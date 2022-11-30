@@ -34,11 +34,11 @@ defmodule BlockScoutWeb.TokenChannel do
         token_transfer: token_transfer,
         burn_address_hash: @burn_address_hash
       )
-
-    push(socket, "token_transfer", %{
-      token_transfer_hash: Hash.to_string(token_transfer.transaction_hash),
-      token_transfer_html: rendered_token_transfer
-    })
+    # TODO(Jayce) there is something wrong with deposit & withdraw tabs in address detail page now, hide cache temporary
+    #push(socket, "token_transfer", %{
+    #  token_transfer_hash: Hash.to_string(token_transfer.transaction_hash),
+    #  token_transfer_html: rendered_token_transfer
+    #})
 
     {:noreply, socket}
   end
