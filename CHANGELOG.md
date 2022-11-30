@@ -4,6 +4,7 @@
 - [#5739](https://github.com/blockscout/blockscout/pull/5739) - Erigon archive node support
 - [#5732](https://github.com/blockscout/blockscout/pull/5732) - Manage testnet label (right to the navbar logo)
 - [#5699](https://github.com/blockscout/blockscout/pull/5699) - Switch to basic (non-pro) API endpoint for Coingecko requests, if API key is not provided
+- [#5542](https://github.com/blockscout/blockscout/pull/5542) - Add `jq` in docker image
 
 ### Fixes
 - [#5768](https://github.com/blockscout/blockscout/pull/5768) - Outstanding rows limit for missing blocks query (catchup fetcher)
