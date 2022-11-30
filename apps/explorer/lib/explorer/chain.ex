@@ -437,7 +437,7 @@ defmodule Explorer.Chain do
 
     options
     |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions(from_block, to_block)
+    |> fetch_transactions(from_block, to_block, true)
   end
 
   defp transactions_block_numbers_at_address(address_hash, options) do
@@ -3448,7 +3448,7 @@ defmodule Explorer.Chain do
     |> pending_transactions_query()
     |> apply_filter_by_method_id_to_transactions(method_id_filter)
     |> apply_filter_by_tx_type_to_transactions(type_filter)
-    |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
+    |> order_by([transaction], desc: transaction.inserted_at, asc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> Repo.all()
@@ -4404,16 +4404,26 @@ defmodule Explorer.Chain do
     if Repo.one(query), do: true, else: false
   end
 
-  defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil) do
+  defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil, is_address? \\ false) do
     Transaction
+    |> order_for_transactions(is_address?)
+    |> where_block_number_in_period(from_block, to_block)
+    |> handle_paging_options(paging_options)
+  end
+
+  defp order_for_transactions(query, true) do
+    query
     |> order_by([transaction],
       desc: transaction.block_number,
       desc: transaction.index,
       desc: transaction.inserted_at,
-      desc: transaction.hash
+      asc: transaction.hash
     )
-    |> where_block_number_in_period(from_block, to_block)
-    |> handle_paging_options(paging_options)
+  end
+
+  defp order_for_transactions(query, _) do
+    query
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
   end
 
   defp fetch_transactions_in_ascending_order_by_index(paging_options) do
@@ -4626,7 +4636,7 @@ defmodule Explorer.Chain do
       [transaction],
       (is_nil(transaction.block_number) and
          (transaction.inserted_at < ^inserted_at or
-            (transaction.inserted_at == ^inserted_at and transaction.hash < ^hash))) or
+            (transaction.inserted_at == ^inserted_at and transaction.hash > ^hash))) or
         not is_nil(transaction.block_number)
     )
   end
