@@ -32,6 +32,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
+  alias Indexer.Prometheus
   alias Indexer.Transform.Addresses
   alias Timex.Duration
 
@@ -281,8 +282,16 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @decorate span(tracer: Tracer)
   defp do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry) do
-    case fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) do
-      {:ok, %{inserted: _, errors: []}} ->
+    time_before = Timex.now()
+
+    {fetch_duration, result} =
+      :timer.tc(fn -> fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) end)
+
+    Prometheus.Instrumenter.block_full_process(fetch_duration, __MODULE__)
+
+    case result do
+      {:ok, %{inserted: inserted, errors: []}} ->
+        log_import_timings(inserted, fetch_duration, time_before)
         Logger.debug("Fetched and imported.")
 
       {:ok, %{inserted: _, errors: [_ | _] = errors}} ->
@@ -295,6 +304,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
         end)
 
       {:error, {:import = step, [%Changeset{} | _] = changesets}} ->
+        Prometheus.Instrumenter.import_errors()
+
         params = %{
           changesets: changesets,
           block_number_to_fetch: block_number_to_fetch,
@@ -318,6 +329,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
         end
 
       {:error, {:import = step, reason}} ->
+        Prometheus.Instrumenter.import_errors()
         Logger.error(fn -> inspect(reason) end, step: step)
 
       {:error, {step, reason}} ->
@@ -345,6 +357,17 @@ defmodule Indexer.Block.Realtime.Fetcher do
         )
     end
   end
+
+  defp log_import_timings(%{blocks: [%{number: number, timestamp: timestamp}]}, fetch_duration, time_before) do
+    node_delay = Timex.diff(time_before, timestamp, :seconds)
+    Prometheus.Instrumenter.node_delay(node_delay)
+
+    Logger.debug("Block #{number} fetching duration: #{fetch_duration / 1_000_000}s. Node delay: #{node_delay}s.",
+      fetcher: :block_import_timings
+    )
+  end
+
+  defp log_import_timings(_inserted, _duration, _time_before), do: nil
 
   defp retry_fetch_and_import_block(%{retry: retry}) when retry < 1, do: :ignore
 
