@@ -19,7 +19,8 @@
 
     <div class="row">
       <div class="col-xs-12 col-lg-3">
-        <p class="footer-info-text"><%= gettext("edeXa is The leading POS enabled and scalable blockchain network built for businesses with instant finality, low gas fees and high throughput.") %></p>
+        <p class="footer-info-text"><%= gettext("edeXa Business Blockchain, private and public ecosystem built to enable scalable and business-
+oriented dApps for the world.") %></p>
         <div class="footer-social-icons">
           <a href="https://twitter.com/edexablockchain" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
             <div class="footer-social-icon-container fontawesome-icon twitter"></div>
@@ -32,7 +33,6 @@
           </a> -->
         </div>
       </div>
-
 
       <% main_nets = main_nets(other_networks()) %>
 

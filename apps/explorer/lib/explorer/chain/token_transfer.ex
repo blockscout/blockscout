@@ -25,7 +25,7 @@ defmodule Explorer.Chain.TokenTransfer do
   use Explorer.Schema
 
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2, limit: 2, where: 3]
+  import Ecto.Query, only: [from: 2, limit: 2, where: 3, join: 5, order_by: 3, preload: 3]
 
   alias Explorer.Chain.{Address, Block, Hash, TokenTransfer, Transaction}
   alias Explorer.Chain.Token.Instance
@@ -110,8 +110,8 @@ defmodule Explorer.Chain.TokenTransfer do
       type: Hash.Full
     )
 
-    has_one(
-      :instance,
+    has_many(
+      :instances,
       Instance,
       foreign_key: :token_contract_address_hash,
       references: :token_contract_address_hash
@@ -177,7 +177,7 @@ defmodule Explorer.Chain.TokenTransfer do
       from(
         tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^token_address_hash,
-        where: tt.token_id == ^token_id or fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)),
+        where: fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)),
         where: not is_nil(tt.block_number),
         preload: [{:transaction, :block}, :token, :from_address, :to_address],
         order_by: [desc: tt.block_number]
@@ -208,7 +208,7 @@ defmodule Explorer.Chain.TokenTransfer do
         tt in TokenTransfer,
         where:
           tt.token_contract_address_hash == ^token_address_hash and
-            (tt.token_id == ^token_id or fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id))),
+            fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)),
         select: fragment("COUNT(*)")
       )
 
@@ -218,11 +218,11 @@ defmodule Explorer.Chain.TokenTransfer do
   def page_token_transfer(query, %PagingOptions{key: nil}), do: query
 
   def page_token_transfer(query, %PagingOptions{key: {token_id}, asc_order: true}) do
-    where(query, [tt], tt.token_id > ^token_id)
+    where(query, [tt], fragment("?[1] > ?", tt.token_ids, ^token_id))
   end
 
   def page_token_transfer(query, %PagingOptions{key: {token_id}}) do
-    where(query, [tt], tt.token_id < ^token_id)
+    where(query, [tt], fragment("?[1] < ?", tt.token_ids, ^token_id))
   end
 
   def page_token_transfer(query, %PagingOptions{key: {block_number, log_index}, asc_order: true}) do
@@ -239,6 +239,16 @@ defmodule Explorer.Chain.TokenTransfer do
       [tt],
       tt.block_number < ^block_number or (tt.block_number == ^block_number and tt.log_index < ^log_index)
     )
+  end
+
+  def handle_paging_options(query, nil), do: query
+
+  def handle_paging_options(query, %PagingOptions{key: nil, page_size: nil}), do: query
+
+  def handle_paging_options(query, paging_options) do
+    query
+    |> page_token_transfer(paging_options)
+    |> limit(^paging_options.page_size)
   end
 
   @doc """
@@ -305,26 +315,35 @@ defmodule Explorer.Chain.TokenTransfer do
     )
   end
 
-  @doc """
-  Innventory tab query.
-  A token ERC-721 is considered unique because it corresponds to the possession
-  of a specific asset.
-
-  To find out its current owner, it is necessary to look at the token last
-  transfer.
-  """
-  @spec address_to_unique_tokens(Hash.Address.t()) :: Ecto.Query.t()
-  def address_to_unique_tokens(contract_address_hash) do
-    from(
-      tt in TokenTransfer,
-      left_join: instance in Instance,
-      on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
-      where: tt.token_contract_address_hash == ^contract_address_hash,
-      where: tt.to_address_hash != ^"0x0000000000000000000000000000000000000000",
-      order_by: [desc: tt.block_number],
-      distinct: [desc: tt.token_id],
-      preload: [:to_address],
-      select: %{tt | instance: instance}
-    )
+  def token_transfers_by_address_hash(direction, address_hash, token_types) do
+    TokenTransfer
+    |> filter_by_direction(direction, address_hash)
+    |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+    |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+    |> preload([token: token], [{:token, token}])
+    |> filter_by_type(token_types)
   end
+
+  def filter_by_direction(query, :to, address_hash) do
+    query
+    |> where([tt], tt.to_address_hash == ^address_hash)
+  end
+
+  def filter_by_direction(query, :from, address_hash) do
+    query
+    |> where([tt], tt.from_address_hash == ^address_hash)
+  end
+
+  def filter_by_direction(query, _, address_hash) do
+    query
+    |> where([tt], tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
+  end
+
+  def filter_by_type(query, []), do: query
+
+  def filter_by_type(query, token_types) when is_list(token_types) do
+    where(query, [token: token], token.type in ^token_types)
+  end
+
+  def filter_by_type(query, _), do: query
 end

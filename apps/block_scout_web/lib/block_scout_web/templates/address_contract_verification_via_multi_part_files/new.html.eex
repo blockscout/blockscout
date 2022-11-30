@@ -4,7 +4,7 @@
   <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost") %>
 
   <div class="new-smart-contract-form">
-      <h1 class="smart-contract-title"><%= gettext "New Solidity Smart Contract Verification" %></h1>
+      <h1 class="smart-contract-title"><%= if RustVerifierInterface.enabled?(), do: gettext "New Solidity/Yul Smart Contract Verification", else: gettext "New Solidity Smart Contract Verification" %></h1>
 
       <%= form_for changeset,
           address_contract_verification_path(@conn, :create),
@@ -19,7 +19,7 @@
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
-            <%= label :evm_version, :evm_version, gettext("EVM Version") %>
+            <%= label f, :evm_version, gettext("EVM Version") %>
             <div class="center-column">
               <%= select f, :evm_version, @evm_versions, class: "form-control border-rounded", "aria-describedby": "evm-version-help-block" %>
             </div>
@@ -29,18 +29,18 @@
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
-            <%= label f, "Optimization" %>
+            <%= label f, :optimization, gettext("Optimization") %>
             <div class="center-column">
               <div class="form-radios-group">
                 <div class="radio-big">
                   <%= radio_button f, :optimization, false, class: "form-check-input optimization-false" %>
                   <div class="radio-icon"></div>
-                  <%= label :smart_contract_optimization, :false, gettext("No"), class: "radio-text" %>
+                  <%= label f, :optimization_false, gettext("No"), class: "radio-text" %>
                 </div>
                 <div class="radio-big">
                   <%= radio_button f, :optimization, true, class: "form-check-input optimization-true", "aria-describedby": "optimization-help-block" %>
                   <div class="radio-icon"></div>
-                  <%= label :smart_contract_optimization, :true, gettext("Yes"), class: "radio-text" %>
+                  <%= label f, :optimization_true, gettext("Yes"), class: "radio-text" %>
                 </div>
               </div>
               <%= error_tag f, :optimization, id: "optimization-help-block", class: "text-danger form-error" %>
@@ -51,7 +51,7 @@
 
         <div class="smart-contract-form-group optimization-runs" style="<%= if !changeset.changes.optimization, do: "display: none;"%>">
           <div class="smart-contract-form-group-inner-wrapper">
-            <%= label f, :name, gettext("Optimization runs") %>
+            <%= label f, :optimization_runs, gettext("Optimization runs") %>
             <div class="center-column">
               <%= text_input f, :optimization_runs, class: "form-control border-rounded", "aria-describedby": "optimization-runs-help-block", "data-test": "optimization-runs" %>
             </div>
@@ -60,7 +60,7 @@
         </div>
 
        <div class="smart-contract-form-group-inner-wrapper">
-        <label for="smart_contract_multi_part_files"><%= gettext("Sources *.sol files") %></label>
+        <label for="smart_contract_multi_part_files"><%= if RustVerifierInterface.enabled?(), do: gettext("Sources *.sol or *.yul files"), else: gettext("Sources *.sol files") %></label>
           <div class="center-column">
             <div class="dropzone-1 dropzone-previews" style="display: flex; margin: 0 auto;", id="dropzone-previews">
               <div style="text-align: center;">
@@ -69,7 +69,7 @@
               </div>
             </div>
           </div>
-          <div class="smart-contract-form-group-tooltip"><%= gettext "Drop all Solidity contract source files into the drop zone." %></div>
+          <div class="smart-contract-form-group-tooltip"><%= if RustVerifierInterface.enabled?(), do: gettext "Drop all Solidity or Yul contract source files into the drop zone.", else: gettext "Drop all Solidity contract source files into the drop zone." %></div>
         </div>
 
         <div class="add-contract-libraries-wrapper">

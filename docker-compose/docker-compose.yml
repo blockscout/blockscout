@@ -53,6 +53,8 @@ services:
       -  ./envs/common-blockscout.env
     ports:
       - 4000:4000
+    volumes:
+      - ./logs/:/app/logs/
 
   smart-contract-verifier:
     image: ghcr.io/blockscout/smart-contract-verifier:${SMART_CONTRACT_VERIFIER_DOCKER_TAG:-latest}
@@ -62,3 +64,12 @@ services:
       -  ./envs/common-smart-contract-verifier.env
     ports:
       - 8043:8043
+
+  visualizer:
+    image: ghcr.io/blockscout/visualizer:${VISUALIZER_DOCKER_TAG:-latest}
+    restart: always
+    container_name: 'visualizer'
+    env_file:
+      -  ./envs/common-visualizer.env
+    ports:
+      - 8050:8050

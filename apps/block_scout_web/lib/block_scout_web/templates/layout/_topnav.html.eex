@@ -24,45 +24,50 @@
           <li class="nav-item dropdown">
             <a class="nav-link topnav-nav-link dropdown-toggle" href="#" id="navbarBlocksDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_block_icon.html" %>
+                <%= render BlockScoutWeb.IconsView, "_blockchain_icon.html" %>
               </span>
-              <%= gettext("Blocks") %>
+              <%= gettext("Blockchain") %>
             </a>
-            <div class="dropdown-menu" aria-labelledby="navbarBlocksDropdown">
-              <%= link to: blocks_path(@conn, :index), class: "dropdown-item #{tab_status("blocks", @conn.request_path)}" do %>
-                <%= gettext("Blocks") %>
-              <% end %>
-              <%= link to: uncle_path(@conn, :uncle), class: "dropdown-item #{tab_status("uncles", @conn.request_path)}" do %>
-                <%= gettext("Uncles") %>
-              <% end %>
-              <%= link to: reorg_path(@conn, :reorg), class: "dropdown-item #{tab_status("reorgs", @conn.request_path)}" do %>
-                <%= gettext("Forked Blocks (Reorgs)") %>
-              <% end %>
-            </div>
-          </li>
-          <li class="nav-item dropdown" id="activeTransactions">
-            <a href="#" role="button" id="navbarTransactionsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_transaction_icon.html" %>
-              </span>
-              <%= gettext("Transactions") %>
-            </a>
-            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
+            <div class="dropdown-menu" aria-labelledby="navbarBlockchainDropdown">
+              <div class="nav-submenu">
+                <span>
+                  <%= gettext("Blocks") %>
+                </span>
+              </div>
               <%= link(
-                    gettext("Validated"),
-                    class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
-                    to: transaction_path(@conn, :index)
-                  ) %>
+                    gettext("Blocks"),
+                    to: blocks_path(@conn, :index),
+                    class: "dropdown-item #{tab_status("blocks", @conn.request_path)}")%>
+              <%= link(gettext("Uncles"),
+                    to: uncle_path(@conn, :uncle),
+                    class: "dropdown-item #{tab_status("uncles", @conn.request_path)}")%>
+              <%= link(gettext("Forked Blocks (Reorgs)"),
+                    to: reorg_path(@conn, :reorg),
+                    class: "border-bottom dropdown-item #{tab_status("reorgs", @conn.request_path)}")%>
+              <div class="nav-submenu">
+                <span>
+                  <%= gettext("Transactions") %>
+                </span>
+              </div>
               <% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)%>
               <% variant = Keyword.fetch!(json_rpc_named_arguments, :variant) %>
+              <%= link(
+                    gettext("Validated"),
+                    to: transaction_path(@conn, :index),
+                    class: "#{if variant == EthereumJSONRPC.Besu, do: "border-bottom", else: ""} dropdown-item #{tab_status("txs", @conn.request_path)}"
+                  ) %>
+
               <%= if variant !== EthereumJSONRPC.Besu do %>
                 <%= link(
                       gettext("Pending"),
-                      class: "dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",
+                      class: "border-bottom dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",
                       "data-test": "pending_transactions_link",
                       to: pending_transaction_path(@conn, :index)
                     ) %>
               <% end %>
+              <%= link(gettext("Verified contracts"),
+                    to: verified_contracts_path(@conn, :index),
+                    class: "dropdown-item #{tab_status("reorgs", @conn.request_path)}")%>
             </div>
           </li>
           <li class="nav-item dropdown">

@@ -57,3 +57,12 @@ services:
     ports:
       - 8043:8043
 
+  visualizer:
+    image: ghcr.io/blockscout/visualizer:${VISUALIZER_DOCKER_TAG:-latest}
+    restart: always
+    container_name: 'visualizer'
+    env_file:
+      -  ./envs/common-visualizer.env
+    ports:
+      - 8050:8050
+

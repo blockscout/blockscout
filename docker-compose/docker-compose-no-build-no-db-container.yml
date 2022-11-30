@@ -30,6 +30,8 @@ services:
         SECRET_KEY_BASE: '56NtB48ear7+wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN'
     ports:
       - 4000:4000
+    volumes:
+      - ./logs/:/app/logs/
 
   smart-contract-verifier:
     image: ghcr.io/blockscout/smart-contract-verifier:${SMART_CONTRACT_VERIFIER_DOCKER_TAG:-latest}
@@ -39,3 +41,13 @@ services:
       -  ./envs/common-smart-contract-verifier.env
     ports:
       - 8043:8043
+
+  visualizer:
+    image: ghcr.io/blockscout/visualizer:${VISUALIZER_DOCKER_TAG:-latest}
+    restart: always
+    container_name: 'visualizer'
+    env_file:
+      -  ./envs/common-visualizer.env
+    ports:
+      - 8050:8050
+

@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Transaction do
 
   alias ABI.FunctionSelector
 
+  alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
 
   alias Explorer.{Chain, Repo}
@@ -22,6 +23,7 @@ defmodule Explorer.Chain.Transaction do
     Hash,
     InternalTransaction,
     Log,
+    SmartContract,
     TokenTransfer,
     Transaction,
     Wei
@@ -465,6 +467,18 @@ defmodule Explorer.Chain.Transaction do
   def decoded_input_data(%__MODULE__{to_address: %{contract_code: nil}}), do: {:error, :not_a_contract_call}
 
   def decoded_input_data(%__MODULE__{
+        to_address: %{smart_contract: %NotLoaded{}},
+        input: input,
+        hash: hash
+      }) do
+    decoded_input_data(%__MODULE__{
+      to_address: %{smart_contract: nil},
+      input: input,
+      hash: hash
+    })
+  end
+
+  def decoded_input_data(%__MODULE__{
         to_address: %{smart_contract: nil},
         input: %{bytes: <<method_id::binary-size(4), _::binary>> = data},
         hash: hash
@@ -480,7 +494,7 @@ defmodule Explorer.Chain.Transaction do
       candidates_query
       |> Repo.all()
       |> Enum.flat_map(fn candidate ->
-        case do_decoded_input_data(data, [candidate.abi], nil, hash) do
+        case do_decoded_input_data(data, %SmartContract{abi: [candidate.abi], address_hash: nil}, hash) do
           {:ok, _, _, _} = decoded -> [decoded]
           _ -> []
         end
@@ -495,10 +509,10 @@ defmodule Explorer.Chain.Transaction do
 
   def decoded_input_data(%__MODULE__{
         input: %{bytes: data},
-        to_address: %{smart_contract: %{abi: abi, address_hash: address_hash}},
+        to_address: %{smart_contract: smart_contract},
         hash: hash
       }) do
-    case do_decoded_input_data(data, abi, address_hash, hash) do
+    case do_decoded_input_data(data, smart_contract, hash) do
       # In some cases transactions use methods of some unpredictadle contracts, so we can try to look up for method in a whole DB
       {:error, :could_not_decode} ->
         case decoded_input_data(%__MODULE__{
@@ -521,8 +535,8 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  defp do_decoded_input_data(data, abi, address_hash, hash) do
-    full_abi = Chain.combine_proxy_implementation_abi(address_hash, abi)
+  defp do_decoded_input_data(data, smart_contract, hash) do
+    full_abi = Chain.combine_proxy_implementation_abi(smart_contract)
 
     with {:ok, {selector, values}} <- find_and_decode(full_abi, data, hash),
          {:ok, mapping} <- selector_mapping(selector, values, hash),
@@ -558,14 +572,16 @@ defmodule Explorer.Chain.Transaction do
 
   def get_method_name(_), do: "Transfer"
 
-  defp parse_method_name(method_desc) do
+  def parse_method_name(method_desc, need_upcase \\ true) do
     method_desc
     |> String.split("(")
     |> Enum.at(0)
-    |> upcase_first
+    |> upcase_first(need_upcase)
   end
 
-  defp upcase_first(<<first::utf8, rest::binary>>), do: String.upcase(<<first::utf8>>) <> rest
+  defp upcase_first(string, false), do: string
+
+  defp upcase_first(<<first::utf8, rest::binary>>, true), do: String.upcase(<<first::utf8>>) <> rest
 
   defp function_call(name, mapping) do
     text =

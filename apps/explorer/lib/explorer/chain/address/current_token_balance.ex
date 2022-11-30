@@ -23,7 +23,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
    *  `token_contract_address_hash` - The contract address hash foreign key.
    *  `block_number` - The block's number that the transfer took place.
    *  `value` - The value that's represents the balance.
-   *  `token_id` - The token_id of the transferred token (applicable for ERC-1155 and ERC-721 tokens)
+   *  `token_id` - The token_id of the transferred token (applicable for ERC-1155)
    *  `token_type` - The type of the token
   """
   @type t :: %__MODULE__{
@@ -165,7 +165,6 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       where: ctb.value > 0,
       left_join: t in Token,
       on: ctb.token_contract_address_hash == t.contract_address_hash,
-      preload: :token,
       select: {ctb, t},
       order_by: [desc: ctb.value, asc: t.type, asc: t.name]
     )
