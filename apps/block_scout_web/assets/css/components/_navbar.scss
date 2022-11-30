@@ -1,6 +1,6 @@
 // Default variables
 $header-background-color: #fff !default;
-$header-links-color: #828ba0 !default;
+$header-links-color: #21413F !default;
 $header-links-color-active: #333 !default;
 $header-icon-color: $header-links-color !default;
 $header-icon-color-hover: $secondary !default;
@@ -105,7 +105,7 @@ $navbar-logo-width: 100% !default;
     display: flex;
 
     @include media-breakpoint-up(xl) {
-      height: 57px;
+      height: 50px;
       margin-bottom: -8px;
       margin-top: -8px;
     }
@@ -163,16 +163,13 @@ $navbar-logo-width: 100% !default;
     }
   }
   .input-group-append {
-    height: 38px;
+    height: 16px;
+    width: 16px;
+    left: 20px;
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 38px;
     z-index: 5;
-
-    &.left {
-      left: 0px;
-    }
 
     &.right {
       right: 8px;
@@ -187,7 +184,7 @@ $navbar-logo-width: 100% !default;
     }
 
     * {
-      fill: $header-textfield-magnifier-color;
+      fill: #6E767D;
     }
   }
   .input-group-text {

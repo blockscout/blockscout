@@ -2,8 +2,11 @@ $body-dark: #1c1d31; // body background
 $dark-bg: #22223a; // hero shade
 $dark-light-bg: #282945; // pills bg shade
 $dark-light: #313355; // tile light top share
-$labels-dark: #8a8dba; // header nav, labels
+$labels-dark: #21413F; // header nav, labels
 $dark-stakes-banned-background: #3e314c;
+$primary: #65B3AE !default;
+$dark-primary: #65B3AE !default;
+$dark-primary-alternate: #65B3AE !default;
 
 // Switcher
 .dark-mode-changer {
@@ -23,7 +26,7 @@ $dark-stakes-banned-background: #3e314c;
 		opacity: .8;
 	}
 	svg path {
-		fill: #828ba0;
+		fill: #21413F;
 	}
 	&--dark {
 		svg path {
@@ -72,6 +75,8 @@ $dark-stakes-banned-background: #3e314c;
 		&::placeholder {
 			color: $labels-dark;
 		}
+		background: rgba(255, 255, 255, 0.7);
+		border-radius: 20px;
 	}
 	.navbar.navbar-primary .navbar-toggler .navbar-toggler-icon {
 		filter: invert(1);
@@ -102,13 +107,13 @@ $dark-stakes-banned-background: #3e314c;
 	}
 	.dashboard-banner-network-plain-container,
 	.dashboard-banner-network-plain-container::after {
-		background-color: $dark-light-bg;
+		background-color: transparent;
 	}
 	.dashboard-banner-network-stats-label,
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-label {
 		color: $labels-dark;
 	}
-
+	
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-item {
 		&.price-per-day {
 			&::before {
@@ -1125,4 +1130,22 @@ $dark-stakes-banned-background: #3e314c;
 .dark-theme-applied .btn-no-border-link-to-tems {
 	border-color: $dark-primary;
 	color: $dark-primary;
+}
+
+.dashboard-banner-container {
+	background-image: url(../static/images/banner_bg.png)!important;
+}
+// _navbar.scss
+.navbar.navbar-primary {
+	background-image: url(../static/images/nav_bg.png);
+}
+.main-search-autocomplete {
+	background-color: rgba(255, 255, 255, 0.1)!important;
+}
+.navbar.navbar-primary .form-control {
+	background-color: rgba(255, 255, 255, 0.7)!important;
+	border-radius: 20px!important;
+}
+.dashboard-banner-network-plain-container {
+
 }

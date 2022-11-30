@@ -8,8 +8,8 @@ $footer-logo-height: 28px !default;
 $footer-logo-width: auto !default;
 
 .footer {
-  background: $footer-background-color;
-  color: $footer-text-color;
+  background: #091312;
+  color: #fff;
   font-size: 12px;
   line-height: 1.67;
   margin: 0;
@@ -62,7 +62,7 @@ $footer-logo-width: auto !default;
 }
 
 .footer-link {
-  color: $footer-link-color;
+  color: #fff;
 
   &:hover {
     color: $footer-link-color;

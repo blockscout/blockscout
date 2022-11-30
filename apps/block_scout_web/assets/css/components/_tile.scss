@@ -15,7 +15,7 @@ $tile-status-error-reason: #ff7986 !default;
 $tile-status-awaiting-internal-transactions: $warning !default;
 $tile-padding: 1rem;
 $tile-title-color: #333 !default;
-$tile-body-a-color: #5959d8 !default;
+$tile-body-a-color: #0A8FF7 !default;
 
 @mixin generate-tile-block($prefix, $color, $label-color: false) {
   &#{ $prefix } {

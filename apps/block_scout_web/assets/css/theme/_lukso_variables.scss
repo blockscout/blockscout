@@ -94,31 +94,9 @@ $dashboard-banner-network-plain-container-height: 150px;
         justify-content: space-between;
       }
 
-      &::after {
-        background-color: transparent;
-        background-image: url($dashboard-banner-network-stats-static-image);
-        background-position: 50% 50%;
-        background-repeat: no-repeat;
-        background-size: contain;
-        bottom: auto;
-        content: "";
-        display: block;
-        flex-grow: 0;
-        flex-shrink: 0;
-        height: $dashboard-banner-network-plain-container-height;
-        margin: 0 0 0 auto;
-        order: 150;
-        width: 301px;
-        box-shadow: none;
-
-        @include media-breakpoint-down(lg) {
-          display: none;
-        }
-      }
-
       .dashboard-banner-network-stats-item {
         margin-right: 60px;
-
+        width: 180px;
         @include media-breakpoint-down(lg) {
           flex-grow: 1;
           flex-shrink: 1;

@@ -75,10 +75,6 @@ a.tile-title { color: $secondary !important; }
   }
 }
 
-.dashboard-banner-network-stats-item::before {
-  background-color: #F0EBDE !important;
-}
-
 .dashboard-banner-chart-legend {
   .dashboard-banner-chart-legend-item.market-cap-per-day
    {
@@ -138,10 +134,6 @@ $dashboard-line-color-transactions-dark-theme: $secondary;
   .dropdown-item:not(.header):focus {
     background-color: $secondary !important;
   }
-
-  .dashboard-banner-network-stats-item::before {
-		background-color: $secondary !important;
-	}
 
   .tile .tile-body a,
   .tile a:hover,

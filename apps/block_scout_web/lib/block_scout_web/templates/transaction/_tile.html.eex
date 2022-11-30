@@ -83,7 +83,7 @@
             </span>
           <% else %>
             <span data-test="transaction_type" class="badge badge-success tile-badge">
-              <%= gettext "IN" %>
+              <%= gettext "IN" %>WE
             </span>
           <% end %>
         </span>
