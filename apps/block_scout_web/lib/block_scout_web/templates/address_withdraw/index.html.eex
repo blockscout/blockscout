@@ -17,7 +17,7 @@
         <%= if !assigns[:token] do %>
         <div class="clearfix">
           <h2 class="card-title float-left">
-            Deposit
+            Withdraw
           </h2>
           <div class="top-pagination-outer-container float-right">
             <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>

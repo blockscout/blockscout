@@ -96,9 +96,7 @@ $dark-primary-alternate: $dark-primary;
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-item:nth-child(1)::before {
 		background-color: $dark-primary;
 	}
-	.dashboard-banner-network-stats-item::before {
-		background-color: $dark-secondary;
-	}
+	
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-item:nth-child(2)::before {
 		background-color: $dark-secondary;
 	}

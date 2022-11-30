@@ -44,13 +44,17 @@ $('#search-icon').on('click', function (event) {
   const value = $('.main-search-autocomplete').val() || $('.main-search-autocomplete-mobile').val()
   search(value)
 })
+$('#search-btn').on('click', function (event) {
+  const value = $('.main-search-autocomplete').val() || $('.main-search-autocomplete-mobile').val()
+  search(value)
+})
 
 $('.main-search-autocomplete').on('focus', function (_event) {
   $('#slash-icon').hide()
-  $('.search-control').addClass('focused-field')
+  //$('.search-control').addClass('focused-field')
 })
 
 $('.main-search-autocomplete').on('focusout', function (_event) {
   $('#slash-icon').show()
-  $('.search-control').removeClass('focused-field')
+  //$('.search-control').removeClass('focused-field')
 })

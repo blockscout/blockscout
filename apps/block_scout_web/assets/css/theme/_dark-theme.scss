@@ -108,9 +108,7 @@ $dark-stakes-banned-background: #3e314c;
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-label {
 		color: $labels-dark;
 	}
-	.dashboard-banner-network-stats-item::before {
-		background-color: $dark-secondary;
-	}
+
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-item {
 		&.price-per-day {
 			&::before {
