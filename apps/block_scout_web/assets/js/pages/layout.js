@@ -152,8 +152,8 @@ $('.send-public-tag-request-button').click((_event) => {
     goal: $('#public_tags_request_is_owner_true').prop('checked') ? 'Add tags' : 'Incorrect public tag',
     public_tag: $('#public_tags_request_tags').val(),
     smart_contracts: $('*[id=public_tags_request_addresses]').map((_i, el) => {
-        return el.value
-      }).get(),
+      return el.value
+    }).get(),
     reason: $('#public_tags_request_additional_comment').val()
   }
   const eventName = 'Request a public tag completed'
@@ -176,8 +176,8 @@ $('#public_tags_request_additional_comment').click((_event) => {
     goal: $('#public_tags_request_is_owner_true').prop('checked') ? 'Add tags' : 'Incorrect public tag',
     public_tag: $('#public_tags_request_tags').val(),
     smart_contracts: $('*[id=public_tags_request_addresses]').map((_i, el) => {
-        return el.value
-      }).get(),
+      return el.value
+    }).get(),
     reason: $('#public_tags_request_additional_comment').val()
   }
   const eventName = 'Request a public tag completed'
@@ -191,6 +191,74 @@ $('#public_tags_request_additional_comment').click((_event) => {
   }
 })
 
+$(document).ready(() => {
+  let timer
+  const waitTime = 500
+  var observer = new MutationObserver((mutations) => {
+    clearTimeout(timer)
+
+    if (mutations[0].target.hidden) {
+      return
+    }
+
+    const $results = $('li[id^="autoComplete_result_"]')
+
+    timer = setTimeout(() => {
+      let eventProperties = {
+        search: $('.main-search-autocomplete').val() || $('.main-search-autocomplete-mobile').val()
+      }
+      let eventName = 'Occurs searching according to substring at the nav bar'
+
+      if (mixpanelToken) {
+        mixpanel.track(eventName, eventProperties)
+      }
+
+      if (amplitudeApiKey) {
+        amplitudeTrack(eventName, eventProperties)
+      }
+
+      eventProperties = {
+        resultsNumber: $results.length,
+        results: $results.map((_i, el) => {
+          return el.children[1].innerText
+        })
+      }
+      eventName = 'Search list displays at the nav bar'
+
+      if (mixpanelToken) {
+        mixpanel.track(eventName, eventProperties)
+      }
+
+      if (amplitudeApiKey) {
+        amplitudeTrack(eventName, eventProperties)
+      }
+    }, waitTime)
+
+    $results.click((event) => {
+      const eventProperties = {
+        item: event.currentTarget.innerText
+      }
+      const eventName = 'Search item click at the nav bar'
+
+      if (mixpanelToken) {
+        mixpanel.track(eventName, eventProperties)
+      }
+
+      if (amplitudeApiKey) {
+        amplitudeTrack(eventName, eventProperties)
+      }
+    })
+
+  })
+  observer.observe($('#autoComplete_list_1')[0], {
+    attributeFilter: ['hidden'],
+    childList: true
+  })
+  observer.observe($('#autoComplete_list_2')[0], {
+    attributeFilter: ['hidden']
+  })
+})
+
 $(document).click(function (event) {
   const clickover = $(event.target)
   const _opened = $('.navbar-collapse').hasClass('show')
@@ -200,6 +268,19 @@ $(document).click(function (event) {
 })
 
 const search = (value) => {
+  const eventProperties = {
+    search: value
+  }
+  const eventName = 'Occurs searching according to substring at the nav bar'
+
+  if (mixpanelToken) {
+    mixpanel.track(eventName, eventProperties)
+  }
+
+  if (amplitudeApiKey) {
+    amplitudeTrack(eventName, eventProperties)
+  }
+
   if (value) {
     window.location.href = `/search?q=${value}`
   }
