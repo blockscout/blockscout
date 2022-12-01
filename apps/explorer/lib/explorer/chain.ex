@@ -255,20 +255,35 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if direction == nil do
-      full_query =
+      query_to_address_hash_wrapped =
         InternalTransaction
         |> InternalTransaction.where_nonpending_block()
-        |> InternalTransaction.where_address_fields_match(hash, nil)
+        |> InternalTransaction.where_address_fields_match(hash, :to_address_hash)
         |> InternalTransaction.where_block_number_in_period(from_block, to_block)
         |> common_where_limit_order(paging_options)
+        |> wrapped_union_subquery()
 
-      full_query
-      |> order_by(
-        [q],
-        desc: q.block_number,
-        desc: q.transaction_index,
-        desc: q.index
-      )
+      query_from_address_hash_wrapped =
+        InternalTransaction
+        |> InternalTransaction.where_nonpending_block()
+        |> InternalTransaction.where_address_fields_match(hash, :from_address_hash)
+        |> InternalTransaction.where_block_number_in_period(from_block, to_block)
+        |> common_where_limit_order(paging_options)
+        |> wrapped_union_subquery()
+
+      query_created_contract_address_hash_wrapped =
+        InternalTransaction
+        |> InternalTransaction.where_nonpending_block()
+        |> InternalTransaction.where_address_fields_match(hash, :created_contract_address_hash)
+        |> InternalTransaction.where_block_number_in_period(from_block, to_block)
+        |> common_where_limit_order(paging_options)
+        |> wrapped_union_subquery()
+
+      query_to_address_hash_wrapped
+      |> union(^query_from_address_hash_wrapped)
+      |> union(^query_created_contract_address_hash_wrapped)
+      |> wrapped_union_subquery()
+      |> common_where_limit_order(paging_options)
       |> preload(transaction: :block)
       |> join_associations(necessity_by_association)
       |> Repo.all()
