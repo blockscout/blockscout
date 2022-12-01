@@ -13,9 +13,15 @@ defmodule Explorer.Chain.SmartContract do
   use Explorer.Schema
 
   alias Ecto.Changeset
+  alias EthereumJSONRPC.Contract
+  alias Explorer.Counters.AverageBlockTime
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, ContractMethod, DecompiledSmartContract, Hash}
   alias Explorer.Chain.SmartContract.ExternalLibrary
+  alias Explorer.SmartContract.Reader
+  alias Timex.Duration
+
+  @burn_address_hash_str "0x0000000000000000000000000000000000000000"
 
   @typedoc """
   The name of a parameter to a function or event.
@@ -201,6 +207,9 @@ defmodule Explorer.Chain.SmartContract do
   * `bytecode_checked_at` - timestamp of the last check of contract's bytecode matching (DB and BlockChain)
   * `contract_code_md5` - md5(`t:Explorer.Chain.Address.t/0` `contract_code`)
   * `implementation_name` - name of the proxy implementation
+  * `compiler_settings` - raw compilation parameters
+  * `implementation_fetched_at` - timestamp of the last fetching contract's implementation info
+  * `implementation_address_hash` - address hash of the proxy's implementation if any
   * `autodetect_constructor_args` - field was added for storing user's choice
   * `is_yul` - field was added for storing user's choice
   """
@@ -222,6 +231,9 @@ defmodule Explorer.Chain.SmartContract do
           bytecode_checked_at: DateTime.t(),
           contract_code_md5: String.t(),
           implementation_name: String.t() | nil,
+          compiler_settings: map() | nil,
+          implementation_fetched_at: DateTime.t(),
+          implementation_address_hash: Hash.Address.t(),
           autodetect_constructor_args: boolean | nil,
           is_yul: boolean | nil
         }
@@ -244,6 +256,9 @@ defmodule Explorer.Chain.SmartContract do
     field(:bytecode_checked_at, :utc_datetime_usec, default: DateTime.add(DateTime.utc_now(), -86400, :second))
     field(:contract_code_md5, :string)
     field(:implementation_name, :string)
+    field(:compiler_settings, :map)
+    field(:implementation_fetched_at, :utc_datetime_usec, default: nil)
+    field(:implementation_address_hash, Hash.Address, default: nil)
     field(:autodetect_constructor_args, :boolean, virtual: true)
     field(:is_yul, :boolean, virtual: true)
 
@@ -287,7 +302,10 @@ defmodule Explorer.Chain.SmartContract do
       :is_changed_bytecode,
       :bytecode_checked_at,
       :contract_code_md5,
-      :implementation_name
+      :implementation_name,
+      :compiler_settings,
+      :implementation_address_hash,
+      :implementation_fetched_at
     ])
     |> validate_required([
       :name,
@@ -489,4 +507,370 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   defp to_address_hash(address_hash), do: address_hash
+
+  def proxy_contract?(%__MODULE__{abi: abi} = smart_contract) when not is_nil(abi) do
+    implementation_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Map.get(method, "name") == "implementation" ||
+          Chain.master_copy_pattern?(method)
+      end)
+
+    if implementation_method_abi ||
+         not is_nil(
+           smart_contract
+           |> get_implementation_address_hash()
+           |> Tuple.to_list()
+           |> List.first()
+         ),
+       do: true,
+       else: false
+  end
+
+  def proxy_contract?(_), do: false
+
+  def get_implementation_address_hash(%__MODULE__{abi: nil}), do: false
+
+  def get_implementation_address_hash(
+        %__MODULE__{
+          address_hash: address_hash,
+          implementation_fetched_at: implementation_fetched_at
+        } = smart_contract
+      ) do
+    updated_smart_contract =
+      if Application.get_env(:explorer, :enable_caching_implementation_data_of_proxy) &&
+           check_implementation_refetch_neccessity(implementation_fetched_at) do
+        Chain.address_hash_to_smart_contract(address_hash)
+      else
+        smart_contract
+      end
+
+    get_implementation_address_hash({:updated, updated_smart_contract})
+  end
+
+  def get_implementation_address_hash(
+        {:updated,
+         %__MODULE__{
+           address_hash: address_hash,
+           abi: abi,
+           implementation_address_hash: implementation_address_hash_from_db,
+           implementation_name: implementation_name_from_db,
+           implementation_fetched_at: implementation_fetched_at
+         }}
+      ) do
+    if check_implementation_refetch_neccessity(implementation_fetched_at) do
+      get_implementation_address_hash_task = Task.async(fn -> get_implementation_address_hash(address_hash, abi) end)
+
+      timeout = Application.get_env(:explorer, :implementation_data_fetching_timeout)
+
+      case Task.yield(get_implementation_address_hash_task, timeout) ||
+             Task.ignore(get_implementation_address_hash_task) do
+        {:ok, {:empty, :empty}} ->
+          {nil, nil}
+
+        {:ok, {address_hash, _name} = result} when not is_nil(address_hash) ->
+          result
+
+        _ ->
+          {db_implementation_data_converter(implementation_address_hash_from_db),
+           db_implementation_data_converter(implementation_name_from_db)}
+      end
+    else
+      {db_implementation_data_converter(implementation_address_hash_from_db),
+       db_implementation_data_converter(implementation_name_from_db)}
+    end
+  end
+
+  def get_implementation_address_hash(_), do: {nil, nil}
+
+  defp db_implementation_data_converter(nil), do: nil
+  defp db_implementation_data_converter(string) when is_binary(string), do: string
+  defp db_implementation_data_converter(other), do: to_string(other)
+
+  defp check_implementation_refetch_neccessity(nil), do: true
+
+  defp check_implementation_refetch_neccessity(timestamp) do
+    if Application.get_env(:explorer, :enable_caching_implementation_data_of_proxy) do
+      now = DateTime.utc_now()
+
+      average_block_time =
+        if Application.get_env(:explorer, :avg_block_time_as_ttl_cached_implementation_data_of_proxy) do
+          case AverageBlockTime.average_block_time() do
+            {:error, :disabled} ->
+              0
+
+            duration ->
+              duration
+              |> Duration.to_milliseconds()
+          end
+        else
+          0
+        end
+
+      fresh_time_distance =
+        case average_block_time do
+          0 ->
+            Application.get_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy)
+
+          time ->
+            round(time)
+        end
+
+      timestamp
+      |> DateTime.add(fresh_time_distance, :millisecond)
+      |> DateTime.compare(now) != :gt
+    else
+      true
+    end
+  end
+
+  @spec get_implementation_address_hash(Hash.Address.t(), list()) :: {String.t() | nil, String.t() | nil}
+  defp get_implementation_address_hash(proxy_address_hash, abi)
+       when not is_nil(proxy_address_hash) and not is_nil(abi) do
+    implementation_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Map.get(method, "name") == "implementation" && Map.get(method, "stateMutability") == "view"
+      end)
+
+    master_copy_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Chain.master_copy_pattern?(method)
+      end)
+
+    implementation_address =
+      cond do
+        implementation_method_abi ->
+          get_implementation_address_hash_basic(proxy_address_hash, abi)
+
+        master_copy_method_abi ->
+          get_implementation_address_hash_from_master_copy_pattern(proxy_address_hash)
+
+        true ->
+          get_implementation_address_hash_eip_1967(proxy_address_hash)
+      end
+
+    save_implementation_data(implementation_address, proxy_address_hash)
+  end
+
+  defp get_implementation_address_hash(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
+    {nil, nil}
+  end
+
+  defp get_implementation_address_hash_eip_1967(proxy_address_hash) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    # https://eips.ethereum.org/EIPS/eip-1967
+    storage_slot_logic_contract_address = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+
+    {_status, implementation_address} =
+      case Contract.eth_get_storage_at_request(
+             proxy_address_hash,
+             storage_slot_logic_contract_address,
+             nil,
+             json_rpc_named_arguments
+           ) do
+        {:ok, empty_address}
+        when empty_address in ["0x", "0x0", "0x0000000000000000000000000000000000000000000000000000000000000000", nil] ->
+          fetch_beacon_proxy_implementation(proxy_address_hash, json_rpc_named_arguments)
+
+        {:ok, implementation_logic_address} ->
+          {:ok, implementation_logic_address}
+
+        _ ->
+          {:ok, nil}
+      end
+
+    abi_decode_address_output(implementation_address)
+  end
+
+  # changes requested by https://github.com/blockscout/blockscout/issues/4770
+  # for support BeaconProxy pattern
+  defp fetch_beacon_proxy_implementation(proxy_address_hash, json_rpc_named_arguments) do
+    # https://eips.ethereum.org/EIPS/eip-1967
+    storage_slot_beacon_contract_address = "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50"
+
+    implementation_method_abi = [
+      %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
+        "name" => "implementation",
+        "inputs" => []
+      }
+    ]
+
+    case Contract.eth_get_storage_at_request(
+           proxy_address_hash,
+           storage_slot_beacon_contract_address,
+           nil,
+           json_rpc_named_arguments
+         ) do
+      {:ok, empty_address}
+      when empty_address in ["0x", "0x0", "0x0000000000000000000000000000000000000000000000000000000000000000", nil] ->
+        fetch_openzeppelin_proxy_implementation(proxy_address_hash, json_rpc_named_arguments)
+
+      {:ok, beacon_contract_address} ->
+        case beacon_contract_address
+             |> abi_decode_address_output()
+             |> get_implementation_address_hash_basic(implementation_method_abi) do
+          <<implementation_address::binary-size(42)>> ->
+            {:ok, implementation_address}
+
+          _ ->
+            {:ok, beacon_contract_address}
+        end
+
+      _ ->
+        {:ok, nil}
+    end
+  end
+
+  # changes requested by https://github.com/blockscout/blockscout/issues/5292
+  defp fetch_openzeppelin_proxy_implementation(proxy_address_hash, json_rpc_named_arguments) do
+    # This is the keccak-256 hash of "org.zeppelinos.proxy.implementation"
+    storage_slot_logic_contract_address = "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3"
+
+    case Contract.eth_get_storage_at_request(
+           proxy_address_hash,
+           storage_slot_logic_contract_address,
+           nil,
+           json_rpc_named_arguments
+         ) do
+      {:ok, empty_address}
+      when empty_address in ["0x", "0x0", "0x0000000000000000000000000000000000000000000000000000000000000000"] ->
+        {:ok, "0x"}
+
+      {:ok, logic_contract_address} ->
+        {:ok, logic_contract_address}
+
+      _ ->
+        {:ok, nil}
+    end
+  end
+
+  defp get_implementation_address_hash_basic(proxy_address_hash, abi) do
+    # 5c60da1b = keccak256(implementation())
+    implementation_address =
+      case Reader.query_contract(
+             proxy_address_hash,
+             abi,
+             %{
+               "5c60da1b" => []
+             },
+             false
+           ) do
+        %{"5c60da1b" => {:ok, [result]}} -> result
+        _ -> nil
+      end
+
+    address_to_hex(implementation_address)
+  end
+
+  defp get_implementation_address_hash_from_master_copy_pattern(proxy_address_hash) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    master_copy_storage_pointer = "0x0"
+
+    {:ok, implementation_address} =
+      case Contract.eth_get_storage_at_request(
+             proxy_address_hash,
+             master_copy_storage_pointer,
+             nil,
+             json_rpc_named_arguments
+           ) do
+        {:ok, empty_address}
+        when empty_address in ["0x", "0x0", "0x0000000000000000000000000000000000000000000000000000000000000000"] ->
+          {:ok, "0x"}
+
+        {:ok, logic_contract_address} ->
+          {:ok, logic_contract_address}
+
+        _ ->
+          {:ok, nil}
+      end
+
+    abi_decode_address_output(implementation_address)
+  end
+
+  defp save_implementation_data(nil, _), do: {nil, nil}
+
+  defp save_implementation_data(empty_address_hash_string, proxy_address_hash)
+       when empty_address_hash_string in [
+              "0x",
+              "0x0",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              @burn_address_hash_str
+            ] do
+    proxy_address_hash
+    |> Chain.address_hash_to_smart_contract_without_twin()
+    |> changeset(%{
+      implementation_name: nil,
+      implementation_address_hash: nil,
+      implementation_fetched_at: DateTime.utc_now()
+    })
+    |> Repo.update()
+
+    {:empty, :empty}
+  end
+
+  defp save_implementation_data(implementation_address_hash_string, proxy_address_hash)
+       when is_binary(implementation_address_hash_string) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(implementation_address_hash_string),
+         proxy_contract <- Chain.address_hash_to_smart_contract_without_twin(proxy_address_hash),
+         false <- is_nil(proxy_contract),
+         %{implementation: %__MODULE__{name: name}, proxy: proxy_contract} <- %{
+           implementation: Chain.address_hash_to_smart_contract(address_hash),
+           proxy: proxy_contract
+         } do
+      proxy_contract
+      |> changeset(%{
+        implementation_name: name,
+        implementation_address_hash: implementation_address_hash_string,
+        implementation_fetched_at: DateTime.utc_now()
+      })
+      |> Repo.update()
+
+      {implementation_address_hash_string, name}
+    else
+      %{implementation: _, proxy: proxy_contract} ->
+        proxy_contract
+        |> changeset(%{
+          implementation_name: nil,
+          implementation_address_hash: implementation_address_hash_string,
+          implementation_fetched_at: DateTime.utc_now()
+        })
+        |> Repo.update()
+
+        {implementation_address_hash_string, nil}
+
+      _ ->
+        {implementation_address_hash_string, nil}
+    end
+  end
+
+  defp address_to_hex(address) do
+    if address do
+      if String.starts_with?(address, "0x") do
+        address
+      else
+        "0x" <> Base.encode16(address, case: :lower)
+      end
+    end
+  end
+
+  defp abi_decode_address_output(nil), do: nil
+
+  defp abi_decode_address_output("0x"), do: @burn_address_hash_str
+
+  defp abi_decode_address_output(address) when is_binary(address) do
+    if String.length(address) > 42 do
+      "0x" <> String.slice(address, -40, 40)
+    else
+      address
+    end
+  end
+
+  defp abi_decode_address_output(_), do: nil
 end

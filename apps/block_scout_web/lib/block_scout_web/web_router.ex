@@ -530,6 +530,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     post("/faucet", FaucetController, :request)
 
+    get("/visualize/sol2uml", VisualizeSol2umlController, :index)
+
     get("/*path", PageNotFoundController, :index)
   end
 end
