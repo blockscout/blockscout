@@ -254,7 +254,8 @@ defmodule EthereumJSONRPC.Geth.Call do
         gas_used: 1040,
         input: "0x0f370699",
         output: "0x",
-        value: 0
+        value: 0,
+        error: nil
       }
 
   A selfdestruct destroys the calling contract and sends any left over balance to the to address.
@@ -416,7 +417,8 @@ defmodule EthereumJSONRPC.Geth.Call do
       gas_used: gas_used,
       input: input,
       output: params["output"],
-      value: value
+      value: value,
+      error: params["error"]
     }
   end
 
