@@ -1,6 +1,6 @@
 <% metadata_for_verification = Chain.get_address_verified_twin_contract(@address_hash).verified_contract %>
 <% changeset = (if assigns[:retrying], do: @changeset, else: SmartContract.merge_twin_contract_with_changeset(metadata_for_verification, @changeset)) |> SmartContract.address_to_checksum_address() %>
-<% fetch_constructor_arguments_automatically = if metadata_for_verification, do: true, else: changeset.changes.autodetect_constructor_args %>
+<% fetch_constructor_arguments_automatically = if metadata_for_verification, do: true, else: changeset.changes[:autodetect_constructor_args] || true %>
 <% display_constructor_arguments_text_area = if fetch_constructor_arguments_automatically, do: "none", else: "block" %>
 <section data-page="contract-verification" class="container new-smart-contract-container">
   <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost") %>

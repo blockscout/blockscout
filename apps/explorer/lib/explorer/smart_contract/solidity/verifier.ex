@@ -205,6 +205,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
                     |> Map.put("file_path", file_path)
                     |> Map.put("name", contract_name)
                     |> Map.put("secondary_sources", secondary_sources)
+                    |> Map.put("compiler_settings", map_json_input["settings"])
 
                   {:halt, {:ok, verified_data, additional_params}}
 
