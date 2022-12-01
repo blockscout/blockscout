@@ -65,11 +65,11 @@ defmodule BlockScoutWeb.TransactionStateController do
       to_hash = transaction.to_address_hash
       miner_hash = block.miner_hash
 
-      from = transaction.from_address
-      from_after = do_update_coin_balance_from_tx(from_hash, transaction, from_before, block)
-
       from_coin_entry =
         if from_hash not in [to_hash, miner_hash] do
+          from = transaction.from_address
+          from_after = do_update_coin_balance_from_tx(from_hash, transaction, from_before, block)
+
           View.render_to_string(
             TransactionStateView,
             "_state_change.html",
@@ -83,11 +83,11 @@ defmodule BlockScoutWeb.TransactionStateController do
           )
         end
 
-      to = transaction.to_address
-      to_after = do_update_coin_balance_from_tx(to_hash, transaction, to_before, block)
-
       to_coin_entry =
-        if to_hash != miner_hash do
+        if not is_nil(to_hash) and to_hash != miner_hash do
+          to = transaction.to_address
+          to_after = do_update_coin_balance_from_tx(to_hash, transaction, to_before, block)
+
           View.render_to_string(
             TransactionStateView,
             "_state_change.html",
@@ -145,7 +145,9 @@ defmodule BlockScoutWeb.TransactionStateController do
           )
         end
 
-      json(conn, %{items: Enum.sort([from_coin_entry, to_coin_entry, miner_entry | items])})
+      json(conn, %{
+        items: [from_coin_entry, to_coin_entry, miner_entry | items] |> Enum.reject(&is_nil/1) |> Enum.sort()
+      })
     else
       {:restricted_access, _} ->
         TransactionController.set_not_found_view(conn, transaction_hash_string)

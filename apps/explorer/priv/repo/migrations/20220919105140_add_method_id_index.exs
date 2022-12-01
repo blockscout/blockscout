@@ -5,11 +5,11 @@ defmodule Explorer.Repo.Migrations.AddMethodIdIndex do
 
   def up do
     execute("""
-      CREATE INDEX CONCURRENTLY method_id ON public.transactions USING btree (substring(input for 4));
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS method_id ON public.transactions USING btree (substring(input for 4));
     """)
   end
 
   def down do
-    execute("DROP INDEX method_id")
+    execute("DROP INDEX IF EXISTS method_id")
   end
 end

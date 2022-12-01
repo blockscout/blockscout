@@ -42,7 +42,15 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "name" => nil,
         "private_tags" => [],
         "public_tags" => [],
-        "watchlist_names" => []
+        "watchlist_names" => [],
+        "creator_address_hash" => nil,
+        "creation_tx_hash" => nil,
+        "token" => nil,
+        "coin_balance" => nil,
+        "exchange_rate" => nil,
+        "implementation_name" => nil,
+        "implementation_address" => nil,
+        "block_number_balance_updated_at" => nil
       }
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
@@ -74,10 +82,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = get(conn, "/api/v2/addresses/#{address.hash}/counters")
 
       assert %{
-               "transaction_count" => "0",
-               "token_transfer_count" => "0",
+               "transactions_count" => "0",
+               "token_transfers_count" => "0",
                "gas_usage_count" => "0",
-               "validation_count" => "0"
+               "validations_count" => "0"
              } = json_response(request, 200)
     end
 
@@ -113,10 +121,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       gas_used = to_string(tx_from.gas_used)
 
       assert %{
-               "transaction_count" => "2",
-               "token_transfer_count" => "2",
+               "transactions_count" => "2",
+               "token_transfers_count" => "2",
                "gas_usage_count" => ^gas_used,
-               "validation_count" => "1"
+               "validations_count" => "1"
              } = json_response(request, 200)
     end
   end
