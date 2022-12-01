@@ -53,8 +53,8 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   def smart_contract_with_read_only_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
 
-  def smart_contract_is_proxy?(%Token{contract_address: %Address{smart_contract: %SmartContract{}} = address}) do
-    Chain.proxy_contract?(address.hash, address.smart_contract.abi)
+  def smart_contract_is_proxy?(%Token{contract_address: %Address{smart_contract: %SmartContract{} = smart_contract}}) do
+    SmartContract.proxy_contract?(smart_contract)
   end
 
   def smart_contract_is_proxy?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
