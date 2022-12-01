@@ -58,11 +58,10 @@ require Logger
             nil
 
           next_page_params ->
-            address_token_transfers_path(
+            address_deposit_path(
               conn,
               :index,
               address_hash_string,
-              token_hash_string,
               Map.delete(next_page_params, "type")
             )
         end
@@ -151,7 +150,7 @@ require Logger
             nil
 
           next_page_params ->
-            address_token_transfers_path(
+            address_deposit_path(
               conn,
               :index,
               address_hash_string,

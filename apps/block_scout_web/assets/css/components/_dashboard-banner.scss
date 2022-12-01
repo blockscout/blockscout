@@ -26,11 +26,18 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   padding: 0;
   position: relative;
   height: 264px;
+  overflow: visible;
   @include media-breakpoint-down(sm) {
       height: auto;
   }
   @include media-breakpoint-down(md) {
       height: auto;
+  }
+  .dashboard-banner-img{
+    position:absolute;
+    right: 0px;
+    top: 8px;
+    height: 280px;
   }
 }
 
@@ -45,6 +52,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   @include media-breakpoint-down(sm) {
     flex-direction: column;
   }
+  
 }
 
 .dashboard-banner-network-graph {
@@ -228,55 +236,72 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
 }
 
 .dashboard-banner-network-plain-container {
-  align-items: center;
   display: flex;
   flex-direction: column;
-
-  .dashboard-banner-network-plain-item{
+  margin-right: 120px;
+  .dashboard-banner-network-plain-wrap{
     display: flex;
-    align-items: flex-start;
-  }
-
-  @include media-breakpoint-down(lg) {
-    margin-top: 15px;
-    width: 550px;
-  }
-
-  @include media-breakpoint-down(md) {
-    border-top-right-radius: 10px;
-    height: auto;
-    justify-content: flex-start;
-    margin-left: 0;
-    max-width: 100%;
-    padding: 20px 0 20px 20px;
-    width: 250px;
-    box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
-  }
-
-  @include media-breakpoint-down(sm) {
-    width: 100%;
-  }
-
-  &::after {
-    background-color: transparent;
-    bottom: 0;
-    content: "";
-    display: block;
-    height: $dashboard-banner-network-plain-container-height;
-    left: 0;
-    position: absolute;
-    width: 9999px;
-    z-index: -1;
-    box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
-    border-top-left-radius: 10px;
-
-    @include media-breakpoint-down(md) {
-      display: none;
+    flex-direction: column;
+    height: 160px;
+    justify-content: center;
+    .dashboard-banner-network-plain-cointainer-item{
+      display:flex;
+      align-items: center;
+      justify-content: center;
+      &:first-child{
+        margin-bottom: 28px;
+      }
+      .dashboard-banner-network-stats-item{
+        display: flex;
+        align-items: flex-start;
+        width: 200px;
+        flex-direction: column;
+        .dashboard-banner-network-stats-label{
+          font-family: 'Prompt';
+          font-style: normal;
+          font-weight: 700;
+          font-size: 16px;
+          line-height: 16px;
+          text-transform: capitalize;
+          color: #15181C;
+        }
+        .dashboard-banner-network-stats-value{
+          font-family: 'Nunito';
+          font-style: normal;
+          font-weight: 700;
+          font-size: 24px;
+          line-height: 36px;
+          color: #152928;
+        }
+      }
+    
+      @include media-breakpoint-down(lg) {
+        margin-top: 15px;
+        width: 550px;
+      }
+    
+      @include media-breakpoint-down(md) {
+        border-top-right-radius: 10px;
+        height: auto;
+        justify-content: flex-start;
+        margin-left: 0;
+        max-width: 100%;
+        padding: 20px 0 20px 20px;
+        width: 250px;
+        box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
+      }
+    
+      @include media-breakpoint-down(sm) {
+        width: 100%;
+      }
     }
   }
+  
+  
+
 }
 
-.dashboard-banner-network-stats {
+.dashboard-banner-network-plain-cointainer-item {
   column-gap: 25px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
