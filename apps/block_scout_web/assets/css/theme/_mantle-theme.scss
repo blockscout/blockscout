@@ -3,6 +3,7 @@ $dark-bg: #22223a; // hero shade
 $dark-light-bg: #282945; // pills bg shade
 $dark-light: #313355; // tile light top share
 $labels-dark: #21413F; // header nav, labels
+$dark-text-content-color: #7FD8D2;
 $dark-stakes-banned-background: #3e314c;
 $primary: #65B3AE !default;
 $dark-primary: #0A8FF6 !default;
@@ -37,7 +38,11 @@ $dark-primary-alternate: #65B3AE !default;
 
 .dark-theme-applied {
 	color: #fff;
-
+	.dark-mode-changer{
+		svg path {
+			fill: $dark-text-content-color;
+		}
+	}
 	// navbar
 	.navbar.navbar-primary {
 		background-color: $dark-light-bg;
@@ -51,10 +56,13 @@ $dark-primary-alternate: #65B3AE !default;
 		filter: brightness(0) invert(1);
 	}
 	.navbar.navbar-primary .navbar-nav .nav-link {
-		color: $labels-dark;
+		color: $dark-text-content-color;
 		.nav-link-icon {
 			svg path {
-				fill: $labels-dark;
+				fill: $dark-text-content-color;
+			}
+			circle {
+				fill: #06DD76;
 			}
 		}
 		&.active, &:hover {
@@ -75,9 +83,25 @@ $dark-primary-alternate: #65B3AE !default;
 		&::placeholder {
 			color: $labels-dark;
 		}
-		background: rgba(255, 255, 255, 0.7);
+		background: rgba(255, 255, 255, 0.3) !important;
 		border-radius: 20px;
 	}
+	.dashboard-banner-chart-legend{
+		.dashboard-banner-chart-legend-item{
+			.dashboard-banner-chart-legend-item-line{
+				background: #BFF6F2;
+			  }
+		}
+	}
+	.dashboard-banner-network-graph .dashbord-banner-chart-container{
+		background: linear-gradient(270deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 95.24%);
+		.dashboard-banner-chart{
+			background: rgba(255, 255, 255, 0.15);
+		}
+	}
+	.dashboard-banner-daily-tx-title{
+		color: #ffffff;
+	  }
 	.navbar.navbar-primary .navbar-toggler .navbar-toggler-icon {
 		filter: invert(1);
 	}
@@ -111,7 +135,13 @@ $dark-primary-alternate: #65B3AE !default;
 	}
 	.dashboard-banner-network-stats-label,
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-label {
-		color: $labels-dark;
+		color: #ffffff !important;
+	}
+	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-value {
+		color: #9FA5A9 !important;
+	}
+	.dashboard-banner-network-stats-value{
+		color: $dark-text-content-color !important;
 	}
 	
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-item {
@@ -257,7 +287,6 @@ $dark-primary-alternate: #65B3AE !default;
 		background-color: transparent;
 		border-color: $dark-primary;
 		color: $dark-primary;
-		border-radius: 10px;
 		&:hover {
 			border-color: $dark-primary;
 			background-color: $dark-primary;
@@ -555,7 +584,7 @@ $dark-primary-alternate: #65B3AE !default;
 
 	// Form Controlls
 	.form-control {
-		background-color: $dark-light;
+		background-color: rgba(255,255,255,.3);
 		border-color: $dark-light;
 		color: #fff;
 		transition: border-color 0.15s ease-in-out;
@@ -1050,8 +1079,19 @@ $dark-primary-alternate: #65B3AE !default;
 		  }
 	}
 	.main-search-autocomplete {
-		background-color: $dark-bg !important;
+		background-color: transparent !important;
 		color: #fff !important;
+	}
+	input::-webkit-input-placeholder{
+		color:#F0F1F2;
+	}
+	.navbar.navbar-primary .input-group-append *{
+		fill: #F0F1F2;
+	}
+	.input-group{
+		#search-btn{
+			color: #15181C !important;
+		}
 	}
 	.autocomplete-category {
 		color: #fff !important;
@@ -1134,11 +1174,25 @@ $dark-primary-alternate: #65B3AE !default;
 }
 
 .dashboard-banner-container {
-	background-image: url(../static/images/banner_bg.png)!important;
+	background: url(../static/images/banner_bg.png) no-repeat !important;
+	background-size: 100% 100% !important;
 }
 // _navbar.scss
 .navbar.navbar-primary {
-	background-image: url(../static/images/nav_bg.png);
+	background: url(../static/images/nav_bg.png) no-repeat;
+	background-size: 100% 100% !important;
+	box-shadow: none;
+}
+.dark-theme-applied{
+	.dashboard-banner-container {
+		background: url(../static/images/banner_bg_dark.png) no-repeat !important;
+		background-size: 100% 100% !important;
+	}
+	// _navbar.scss
+	.navbar.navbar-primary {
+		background: url(../static/images/nav_bg_dark.png) no-repeat;
+		background-size: 100% 100% !important;
+	}
 }
 .main-search-autocomplete {
 	background-color: rgba(255, 255, 255, 0.1)!important;

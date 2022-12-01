@@ -137,7 +137,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     flex-direction: row;
     align-items: center;
     &:first-child{
-      margin-bottom: 10px;
+      margin-bottom: 30px;
     }
     @include media-breakpoint-down(md) {
       display: flex;

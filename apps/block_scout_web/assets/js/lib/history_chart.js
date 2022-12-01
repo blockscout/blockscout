@@ -40,7 +40,13 @@ function getMarketCapChartColor () {
   }
 }
 
-function xAxe (fontColor) {
+function xAxe () {
+  let color;
+  if (localStorage.getItem('current-color-mode') === 'dark') {
+    color = '#F0F1F2';
+  } else {
+    color = ' #41474D';
+  }
   return {
     grid,
     type: 'time',
@@ -50,7 +56,7 @@ function xAxe (fontColor) {
       stepSize: 14
     },
     ticks: {
-      color: fontColor
+      color: color
     }
   }
 }
@@ -67,7 +73,12 @@ const legend = {
 function formatValue (val) {
   return `${numeral(val).format('0,0')}`
 }
-
+let color;
+  if (localStorage.getItem('current-color-mode') === 'dark') {
+    color = '#F0F1F2';
+  } else {
+    color = ' #41474D';
+  }
 const config = {
   type: 'line',
   responsive: true,
@@ -84,6 +95,17 @@ const config = {
     },
     scales: {
       x: xAxe(sassVariables.dashboardBannerChartAxisFontColor),
+      y:{
+        ticks: {
+          display:false,
+          color: color,
+          fontColor: 'f00',
+        },
+        gridLines:{
+          display:true,
+          color: '#305A57',
+        }
+      },
       price: {
         position: 'left',
         grid,
