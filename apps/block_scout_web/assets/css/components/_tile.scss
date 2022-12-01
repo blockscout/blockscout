@@ -15,7 +15,7 @@ $tile-status-error-reason: #ff7986 !default;
 $tile-status-awaiting-internal-transactions: $warning !default;
 $tile-padding: 1rem;
 $tile-title-color: #333 !default;
-$tile-body-a-color: #0A8FF7 !default;
+$tile-body-a-color: #65B3AE !default;
 
 @mixin generate-tile-block($prefix, $color, $label-color: false) {
   &#{ $prefix } {
@@ -286,11 +286,20 @@ $tile-body-a-color: #0A8FF7 !default;
 
   &.tile-type-block {
     max-width: 100%;
+    background-color: #F8F8F9;
+    border-radius: 12px;
     .tile-title {
       font-weight: 700;
       line-height: 1.2;
       margin-bottom: 12px;
       padding: 1rem 1rem 0 1rem;
+    }
+    hr {
+      border-bottom: none;
+      border-left: none;
+      border-right: none;
+      border-top: 1px solid #CFD2D4;
+      margin: 0 1rem;
     }
   }
 

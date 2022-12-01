@@ -6,6 +6,7 @@
           to: block_path(BlockScoutWeb.Endpoint, :show, @block),
           "data-selector": "block-number"
         ) %>
+    <hr />
     <div class="tile-bottom-contents">
       <div class="tile-transactions">
         <span class="mr-2"><%= gettext("%{count} Transactions", count: Enum.count(@block.transactions)) %></span>
