@@ -19,7 +19,7 @@
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
-            <%= label :evm_version, :evm_version, gettext("EVM Version") %>
+            <%= label f, :evm_version, gettext("EVM Version") %>
             <div class="center-column">
               <%= select f, :evm_version, @evm_versions, class: "form-control border-rounded", "aria-describedby": "evm-version-help-block" %>
             </div>
@@ -29,18 +29,18 @@
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
-            <%= label f, "Optimization" %>
+            <%= label f, :optimization, gettext("Optimization") %>
             <div class="center-column">
               <div class="form-radios-group">
                 <div class="radio-big">
                   <%= radio_button f, :optimization, false, class: "form-check-input optimization-false" %>
                   <div class="radio-icon"></div>
-                  <%= label :smart_contract_optimization, :false, gettext("No"), class: "radio-text" %>
+                  <%= label f, :optimization_false, gettext("No"), class: "radio-text" %>
                 </div>
                 <div class="radio-big">
                   <%= radio_button f, :optimization, true, class: "form-check-input optimization-true", "aria-describedby": "optimization-help-block" %>
                   <div class="radio-icon"></div>
-                  <%= label :smart_contract_optimization, :true, gettext("Yes"), class: "radio-text" %>
+                  <%= label f, :optimization_true, gettext("Yes"), class: "radio-text" %>
                 </div>
               </div>
               <%= error_tag f, :optimization, id: "optimization-help-block", class: "text-danger form-error" %>
@@ -51,7 +51,7 @@
 
         <div class="smart-contract-form-group optimization-runs" style="<%= if !changeset.changes.optimization, do: "display: none;"%>">
           <div class="smart-contract-form-group-inner-wrapper">
-            <%= label f, :name, gettext("Optimization runs") %>
+            <%= label f, :optimization_runs, gettext("Optimization runs") %>
             <div class="center-column">
               <%= text_input f, :optimization_runs, class: "form-control border-rounded", "aria-describedby": "optimization-runs-help-block", "data-test": "optimization-runs" %>
             </div>
