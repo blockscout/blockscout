@@ -7,7 +7,6 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
   import BlockScoutWeb.WeiHelpers, only: [format_wei_value: 2]
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
   alias Explorer.Chain.Wei
-  alias EthereumJSONRPC.Blocks
 
   describe "GET index/3" do
     test "loads existing transaction", %{conn: conn} do
@@ -48,6 +47,35 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
       {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
 
       assert(items |> Enum.filter(fn item -> item != nil end) |> length() == 1)
+    end
+
+    test "returns state changes for the transaction with contract creation", %{conn: conn} do
+      block = insert(:block)
+
+      contract_address = insert(:contract_address)
+
+      transaction =
+        :transaction
+        |> insert(to_address: nil)
+        |> with_contract_creation(contract_address)
+        |> with_block(insert(:block))
+
+      insert(:fetched_balance,
+        address_hash: transaction.from_address_hash,
+        value: 1_000_000,
+        block_number: block.number
+      )
+
+      insert(:fetched_balance,
+        address_hash: transaction.block.miner_hash,
+        value: 1_000_000,
+        block_number: block.number
+      )
+
+      conn = get(conn, transaction_state_path(conn, :index, transaction), %{type: "JSON"})
+      {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
+
+      assert(items |> Enum.filter(fn item -> item != nil end) |> length() == 2)
     end
 
     test "returns fetched state changes for the transaction with token transfer", %{conn: conn} do
