@@ -51,8 +51,8 @@ $card-tab-icon-color-active: #fff !default;
 }
 
 .card-title {
-  font-size: 18px;
-  font-weight: normal;
+  font-size: 20px;
+  font-weight: 700;
   line-height: 1.2rem;
   margin-bottom: 2rem;
 
@@ -248,6 +248,7 @@ $card-tab-icon-color-active: #fff !default;
     border-radius:4px;
     box-shadow:0 0 30px 0 rgb(202 199 226 / 50%);
     border:1px solid #e7eaf3;
+    border-radius: 20px;
     .recent-preview-item-content{
       width:100%;
       box-sizing:border-box;
@@ -306,6 +307,16 @@ $card-tab-icon-color-active: #fff !default;
     font-weight:600;
     font-size:18px;
     border-bottom:1px solid #e7eaf3;
+  }
+  .view-btn {
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    background: #CBE9E7;
+    color: #65B3AE;
+    font-size: 12px;
+    line-height: 12px;
+    margin: 20px 0;
   }
 }
 .dark-theme-applied {
