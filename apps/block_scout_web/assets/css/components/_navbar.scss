@@ -76,7 +76,9 @@ $navbar-logo-width: 100% !default;
         margin-right: 0.71em;
         position: relative;
         top: -1px;
-
+        circle {
+          fill: #06DD76;
+        }
         path {
           fill: $header-icon-color;
           transition: $transition-cont;
@@ -126,7 +128,7 @@ $navbar-logo-width: 100% !default;
     color: $header-textfield-text-color;
     font-size: 14px;
     height: 100%;
-    padding-left: 38px;
+    padding-left: 45px;
     padding-right: 8px;
     position: relative;
     width: 100%;

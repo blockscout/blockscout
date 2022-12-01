@@ -3,6 +3,7 @@ $dark-bg: #22223a; // hero shade
 $dark-light-bg: #282945; // pills bg shade
 $dark-light: #313355; // tile light top share
 $labels-dark: #8a8dba; // header nav, labels
+$dark-text-content-color: #7FD8D2;
 $dark-stakes-banned-background: #3e314c;
 
 // Switcher
@@ -48,10 +49,10 @@ $dark-stakes-banned-background: #3e314c;
 		filter: brightness(0) invert(1);
 	}
 	.navbar.navbar-primary .navbar-nav .nav-link {
-		color: $labels-dark;
+		color: $dark-text-content-color;
 		.nav-link-icon {
 			svg path {
-				fill: $labels-dark;
+				fill: $dark-text-content-color;
 			}
 		}
 		&.active, &:hover {

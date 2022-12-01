@@ -37,7 +37,7 @@
             <% transaction_chart_config = @chart_config.transactions%>
             <%= if Enum.member?(transaction_chart_config, :transactions_per_day) do %>
             <div class="dashboard-banner-chart-legend-item tx-per-day">
-                <i class="dashboard-banner-chart-legend-item-line"></i>
+                <i class="dashboard-banner-chart-legend-item-line" style="background: #ffffff;"></i>
                 <div class="dashboard-banner-chart-legend-item-item">
                   <span class="dashboard-banner-chart-legend-label">
                     <%= gettext "Daily Transactions" %>
