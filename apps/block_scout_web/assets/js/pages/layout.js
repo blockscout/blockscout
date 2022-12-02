@@ -1,28 +1,8 @@
 import $ from 'jquery'
 import { addChainToMM } from '../lib/add_chain_to_mm'
-import mixpanel from 'mixpanel-browser'
-import { init as amplitudeInit, track as amplitudeTrack } from '@amplitude/analytics-browser'
+import * as analytics from '../lib/analytics'
 
-const mixpanelToken = process.env.MIXPANEL_TOKEN
-const amplitudeApiKey = process.env.AMPLITUDE_API_KEY
-const mixpanelUrl = process.env.MIXPANEL_URL
-const amplitudeUrl = process.env.AMPLITUDE_URL
-
-if (mixpanelToken) {
-  if (mixpanelUrl) {
-    mixpanel.init(mixpanelToken, { api_host: mixpanelUrl })
-  } else {
-    mixpanel.init(mixpanelToken)
-  }
-}
-
-if (amplitudeApiKey) {
-  if (amplitudeUrl) {
-    amplitudeInit(amplitudeApiKey, { serverUrl: amplitudeUrl })
-  } else {
-    amplitudeInit(amplitudeApiKey)
-  }
-}
+analytics.init()
 
 const simpleEvents = {
   '.profile-button': 'Profile click',
@@ -42,16 +22,10 @@ const simpleEvents = {
   '.add-public-tag-button': 'Request to add public tag click'
 }
 
-if (mixpanelToken || amplitudeApiKey) {
+if (analytics.mixpanelInitialized || analytics.amplitudeInitialized) {
   for (const elementClass in simpleEvents) {
     $(elementClass).click((_event) => {
-      if (mixpanelToken) {
-        mixpanel.track(simpleEvents[elementClass])
-      }
-
-      if (amplitudeApiKey) {
-        amplitudeTrack(simpleEvents[elementClass])
-      }
+      analytics.trackEvent(simpleEvents[elementClass])
     })
   }
 }
@@ -70,80 +44,51 @@ $('.save-address-button').click((_event) => {
   }
   const eventName = 'New address to watchlist completed'
 
-  if (mixpanelToken) {
-    mixpanel.track(eventName, eventProperties)
-  }
-
-  if (amplitudeApiKey) {
-    amplitudeTrack(eventName, eventProperties)
-  }
+  analytics.trackEvent(eventName, eventProperties)
 })
 
 $('.save-address-tag-button').click((_event) => {
+  const eventName = 'Add address tag completed'
   const eventProperties = {
     address_hash: $('#tag_address_address_hash').val(),
     private_tag: $('#tag_address_name').val()
   }
-  const eventName = 'Add address tag completed'
 
-  if (mixpanelToken) {
-    mixpanel.track(eventName, eventProperties)
-  }
-
-  if (amplitudeApiKey) {
-    amplitudeTrack(eventName, eventProperties)
-  }
+  analytics.trackEvent(eventName, eventProperties)
 })
 
 $('.save-transaction-tag-button').click((_event) => {
+  const eventName = 'Add transaction tag completed'
   const eventProperties = {
     address_hash: $('#tag_transaction_tx_hash').val(),
     private_tag: $('#tag_transaction_name').val()
   }
-  const eventName = 'Add transaction tag completed'
 
-  if (mixpanelToken) {
-    mixpanel.track(eventName, eventProperties)
-  }
-
-  if (amplitudeApiKey) {
-    amplitudeTrack(eventName, eventProperties)
-  }
+  analytics.trackEvent(eventName, eventProperties)
 })
 
 $('.save-api-key-button').click((_event) => {
+  const eventName = 'Generate API key completed'
   const eventProperties = {
     application_name: $('#key_name').val()
   }
-  const eventName = 'Generate API key completed'
 
-  if (mixpanelToken) {
-    mixpanel.track(eventName, eventProperties)
-  }
-
-  if (amplitudeApiKey) {
-    amplitudeTrack(eventName, eventProperties)
-  }
+  analytics.trackEvent(eventName, eventProperties)
 })
 
 $('.save-custom-abi-button').click((_event) => {
+  const eventName = 'Custom ABI completed'
   const eventProperties = {
     smart_contract_address: $('#custom_abi_address_hash').val(),
     project_name: $('#custom_abi_name').val(),
     custom_abi: $('#custom_abi_abi').val()
   }
-  const eventName = 'Custom ABI completed'
 
-  if (mixpanelToken) {
-    mixpanel.track(eventName, eventProperties)
-  }
-
-  if (amplitudeApiKey) {
-    amplitudeTrack(eventName, eventProperties)
-  }
+  analytics.trackEvent(eventName, eventProperties)
 })
 
 $('.send-public-tag-request-button').click((_event) => {
+  const eventName = 'Request a public tag completed'
   const eventProperties = {
     name: $('#public_tags_request_full_name').val(),
     email: $('#public_tags_request_email').val(),
@@ -156,99 +101,48 @@ $('.send-public-tag-request-button').click((_event) => {
     }).get(),
     reason: $('#public_tags_request_additional_comment').val()
   }
-  const eventName = 'Request a public tag completed'
 
-  if (mixpanelToken) {
-    mixpanel.track(eventName, eventProperties)
-  }
-
-  if (amplitudeApiKey) {
-    amplitudeTrack(eventName, eventProperties)
-  }
-})
-
-$('#public_tags_request_additional_comment').click((_event) => {
-  const eventProperties = {
-    name: $('#public_tags_request_full_name').val(),
-    email: $('#public_tags_request_email').val(),
-    company_name: $('#public_tags_request_company').val(),
-    company_website: $('#public_tags_request_website').val(),
-    goal: $('#public_tags_request_is_owner_true').prop('checked') ? 'Add tags' : 'Incorrect public tag',
-    public_tag: $('#public_tags_request_tags').val(),
-    smart_contracts: $('*[id=public_tags_request_addresses]').map((_i, el) => {
-      return el.value
-    }).get(),
-    reason: $('#public_tags_request_additional_comment').val()
-  }
-  const eventName = 'Request a public tag completed'
-
-  if (mixpanelToken) {
-    mixpanel.track(eventName, eventProperties)
-  }
-
-  if (amplitudeApiKey) {
-    amplitudeTrack(eventName, eventProperties)
-  }
+  analytics.trackEvent(eventName, eventProperties)
 })
 
 $(document).ready(() => {
   let timer
   const waitTime = 500
-  var observer = new MutationObserver((mutations) => {
-    clearTimeout(timer)
-
+  const observer = new MutationObserver((mutations) => {
     if (mutations[0].target.hidden) {
       return
     }
 
     const $results = $('li[id^="autoComplete_result_"]')
 
+    clearTimeout(timer)
     timer = setTimeout(() => {
+      let eventName = 'Occurs searching according to substring at the nav bar'
       let eventProperties = {
         search: $('.main-search-autocomplete').val() || $('.main-search-autocomplete-mobile').val()
       }
-      let eventName = 'Occurs searching according to substring at the nav bar'
 
-      if (mixpanelToken) {
-        mixpanel.track(eventName, eventProperties)
-      }
+      analytics.trackEvent(eventName, eventProperties)
 
-      if (amplitudeApiKey) {
-        amplitudeTrack(eventName, eventProperties)
-      }
-
+      eventName = 'Search list displays at the nav bar'
       eventProperties = {
         resultsNumber: $results.length,
         results: $results.map((_i, el) => {
           return el.children[1].innerText
         })
       }
-      eventName = 'Search list displays at the nav bar'
 
-      if (mixpanelToken) {
-        mixpanel.track(eventName, eventProperties)
-      }
-
-      if (amplitudeApiKey) {
-        amplitudeTrack(eventName, eventProperties)
-      }
+      analytics.trackEvent(eventName, eventProperties)
     }, waitTime)
 
     $results.click((event) => {
+      const eventName = 'Search item click at the nav bar'
       const eventProperties = {
         item: event.currentTarget.innerText
       }
-      const eventName = 'Search item click at the nav bar'
 
-      if (mixpanelToken) {
-        mixpanel.track(eventName, eventProperties)
-      }
-
-      if (amplitudeApiKey) {
-        amplitudeTrack(eventName, eventProperties)
-      }
+      analytics.trackEvent(eventName, eventProperties)
     })
-
   })
   observer.observe($('#autoComplete_list_1')[0], {
     attributeFilter: ['hidden'],
@@ -268,18 +162,12 @@ $(document).click(function (event) {
 })
 
 const search = (value) => {
+  const eventName = 'Occurs searching according to substring at the nav bar'
   const eventProperties = {
     search: value
   }
-  const eventName = 'Occurs searching according to substring at the nav bar'
 
-  if (mixpanelToken) {
-    mixpanel.track(eventName, eventProperties)
-  }
-
-  if (amplitudeApiKey) {
-    amplitudeTrack(eventName, eventProperties)
-  }
+  analytics.trackEvent(eventName, eventProperties)
 
   if (value) {
     window.location.href = `/search?q=${value}`

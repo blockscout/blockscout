@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#6542](https://github.com/blockscout/blockscout/pull/6542) - Init mixpanel and amplitude analytics
 - [#6574](https://github.com/blockscout/blockscout/pull/6574), [#6601](https://github.com/blockscout/blockscout/pull/6601) - Allow and manage insecure HTTP connection to the archive node
 - [#6433](https://github.com/blockscout/blockscout/pull/6433) - Update error pagess
 - [#6544](https://github.com/blockscout/blockscout/pull/6544) - API improvements
