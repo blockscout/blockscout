@@ -24,9 +24,13 @@ config :explorer, Explorer.ChainSpec.GenesisData, enabled: true
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: true
 
-config :explorer, Explorer.Chain.Cache.AddressSum, enabled: true
+config :explorer, Explorer.Chain.Cache.AddressSum,
+  enabled: true,
+  ttl_check_interval: :timer.seconds(1)
 
-config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt, enabled: true
+config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt,
+  enabled: true,
+  ttl_check_interval: :timer.seconds(1)
 
 cache_address_with_balances_update_interval = System.get_env("CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL")
 
