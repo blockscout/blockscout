@@ -90,8 +90,7 @@ config :block_scout_web,
   re_captcha_api_key: System.get_env("RE_CAPTCHA_API_KEY", nil),
   re_captcha_project_id: System.get_env("RE_CAPTCHA_PROJECT_ID", nil),
   chain_id: System.get_env("CHAIN_ID"),
-  json_rpc: System.get_env("JSON_RPC"),
-  admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
+  json_rpc: System.get_env("JSON_RPC")
 
 default_api_rate_limit = 50
 default_api_rate_limit_str = Integer.to_string(default_api_rate_limit)
@@ -131,6 +130,7 @@ config :block_scout_web, :api_rate_limit,
   whitelisted_ips: System.get_env("API_RATE_LIMIT_WHITELISTED_IPS", nil)
 
 config :block_scout_web, BlockScoutWeb.Endpoint,
+  server: true,
   url: [
     scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "http",
     host: System.get_env("BLOCKSCOUT_HOST") || "localhost"
@@ -230,6 +230,7 @@ config :explorer, Explorer.Chain.Cache.AddressSum, global_ttl: address_sum_globa
 config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt, global_ttl: address_sum_global_ttl
 
 config :explorer, Explorer.ExchangeRates,
+  store: :ets,
   enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true",
   coingecko_coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID"),
   coingecko_api_key: System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),

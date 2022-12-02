@@ -94,8 +94,6 @@ config :explorer, Explorer.Celo.Events.ContractEventStream,
 config :explorer, Explorer.Chain.Cache.GasUsage,
   enabled: System.get_env("CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER") == "true"
 
-config :explorer, Explorer.ExchangeRates, store: :ets
-
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 
 config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber, enabled: System.get_env("DISABLE_WRITE_API") != "true"
