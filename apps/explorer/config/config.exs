@@ -24,11 +24,9 @@ config :explorer, Explorer.ChainSpec.GenesisData, enabled: true
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: true
 
-config :explorer, Explorer.Chain.Cache.AddressSum,
-  enabled: true
+config :explorer, Explorer.Chain.Cache.AddressSum, enabled: true
 
-config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt,
-  enabled: true
+config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt, enabled: true
 
 cache_address_with_balances_update_interval = System.get_env("CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL")
 
@@ -99,7 +97,6 @@ config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :ti
 config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber, enabled: System.get_env("DISABLE_WRITE_API") != "true"
 
 config :explorer, :write_api_enabled, System.get_env("DISABLE_WRITE_API") != "true"
-
 
 config :explorer, Explorer.Repo.Local, migration_timestamps: [type: :utc_datetime_usec]
 

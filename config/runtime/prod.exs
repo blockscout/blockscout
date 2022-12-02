@@ -31,7 +31,7 @@ pool_size =
     else: String.to_integer(System.get_env("POOL_SIZE", "40"))
 
 # Configures the database
-config :explorer, Explorer.Repo,
+config :explorer, Explorer.Repo.Local,
   priv: "priv/repo",
   url: System.get_env("DATABASE_URL") || "postgresql://postgres:1234@localhost:5432/blockscout",
   username: System.get_env("DATABASE_USER") || "postgres",
@@ -40,7 +40,7 @@ config :explorer, Explorer.Repo,
   hostname: System.get_env("DATABASE_HOSTNAME") || "localhost",
   port: System.get_env("DATABASE_PORT") || "5432",
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "50"),
-  ssl: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true"),
+  ssl: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true")
 
 database_api_url =
   if System.get_env("DATABASE_READ_ONLY_API_URL"),
