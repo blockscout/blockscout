@@ -1,25 +1,42 @@
 <footer class="footer">
   <div class="footer-body container">
-    <!-- Logo -->
-    <div class="row footer-logo-row">
-      <div class="col-md-12">
-        <%= link to: webapp_url(@conn), class: "footer-brand" do %>
-          <%= if logo_footer() do %>
-            <img class="footer-logo" src="<%= static_path(@conn, logo_footer()) %>" alt="<%= subnetwork_title() %>" />
-          <% end %>
-          <%= if logo_text() do %>
-            <span class="logo-text in-footer <%= unless logo_footer(), do: "no-logo" %>"> <%= logo_text() %> </span>
-          <% end %>
-        <% end %>
-      </div>
-    </div>
 
     <% other_explorers = other_explorers() %>
     <% col_size = if Enum.empty?(other_explorers), do: 3, else: 2 %>
 
     <div class="row">
-      <div class="col-xs-12 col-lg-3">
-        <p class="footer-info-text"><%= gettext("Mantle is the first modular layer-2 blcokchain, combing hyperscale performance with security from Ethereum. Mantle powers whatever builders can dream.") %></p>
+      <div
+        class="col-xs-12 foot-left-description-container"
+        style="display:flex;border: 1px solid rgba(255, 255, 255, 0.15);border-radius: 12px;padding:18px;width:480px;margin-right:80px;"
+      >
+        <img class="foot-left-description--logo" style="width:40px;height:40px;margin-right:20px;" src="/images/mantle_logo_img.png" />
+        <div>
+          <p class="footer-info-text">
+            <%= gettext("Mantle is the first modular layer-2 blcokchain, combing hyperscale performance with security from Ethereum. Mantle powers whatever builders can dream.") %>
+          </p>
+          <% version = version() %>
+          <%= unless ignore_version?(version) do %>
+            <% release_link = release_link(version) %>
+            <span>
+              <%= gettext("Version") %>: <%= release_link %>
+            </span>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="col-xs-12 col-md-4 col-lg-3 footer-list">
+        <h3>BlockScout</h3>
+        <ul>
+          <li><a href="<%= issue_link(@conn) %>" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Submit an Issue") %></a></li>
+          <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:github_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
+          <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:chat_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Chat (#blockscout)") %></a></li>
+          <%= if System.get_env("COIN_NAME") && System.get_env("SUBNETWORK") && System.get_env("JSON_RPC") && System.get_env("CHAIN_ID") do %>
+            <li><a class="footer-link js-btn-add-chain-to-mm btn-add-chain-to-mm in-footer" style="cursor: pointer;"><%= gettext("Add") <> " #{System.get_env("SUBNETWORK")}" %></a></li>
+          <% end %>
+        </ul>
+      </div>
+      <div class="col-xs-12 col-md-4 col-lg-2 footer-list">
+        <h3>Contact Us</h3>
         <div class="footer-social-icons">
           <a href="<%= Application.get_env(:block_scout_web, :footer)[:github_link] %>" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
             <div class="footer-social-icon-container fontawesome-icon github"></div>
@@ -34,18 +51,6 @@
             <div class="footer-social-icon-container fontawesome-icon discord"></div>
           </a>
         </div>
-      </div>
-
-      <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
-        <h3>BlockScout</h3>
-        <ul>
-          <li><a href="<%= issue_link(@conn) %>" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Submit an Issue") %></a></li>
-          <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:github_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
-          <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:chat_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Chat (#blockscout)") %></a></li>
-          <%= if System.get_env("COIN_NAME") && System.get_env("NETWORK_PATH") && System.get_env("SUBNETWORK") && System.get_env("JSON_RPC") && System.get_env("CHAIN_ID") do %>
-            <li><a class="footer-link js-btn-add-chain-to-mm btn-add-chain-to-mm in-footer" style="cursor: pointer;"><%= gettext("Add") <> " #{System.get_env("SUBNETWORK")}" %></a></li>
-          <% end %>
-        </ul>
       </div>
       <% main_nets = main_nets(other_networks()) %>
 
@@ -85,13 +90,6 @@
       <% end %>
     </div>
 
-    <% version = version() %>
 
-    <%= unless ignore_version?(version) do %>
-      <% release_link = release_link(version) %>
-      <div>
-        <%= gettext("Version") %>: <%= release_link %>
-      </div>
-    <% end %>
   </div>
 </footer>
