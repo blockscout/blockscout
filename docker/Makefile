@@ -394,7 +394,7 @@ ifdef FETCH_REWARDS_WAY
 endif
 
 HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw "${BS_CONTAINER_IMAGE} ")
-build: 
+build:
 	@echo "==> Checking for blockscout image $(BS_CONTAINER_IMAGE)"
 ifdef HAS_BLOCKSCOUT_IMAGE
 	@echo "==> Image exist. Using $(BS_CONTAINER_IMAGE)"
@@ -443,13 +443,13 @@ else
 endif
 endif
 
-blockscout: build
+start: build postgres
 	@echo "==> Starting blockscout"
 	@echo "DB_URL=$(DB_URL)"
 	@docker run --rm --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p 4000:4000 \
-					$(BS_CONTAINER_IMAGE) /bin/sh -c "mix phx.server"
+					$(BS_CONTAINER_IMAGE) /bin/sh -c "./bin/blockscout start"
 
 BS_STARTED := $(shell docker ps --no-trunc --filter name=^/${BS_CONTAINER_NAME}$)
 stop:
