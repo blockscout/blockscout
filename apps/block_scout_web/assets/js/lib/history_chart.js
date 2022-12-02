@@ -18,9 +18,9 @@ const grid = {
 
 function getTxChartColor () {
   if (localStorage.getItem('current-color-mode') === 'dark') {
-    return sassVariables.dashboardLineColorTransactionsDarkTheme
+    return '#BFF6F2'
   } else {
-    return sassVariables.dashboardLineColorTransactions
+    return '#305A57'
   }
 }
 
@@ -95,17 +95,6 @@ const config = {
     },
     scales: {
       x: xAxe(sassVariables.dashboardBannerChartAxisFontColor),
-      y:{
-        ticks: {
-          display:false,
-          color: color,
-          fontColor: 'f00',
-        },
-        gridLines:{
-          display:true,
-          color: '#305A57',
-        }
-      },
       price: {
         position: 'left',
         grid,
