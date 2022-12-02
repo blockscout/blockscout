@@ -1,7 +1,7 @@
 <div class="tile tile-type-epoch-transaction fade-in" data-test="epoch_transaction"
-     data-key="<%= @epoch_transaction.block_number %>_<%= if @epoch_transaction.reward_type == "group", do: @epoch_transaction.associated_account_name, else: @epoch_transaction.account_hash %>"
+     data-key="<%= @epoch_transaction.block_number %>_<%= if @epoch_transaction.reward_type == "group", do: @epoch_transaction.associated_address.celo_account.name, else: @epoch_transaction.account_hash %>"
      data-epoch-transaction-block-number="<%= @epoch_transaction.block_number %>"
-     data-epoch-transaction-group="<%= if @epoch_transaction.reward_type == "group", do: @epoch_transaction.account_hash, else: @epoch_transaction.associated_account_name %>">
+     data-epoch-transaction-group="<%= if @epoch_transaction.reward_type == "group", do: @epoch_transaction.account_hash, else: @epoch_transaction.associated_address.celo_account.name %>">
   <div class="row tile-body">
     <!-- Color Block -->
     <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
@@ -26,20 +26,18 @@
       <span class="tile-address-wrapper d-flex flex-md-row mt-3 mt-md-0 pl-2">
         <img src="/images/icons/arrow.png" width="28px" height="22.4px">
         <div class="d-flex align-items-end ml-2 pt-2">
-          <%= with {:ok, address} <- Chain.hash_to_address(@epoch_transaction.account_hash) do %>
-            <%= render BlockScoutWeb.AddressView,
-              "_link.html",
-              address: address,
-              contract: false,
-              use_custom_tooltip: false,
-              truncate: false %>
-          <% end %>
+          <%= render BlockScoutWeb.AddressView,
+            "_link.html",
+            address: @epoch_transaction.address,
+            contract: false,
+            use_custom_tooltip: false,
+            truncate: false %>
         </div>
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <%= gettext "Validator Group:" %>&nbsp;
         <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @epoch_transaction.associated_account_hash), "data-test": "address_hash_link", class: assigns[:class] do %>
-          <%= @epoch_transaction.associated_account_name %>
+          <%= @epoch_transaction.associated_address.celo_account.name %>
         <% end %>
       </span>
       <% end %>
@@ -51,20 +49,18 @@
       <span class="tile-address-wrapper d-flex flex-md-row mt-3 mt-md-0 pl-2">
         <img src="/images/icons/arrow.png" width="28px" height="22.4px">
         <div class="d-flex align-items-end ml-2 pt-2">
-          <%= with {:ok, address} <- Chain.hash_to_address(@epoch_transaction.account_hash) do %>
-            <%= render BlockScoutWeb.AddressView,
-              "_link.html",
-              address: address,
-              contract: false,
-              use_custom_tooltip: false,
-              truncate: false %>
-          <% end %>
+          <%= render BlockScoutWeb.AddressView,
+            "_link.html",
+            address: @epoch_transaction.address,
+            contract: false,
+            use_custom_tooltip: false,
+            truncate: false %>
         </div>
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <%= gettext "Validator Group:" %>&nbsp;
         <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @epoch_transaction.associated_account_hash), "data-test": "address_hash_link", class: assigns[:class] do %>
-          <%= @epoch_transaction.associated_account_name %>
+          <%= @epoch_transaction.associated_address.celo_account.name %>
         <% end %>
       </span>
       <% end %>
@@ -78,25 +74,21 @@
           <img src="/images/icons/arrow.png" width="28px" height="22.4px">
           <div class="d-flex align-items-end ml-2 pt-2">
             <div>
-              <%= with {:ok, address} <- Chain.hash_to_address(@epoch_transaction.associated_account_hash) do %>
-                <%= render BlockScoutWeb.AddressView,
-                  "_link.html",
-                  address: address,
-                  contract: false,
-                  use_custom_tooltip: false,
-                  truncate: false %>
-            <% end %>
+              <%= render BlockScoutWeb.AddressView,
+                "_link.html",
+                address: @epoch_transaction.associated_address,
+                contract: false,
+                use_custom_tooltip: false,
+                truncate: false %>
 
             &rarr;
 
-            <%= with {:ok, address} <- Chain.hash_to_address(@epoch_transaction.account_hash) do %>
-                <%= render BlockScoutWeb.AddressView,
-                  "_link.html",
-                  address: address,
-                  contract: false,
-                  use_custom_tooltip: false,
-                  truncate: false %>
-            <% end %>
+            <%= render BlockScoutWeb.AddressView,
+              "_link.html",
+              address: @epoch_transaction.address,
+              contract: false,
+              use_custom_tooltip: false,
+              truncate: false %>
             </div>
           </div>
         </span>
@@ -114,7 +106,7 @@
           to: block_path(BlockScoutWeb.Endpoint, :show, @epoch_transaction.block_number)
         ) %>
       </span>
-      <span class="mr-2 mr-md-0 order-2" in-tile data-from-now="<%= @epoch_transaction.date %>"></span>
+      <span class="mr-2 mr-md-0 order-2" in-tile data-from-now="<%= @epoch_transaction.block_timestamp %>"></span>
       <span class="mr-2 mr-md-0 order-0 order-md-3">
           <span class="badge badge-success tile-badge"><%= gettext "IN" %></span>
       </span>

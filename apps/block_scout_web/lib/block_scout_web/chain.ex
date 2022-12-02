@@ -99,6 +99,8 @@ defmodule BlockScoutWeb.Chain do
     Map.put(next_page_params, "items_count", items_count(next_page_params) + Enum.count(list))
   end
 
+  defp items_count(%{"items_count" => it}) when is_binary(it), do: items_count(%{items_count: it})
+
   defp items_count(%{items_count: it}) when is_binary(it) do
     case Integer.parse(it) do
       {items_count, _} -> items_count

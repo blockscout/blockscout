@@ -275,7 +275,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_link.html.eex:2
-#: lib/block_scout_web/templates/epoch_transaction/_election_aggregated_tile.html.eex:91 lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:113
+#: lib/block_scout_web/templates/epoch_transaction/_election_aggregated_tile.html.eex:91 lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:105
 #: lib/block_scout_web/templates/epoch_transaction/_epoch_tile.html.eex:58 lib/block_scout_web/templates/internal_transaction/_tile.html.eex:32
 #: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:43
 msgid "Block #%{number}"
@@ -933,7 +933,7 @@ msgid "Enter the Vyper Contract Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/epoch_transaction/_election_aggregated_tile.html.eex:87 lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:109
+#: lib/block_scout_web/templates/epoch_transaction/_election_aggregated_tile.html.eex:87 lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:101
 #: lib/block_scout_web/templates/epoch_transaction/_epoch_tile.html.eex:54
 msgid "Epoch #"
 msgstr ""
@@ -1130,7 +1130,7 @@ msgid "IMPORTANT: This information is a best guess based on similar functions fr
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/epoch_transaction/_election_aggregated_tile.html.eex:97 lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:119
+#: lib/block_scout_web/templates/epoch_transaction/_election_aggregated_tile.html.eex:97 lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:111
 #: lib/block_scout_web/templates/epoch_transaction/_epoch_tile.html.eex:64 lib/block_scout_web/templates/internal_transaction/_tile.html.eex:42
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:86
 msgid "IN"
@@ -1730,7 +1730,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/epoch_transaction/_election_aggregated_tile.html.eex:24 lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:24
-#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:48 lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:73
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:46 lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:69
 msgid "Rewards: "
 msgstr ""
 
@@ -2484,8 +2484,8 @@ msgid "Validator Group Rewards"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:40
-#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:65
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:38
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:61
 msgid "Validator Group:"
 msgstr ""
 

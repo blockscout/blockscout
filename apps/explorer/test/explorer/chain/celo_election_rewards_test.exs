@@ -3,6 +3,7 @@ defmodule Explorer.Chain.CeloElectionRewardsTest do
 
   import Explorer.Factory
 
+  alias Explorer.Celo.EpochUtil
   alias Explorer.Chain
   alias Explorer.Chain.Wei
 
@@ -63,7 +64,8 @@ defmodule Explorer.Chain.CeloElectionRewardsTest do
       from = DateTime.add(DateTime.now!("Etc/UTC"), -10)
       to = DateTime.add(DateTime.now!("Etc/UTC"), 10)
 
-      assert CeloElectionRewards.get_rewards([account_hash], ["voter", "validator"], from, to) == %{
+      assert CeloElectionRewards.get_rewards([account_hash], ["voter", "validator"], from, to)
+             |> transform_rewards_from_db == %{
                rewards: expected_rewards,
                total_reward_celo: two_wei,
                from: from,
@@ -135,7 +137,33 @@ defmodule Explorer.Chain.CeloElectionRewardsTest do
                ["voter", "validator"],
                from,
                to
-             ) == %{from: from, to: to, rewards: expected_rewards, total_reward_celo: one_wei}
+             )
+             |> transform_rewards_from_db == %{
+               from: from,
+               to: to,
+               rewards: expected_rewards,
+               total_reward_celo: one_wei
+             }
     end
+  end
+
+  defp transform_rewards_from_db(rewards_from_db) do
+    %{
+      rewards_from_db
+      | rewards:
+          rewards_from_db.rewards
+          |> Enum.map(fn row ->
+            %{
+              account_hash: row.account_hash,
+              amount: row.amount,
+              associated_account_name: row.associated_address.celo_account.name,
+              associated_account_hash: row.associated_account_hash,
+              block_number: row.block_number,
+              date: row.block_timestamp,
+              epoch_number: EpochUtil.epoch_by_block_number(row.block_number),
+              reward_type: row.reward_type
+            }
+          end)
+    }
   end
 end

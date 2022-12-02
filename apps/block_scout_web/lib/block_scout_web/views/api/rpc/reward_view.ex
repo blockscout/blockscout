@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.RPC.RewardView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.RPC.RPCView
+  alias Explorer.Celo.EpochUtil
 
   def render("getvoterrewardsforgroup.json", %{rewards: rewards}) do
     prepared_rewards = prepare_voter_rewards_for_group(rewards)
@@ -36,8 +37,8 @@ defmodule BlockScoutWeb.API.RPC.RewardView do
     %{
       amount: to_string(reward.amount),
       blockNumber: to_string(reward.block_number),
-      date: reward.date,
-      epochNumber: to_string(reward.epoch_number)
+      date: reward.block_timestamp,
+      epochNumber: to_string(EpochUtil.epoch_by_block_number(reward.block_number))
     }
   end
 
@@ -64,9 +65,9 @@ defmodule BlockScoutWeb.API.RPC.RewardView do
       account: to_string(reward.account_hash),
       amount: to_string(reward.amount),
       blockNumber: to_string(reward.block_number),
-      date: reward.date,
-      epochNumber: to_string(reward.epoch_number),
-      group: to_string(reward.associated_account_name)
+      date: reward.block_timestamp,
+      epochNumber: to_string(EpochUtil.epoch_by_block_number(reward.block_number)),
+      group: to_string(reward.associated_address.celo_account.name)
     }
   end
 
@@ -74,10 +75,10 @@ defmodule BlockScoutWeb.API.RPC.RewardView do
     %{
       amount: to_string(reward.amount),
       blockNumber: to_string(reward.block_number),
-      date: reward.date,
-      epochNumber: to_string(reward.epoch_number),
+      date: reward.block_timestamp,
+      epochNumber: to_string(EpochUtil.epoch_by_block_number(reward.block_number)),
       group: to_string(reward.account_hash),
-      validator: to_string(reward.associated_account_name)
+      validator: to_string(reward.associated_address.celo_account.name)
     }
   end
 end

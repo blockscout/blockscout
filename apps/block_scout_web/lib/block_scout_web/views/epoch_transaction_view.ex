@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.EpochTransactionView do
   use BlockScoutWeb, :view
 
   alias Explorer.Celo.EpochUtil
-  alias Explorer.Chain
   alias Explorer.Chain.Wei
 
   @visible_rewards_batch_size 20
