@@ -1,25 +1,12 @@
 <footer class="footer">
   <div class="footer-body container">
-    <!-- Logo -->
-    <div class="row footer-logo-row">
-      <div class="col-md-12">
-        <%= link to: webapp_url(@conn), class: "footer-brand" do %>
-          <%= if logo_footer() do %>
-            <img class="footer-logo" src="<%= static_path(@conn, logo_footer()) %>" alt="<%= subnetwork_title() %>" />
-          <% end %>
-          <%= if logo_text() do %>
-            <span class="logo-text in-footer <%= unless logo_footer(), do: "no-logo" %>"> <%= logo_text() %> </span>
-          <% end %>
-        <% end %>
-      </div>
-    </div>
 
     <% other_explorers = other_explorers() %>
     <% col_size = if Enum.empty?(other_explorers), do: 3, else: 2 %>
 
     <div class="row">
-      <div 
-        class="col-xs-12 foot-left-description-container" 
+      <div
+        class="col-xs-12 foot-left-description-container"
         style="display:flex;border: 1px solid rgba(255, 255, 255, 0.15);border-radius: 12px;padding:18px;width:480px;margin-right:80px;"
       >
         <img class="foot-left-description--logo" style="width:40px;height:40px;margin-right:20px;" src="/images/mantle_logo_img.png" />
@@ -103,6 +90,6 @@
       <% end %>
     </div>
 
-   
+
   </div>
 </footer>

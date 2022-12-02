@@ -188,6 +188,9 @@ $card-tab-icon-color-active: #fff !default;
   }
 }
 .dark-theme-applied{
+  .card-body {
+    background-color: #141918;
+  }
   .txn-list-container{
     .txn-list-table-head-container{
       background:  #313355;
@@ -317,13 +320,19 @@ $card-tab-icon-color-active: #fff !default;
     font-size: 12px;
     line-height: 12px;
     margin: 20px 0;
+    font-weight: 700;
+    &:hover {
+      background: #21413F;
+    }
   }
 }
 .dark-theme-applied {
   .recent-preview-container{
-    background:#1c1d31;
+    background: #080D0C;
     .recent-preview-item{
       box-shadow:none;
+      background-color: #141918;
+      border-color: #141918!important;
       .recent-preview-item-content{
         border-bottom:1px solid rgba(255,255,255,.1);
         color:#a3a9b5;
@@ -337,6 +346,9 @@ $card-tab-icon-color-active: #fff !default;
     }
     .recent-preview-item-title-container{
       border-bottom:1px solid rgba(255,255,255,.1);
+    }
+    .view-btn {
+      background: #21413F;
     }
   }
   
