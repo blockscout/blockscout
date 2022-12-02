@@ -426,8 +426,12 @@ config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") 
 
 config :indexer, Indexer.Block.Realtime.Supervisor, enabled: System.get_env("DISABLE_REALTIME_INDEXER") != "true"
 
-Code.require_file("#{config_env()}.exs", "config/runtime")
+if File.exists?("#{Path.absname(__DIR__)}/runtime/#{config_env()}.exs") do
+  Code.require_file("#{config_env()}.exs", "#{Path.absname(__DIR__)}/runtime")
+end
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
-  Code.require_file("#{config_env()}.exs", Path.dirname(config))
+  if File.exists?(config) do
+    Code.require_file("#{config_env()}.exs", Path.dirname(config))
+  end
 end

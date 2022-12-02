@@ -95,13 +95,3 @@ RUN if [ "$COIN" != "" ]; then \
 # Invalidate cache via modifying build args on compilation
 ARG FORCE_MIX_COMPILE_CACHE_MISS
 RUN mix compile && mix phx.digest
-
-RUN mkdir -p /opt/release \
-  && mix release blockscout \
-  && mv _build/${MIX_ENV}/rel/blockscout /opt/release
-
-FROM bitwalker/alpine-elixir-phoenix:1.13
-
-WORKDIR /app
-
-COPY --from=builder /opt/release/blockscout .
