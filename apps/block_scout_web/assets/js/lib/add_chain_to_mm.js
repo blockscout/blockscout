@@ -2,11 +2,11 @@ import 'bootstrap'
 
 export async function addChainToMM ({ btn }) {
   try {
-    const chainID = await window.ethereum.request({ method: 'eth_chainId' })
+    //const chainID = await window.ethereum.request({ method: 'eth_chainId' })
     const chainIDFromEnvVar = parseInt(process.env.CHAIN_ID)
     const chainIDHex = chainIDFromEnvVar && `0x${chainIDFromEnvVar.toString(16)}`
-    const blockscoutURL = location.protocol + '//' + location.host + process.env.NETWORK_PATH
-    if (chainID !== chainIDHex) {
+    const blockscoutURL = location.protocol + '//' + location.host
+    //if (chainID !== chainIDHex) {
       await window.ethereum.request({
         method: 'wallet_addEthereumChain',
         params: [{
@@ -21,7 +21,7 @@ export async function addChainToMM ({ btn }) {
           blockExplorerUrls: [blockscoutURL]
         }]
       })
-    } else {
+    /* } else {
       btn.tooltip('dispose')
       btn.tooltip({
         title: `You're already connected to ${process.env.SUBNETWORK}`,
@@ -32,7 +32,7 @@ export async function addChainToMM ({ btn }) {
       setTimeout(() => {
         btn.tooltip('dispose')
       }, 3000)
-    }
+    } */
   } catch (error) {
     console.error(error)
   }
