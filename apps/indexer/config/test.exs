@@ -6,9 +6,6 @@ config :indexer, :environment, :test
 
 config :indexer, Indexer.Fetcher.CeloValidatorHistory.Supervisor, disabled?: true
 
-config :indexer,
-  block_transformer: Indexer.Transform.Blocks.Base
-
 config :logger, :indexer,
   level: :warn,
   path: Path.absname("logs/test/indexer.log")
