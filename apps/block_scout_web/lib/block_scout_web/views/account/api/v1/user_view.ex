@@ -1,8 +1,8 @@
 defmodule BlockScoutWeb.Account.Api.V1.UserView do
   alias BlockScoutWeb.Account.Api.V1.AccountView
+  alias BlockScoutWeb.API.V2.Helper
   alias Ecto.Changeset
   alias Explorer.Chain
-  alias BlockScoutWeb.API.V2.Helper
 
   def render("message.json", assigns) do
     AccountView.render("message.json", assigns)

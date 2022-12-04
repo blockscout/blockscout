@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.Account.AuthController do
 
         conn
         |> put_session(:current_user, user)
-        |> redirect(to: params["path"] || root())
+        |> redirect(to: redirect_path(params["path"]))
 
       {:error, reason} ->
         conn
@@ -71,4 +71,19 @@ defmodule BlockScoutWeb.Account.AuthController do
   defp root do
     ConfigHelper.network_path()
   end
+
+  defp redirect_path(path) when is_binary(path) do
+    case URI.parse(path) do
+      %URI{path: "/" <> path} ->
+        "/" <> path
+
+      %URI{path: path} when is_binary(path) ->
+        "/" <> path
+
+      _ ->
+        root()
+    end
+  end
+
+  defp redirect_path(_), do: root()
 end
