@@ -8,6 +8,7 @@ defmodule Explorer.Account.Notifier.ForbiddenAddress do
     "0x000000000000000000000000000000000000dEaD"
   ]
 
+  alias Explorer.AccessHelpers
   alias Explorer.Chain.Token
   alias Explorer.Repo
 
@@ -20,17 +21,20 @@ defmodule Explorer.Account.Notifier.ForbiddenAddress do
         {:error, message}
 
       address_hash ->
-        check(address_hash)
+        check(address_hash, address_string)
     end
   end
 
-  def check(%Explorer.Chain.Hash{} = address_hash) do
+  def check(%Explorer.Chain.Hash{} = address_hash, address_hash_string) do
     cond do
       address_hash in blacklist() ->
         {:error, "This address is blacklisted"}
 
       is_contract(address_hash) ->
         {:error, "This address isn't personal"}
+
+      match?({:restricted_access, true}, AccessHelpers.restricted_access?(address_hash_string, %{})) ->
+        {:error, "This address has restricted access"}
 
       address_hash ->
         {:ok, address_hash}
