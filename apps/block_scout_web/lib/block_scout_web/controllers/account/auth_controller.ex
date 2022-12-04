@@ -33,14 +33,14 @@ defmodule BlockScoutWeb.Account.AuthController do
     |> redirect(to: root())
   end
 
-  def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
+  def callback(%{assigns: %{ueberauth_auth: auth}} = conn, params) do
     case UserFromAuth.find_or_create(auth) do
       {:ok, user} ->
         CSRFProtection.get_csrf_token()
 
         conn
         |> put_session(:current_user, user)
-        |> redirect(to: root())
+        |> redirect(to: params["path"] || root())
 
       {:error, reason} ->
         conn
