@@ -8,8 +8,8 @@ defmodule Explorer.Account.Notifier.ForbiddenAddress do
     "0x000000000000000000000000000000000000dEaD"
   ]
 
+  alias Explorer.{AccessHelpers, Repo}
   alias Explorer.Chain.Token
-  alias Explorer.Repo
 
   import Ecto.Query, only: [from: 2]
   import Explorer.Chain, only: [string_to_address_hash: 1]
@@ -31,6 +31,9 @@ defmodule Explorer.Account.Notifier.ForbiddenAddress do
 
       is_contract(address_hash) ->
         {:error, "This address isn't personal"}
+
+      match?({:restricted_access, true}, AccessHelpers.restricted_access?(to_string(address_hash), %{})) ->
+        {:error, "This address has restricted access"}
 
       address_hash ->
         {:ok, address_hash}
