@@ -5,13 +5,47 @@
 
 ### Fixes
 - [#5904](https://github.com/blockscout/blockscout/pull/5904) - Enhance health API endpoint: better parsing HEALTHY_BLOCKS_PERIOD and use it in the response
-- [#5809](https://github.com/blockscout/blockscout/pull/5809) - Fix 404 on `/metadata` page
-- [#5786](https://github.com/blockscout/blockscout/pull/5786) - Replace `current_path` with `Controller.current_full_path` in two controllers
-- [#5807](https://github.com/blockscout/blockscout/pull/5807) - Update Makefile migrate command due to release build
-- [#5887](https://github.com/blockscout/blockscout/pull/5887) - Added missing environment variables to Makefile container params
 - [#5903](https://github.com/blockscout/blockscout/pull/5903) - Disable compile env validation
+- [#5887](https://github.com/blockscout/blockscout/pull/5887) - Added missing environment variables to Makefile container params
+- [#5850](https://github.com/blockscout/blockscout/pull/5850) - Fix too large postgres notifications
+- [#5809](https://github.com/blockscout/blockscout/pull/5809) - Fix 404 on `/metadata` page
+- [#5807](https://github.com/blockscout/blockscout/pull/5807) - Update Makefile migrate command due to release build
+- [#5786](https://github.com/blockscout/blockscout/pull/5786) - Replace `current_path` with `Controller.current_full_path` in two controllers
 
 ### Chore
+- [#5845](https://github.com/blockscout/blockscout/pull/5845) - Bump autoprefixer from 10.4.2 to 10.4.8 in /apps/block_scout_web/assets
+- [#5877](https://github.com/blockscout/blockscout/pull/5877) - Bump eslint from 8.17.0 to 8.21.0 in /apps/block_scout_web/assets
+- [#5875](https://github.com/blockscout/blockscout/pull/5875) - Bump sass from 1.49.8 to 1.54.3 in /apps/block_scout_web/assets
+- [#5873](https://github.com/blockscout/blockscout/pull/5873) - Bump highlight.js from 11.4.0 to 11.6.0 in /apps/block_scout_web/assets
+- [#5870](https://github.com/blockscout/blockscout/pull/5870) - Bump spandex_ecto from 0.6.2 to 0.7.0
+- [#5867](https://github.com/blockscout/blockscout/pull/5867) - Bump @babel/preset-env from 7.16.11 to 7.18.10 in /apps/block_scout_web/assets
+- [#5876](https://github.com/blockscout/blockscout/pull/5876) - Bump bignumber.js from 9.0.2 to 9.1.0 in /apps/block_scout_web/assets
+- [#5871](https://github.com/blockscout/blockscout/pull/5871) - Bump redux from 4.1.2 to 4.2.0 in /apps/block_scout_web/assets
+- [#5868](https://github.com/blockscout/blockscout/pull/5868) - Bump ex_rlp from 0.5.3 to 0.5.4 
+- [#5874](https://github.com/blockscout/blockscout/pull/5874) - Bump core-js from 3.20.3 to 3.24.1 in /apps/block_scout_web/assets
+- [#5882](https://github.com/blockscout/blockscout/pull/5882) - Bump math from 0.3.1 to 0.7.0
+- [#5878](https://github.com/blockscout/blockscout/pull/5878) - Bump css-minimizer-webpack-plugin from 3.4.1 to 4.0.0 in /apps/block_scout_web/assets
+- [#5883](https://github.com/blockscout/blockscout/pull/5883) - Bump postgrex from 0.15.10 to 0.15.13
+- [#5885](https://github.com/blockscout/blockscout/pull/5885) - Bump hammer from 6.0.0 to 6.1.0
+- [#5893](https://github.com/blockscout/blockscout/pull/5893) - Bump prometheus from 4.8.1 to 4.9.0
+- [#5892](https://github.com/blockscout/blockscout/pull/5892) - Bump babel-loader from 8.2.3 to 8.2.5 in /apps/block_scout_web/assets
+- [#5890](https://github.com/blockscout/blockscout/pull/5890) - Bump sweetalert2 from 11.3.10 to 11.4.26 in /apps/block_scout_web/assets
+- [#5889](https://github.com/blockscout/blockscout/pull/5889) - Bump sass from 1.54.3 to 1.54.4 in /apps/block_scout_web/assets
+- [#5894](https://github.com/blockscout/blockscout/pull/5894) - Bump jest from 27.4.7 to 28.1.3 in /apps/block_scout_web/assets
+- [#5865](https://github.com/blockscout/blockscout/pull/5865) - Bump timex from 3.7.1 to 3.7.9
+- [#5872](https://github.com/blockscout/blockscout/pull/5872) - Bump benchee from 0.13.2 to 0.99.0
+- [#5895](https://github.com/blockscout/blockscout/pull/5895) - Bump wallaby from 0.29.1 to 0.30.1
+- [#5905](https://github.com/blockscout/blockscout/pull/5905) - Bump absinthe from 1.6.5 to 1.6.8
+- [#5881](https://github.com/blockscout/blockscout/pull/5881) - Bump dataloader from 1.0.9 to 1.0.10
+- [#5909](https://github.com/blockscout/blockscout/pull/5909) - Bump junit_formatter from 3.3.0 to 3.3.1
+- [#5912](https://github.com/blockscout/blockscout/pull/5912) - Bump credo from 1.6.4 to 1.6.6
+- [#5911](https://github.com/blockscout/blockscout/pull/5911) - Bump absinthe_relay from 1.5.1 to 1.5.2
+- [#5915](https://github.com/blockscout/blockscout/pull/5915) - Bump flow from 0.15.0 to 1.2.0
+- [#5916](https://github.com/blockscout/blockscout/pull/5916) - Bump dialyxir from 1.1.0 to 1.2.0
+- [#5910](https://github.com/blockscout/blockscout/pull/5910) - Bump benchee from 0.99.0 to 1.1.0
+- [#5917](https://github.com/blockscout/blockscout/pull/5917) - Bump bypass from 1.0.0 to 2.1.0
+- [#5920](https://github.com/blockscout/blockscout/pull/5920) - Bump spandex_datadog from 1.1.0 to 1.2.0
+- [#5918](https://github.com/blockscout/blockscout/pull/5918) - Bump logger_file_backend from 0.0.12 to 0.0.13
 - [#5863](https://github.com/blockscout/blockscout/pull/5863) - Update Poison hex package
 - [#5861](https://github.com/blockscout/blockscout/pull/5861) - Add cache for docker build
 - [#5859](https://github.com/blockscout/blockscout/pull/5859) - Update ex_cldr hex packages

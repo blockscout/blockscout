@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.3", override: true},
       # Absinthe support for the Relay framework
       {:absinthe_relay, "~> 1.5"},
-      {:bypass, "~> 1.0", only: :test},
+      {:bypass, "~> 2.1", only: :test},
       # To add (CORS)(https://www.w3.org/TR/cors/)
       {:cors_plug, "~> 3.0"},
       {:credo, "~> 1.5", only: :test, runtime: false},
@@ -86,7 +86,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:file_info, "~> 0.0.4"},
       # HTML CSS selectors for Phoenix controller tests
       {:floki, "~> 0.31"},
-      {:flow, "~> 0.12"},
+      {:flow, "~> 1.2"},
       {:gettext, "~> 0.20.0"},
       {:hammer, "~> 6.0"},
       {:httpoison, "~> 1.6"},
