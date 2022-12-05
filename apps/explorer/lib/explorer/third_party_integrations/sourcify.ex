@@ -312,6 +312,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       |> Map.put("optimization_runs", Map.get(optimizer, "runs"))
       |> Map.put("external_libraries", Map.get(settings, "libraries"))
       |> Map.put("verified_via_sourcify", true)
+      |> Map.put("compiler_settings", settings)
 
     %{
       "params_to_publish" => params,

@@ -9,6 +9,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       current_filter: 1
     ]
 
+  import BlockScoutWeb.PagingHelper,
+    only: [delete_parameters_from_next_page_params: 1, token_transfers_types_options: 1]
+
   alias BlockScoutWeb.API.V2.{AddressView, BlockView, TransactionView}
   alias Explorer.{Chain, Market}
   alias Indexer.Fetcher.TokenBalanceOnDemand
@@ -25,19 +28,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     }
   ]
 
-  @transaction_with_tt_necessity_by_association [
+  @token_transfer_necessity_by_association [
     necessity_by_association: %{
-      [created_contract_address: :names] => :optional,
-      [from_address: :names] => :optional,
-      [to_address: :names] => :optional,
-      [created_contract_address: :smart_contract] => :optional,
-      [from_address: :smart_contract] => :optional,
-      [to_address: :smart_contract] => :optional,
-      [token_transfers: :token] => :optional,
-      [token_transfers: :to_address] => :optional,
-      [token_transfers: :from_address] => :optional,
-      [token_transfers: :token_contract_address] => :optional,
-      :block => :required
+      :to_address => :optional,
+      :from_address => :optional,
+      :block => :optional
     }
   ]
 
@@ -49,6 +44,24 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> render(:address, %{address: address})
+    end
+  end
+
+  def counters(conn, %{"address_hash" => address_hash_string}) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash)} do
+      {validation_count} = Chain.address_counters(address)
+
+      transactions_from_db = address.transactions_count || 0
+      token_transfers_from_db = address.token_transfers_count || 0
+      address_gas_usage_from_db = address.gas_used || 0
+
+      json(conn, %{
+        transactions_count: to_string(transactions_from_db),
+        token_transfers_count: to_string(token_transfers_from_db),
+        gas_usage_count: to_string(address_gas_usage_from_db),
+        validations_count: to_string(validation_count)
+      })
     end
   end
 
@@ -82,7 +95,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       results_plus_one = Chain.address_to_transactions_with_rewards(address_hash, options)
       {transactions, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, transactions, params)
+      next_page_params =
+        next_page |> next_page_params(transactions, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
@@ -94,24 +108,26 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   def token_transfers(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)} do
       options =
-        @transaction_with_tt_necessity_by_association
+        @token_transfer_necessity_by_association
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
+        |> Keyword.merge(token_transfers_types_options(params))
 
       results_plus_one =
-        Chain.address_hash_to_token_transfers(
+        Chain.address_hash_to_token_transfers_new(
           address_hash,
           options
         )
 
-      {transactions, next_page} = split_list_by_page(results_plus_one)
+      {token_transfers, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, transactions, params)
+      next_page_params =
+        next_page |> next_page_params(token_transfers, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:transactions, %{transactions: transactions, next_page_params: next_page_params})
+      |> render(:token_transfers, %{token_transfers: token_transfers, next_page_params: next_page_params})
     end
   end
 
@@ -134,7 +150,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       results_plus_one = Chain.address_to_internal_transactions(address_hash, full_options)
       {internal_transactions, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, internal_transactions, params)
+      next_page_params =
+        next_page |> next_page_params(internal_transactions, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
@@ -156,7 +173,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       {logs, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, logs, params)
+      next_page_params = next_page |> next_page_params(logs, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
@@ -170,7 +187,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       results_plus_one = Chain.address_to_logs(address_hash, paging_options(params))
       {logs, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, logs, params)
+      next_page_params = next_page |> next_page_params(logs, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
@@ -197,7 +214,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       results_plus_one = Chain.get_blocks_validated_by_address(full_options, address_hash)
       {blocks, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, blocks, params)
+      next_page_params = next_page |> next_page_params(blocks, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
@@ -207,14 +224,17 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   end
 
   def coin_balance_history(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)} do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:not_found, {:ok, _address}, _} <-
+           {:not_found, Chain.hash_to_address(address_hash), :empty_items_with_next_page_params} do
       full_options = paging_options(params)
 
       results_plus_one = Chain.address_to_coin_balances(address_hash, full_options)
 
       {coin_balances, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, coin_balances, params)
+      next_page_params =
+        next_page |> next_page_params(coin_balances, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
