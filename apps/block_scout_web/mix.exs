@@ -7,7 +7,6 @@ defmodule BlockScoutWeb.Mixfile do
       app: :block_scout_web,
       build_path: "../../_build",
       config_path: "../../config/config.exs",
-      compilers: [:phoenix, :gettext | Mix.compilers()],
       deps: deps(),
       deps_path: "../../deps",
       description: "Web interface for BlockScout.",
@@ -15,7 +14,7 @@ defmodule BlockScoutWeb.Mixfile do
         plt_add_deps: :transitive,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.12",
+      elixir: "~> 1.13",
       elixirc_options: [
         warnings_as_errors: true
       ],
@@ -27,7 +26,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "0.0.1"
+      version: "4.1.7"
     ]
   end
 
@@ -79,8 +78,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:ecto, "~> 3.3", override: true},
       {:ex_cldr, "~> 2.18"},
       {:ex_cldr_numbers, "~> 2.6"},
-      {:ex_cldr_units, "~> 2.5"},
-      {:cldr_utils, "~> 2.12"},
+      {:ex_cldr_units, "~> 3.13"},
+      {:cldr_utils, "~> 2.3"},
       {:ex_machina, "~> 2.1", only: [:test]},
       {:explorer, in_umbrella: true},
       {:exvcr, "~> 0.10", only: :test},
@@ -131,7 +130,7 @@ defmodule BlockScoutWeb.Mixfile do
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:websocket_client, "~> 1.3"},
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
-      {:ex_json_schema, "~> 0.6.2"},
+      {:ex_json_schema, "~> 0.9.1"},
       # Log json format
       {:logger_json, "~> 3.2"},
       # {:jason, "~> 1.1"}
@@ -163,7 +162,7 @@ defmodule BlockScoutWeb.Mixfile do
 
   defp package do
     [
-      maintainers: ["POA Networks Ltd."],
+      maintainers: ["Blockscout"],
       licenses: ["GPL 3.0"],
       links: %{"GitHub" => "https://github.com/blockscout/blockscout"}
     ]

@@ -11,7 +11,7 @@ defmodule BlockScout.Mixfile do
       apps_path: "apps",
       deps: deps(),
       dialyzer: dialyzer(),
-      elixir: "~> 1.12",
+      elixir: "~> 1.13",
       elixirc_options: [
         warnings_as_errors: true
       ],

@@ -15,7 +15,7 @@ defmodule Explorer.Mixfile do
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.12",
+      elixir: "~> 1.13",
       elixirc_options: [
         warnings_as_errors: true
       ],
@@ -27,7 +27,7 @@ defmodule Explorer.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "0.0.1"
+      version: "4.1.7"
     ]
   end
 
@@ -146,7 +146,7 @@ defmodule Explorer.Mixfile do
 
   defp package do
     [
-      maintainers: ["POA Networks Ltd."],
+      maintainers: ["Blockscout"],
       licenses: ["GPL 3.0"],
       links: %{"GitHub" => "https://github.com/blockscout/blockscout"}
     ]

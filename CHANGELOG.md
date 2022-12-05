@@ -3,10 +3,38 @@
 ### Features
 
 ### Fixes
+- [#5809](https://github.com/blockscout/blockscout/pull/5809) - Fix 404 on `/metadata` page
 - [#5786](https://github.com/blockscout/blockscout/pull/5786) - Replace `current_path` with `Controller.current_full_path` in two controllers
 - [#5807](https://github.com/blockscout/blockscout/pull/5807) - Update Makefile migrate command due to release build
 
 ### Chore
+- [#5861](https://github.com/blockscout/blockscout/pull/5861) - Add cache for docker build
+- [#5859](https://github.com/blockscout/blockscout/pull/5859) - Update ex_cldr hex packages
+- [#5858](https://github.com/blockscout/blockscout/pull/5858) - Update CHANGELOG; revert update of css-loader; rename fontawesome icons selectors
+- [#5811](https://github.com/blockscout/blockscout/pull/5811) - Bump chartjs-adapter-luxon from 1.1.0 to 1.2.0 in /apps/block_scout_web/assets
+- [#5814](https://github.com/blockscout/blockscout/pull/5814) - Bump webpack from 5.69.1 to 5.74.0 in /apps/block_scout_web/assets
+- [#5812](https://github.com/blockscout/blockscout/pull/5812) - Bump mini-css-extract-plugin from 2.5.3 to 2.6.1 in /apps/block_scout_web/assets
+- [#5819](https://github.com/blockscout/blockscout/pull/5819) - Bump xss from 1.0.10 to 1.0.13 in /apps/block_scout_web/assets
+- [#5818](https://github.com/blockscout/blockscout/pull/5818) - Bump @fortawesome/fontawesome-free from 6.0.0-beta3 to 6.1.2 in /apps/block_scout_web/assets
+- [#5821](https://github.com/blockscout/blockscout/pull/5821) - Bump spandex from 3.0.3 to 3.1.0
+- [#5830](https://github.com/blockscout/blockscout/pull/5830) - Bump spandex_phoenix from 1.0.5 to 1.0.6
+- [#5825](https://github.com/blockscout/blockscout/pull/5825) - Bump postcss from 8.4.6 to 8.4.16 in /apps/block_scout_web/assets
+- [#5816](https://github.com/blockscout/blockscout/pull/5816) - Bump webpack-cli from 4.9.2 to 4.10.0 in /apps/block_scout_web/assets
+- [#5822](https://github.com/blockscout/blockscout/pull/5822) - Bump chart.js from 3.7.0 to 3.9.1 in /apps/block_scout_web/assets
+- [#5829](https://github.com/blockscout/blockscout/pull/5829) - Bump mox from 0.5.2 to 1.0.2
+- [#5823](https://github.com/blockscout/blockscout/pull/5823) - Bump luxon from 2.4.0 to 3.0.1 in /apps/block_scout_web/assets
+- [#5837](https://github.com/blockscout/blockscout/pull/5837) - Bump @walletconnect/web3-provider from 1.7.8 to 1.8.0 in /apps/block_scout_web/assets
+- [#5840](https://github.com/blockscout/blockscout/pull/5840) - Bump web3modal from 1.9.5 to 1.9.8 in /apps/block_scout_web/assets
+- [#5842](https://github.com/blockscout/blockscout/pull/5842) - Bump copy-webpack-plugin from 10.2.1 to 11.0.0 in /apps/block_scout_web/assets
+- [#5835](https://github.com/blockscout/blockscout/pull/5835) - Bump tesla from 1.3.3 to 1.4.4
+- [#5841](https://github.com/blockscout/blockscout/pull/5841) - Bump sass-loader from 12.6.0 to 13.0.2 in /apps/block_scout_web/assets
+- [#5844](https://github.com/blockscout/blockscout/pull/5844) - Bump postcss-loader from 6.2.1 to 7.0.1 in /apps/block_scout_web/assets
+- [#5838](https://github.com/blockscout/blockscout/pull/5838) - Bump path-parser from 4.2.0 to 6.1.0 in /apps/block_scout_web/assets
+- [#5843](https://github.com/blockscout/blockscout/pull/5843) - Bump @tarekraafat/autocomplete.js from 10.2.6 to 10.2.7 in /apps/block_scout_web/assets
+- [#5834](https://github.com/blockscout/blockscout/pull/5834) - Bump clipboard from 2.0.9 to 2.0.11 in /apps/block_scout_web/assets
+- [#5827](https://github.com/blockscout/blockscout/pull/5827) - Bump @babel/core from 7.16.12 to 7.18.10 in /apps/block_scout_web/assets
+- [#5851](https://github.com/blockscout/blockscout/pull/5851) - Bump exvcr from 0.13.2 to 0.13.3
+- [#5824](https://github.com/blockscout/blockscout/pull/5824) - Bump ex_json_schema from 0.6.2 to 0.9.1
 - [#5849](https://github.com/blockscout/blockscout/pull/5849) - Bump gettext 0.18.2 -> 0.20.0
 - [#5806](https://github.com/blockscout/blockscout/pull/5806) - Update target Postgres version in Docker: 13 -> 14
 
