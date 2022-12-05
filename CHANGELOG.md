@@ -2,6 +2,14 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+## 4.1.6-beta
+
+### Features
+
 - [#5739](https://github.com/blockscout/blockscout/pull/5739) - Erigon archive node support
 - [#5732](https://github.com/blockscout/blockscout/pull/5732) - Manage testnet label (right to the navbar logo)
 - [#5699](https://github.com/blockscout/blockscout/pull/5699) - Switch to basic (non-pro) API endpoint for Coingecko requests, if API key is not provided
@@ -19,7 +27,8 @@
 - [#5778](https://github.com/blockscout/blockscout/pull/5778) - Allow hyphen in database name
 
 ### Chore
-
+- [#5787](https://github.com/blockscout/blockscout/pull/5787) - Add job for merging master to specific branch after release
+- [#5788](https://github.com/blockscout/blockscout/pull/5788) - Update Docker image on every push to master branch
 - [#5736](https://github.com/blockscout/blockscout/pull/5736) - Remove obsolete network selector
 - [#5730](https://github.com/blockscout/blockscout/pull/5730) - Add primary keys for DB tables where they do not exist
 - [#5703](https://github.com/blockscout/blockscout/pull/5703) - Remove bridged tokens functionality from Blockscout core
