@@ -1,9 +1,20 @@
 ## Current
 
 ### Features
+
+### Fixes
+- [#5786](https://github.com/blockscout/blockscout/pull/5786) - Replace `current_path` with `Controller.current_full_path` in two controllers
+
+### Chore
+
+## 4.1.7-beta
+
+### Features
 - [#5783](https://github.com/blockscout/blockscout/pull/5783) - Allow to setup multiple ranges of blocks to index
 
 ### Fixes
+- [#5799](https://github.com/blockscout/blockscout/pull/5799) - Fix address_tokens_usd_sum function
+- [#5798](https://github.com/blockscout/blockscout/pull/5798) - Copy explorer node_modules to result image
 - [#5797](https://github.com/blockscout/blockscout/pull/5797) - Fix flickering token tooltip
 
 ### Chore
