@@ -410,7 +410,7 @@ migrate_only:
 	@echo "==> Running migrations"
 	@docker run --rm \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
-					$(BS_CONTAINER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
+					$(BS_CONTAINER_IMAGE) /bin/sh -c "echo $$MIX_ENV && ./bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\""
 
 migrate: build postgres
 	@$(MAKE) -f $(THIS_FILE) migrate_only

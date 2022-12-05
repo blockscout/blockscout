@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:absinthe_relay, "~> 1.5"},
       {:bypass, "~> 1.0", only: :test},
       # To add (CORS)(https://www.w3.org/TR/cors/)
-      {:cors_plug, "~> 2.0"},
+      {:cors_plug, "~> 3.0"},
       {:credo, "~> 1.5", only: :test, runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 1.0.0"},
@@ -88,7 +88,7 @@ defmodule BlockScoutWeb.Mixfile do
       # HTML CSS selectors for Phoenix controller tests
       {:floki, "~> 0.31"},
       {:flow, "~> 0.12"},
-      {:gettext, "~> 0.18.2"},
+      {:gettext, "~> 0.20.0"},
       {:hammer, "~> 6.0"},
       {:httpoison, "~> 1.6"},
       {:indexer, in_umbrella: true, runtime: false},
