@@ -258,6 +258,7 @@ defmodule Explorer.Chain do
       query_to_address_hash_wrapped =
         InternalTransaction
         |> InternalTransaction.where_nonpending_block()
+        |> InternalTransaction.where_address_fields_match(hash, :to_address_hash)
         |> InternalTransaction.where_block_number_in_period(from_block, to_block)
         |> common_where_limit_order(paging_options)
         |> wrapped_union_subquery()
@@ -265,6 +266,7 @@ defmodule Explorer.Chain do
       query_from_address_hash_wrapped =
         InternalTransaction
         |> InternalTransaction.where_nonpending_block()
+        |> InternalTransaction.where_address_fields_match(hash, :from_address_hash)
         |> InternalTransaction.where_block_number_in_period(from_block, to_block)
         |> common_where_limit_order(paging_options)
         |> wrapped_union_subquery()
@@ -272,6 +274,7 @@ defmodule Explorer.Chain do
       query_created_contract_address_hash_wrapped =
         InternalTransaction
         |> InternalTransaction.where_nonpending_block()
+        |> InternalTransaction.where_address_fields_match(hash, :created_contract_address_hash)
         |> InternalTransaction.where_block_number_in_period(from_block, to_block)
         |> common_where_limit_order(paging_options)
         |> wrapped_union_subquery()
