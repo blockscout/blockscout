@@ -4,6 +4,7 @@
 - [#5860](https://github.com/blockscout/blockscout/pull/5860) - Integrate rust verifier micro-service ([blockscout-rs/verifier](https://github.com/blockscout/blockscout-rs/tree/main/verification))
 
 ### Fixes
+- [#5954](https://github.com/blockscout/blockscout/pull/5954) - Fix ace editor appearance
 - [#5942](https://github.com/blockscout/blockscout/pull/5942), [#5945](https://github.com/blockscout/blockscout/pull/5945) - Fix nightly solidity versions filtering UX
 - [#5904](https://github.com/blockscout/blockscout/pull/5904) - Enhance health API endpoint: better parsing HEALTHY_BLOCKS_PERIOD and use it in the response
 - [#5903](https://github.com/blockscout/blockscout/pull/5903) - Disable compile env validation
@@ -15,6 +16,7 @@
 - [#5948](https://github.com/blockscout/blockscout/pull/5948) - Fix unexpected messages in `CoinBalanceOnDemand`
 
 ### Chore
+- [#5836](https://github.com/blockscout/blockscout/pull/5836) - Bump comeonin from 4.1.2 to 5.3.3
 - [#5869](https://github.com/blockscout/blockscout/pull/5869) - Bump reduce-reducers from 0.4.3 to 1.0.4 in /apps/block_scout_web/assets
 - [#5919](https://github.com/blockscout/blockscout/pull/5919) - Bump floki from 0.32.1 to 0.33.1
 - [#5930](https://github.com/blockscout/blockscout/pull/5930) - Bump eslint from 8.21.0 to 8.22.0 in /apps/block_scout_web/assets

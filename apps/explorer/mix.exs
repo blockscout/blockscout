@@ -59,14 +59,14 @@ defmodule Explorer.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:bcrypt_elixir, "~> 1.0"},
+      {:bcrypt_elixir, "~> 3.0"},
       # benchmark optimizations
       {:benchee, "~> 1.1.0", only: :test},
       # CSV output for benchee
       {:benchee_csv, "~> 1.0.0", only: :test},
       {:bypass, "~> 2.1", only: :test},
       {:briefly, "~> 0.4", github: "CargoSense/briefly"},
-      {:comeonin, "~> 4.0"},
+      {:comeonin, "~> 5.3"},
       {:credo, "~> 1.5", only: :test, runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 1.0.0"},
