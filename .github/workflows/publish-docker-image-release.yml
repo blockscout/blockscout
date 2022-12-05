@@ -10,8 +10,8 @@ on:
     types: [published]
 
 env:
-  OTP_VERSION: '24.3.4.1'
-  ELIXIR_VERSION: '1.13.4'
+  OTP_VERSION: '25.1.1'
+  ELIXIR_VERSION: '1.14.2'
 
 jobs:
   push_to_registry:
