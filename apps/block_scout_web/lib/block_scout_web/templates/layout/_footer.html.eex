@@ -14,13 +14,6 @@
           <p class="footer-info-text">
             <%= gettext("Mantle is the first modular layer-2 blcokchain, combing hyperscale performance with security from Ethereum. Mantle powers whatever builders can dream.") %>
           </p>
-          <% version = version() %>
-          <%= unless ignore_version?(version) do %>
-            <% release_link = release_link(version) %>
-            <span>
-              <%= gettext("Version") %>: <%= release_link %>
-            </span>
-          <% end %>
         </div>
       </div>
 
