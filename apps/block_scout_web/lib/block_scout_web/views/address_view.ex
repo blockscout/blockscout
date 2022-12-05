@@ -181,9 +181,7 @@ defmodule BlockScoutWeb.AddressView do
   @doc """
   Returns the primary name of an address if available. If there is no names on address function performs preload of names association.
   """
-  def primary_name(_, second_time? \\ false)
-
-  def primary_name(%Address{names: [_ | _] = address_names}, _second_time?) do
+  def primary_name(%Address{names: [_ | _] = address_names}) do
     case Enum.find(address_names, &(&1.primary == true)) do
       nil ->
         %Address.Name{name: name} = Enum.at(address_names, 0)
@@ -194,11 +192,20 @@ defmodule BlockScoutWeb.AddressView do
     end
   end
 
-  def primary_name(%Address{names: _} = address, false) do
-    primary_name(Repo.preload(address, [:names]), true)
+  def primary_name(%Address{names: %Ecto.Association.NotLoaded{}} = address) do
+    primary_name(Repo.preload(address, [:names]))
   end
 
-  def primary_name(%Address{names: _}, true), do: nil
+  def primary_name(%Address{names: _} = address) do
+    with false <- is_nil(address.contract_code),
+         twin <- Chain.get_verified_twin_contract(address),
+         false <- is_nil(twin) do
+      twin.name
+    else
+      _ ->
+        nil
+    end
+  end
 
   def implementation_name(%Address{smart_contract: %{implementation_name: implementation_name}}),
     do: implementation_name
@@ -254,8 +261,8 @@ defmodule BlockScoutWeb.AddressView do
 
   def is_read_function?(function), do: Helper.queriable_method?(function) || Helper.read_with_wallet_method?(function)
 
-  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
-    Chain.proxy_contract?(address.hash, address.smart_contract.abi)
+  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}) do
+    SmartContract.proxy_contract?(smart_contract)
   end
 
   def smart_contract_is_proxy?(%Address{smart_contract: nil}), do: false

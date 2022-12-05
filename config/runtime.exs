@@ -89,8 +89,6 @@ config :block_scout_web,
   apps_menu: if(System.get_env("APPS_MENU", "false") == "true", do: true, else: false),
   apps: System.get_env("APPS") || System.get_env("EXTERNAL_APPS"),
   gas_price: System.get_env("GAS_PRICE", nil),
-  restricted_list: System.get_env("RESTRICTED_LIST", nil),
-  restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil),
   dark_forest_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST"),
   dark_forest_addresses_v_0_5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5"),
   circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES"),
@@ -213,7 +211,17 @@ config :explorer,
     if(disable_webapp != "true",
       do: Explorer.Chain.Events.SimpleSender,
       else: Explorer.Chain.Events.DBSender
-    )
+    ),
+  enable_caching_implementation_data_of_proxy: true,
+  avg_block_time_as_ttl_cached_implementation_data_of_proxy: true,
+  fallback_ttl_cached_implementation_data_of_proxy: :timer.seconds(4),
+  implementation_data_fetching_timeout: :timer.seconds(2),
+  restricted_list: System.get_env("RESTRICTED_LIST", nil),
+  restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil)
+
+config :explorer, Explorer.Visualize.Sol2uml,
+  service_url: System.get_env("VISUALIZE_SOL2UML_SERVICE_URL"),
+  enabled: System.get_env("VISUALIZE_SOL2UML_ENABLED") == "true"
 
 config :explorer, Explorer.Chain.Events.Listener,
   enabled:

@@ -60,13 +60,13 @@ defmodule Explorer.Etherscan.Contracts do
 
   def append_proxy_info(%Address{smart_contract: smart_contract} = address) when not is_nil(smart_contract) do
     updated_smart_contract =
-      if Chain.proxy_contract?(address.hash, smart_contract.abi) do
+      if SmartContract.proxy_contract?(smart_contract) do
         smart_contract
         |> Map.put(:is_proxy, true)
         |> Map.put(
           :implementation_address_hash_string,
-          address.hash
-          |> Chain.get_implementation_address_hash(smart_contract.abi)
+          smart_contract
+          |> SmartContract.get_implementation_address_hash()
           |> Tuple.to_list()
           |> List.first()
         )

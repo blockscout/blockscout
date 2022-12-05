@@ -1,0 +1,36 @@
+<section class="container">
+    <div class="card">
+        <div class="card-body fs-14" data-async-contract-svg="<%= @get_svg_path %>">
+            <div class="card-title lg-card-title mb-2">
+                <div class="title-with-label"><%= gettext("UML diagram") %></div>
+                <h3>
+                    <%= gettext("For contract") %>
+                    <%= link to: address_contract_path(@conn, :index, @address), "data-test": "address_hash_link" do %>
+                        <%= render(
+                            BlockScoutWeb.AddressView,
+                            "_responsive_hash.html",
+                            address: @address,
+                            contract: true,
+                            use_custom_tooltip: false
+                        ) %>
+                    <% end %>
+                </h3>
+            </div>
+            <div class="row d-flex justify-content-center">
+                <span class="loading-spinner" id="spinner">
+                    <span class="loading-spinner-block-1"></span>
+                    <span class="loading-spinner-block-2"></span>
+                </span>
+
+                <div data-selector="contract-image">
+                    <span data-toggle="tooltip" data-placement="top" title="Click on image to zoom">
+                    <div id="gallery">
+                         <img src="" style="max-width: 100%; max-height: 100%;">
+                    </div>
+                 </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/sol2uml.js") %>"></script>
+</section>

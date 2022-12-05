@@ -36,7 +36,7 @@ defmodule Explorer.TokenTransferTokenIdMigration.Worker do
   @impl true
   def handle_info(:update, %{current_range: {lower_bound, upper_bound}} = state) do
     case do_update(lower_bound, upper_bound) do
-      {_total, _result} ->
+      true ->
         LowestBlockNumberUpdater.add_range(upper_bound, lower_bound)
         new_range = calculate_new_range(lower_bound, state.bottom_block, state.batch_size, state.step)
         schedule_next_update()
@@ -60,21 +60,22 @@ defmodule Explorer.TokenTransferTokenIdMigration.Worker do
   end
 
   defp do_update(lower_bound, upper_bound) do
-    query =
+    token_transfers_batch_query =
       from(
         tt in TokenTransfer,
         where: tt.block_number >= ^lower_bound,
-        where: tt.block_number <= ^upper_bound,
-        where: not is_nil(tt.token_id),
-        update: [
-          set: [
-            token_ids: fragment("ARRAY_APPEND(ARRAY[]::decimal[], ?)", tt.token_id),
-            token_id: nil
-          ]
-        ]
+        where: tt.block_number <= ^upper_bound
       )
 
-    Repo.update_all(query, [], timeout: :infinity)
+    token_transfers_batch_query
+    |> Repo.all()
+    |> Enum.filter(fn %{token_id: token_id} -> not is_nil(token_id) end)
+    |> Enum.map(fn token_transfer ->
+      token_transfer
+      |> TokenTransfer.changeset(%{token_ids: [token_transfer.token_id], token_id: nil})
+      |> Repo.update()
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
   end
 
   defp schedule_next_update do
