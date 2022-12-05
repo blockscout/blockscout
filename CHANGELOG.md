@@ -56,6 +56,7 @@
 - [#6449](https://github.com/blockscout/blockscout/pull/6449) - Search min_missing_block_number from zero
 - [#6492](https://github.com/blockscout/blockscout/pull/6492) - Remove token instance owner fetching
 - [#6536](https://github.com/blockscout/blockscout/pull/6536) - Fix internal transactions query
+- [#6550](https://github.com/blockscout/blockscout/pull/6550) - Query token transfers before updating
 
 ### Chore
 
