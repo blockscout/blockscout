@@ -44,7 +44,7 @@
           >
             <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Loading...") %>
           </button>
-          <%= submit gettext("Verify & publish"), class: "btn-full-primary mr-2", "data-button-loading": "animation"  %>
+          <%= submit gettext("Verify & publish"), class: "btn-full-primary mr-2", "data-button-loading": "animation", "data-submit-button": "" %>
           <%= reset gettext("Reset"), class: "btn-line mr-2 js-smart-contract-form-reset" %>
           <%=
             link(
@@ -56,5 +56,4 @@
         </div>
       <% end %>
     </div>
-    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
 </section>

@@ -4,6 +4,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   """
   use Tesla
 
+  alias Explorer.SmartContract.{Helper, RustVerifierInterface}
   alias HTTPoison.{Error, Response}
   alias Tesla.Multipart
 
@@ -11,7 +12,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   @failed_verification_message "Unsuccessful Sourcify verification"
 
   def check_by_address(address_hash_string) do
-    chain_id = config(:chain_id)
+    chain_id = config(__MODULE__, :chain_id)
     params = [addresses: address_hash_string, chainIds: chain_id]
     http_get_request(check_by_address_url(), params)
   end
@@ -27,7 +28,15 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   def verify(address_hash_string, files) do
-    chain_id = config(:chain_id)
+    if RustVerifierInterface.enabled?() do
+      verify_via_rust_microservice(address_hash_string, files)
+    else
+      verify_via_sourcify_server(address_hash_string, files)
+    end
+  end
+
+  def verify_via_sourcify_server(address_hash_string, files) do
+    chain_id = config(__MODULE__, :chain_id)
 
     multipart_text_params =
       Multipart.new()
@@ -90,6 +99,44 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     end
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
+  def verify_via_rust_microservice(address_hash_string, files) do
+    chain_id = config(__MODULE__, :chain_id)
+
+    body_params =
+      Map.new()
+      |> Map.put("chain", chain_id)
+      |> Map.put("address", address_hash_string)
+
+    files_body =
+      files
+      |> Enum.reduce(Map.new(), fn file, acc ->
+        if file do
+          {:ok, file_content} = File.read(file.path)
+
+          file_content =
+            if Helper.json_file?(file.filename) do
+              file_content
+              |> Jason.decode!()
+              |> Jason.encode!()
+            else
+              file_content
+            end
+
+          acc
+          |> Map.put(file.filename, file_content)
+        else
+          acc
+        end
+      end)
+
+    body =
+      body_params
+      |> Map.put("files", files_body)
+
+    http_post_request_rust_microservice(verify_url_rust_microservice(), body)
+  end
+
   def http_get_request(url, params) do
     request = HTTPoison.get(url, [], params: params)
 
@@ -129,6 +176,18 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     end
   end
 
+  def http_post_request_rust_microservice(url, body) do
+    request = HTTPoison.post(url, Jason.encode!(body), [{"Content-Type", "application/json"}], recv_timeout: :infinity)
+
+    case request do
+      {:ok, %Response{body: body, status_code: 200}} ->
+        process_sourcify_response(url, body)
+
+      _ ->
+        {:error, "Unexpected response from Sourcify verify method"}
+    end
+  end
+
   defp process_sourcify_response(url, body) do
     cond do
       url =~ "check-by-addresses" ->
@@ -152,8 +211,16 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     body_json = decode_json(body)
 
     case body_json do
+      # Success status from native Sourcify server
       %{"result" => [%{"status" => "perfect"}]} ->
         {:ok, body_json}
+
+      # Success status code from Rust microservice
+      %{"status" => "0"} ->
+        {:ok, body_json}
+
+      %{"status" => "1", "message" => message} ->
+        {:error, message}
 
       %{"result" => [%{"status" => unknown_status}]} ->
         {:error, unknown_status}
@@ -338,18 +405,22 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     _ -> data
   end
 
-  defp config(key) do
+  defp config(module, key) do
     :explorer
-    |> Application.get_env(__MODULE__)
+    |> Application.get_env(module)
     |> Keyword.get(key)
   end
 
   defp base_server_url do
-    config(:server_url)
+    config(__MODULE__, :server_url)
   end
 
   defp verify_url do
     "#{base_server_url()}" <> "/verify"
+  end
+
+  defp verify_url_rust_microservice do
+    "#{RustVerifierInterface.base_api_url()}" <> "/sourcify/verify"
   end
 
   defp check_by_address_url do
@@ -357,12 +428,12 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp get_metadata_url do
-    chain_id = config(:chain_id)
+    chain_id = config(__MODULE__, :chain_id)
     "#{base_server_url()}" <> "/files/" <> chain_id
   end
 
   defp get_metadata_any_url do
-    chain_id = config(:chain_id)
+    chain_id = config(__MODULE__, :chain_id)
     "#{base_server_url()}" <> "/files/any/" <> chain_id
   end
 

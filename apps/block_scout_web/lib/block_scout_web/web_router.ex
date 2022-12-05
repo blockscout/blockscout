@@ -168,6 +168,13 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
+        "/verify-via-multi-part-files",
+        AddressContractVerificationViaMultiPartFilesController,
+        only: [:new],
+        as: :verify_contract_via_multi_part_files
+      )
+
+      resources(
         "/verify-vyper-contract",
         AddressContractVerificationVyperController,
         only: [:new, :create],

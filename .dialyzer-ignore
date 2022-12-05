@@ -27,11 +27,11 @@ lib/indexer/fetcher/token_total_supply_on_demand.ex:16
 lib/explorer/exchange_rates/source.ex:116
 lib/explorer/exchange_rates/source.ex:119
 lib/explorer/smart_contract/verifier.ex:89
-lib/explorer/smart_contract/solidity/verifier.ex:223
+lib/explorer/smart_contract/solidity/verifier.ex:310
 lib/block_scout_web/templates/address_contract/index.html.eex:170
 lib/block_scout_web/templates/address_contract/index.html.eex:207
-lib/explorer/third_party_integrations/sourcify.ex:112
-lib/explorer/third_party_integrations/sourcify.ex:115
+lib/explorer/third_party_integrations/sourcify.ex:159
+lib/explorer/third_party_integrations/sourcify.ex:162
 lib/block_scout_web/views/transaction_view.ex:137
 lib/block_scout_web/views/transaction_view.ex:152
 lib/block_scout_web/views/transaction_view.ex:197

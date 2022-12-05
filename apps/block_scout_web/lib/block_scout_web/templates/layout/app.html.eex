@@ -290,6 +290,7 @@
       @view_module != Elixir.BlockScoutWeb.Admin.DashboardView &&
       @view_module != Elixir.BlockScoutWeb.SearchView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView &&
+      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView &&
       @view_module != Elixir.BlockScoutWeb.BlockEpochTransactionView &&
       @view_module != Elixir.BlockScoutWeb.StakesView &&
       @view_module != Elixir.BlockScoutWeb.AddressEpochTransactionView
@@ -308,5 +309,11 @@
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
     <% end %>
     <script defer src="<%= static_path(@conn, "/js/autocomplete.js") %>"></script>
+    <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationView, Elixir.BlockScoutWeb.AddressContractVerificationVyperView, Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView, Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
+      <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
+    <% end %>
+    <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
+      <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/dropzone.js") %>"></script>
+    <% end %>
   </body>
 </html>

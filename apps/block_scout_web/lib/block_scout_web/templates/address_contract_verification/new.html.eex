@@ -23,6 +23,13 @@
                     <%= label :verify_via, :true, gettext("Via Sourcify: Sources and metadata JSON file"), class: "radio-text" %>
                   </div>
                 <% end %>
+                <%= if RustVerifierInterface.enabled?() do %>
+                  <div class="radio-big">
+                    <%= radio_button f, :verify_via, false, class: "form-check-input verify-via-multi-part-files" %>
+                    <div class="radio-icon"></div>
+                    <%= label :verify_via, :false, gettext("Via multi-part files"), class: "radio-text" %>
+                  </div>
+                <% end %>
                 <div class="radio-big">
                   <%= radio_button f, :verify_via, false, class: "form-check-input verify-vyper-contract" %>
                   <div class="radio-icon"></div>

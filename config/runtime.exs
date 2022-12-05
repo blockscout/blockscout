@@ -332,6 +332,10 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   chain_id: System.get_env("CHAIN_ID"),
   repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://repo.sourcify.dev/contracts"
 
+config :explorer, Explorer.SmartContract.RustVerifierInterface,
+  service_url: System.get_env("RUST_VERIFICATION_SERVICE_URL"),
+  enabled: System.get_env("ENABLE_RUST_VERIFICATION_SERVICE") == "true"
+
 ###############
 ### Indexer ###
 ###############
