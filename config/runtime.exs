@@ -407,7 +407,6 @@ coin_balance_on_demand_fetcher_threshold =
 
 config :indexer, Indexer.Fetcher.CoinBalanceOnDemand, threshold: coin_balance_on_demand_fetcher_threshold
 
-# config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
 config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_BLOCK_REWARD_FETCHER", "false") == "true"
 

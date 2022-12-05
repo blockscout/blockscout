@@ -6,6 +6,7 @@
 - [#5786](https://github.com/blockscout/blockscout/pull/5786) - Replace `current_path` with `Controller.current_full_path` in two controllers
 
 ### Chore
+- [#5806](https://github.com/blockscout/blockscout/pull/5806) - Update target Postgres version in Docker: 13 -> 14
 
 ## 4.1.7-beta
 
