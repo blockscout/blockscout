@@ -176,6 +176,12 @@ config :ethereum_jsonrpc, :internal_transaction_timeout, debug_trace_transaction
 disable_indexer = System.get_env("DISABLE_INDEXER")
 disable_webapp = System.get_env("DISABLE_WEBAPP")
 
+healthy_blocks_period =
+  case Integer.parse(System.get_env("HEALTHY_BLOCKS_PERIOD", "")) do
+    {secs, ""} -> :timer.seconds(secs)
+    _ -> :timer.minutes(5)
+  end
+
 config :explorer,
   coin: System.get_env("COIN") || "CELO",
   coin_name: System.get_env("COIN_NAME") || System.get_env("COIN") || "CELO",
@@ -184,11 +190,7 @@ config :explorer,
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,default",
   include_uncles_in_average_block_time:
     if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
-  healthy_blocks_period:
-    (case Integer.parse(System.get_env("HEALTHY_BLOCKS_PERIOD", "")) do
-       {secs, ""} -> :timer.seconds(secs)
-       _ -> :timer.minutes(5)
-     end),
+  healthy_blocks_period: healthy_blocks_period,
   realtime_events_sender:
     if(disable_webapp != "true",
       do: Explorer.Chain.Events.SimpleSender,

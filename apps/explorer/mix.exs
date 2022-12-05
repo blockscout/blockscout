@@ -61,9 +61,9 @@ defmodule Explorer.Mixfile do
     [
       {:bcrypt_elixir, "~> 1.0"},
       # benchmark optimizations
-      {:benchee, "~> 0.13.1", only: :test},
+      {:benchee, "~> 0.99.0", only: :test},
       # CSV output for benchee
-      {:benchee_csv, "~> 0.8.0", only: :test},
+      {:benchee_csv, "~> 1.0.0", only: :test},
       {:bypass, "~> 1.0", only: :test},
       {:briefly, "~> 0.4", github: "CargoSense/briefly"},
       {:comeonin, "~> 4.0"},

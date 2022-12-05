@@ -57,3 +57,5 @@ node_modules
 
 .idea/
 *.iml
+
+.vscode
