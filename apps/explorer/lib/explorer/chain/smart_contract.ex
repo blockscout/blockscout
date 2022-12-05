@@ -261,6 +261,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:implementation_address_hash, Hash.Address, default: nil)
     field(:autodetect_constructor_args, :boolean, virtual: true)
     field(:is_yul, :boolean, virtual: true)
+    field(:metadata_from_verified_twin, :boolean, virtual: true)
 
     has_many(
       :decompiled_smart_contracts,
@@ -529,7 +530,11 @@ defmodule Explorer.Chain.SmartContract do
 
   def proxy_contract?(_), do: false
 
-  def get_implementation_address_hash(%__MODULE__{abi: nil}), do: false
+  def get_implementation_address_hash(%__MODULE__{abi: nil}), do: {nil, nil}
+
+  def get_implementation_address_hash(%__MODULE__{metadata_from_verified_twin: true} = smart_contract) do
+    get_implementation_address_hash({:updated, smart_contract})
+  end
 
   def get_implementation_address_hash(
         %__MODULE__{
@@ -540,7 +545,7 @@ defmodule Explorer.Chain.SmartContract do
     updated_smart_contract =
       if Application.get_env(:explorer, :enable_caching_implementation_data_of_proxy) &&
            check_implementation_refetch_neccessity(implementation_fetched_at) do
-        Chain.address_hash_to_smart_contract(address_hash)
+        Chain.address_hash_to_smart_contract_without_twin(address_hash)
       else
         smart_contract
       end
@@ -555,11 +560,13 @@ defmodule Explorer.Chain.SmartContract do
            abi: abi,
            implementation_address_hash: implementation_address_hash_from_db,
            implementation_name: implementation_name_from_db,
-           implementation_fetched_at: implementation_fetched_at
+           implementation_fetched_at: implementation_fetched_at,
+           metadata_from_verified_twin: metadata_from_verified_twin
          }}
       ) do
     if check_implementation_refetch_neccessity(implementation_fetched_at) do
-      get_implementation_address_hash_task = Task.async(fn -> get_implementation_address_hash(address_hash, abi) end)
+      get_implementation_address_hash_task =
+        Task.async(fn -> get_implementation_address_hash(address_hash, abi, metadata_from_verified_twin) end)
 
       timeout = Application.get_env(:explorer, :implementation_data_fetching_timeout)
 
@@ -624,8 +631,9 @@ defmodule Explorer.Chain.SmartContract do
     end
   end
 
-  @spec get_implementation_address_hash(Hash.Address.t(), list()) :: {String.t() | nil, String.t() | nil}
-  defp get_implementation_address_hash(proxy_address_hash, abi)
+  @spec get_implementation_address_hash(Hash.Address.t(), list(), boolean() | nil) ::
+          {String.t() | nil, String.t() | nil}
+  defp get_implementation_address_hash(proxy_address_hash, abi, metadata_from_verified_twin)
        when not is_nil(proxy_address_hash) and not is_nil(abi) do
     implementation_method_abi =
       abi
@@ -651,10 +659,10 @@ defmodule Explorer.Chain.SmartContract do
           get_implementation_address_hash_eip_1967(proxy_address_hash)
       end
 
-    save_implementation_data(implementation_address, proxy_address_hash)
+    save_implementation_data(implementation_address, proxy_address_hash, metadata_from_verified_twin)
   end
 
-  defp get_implementation_address_hash(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
+  defp get_implementation_address_hash(_proxy_address_hash, _abi, _) do
     {nil, nil}
   end
 
@@ -794,28 +802,30 @@ defmodule Explorer.Chain.SmartContract do
     abi_decode_address_output(implementation_address)
   end
 
-  defp save_implementation_data(nil, _), do: {nil, nil}
+  defp save_implementation_data(nil, _, _), do: {nil, nil}
 
-  defp save_implementation_data(empty_address_hash_string, proxy_address_hash)
+  defp save_implementation_data(empty_address_hash_string, proxy_address_hash, metadata_from_verified_twin)
        when empty_address_hash_string in [
               "0x",
               "0x0",
               "0x0000000000000000000000000000000000000000000000000000000000000000",
               @burn_address_hash_str
             ] do
-    proxy_address_hash
-    |> Chain.address_hash_to_smart_contract_without_twin()
-    |> changeset(%{
-      implementation_name: nil,
-      implementation_address_hash: nil,
-      implementation_fetched_at: DateTime.utc_now()
-    })
-    |> Repo.update()
+    if is_nil(metadata_from_verified_twin) or !metadata_from_verified_twin do
+      proxy_address_hash
+      |> Chain.address_hash_to_smart_contract_without_twin()
+      |> changeset(%{
+        implementation_name: nil,
+        implementation_address_hash: nil,
+        implementation_fetched_at: DateTime.utc_now()
+      })
+      |> Repo.update()
+    end
 
     {:empty, :empty}
   end
 
-  defp save_implementation_data(implementation_address_hash_string, proxy_address_hash)
+  defp save_implementation_data(implementation_address_hash_string, proxy_address_hash, _)
        when is_binary(implementation_address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(implementation_address_hash_string),
          proxy_contract <- Chain.address_hash_to_smart_contract_without_twin(proxy_address_hash),
@@ -844,6 +854,12 @@ defmodule Explorer.Chain.SmartContract do
         |> Repo.update()
 
         {implementation_address_hash_string, nil}
+
+      true ->
+        {:ok, address_hash} = Chain.string_to_address_hash(implementation_address_hash_string)
+        smart_contract = Chain.address_hash_to_smart_contract(address_hash)
+
+        {implementation_address_hash_string, smart_contract && smart_contract.name}
 
       _ ->
         {implementation_address_hash_string, nil}

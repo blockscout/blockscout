@@ -136,6 +136,165 @@ defmodule Explorer.Chain.SmartContractTest do
       verify!(EthereumJSONRPC.Mox)
       assert_empty_implementation(smart_contract.address_hash)
     end
+
+    test "test get_implementation_adddress_hash/1 for twins contract" do
+      # return nils for nil
+      assert {nil, nil} = SmartContract.get_implementation_address_hash(nil)
+      smart_contract = insert(:smart_contract)
+      another_address = insert(:contract_address)
+
+      twin = Chain.address_hash_to_smart_contract(another_address.hash)
+      implementation_smart_contract = insert(:smart_contract, name: "proxy")
+
+      Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, :timer.seconds(20))
+      Application.put_env(:explorer, :implementation_data_fetching_timeout, :timer.seconds(20))
+
+      # fetch nil implementation
+      get_eip1967_implementation_zero_addresses()
+      assert {nil, nil} = SmartContract.get_implementation_address_hash(twin)
+      verify!(EthereumJSONRPC.Mox)
+      assert_implementation_never_fetched(smart_contract.address_hash)
+
+      get_eip1967_implementation_zero_addresses()
+      assert {nil, nil} = SmartContract.get_implementation_address_hash(twin)
+      verify!(EthereumJSONRPC.Mox)
+      assert_implementation_never_fetched(smart_contract.address_hash)
+
+      string_implementation_address_hash = to_string(implementation_smart_contract.address_hash)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                  id: 0,
+                                                  method: "eth_getStorageAt",
+                                                  params: [
+                                                    _,
+                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                    "latest"
+                                                  ]
+                                                },
+                                                _options ->
+        {:ok, string_implementation_address_hash}
+      end)
+
+      assert {^string_implementation_address_hash, "proxy"} = SmartContract.get_implementation_address_hash(twin)
+
+      verify!(EthereumJSONRPC.Mox)
+
+      assert_implementation_never_fetched(smart_contract.address_hash)
+
+      get_eip1967_implementation_error_response()
+
+      assert {nil, nil} = SmartContract.get_implementation_address_hash(twin)
+
+      verify!(EthereumJSONRPC.Mox)
+
+      assert_implementation_never_fetched(smart_contract.address_hash)
+
+      {:ok, addr} = Chain.hash_to_address(another_address.hash)
+      twin = addr.smart_contract
+
+      implementation_smart_contract = insert(:smart_contract, name: "proxy")
+
+      Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, :timer.seconds(20))
+      Application.put_env(:explorer, :implementation_data_fetching_timeout, :timer.seconds(20))
+
+      # fetch nil implementation
+      get_eip1967_implementation_zero_addresses()
+      assert {nil, nil} = SmartContract.get_implementation_address_hash(twin)
+      verify!(EthereumJSONRPC.Mox)
+      assert_implementation_never_fetched(smart_contract.address_hash)
+
+      get_eip1967_implementation_zero_addresses()
+      assert {nil, nil} = SmartContract.get_implementation_address_hash(twin)
+      verify!(EthereumJSONRPC.Mox)
+      assert_implementation_never_fetched(smart_contract.address_hash)
+
+      string_implementation_address_hash = to_string(implementation_smart_contract.address_hash)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                  id: 0,
+                                                  method: "eth_getStorageAt",
+                                                  params: [
+                                                    _,
+                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                    "latest"
+                                                  ]
+                                                },
+                                                _options ->
+        {:ok, string_implementation_address_hash}
+      end)
+
+      assert {^string_implementation_address_hash, "proxy"} = SmartContract.get_implementation_address_hash(twin)
+
+      verify!(EthereumJSONRPC.Mox)
+
+      assert_implementation_never_fetched(smart_contract.address_hash)
+
+      get_eip1967_implementation_error_response()
+
+      assert {nil, nil} = SmartContract.get_implementation_address_hash(twin)
+
+      verify!(EthereumJSONRPC.Mox)
+
+      assert_implementation_never_fetched(smart_contract.address_hash)
+
+      {:ok, addr} =
+        Chain.find_contract_address(
+          another_address.hash,
+          [
+            necessity_by_association: %{
+              :smart_contract => :optional
+            }
+          ],
+          true
+        )
+
+      twin = addr.smart_contract
+
+      implementation_smart_contract = insert(:smart_contract, name: "proxy")
+
+      Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, :timer.seconds(20))
+      Application.put_env(:explorer, :implementation_data_fetching_timeout, :timer.seconds(20))
+
+      # fetch nil implementation
+      get_eip1967_implementation_zero_addresses()
+      assert {nil, nil} = SmartContract.get_implementation_address_hash(twin)
+      verify!(EthereumJSONRPC.Mox)
+      assert_implementation_never_fetched(smart_contract.address_hash)
+
+      get_eip1967_implementation_zero_addresses()
+      assert {nil, nil} = SmartContract.get_implementation_address_hash(twin)
+      verify!(EthereumJSONRPC.Mox)
+      assert_implementation_never_fetched(smart_contract.address_hash)
+
+      string_implementation_address_hash = to_string(implementation_smart_contract.address_hash)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                  id: 0,
+                                                  method: "eth_getStorageAt",
+                                                  params: [
+                                                    _,
+                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                    "latest"
+                                                  ]
+                                                },
+                                                _options ->
+        {:ok, string_implementation_address_hash}
+      end)
+
+      assert {^string_implementation_address_hash, "proxy"} = SmartContract.get_implementation_address_hash(twin)
+
+      verify!(EthereumJSONRPC.Mox)
+
+      assert_implementation_never_fetched(smart_contract.address_hash)
+
+      get_eip1967_implementation_error_response()
+
+      assert {nil, nil} = SmartContract.get_implementation_address_hash(twin)
+
+      verify!(EthereumJSONRPC.Mox)
+
+      assert_implementation_never_fetched(smart_contract.address_hash)
+    end
   end
 
   def get_eip1967_implementation_zero_addresses do
@@ -212,6 +371,13 @@ defmodule Explorer.Chain.SmartContractTest do
   def assert_empty_implementation(address_hash) do
     contract = Chain.address_hash_to_smart_contract(address_hash)
     assert contract.implementation_fetched_at
+    refute contract.implementation_name
+    refute contract.implementation_address_hash
+  end
+
+  def assert_implementation_never_fetched(address_hash) do
+    contract = Chain.address_hash_to_smart_contract(address_hash)
+    refute contract.implementation_fetched_at
     refute contract.implementation_name
     refute contract.implementation_address_hash
   end
