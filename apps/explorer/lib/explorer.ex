@@ -13,4 +13,8 @@ defmodule Explorer do
   def coin do
     Application.get_env(:explorer, :coin)
   end
+
+  def coin_name do
+    Application.get_env(:explorer, :coin_name)
+  end
 end

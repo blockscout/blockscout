@@ -37,15 +37,15 @@ defmodule Explorer.GraphQL do
   Returns a query to fetch transactions with a matching `to_address_hash`,
   `from_address_hash`, or `created_contract_address_hash` field for a given address hash.
 
-  Orders transactions by descending block number and index.
+  Orders transactions by `block_number` and `index` according to to `order`
   """
-  @spec address_to_transactions_query(Hash.Address.t()) :: Ecto.Query.t()
-  def address_to_transactions_query(address_hash) do
+  @spec address_to_transactions_query(Hash.Address.t(), :desc | :asc) :: Ecto.Query.t()
+  def address_to_transactions_query(address_hash, order) do
     Transaction
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> where([transaction], transaction.to_address_hash == ^address_hash)
     |> or_where([transaction], transaction.from_address_hash == ^address_hash)
     |> or_where([transaction], transaction.created_contract_address_hash == ^address_hash)
+    |> order_by([transaction], [{^order, transaction.block_number}, {^order, transaction.index}])
   end
 
   def address_to_account_query(address_hash) do

@@ -9,10 +9,6 @@ config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
   wait_per_timeout: :timer.seconds(20),
   max_jitter: :timer.seconds(2)
 
-config :ethereum_jsonrpc,
-  rpc_transport: if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http", do: :http, else: :ipc),
-  ipc_path: System.get_env("IPC_PATH")
-
 # Add this configuration to add global RPC request throttling.
 # throttle_rate_limit: 250,
 # throttle_rolling_window_opts: [
@@ -33,9 +29,6 @@ config :logger_json, :ethereum_jsonrpc,
   metadata_filter: [application: :ethereum_jsonrpc]
 
 config :logger, :ethereum_jsonrpc, backends: [LoggerJSON]
-
-debug_trace_transaction_timeout = System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "900s")
-config :ethereum_jsonrpc, :internal_transaction_timeout, debug_trace_transaction_timeout
 
 # config :logger, :ethereum_jsonrpc,
 #  # keep synced with `config/config.exs`
