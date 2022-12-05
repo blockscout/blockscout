@@ -8,6 +8,7 @@
 - [#5807](https://github.com/blockscout/blockscout/pull/5807) - Update Makefile migrate command due to release build
 
 ### Chore
+- [#5863](https://github.com/blockscout/blockscout/pull/5863) - Update Poison hex package
 - [#5861](https://github.com/blockscout/blockscout/pull/5861) - Add cache for docker build
 - [#5859](https://github.com/blockscout/blockscout/pull/5859) - Update ex_cldr hex packages
 - [#5858](https://github.com/blockscout/blockscout/pull/5858) - Update CHANGELOG; revert update of css-loader; rename fontawesome icons selectors
