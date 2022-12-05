@@ -6,6 +6,8 @@
 - [#5809](https://github.com/blockscout/blockscout/pull/5809) - Fix 404 on `/metadata` page
 - [#5786](https://github.com/blockscout/blockscout/pull/5786) - Replace `current_path` with `Controller.current_full_path` in two controllers
 - [#5807](https://github.com/blockscout/blockscout/pull/5807) - Update Makefile migrate command due to release build
+- [#5887](https://github.com/blockscout/blockscout/pull/5887) - Added missing environment variables to Makefile container params
+- [#5903](https://github.com/blockscout/blockscout/pull/5903) - Disable compile env validation
 
 ### Chore
 - [#5863](https://github.com/blockscout/blockscout/pull/5863) - Update Poison hex package
