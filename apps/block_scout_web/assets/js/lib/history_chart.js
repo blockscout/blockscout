@@ -41,11 +41,11 @@ function getMarketCapChartColor () {
 }
 
 function xAxe () {
-  let color;
+  let color
   if (localStorage.getItem('current-color-mode') === 'dark') {
-    color = '#F0F1F2';
+    color = '#F0F1F2'
   } else {
-    color = ' #41474D';
+    color = '#41474D'
   }
   return {
     grid,
@@ -56,7 +56,7 @@ function xAxe () {
       stepSize: 14
     },
     ticks: {
-      color: color
+      color
     }
   }
 }
@@ -73,12 +73,12 @@ const legend = {
 function formatValue (val) {
   return `${numeral(val).format('0,0')}`
 }
-let color;
-  if (localStorage.getItem('current-color-mode') === 'dark') {
-    color = '#F0F1F2';
-  } else {
-    color = ' #41474D';
-  }
+let color
+if (localStorage.getItem('current-color-mode') === 'dark') {
+  color = '#F0F1F2'
+} else {
+  color = ' #41474D'
+}
 const config = {
   type: 'line',
   responsive: true,
@@ -122,7 +122,7 @@ const config = {
           beginAtZero: true,
           callback: (value, _index, _values) => formatValue(value),
           maxTicksLimit: 4,
-          color: sassVariables.dashboardBannerChartAxisFontColor
+          color
         }
       }
     },
