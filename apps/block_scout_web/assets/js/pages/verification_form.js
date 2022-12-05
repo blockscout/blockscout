@@ -124,6 +124,10 @@ const elements = {
         renderValidationErrors(state.validationErrors)
       } else if (state.newForm) {
         $el.replaceWith(state.newForm)
+
+        if ($('.nightly-builds-true').prop('checked')) { filterNightlyBuilds(false, false) }
+        if ($('.nightly-builds-false').prop('checked')) { filterNightlyBuilds(true, false) }
+
         initializeDropzone()
         state.newForm = null
 
@@ -138,15 +142,21 @@ const elements = {
 const $contractVerificationPage = $('[data-page="contract-verification"]')
 const $contractVerificationChooseTypePage = $('[data-page="contract-verification-choose-type"]')
 
-function filterNightlyBuilds (filter) {
+function filterNightlyBuilds (filter, selectFirstNonNightly_) {
   const select = document.getElementById('smart_contract_compiler_version')
   const options = select.getElementsByTagName('option')
+  let selectFirstNonNightly = selectFirstNonNightly_
+
   for (const option of options) {
     const txtValue = option.textContent || option.innerText
     if (filter) {
       if (txtValue.toLowerCase().indexOf('nightly') > -1) {
         option.style.display = 'none'
       } else {
+        if (selectFirstNonNightly) {
+          option.selected = 'selected'
+          selectFirstNonNightly = false
+        }
         option.style.display = ''
       }
     } else {
@@ -225,11 +235,11 @@ if ($contractVerificationPage.length) {
     })
 
     $('body').on('click', '.nightly-builds-true', function () {
-      if ($(this).prop('checked')) { filterNightlyBuilds(false) }
+      if ($(this).prop('checked')) { filterNightlyBuilds(false, true) }
     })
 
     $('body').on('click', '.nightly-builds-false', function () {
-      if ($(this).prop('checked')) { filterNightlyBuilds(true) }
+      if ($(this).prop('checked')) { filterNightlyBuilds(true, true) }
     })
 
     $('body').on('click', '.optimization-false', function () {
