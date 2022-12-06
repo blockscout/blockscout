@@ -40,4 +40,11 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     conn
     |> call({:not_found, nil})
   end
+
+  def call(conn, {:restricted_access, true}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Restricted access"})
+  end
 end
