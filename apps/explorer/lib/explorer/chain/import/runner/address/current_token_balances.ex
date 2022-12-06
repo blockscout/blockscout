@@ -252,7 +252,13 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list =
       changes_list
-      |> Enum.map(fn change -> Map.put_new(change, :token_id, nil) end)
+      |> Enum.map(fn change ->
+        if Map.has_key?(change, :token_id) and Map.get(change, :token_type) == "ERC-1155" do
+          change
+        else
+          Map.put(change, :token_id, nil)
+        end
+      end)
       |> Enum.group_by(fn %{
                             address_hash: address_hash,
                             token_contract_address_hash: token_contract_address_hash,
