@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
          {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:watchlist, %{watchlists: [watchlist | _]}} <-
            {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
-         watchlist_with_addresses <- preload_watchlist_address_fetched_coin_balance(watchlist) do
+         watchlist_with_addresses <- preload_watchlist_addresses(watchlist) do
       conn
       |> put_status(200)
       |> render(:watchlist_addresses, %{
@@ -98,12 +98,11 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
          {:watchlist, %{watchlists: [watchlist | _]}} <-
            {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
          {:ok, watchlist_address} <-
-           WatchlistAddress.create(Map.put(watchlist_params, :watchlist_id, watchlist.id)),
-         watchlist_address_preloaded <- WatchlistAddress.preload_address_fetched_coin_balance(watchlist_address) do
+           WatchlistAddress.create(Map.put(watchlist_params, :watchlist_id, watchlist.id)) do
       conn
       |> put_status(200)
       |> render(:watchlist_address, %{
-        watchlist_address: watchlist_address_preloaded,
+        watchlist_address: watchlist_address,
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
       })
     end
@@ -156,12 +155,11 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
          {:watchlist, %{watchlists: [watchlist | _]}} <-
            {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
          {:ok, watchlist_address} <-
-           WatchlistAddress.update(Map.put(watchlist_params, :watchlist_id, watchlist.id)),
-         watchlist_address_preloaded <- WatchlistAddress.preload_address_fetched_coin_balance(watchlist_address) do
+           WatchlistAddress.update(Map.put(watchlist_params, :watchlist_id, watchlist.id)) do
       conn
       |> put_status(200)
       |> render(:watchlist_address, %{
-        watchlist_address: watchlist_address_preloaded,
+        watchlist_address: watchlist_address,
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
       })
     end
@@ -468,9 +466,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     Map.reject(map, fn {_k, v} -> is_nil(v) end)
   end
 
-  defp preload_watchlist_address_fetched_coin_balance(watchlist) do
+  defp preload_watchlist_addresses(watchlist) do
     watchlist
     |> Repo.account_repo().preload(watchlist_addresses: from(wa in WatchlistAddress, order_by: [desc: wa.id]))
-    |> WatchlistAddress.preload_address_fetched_coin_balance()
   end
 end
