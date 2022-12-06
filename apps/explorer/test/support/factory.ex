@@ -810,7 +810,8 @@ defmodule Explorer.Factory do
   def smart_contract_factory do
     contract_code_info = contract_code_info()
 
-    bytecode_md5 = Helper.contract_code_md5(contract_code_info.bytecode)
+    {:ok, data} = Explorer.Chain.Data.cast(contract_code_info.bytecode)
+    bytecode_md5 = Helper.contract_code_md5(data.bytes)
 
     %SmartContract{
       address_hash: insert(:address, contract_code: contract_code_info.bytecode, verified: true).hash,
