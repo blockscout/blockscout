@@ -30,6 +30,7 @@
 
 ### Fixes
 
+- [#6552](https://github.com/blockscout/blockscout/pull/6552) - Index to speedup query for acquiring consensus block hashes with requirement to fetch internal transactions for them
 - [#6512](https://github.com/blockscout/blockscout/pull/6512) - Allow gasUsed in failed internal txs; Leave error field for staticcall
 - [#6532](https://github.com/blockscout/blockscout/pull/6532) - Fix index creation migration
 - [#6473](https://github.com/blockscout/blockscout/pull/6473) - Fix state changes for contract creation transactions
