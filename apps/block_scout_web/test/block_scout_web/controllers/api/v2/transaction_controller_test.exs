@@ -117,13 +117,11 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   describe "/transactions/{tx_hash}/internal-transactions" do
-    test "return empty list on non existing tx", %{conn: conn} do
+    test "return 404 on non existing tx", %{conn: conn} do
       tx = build(:transaction)
       request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/internal-transactions")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "return 422 on invalid tx hash", %{conn: conn} do
@@ -236,13 +234,11 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   describe "/transactions/{tx_hash}/logs" do
-    test "return empty list on non existing tx", %{conn: conn} do
+    test "return 404 on non existing tx", %{conn: conn} do
       tx = build(:transaction)
       request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/logs")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "return 422 on invalid tx hash", %{conn: conn} do
@@ -330,13 +326,11 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   describe "/transactions/{tx_hash}/token-transfers" do
-    test "return empty list on non existing tx", %{conn: conn} do
+    test "return 404 on non existing tx", %{conn: conn} do
       tx = build(:transaction)
       request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "return 422 on invalid tx hash", %{conn: conn} do

@@ -2,7 +2,8 @@
 
 ### Features
 
-- [#5561](https://github.com/blockscout/blockscout/pull/5561), [#6523](https://github.com/blockscout/blockscout/pull/6523) - Improve working with contracts implementations
+- [#6544](https://github.com/blockscout/blockscout/pull/6544) - API improvements
+- [#5561](https://github.com/blockscout/blockscout/pull/5561), [#6523](https://github.com/blockscout/blockscout/pull/6523), [#6549](https://github.com/blockscout/blockscout/pull/6549) - Improve working with contracts implementations
 - [#6401](https://github.com/blockscout/blockscout/pull/6401) - Add Sol2Uml contract visualization
 - [#6481](https://github.com/blockscout/blockscout/pull/6481) - Smart contract verification improvements
 - [#6444](https://github.com/blockscout/blockscout/pull/6444) - Add support for yul verification via rust microservice
@@ -25,6 +26,7 @@
 - [#6450](https://github.com/blockscout/blockscout/pull/6450) - INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE and INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY env variables
 - [#6454](https://github.com/blockscout/blockscout/pull/6454) - INDEXER_RECEIPTS_BATCH_SIZE, INDEXER_RECEIPTS_CONCURRENCY, INDEXER_COIN_BALANCES_BATCH_SIZE, INDEXER_COIN_BALANCES_CONCURRENCY env variables
 - [#6476](https://github.com/blockscout/blockscout/pull/6476), [#6484](https://github.com/blockscout/blockscout/pull/6484) - Update token balances indexes
+- [#6510](https://github.com/blockscout/blockscout/pull/6510) - Set consensus: false for blocks on int transaction foreign_key_violation
 
 ### Fixes
 
@@ -54,6 +56,8 @@
 - [#6327](https://github.com/blockscout/blockscout/pull/6327) - Fix and refactor address logs page and search
 - [#6449](https://github.com/blockscout/blockscout/pull/6449) - Search min_missing_block_number from zero
 - [#6492](https://github.com/blockscout/blockscout/pull/6492) - Remove token instance owner fetching
+- [#6536](https://github.com/blockscout/blockscout/pull/6536) - Fix internal transactions query
+- [#6550](https://github.com/blockscout/blockscout/pull/6550) - Query token transfers before updating
 
 ### Chore
 
