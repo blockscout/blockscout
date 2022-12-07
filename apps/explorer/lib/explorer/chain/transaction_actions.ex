@@ -26,6 +26,7 @@ defmodule Explorer.Chain.TransactionActions do
           log_index: non_neg_integer()
         }
 
+  @primary_key false
   schema "transaction_actions" do
     field(:protocol, Ecto.Enum, values: @supported_protocols)
     field(:data, :map)
@@ -49,9 +50,9 @@ defmodule Explorer.Chain.TransactionActions do
       ]
     )
 
-    field(:log_index, :integer)
+    field(:log_index, :integer, primary_key: true)
 
-    belongs_to(:transaction, Transaction, foreign_key: :hash, references: :hash, type: Hash.Full)
+    belongs_to(:transaction, Transaction, foreign_key: :hash, primary_key: true, references: :hash, type: Hash.Full)
 
     timestamps()
   end
