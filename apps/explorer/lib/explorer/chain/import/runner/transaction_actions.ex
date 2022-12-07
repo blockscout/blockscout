@@ -66,7 +66,8 @@ defmodule Explorer.Chain.Import.Runner.TransactionActions do
         for: TransactionActions,
         returning: true,
         timeout: timeout,
-        timestamps: timestamps
+        timestamps: timestamps,
+        on_conflict: :nothing
       )
 
     {:ok, inserted}
