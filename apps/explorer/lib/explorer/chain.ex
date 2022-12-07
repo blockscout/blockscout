@@ -173,7 +173,7 @@ defmodule Explorer.Chain do
   def address_estimated_count do
     cached_value = AddressesCounter.fetch()
 
-    if is_nil(cached_value) do
+    if is_nil(cached_value) || cached_value == 0 do
       %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'addresses';")
 
       count
@@ -202,10 +202,7 @@ defmodule Explorer.Chain do
   while to have the return back.
   """
   def count_addresses do
-    Repo.one(
-      Address.count(),
-      timeout: :infinity
-    )
+    Repo.aggregate(Address, :count, timeout: :infinity)
   end
 
   @doc """

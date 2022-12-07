@@ -165,7 +165,8 @@ config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
 
 config :ethereum_jsonrpc,
   rpc_transport: if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http", do: :http, else: :ipc),
-  ipc_path: System.get_env("IPC_PATH")
+  ipc_path: System.get_env("IPC_PATH"),
+  disable_archive_balances?: System.get_env("ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES", "false") == "true"
 
 debug_trace_transaction_timeout = System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "900s")
 config :ethereum_jsonrpc, :internal_transaction_timeout, debug_trace_transaction_timeout
