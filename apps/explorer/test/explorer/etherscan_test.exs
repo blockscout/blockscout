@@ -803,6 +803,7 @@ defmodule Explorer.EtherscanTest do
         index: internal_transaction.index,
         transaction_hash: internal_transaction.transaction_hash,
         type: internal_transaction.type,
+        call_type: internal_transaction.call_type,
         gas: internal_transaction.gas,
         gas_used: internal_transaction.gas_used,
         error: internal_transaction.error
