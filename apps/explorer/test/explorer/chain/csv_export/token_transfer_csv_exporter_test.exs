@@ -73,13 +73,13 @@ defmodule Explorer.CSV.Export.TokenTransferCsvExporterTest do
           }
         end)
 
-      assert result.block_number == to_string(transaction.block_number)
-      assert result.tx_hash == to_string(transaction.hash)
-      assert result.from_address == token_transfer.from_address_hash |> to_string() |> String.downcase()
-      assert result.to_address == token_transfer.to_address_hash |> to_string() |> String.downcase()
-      assert result.timestamp == to_string(transaction.block.timestamp)
-      assert result.transaction_currency == "CELO"
-      assert result.type == "OUT"
+      assert result.block_number == [[], to_string(transaction.block_number)]
+      assert result.tx_hash == [[], to_string(transaction.hash)]
+      assert result.from_address == [[], token_transfer.from_address_hash |> to_string() |> String.downcase()]
+      assert result.to_address == [[], token_transfer.to_address_hash |> to_string() |> String.downcase()]
+      assert result.timestamp == [[], to_string(transaction.block.timestamp)]
+      assert result.transaction_currency == [[], "CELO"]
+      assert result.type == [[], "OUT"]
     end
   end
 end

@@ -91,24 +91,24 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporterTest do
           }
         end)
 
-      assert result.transaction_hash == to_string(internal_transaction.transaction_hash)
-      assert result.index == to_string(internal_transaction.index)
-      assert result.block_number == to_string(internal_transaction.block_number)
-      assert result.block_index == to_string(internal_transaction.block_index)
-      assert result.block_hash == to_string(internal_transaction.block_hash)
-      assert result.transaction_index == to_string(internal_transaction.transaction_index)
+      assert result.transaction_hash == [[], to_string(internal_transaction.transaction_hash)]
+      assert result.index == [[], to_string(internal_transaction.index)]
+      assert result.block_number == [[], to_string(internal_transaction.block_number)]
+      assert result.block_index == [[], to_string(internal_transaction.block_index)]
+      assert result.block_hash == [[], to_string(internal_transaction.block_hash)]
+      assert result.transaction_index == [[], to_string(internal_transaction.transaction_index)]
       assert result.timestamp
-      assert result.from_address_hash == to_string(internal_transaction.from_address_hash)
-      assert result.to_address_hash == to_string(internal_transaction.to_address_hash)
-      assert result.created_contract_address_hash == to_string(internal_transaction.created_contract_address_hash)
-      assert result.type == to_string(internal_transaction.type)
-      assert result.call_type == to_string(internal_transaction.call_type)
-      assert result.gas == to_string(internal_transaction.gas)
-      assert result.gas_used == to_string(internal_transaction.gas_used)
-      assert result.value == internal_transaction.value |> Wei.to(:wei) |> to_string()
-      assert result.input == to_string(internal_transaction.input)
-      assert result.output == to_string(internal_transaction.output)
-      assert result.error == to_string(internal_transaction.error)
+      assert result.from_address_hash == [[], to_string(internal_transaction.from_address_hash)]
+      assert result.to_address_hash == [[], to_string(internal_transaction.to_address_hash)]
+      assert result.created_contract_address_hash == [[], to_string(internal_transaction.created_contract_address_hash)]
+      assert result.type == [[], to_string(internal_transaction.type)]
+      assert result.call_type == [[], to_string(internal_transaction.call_type)]
+      assert result.gas == [[], to_string(internal_transaction.gas)]
+      assert result.gas_used == [[], to_string(internal_transaction.gas_used)]
+      assert result.value == [[], internal_transaction.value |> Wei.to(:wei) |> to_string()]
+      assert result.input == [[], to_string(internal_transaction.input)]
+      assert result.output == [[], to_string(internal_transaction.output)]
+      assert result.error == [[], to_string(internal_transaction.error)]
     end
 
     test "fetches all internal transactions" do

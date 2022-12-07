@@ -65,18 +65,18 @@ defmodule Explorer.Export.CSV.TransactionExporterTest do
           }
         end)
 
-      assert result.block_number == to_string(transaction.block_number)
+      assert result.block_number == [[], to_string(transaction.block_number)]
       assert result.timestamp
-      assert result.created_address == to_string(transaction.created_contract_address_hash)
-      assert result.from_address == to_string(transaction.from_address)
-      assert result.to_address == to_string(transaction.to_address)
-      assert result.hash == to_string(transaction.hash)
-      assert result.type == "OUT"
-      assert result.value == transaction.value |> Wei.to(:wei) |> to_string()
+      assert result.created_address == [[], to_string(transaction.created_contract_address_hash)]
+      assert result.from_address == [[], to_string(transaction.from_address)]
+      assert result.to_address == [[], to_string(transaction.to_address)]
+      assert result.hash == [[], to_string(transaction.hash)]
+      assert result.type == [[], "OUT"]
+      assert result.value == [[], transaction.value |> Wei.to(:wei) |> to_string()]
       assert result.fee
-      assert result.currency == fee_currency.symbol
-      assert result.status == to_string(transaction.status)
-      assert result.error == to_string(transaction.error)
+      assert result.currency == [[], fee_currency.symbol]
+      assert result.status == [[], to_string(transaction.status)]
+      assert result.error == [[], to_string(transaction.error)]
     end
 
     test "exports transaction without explicit fee currency with CELO as currency" do
@@ -125,7 +125,7 @@ defmodule Explorer.Export.CSV.TransactionExporterTest do
           currency
         end)
 
-      assert result_currency == "CELO"
+      assert result_currency == [[], "CELO"]
     end
 
     test "fetches all transactions" do

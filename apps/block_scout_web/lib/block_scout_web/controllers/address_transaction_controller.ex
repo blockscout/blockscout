@@ -21,6 +21,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
+  alias Plug.Conn
+
   @transaction_necessity_by_association [
     necessity_by_association: %{
       [created_contract_address: :names] => :optional,
@@ -278,10 +280,15 @@ defmodule BlockScoutWeb.AddressTransactionController do
          {:recaptcha, true} <- {:recaptcha, captcha_helper().recaptcha_passed?(recaptcha_response)} do
       address
       |> AddressInternalTransactionCsvExporter.export(from_period, to_period)
-      |> Enum.into(
-        conn
-        |> put_resp_params("internal_transactions.csv")
-      )
+      |> Enum.reduce_while(put_resp_params(conn, "internal_transactions.csv"), fn chunk, conn ->
+        case Conn.chunk(conn, chunk) do
+          {:ok, conn} ->
+            {:cont, conn}
+
+          {:error, :closed} ->
+            {:halt, conn}
+        end
+      end)
     end
   end
 
@@ -299,10 +306,15 @@ defmodule BlockScoutWeb.AddressTransactionController do
          {:recaptcha, true} <- {:recaptcha, captcha_helper().recaptcha_passed?(recaptcha_response)} do
       address
       |> AddressLogCsvExporter.export(from_period, to_period)
-      |> Enum.into(
-        conn
-        |> put_resp_params("logs.csv")
-      )
+      |> Enum.reduce_while(put_resp_params(conn, "logs.csv"), fn chunk, conn ->
+        case Conn.chunk(conn, chunk) do
+          {:ok, conn} ->
+            {:cont, conn}
+
+          {:error, :closed} ->
+            {:halt, conn}
+        end
+      end)
     end
   end
 

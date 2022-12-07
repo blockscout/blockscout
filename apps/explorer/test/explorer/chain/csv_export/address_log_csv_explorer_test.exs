@@ -70,16 +70,16 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
           }
         end)
 
-      assert result.transaction_hash == to_string(log.transaction_hash)
-      assert result.index == to_string(log.index)
-      assert result.block_number == to_string(log.block_number)
-      assert result.block_hash == to_string(log.block_hash)
-      assert result.address == String.downcase(to_string(log.address))
-      assert result.data == to_string(log.data)
-      assert result.first_topic == to_string(log.first_topic)
-      assert result.second_topic == to_string(log.second_topic)
-      assert result.third_topic == to_string(log.third_topic)
-      assert result.fourth_topic == to_string(log.fourth_topic)
+      assert result.transaction_hash == [[], to_string(log.transaction_hash)]
+      assert result.index == [[], to_string(log.index)]
+      assert result.block_number == [[], to_string(log.block_number)]
+      assert result.block_hash == [[], to_string(log.block_hash)]
+      assert result.address == [[], String.downcase(to_string(log.address))]
+      assert result.data == [[], to_string(log.data)]
+      assert result.first_topic == [[], to_string(log.first_topic)]
+      assert result.second_topic == [[], to_string(log.second_topic)]
+      assert result.third_topic == [[], to_string(log.third_topic)]
+      assert result.fourth_topic == [[], to_string(log.fourth_topic)]
     end
 
     test "fetches all logs" do
