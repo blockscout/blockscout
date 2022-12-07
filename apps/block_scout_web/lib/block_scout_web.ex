@@ -46,7 +46,6 @@ defmodule BlockScoutWeb do
       use Phoenix.HTML
 
       import BlockScoutWeb.{
-        CurrencyHelpers,
         ErrorHelpers,
         Gettext,
         Router.Helpers,

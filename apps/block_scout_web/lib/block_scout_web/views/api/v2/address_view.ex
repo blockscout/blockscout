@@ -1,8 +1,12 @@
 defmodule BlockScoutWeb.API.V2.AddressView do
   use BlockScoutWeb, :view
 
+  alias BlockScoutWeb.AddressView
   alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
   alias BlockScoutWeb.API.V2.Helper
+  alias Explorer.{Chain, Market}
+  alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.ExchangeRates.Token
 
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
@@ -29,7 +33,38 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   end
 
   def prepare_address(address, conn \\ nil) do
-    Helper.address_with_info(conn, address, address.hash)
+    base_info = Helper.address_with_info(conn, address, address.hash)
+    is_proxy = AddressView.smart_contract_is_proxy?(address)
+
+    {implementation_address, implementation_name} =
+      with true <- is_proxy,
+           {address, name} <- SmartContract.get_implementation_address_hash(address.smart_contract),
+           false <- is_nil(address),
+           {:ok, address_hash} <- Chain.string_to_address_hash(address),
+           checksummed_address <- Address.checksum(address_hash) do
+        {checksummed_address, name}
+      else
+        _ ->
+          {nil, nil}
+      end
+
+    balance = address.fetched_coin_balance && address.fetched_coin_balance.value
+    exchange_rate = (Market.get_exchange_rate(Explorer.coin()) || Token.null()).usd_value
+
+    creator_hash = AddressView.from_address_hash(address)
+    creation_tx = creator_hash && AddressView.transaction_hash(address)
+    token = address.token && TokenView.render("token.json", %{token: Market.add_price(address.token)})
+
+    Map.merge(base_info, %{
+      "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
+      "creation_tx_hash" => creation_tx,
+      "token" => token,
+      "coin_balance" => balance,
+      "exchange_rate" => exchange_rate,
+      "implementation_name" => implementation_name,
+      "implementation_address" => implementation_address,
+      "block_number_balance_updated_at" => address.fetched_coin_balance_block_number
+    })
   end
 
   def prepare_token_balance({token_balance, token}) do

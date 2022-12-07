@@ -118,6 +118,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
     scope "/addresses" do
       get("/:address_hash", V2.AddressController, :address)
+      get("/:address_hash/counters", V2.AddressController, :counters)
       get("/:address_hash/token-balances", V2.AddressController, :token_balances)
       get("/:address_hash/transactions", V2.AddressController, :transactions)
       get("/:address_hash/token-transfers", V2.AddressController, :token_transfers)
@@ -128,9 +129,17 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
     end
 
+    scope "/tokens" do
+      get("/:address_hash", V2.TokenController, :token)
+      get("/:address_hash/counters", V2.TokenController, :counters)
+      get("/:address_hash/transfers", V2.TokenController, :transfers)
+      get("/:address_hash/holders", V2.TokenController, :holders)
+    end
+
     scope "/main-page" do
       get("/blocks", V2.MainPageController, :blocks)
       get("/transactions", V2.MainPageController, :transactions)
+      get("/indexing-status", V2.MainPageController, :indexing_status)
     end
 
     scope "/stats" do

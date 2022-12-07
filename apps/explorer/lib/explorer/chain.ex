@@ -16,11 +16,11 @@ defmodule Explorer.Chain do
       order_by: 2,
       order_by: 3,
       preload: 2,
+      preload: 3,
       select: 2,
       select: 3,
       subquery: 1,
       union: 2,
-      update: 2,
       where: 2,
       where: 3
     ]
@@ -35,9 +35,9 @@ defmodule Explorer.Chain do
   alias EthereumJSONRPC.Contract
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
 
-  alias Explorer.Counters.LastFetchedCounter
+  alias Explorer.Counters.{LastFetchedCounter, TokenHoldersCounter, TokenTransfersCounter}
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, CustomContractsHelpers}
 
   alias Explorer.Chain.{
     Address,
@@ -86,12 +86,15 @@ defmodule Explorer.Chain do
 
   alias Explorer.Counters.{
     AddressesCounter,
-    AddressesWithBalanceCounter
+    AddressesWithBalanceCounter,
+    AddressTokenTransfersCounter,
+    AddressTransactionsCounter,
+    AddressTransactionsGasUsageCounter
   }
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.SmartContract.{Helper, Reader}
+  alias Explorer.SmartContract.Helper
   alias Explorer.Staking.ContractState
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
@@ -456,7 +459,7 @@ defmodule Explorer.Chain do
 
     options
     |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions(from_block, to_block)
+    |> fetch_transactions(from_block, to_block, true)
   end
 
   defp transactions_block_numbers_at_address(address_hash, options) do
@@ -569,6 +572,20 @@ defmodule Explorer.Chain do
     |> Transaction.transactions_with_token_transfers_direction(address_hash)
     |> Transaction.preload_token_transfers(address_hash)
     |> handle_paging_options(paging_options)
+    |> Repo.all()
+  end
+
+  @spec address_hash_to_token_transfers_new(Hash.Address.t() | String.t(), Keyword.t()) :: [TokenTransfer.t()]
+  def address_hash_to_token_transfers_new(address_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    direction = Keyword.get(options, :direction)
+    filters = Keyword.get(options, :token_type)
+    necessity_by_association = Keyword.get(options, :necessity_by_association)
+
+    direction
+    |> TokenTransfer.token_transfers_by_address_hash(address_hash, filters)
+    |> join_associations(necessity_by_association)
+    |> TokenTransfer.handle_paging_options(paging_options)
     |> Repo.all()
   end
 
@@ -1374,7 +1391,10 @@ defmodule Explorer.Chain do
               address_verified_twin_contract_updated =
                 address_verified_twin_contract
                 |> Map.put(:address_hash, hash)
-                |> Map.put_new(:metadata_from_verified_twin, true)
+                |> Map.put(:metadata_from_verified_twin, true)
+                |> Map.put(:implementation_address_hash, nil)
+                |> Map.put(:implementation_name, nil)
+                |> Map.put(:implementation_fetched_at, nil)
 
               address_result
               |> Map.put(:smart_contract, address_verified_twin_contract_updated)
@@ -1976,7 +1996,10 @@ defmodule Explorer.Chain do
               address_verified_twin_contract_updated =
                 address_verified_twin_contract
                 |> Map.put(:address_hash, hash)
-                |> Map.put_new(:metadata_from_verified_twin, true)
+                |> Map.put(:metadata_from_verified_twin, true)
+                |> Map.put(:implementation_address_hash, nil)
+                |> Map.put(:implementation_name, nil)
+                |> Map.put(:implementation_fetched_at, nil)
 
               address_result
               |> Map.put(:smart_contract, address_verified_twin_contract_updated)
@@ -2205,14 +2228,6 @@ defmodule Explorer.Chain do
   end
 
   def get_token_transfers_per_transaction_preview_count, do: @token_transfers_per_transaction_preview
-
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-  end
 
   @doc """
   Converts list of `t:Explorer.Chain.Transaction.t/0` `hashes` to the list of `t:Explorer.Chain.Transaction.t/0`s for
@@ -3559,17 +3574,23 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec recent_collated_transactions(true | false, [paging_options | necessity_by_association_option], [String.t()], [
-          :atom
-        ]) :: [
+  @spec recent_collated_transactions(true | false, [paging_options | necessity_by_association_option]) :: [
           Transaction.t()
         ]
-  def recent_collated_transactions(old_ui?, options \\ [], method_id_filter \\ [], type_filter \\ [])
+  def recent_collated_transactions(old_ui?, options \\ [])
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    method_id_filter = Keyword.get(options, :method)
+    type_filter = Keyword.get(options, :type)
 
-    fetch_recent_collated_transactions(old_ui?, paging_options, necessity_by_association, method_id_filter, type_filter)
+    fetch_recent_collated_transactions(
+      old_ui?,
+      paging_options,
+      necessity_by_association,
+      method_id_filter,
+      type_filter
+    )
   end
 
   # RAP - random access pagination
@@ -3641,7 +3662,6 @@ defmodule Explorer.Chain do
     |> apply_filter_by_tx_type_to_transactions(type_filter)
     |> join_associations(necessity_by_association)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
-    |> debug("result collated query")
     |> Repo.all()
     |> (&if(old_ui?,
           do: &1,
@@ -3673,13 +3693,15 @@ defmodule Explorer.Chain do
       Results will be the transactions older than the `inserted_at` and `hash` that are passed.
 
   """
-  @spec recent_pending_transactions([paging_options | necessity_by_association_option], true | false, [String.t()], [
-          :atom
-        ]) :: [Transaction.t()]
-  def recent_pending_transactions(options \\ [], old_ui? \\ true, method_id_filter \\ [], type_filter \\ [])
+  @spec recent_pending_transactions([paging_options | necessity_by_association_option], true | false) :: [
+          Transaction.t()
+        ]
+  def recent_pending_transactions(options \\ [], old_ui? \\ true)
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    method_id_filter = Keyword.get(options, :method)
+    type_filter = Keyword.get(options, :type)
 
     Transaction
     |> page_pending_transaction(paging_options)
@@ -3687,10 +3709,9 @@ defmodule Explorer.Chain do
     |> pending_transactions_query()
     |> apply_filter_by_method_id_to_transactions(method_id_filter)
     |> apply_filter_by_tx_type_to_transactions(type_filter)
-    |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
+    |> order_by([transaction], desc: transaction.inserted_at, asc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
-    |> debug("result pendging query")
     |> Repo.all()
     |> (&if(old_ui?,
           do: &1,
@@ -3921,6 +3942,7 @@ defmodule Explorer.Chain do
   def transaction_to_token_transfers(transaction_hash, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = options |> Keyword.get(:paging_options, @default_paging_options) |> Map.put(:asc_order, true)
+    token_type = Keyword.get(options, :token_type)
 
     TokenTransfer
     |> join(:inner, [token_transfer], transaction in assoc(token_transfer, :transaction))
@@ -3929,6 +3951,9 @@ defmodule Explorer.Chain do
       transaction.hash == ^transaction_hash and token_transfer.block_hash == transaction.block_hash and
         token_transfer.block_number == transaction.block_number
     )
+    |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+    |> preload([token: token], [{:token, token}])
+    |> TokenTransfer.filter_by_type(token_type)
     |> TokenTransfer.page_token_transfer(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([token_transfer], asc: token_transfer.log_index)
@@ -4437,6 +4462,30 @@ defmodule Explorer.Chain do
     |> repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
   end
 
+  def get_verified_twin_contract(%Explorer.Chain.Address{} = target_address) do
+    case target_address do
+      %{contract_code: %Chain.Data{bytes: contract_code_bytes}} ->
+        target_address_hash = target_address.hash
+
+        contract_code_md5 = Helper.contract_code_md5(contract_code_bytes)
+
+        verified_contract_twin_query =
+          from(
+            smart_contract in SmartContract,
+            where: smart_contract.contract_code_md5 == ^contract_code_md5,
+            where: smart_contract.address_hash != ^target_address_hash,
+            select: smart_contract,
+            limit: 1
+          )
+
+        verified_contract_twin_query
+        |> Repo.one(timeout: 10_000)
+
+      _ ->
+        nil
+    end
+  end
+
   @doc """
   Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
   which were verified previously, returns a single t:SmartContract.t/0
@@ -4450,24 +4499,8 @@ defmodule Explorer.Chain do
 
   def get_address_verified_twin_contract(%Explorer.Chain.Hash{} = address_hash) do
     with target_address <- Repo.get(Address, address_hash),
-         false <- is_nil(target_address),
-         %{contract_code: %Chain.Data{bytes: contract_code_bytes}} <- target_address do
-      target_address_hash = target_address.hash
-
-      contract_code_md5 = Helper.contract_code_md5(contract_code_bytes)
-
-      verified_contract_twin_query =
-        from(
-          smart_contract in SmartContract,
-          where: smart_contract.contract_code_md5 == ^contract_code_md5,
-          where: smart_contract.address_hash != ^target_address_hash,
-          select: smart_contract,
-          limit: 1
-        )
-
-      verified_contract_twin =
-        verified_contract_twin_query
-        |> Repo.one(timeout: 10_000)
+         false <- is_nil(target_address) do
+      verified_contract_twin = get_verified_twin_contract(target_address)
 
       verified_contract_twin_additional_sources = get_contract_additional_sources(verified_contract_twin)
 
@@ -4560,11 +4593,27 @@ defmodule Explorer.Chain do
           Chain.get_address_verified_twin_contract(address_hash).verified_contract
 
       if address_verified_twin_contract do
-        Map.put(address_verified_twin_contract, :address_hash, address_hash)
+        address_verified_twin_contract
+        |> Map.put(:address_hash, address_hash)
+        |> Map.put(:metadata_from_verified_twin, true)
+        |> Map.put(:implementation_address_hash, nil)
+        |> Map.put(:implementation_name, nil)
+        |> Map.put(:implementation_fetched_at, nil)
       else
         current_smart_contract
       end
     end
+  end
+
+  @spec address_hash_to_smart_contract_without_twin(Hash.Address.t()) :: SmartContract.t() | nil
+  def address_hash_to_smart_contract_without_twin(address_hash) do
+    query =
+      from(
+        smart_contract in SmartContract,
+        where: smart_contract.address_hash == ^address_hash
+      )
+
+    Repo.one(query)
   end
 
   def smart_contract_fully_verified?(address_hash_str) when is_binary(address_hash_str) do
@@ -4617,11 +4666,26 @@ defmodule Explorer.Chain do
     if Repo.one(query), do: true, else: false
   end
 
-  defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil) do
+  defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil, is_address? \\ false) do
     Transaction
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+    |> order_for_transactions(is_address?)
     |> where_block_number_in_period(from_block, to_block)
     |> handle_paging_options(paging_options)
+  end
+
+  defp order_for_transactions(query, true) do
+    query
+    |> order_by([transaction],
+      desc: transaction.block_number,
+      desc: transaction.index,
+      desc: transaction.inserted_at,
+      asc: transaction.hash
+    )
+  end
+
+  defp order_for_transactions(query, _) do
+    query
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
   end
 
   defp fetch_transactions_in_ascending_order_by_index(paging_options) do
@@ -4840,7 +4904,10 @@ defmodule Explorer.Chain do
     where(
       query,
       [transaction],
-      transaction.inserted_at < ^inserted_at or (transaction.inserted_at == ^inserted_at and transaction.hash < ^hash)
+      (is_nil(transaction.block_number) and
+         (transaction.inserted_at < ^inserted_at or
+            (transaction.inserted_at == ^inserted_at and transaction.hash > ^hash))) or
+        not is_nil(transaction.block_number)
     )
   end
 
@@ -4872,6 +4939,20 @@ defmodule Explorer.Chain do
   end
 
   defp page_search_results(query, %PagingOptions{key: nil}), do: query
+
+  defp page_search_results(query, %PagingOptions{
+         key: {_address_hash, _tx_hash, _block_hash, holder_count, name, inserted_at, item_type}
+       })
+       when holder_count in [nil, ""] do
+    where(
+      query,
+      [item],
+      (item.name > ^name and item.type == ^item_type) or
+        (item.name == ^name and item.inserted_at < ^inserted_at and
+           item.type == ^item_type) or
+        item.type != ^item_type
+    )
+  end
 
   # credo:disable-for-next-line
   defp page_search_results(query, %PagingOptions{
@@ -7077,31 +7158,15 @@ defmodule Explorer.Chain do
     end
   end
 
-  def combine_proxy_implementation_abi(proxy_address_hash, abi) when not is_nil(abi) do
-    implementation_abi = get_implementation_abi_from_proxy(proxy_address_hash, abi)
+  def combine_proxy_implementation_abi(%SmartContract{abi: abi} = smart_contract) when not is_nil(abi) do
+    implementation_abi = get_implementation_abi_from_proxy(smart_contract)
 
     if Enum.empty?(implementation_abi), do: abi, else: implementation_abi ++ abi
   end
 
-  def combine_proxy_implementation_abi(_, abi) when is_nil(abi) do
+  def combine_proxy_implementation_abi(_) do
     []
   end
-
-  def proxy_contract?(address_hash, abi) when not is_nil(abi) do
-    implementation_method_abi =
-      abi
-      |> Enum.find(fn method ->
-        Map.get(method, "name") == "implementation" ||
-          master_copy_pattern?(method)
-      end)
-
-    if implementation_method_abi ||
-         get_implementation_address_hash_eip_1967(address_hash) !== "0x0000000000000000000000000000000000000000",
-       do: true,
-       else: false
-  end
-
-  def proxy_contract?(_address_hash, abi) when is_nil(abi), do: false
 
   def gnosis_safe_contract?(abi) when not is_nil(abi) do
     implementation_method_abi =
@@ -7115,167 +7180,7 @@ defmodule Explorer.Chain do
 
   def gnosis_safe_contract?(abi) when is_nil(abi), do: false
 
-  @spec get_implementation_address_hash(Hash.Address.t(), list()) :: {String.t() | nil, String.t() | nil}
-  def get_implementation_address_hash(proxy_address_hash, abi)
-      when not is_nil(proxy_address_hash) and not is_nil(abi) do
-    implementation_method_abi =
-      abi
-      |> Enum.find(fn method ->
-        Map.get(method, "name") == "implementation" && Map.get(method, "stateMutability") == "view"
-      end)
-
-    master_copy_method_abi =
-      abi
-      |> Enum.find(fn method ->
-        master_copy_pattern?(method)
-      end)
-
-    implementation_address =
-      cond do
-        implementation_method_abi ->
-          get_implementation_address_hash_basic(proxy_address_hash, abi)
-
-        master_copy_method_abi ->
-          get_implementation_address_hash_from_master_copy_pattern(proxy_address_hash)
-
-        true ->
-          get_implementation_address_hash_eip_1967(proxy_address_hash)
-      end
-
-    save_implementation_name(implementation_address, proxy_address_hash)
-  end
-
-  def get_implementation_address_hash(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
-    {nil, nil}
-  end
-
-  defp get_implementation_address_hash_eip_1967(proxy_address_hash) do
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-    # https://eips.ethereum.org/EIPS/eip-1967
-    storage_slot_logic_contract_address = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
-
-    {_status, implementation_address} =
-      case Contract.eth_get_storage_at_request(
-             proxy_address_hash,
-             storage_slot_logic_contract_address,
-             nil,
-             json_rpc_named_arguments
-           ) do
-        {:ok, empty_address}
-        when empty_address in ["0x", "0x0", "0x0000000000000000000000000000000000000000000000000000000000000000"] ->
-          fetch_beacon_proxy_implementation(proxy_address_hash, json_rpc_named_arguments)
-
-        {:ok, implementation_logic_address} ->
-          {:ok, implementation_logic_address}
-
-        {:error, _} ->
-          {:ok, "0x"}
-      end
-
-    abi_decode_address_output(implementation_address)
-  end
-
-  # changes requested by https://github.com/blockscout/blockscout/issues/4770
-  # for support BeaconProxy pattern
-  defp fetch_beacon_proxy_implementation(proxy_address_hash, json_rpc_named_arguments) do
-    # https://eips.ethereum.org/EIPS/eip-1967
-    storage_slot_beacon_contract_address = "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50"
-
-    implementation_method_abi = [
-      %{
-        "type" => "function",
-        "stateMutability" => "view",
-        "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
-        "name" => "implementation",
-        "inputs" => []
-      }
-    ]
-
-    case Contract.eth_get_storage_at_request(
-           proxy_address_hash,
-           storage_slot_beacon_contract_address,
-           nil,
-           json_rpc_named_arguments
-         ) do
-      {:ok, empty_address}
-      when empty_address in ["0x", "0x0", "0x0000000000000000000000000000000000000000000000000000000000000000"] ->
-        fetch_openzeppelin_proxy_implementation(proxy_address_hash, json_rpc_named_arguments)
-
-      {:ok, beacon_contract_address} ->
-        case beacon_contract_address
-             |> abi_decode_address_output()
-             |> get_implementation_address_hash_basic(implementation_method_abi) do
-          <<implementation_address::binary-size(42)>> ->
-            {:ok, implementation_address}
-
-          _ ->
-            {:ok, beacon_contract_address}
-        end
-
-      {:error, _} ->
-        {:ok, "0x"}
-    end
-  end
-
-  # changes requested by https://github.com/blockscout/blockscout/issues/5292
-  defp fetch_openzeppelin_proxy_implementation(proxy_address_hash, json_rpc_named_arguments) do
-    # This is the keccak-256 hash of "org.zeppelinos.proxy.implementation"
-    storage_slot_logic_contract_address = "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3"
-
-    case Contract.eth_get_storage_at_request(
-           proxy_address_hash,
-           storage_slot_logic_contract_address,
-           nil,
-           json_rpc_named_arguments
-         ) do
-      {:ok, empty_address}
-      when empty_address in ["0x", "0x0", "0x0000000000000000000000000000000000000000000000000000000000000000"] ->
-        {:ok, "0x"}
-
-      {:ok, logic_contract_address} ->
-        {:ok, logic_contract_address}
-
-      {:error, _} ->
-        {:ok, "0x"}
-    end
-  end
-
-  defp get_implementation_address_hash_basic(proxy_address_hash, abi) do
-    # 5c60da1b = keccak256(implementation())
-    implementation_address =
-      case Reader.query_contract(
-             proxy_address_hash,
-             abi,
-             %{
-               "5c60da1b" => []
-             },
-             false
-           ) do
-        %{"5c60da1b" => {:ok, [result]}} -> result
-        _ -> nil
-      end
-
-    address_to_hex(implementation_address)
-  end
-
-  defp get_implementation_address_hash_from_master_copy_pattern(proxy_address_hash) do
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-    master_copy_storage_pointer = "0x0"
-
-    {:ok, implementation_address} =
-      Contract.eth_get_storage_at_request(
-        proxy_address_hash,
-        master_copy_storage_pointer,
-        nil,
-        json_rpc_named_arguments
-      )
-
-    abi_decode_address_output(implementation_address)
-  end
-
-  defp master_copy_pattern?(method) do
+  def master_copy_pattern?(method) do
     Map.get(method, "type") == "constructor" &&
       method
       |> Enum.find(fn item ->
@@ -7294,57 +7199,6 @@ defmodule Explorer.Chain do
     |> Enum.find(fn input ->
       Map.get(input, "name") == "_masterCopy"
     end)
-  end
-
-  defp save_implementation_name(empty_address_hash_string, _)
-       when empty_address_hash_string in [
-              "0x",
-              "0x0",
-              "0x0000000000000000000000000000000000000000000000000000000000000000",
-              @burn_address_hash_str
-            ],
-       do: {empty_address_hash_string, nil}
-
-  defp save_implementation_name(implementation_address_hash_string, proxy_address_hash)
-       when is_binary(implementation_address_hash_string) do
-    with {:ok, address_hash} <- string_to_address_hash(implementation_address_hash_string),
-         %SmartContract{name: name} <- address_hash_to_smart_contract(address_hash) do
-      SmartContract
-      |> where([sc], sc.address_hash == ^proxy_address_hash)
-      |> update(set: [implementation_name: ^name])
-      |> Repo.update_all([])
-
-      {implementation_address_hash_string, name}
-    else
-      _ ->
-        {implementation_address_hash_string, nil}
-    end
-  end
-
-  defp save_implementation_name(other, _), do: {other, nil}
-
-  defp abi_decode_address_output(nil), do: nil
-
-  defp abi_decode_address_output("0x"), do: @burn_address_hash_str
-
-  defp abi_decode_address_output(address) when is_binary(address) do
-    if String.length(address) > 42 do
-      "0x" <> String.slice(address, -40, 40)
-    else
-      address
-    end
-  end
-
-  defp abi_decode_address_output(_), do: nil
-
-  defp address_to_hex(address) do
-    if address do
-      if String.starts_with?(address, "0x") do
-        address
-      else
-        "0x" <> Base.encode16(address, case: :lower)
-      end
-    end
   end
 
   def get_implementation_abi(implementation_address_hash_string) when not is_nil(implementation_address_hash_string) do
@@ -7370,15 +7224,13 @@ defmodule Explorer.Chain do
     []
   end
 
-  def get_implementation_abi_from_proxy(proxy_address_hash, abi)
+  def get_implementation_abi_from_proxy(%SmartContract{address_hash: proxy_address_hash, abi: abi} = smart_contract)
       when not is_nil(proxy_address_hash) and not is_nil(abi) do
-    {implementation_address_hash_string, _name} = get_implementation_address_hash(proxy_address_hash, abi)
+    {implementation_address_hash_string, _name} = SmartContract.get_implementation_address_hash(smart_contract)
     get_implementation_abi(implementation_address_hash_string)
   end
 
-  def get_implementation_abi_from_proxy(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
-    []
-  end
+  def get_implementation_abi_from_proxy(_), do: []
 
   defp format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments) do
     {:ok, to_address_hash} =
@@ -7796,13 +7648,15 @@ defmodule Explorer.Chain do
     |> String.downcase()
   end
 
-  def recent_transactions(options, [:pending | _], method_id_filter, type_filter_options) do
-    recent_pending_transactions(options, false, method_id_filter, type_filter_options)
+  def recent_transactions(options, [:pending | _]) do
+    recent_pending_transactions(options, false)
   end
 
-  def recent_transactions(options, _, method_id_filter, type_filter_options) do
-    recent_collated_transactions(false, options, method_id_filter, type_filter_options)
+  def recent_transactions(options, _) do
+    recent_collated_transactions(false, options)
   end
+
+  def apply_filter_by_method_id_to_transactions(query, nil), do: query
 
   def apply_filter_by_method_id_to_transactions(query, filter) when is_list(filter) do
     method_ids = Enum.flat_map(filter, &map_name_or_method_id_to_method_id/1)
@@ -8013,5 +7867,146 @@ defmodule Explorer.Chain do
 
   def count_new_contracts_from_cache do
     NewContractsCounter.fetch()
+  end
+
+  def address_counters(address) do
+    validation_count_task =
+      Task.async(fn ->
+        validation_count(address)
+      end)
+
+    crc_total_worth_task =
+      Task.async(fn ->
+        crc_total_worth(address)
+      end)
+
+    Task.start_link(fn ->
+      transaction_count(address)
+    end)
+
+    Task.start_link(fn ->
+      token_transfers_count(address)
+    end)
+
+    Task.start_link(fn ->
+      gas_usage_count(address)
+    end)
+
+    [
+      validation_count_task,
+      crc_total_worth_task
+    ]
+    |> Task.yield_many(:infinity)
+    |> Enum.map(fn {_task, res} ->
+      case res do
+        {:ok, result} ->
+          result
+
+        {:exit, reason} ->
+          raise "Query fetching address counters terminated: #{inspect(reason)}"
+
+        nil ->
+          raise "Query fetching address counters timed out."
+      end
+    end)
+    |> List.to_tuple()
+  end
+
+  def transaction_count(address) do
+    AddressTransactionsCounter.fetch(address)
+  end
+
+  def token_transfers_count(address) do
+    AddressTokenTransfersCounter.fetch(address)
+  end
+
+  def gas_usage_count(address) do
+    AddressTransactionsGasUsageCounter.fetch(address)
+  end
+
+  defp validation_count(address) do
+    Chain.address_to_validation_count(address.hash)
+  end
+
+  defp crc_total_worth(address) do
+    circles_total_balance(address.hash)
+  end
+
+  defp circles_total_balance(address_hash) do
+    circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses)
+
+    token_balances =
+      address_hash
+      |> Chain.fetch_last_token_balances()
+
+    token_balances_except_bridged =
+      token_balances
+      |> Enum.filter(fn {_, _, token} -> !token.bridged end)
+
+    circles_total_balance_raw =
+      if Enum.count(circles_addresses_list) > 0 do
+        token_balances_except_bridged
+        |> Enum.reduce(Decimal.new(0), fn {token_balance, _, token}, acc_balance ->
+          {:ok, token_address} = Chain.hash_to_address(token.contract_address_hash)
+
+          from_address = from_address_hash(token_address)
+
+          created_from_address_hash =
+            if from_address,
+              do: "0x" <> Base.encode16(from_address.bytes, case: :lower),
+              else: nil
+
+          if Enum.member?(circles_addresses_list, created_from_address_hash) && token.name == "Circles" &&
+               token.symbol == "CRC" do
+            Decimal.add(acc_balance, token_balance.value)
+          else
+            acc_balance
+          end
+        end)
+      else
+        Decimal.new(0)
+      end
+
+    CurrencyHelpers.format_according_to_decimals(circles_total_balance_raw, Decimal.new(18))
+  end
+
+  defp from_address_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contracts_creation_internal_transaction.from_address_hash
+  end
+
+  defp from_address_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
+    address.contracts_creation_transaction.from_address_hash
+  end
+
+  defp from_address_hash(_address), do: nil
+
+  def fetch_token_counters(address_hash, timeout) do
+    total_token_transfers_task =
+      Task.async(fn ->
+        TokenTransfersCounter.fetch(address_hash)
+      end)
+
+    total_token_holders_task =
+      Task.async(fn ->
+        TokenHoldersCounter.fetch(address_hash)
+      end)
+
+    [total_token_transfers_task, total_token_holders_task]
+    |> Task.yield_many(timeout)
+    |> Enum.map(fn {_task, res} ->
+      case res do
+        {:ok, result} ->
+          result
+
+        {:exit, reason} ->
+          Logger.warn("Query fetching token counters terminated: #{inspect(reason)}")
+          0
+
+        nil ->
+          Logger.warn("Query fetching token counters timed out.")
+          0
+      end
+    end)
+    |> List.to_tuple()
   end
 end

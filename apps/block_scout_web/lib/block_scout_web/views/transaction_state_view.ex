@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.TransactionStateView do
   use BlockScoutWeb, :view
 
   alias Explorer.Chain
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.{CurrencyHelpers, Wei}
 
   import BlockScoutWeb.TransactionStateController, only: [from_loss: 1, to_profit: 1]
 

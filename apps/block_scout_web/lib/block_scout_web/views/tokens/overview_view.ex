@@ -2,10 +2,10 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   use BlockScoutWeb, :view
 
   alias Explorer.{Chain, CustomContractsHelpers}
-  alias Explorer.Chain.{Address, SmartContract, Token}
+  alias Explorer.Chain.{Address, CurrencyHelpers, SmartContract, Token}
   alias Explorer.SmartContract.{Helper, Writer}
 
-  alias BlockScoutWeb.{AccessHelpers, CurrencyHelpers, LayoutView}
+  alias BlockScoutWeb.{AccessHelpers, LayoutView}
 
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1, is_test?: 1]
 
@@ -60,13 +60,13 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   def smart_contract_with_read_only_functions?(
         %Token{contract_address: %Address{smart_contract: %SmartContract{}}} = token
       ) do
-    Enum.any?(token.contract_address.smart_contract.abi, &Helper.queriable_method?(&1))
+    Enum.any?(token.contract_address.smart_contract.abi || [], &Helper.queriable_method?(&1))
   end
 
   def smart_contract_with_read_only_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
 
-  def smart_contract_is_proxy?(%Token{contract_address: %Address{smart_contract: %SmartContract{}} = address}) do
-    Chain.proxy_contract?(address.hash, address.smart_contract.abi)
+  def smart_contract_is_proxy?(%Token{contract_address: %Address{smart_contract: %SmartContract{} = smart_contract}}) do
+    SmartContract.proxy_contract?(smart_contract)
   end
 
   def smart_contract_is_proxy?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
@@ -75,7 +75,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
         contract_address: %Address{smart_contract: %SmartContract{}} = address
       }) do
     Enum.any?(
-      address.smart_contract.abi,
+      address.smart_contract.abi || [],
       &Writer.write_function?(&1)
     )
   end

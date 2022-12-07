@@ -26,7 +26,8 @@ api_path =
 # General application configuration
 config :block_scout_web,
   namespace: BlockScoutWeb,
-  ecto_repos: [Explorer.Repo, Explorer.Repo.Account]
+  ecto_repos: [Explorer.Repo, Explorer.Repo.Account],
+  cookie_domain: System.get_env("SESSION_COOKIE_DOMAIN")
 
 config :block_scout_web,
   admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"

@@ -62,7 +62,7 @@
             <%= if token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id) do %>
               1
             <% else %>
-              <%= format_according_to_decimals(token_balance.value, token.decimals) %> <%= token_symbol(token) %>
+              <%= CurrencyHelpers.format_according_to_decimals(token_balance.value, token.decimals) %> <%= token_symbol(token) %>
             <% end %>
             <%= if (token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id)) or token_balance.token_type == "ERC-1155" do %>
               <%= " TokenID " <> to_string(token_balance.token_id) %>

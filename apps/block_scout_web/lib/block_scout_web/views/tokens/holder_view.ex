@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.Tokens.HolderView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.Tokens.OverviewView
-  alias Explorer.Chain.Token
+  alias Explorer.Chain.{CurrencyHelpers, Token}
 
   @doc """
   Checks if the total supply percentage must be shown.
@@ -63,11 +63,11 @@ defmodule BlockScoutWeb.Tokens.HolderView do
 
   """
   def format_token_balance_value(value, _id, %Token{type: "ERC-20", decimals: decimals}) do
-    format_according_to_decimals(value, decimals)
+    CurrencyHelpers.format_according_to_decimals(value, decimals)
   end
 
   def format_token_balance_value(value, id, %Token{type: "ERC-1155", decimals: decimals}) do
-    to_string(format_according_to_decimals(value, decimals)) <> " TokenID " <> to_string(id)
+    to_string(CurrencyHelpers.format_according_to_decimals(value, decimals)) <> " TokenID " <> to_string(id)
   end
 
   def format_token_balance_value(value, _id, _token) do

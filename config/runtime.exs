@@ -106,8 +106,6 @@ config :block_scout_web,
   amb_bridge_mediators: System.get_env("AMB_BRIDGE_MEDIATORS"),
   foreign_json_rpc: System.get_env("FOREIGN_JSON_RPC", ""),
   gas_price: System.get_env("GAS_PRICE", nil),
-  restricted_list: System.get_env("RESTRICTED_LIST", nil),
-  restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil),
   dark_forest_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST"),
   dark_forest_addresses_v_0_5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_5"),
   dark_forest_addresses_v_0_6: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6"),
@@ -258,7 +256,17 @@ config :explorer,
     if(disable_webapp != "true",
       do: Explorer.Chain.Events.SimpleSender,
       else: Explorer.Chain.Events.DBSender
-    )
+    ),
+  enable_caching_implementation_data_of_proxy: true,
+  avg_block_time_as_ttl_cached_implementation_data_of_proxy: true,
+  fallback_ttl_cached_implementation_data_of_proxy: :timer.seconds(4),
+  implementation_data_fetching_timeout: :timer.seconds(2),
+  restricted_list: System.get_env("RESTRICTED_LIST", nil),
+  restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil)
+
+config :explorer, Explorer.Visualize.Sol2uml,
+  service_url: System.get_env("VISUALIZE_SOL2UML_SERVICE_URL"),
+  enabled: System.get_env("VISUALIZE_SOL2UML_ENABLED") == "true"
 
 config :explorer, Explorer.Chain.Events.Listener,
   enabled:
@@ -386,6 +394,10 @@ config :explorer, Explorer.Chain.Cache.Blocks,
   global_ttl: if(disable_indexer == "true", do: :timer.seconds(5))
 
 config :explorer, Explorer.Chain.Cache.Transactions,
+  ttl_check_interval: if(disable_indexer == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(disable_indexer == "true", do: :timer.seconds(5))
+
+config :explorer, Explorer.Chain.Cache.TransactionsApiV2,
   ttl_check_interval: if(disable_indexer == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(disable_indexer == "true", do: :timer.seconds(5))
 

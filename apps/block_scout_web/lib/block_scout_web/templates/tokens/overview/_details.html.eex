@@ -177,9 +177,9 @@
               </dt>
               <dd class="col-sm-8 col-md-8 col-lg-9">
                 <%= if decimals?(@token) do %>
-                  <%= format_according_to_decimals(@token.total_supply, @token.decimals) %>
+                  <%= CurrencyHelpers.format_according_to_decimals(@token.total_supply, @token.decimals) %>
                 <% else %>
-                  <%= format_integer_to_currency(@token.total_supply) %>
+                  <%= CurrencyHelpers.format_integer_to_currency(@token.total_supply) %>
                 <% end %> <%= @token.symbol %>
               </dd>
             </dl>
