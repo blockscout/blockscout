@@ -271,7 +271,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
         "from_period" => from_period,
         "to_period" => to_period,
         "recaptcha_response" => recaptcha_response
-      }) do
+      })
+      when is_binary(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:recaptcha, true} <- {:recaptcha, captcha_helper().recaptcha_passed?(recaptcha_response)} do
@@ -281,12 +282,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
         conn
         |> put_resp_params("internal_transactions.csv")
       )
-    else
-      :error ->
-        unprocessable_entity(conn)
-
-      {:error, :not_found} ->
-        not_found(conn)
     end
   end
 
@@ -297,7 +292,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
         "from_period" => from_period,
         "to_period" => to_period,
         "recaptcha_response" => recaptcha_response
-      }) do
+      })
+      when is_binary(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:recaptcha, true} <- {:recaptcha, captcha_helper().recaptcha_passed?(recaptcha_response)} do
@@ -307,12 +303,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
         conn
         |> put_resp_params("logs.csv")
       )
-    else
-      :error ->
-        unprocessable_entity(conn)
-
-      {:error, :not_found} ->
-        not_found(conn)
     end
   end
 
