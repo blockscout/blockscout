@@ -2,7 +2,7 @@
 <% stats_report_url = Application.get_env(:block_scout_web, :stats_report_url) %>
 <%
 {:ok, urls} = stats_report_url |> Jason.decode()
-%{"overview" => overview_url, "addresses" => addresses_url, "cStables" => cstables_url, "transactions" => transactions_url, "reserve" => reserve_url} = urls
+%{"overview" => overview_url, "addresses" => addresses_url, "cStables" => cstables_url, "transactions" => transactions_url, "reserve" => reserve_url, "epoch" => epoch_url} = urls
 %>
 
 <nav class="menu-wrap" data-selector="stats-nabvar">
@@ -30,6 +30,11 @@
       <li class="stats-link" data-tab-id="5">
         <a href="<%= transactions_url %>" target="myiframe">
           <%=  gettext("Transactions") %>
+        </a>
+      </li>
+      <li class="stats-link" data-tab-id="6">
+        <a href="<%= epoch_url %>" target="myiframe">
+          <%=  gettext("Epoch Rewards") %>
         </a>
       </li>
   </ul>

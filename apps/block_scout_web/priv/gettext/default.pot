@@ -3300,3 +3300,8 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "truffle flattener"
 msgstr ""
+
+#: lib/block_scout_web/templates/stats/index.html.eex:37
+#, elixir-autogen, elixir-format
+msgid "Epoch Rewards"
+msgstr ""
