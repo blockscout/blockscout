@@ -3034,6 +3034,10 @@ msgid "View previous block"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/stats/index.html.eex:37
+msgid "Epoch Rewards"
+msgstr ""
+
 #: lib/block_scout_web/templates/address/overview.html.eex:204
 msgid "Voting CELO Balance"
 msgstr ""
