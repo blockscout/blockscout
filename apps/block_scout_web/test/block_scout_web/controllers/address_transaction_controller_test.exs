@@ -188,7 +188,8 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         get(conn, "/token-transfers-csv", %{
           "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
-          "to_period" => to_period
+          "to_period" => to_period,
+          "recaptcha_response" => "123"
         })
 
       assert conn.status == 404

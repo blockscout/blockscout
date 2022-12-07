@@ -269,10 +269,12 @@ defmodule BlockScoutWeb.AddressTransactionController do
   def internal_transactions_csv(conn, %{
         "address_id" => address_hash_string,
         "from_period" => from_period,
-        "to_period" => to_period
+        "to_period" => to_period,
+        "recaptcha_response" => recaptcha_response
       }) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
+         {:ok, address} <- Chain.hash_to_address(address_hash),
+         {:recaptcha, true} <- {:recaptcha, captcha_helper().recaptcha_passed?(recaptcha_response)} do
       address
       |> AddressInternalTransactionCsvExporter.export(from_period, to_period)
       |> Enum.into(
@@ -290,9 +292,15 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   def internal_transactions_csv(conn, _), do: not_found(conn)
 
-  def logs_csv(conn, %{"address_id" => address_hash_string, "from_period" => from_period, "to_period" => to_period}) do
+  def logs_csv(conn, %{
+        "address_id" => address_hash_string,
+        "from_period" => from_period,
+        "to_period" => to_period,
+        "recaptcha_response" => recaptcha_response
+      }) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
+         {:ok, address} <- Chain.hash_to_address(address_hash),
+         {:recaptcha, true} <- {:recaptcha, captcha_helper().recaptcha_passed?(recaptcha_response)} do
       address
       |> AddressLogCsvExporter.export(from_period, to_period)
       |> Enum.into(
