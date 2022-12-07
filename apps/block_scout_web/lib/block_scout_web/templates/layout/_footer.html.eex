@@ -31,16 +31,16 @@
       <div class="col-xs-12 col-md-4 col-lg-2 footer-list">
         <h3>Contact Us</h3>
         <div class="footer-social-icons">
-          <a href="<%= Application.get_env(:block_scout_web, :footer)[:github_link] %>" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
+          <a href="https://github.com/mantlenetworkio/mantle" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
             <div class="footer-social-icon-container fontawesome-icon github"></div>
           </a>
-          <a href="https://www.twitter.com/mantlenetwork/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
+          <a href="https://twitter.com/0xMantle" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
             <div class="footer-social-icon-container fontawesome-icon twitter"></div>
           </a>
           <a href="https://t.me/mantlenetwork" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
             <div class="footer-social-icon-container fontawesome-icon telegram"></div>
           </a>
-          <a href="https://t.me/mantlenetwork" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
+          <a href="https://discord.com/invite/0xMantle" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
             <div class="footer-social-icon-container fontawesome-icon discord"></div>
           </a>
         </div>
