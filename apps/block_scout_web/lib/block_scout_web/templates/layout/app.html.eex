@@ -54,13 +54,7 @@
     </script>
   </head>
 
-  <body
-    data-network-path="<%= network_path() %>"
-    data-chain-id="<%= chain_id() %>"
-    data-subnetwork="<%= subnetwork() %>"
-    data-coin-name="<%= coin_name() %>"
-    data-json-rpc="<%= json_rpc() %>"
-  >
+  <body>
     <script defer data-cfasync="false">
       function applyDarkMode() {
         if (localStorage.getItem("current-color-mode") === "dark") {
