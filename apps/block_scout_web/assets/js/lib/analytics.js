@@ -133,7 +133,7 @@ function getNetwork () {
 
   if (host.includes('localhost')) {
     return 'mainnet-dev'
-  } else if (host.includes('explorer.celo.org')) {
+  } else if (host === 'explorer.celo.org') {
     // all production envs live on explorer.celo.org/%env% now
     return window.location.pathname.match('^/([a-z0-9]*)/?')[1]
   }

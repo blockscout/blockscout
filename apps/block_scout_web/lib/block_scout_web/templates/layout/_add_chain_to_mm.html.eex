@@ -8,6 +8,6 @@
         class="footer-link js-btn-add-chain-to-mm btn-add-chain-to-mm in-footer"
         style="cursor: pointer;"
     >
-        <%= gettext("Add") <> " " <> subnetwork() %>
+        <%= gettext("Add") <> " #{subnetwork()}" %>
     </a>
 </li>

@@ -26,7 +26,7 @@ export function showLoader (isTimeout, loader) {
 }
 
 export function fullPath (path) {
-  const networkPath = document.getElementById('js-network-path').value || '/'
+  const networkPath = document.body.dataset.networkPath || '/'
   return `${networkPath}${path}`.replace('//', '/')
 }
 

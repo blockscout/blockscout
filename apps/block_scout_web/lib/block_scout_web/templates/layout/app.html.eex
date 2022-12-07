@@ -54,7 +54,7 @@
     </script>
   </head>
 
-  <body>
+  <body data-network-path="<%= network_path() %>">
     <script defer data-cfasync="false">
       function applyDarkMode() {
         if (localStorage.getItem("current-color-mode") === "dark") {
