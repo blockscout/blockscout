@@ -157,20 +157,38 @@ defmodule BlockScoutWeb.AddressTransactionController do
     end
   end
 
-  def token_transfers_csv(conn, %{
-        "address_id" => address_hash_string,
-        "from_period" => from_period,
-        "to_period" => to_period
-      })
-      when is_binary(address_hash_string) do
+  defp captcha_helper do
+    :block_scout_web
+    |> Application.get_env(:captcha_helper)
+  end
+
+  defp put_resp_params(conn, file_name) do
+    conn
+    |> put_resp_content_type("application/csv")
+    |> put_resp_header("content-disposition", "attachment; filename=#{file_name}")
+    |> put_resp_cookie("csv-downloaded", "true", max_age: 86_400, http_only: false)
+    |> send_chunked(200)
+  end
+
+  defp items_csv(
+         conn,
+         %{
+           "address_id" => address_hash_string,
+           "from_period" => from_period,
+           "to_period" => to_period,
+           "recaptcha_response" => recaptcha_response
+         },
+         csv_export_function,
+         file_name
+       )
+       when is_binary(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
+         {:ok, address} <- Chain.hash_to_address(address_hash),
+         {:recaptcha, true} <- {:recaptcha, captcha_helper().recaptcha_passed?(recaptcha_response)} do
       {:ok, conn} =
         conn
-        |> put_resp_content_type("application/csv")
-        |> put_resp_header("content-disposition", "attachment; filename=token_transfers.csv")
-        |> send_chunked(200)
-        |> then(&CSV.export_token_transfers(address, from_period, to_period, &1))
+        |> put_resp_params(file_name)
+        |> then(&csv_export_function.(address, from_period, to_period, &1))
 
       conn
     else
@@ -179,7 +197,31 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
       {:error, :not_found} ->
         not_found(conn)
+
+      {:recaptcha, false} ->
+        not_found(conn)
     end
+  end
+
+  defp items_csv(conn, _, _, _), do: not_found(conn)
+
+  def token_transfers_csv(conn, %{
+        "address_id" => address_hash_string,
+        "from_period" => from_period,
+        "to_period" => to_period,
+        "recaptcha_response" => recaptcha_response
+      }) do
+    items_csv(
+      conn,
+      %{
+        "address_id" => address_hash_string,
+        "from_period" => from_period,
+        "to_period" => to_period,
+        "recaptcha_response" => recaptcha_response
+      },
+      &CSV.export_token_transfers/4,
+      "token_transfers.csv"
+    )
   end
 
   def token_transfers_csv(conn, _), do: not_found(conn)
@@ -187,26 +229,20 @@ defmodule BlockScoutWeb.AddressTransactionController do
   def epoch_transactions_csv(conn, %{
         "address_id" => address_hash_string,
         "from_period" => from_period,
-        "to_period" => to_period
-      })
-      when is_binary(address_hash_string) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
-      {:ok, conn} =
-        conn
-        |> put_resp_content_type("application/csv")
-        |> put_resp_header("content-disposition", "attachment; filename=epoch_transactions.csv")
-        |> send_chunked(200)
-        |> then(&CSV.export_epoch_transactions(address, from_period, to_period, &1))
-
-      conn
-    else
-      :error ->
-        unprocessable_entity(conn)
-
-      {:error, :not_found} ->
-        not_found(conn)
-    end
+        "to_period" => to_period,
+        "recaptcha_response" => recaptcha_response
+      }) do
+    items_csv(
+      conn,
+      %{
+        "address_id" => address_hash_string,
+        "from_period" => from_period,
+        "to_period" => to_period,
+        "recaptcha_response" => recaptcha_response
+      },
+      &CSV.export_epoch_transactions/4,
+      "epoch_transactions.csv"
+    )
   end
 
   def epoch_transactions_csv(conn, _), do: not_found(conn)
@@ -214,28 +250,21 @@ defmodule BlockScoutWeb.AddressTransactionController do
   def transactions_csv(conn, %{
         "address_id" => address_hash_string,
         "from_period" => from_period,
-        "to_period" => to_period
+        "to_period" => to_period,
+        "recaptcha_response" => recaptcha_response
       }) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
-      {:ok, conn} =
-        conn
-        |> put_resp_content_type("application/csv")
-        |> put_resp_header("content-disposition", "attachment; filename=transactions.csv")
-        |> send_chunked(200)
-        |> then(&CSV.export_transactions(address, from_period, to_period, &1))
-
-      conn
-    else
-      :error ->
-        unprocessable_entity(conn)
-
-      {:error, :not_found} ->
-        not_found(conn)
-    end
+    items_csv(
+      conn,
+      %{
+        "address_id" => address_hash_string,
+        "from_period" => from_period,
+        "to_period" => to_period,
+        "recaptcha_response" => recaptcha_response
+      },
+      &CSV.export_transactions/4,
+      "transactions.csv"
+    )
   end
-
-  def transactions_csv(conn, _), do: not_found(conn)
 
   def internal_transactions_csv(conn, %{
         "address_id" => address_hash_string,
@@ -248,9 +277,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
       |> AddressInternalTransactionCsvExporter.export(from_period, to_period)
       |> Enum.into(
         conn
-        |> put_resp_content_type("application/csv")
-        |> put_resp_header("content-disposition", "attachment; filename=internal_transactions.csv")
-        |> send_chunked(200)
+        |> put_resp_params("internal_transactions.csv")
       )
     else
       :error ->
@@ -270,9 +297,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
       |> AddressLogCsvExporter.export(from_period, to_period)
       |> Enum.into(
         conn
-        |> put_resp_content_type("application/csv")
-        |> put_resp_header("content-disposition", "attachment; filename=logs.csv")
-        |> send_chunked(200)
+        |> put_resp_params("logs.csv")
       )
     else
       :error ->

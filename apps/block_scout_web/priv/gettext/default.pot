@@ -414,7 +414,7 @@ msgstr ""
 msgid "CSV"
 msgstr ""
 
-#: lib/block_scout_web/templates/csv_export/index.html.eex:27
+#: lib/block_scout_web/templates/csv_export/index.html.eex:26
 #, elixir-autogen, elixir-format
 msgid "CSV is being prepared, please wait..."
 msgstr ""
@@ -901,7 +901,7 @@ msgstr ""
 msgid "Domain"
 msgstr ""
 
-#: lib/block_scout_web/templates/csv_export/index.html.eex:26
+#: lib/block_scout_web/templates/csv_export/index.html.eex:25
 #, elixir-autogen, elixir-format
 msgid "Download"
 msgstr ""

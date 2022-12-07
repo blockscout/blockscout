@@ -49,3 +49,5 @@ config :libcluster,
       ]
     ]
   ]
+
+config :block_scout_web, :captcha_helper, BlockScoutWeb.CaptchaHelper
