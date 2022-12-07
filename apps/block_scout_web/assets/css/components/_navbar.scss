@@ -155,10 +155,10 @@ $navbar-logo-width: 100% !default;
     }
 
     @include media-breakpoint-up(xl) {
-      width: 290px;
+      width: 360px;
     }
     @media (min-width: 1366px) {
-      width: 380px;
+      width: 600px;
     }
     @media (min-width: 1540px) {
       width: 550px;
@@ -273,7 +273,7 @@ $navbar-logo-width: 100% !default;
 }
 
 .navbar-collapse {
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: flex-start;
   flex-shrink: 0;
   @media (min-width: 992px) {

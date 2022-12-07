@@ -5,7 +5,7 @@ config :explorer,
     transport: EthereumJSONRPC.HTTP,
     transport_options: [
       http: EthereumJSONRPC.HTTP.HTTPoison,
-      url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || "http://localhost:8545",
+      url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || "https://rpc.testnet.mantlenetwork.io",
       method_to_url: [
         eth_call: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "http://localhost:8545",
         eth_getBalance: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "http://localhost:8545",
