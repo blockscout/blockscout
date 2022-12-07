@@ -104,7 +104,8 @@ defmodule Indexer.Transform.TransactionActions do
 
     # handle uniswap v3
     tx_actions =
-      if Enum.member?([@mainnet, @optimism, @polygon], chain_id) and (Enum.empty?(protocols_to_rewrite) or Enum.member?(protocols_to_rewrite, "uniswap_v3")) do
+      if Enum.member?([@mainnet, @optimism, @polygon], chain_id) and
+           (Enum.empty?(protocols_to_rewrite) or Enum.member?(protocols_to_rewrite, "uniswap_v3")) do
         logs
         |> uniswap_filter_logs()
         |> logs_group_by_txs()
