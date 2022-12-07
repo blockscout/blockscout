@@ -26,7 +26,6 @@ defmodule Explorer.Repo.Migrations.AddTransactionActionsTable do
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
-    create(index(:transaction_actions, :hash))
     create(index(:transaction_actions, [:protocol, :type]))
   end
 end
