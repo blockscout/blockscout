@@ -8,7 +8,7 @@ const Mode = ace.require('ace/mode/csharp').Mode
 const codeMain = document.getElementById('code_viewer_main')
 const code = codeMain.textContent
 /* eslint-disable-next-line */
-const editor = (codeMain.length > 0) && ace.edit('code_viewer_main')
+const editor = codeMain && ace.edit('code_viewer_main')
 if (editor) {
   editor.session.setMode(new Mode())
   editor.setTheme('ace/theme/chrome')
