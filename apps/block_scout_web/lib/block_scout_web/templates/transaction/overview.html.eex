@@ -201,9 +201,15 @@
                   text: gettext("Highlighted events of the transaction.") %>
                 <%= gettext "Transaction Action" %></dt>
               <dd class="col-sm-9 col-lg-10 actions-list-mobile-container">
-                <%= for action <- transaction_actions do %>
-                  <%= render BlockScoutWeb.TransactionView, "_actions.html", Map.put(assigns, :action, action) %>
-                <% end %>
+                <div class="mCustomScrollbar" style="max-height:100px;width:90%">
+                  <% transaction_actions_indexed = Enum.with_index(transaction_actions) %>
+                  <% transaction_actions_length = Enum.count(transaction_actions) %>
+                  <%= for {action, i} <- transaction_actions_indexed do %>
+                    <% action_assigns = Map.put(assigns, :action, action) %>
+                    <% action_assigns = Map.put(action_assigns, :isLast, (i == transaction_actions_length - 1)) %>
+                    <%= render BlockScoutWeb.TransactionView, "_actions.html", action_assigns %>
+                  <% end %>
+                </div>
               </dd>
             </dl>
           <% end %>
