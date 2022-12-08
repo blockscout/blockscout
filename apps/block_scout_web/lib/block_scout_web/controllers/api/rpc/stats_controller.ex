@@ -11,7 +11,15 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
          {:format, {:ok, address_hash}} <- to_address_hash(contractaddress_param),
          {:token, {:ok, token}} <- {:token, Chain.token_from_address_hash(address_hash)} do
-      render(conn, "tokensupply.json", total_supply: Decimal.to_string(token.total_supply))
+      case Map.get(params, "cmc", nil) do
+        nil ->
+          render(conn, "tokensupply.json", total_supply: Decimal.to_string(token.total_supply))
+
+        _ ->
+          conn
+          |> put_resp_content_type("text/plain")
+          |> send_resp(200, Decimal.to_string(token.total_supply))
+      end
     else
       {:contractaddress_param, :error} ->
         render(conn, :error, error: "Query parameter contract address is required")
