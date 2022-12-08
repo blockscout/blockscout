@@ -3,7 +3,7 @@ defmodule Indexer.Fetcher.Token do
   Fetches information about a token.
   """
 
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
   alias Explorer.Chain
