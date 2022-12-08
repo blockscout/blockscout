@@ -83,6 +83,22 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(tokensupply_schema(), response)
     end
+
+    test "with coinmarketcap param", %{conn: conn} do
+      token = insert(:token, %{total_supply: 777.777})
+
+      params = %{
+        "module" => "stats",
+        "action" => "tokensupply",
+        "cmc" => true,
+        "contractaddress" => to_string(token.contract_address_hash)
+      }
+
+      assert "777.777" ==
+               conn
+               |> get("/api", params)
+               |> text_response(200)
+    end
   end
 
   describe "ethsupplyexchange" do
