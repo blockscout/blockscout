@@ -56,7 +56,7 @@ $button.on('click', () => {
       clearInterval(interval)
       Cookies.remove('csv-downloaded')
       // eslint-disable-next-line
-      grecaptcha.reset()
+      grecaptcha.enterprise.reset()
     }
   }
 })
