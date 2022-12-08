@@ -8,6 +8,9 @@
 
 ### Fixes
 
+- [#6037](https://github.com/blockscout/blockscout/pull/6037) - Fix order of results in txlistinternal API endpoint
+- [#6036](https://github.com/blockscout/blockscout/pull/6036) - Fix address checksum on transaction page
+- [#6032](https://github.com/blockscout/blockscout/pull/6032) - Sort by address.hash column in accountlist API endpoint
 - [#6017](https://github.com/blockscout/blockscout/pull/6017), [#6028](https://github.com/blockscout/blockscout/pull/6028) - Move "contract interaction" and "Add chain to MM" env vars to runtime
 - [#6012](https://github.com/blockscout/blockscout/pull/6012) - Fix display of estimated addresses counter on the main page
 - [#5978](https://github.com/blockscout/blockscout/pull/5978) - Allow timestamp param in the log of eth_getTransactionReceipt method
@@ -27,6 +30,8 @@
 
 ### Chore
 
+- [#6035](https://github.com/blockscout/blockscout/pull/6035) - Hide copy btn if no raw trace
+- [#6034](https://github.com/blockscout/blockscout/pull/6034) - Suppress empty sections in supported chain dropdown
 - [#5939](https://github.com/blockscout/blockscout/pull/5939) - Bump sweetalert2 from 11.4.26 to 11.4.27 in /apps/block_scout_web/assets
 - [#5938](https://github.com/blockscout/blockscout/pull/5938) - Bump xss from 1.0.13 to 1.0.14 in /apps/block_scout_web/assets
 - [#5743](https://github.com/blockscout/blockscout/pull/5743) - Fixing tracer not found #5729
