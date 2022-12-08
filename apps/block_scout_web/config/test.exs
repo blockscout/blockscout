@@ -28,3 +28,5 @@ config :logger, :block_scout_web,
 config :wallaby, screenshot_on_failure: true, driver: Wallaby.Chrome, js_errors: false
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: false
+
+config :block_scout_web, :captcha_helper, BlockScoutWeb.TestCaptchaHelper

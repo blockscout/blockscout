@@ -10,14 +10,14 @@ defmodule Indexer.MixProject do
       deps: deps(),
       deps_path: "../../deps",
       description: "Fetches block chain data from on-chain node for later reading with Explorer.",
-      elixir: "~> 1.12",
+      elixir: "~> 1.13",
       elixirc_options: [
         warnings_as_errors: true
       ],
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "0.1.0"
+      version: "4.1.7"
     ]
   end
 
@@ -49,7 +49,7 @@ defmodule Indexer.MixProject do
     [
       # Due to the way we build the image, we have to include the deps here
       {:plug_cowboy, "~> 2.0"},
-      {:poison, "~> 4.0"},
+      {:poison, "~> 5.0.0"},
       # Optional dependency of `:spandex` for `Spandex.Decorators`
       {:decorator, "~> 1.4"},
       # JSONRPC access to Parity for `Explorer.Indexer`
@@ -63,7 +63,7 @@ defmodule Indexer.MixProject do
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
       # Mocking `EthereumJSONRPC.Transport`, so we avoid hitting real chains for local testing
-      {:mox, "~> 0.4", only: [:test]},
+      {:mox, "~> 1.0", only: [:test]},
       # Tracing
       {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog

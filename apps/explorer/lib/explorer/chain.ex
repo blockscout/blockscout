@@ -173,7 +173,7 @@ defmodule Explorer.Chain do
   def address_estimated_count do
     cached_value = AddressesCounter.fetch()
 
-    if is_nil(cached_value) do
+    if is_nil(cached_value) || cached_value == 0 do
       %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'addresses';")
 
       count
@@ -202,10 +202,7 @@ defmodule Explorer.Chain do
   while to have the return back.
   """
   def count_addresses do
-    Repo.one(
-      Address.count(),
-      timeout: :infinity
-    )
+    Repo.aggregate(Address, :count, timeout: :infinity)
   end
 
   @doc """
@@ -241,37 +238,14 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if direction == nil do
-      query_to_address_hash_wrapped =
-        InternalTransaction
-        |> InternalTransaction.where_nonpending_block()
-        |> InternalTransaction.where_address_fields_match(hash, :to_address_hash)
-        |> InternalTransaction.where_block_number_in_period(from_block, to_block)
-        |> common_where_limit_order(paging_options)
-        |> wrapped_union_subquery()
-
-      query_from_address_hash_wrapped =
-        InternalTransaction
-        |> InternalTransaction.where_nonpending_block()
-        |> InternalTransaction.where_address_fields_match(hash, :from_address_hash)
-        |> InternalTransaction.where_block_number_in_period(from_block, to_block)
-        |> common_where_limit_order(paging_options)
-        |> wrapped_union_subquery()
-
-      query_created_contract_address_hash_wrapped =
-        InternalTransaction
-        |> InternalTransaction.where_nonpending_block()
-        |> InternalTransaction.where_address_fields_match(hash, :created_contract_address_hash)
-        |> InternalTransaction.where_block_number_in_period(from_block, to_block)
-        |> common_where_limit_order(paging_options)
-        |> wrapped_union_subquery()
-
       full_query =
-        query_to_address_hash_wrapped
-        |> union(^query_from_address_hash_wrapped)
-        |> union(^query_created_contract_address_hash_wrapped)
+        InternalTransaction
+        |> InternalTransaction.where_nonpending_block()
+        |> InternalTransaction.where_address_fields_match(hash, nil)
+        |> InternalTransaction.where_block_number_in_period(from_block, to_block)
+        |> common_where_limit_order(paging_options)
 
       full_query
-      |> wrapped_union_subquery()
       |> order_by(
         [q],
         desc: q.block_number,
@@ -2646,17 +2620,6 @@ defmodule Explorer.Chain do
     tokens = CurrencyHelpers.divide_decimals(token_balance.value, token_balance.token.decimals)
     price = token_balance.token.usd_value
     Decimal.mult(tokens, price)
-  end
-
-  def address_tokens_usd_sum(token_balances) do
-    token_balances
-    |> Enum.reduce(Decimal.new(0), fn {token_balance, _, _}, acc ->
-      if token_balance.value && token_balance.token.usd_value do
-        Decimal.add(acc, balance_in_usd(token_balance))
-      else
-        acc
-      end
-    end)
   end
 
   defp contract?(%{contract_code: nil}), do: false

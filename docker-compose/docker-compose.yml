@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:13.6
+    image: postgres:14
     restart: always
     container_name: 'postgres'
     environment:
@@ -28,6 +28,8 @@ services:
         DISABLE_WEBAPP: "false"
         DISABLE_WRITE_API: "false"
         CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER: ""
+        CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
+        SOCKET_ROOT: "/"
         WOBSERVER_ENABLED: "false"
         ADMIN_PANEL_ENABLED: ""
     restart: always

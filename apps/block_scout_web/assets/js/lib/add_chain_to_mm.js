@@ -2,29 +2,35 @@ import 'bootstrap'
 
 export async function addChainToMM ({ btn }) {
   try {
-    const chainID = await window.ethereum.request({ method: 'eth_chainId' })
-    const chainIDFromEnvVar = parseInt(document.body.dataset.chainId)
-    const chainIDHex = chainIDFromEnvVar && `0x${chainIDFromEnvVar.toString(16)}`
-    const blockscoutURL = location.protocol + '//' + location.host + document.body.dataset.networkPath
-    if (chainID !== chainIDHex) {
+    const chainIDFromWallet = await window.ethereum.request({ method: 'eth_chainId' })
+    const chainIDFromInstance = getChainIdHex()
+
+    const coinName = document.getElementById('js-coin-name').value
+    const subNetwork = document.getElementById('js-subnetwork').value
+    const jsonRPC = document.getElementById('js-json-rpc').value
+    const networkPath = document.getElementById('js-network-path').value
+
+    const blockscoutURL = location.protocol + '//' + location.host + networkPath
+
+    if (chainIDFromWallet !== chainIDFromInstance) {
       await window.ethereum.request({
         method: 'wallet_addEthereumChain',
         params: [{
-          chainId: chainIDHex,
-          chainName: document.body.dataset.subnetwork,
+          chainId: chainIDFromInstance,
+          chainName: subNetwork,
           nativeCurrency: {
-            name: document.body.dataset.coinName,
-            symbol: document.body.dataset.coinName,
+            name: coinName,
+            symbol: coinName,
             decimals: 18
           },
-          rpcUrls: [document.body.dataset.jsonRpc],
+          rpcUrls: [jsonRPC],
           blockExplorerUrls: [blockscoutURL]
         }]
       })
     } else {
       btn.tooltip('dispose')
       btn.tooltip({
-        title: `You're already connected to ${document.body.dataset.subnetwork}`,
+        title: `You're already connected to ${subNetwork}`,
         trigger: 'click',
         placement: 'bottom'
       }).tooltip('show')
@@ -36,4 +42,10 @@ export async function addChainToMM ({ btn }) {
   } catch (error) {
     console.error(error)
   }
+}
+
+function getChainIdHex () {
+  const chainIDFromDOM = document.getElementById('js-chain-id').value
+  const chainIDFromInstance = parseInt(chainIDFromDOM)
+  return chainIDFromInstance && `0x${chainIDFromInstance.toString(16)}`
 }

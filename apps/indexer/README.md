@@ -32,6 +32,7 @@ Some data has to be extracted from already fetched data, and there're several tr
 - `block/catchup`: gets unfetched ranges of blocks, imports them in batches
 
 Both block fetchers retrieve/extract the blocks themselves and the following additional data:
+
 - `block_second_degree_relations`
 - `transactions`
 - `logs`
@@ -39,16 +40,19 @@ Both block fetchers retrieve/extract the blocks themselves and the following add
 - `addresses`
 
 The following stubs for further async fetching are inserted as well:
+
 - `block_rewards`
 - `address_coin_balances`
 - `address_token_balances`
 - `tokens`
 
 Realtime fetcher also immediately fetches from the node:
+
 - current balances for `addresses`
 - `address_coin_balances`
 
 The following async fetchers are launched for importing missing data:
+
 - `replaced_transaction`
 - `block_reward`
 - `uncle_block`
@@ -65,6 +69,7 @@ The following async fetchers are launched for importing missing data:
 
 These are responsible for fetching additional block data not retrieved in root fetchers.
 Most of them are based off `BufferedTask`, and the basic algorithm goes like this:
+
 1. Make an initial streaming request to database to fetch identifiers of all existing unfetched items.
 2. Accept new identifiers for fetching via `async_fetch()` method.
 3. Split identifier in batches and run tasks on `TaskSupervisor` according to `max_batch_size` and `max_concurrency` settings.
@@ -86,6 +91,7 @@ Most of them are based off `BufferedTask`, and the basic algorithm goes like thi
 - `celo_validator_groups`: for fetching Celo validator pools
 
 Additionally:
+
 - `token_updater` is run every 2 days to update token metadata
 - `coin_balance_on_demand` is triggered from web UI to ensure address balance is as up-to-date as possible
 

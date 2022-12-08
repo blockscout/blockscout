@@ -80,6 +80,7 @@ defmodule Explorer.Etherscan do
     created_contract_address_hash
     input
     type
+    call_type
     gas
     gas_used
     error

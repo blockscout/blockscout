@@ -106,7 +106,8 @@ defmodule BlockScoutWeb.Etherscan do
         "transactionHash" => "0xd65b788c610949704a5f9aac2228c7c777434dfe11c863a12306f57fcbd8cdbb",
         "index" => "0",
         "input" => "",
-        "type" => "create",
+        "type" => "call",
+        "callType" => "delegatecall",
         "gas" => "814937",
         "gasUsed" => "536262",
         "isError" => "0",
@@ -1220,6 +1221,11 @@ defmodule BlockScoutWeb.Etherscan do
         type: "type",
         definition: ~s(Possible values: "create", "call", "reward", or "selfdestruct"),
         example: ~s("create")
+      },
+      callType: %{
+        type: "type",
+        definition: ~s(Possible values: "call", "callcode", "delegatecall", or "staticcall"),
+        example: ~s("delegatecall")
       },
       gas: @gas_type,
       gasUsed: @gas_type,

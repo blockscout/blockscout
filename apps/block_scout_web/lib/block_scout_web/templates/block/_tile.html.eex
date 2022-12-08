@@ -31,7 +31,7 @@
         </span>
         <%= if @block.size do %>
            <!-- size -->
-          <span class="mr-2"> <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
+          <span class="mr-2"> <%= Cldr.Unit.new!(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
         <% end %>
         <!-- age -->
         <span data-from-now="<%= @block.timestamp %>"></span>

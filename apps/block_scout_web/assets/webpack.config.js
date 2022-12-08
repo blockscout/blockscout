@@ -71,8 +71,8 @@ const appJs =
       'search-results': './js/pages/search-results/search.js',
       'token-overview': './js/pages/token/overview.js',
       'export-csv': './css/export-csv.scss',
-      'datepicker': './js/lib/datepicker.js',
       'stats': './js/pages/stats.js',
+      'csv-download': './js/lib/csv_download.js',
       'dropzone': './js/lib/dropzone.js'
     },
     output: {
@@ -159,11 +159,7 @@ const appJs =
       new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
       new webpack.DefinePlugin({
         'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT),
-        'process.env.NETWORK_PATH': JSON.stringify(process.env.NETWORK_PATH),
-        'process.env.CHAIN_ID': JSON.stringify(process.env.CHAIN_ID),
-        'process.env.JSON_RPC': JSON.stringify(process.env.JSON_RPC),
-        'process.env.SUBNETWORK': JSON.stringify(process.env.SUBNETWORK),
-        'process.env.COIN_NAME': JSON.stringify(process.env.COIN_NAME)
+        'process.env.NETWORK_PATH': JSON.stringify(process.env.NETWORK_PATH)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',

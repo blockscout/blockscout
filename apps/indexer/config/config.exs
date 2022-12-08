@@ -7,6 +7,8 @@ alias Indexer.LoggerBackend
 config :indexer,
   ecto_repos: [Explorer.Repo.Local]
 
+# config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
+
 config :indexer, Indexer.Tracer,
   service: :indexer,
   adapter: SpandexDatadog.Adapter,
