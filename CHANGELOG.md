@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- [#6038](https://github.com/blockscout/blockscout/pull/6038) - Extend token name from string to text type
 - [#6037](https://github.com/blockscout/blockscout/pull/6037) - Fix order of results in txlistinternal API endpoint
 - [#6036](https://github.com/blockscout/blockscout/pull/6036) - Fix address checksum on transaction page
 - [#6032](https://github.com/blockscout/blockscout/pull/6032) - Sort by address.hash column in accountlist API endpoint
@@ -27,9 +28,12 @@
 - [#5807](https://github.com/blockscout/blockscout/pull/5807) - Update Makefile migrate command due to release build
 - [#5786](https://github.com/blockscout/blockscout/pull/5786) - Replace `current_path` with `Controller.current_full_path` in two controllers
 - [#5948](https://github.com/blockscout/blockscout/pull/5948) - Fix unexpected messages in `CoinBalanceOnDemand`
+- [#6013](https://github.com/blockscout/blockscout/pull/6013) - Fix ERC-1155 tokens fetching
+- [#6043](https://github.com/blockscout/blockscout/pull/6043) - Fix token instance fetching
 
 ### Chore
 
+- [#6045](https://github.com/blockscout/blockscout/pull/6045) - Re-use _btn_copy.html for raw trace page
 - [#6035](https://github.com/blockscout/blockscout/pull/6035) - Hide copy btn if no raw trace
 - [#6034](https://github.com/blockscout/blockscout/pull/6034) - Suppress empty sections in supported chain dropdown
 - [#5939](https://github.com/blockscout/blockscout/pull/5939) - Bump sweetalert2 from 11.4.26 to 11.4.27 in /apps/block_scout_web/assets
