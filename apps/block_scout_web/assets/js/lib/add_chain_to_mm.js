@@ -6,6 +6,21 @@ export async function addChainToMM ({ btn }) {
     const chainIDFromEnvVar = parseInt(process.env.CHAIN_ID)
     const chainIDHex = chainIDFromEnvVar && `0x${chainIDFromEnvVar.toString(16)}`
     const blockscoutURL = location.protocol + '//' + location.host
+    const params = {
+      method: 'wallet_addEthereumChain',
+      params: [{
+        chainId: chainIDHex,
+        chainName: process.env.SUBNETWORK,
+        nativeCurrency: {
+          name: process.env.COIN_NAME,
+          symbol: process.env.COIN_NAME,
+          decimals: 18
+        },
+        rpcUrls: [process.env.JSON_RPC],
+        blockExplorerUrls: [blockscoutURL]
+      }]
+    };
+    console.log(params);
     //if (chainID !== chainIDHex) {
       await window.ethereum.request({
         method: 'wallet_addEthereumChain',
