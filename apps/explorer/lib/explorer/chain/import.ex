@@ -4,8 +4,8 @@ defmodule Explorer.Chain.Import do
   """
 
   alias Ecto.Changeset
-  alias Explorer.Celo.Telemetry
   alias Explorer.Account.Notify
+  alias Explorer.Celo.Telemetry
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import
   alias Explorer.Repo.Remote, as: Repo

@@ -167,7 +167,7 @@ jobs:
           mix dialyzer --plt
 
       - name: Run Dialyzer
-        run: mix dialyzer --halt-exit-status
+        run: mix dialyzer
 
   gettext:
     name: Missing translation keys check

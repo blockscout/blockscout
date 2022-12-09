@@ -535,7 +535,7 @@ defmodule Explorer.SmartContract.Reader do
       custom_abi
       |> ABI.parse_specification()
 
-    %{outputs: outputs, method_id: method_id} = proccess_abi(parsed_abi, method_id)
+    %{outputs: outputs, method_id: method_id} = process_abi(parsed_abi, method_id)
 
     query_contract_and_link_outputs(
       contract_address_hash,
@@ -548,7 +548,7 @@ defmodule Explorer.SmartContract.Reader do
     )
   end
 
-  defp proccess_abi([], _method_id), do: nil
+  defp process_abi([], _method_id), do: nil
 
   defp process_abi(abi, method_id) do
     function_object = find_function_by_method(abi, method_id)

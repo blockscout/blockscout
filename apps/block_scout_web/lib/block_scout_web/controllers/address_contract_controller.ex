@@ -29,7 +29,6 @@ defmodule BlockScoutWeb.AddressContractController do
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          _ <- VerificationController.check_and_verify(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
-
       with {:ok, implementation_address} <- Contracts.get_proxied_address(address_hash),
            {:ok, implementation_contract} <- Chain.find_contract_address(implementation_address, address_options, true) do
         Logger.debug("Implementation address FOUND in proxy table #{implementation_address}")

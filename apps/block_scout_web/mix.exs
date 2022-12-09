@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.Mixfile do
       deps_path: "../../deps",
       description: "Web interface for BlockScout.",
       dialyzer: [
-        plt_add_deps: :transitive,
+        plt_add_deps: :app_tree,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
       elixir: "~> 1.13",
