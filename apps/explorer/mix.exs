@@ -79,6 +79,10 @@ defmodule Explorer.Mixfile do
       # {:eth, git: "https://github.com/blockscout/eth.git", branch: "xdai"},
       # JSONRPC access to query smart contracts
       {:ethereum_jsonrpc, in_umbrella: true},
+      {:ex_cldr, "~> 2.7"},
+      {:ex_cldr_numbers, "~> 2.6"},
+      {:ex_cldr_units, "~> 3.13"},
+      {:cldr_utils, "~> 2.3"},
       # Data factory for testing
       {:ex_machina, "~> 2.3", only: [:test]},
       {:exvcr, "~> 0.10", only: :test},

@@ -10,6 +10,6 @@ data-pagination-container>
     </ul>
 </div>
 <%= if assigns[:showing_limit] do %>
-    <div class="limit mrm18" >(<%= gettext("Only the first")%> <%= assigns[:showing_limit] |> BlockScoutWeb.Cldr.Number.to_string! %> <%= gettext("elements are displayed")%>)
+    <div class="limit mrm18" >(<%= gettext("Only the first")%> <%= assigns[:showing_limit] |> Explorer.Cldr.Number.to_string! %> <%= gettext("elements are displayed")%>)
     </div>
 <% end %>

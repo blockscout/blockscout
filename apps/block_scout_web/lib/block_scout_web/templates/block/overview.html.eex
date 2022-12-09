@@ -158,7 +158,7 @@
               text: gettext("Block difficulty for miner, used to calibrate block generation time (Note: constant in POA based networks).") %>
               <%= gettext("Difficulty") %>
             </dt>
-            <dd class="col-sm-9 col-lg-10"><%= @block.difficulty |> Decimal.to_integer() |> BlockScoutWeb.Cldr.Number.to_string! %></dd>
+            <dd class="col-sm-9 col-lg-10"><%= @block.difficulty |> Decimal.to_integer() |> Explorer.Cldr.Number.to_string! %></dd>
           </dl>
           <%= if block_type(@block) == "Block" do %>
             <!-- Total Difficulty -->
@@ -168,7 +168,7 @@
                 text: gettext("Total difficulty of the chain until this block.") %>
                 <%= gettext("Total Difficulty") %>
               </dt>
-              <dd class="col-sm-9 col-lg-10"><%= @block.total_difficulty |> Decimal.to_integer() |> BlockScoutWeb.Cldr.Number.to_string! %></dd>
+              <dd class="col-sm-9 col-lg-10"><%= @block.total_difficulty |> Decimal.to_integer() |> Explorer.Cldr.Number.to_string! %></dd>
             </dl>
             <!-- Gas Used -->
             <dl class="row">
@@ -177,7 +177,7 @@
                 text: gettext("The total gas amount used in the block and its percentage of gas filled in the block.") %>
                 <%= gettext("Gas Used") %>
               </dt>
-              <dd class="col-sm-9 col-lg-10"><%= @block.gas_used |> BlockScoutWeb.Cldr.Number.to_string! %> | <%= if Decimal.compare(@block.gas_limit, 0) == :eq, do: "0%", else: ((Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> BlockScoutWeb.Cldr.Number.to_string!(format: "#.#%")) %></dd>
+              <dd class="col-sm-9 col-lg-10"><%= @block.gas_used |> Explorer.Cldr.Number.to_string! %> | <%= if Decimal.compare(@block.gas_limit, 0) == :eq, do: "0%", else: ((Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> Explorer.Cldr.Number.to_string!(format: "#.#%")) %></dd>
             </dl>
             <!-- Gas Limit -->
             <dl class="row">
@@ -186,7 +186,7 @@
                 text: gettext("Total gas limit provided by all transactions in the block.") %>
                 <%= gettext("Gas Limit") %>
               </dt>
-              <dd class="col-sm-9 col-lg-10"><%= BlockScoutWeb.Cldr.Number.to_string!(@block.gas_limit) %></dd>
+              <dd class="col-sm-9 col-lg-10"><%= Explorer.Cldr.Number.to_string!(@block.gas_limit) %></dd>
             </dl>
             <!-- Nonce -->
             <dl class="row">

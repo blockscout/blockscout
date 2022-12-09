@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.CldrHelper.Number do
+defmodule Explorer.CldrHelper.Number do
   @moduledoc """
   Work-arounds for `Cldr.Number` bugs
   """
@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.CldrHelper.Number do
     # We do this to trick Dialyzer to not complain about non-local returns caused by bug in Cldr.Number.to_string spec
     case :erlang.phash2(1, 1) do
       0 ->
-        BlockScoutWeb.Cldr.Number.to_string(decimal, options)
+        Explorer.Cldr.Number.to_string(decimal, options)
 
       1 ->
         # does not occur
@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.CldrHelper.Number do
     # We do this to trick Dialyzer to not complain about non-local returns caused by bug in Cldr.Number.to_string! spec
     case :erlang.phash2(1, 1) do
       0 ->
-        BlockScoutWeb.Cldr.Number.to_string!(decimal)
+        Explorer.Cldr.Number.to_string!(decimal)
 
       1 ->
         # does not occur
@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.CldrHelper.Number do
     # We do this to trick Dialyzer to not complain about non-local returns caused by bug in Cldr.Number.to_string! spec
     case :erlang.phash2(1, 1) do
       0 ->
-        BlockScoutWeb.Cldr.Number.to_string!(decimal, options)
+        Explorer.Cldr.Number.to_string!(decimal, options)
 
       1 ->
         # does not occur

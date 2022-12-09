@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.TransactionView do
 
   alias BlockScoutWeb.{AccessHelpers, AddressView, BlockView, TabHelpers}
   alias BlockScoutWeb.Account.AuthController
-  alias BlockScoutWeb.Cldr.Number
+  alias Explorer.Cldr.Number
   alias Explorer.{Chain, CustomContractsHelpers, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
@@ -274,7 +274,7 @@ defmodule BlockScoutWeb.TransactionView do
     case block do
       %Block{consensus: true} ->
         {:ok, confirmations} = Chain.confirmations(block, named_arguments)
-        BlockScoutWeb.Cldr.Number.to_string!(confirmations, format: "#,###")
+        Explorer.Cldr.Number.to_string!(confirmations, format: "#,###")
 
       _ ->
         0
@@ -359,7 +359,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def gas(%type{gas: gas}) when is_transaction_type(type) do
-    BlockScoutWeb.Cldr.Number.to_string!(gas)
+    Explorer.Cldr.Number.to_string!(gas)
   end
 
   def skip_decoding?(transaction) do

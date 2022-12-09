@@ -65,7 +65,7 @@ config :block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController,
 
 config :ex_cldr,
   default_locale: "en",
-  default_backend: BlockScoutWeb.Cldr
+  default_backend: Explorer.Cldr
 
 config :logger, :block_scout_web,
   # keep synced with `config/config.exs`

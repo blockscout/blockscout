@@ -72,10 +72,6 @@ defmodule BlockScoutWeb.Mixfile do
       # Need until https://github.com/absinthe-graphql/absinthe_relay/pull/125 is released, then can be removed
       # The current `absinthe_relay` is compatible though as shown from that PR
       {:ecto, "~> 3.3", override: true},
-      {:ex_cldr, "~> 2.7"},
-      {:ex_cldr_numbers, "~> 2.6"},
-      {:ex_cldr_units, "~> 3.13"},
-      {:cldr_utils, "~> 2.3"},
       {:ex_machina, "~> 2.1", only: [:test]},
       {:explorer, in_umbrella: true},
       {:exvcr, "~> 0.10", only: :test},

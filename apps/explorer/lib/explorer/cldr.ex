@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Cldr do
+defmodule Explorer.Cldr do
   @moduledoc """
   Cldr global configuration.
   """

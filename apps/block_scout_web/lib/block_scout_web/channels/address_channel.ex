@@ -113,7 +113,7 @@ defmodule BlockScoutWeb.AddressChannel do
   def handle_out("count", %{count: count}, socket) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
-    push(socket, "count", %{count: BlockScoutWeb.Cldr.Number.to_string!(count, format: "#,###")})
+    push(socket, "count", %{count: Explorer.Cldr.Number.to_string!(count, format: "#,###")})
 
     {:noreply, socket}
   end

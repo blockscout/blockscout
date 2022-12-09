@@ -2,9 +2,9 @@ defmodule BlockScoutWeb.StakesHelpers do
   @moduledoc """
   Helpers for staking templates
   """
-  alias BlockScoutWeb.CldrHelper.Number
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Token
+  alias Explorer.CldrHelper.Number
   alias Phoenix.HTML
   alias Timex.Duration
 

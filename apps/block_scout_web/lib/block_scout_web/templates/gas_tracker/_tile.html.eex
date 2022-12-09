@@ -15,7 +15,7 @@
     <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @gas_consumer.address_hash %>
   </td>
   <td class="stakes-td">
-    $<%= BlockScoutWeb.Cldr.Number.to_string!(gas_fees(@gas_consumer.total_gas)) %> (<%= BlockScoutWeb.Cldr.Number.to_string!(@gas_consumer.total_gas) %>)
+    $<%= Explorer.Cldr.Number.to_string!(gas_fees(@gas_consumer.total_gas)) %> (<%= Explorer.Cldr.Number.to_string!(@gas_consumer.total_gas) %>)
   </td>
   <td class="stakes-td">
     <%= gas_usage_perc(@gas_consumer.total_gas, @total_gas_in_period) %>%
