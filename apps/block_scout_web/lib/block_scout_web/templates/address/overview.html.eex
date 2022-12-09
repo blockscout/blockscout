@@ -159,7 +159,7 @@
                     data-placement="top"
                     data-toggle="tooltip"
                     data-html="true"
-                    title='<%= "@ " <> usd_value <> "/" <> gettext("CELO") %>'
+                    title='<%= "@ " <> usd_value <> "/" <> Explorer.coin_name() %>'  
                   >
                   </span>)
                 </span>

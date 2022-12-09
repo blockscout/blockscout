@@ -46,7 +46,7 @@
         'Less than': '<%= gettext("Less than") %>',
         'Market Cap': '<%= gettext("Market Cap") %>',
         'Price': '<%= gettext("Price") %>',
-        'Ether': '<%= gettext("CELO") %>',
+        'Ether': '<%= Explorer.coin_name() %>',
         'Tx/day': '<%= gettext("Tx/day") %>'
       }
       // make analytics key variable accessible from js files

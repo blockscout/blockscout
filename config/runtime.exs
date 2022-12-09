@@ -185,6 +185,8 @@ config :ethereum_jsonrpc, :internal_transaction_timeout, debug_trace_transaction
 config :ethereum_jsonrpc, EthereumJSONRPC.PendingTransaction,
   type: System.get_env("ETHEREUM_JSONRPC_PENDING_TRANSACTIONS_TYPE", "default")
 
+config :ethereum_jsonrpc, EthereumJSONRPC.Variant, type: System.get_env("ETHEREUM_JSONRPC_VARIANT", "nethermind")
+
 ################
 ### Explorer ###
 ################
@@ -199,8 +201,8 @@ healthy_blocks_period =
   end
 
 config :explorer,
-  coin: System.get_env("COIN") || "CELO",
-  coin_name: System.get_env("COIN_NAME") || System.get_env("COIN") || "CELO",
+  coin: System.get_env("COIN", nil) || System.get_env("EXCHANGE_RATES_COIN") || "CELO",
+  coin_name: System.get_env("COIN_NAME", nil) || || System.get_env("EXCHANGE_RATES_COIN") || "CELO",
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,default",
