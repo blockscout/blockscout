@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
         TransactionController.set_not_found_view(conn, hash_string)
 
       :error ->
-        TransactionController.set_invalid_view(conn, hash_string)
+        unprocessable_entity(conn)
 
       {:error, :not_found} ->
         TransactionController.set_not_found_view(conn, hash_string)
