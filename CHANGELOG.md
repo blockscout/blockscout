@@ -29,6 +29,7 @@
 - [#6476](https://github.com/blockscout/blockscout/pull/6476), [#6484](https://github.com/blockscout/blockscout/pull/6484) - Update token balances indexes
 - [#6510](https://github.com/blockscout/blockscout/pull/6510) - Set consensus: false for blocks on int transaction foreign_key_violation
 - [#6565](https://github.com/blockscout/blockscout/pull/6565) - Set restart: :permanent for permanent fetchers
+- [#6568](https://github.com/blockscout/blockscout/pull/6568) - Drop unfetched_token_balances index
 
 ### Fixes
 
