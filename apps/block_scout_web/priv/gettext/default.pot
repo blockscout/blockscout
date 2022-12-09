@@ -17,7 +17,7 @@ msgid_plural "%{count} tokens"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/block_scout_web/templates/block/_tile.html.eex:30
+#: lib/block_scout_web/templates/block/_tile.html.eex:32
 #, elixir-format
 msgid "%{count} transaction"
 msgid_plural "%{count} transactions"
@@ -44,12 +44,12 @@ msgstr ""
 msgid "%{address} - %{subnetwork} Explorer"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:11
+#: lib/block_scout_web/templates/block/overview.html.eex:13
 #, elixir-autogen, elixir-format
 msgid "%{block_type} Details"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:54
+#: lib/block_scout_web/templates/block/overview.html.eex:56
 #, elixir-autogen, elixir-format
 msgid "%{block_type} Height"
 msgstr ""
@@ -59,17 +59,17 @@ msgstr ""
 msgid "%{block_type}s"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:101
+#: lib/block_scout_web/templates/block/overview.html.eex:103
 #, elixir-autogen, elixir-format
 msgid "%{count} Epoch Transactions"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:84
+#: lib/block_scout_web/templates/block/overview.html.eex:86
 #, elixir-autogen, elixir-format
 msgid "%{count} Transaction"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:86
+#: lib/block_scout_web/templates/block/overview.html.eex:88
 #: lib/block_scout_web/templates/chain/_block.html.eex:11
 #, elixir-autogen, elixir-format
 msgid "%{count} Transactions"
@@ -103,12 +103,12 @@ msgstr ""
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:227
+#: lib/block_scout_web/templates/block/overview.html.eex:229
 #, elixir-autogen, elixir-format
 msgid "64-bit hash of value verifying proof-of-work (note: null for POA chains)."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:111
+#: lib/block_scout_web/templates/block/overview.html.eex:113
 #, elixir-autogen, elixir-format
 msgid "A block producer who successfully included the block onto the blockchain."
 msgstr ""
@@ -222,7 +222,7 @@ msgstr ""
 msgid "Amount of"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:299
+#: lib/block_scout_web/templates/block/overview.html.eex:280
 #, elixir-autogen, elixir-format
 msgid "Amount of distributed reward. Miners receive a static block reward + Tx fees + uncle fees."
 msgstr ""
@@ -255,8 +255,7 @@ msgstr ""
 msgid "Balances"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:241
-#: lib/block_scout_web/templates/block/overview.html.eex:270
+#: lib/block_scout_web/templates/block/overview.html.eex:243
 #, elixir-autogen, elixir-format
 msgid "Base Fee per Gas"
 msgstr ""
@@ -273,7 +272,7 @@ msgid "Binary data included with the transaction. See input / logs below for add
 msgstr ""
 
 #: lib/block_scout_web/templates/address_coin_balance/_coin_balances.html.eex:8
-#: lib/block_scout_web/templates/block/overview.html.eex:28
+#: lib/block_scout_web/templates/block/overview.html.eex:30
 #: lib/block_scout_web/templates/transaction/overview.html.eex:153
 #, elixir-autogen, elixir-format
 msgid "Block"
@@ -300,7 +299,7 @@ msgstr ""
 msgid "Block Details"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:52
+#: lib/block_scout_web/templates/block/overview.html.eex:54
 #, elixir-autogen, elixir-format
 msgid "Block Height"
 msgstr ""
@@ -315,7 +314,7 @@ msgstr ""
 msgid "Block Proposed, awaiting import..."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:185
+#: lib/block_scout_web/templates/block/overview.html.eex:187
 #, elixir-autogen, elixir-format
 msgid "Block difficulty for miner, used to calibrate block generation time (Note: constant in POA based networks)."
 msgstr ""
@@ -371,13 +370,6 @@ msgstr ""
 msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for the Celo Network."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/_tile.html.eex:65
-#: lib/block_scout_web/templates/block/overview.html.eex:250
-#: lib/block_scout_web/templates/block/overview.html.eex:279
-#, elixir-autogen, elixir-format
-msgid "Burnt Fees"
-msgstr ""
-
 #: lib/block_scout_web/templates/address/_current_coin_balance.html.eex:11
 #: lib/block_scout_web/templates/address/index.html.eex:4
 #: lib/block_scout_web/templates/address/overview.html.eex:180
@@ -402,12 +394,6 @@ msgstr ""
 #: lib/block_scout_web/views/wei_helpers.ex:80
 #, elixir-autogen, elixir-format
 msgid "CELO"
-msgstr ""
-
-#: lib/block_scout_web/templates/block/overview.html.eex:249
-#: lib/block_scout_web/templates/block/overview.html.eex:278
-#, elixir-autogen, elixir-format
-msgid "CELO burned from transactions included in the block (Base fee (per unit of gas) * Gas Used)."
 msgstr ""
 
 #: lib/block_scout_web/templates/common_components/_csv_export_button.html.eex:2
@@ -493,6 +479,8 @@ msgstr ""
 msgid "Collapse"
 msgstr ""
 
+#: lib/block_scout_web/templates/block/_tile.html.eex:74
+#: lib/block_scout_web/templates/block/overview.html.eex:256
 #: lib/block_scout_web/templates/epoch_transaction/_epoch_tile.html.eex:12
 #, elixir-autogen, elixir-format
 msgid "Community Fund"
@@ -670,8 +658,8 @@ msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:36
 #: lib/block_scout_web/templates/address/overview.html.eex:37
-#: lib/block_scout_web/templates/block/overview.html.eex:118
-#: lib/block_scout_web/templates/block/overview.html.eex:119
+#: lib/block_scout_web/templates/block/overview.html.eex:120
+#: lib/block_scout_web/templates/block/overview.html.eex:121
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:41
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:42
 #, elixir-autogen, elixir-format
@@ -703,8 +691,8 @@ msgstr ""
 msgid "Copy From Address"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:143
-#: lib/block_scout_web/templates/block/overview.html.eex:144
+#: lib/block_scout_web/templates/block/overview.html.eex:145
+#: lib/block_scout_web/templates/block/overview.html.eex:146
 #, elixir-autogen, elixir-format
 msgid "Copy Hash"
 msgstr ""
@@ -714,8 +702,8 @@ msgstr ""
 msgid "Copy Metadata"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:163
-#: lib/block_scout_web/templates/block/overview.html.eex:164
+#: lib/block_scout_web/templates/block/overview.html.eex:165
+#: lib/block_scout_web/templates/block/overview.html.eex:166
 #, elixir-autogen, elixir-format
 msgid "Copy Parent Hash"
 msgstr ""
@@ -810,7 +798,7 @@ msgstr ""
 msgid "Data"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:69
+#: lib/block_scout_web/templates/block/overview.html.eex:71
 #, elixir-autogen, elixir-format
 msgid "Date & time at which block was produced."
 msgstr ""
@@ -888,7 +876,7 @@ msgstr ""
 msgid "Details"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:186
+#: lib/block_scout_web/templates/block/overview.html.eex:188
 #, elixir-autogen, elixir-format
 msgid "Difficulty"
 msgstr ""
@@ -992,7 +980,7 @@ msgid "Epoch #"
 msgstr ""
 
 #: lib/block_scout_web/templates/block/_tabs.html.eex:12
-#: lib/block_scout_web/templates/block/overview.html.eex:97
+#: lib/block_scout_web/templates/block/overview.html.eex:99
 #, elixir-autogen, elixir-format
 msgid "Epoch Transactions"
 msgstr ""
@@ -1107,9 +1095,9 @@ msgstr ""
 msgid "GET"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/_tile.html.eex:68
-#: lib/block_scout_web/templates/block/overview.html.eex:218
-#: lib/block_scout_web/templates/block/overview.html.eex:339
+#: lib/block_scout_web/templates/block/_tile.html.eex:80
+#: lib/block_scout_web/templates/block/overview.html.eex:220
+#: lib/block_scout_web/templates/block/overview.html.eex:320
 #: lib/block_scout_web/templates/transaction/overview.html.eex:366
 #, elixir-autogen, elixir-format
 msgid "Gas Limit"
@@ -1126,9 +1114,9 @@ msgid "Gas Tracker"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:322
-#: lib/block_scout_web/templates/block/_tile.html.eex:74
-#: lib/block_scout_web/templates/block/overview.html.eex:209
-#: lib/block_scout_web/templates/block/overview.html.eex:332
+#: lib/block_scout_web/templates/block/_tile.html.eex:86
+#: lib/block_scout_web/templates/block/overview.html.eex:211
+#: lib/block_scout_web/templates/block/overview.html.eex:313
 #, elixir-autogen, elixir-format
 msgid "Gas Used"
 msgstr ""
@@ -1143,7 +1131,7 @@ msgstr ""
 msgid "Gas used by the address."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:59
+#: lib/block_scout_web/templates/block/overview.html.eex:61
 #, elixir-autogen, elixir-format
 msgid "Genesis Block"
 msgstr ""
@@ -1169,7 +1157,7 @@ msgstr ""
 msgid "Gwei"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:137
+#: lib/block_scout_web/templates/block/overview.html.eex:139
 #, elixir-autogen, elixir-format
 msgid "Hash"
 msgstr ""
@@ -1229,7 +1217,7 @@ msgstr ""
 msgid "Index position of Transaction in the block."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:312
+#: lib/block_scout_web/templates/block/overview.html.eex:293
 #, elixir-autogen, elixir-format
 msgid "Index position(s) of referenced stale blocks."
 msgstr ""
@@ -1456,8 +1444,7 @@ msgstr ""
 msgid "Minimal Proxy Contract for"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:240
-#: lib/block_scout_web/templates/block/overview.html.eex:269
+#: lib/block_scout_web/templates/block/overview.html.eex:242
 #, elixir-autogen, elixir-format
 msgid "Minimum fee required per unit of gas. Fee adjusts based on network congestion."
 msgstr ""
@@ -1550,7 +1537,7 @@ msgstr ""
 msgid "No verified contracts found"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:228
+#: lib/block_scout_web/templates/block/overview.html.eex:230
 #: lib/block_scout_web/templates/transaction/overview.html.eex:429
 #, elixir-autogen, elixir-format
 msgid "Nonce"
@@ -1577,7 +1564,7 @@ msgstr ""
 msgid "OUT"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:173
+#: lib/block_scout_web/templates/block/overview.html.eex:175
 #, elixir-autogen, elixir-format
 msgid "On which round was the block finalized"
 msgstr ""
@@ -1631,7 +1618,7 @@ msgstr ""
 msgid "Parameters"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:153
+#: lib/block_scout_web/templates/block/overview.html.eex:155
 #, elixir-autogen, elixir-format
 msgid "Parent Hash"
 msgstr ""
@@ -1668,7 +1655,7 @@ msgstr ""
 msgid "Position"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:317
+#: lib/block_scout_web/templates/block/overview.html.eex:298
 #, elixir-autogen, elixir-format
 msgid "Position %{index}"
 msgstr ""
@@ -1696,14 +1683,13 @@ msgstr ""
 msgid "Price per unit of gas specified by the sender. Higher gas prices can prioritize transaction inclusion during times of high usage."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:259
-#: lib/block_scout_web/templates/block/overview.html.eex:288
+#: lib/block_scout_web/templates/block/overview.html.eex:269
 #: lib/block_scout_web/templates/transaction/overview.html.eex:395
 #, elixir-autogen, elixir-format
 msgid "Priority Fee / Tip"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/_tile.html.eex:63
+#: lib/block_scout_web/templates/block/_tile.html.eex:65
 #, elixir-autogen, elixir-format
 msgid "Priority Fees"
 msgstr ""
@@ -1808,7 +1794,7 @@ msgstr ""
 msgid "Revert reason"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/_tile.html.eex:53
+#: lib/block_scout_web/templates/block/_tile.html.eex:55
 #: lib/block_scout_web/templates/chain/_block.html.eex:27
 #: lib/block_scout_web/views/internal_transaction_view.ex:28
 #, elixir-autogen, elixir-format
@@ -1823,7 +1809,7 @@ msgstr ""
 msgid "Rewards: "
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:174
+#: lib/block_scout_web/templates/block/overview.html.eex:176
 #, elixir-autogen, elixir-format
 msgid "Round number"
 msgstr ""
@@ -1901,12 +1887,12 @@ msgstr ""
 msgid "Signers"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:128
+#: lib/block_scout_web/templates/block/overview.html.eex:130
 #, elixir-autogen, elixir-format
 msgid "Size"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:127
+#: lib/block_scout_web/templates/block/overview.html.eex:129
 #, elixir-autogen, elixir-format
 msgid "Size of the block in bytes."
 msgstr ""
@@ -2009,7 +1995,7 @@ msgstr ""
 msgid "Test Networks"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:136
+#: lib/block_scout_web/templates/block/overview.html.eex:138
 #, elixir-autogen, elixir-format
 msgid "The SHA256 hash of the block."
 msgstr ""
@@ -2020,7 +2006,7 @@ msgstr ""
 msgid "The address could not be loaded. Please try again later"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:50
+#: lib/block_scout_web/templates/block/overview.html.eex:52
 #, elixir-autogen, elixir-format
 msgid "The block height of a particular block is defined as the number of blocks preceding it in the blockchain."
 msgstr ""
@@ -2030,7 +2016,7 @@ msgstr ""
 msgid "The fallback function is executed on a call to the contract if none of the other functions match the given function signature, or if no data was supplied at all and there is no receive CELO function. The fallback function always receives data, but in order to also receive CELO it must be marked payable."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:152
+#: lib/block_scout_web/templates/block/overview.html.eex:154
 #, elixir-autogen, elixir-format
 msgid "The hash of the block from which this block was generated."
 msgstr ""
@@ -2045,12 +2031,12 @@ msgstr ""
 msgid "The name of the validator."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:96
+#: lib/block_scout_web/templates/block/overview.html.eex:98
 #, elixir-autogen, elixir-format
 msgid "The number of epoch transactions in the block."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:78
+#: lib/block_scout_web/templates/block/overview.html.eex:80
 #, elixir-autogen, elixir-format
 msgid "The number of transactions in the block."
 msgstr ""
@@ -2070,7 +2056,7 @@ msgstr ""
 msgid "The status of the transaction: Confirmed or Unconfirmed."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:208
+#: lib/block_scout_web/templates/block/overview.html.eex:210
 #, elixir-autogen, elixir-format
 msgid "The total gas amount used in the block and its percentage of gas filled in the block."
 msgstr ""
@@ -2225,7 +2211,7 @@ msgstr ""
 msgid "This transaction is pending confirmation."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:70
+#: lib/block_scout_web/templates/block/overview.html.eex:72
 #: lib/block_scout_web/templates/transaction/overview.html.eex:172
 #, elixir-autogen, elixir-format
 msgid "Timestamp"
@@ -2383,7 +2369,7 @@ msgstr ""
 msgid "Topics"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:198
+#: lib/block_scout_web/templates/block/overview.html.eex:200
 #, elixir-autogen, elixir-format
 msgid "Total Difficulty"
 msgstr ""
@@ -2393,12 +2379,12 @@ msgstr ""
 msgid "Total blocks"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:197
+#: lib/block_scout_web/templates/block/overview.html.eex:199
 #, elixir-autogen, elixir-format
 msgid "Total difficulty of the chain until this block."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:217
+#: lib/block_scout_web/templates/block/overview.html.eex:219
 #, elixir-autogen, elixir-format
 msgid "Total gas limit provided by all transactions in the block."
 msgstr ""
@@ -2476,7 +2462,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:282
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:13
 #: lib/block_scout_web/templates/block/_tabs.html.eex:4
-#: lib/block_scout_web/templates/block/overview.html.eex:79
+#: lib/block_scout_web/templates/block/overview.html.eex:81
 #: lib/block_scout_web/templates/chain/show.html.eex:210
 #: lib/block_scout_web/templates/stats/index.html.eex:32
 #: lib/block_scout_web/views/address_view.ex:426
@@ -2540,7 +2526,7 @@ msgstr ""
 msgid "Uncle Reward"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:313
+#: lib/block_scout_web/templates/block/overview.html.eex:294
 #, elixir-autogen, elixir-format
 msgid "Uncles"
 msgstr ""
@@ -2570,8 +2556,7 @@ msgstr ""
 msgid "User-defined tip sent to validator for transaction priority/inclusion."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:258
-#: lib/block_scout_web/templates/block/overview.html.eex:287
+#: lib/block_scout_web/templates/block/overview.html.eex:268
 #, elixir-autogen, elixir-format
 msgid "User-defined tips sent to validator for transaction priority/inclusion."
 msgstr ""
@@ -2586,8 +2571,8 @@ msgstr ""
 msgid "Validated Txs"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/_tile.html.eex:42
-#: lib/block_scout_web/templates/block/overview.html.eex:112
+#: lib/block_scout_web/templates/block/_tile.html.eex:44
+#: lib/block_scout_web/templates/block/overview.html.eex:114
 #: lib/block_scout_web/templates/chain/_block.html.eex:16
 #, elixir-autogen, elixir-format
 msgid "Validator"
@@ -2959,7 +2944,7 @@ msgstr ""
 msgid "Loading chart..."
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:130
+#: lib/block_scout_web/templates/block/overview.html.eex:132
 #, elixir-autogen, elixir-format
 msgid "N/A bytes"
 msgstr ""
@@ -3164,12 +3149,12 @@ msgstr ""
 msgid "Error in internal transactions"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:38
+#: lib/block_scout_web/templates/block/overview.html.eex:40
 #, elixir-autogen, elixir-format
 msgid "View next block"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:22
+#: lib/block_scout_web/templates/block/overview.html.eex:24
 #, elixir-autogen, elixir-format
 msgid "View previous block"
 msgstr ""
@@ -3321,4 +3306,15 @@ msgstr ""
 #: lib/block_scout_web/templates/page_not_found/index.html.eex:8
 #, elixir-autogen, elixir-format
 msgid "The requested path was not found on BlockScout."
+msgstr ""
+
+#: lib/block_scout_web/templates/block/overview.html.eex:251
+#, elixir-autogen, elixir-format
+msgid "CELO sent to Community Fund from transactions included in the block (Base fee (per unit of gas) * Gas Used)."
+msgstr ""
+
+#: lib/block_scout_web/templates/block/_tile.html.eex:71
+#: lib/block_scout_web/templates/block/overview.html.eex:253
+#, elixir-autogen, elixir-format
+msgid "Fees sent to Community Fund"
 msgstr ""

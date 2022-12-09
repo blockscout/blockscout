@@ -1,8 +1,18 @@
 defmodule BlockScoutWeb.BlockControllerTest do
   use BlockScoutWeb.ConnCase
+
+  alias Explorer.Celo.CacheHelper
   alias Explorer.Chain.Block
 
+  import Mox
+
+  setup :set_mox_global
+
   setup do
+    CacheHelper.set_test_addresses(%{
+      "Governance" => "0xD533Ca259b330c7A88f74E000a3FaEa2d63B7972"
+    })
+
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
     Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Uncles.child_id())
