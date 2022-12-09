@@ -221,8 +221,7 @@
 
 
     <div
-      class="tile recent-preview-item"
-      style="margin:0 10px;"
+      class="tile recent-preview-item recent-preview-item-center"
     >
       <p class="recent-preview-item-title-container">
         <span style="font-size:16px;" class="tile-title">

@@ -245,6 +245,9 @@ $card-tab-icon-color-active: #fff !default;
   flex-direction:row;
   box-shadow:none;
   margin-bottom:20px;
+  @media (max-width: 1254px) {
+    flex-direction: column;
+  }
   .recent-preview-item{
     flex:1;
     margin-top:0 !important;
@@ -298,7 +301,23 @@ $card-tab-icon-color-active: #fff !default;
         
       }
     }
+    @media (max-width: 1254px) {
+      margin-bottom: 10px;
+    }
+    &:last-child{
+      @media (max-width: 1254px) {
+        margin-bottom: 0px;
+      }
+    }
   }
+  .recent-preview-item-center{
+    margin: 0 10px;
+    @media (max-width: 1254px) {
+      margin-left:0px;
+      margin-right:0px;
+    }
+  }
+  
   .recent-preview-item-title-container{
     font-size:16px;
     display:flex;justify-content:space-between;

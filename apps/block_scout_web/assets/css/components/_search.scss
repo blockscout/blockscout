@@ -1,25 +1,21 @@
 .mobile-search-show {
-    @media screen and (max-width: 992px) {
+    @media screen and (max-width: 1200px) {
         width: 100%;
     }
-    @media screen and (min-width: 992px) {
+    @media screen and (min-width: 1200px) {
         display: none !important;
     }
 }
 
 .mobile-search-hide {
-    @media screen and (max-width: 992px) {
+    @media screen and (max-width: 1200px) {
         display: none !important;
     }
 }
 
 .search-control {
-    @media screen and (min-width: 992px) {
-        height: 50px !important;
-    }
-    @media screen and (max-width: 992px) {
-        height: 33px !important;
-    }
+
+    height: 50px !important;
 }
 
 .autoComplete_wrapper {
@@ -32,9 +28,9 @@
     border: none !important;
     border-radius: 0 !important;
     background-color: #f5f6fa !important;
-    @media screen and (max-width: 992px) {
+    /* @media screen and (max-width: 1200px) {
         height: auto !important;
-    }
+    } */
 }
 
 .main-search-autocomplete, .main-search-autocomplete-mobile {
