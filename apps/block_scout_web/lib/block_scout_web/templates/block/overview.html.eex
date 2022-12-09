@@ -1,5 +1,7 @@
 <% burned_fee = if !is_nil(@block.base_fee_per_gas), do: Wei.mult(@block.base_fee_per_gas, BlockBurnedFeeCounter.fetch(@block.hash)), else: nil %>
 <% priority_fee = if !is_nil(@block.base_fee_per_gas), do: BlockPriorityFeeCounter.fetch(@block.hash), else: nil %>
+<% community_fund_address_string = community_fund_address() %>
+
 <section>
   <div class="row">
     <div class="col-md-12 mb-2">
@@ -240,45 +242,24 @@
                   text: gettext("Minimum fee required per unit of gas. Fee adjusts based on network congestion.") %>
                   <%= gettext("Base Fee per Gas") %>
                 </dt>
-                <dd class="col-sm-9 col-lg-10"><%= format_wei_value(@block.base_fee_per_gas, :gwei) %></dd>
+                <dd class="col-sm-9 col-lg-10"><%= format_wei_value(@block.base_fee_per_gas, :ether) %></dd>
             </dl>
-            <!-- Burnt Fees -->
+            <!-- Fees sent to Community Fund -->
             <dl class="row">
                 <dt class="col-sm-3 col-lg-2 text-muted">
                   <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("CELO burned from transactions included in the block (Base fee (per unit of gas) * Gas Used).") %>
-                  <%= gettext("Burnt Fees") %>
+                  text: gettext("CELO sent to Community Fund from transactions included in the block (Base fee (per unit of gas) * Gas Used).") %>
+                  <%= if is_nil(community_fund_address_string) do %>
+                    <%= gettext("Fees sent to Community Fund") %>
+                  <% else %>
+                    <%= link to: address_path(BlockScoutWeb.Endpoint, :show, community_fund_address_string) do %>
+                      <%= gettext("Community Fund") %>
+                    <% end %>
+                  <% end %>
                 </dt>
-                <dd class="col-sm-9 col-lg-10"><i class="fas fa-fire i-tooltip-2"></i> <s><%= format_wei_value(burned_fee, :ether) %></s></dd>
-            </dl>
-            <!-- Priority Fee / Tip -->
-            <dl class="row">
-                <dt class="col-sm-3 col-lg-2 text-muted">
-                  <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("User-defined tips sent to validator for transaction priority/inclusion.") %>
-                  <%= gettext("Priority Fee / Tip") %>
-                </dt>
-                <dd class="col-sm-9 col-lg-10"><%= format_wei_value(%Wei{value: priority_fee}, :ether) %></dd>
-            </dl>
-          <% end %>
-          <%= if !is_nil(@block.base_fee_per_gas) do%>
-            <!-- Base Fee per Gas -->
-            <dl class="row">
-                <dt class="col-sm-3 col-lg-2 text-muted">
-                  <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("Minimum fee required per unit of gas. Fee adjusts based on network congestion.") %>
-                  <%= gettext("Base Fee per Gas") %>
-                </dt>
-                <dd class="col-sm-9 col-lg-10"><%= format_wei_value(@block.base_fee_per_gas, :gwei) %></dd>
-            </dl>
-            <!-- Burnt Fees -->
-            <dl class="row">
-                <dt class="col-sm-3 col-lg-2 text-muted">
-                  <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("CELO burned from transactions included in the block (Base fee (per unit of gas) * Gas Used).") %>
-                  <%= gettext("Burnt Fees") %>
-                </dt>
-                <dd class="col-sm-9 col-lg-10"><i class="fa-solid fa-fire i-tooltip-2"></i> <%= format_wei_value(burned_fee, :ether) %></dd>
+                <dd class="col-sm-9 col-lg-10">
+                  <%= format_wei_value(burned_fee, :ether) %>
+                </dd>
             </dl>
             <!-- Priority Fee / Tip -->
             <dl class="row">

@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.BlockView do
 
   alias BlockScoutWeb.AccessHelpers
 
-  alias Explorer.Celo.EpochUtil
+  alias Explorer.Celo.{EpochUtil, Util}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, Wei}
   alias Explorer.Chain.Block.Reward
@@ -115,5 +115,15 @@ defmodule BlockScoutWeb.BlockView do
     block
     |> Chain.block_combined_rewards()
     |> format_wei_value(:ether)
+  end
+
+  def community_fund_address do
+    case(Util.get_address("Governance")) do
+      {:ok, address_string} ->
+        address_string
+
+      _ ->
+        nil
+    end
   end
 end

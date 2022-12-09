@@ -1,7 +1,20 @@
 defmodule BlockScoutWeb.BlockTransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
+  alias Explorer.Celo.CacheHelper
+
   import BlockScoutWeb.WebRouter.Helpers, only: [block_transaction_path: 3]
+  import Mox
+
+  setup :set_mox_global
+
+  setup do
+    CacheHelper.set_test_addresses(%{
+      "Governance" => "0xD533Ca259b330c7A88f74E000a3FaEa2d63B7972"
+    })
+
+    :ok
+  end
 
   describe "GET index/2" do
     test "with invalid block number", %{conn: conn} do

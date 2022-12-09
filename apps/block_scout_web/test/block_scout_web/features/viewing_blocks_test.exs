@@ -2,9 +2,19 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
   use BlockScoutWeb.FeatureCase, async: false
 
   alias BlockScoutWeb.{BlockListPage, BlockPage}
+
+  alias Explorer.Celo.CacheHelper
   alias Explorer.Chain.Block
 
+  import Mox
+
+  setup :set_mox_global
+
   setup do
+    CacheHelper.set_test_addresses(%{
+      "Governance" => "0xD533Ca259b330c7A88f74E000a3FaEa2d63B7972"
+    })
+
     timestamp = Timex.now() |> Timex.shift(hours: -1)
     [oldest_block | _] = Enum.map(308..310, &insert(:block, number: &1, timestamp: timestamp, gas_used: 10))
 
