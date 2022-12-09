@@ -7,9 +7,30 @@
 
 ### Fixes
 
+- [#6091](https://github.com/blockscout/blockscout/pull/6091) - Improve fetching media type for NFT
 - [#6094](https://github.com/blockscout/blockscout/pull/6094) - Fix inconsistent behaviour of `getsourcecode` method
+- [#6105](https://github.com/blockscout/blockscout/pull/6105) - Fix some token transfers broadcasting
+- [#6106](https://github.com/blockscout/blockscout/pull/6106) - Fix 500 response on `/coin-balance` for empty address
 
 ### Chore
+
+- [#6053](https://github.com/blockscout/blockscout/pull/6053) - Bump jest-environment-jsdom from 29.0.1 to 29.0.2 in /apps/block_scout_web/assets
+- [#6055](https://github.com/blockscout/blockscout/pull/6055) - Bump @babel/core from 7.18.13 to 7.19.0 in /apps/block_scout_web/assets
+- [#6054](https://github.com/blockscout/blockscout/pull/6054) - Bump jest from 29.0.1 to 29.0.2 in /apps/block_scout_web/assets
+- [#6056](https://github.com/blockscout/blockscout/pull/6056) - Bump @babel/preset-env from 7.18.10 to 7.19.0 in /apps/block_scout_web/assets
+- [#6061](https://github.com/blockscout/blockscout/pull/6061) - Discord badge and updated permalink
+- [#6064](https://github.com/blockscout/blockscout/pull/6064) - Bump sweetalert2 from 11.4.29 to 11.4.31 in /apps/block_scout_web/assets
+- [#6075](https://github.com/blockscout/blockscout/pull/6075) - Bump sweetalert2 from 11.4.31 to 11.4.32 in /apps/block_scout_web/assets
+- [#6082](https://github.com/blockscout/blockscout/pull/6082) - Bump core-js from 3.25.0 to 3.25.1 in /apps/block_scout_web/assets
+- [#6083](https://github.com/blockscout/blockscout/pull/6083) - Bump sass from 1.54.8 to 1.54.9 in /apps/block_scout_web/assets
+- [#6095](https://github.com/blockscout/blockscout/pull/6095) - Bump jest-environment-jsdom from 29.0.2 to 29.0.3 in /apps/block_scout_web/assets
+- [#6096](https://github.com/blockscout/blockscout/pull/6096) - Bump exvcr from 0.13.3 to 0.13.4
+- [#6101](https://github.com/blockscout/blockscout/pull/6101) - Bump ueberauth from 0.10.1 to 0.10.2
+- [#6102](https://github.com/blockscout/blockscout/pull/6102) - Bump eslint from 8.23.0 to 8.23.1 in /apps/block_scout_web/assets
+- [#6098](https://github.com/blockscout/blockscout/pull/6098) - Bump ex_json_schema from 0.9.1 to 0.9.2
+- [#6097](https://github.com/blockscout/blockscout/pull/6097) - Bump autoprefixer from 10.4.8 to 10.4.9 in /apps/block_scout_web/assets
+- [#6099](https://github.com/blockscout/blockscout/pull/6099) - Bump jest from 29.0.2 to 29.0.3 in /apps/block_scout_web/assets
+- [#6103](https://github.com/blockscout/blockscout/pull/6103) - Bump css-minimizer-webpack-plugin from 4.0.0 to 4.1.0 in /apps/block_scout_web/assets
 
 ## 4.1.8-beta
 
@@ -43,6 +64,7 @@
 - [#5948](https://github.com/blockscout/blockscout/pull/5948) - Fix unexpected messages in `CoinBalanceOnDemand`
 - [#6013](https://github.com/blockscout/blockscout/pull/6013) - Fix ERC-1155 tokens fetching
 - [#6043](https://github.com/blockscout/blockscout/pull/6043) - Fix token instance fetching
+- [#6093](https://github.com/blockscout/blockscout/pull/6093) - Fix Indexer.Fetcher.TokenInstance for ERC-1155 tokens
 
 ### Chore
 
