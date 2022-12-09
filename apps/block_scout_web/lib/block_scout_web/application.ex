@@ -7,8 +7,8 @@ defmodule BlockScoutWeb.Application do
 
   require Logger
 
-  alias BlockScoutWeb.{CampaignBannerCache, LoggerBackend}
   alias BlockScoutWeb.API.APILogger
+  alias BlockScoutWeb.{CampaignBannerCache, LoggerBackend}
   alias BlockScoutWeb.Counters.BlocksIndexedCounter
   alias BlockScoutWeb.{Endpoint, Prometheus}
   alias BlockScoutWeb.RealtimeEventHandler

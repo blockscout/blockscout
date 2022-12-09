@@ -377,28 +377,15 @@ msgstr ""
 msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for the Celo Network."
 msgstr ""
 
-#: lib/block_scout_web/templates/address/_current_coin_balance.html.eex:11
-#: lib/block_scout_web/templates/address/index.html.eex:4
-#: lib/block_scout_web/templates/address/overview.html.eex:162
 #: lib/block_scout_web/templates/address/overview.html.eex:178
 #: lib/block_scout_web/templates/address/overview.html.eex:191
 #: lib/block_scout_web/templates/address/overview.html.eex:204
 #: lib/block_scout_web/templates/address/overview.html.eex:217
 #: lib/block_scout_web/templates/address/overview.html.eex:230
-#: lib/block_scout_web/templates/address_token/overview.html.eex:1
 #: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:24
 #: lib/block_scout_web/templates/epoch_transaction/_epoch_tile.html.eex:23
-#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:24
-#: lib/block_scout_web/templates/layout/app.html.eex:49
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:95
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:95
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:137
-#: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:49
-#: lib/block_scout_web/templates/transaction/overview.html.eex:412
 #: lib/block_scout_web/templates/verified_contracts/_tile.html.eex:29
 #: lib/block_scout_web/views/transaction_view.ex:508
-#: lib/block_scout_web/views/wei_helpers.ex:80
 #, elixir-autogen, elixir-format
 msgid "CELO"
 msgstr ""
@@ -3524,12 +3511,6 @@ msgstr ""
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:71
 #, elixir-autogen, elixir-format
 msgid "Email notifications"
-msgstr ""
-
-#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:27
-#: lib/block_scout_web/templates/account/watchlist_address/row.html.eex:21
-#, elixir-autogen, elixir-format
-msgid "Ether"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:30
