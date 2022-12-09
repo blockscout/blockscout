@@ -1,6 +1,6 @@
-defmodule EthereumJSONRPC.WebSocket.Case.Parity do
+defmodule EthereumJSONRPC.WebSocket.Case.Nethermind do
   @moduledoc """
-  `EthereumJSONRPC.WebSocket.Case` connecting to Parity.
+  `EthereumJSONRPC.WebSocket.Case` connecting to Nethermind.
   """
 
   import ExUnit.Callbacks, only: [start_supervised!: 1]

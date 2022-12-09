@@ -48,7 +48,7 @@ defmodule EthereumJSONRPC.ReceiptsTest do
               block_hash: "0xf6db2bace4ac8277384553ad9603d045220a91fb2448ab6130d7a6f044f9a8cf"
             }
 
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             %{
               created_contract_address_hash: nil,
               # block_hash: nil,

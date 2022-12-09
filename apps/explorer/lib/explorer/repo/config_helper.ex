@@ -35,6 +35,19 @@ defmodule Explorer.Repo.ConfigHelper do
     |> Keyword.merge(get_env_vars(@app_env_vars, env_function))
   end
 
+  def get_db_pool_size(default_pool_size), do: String.to_integer(System.get_env("POOL_SIZE", default_pool_size))
+
+  def get_account_db_url, do: System.get_env("ACCOUNT_DATABASE_URL") || System.get_env("DATABASE_URL")
+
+  def get_account_db_pool_size(default_pool_size),
+    do: String.to_integer(System.get_env("ACCOUNT_POOL_SIZE", default_pool_size))
+
+  def get_api_db_url, do: System.get_env("DATABASE_READ_ONLY_API_URL") || System.get_env("DATABASE_URL")
+
+  def get_api_db_pool_size(default_pool_size), do: String.to_integer(System.get_env("POOL_SIZE_API", default_pool_size))
+
+  def ssl_enabled?, do: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true")
+
   defp extract_parameters(empty) when empty == nil or empty == "", do: []
 
   # sobelow_skip ["DOS.StringToAtom"]

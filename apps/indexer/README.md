@@ -81,7 +81,7 @@ Most of them are based off `BufferedTask`, and the basic algorithm goes like thi
 - `replaced_transaction`: not a fetcher per se, but rather an async worker, which discards previously pending transactions after they are replaced with new pending transactions with the same nonce, or are collated in a block.
 - `block_reward`: missing `block_rewards` for consensus blocks
 - `uncle_block`: blocks for `block_second_degree_relations` with null `uncle_fetched_at`
-- `internal_transaction`: for either `blocks` (Parity) or `transactions` with null `internal_transactions_indexed_at`
+- `internal_transaction`: for either `blocks` (Nethermind) or `transactions` with null `internal_transactions_indexed_at`
 - `coin_balance`: for `address_coin_balances` with null `value_fetched_at`
 - `token_balance`: for `address_token_balances` with null `value_fetched_at`. Also upserts `address_current_token_balances`
 - `token`: for `tokens` with `cataloged == false`
@@ -118,22 +118,22 @@ This defaults to 150 seconds, but it can be set via adding a configuration to `s
 
 ## Testing
 
-### Parity
+### Nethermind
 
 #### Mox
 
 **This is the default setup.  `mix test` will work on its own, but to be explicit, use the following setup**:
 
 ```shell
-export ETHEREUM_JSONRPC_CASE=EthereumJSONRPC.Case.Parity.Mox
-mix test --exclude no_parity
+export ETHEREUM_JSONRPC_CASE=EthereumJSONRPC.Case.Nethermind.Mox
+mix test --exclude no_nethermind
 ```
 
 #### HTTP / WebSocket
 
 ```shell
-export ETHEREUM_JSONRPC_CASE=EthereumJSONRPC.Case.Parity.HTTPWebSocket
-mix test --exclude no_parity
+export ETHEREUM_JSONRPC_CASE=EthereumJSONRPC.Case.Nethermind.HTTPWebSocket
+mix test --exclude no_nethermind
 ```
 
 | Protocol  | URL                                |

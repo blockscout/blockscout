@@ -6304,7 +6304,7 @@ defmodule Explorer.Chain do
   defp boolean_to_check_result(false), do: :not_found
 
   @doc """
-  Fetches the first trace from the Parity trace URL.
+  Fetches the first trace from the Nethermind trace URL.
   """
   def fetch_first_trace(transactions_params, json_rpc_named_arguments) do
     case EthereumJSONRPC.fetch_first_trace(transactions_params, json_rpc_named_arguments) do
