@@ -5050,32 +5050,6 @@ defmodule Explorer.ChainTest do
       assert result.contract_address_hash == token_transfer.token_contract_address_hash
     end
 
-    test "reduces with given reducer and accumulator for ERC-1155 token" do
-      token_contract_address = insert(:contract_address)
-      token = insert(:token, contract_address: token_contract_address, type: "ERC-1155")
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(insert(:block, number: 1))
-
-      token_transfer =
-        insert(
-          :token_transfer,
-          block_number: 1000,
-          to_address: build(:address),
-          transaction: transaction,
-          token_contract_address: token_contract_address,
-          token: token,
-          token_id: nil,
-          token_ids: [11]
-        )
-
-      assert {:ok, [result]} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
-      assert result.token_ids == token_transfer.token_ids
-      assert result.contract_address_hash == token_transfer.token_contract_address_hash
-    end
-
     test "does not fetch token transfers without token id or token_ids" do
       token_contract_address = insert(:contract_address)
       token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
