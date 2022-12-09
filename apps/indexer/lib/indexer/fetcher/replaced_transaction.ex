@@ -3,7 +3,7 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
   Finds and updates replaced transactions.
   """
 
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
   require Logger
