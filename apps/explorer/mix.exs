@@ -27,7 +27,8 @@ defmodule Explorer.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "4.1.8"
+      version: "4.1.8",
+      xref: [exclude: [BlockScoutWeb.WebRouter.Helpers]]
     ]
   end
 
@@ -59,6 +60,8 @@ defmodule Explorer.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:bamboo, "~> 2.2.0"},
+      {:mime, "~> 1.4"},
       {:bcrypt_elixir, "~> 3.0"},
       # benchmark optimizations
       {:benchee, "~> 1.1.0", only: :test},
@@ -90,7 +93,7 @@ defmodule Explorer.Mixfile do
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 1.0", only: [:test]},
       {:phoenix_html, "== 3.0.4"},
-      {:poison, "~> 5.0.0"},
+      {:poison, "~> 4.0.1"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
@@ -114,6 +117,8 @@ defmodule Explorer.Mixfile do
       {:con_cache, "~> 1.0"},
       {:tesla, "~> 1.4.4"},
       {:cbor, "~> 1.0"},
+      {:cloak_ecto, "~> 1.2.0"},
+      {:redix, "~> 1.1"},
       # Log json format
       {:logger_json, "~> 3.2"},
       {:observer_cli, "~> 1.6"},

@@ -49,7 +49,7 @@ defmodule Indexer.MixProject do
     [
       # Due to the way we build the image, we have to include the deps here
       {:plug_cowboy, "~> 2.0"},
-      {:poison, "~> 5.0.0"},
+      {:poison, "~> 4.0.1"},
       # Optional dependency of `:spandex` for `Spandex.Decorators`
       {:decorator, "~> 1.4"},
       # JSONRPC access to Parity for `Explorer.Indexer`

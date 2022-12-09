@@ -395,20 +395,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
       expected_result = [
         %{
-          "Address" => "",
-          "SourceCode" => "",
-          "ABI" => "Contract source code not verified",
-          "ContractName" => "",
-          "CompilerVersion" => "",
-          "OptimizationUsed" => "",
-          "DecompiledSourceCode" => "",
-          "DecompilerVersion" => "",
-          "ConstructorArguments" => "",
-          "EVMVersion" => "",
-          "ExternalLibraries" => "",
-          "OptimizationRuns" => "",
-          "FileName" => "",
-          "IsProxy" => "false"
+          "Address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
         }
       ]
 

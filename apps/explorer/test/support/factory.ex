@@ -4,10 +4,20 @@ defmodule Explorer.Factory do
   require Ecto.Query
 
   import Ecto.Query
+  import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Kernel, except: [+: 2]
 
-  alias Bcrypt
-  alias Explorer.Accounts.{User, UserContact}
+  alias Explorer.Account.{
+    Identity,
+    Watchlist,
+    WatchlistAddress
+  }
+
+  alias Explorer.Accounts.{
+    User,
+    UserContact
+  }
+
   alias Explorer.Admin.Administrator
   alias Explorer.Celo.ContractEvents.EventTransformer
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
@@ -46,6 +56,116 @@ defmodule Explorer.Factory do
 
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
+
+  alias Ueberauth.Strategy.Auth0
+  alias Ueberauth.Auth.Info
+  alias Ueberauth.Auth
+
+  def account_identity_factory do
+    %Identity{
+      uid: sequence("github|"),
+      email: sequence(:email, &"me-#{&1}@blockscout.com"),
+      name: sequence("John")
+    }
+  end
+
+  def auth_factory do
+    %Auth{
+      info: %Info{
+        birthday: nil,
+        description: nil,
+        email: sequence(:email, &"test_user-#{&1}@blockscout.com"),
+        first_name: nil,
+        image: sequence("https://example.com/avatar/test_user"),
+        last_name: nil,
+        location: nil,
+        name: sequence("User Test"),
+        nickname: sequence("test_user"),
+        phone: nil,
+        urls: %{profile: nil, website: nil}
+      },
+      provider: :auth0,
+      strategy: Auth0,
+      uid: sequence("blockscout|000")
+    }
+  end
+
+  def watchlist_address_factory do
+    %{
+      "address_hash" => to_string(build(:address).hash),
+      "name" => sequence("test"),
+      "notification_settings" => %{
+        "native" => %{
+          "incoming" => random_bool(),
+          "outcoming" => random_bool()
+        },
+        "ERC-20" => %{
+          "incoming" => random_bool(),
+          "outcoming" => random_bool()
+        },
+        "ERC-721" => %{
+          "incoming" => random_bool(),
+          "outcoming" => random_bool()
+        }
+      },
+      "notification_methods" => %{
+        "email" => random_bool()
+      }
+    }
+  end
+
+  def custom_abi_factory do
+    contract_address_hash = to_string(insert(:contract_address).hash)
+
+    %{"contract_address_hash" => contract_address_hash, "name" => sequence("test"), "abi" => contract_code_info().abi}
+  end
+
+  def public_tags_request_factory do
+    %{
+      "full_name" => sequence("full name"),
+      "email" => sequence(:email, &"test_user-#{&1}@blockscout.com"),
+      "tags" => Enum.join(Enum.map(1..Enum.random(1..2), fn _ -> sequence("Tag") end), ";"),
+      "website" => sequence("website"),
+      "additional_comment" => sequence("additional_comment"),
+      "addresses" => Enum.map(1..Enum.random(1..10), fn _ -> to_string(build(:address).hash) end),
+      "company" => sequence("company"),
+      "is_owner" => random_bool()
+    }
+  end
+
+  def account_watchlist_factory do
+    %Watchlist{
+      identity: build(:account_identity)
+    }
+  end
+
+  def tag_address_factory do
+    %{"name" => sequence("name"), "address_hash" => to_string(build(:address).hash)}
+  end
+
+  def tag_transaction_factory do
+    %{"name" => sequence("name"), "transaction_hash" => to_string(insert(:transaction).hash)}
+  end
+
+  def account_watchlist_address_factory do
+    hash = build(:address).hash
+
+    %WatchlistAddress{
+      name: "wallet",
+      watchlist: build(:account_watchlist),
+      address_hash: hash,
+      address_hash_hash: hash_to_lower_case_string(hash),
+      watch_coin_input: true,
+      watch_coin_output: true,
+      watch_erc_20_input: true,
+      watch_erc_20_output: true,
+      watch_erc_721_input: true,
+      watch_erc_721_output: true,
+      watch_erc_1155_input: true,
+      watch_erc_1155_output: true,
+      notify_email: true
+    }
+  end
 
   def address_factory do
     %Address{
@@ -807,6 +927,8 @@ defmodule Explorer.Factory do
       user: build(:user)
     }
   end
+
+  def random_bool, do: Enum.random([true, false])
 
   def celo_account_factory do
     wei_per_ether = 1_000_000_000_000_000_000

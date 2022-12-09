@@ -14,7 +14,7 @@ defmodule Explorer.ReleaseTasks do
     :ecto_sql
   ]
 
-  @repos Application.compile_env(:blockscout, :ecto_repos, [Explorer.Repo])
+  @repos Application.compile_env(:blockscout, :ecto_repos, [Explorer.Repo, Explorer.Repo.Account])
 
   def create_and_migrate do
     start_services()

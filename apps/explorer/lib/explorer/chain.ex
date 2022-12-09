@@ -6920,6 +6920,24 @@ defmodule Explorer.Chain do
     |> Repo.one()
   end
 
+  def is_address_hash_is_smart_contract?(nil), do: false
+
+  def is_address_hash_is_smart_contract?(address_hash) do
+    with %Address{contract_code: bytecode} <- Repo.get_by(Address, hash: address_hash),
+         false <- is_nil(bytecode) do
+      true
+    else
+      _ ->
+        false
+    end
+  end
+
+  def hash_to_lower_case_string(hash) do
+    hash
+    |> to_string()
+    |> String.downcase()
+  end
+
   def pending_withdrawals_for_account(account_address) do
     query =
       from(unlocked in CeloUnlocked,

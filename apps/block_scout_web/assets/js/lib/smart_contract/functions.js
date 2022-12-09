@@ -4,7 +4,7 @@ import { queryMethod, callMethod } from './interact'
 import { walletEnabled, connectToWallet, disconnectWallet, web3ModalInit } from './connect.js'
 import '../../pages/address'
 
-const loadFunctions = (element) => {
+const loadFunctions = (element, isCustomABI) => {
   const $element = $(element)
   const url = $element.data('url')
   const hash = $element.data('hash')
@@ -13,7 +13,7 @@ const loadFunctions = (element) => {
 
   $.get(
     url,
-    { hash, type, action },
+    { hash, type, action, is_custom_abi: isCustomABI },
     response => $element.html(response)
   )
     .done(function () {
@@ -21,7 +21,9 @@ const loadFunctions = (element) => {
       document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).addEventListener('click', disconnectWallet)
       web3ModalInit(connectToWallet)
 
-      $('[data-function]').each((_, element) => {
+      const selector = isCustomABI ? '[data-function-custom]' : '[data-function]'
+
+      $(selector).each((_, element) => {
         readWriteFunction(element)
       })
 
@@ -70,9 +72,10 @@ const readWriteFunction = (element) => {
       const $methodId = $form.find('input[name=method_id]')
       const args = prepareMethodArgs($functionInputs, inputs)
       const type = $('[data-smart-contract-functions]').data('type')
+      const isCustomABI = $form.data('custom-abi')
 
       walletEnabled()
-        .then((isWalletEnabled) => queryMethod(isWalletEnabled, url, $methodId, args, type, functionName, $responseContainer))
+        .then((isWalletEnabled) => queryMethod(isWalletEnabled, url, $methodId, args, type, functionName, $responseContainer, isCustomABI))
     } else if (action === 'write') {
       const explorerChainId = $form.data('chainId')
       walletEnabled()
@@ -84,5 +87,11 @@ const readWriteFunction = (element) => {
 const container = $('[data-smart-contract-functions]')
 
 if (container.length) {
-  loadFunctions(container)
+  loadFunctions(container, false)
+}
+
+const customABIContainer = $('[data-smart-contract-functions-custom]')
+
+if (customABIContainer.length) {
+  loadFunctions(customABIContainer, true)
 }

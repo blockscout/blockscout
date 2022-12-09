@@ -49,8 +49,8 @@ database_api_url =
 
 pool_size =
   if System.get_env("DATABASE_READ_ONLY_API_URL"),
-    do: String.to_integer(System.get_env("POOL_SIZE", "40")),
-    else: String.to_integer(System.get_env("POOL_SIZE", "50"))
+    do: String.to_integer(System.get_env("POOL_SIZE", "30")),
+    else: String.to_integer(System.get_env("POOL_SIZE", "40"))
 
 # Configure your database
 config :explorer, Explorer.Repo.Local,
@@ -65,10 +65,7 @@ config :explorer, Explorer.Repo.Local,
 database_api = if System.get_env("DATABASE_READ_ONLY_API_URL"), do: nil, else: database
 hostname_api = if System.get_env("DATABASE_READ_ONLY_API_URL"), do: nil, else: hostname
 
-pool_size_api =
-  if System.get_env("DATABASE_READ_ONLY_API_URL"),
-    do: String.to_integer(System.get_env("POOL_SIZE_API", "50")),
-    else: String.to_integer(System.get_env("POOL_SIZE_API", "10"))
+pool_size_api = String.to_integer(System.get_env("POOL_SIZE_API", "10"))
 
 # Configure API database
 config :explorer, Explorer.Repo.Replica1,
@@ -76,6 +73,20 @@ config :explorer, Explorer.Repo.Replica1,
   hostname: hostname_api,
   url: database_api_url,
   pool_size: pool_size_api
+
+database_account_url = System.get_env("ACCOUNT_DATABASE_URL") || System.get_env("DATABASE_URL")
+
+pool_size_account = String.to_integer(System.get_env("ACCOUNT_POOL_SIZE", "10"))
+
+database_account = if System.get_env("ACCOUNT_DATABASE_URL"), do: nil, else: database
+hostname_account = if System.get_env("ACCOUNT_DATABASE_URL"), do: nil, else: hostname
+
+# Configure Account database
+config :explorer, Explorer.Repo.Account,
+  database: database_account,
+  hostname: hostname_account,
+  url: database_account_url,
+  pool_size: pool_size_account
 
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do

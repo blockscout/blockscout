@@ -233,7 +233,7 @@
       <% end %>
 
       <%= render BlockScoutWeb.LayoutView, "_cookie_banner.html", assigns %>
-      <%= render BlockScoutWeb.LayoutView, "_topnav.html", assigns %>
+      <%= render BlockScoutWeb.LayoutView, "_topnav.html", current_user: Conn.get_session(@conn, :current_user), conn: @conn %>
 
       <main class="pt pt-5">
         <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>

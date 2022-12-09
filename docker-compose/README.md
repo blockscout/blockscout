@@ -10,14 +10,21 @@ Runs BlockScout locally in Docker container with usage [docker-compose](https://
 
 ## Building Docker containers from source
 
-```
+```bash
 docker-compose up --build
 ```
 
-This command uses by-default `docker-compose.yml`, which build the explorer into Docker image and runs 2 Docker containers:
+This command uses by-default `docker-compose.yml`, which build the explorer into Docker image and runs 3 Docker containers:
 
 - one for the database. Postgres 13.x, which will be available at port 7432 on localhost
+- [smart-contract-verifier](https://github.com/blockscout/blockscout-rs/) service, which will be available at port 8043 on localhost
 - and the BlockScout explorer at http://localhost:4000
+
+## Building Docker contrainers from source with native smart contract verification (deprecated)
+
+```bash
+docker-compose -f docker-compose-no-rust-verification.yml up --build
+```
 
 ## Configs for different Ethereum clients
 
