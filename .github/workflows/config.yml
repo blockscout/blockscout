@@ -629,10 +629,10 @@ jobs:
     name: "Publish Unit Tests Results"
     runs-on: ubuntu-latest
     needs:
-      - test_parity_mox_ethereum_jsonrpc
-      - test_parity_mox_explorer
-      - test_parity_mox_indexer
-      - test_parity_mox_block_scout_web
+      - test_nethermind_mox_ethereum_jsonrpc
+      - test_nethermind_mox_explorer
+      - test_nethermind_mox_indexer
+      - test_nethermind_mox_block_scout_web
     if: success() || failure()
     steps:
       - name: Download Artifacts
