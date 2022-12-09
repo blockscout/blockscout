@@ -463,6 +463,19 @@ config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") 
 
 config :indexer, Indexer.Block.Realtime.Supervisor, enabled: System.get_env("DISABLE_REALTIME_INDEXER") != "true"
 
+blocks_catchup_fetcher_batch_size_default_str = "10"
+blocks_catchup_fetcher_concurrency_default_str = "10"
+
+{blocks_catchup_fetcher_batch_size, _} =
+  Integer.parse(System.get_env("INDEXER_CATCHUP_BLOCKS_BATCH_SIZE", blocks_catchup_fetcher_batch_size_default_str))
+
+{blocks_catchup_fetcher_concurrency, _} =
+  Integer.parse(System.get_env("INDEXER_CATCHUP_BLOCKS_CONCURRENCY", blocks_catchup_fetcher_concurrency_default_str))
+
+config :indexer, Indexer.Block.Catchup.Fetcher,
+  batch_size: blocks_catchup_fetcher_batch_size,
+  concurrency: blocks_catchup_fetcher_concurrency
+
 if File.exists?("#{Path.absname(__DIR__)}/runtime/#{config_env()}.exs") do
   Code.require_file("#{config_env()}.exs", "#{Path.absname(__DIR__)}/runtime")
 end

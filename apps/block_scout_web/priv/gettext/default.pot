@@ -1230,11 +1230,6 @@ msgstr ""
 msgid "Indexed?"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:45
-#, elixir-autogen, elixir-format
-msgid "Indexing Tokens"
-msgstr ""
-
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:3
 #, elixir-autogen, elixir-format
 msgid "Input"
@@ -3704,4 +3699,9 @@ msgstr ""
 #: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:14
 #, elixir-autogen, elixir-format
 msgid "Your name*"
+msgstr ""
+
+#: lib/block_scout_web/templates/layout/app.html.eex:45
+#, elixir-autogen, elixir-format
+msgid "Indexing Internal Transactions"
 msgstr ""
