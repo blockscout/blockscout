@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   """
 
   use GenServer
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
 
   import Ecto.Query, only: [from: 2]
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
