@@ -13,7 +13,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     only: [delete_parameters_from_next_page_params: 1, token_transfers_types_options: 1]
 
   alias BlockScoutWeb.AccessHelpers
-  alias BlockScoutWeb.API.V2.{AddressView, BlockView, TransactionView}
+  alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
+  alias BlockScoutWeb.API.V2.{BlockView, TransactionView}
   alias Explorer.{Chain, Market}
   alias Indexer.Fetcher.TokenBalanceOnDemand
 
@@ -34,6 +35,12 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       :to_address => :optional,
       :from_address => :optional,
       :block => :optional
+    }
+  ]
+
+  @smart_contract_address_options [
+    necessity_by_association: %{
+      :smart_contract => :optional
     }
   ]
 
@@ -249,7 +256,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       conn
       |> put_status(200)
-      |> put_view(AddressView)
       |> render(:coin_balances, %{coin_balances: coin_balances, next_page_params: next_page_params})
     end
   end
@@ -263,8 +269,51 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       conn
       |> put_status(200)
-      |> put_view(AddressView)
       |> render(:coin_balances_by_day, %{coin_balances_by_day: balances_by_day})
+    end
+  end
+
+  def smart_contract(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
+         _ <- VerificationController.check_and_verify(address_hash_string),
+         {:not_found, {:ok, address}} <-
+           {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options, true)} do
+      conn
+      |> put_status(200)
+      |> render(:smart_contract, %{address: address})
+    end
+  end
+
+  def methods_read(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+      conn
+      |> put_status(200)
+    end
+  end
+
+  def methods_write(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+      conn
+      |> put_status(200)
+    end
+  end
+
+  def methods_read_proxy(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+      conn
+      |> put_status(200)
+    end
+  end
+
+  def methods_write_proxy(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+      conn
+      |> put_status(200)
     end
   end
 end

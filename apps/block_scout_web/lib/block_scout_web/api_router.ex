@@ -127,6 +127,14 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash/blocks-validated", V2.AddressController, :blocks_validated)
       get("/:address_hash/coin-balance-history", V2.AddressController, :coin_balance_history)
       get("/:address_hash/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
+
+      scope "/smart-contract" do
+        get("/", V2.AddressController, :smart_contract)
+        get("/methods-read", V2.AddressController, :methods_read)
+        get("/methods-write", V2.AddressController, :methods_write)
+        get("/methods-read-proxy", V2.AddressController, :methods_read_proxy)
+        get("/methods-write-proxy", V2.AddressController, :methods_write_proxy)
+      end
     end
 
     scope "/tokens" do
