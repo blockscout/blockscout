@@ -46,6 +46,10 @@ ADD apps/explorer/mix.exs ./apps/explorer/
 ADD apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
 ADD apps/indexer/mix.exs ./apps/indexer/
 
+ENV JSON_RPC=https://rpc.testnet.mantle.xyz
+ENV SUBNETWORK=Mantle Testnet
+ENV COIN_NAME=BIT
+ENV CHAIN_ID=5001
 RUN mix do deps.get, local.rebar --force, deps.compile
 
 ADD . .
