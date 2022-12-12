@@ -65,6 +65,7 @@
 
 ### Chore
 
+- [#6572](https://github.com/blockscout/blockscout/pull/6572) - pending_block_operations table: remove fetch_internal_transactions column
 - [#6387](https://github.com/blockscout/blockscout/pull/6387) - Fix errors in docker-build and e2e-tests workflows
 - [#6325](https://github.com/blockscout/blockscout/pull/6325) - Set http_only attribute of account authorization cookie to false
 - [#6343](https://github.com/blockscout/blockscout/pull/6343) - Docker-compose persistent logs
