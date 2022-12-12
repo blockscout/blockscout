@@ -35,6 +35,9 @@ function baseReducer (state = initialState, action) {
 
       if (state.items.length && blockNumber < minBlock) return state
 
+      // celo: deactivating live block updates on /blocks page
+      if (state.items.length > 0) return state
+
       return Object.assign({}, state, {
         items: [action.msg.blockHtml, ...state.items]
       })

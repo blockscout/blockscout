@@ -154,6 +154,7 @@ defmodule BlockScoutWeb.Notifier do
         )
 
       token_transfers_full
+      |> Enum.filter(&(!is_nil(&1)))
       |> Enum.each(&broadcast_token_transfer/1)
     end
   end

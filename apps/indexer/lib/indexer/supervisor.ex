@@ -173,7 +173,6 @@ defmodule Indexer.Supervisor do
       {TrackedEventCache, [[], []]},
       {CeloMaterializedViewRefresh, [[], []]},
       {InternalTransactionCache, [[], []]},
-      {Indexer.Celo.WriteOperationHandler, [[], []]},
       {CeloEpochData.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
     ]
 

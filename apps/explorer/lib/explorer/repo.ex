@@ -67,14 +67,3 @@ defmodule Explorer.Repo do
 
   def replica, do: __MODULE__
 end
-
-defmodule Explorer.Repo.Remote do
-  @moduledoc "RPC wrapper for Explorer library, forwards all operations to indexer pod"
-
-  use Fly.RemoteRepo, local_repo: Explorer.Repo.Local
-  require Logger
-
-  use Explorer.Repo.RepoHelper
-
-  def replica, do: __MODULE__
-end

@@ -5,7 +5,8 @@
 import { reducer, initialState } from '../../../js/pages/address/transactions'
 
 describe('RECEIVED_NEW_TRANSACTION', () => {
-  test('with new transaction', () => {
+  // celo: skip due to live updates disabled
+  test.skip('with new transaction', () => {
     const state = Object.assign({}, initialState, {
       items: ['transaction html']
     })

@@ -8,7 +8,7 @@ if [[ "${TRACE-0}" == "1" ]]; then
 fi
 
 if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
-    echo 'Usage: ./remote_iex.sh <environment_name> <pod (api|web|indexer)> <suffix (optional)>
+    echo 'Usage: ./remote_iex.sh <environment_name> <pod (api|web|indexer)> <suffix (optional)> <pattern (optional)>
 
 Create a remote shell connection to a running blockscout pod. Assumes that the appropriate k8s context is active. Will connect
 to the first matching pod when multiple exist, which may not be what you want.
@@ -18,6 +18,7 @@ Examples:
     ./remote_iex.sh alfajores indexer 3
     ./remote_iex.sh rc1staging web
     ./remote_iex.sh rc1 indexer 1
+    ./remote_iex.sh alfajores web 2 55d8cff9dd-z27cc
 '
     exit
 fi
@@ -35,10 +36,17 @@ get_pod() {
     local namespace="$1"
     local pod="$2"
     local suffix="${3:-}"
+    local pod_pattern="${4:-}"
 
     local search_pattern="blockscout$suffix-$pod"
 
-    local name=$(kubectl get pods -n "$namespace" -o name | grep "$search_pattern" | head -1)
+    local name
+
+    if [[ ! -z "$pod_pattern"  ]]; then
+      name=$(kubectl get pods -n "$namespace" -o name | grep "$search_pattern" | grep "$pod_pattern" | head -1)
+    else
+      name=$(kubectl get pods -n "$namespace" -o name | grep "$search_pattern" | head -1)
+    fi
 
     echo "$name"
 }
@@ -56,6 +64,7 @@ get_context() {
     kubectl config current-context  
 }
 
+pod_pattern="${4:-}"
 suffix="${3:-}"
 pod="${2:-}"
 namespace="${1:-}"
@@ -64,7 +73,7 @@ main() {
     local current_context=$(get_context)
     echo "Looking for pod on $current_context cluster in namespace $namespace"
 
-    local pod_name=$(get_pod "$namespace" "$pod" "$suffix")
+    local pod_name=$(get_pod "$namespace" "$pod" "$suffix" "$pod_pattern")
 
     if [[ -z "${pod_name}" ]]; then
         echo "Couldn't find a matching pod"

@@ -63,7 +63,8 @@ describe('RECEIVED_NEW_BLOCK', () => {
 
     expect(output.items).toEqual([])
   })
-  test('inserts place holders if block received out of order', () => {
+  // celo: skip due to deactivated live updates
+  test.skip('inserts place holders if block received out of order', () => {
     window.localized = {}
     const state = Object.assign({}, initialState, {
       items: [
@@ -86,7 +87,8 @@ describe('RECEIVED_NEW_BLOCK', () => {
       '<div data-block-number="2"></div>'
     ])
   })
-  test('replaces duplicated block', () => {
+  // celo: skip due to deactivated live updates
+  test.skip('replaces duplicated block', () => {
     const state = Object.assign({}, initialState, {
       items: [
         '<div data-block-number="5"></div>',
@@ -107,7 +109,8 @@ describe('RECEIVED_NEW_BLOCK', () => {
         '<div data-block-number="4"></div>'
     ])
   })
-  test('replaces duplicated block older than last one', () => {
+  // celo: skip due to deactivated live updates
+  test.skip('replaces duplicated block older than last one', () => {
     const state = Object.assign({}, initialState, {
       items: [
         '<div data-block-number="5"></div>',

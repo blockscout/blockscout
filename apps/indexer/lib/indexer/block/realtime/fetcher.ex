@@ -94,6 +94,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
     if number > 0 do
       Publisher.broadcast([{:last_block_number, number}], :realtime)
+      Logger.info("WS announced new block #{number}")
     end
 
     :timer.sleep(@realtime_fetcher_delay)
@@ -157,10 +158,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
        when is_list(subscribe_named_arguments) do
     case EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments) do
       {:ok, subscription} ->
+        Logger.info("Subscribed to websocket newHeads")
         %__MODULE__{state | subscription: subscription}
 
       {:error, reason} ->
-        Logger.debug(fn -> ["Could not connect to websocket: #{inspect(reason)}. Continuing with polling."] end)
+        Logger.error(fn -> ["Could not connect to websocket: #{inspect(reason)}. Continuing with polling."] end)
         state
     end
   catch

@@ -10,7 +10,7 @@ defmodule Explorer.Chain.Events.DBSource do
   def setup_source do
     {:ok, pid} =
       :explorer
-      |> Application.get_env(Explorer.Repo)
+      |> Application.get_env(Explorer.Repo.Local)
       |> Notifications.start_link()
 
     ref = Notifications.listen!(pid, @channel)

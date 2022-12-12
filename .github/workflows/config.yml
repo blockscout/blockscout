@@ -309,8 +309,15 @@ jobs:
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
 
-      - run: ./node_modules/.bin/jest
+      - run: ./node_modules/.bin/jest --reporters="jest-junit"
         working-directory: apps/block_scout_web/assets
+
+      - name: Upload Unit Test Results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Jest JUnit Test Results
+          path: apps/block_scout_web/assets/junit.xml
 
   test_parity_mox_ethereum_jsonrpc:
     name: EthereumJSONRPC Tests
@@ -623,6 +630,7 @@ jobs:
       - test_parity_mox_explorer
       - test_parity_mox_indexer
       - test_parity_mox_block_scout_web
+      - jest
     if: success() || failure()
     steps:
       - name: Download Artifacts
