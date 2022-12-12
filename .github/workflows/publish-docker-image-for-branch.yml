@@ -45,8 +45,8 @@ jobs:
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
-            API_PATH=/optimism/bedrock-alpha
-            NETWORK_PATH=/optimism/bedrock-alpha
+            API_PATH=/optimism/bedrock-beta
+            NETWORK_PATH=/optimism/bedrock-beta
             DISABLE_WEBAPP=false
             DISABLE_WRITE_API=false
             CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER=
@@ -55,4 +55,4 @@ jobs:
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             DISABLE_BRIDGE_MARKET_CAP_UPDATER=false
             CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL=
-            SOCKET_ROOT=/optimism/bedrock-alpha
+            SOCKET_ROOT=/optimism/bedrock-beta
