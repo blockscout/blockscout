@@ -18,7 +18,7 @@ defmodule Indexer.Transform.TransactionActions do
   @polygon 137
   # @gnosis 100
 
-  @default_max_token_cache_size 100000
+  @default_max_token_cache_size 100_000
   @null_address "0x0000000000000000000000000000000000000000"
   @uniswap_v3_positions_nft "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
   @uniswap_v3_factory "0x1F98431c8aD98523631AE4a59f267346ea31F984"

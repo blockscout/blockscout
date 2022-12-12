@@ -199,7 +199,9 @@
               <dt class="col-sm-3 col-lg-2 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                   text: gettext("Highlighted events of the transaction.") %>
-                <%= gettext "Transaction Action" %></dt>
+                <%= gettext "Transaction Action" %>
+                <p id="actions-list-scroll-note"><%= gettext "Scroll to see more" %></p>
+              </dt>
               <dd class="col-sm-9 col-lg-10 actions-list-mobile-container">
                 <div class="mCustomScrollbar" style="max-height:100px;width:90%">
                   <% transaction_actions_indexed = Enum.with_index(transaction_actions) %>

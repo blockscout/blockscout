@@ -1,19 +1,22 @@
 import $ from 'jquery'
 import 'malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min'
 
-$(function() {
-  $(".mCustomScrollbar").mCustomScrollbar({
+$(function () {
+  const scrollBar = $('.mCustomScrollbar')
+  scrollBar.mCustomScrollbar({
     callbacks: {
       onOverflowY: () => {
-        $("#txActionsTitle .note").css("display", "block");
+        $('#actions-list-scroll-note').css('display', 'block')
+        scrollBar.removeClass('mCS_no_scrollbar_y')
       },
       onOverflowYNone: () => {
-        $("#txActionsTitle .note").css("display", "none");
+        $('#actions-list-scroll-note').css('display', 'none')
+        scrollBar.addClass('mCS_no_scrollbar_y')
       }
     },
-    theme: "dark",
+    theme: 'dark',
     autoHideScrollbar: true,
-    scrollButtons: {enable: false},
-    scrollbarPosition: "outside"
-  });
-});
+    scrollButtons: { enable: false },
+    scrollbarPosition: 'outside'
+  })
+})
