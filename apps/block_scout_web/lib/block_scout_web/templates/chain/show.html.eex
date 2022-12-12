@@ -68,7 +68,7 @@
       </div>
       <!-- Stats -->
       <div class="dashboard-banner-network-plain-container">
-        <p class="dashboard-banner-daily-tx-title" style="height: 30px;margin-bottom: 16px;"></p>
+        <p class="dashboard-banner-daily-tx-title dashboard-banner-daily-tx-title-empty" style="height: 30px;margin-bottom: 16px;"></p>
         <div class="dashboard-banner-network-plain-wrap">
           <div class="dashboard-banner-network-plain-cointainer-item">
             <%= case @average_block_time do %>

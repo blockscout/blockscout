@@ -1,14 +1,14 @@
 .mobile-search-show {
-    @media screen and (max-width: 1200px) {
+    @media screen and (max-width: 992px) {
         width: 100%;
     }
-    @media screen and (min-width: 1200px) {
+    @media screen and (min-width: 992px) {
         display: none !important;
     }
 }
 
 .mobile-search-hide {
-    @media screen and (max-width: 1200px) {
+    @media screen and (max-width: 992px) {
         display: none !important;
     }
 }
@@ -28,7 +28,7 @@
     border: none !important;
     border-radius: 0 !important;
     background-color: #f5f6fa !important;
-    /* @media screen and (max-width: 1200px) {
+    /* @media screen and (max-width: 992px) {
         height: auto !important;
     } */
 }
