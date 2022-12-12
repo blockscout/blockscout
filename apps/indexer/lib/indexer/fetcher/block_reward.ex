@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.BlockReward do
   retrieved from the database and compared against that returned from `EthereumJSONRPC.`
   """
 
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
   require Logger

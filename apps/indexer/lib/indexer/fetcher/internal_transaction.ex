@@ -5,7 +5,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   See `async_fetch/1` for details on configuring limits.
   """
 
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
   require Logger
