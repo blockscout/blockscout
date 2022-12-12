@@ -335,7 +335,7 @@ defmodule Indexer.Block.FetcherTest do
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             block_quantity = integer_to_quantity(block_number)
             from_address_hash = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
             to_address_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
@@ -362,7 +362,7 @@ defmodule Indexer.Block.FetcherTest do
       end
 
       case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-        EthereumJSONRPC.Parity ->
+        EthereumJSONRPC.Nethermind ->
           assert {:ok,
                   %{
                     inserted: %{
@@ -451,7 +451,7 @@ defmodule Indexer.Block.FetcherTest do
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             block_quantity = integer_to_quantity(block_number)
             from_address_hash = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
             to_address_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
@@ -476,7 +476,7 @@ defmodule Indexer.Block.FetcherTest do
       end
 
       case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-        EthereumJSONRPC.Parity ->
+        EthereumJSONRPC.Nethermind ->
           assert {:ok,
                   %{
                     inserted: %{
