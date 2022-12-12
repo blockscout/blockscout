@@ -64,6 +64,7 @@
 
 ### Chore
 
+- [#6573](https://github.com/blockscout/blockscout/pull/6573) - Allow and manage insecure http connection to the archive node
 - [#6387](https://github.com/blockscout/blockscout/pull/6387) - Fix errors in docker-build and e2e-tests workflows
 - [#6325](https://github.com/blockscout/blockscout/pull/6325) - Set http_only attribute of account authorization cookie to false
 - [#6343](https://github.com/blockscout/blockscout/pull/6343) - Docker-compose persistent logs
