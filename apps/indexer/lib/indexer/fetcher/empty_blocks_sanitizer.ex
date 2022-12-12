@@ -5,7 +5,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   """
 
   use GenServer
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
 
   require Logger
 
