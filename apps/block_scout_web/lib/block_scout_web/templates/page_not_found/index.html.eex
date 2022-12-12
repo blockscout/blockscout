@@ -1,12 +1,12 @@
-<section class="container">
+<section class="container error-container">
   <div class="block-not-found">
     <div class="block-not-found-img">
-      <img alt="Page Not Found" src="/images/errors-img/lukso-page-not-found.png" srcset="/images/errors-img/lukso-page-not-found@2x.png 2x">
+      <img alt="Page not found" src="/images/errors-img/page-not-found.svg">
     </div>
     <div class="block-not-found-content">
       <h1 class="card-title error-title"><%= gettext "Page not found" %></h1>
-      <p class="error-descr"><%= gettext "The requested path was not found on BlockScout." %></p>
-      <a class="error-btn btn-line" href="/"><%= gettext "Back Home" %></a>
+      <p class="error-descr"><%= gettext "This page is no longer explorable! If you are lost, use the search bar to find what you are looking for." %></p>
+      <a class="error-btn" href="/"><%= gettext "Back to home" %></a>
     </div>
   </div>
 </section>

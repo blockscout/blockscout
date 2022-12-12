@@ -4,7 +4,7 @@ defmodule Indexer.Fetcher.CoinBalance do
   `fetched_coin_balance_block_number` to value at max `t:Explorer.Chain.Address.CoinBalance.t/0` `block_number` for the given `t:Explorer.Chain.Address.t/` `hash`.
   """
 
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
   require Logger

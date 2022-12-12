@@ -1,34 +1,16 @@
-<section class="container">
+<section class="container error-container">
   <div class="tx-nf">
     <div class="tx-nf-illustr">
-      <img alt="Block Not Found" src="/images/errors-img/lukso-tx-not-found.png" srcset="/images/errors-img/lukso-tx-not-found@2x.png 2x">
+      <img alt="Transaction not found" src="/images/errors-img/tx-not-found.svg">
     </div>
-    <div class="tx-nf-content">
-      <h1 class="card-title error-title"><%= gettext("Sorry, We are unable to locate this transaction Hash") %></h1>
-      <div class="tx-nf-blocks">
-        <div class="tx-nf-blocks-row">
-          <div class="tx-nf-block">
-            <span class="tx-nf-number">1</span>
-            <p class="error-descr"><%= gettext("If you have just submitted this transaction please wait for at least 30 seconds before refreshing this page.") %></p>
-          </div>
-          <div class="tx-nf-block">
-            <span class="tx-nf-number">2</span>
-            <p class="error-descr"><%= gettext("It could still be in the TX Pool of a different node, waiting to be broadcasted.") %></p>
-          </div>
-        </div>
-        <div class="tx-nf-blocks-row">
-          <div class="tx-nf-block">
-            <span class="tx-nf-number">3</span>
-            <p class="error-descr"><%= gettext("During times when the network is busy (i.e during ICOs) it can take a while for your transaction to propagate through the network and for us to index it.") %></p>
-          </div>
-          <div class="tx-nf-block">
-            <span class="tx-nf-number">4</span>
-            <p class="error-descr"><%= gettext("If it still does not show up after 1 hour, please check with your sender/exchange/wallet/transaction provider for additional information.") %></p>
-          </div>
-        </div>
-      </div>
-      <a class="error-btn btn-line" href="/"><%= gettext("Back Home") %></a>
+    <h1 class="card-title error-title"><%= gettext("Sorry, we are unable to locate this transaction hash") %></h1>
+    <div class="tx-nf-block">
+          <p class="error-descr"><%= gettext("1. If you have just submitted this transaction please wait for at least 30 seconds before refreshing this page.") %></p>
+          <p class="error-descr"><%= gettext("2. It could still be in the TX Pool of a different node, waiting to be broadcasted.") %></p>
+          <p class="error-descr"><%= gettext("3. During times when the network is busy (i.e during ICOs) it can take a while for your transaction to propagate through the network and for us to index it.") %></p>
+          <p class="error-descr"><%= gettext("4. If it still does not show up after 1 hour, please check with your sender/exchange/wallet/transaction provider for additional information.") %></p>
     </div>
+    <a class="error-btn btn-line" href="/"><%= gettext("Back to home") %></a>
   </div>
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/transaction.js") %>"></script>
 </section>

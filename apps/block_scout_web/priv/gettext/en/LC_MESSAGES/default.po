@@ -175,12 +175,6 @@ msgstr ""
 msgid "Average block time"
 msgstr ""
 
-#: lib/block_scout_web/templates/page_not_found/index.html.eex:9
-#: lib/block_scout_web/templates/transaction/not_found.html.eex:30
-#, elixir-autogen, elixir-format
-msgid "Back Home"
-msgstr ""
-
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:25
 #, elixir-autogen, elixir-format
 msgid "Back to API keys (Cancel)"
@@ -641,11 +635,6 @@ msgstr ""
 msgid "Displaying the init data provided of the creating transaction."
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/not_found.html.eex:22
-#, elixir-autogen, elixir-format
-msgid "During times when the network is busy (i.e during ICOs) it can take a while for your transaction to propagate through the network and for us to index it."
-msgstr ""
-
 #: lib/block_scout_web/views/transaction_view.ex:210
 #, elixir-autogen, elixir-format
 msgid "ERC-20 "
@@ -1055,11 +1044,6 @@ msgstr ""
 msgid "Transaction"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/not_found.html.eex:12
-#, elixir-autogen, elixir-format
-msgid "If you have just submitted this transaction please wait for at least 30 seconds before refreshing this page."
-msgstr ""
-
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:6
 #, elixir-autogen, elixir-format
 msgid "Indexed?"
@@ -1075,11 +1059,6 @@ msgstr ""
 msgid "Internal Transaction"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/invalid.html.eex:6
-#, elixir-autogen, elixir-format
-msgid "Invalid Transaction Hash"
-msgstr ""
-
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:16
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:19
 #: lib/block_scout_web/views/tokens/overview_view.ex:42
@@ -1090,11 +1069,6 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_yul_contracts_switcher.html.eex:3
 #, elixir-autogen, elixir-format
 msgid "Is Yul contract"
-msgstr ""
-
-#: lib/block_scout_web/templates/transaction/not_found.html.eex:16
-#, elixir-autogen, elixir-format
-msgid "It could still be in the TX Pool of a different node, waiting to be broadcasted."
 msgstr ""
 
 #: lib/block_scout_web/templates/layout/app.html.eex:45
@@ -1506,11 +1480,6 @@ msgstr ""
 msgid "Something went wrong, click to retry."
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/not_found.html.eex:7
-#, elixir-autogen, elixir-format
-msgid "Sorry, We are unable to locate this transaction Hash"
-msgstr ""
-
 #: lib/block_scout_web/views/internal_transaction_view.ex:24
 #, elixir-autogen, elixir-format
 msgid "Static Call"
@@ -1836,11 +1805,6 @@ msgstr ""
 msgid "here."
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/invalid.html.eex:8
-#, elixir-autogen, elixir-format
-msgid "is not a valid transaction hash"
-msgstr ""
-
 #: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:41
 #, elixir-autogen, elixir-format
 msgid "of"
@@ -1889,11 +1853,6 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:131
 #, elixir-autogen, elixir-format
 msgid "Decimals"
-msgstr ""
-
-#: lib/block_scout_web/templates/transaction/not_found.html.eex:26
-#, elixir-autogen, elixir-format
-msgid "If it still does not show up after 1 hour, please check with your sender/exchange/wallet/transaction provider for additional information."
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:131
@@ -3343,11 +3302,6 @@ msgstr ""
 msgid "Submission date"
 msgstr ""
 
-#: lib/block_scout_web/templates/page_not_found/index.html.eex:8
-#, elixir-autogen, elixir-format
-msgid "The requested path was not found on BlockScout."
-msgstr ""
-
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:68
 #, elixir-autogen, elixir-format
 msgid "The total amount of tokens issued"
@@ -3493,4 +3447,62 @@ msgstr ""
 #: lib/block_scout_web/templates/visualize_sol2uml/index.html.eex:5
 #, elixir-autogen, elixir-format
 msgid "UML diagram"
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:8
+#, elixir-autogen, elixir-format, fuzzy
+msgid "1. If you have just submitted this transaction please wait for at least 30 seconds before refreshing this page."
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:9
+#, elixir-autogen, elixir-format, fuzzy
+msgid "2. It could still be in the TX Pool of a different node, waiting to be broadcasted."
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:11
+#, elixir-autogen, elixir-format, fuzzy
+msgid "4. If it still does not show up after 1 hour, please check with your sender/exchange/wallet/transaction provider for additional information."
+msgstr ""
+
+#: lib/block_scout_web/templates/internal_server_error/index.html.eex:8
+#, elixir-autogen, elixir-format
+msgid "An unexpected error has occurred. Try reloading the page, or come back soon and try again."
+msgstr ""
+
+#: lib/block_scout_web/templates/error422/index.html.eex:9
+#: lib/block_scout_web/templates/internal_server_error/index.html.eex:9
+#: lib/block_scout_web/templates/page_not_found/index.html.eex:9
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:13
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Back to home"
+msgstr ""
+
+#: lib/block_scout_web/templates/internal_server_error/index.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Internal server error"
+msgstr ""
+
+#: lib/block_scout_web/templates/error422/index.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Request cannot be processed"
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:6
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Sorry, we are unable to locate this transaction hash"
+msgstr ""
+
+#: lib/block_scout_web/templates/page_not_found/index.html.eex:8
+#, elixir-autogen, elixir-format
+msgid "This page is no longer explorable! If you are lost, use the search bar to find what you are looking for."
+msgstr ""
+
+#: lib/block_scout_web/templates/error422/index.html.eex:8
+#, elixir-autogen, elixir-format
+msgid "Your request contained an error, perhaps a mistyped tx/block/address hash. Try again, and check the developer tools console for more info."
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:10
+#, elixir-autogen, elixir-format, fuzzy
+msgid "3. During times when the network is busy (i.e during ICOs) it can take a while for your transaction to propagate through the network and for us to index it."
 msgstr ""
