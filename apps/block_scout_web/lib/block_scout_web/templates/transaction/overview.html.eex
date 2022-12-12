@@ -26,6 +26,8 @@
 <% fee_token = get_fee_token_name(@transaction) %>
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
+<% community_fund_address_string = community_fund_address() %>
+
 <section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
     <div class="col-md-12">
@@ -409,10 +411,17 @@
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("Amount of") <> " " <> gettext("CELO") <> " " <> gettext("burned for this transaction. Equals Block Base Fee per Gas * Gas Used.") %>
-                <%= gettext "Transaction Burnt Fee" %>
+                  text: gettext("Amount of") <> " " <> gettext("CELO") <> " " <> gettext("sent to Community Fund for this transaction. Equals Block Base Fee per Gas * Gas Used.") %>
+
+                <%= if is_nil(community_fund_address_string) do %>
+                  <%= gettext("Fees sent to Community Fund") %>
+                    <% else %>
+                  <%= link to: address_path(BlockScoutWeb.Endpoint, :show, community_fund_address_string) do %>
+                    <%= gettext("Community Fund") %>
+                  <% end %>
+                <% end %>
               </dt>
-              <dd class="col-sm-9 col-lg-10"><i class="fa-solid fa-fire i-tooltip-2"></i> <%= format_wei_value(burned_fee, :ether) %>
+              <dd class="col-sm-9 col-lg-10"><%= format_wei_value(burned_fee, :ether) %>
                 <%= unless empty_exchange_rate?(@exchange_rate) do %>
                   (<span data-wei-value=<%= burned_fee_decimal %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)
                 <% end %>

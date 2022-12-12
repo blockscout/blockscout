@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.TransactionView do
 
   alias BlockScoutWeb.{AccessHelpers, AddressView, BlockView, TabHelpers}
   alias BlockScoutWeb.Cldr.Number
+  alias Explorer.Celo.Util
   alias Explorer.{Chain, CustomContractsHelpers, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
@@ -610,6 +611,16 @@ defmodule BlockScoutWeb.TransactionView do
 
       _ ->
         hex_revert_reason
+    end
+  end
+
+  def community_fund_address do
+    case(Util.get_address("Governance")) do
+      {:ok, address_string} ->
+        address_string
+
+      _ ->
+        nil
     end
   end
 end

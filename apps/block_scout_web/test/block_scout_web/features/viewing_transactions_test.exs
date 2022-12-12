@@ -6,11 +6,16 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
   use BlockScoutWeb.FeatureCase, async: false
 
   alias BlockScoutWeb.{AddressPage, TransactionListPage, TransactionLogsPage, TransactionPage}
+  alias Explorer.Celo.CacheHelper
   alias Explorer.Chain.Wei
 
   setup :set_mox_global
 
   setup do
+    CacheHelper.set_test_addresses(%{
+      "Governance" => "0xD533Ca259b330c7A88f74E000a3FaEa2d63B7972"
+    })
+
     block =
       insert(:block, %{
         timestamp: Timex.now() |> Timex.shift(hours: -2),
