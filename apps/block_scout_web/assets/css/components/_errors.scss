@@ -1,4 +1,18 @@
 $error-tablet-breakpoint: 768px;
+$error-title-color: #606571;
+$error-description-color: #718096;
+$error-btn-color: #2B6CB0;
+$error-delimiter-color: #D9D9D9;
+
+// In order to center vertically
+
+main:has(section.error-container) {
+	display: flex;
+}
+
+.error-container {
+	margin: auto;
+}
 
 // Block Not Found
 
@@ -10,11 +24,12 @@ $error-tablet-breakpoint: 768px;
 		flex-direction: row;
 		align-items: center;
 		justify-content: center;
-		padding-top: 52px;
 	}
+	gap: 50px;
 }
 
 .block-not-found-img {
+	order: -1;
 	margin-bottom: 40px;
 	text-align: center;
 	@media (min-width: $error-tablet-breakpoint) {
@@ -27,68 +42,65 @@ $error-tablet-breakpoint: 768px;
 	}
 }
 
+.block-not-found::before {
+	align-self: stretch;
+	border: 1px solid $error-delimiter-color;
+	border-radius: 10px;
+	content: "";
+}
+
 .block-not-found-content {
 	text-align: center;
 	@media (min-width: $error-tablet-breakpoint) {
 		text-align: left;
-		padding-left: 52px;
-		max-width: 396px;
+		max-width: 466px;
 	}
 }
 
 .error-title {
 	margin-bottom: 20px !important;
+	font-weight: 500;
+	font-size: 48px;
+	line-height: 58px;
+	color: $error-title-color;
 }
 
 .error-descr {
 	display: block;
-	font-size: 14px;
-	color: #a3a9b5;
-	line-height: 1.714;
+	font-size: 16px;
+	color: $error-description-color;
+	line-height: 30px;
 	margin-bottom: 22px;
 	word-wrap: break-word;
 }
 
 .error-btn {
+	@include btn-line($btn-line-bg, $error-btn-color, 16px);
+	border-width: 2px;
 	background: transparent;
 	display: inline-flex !important;
+	border-radius: 8px;
+	font-weight: 600;
+	line-height: 24px;
+}
+
+.dark-theme-applied .error-btn {
+	color: $error-btn-color;
 }
 
 // TX Not Found
 .tx-nf {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: center;
 	flex-direction: column;
-	padding-bottom: 50px;
-	@media (min-width: $error-tablet-breakpoint) {
-		flex-direction: row;
-		padding-top: 52px;
-	}
-}
+	margin: auto;
+	padding-bottom: 3rem;
+	max-width: 827px;
+	gap: 12px;
 
-.tx-nf-content {
-	margin-top: 52px;
-	max-width: 700px;
-	@media (min-width: $error-tablet-breakpoint) {
-		margin-left: 90px;
-		margin-top: 0;
-	}
-}
-
-.tx-nf-blocks {
-	margin-bottom: 40px;
-	margin-top: 40px;
-}
-
-.tx-nf-block {
-	background-color: #fff;
-	box-shadow: 0px 0px 30px 0px rgba(202, 199, 226, 0.5);
-	padding: 17px 40px 17px 20px;
-	position: relative;
-	border-radius: 6px;
-	@media (min-width: $error-tablet-breakpoint) {
-		width: calc(50% - 20px);
+	.error-title {
+		margin-bottom: 0 !important;
 	}
 }
 
@@ -96,42 +108,4 @@ $error-tablet-breakpoint: 768px;
 	.error-descr {
 		margin-bottom: 0;
 	}
-	& + .tx-nf-block {
-		margin-top: 30px;
-		@media (min-width: $error-tablet-breakpoint) {
-			margin-top: 0;
-		}
-	}
-}
-
-.tx-nf-blocks-row {
-	display: flex;
-	justify-content: space-between;
-	flex-direction: column;
-	@media (min-width: $error-tablet-breakpoint) {
-		flex-direction: row;
-	}
-	& + .tx-nf-blocks-row {
-		margin-top: 30px;
-		@media (min-width: $error-tablet-breakpoint) {
-			margin-top: 40px;
-		}
-	}
-}
-
-.tx-nf-number {
-	display: inline-block;
-	position: absolute;
-	top: -15px;
-	left: -15px;
-	width: 30px;
-	height: 30px;
-	border-radius: 15px;
-	background-color: $secondary;
-	box-shadow: 0px 3px 5px 0px rgba($secondary, 0.25);
-	color: #fff;
-	font-weight: 700;
-	font-size: 14px;
-	text-align: center;
-	line-height: 32px;
 }

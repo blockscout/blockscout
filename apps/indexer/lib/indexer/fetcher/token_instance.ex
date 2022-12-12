@@ -3,7 +3,7 @@ defmodule Indexer.Fetcher.TokenInstance do
   Fetches information about a token instance.
   """
 
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
   require Logger

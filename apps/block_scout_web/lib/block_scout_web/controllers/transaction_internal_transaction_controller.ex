@@ -73,7 +73,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
         TransactionController.set_not_found_view(conn, transaction_hash_string)
 
       :error ->
-        TransactionController.set_invalid_view(conn, transaction_hash_string)
+        unprocessable_entity(conn)
 
       {:error, :not_found} ->
         TransactionController.set_not_found_view(conn, transaction_hash_string)
@@ -121,7 +121,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
         TransactionController.set_not_found_view(conn, transaction_hash_string)
 
       :error ->
-        TransactionController.set_invalid_view(conn, transaction_hash_string)
+        unprocessable_entity(conn)
 
       {:error, :not_found} ->
         TransactionController.set_not_found_view(conn, transaction_hash_string)

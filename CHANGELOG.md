@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#6433](https://github.com/blockscout/blockscout/pull/6433) - Update error pagess
 - [#6544](https://github.com/blockscout/blockscout/pull/6544) - API improvements
 - [#5561](https://github.com/blockscout/blockscout/pull/5561), [#6523](https://github.com/blockscout/blockscout/pull/6523), [#6549](https://github.com/blockscout/blockscout/pull/6549) - Improve working with contracts implementations
 - [#6401](https://github.com/blockscout/blockscout/pull/6401) - Add Sol2Uml contract visualization
@@ -28,6 +29,8 @@
 - [#6454](https://github.com/blockscout/blockscout/pull/6454) - INDEXER_RECEIPTS_BATCH_SIZE, INDEXER_RECEIPTS_CONCURRENCY, INDEXER_COIN_BALANCES_BATCH_SIZE, INDEXER_COIN_BALANCES_CONCURRENCY env variables
 - [#6476](https://github.com/blockscout/blockscout/pull/6476), [#6484](https://github.com/blockscout/blockscout/pull/6484) - Update token balances indexes
 - [#6510](https://github.com/blockscout/blockscout/pull/6510) - Set consensus: false for blocks on int transaction foreign_key_violation
+- [#6565](https://github.com/blockscout/blockscout/pull/6565) - Set restart: :permanent for permanent fetchers
+- [#6568](https://github.com/blockscout/blockscout/pull/6568) - Drop unfetched_token_balances index
 
 ### Fixes
 

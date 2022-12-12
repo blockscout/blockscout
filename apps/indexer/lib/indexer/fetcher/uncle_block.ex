@@ -4,7 +4,7 @@ defmodule Indexer.Fetcher.UncleBlock do
   `uncle_fetched_at` where the `uncle_hash` matches `hash`.
   """
 
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
   require Logger
