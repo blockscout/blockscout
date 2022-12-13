@@ -99,7 +99,12 @@ msgstr ""
 msgid "(query)"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:286
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_first.html.eex:4
+#, elixir-autogen, elixir-format
+msgid ") may be added for each contract. Click the Add Library button to add an additional one."
+msgstr ""
+
+#: lib/block_scout_web/templates/layout/app.html.eex:236
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
