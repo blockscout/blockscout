@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import do
   alias Explorer.Celo.Telemetry
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import
-  alias Explorer.Repo.Remote, as: Repo
+  alias Explorer.Repo
 
   require Logger
 

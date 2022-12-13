@@ -43,7 +43,7 @@ defmodule Explorer.Application do
     base_children = [
       {Fly.RPC, []},
       Explorer.Repo.Local,
-      {Fly.Postgres.LSN.Tracker, repo: Explorer.Repo.Local},
+      {Fly.Postgres.LSN.Supervisor, repo: Explorer.Repo.Local},
       Explorer.Repo.Account,
       Explorer.Vault,
       Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),

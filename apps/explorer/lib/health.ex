@@ -33,6 +33,9 @@ defmodule Explorer.Health do
     case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
       {:ok, number} ->
         case EthereumJSONRPC.fetch_blocks_by_range(number..number, json_rpc_named_arguments) do
+          {:ok, %{blocks_params: []}} ->
+            false
+
           {:ok, blocks} ->
             diff = DateTime.diff(DateTime.utc_now(), Enum.at(blocks.blocks_params, 0).timestamp) * 1000
             diff <= healthy_blocks_period
