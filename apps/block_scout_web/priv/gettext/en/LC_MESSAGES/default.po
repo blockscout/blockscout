@@ -492,7 +492,7 @@ msgstr ""
 msgid "Blocks Validated"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:44
+#: lib/block_scout_web/templates/layout/app.html.eex:48
 #, elixir-autogen, elixir-format
 msgid "Blocks With Internal Transactions Indexed"
 msgstr ""
@@ -1509,7 +1509,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:17
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:11
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:6
-#: lib/block_scout_web/views/address_view.ex:364
+#: lib/block_scout_web/views/address_view.ex:371
 #: lib/block_scout_web/views/transaction_view.ex:514
 #, elixir-autogen, elixir-format
 msgid "Internal Transactions"
@@ -1621,7 +1621,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/index.html.eex:10
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:17
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:8
-#: lib/block_scout_web/views/address_view.ex:375
+#: lib/block_scout_web/views/address_view.ex:382
 #: lib/block_scout_web/views/transaction_view.ex:515
 #, elixir-autogen, elixir-format
 msgid "Logs"
@@ -2370,7 +2370,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:29
 #: lib/block_scout_web/templates/transaction_state/index.html.eex:6
-#: lib/block_scout_web/views/transaction_view.ex:513
+#: lib/block_scout_web/views/transaction_view.ex:517
 #, elixir-autogen, elixir-format
 msgid "State changes"
 msgstr ""
@@ -3467,76 +3467,6 @@ msgstr ""
 #: lib/block_scout_web/templates/internal_server_error/index.html.eex:9
 #: lib/block_scout_web/templates/page_not_found/index.html.eex:9
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:13
-#: lib/block_scout_web/templates/transaction_state/index.html.eex:38
-#, elixir-autogen, elixir-format
-msgid "Change"
-msgstr ""
-
-#: lib/block_scout_web/templates/transaction/_tabs.html.eex:29
-#: lib/block_scout_web/templates/transaction_state/index.html.eex:6
-#: lib/block_scout_web/views/transaction_view.ex:517
-#, elixir-autogen, elixir-format
-msgid "State changes"
-msgstr ""
-
-#: lib/block_scout_web/templates/transaction_state/index.html.eex:13
-#, elixir-autogen, elixir-format
-msgid "The changes from this transaction have not yet happened since the transaction is still pending."
-msgstr ""
-
-#: lib/block_scout_web/templates/transaction_state/index.html.eex:17
-#, elixir-autogen, elixir-format
-msgid "This transaction hasn't changed state."
-msgstr ""
-
-#: lib/block_scout_web/templates/address/overview.html.eex:120
-#, elixir-autogen, elixir-format
-msgid "Contract was precompiled and created at genesis or contract creation transaction is missing"
-msgstr ""
-
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:29
-#, elixir-autogen, elixir-format, fuzzy
-msgid "Blockchain"
-msgstr ""
-
-#: lib/block_scout_web/templates/verified_contracts/index.html.eex:72
-#, elixir-autogen, elixir-format, fuzzy
-msgid "Constructor args"
-msgstr ""
-
-#: lib/block_scout_web/templates/verified_contracts/index.html.eex:41
-#, elixir-autogen, elixir-format, fuzzy
-msgid "Contract name or address"
-msgstr ""
-
-#: lib/block_scout_web/templates/verified_contracts/_stats.html.eex:5
-#, elixir-autogen, elixir-format, fuzzy
-msgid "Contracts"
-msgstr ""
-
-#: lib/block_scout_web/templates/verified_contracts/index.html.eex:15
-#, elixir-autogen, elixir-format
-msgid "Filter by compiler:"
-msgstr ""
-
-#: lib/block_scout_web/templates/verified_contracts/_stats.html.eex:13
-#: lib/block_scout_web/templates/verified_contracts/_stats.html.eex:26
-#, elixir-autogen, elixir-format
-msgid "Last 24h"
-msgstr ""
-
-#: lib/block_scout_web/templates/verified_contracts/index.html.eex:78
-#, elixir-autogen, elixir-format, fuzzy
-msgid "Market cap"
-msgstr ""
-
-#: lib/block_scout_web/templates/verified_contracts/_contract.html.eex:21
-#: lib/block_scout_web/templates/verified_contracts/_contract.html.eex:58
-#, elixir-autogen, elixir-format
-msgid "N/A"
-msgstr ""
-
-#: lib/block_scout_web/templates/verified_contracts/index.html.eex:69
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Back to home"
 msgstr ""
@@ -3567,7 +3497,6 @@ msgid "Your request contained an error, perhaps a mistyped tx/block/address hash
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:10
-#: lib/block_scout_web/templates/layout/app.html.eex:48
 #, elixir-autogen, elixir-format, fuzzy
 msgid "3. During times when the network is busy (i.e during ICOs) it can take a while for your transaction to propagate through the network and for us to index it."
 msgstr ""
