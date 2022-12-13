@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#6582](https://github.com/blockscout/blockscout/pull/6582) - Transaction actions indexer
 - [#6433](https://github.com/blockscout/blockscout/pull/6433) - Update error pagess
 - [#6544](https://github.com/blockscout/blockscout/pull/6544) - API improvements
 - [#5561](https://github.com/blockscout/blockscout/pull/5561), [#6523](https://github.com/blockscout/blockscout/pull/6523), [#6549](https://github.com/blockscout/blockscout/pull/6549) - Improve working with contracts implementations
