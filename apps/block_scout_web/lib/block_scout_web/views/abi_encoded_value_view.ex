@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       |> Enum.map(&do_copy_text(type, &1))
       |> Enum.intersperse(", ")
 
-    ~E|[<%= values %>]|
+    raw(hex(values))
   end
 
   defp do_copy_text(_, {:dynamic, value}) do
@@ -86,7 +86,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       |> Enum.map(fn {val, ind} -> do_copy_text(Enum.at(types, ind), val) end)
       |> Enum.intersperse(", ")
 
-    ~E|(<%= values %>)|
+    raw(hex(values))
   end
 
   defp do_copy_text(_type, value) do
@@ -112,7 +112,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     spacing = String.duplicate(" ", depth * 2)
     delimited = Enum.intersperse(values, ",\n")
 
-    ~E|<%= spacing %>[<%= "\n" %><%= delimited %><%= "\n" %><%= spacing %>]|
+    "#{spacing}[\n#{raw(delimited)}\n#{spacing}]"
   end
 
   defp do_value_html({:tuple, types}, values, no_links, _) do
@@ -125,17 +125,17 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       end)
 
     delimited = Enum.intersperse(values_list, ",")
-    ~E|(<%= delimited %>)|
+    raw(hex(delimited))
   end
 
   defp do_value_html(type, value, no_links, depth) do
     spacing = String.duplicate(" ", depth * 2)
-    ~E|<%= spacing %><%=base_value_html(type, value, no_links)%>|
+    "#{spacing}#{base_value_html(type, value, no_links)}"
     [spacing, base_value_html(type, value, no_links)]
   end
 
   defp base_value_html(_, {:dynamic, value}, _no_links) do
-    ~E|<%= hex(value) %>|
+    raw(hex(value))
   end
 
   defp base_value_html(:address, value, no_links) do
@@ -144,16 +144,17 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     else
       address = hex(value)
 
-      ~E|<a href="<%= address_path(BlockScoutWeb.Endpoint, :show, address) %>" target="_blank"><%= address %></a>|
+      # credo:disable-for-next-line
+      raw("<a href=\"#{address_path(BlockScoutWeb.Endpoint, :show, address)}\" target=\"_blank\">#{address}</a>")
     end
   end
 
   defp base_value_html(:address_text, value, _no_links) do
-    ~E|<%= hex(value) %>|
+    raw(hex(value))
   end
 
   defp base_value_html(:bytes, value, _no_links) do
-    ~E|<%= hex(value) %>|
+    raw(hex(value))
   end
 
   defp base_value_html(_, value, _no_links), do: HTML.html_escape(value)

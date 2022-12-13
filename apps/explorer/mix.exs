@@ -89,7 +89,7 @@ defmodule Explorer.Mixfile do
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 1.0", only: [:test]},
-      {:phoenix_html, "== 3.0.4"},
+      {:phoenix_html, "== 3.2.0"},
       {:poison, "~> 4.0.1"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},

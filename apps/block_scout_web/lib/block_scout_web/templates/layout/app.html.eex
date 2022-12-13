@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <%= case @view_module do %>
+    <%= case view_module(@conn) do %>
       <% Elixir.BlockScoutWeb.ChainView -> %>
         <link rel="stylesheet" href="<%= static_path(@conn, "/css/main-page.css") %>">
         <link rel="preload" href="<%= static_path(@conn, "/js/chain.js") %>" as="script">
@@ -23,7 +23,7 @@
     <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/tag.svg") %>" as="image" crossorigin>
     <link rel="preload" href="<%= static_path(@conn, "/css/non-critical.css") %>" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/non-critical.css") %>">
-    <%= render_existing(@view_module, "styles.html", assigns) %>
+    <%= render_existing(view_module(@conn), "styles.html", assigns) %>
 
     <link rel="apple-touch-icon" sizes="180x180" href="<%= static_path(@conn, "/apple-touch-icon.png") %>">
     <link rel="icon" type="image/png" sizes="32x32" href="<%= static_path(@conn, "/images/favicon-32x32.png") %>">
@@ -35,7 +35,7 @@
     <meta name="msapplication-config" content="<%= static_path(@conn, "/browserconfig.xml") %>">
     <meta name="theme-color" content="#ffffff">
 
-    <%= render_existing(@view_module, "_metatags.html", assigns) || render("_default_title.html") %>
+    <%= render_existing(view_module(@conn), "_metatags.html", assigns) || render("_default_title.html") %>
 
     <script defer data-cfasync="false">
       window.localized = {
@@ -107,11 +107,11 @@
     <% raw_circles_addresses = CustomContractsHelpers.get_raw_custom_addresses_list(:circles_addresses) %>
     <%= cond do %>
       <% (
-        @view_module == Elixir.BlockScoutWeb.TransactionInternalTransactionView ||
-        @view_module == Elixir.BlockScoutWeb.TransactionLogView ||
-        @view_module == Elixir.BlockScoutWeb.TransactionRawTraceView ||
-        @view_module == Elixir.BlockScoutWeb.TransactionTokenTransferView ||
-        @view_module == Elixir.BlockScoutWeb.TransactionStateView
+        view_module(@conn) == Elixir.BlockScoutWeb.TransactionInternalTransactionView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.TransactionLogView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.TransactionRawTraceView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.TransactionTokenTransferView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.TransactionStateView
       ) -> %>
         <% to_address = @transaction && @transaction.to_address && "0x" <> Base.encode16(@transaction.to_address.hash.bytes, case: :lower) %>
         <% {:ok, created_from_address} = if @transaction.to_address_hash, do: Chain.hash_to_address(@transaction.to_address_hash), else: {:ok, nil} %>
@@ -143,18 +143,18 @@
           window.onload = applyCustomMode()
         </script>
       <% (
-        @view_module == Elixir.BlockScoutWeb.AddressTransactionView ||
-        @view_module == Elixir.BlockScoutWeb.AddressTokenTransferView ||
-        @view_module == Elixir.BlockScoutWeb.AddressTokenView ||
-        @view_module == Elixir.BlockScoutWeb.AddressInternalTransactionView ||
-        @view_module == Elixir.BlockScoutWeb.AddressCoinBalanceView ||
-        @view_module == Elixir.BlockScoutWeb.AddressLogsView ||
-        @view_module == Elixir.BlockScoutWeb.AddressValidationView ||
-        @view_module == Elixir.BlockScoutWeb.AddressContractView ||
-        @view_module == Elixir.BlockScoutWeb.AddressReadContractView ||
-        @view_module == Elixir.BlockScoutWeb.AddressReadProxyView ||
-        @view_module == Elixir.BlockScoutWeb.AddressWriteContractView ||
-        @view_module == Elixir.BlockScoutWeb.AddressWriteProxyView
+        view_module(@conn) == Elixir.BlockScoutWeb.AddressTransactionView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.AddressTokenTransferView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.AddressTokenView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.AddressInternalTransactionView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.AddressCoinBalanceView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.AddressLogsView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.AddressValidationView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.AddressContractView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.AddressReadContractView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.AddressReadProxyView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.AddressWriteContractView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.AddressWriteProxyView
       ) -> %>
         <% created_from_address = if @address && from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
         <script>
@@ -181,12 +181,12 @@
           window.onload = applyCustomMode()
         </script>
       <% (
-        @view_module == Elixir.BlockScoutWeb.Tokens.TransferView ||
-        @view_module == Elixir.BlockScoutWeb.Tokens.ReadContractView ||
-        @view_module == Elixir.BlockScoutWeb.Tokens.HolderView ||
-        @view_module == Elixir.BlockScoutWeb.Tokens.Instance.TransferView ||
-        @view_module == Elixir.BlockScoutWeb.Tokens.Instance.MetadataView ||
-        @view_module == Elixir.BlockScoutWeb.PageNotFoundView
+        view_module(@conn) == Elixir.BlockScoutWeb.Tokens.TransferView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.Tokens.ReadContractView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.Tokens.HolderView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.Tokens.Instance.TransferView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.Tokens.Instance.MetadataView ||
+        view_module(@conn) == Elixir.BlockScoutWeb.PageNotFoundView
       ) -> %>
         <% {:ok, created_from_address} = if @token && @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
         <% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
@@ -246,49 +246,49 @@
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
     </div>
     <%= if (
-      @view_module != Elixir.BlockScoutWeb.ChainView &&
-      @view_module != Elixir.BlockScoutWeb.BlockView &&
-      @view_module != Elixir.BlockScoutWeb.BlockTransactionView &&
-      @view_module != Elixir.BlockScoutWeb.AddressView &&
-      @view_module != Elixir.BlockScoutWeb.TokensView &&
-      @view_module != Elixir.BlockScoutWeb.TransactionView &&
-      @view_module != Elixir.BlockScoutWeb.PendingTransactionView &&
-      @view_module != Elixir.BlockScoutWeb.TransactionInternalTransactionView &&
-      @view_module != Elixir.BlockScoutWeb.TransactionLogView &&
-      @view_module != Elixir.BlockScoutWeb.TransactionRawTraceView &&
-      @view_module != Elixir.BlockScoutWeb.TransactionTokenTransferView &&
-      @view_module != Elixir.BlockScoutWeb.TransactionStateView &&
-      @view_module != Elixir.BlockScoutWeb.AddressTransactionView &&
-      @view_module != Elixir.BlockScoutWeb.AddressTokenTransferView &&
-      @view_module != Elixir.BlockScoutWeb.AddressTokenView &&
-      @view_module != Elixir.BlockScoutWeb.AddressInternalTransactionView &&
-      @view_module != Elixir.BlockScoutWeb.AddressCoinBalanceView &&
-      @view_module != Elixir.BlockScoutWeb.AddressLogsView &&
-      @view_module != Elixir.BlockScoutWeb.AddressValidationView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationVyperView &&
-      @view_module != Elixir.BlockScoutWeb.AddressReadContractView &&
-      @view_module != Elixir.BlockScoutWeb.AddressReadProxyView &&
-      @view_module != Elixir.BlockScoutWeb.AddressWriteContractView &&
-      @view_module != Elixir.BlockScoutWeb.AddressWriteProxyView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.TransferView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.ContractView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.HolderView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.InventoryView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.InstanceView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.Instance.MetadataView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.Instance.OverviewView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.Instance.TransferView &&
-      @view_module != Elixir.BlockScoutWeb.VerifiedContractsView &&
-      @view_module != Elixir.BlockScoutWeb.APIDocsView &&
-      @view_module != Elixir.BlockScoutWeb.Admin.DashboardView &&
-      @view_module != Elixir.BlockScoutWeb.SearchView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView &&
-      @view_module != Elixir.BlockScoutWeb.StakesView
+      view_module(@conn) != Elixir.BlockScoutWeb.ChainView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.BlockView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.BlockTransactionView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.TokensView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.TransactionView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.PendingTransactionView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.TransactionInternalTransactionView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.TransactionLogView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.TransactionRawTraceView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.TransactionTokenTransferView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.TransactionStateView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressTransactionView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressTokenTransferView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressTokenView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressInternalTransactionView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressCoinBalanceView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressLogsView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressValidationView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressContractView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressContractVerificationView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressContractVerificationVyperView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressReadContractView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressReadProxyView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressWriteContractView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressWriteProxyView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.Tokens.TransferView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.Tokens.ContractView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.Tokens.HolderView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.Tokens.InventoryView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.Tokens.InstanceView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.Tokens.Instance.MetadataView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.Tokens.Instance.OverviewView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.Tokens.Instance.TransferView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.VerifiedContractsView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.APIDocsView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.Admin.DashboardView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.SearchView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView &&
+      view_module(@conn) != Elixir.BlockScoutWeb.StakesView
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>
@@ -297,17 +297,17 @@
         render BlockScoutWeb.CommonComponentsView, "_modal_status.html", status: status
       end
     %>
-    <%= render_existing(@view_module, "scripts.html", assigns) %>
-    <%= if @view_module == Elixir.BlockScoutWeb.ChainView do %>
+    <%= render_existing(view_module(@conn), "scripts.html", assigns) %>
+    <%= if view_module(@conn) == Elixir.BlockScoutWeb.ChainView do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chain.js") %>"></script>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
     <% end %>
     <script defer src="<%= static_path(@conn, "/js/autocomplete.js") %>"></script>
-    <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationView, Elixir.BlockScoutWeb.AddressContractVerificationVyperView, Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView, Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
+    <%= if view_module(@conn) in [Elixir.BlockScoutWeb.AddressContractVerificationView, Elixir.BlockScoutWeb.AddressContractVerificationVyperView, Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView, Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
     <% end %>
-    <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
+    <%= if view_module(@conn) in [Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/dropzone.js") %>"></script>
     <% end %>
   </body>
