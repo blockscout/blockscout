@@ -83,8 +83,14 @@
 
   <body>
     <script defer data-cfasync="false">
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+      }
+
       function applyDarkMode() {
-        if (localStorage.getItem("current-color-mode") === "dark") {
+        if (getCookie('chakra-ui-color-mode') === "dark") {
           document.body.className += " " + "dark-theme-applied";
           document.body.style.backgroundColor = "#1c1d31";
         }
@@ -92,7 +98,7 @@
       window.onload = applyDarkMode()
     </script>
     <script defer data-cfasync="false">
-      if (localStorage.getItem("current-color-mode") === "dark") {
+      if (getCookie('chakra-ui-color-mode') === "dark") {
         if (document.getElementById("top-navbar")) {
           document.getElementById("top-navbar").style.backgroundColor = "#282945";
         }
@@ -106,7 +112,7 @@
       }
     </script>
     <script defer data-cfasync="false">
-      if (localStorage.getItem("current-color-mode") === "dark") {
+      if (getCookie('chakra-ui-color-mode') === "dark") {
         const search = document.getElementById("main-search-autocomplete")
         const searchMobile = document.getElementById("main-search-autocomplete-mobile")
             if (search && search.style) {

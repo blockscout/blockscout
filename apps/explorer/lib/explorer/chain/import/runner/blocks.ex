@@ -396,7 +396,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         |> MapSet.union(MapSet.new(hashes))
         |> Enum.sort()
         |> Enum.map(fn hash ->
-          %{block_hash: hash, fetch_internal_transactions: true}
+          %{block_hash: hash}
         end)
 
       Logger.info(["### Blocks new_pending_operations length #{Enum.count(sorted_pending_ops)} ###"])
@@ -405,7 +405,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         repo,
         sorted_pending_ops,
         conflict_target: :block_hash,
-        on_conflict: PendingBlockOperation.default_on_conflict(),
+        on_conflict: :nothing,
         for: PendingBlockOperation,
         returning: true,
         timeout: timeout,

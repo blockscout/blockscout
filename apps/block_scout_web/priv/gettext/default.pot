@@ -81,7 +81,7 @@ msgstr ""
 msgid ") may be added for each contract. Click the Add Library button to add an additional one."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:260
+#: lib/block_scout_web/templates/layout/app.html.eex:266
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
@@ -334,10 +334,29 @@ msgstr ""
 msgid "Average block time"
 msgstr ""
 
-#: lib/block_scout_web/templates/page_not_found/index.html.eex:9
-#: lib/block_scout_web/templates/transaction/not_found.html.eex:30
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:25
 #, elixir-autogen, elixir-format
-msgid "Back Home"
+msgid "Back to API keys (Cancel)"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/tag_address/form.html.eex:24
+#, elixir-autogen, elixir-format
+msgid "Back to Address Tags (Cancel)"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:30
+#, elixir-autogen, elixir-format
+msgid "Back to Custom ABI (Cancel)"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:24
+#, elixir-autogen, elixir-format
+msgid "Back to Transaction Tags (Cancel)"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:81
+#, elixir-autogen, elixir-format
+msgid "Back to Watch list (Cancel)"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/watchlist/show.html.eex:24
@@ -1077,11 +1096,6 @@ msgstr ""
 msgid "Drop the standard input JSON file or click here"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/not_found.html.eex:22
-#, elixir-autogen, elixir-format
-msgid "During times when the network is busy (i.e during ICOs) it can take a while for your transaction to propagate through the network and for us to index it."
-msgstr ""
-
 #: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:27
 #, elixir-autogen, elixir-format
 msgid "E-mail*"
@@ -1423,20 +1437,10 @@ msgstr ""
 msgid "IN"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/not_found.html.eex:26
-#, elixir-autogen, elixir-format
-msgid "If it still does not show up after 1 hour, please check with your sender/exchange/wallet/transaction provider for additional information."
-msgstr ""
-
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:56
 #: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:48
 #, elixir-autogen, elixir-format
 msgid "If you enabled optimization during compilation, select yes."
-msgstr ""
-
-#: lib/block_scout_web/templates/transaction/not_found.html.eex:12
-#, elixir-autogen, elixir-format
-msgid "If you have just submitted this transaction please wait for at least 30 seconds before refreshing this page."
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:131
@@ -1501,11 +1505,6 @@ msgstr ""
 msgid "Internal Transactions"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/invalid.html.eex:6
-#, elixir-autogen, elixir-format
-msgid "Invalid Transaction Hash"
-msgstr ""
-
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:16
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:19
 #: lib/block_scout_web/views/tokens/overview_view.ex:42
@@ -1516,11 +1515,6 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_yul_contracts_switcher.html.eex:3
 #, elixir-autogen, elixir-format
 msgid "Is Yul contract"
-msgstr ""
-
-#: lib/block_scout_web/templates/transaction/not_found.html.eex:16
-#, elixir-autogen, elixir-format
-msgid "It could still be in the TX Pool of a different node, waiting to be broadcasted."
 msgstr ""
 
 #: lib/block_scout_web/templates/verified_contracts/_stats.html.eex:13
@@ -2327,11 +2321,6 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/show.html.eex:211
 #, elixir-autogen, elixir-format
 msgid "Something went wrong, click to retry."
-msgstr ""
-
-#: lib/block_scout_web/templates/transaction/not_found.html.eex:7
-#, elixir-autogen, elixir-format
-msgid "Sorry, We are unable to locate this transaction Hash"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:63
@@ -3337,11 +3326,6 @@ msgstr ""
 msgid "here."
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/invalid.html.eex:8
-#, elixir-autogen, elixir-format
-msgid "is not a valid transaction hash"
-msgstr ""
-
 #: lib/block_scout_web/templates/smart_contract/_function_response.html.eex:3
 #, elixir-autogen, elixir-format
 msgid "method Response"
@@ -3386,34 +3370,67 @@ msgstr ""
 msgid "truffle flattener"
 msgstr ""
 
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:8
+#, elixir-autogen, elixir-format
+msgid "1. If you have just submitted this transaction please wait for at least 30 seconds before refreshing this page."
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:9
+#, elixir-autogen, elixir-format
+msgid "2. It could still be in the TX Pool of a different node, waiting to be broadcasted."
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:11
+#, elixir-autogen, elixir-format
+msgid "4. If it still does not show up after 1 hour, please check with your sender/exchange/wallet/transaction provider for additional information."
+msgstr ""
+
+#: lib/block_scout_web/templates/internal_server_error/index.html.eex:8
+#, elixir-autogen, elixir-format
+msgid "An unexpected error has occurred. Try reloading the page, or come back soon and try again."
+msgstr ""
+
+#: lib/block_scout_web/templates/error422/index.html.eex:9
+#: lib/block_scout_web/templates/internal_server_error/index.html.eex:9
+#: lib/block_scout_web/templates/page_not_found/index.html.eex:9
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:13
+#, elixir-autogen, elixir-format
+msgid "Back to home"
+msgstr ""
+
+#: lib/block_scout_web/templates/internal_server_error/index.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Internal server error"
+msgstr ""
+
+#: lib/block_scout_web/templates/error422/index.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Request cannot be processed"
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:6
+#, elixir-autogen, elixir-format
+msgid "Sorry, we are unable to locate this transaction hash"
+msgstr ""
+
+#: lib/block_scout_web/templates/page_not_found/index.html.eex:8
+#, elixir-autogen, elixir-format
+msgid "This page is no longer explorable! If you are lost, use the search bar to find what you are looking for."
+msgstr ""
+
+#: lib/block_scout_web/templates/error422/index.html.eex:8
+#, elixir-autogen, elixir-format
+msgid "Your request contained an error, perhaps a mistyped tx/block/address hash. Try again, and check the developer tools console for more info."
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:10
+#, elixir-autogen, elixir-format
+msgid "3. During times when the network is busy (i.e during ICOs) it can take a while for your transaction to propagate through the network and for us to index it."
+msgstr ""
+
 #: lib/block_scout_web/templates/account/watchlist/show.html.eex:25
 #, elixir-autogen, elixir-format
 msgid "Actions"
-msgstr ""
-
-#: lib/block_scout_web/templates/account/api_key/form.html.eex:25
-#, elixir-autogen, elixir-format
-msgid "Back to API keys (Cancel)"
-msgstr ""
-
-#: lib/block_scout_web/templates/account/tag_address/form.html.eex:24
-#, elixir-autogen, elixir-format
-msgid "Back to Address Tags (Cancel)"
-msgstr ""
-
-#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:30
-#, elixir-autogen, elixir-format
-msgid "Back to Custom ABI (Cancel)"
-msgstr ""
-
-#: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:24
-#, elixir-autogen, elixir-format
-msgid "Back to Transaction Tags (Cancel)"
-msgstr ""
-
-#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:81
-#, elixir-autogen, elixir-format
-msgid "Back to Watch list (Cancel)"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:40
@@ -3429,11 +3446,6 @@ msgstr ""
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:24
 #, elixir-autogen, elixir-format
 msgid "Please select what types of notifications you will receive:"
-msgstr ""
-
-#: lib/block_scout_web/templates/page_not_found/index.html.eex:8
-#, elixir-autogen, elixir-format
-msgid "The requested path was not found on BlockScout."
 msgstr ""
 
 #: lib/block_scout_web/templates/account/common/_nav.html.eex:13

@@ -179,7 +179,7 @@ defmodule BlockScoutWeb.TransactionController do
             set_not_found_view(conn, id)
 
           :error ->
-            set_invalid_view(conn, id)
+            unprocessable_entity(conn)
 
           {:error, :not_found} ->
             set_not_found_view(conn, id)
@@ -217,7 +217,7 @@ defmodule BlockScoutWeb.TransactionController do
             set_not_found_view(conn, id)
 
           :error ->
-            set_invalid_view(conn, id)
+            unprocessable_entity(conn)
 
           {:error, :not_found} ->
             set_not_found_view(conn, id)
@@ -228,7 +228,7 @@ defmodule BlockScoutWeb.TransactionController do
       end
     else
       :error ->
-        set_invalid_view(conn, id)
+        unprocessable_entity(conn)
 
       :not_found ->
         set_not_found_view(conn, id)
@@ -240,12 +240,5 @@ defmodule BlockScoutWeb.TransactionController do
     |> put_status(404)
     |> put_view(TransactionView)
     |> render("not_found.html", transaction_hash: transaction_hash_string)
-  end
-
-  def set_invalid_view(conn, transaction_hash_string) do
-    conn
-    |> put_status(422)
-    |> put_view(TransactionView)
-    |> render("invalid.html", transaction_hash: transaction_hash_string)
   end
 end
