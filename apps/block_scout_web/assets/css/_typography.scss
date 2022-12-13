@@ -2,6 +2,15 @@ $common-link-color: #65B3AE !default;
 $blue: #4b89fb !default;
 $success: #34c0ad !default;
 
+@font-face {
+	font-family: GT;
+	src: url('./GTWalsheimPro-Medium.woff2') format('woff2');
+}
+@font-face {
+	font-family: GTBold;
+	src: url('./GTWalsheimPro-Bold.woff2') format('woff2');
+}
+
 body {
   font-family: $font-family;
   font-size: 12px;

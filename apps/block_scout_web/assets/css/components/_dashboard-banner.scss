@@ -64,7 +64,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
 }
 .dashboard-banner-network-plain-container {
   .dashboard-banner-daily-tx-title-empty {
-    @media (max-width: 768px) {
+    @media (max-width: 1200px) {
       display: none;
     }
   }
@@ -81,7 +81,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   }
 
   .dashboard-banner-daily-tx-title{
-    font-family: 'Prompt';
+    font-family: 'GTBold';
     font-weight: 700;
     font-size: 26px;
     line-height: 26px;
@@ -106,7 +106,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     
     @media (max-width: 767px) {
       flex-direction: column;
-      background: none;
+      background: linear-gradient(0deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 95.24%);;
       height: auto;
       width:100%;
     }
@@ -168,6 +168,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   @media (max-width: 767px) {
     flex-direction: row;
     margin-left: 0;
+    margin-bottom: 10px;
   }
 
   .dashboard-banner-chart-legend-item {
@@ -317,7 +318,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
           width: 165px;
         }
         .dashboard-banner-network-stats-label{
-          font-family: 'Prompt';
+          font-family: 'GTBold';
           font-style: normal;
           font-weight: 700;
           font-size: 16px;
