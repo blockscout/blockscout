@@ -112,7 +112,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
   defp fetch_missing_ranges_batch(max_fetched_block_number, true) do
     to = max_fetched_block_number + 1
-    from = min(max_fetched_block_number + missing_ranges_batch_size(), last_block())
+    from = min(max_fetched_block_number + missing_ranges_batch_size(), last_block() - 1)
 
     if from >= to do
       {from, Chain.missing_block_number_ranges(from..to)}
@@ -145,7 +145,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
   defp last_block do
     case Integer.parse(Application.get_env(:indexer, :last_block)) do
-      {block, ""} -> block
+      {block, ""} -> block + 1
       _ -> BlockNumber.get_max()
     end
   end
