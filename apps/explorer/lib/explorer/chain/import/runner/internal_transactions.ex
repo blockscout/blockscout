@@ -303,7 +303,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       from(
         pending_ops in PendingBlockOperation,
         where: pending_ops.block_hash in ^block_hashes,
-        where: pending_ops.fetch_internal_transactions,
         select: pending_ops.block_hash,
         # Enforce PendingBlockOperation ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: pending_ops.block_hash],

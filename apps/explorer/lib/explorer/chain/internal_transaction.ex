@@ -120,8 +120,7 @@ defmodule Explorer.Chain.InternalTransaction do
       foreign_key: :block_hash,
       define_field: false,
       references: :block_hash,
-      type: Hash.Full,
-      where: [fetch_internal_transactions: true]
+      type: Hash.Full
     )
   end
 
@@ -281,8 +280,7 @@ defmodule Explorer.Chain.InternalTransaction do
       false
       iex> changeset.errors
       [
-        output: {"can't be present for failed call", []},
-        gas_used: {"can't be present for failed call", []}
+        output: {"can't be present for failed call", []}
       ]
 
   Likewise, successful `:call`s require `input`, `gas_used` and `output` to be set.
@@ -496,13 +494,11 @@ defmodule Explorer.Chain.InternalTransaction do
     end)
   end
 
-  @call_success_fields ~w(gas_used output)a
-
   # Validates that :call `type` changeset either has an `error` or both `gas_used` and `output`
   defp validate_call_error_or_result(changeset) do
     case get_field(changeset, :error) do
-      nil -> validate_required(changeset, @call_success_fields, message: "can't be blank for successful call")
-      _ -> validate_disallowed(changeset, @call_success_fields, message: "can't be present for failed call")
+      nil -> validate_required(changeset, [:gas_used, :output], message: "can't be blank for successful call")
+      _ -> validate_disallowed(changeset, [:output], message: "can't be present for failed call")
     end
   end
 

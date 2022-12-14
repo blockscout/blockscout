@@ -255,20 +255,35 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if direction == nil do
-      full_query =
+      query_to_address_hash_wrapped =
         InternalTransaction
         |> InternalTransaction.where_nonpending_block()
-        |> InternalTransaction.where_address_fields_match(hash, nil)
+        |> InternalTransaction.where_address_fields_match(hash, :to_address_hash)
         |> InternalTransaction.where_block_number_in_period(from_block, to_block)
         |> common_where_limit_order(paging_options)
+        |> wrapped_union_subquery()
 
-      full_query
-      |> order_by(
-        [q],
-        desc: q.block_number,
-        desc: q.transaction_index,
-        desc: q.index
-      )
+      query_from_address_hash_wrapped =
+        InternalTransaction
+        |> InternalTransaction.where_nonpending_block()
+        |> InternalTransaction.where_address_fields_match(hash, :from_address_hash)
+        |> InternalTransaction.where_block_number_in_period(from_block, to_block)
+        |> common_where_limit_order(paging_options)
+        |> wrapped_union_subquery()
+
+      query_created_contract_address_hash_wrapped =
+        InternalTransaction
+        |> InternalTransaction.where_nonpending_block()
+        |> InternalTransaction.where_address_fields_match(hash, :created_contract_address_hash)
+        |> InternalTransaction.where_block_number_in_period(from_block, to_block)
+        |> common_where_limit_order(paging_options)
+        |> wrapped_union_subquery()
+
+      query_to_address_hash_wrapped
+      |> union(^query_from_address_hash_wrapped)
+      |> union(^query_created_contract_address_hash_wrapped)
+      |> wrapped_union_subquery()
+      |> common_where_limit_order(paging_options)
       |> preload(transaction: :block)
       |> join_associations(necessity_by_association)
       |> Repo.all()
@@ -437,7 +452,7 @@ defmodule Explorer.Chain do
 
     options
     |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions(from_block, to_block)
+    |> fetch_transactions(from_block, to_block, true)
   end
 
   defp transactions_block_numbers_at_address(address_hash, options) do
@@ -1238,7 +1253,7 @@ defmodule Explorer.Chain do
 
   @doc """
   Checks to see if the chain is down indexing based on the transaction from the
-  oldest block and the `fetch_internal_transactions` pending operation
+  oldest block and the pending operation
   """
   @spec finished_internal_transactions_indexing?() :: boolean()
   def finished_internal_transactions_indexing? do
@@ -1264,7 +1279,6 @@ defmodule Explorer.Chain do
             from(
               b in Block,
               join: pending_ops in assoc(b, :pending_operations),
-              where: pending_ops.fetch_internal_transactions,
               where: b.consensus and b.number == ^min_block_number
             )
 
@@ -1369,7 +1383,10 @@ defmodule Explorer.Chain do
               address_verified_twin_contract_updated =
                 address_verified_twin_contract
                 |> Map.put(:address_hash, hash)
-                |> Map.put_new(:metadata_from_verified_twin, true)
+                |> Map.put(:metadata_from_verified_twin, true)
+                |> Map.put(:implementation_address_hash, nil)
+                |> Map.put(:implementation_name, nil)
+                |> Map.put(:implementation_fetched_at, nil)
 
               address_result
               |> Map.put(:smart_contract, address_verified_twin_contract_updated)
@@ -1887,7 +1904,10 @@ defmodule Explorer.Chain do
               address_verified_twin_contract_updated =
                 address_verified_twin_contract
                 |> Map.put(:address_hash, hash)
-                |> Map.put_new(:metadata_from_verified_twin, true)
+                |> Map.put(:metadata_from_verified_twin, true)
+                |> Map.put(:implementation_address_hash, nil)
+                |> Map.put(:implementation_name, nil)
+                |> Map.put(:implementation_fetched_at, nil)
 
               address_result
               |> Map.put(:smart_contract, address_verified_twin_contract_updated)
@@ -2711,11 +2731,9 @@ defmodule Explorer.Chain do
   Only blocks with consensus are returned.
 
       iex> non_consensus = insert(:block, consensus: false)
-      iex> insert(:pending_block_operation, block: non_consensus, fetch_internal_transactions: true)
+      iex> insert(:pending_block_operation, block: non_consensus)
       iex> unfetched = insert(:block)
-      iex> insert(:pending_block_operation, block: unfetched, fetch_internal_transactions: true)
-      iex> fetched = insert(:block)
-      iex> insert(:pending_block_operation, block: fetched, fetch_internal_transactions: false)
+      iex> insert(:pending_block_operation, block: unfetched)
       iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
       ...>   MapSet.new(),
       ...>   fn number, acc ->
@@ -2726,8 +2744,6 @@ defmodule Explorer.Chain do
       false
       iex> unfetched.number in number_set
       true
-      iex> fetched.hash in number_set
-      false
 
   """
   @spec stream_blocks_with_unfetched_internal_transactions(
@@ -2740,7 +2756,6 @@ defmodule Explorer.Chain do
       from(
         b in Block,
         join: pending_ops in assoc(b, :pending_operations),
-        where: pending_ops.fetch_internal_transactions,
         where: b.consensus,
         select: b.number
       )
@@ -3039,6 +3054,19 @@ defmodule Explorer.Chain do
     else
       0
     end
+  end
+
+  def remove_blocks_consensus(block_numbers) do
+    numbers = List.wrap(block_numbers)
+
+    query =
+      from(
+        block in Block,
+        where: block.number in ^numbers,
+        where: block.consensus
+      )
+
+    Repo.update_all(query, set: [consensus: false])
   end
 
   @doc """
@@ -3448,7 +3476,7 @@ defmodule Explorer.Chain do
     |> pending_transactions_query()
     |> apply_filter_by_method_id_to_transactions(method_id_filter)
     |> apply_filter_by_tx_type_to_transactions(type_filter)
-    |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
+    |> order_by([transaction], desc: transaction.inserted_at, asc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> Repo.all()
@@ -4334,9 +4362,10 @@ defmodule Explorer.Chain do
       if address_verified_twin_contract do
         address_verified_twin_contract
         |> Map.put(:address_hash, address_hash)
-        |> Map.put(:implementation_address_hash, current_smart_contract.implementation_address_hash)
-        |> Map.put(:implementation_name, current_smart_contract.implementation_name)
-        |> Map.put(:implementation_fetched_at, current_smart_contract.implementation_fetched_at)
+        |> Map.put(:metadata_from_verified_twin, true)
+        |> Map.put(:implementation_address_hash, nil)
+        |> Map.put(:implementation_name, nil)
+        |> Map.put(:implementation_fetched_at, nil)
       else
         current_smart_contract
       end
@@ -4404,16 +4433,26 @@ defmodule Explorer.Chain do
     if Repo.one(query), do: true, else: false
   end
 
-  defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil) do
+  defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil, is_address? \\ false) do
     Transaction
+    |> order_for_transactions(is_address?)
+    |> where_block_number_in_period(from_block, to_block)
+    |> handle_paging_options(paging_options)
+  end
+
+  defp order_for_transactions(query, true) do
+    query
     |> order_by([transaction],
       desc: transaction.block_number,
       desc: transaction.index,
       desc: transaction.inserted_at,
-      desc: transaction.hash
+      asc: transaction.hash
     )
-    |> where_block_number_in_period(from_block, to_block)
-    |> handle_paging_options(paging_options)
+  end
+
+  defp order_for_transactions(query, _) do
+    query
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
   end
 
   defp fetch_transactions_in_ascending_order_by_index(paging_options) do
@@ -4626,7 +4665,7 @@ defmodule Explorer.Chain do
       [transaction],
       (is_nil(transaction.block_number) and
          (transaction.inserted_at < ^inserted_at or
-            (transaction.inserted_at == ^inserted_at and transaction.hash < ^hash))) or
+            (transaction.inserted_at == ^inserted_at and transaction.hash > ^hash))) or
         not is_nil(transaction.block_number)
     )
   end
