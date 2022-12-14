@@ -14,8 +14,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   alias BlockScoutWeb.AccessHelpers
   alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
+  alias BlockScoutWeb.AddressView
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView}
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.SmartContract
+  alias Explorer.SmartContract.{Reader, Writer}
   alias Indexer.Fetcher.TokenBalanceOnDemand
 
   @transaction_necessity_by_association [
@@ -43,6 +46,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       :smart_contract => :optional
     }
   ]
+
+  @burn_address "0x0000000000000000000000000000000000000000"
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -285,9 +290,36 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  def methods_read(conn, %{"address_hash" => address_hash_string, "is_custom_abi" => "true"} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
+         custom_abi <- AddressView.fetch_custom_abi(conn, address_hash_string),
+         {:not_found, true} <- {:not_found, AddressView.check_custom_abi_for_having_read_functions(custom_abi)} do
+      Reader.read_only_functions_from_abi(custom_abi.abi, address_hash)
+      Reader.read_functions_required_wallet_from_abi(custom_abi.abi)
+
+      conn
+      |> put_status(200)
+    end
+  end
+
   def methods_read(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+      Reader.read_only_functions(address_hash)
+
+      conn
+      |> put_status(200)
+    end
+  end
+
+  def methods_write(conn, %{"address_hash" => address_hash_string, "is_custom_abi" => "true"} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
+         custom_abi <- AddressView.fetch_custom_abi(conn, address_hash_string),
+         {:not_found, true} <- {:not_found, AddressView.check_custom_abi_for_having_read_functions(custom_abi)} do
+      Writer.filter_write_functions(custom_abi.abi)
+
       conn
       |> put_status(200)
     end
@@ -296,6 +328,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   def methods_write(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+      Writer.write_functions(address_hash)
+
       conn
       |> put_status(200)
     end
@@ -303,7 +337,17 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   def methods_read_proxy(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
+         {:not_found, {:ok, address}} <-
+           {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)} do
+      implementation_address_hash_string =
+        address.smart_contract
+        |> SmartContract.get_implementation_address_hash()
+        |> Tuple.to_list()
+        |> List.first() || @burn_address
+
+      Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string)
+
       conn
       |> put_status(200)
     end
@@ -311,9 +355,23 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   def methods_write_proxy(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
+         {:not_found, {:ok, address}} <-
+           {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)} do
+      implementation_address_hash_string =
+        address.smart_contract
+        |> SmartContract.get_implementation_address_hash()
+        |> Tuple.to_list()
+        |> List.first() || @burn_address
+
+      Writer.write_functions_proxy(implementation_address_hash_string)
+
       conn
       |> put_status(200)
     end
+  end
+
+  def query_read_method(conn, %{"address_hash" => address_hash_string} = params) do
+
   end
 end

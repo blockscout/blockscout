@@ -60,6 +60,9 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     creation_tx = creator_hash && AddressView.transaction_hash(address)
     token = address.token && TokenView.render("token.json", %{token: Market.add_price(address.token)})
 
+    write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
+    read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
+
     Map.merge(base_info, %{
       "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
       "creation_tx_hash" => creation_tx,
@@ -69,12 +72,10 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "implementation_name" => implementation_name,
       "implementation_address" => implementation_address,
       "block_number_balance_updated_at" => address.fetched_coin_balance_block_number,
-      "has_methods_read" =>
-        AddressView.smart_contract_with_read_only_functions?(address) ||
-          AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash),
-      "has_methods_write" =>
-        AddressView.smart_contract_with_write_functions?(address) ||
-          AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash),
+      "has_custom_methods_read" => read_custom_abi?,
+      "has_custom_methods_write" => write_custom_abi?,
+      "has_methods_read" => AddressView.smart_contract_with_read_only_functions?(address) || read_custom_abi?,
+      "has_methods_write" => AddressView.smart_contract_with_write_functions?(address) || write_custom_abi?,
       "has_methods_read_proxy" => is_proxy,
       "has_methods_write_proxy" => AddressView.smart_contract_with_write_functions?(address) && is_proxy
     })

@@ -134,6 +134,7 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/methods-write", V2.AddressController, :methods_write)
         get("/methods-read-proxy", V2.AddressController, :methods_read_proxy)
         get("/methods-write-proxy", V2.AddressController, :methods_write_proxy)
+        get("/query-read-method", V2.AddressController, :query_read_method)
       end
     end
 
