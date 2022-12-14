@@ -100,7 +100,8 @@ $navbar-logo-width: 100% !default;
     padding-right: 0px;
 
     .navbar-toggler-icon {
-      background-image: url($header-toggler-icon);
+      background: url(../static/images/menu_icon.svg) no-repeat !important;
+      background-size: 100% 100% !important;
     }
   }
   .search-form {
@@ -276,13 +277,13 @@ $navbar-logo-width: 100% !default;
   justify-content: space-between;
   align-items: flex-start;
   flex-shrink: 0;
-  @media (min-width: 1200px) {
+  @media (min-width: 992px) {
     align-items: center;
   }
 }
 
 .navbar-container, .navbar-primary {
-  @media (min-width: 1200px) {
+  @media (min-width: 992px) {
     padding-right: 0;
   }
 }
