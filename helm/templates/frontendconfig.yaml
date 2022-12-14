@@ -1,0 +1,9 @@
+{{- $name := include "quai-blockscout.name" . -}}
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: {{ $name }}
+spec:
+  redirectToHttps:
+    enabled: true
+

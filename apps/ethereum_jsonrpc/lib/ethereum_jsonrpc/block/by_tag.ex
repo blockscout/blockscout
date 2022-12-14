@@ -16,6 +16,10 @@ defmodule EthereumJSONRPC.Block.ByTag do
     {:ok, quantity_to_integer(quantity)}
   end
 
+  def number_from_result({:ok, %{"number" => quantity}}) when is_list(quantity) do
+    {:ok, quantity_to_integer(Enum.at(quantity, String.to_integer(System.get_env("CHAIN_INDEX"))))}
+  end
+
   def number_from_result({:ok, nil}), do: {:error, :not_found}
 
   def number_from_result({:error, %{"code" => -32602}}), do: {:error, :invalid_tag}

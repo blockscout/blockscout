@@ -1,0 +1,21 @@
+{{- $name := include "quai-blockscout.name" . -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $name }}
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: {{ $name }}
+    kubernetes.io/ingress.class: "gce"
+    networking.gke.io/managed-certificates: {{ $name }}
+    networking.gke.io/v1beta1.FrontendConfig: {{ $name }}
+  namespace: {{ .Values.quaiBlockscout.env }}
+spec:
+  defaultBackend:
+    service:
+      name: prime-{{ $name }}
+      port:
+        name: http
+  rules:
+{{- range $chain := .Values.quaiBlockscout.chains }}
+{{ include "quai-blockscout.ingress" $ | replace "prime" $chain.name | indent 4 }}
+{{- end }}

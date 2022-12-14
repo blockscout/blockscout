@@ -1,0 +1,11 @@
+{{- define "quai-blockscout.configmap" }}
+apiVersion: v1
+data:
+  ETHEREUM_JSONRPC_HTTP_URL: http://prime-go-quai-{{- include "quai-blockscout.envSuffix" $ -}}.{{- .Values.quaiBlockscout.env -}}.svc.cluster.local:<HTTP>
+  ETHEREUM_JSONRPC_WS_URL: ws://prime-go-quai-{{- include "quai-blockscout.envSuffix" $ -}}.{{- .Values.quaiBlockscout.env -}}.svc.cluster.local:<WS>
+kind: ConfigMap
+metadata:
+  annotations:
+  name: prime-{{- include "quai-blockscout.name" $ }}
+  namespace: {{ .Values.quaiBlockscout.env }}
+{{- end }}

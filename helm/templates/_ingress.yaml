@@ -1,0 +1,12 @@
+{{- define "quai-blockscout.ingress" }}
+- host: {{ include "quai-blockscout.envPrefix" . -}}prime.quaiscan.io
+  http:
+    paths:
+    - path: /
+      pathType: Prefix
+      backend:
+        service:
+          name: prime-{{ include "quai-blockscout.name" $ }}
+          port:
+            name: http
+{{- end }}

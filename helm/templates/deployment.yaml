@@ -1,0 +1,4 @@
+{{- range $chain := .Values.quaiBlockscout.chains }}
+{{ include "quai-blockscout.bs" $ | replace "prime" $chain.name }}
+---
+{{- end }}

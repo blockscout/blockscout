@@ -1,0 +1,21 @@
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  annotations:
+  name: quai-blockscout-prod
+  namespace: quai-prod
+spec:
+  domains:
+  - prime.quaiscan.io
+  - cyprus.quaiscan.io
+  - paxos.quaiscan.io
+  - hydra.quaiscan.io
+  - cyprus1.quaiscan.io
+  - cyprus2.quaiscan.io
+  - cyprus3.quaiscan.io
+  - paxos1.quaiscan.io
+  - paxos2.quaiscan.io
+  - paxos3.quaiscan.io
+  - hydra1.quaiscan.io
+  - hydra2.quaiscan.io
+  - hydra3.quaiscan.io

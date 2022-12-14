@@ -360,7 +360,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
   @doc false
   def block_ranges(json_rpc_named_arguments) do
     block_ranges_string = Application.get_env(:indexer, :block_ranges)
-
     ranges =
       block_ranges_string
       |> String.split(",")

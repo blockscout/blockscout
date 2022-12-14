@@ -1,0 +1,17 @@
+{{- define "quai-blockscout.service" }}
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+  name: prime-{{ include "quai-blockscout.name" $ }}
+  namespace: {{ .Values.quaiBlockscout.env }}
+spec:
+  ports:
+  - port: 4000
+    protocol: TCP
+    targetPort: 4000
+    name: http
+  selector:
+    app: prime-{{ include "quai-blockscout.name" $ }}
+  type: NodePort
+{{- end }}

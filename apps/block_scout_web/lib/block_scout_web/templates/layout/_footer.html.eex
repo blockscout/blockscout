@@ -21,14 +21,14 @@
       <div class="col-xs-12 col-lg-3">
         <p class="footer-info-text"><%= gettext("Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks.") %></p>
         <div class="footer-social-icons">
-          <a href="<%= Application.get_env(:block_scout_web, :footer)[:github_link] %>" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
+          <a href="https://github.com/spruce-solutions/go-quai" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
             <div class="footer-social-icon-container fontawesome-icon github"></div>
           </a>
-          <a href="https://www.twitter.com/blockscoutcom/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
+          <a href="https://www.twitter.com/QuaiNetwork" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
             <div class="footer-social-icon-container fontawesome-icon twitter"></div>
           </a>
-          <a href="https://t.me/poa_network" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
-            <div class="footer-social-icon-container fontawesome-icon telegram"></div>
+          <a href="https://discord.com/invite/ngw88VXXnV" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Discord") %>'>
+            <div class="footer-social-icon-container fontawesome-icon discord"></div>
           </a>
         </div>
       </div>
@@ -37,12 +37,12 @@
         <h3>BlockScout</h3>
         <ul>
           <li><a href="<%= issue_link(@conn) %>" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Submit an Issue") %></a></li>
-          <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:github_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
-          <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:chat_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Chat (#blockscout)") %></a></li>
-          <%= if Application.get_env(:block_scout_web, :footer)[:enable_forum_link] do %>
-            <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:forum_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Forum") %></a></li>
+          <li><a href="https://github.com/spruce-solutions/go-quai" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
+          <li><a href="https://discord.com/invite/ngw88VXXnV" rel="noreferrer" class="footer-link"><%= gettext("Chat (#blockscout)") %></a></li>
+          <li><a href="https://docs.quai.network/projects/what-is-quai-network" rel="noreferrer" class="footer-link"><%= gettext("Documentation") %></a></li>
+          <%= if System.get_env("COIN_NAME") && System.get_env("NETWORK_PATH") && System.get_env("SUBNETWORK") && System.get_env("JSON_RPC") && System.get_env("CHAIN_ID") do %>
+            <li><a class="footer-link js-btn-add-chain-to-mm btn-add-chain-to-mm in-footer" style="cursor: pointer;"><%= gettext("Add") <> " #{System.get_env("SUBNETWORK")}" %></a></li>
           <% end %>
-          <%= render BlockScoutWeb.LayoutView, "_add_chain_to_mm.html" %>
         </ul>
       </div>
       <% main_nets = main_nets(other_networks()) %>
