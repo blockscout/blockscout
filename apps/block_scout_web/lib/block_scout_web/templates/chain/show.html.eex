@@ -90,7 +90,8 @@
               </span>
               <div class="d-flex">
                 <span class="dashboard-banner-network-stats-value" data-selector="transaction-count">
-                  <%= BlockScoutWeb.Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
+                  <%= #BlockScoutWeb.Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
+                  <%= BlockScoutWeb.Cldr.Number.to_string!(@block_count, format: "#,###") %>
                 </span>
                 <%= if @total_gas_usage > 0 do %>
                   <span
