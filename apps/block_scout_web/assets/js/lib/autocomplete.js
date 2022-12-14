@@ -6,7 +6,7 @@ import { appendTokenIcon } from './token_icon'
 import { escapeHtml } from './utils'
 import xss from 'xss'
 
-const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
+let placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
 const dataSrc = async (query, id) => {
   try {
     // Loading placeholder text
@@ -21,6 +21,9 @@ const dataSrc = async (query, id) => {
     )
     const data = await source.json()
     // Post Loading placeholder text
+    if(window && window.innerWidth && window.innerWidth <= 650){
+      placeHolder = 'Address/Txn hash/Block/Token'
+    }
 
     searchInput.setAttribute('placeholder', placeHolder)
     // Returns Fetched data
@@ -102,6 +105,9 @@ const resultItemElement = async (item, data) => {
   appendTokenIcon($tokenIconContainer, chainID, data.value.address_hash, displayTokenIcons, 15)
 }
 const config = (id) => {
+    if(window && window.innerWidth && window.innerWidth <= 650){
+      placeHolder = 'Address/Txn hash/Block/Token'
+    }
   return {
     selector: `#${id}`,
     data: {
