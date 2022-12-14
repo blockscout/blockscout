@@ -3144,7 +3144,6 @@ defmodule Explorer.Chain do
               WHERE NOT EXISTS
                 (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus)
               ORDER BY b1.number DESC
-              LIMIT 500000
             )
             """,
             ^range_min,
