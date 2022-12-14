@@ -78,7 +78,6 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
           tags: blockscout/blockscout:frontend-main
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
