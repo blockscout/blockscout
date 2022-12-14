@@ -384,7 +384,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp retry_fetch_and_import_block(%{changesets: changesets} = params) do
     if unknown_block_number_error?(changesets) do
-      # Wait half a second to give Parity time to sync.
+      # Wait half a second to give Nethermind time to sync.
       :timer.sleep(500)
 
       number = params.block_number_to_fetch

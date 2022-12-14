@@ -1,15 +1,14 @@
 defmodule EthereumJSONRPC.Besu.Trace do
   @moduledoc """
   Trace returned by
-  [`trace_replayTransaction`](https://wiki.parity.io/JSONRPC-trace-module.html#trace_replaytransaction), which is an
-  extension to the Ethereum JSONRPC standard that is only supported by [Parity](https://wiki.parity.io/).
+  [`trace_replayTransaction`](https://openethereum.github.io/JSONRPC-trace-module#trace_replaytransaction).
   """
 
-  alias EthereumJSONRPC.Parity.Trace, as: ParityTrace
-  alias EthereumJSONRPC.Parity.Trace.{Action, Result}
+  alias EthereumJSONRPC.Nethermind.Trace, as: NethermindTrace
+  alias EthereumJSONRPC.Nethermind.Trace.{Action, Result}
 
   def elixir_to_params(elixir) do
-    ParityTrace.elixir_to_params(elixir)
+    NethermindTrace.elixir_to_params(elixir)
   end
 
   def to_elixir(%{"blockNumber" => _, "index" => _, "transactionHash" => _, "transactionIndex" => _} = trace)
@@ -18,7 +17,7 @@ defmodule EthereumJSONRPC.Besu.Trace do
   end
 
   def to_elixir(trace) do
-    ParityTrace.to_elixir(trace)
+    NethermindTrace.to_elixir(trace)
   end
 
   # subtraces is an actual integer in JSON and not hex-encoded

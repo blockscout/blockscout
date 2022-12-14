@@ -1359,7 +1359,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "finished_indexing?/0" do
+  describe "finished_internal_transactions_indexing?/0" do
     test "finished indexing" do
       block = insert(:block, number: 1)
 
@@ -1367,11 +1367,11 @@ defmodule Explorer.ChainTest do
       |> insert()
       |> with_block(block)
 
-      assert Chain.finished_indexing?()
+      assert Chain.finished_internal_transactions_indexing?()
     end
 
     test "finished indexing (no txs)" do
-      assert Chain.finished_indexing?()
+      assert Chain.finished_internal_transactions_indexing?()
     end
 
     test "not finished indexing" do
@@ -1383,7 +1383,7 @@ defmodule Explorer.ChainTest do
 
       insert(:pending_block_operation, block: block, fetch_internal_transactions: true)
 
-      refute Chain.finished_indexing?()
+      refute Chain.finished_internal_transactions_indexing?()
     end
   end
 
@@ -5741,7 +5741,7 @@ defmodule Explorer.ChainTest do
       refute Chain.contract_address?(to_string(address.hash), 1)
     end
 
-    @tag :no_parity
+    @tag :no_nethermind
     @tag :no_geth
     test "returns true if fetched code from json rpc", %{
       json_rpc_named_arguments: json_rpc_named_arguments
@@ -5764,7 +5764,7 @@ defmodule Explorer.ChainTest do
       assert Chain.contract_address?(to_string(hash), 1, json_rpc_named_arguments)
     end
 
-    @tag :no_parity
+    @tag :no_nethermind
     @tag :no_geth
     test "returns false if no fetched code from json rpc", %{
       json_rpc_named_arguments: json_rpc_named_arguments

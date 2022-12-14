@@ -4,10 +4,13 @@ defmodule Explorer.Chain.Import do
   """
 
   alias Ecto.Changeset
+  alias Explorer.Account.Notify
   alias Explorer.Celo.Telemetry
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import
   alias Explorer.Repo
+
+  require Logger
 
   @stages [
     Import.Stage.Addresses,
@@ -128,6 +131,7 @@ defmodule Explorer.Chain.Import do
          {:ok, runner_to_changes_list} <- runner_to_changes_list(valid_runner_option_pairs),
          {:ok, data} <- insert_runner_to_changes_list(runner_to_changes_list, options) do
       emit_ingestion_metrics(data)
+      Notify.async(data[:transactions])
       Publisher.broadcast(data, Map.get(options, :broadcast, false))
       {:ok, data}
     end

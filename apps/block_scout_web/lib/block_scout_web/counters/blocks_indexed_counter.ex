@@ -41,7 +41,7 @@ defmodule BlockScoutWeb.Counters.BlocksIndexedCounter do
     finished? =
       case Decimal.compare(ratio, 1) do
         :lt -> false
-        _ -> Chain.finished_indexing?()
+        _ -> Chain.finished_internal_transactions_indexing?()
       end
 
     Notifier.broadcast_blocks_indexed_ratio(ratio, finished?)

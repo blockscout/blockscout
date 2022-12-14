@@ -32,6 +32,7 @@
               <% else %>
                 <%= gettext("Token Details") %>
               <% end %>
+              <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @token.contract_address_hash, tags: @tags %>
             </div>
             <!-- buttons -->
             <span class="overview-title-buttons token float-right">

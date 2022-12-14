@@ -1,5 +1,5 @@
 <input id="js-chain-id" class="d-none" value="<%= chain_id() %>" />
-<input id="js-coin-name" class="d-none" value="<%= coin_name() %>" />
+<input id="js-coin-name" class="d-none" value="<%= Explorer.coin_name() %>" />
 <input id="js-subnetwork" class="d-none" value="<%= subnetwork() %>" />
 <input id="js-json-rpc" class="d-none" value="<%= json_rpc() %>" />
 <input id="js-network-path" class="d-none" value="<%= network_path() %>" />

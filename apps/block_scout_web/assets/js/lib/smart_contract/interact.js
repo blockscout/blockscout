@@ -3,11 +3,12 @@ import { openErrorModal, openWarningModal, openSuccessModal, openModalWithMessag
 import { compareChainIDs, formatError, formatTitleAndError, getContractABI, getCurrentAccountPromise, getMethodInputs, prepareMethodArgs } from './common_helpers'
 import { fullPath } from '../utils'
 
-export const queryMethod = (isWalletEnabled, url, $methodId, args, type, functionName, $responseContainer) => {
+export const queryMethod = (isWalletEnabled, url, $methodId, args, type, functionName, $responseContainer, isCustomABI) => {
   const data = {
     function_name: functionName,
     method_id: $methodId.val(),
-    type
+    type,
+    is_custom_abi: isCustomABI
   }
 
   data.args_count = args.length
@@ -68,7 +69,7 @@ export const callMethod = (isWalletEnabled, $functionInputs, explorerChainId, $f
                 openErrorModal(titleAndError.title.length ? titleAndError.title : `Error in sending transaction for method "${functionName}"`, message, false)
               })
               .on('transactionHash', function (txHash) {
-                onTransactionHash(txHash, $element, functionName)
+                onTransactionHash(txHash, functionName)
               })
           } else {
             const txParams = {
@@ -81,7 +82,7 @@ export const callMethod = (isWalletEnabled, $functionInputs, explorerChainId, $f
               params: [txParams]
             })
               .then(function (txHash) {
-                onTransactionHash(txHash, $element, functionName)
+                onTransactionHash(txHash, functionName)
               })
               .catch(function (error) {
                 openErrorModal('Error in sending transaction for fallback method', formatError(error), false)
@@ -227,8 +228,8 @@ function isSanctioned (address) {
   return sanctionedAddresses.includes(address.toLowerCase())
 }
 
-function onTransactionHash (txHash, $element, functionName) {
-  openModalWithMessage($element.find('#pending-contract-write'), true, txHash)
+function onTransactionHash (txHash, functionName) {
+  openModalWithMessage($('#pending-contract-write'), true, txHash)
   const getTxReceipt = (txHash) => {
     window.ethereum.request({
       method: 'eth_getTransactionReceipt',

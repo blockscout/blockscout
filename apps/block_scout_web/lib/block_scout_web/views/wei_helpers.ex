@@ -77,5 +77,5 @@ defmodule BlockScoutWeb.WeiHelpers do
 
   defp display_unit(:wei), do: gettext("Wei")
   defp display_unit(:gwei), do: gettext("Gwei")
-  defp display_unit(:ether), do: gettext("CELO")
+  defp display_unit(:ether), do: Explorer.coin_name()
 end

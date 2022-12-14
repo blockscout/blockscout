@@ -18,7 +18,7 @@ defmodule EthereumJSONRPCTest do
       expected_fetched_balance =
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
           EthereumJSONRPC.Geth -> 0
-          EthereumJSONRPC.Parity -> 1
+          EthereumJSONRPC.Nethermind -> 1
           variant -> raise ArgumentError, "Unsupported variant (#{variant}})"
         end
 
@@ -56,7 +56,7 @@ defmodule EthereumJSONRPCTest do
           EthereumJSONRPC.Geth ->
             "invalid argument 0: json: cannot unmarshal hex string of odd length into Go value of type common.Address"
 
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             "Invalid params: invalid length 1, expected a 0x-prefixed hex string with length of 40."
 
           _ ->
@@ -174,7 +174,7 @@ defmodule EthereumJSONRPCTest do
   end
 
   describe "fetch_codes/2" do
-    @tag :no_parity
+    @tag :no_nethermind
     test "returns both codes and errors", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
@@ -251,7 +251,7 @@ defmodule EthereumJSONRPCTest do
     test "can fetch blocks", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       %{block_hash: block_hash, transaction_hash: transaction_hash} =
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             %{
               block_hash: "0x29c850324e357f3c0c836d79860c5af55f7b651e5d7ee253c1af1b14908af49c",
               transaction_hash: "0xa2e81bb56b55ba3dab2daf76501b50dfaad240cccb905dbf89d65c7a84a4a48e"
@@ -674,7 +674,7 @@ defmodule EthereumJSONRPCTest do
     test "with valid transaction hash", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       hash =
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             "0xa2e81bb56b55ba3dab2daf76501b50dfaad240cccb905dbf89d65c7a84a4a48e"
 
           EthereumJSONRPC.Geth ->
@@ -896,7 +896,7 @@ defmodule EthereumJSONRPCTest do
     test "fetches net version", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       expected_version =
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-          EthereumJSONRPC.Parity -> 77
+          EthereumJSONRPC.Nethermind -> 77
           _variant -> 1
         end
 

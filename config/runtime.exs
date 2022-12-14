@@ -38,6 +38,17 @@ config :block_scout_web, :footer,
 ### BlockScout Web ###
 ######################
 
+# Configures Ueberauth's Auth0 auth provider
+config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
+  domain: System.get_env("ACCOUNT_AUTH0_DOMAIN"),
+  client_id: System.get_env("ACCOUNT_AUTH0_CLIENT_ID"),
+  client_secret: System.get_env("ACCOUNT_AUTH0_CLIENT_SECRET")
+
+# Configures Ueberauth local settings
+config :ueberauth, Ueberauth,
+  logout_url: System.get_env("ACCOUNT_AUTH0_LOGOUT_URL"),
+  logout_return_to_url: System.get_env("ACCOUNT_AUTH0_LOGOUT_RETURN_URL")
+
 config :block_scout_web,
   version: System.get_env("BLOCKSCOUT_VERSION"),
   segment_key: System.get_env("SEGMENT_KEY"),
@@ -171,6 +182,9 @@ config :ethereum_jsonrpc,
 debug_trace_transaction_timeout = System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "900s")
 config :ethereum_jsonrpc, :internal_transaction_timeout, debug_trace_transaction_timeout
 
+config :ethereum_jsonrpc, EthereumJSONRPC.PendingTransaction,
+  type: System.get_env("ETHEREUM_JSONRPC_PENDING_TRANSACTIONS_TYPE", "default")
+
 ################
 ### Explorer ###
 ################
@@ -185,8 +199,8 @@ healthy_blocks_period =
   end
 
 config :explorer,
-  coin: System.get_env("COIN") || "CELO",
-  coin_name: System.get_env("COIN_NAME") || System.get_env("COIN") || "CELO",
+  coin: System.get_env("COIN", nil) || System.get_env("EXCHANGE_RATES_COIN") || "CELO",
+  coin_name: System.get_env("COIN_NAME", nil) || System.get_env("EXCHANGE_RATES_COIN") || "CELO",
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,default",
@@ -338,6 +352,21 @@ config :explorer, Explorer.SmartContract.RustVerifierInterface,
   service_url: System.get_env("RUST_VERIFICATION_SERVICE_URL"),
   enabled: System.get_env("ENABLE_RUST_VERIFICATION_SERVICE") == "true"
 
+config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
+  table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
+  api_key: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
+
+config :explorer, Explorer.Mailer,
+  adapter: Bamboo.SendGridAdapter,
+  api_key: System.get_env("ACCOUNT_SENDGRID_API_KEY")
+
+config :explorer, Explorer.Account,
+  enabled: System.get_env("ACCOUNT_ENABLED") == "true",
+  sendgrid: [
+    sender: System.get_env("ACCOUNT_SENDGRID_SENDER"),
+    template: System.get_env("ACCOUNT_SENDGRID_TEMPLATE")
+  ]
+
 ###############
 ### Indexer ###
 ###############
@@ -433,6 +462,19 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
 config :indexer, Indexer.Block.Realtime.Supervisor, enabled: System.get_env("DISABLE_REALTIME_INDEXER") != "true"
+
+blocks_catchup_fetcher_batch_size_default_str = "10"
+blocks_catchup_fetcher_concurrency_default_str = "10"
+
+{blocks_catchup_fetcher_batch_size, _} =
+  Integer.parse(System.get_env("INDEXER_CATCHUP_BLOCKS_BATCH_SIZE", blocks_catchup_fetcher_batch_size_default_str))
+
+{blocks_catchup_fetcher_concurrency, _} =
+  Integer.parse(System.get_env("INDEXER_CATCHUP_BLOCKS_CONCURRENCY", blocks_catchup_fetcher_concurrency_default_str))
+
+config :indexer, Indexer.Block.Catchup.Fetcher,
+  batch_size: blocks_catchup_fetcher_batch_size,
+  concurrency: blocks_catchup_fetcher_concurrency
 
 if File.exists?("#{Path.absname(__DIR__)}/runtime/#{config_env()}.exs") do
   Code.require_file("#{config_env()}.exs", "#{Path.absname(__DIR__)}/runtime")

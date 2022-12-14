@@ -1,5 +1,7 @@
 <% status = transaction_status(@transaction) %>
 <% error_in_internal_tx = @transaction.has_error_in_internal_txs %>
+<% current_user = AuthController.current_user(@conn) %>
+<% tx_tags = BlockScoutWeb.Models.GetTransactionTags.get_transaction_with_addresses_tags(@transaction, current_user) %>
 <div class="tile tile-type-<%= type_suffix(@transaction) %> fade-in <%= status_class(@transaction) %>" data-test="<%= type_suffix(@transaction) %>" data-identifier-hash="<%= @transaction.hash %>">
   <div class="row tile-body" data-selector="token-transfers-toggle" data-test="chain_transaction">
     <!-- Color Block -->
@@ -31,6 +33,10 @@
         <%= if method_name do %>
           <%= render BlockScoutWeb.FormView, "_tag.html", text: method_name, additional_classes: ["method", "ml-1"] %>
         <% end %>
+        <%= if tx_tags.personal_tx_tag && tx_tags.personal_tx_tag.name !== :error do %>
+          <%= render BlockScoutWeb.FormView, "_tag.html", text: tx_tags.personal_tx_tag.name, additional_classes: [tag_name_to_label(tx_tags.personal_tx_tag.name), "ml-1"] %>
+        <% end %>
+        <%= render BlockScoutWeb.AddressView, "_labels.html", tags: tx_tags %>
       </div>
       </span>
       <span>
@@ -40,7 +46,7 @@
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <span class="tile-title">
-          <%= value(@transaction, include_label: false) %> <%= gettext "CELO" %>
+          <%= value(@transaction, include_label: false) %> <%= Explorer.coin_name() %>
         </span>
         <span class="ml-0 ml-md-1 text-nowrap">
           <%= formatted_fee(@transaction, denomination: :ether, include_label: false) %> <%= gettext "TX Fee" %>

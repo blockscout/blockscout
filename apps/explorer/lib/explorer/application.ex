@@ -44,6 +44,8 @@ defmodule Explorer.Application do
       {Fly.RPC, []},
       Explorer.Repo.Local,
       {Fly.Postgres.LSN.Supervisor, repo: Explorer.Repo.Local},
+      Explorer.Repo.Account,
+      Explorer.Vault,
       Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor}, id: Explorer.HistoryTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
@@ -66,7 +68,8 @@ defmodule Explorer.Application do
       Accounts,
       Uncles,
       Supervisor.child_spec({Phoenix.PubSub, name: :chain_pubsub}, id: :chain_pubsub),
-      Supervisor.child_spec({Phoenix.PubSub, name: :operations}, id: :operations)
+      Supervisor.child_spec({Phoenix.PubSub, name: :operations}, id: :operations),
+      {Redix, redix_opts()}
     ]
 
     children = base_children ++ configurable_children()
@@ -187,5 +190,9 @@ defmodule Explorer.Application do
       },
       id: {ConCache, name}
     )
+  end
+
+  defp redix_opts do
+    {System.get_env("ACCOUNT_REDIS_URL") || "redis://127.0.0.1:6379", [name: :redix]}
   end
 end

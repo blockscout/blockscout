@@ -1,14 +1,8 @@
 import Config
 
-variant =
-  if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
-    "parity"
-  else
-    System.get_env("ETHEREUM_JSONRPC_VARIANT")
-    |> String.split(".")
-    |> List.last()
-    |> String.downcase()
-  end
+alias EthereumJSONRPC.Variant
+
+variant = Variant.get()
 
 config :indexer,
   block_transformer: Indexer.Transform.Blocks.Base

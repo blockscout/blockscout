@@ -1,5 +1,8 @@
 import Config
 
+alias EthereumJSONRPC.Variant
+alias Explorer.Repo.ConfigHelper
+
 ######################
 ### BlockScout Web ###
 ######################
@@ -27,8 +30,8 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
 
 pool_size =
   if System.get_env("DATABASE_READ_ONLY_API_URL"),
-    do: String.to_integer(System.get_env("POOL_SIZE", "50")),
-    else: String.to_integer(System.get_env("POOL_SIZE", "40"))
+    do: ConfigHelper.get_db_pool_size("50"),
+    else: ConfigHelper.get_db_pool_size("40")
 
 # Configures the database
 config :explorer, Explorer.Repo.Local,
@@ -39,8 +42,8 @@ config :explorer, Explorer.Repo.Local,
   database: System.get_env("DATABASE_DB") || "blockscout",
   hostname: System.get_env("DATABASE_HOSTNAME") || "localhost",
   port: System.get_env("DATABASE_PORT") || "5432",
-  pool_size: String.to_integer(System.get_env("POOL_SIZE") || "50"),
-  ssl: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true")
+  pool_size: pool_size,
+  ssl: ConfigHelper.ssl_enabled?()
 
 database_api_url =
   if System.get_env("DATABASE_READ_ONLY_API_URL"),
@@ -49,24 +52,22 @@ database_api_url =
 
 pool_size_api =
   if System.get_env("DATABASE_READ_ONLY_API_URL"),
-    do: String.to_integer(System.get_env("POOL_SIZE_API", "50")),
-    else: String.to_integer(System.get_env("POOL_SIZE_API", "10"))
+    do: ConfigHelper.get_api_db_pool_size("50"),
+    else: ConfigHelper.get_api_db_pool_size("10")
 
 # Configures API the database
 config :explorer, Explorer.Repo.Replica1,
-  url: database_api_url,
+  url: ConfigHelper.get_api_db_url(),
   pool_size: pool_size_api,
-  ssl: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true")
+  ssl: ConfigHelper.ssl_enabled?()
 
-variant =
-  if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
-    "parity"
-  else
-    System.get_env("ETHEREUM_JSONRPC_VARIANT")
-    |> String.split(".")
-    |> List.last()
-    |> String.downcase()
-  end
+# Configures Account database
+config :explorer, Explorer.Repo.Account,
+  url: ConfigHelper.get_account_db_url(),
+  pool_size: ConfigHelper.get_account_db_pool_size("50"),
+  ssl: ConfigHelper.ssl_enabled?()
+
+variant = Variant.get()
 
 Code.require_file("#{variant}.exs", "#{__DIR__}/../../apps/explorer/config/prod")
 

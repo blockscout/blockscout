@@ -12,6 +12,9 @@ env:
   MIX_ENV: test
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
+  ACCOUNT_AUTH0_DOMAIN: 'blockscoutcom.us.auth0.com'
+  ACCOUNT_AUTH0_LOGOUT_URL: 'https://blockscoutcom.us.auth0.com/v2/logout'
+  ACCOUNT_AUTH0_LOGOUT_RETURN_URL: 'https://blockscout.com/auth/logout'
 
 jobs:
   build-and-cache:
@@ -153,7 +156,7 @@ jobs:
         id: dialyzer-cache
         with:
           path: priv/plts
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-dialyzer-mixlockhash_14-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-dialyzer-mixlockhash_15-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-dialyzer-"
 
@@ -164,7 +167,7 @@ jobs:
           mix dialyzer --plt
 
       - name: Run Dialyzer
-        run: mix dialyzer --halt-exit-status
+        run: mix dialyzer
 
   gettext:
     name: Missing translation keys check
@@ -319,7 +322,7 @@ jobs:
           name: Jest JUnit Test Results
           path: apps/block_scout_web/assets/junit.xml
 
-  test_parity_mox_ethereum_jsonrpc:
+  test_nethermind_mox_ethereum_jsonrpc:
     name: EthereumJSONRPC Tests
     runs-on: ubuntu-latest
     needs: build-and-cache
@@ -363,18 +366,18 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
       - run: ./bin/install_chrome_headless.sh
-      - name: mix test --exclude no_parity
+      - name: mix test --exclude no_nethermind
         run: |
           cd apps/ethereum_jsonrpc
           mix compile --warnings-as-errors
-          mix test --no-start --exclude no_parity
+          mix test --no-start --exclude no_nethermind
         env:
           MIX_ENV: "test"
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
           PGUSER: postgres
-          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
       - name: Upload Unit Test Results
         if: always()
@@ -382,7 +385,7 @@ jobs:
         with:
           name: EthereumJSONRPC Test Results
           path: _build/test/junit/ethereum_jsonrpc/*.xml
-  test_parity_mox_explorer:
+  test_nethermind_mox_explorer:
     name: Explorer Tests
     runs-on: ubuntu-latest
     needs: build-and-cache
@@ -435,7 +438,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm
 
       - run: ./bin/install_chrome_headless.sh
-      - name: mix test --exclude no_parity --exclude smart_contract_compiler
+      - name: mix test --exclude no_nethermind --exclude smart_contract_compiler
         run: |
           cd apps/explorer
           mix compile --warnings-as-errors
@@ -443,14 +446,14 @@ jobs:
           mix ecto.create --quiet
           mix ecto.migrate
           cd apps/explorer
-          mix test --no-start --exclude no_parity --exclude smart_contract_compiler
+          mix test --no-start --exclude no_nethermind --exclude smart_contract_compiler
         env:
           MIX_ENV: "test"
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
           PGUSER: postgres
-          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
       - name: Upload Unit Test Results
         if: always()
@@ -458,7 +461,7 @@ jobs:
         with:
           name: Explorer Test Results
           path: _build/test/junit/explorer/*.xml
-  test_parity_mox_indexer:
+  test_nethermind_mox_indexer:
     name: Indexer Tests
     runs-on: ubuntu-latest
     needs: build-and-cache
@@ -504,7 +507,7 @@ jobs:
 
       - run: ./bin/install_chrome_headless.sh
 
-      - name: mix test --exclude no_parity
+      - name: mix test --exclude no_nethermind
         run: |
           cd apps/indexer
           mix compile --warnings-as-errors
@@ -512,14 +515,14 @@ jobs:
           mix ecto.create --quiet
           mix ecto.migrate
           cd apps/indexer
-          mix test --no-start --exclude no_parity
+          mix test --no-start --exclude no_nethermind
         env:
           MIX_ENV: "test"
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
           PGUSER: postgres
-          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
       - name: Upload Unit Test Results
         if: always()
@@ -528,11 +531,16 @@ jobs:
           name: Indexer Test Results
           path: _build/test/junit/indexer/*.xml
 
-  test_parity_mox_block_scout_web:
+  test_nethermind_mox_block_scout_web:
     name: Blockscout Web Tests
     runs-on: ubuntu-latest
     needs: build-and-cache
     services:
+      redis_db:
+        image: 'redis:alpine'
+        ports: 
+          - 6379:6379
+
       postgres:
         image: postgres
         env:
@@ -596,7 +604,7 @@ jobs:
 
       - run: ./bin/install_chrome_headless.sh
 
-      - name: mix test --exclude no_parity
+      - name: mix test --exclude no_nethermind
         run: |
           cd apps/block_scout_web
           mix compile --warnings-as-errors
@@ -604,18 +612,20 @@ jobs:
           mix ecto.create --quiet
           mix ecto.migrate
           cd apps/block_scout_web
-          mix test --no-start --exclude no_parity
+          mix test --no-start --exclude no_nethermind
         env:
           # match POSTGRES_PASSWORD for postgres image below
           MIX_ENV: "test"
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
           PGUSER: postgres
-          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_ID: "77"
           COIN: "CELO"
           ADMIN_PANEL_ENABLED: "true"
+          ACCOUNT_ENABLED: "true"
+          ACCOUNT_REDIS_URL: "redis://localhost:6379"
       - name: Upload Unit Test Results
         if: always()
         uses: actions/upload-artifact@v2
@@ -626,10 +636,10 @@ jobs:
     name: "Publish Unit Tests Results"
     runs-on: ubuntu-latest
     needs:
-      - test_parity_mox_ethereum_jsonrpc
-      - test_parity_mox_explorer
-      - test_parity_mox_indexer
-      - test_parity_mox_block_scout_web
+      - test_nethermind_mox_ethereum_jsonrpc
+      - test_nethermind_mox_explorer
+      - test_nethermind_mox_indexer
+      - test_nethermind_mox_block_scout_web
       - jest
     if: success() || failure()
     steps:
