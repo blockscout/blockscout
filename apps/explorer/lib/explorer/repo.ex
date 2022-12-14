@@ -113,10 +113,10 @@ defmodule Explorer.Repo.Account do
   def get_application_name do
     case Mix.env() do
       :dev ->
-        System.get_env("USER", "anon") <> "_dev_blockscout"
+        System.get_env("USER", "anon") <> "_dev_blockscout_accounts"
 
       :prod ->
-        System.get_env("HOSTNAME", "blockscout_production")
+        System.get_env("HOSTNAME", "blockscout_production") <> "_accounts"
 
       _ ->
         "blockscout"
