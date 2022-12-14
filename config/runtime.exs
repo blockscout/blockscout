@@ -2,26 +2,29 @@ import Config
 
 import Bitwise
 
+indexer_memory_limit_default = 1
+
 indexer_memory_limit =
   "INDEXER_MEMORY_LIMIT"
-  |> System.get_env("1")
+  |> System.get_env(to_string(indexer_memory_limit_default))
   |> Integer.parse()
   |> case do
     {integer, ""} -> integer
-    _ -> 1
+    _ -> indexer_memory_limit_default
   end
 
 config :indexer,
   memory_limit: indexer_memory_limit <<< 32
 
+indexer_empty_blocks_sanitizer_batch_size_default = 100
+
 indexer_empty_blocks_sanitizer_batch_size =
-  if System.get_env("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE") do
-    case Integer.parse(System.get_env("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE")) do
-      {integer, ""} -> integer
-      _ -> 100
-    end
-  else
-    100
+  "INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE"
+  |> System.get_env(to_string(indexer_empty_blocks_sanitizer_batch_size_default))
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> indexer_empty_blocks_sanitizer_batch_size_default
   end
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
@@ -69,6 +72,17 @@ config :block_scout_web, BlockScoutWeb.Chain,
   enable_testnet_label: System.get_env("SHOW_TESTNET_LABEL", "false") == "true",
   testnet_label_text: System.get_env("TESTNET_LABEL_TEXT", "Testnet")
 
+verification_max_libraries_default = 10
+
+verification_max_libraries =
+  "CONTRACT_VERIFICATION_MAX_LIBRARIES"
+  |> System.get_env(to_string(verification_max_libraries_default))
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> verification_max_libraries_default
+  end
+
 config :block_scout_web,
   link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
   other_explorers: System.get_env("OTHER_EXPLORERS"),
@@ -102,7 +116,8 @@ config :block_scout_web,
   re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY", nil),
   re_captcha_project_id: System.get_env("RE_CAPTCHA_PROJECT_ID", nil),
   chain_id: System.get_env("CHAIN_ID"),
-  json_rpc: System.get_env("JSON_RPC")
+  json_rpc: System.get_env("JSON_RPC"),
+  verification_max_libraries: verification_max_libraries
 
 default_api_rate_limit = 50
 default_api_rate_limit_str = Integer.to_string(default_api_rate_limit)
@@ -239,9 +254,10 @@ address_sum_global_ttl =
   |> System.get_env("")
   |> Integer.parse()
   |> case do
-    {integer, ""} -> :timer.seconds(integer)
-    _ -> :timer.minutes(60)
+    {integer, ""} -> integer
+    _ -> 3600
   end
+  |> :timer.seconds()
 
 config :explorer, Explorer.Chain.Cache.AddressSum, global_ttl: address_sum_global_ttl
 
