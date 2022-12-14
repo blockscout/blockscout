@@ -38,7 +38,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   end
 
   defp default_init do
-    max_number = BlockNumber.get_max()
+    max_number = last_block()
     {min_number, first_batch} = fetch_missing_ranges_batch(max_number, false)
     initial_queue = push_batch_to_queue(first_batch, :queue.new())
 
@@ -112,7 +112,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
   defp fetch_missing_ranges_batch(max_fetched_block_number, true) do
     to = max_fetched_block_number + 1
-    from = min(max_fetched_block_number + missing_ranges_batch_size(), BlockNumber.get_max())
+    from = min(max_fetched_block_number + missing_ranges_batch_size(), last_block() - 1)
 
     if from >= to do
       {from, Chain.missing_block_number_ranges(from..to)}
@@ -143,9 +143,16 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
     end
   end
 
+  defp last_block do
+    case Integer.parse(Application.get_env(:indexer, :last_block)) do
+      {block, ""} -> block + 1
+      _ -> BlockNumber.get_max()
+    end
+  end
+
   defp continue_future_updating?(max_fetched_block_number) do
     case Integer.parse(Application.get_env(:indexer, :last_block)) do
-      {last_block, ""} -> max_fetched_block_number < last_block
+      {block, ""} -> max_fetched_block_number < block
       _ -> true
     end
   end
