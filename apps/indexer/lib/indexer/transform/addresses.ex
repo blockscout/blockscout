@@ -410,6 +410,11 @@ defmodule Indexer.Transform.Addresses do
               required(:block_number) => non_neg_integer()
             }
           ],
+          optional(:transaction_actions) => [
+            %{
+              required(:data) => map()
+            }
+          ],
           optional(:mint_transfers) => [
             %{
               required(:from_address_hash) => String.t(),
