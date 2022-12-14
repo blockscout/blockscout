@@ -35,7 +35,7 @@
     "highlight.js": "^11.7.0",
     "https-browserify": "^1.0.0",
     "humps": "^2.0.1",
-    "jquery": "^3.6.1",
+    "jquery": "^3.6.2",
     "js-cookie": "^3.0.1",
     "lodash.debounce": "^4.0.8",
     "lodash.differenceby": "^4.8.0",
@@ -75,9 +75,9 @@
     "urijs": "^1.19.11",
     "url": "^0.11.0",
     "util": "^0.12.5",
+    "viewerjs": "^1.11.1",
     "web3": "^1.8.1",
     "web3modal": "^1.9.10",
-    "viewerjs": "^1.11.1",
     "xss": "^1.0.14"
   },
   "devDependencies": {
