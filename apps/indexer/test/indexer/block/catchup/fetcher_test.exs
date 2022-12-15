@@ -271,7 +271,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                  }
                })
 
-      Process.sleep(1000)
+      Process.sleep(3000)
 
       assert count(Chain.Block) == 1
       assert count(Reward) == 0
@@ -420,7 +420,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                  }
                })
 
-      Process.sleep(1000)
+      Process.sleep(3000)
 
       assert count(Chain.Block) == 1
       assert count(Reward) == 0
@@ -564,7 +564,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                  }
                })
 
-      Process.sleep(1000)
+      Process.sleep(3000)
       assert count(Chain.Block) == 1
       assert count(Reward) == 0
 
