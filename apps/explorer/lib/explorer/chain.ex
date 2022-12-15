@@ -3049,10 +3049,9 @@ defmodule Explorer.Chain do
           select: min(missing_range.number)
         )
 
-      query
-      |> Repo.one(timeout: :infinity) || 0
+      Repo.one(query, timeout: :infinity)
     else
-      0
+      nil
     end
   end
 

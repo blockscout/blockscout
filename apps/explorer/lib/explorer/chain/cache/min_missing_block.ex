@@ -27,7 +27,7 @@ defmodule Explorer.Chain.Cache.MinMissingBlockNumber do
   def fetch_min_missing_block do
     result = Chain.fetch_min_missing_block_cache()
 
-    if result > 0 do
+    unless is_nil(result) do
       params = %{
         counter_type: "min_missing_block_number",
         value: result
