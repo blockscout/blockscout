@@ -276,13 +276,13 @@ $navbar-logo-width: 100% !default;
   justify-content: space-between;
   align-items: flex-start;
   flex-shrink: 0;
-  @media (min-width: 992px) {
+  @media (min-width: 1200px) {
     align-items: center;
   }
 }
 
 .navbar-container, .navbar-primary {
-  @media (min-width: 992px) {
+  @media (min-width: 1200px) {
     padding-right: 0;
   }
 }

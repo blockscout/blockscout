@@ -19,6 +19,21 @@ $footer-logo-width: auto !default;
   @media (max-width: $breakpoint-md) {
     width: 100%;
   }
+  .foot-left-description-container{
+    display:flex;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding:18px;
+    width:480px;
+    margin-right:80px;
+    @media (max-width: 992px) {
+      margin-right: 0;
+      margin-bottom: 20px;
+    }
+  }
+  .row {
+    margin: 0;
+  }
 }
 
 .footer-logo-row {

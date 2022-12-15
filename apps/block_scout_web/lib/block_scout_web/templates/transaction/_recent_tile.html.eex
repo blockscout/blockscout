@@ -12,18 +12,18 @@
         <span style="margin-right:10px;">
           Tx#<%= @transaction.block_number %>
         </span>
-        <span style="width:200px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-left:5px;">
+        <span class="recent-preview-item-content-latest-txs-hash">
           <%= render "_link.html", transaction_hash: @transaction.hash, data_test: "address_hash_link" %>
         </span>
         
       </div>
       <div class="d-flex flex-row">
         <span>From</span>
-        <span style="width:100px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-left:5px;">
+        <span class="recent-preview-item-content-latest-txs-from">
           <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, assigns[:current_address]) |> BlockScoutWeb.RenderHelpers.render_partial() %>
         </span>
         <span style="margin-left:10px;">To</span>
-        <span style="width:100px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-left:5px;">
+        <span class="recent-preview-item-content-latest-txs-from">
           <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:to, assigns[:current_address]) |> BlockScoutWeb.RenderHelpers.render_partial() %>
         </span>
           

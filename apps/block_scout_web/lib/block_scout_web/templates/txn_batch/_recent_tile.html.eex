@@ -7,7 +7,7 @@
     >
         Ba
     </span>
-    <div style="margin-bottom:5px;display:flex;flex-direction:column;flex:0 0 120px;">
+    <div class="recent-preview-item-content-batch">
         <span>
             <%= #render "_link.html", batch_index: @txn_batch .batch_index, data_test: "address_hash_link" %>
             <%=  @txn_batch .batch_index %>

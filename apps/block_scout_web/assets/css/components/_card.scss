@@ -155,6 +155,7 @@ $card-tab-icon-color-active: #fff !default;
 
 .card-body {
   padding: $card-horizontal-padding;
+  overflow-x: auto;
   .recent-tx-list-page{
     .recent-preview-item-content{
       display:none;
@@ -176,6 +177,10 @@ $card-tab-icon-color-active: #fff !default;
     border-top:1px solid #cccccc;
     border-bottom:2px solid #cccccc;
     color:#6c757e;
+    min-width: 1130px;
+  }
+  .recent-tx-list-page{
+    min-width: 1130px;
   }
   .txn-list-table-item{
     width:100%;
@@ -245,6 +250,9 @@ $card-tab-icon-color-active: #fff !default;
   flex-direction:row;
   box-shadow:none;
   margin-bottom:20px;
+  @media (max-width: 1254px) {
+    flex-direction: column;
+  }
   .recent-preview-item{
     flex:1;
     margin-top:0 !important;
@@ -274,8 +282,56 @@ $card-tab-icon-color-active: #fff !default;
         line-height:44px;
         margin-right:10px;
       }
+      .recent-preview-item-content-batch{
+        margin-bottom:5px;
+        display:flex;
+        flex-direction:column;
+        flex:0 0 120px;
+        @media (max-width: 368px) {
+          flex:0 0 95px;
+        }
+      }
+      .recent-preview-item-content-l1-2-l2{
+        .recent-preview-item-content-l1-2-l2-link{
+          width:100px;
+          overflow:hidden;
+          white-space:nowrap;
+          text-overflow:ellipsis;
+          @media (max-width: 368px) {
+            width: 65px;
+          }
+          @media (max-width: 500px) {
+            width: 90px;
+          }
+        }
+        
+      }
       .recent-preview-item-content-latest-txs{
         flex:1;
+        .recent-preview-item-content-latest-txs-hash{
+          width:200px;
+          overflow:hidden;
+          white-space:nowrap;
+          text-overflow:ellipsis;
+          margin-left:5px;
+          @media (max-width: 500px) {
+            width:160px;
+          }
+
+          @media (max-width: 368px) {
+            width:140px;
+          }
+        }
+        .recent-preview-item-content-latest-txs-from{
+          width:100px;
+          overflow:hidden;
+          white-space:nowrap;
+          text-overflow:ellipsis;
+          margin-left:5px;
+          @media (max-width: 500px) {
+            width:80px;
+          }
+        }
         .recent-preview-item-content-latest-txs-tag-wrap{
           margin-left:5px;
           font-size:12px;position:relative;
@@ -298,7 +354,22 @@ $card-tab-icon-color-active: #fff !default;
         
       }
     }
+    @media (max-width: 1254px) {
+      margin-bottom: 10px;
+    }
+    &:last-child{
+      @media (max-width: 1254px) {
+        margin-bottom: 0px;
+      }
+    }
   }
+  .recent-preview-item-center{
+    margin: 0 10px;
+    @media (max-width: 1254px) {
+      margin: 10px 0;
+    }
+  }
+  
   .recent-preview-item-title-container{
     font-size:16px;
     display:flex;justify-content:space-between;

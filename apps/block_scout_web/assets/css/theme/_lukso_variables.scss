@@ -89,10 +89,10 @@ $dashboard-banner-network-plain-container-height: 150px;
       justify-content: flex-start;
       width: 100%;
 
-      @include media-breakpoint-down(lg) {
+      /* @include media-breakpoint-down(lg) {
         flex-wrap: wrap;
         justify-content: space-between;
-      }
+      } */
 
       .dashboard-banner-network-stats-item {
         margin-right: 60px;

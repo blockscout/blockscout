@@ -22,20 +22,7 @@ export async function addChainToMM ({ btn }) {
     };
     console.log(params);
     //if (chainID !== chainIDHex) {
-      await window.ethereum.request({
-        method: 'wallet_addEthereumChain',
-        params: [{
-          chainId: chainIDHex,
-          chainName: process.env.SUBNETWORK,
-          nativeCurrency: {
-            name: process.env.COIN_NAME,
-            symbol: process.env.COIN_NAME,
-            decimals: 18
-          },
-          rpcUrls: [process.env.JSON_RPC],
-          blockExplorerUrls: [blockscoutURL]
-        }]
-      })
+      await window.ethereum.request(params)
     /* } else {
       btn.tooltip('dispose')
       btn.tooltip({

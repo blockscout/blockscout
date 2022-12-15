@@ -25,8 +25,10 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   overflow: hidden;
   padding: 0;
   position: relative;
-  height: 264px;
   overflow: visible;
+  @media (max-width:1200px) {
+    height: 450px;
+  }
   @include media-breakpoint-down(sm) {
       height: auto;
   }
@@ -38,6 +40,9 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     right: 0px;
     top: 8px;
     height: 280px;
+    @media (max-width: 1511px) {
+      display:none;
+    }
   }
 }
 
@@ -45,16 +50,25 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  @include media-breakpoint-between(lg, xl) {
+  flex-direction: row;
+  height: 249px;
+  /* @include media-breakpoint-between(lg, xl) {
     height: 249px;
-  }
+  } */
 
-  @include media-breakpoint-down(sm) {
+  @media (max-width:1200px) {
     flex-direction: column;
+    height: 450px;
   }
   
 }
-
+.dashboard-banner-network-plain-container {
+  .dashboard-banner-daily-tx-title-empty {
+    @media (max-width: 1200px) {
+      display: none;
+    }
+  }
+}
 .dashboard-banner-network-graph {
   flex-grow: 1;
   display:flex;
@@ -62,23 +76,42 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   align-items: flex-start;
   justify-content: center;
 
+  @media (max-width:767px) {
+    width: 100%;
+  }
+
   .dashboard-banner-daily-tx-title{
-    font-family: 'Prompt';
+    font-family: 'GTBold';
     font-weight: 700;
-    font-size: 30px;
-    line-height: 30px;
+    font-size: 26px;
+    line-height: 26px;
     text-transform: capitalize;
     color: #12201F;
     margin-bottom: 16px;
   }
+  
   .dashbord-banner-chart-container{
     display:flex;
     align-items: center;
     border-radius: 20px;
-    height: 160px;
+    height: 180px;
     padding-right: 10px;
     box-sizing: border-box;
     background: linear-gradient(270deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 95.24%);
+
+    @media (max-width: 1200px) {
+      padding-right: 0;
+    }
+
+    
+    @media (max-width: 767px) {
+      flex-direction: column;
+      background: linear-gradient(0deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 95.24%);;
+      height: auto;
+      width:100%;
+    }
+
+
     .dashboard-banner-chart{
       @include media-breakpoint-up(md) {
         min-width: 500px;
@@ -89,8 +122,9 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
       @include media-breakpoint-down(md) {
         display: flex;
         flex-direction: column;
-        padding-top: 20px;
+        width: 100%;
       }
+      
     }
   }
   
@@ -101,12 +135,11 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   flex-grow: 1;
   min-height: 100px;
   height: 100%;
-  min-width: 500px;
+  //min-width: 500px;
   background: rgba(255, 255, 255, 0.5);
   border-radius: 20px;
   @include media-breakpoint-down(md) {
     flex-grow: 0;
-    margin-top: 20px;
     margin-bottom: auto;
     max-width: 100%;
   }
@@ -120,6 +153,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
 
   @include media-breakpoint-down(sm) {
     height: 150px !important;
+    margin-bottom: 10px;
   }
 }
 
@@ -131,6 +165,12 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     grid-template-columns: 1fr 1fr;
   }
 
+  @media (max-width: 767px) {
+    flex-direction: row;
+    margin-left: 0;
+    margin-bottom: 10px;
+  }
+
   .dashboard-banner-chart-legend-item {
     height: 36px;
     display:flex;
@@ -138,21 +178,32 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     align-items: center;
     &:first-child{
       margin-bottom: 30px;
+      @media (max-width: 767px) {
+        margin-bottom: 0;
+      }
     }
+    @media (max-width: 767px) {
+      width: 200px;
+    }
+
+    @media (max-width: 500px) {
+      width: 165px;
+    }
+   
     @include media-breakpoint-down(md) {
       display: flex;
       flex-direction: row;
     }
 
-    @include media-breakpoint-down(sm) {
+    /* @include media-breakpoint-down(sm) {
       margin-top: 10px;
-    }
+    } */
 
-    @media (max-width: 599px) {
+   /*  @media (max-width: 599px) {
       padding-top: 0;
       padding-bottom: 0;
       flex-direction: column;
-    }
+    } */
     .dashboard-banner-chart-legend-item-line{
       height: 32px;
       width: 5px;
@@ -193,7 +244,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
 
   .dashboard-banner-chart-legend-label {
     color: #15181C;
-    font-family: 'Nunito';
+    font-family: 'GTBold';
     font-style: normal;
     font-weight: 700;
     font-size: 14px;
@@ -239,6 +290,13 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   display: flex;
   flex-direction: column;
   margin-right: 120px;
+  @media (max-width: 1511px) {
+    margin-right: 0;
+  }
+  @media (min-width: 1690px) {
+    margin-right: 0;
+  }
+  
   .dashboard-banner-network-plain-wrap{
     display: flex;
     flex-direction: column;
@@ -256,8 +314,11 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
         align-items: flex-start;
         width: 200px;
         flex-direction: column;
+        @media (max-width: 500px) {
+          width: 165px;
+        }
         .dashboard-banner-network-stats-label{
-          font-family: 'Prompt';
+          font-family: 'GTBold';
           font-style: normal;
           font-weight: 700;
           font-size: 16px;
@@ -269,13 +330,13 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
           font-family: 'Nunito';
           font-style: normal;
           font-weight: 700;
-          font-size: 24px;
+          font-size: 20px;
           line-height: 36px;
           color: #152928;
         }
       }
     
-      @include media-breakpoint-down(lg) {
+      /* @include media-breakpoint-down(lg) {
         margin-top: 15px;
         width: 550px;
       }
@@ -293,7 +354,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     
       @include media-breakpoint-down(sm) {
         width: 100%;
-      }
+      } */
     }
   }
   
@@ -306,7 +367,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
 
-  @include media-breakpoint-down(lg) {
+  /* @include media-breakpoint-down(lg) {
     grid-template-columns: 1fr 1fr;
     row-gap: 20px;
   }
@@ -334,5 +395,5 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     @media (max-width: 374px) {
       font-size: 0.9rem;
     }
-  }
+  } */
 }

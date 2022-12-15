@@ -13,19 +13,19 @@
                <%=  @l1_to_l2 .block %>
             </a>
         </div>
-        <div style="display:flex;align-items:center">
+        <div class="recent-preview-item-content-l1-2-l2" style="display:flex;align-items:center">
             <span>L1 Tx#</span>
             <a 
                 href="https://goerli.etherscan.io/tx/<%= @l1_to_l2.hash %>" 
                 target="_blank"
-                style="width:100px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"
+                class="recent-preview-item-content-l1-2-l2-link"
             >
                 <%= sub_hash_string(@l1_to_l2.hash, 15) %>...
             </a>
             <span style="margin-left:5px;">L2 Tx#</span>
             <a 
                 href="/tx/<%= @l1_to_l2.l2_hash %>"
-                style="width:100px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"
+                class="recent-preview-item-content-l1-2-l2-link"
             >
                 <%= @l1_to_l2.l2_hash %>...
             </a>

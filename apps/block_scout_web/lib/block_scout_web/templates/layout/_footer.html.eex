@@ -7,7 +7,6 @@
     <div class="row">
       <div
         class="col-xs-12 foot-left-description-container"
-        style="display:flex;border: 1px solid rgba(255, 255, 255, 0.15);border-radius: 12px;padding:18px;width:480px;margin-right:80px;"
       >
         <img class="foot-left-description--logo" style="width:40px;height:40px;margin-right:20px;" src="/images/mantle_logo_img.png" />
         <div>
