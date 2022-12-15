@@ -12,14 +12,12 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
          {:format, {:ok, address_hash}} <- to_address_hash(contractaddress_param),
          {:token, {:ok, token}} <- {:token, Chain.token_from_address_hash(address_hash)} do
-      case Map.get(params, "cmc", nil) do
+      case Map.get(params, "cmc") do
         nil ->
           render(conn, "tokensupply.json", total_supply: Decimal.to_string(token.total_supply))
 
         _ ->
-          conn
-          |> put_resp_content_type("text/plain")
-          |> send_resp(200, Decimal.to_string(token.total_supply))
+          conn |> cmc_tokensupply(token)
       end
     else
       {:contractaddress_param, :error} ->
@@ -31,6 +29,19 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
       {:token, {:error, :not_found}} ->
         render(conn, :error, error: "contract address not found")
     end
+  end
+
+  defp cmc_tokensupply(conn, token) do
+    formatted =
+      token.total_supply
+      |> Wei.from(:wei)
+      |> Wei.to(:ether)
+      |> Decimal.round(9)
+      |> Decimal.to_string()
+
+    conn
+    |> put_resp_content_type("text/plain")
+    |> send_resp(200, formatted)
   end
 
   def ethsupplyexchange(conn, _params) do
