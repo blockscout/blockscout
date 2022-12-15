@@ -12,7 +12,8 @@
     voting_sum: @voting_sum,
     locked_gold: @locked_gold,
     vote_activated_gold: @vote_activated_gold,
-    pending_gold: @pending_gold
+    pending_gold: @pending_gold,
+    tags: @tags
   %>
 
   <section data-page="address-epoch-transactions">

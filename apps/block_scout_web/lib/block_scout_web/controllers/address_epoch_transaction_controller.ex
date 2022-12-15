@@ -6,6 +6,8 @@ defmodule BlockScoutWeb.AddressEpochTransactionController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, EpochTransactionView}
   alias Explorer.{Chain, Market}
@@ -78,7 +80,8 @@ defmodule BlockScoutWeb.AddressEpochTransactionController do
         locked_gold: locked_gold,
         vote_activated_gold: vote_activated_gold,
         pending_gold: pending_gold,
-        is_proxy: false
+        is_proxy: false,
+        tags: get_address_tags(address_hash, current_user(conn))
       )
     else
       {:restricted_access, _} ->
