@@ -26,10 +26,11 @@ spec:
         - -c
         env:
         - name: NETWORK
+          value: QUAI
         - name: ECTO_USE_SSL
           value: "false"
         - name: SUBNETWORK
-          value: QUAI
+          value: PRIME
         - name: LOGO
           value: /images/quai_logo.png
         - name: ETHEREUM_JSONRPC_VARIANT
@@ -53,6 +54,10 @@ spec:
           value: PRIME / REGION1 /ZONE23
         - name: COIN
           value: QUAI
+        - name: COIN_TYPE
+          value: QUAI
+        - name: CHAIN_INDEX
+          value: "<INDEX>"
         image: {{ .Values.quaiBlockscout.image.name }}:{{ .Values.quaiBlockscout.image.version }}
         imagePullPolicy: Always
         livenessProbe:

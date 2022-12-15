@@ -9,28 +9,84 @@ defmodule BlockScoutWeb.LayoutView do
 
   @default_other_networks [
     %{
-      title: "POA",
-      url: "https://blockscout.com/poa/core"
-    },
-    %{
-      title: "Sokol",
-      url: "https://blockscout.com/poa/sokol",
+      title: "Prime",
+      url: "https://dev.prime.quaiscan.io",
       test_net?: true
     },
     %{
-      title: "Gnosis Chain",
-      url: "https://blockscout.com/xdai/mainnet"
+      title: "Cyprus",
+      url: "https://dev.cyprus.quaiscan.io",
+      test_net?: true
     },
     %{
-      title: "Ethereum Classic",
-      url: "https://blockscout.com/etc/mainnet",
-      other?: true
+      title: "Paxos",
+      url: "https://dev.paxos.quaiscan.io",
+      test_net?: true
     },
     %{
-      title: "RSK",
-      url: "https://blockscout.com/rsk/mainnet",
-      other?: true
-    }
+      title: "Hydra",
+      url: "https://dev.hydra.quaiscan.io",
+      test_net?: true
+    },
+    %{
+      title: "Cyprus 1",
+      url: "https://dev.cyprus1.quaiscan.io",
+      test_net?: true
+    },
+    %{
+      title: "Cyprus 2",
+      url: "https://dev.cyprus2.quaiscan.io",
+      test_net?: true
+    },
+    %{
+      title: "Cyprus 3",
+      url: "https://dev.cyprus3.quaiscan.io",
+      test_net?: true
+    },
+    %{
+      title: "Paxos 1",
+      url: "https://dev.paxos1.quaiscan.io",
+      test_net?: true
+    },
+    %{
+      title: "Paxos 2",
+      url: "https://dev.paxos2.quaiscan.io",
+      test_net?: true
+    },
+    %{
+      title: "Paxos 3",
+      url: "https://dev.paxos3.quaiscan.io",
+      test_net?: true
+    },
+    %{
+      title: "Hydra 1",
+      url: "https://dev.hydra1.quaiscan.io",
+      test_net?: true
+    },
+    %{
+      title: "Hydra 2",
+      url: "https://dev.hydra2.quaiscan.io",
+      test_net?: true
+    },
+    %{
+      title: "Hydra 3",
+      url: "https://dev.hydra3.quaiscan.io",
+      test_net?: true
+    },
+#    %{
+#      title: "Gnosis Chain",
+#      url: "https://blockscout.com/xdai/mainnet"
+#    },
+#    %{
+#      title: "Ethereum Classic",
+#      url: "https://blockscout.com/etc/mainnet",
+#      other?: true
+#    },
+#    %{
+#      title: "RSK",
+#      url: "https://blockscout.com/rsk/mainnet",
+#      other?: true
+#    }
   ]
 
   alias BlockScoutWeb.SocialMedia
