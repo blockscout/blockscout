@@ -295,43 +295,43 @@ defmodule BlockScoutWeb.API.V2.AddressController do
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          custom_abi <- AddressView.fetch_custom_abi(conn, address_hash_string),
          {:not_found, true} <- {:not_found, AddressView.check_custom_abi_for_having_read_functions(custom_abi)} do
-      Reader.read_only_functions_from_abi(custom_abi.abi, address_hash)
-      Reader.read_functions_required_wallet_from_abi(custom_abi.abi)
+          read_only_functions_from_abi = Reader.read_only_functions_from_abi(custom_abi.abi, address_hash)
+          read_functions_required_wallet_from_abi =Reader.read_functions_required_wallet_from_abi(custom_abi.abi)
 
       conn
       |> put_status(200)
+      |> json(read_only_functions_from_abi ++ read_functions_required_wallet_from_abi)
     end
   end
 
   def methods_read(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
-      Reader.read_only_functions(address_hash)
-
       conn
       |> put_status(200)
+      |> json(Reader.read_only_functions(address_hash))
     end
   end
 
   def methods_write(conn, %{"address_hash" => address_hash_string, "is_custom_abi" => "true"} = params) do
-    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+    with {:format, {:ok, _address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          custom_abi <- AddressView.fetch_custom_abi(conn, address_hash_string),
          {:not_found, true} <- {:not_found, AddressView.check_custom_abi_for_having_read_functions(custom_abi)} do
-      Writer.filter_write_functions(custom_abi.abi)
-
       conn
       |> put_status(200)
+      |> json(Writer.filter_write_functions(custom_abi.abi))
     end
   end
 
   def methods_write(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
-      Writer.write_functions(address_hash)
+
 
       conn
       |> put_status(200)
+      |> json(Writer.write_functions(address_hash))
     end
   end
 
@@ -346,10 +346,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> Tuple.to_list()
         |> List.first() || @burn_address
 
-      Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string)
-
       conn
       |> put_status(200)
+      |> json(Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string))
     end
   end
 
@@ -364,10 +363,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> Tuple.to_list()
         |> List.first() || @burn_address
 
-      Writer.write_functions_proxy(implementation_address_hash_string)
-
       conn
       |> put_status(200)
+      |> json(Writer.write_functions_proxy(implementation_address_hash_string))
     end
   end
 
