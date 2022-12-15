@@ -1223,6 +1223,17 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Checks if indexing of blocks and internal transactions finished aka full indexing
+  """
+  @spec finished_indexing?(Decimal.t()) :: boolean()
+  def finished_indexing?(indexed_ratio) do
+    case Decimal.compare(indexed_ratio, 1) do
+      :lt -> false
+      _ -> Chain.finished_internal_transactions_indexing?()
+    end
+  end
+
+  @doc """
   The `t:Explorer.Chain.Transaction.t/0` `gas_price` of the `transaction` in `unit`.
   """
   def gas_price(%Transaction{gas_price: gas_price}, unit) do
@@ -2143,14 +2154,22 @@ defmodule Explorer.Chain do
   def indexed_ratio do
     %{min: min, max: max} = BlockNumber.get_all()
 
+    min_blockchain_block_number =
+      case Integer.parse(Application.get_env(:indexer, :first_block)) do
+        {block_number, _} -> block_number
+        _ -> 0
+      end
+
     case {min, max} do
       {0, 0} ->
         Decimal.new(0)
 
       _ ->
-        result = Decimal.div(max - min + 1, max + 1)
+        result = Decimal.div(max - min + 1, max - min_blockchain_block_number + 1)
 
-        Decimal.round(result, 2, :down)
+        result
+        |> Decimal.round(2, :down)
+        |> Decimal.min(Decimal.new(1))
     end
   end
 
