@@ -85,7 +85,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
     end
 
     test "with coinmarketcap param", %{conn: conn} do
-      token = insert(:token, %{total_supply: 777.777})
+      token = insert(:token, %{total_supply: 24_787_584_335_729_452_746_080_877})
 
       params = %{
         "module" => "stats",
@@ -94,7 +94,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
         "contractaddress" => to_string(token.contract_address_hash)
       }
 
-      assert "777.777" ==
+      assert "24787584.335729453" ==
                conn
                |> get("/api", params)
                |> text_response(200)
