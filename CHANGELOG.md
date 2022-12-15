@@ -64,6 +64,7 @@
 
 ### Chore
 
+- [#6600](https://github.com/blockscout/blockscout/pull/6600) - Token stub icon
 - [#6588](https://github.com/blockscout/blockscout/pull/6588) - Add latest image build for frontend-main with specific build-args
 - [#6584](https://github.com/blockscout/blockscout/pull/6584) - Vacuum package-lock.json
 - [#6581](https://github.com/blockscout/blockscout/pull/6581) - Dark mode switcher localStorage to cookie in order to support new UI
