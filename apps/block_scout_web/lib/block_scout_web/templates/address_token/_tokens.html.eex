@@ -15,7 +15,7 @@
   </td>
   <td class="stakes-td">
     <%= link(
-          to: address_token_transfers_path(@conn, :index, to_string(@address.hash), to_string(@token.contract_address_hash)),
+          to: token_path(@conn, :show, @token.contract_address_hash),
           class: "tile-title-lg",
           "data-test": "token_transfers_#{@token_balance.token.contract_address_hash}"
       ) do %>
