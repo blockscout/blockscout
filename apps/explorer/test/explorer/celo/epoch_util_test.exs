@@ -4,7 +4,7 @@ defmodule Explorer.Celo.EpochUtilTest do
 
   describe "epoch_by_block_number/1" do
     test "returns the epoch number when passed a block number" do
-      assert EpochUtil.epoch_by_block_number(3_878_389) == 224
+      assert EpochUtil.epoch_by_block_number(3_878_389) == 225
     end
   end
 

@@ -109,6 +109,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources("/blocks", BlockController, as: :blocks, only: [:index])
 
+    get("/epochs", BlockController, :epochs, as: :epochs)
+
     resources "/blocks", BlockController,
       as: :block_secondary,
       only: [:show],

@@ -126,4 +126,29 @@ defmodule BlockScoutWeb.BlockView do
         nil
     end
   end
+
+  def calculate_previous_epoch_block_number(block_number) when block_number <= 17_280, do: nil
+
+  def calculate_previous_epoch_block_number(block_number) when rem(block_number, 17_280) > 0,
+    do: EpochUtil.round_to_closest_epoch_block_number(block_number, :down)
+
+  def calculate_previous_epoch_block_number(block_number),
+    do: (EpochUtil.epoch_by_block_number(block_number) - 1) * EpochUtil.blocks_per_epoch()
+
+  def calculate_next_epoch_block_number_if_exists(block_number) when rem(block_number, 17_280) > 0,
+    do: only_if_exists(EpochUtil.round_to_closest_epoch_block_number(block_number, :up))
+
+  def calculate_next_epoch_block_number_if_exists(block_number) do
+    next_block_number = (EpochUtil.epoch_by_block_number(block_number) + 1) * EpochUtil.blocks_per_epoch()
+
+    next_block_number |> only_if_exists
+  end
+
+  defp only_if_exists(block_number) do
+    if Block.block_exists?(block_number) do
+      block_number
+    else
+      nil
+    end
+  end
 end

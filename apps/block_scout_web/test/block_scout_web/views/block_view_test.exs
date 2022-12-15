@@ -94,4 +94,58 @@ defmodule BlockScoutWeb.BlockViewTest do
       assert BlockView.combined_rewards_value(block) == "3.000042 CELO"
     end
   end
+
+  describe "calculate_previous_epoch_block_number/1" do
+    test "returns nil when no previous epoch block" do
+      assert BlockView.calculate_previous_epoch_block_number(0) == nil
+      assert BlockView.calculate_previous_epoch_block_number(17_279) == nil
+      assert BlockView.calculate_previous_epoch_block_number(17_280) == nil
+    end
+
+    test "returns block number when previous epoch block can be calculated" do
+      assert BlockView.calculate_previous_epoch_block_number(17_281) == 17_280
+      assert BlockView.calculate_previous_epoch_block_number(16_672_077) == 16_657_920
+    end
+
+    test "returns block number when block number is an epoch one" do
+      assert BlockView.calculate_previous_epoch_block_number(16_657_920) == 16_640_640
+    end
+  end
+
+  describe "calculate_next_epoch_block_number_if_exists/1" do
+    test "returns nil when next block does not exist" do
+      assert BlockView.calculate_next_epoch_block_number_if_exists(16_672_077) == nil
+    end
+
+    test "returns block number when next epoch block can be calculated and exists" do
+      insert(
+        :block,
+        number: 17_280
+      )
+
+      insert(
+        :block,
+        number: 34_560
+      )
+
+      insert(
+        :block,
+        number: 16_675_200
+      )
+
+      assert BlockView.calculate_next_epoch_block_number_if_exists(0) == 17_280
+      assert BlockView.calculate_next_epoch_block_number_if_exists(1) == 17_280
+      assert BlockView.calculate_next_epoch_block_number_if_exists(17_280) == 34_560
+      assert BlockView.calculate_next_epoch_block_number_if_exists(16_672_077) == 16_675_200
+    end
+
+    test "returns block number when block number is an epoch one" do
+      insert(
+        :block,
+        number: 16_675_200
+      )
+
+      assert BlockView.calculate_next_epoch_block_number_if_exists(16_657_920) == 16_675_200
+    end
+  end
 end

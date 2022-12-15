@@ -1,6 +1,8 @@
 <% burned_fee = if !is_nil(@block.base_fee_per_gas), do: Wei.mult(@block.base_fee_per_gas, BlockBurnedFeeCounter.fetch(@block.hash)), else: nil %>
 <% priority_fee = if !is_nil(@block.base_fee_per_gas), do: BlockPriorityFeeCounter.fetch(@block.hash), else: nil %>
 <% community_fund_address_string = community_fund_address() %>
+<% previous_epoch_block_number = calculate_previous_epoch_block_number(@block.number) %>
+<% next_epoch_block_number = calculate_next_epoch_block_number_if_exists(@block.number) %>
 
 <section>
   <div class="row">
@@ -11,8 +13,28 @@
           <dl class="pagination-container">
             <h1 class="card-title" data-test="detail_type">
               <%= gettext("%{block_type} Details", block_type: block_type(@block)) %>
+              <%= if not EpochUtil.is_epoch_block?(@block.number) do %>
+                <span class="bs-label epoch-number"><%= gettext("Epoch") %> #<%= EpochUtil.epoch_by_block_number(@block.number) %></span>
+              <% end %>
             </h1>
               <ul class="pagination">
+                <%= if previous_epoch_block_number do %>
+                <li class="page-item">
+                  <a class="page-link"
+                     href='<%= block_path(@conn, :show, previous_epoch_block_number) %>'
+                     data-placement="top"
+                     data-toggle="tooltip"
+                     title="<%= gettext "View previous epoch" %>
+                  ">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="6" height="10">
+                      <path fill-rule="evenodd" d="M2.358 5l3.357 3.358a.959.959 0 1 1-1.357 1.357L.502 5.859c-.076-.042-.153-.08-.217-.144A.949.949 0 0 1 .011 5a.949.949 0 0 1 .274-.715c.064-.064.142-.102.217-.145L4.358.285a.959.959 0 1 1 1.357 1.357L2.358 5z"/>
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="6" height="10">
+                      <path fill-rule="evenodd" d="M2.358 5l3.357 3.358a.959.959 0 1 1-1.357 1.357L.502 5.859c-.076-.042-.153-.08-.217-.144A.949.949 0 0 1 .011 5a.949.949 0 0 1 .274-.715c.064-.064.142-.102.217-.145L4.358.285a.959.959 0 1 1 1.357 1.357L2.358 5z"/>
+                    </svg>
+                  </a>
+                </li>
+                <% end %>
                 <li class="page-item">
                     <a
                         <%= if false do %>disabled<% end %>
@@ -43,6 +65,23 @@
                         </svg>
                     </a>
                 </li>
+                <%= if next_epoch_block_number do %>
+                <li class="page-item">
+                  <a class="page-link"
+                     href='<%= block_path(@conn, :show, next_epoch_block_number) %>'
+                     data-placement="top"
+                     data-toggle="tooltip"
+                     title="<%= gettext "View next epoch" %>
+                  ">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="6" height="10">
+                      <path fill-rule="evenodd" d="M5.715 5.715c-.064.064-.141.102-.217.144L1.642 9.715A.959.959 0 1 1 .285 8.358L3.642 5 .285 1.642A.959.959 0 1 1 1.642.285L5.498 4.14c.075.043.153.081.217.145A.949.949 0 0 1 5.989 5a.949.949 0 0 1-.274.715z"/>
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="6" height="10">
+                      <path fill-rule="evenodd" d="M5.715 5.715c-.064.064-.141.102-.217.144L1.642 9.715A.959.959 0 1 1 .285 8.358L3.642 5 .285 1.642A.959.959 0 1 1 1.642.285L5.498 4.14c.075.043.153.081.217.145A.949.949 0 0 1 5.989 5a.949.949 0 0 1-.274.715z"/>
+                    </svg>
+                  </a>
+                </li>
+                <% end %>
               </ul>
           </dl>
           <!-- Block Height -->

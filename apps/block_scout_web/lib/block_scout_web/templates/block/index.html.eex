@@ -3,7 +3,14 @@
     <div class="card-body" data-async-listing="<%= @current_path %>">
       <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost, click to load newer blocks") %>
 
-      <h1 class="card-title list-title-description"><%= gettext("%{block_type}s", block_type: @block_type) %></h1>
+      <h1 class="card-title list-title-description">
+        <%= case @block_type do %>
+          <% "Epoch" -> %>
+            <%= gettext("Epoch Blocks") %>
+          <% _ -> %>
+            <%= gettext("All Blocks") %>
+        <% end %>
+      </h1>
 
       <div class="list-top-pagination-container-wrapper">
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
