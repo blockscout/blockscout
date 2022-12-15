@@ -378,6 +378,13 @@ config :explorer, :token_id_migration,
   concurrency: token_id_migration_concurrency,
   batch_size: token_id_migration_batch_size
 
+min_missing_block_number_batch_size_default_str = "100000"
+
+{min_missing_block_number_batch_size, _} =
+  Integer.parse(System.get_env("MIN_MISSING_BLOCK_NUMBER_BATCH_SIZE", min_missing_block_number_batch_size_default_str))
+
+config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber, batch_size: min_missing_block_number_batch_size
+
 ###############
 ### Indexer ###
 ###############
