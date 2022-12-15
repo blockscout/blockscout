@@ -13,7 +13,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   that always raise errors interacting with the Smart Contract.
   """
 
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
   require Logger

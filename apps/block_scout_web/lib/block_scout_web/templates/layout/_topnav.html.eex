@@ -30,7 +30,7 @@
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarBlockchainDropdown">
               <div class="nav-submenu">
-                <span>
+                <span class="title-custom">
                   <%= gettext("Blocks") %>
                 </span>
               </div>
@@ -45,7 +45,7 @@
                     to: reorg_path(@conn, :reorg),
                     class: "border-bottom dropdown-item #{tab_status("reorgs", @conn.request_path)}")%>
               <div class="nav-submenu">
-                <span>
+                <span class="title-custom">
                   <%= gettext("Transactions") %>
                 </span>
               </div>
@@ -105,16 +105,6 @@
                     class: "dropdown-item #{tab_status("graphiql", @conn.request_path)}",
                     to: api_url() <> "/graphiql"
                   ) %>
-              <%= link(
-                    gettext("RPC"),
-                    class: "dropdown-item #{tab_status("api-docs", @conn.request_path)}",
-                    to: api_url() <> api_docs_path(@conn, :index)
-                  ) %>
-              <%= link(
-                    gettext("Eth RPC"),
-                    class: "dropdown-item #{tab_status("eth-rpc-api-docs", @conn.request_path)}",
-                    to: api_url() <> api_docs_path(@conn, :eth_rpc)
-                  ) %>
             </div>
           </li>
         <% end %>
@@ -132,7 +122,7 @@
             </a>
             <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown">
               <%= if apps_menu == true do %>
-                <%= for %{url: url, title: title} <- external_apps_list() do %>
+                <%= for %{url: url, title: title} <- apps_list() do %>
                     <a href="<%= url %>" class="dropdown-item" target="_blank"><%= title %>
                       <span class="external-link-icon">
                         <%= render BlockScoutWeb.IconsView, "_external_link.html" %>
