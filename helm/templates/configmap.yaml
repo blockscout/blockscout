@@ -1,0 +1,4 @@
+{{- range $chain := .Values.quaiBlockscout.chains }}
+{{ include "quai-blockscout.configmap" $ | replace "prime" $chain.name | replace "<HTTP>" $chain.ports.http | replace "<WS>" $chain.ports.ws }}
+---
+{{- end }}

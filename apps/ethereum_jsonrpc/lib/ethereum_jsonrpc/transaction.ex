@@ -14,8 +14,8 @@ defmodule EthereumJSONRPC.Transaction do
   alias EthereumJSONRPC
 
   @type elixir :: %{
-          String.t() => EthereumJSONRPC.address() | EthereumJSONRPC.hash() | String.t() | non_neg_integer() | nil
-        }
+                    String.t() => EthereumJSONRPC.address() | EthereumJSONRPC.hash() | String.t() | non_neg_integer() | nil
+                  }
 
   @typedoc """
    * `"blockHash"` - `t:EthereumJSONRPC.hash/0` of the block this transaction is in.  `nil` when transaction is
@@ -46,30 +46,30 @@ defmodule EthereumJSONRPC.Transaction do
    * `"type"` - `t:EthereumJSONRPC.quantity/0` denotes transaction type. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
   """
   @type t :: %{
-          String.t() =>
-            EthereumJSONRPC.address() | EthereumJSONRPC.hash() | EthereumJSONRPC.quantity() | String.t() | nil
-        }
+               String.t() =>
+                 EthereumJSONRPC.address() | EthereumJSONRPC.hash() | EthereumJSONRPC.quantity() | String.t() | nil
+             }
 
   @type params :: %{
-          block_hash: EthereumJSONRPC.hash(),
-          block_number: non_neg_integer(),
-          from_address_hash: EthereumJSONRPC.address(),
-          gas: non_neg_integer(),
-          gas_price: non_neg_integer(),
-          hash: EthereumJSONRPC.hash(),
-          index: non_neg_integer(),
-          input: String.t(),
-          nonce: non_neg_integer(),
-          r: non_neg_integer(),
-          s: non_neg_integer(),
-          to_address_hash: EthereumJSONRPC.address(),
-          v: non_neg_integer(),
-          value: non_neg_integer(),
-          transaction_index: non_neg_integer(),
-          max_priority_fee_per_gas: non_neg_integer(),
-          max_fee_per_gas: non_neg_integer(),
-          type: non_neg_integer()
-        }
+                    block_hash: EthereumJSONRPC.hash(),
+                    block_number: non_neg_integer(),
+                    from_address_hash: EthereumJSONRPC.address(),
+                    gas: non_neg_integer(),
+                    gas_price: non_neg_integer(),
+                    hash: EthereumJSONRPC.hash(),
+                    index: non_neg_integer(),
+                    input: String.t(),
+                    nonce: non_neg_integer(),
+                    r: non_neg_integer(),
+                    s: non_neg_integer(),
+                    to_address_hash: EthereumJSONRPC.address(),
+                    v: non_neg_integer(),
+                    value: non_neg_integer(),
+                    transaction_index: non_neg_integer(),
+                    max_priority_fee_per_gas: non_neg_integer(),
+                    max_fee_per_gas: non_neg_integer(),
+                    type: non_neg_integer()
+                  }
 
   @doc """
   Geth `elixir` can be converted to `params`.  Geth does not supply `"publicKey"` or `"standardV"`, unlike Nethermind.
@@ -160,7 +160,6 @@ defmodule EthereumJSONRPC.Transaction do
           "blockNumber" => block_number,
           "from" => from_address_hash,
           "gas" => gas,
-          "gasPrice" => gas_price,
           "hash" => hash,
           "input" => input,
           "nonce" => nonce,
@@ -180,7 +179,7 @@ defmodule EthereumJSONRPC.Transaction do
       block_number: block_number,
       from_address_hash: from_address_hash,
       gas: gas,
-      gas_price: gas_price,
+      gas_price: max_priority_fee_per_gas,
       hash: hash,
       index: index,
       input: input,
@@ -453,11 +452,11 @@ defmodule EthereumJSONRPC.Transaction do
 
   # specific to Nethermind client
   defp entry_to_elixir({"data", value}),
-    do: {"input", value}
+       do: {"input", value}
 
   defp entry_to_elixir({key, quantity})
        when key in ~w(gas gasPrice nonce r s standardV v value type maxPriorityFeePerGas maxFeePerGas) and
-              quantity != nil do
+            quantity != nil do
     {key, quantity_to_integer(quantity)}
   end
 

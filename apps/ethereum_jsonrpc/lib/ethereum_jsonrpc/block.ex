@@ -8,6 +8,20 @@ defmodule EthereumJSONRPC.Block do
 
   alias EthereumJSONRPC.{Transactions, Uncles}
 
+  def map_keys(object) do
+    # Use Enum.reduce to iterate over the key-value pairs in the object
+    Enum.reduce(object, %{}, fn {key, value}, acc ->
+      if is_list(value) and length(value) == 3 do
+        # Replace the value with the chain appropriate element in the list
+        Map.put(acc, key, Enum.at(value, String.to_integer(System.get_env("CHAIN_INDEX"))))
+      else
+        # If the value is not a list of size 3, add the original key-value pair to the updated object
+        Map.put(acc, key, value)
+      end
+    end)
+  end
+
+
   @type elixir :: %{String.t() => non_neg_integer | DateTime.t() | String.t() | nil}
   @type params :: %{
           difficulty: pos_integer(),
@@ -78,8 +92,7 @@ defmodule EthereumJSONRPC.Block do
 
   def from_response(%{id: id, result: block}, id_to_params) when is_map(id_to_params) do
     true = Map.has_key?(id_to_params, id)
-
-    {:ok, block}
+    {:ok, map_keys(block)}
   end
 
   def from_response(%{id: id, error: error}, id_to_params) when is_map(id_to_params) do

@@ -57,24 +57,16 @@ COPY . .
 RUN mix compile && npm install npm@latest
 
 # Add blockscout npm deps
-RUN cd apps/block_scout_web/assets/ && \
-    npm install && \
-    npm run deploy && \
-    cd /app/apps/explorer/ && \
-    npm install && \
-    apk update && \
-    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
+WORKDIR apps/block_scout_web/assets/ 
+RUN npm install 
+RUN npm run deploy 
+WORKDIR /app/apps/explorer/ 
+RUN npm install 
+RUN apk update 
+RUN apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
 
 RUN mix phx.digest
 
-RUN mkdir -p /opt/release \
-  && mix release blockscout \
-  && mv _build/${MIX_ENV}/rel/blockscout /opt/release
-
-##############################################################
-FROM bitwalker/alpine-elixir-phoenix:1.13
-
 WORKDIR /app
 
-COPY --from=builder /opt/release/blockscout .
-COPY --from=builder /app/apps/explorer/node_modules ./node_modules
+CMD mix phx.server

@@ -1,0 +1,87 @@
+{{- define "quai-blockscout.bs" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+  labels:
+    app: prime-{{ include "quai-blockscout.name" $ }}
+  name: prime-{{ include "quai-blockscout.name" $ }}
+  namespace: {{ .Values.quaiBlockscout.env }}
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prime-{{ include "quai-blockscout.name" $ }}
+  template:
+    metadata:
+      labels:
+        app: prime-{{ include "quai-blockscout.name" $ }}
+    spec:
+      containers:
+      - args:
+        - sleep 9; mix ecto.drop; mix ecto.create; mix ecto.migrate; mix phx.server
+        command:
+        - /bin/bash
+        - -c
+        env:
+        - name: NETWORK
+          value: QUAI
+        - name: ECTO_USE_SSL
+          value: "false"
+        - name: SUBNETWORK
+          value: PRIME
+        - name: LOGO
+          value: /images/quai_logo.png
+        - name: ETHEREUM_JSONRPC_VARIANT
+          value: geth
+        - name: ETHEREUM_JSONRPC_WS_URL
+          valueFrom:
+            configMapKeyRef:
+              key: ETHEREUM_JSONRPC_WS_URL
+              name: prime-{{ include "quai-blockscout.name" $ }}
+        - name: ETHEREUM_JSONRPC_HTTP_URL
+          valueFrom:
+            configMapKeyRef:
+              key: ETHEREUM_JSONRPC_HTTP_URL
+              name: prime-{{ include "quai-blockscout.name" $ }}
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              key: DATABASE_URL
+              name: prime-{{ include "quai-blockscout.name" $ }}
+        - name: QUAI_CHAIN
+          value: PRIME / REGION1 /ZONE23
+        - name: COIN
+          value: QUAI
+        - name: COIN_TYPE
+          value: QUAI
+        - name: CHAIN_INDEX
+          value: "<INDEX>"
+        image: {{ .Values.quaiBlockscout.image.name }}:{{ .Values.quaiBlockscout.image.version }}
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 1
+          httpGet:
+            path: /blocks
+            port: http
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: blockscout
+        ports:
+        - containerPort: 4000
+          name: http
+          protocol: TCP
+        resources: {}
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /blocks
+            port: http
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+{{- end }}

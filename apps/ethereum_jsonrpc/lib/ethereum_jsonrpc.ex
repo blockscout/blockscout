@@ -401,6 +401,13 @@ defmodule EthereumJSONRPC do
 
   def quantity_to_integer(integer) when is_integer(integer), do: integer
 
+  def quantity_to_integer(list) when is_list(list) do
+    case Integer.parse(Enum.at(list, String.to_integer(System.get_env("CHAIN_INDEX")))) do
+      {integer, ""} -> integer
+      _ -> :error
+    end
+  end
+
   def quantity_to_integer(string) when is_binary(string) do
     case Integer.parse(string) do
       {integer, ""} -> integer

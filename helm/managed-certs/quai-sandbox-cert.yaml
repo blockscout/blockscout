@@ -1,0 +1,21 @@
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  annotations:
+  name: quai-blockscout-sandbox
+  namespace: quai-sandbox
+spec:
+  domains:
+  - sandbox.prime.quaiscan.io
+  - sandbox.cyprus.quaiscan.io
+  - sandbox.paxos.quaiscan.io
+  - sandbox.hydra.quaiscan.io
+  - sandbox.cyprus1.quaiscan.io
+  - sandbox.cyprus2.quaiscan.io
+  - sandbox.cyprus3.quaiscan.io
+  - sandbox.paxos1.quaiscan.io
+  - sandbox.paxos2.quaiscan.io
+  - sandbox.paxos3.quaiscan.io
+  - sandbox.hydra1.quaiscan.io
+  - sandbox.hydra2.quaiscan.io
+  - sandbox.hydra3.quaiscan.io

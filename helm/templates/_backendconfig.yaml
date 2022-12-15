@@ -1,0 +1,11 @@
+{{- define "quai-blockscout.backendconfig" }}
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: prime-{{ include "quai-blockscout.name" $ }}
+  namespace: {{ .Values.quaiBlockscout.env }}
+spec:
+  connectionDraining:
+    drainingTimeoutSec: 1800
+  timeoutSec: 1800
+{{- end }}
