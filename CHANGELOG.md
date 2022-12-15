@@ -66,6 +66,9 @@
 ### Chore
 
 - [#5322](https://github.com/blockscout/blockscout/pull/5322) - DB denormalization: block consensus and timestamp in transaction table
+- [#6600](https://github.com/blockscout/blockscout/pull/6600) - Token stub icon
+- [#6588](https://github.com/blockscout/blockscout/pull/6588) - Add latest image build for frontend-main with specific build-args
+- [#6584](https://github.com/blockscout/blockscout/pull/6584) - Vacuum package-lock.json
 - [#6581](https://github.com/blockscout/blockscout/pull/6581) - Dark mode switcher localStorage to cookie in order to support new UI
 - [#6572](https://github.com/blockscout/blockscout/pull/6572) - pending_block_operations table: remove fetch_internal_transactions column
 - [#6387](https://github.com/blockscout/blockscout/pull/6387) - Fix errors in docker-build and e2e-tests workflows
