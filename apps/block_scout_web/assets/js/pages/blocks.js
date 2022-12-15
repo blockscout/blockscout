@@ -83,14 +83,14 @@ function withMissingBlocks (reducer) {
 }
 
 const $blockListPage = $('[data-page="block-list"]')
-const $uncleListPage = $('[data-page="uncle-list"]')
-const $reorgListPage = $('[data-page="reorg-list"]')
-if ($blockListPage.length || $uncleListPage.length || $reorgListPage.length) {
+const $epochListPage = $('[data-page="epoch-list"]')
+
+if ($blockListPage.length || $epochListPage.length) {
   window.onbeforeunload = () => {
     window.loading = true
   }
 
-  const blockType = $blockListPage.length ? 'block' : $uncleListPage.length ? 'uncle' : 'reorg'
+  const blockType = $epochListPage.length ? 'epoch' : 'block'
 
   const store = createAsyncLoadStore(
     $blockListPage.length ? blockReducer : baseReducer,

@@ -39,7 +39,8 @@
         background: $primary;
         color: #fff;
     }
-    &.reward {
+    &.reward,
+    &.epoch-number {
         background: $primary;
         color: #fff;
         width: fit-content;

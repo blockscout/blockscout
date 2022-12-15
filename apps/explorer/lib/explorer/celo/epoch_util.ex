@@ -6,12 +6,11 @@ defmodule Explorer.Celo.EpochUtil do
   alias Explorer.Chain
   alias Explorer.Chain.CeloElectionRewards
 
-  def epoch_by_block_number(bn) do
-    div(bn, 17_280)
-  end
+  def epoch_by_block_number(bn) when rem(bn, 17_280) == 0, do: div(bn, blocks_per_epoch())
+  def epoch_by_block_number(bn), do: div(bn, blocks_per_epoch()) + 1
 
   def is_epoch_block?(bn) do
-    rem(bn, 17_280) == 0
+    rem(bn, blocks_per_epoch()) == 0
   end
 
   def calculate_epoch_transaction_count_for_block(_, nil), do: 0
@@ -32,9 +31,14 @@ defmodule Explorer.Celo.EpochUtil do
   end
 
   def round_to_closest_epoch_block_number(nil = _block_number, _), do: nil
-  def round_to_closest_epoch_block_number(block_number, :up), do: ceil(block_number / 17_280) * 17_280
-  def round_to_closest_epoch_block_number(block_number, :down) when block_number < 17_280, do: 17_280
-  def round_to_closest_epoch_block_number(block_number, :down), do: floor(block_number / 17_280) * 17_280
+
+  def round_to_closest_epoch_block_number(block_number, :up),
+    do: ceil(block_number / blocks_per_epoch()) * blocks_per_epoch()
+
+  def round_to_closest_epoch_block_number(block_number, :down) when block_number < 17_280, do: blocks_per_epoch()
+
+  def round_to_closest_epoch_block_number(block_number, :down),
+    do: floor(block_number / blocks_per_epoch()) * blocks_per_epoch()
 
   def get_reward_currency_address_hash(reward_type) do
     with {:ok, address_string} <-
@@ -48,4 +52,6 @@ defmodule Explorer.Celo.EpochUtil do
       address_hash
     end
   end
+
+  def blocks_per_epoch, do: 17_280
 end

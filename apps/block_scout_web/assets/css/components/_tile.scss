@@ -243,6 +243,11 @@ $tile-body-a-color: #5959d8 !default;
     $tile-type-block-color,
     darken($tile-type-block-color, 20%)
   );
+  @include generate-tile-block(
+    ".tile-type-epoch",
+    $tile-type-block-color,
+    darken($tile-type-block-color, 20%)
+  );
   @include generate-tile-block(".tile-type-uncle", $tile-type-uncle-color);
   @include generate-tile-block(".tile-type-reorg", $tile-type-reorg-color);
   @include generate-tile-block(
