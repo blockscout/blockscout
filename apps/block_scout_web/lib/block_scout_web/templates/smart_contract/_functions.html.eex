@@ -115,7 +115,7 @@
       </div>
     <% else %>
       <%= cond do %>
-        <%= outputs?(function["outputs"]) -> %>
+        <% outputs?(function["outputs"]) -> %>
           <div class="align-self-center">
             <% length = Enum.count(function["outputs"]) %>
             <%= for {output, index} <- Enum.with_index(function["outputs"]) do %>

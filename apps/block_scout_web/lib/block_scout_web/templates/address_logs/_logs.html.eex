@@ -1,7 +1,7 @@
 <div data-test="address_log" class="tile tile-muted" data-identifier-log="<%= "#{to_string(@log.transaction_hash)}#{@log.index}" %>">
     <% decoded_result = decode(@log, @log.transaction) %>
     <%= case decoded_result do %>
-      <%= {:error, :contract_not_verified, _cadidates} -> %>
+      <% {:error, :contract_not_verified, _cadidates} -> %>
         <div class="alert alert-info">
         <%= gettext "To see accurate decoded input data, the contract must be verified." %>
         <%= case @log.transaction do %>

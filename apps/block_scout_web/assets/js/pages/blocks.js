@@ -74,6 +74,7 @@ function withMissingBlocks (reducer) {
     const blockNumbers = keys(blockNumbersToItems).map(x => parseInt(x, 10))
     const minBlock = min(blockNumbers)
     const maxBlock = max(blockNumbers)
+    if (maxBlock - minBlock > 100) return result
 
     return Object.assign({}, result, {
       items: rangeRight(minBlock, maxBlock + 1)
