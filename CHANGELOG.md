@@ -65,7 +65,8 @@
 
 ### Chore
 
-- [#6606](https://github.com/blockscout/blockscout/pull/6600) - Add ARG SESSION_COOKIE_DOMAIN to Dockerfile
+- [#6607](https://github.com/blockscout/blockscout/pull/6607) - Run e2e tests after PR review
+- [#6606](https://github.com/blockscout/blockscout/pull/6606) - Add ARG SESSION_COOKIE_DOMAIN to Dockerfile
 - [#6600](https://github.com/blockscout/blockscout/pull/6600) - Token stub icon
 - [#6588](https://github.com/blockscout/blockscout/pull/6588) - Add latest image build for frontend-main with specific build-args
 - [#6584](https://github.com/blockscout/blockscout/pull/6584) - Vacuum package-lock.json
