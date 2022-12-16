@@ -88,6 +88,42 @@ defmodule BlockScoutWeb.AddressController do
     )
   end
 
+  @quai_contexts [
+    %{shard: "prime", context: 0, byte: ["00", "09"]},
+    %{shard: "cyprus", context: 1, byte: ["0a", "13"]},
+    %{shard: "cyprus1", context: 2, byte: ["14", "1d"]},
+    %{shard: "cyprus2", context: 2, byte: ["1e", "27"]},
+    %{shard: "cyprus3", context: 2, byte: ["28", "31"]},
+    %{shard: "paxos", context: 1, byte: ["32", "3b"]},
+    %{shard: "paxos1", context: 2, byte: ["3c", "45"]},
+    %{shard: "paxos2", context: 2, byte: ["46", "4f"]},
+    %{shard: "paxos3", context: 2, byte: ["50", "59"]},
+    %{shard: "hydra", context: 1, byte: ["5a", "63"]},
+    %{shard: "hydra1", context: 2, byte: ["64", "6d"]},
+    %{shard: "hydra2", context: 2, byte: ["6e", "77"]},
+    %{shard: "hydra3", context: 2, byte: ["78", "81"]}
+  ]
+
+  def get_shard_from_address(address) do
+    get_in(
+      Enum.at(
+        Enum.filter(
+          @quai_contexts,
+          fn obj ->
+            num = address
+                  |> String.slice(2, 2)
+                  |> String.to_integer(16)
+            start = String.to_integer(Enum.at(obj.byte, 0), 16)
+            finish = String.to_integer(Enum.at(obj.byte, 1), 16)
+            num >= start and num <= finish
+          end
+        ),
+        0
+      ),
+      [:shard]
+    )
+  end
+
   def show(conn, %{"id" => address_hash_string, "type" => "JSON"} = params) do
     AddressTransactionController.index(conn, Map.put(params, "address_id", address_hash_string))
   end
@@ -96,17 +132,24 @@ defmodule BlockScoutWeb.AddressController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
-      render(
-        conn,
-        "_show_address_transactions.html",
-        address: address,
-        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        filter: params["filter"],
-        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-        current_path: Controller.current_full_path(conn),
-        tags: get_address_tags(address_hash, current_user(conn))
-      )
+      shard = get_shard_from_address(address_hash_string)
+      if shard != nil and shard != String.downcase(System.get_env("SUBNETWORK")) do
+        conn |> redirect(
+                  external: "#{conn.scheme}://#{String.replace(conn.host, String.downcase(System.get_env("SUBNETWORK")), shard)}/address/#{address_hash_string}"
+                ) |> halt()
+      else
+        render(
+          conn,
+          "_show_address_transactions.html",
+          address: address,
+          coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+          exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+          filter: params["filter"],
+          counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
+          current_path: Controller.current_full_path(conn),
+          tags: get_address_tags(address_hash, current_user(conn))
+        )
+      end
     else
       :error ->
         unprocessable_entity(conn)
@@ -123,7 +166,6 @@ defmodule BlockScoutWeb.AddressController do
           token: nil,
           fetched_coin_balance: %Wei{value: Decimal.new(0)}
         }
-
         case Chain.Hash.Address.validate(address_hash_string) do
           {:ok, _} ->
             render(

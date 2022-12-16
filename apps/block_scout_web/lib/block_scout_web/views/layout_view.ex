@@ -29,47 +29,47 @@ defmodule BlockScoutWeb.LayoutView do
       test_net?: true
     },
     %{
-      title: "Cyprus 1",
+      title: "Cyprus1",
       url: "https://dev.cyprus1.quaiscan.io",
       test_net?: true
     },
     %{
-      title: "Cyprus 2",
+      title: "Cyprus2",
       url: "https://dev.cyprus2.quaiscan.io",
       test_net?: true
     },
     %{
-      title: "Cyprus 3",
+      title: "Cyprus3",
       url: "https://dev.cyprus3.quaiscan.io",
       test_net?: true
     },
     %{
-      title: "Paxos 1",
+      title: "Paxos1",
       url: "https://dev.paxos1.quaiscan.io",
       test_net?: true
     },
     %{
-      title: "Paxos 2",
+      title: "Paxos2",
       url: "https://dev.paxos2.quaiscan.io",
       test_net?: true
     },
     %{
-      title: "Paxos 3",
+      title: "Paxos3",
       url: "https://dev.paxos3.quaiscan.io",
       test_net?: true
     },
     %{
-      title: "Hydra 1",
+      title: "Hydra1",
       url: "https://dev.hydra1.quaiscan.io",
       test_net?: true
     },
     %{
-      title: "Hydra 2",
+      title: "Hydra2",
       url: "https://dev.hydra2.quaiscan.io",
       test_net?: true
     },
     %{
-      title: "Hydra 3",
+      title: "Hydra3",
       url: "https://dev.hydra3.quaiscan.io",
       test_net?: true
     },
@@ -211,7 +211,6 @@ defmodule BlockScoutWeb.LayoutView do
     |> Enum.reject(fn %{title: title} ->
       title == subnetwork_title()
     end)
-    |> Enum.sort()
   end
 
   def main_nets(nets) do

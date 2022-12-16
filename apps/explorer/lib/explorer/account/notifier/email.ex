@@ -62,31 +62,39 @@ defmodule Explorer.Account.Notifier.Email do
     end
   end
 
-  defp email(%WatchlistNotification{
-         watchlist_address: %WatchlistAddress{
-           watchlist: %Watchlist{
-             identity: %Identity{
-               email: email
+  defp email(
+         %WatchlistNotification{
+           watchlist_address: %WatchlistAddress{
+             watchlist: %Watchlist{
+               identity: %Identity{
+                 email: email
+               }
              }
            }
          }
-       }),
+       ),
        do: email
 
-  defp username(%WatchlistNotification{
-         watchlist_address: %WatchlistAddress{
-           watchlist: %Watchlist{
-             identity: %Identity{
-               name: name
+  defp username(
+         %WatchlistNotification{
+           watchlist_address: %WatchlistAddress{
+             watchlist: %Watchlist{
+               identity: %Identity{
+                 name: name
+               }
              }
            }
          }
-       }),
+       ),
        do: name
 
-  defp address_hash_string(%WatchlistNotification{
-         watchlist_address: %WatchlistAddress{address_hash: address_hash}
-       }),
+  defp address_hash_string(
+         %WatchlistNotification{
+           watchlist_address: %WatchlistAddress{
+             address_hash: address_hash
+           }
+         }
+       ),
        do: hash_string(address_hash)
 
   defp hash_string(hash) do
@@ -114,7 +122,12 @@ defmodule Explorer.Account.Notifier.Email do
   end
 
   defp preload(notification) do
-    Repo.account_repo().preload(notification, watchlist_address: [watchlist: :identity])
+    Repo.account_repo().preload(
+      notification,
+      watchlist_address: [
+        watchlist: :identity
+      ]
+    )
   end
 
   defp address_url(address_hash) do
