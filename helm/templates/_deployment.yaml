@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - args:
-        - sleep 9; mix ecto.drop; mix ecto.create; mix ecto.migrate; mix phx.server
+        - sleep 9; mix ecto.create; mix ecto.migrate; mix phx.server
         command:
         - /bin/bash
         - -c
@@ -30,7 +30,7 @@ spec:
         - name: ECTO_USE_SSL
           value: "false"
         - name: SUBNETWORK
-          value: PRIME
+          value: Prime
         - name: LOGO
           value: /images/quai_logo.png
         - name: ETHEREUM_JSONRPC_VARIANT
@@ -54,7 +54,7 @@ spec:
           value: PRIME / REGION1 /ZONE23
         - name: COIN
           value: QUAI
-        - name: COIN_TYPE
+        - name: COIN_NAME
           value: QUAI
         - name: CHAIN_INDEX
           value: "<INDEX>"
