@@ -90,4 +90,4 @@ RUN if [ "$COIN" != "" ]; then \
 
 # Invalidate cache via modifying build args on compilation
 ARG FORCE_MIX_COMPILE_CACHE_MISS
-RUN mix compile --no-validate-compile-env && mix phx.digest
+RUN mix compile && mix phx.digest
