@@ -1253,7 +1253,7 @@ defmodule Explorer.Chain do
 
   @doc """
   Checks to see if the chain is down indexing based on the transaction from the
-  oldest block and the `fetch_internal_transactions` pending operation
+  oldest block and the pending operation
   """
   @spec finished_internal_transactions_indexing?() :: boolean()
   def finished_internal_transactions_indexing? do
@@ -1279,7 +1279,6 @@ defmodule Explorer.Chain do
             from(
               b in Block,
               join: pending_ops in assoc(b, :pending_operations),
-              where: pending_ops.fetch_internal_transactions,
               where: b.consensus and b.number == ^min_block_number
             )
 
@@ -2732,11 +2731,9 @@ defmodule Explorer.Chain do
   Only blocks with consensus are returned.
 
       iex> non_consensus = insert(:block, consensus: false)
-      iex> insert(:pending_block_operation, block: non_consensus, fetch_internal_transactions: true)
+      iex> insert(:pending_block_operation, block: non_consensus)
       iex> unfetched = insert(:block)
-      iex> insert(:pending_block_operation, block: unfetched, fetch_internal_transactions: true)
-      iex> fetched = insert(:block)
-      iex> insert(:pending_block_operation, block: fetched, fetch_internal_transactions: false)
+      iex> insert(:pending_block_operation, block: unfetched)
       iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
       ...>   MapSet.new(),
       ...>   fn number, acc ->
@@ -2747,8 +2744,6 @@ defmodule Explorer.Chain do
       false
       iex> unfetched.number in number_set
       true
-      iex> fetched.hash in number_set
-      false
 
   """
   @spec stream_blocks_with_unfetched_internal_transactions(
@@ -2761,7 +2756,6 @@ defmodule Explorer.Chain do
       from(
         b in Block,
         join: pending_ops in assoc(b, :pending_operations),
-        where: pending_ops.fetch_internal_transactions,
         where: b.consensus,
         select: b.number
       )
@@ -3060,6 +3054,19 @@ defmodule Explorer.Chain do
     else
       0
     end
+  end
+
+  def remove_blocks_consensus(block_numbers) do
+    numbers = List.wrap(block_numbers)
+
+    query =
+      from(
+        block in Block,
+        where: block.number in ^numbers,
+        where: block.consensus
+      )
+
+    Repo.update_all(query, set: [consensus: false])
   end
 
   @doc """
