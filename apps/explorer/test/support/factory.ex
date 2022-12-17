@@ -554,11 +554,7 @@ defmodule Explorer.Factory do
   end
 
   def pending_block_operation_factory do
-    %PendingBlockOperation{
-      # caller MUST supply block
-      # all operations will default to false
-      fetch_internal_transactions: false
-    }
+    %PendingBlockOperation{}
   end
 
   def internal_transaction_factory() do
