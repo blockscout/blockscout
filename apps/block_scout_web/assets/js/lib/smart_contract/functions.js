@@ -3,6 +3,7 @@ import { connectSelector, disconnectSelector, getCurrentAccountPromise, getContr
 import { queryMethod, callMethod } from './interact'
 import { walletEnabled, connectToWallet, disconnectWallet, web3ModalInit } from './connect.js'
 import '../../pages/address'
+import BigNumber from 'bignumber.js'
 
 const loadFunctions = (element, isCustomABI, from) => {
   const $element = $(element)
@@ -41,7 +42,7 @@ const loadFunctions = (element, isCustomABI, from) => {
         const $input = $(event.currentTarget).parent().parent().parent().find('[name=function_input]')
         // @ts-ignore
         const currentInputVal = parseInt($input.val(), 10) || 1
-        const newInputVal = (currentInputVal * Math.pow(10, power)).toString()
+        const newInputVal = BigNumber(currentInputVal).multipliedBy(10 ** power).toFixed()
         $input.val(newInputVal.toString())
       })
 

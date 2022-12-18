@@ -260,6 +260,7 @@
 - [#6550](https://github.com/blockscout/blockscout/pull/6550) - Query token transfers before updating
 - [#6599](https://github.com/blockscout/blockscout/pull/6599) - unhandled division by zero
 - [#6590](https://github.com/blockscout/blockscout/pull/6590) - ignore some receipt fields for metis
+- [#6616](https://github.com/blockscout/blockscout/pull/6616) - Fix return BigInt instead of E notation for add zeros function
 
 ### Chore
 
