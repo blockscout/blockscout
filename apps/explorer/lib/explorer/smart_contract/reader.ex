@@ -217,7 +217,7 @@ defmodule Explorer.SmartContract.Reader do
       ]
   """
   @spec read_only_functions(Hash.t()) :: [%{}]
-  def read_only_functions(contract_address_hash) do
+  def read_only_functions(contract_address_hash, from \\ nil) do
     abi =
       contract_address_hash
       |> Chain.address_hash_to_smart_contract()
@@ -228,11 +228,11 @@ defmodule Explorer.SmartContract.Reader do
         []
 
       _ ->
-        read_only_functions_from_abi(abi, contract_address_hash)
+        read_only_functions_from_abi_with_sender(abi, contract_address_hash, from)
     end
   end
 
-  def read_only_functions_proxy(contract_address_hash, implementation_address_hash_string) do
+  def read_only_functions_proxy(contract_address_hash, implementation_address_hash_string, from \\ nil) do
     implementation_abi = Chain.get_implementation_abi(implementation_address_hash_string)
 
     case implementation_abi do
@@ -240,7 +240,7 @@ defmodule Explorer.SmartContract.Reader do
         []
 
       _ ->
-        read_only_functions_from_abi(implementation_abi, contract_address_hash)
+        read_only_functions_from_abi_with_sender(implementation_abi, contract_address_hash, from)
     end
   end
 
@@ -279,15 +279,15 @@ defmodule Explorer.SmartContract.Reader do
     end
   end
 
-  def read_only_functions_from_abi([_ | _] = abi, contract_address_hash) do
+  def read_only_functions_from_abi_with_sender([_ | _] = abi, contract_address_hash, from) do
     abi_with_method_id = get_abi_with_method_id(abi)
 
     abi_with_method_id
     |> Enum.filter(&Helper.queriable_method?(&1))
-    |> Enum.map(&fetch_current_value_from_blockchain(&1, abi_with_method_id, contract_address_hash, false))
+    |> Enum.map(&fetch_current_value_from_blockchain(&1, abi_with_method_id, contract_address_hash, false, from))
   end
 
-  def read_only_functions_from_abi(_, _), do: []
+  def read_only_functions_from_abi_with_sender(_, _, _), do: []
 
   def read_functions_required_wallet_from_abi([_ | _] = abi) do
     abi_with_method_id = get_abi_with_method_id(abi)
@@ -346,7 +346,7 @@ defmodule Explorer.SmartContract.Reader do
     "tuple[#{tuple_types}]"
   end
 
-  def fetch_current_value_from_blockchain(function, abi, contract_address_hash, leave_error_as_map) do
+  def fetch_current_value_from_blockchain(function, abi, contract_address_hash, leave_error_as_map, from \\ nil) do
     values =
       case function do
         %{"inputs" => []} ->
@@ -355,7 +355,7 @@ defmodule Explorer.SmartContract.Reader do
           outputs = function["outputs"]
 
           contract_address_hash
-          |> query_verified_contract(%{method_id => normalize_args(args)}, leave_error_as_map, abi)
+          |> query_verified_contract(%{method_id => normalize_args(args)}, from, leave_error_as_map, abi)
           |> link_outputs_and_values(outputs, method_id)
 
         _ ->

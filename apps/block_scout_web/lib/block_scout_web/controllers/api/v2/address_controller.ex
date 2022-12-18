@@ -12,6 +12,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   import BlockScoutWeb.PagingHelper,
     only: [delete_parameters_from_next_page_params: 1, token_transfers_types_options: 1]
 
+  import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
+
   alias BlockScoutWeb.AccessHelpers
   alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
   alias BlockScoutWeb.AddressView
@@ -295,8 +297,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          custom_abi <- AddressView.fetch_custom_abi(conn, address_hash_string),
          {:not_found, true} <- {:not_found, AddressView.check_custom_abi_for_having_read_functions(custom_abi)} do
-          read_only_functions_from_abi = Reader.read_only_functions_from_abi(custom_abi.abi, address_hash)
-          read_functions_required_wallet_from_abi =Reader.read_functions_required_wallet_from_abi(custom_abi.abi)
+      read_only_functions_from_abi =
+        Reader.read_only_functions_from_abi_with_sender(custom_abi.abi, address_hash, params["from"])
+
+      read_functions_required_wallet_from_abi = Reader.read_functions_required_wallet_from_abi(custom_abi.abi)
 
       conn
       |> put_status(200)
@@ -307,9 +311,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   def methods_read(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+      read_only_functions_from_abi = Reader.read_only_functions(address_hash, params["from"]) |> debug("r only")
+
+      read_functions_required_wallet_from_abi =
+        Reader.read_functions_required_wallet(address_hash) |> debug("r req wall")
+
       conn
       |> put_status(200)
-      |> json(Reader.read_only_functions(address_hash))
+      |> json(read_only_functions_from_abi ++ read_functions_required_wallet_from_abi)
     end
   end
 
@@ -327,8 +336,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   def methods_write(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
-
-
       conn
       |> put_status(200)
       |> json(Writer.write_functions(address_hash))
@@ -348,7 +355,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       conn
       |> put_status(200)
-      |> json(Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string))
+      |> json(Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string, params["from"]))
     end
   end
 
@@ -369,7 +376,39 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
-  def query_read_method(conn, %{"address_hash" => address_hash_string} = params) do
+  def query_read_method(
+        conn,
+        %{"address_hash" => address_hash_string, "is_custom_abi" => custom_abi, "contract_type" => type, "args" => args} =
+          params
+      ) do
+    custom_abi =
+      if parse_boolean(params["is_custom_abi"]), do: AddressView.fetch_custom_abi(conn, params["id"]), else: nil
 
+    contract_type = if type == "proxy", do: :proxy, else: :regular
+
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
+         {:not_found, {:ok, _address}} <- {:not_found, Chain.find_contract_address(address_hash, [])} do
+      %{output: outputs, names: _names} =
+        if custom_abi do
+          Reader.query_function_with_names_custom_abi(
+            address_hash,
+            %{method_id: params["method_id"], args: args},
+            params["from"],
+            custom_abi.abi
+          )
+        else
+          Reader.query_function_with_names(
+            address_hash,
+            %{method_id: params["method_id"], args: args},
+            contract_type,
+            params["from"]
+          )
+        end
+
+      conn
+      |> put_status(200)
+      |> json(outputs)
+    end
   end
 end
