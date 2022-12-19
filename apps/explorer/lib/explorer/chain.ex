@@ -30,6 +30,7 @@ defmodule Explorer.Chain do
   require Logger
 
   alias ABI.TypeDecoder
+  alias Ecto.Association.NotLoaded
   alias Ecto.{Changeset, Multi}
 
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
@@ -1894,7 +1895,11 @@ defmodule Explorer.Chain do
       case address_result do
         %{smart_contract: smart_contract} ->
           if smart_contract do
-            check_bytecode_matching(address_result)
+            if match?(%NotLoaded{}, smart_contract) do
+              address_result
+            else
+              check_bytecode_matching(address_result)
+            end
           else
             address_verified_twin_contract =
               Chain.get_minimal_proxy_template(hash) ||
