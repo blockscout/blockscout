@@ -9,6 +9,7 @@
 - [#6111](https://github.com/blockscout/blockscout/pull/6111) - Add Prometheus metrics to indexer
 - [#6168](https://github.com/blockscout/blockscout/pull/6168) - Token instance fetcher checks instance owner and updates current token balance
 - [#6209](https://github.com/blockscout/blockscout/pull/6209) - Add metrics for block import stages, runners, steps
+- [#6257](https://github.com/blockscout/blockscout/pull/6257) - DISABLE_TOKEN_INSTANCE_FETCHER env variable
 
 ### Fixes
 

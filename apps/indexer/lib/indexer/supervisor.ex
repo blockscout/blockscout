@@ -107,74 +107,76 @@ defmodule Indexer.Supervisor do
 
     realtime_subscribe_named_arguments = realtime_overrides[:subscribe_named_arguments] || subscribe_named_arguments
 
-    realtime_fetcher =
-      if Application.get_env(:indexer, Realtime.Supervisor)[:enabled] do
-        [
-          {Realtime.Supervisor,
-           [
-             %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
-             [name: Realtime.Supervisor]
-           ]}
-        ]
-      else
-        []
-      end
+    basic_fetchers =
+      [
+        # Root fetchers
+        {PendingTransaction.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
+        configure(Realtime.Supervisor, [
+          %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
+          [name: Realtime.Supervisor]
+        ]),
+        {Catchup.Supervisor,
+         [
+           %{block_fetcher: block_fetcher, block_interval: block_interval, memory_monitor: memory_monitor},
+           [name: Catchup.Supervisor]
+         ]},
 
-    basic_fetchers = [
-      # Root fetchers
-      {Catchup.Supervisor,
-       [
-         %{block_fetcher: block_fetcher, block_interval: block_interval, memory_monitor: memory_monitor},
-         [name: Catchup.Supervisor]
-       ]},
+        # Async catchup fetchers
+        {UncleBlock.Supervisor, [[block_fetcher: block_fetcher, memory_monitor: memory_monitor]]},
+        {BlockReward.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {InternalTransaction.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {CoinBalance.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {TokenInstance.Supervisor,
+         [
+           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+         ]},
+        {ContractCode.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {TokenBalance.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {TokenUpdater.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
 
-      # Async catchup fetchers
-      {UncleBlock.Supervisor, [[block_fetcher: block_fetcher, memory_monitor: memory_monitor]]},
-      {BlockReward.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {InternalTransaction.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {CoinBalance.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {TokenInstance.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {ContractCode.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {TokenBalance.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {TokenUpdater.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
+        # Out-of-band fetchers
+        {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
+        {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
+        {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
+        {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
 
-      # Out-of-band fetchers
-      {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
-      {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
-      {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
-      {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
+        # Temporary workers
+        {UncatalogedTokenTransfers.Supervisor, [[]]},
+        {UnclesWithoutIndex.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {BlocksTransactionsMismatch.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {PendingOpsCleaner, [[], []]},
 
-      # Temporary workers
-      # This worker doesn't work for epoch transactions as they don't have a transaction hash
-      # which results in a growing number of "problematic" blocks. Disabled on purpose.
-      # {UncatalogedTokenTransfers.Supervisor, [[]]},
-      {UnclesWithoutIndex.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {BlocksTransactionsMismatch.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {PendingOpsCleaner, [[], []]},
-
-      # Celo
-      {CeloAccount.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {CeloValidator.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {CeloValidatorGroup.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {CeloValidatorHistory.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {CeloUnlocked.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {CeloVoters.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {EventProcessor.Supervisor, [[], []]},
-      {EventBackfill.Supervisor, [[], []]},
-      {TrackedEventCache, [[], []]},
-      {CeloMaterializedViewRefresh, [[], []]},
-      {InternalTransactionCache, [[], []]},
-      {CeloEpochData.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
-    ]
+        # Celo
+        {CeloAccount.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {CeloValidator.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {CeloValidatorGroup.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {CeloValidatorHistory.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {CeloUnlocked.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {CeloVoters.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {EventProcessor.Supervisor, [[], []]},
+        {EventBackfill.Supervisor, [[], []]},
+        {TrackedEventCache, [[], []]},
+        {CeloMaterializedViewRefresh, [[], []]},
+        {InternalTransactionCache, [[], []]},
+        {CeloEpochData.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
+      ]
+      |> List.flatten()
 
     metrics_enabled = Application.get_env(:indexer, :metrics_enabled)
 
@@ -190,16 +192,17 @@ defmodule Indexer.Supervisor do
         basic_fetchers
       end
 
-    all_fetchers =
-      [
-        {PendingTransaction.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]}
-      ] ++
-        realtime_fetcher ++
-        fetchers_with_metrics
-
     Supervisor.init(
-      all_fetchers,
+      fetchers_with_metrics,
       strategy: :one_for_one
     )
+  end
+
+  defp configure(process, opts) do
+    if Application.get_env(:indexer, process)[:enabled] do
+      [{process, opts}]
+    else
+      []
+    end
   end
 end
