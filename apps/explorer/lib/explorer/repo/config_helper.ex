@@ -71,4 +71,24 @@ defmodule Explorer.Repo.ConfigHelper do
       end
     end)
   end
+
+  def network_path do
+    path = System.get_env("NETWORK_PATH", "/")
+
+    path_from_env(path)
+  end
+
+  def api_path do
+    path = System.get_env("API_PATH", "/")
+
+    path_from_env(path)
+  end
+
+  defp path_from_env(path_env_var) do
+    if String.ends_with?(path_env_var, "/") do
+      path_env_var
+    else
+      path_env_var <> "/"
+    end
+  end
 end
