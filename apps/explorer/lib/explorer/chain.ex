@@ -1520,7 +1520,7 @@ defmodule Explorer.Chain do
 
       _ ->
         case Integer.parse(term) do
-          {block_number, _} ->
+          {block_number, ""} ->
             from(block in Block,
               where: block.number == ^block_number,
               select: %{
@@ -1542,7 +1542,9 @@ defmodule Explorer.Chain do
     end
   end
 
-  def joint_search(paging_options, offset, string) do
+  def joint_search(paging_options, offset, raw_string) do
+    string = String.trim(raw_string)
+
     case prepare_search_term(string) do
       {:some, term} ->
         tokens_query = search_token_query(term)
