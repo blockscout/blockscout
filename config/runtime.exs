@@ -35,7 +35,8 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer, batch_size: indexer_empty
 config :block_scout_web, :footer,
   chat_link: System.get_env("FOOTER_CHAT_LINK", "http://discord.gg/celo"),
   forum_link: System.get_env("FOOTER_FORUM_LINK", "https://forum.celo.org/"),
-  github_link: System.get_env("FOOTER_GITHUB_LINK", "https://github.com/celo-org/blockscout")
+  github_link: System.get_env("FOOTER_GITHUB_LINK", "https://github.com/celo-org/blockscout"),
+  enable_forum_link: System.get_env("FOOTER_ENABLE_FORUM_LINK", "false") == "true"
 
 ######################
 ### BlockScout Web ###

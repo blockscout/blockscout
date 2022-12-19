@@ -55,8 +55,10 @@ tmpbriefly*
 node_modules
 .elixir_ls
 /docker-compose/postgres-data
+/docker-compose/redis-data
 /docker-compose/tmp
 **/*/junit.xml
+/docker-compose/logs
 
 .idea/
 *.iml

@@ -1074,7 +1074,7 @@ msgstr ""
 msgid "For any existing contracts in the database, insert all ABI entries into the contract_methods table. Use this in case you have verified smart contracts before early March 2019 and you want other contracts with the same functions to show those ABI's as candidate matches."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:39
+#: lib/block_scout_web/templates/layout/_footer.html.eex:40
 #, elixir-autogen, elixir-format
 msgid "Forum"
 msgstr ""
@@ -1373,7 +1373,7 @@ msgstr ""
 msgid "Logs"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:47
+#: lib/block_scout_web/templates/layout/_footer.html.eex:49
 #, elixir-autogen, elixir-format
 msgid "Main Networks"
 msgstr ""
@@ -1586,7 +1586,7 @@ msgstr ""
 msgid "Optimization runs"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:71
+#: lib/block_scout_web/templates/layout/_footer.html.eex:73
 #, elixir-autogen, elixir-format
 msgid "Other Explorers"
 msgstr ""
@@ -1985,7 +1985,7 @@ msgstr ""
 msgid "TX Fee"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:60
+#: lib/block_scout_web/templates/layout/_footer.html.eex:62
 #, elixir-autogen, elixir-format
 msgid "Test Networks"
 msgstr ""
@@ -2670,7 +2670,7 @@ msgstr ""
 msgid "Verify the contract "
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:86
+#: lib/block_scout_web/templates/layout/_footer.html.eex:88
 #, elixir-autogen, elixir-format
 msgid "Version"
 msgstr ""

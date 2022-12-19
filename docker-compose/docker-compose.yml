@@ -53,6 +53,8 @@ services:
       -  ./envs/common-blockscout.env
     ports:
       - 4000:4000
+    volumes:
+      - ./logs/:/app/logs/
 
   smart-contract-verifier:
     image: ghcr.io/blockscout/smart-contract-verifier:${SMART_CONTRACT_VERIFIER_DOCKER_TAG:-latest}

@@ -54,3 +54,5 @@ services:
         ENABLE_RUST_VERIFICATION_SERVICE: 'false'
     ports:
       - 4000:4000
+    volumes:
+      - ./logs/:/app/logs/
