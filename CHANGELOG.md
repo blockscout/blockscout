@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#6316](https://github.com/blockscout/blockscout/pull/6316) - Copy public tags functionality to master
 - [#6196](https://github.com/blockscout/blockscout/pull/6196) - INDEXER_CATCHUP_BLOCKS_BATCH_SIZE and INDEXER_CATCHUP_BLOCKS_CONCURRENCY env varaibles
 - [#6187](https://github.com/blockscout/blockscout/pull/6187) - Filter by created time of verified contracts in listcontracts API endpoint
 - [#6092](https://github.com/blockscout/blockscout/pull/6092) - Blockscout Account functionality
@@ -13,6 +14,7 @@
 
 ### Fixes
 
+- [#6309](https://github.com/blockscout/blockscout/pull/6309) - Fix read contract bug and change address tx count
 - [#6303](https://github.com/blockscout/blockscout/pull/6303) - Fix some UI bugs
 - [#6243](https://github.com/blockscout/blockscout/pull/6243) - Fix freezes on `/blocks` page
 - [#6162](https://github.com/blockscout/blockscout/pull/6162) - Extend token symbol type varchar(255) -> text
