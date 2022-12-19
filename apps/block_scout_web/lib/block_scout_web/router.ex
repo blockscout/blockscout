@@ -6,11 +6,11 @@ defmodule BlockScoutWeb.Router do
   alias BlockScoutWeb.Plug.GraphQL
   alias BlockScoutWeb.{ApiRouter, WebRouter}
 
-  if Application.get_env(:block_scout_web, ApiRouter)[:wobserver_enabled] do
+  if Application.compile_env(:block_scout_web, ApiRouter)[:wobserver_enabled] do
     forward("/wobserver", Wobserver.Web.Router)
   end
 
-  if Application.get_env(:block_scout_web, :admin_panel_enabled) do
+  if Application.compile_env(:block_scout_web, :admin_panel_enabled) do
     forward("/admin", BlockScoutWeb.AdminRouter)
   end
 
@@ -28,9 +28,9 @@ defmodule BlockScoutWeb.Router do
 
   forward("/api", ApiRouter)
 
-  if Application.get_env(:block_scout_web, ApiRouter)[:reading_enabled] do
+  if Application.compile_env(:block_scout_web, ApiRouter)[:reading_enabled] do
     # Needs to be 200 to support the schema introspection for graphiql
-    max_complexity = Application.get_env(:block_scout_web, ApiRouter)[:max_complexity]
+    max_complexity = Application.compile_env(:block_scout_web, ApiRouter)[:max_complexity]
     Logger.info("GRAPHQL Max Complexity: #{max_complexity}")
 
     forward("/graphql", Absinthe.Plug,
@@ -62,25 +62,13 @@ defmodule BlockScoutWeb.Router do
     get("/eth-rpc-api-docs", APIDocsController, :eth_rpc)
   end
 
-  url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
-  api_path = url_params[:api_path]
-  path = url_params[:path]
+  scope "/verify_smart_contract" do
+    pipe_through(:api)
 
-  if path != api_path do
-    scope to_string(api_path) <> "/verify_smart_contract" do
-      pipe_through(:api)
-
-      post("/contract-verifications", BlockScoutWeb.AddressContractVerificationController, :create)
-    end
-  else
-    scope "/verify_smart_contract" do
-      pipe_through(:api)
-
-      post("/contract-verifications", BlockScoutWeb.AddressContractVerificationController, :create)
-    end
+    post("/contract-verifications", BlockScoutWeb.AddressContractVerificationController, :create)
   end
 
-  if Application.get_env(:block_scout_web, WebRouter)[:enabled] do
+  if Application.compile_env(:block_scout_web, WebRouter)[:enabled] do
     forward("/", BlockScoutWeb.WebRouter)
   else
     scope "/", BlockScoutWeb do

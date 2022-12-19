@@ -72,7 +72,7 @@ defmodule Indexer.MixProject do
       {:logger_json, "~> 3.2"},
       {:jason, "~> 1.3"},
       # Metrics
-      {:prometheus_ex, "~>3.0"},
+      {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
       {:prometheus_plugs, "~> 1.1"},
       {:prometheus_process_collector, "~> 1.1"},
       {:telemetry, "~> 0.4.0"},

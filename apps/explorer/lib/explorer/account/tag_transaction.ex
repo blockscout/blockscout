@@ -17,7 +17,7 @@ defmodule Explorer.Account.TagTransaction do
   schema "account_tag_transactions" do
     field(:tx_hash_hash, Cloak.Ecto.SHA256)
     field(:name, Explorer.Encrypted.Binary)
-    field(:tx_hash, Explorer.Encrypted.TransactionHash, null: false)
+    field(:tx_hash, Explorer.Encrypted.TransactionHash)
 
     belongs_to(:identity, Identity)
 

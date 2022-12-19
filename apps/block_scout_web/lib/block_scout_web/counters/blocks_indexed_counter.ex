@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.Counters.BlocksIndexedCounter do
   # It is undesirable to automatically start the counter in all environments.
   # Consider the test environment: if it initiates but does not finish before a
   # test ends, that test will fail.
-  config = Application.get_env(:block_scout_web, __MODULE__)
+  config = Application.compile_env(:block_scout_web, __MODULE__)
   @enabled Keyword.get(config, :enabled)
 
   @doc """
@@ -36,15 +36,11 @@ defmodule BlockScoutWeb.Counters.BlocksIndexedCounter do
   end
 
   def calculate_blocks_indexed do
-    ratio = Chain.indexed_ratio()
+    indexed_ratio = Chain.indexed_ratio()
 
-    finished? =
-      case Decimal.compare(ratio, 1) do
-        :lt -> false
-        _ -> Chain.finished_internal_transactions_indexing?()
-      end
+    finished? = Chain.finished_indexing?(indexed_ratio)
 
-    Notifier.broadcast_blocks_indexed_ratio(ratio, finished?)
+    Notifier.broadcast_blocks_indexed_ratio(indexed_ratio, finished?)
   end
 
   defp schedule_next_consolidation do
