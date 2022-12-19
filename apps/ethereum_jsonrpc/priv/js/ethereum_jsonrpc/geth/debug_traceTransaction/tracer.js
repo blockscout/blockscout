@@ -247,7 +247,7 @@
     result(ctx, db) {
         const result = this.ctxToResult(ctx, db);
         const filtered = this.filterNotUndefined(result);
-        const callSequence = this.sequence(filtered, [], filtered.valueBigInt, []).callSequence;
+        const callSequence = this.sequence(filtered, [], filtered && filtered.valueBigInt, []).callSequence;
         return this.encodeCallSequence(callSequence);
     },
 
@@ -379,7 +379,7 @@
             }
         }
 
-        if (call.calls !== undefined) {
+        if (call && call.calls !== undefined) {
             for (var i = 0; i < call.calls.length; i++) {
                 call.calls[i] = this.filterNotUndefined(call.calls[i]);
             }
@@ -390,32 +390,38 @@
 
     // sequence converts the finalized calls from a call tree to a call sequence
     sequence(call, callSequence, availableValueBigInt, traceAddress) {
-        const subcalls = call.calls;
-        delete call.calls;
+        if (call) {
+            const subcalls = call.calls;
+            delete call.calls;
 
-        call.traceAddress = traceAddress;
+            call.traceAddress = traceAddress;
 
-        if (call.type === 'call' && call.callType === 'delegatecall') {
-            call.valueBigInt = availableValueBigInt;
-        }
+            if (call.type === 'call' && call.callType === 'delegatecall') {
+                call.valueBigInt = availableValueBigInt;
+            }
 
-        var newCallSequence = callSequence.concat([call]);
+            var newCallSequence = callSequence.concat([call]);
 
-        if (subcalls !== undefined) {
-            for (var i = 0; i < subcalls.length; i++) {
-                const nestedSequenced = this.sequence(
-                    subcalls[i],
-                    newCallSequence,
-                    call.valueBigInt,
-                    traceAddress.concat([i])
-                );
-                newCallSequence = nestedSequenced.callSequence;
+            if (subcalls !== undefined) {
+                for (var i = 0; i < subcalls.length; i++) {
+                    const nestedSequenced = this.sequence(
+                        subcalls[i],
+                        newCallSequence,
+                        call.valueBigInt,
+                        traceAddress.concat([i])
+                    );
+                    newCallSequence = nestedSequenced.callSequence;
+                }
+            }
+
+            return {
+                callSequence: newCallSequence
+            };
+        } else {
+            return {
+                callSequence: {}
             }
         }
-
-        return {
-            callSequence: newCallSequence
-        };
     },
 
     encodeCallSequence(calls) {
