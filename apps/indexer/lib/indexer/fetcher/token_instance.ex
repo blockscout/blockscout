@@ -153,7 +153,13 @@ defmodule Indexer.Fetcher.TokenInstance do
   @doc """
   Fetches token instance data asynchronously.
   """
-  def async_fetch(token_transfers) when is_list(token_transfers) do
+  def async_fetch(data) do
+    async_fetch(data, __MODULE__.Supervisor.disabled?())
+  end
+
+  def async_fetch(_data, true), do: :ok
+
+  def async_fetch(token_transfers, _disabled?) when is_list(token_transfers) do
     data =
       token_transfers
       |> Enum.reject(fn token_transfer -> is_nil(token_transfer.token_id) and is_nil(token_transfer.token_ids) end)
@@ -169,7 +175,7 @@ defmodule Indexer.Fetcher.TokenInstance do
     BufferedTask.buffer(__MODULE__, data)
   end
 
-  def async_fetch(data) do
+  def async_fetch(data, _disabled?) do
     BufferedTask.buffer(__MODULE__, data)
   end
 end

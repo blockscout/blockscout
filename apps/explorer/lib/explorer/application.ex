@@ -104,6 +104,7 @@ defmodule Explorer.Application do
       configure(Explorer.Celo.SignerCache),
       configure(Explorer.Counters.Bridge),
       configure(Explorer.Validator.MetadataProcessor),
+      configure(Explorer.Tags.AddressTag.Cataloger),
       configure(MinMissingBlockNumber),
       configure(ContractEventStream)
     ]
