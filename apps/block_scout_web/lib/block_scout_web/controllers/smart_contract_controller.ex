@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.SmartContractController do
           end
         else
           if contract_type == "proxy" do
-            Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string, params["from"])
+            Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string)
           else
             Reader.read_only_functions(address_hash, params["from"])
           end

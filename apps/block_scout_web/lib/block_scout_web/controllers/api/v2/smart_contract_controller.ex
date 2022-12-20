@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
       conn
       |> put_status(200)
-      |> json(read_only_functions_from_abi ++ read_functions_required_wallet_from_abi)
+      |> render(:read_functions, %{functions: read_only_functions_from_abi ++ read_functions_required_wallet_from_abi})
     end
   end
 
@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
       conn
       |> put_status(200)
-      |> json(read_only_functions_from_abi ++ read_functions_required_wallet_from_abi)
+      |> render(:read_functions, %{functions: read_only_functions_from_abi ++ read_functions_required_wallet_from_abi})
     end
   end
 
@@ -94,7 +94,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
       conn
       |> put_status(200)
-      |> json(Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string, params["from"]))
+      |> render(:read_functions, %{
+        functions: Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string)
+      })
     end
   end
 
@@ -127,7 +129,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, _address}} <- {:not_found, Chain.find_contract_address(address_hash, [])} do
-      result =
+      %{output: output, names: names} =
         if custom_abi do
           Reader.query_function_with_names_custom_abi(
             address_hash,
@@ -146,7 +148,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
       conn
       |> put_status(200)
-      |> json(result)
+      |> render(:function_response, %{output: output, names: names, contract_address_hash: address_hash})
     end
   end
 end
