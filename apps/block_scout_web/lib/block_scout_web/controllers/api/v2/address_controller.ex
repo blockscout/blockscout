@@ -265,4 +265,23 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       |> render(:coin_balances_by_day, %{coin_balances_by_day: balances_by_day})
     end
   end
+
+  def tokens(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
+         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, [], false)} do
+      results_plus_one =
+        address_hash
+        |> Chain.fetch_last_token_balances(paging_options(params))
+        |> Market.add_price()
+
+      {tokens, next_page} = split_list_by_page(results_plus_one)
+
+      next_page_params = next_page |> next_page_params(tokens, params) |> delete_parameters_from_next_page_params()
+
+      conn
+      |> put_status(200)
+      |> render(:tokens, %{tokens: tokens, next_page_params: next_page_params})
+    end
+  end
 end
