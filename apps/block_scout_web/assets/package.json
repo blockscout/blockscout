@@ -87,7 +87,7 @@
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^5.2.7",
     "css-minimizer-webpack-plugin": "^4.2.2",
-    "eslint": "^8.29.0",
+    "eslint": "^8.30.0",
     "eslint-config-standard": "^17.0.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
