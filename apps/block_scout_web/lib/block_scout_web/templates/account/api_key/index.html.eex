@@ -41,7 +41,7 @@
             </div>
           </div>
           <%= if Enum.count(@api_keys) < Key.get_max_api_keys_count() do %>
-            <a class="button button-primary button-sm" href="<%= api_key_path(@conn, :new) %>"><%= gettext "Add API key" %></a>
+            <a class="add-api-key-button button button-primary button-sm" href="<%= api_key_path(@conn, :new) %>"><%= gettext "Add API key" %></a>
           <% end %>
         </div>
       </div>
