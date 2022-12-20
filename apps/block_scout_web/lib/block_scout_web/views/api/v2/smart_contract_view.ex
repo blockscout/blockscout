@@ -3,12 +3,100 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   alias ABI.FunctionSelector
   alias Explorer.Visualize.Sol2uml
+  alias BlockScoutWeb.API.V2.TransactionView
+  alias BlockScoutWeb.SmartContractView
   alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
   alias Explorer.Chain
   alias Explorer.Chain.Address
 
   def render("smart_contract.json", %{address: address}) do
     prepare_smart_contract(address)
+  end
+
+  def render("read_functions.json", %{functions: functions}) do
+    Enum.map(functions, &prepare_read_function/1)
+  end
+
+  def render("function_response.json", %{output: output, names: names, contract_address_hash: contract_address_hash}) do
+    prepare_function_response(output, names, contract_address_hash)
+  end
+
+  def prepare_function_response(outputs, names, contract_address_hash) do
+    case outputs do
+      {:error, %{code: code, message: message, data: data}} ->
+        revert_reason = Chain.format_revert_reason_message(data)
+
+        case SmartContractView.decode_revert_reason(contract_address_hash, revert_reason) do
+          {:ok, method_id, text, mapping} ->
+            %{
+              result:
+                render(TransactionView, "decoded_input.json",
+                  method_id: method_id,
+                  text: text,
+                  mapping: mapping,
+                  error?: true
+                ),
+              is_error: true
+            }
+
+          {:error, _contract_verified, []} ->
+            %{
+              result:
+                Map.merge(render(TransactionView, "revert_reason.json", raw: revert_reason), %{
+                  code: code,
+                  message: message
+                }),
+              is_error: true
+            }
+
+          {:error, _contract_verified, candidates} ->
+            {:ok, method_id, text, mapping} = Enum.at(candidates, 0)
+
+            %{
+              result:
+                render(TransactionView, "decoded_input.json",
+                  method_id: method_id,
+                  text: text,
+                  mapping: mapping,
+                  error?: true
+                ),
+              is_error: true
+            }
+
+          _ ->
+            %{
+              result:
+                Map.merge(render(TransactionView, "revert_reason.json", raw: revert_reason), %{
+                  code: code,
+                  message: message
+                }),
+              is_error: true
+            }
+        end
+
+      {:error, %{code: code, message: message}} ->
+        %{result: %{code: code, message: message}, is_error: true}
+
+      {:error, error} ->
+        %{result: %{error: error}, is_error: true}
+
+      _ ->
+        %{result: %{output: outputs, names: names}, is_error: false}
+    end
+  end
+
+  def prepare_read_function(function) do
+    case function["outputs"] do
+      {:error, text_error} ->
+        function
+        |> Map.put("error", text_error)
+        |> Map.replace("outputs", function["abi_outputs"])
+        |> Map.drop(["abi_outputs"])
+
+      _ ->
+        function
+        |> Map.drop(["abi_outputs"])
+    end
   end
 
   def prepare_smart_contract(address) do
@@ -60,8 +148,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
     }
     |> Map.merge(bytecode_info(address))
-
-    # |>
   end
 
   defp bytecode_info(address) do

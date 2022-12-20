@@ -362,7 +362,9 @@ defmodule Explorer.SmartContract.Reader do
           link_outputs_and_values(%{}, Map.get(function, "outputs", []), function["method_id"])
       end
 
-    Map.replace!(function, "outputs", values)
+    function
+    |> Map.replace!("outputs", values)
+    |> Map.put("abi_outputs", link_outputs_and_values(%{}, Map.get(function, "outputs", []), function["method_id"]))
   end
 
   @doc """
