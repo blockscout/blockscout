@@ -32,6 +32,10 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     Enum.map(coin_balances_by_day, &prepare_coin_balance_history_by_day_entry/1)
   end
 
+  def render("tokens.json", %{tokens: tokens, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(tokens, &prepare_token_balance/1), "next_page_params" => next_page_params}
+  end
+
   def prepare_address(address, conn \\ nil) do
     base_info = Helper.address_with_info(conn, address, address.hash)
     is_proxy = AddressView.smart_contract_is_proxy?(address)
@@ -72,7 +76,12 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "has_methods_read" => AddressView.smart_contract_with_read_only_functions?(address) || read_custom_abi?,
       "has_methods_write" => AddressView.smart_contract_with_write_functions?(address) || write_custom_abi?,
       "has_methods_read_proxy" => is_proxy,
-      "has_methods_write_proxy" => AddressView.smart_contract_with_write_functions?(address) && is_proxy
+      "has_methods_write_proxy" => AddressView.smart_contract_with_write_functions?(address) && is_proxy,
+      "has_decompiled_code" => AddressView.has_decompiled_code?(address),
+      "has_validated_blocks" => Chain.check_if_validated_blocks_at_address(address.hash),
+      "has_logs" => Chain.check_if_logs_at_address(address.hash),
+      "has_tokens" => Chain.check_if_tokens_at_address(address.hash),
+      "has_token_transfers" => Chain.check_if_token_transfers_at_address(address.hash)
     })
   end
 
