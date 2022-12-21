@@ -1,25 +1,54 @@
 defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
-  use Explorer.DataCase
+  use Explorer.DataCase, async: false
 
+  alias Explorer.Utility.MissingBlockRange
   alias Indexer.Block.Catchup.MissingRangesCollector
 
-  test "default_init" do
-    insert(:block, number: 1_000_000)
-    insert(:block, number: 500_123)
-    MissingRangesCollector.start_link([])
-    Process.sleep(500)
+  describe "default_init" do
+    setup do
+      initial_env = Application.get_all_env(:indexer)
+      on_exit(fn -> Application.put_all_env([{:indexer, initial_env}]) end)
+    end
 
-    assert [999_999..900_000//-1] = MissingRangesCollector.get_latest_batch()
-    assert [899_999..800_000//-1] = MissingRangesCollector.get_latest_batch()
-    assert [799_999..700_000//-1] = MissingRangesCollector.get_latest_batch()
+    test "empty envs" do
+      insert(:block, number: 1_000_000)
+      insert(:block, number: 500_123)
+      MissingRangesCollector.start_link([])
+      Process.sleep(500)
 
-    insert(:block, number: 1_200_000)
-    Process.sleep(500)
+      assert [999_999..900_000//-1] = batch = MissingBlockRange.get_latest_batch(1)
+      MissingBlockRange.clear_batch(batch)
+      assert [899_999..800_000//-1] = batch = MissingBlockRange.get_latest_batch(1)
+      MissingBlockRange.clear_batch(batch)
+      assert [799_999..700_000//-1] = batch = MissingBlockRange.get_latest_batch(1)
+      MissingBlockRange.clear_batch(batch)
 
-    assert [1_199_999..1_100_001//-1] = MissingRangesCollector.get_latest_batch()
-    assert [1_100_000..1_000_001//-1] = MissingRangesCollector.get_latest_batch()
-    assert [699_999..600_000//-1] = MissingRangesCollector.get_latest_batch()
-    assert [599_999..500_124//-1, 500_122..500_000//-1] = MissingRangesCollector.get_latest_batch()
+      insert(:block, number: 1_200_000)
+      Process.sleep(500)
+
+      assert [1_199_999..1_100_001//-1] = batch = MissingBlockRange.get_latest_batch(1)
+      MissingBlockRange.clear_batch(batch)
+      assert [1_100_000..1_000_001//-1] = batch = MissingBlockRange.get_latest_batch(1)
+      MissingBlockRange.clear_batch(batch)
+      assert [699_999..600_000//-1] = batch = MissingBlockRange.get_latest_batch(1)
+      MissingBlockRange.clear_batch(batch)
+      assert [599_999..500_124//-1, 500_122..500_000//-1] = MissingBlockRange.get_latest_batch(2)
+    end
+
+    test "FIRST_BLOCK and LAST_BLOCK envs" do
+      Application.put_env(:indexer, :first_block, "100")
+      Application.put_env(:indexer, :last_block, "200")
+
+      insert(:missing_block_range, from_number: 250, to_number: 220)
+      insert(:missing_block_range, from_number: 220, to_number: 190)
+      insert(:missing_block_range, from_number: 120, to_number: 90)
+      insert(:missing_block_range, from_number: 90, to_number: 80)
+
+      MissingRangesCollector.start_link([])
+      Process.sleep(500)
+
+      assert [%{from_number: 120, to_number: 100}, %{from_number: 200, to_number: 190}] = Repo.all(MissingBlockRange)
+    end
   end
 
   describe "ranges_init" do
@@ -36,9 +65,11 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
       MissingRangesCollector.start_link([])
       Process.sleep(500)
 
-      assert [199_999..100_010//-1] = MissingRangesCollector.get_latest_batch()
-      assert [100_009..10//-1] = MissingRangesCollector.get_latest_batch()
-      assert [5..1//-1] = MissingRangesCollector.get_latest_batch()
+      assert [199_999..100_010//-1] = batch = MissingBlockRange.get_latest_batch(1)
+      MissingBlockRange.clear_batch(batch)
+      assert [100_009..10//-1] = batch = MissingBlockRange.get_latest_batch(1)
+      MissingBlockRange.clear_batch(batch)
+      assert [5..1//-1] = MissingBlockRange.get_latest_batch(1)
     end
 
     test "finite range" do
@@ -49,8 +80,9 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
       MissingRangesCollector.start_link([])
       Process.sleep(500)
 
-      assert [200..150//-1, 50..30//-1, 25..5//-1] = MissingRangesCollector.get_latest_batch()
-      assert [] = MissingRangesCollector.get_latest_batch()
+      assert [200..150//-1, 50..30//-1, 25..5//-1] = batch = MissingBlockRange.get_latest_batch(3)
+      MissingBlockRange.clear_batch(batch)
+      assert [] = MissingBlockRange.get_latest_batch()
     end
 
     test "finite range with existing blocks" do
@@ -63,8 +95,11 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
       MissingRangesCollector.start_link([])
       Process.sleep(500)
 
-      assert [200..176//-1, 174..150//-1, 50..34//-1, 32..30//-1, 25..5//-1] = MissingRangesCollector.get_latest_batch()
-      assert [] = MissingRangesCollector.get_latest_batch()
+      assert [200..176//-1, 174..150//-1, 50..34//-1, 32..30//-1, 25..5//-1] =
+               batch = MissingBlockRange.get_latest_batch(5)
+
+      MissingBlockRange.clear_batch(batch)
+      assert [] = MissingBlockRange.get_latest_batch()
     end
   end
 
