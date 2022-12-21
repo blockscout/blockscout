@@ -18,7 +18,7 @@ defmodule Explorer.Celo.AddressCache do
   @callback update_cache(String.t(), String.t()) :: any()
 
   # credo:disable-for-next-line
-  @implementation Application.fetch_env!(:explorer, __MODULE__)
+  @implementation Application.compile_env!(:explorer, __MODULE__)
 
   defdelegate contract_address(contract_name), to: @implementation
   defdelegate is_core_contract_address?(address), to: @implementation
