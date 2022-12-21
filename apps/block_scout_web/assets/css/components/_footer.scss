@@ -28,6 +28,8 @@ $footer-logo-width: auto !default;
     margin-right:80px;
     @media (max-width: 992px) {
       margin-right: 0;
+    }
+    @media (max-width: 1200px) {
       margin-bottom: 20px;
     }
   }
