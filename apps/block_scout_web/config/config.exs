@@ -10,8 +10,8 @@ alias BlockScoutWeb.LoggerBackend
 network_path =
   "NETWORK_PATH"
   |> System.get_env("/")
-  |> (&(if !String.ends_with?(&1, "/") do
-          &1 <> "/"
+  |> (&(if String.ends_with?(&1, "/") do
+          String.trim_trailing(&1, "/")
         else
           &1
         end)).()
@@ -19,8 +19,8 @@ network_path =
 api_path =
   "API_PATH"
   |> System.get_env("/")
-  |> (&(if !String.ends_with?(&1, "/") do
-          &1 <> "/"
+  |> (&(if String.ends_with?(&1, "/") do
+          String.trim_trailing(&1, "/")
         else
           &1
         end)).()

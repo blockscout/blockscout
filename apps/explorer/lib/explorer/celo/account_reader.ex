@@ -6,7 +6,7 @@ defmodule Explorer.Celo.AccountReader do
   require Logger
   alias Explorer.Celo.SignerCache
 
-  use Bitwise
+  import Bitwise
 
   import Explorer.Celo.{EpochUtil, Util}
 

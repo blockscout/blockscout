@@ -57,6 +57,13 @@ defmodule BlockScoutWeb.Controller do
       if path =~ network_path do
         path
       else
+        network_path =
+          if String.starts_with?(path, "/") do
+            String.trim_trailing(network_path, "/")
+          else
+            network_path
+          end
+
         network_path <> path
       end
     else
