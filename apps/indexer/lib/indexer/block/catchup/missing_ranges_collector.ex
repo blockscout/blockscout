@@ -5,8 +5,9 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
   use GenServer
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Utility.MissingBlockRange
   alias Indexer.Block.Catchup.Helper
 
   @default_missing_ranges_batch_size 100_000
@@ -38,62 +39,105 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   end
 
   defp default_init do
-    max_number = last_block()
-    {min_number, first_batch} = fetch_missing_ranges_batch(max_number, false)
-    initial_queue = push_batch_to_queue(first_batch, :queue.new())
+    {min_number, max_number} = get_initial_min_max()
+
+    clear_to_bounds(min_number, max_number)
 
     Process.send_after(self(), :update_future, @future_check_interval)
     Process.send_after(self(), :update_past, @past_check_interval)
 
-    %{queue: initial_queue, min_fetched_block_number: min_number, max_fetched_block_number: max_number}
+    %{min_fetched_block_number: min_number, max_fetched_block_number: max_number}
   end
 
   defp ranges_init(ranges, max_fetched_block_number \\ nil) do
-    missing_ranges =
-      ranges
-      |> Enum.reverse()
-      |> Enum.flat_map(fn f..l -> Chain.missing_block_number_ranges(l..f) end)
+    Repo.delete_all(MissingBlockRange)
 
-    initial_queue = push_batch_to_queue(missing_ranges, :queue.new())
+    ranges
+    |> Enum.reverse()
+    |> Enum.flat_map(fn f..l -> Chain.missing_block_number_ranges(l..f) end)
+    |> MissingBlockRange.save_batch()
 
     if not is_nil(max_fetched_block_number) do
       Process.send_after(self(), :update_future, @future_check_interval)
     end
 
-    %{queue: initial_queue, max_fetched_block_number: max_fetched_block_number}
+    %{max_fetched_block_number: max_fetched_block_number}
   end
 
-  def get_latest_batch do
-    GenServer.call(__MODULE__, :get_latest_batch)
-  end
+  defp clear_to_bounds(min_number, max_number) do
+    first = first_block()
+    last = last_block() - 1
 
-  @impl true
-  def handle_call(:get_latest_batch, _from, %{queue: queue} = state) do
-    {latest_batch, new_queue} =
-      case :queue.out(queue) do
-        {{:value, batch}, rest} -> {batch, rest}
-        {:empty, rest} -> {[], rest}
+    if min_number < first do
+      first
+      |> MissingBlockRange.from_number_below_query()
+      |> Repo.delete_all()
+
+      first
+      |> MissingBlockRange.include_bound_query()
+      |> Repo.one()
+      |> case do
+        nil ->
+          :ok
+
+        range ->
+          range
+          |> MissingBlockRange.changeset(%{to_number: first})
+          |> Repo.update()
       end
+    end
 
-    {:reply, latest_batch, %{state | queue: new_queue}}
+    if max_number > last do
+      last
+      |> MissingBlockRange.to_number_above_query()
+      |> Repo.delete_all()
+
+      last
+      |> MissingBlockRange.include_bound_query()
+      |> Repo.one()
+      |> case do
+        nil ->
+          :ok
+
+        range ->
+          range
+          |> MissingBlockRange.changeset(%{from_number: last})
+          |> Repo.update()
+      end
+    end
+  end
+
+  defp get_initial_min_max do
+    case MissingBlockRange.fetch_min_max() do
+      %{min: nil, max: nil} ->
+        max_number = last_block()
+        {min_number, first_batch} = fetch_missing_ranges_batch(max_number, false)
+        MissingBlockRange.save_batch(first_batch)
+        {min_number, max_number}
+
+      %{min: min, max: max} ->
+        {min, max}
+    end
   end
 
   @impl true
-  def handle_info(:update_future, %{queue: queue, max_fetched_block_number: max_number} = state) do
+  def handle_info(:update_future, %{max_fetched_block_number: max_number} = state) do
     if continue_future_updating?(max_number) do
       {new_max_number, batch} = fetch_missing_ranges_batch(max_number, true)
+      MissingBlockRange.save_batch(batch)
       Process.send_after(self(), :update_future, @future_check_interval)
-      {:noreply, %{state | queue: push_batch_to_queue(batch, queue, true), max_fetched_block_number: new_max_number}}
+      {:noreply, %{state | max_fetched_block_number: new_max_number}}
     else
       {:noreply, state}
     end
   end
 
-  def handle_info(:update_past, %{queue: queue, min_fetched_block_number: min_number} = state) do
+  def handle_info(:update_past, %{min_fetched_block_number: min_number} = state) do
     if min_number > first_block() do
       {new_min_number, batch} = fetch_missing_ranges_batch(min_number, false)
       Process.send_after(self(), :update_past, @past_check_interval)
-      {:noreply, %{state | queue: push_batch_to_queue(batch, queue), min_fetched_block_number: new_min_number}}
+      MissingBlockRange.save_batch(batch)
+      {:noreply, %{state | min_fetched_block_number: new_min_number}}
     else
       {:noreply, state}
     end
@@ -120,11 +164,6 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
       {max_fetched_block_number, []}
     end
   end
-
-  defp push_batch_to_queue(batch, queue, r? \\ false)
-  defp push_batch_to_queue([], queue, _r?), do: queue
-  defp push_batch_to_queue(batch, queue, false), do: :queue.in(batch, queue)
-  defp push_batch_to_queue(batch, queue, true), do: :queue.in_r(batch, queue)
 
   defp first_block do
     string_value = Application.get_env(:indexer, :first_block)
