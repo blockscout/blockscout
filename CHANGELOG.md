@@ -35,6 +35,7 @@
 
 ### Fixes
 
+- [#6637](https://github.com/blockscout/blockscout/pull/6637) - Index for logs filtered by ERC-20 transfer method signature
 - [#6603](https://github.com/blockscout/blockscout/pull/6603) - Add to MM button explorer URL fix
 - [#6512](https://github.com/blockscout/blockscout/pull/6512) - Allow gasUsed in failed internal txs; Leave error field for staticcall
 - [#6532](https://github.com/blockscout/blockscout/pull/6532) - Fix index creation migration
