@@ -3,6 +3,8 @@
 ### Features
 
 - [#6582](https://github.com/blockscout/blockscout/pull/6582) - Transaction actions indexer
+- [#6542](https://github.com/blockscout/blockscout/pull/6542) - Init mixpanel and amplitude analytics
+- [#6574](https://github.com/blockscout/blockscout/pull/6574), [#6601](https://github.com/blockscout/blockscout/pull/6601) - Allow and manage insecure HTTP connection to the archive node
 - [#6433](https://github.com/blockscout/blockscout/pull/6433) - Update error pagess
 - [#6544](https://github.com/blockscout/blockscout/pull/6544) - API improvements
 - [#5561](https://github.com/blockscout/blockscout/pull/5561), [#6523](https://github.com/blockscout/blockscout/pull/6523), [#6549](https://github.com/blockscout/blockscout/pull/6549) - Improve working with contracts implementations
@@ -34,6 +36,7 @@
 
 ### Fixes
 
+- [#6603](https://github.com/blockscout/blockscout/pull/6603) - Add to MM button explorer URL fix
 - [#6512](https://github.com/blockscout/blockscout/pull/6512) - Allow gasUsed in failed internal txs; Leave error field for staticcall
 - [#6532](https://github.com/blockscout/blockscout/pull/6532) - Fix index creation migration
 - [#6473](https://github.com/blockscout/blockscout/pull/6473) - Fix state changes for contract creation transactions
@@ -65,6 +68,10 @@
 
 ### Chore
 
+- [#6607](https://github.com/blockscout/blockscout/pull/6607) - Run e2e tests after PR review
+- [#6606](https://github.com/blockscout/blockscout/pull/6606) - Add ARG SESSION_COOKIE_DOMAIN to Dockerfile
+- [#6600](https://github.com/blockscout/blockscout/pull/6600) - Token stub icon
+- [#6588](https://github.com/blockscout/blockscout/pull/6588) - Add latest image build for frontend-main with specific build-args
 - [#6584](https://github.com/blockscout/blockscout/pull/6584) - Vacuum package-lock.json
 - [#6581](https://github.com/blockscout/blockscout/pull/6581) - Dark mode switcher localStorage to cookie in order to support new UI
 - [#6572](https://github.com/blockscout/blockscout/pull/6572) - pending_block_operations table: remove fetch_internal_transactions column

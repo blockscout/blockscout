@@ -8,25 +8,25 @@
         </a>
         <div class="dropdown-menu" aria-labelledby="navbarBlocksDropdown">
             <div class="header dropdown-item">
-            <%= "Signed in as " <> Plug.Conn.get_session(@conn, :current_user)[:nickname] %>
+            <%= gettext("Signed in as ") <> Plug.Conn.get_session(@conn, :current_user)[:nickname] %>
             </div>
-            <a href="<%= auth_path(@conn, :profile) %>" class= "dropdown-item"><%= gettext "Profile" %></a>
-            <a href="<%= watchlist_path(@conn, :show) %>" class= "dropdown-item"><%= gettext "Watch list" %></a>
-            <a href="<%= tag_address_path(@conn, :index) %>" class= "dropdown-item"><%= gettext "Address Tags" %></a>
-            <a href="<%= tag_transaction_path(@conn, :index) %>" class= "dropdown-item"><%= gettext "Transaction Tags" %></a>
-            <a href="<%= api_key_path(@conn, :index) %>" class= "dropdown-item"><%= gettext "API keys" %></a>
-            <a href="<%= custom_abi_path(@conn, :index) %>" class= "dropdown-item"><%= gettext "Custom ABI" %></a>
-            <a href="<%= public_tags_request_path(@conn, :index) %>" class= "dropdown-item"><%= gettext "Public Tags" %></a>
-            <a href="<%= BlockScoutWeb.LayoutView.sign_out_link %>" class= "dropdown-item"><%= gettext "Sign out" %></a>
+            <a href="<%= auth_path(@conn, :profile) %>" class= "profile-button dropdown-item"><%= gettext "Profile" %></a>
+            <a href="<%= watchlist_path(@conn, :show) %>" class= "watchlist-button dropdown-item"><%= gettext "Watch list" %></a>
+            <a href="<%= tag_address_path(@conn, :index) %>" class= "address-tags-button dropdown-item"><%= gettext "Address Tags" %></a>
+            <a href="<%= tag_transaction_path(@conn, :index) %>" class= "transaction-tags-button dropdown-item"><%= gettext "Transaction Tags" %></a>
+            <a href="<%= api_key_path(@conn, :index) %>" class= "api-keys-button dropdown-item"><%= gettext "API keys" %></a>
+            <a href="<%= custom_abi_path(@conn, :index) %>" class= "custom-abi-button dropdown-item"><%= gettext "Custom ABI" %></a>
+            <a href="<%= public_tags_request_path(@conn, :index) %>" class= "public-tags-button dropdown-item"><%= gettext "Public Tags" %></a>
+            <a href="<%= BlockScoutWeb.LayoutView.sign_out_link %>" class= "sign-out-button dropdown-item"><%= gettext "Sign out" %></a>
         </div>
         </li>
     <% else %>
         <li>
-        <a class="nav-link topnav-nav-link" href="<%= BlockScoutWeb.LayoutView.sign_in_link %>" id="navbarBlocksDropdown" role="button" aria-haspopup="true">
+        <a class="sign-in-button nav-link topnav-nav-link" href="<%= BlockScoutWeb.LayoutView.sign_in_link %>" id="navbarBlocksDropdown" role="button" aria-haspopup="true">
             <span class="nav-link-icon">
             <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
             </span>
-            Sign in
+            <%= gettext "Sign in" %>
         </a>
         </li>
     <% end %>

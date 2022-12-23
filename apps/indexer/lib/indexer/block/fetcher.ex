@@ -244,7 +244,11 @@ defmodule Indexer.Block.Fetcher do
     {import_time, result} = :timer.tc(fn -> callback_module.import(state, options_with_broadcast) end)
 
     no_blocks_to_import = length(options_with_broadcast.blocks.params)
-    Prometheus.Instrumenter.block_import(import_time / no_blocks_to_import, callback_module)
+
+    if no_blocks_to_import != 0 do
+      Prometheus.Instrumenter.block_import(import_time / no_blocks_to_import, callback_module)
+    end
+
     result
   end
 
