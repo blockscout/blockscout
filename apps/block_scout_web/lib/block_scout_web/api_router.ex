@@ -135,7 +135,6 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash/methods-write", V2.SmartContractController, :methods_write)
       get("/:address_hash/methods-read-proxy", V2.SmartContractController, :methods_read_proxy)
       get("/:address_hash/methods-write-proxy", V2.SmartContractController, :methods_write_proxy)
-      get("/:address_hash/query-read-method", V2.SmartContractController, :query_read_method)
       post("/:address_hash/query-read-method", V2.SmartContractController, :query_read_method)
     end
 
