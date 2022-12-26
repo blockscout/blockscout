@@ -34,7 +34,7 @@
             </div>
           </div>
           <%= if Enum.count(@public_tags_requests) < PublicTagsRequest.get_max_public_tags_request_count() do %>
-            <a class="button button-primary button-sm" href="<%= public_tags_request_path(@conn, :new) %>"><%= gettext "Request to add public tag" %></a>
+            <a class="add-public-tag-button button button-primary button-sm" href="<%= public_tags_request_path(@conn, :new) %>"><%= gettext "Request to add public tag" %></a>
           <% end %>
         </div>
       </div>
