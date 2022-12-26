@@ -2754,10 +2754,8 @@ defmodule Explorer.Chain do
   def stream_blocks_with_unfetched_internal_transactions(initial, reducer) when is_function(reducer, 2) do
     query =
       from(
-        b in Block,
-        join: pending_ops in assoc(b, :pending_operations),
-        where: b.consensus,
-        select: b.number
+        po in PendingBlockOperation,
+        select: po.block_number
       )
 
     Repo.stream_reduce(query, initial, reducer)
