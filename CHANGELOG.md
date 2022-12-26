@@ -32,6 +32,7 @@
 - [#6510](https://github.com/blockscout/blockscout/pull/6510) - Set consensus: false for blocks on int transaction foreign_key_violation
 - [#6565](https://github.com/blockscout/blockscout/pull/6565) - Set restart: :permanent for permanent fetchers
 - [#6568](https://github.com/blockscout/blockscout/pull/6568) - Drop unfetched_token_balances index
+- [#6583](https://github.com/blockscout/blockscout/pull/6583) - Missing ranges collector
 
 ### Fixes
 
