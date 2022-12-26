@@ -2728,20 +2728,14 @@ defmodule Explorer.Chain do
   Returns a stream of all blocks with unfetched internal transactions, using
   the `pending_block_operation` table.
 
-  Only blocks with consensus are returned.
-
-      iex> non_consensus = insert(:block, consensus: false)
-      iex> insert(:pending_block_operation, block: non_consensus)
       iex> unfetched = insert(:block)
-      iex> insert(:pending_block_operation, block: unfetched)
+      iex> insert(:pending_block_operation, block: unfetched, block_number: unfetched.number)
       iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
       ...>   MapSet.new(),
       ...>   fn number, acc ->
       ...>     MapSet.put(acc, number)
       ...>   end
       ...> )
-      iex> non_consensus.number in number_set
-      false
       iex> unfetched.number in number_set
       true
 
