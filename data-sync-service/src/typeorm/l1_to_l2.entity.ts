@@ -32,6 +32,9 @@ export class L1ToL2 {
   @Column({ type: 'varchar', length: 255 })
   status: string;
 
+  @Column({ type: 'boolean' })
+  is_merge: boolean;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   inserted_at: Date;
 

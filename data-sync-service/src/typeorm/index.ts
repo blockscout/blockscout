@@ -1,3 +1,4 @@
+import { Transactions } from './transactions.entity';
 import { L1ToL2 } from './l1_to_l2.entity';
 import { L2ToL1 } from './l2_to_l1.entity';
 import { L1RelayedMessageEvents } from './l1_relayed_message_events.entity';
@@ -16,6 +17,7 @@ const entities = [
   L2SentMessageEvents,
   StateBatches,
   TxnBatches,
+  Transactions
 ];
 
 export {
@@ -27,5 +29,6 @@ export {
   L2SentMessageEvents,
   StateBatches,
   TxnBatches,
+  Transactions
 };
 export default entities;
