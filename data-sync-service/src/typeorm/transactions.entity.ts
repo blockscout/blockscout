@@ -32,6 +32,6 @@ export class Transactions {
   @Column({ type: 'numeric', precision: 100 })
   l1_fee: number;
 
-  @Column({ type: 'numeric', precision: 100 })
+  @Column({ type: 'numeric', precision: 10, scale: 2 })
   l1_fee_scalar: number;
 }
