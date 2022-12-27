@@ -2749,6 +2749,7 @@ defmodule Explorer.Chain do
     query =
       from(
         po in PendingBlockOperation,
+        where: not is_nil(po.block_number),
         select: po.block_number
       )
 
