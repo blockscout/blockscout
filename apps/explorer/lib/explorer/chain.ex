@@ -1895,11 +1895,7 @@ defmodule Explorer.Chain do
       case address_result do
         %{smart_contract: smart_contract} ->
           if smart_contract do
-            if match?(%NotLoaded{}, smart_contract) do
-              address_result
-            else
-              check_bytecode_matching(address_result)
-            end
+            check_bytecode_matching(address_result, smart_contract)
           else
             address_verified_twin_contract =
               Chain.get_minimal_proxy_template(hash) ||
@@ -1932,7 +1928,9 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp check_bytecode_matching(address) do
+  defp check_bytecode_matching(address, %NotLoaded{}), do: address
+
+  defp check_bytecode_matching(address, _) do
     now = DateTime.utc_now()
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
