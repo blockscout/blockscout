@@ -10,14 +10,16 @@ import {
   L2ToL1,
   StateBatches,
   TxnBatches,
+  Transactions,
 } from 'src/typeorm';
-import { EntityManager, getConnection, getManager, Repository } from 'typeorm';
+import { EntityManager, getConnection, getManager, Repository, IsNull, Not } from 'typeorm';
 import Web3 from 'web3';
 import CMGABI from '../abi/L1CrossDomainMessenger.json';
 import CTCABI from '../abi/CanonicalTransactionChain.json';
 import SCCABI from '../abi/StateCommitmentChain.json';
 
 import { L2IngestionService } from '../l2Ingestion/l2Ingestion.service';
+import { decode } from 'punycode';
 
 const FraudProofWindow = 0;
 
@@ -43,6 +45,8 @@ export class L1IngestionService {
     private readonly txnL2ToL1Repository: Repository<L2ToL1>,
     @InjectRepository(L1ToL2)
     private readonly txnL1ToL2Repository: Repository<L1ToL2>,
+    @InjectRepository(Transactions)
+    private readonly transactions: Repository<Transactions>,
     private readonly l2IngestionService: L2IngestionService,
   ) {
     this.entityManager = getManager();
@@ -566,5 +570,41 @@ export class L1IngestionService {
       });
     }
     return result;
+  }
+  async updateL1OriginTxHashInTransactions() {
+    const unMergeTxList = await this.txnL1ToL2Repository.find({
+      where: { 
+        is_merge: false,
+        l2_hash: Not(IsNull())
+      },
+    });
+    for (let i = 0; i < unMergeTxList.length; i++) {
+      const l2Hash = unMergeTxList[i].l2_hash;
+      if (l2Hash) {
+        const dataSource = getConnection();
+        const queryRunner = dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+        try {
+          const handleL2Hash = l2Hash.startsWith('0x') ? l2Hash.slice(2) : l2Hash;
+          await queryRunner.manager.query(`
+            UPDATE transactions SET l1_origin_tx_hash=$1 WHERE hash=decode($2, 'hex');
+          `, [unMergeTxList[i].hash, handleL2Hash])
+          await queryRunner.manager
+            .createQueryBuilder()
+            .update(L1ToL2)
+            .set({ is_merge: true })
+            .where('hash = :hash', { hash: unMergeTxList[i].hash })
+            .execute();
+          await queryRunner.commitTransaction();
+        } catch (err) {
+          // since we have errors let's rollback changes we made
+          await queryRunner.rollbackTransaction();
+        } finally {
+          // you need to release query runner which is manually created:
+          await queryRunner.release();
+        }
+      }
+    }
   }
 }

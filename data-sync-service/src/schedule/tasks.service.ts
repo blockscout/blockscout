@@ -320,4 +320,14 @@ export class TasksService {
       this.logger.error(`error l1l2 [handle_l2l1_merge_waiting]: ${error}`);
     }
   }
+
+  @Interval(2000)
+  async update_transactions() {
+    try {
+      this.logger.log(`update l1_origin_tx_hash to transactions table`);
+      await this.l1IngestionService.updateL1OriginTxHashInTransactions();
+    } catch (error) {
+      this.logger.error(`error [update_transactions]: ${error}`);
+    }
+  }
 }

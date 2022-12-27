@@ -10,6 +10,7 @@ import {
   TxnBatches,
   L2ToL1,
   L1ToL2,
+  Transactions,
 } from 'src/typeorm';
 
 @Module({
@@ -22,6 +23,7 @@ import {
       TxnBatches,
       L2ToL1,
       L1ToL2,
+      Transactions,
     ]),
   ],
   controllers: [L1IngestionController],
