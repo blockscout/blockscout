@@ -13,7 +13,7 @@ const loadFunctions = (element, isCustomABI, from) => {
 
   $.get(
     url,
-    { hash, type, action, is_custom_abi: isCustomABI, from: from },
+    { hash, type, action, is_custom_abi: isCustomABI, from },
     response => $element.html(response)
   )
     .done(function () {
@@ -97,14 +97,18 @@ const container = $('[data-smart-contract-functions]')
 
 if (container.length) {
   getCurrentAccountPromise(window.web3 && window.web3.currentProvider).then((currentAccount) => {
-    loadFunctions(container, false, currentAccount)}, () => {loadFunctions(container, false, null)
-    })
+    loadFunctions(container, false, currentAccount)
+  }, () => {
+    loadFunctions(container, false, null)
+  })
 }
 
 const customABIContainer = $('[data-smart-contract-functions-custom]')
 
 if (customABIContainer.length) {
   getCurrentAccountPromise(window.web3 && window.web3.currentProvider).then((currentAccount) => {
-    loadFunctions(container, false, currentAccount)}, () => {loadFunctions(container, true, null)
-    })
+    loadFunctions(container, false, currentAccount)
+  }, () => {
+    loadFunctions(container, true, null)
+  })
 }

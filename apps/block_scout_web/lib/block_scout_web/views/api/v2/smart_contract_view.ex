@@ -2,12 +2,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   use BlockScoutWeb, :view
 
   alias ABI.FunctionSelector
-  alias Explorer.Visualize.Sol2uml
   alias BlockScoutWeb.API.V2.TransactionView
   alias BlockScoutWeb.SmartContractView
   alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
   alias Explorer.Chain
   alias Explorer.Chain.Address
+  alias Explorer.Visualize.Sol2uml
 
   def render("smart_contract.json", %{address: address}) do
     prepare_smart_contract(address)

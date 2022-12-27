@@ -50,7 +50,18 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "exchange_rate" => nil,
         "implementation_name" => nil,
         "implementation_address" => nil,
-        "block_number_balance_updated_at" => nil
+        "block_number_balance_updated_at" => nil,
+        "has_custom_methods_read" => false,
+        "has_custom_methods_write" => false,
+        "has_methods_read" => false,
+        "has_methods_write" => false,
+        "has_methods_read_proxy" => false,
+        "has_methods_write_proxy" => false,
+        "has_decompiled_code" => false,
+        "has_validated_blocks" => false,
+        "has_logs" => false,
+        "has_tokens" => false,
+        "has_token_transfers" => false
       }
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
@@ -135,9 +146,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -336,9 +345,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -717,9 +724,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -864,9 +869,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/blocks-validated")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -910,8 +913,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-balances")
 
-      assert response = json_response(request, 200)
-      assert response == []
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -945,9 +947,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -994,8 +994,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history-by-day")
 
-      assert response = json_response(request, 200)
-      assert response == []
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -1032,9 +1031,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/logs")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
