@@ -279,7 +279,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
          {:not_found, {:ok, _address}} <- {:not_found, Chain.hash_to_address(address_hash, [], false)} do
       results_plus_one =
         address_hash
-        |> Chain.fetch_last_token_balances(paging_options(params))
+        |> Chain.fetch_last_token_balances(
+          params
+          |> paging_options()
+          |> Keyword.merge(token_transfers_types_options(params))
+        )
         |> Market.add_price()
 
       {tokens, next_page} = split_list_by_page(results_plus_one)
