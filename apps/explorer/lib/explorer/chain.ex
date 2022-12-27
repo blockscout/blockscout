@@ -5152,10 +5152,12 @@ defmodule Explorer.Chain do
   end
 
   @spec fetch_last_token_balances(Hash.Address.t(), [paging_options]) :: []
-  def fetch_last_token_balances(address_hash, paging_options) do
+  def fetch_last_token_balances(address_hash, options) do
+    filter = Keyword.get(options, :token_type)
+
     address_hash
-    |> CurrentTokenBalance.last_token_balances(paging_options)
-    |> page_current_token_balances(paging_options)
+    |> CurrentTokenBalance.last_token_balances(options, filter)
+    |> page_current_token_balances(options)
     |> Repo.all()
   end
 
