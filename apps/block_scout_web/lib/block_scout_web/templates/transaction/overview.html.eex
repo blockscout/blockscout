@@ -420,6 +420,43 @@
               </dd>
             </dl>
           <% end %>
+          <hr>
+          <!-- L1 Gas Price -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("L1 Gas Price") %>
+              <%= gettext "L1 Gas Price" %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10"> <%= l1_gas_price(@transaction, :gwei) %> </dd>
+          </dl>
+          <!-- L1 Fee -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("L1 Fee") %>
+              <%= gettext "L1 Fee" %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10"> <%= l1_fee(@transaction) %> </dd>
+          </dl>
+          <!-- L1 Fee Scalar-->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("L1 Fee Scalar") %>
+              <%= gettext "L1 Fee Scalar" %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10"> <%= l1_fee_scalar(@transaction) %> </dd>
+          </dl>
+          <!-- L1 Gas Used -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("L1 Gas Used") %>
+              <%= gettext "L1 Gas Used" %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10"> <%= l1_gas_used(@transaction) %> </dd>
+          </dl>
         </div>
       </div>
     </div>

@@ -146,6 +146,10 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:from_address_hash, :address_hash)
     field(:to_address_hash, :address_hash)
     field(:created_contract_address_hash, :address_hash)
+    field(:l1_gas_price, :decimal)
+    field(:l1_gas_used, :decimal)
+    field(:l1_fee, :decimal)
+    field(:l1_fee_scalar, :decimal)
 
     connection field(:internal_transactions, node_type: :internal_transaction) do
       arg(:count, :integer)

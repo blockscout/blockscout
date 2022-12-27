@@ -118,6 +118,10 @@ defmodule EthereumJSONRPC.Receipt do
           status: status(),
           transaction_hash: String.t(),
           transaction_index: non_neg_integer(),
+          l1_fee: non_neg_integer,
+          l1_fee_scalar: non_neg_integer,
+          l1_gas_price: non_neg_integer,
+          l1_gas_used: non_neg_integer,
         }
   def elixir_to_params(
         %{
@@ -125,7 +129,11 @@ defmodule EthereumJSONRPC.Receipt do
           "gasUsed" => gas_used,
           "contractAddress" => created_contract_address_hash,
           "transactionHash" => transaction_hash,
-          "transactionIndex" => transaction_index
+          "transactionIndex" => transaction_index,
+          "l1Fee" => l1_fee,
+          "l1FeeScalar" => l1_fee_scalar,
+          "l1GasPrice" => l1_gas_price,
+          "l1GasUsed" => l1_gas_used
         } = elixir
       ) do
     status = elixir_to_status(elixir)
@@ -136,7 +144,11 @@ defmodule EthereumJSONRPC.Receipt do
       created_contract_address_hash: created_contract_address_hash,
       status: status,
       transaction_hash: transaction_hash,
-      transaction_index: transaction_index
+      transaction_index: transaction_index,
+      l1_fee: l1_fee,
+      l1_fee_scalar: l1_fee_scalar,
+      l1_gas_price: l1_gas_price,
+      l1_gas_used: l1_gas_used
     }
   end
 
