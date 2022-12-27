@@ -33,7 +33,7 @@ $dark-primary-alternate: $dark-primary;
 		&.active, &:hover {
 			.nav-link-icon {
 				svg path {
-					fill: $dark-primary;
+					fill: green;
 				}
 			}
 			@media (min-width: 992px) {

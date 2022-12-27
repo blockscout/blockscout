@@ -40,7 +40,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     right: 0px;
     top: 8px;
     height: 280px;
-    @media (max-width: 1511px) {
+    @media (max-width: 1350px) {
       display:none;
     }
   }
@@ -290,7 +290,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   display: flex;
   flex-direction: column;
   margin-right: 120px;
-  @media (max-width: 1511px) {
+  @media (max-width: 1350px) {
     margin-right: 0;
   }
   @media (min-width: 1690px) {

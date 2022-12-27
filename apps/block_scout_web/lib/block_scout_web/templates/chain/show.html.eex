@@ -202,7 +202,6 @@
         <span style="font-size:16px;" class="tile-title">
           Latest L1 Batches
         </span>
-        <a href="/txn-batches" style="font-size:16px;">View All</a>
       </p>
       <span
         data-selector="txn-batch-list"
@@ -229,7 +228,6 @@
         <span style="font-size:16px;" class="tile-title">
           Latest Transactions
         </span>
-        <a href="/txs" style="font-size:16px;">View All</a>
       </p>
       <%# <%= link(gettext("View All Transactions"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %>
       <div data-selector="channel-batching-message" style="display: none;">
@@ -261,7 +259,6 @@
         <span style="font-size:16px;" class="tile-title">
           Latest L1->L2 Transactions
         </span>
-        <a href="/l1-to-l2-txns" style="font-size:16px;">View All</a>
       </p>
        <span
         data-selector="l1-to-l2-list"

@@ -14,7 +14,7 @@ $card-tab-icon-color-active: #fff !default;
   border: none;
   box-shadow: 0 0 30px 0 rgba(202, 199, 226, 0.5);
   margin-bottom: $common-container-margin;
-
+  border-radius: 20px;
   .block-details-row {
     flex-direction: row;
     @include media-breakpoint-down(sm) {
@@ -166,7 +166,7 @@ $card-tab-icon-color-active: #fff !default;
 .txn-list-container{
 
   .txn-list-table-head-container{
-    background:#f8fafd;
+    background:#F8F8F9;;
     display:flex;
     align-items:center;
     height:42px;
@@ -174,8 +174,7 @@ $card-tab-icon-color-active: #fff !default;
     font-weight:500;
     font-size:16px;
     width:100%;
-    border-top:1px solid #cccccc;
-    border-bottom:2px solid #cccccc;
+    border-bottom:1px solid #F0F1F2;
     color:#6c757e;
     min-width: 1130px;
   }
@@ -198,13 +197,9 @@ $card-tab-icon-color-active: #fff !default;
   }
   .txn-list-container{
     .txn-list-table-head-container{
-      background:  #313355;
+      background:  rgba(255, 255, 255, 0.05);
       color:#ffffff;
-    }
-    .txn-list-table-head-container{
-      border-top:1px solid rgba(255,255,255,.1);
-      border-bottom:2px solid rgba(255,255,255,.1);
-      
+      border-color: rgba(255, 255, 255, 0.15);
     }
     .txn-list-table-item{
       border-color:rgba(255,255,255,.1);
@@ -339,8 +334,8 @@ $card-tab-icon-color-active: #fff !default;
           letter-spacing:0.8px;
           border-top-right-radius:6px;
           border-bottom-right-radius:6px;
-          color:#77838f;
-          background:rgba(119,131,143,.1);
+          color:#091312;
+          background:#AFD0E8;
           height:20px;
           .recent-preview-item-content-latest-txs-tag{
             position:absolute;
@@ -393,7 +388,10 @@ $card-tab-icon-color-active: #fff !default;
     margin: 20px 0;
     font-weight: 700;
     &:hover {
-      background: #21413F;
+      background: #d5edec;
+    }
+    &:active{
+      background: #a2bab9;
     }
   }
 }
@@ -420,6 +418,9 @@ $card-tab-icon-color-active: #fff !default;
     }
     .view-btn {
       background: #21413F;
+      hr{
+        border-color: rgba(255,255,255,.15)
+      }
     }
   }
   

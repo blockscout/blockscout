@@ -63,7 +63,9 @@ function xAxe () {
 
 const padding = {
   left: 20,
-  right: 20
+  right: 20,
+  top:1,
+  bottom:20
 }
 
 const legend = {
