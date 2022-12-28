@@ -30,7 +30,7 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.Chain.Transaction.{Fork, Status}
 
   @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
-                     error gas_used index created_contract_code_indexed_at status to_address_hash revert_reason has_error_in_internal_txs l1_gas_price l1_gas_used l1_fee l1_fee_scalar)a
+                     error gas_used index created_contract_code_indexed_at status to_address_hash revert_reason has_error_in_internal_txs l1_gas_price l1_gas_used l1_fee l1_origin_tx_hash)a
 
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
@@ -168,7 +168,8 @@ defmodule Explorer.Chain.Transaction do
           l1_gas_price: Gas.t() | nil,
           l1_gas_used: Gas.t() | nil,
           l1_fee: Gas.t() | nil,
-          l1_fee_scalar: Gas.t() | nil
+          l1_fee_scalar: Gas.t() | nil,
+          l1_origin_tx_hash: Hash.t() | nil
         }
 
   @derive {Poison.Encoder,
@@ -192,7 +193,8 @@ defmodule Explorer.Chain.Transaction do
              :l1_gas_price,
              :l1_gas_used,
              :l1_fee,
-             :l1_fee_scalar
+             :l1_fee_scalar,
+             :l1_origin_tx_hash
            ]}
 
   @derive {Jason.Encoder,
@@ -216,7 +218,8 @@ defmodule Explorer.Chain.Transaction do
              :l1_gas_price,
              :l1_gas_used,
              :l1_fee,
-             :l1_fee_scalar
+             :l1_fee_scalar,
+             :l1_origin_tx_hash
            ]}
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -243,6 +246,7 @@ defmodule Explorer.Chain.Transaction do
     field(:l1_gas_used, :decimal)
     field(:l1_fee, :decimal)
     field(:l1_fee_scalar, :decimal)
+    field(:l1_origin_tx_hash, :string)
 
     # A transient field for deriving old block hash during transaction upserts.
     # Used to force refetch of a block in case a transaction is re-collated
