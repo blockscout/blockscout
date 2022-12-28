@@ -437,7 +437,7 @@
                 text: gettext("L1 Fee") %>
               <%= gettext "L1 Fee" %>
             </dt>
-            <dd class="col-sm-9 col-lg-10"> <%= l1_fee(@transaction) %> </dd>
+            <dd class="col-sm-9 col-lg-10"> <%= l1_fee(@transaction, :ether) %> </dd>
           </dl>
           <!-- L1 Fee Scalar-->
           <dl class="row">
