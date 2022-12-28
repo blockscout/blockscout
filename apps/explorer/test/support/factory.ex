@@ -815,7 +815,9 @@ defmodule Explorer.Factory do
       contract_source_code: contract_code_info.source_code,
       optimization: contract_code_info.optimized,
       abi: contract_code_info.abi,
-      contract_code_md5: bytecode_md5
+      contract_code_md5: bytecode_md5,
+      verified_via_sourcify: Enum.random([true, false]),
+      is_vyper_contract: Enum.random([true, false])
     }
   end
 
