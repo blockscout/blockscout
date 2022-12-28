@@ -165,9 +165,9 @@ defmodule Explorer.Chain.Transaction do
           value: Wei.t(),
           revert_reason: String.t() | nil,
           has_error_in_internal_txs: boolean(),
-          l1_gas_price: Gas.t() | nil,
+          l1_gas_price: wei_per_gas,
           l1_gas_used: Gas.t() | nil,
-          l1_fee: Gas.t() | nil,
+          l1_fee: wei_per_gas,
           l1_fee_scalar: Gas.t() | nil,
           l1_origin_tx_hash: Hash.t() | nil
         }
@@ -242,9 +242,9 @@ defmodule Explorer.Chain.Transaction do
     field(:value, Wei)
     field(:revert_reason, :string)
     field(:has_error_in_internal_txs, :boolean)
-    field(:l1_gas_price, :decimal)
+    field(:l1_gas_price, Wei)
     field(:l1_gas_used, :decimal)
-    field(:l1_fee, :decimal)
+    field(:l1_fee, Wei)
     field(:l1_fee_scalar, :decimal)
     field(:l1_origin_tx_hash, :string)
 

@@ -406,13 +406,13 @@ defmodule BlockScoutWeb.TransactionView do
   def l1_gas_price(%Transaction{l1_gas_price: nil}, _unit), do: gettext("Pending")
 
   def l1_gas_price(%Transaction{l1_gas_price: l1_gas_price}, unit) when unit in ~w(wei gwei ether)a do
-    l1_gas_price
+    format_wei_value(l1_gas_price, unit)
   end
 
-  def l1_fee(%Transaction{l1_fee: nil}), do: gettext("Pending")
+  def l1_fee(%Transaction{l1_fee: nil}, _unit), do: gettext("Pending")
 
-  def l1_fee(%Transaction{l1_fee: l1_fee}) do
-    l1_fee
+  def l1_fee(%Transaction{l1_fee: l1_fee}, unit) when unit in ~w(wei gwei ether)a do
+    format_wei_value(l1_fee, unit)
   end
 
   def l1_gas_used(%Transaction{l1_gas_used: nil}), do: gettext("Pending")
