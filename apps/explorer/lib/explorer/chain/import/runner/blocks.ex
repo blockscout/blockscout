@@ -14,6 +14,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Import.Runner
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
+  alias Explorer.Utility.MissingBlockRange
 
   @behaviour Runner
 
@@ -360,6 +361,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       )
 
     Logger.info(["### Blocks lose_consensus FINISHED ###"])
+
+    removed_consensus_block_hashes
+    |> Enum.map(fn {number, _hash} -> number end)
+    |> MissingBlockRange.add_ranges_by_block_numbers()
 
     {:ok, removed_consensus_block_hashes}
   rescue

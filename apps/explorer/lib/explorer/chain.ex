@@ -3044,44 +3044,32 @@ defmodule Explorer.Chain do
 
   defp block_status(nil), do: {:error, :no_blocks}
 
-  def fetch_min_missing_block_cache do
-    max_block_number = BlockNumber.get_max()
+  def fetch_min_missing_block_cache(from \\ nil, to \\ nil) do
+    from_block_number = from || 0
+    to_block_number = to || BlockNumber.get_max()
 
-    if max_block_number > 0 do
+    if to_block_number > 0 do
       query =
         from(b in Block,
           right_join:
             missing_range in fragment(
               """
                 (SELECT b1.number
-                FROM generate_series(0, (?)::integer) AS b1(number)
+                FROM generate_series((?)::integer, (?)::integer) AS b1(number)
                 WHERE NOT EXISTS
                   (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus))
               """,
-              ^max_block_number
+              ^from_block_number,
+              ^to_block_number
             ),
           on: b.number == missing_range.number,
           select: min(missing_range.number)
         )
 
-      query
-      |> Repo.one(timeout: :infinity) || 0
+      Repo.one(query, timeout: :infinity)
     else
-      0
+      nil
     end
-  end
-
-  def remove_blocks_consensus(block_numbers) do
-    numbers = List.wrap(block_numbers)
-
-    query =
-      from(
-        block in Block,
-        where: block.number in ^numbers,
-        where: block.consensus
-      )
-
-    Repo.update_all(query, set: [consensus: false])
   end
 
   @doc """
@@ -3159,7 +3147,6 @@ defmodule Explorer.Chain do
               WHERE NOT EXISTS
                 (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus)
               ORDER BY b1.number DESC
-              LIMIT 500000
             )
             """,
             ^range_min,

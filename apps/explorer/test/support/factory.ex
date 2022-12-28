@@ -47,6 +47,8 @@ defmodule Explorer.Factory do
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
+  alias Explorer.Utility.MissingBlockRange
+
   alias Ueberauth.Strategy.Auth0
   alias Ueberauth.Auth.Info
   alias Ueberauth.Auth
@@ -933,6 +935,13 @@ defmodule Explorer.Factory do
     %Administrator{
       role: "owner",
       user: build(:user)
+    }
+  end
+
+  def missing_block_range_factory do
+    %MissingBlockRange{
+      from_number: 1,
+      to_number: 0
     }
   end
 

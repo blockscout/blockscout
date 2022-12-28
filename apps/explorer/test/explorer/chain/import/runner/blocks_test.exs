@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
   alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.{Chain, Repo}
+  alias Explorer.Utility.MissingBlockRange
 
   describe "run/1" do
     setup do
@@ -329,6 +330,16 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
         |> Repo.transaction()
 
       assert {:ok, %{blocks: [%{hash: _block_hash, consensus: true}]}} = result
+    end
+
+    test "inserts missing ranges if there are blocks that lost consensus",
+         %{consensus_block: %{number: block_number} = block, options: options} do
+      block1 = params_for(:block, consensus: true, miner_hash: insert(:address).hash)
+
+      run_block_consensus_change(block, false, options)
+      run_block_consensus_change(block1, true, options)
+
+      assert %{from_number: ^block_number, to_number: ^block_number} = Repo.one(MissingBlockRange)
     end
   end
 

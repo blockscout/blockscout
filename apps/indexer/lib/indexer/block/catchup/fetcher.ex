@@ -23,6 +23,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   alias Ecto.Changeset
   alias Explorer.Chain
+  alias Explorer.Utility.MissingBlockRange
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Catchup.{Sequence, TaskSupervisor}
   alias Indexer.Memory.Shrinkable
@@ -42,70 +43,47 @@ defmodule Indexer.Block.Catchup.Fetcher do
     * `:json_rpc_named_arguments` - `t:EthereumJSONRPC.json_rpc_named_arguments/0` passed to
         `EthereumJSONRPC.json_rpc/2`.
   """
-  def task(
-        %__MODULE__{
-          block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
-        } = state
-      ) do
+  def task(state) do
     Logger.metadata(fetcher: :block_catchup)
 
-    with {:ok, ranges} <- block_ranges(json_rpc_named_arguments) do
-      case ranges do
-        # -1 means that latest block is 0, so let realtime indexer get the genesis block
-        [_..-1] ->
-          %{first_block_number: 0, missing_block_count: 0, last_block_number: 0, shrunk: false}
+    case MissingBlockRange.get_latest_batch() do
+      [] ->
+        %{
+          first_block_number: nil,
+          last_block_number: nil,
+          missing_block_count: 0,
+          shrunk: false
+        }
 
-        _ ->
-          # realtime indexer gets the current latest block
-          _..first = List.last(ranges)
-          last.._ = List.first(ranges)
+      missing_ranges ->
+        first.._ = List.first(missing_ranges)
+        _..last = List.last(missing_ranges)
 
-          Logger.metadata(first_block_number: first, last_block_number: last)
+        Logger.metadata(first_block_number: first, last_block_number: last)
 
-          missing_ranges =
-            ranges
-            # let it fetch from newest to oldest block
-            |> Enum.reverse()
-            |> Enum.flat_map(fn f..l -> Chain.missing_block_number_ranges(l..f) end)
+        missing_block_count =
+          missing_ranges
+          |> Stream.map(&Enum.count/1)
+          |> Enum.sum()
 
-          range_count = Enum.count(missing_ranges)
+        step = step(first, last, blocks_batch_size())
+        sequence_opts = put_memory_monitor([ranges: missing_ranges, step: step], state)
+        gen_server_opts = [name: @sequence_name]
+        {:ok, sequence} = Sequence.start_link(sequence_opts, gen_server_opts)
+        Sequence.cap(sequence)
 
-          missing_block_count =
-            missing_ranges
-            |> Stream.map(&Enum.count/1)
-            |> Enum.sum()
+        stream_fetch_and_import(state, sequence)
 
-          Prometheus.Instrumenter.missing_blocks(missing_block_count)
+        shrunk = Shrinkable.shrunk?(sequence)
 
-          Logger.debug(fn -> "Missed blocks in ranges." end,
-            missing_block_range_count: range_count,
-            missing_block_count: missing_block_count
-          )
+        MissingBlockRange.clear_batch(missing_ranges)
 
-          shrunk =
-            case missing_block_count do
-              0 ->
-                false
-
-              _ ->
-                step = step(first, last, blocks_batch_size())
-                sequence_opts = put_memory_monitor([ranges: missing_ranges, step: step], state)
-                gen_server_opts = [name: @sequence_name]
-                {:ok, sequence} = Sequence.start_link(sequence_opts, gen_server_opts)
-                Sequence.cap(sequence)
-
-                stream_fetch_and_import(state, sequence)
-
-                Shrinkable.shrunk?(sequence)
-            end
-
-          %{
-            first_block_number: first,
-            last_block_number: last,
-            missing_block_count: missing_block_count,
-            shrunk: shrunk
-          }
-      end
+        %{
+          first_block_number: first,
+          last_block_number: last,
+          missing_block_count: missing_block_count,
+          shrunk: shrunk
+        }
     end
   end
 
@@ -128,16 +106,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
   """
   def blocks_concurrency do
     Application.get_env(:indexer, __MODULE__)[:concurrency]
-  end
-
-  defp fetch_last_block(json_rpc_named_arguments) do
-    case latest_block() do
-      nil ->
-        EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
-
-      number ->
-        {:ok, number}
-    end
   end
 
   defp step(first, last, blocks_batch_size) do
@@ -357,112 +325,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
       end)
     else
       {:error, :queue_unavailable}
-    end
-  end
-
-  @doc false
-  def block_ranges(json_rpc_named_arguments) do
-    block_ranges_string = Application.get_env(:indexer, :block_ranges)
-
-    ranges =
-      block_ranges_string
-      |> String.split(",")
-      |> Enum.map(fn string_range ->
-        case String.split(string_range, "..") do
-          [from_string, "latest"] ->
-            parse_integer(from_string)
-
-          [from_string, to_string] ->
-            with {from, ""} <- Integer.parse(from_string),
-                 {to, ""} <- Integer.parse(to_string) do
-              if from <= to, do: from..to, else: nil
-            else
-              _ -> nil
-            end
-
-          _ ->
-            nil
-        end
-      end)
-      |> sanitize_ranges()
-
-    case List.last(ranges) do
-      _from.._to ->
-        {:ok, ranges}
-
-      nil ->
-        with {:ok, latest_block_number} <- fetch_last_block(json_rpc_named_arguments) do
-          {:ok, [last_block()..(latest_block_number - 1)]}
-        end
-
-      num ->
-        with {:ok, latest_block_number} <-
-               EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
-          {:ok, List.update_at(ranges, -1, fn _ -> num..(latest_block_number - 1) end)}
-        end
-    end
-  end
-
-  defp sanitize_ranges(ranges) do
-    ranges
-    |> Enum.filter(&(not is_nil(&1)))
-    |> Enum.sort_by(
-      fn
-        from.._to -> from
-        el -> el
-      end,
-      :asc
-    )
-    |> Enum.chunk_while(
-      nil,
-      fn
-        _from.._to = chunk, nil ->
-          {:cont, chunk}
-
-        _ch_from..ch_to = chunk, acc_from..acc_to = acc ->
-          if Range.disjoint?(chunk, acc),
-            do: {:cont, acc, chunk},
-            else: {:cont, acc_from..max(ch_to, acc_to)}
-
-        num, nil ->
-          {:halt, num}
-
-        num, acc_from.._ = acc ->
-          if Range.disjoint?(num..num, acc), do: {:cont, acc, num}, else: {:halt, acc_from}
-
-        _, num ->
-          {:halt, num}
-      end,
-      fn reminder -> {:cont, reminder, nil} end
-    )
-  end
-
-  defp last_block do
-    string_value = Application.get_env(:indexer, :first_block)
-
-    case Integer.parse(string_value) do
-      {integer, ""} ->
-        integer
-
-      _ ->
-        min_missing_block_number =
-          "min_missing_block_number"
-          |> Chain.get_last_fetched_counter()
-          |> Decimal.to_integer()
-
-        min_missing_block_number
-    end
-  end
-
-  defp latest_block do
-    string_value = Application.get_env(:indexer, :last_block)
-    parse_integer(string_value)
-  end
-
-  defp parse_integer(integer_string) do
-    case Integer.parse(integer_string) do
-      {integer, ""} -> integer
-      _ -> nil
     end
   end
 end
