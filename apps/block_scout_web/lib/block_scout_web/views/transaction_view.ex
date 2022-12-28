@@ -406,7 +406,7 @@ defmodule BlockScoutWeb.TransactionView do
   def l1_gas_price(%Transaction{l1_gas_price: nil}, _unit), do: gettext("Pending")
 
   def l1_gas_price(%Transaction{l1_gas_price: l1_gas_price}, unit) when unit in ~w(wei gwei ether)a do
-    l1_gas_price
+    format_wei_value(l1_gas_price, unit)
   end
 
   def l1_fee(%Transaction{l1_fee: nil}), do: gettext("Pending")
