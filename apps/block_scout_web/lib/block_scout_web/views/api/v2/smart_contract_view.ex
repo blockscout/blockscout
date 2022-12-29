@@ -99,6 +99,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     end
   end
 
+  # credo:disable-for-next-line
   def prepare_smart_contract(address) do
     minimal_proxy_template = Chain.get_minimal_proxy_template(address.hash)
 

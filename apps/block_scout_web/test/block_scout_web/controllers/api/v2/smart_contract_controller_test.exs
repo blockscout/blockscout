@@ -658,6 +658,502 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     end
   end
 
+  describe "/smart-contracts/{address_hash}/methods-read-proxy" do
+    test "get 404 on non existing SC", %{conn: conn} do
+      address = build(:address)
+
+      request = get(conn, "/api/v2/smart-contracts/#{address.hash}/methods-read-proxy")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/smart-contracts/0x/methods-read-proxy")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get read-methods", %{conn: conn} do
+      abi = [
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
+          "name" => "getCaller",
+          "inputs" => []
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "bool", "name" => "", "internalType" => "bool"}],
+          "name" => "isWhitelist",
+          "inputs" => [%{"type" => "address", "name" => "_address", "internalType" => "address"}]
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "nonpayable",
+          "outputs" => [],
+          "name" => "disableWhitelist",
+          "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
+        }
+      ]
+
+      target_contract = insert(:smart_contract, abi: abi)
+      blockchain_get_code_mock()
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                  id: 0,
+                                                  method: "eth_getStorageAt",
+                                                  params: [
+                                                    _,
+                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                    "latest"
+                                                  ]
+                                                },
+                                                _options ->
+        {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
+      end)
+
+      address_hash = to_string(target_contract.address_hash)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: "eth_call", params: [%{to: address_hash}, _]}], opts ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x000000000000000000000000fffffffffffffffffffffffffffffffffffffffe"
+             }
+           ]}
+        end
+      )
+
+      contract = insert(:smart_contract)
+      request = get(conn, "/api/v2/smart-contracts/#{contract.address_hash}/methods-read-proxy")
+      assert response = json_response(request, 200)
+
+      assert %{
+               "type" => "function",
+               "stateMutability" => "view",
+               "outputs" => [
+                 %{
+                   "type" => "address",
+                   "name" => "",
+                   "internalType" => "address",
+                   "value" => "0xfffffffffffffffffffffffffffffffffffffffe"
+                 }
+               ],
+               "name" => "getCaller",
+               "inputs" => [],
+               "method_id" => "ab470f05"
+             } in response
+
+      assert %{
+               "type" => "function",
+               "stateMutability" => "view",
+               "outputs" => [%{"type" => "bool", "name" => "", "internalType" => "bool", "value" => ""}],
+               "name" => "isWhitelist",
+               "inputs" => [%{"type" => "address", "name" => "_address", "internalType" => "address"}],
+               "method_id" => "c683630d"
+             } in response
+    end
+  end
+
+  describe "/smart-contracts/{address_hash}/query-read-method proxy" do
+    test "get 404 on non existing SC", %{conn: conn} do
+      address = build(:address)
+
+      request =
+        post(conn, "/api/v2/smart-contracts/#{address.hash}/query-read-method", %{
+          "contract_type" => "proxy",
+          "args" => ["0xfffffffffffffffffffffffffffffffffffffffe"],
+          "method_id" => "c683630d"
+        })
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request =
+        post(conn, "/api/v2/smart-contracts/0x/query-read-method", %{
+          "contract_type" => "proxy",
+          "args" => ["0xfffffffffffffffffffffffffffffffffffffffe"],
+          "method_id" => "c683630d"
+        })
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "query-read-method", %{conn: conn} do
+      abi = [
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
+          "name" => "getCaller",
+          "inputs" => []
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "bool", "name" => "", "internalType" => "bool"}],
+          "name" => "isWhitelist",
+          "inputs" => [%{"type" => "address", "name" => "_address", "internalType" => "address"}]
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "nonpayable",
+          "outputs" => [],
+          "name" => "disableWhitelist",
+          "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
+        }
+      ]
+
+      target_contract = insert(:smart_contract, abi: abi)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                  id: 0,
+                                                  method: "eth_getStorageAt",
+                                                  params: [
+                                                    _,
+                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                    "latest"
+                                                  ]
+                                                },
+                                                _options ->
+        {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
+      end)
+
+      address_hash = target_contract.address_hash |> to_string()
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [
+             %{
+               id: id,
+               method: "eth_call",
+               params: [
+                 %{
+                   data: "0xc683630d000000000000000000000000fffffffffffffffffffffffffffffffffffffffe",
+                   to: address_hash
+                 },
+                 _
+               ]
+             }
+           ],
+           _opts ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x0000000000000000000000000000000000000000000000000000000000000001"
+             }
+           ]}
+        end
+      )
+
+      contract = insert(:smart_contract)
+
+      request =
+        post(conn, "/api/v2/smart-contracts/#{contract.address_hash}/query-read-method", %{
+          "contract_type" => "proxy",
+          "args" => ["0xfffffffffffffffffffffffffffffffffffffffe"],
+          "method_id" => "c683630d"
+        })
+
+      assert response = json_response(request, 200)
+
+      assert %{
+               "is_error" => false,
+               "result" => %{"names" => ["bool"], "output" => [%{"type" => "bool", "value" => true}]}
+             } == response
+    end
+
+    test "query-read-method returns error 1", %{conn: conn} do
+      abi = [
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
+          "name" => "getCaller",
+          "inputs" => []
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "bool", "name" => "", "internalType" => "bool"}],
+          "name" => "isWhitelist",
+          "inputs" => [%{"type" => "address", "name" => "_address", "internalType" => "address"}]
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "nonpayable",
+          "outputs" => [],
+          "name" => "disableWhitelist",
+          "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
+        }
+      ]
+
+      target_contract = insert(:smart_contract, abi: abi)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                  id: 0,
+                                                  method: "eth_getStorageAt",
+                                                  params: [
+                                                    _,
+                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                    "latest"
+                                                  ]
+                                                },
+                                                _options ->
+        {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
+      end)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [
+             %{
+               id: id,
+               method: "eth_call",
+               params: [%{data: "0xc683630d000000000000000000000000fffffffffffffffffffffffffffffffffffffffe"}, _]
+             }
+           ],
+           _opts ->
+          {:ok, [%{id: id, jsonrpc: "2.0", error: %{code: "12345", message: "Error message"}}]}
+        end
+      )
+
+      contract = insert(:smart_contract)
+
+      request =
+        post(conn, "/api/v2/smart-contracts/#{contract.address_hash}/query-read-method", %{
+          "contract_type" => "proxy",
+          "args" => ["0xfffffffffffffffffffffffffffffffffffffffe"],
+          "method_id" => "c683630d"
+        })
+
+      assert response = json_response(request, 200)
+
+      assert %{"is_error" => true, "result" => %{"code" => "12345", "message" => "Error message"}} == response
+    end
+
+    test "query-read-method returns error 2", %{conn: conn} do
+      abi = [
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
+          "name" => "getCaller",
+          "inputs" => []
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "bool", "name" => "", "internalType" => "bool"}],
+          "name" => "isWhitelist",
+          "inputs" => [%{"type" => "address", "name" => "_address", "internalType" => "address"}]
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "nonpayable",
+          "outputs" => [],
+          "name" => "disableWhitelist",
+          "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
+        }
+      ]
+
+      target_contract = insert(:smart_contract, abi: abi)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                  id: 0,
+                                                  method: "eth_getStorageAt",
+                                                  params: [
+                                                    _,
+                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                    "latest"
+                                                  ]
+                                                },
+                                                _options ->
+        {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
+      end)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [
+             %{
+               id: id,
+               method: "eth_call",
+               params: [%{data: "0xc683630d000000000000000000000000fffffffffffffffffffffffffffffffffffffffe"}, _]
+             }
+           ],
+           _opts ->
+          {:error, {:bad_gateway, "request_url"}}
+        end
+      )
+
+      contract = insert(:smart_contract)
+
+      request =
+        post(conn, "/api/v2/smart-contracts/#{contract.address_hash}/query-read-method", %{
+          "contract_type" => "proxy",
+          "args" => ["0xfffffffffffffffffffffffffffffffffffffffe"],
+          "method_id" => "c683630d"
+        })
+
+      assert response = json_response(request, 200)
+      assert %{"is_error" => true, "result" => %{"error" => "Bad gateway"}} == response
+    end
+
+    test "query-read-method returns error 3", %{conn: conn} do
+      abi = [
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
+          "name" => "getCaller",
+          "inputs" => []
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "bool", "name" => "", "internalType" => "bool"}],
+          "name" => "isWhitelist",
+          "inputs" => [%{"type" => "address", "name" => "_address", "internalType" => "address"}]
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "nonpayable",
+          "outputs" => [],
+          "name" => "disableWhitelist",
+          "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
+        }
+      ]
+
+      target_contract = insert(:smart_contract, abi: abi)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                  id: 0,
+                                                  method: "eth_getStorageAt",
+                                                  params: [
+                                                    _,
+                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                    "latest"
+                                                  ]
+                                                },
+                                                _options ->
+        {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
+      end)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [
+             %{
+               id: id,
+               method: "eth_call",
+               params: [%{data: "0xc683630d000000000000000000000000fffffffffffffffffffffffffffffffffffffffe"}, _]
+             }
+           ],
+           _opts ->
+          raise FunctionClauseError
+        end
+      )
+
+      contract = insert(:smart_contract)
+
+      request =
+        post(conn, "/api/v2/smart-contracts/#{contract.address_hash}/query-read-method", %{
+          "contract_type" => "proxy",
+          "args" => ["0xfffffffffffffffffffffffffffffffffffffffe"],
+          "method_id" => "c683630d"
+        })
+
+      assert response = json_response(request, 200)
+
+      assert %{"is_error" => true, "result" => %{"error" => "no function clause matches"}} == response
+    end
+  end
+
+  describe "/smart-contracts/{address_hash}/methods-write-proxy" do
+    test "get 404 on non existing SC", %{conn: conn} do
+      address = build(:address)
+
+      request = get(conn, "/api/v2/smart-contracts/#{address.hash}/methods-write-proxy")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/smart-contracts/0x/methods-write-proxy")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get write-methods", %{conn: conn} do
+      abi = [
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
+          "name" => "getCaller",
+          "inputs" => []
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "bool", "name" => "", "internalType" => "bool"}],
+          "name" => "isWhitelist",
+          "inputs" => [%{"type" => "address", "name" => "_address", "internalType" => "address"}]
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "nonpayable",
+          "outputs" => [],
+          "name" => "disableWhitelist",
+          "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
+        }
+      ]
+
+      target_contract = insert(:smart_contract, abi: abi)
+      blockchain_get_code_mock()
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                  id: 0,
+                                                  method: "eth_getStorageAt",
+                                                  params: [
+                                                    _,
+                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                    "latest"
+                                                  ]
+                                                },
+                                                _options ->
+        {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
+      end)
+
+      contract = insert(:smart_contract)
+
+      request = get(conn, "/api/v2/smart-contracts/#{contract.address_hash}/methods-write-proxy")
+      assert response = json_response(request, 200)
+
+      assert [
+               %{
+                 "type" => "function",
+                 "stateMutability" => "nonpayable",
+                 "outputs" => [],
+                 "name" => "disableWhitelist",
+                 "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
+               }
+             ] == response
+    end
+  end
+
   defp blockchain_get_code_mock do
     expect(
       EthereumJSONRPC.Mox,
@@ -708,13 +1204,5 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
          ]}
       end
     )
-  end
-
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
   end
 end
