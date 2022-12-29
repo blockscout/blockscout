@@ -314,6 +314,7 @@ $navbar-logo-width: 100% !default;
     box-sizing: border-box;
     border: .5px solid #091312;
     margin:0;
+    display:none;
     @media (min-width: 992px) {
       bottom:-12px;
     }

@@ -165,7 +165,7 @@
         </svg>
       </button>
     </div>
-    <hr class="navbar-container-bottom-line">
+    <hr class="navbar-container-bottom-line" id='navbar-container-bottom-line'>
   </div>
   <%= render BlockScoutWeb.LayoutView, "_search.html", conn: @conn, id: "main-search-autocomplete-mobile", additional_classes: ["mobile-search-show"] %>
 </nav>
