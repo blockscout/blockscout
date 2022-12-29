@@ -281,6 +281,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         address_hash
         |> Chain.fetch_last_token_balances(
           params
+          |> delete_parameters_from_next_page_params()
           |> paging_options()
           |> Keyword.merge(token_transfers_types_options(params))
         )

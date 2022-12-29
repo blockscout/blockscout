@@ -31,11 +31,6 @@ defmodule BlockScoutWeb.ApiRouter do
     plug(:protect_from_forgery)
   end
 
-  pipeline :api_v2_no_forgery_protect do
-    plug(CheckApiV2)
-    plug(:fetch_session)
-  end
-
   alias BlockScoutWeb.Account.Api.V1.{TagsController, UserController}
 
   scope "/account/v1", as: :account_v1 do
@@ -141,6 +136,7 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash/methods-write", V2.SmartContractController, :methods_write)
       get("/:address_hash/methods-read-proxy", V2.SmartContractController, :methods_read_proxy)
       get("/:address_hash/methods-write-proxy", V2.SmartContractController, :methods_write_proxy)
+      post("/:address_hash/query-read-method", BlockScoutWeb.API.V2.SmartContractController, :query_read_method)
     end
 
     scope "/tokens" do
@@ -163,15 +159,6 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/transactions", V2.StatsController, :transactions_chart)
         get("/market", V2.StatsController, :market_chart)
       end
-    end
-  end
-
-  scope "/v2", as: :api_v2 do
-    pipe_through(:api)
-    pipe_through(:api_v2_no_forgery_protect)
-
-    scope "/smart-contracts" do
-      post("/:address_hash/query-read-method", BlockScoutWeb.API.V2.SmartContractController, :query_read_method)
     end
   end
 

@@ -1133,6 +1133,84 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
   end
 
+  describe "/addresses/{address_hash}/tokens" do
+    test "get empty list on non existing address", %{conn: conn} do
+      address = build(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tokens")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/addresses/0x/tokens")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get tokens", %{conn: conn} do
+      address = insert(:address)
+
+      ctbs_erc_20 =
+        for _ <- 0..50 do
+          insert(:address_current_token_balance_with_token_id, address: address, token_type: "ERC-20", token_id: nil)
+          |> Repo.preload([:token])
+        end
+        |> Enum.sort_by(fn x -> x.value end, :asc)
+
+      ctbs_erc_721 =
+        for _ <- 0..50 do
+          insert(:address_current_token_balance_with_token_id, address: address, token_type: "ERC-721", token_id: nil)
+          |> Repo.preload([:token])
+        end
+        |> Enum.sort_by(fn x -> x.value end, :asc)
+
+      ctbs_erc_1155 =
+        for _ <- 0..50 do
+          insert(:address_current_token_balance_with_token_id,
+            address: address,
+            token_type: "ERC-1155",
+            token_id: Enum.random(1..100_000)
+          )
+          |> Repo.preload([:token])
+        end
+        |> Enum.sort_by(fn x -> x.value end, :asc)
+
+      filter = %{"type" => "ERC-20"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tokens", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/tokens", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, ctbs_erc_20)
+
+      filter = %{"type" => "ERC-721"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tokens", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/tokens", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, ctbs_erc_721)
+
+      filter = %{"type" => "ERC-1155"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tokens", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/tokens", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, ctbs_erc_1155)
+    end
+  end
+
   defp compare_item(%Transaction{} = transaction, json) do
     assert to_string(transaction.hash) == json["hash"]
     assert transaction.block_number == json["block"]
