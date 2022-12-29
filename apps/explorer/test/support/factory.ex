@@ -875,13 +875,16 @@ defmodule Explorer.Factory do
   end
 
   def address_current_token_balance_with_token_id_factory do
+    {token_type, token_id} = Enum.random([{"ERC-20", nil}, {"ERC-721", nil}, {"ERC-1155", Enum.random(1..100_000)}])
+
     %CurrentTokenBalance{
       address: build(:address),
       token_contract_address_hash: insert(:token).contract_address_hash,
       block_number: block_number(),
       value: Enum.random(1..100_000),
       value_fetched_at: DateTime.utc_now(),
-      token_id: Enum.random([nil, Enum.random(1..100_000)])
+      token_id: token_id,
+      token_type: token_type
     }
   end
 
