@@ -20,6 +20,7 @@
 - [#6740](https://github.com/blockscout/blockscout/pull/6740) - Fix tokens deadlock
 - [#6759](https://github.com/blockscout/blockscout/pull/6759) - Add `jq` in docker image
 - [#6779](https://github.com/blockscout/blockscout/pull/6779) - Fix missing ranges bounds clearing
+- [#6652](https://github.com/blockscout/blockscout/pull/6652) - Fix geth transaction tracer
 
 ### Chore
 
