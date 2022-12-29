@@ -33,6 +33,7 @@
 - [#6565](https://github.com/blockscout/blockscout/pull/6565) - Set restart: :permanent for permanent fetchers
 - [#6568](https://github.com/blockscout/blockscout/pull/6568) - Drop unfetched_token_balances index
 - [#6583](https://github.com/blockscout/blockscout/pull/6583) - Missing ranges collector
+- [#6647](https://github.com/blockscout/blockscout/pull/6647) - Pending block operations update
 
 ### Fixes
 

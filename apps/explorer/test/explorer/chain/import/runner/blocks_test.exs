@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
-  alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.Chain.{Address, Block, Transaction, PendingBlockOperation}
   alias Explorer.{Chain, Repo}
   alias Explorer.Utility.MissingBlockRange
 
@@ -334,6 +334,22 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       run_block_consensus_change(block1, true, options)
 
       assert %{from_number: ^block_number, to_number: ^block_number} = Repo.one(MissingBlockRange)
+    end
+
+    test "inserts pending_block_operations only for consensus blocks",
+         %{consensus_block: %{miner_hash: miner_hash}, options: options} do
+      %{number: number, hash: hash} = new_block = params_for(:block, miner_hash: miner_hash, consensus: true)
+      new_block1 = params_for(:block, miner_hash: miner_hash, consensus: false)
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, new_block)
+      %Ecto.Changeset{valid?: true, changes: block_changes1} = Block.changeset(%Block{}, new_block1)
+
+      result =
+        Multi.new()
+        |> Blocks.run([block_changes, block_changes1], options)
+        |> Repo.transaction()
+
+      assert %{block_number: ^number, block_hash: ^hash} = Repo.one(PendingBlockOperation)
     end
   end
 

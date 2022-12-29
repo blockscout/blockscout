@@ -51,14 +51,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     minimal_block_height = trace_minimal_block_height()
 
-    hashes_for_pending_block_operations =
-      if minimal_block_height > 0 do
-        changes_list
-        |> Enum.filter(&(&1.number >= minimal_block_height))
-        |> Enum.map(& &1.hash)
-      else
-        hashes
-      end
+    items_for_pending_ops =
+      changes_list
+      |> filter_by_min_height(&(&1.number >= minimal_block_height))
+      |> Enum.filter(& &1.consensus)
+      |> Enum.map(&{&1.number, &1.hash})
 
     consensus_block_numbers = consensus_block_numbers(changes_list)
 
@@ -66,16 +63,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     run_func = fn repo ->
       {:ok, nonconsensus_items} = lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
 
-      nonconsensus_hashes =
-        if minimal_block_height > 0 do
-          nonconsensus_items
-          |> Enum.filter(fn {number, _hash} -> number >= minimal_block_height end)
-          |> Enum.map(fn {_number, hash} -> hash end)
-        else
-          hashes
-        end
-
-      {:ok, nonconsensus_hashes}
+      {:ok, filter_by_min_height(nonconsensus_items, fn {number, _hash} -> number >= minimal_block_height end)}
     end
 
     multi
@@ -98,10 +86,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :blocks
       )
     end)
-    |> Multi.run(:new_pending_operations, fn repo, %{lose_consensus: nonconsensus_hashes} ->
+    |> Multi.run(:new_pending_operations, fn repo, %{lose_consensus: nonconsensus_items} ->
       Instrumenter.block_import_stage_runner(
         fn ->
-          new_pending_operations(repo, nonconsensus_hashes, hashes_for_pending_block_operations, insert_options)
+          new_pending_operations(repo, nonconsensus_items, items_for_pending_ops, insert_options)
         end,
         :address_referencing,
         :blocks,
@@ -428,7 +416,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
   end
 
-  defp new_pending_operations(repo, nonconsensus_hashes, hashes, %{
+  defp new_pending_operations(repo, nonconsensus_items, items, %{
          timeout: timeout,
          timestamps: timestamps
        }) do
@@ -436,12 +424,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       {:ok, []}
     else
       sorted_pending_ops =
-        nonconsensus_hashes
+        items
         |> MapSet.new()
-        |> MapSet.union(MapSet.new(hashes))
+        |> MapSet.difference(MapSet.new(nonconsensus_items))
         |> Enum.sort()
-        |> Enum.map(fn hash ->
-          %{block_hash: hash}
+        |> Enum.map(fn {number, hash} ->
+          %{block_hash: hash, block_number: number}
         end)
 
       Import.insert_changes_list(
@@ -743,5 +731,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         acc
       end
     end)
+  end
+
+  defp filter_by_min_height(blocks, filter_func) do
+    minimal_block_height = trace_minimal_block_height()
+
+    if minimal_block_height > 0 do
+      Enum.filter(blocks, &filter_func.(&1))
+    else
+      blocks
+    end
   end
 end
