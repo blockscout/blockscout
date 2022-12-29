@@ -437,7 +437,7 @@
                 text: gettext("L1 Fee") %>
               <%= gettext "L1 Fee" %>
             </dt>
-            <dd class="col-sm-9 col-lg-10"> <%= l1_fee(@transaction) %> </dd>
+            <dd class="col-sm-9 col-lg-10"> <%= l1_fee(@transaction, :ether) %> </dd>
           </dl>
           <!-- L1 Fee Scalar-->
           <dl class="row">
@@ -457,6 +457,17 @@
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= l1_gas_used(@transaction) %> </dd>
           </dl>
+          <!-- L1 Origin Tx Hash -->
+          <%= if @transaction.l1_origin_tx_hash do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("L1 Origin Tx Hash") %>
+                <%= gettext "L1 Origin Tx Hash" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"> <%= @transaction.l1_origin_tx_hash %> </dd>
+            </dl>
+          <% end %>
         </div>
       </div>
     </div>
