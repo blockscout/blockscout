@@ -13,7 +13,7 @@
 - [#6440](https://github.com/blockscout/blockscout/pull/6440) - Add support for base64 encoded NFT metadata
 - [#6407](https://github.com/blockscout/blockscout/pull/6407) - Indexed ratio for int txs fetching stage
 - [#6324](https://github.com/blockscout/blockscout/pull/6324) - Add verified contracts list page
-- [#6379](https://github.com/blockscout/blockscout/pull/6379), [#6429](https://github.com/blockscout/blockscout/pull/6429) - API v2 for frontend
+- [#6379](https://github.com/blockscout/blockscout/pull/6379), [#6429](https://github.com/blockscout/blockscout/pull/6429), [#6642](https://github.com/blockscout/blockscout/pull/6642) - API v2 for frontend
 - [#6351](https://github.com/blockscout/blockscout/pull/6351) - Enable forum link env var
 - [#6316](https://github.com/blockscout/blockscout/pull/6316) - Copy public tags functionality to master
 - [#6196](https://github.com/blockscout/blockscout/pull/6196) - INDEXER_CATCHUP_BLOCKS_BATCH_SIZE and INDEXER_CATCHUP_BLOCKS_CONCURRENCY env varaibles
