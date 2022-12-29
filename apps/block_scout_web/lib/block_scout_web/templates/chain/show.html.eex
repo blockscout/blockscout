@@ -71,26 +71,35 @@
         <p class="dashboard-banner-daily-tx-title dashboard-banner-daily-tx-title-empty" style="height: 30px;margin-bottom: 16px;"></p>
         <div class="dashboard-banner-network-plain-wrap">
           <div class="dashboard-banner-network-plain-cointainer-item">
-            <%= case @average_block_time do %>
-              <% {:error, :disabled} -> %>
-                <%= nil %>
-              <% average_block_time -> %>
-                <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-1">
-                  <span class="dashboard-banner-network-stats-label">
-                    <%= gettext "Average block time" %>
-                  </span>
-                  <span class="dashboard-banner-network-stats-value" data-selector="average-block-time">
-                    <%= Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormat) %>
-                  </span>
-                </div>
-            <% end %>
+            <%=# case @average_block_time do %>
+              <%# {:error, :disabled} -> %>
+                <%=# nil %>
+              <%# average_block_time -> %>
+                <%# <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-1"> %>
+                  <%# <span class="dashboard-banner-network-stats-label"> %>
+                    <%=# gettext "Average block time" %>
+                  <%# </span> %>
+                  <%# <span class="dashboard-banner-network-stats-value" data-selector="average-block-time"> %>
+                    <%=# Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormat) %>
+                  <%# </span> %>
+                <%# </div> %>
+            <%# end %>
+            <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-3">
+                <span class="dashboard-banner-network-stats-label">
+                  <%= gettext "Total blocks" %>
+                </span>
+                <span class="dashboard-banner-network-stats-value" data-selector="block-count">
+                  <%= BlockScoutWeb.Cldr.Number.to_string!(@block_count, format: "#,###") %>
+                </span>
+              </div>
             <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-2">
               <span class="dashboard-banner-network-stats-label">
                 <%= gettext "Total transactions" %>
               </span>
               <div class="d-flex">
                 <span class="dashboard-banner-network-stats-value" data-selector="transaction-count">
-                  <%= BlockScoutWeb.Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
+                  <%= #BlockScoutWeb.Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
+                  <%= BlockScoutWeb.Cldr.Number.to_string!(@block_count, format: "#,###") %>
                 </span>
                 <%= if @total_gas_usage > 0 do %>
                   <span
@@ -106,15 +115,8 @@
               </div>
             </div>
           </div>
-          <div class="dashboard-banner-network-plain-cointainer-item">
-              <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-3">
-                <span class="dashboard-banner-network-stats-label">
-                  <%= gettext "Total blocks" %>
-                </span>
-                <span class="dashboard-banner-network-stats-value" data-selector="block-count">
-                  <%= BlockScoutWeb.Cldr.Number.to_string!(@block_count, format: "#,###") %>
-                </span>
-              </div>
+          <div class="dashboard-banner-network-plain-cointainer-item" style='justify-content:flex-start;'>
+              
               <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-4">
                 <span class="dashboard-banner-network-stats-label">
                   <%= gettext "Wallet addresses" %>
@@ -200,7 +202,6 @@
         <span style="font-size:16px;" class="tile-title">
           Latest L1 Batches
         </span>
-        <a href="/txn-batches" style="font-size:16px;">View All</a>
       </p>
       <span
         data-selector="txn-batch-list"
@@ -227,7 +228,6 @@
         <span style="font-size:16px;" class="tile-title">
           Latest Transactions
         </span>
-        <a href="/txs" style="font-size:16px;">View All</a>
       </p>
       <%# <%= link(gettext("View All Transactions"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %>
       <div data-selector="channel-batching-message" style="display: none;">
@@ -259,7 +259,6 @@
         <span style="font-size:16px;" class="tile-title">
           Latest L1->L2 Transactions
         </span>
-        <a href="/l1-to-l2-txns" style="font-size:16px;">View All</a>
       </p>
        <span
         data-selector="l1-to-l2-list"

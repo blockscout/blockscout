@@ -39,6 +39,13 @@ $dark-primary-alternate: #65B3AE !default;
 		}
 	}
 }
+.card-body{
+	.tile {
+		.tile-title-block-link{
+			color: #007bff !important;
+		}
+	}
+}
 
 .dark-theme-applied {
 	color: #fff;
@@ -79,14 +86,15 @@ $dark-primary-alternate: #65B3AE !default;
 
 		&.active,
 		&:hover {
+			color: #ffffff;
 			.nav-link-icon {
 				svg path {
-					fill: $dark-primary;
+					fill:#ffffff;;
 				}
 			}
 
 			&:before {
-				background-color: $dark-primary;
+				background-color:#ffffff;;
 			}
 		}
 	}
@@ -153,6 +161,7 @@ $dark-primary-alternate: #65B3AE !default;
 	.layout-container .dashboard-banner-container {
 		background-image: none;
 		background-color: $dark-bg !important;
+		box-shadow: none;
 	}
 
 	.dashboard-banner-network-plain-container,
@@ -240,16 +249,16 @@ $dark-primary-alternate: #65B3AE !default;
 	}
 
 	// Components
-	a {
+	/* a {
 		color: $dark-primary;
-	}
+	} */
 
 	.tile,
 	.tile-code {
 		border-top-color: $dark-light;
 		border-bottom-color: $dark-light;
 		border-right-color: $dark-light;
-		background-color: $dark-light;
+		background-color: rgba(255, 255, 255, 0.05);;
 		color: $labels-dark;
 
 		&:not([class^="tile tile-type"]) {
@@ -296,12 +305,12 @@ $dark-primary-alternate: #65B3AE !default;
 		color: $labels-dark;
 	}
 
-	.tile .tile-body a,
+	/* .tile .tile-body a,
 	.tile a:hover,
 	.tile span[data-address-hash],
 	.tile a[data-test=token_link] {
 		color: $dark-primary;
-	}
+	} */
 
 	.fade-up-blocks-chain .tile-type-block-animation .tile-type-line-up {
 		background-color: $dark-primary;
@@ -465,7 +474,7 @@ $dark-primary-alternate: #65B3AE !default;
 	}
 
 	hr {
-		border-top-color: darken($labels-dark, 30);
+		border-top-color: rgba(255,255,255, .15) !important;
 	}
 
 	.i-tooltip {
@@ -899,7 +908,7 @@ $dark-primary-alternate: #65B3AE !default;
 	.dark-theme-applied .table td,
 	.dark-theme-applied .table th,
 	.dark-theme-applied hr {
-		border-top-color: darken($labels-dark, 30);
+		border-top-color: rgba(255, 255, 255, 0.15) !important;
 	}
 
 	.btn-copy-ico svg path {
@@ -1339,6 +1348,7 @@ $dark-primary-alternate: #65B3AE !default;
 .dashboard-banner-container {
 	background: url(../static/images/banner_bg.png) no-repeat !important;
 	background-size: 100% 100% !important;
+	box-shadow: none;
 }
 
 // _navbar.scss

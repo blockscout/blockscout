@@ -49,20 +49,20 @@ $dark-stakes-banned-background: #3e314c;
 		filter: brightness(0) invert(1);
 	}
 	.navbar.navbar-primary .navbar-nav .nav-link {
-		color: $dark-text-content-color;
+		color: #ffffff;
 		.nav-link-icon {
 			svg path {
-				fill: $dark-text-content-color;
+				fill: #ffffff;
 			}
 		}
 		&.active, &:hover {
 			.nav-link-icon {
 				svg path {
-					fill: $dark-primary;
+					fill: #ffffff;
 				}
 			}
 			&:before {
-				background-color: $dark-primary;
+				background-color:#ffffff;
 			}
 		}
 	}
@@ -219,10 +219,10 @@ $dark-stakes-banned-background: #3e314c;
 	.cube-animation-title {
 		color: $labels-dark;
 	}
-	.tile .tile-body a,
+	/* .tile .tile-body a,
 	.tile a:hover,
 	.tile span[data-address-hash],
-	.tile a[data-test=token_link] { color: $dark-primary; }
+	.tile a[data-test=token_link] { color: $dark-primary; } */
 	.fade-up-blocks-chain .tile-type-block-animation .tile-type-line-up {
 		background-color: $dark-primary;
 	}
@@ -739,7 +739,7 @@ $dark-stakes-banned-background: #3e314c;
 		border-color: darken($labels-dark, 30);
 	}
 	.dark-theme-applied .table td, .dark-theme-applied .table th, .dark-theme-applied hr {
-		border-top-color: darken($labels-dark, 30);
+		border-top-color: rgba(255, 255, 255, 0.15) !important;
 	}
 	.btn-copy-ico svg path {
 		fill: #fff;

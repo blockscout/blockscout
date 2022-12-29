@@ -403,6 +403,30 @@ defmodule BlockScoutWeb.TransactionView do
     end
   end
 
+  def l1_gas_price(%Transaction{l1_gas_price: nil}, _unit), do: gettext("Pending")
+
+  def l1_gas_price(%Transaction{l1_gas_price: l1_gas_price}, unit) when unit in ~w(wei gwei ether)a do
+    format_wei_value(l1_gas_price, unit)
+  end
+
+  def l1_fee(%Transaction{l1_fee: nil}, _unit), do: gettext("Pending")
+
+  def l1_fee(%Transaction{l1_fee: l1_fee}, unit) when unit in ~w(wei gwei ether)a do
+    format_wei_value(l1_fee, unit)
+  end
+
+  def l1_gas_used(%Transaction{l1_gas_used: nil}), do: gettext("Pending")
+
+  def l1_gas_used(%Transaction{l1_gas_used: l1_gas_used}) do
+    l1_gas_used
+  end
+
+  def l1_fee_scalar(%Transaction{l1_fee_scalar: nil}), do: gettext("Pending")
+
+  def l1_fee_scalar(%Transaction{l1_fee_scalar: l1_fee_scalar}) do
+    l1_fee_scalar
+  end
+
   def hash(%Transaction{hash: hash}) do
     to_string(hash)
   end

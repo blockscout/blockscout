@@ -2,7 +2,7 @@
   <div class="tile tile-type-block n-p d-flex flex-column">
     <%= link(
           @block,
-          class: "tile-title",
+          class: "tile-title tile-title-block-link",
           to: block_path(BlockScoutWeb.Endpoint, :show, @block),
           "data-selector": "block-number"
         ) %>

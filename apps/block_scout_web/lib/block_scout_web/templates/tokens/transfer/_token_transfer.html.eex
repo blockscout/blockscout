@@ -10,7 +10,7 @@
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
       <%= render BlockScoutWeb.TransactionView, "_link.html", transaction_hash: @token_transfer.transaction_hash %>
       <span class="text-nowrap">
-        <%= link to: address_token_transfers_path(@conn, :index, Address.checksum(@token_transfer.from_address), Address.checksum(@token.contract_address_hash)), "data-test": "address_hash_link" do %>
+        <%= link to: address_path(@conn, :show, Address.checksum(@token_transfer.from_address)), "data-test": "address_hash_link" do %>
             <%= render(
                   BlockScoutWeb.AddressView,
                   "_responsive_hash.html",
@@ -20,7 +20,7 @@
                 ) %>
         <% end %>
         &rarr;
-        <%= link to: address_token_transfers_path(@conn, :index, Address.checksum(@token_transfer.to_address), Address.checksum(@token.contract_address_hash)), "data-test": "address_hash_link" do %>
+        <%= link to: address_path(@conn, :show, Address.checksum(@token_transfer.to_address)), "data-test": "address_hash_link" do %>
             <%= render(
                   BlockScoutWeb.AddressView,
                   "_responsive_hash.html",

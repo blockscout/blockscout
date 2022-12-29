@@ -59,6 +59,15 @@
           document.body.className += " " + "dark-theme-applied";
           document.body.style.backgroundColor = "#1c1d31";
         }
+        setTimeout(function(){
+          if(window && window.location && window.location.pathname === '/'){
+            const ele = document.getElementById('navbar-container-bottom-line');
+            if(ele){
+              ele.style.display = 'block';
+            }
+          }
+        },10)
+        
       }
       window.onload = applyDarkMode()
     </script>

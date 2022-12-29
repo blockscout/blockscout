@@ -15,12 +15,12 @@
 			>
 		</div>
 		<div class="input-group-append left search-icon">
-			<button class="input-group-text" id="search-icon">
+			<button class="input-group-text search-icon-cls" id="search-icon">
 			<%= render BlockScoutWeb.IconsView, "_search_icon.html" %>
 			</button>
 		</div>
 		<div 
-			class="right desktop-only"
+			class="right desktop-only search-btn-cls"
 			id="search-btn"
 			style="	height:35px;
 					width:92px;
