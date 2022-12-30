@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.Router do
   use BlockScoutWeb, :router
 
   alias BlockScoutWeb.Plug.GraphQL
-  alias BlockScoutWeb.{ApiRouter, WebRouter}
+  alias BlockScoutWeb.{ApiRouter, WebRouter, SmartContractsApiV2Router}
 
   if Application.compile_env(:block_scout_web, ApiRouter)[:wobserver_enabled] do
     forward("/wobserver", Wobserver.Web.Router)
@@ -24,6 +24,7 @@ defmodule BlockScoutWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  forward("/api/v2/smart-contracts", SmartContractsApiV2Router)
   forward("/api", ApiRouter)
 
   if Application.compile_env(:block_scout_web, ApiRouter)[:reading_enabled] do
