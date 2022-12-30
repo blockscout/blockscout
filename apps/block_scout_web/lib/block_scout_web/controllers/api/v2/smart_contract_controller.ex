@@ -150,14 +150,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
         if custom_abi do
           Reader.query_function_with_names_custom_abi(
             address_hash,
-            %{method_id: params["method_id"], args: args},
+            %{method_id: params["method_id"], args: prepare_args(args)},
             params["from"],
             custom_abi.abi
           )
         else
           Reader.query_function_with_names(
             address_hash,
-            %{method_id: params["method_id"], args: args},
+            %{method_id: params["method_id"], args: prepare_args(args)},
             contract_type,
             params["from"]
           )
@@ -168,4 +168,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       |> render(:function_response, %{output: output, names: names, contract_address_hash: address_hash})
     end
   end
+
+  def prepare_args(list) when is_list(list), do: list
+  def prepare_args(other), do: [other]
 end
