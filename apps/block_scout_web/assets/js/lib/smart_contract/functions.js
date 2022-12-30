@@ -96,19 +96,19 @@ const readWriteFunction = (element) => {
 const container = $('[data-smart-contract-functions]')
 
 if (container.length) {
-  getCurrentAccountPromise(window.web3 && window.web3.currentProvider).then((currentAccount) => {
-    loadFunctions(container, false, currentAccount)
-  }, () => {
-    loadFunctions(container, false, null)
-  })
+  getWalletAndLoadFunctions()
 }
 
 const customABIContainer = $('[data-smart-contract-functions-custom]')
 
 if (customABIContainer.length) {
+  getWalletAndLoadFunctions()
+}
+
+function getWalletAndLoadFunctions () {
   getCurrentAccountPromise(window.web3 && window.web3.currentProvider).then((currentAccount) => {
     loadFunctions(container, false, currentAccount)
   }, () => {
-    loadFunctions(container, true, null)
+    loadFunctions(container, false, null)
   })
 }
