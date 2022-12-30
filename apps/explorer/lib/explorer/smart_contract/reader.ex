@@ -436,9 +436,12 @@ defmodule Explorer.SmartContract.Reader do
       abi
       |> ABI.parse_specification()
 
-    %{outputs: outputs, method_id: method_id} = proccess_abi(parsed_final_abi, method_id)
-
-    query_contract_and_link_outputs(contract_address_hash, args, from, abi, outputs, method_id, leave_error_as_map)
+    with %{outputs: outputs, method_id: method_id} <- proccess_abi(parsed_final_abi, method_id) do
+      query_contract_and_link_outputs(contract_address_hash, args, from, abi, outputs, method_id, leave_error_as_map)
+    else
+      {:error, message} ->
+        {:error, message}
+    end
   end
 
   @spec query_function_with_custom_abi(
@@ -515,10 +518,15 @@ defmodule Explorer.SmartContract.Reader do
 
   defp proccess_abi(abi, method_id) do
     function_object = find_function_by_method(abi, method_id)
-    %ABI.FunctionSelector{returns: returns, method_id: method_id} = function_object
-    outputs = extract_outputs(returns)
 
-    %{outputs: outputs, method_id: method_id}
+    if function_object do
+      %ABI.FunctionSelector{returns: returns, method_id: method_id} = function_object
+      outputs = extract_outputs(returns)
+
+      %{outputs: outputs, method_id: method_id}
+    else
+      {:error, "method_id does not exist"}
+    end
   end
 
   defp query_contract_and_link_outputs(contract_address_hash, args, from, abi, outputs, method_id, leave_error_as_map) do

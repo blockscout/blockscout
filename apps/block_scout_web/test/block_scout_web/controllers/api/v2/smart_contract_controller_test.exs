@@ -292,6 +292,50 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
              } == response
     end
 
+    test "query-read-method with nonexistent method_id", %{conn: conn} do
+      abi = [
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
+          "name" => "getCaller",
+          "inputs" => []
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "bool", "name" => "", "internalType" => "bool"}],
+          "name" => "isWhitelist",
+          "inputs" => [%{"type" => "address", "name" => "_address", "internalType" => "address"}]
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "nonpayable",
+          "outputs" => [],
+          "name" => "disableWhitelist",
+          "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
+        }
+      ]
+
+      blockchain_get_code_mock()
+
+      target_contract = insert(:smart_contract, abi: abi)
+
+      request =
+        post(conn, "/api/v2/smart-contracts/#{target_contract.address_hash}/query-read-method", %{
+          "contract_type" => "regular",
+          "args" => ["0xfffffffffffffffffffffffffffffffffffffffe"],
+          "method_id" => "00000000"
+        })
+
+      assert response = json_response(request, 200)
+
+      assert %{
+               "is_error" => true,
+               "result" => %{"error" => "method_id does not exist"}
+             } == response
+    end
+
     test "query-read-method returns error 1", %{conn: conn} do
       abi = [
         %{
