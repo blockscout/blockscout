@@ -25,10 +25,13 @@ defmodule Explorer.Chain.Events.Listener do
   end
 
   def handle_info({:notification, _pid, _ref, _topic, payload}, state) do
-    payload
-    |> expand_payload()
-    |> decode_payload!()
-    |> broadcast()
+    expanded_payload = expand_payload(payload)
+
+    if expanded_payload != nil do
+      expanded_payload
+      |> decode_payload!()
+      |> broadcast()
+    end
 
     {:noreply, state}
   end
@@ -69,7 +72,12 @@ defmodule Explorer.Chain.Events.Listener do
         nil
 
       %{data: data} = notification ->
-        Repo.delete(notification)
+        try do
+          Repo.delete(notification)
+        rescue
+          Ecto.StaleEntryError -> nil
+        end
+
         data
     end
   end

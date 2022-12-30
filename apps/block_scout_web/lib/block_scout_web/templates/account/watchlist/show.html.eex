@@ -35,7 +35,7 @@
             </div>
           </div>
           <%= if Enum.count(@watchlist.watchlist_addresses) < WatchlistAddress.get_max_watchlist_addresses_count() do %>
-            <a class="button button-primary button-sm" href="<%= watchlist_address_path(@conn, :new) %>"><%= gettext "Add address" %></a>
+            <a class="add-address-button button button-primary button-sm" href="<%= watchlist_address_path(@conn, :new) %>"><%= gettext "Add address" %></a>
           <% end %>
         </div>
       </div>
