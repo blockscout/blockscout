@@ -436,9 +436,10 @@ defmodule Explorer.SmartContract.Reader do
       abi
       |> ABI.parse_specification()
 
-    with %{outputs: outputs, method_id: method_id} <- proccess_abi(parsed_final_abi, method_id) do
-      query_contract_and_link_outputs(contract_address_hash, args, from, abi, outputs, method_id, leave_error_as_map)
-    else
+    case proccess_abi(parsed_final_abi, method_id) do
+      %{outputs: outputs, method_id: method_id} ->
+        query_contract_and_link_outputs(contract_address_hash, args, from, abi, outputs, method_id, leave_error_as_map)
+
       {:error, message} ->
         {:error, message}
     end
