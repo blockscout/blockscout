@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   alias BlockScoutWeb.{AccessHelpers, AddressView}
   alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
+  alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{Reader, Writer}
@@ -90,7 +91,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, address}} <-
-           {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)} do
+           {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)},
+         {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
       implementation_address_hash_string =
         address.smart_contract
         |> SmartContract.get_implementation_address_hash()
@@ -109,7 +111,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, address}} <-
-           {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)} do
+           {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)},
+         {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
       implementation_address_hash_string =
         address.smart_contract
         |> SmartContract.get_implementation_address_hash()
@@ -133,7 +136,16 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
-         {:not_found, {:ok, _address}} <- {:not_found, Chain.find_contract_address(address_hash, [])} do
+         {:not_found, {:ok, address}} <-
+           {:not_found,
+            Chain.find_contract_address(address_hash,
+              necessity_by_association: %{
+                :smart_contract => :optional
+              }
+            )},
+         {:not_found, true} <-
+           {:not_found,
+            !is_nil(custom_abi) || (address.smart_contract && !match?(%NotLoaded{}, address.smart_contract))} do
       %{output: output, names: names} =
         if custom_abi do
           Reader.query_function_with_names_custom_abi(

@@ -122,6 +122,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
     end
 
+    test "return 404 on unverified contract", %{conn: conn} do
+      address = insert(:contract_address)
+
+      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}/methods-read")
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
     test "get read-methods", %{conn: conn} do
       abi = [
         %{
@@ -206,6 +213,19 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
     end
 
+    test "return 404 on unverified contract", %{conn: conn} do
+      address = insert(:contract_address)
+
+      request =
+        post(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}/query-read-method", %{
+          "contract_type" => "regular",
+          "args" => ["0xfffffffffffffffffffffffffffffffffffffffe"],
+          "method_id" => "c683630d"
+        })
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
     test "query-read-method", %{conn: conn} do
       abi = [
         %{
@@ -230,6 +250,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
         }
       ]
+
+      blockchain_get_code_mock()
 
       expect(
         EthereumJSONRPC.Mox,
@@ -295,6 +317,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         }
       ]
 
+      blockchain_get_code_mock()
+
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
@@ -349,6 +373,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         }
       ]
 
+      blockchain_get_code_mock()
+
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
@@ -402,6 +428,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         }
       ]
 
+      blockchain_get_code_mock()
+
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
@@ -445,6 +473,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       request = get(conn, "/api/v2/smart-contracts/0x/methods-write")
 
       assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "return 404 on unverified contract", %{conn: conn} do
+      address = insert(:contract_address)
+
+      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}/methods-write")
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get write-methods", %{conn: conn} do
@@ -704,6 +739,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
     end
 
+    test "return 404 on unverified contract", %{conn: conn} do
+      address = insert(:contract_address)
+
+      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}/methods-read-proxy")
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
     test "get read-methods", %{conn: conn} do
       abi = [
         %{
@@ -843,6 +885,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       target_contract = insert(:smart_contract, abi: abi)
 
+      blockchain_get_code_mock()
+
       expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
                                                   id: 0,
                                                   method: "eth_getStorageAt",
@@ -928,6 +972,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       target_contract = insert(:smart_contract, abi: abi)
 
+      blockchain_get_code_mock()
+
       expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
                                                   id: 0,
                                                   method: "eth_getStorageAt",
@@ -997,6 +1043,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       target_contract = insert(:smart_contract, abi: abi)
 
+      blockchain_get_code_mock()
+
       expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
                                                   id: 0,
                                                   method: "eth_getStorageAt",
@@ -1065,6 +1113,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       target_contract = insert(:smart_contract, abi: abi)
 
+      blockchain_get_code_mock()
+
       expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
                                                   id: 0,
                                                   method: "eth_getStorageAt",
@@ -1121,6 +1171,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       request = get(conn, "/api/v2/smart-contracts/0x/methods-write-proxy")
 
       assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "return 404 on unverified contract", %{conn: conn} do
+      address = insert(:contract_address)
+
+      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}/methods-write-proxy")
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get write-methods", %{conn: conn} do
