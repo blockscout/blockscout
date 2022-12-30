@@ -618,6 +618,8 @@ defmodule Explorer.SmartContract.Reader do
     end
   end
 
+  defp parse_item(nil), do: nil
+
   defp parse_item("true"), do: true
   defp parse_item("false"), do: false
 
