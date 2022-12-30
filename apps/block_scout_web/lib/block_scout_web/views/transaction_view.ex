@@ -313,7 +313,7 @@ defmodule BlockScoutWeb.TransactionView do
   def formatted_fee(%Transaction{} = transaction, opts) do
     transaction
     |> Chain.fee(:wei)
-    |> fee_to_denomination(opts)
+    |> fee_to_denomination(transaction.l1_fee, opts)
     |> case do
          {:actual, value} -> value
          {:maximum, value} -> "#{gettext("Max of")} #{value}"
@@ -510,10 +510,10 @@ defmodule BlockScoutWeb.TransactionView do
     format_wei_value(value, :ether, include_unit_label: false)
   end
 
-  defp fee_to_denomination({fee_type, fee}, opts) do
+  defp fee_to_denomination({fee_type, fee}, l1_fee, opts) do
     denomination = Keyword.get(opts, :denomination)
     include_label? = Keyword.get(opts, :include_label, true)
-    {fee_type, format_wei_value(Wei.from(fee, :wei), denomination, include_unit_label: include_label?)}
+    {fee_type, format_wei_value(Wei.sum(Wei.from(fee, :wei), l1_fee), denomination, include_unit_label: include_label?)}
   end
 
   @doc """

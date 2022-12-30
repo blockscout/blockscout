@@ -318,23 +318,23 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Total transaction fee.") %>
+                text: gettext("Total transaction fee spent on L1 and L2.") %>
               <%= gettext "Transaction Fee" %>
             </dt>
             <dd class="col-sm-9 col-lg-10">
               <%= formatted_fee(@transaction, denomination: :ether) %>
             </dd>
           </dl>
+          <hr>
           <!-- Gas Price -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                 text: gettext("Price per unit of gas specified by the sender. Higher gas prices can prioritize transaction inclusion during times of high usage.") %>
-              <%= gettext "Gas Price" %>
+              <%= gettext "Gas Price on L2" %>
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= gas_price(@transaction, :gwei) %> </dd>
           </dl>
-          <hr>
           <!-- Gas Limit -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
