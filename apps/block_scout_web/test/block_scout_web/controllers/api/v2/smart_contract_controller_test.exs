@@ -22,16 +22,47 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
     end
 
+    test "get unverified smart-contract info", %{conn: conn} do
+      address = insert(:contract_address)
+
+      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+      response = json_response(request, 200)
+
+      assert response ==
+               %{
+                 "is_self_destructed" => false,
+                 "deployed_bytecode" => to_string(address.contract_code),
+                 "creation_bytecode" => nil
+               }
+
+      insert(:transaction,
+        created_contract_address_hash: address.hash,
+        input:
+          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+      )
+      |> with_block()
+
+      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+      response = json_response(request, 200)
+
+      assert response ==
+               %{
+                 "is_self_destructed" => false,
+                 "deployed_bytecode" => to_string(address.contract_code),
+                 "creation_bytecode" =>
+                   "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+               }
+    end
+
     test "get smart-contract", %{conn: conn} do
       target_contract = insert(:smart_contract)
 
-      tx =
-        insert(:transaction,
-          created_contract_address_hash: target_contract.address_hash,
-          input:
-            "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-        )
-        |> with_block()
+      insert(:transaction,
+        created_contract_address_hash: target_contract.address_hash,
+        input:
+          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+      )
+      |> with_block()
 
       correct_response = %{
         "verified_twin_address_hash" => nil,
@@ -323,7 +354,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         :json_rpc,
         fn [
              %{
-               id: id,
+               id: _id,
                method: "eth_call",
                params: [%{data: "0xc683630d000000000000000000000000fffffffffffffffffffffffffffffffffffffffe"}, _]
              }
@@ -376,7 +407,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         :json_rpc,
         fn [
              %{
-               id: id,
+               id: _id,
                method: "eth_call",
                params: [%{data: "0xc683630d000000000000000000000000fffffffffffffffffffffffffffffffffffffffe"}, _]
              }
@@ -714,12 +745,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
       end)
 
-      address_hash = to_string(target_contract.address_hash)
-
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
-        fn [%{id: id, method: "eth_call", params: [%{to: address_hash}, _]}], opts ->
+        fn [%{id: id, method: "eth_call", params: [%{to: _address_hash}, _]}], _opts ->
           {:ok,
            [
              %{
@@ -827,8 +856,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
       end)
 
-      address_hash = target_contract.address_hash |> to_string()
-
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
@@ -839,7 +866,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                params: [
                  %{
                    data: "0xc683630d000000000000000000000000fffffffffffffffffffffffffffffffffffffffe",
-                   to: address_hash
+                   to: _address_hash
                  },
                  _
                ]
@@ -988,7 +1015,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         :json_rpc,
         fn [
              %{
-               id: id,
+               id: _id,
                method: "eth_call",
                params: [%{data: "0xc683630d000000000000000000000000fffffffffffffffffffffffffffffffffffffffe"}, _]
              }
@@ -1056,7 +1083,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         :json_rpc,
         fn [
              %{
-               id: id,
+               id: _id,
                method: "eth_call",
                params: [%{data: "0xc683630d000000000000000000000000fffffffffffffffffffffffffffffffffffffffe"}, _]
              }
@@ -1176,24 +1203,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      fn [%{id: id, method: "eth_call", params: params}], opts ->
-        {:ok,
-         [
-           %{
-             id: id,
-             jsonrpc: "2.0",
-             result: "0x000000000000000000000000fffffffffffffffffffffffffffffffffffffffe"
-           }
-         ]}
-      end
-    )
-  end
-
-  defp blockchain_eth_call_mock do
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn [%{id: id, method: "eth_call", params: params}], opts ->
+      fn [%{id: id, method: "eth_call", params: _params}], _opts ->
         {:ok,
          [
            %{

@@ -13,7 +13,10 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
+  alias BlockScoutWeb.SmartContractsApiV2Router
   alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2}
+
+  forward("/v2/smart-contracts", SmartContractsApiV2Router)
 
   pipeline :api do
     plug(:accepts, ["json"])
@@ -128,15 +131,6 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash/blocks-validated", V2.AddressController, :blocks_validated)
       get("/:address_hash/coin-balance-history", V2.AddressController, :coin_balance_history)
       get("/:address_hash/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
-    end
-
-    scope "/smart-contracts" do
-      get("/:address_hash", V2.SmartContractController, :smart_contract)
-      get("/:address_hash/methods-read", V2.SmartContractController, :methods_read)
-      get("/:address_hash/methods-write", V2.SmartContractController, :methods_write)
-      get("/:address_hash/methods-read-proxy", V2.SmartContractController, :methods_read_proxy)
-      get("/:address_hash/methods-write-proxy", V2.SmartContractController, :methods_write_proxy)
-      post("/:address_hash/query-read-method", BlockScoutWeb.API.V2.SmartContractController, :query_read_method)
     end
 
     scope "/tokens" do

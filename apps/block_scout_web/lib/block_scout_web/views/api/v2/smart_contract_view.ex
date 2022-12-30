@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias BlockScoutWeb.SmartContractView
   alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
   alias Explorer.Chain
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Visualize.Sol2uml
 
   def render("smart_contract.json", %{address: address}) do
@@ -100,7 +100,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   end
 
   # credo:disable-for-next-line
-  def prepare_smart_contract(address) do
+  def prepare_smart_contract(%Address{smart_contract: %SmartContract{}} = address) do
     minimal_proxy_template = Chain.get_minimal_proxy_template(address.hash)
 
     metadata_for_verification =
@@ -149,6 +149,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
     }
     |> Map.merge(bytecode_info(address))
+  end
+
+  def prepare_smart_contract(address) do
+    bytecode_info(address)
   end
 
   defp bytecode_info(address) do
