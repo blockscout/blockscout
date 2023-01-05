@@ -1,6 +1,6 @@
 $card-background-color: #fff !default;
 $card-tab-active: $primary !default;
-$card-default-border-radius: 10px !default;
+$card-default-border-radius: 20px !default;
 $card-horizontal-padding: 30px;
 $card-vertical-padding: 30px;
 $card-background-1: $primary !default;
@@ -244,7 +244,7 @@ $card-tab-icon-color-active: #fff !default;
   display:flex;
   flex-direction:row;
   box-shadow:none;
-  margin-bottom:20px;
+  margin-bottom:10px;
   @media (max-width: 1254px) {
     flex-direction: column;
   }
@@ -335,7 +335,7 @@ $card-tab-icon-color-active: #fff !default;
           border-top-right-radius:6px;
           border-bottom-right-radius:6px;
           color:#091312;
-          background:#AFD0E8;
+          background:rgba(175, 208, 232, .35);
           height:20px;
           .recent-preview-item-content-latest-txs-tag{
             position:absolute;
@@ -391,7 +391,7 @@ $card-tab-icon-color-active: #fff !default;
       background: #d5edec;
     }
     &:active{
-      background: #a2bab9;
+      background: #B7D2D0;
     }
   }
 }
@@ -407,7 +407,7 @@ $card-tab-icon-color-active: #fff !default;
         color:#a3a9b5;
         .recent-preview-item-content-latest-txs-tag-wrap{
           .recent-preview-item-content-latest-txs-tag{
-            border-left:10px solid #313355 !important;
+            border-left:10px solid #141918 !important;
           }
         }
       }

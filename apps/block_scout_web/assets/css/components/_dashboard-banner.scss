@@ -38,9 +38,9 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   .dashboard-banner-img{
     position:absolute;
     right: 0px;
-    top: 8px;
+    top: 80px;
     height: 280px;
-    @media (max-width: 1350px) {
+    @media (max-width: 1250px) {
       display:none;
     }
   }
@@ -48,10 +48,10 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
 
 .dashboard-banner {
   display: flex;
-  justify-content: space-between;
+  //padding-top: 43px;
   align-items: center;
   flex-direction: row;
-  height: 249px;
+  height: 316px;
   /* @include media-breakpoint-between(lg, xl) {
     height: 249px;
   } */
@@ -59,6 +59,8 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   @media (max-width:1200px) {
     flex-direction: column;
     height: 450px;
+    padding-top: 29px;
+    justify-content: space-between;
   }
   
 }
@@ -70,7 +72,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   }
 }
 .dashboard-banner-network-graph {
-  flex-grow: 1;
+  //flex-grow: 1;
   display:flex;
   flex-direction: column;
   align-items: flex-start;
@@ -289,9 +291,10 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
 .dashboard-banner-network-plain-container {
   display: flex;
   flex-direction: column;
-  margin-right: 120px;
-  @media (max-width: 1350px) {
-    margin-right: 0;
+  margin-left:20px;
+  @media (max-width: 1250px) {
+    //margin-right: 0;
+    
   }
   @media (min-width: 1690px) {
     margin-right: 0;
@@ -312,7 +315,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
       .dashboard-banner-network-stats-item{
         display: flex;
         align-items: flex-start;
-        width: 200px;
+        width: 150px;
         flex-direction: column;
         @media (max-width: 500px) {
           width: 165px;
