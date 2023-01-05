@@ -17,12 +17,15 @@ $navbar-logo-width: 100% !default;
   background-color: $header-background-color;
   position: relative;
   z-index: 100;
-  //padding-left: 0;
+  align-items: center;
+  @media (min-width: 992px) {
+    height:96px;
+  }
   .nav-item {
     font-size: 14px;
     &:last-child {
       .nav-link {
-        color: #21413F !important;
+        color: #21413F;
         &::before{
           background: transparent;
         }
@@ -40,23 +43,6 @@ $navbar-logo-width: 100% !default;
       font-size: 14px;
       position: relative;
       transition: $transition-cont;
-
-      &:before {
-        background-color: #ffffff;
-        border-radius: 0 0 4px 4px;
-        content: "";
-        display: block;
-        height: 0.25rem;
-        left: 50%;
-        opacity: 0;
-        position: absolute;
-        top: -10px;
-        transform: translateX(-50%);
-        transition: $transition-cont;
-        width: calc(
-          100% - #{$header-link-horizontal-padding} - #{$header-link-horizontal-padding}
-        );
-      }
 
       &.active,
       &:hover {
@@ -116,7 +102,7 @@ $navbar-logo-width: 100% !default;
     display: flex;
 
     @include media-breakpoint-up(xl) {
-      height: 50px;
+      height: 42px;
       margin-bottom: -8px;
       margin-top: -8px;
     }
@@ -242,7 +228,7 @@ $navbar-logo-width: 100% !default;
 
 .navbar-brand {
   margin-left: 0;
-  flex-shrink: 1;
+  flex: 0 0 155px !important;
   display: inline-flex;
   .navbar-logo {
     max-width: 100%;
@@ -308,7 +294,7 @@ $navbar-logo-width: 100% !default;
   .navbar-container-bottom-line{
     position:absolute;
     left:0;
-    bottom:-16px;
+    bottom:-18px;
     width: 100%;
     height:1px;
     box-sizing: border-box;
@@ -316,7 +302,7 @@ $navbar-logo-width: 100% !default;
     margin:0;
     display:none;
     @media (min-width: 992px) {
-      bottom:-12px;
+      bottom:-24px;
     }
   }
  

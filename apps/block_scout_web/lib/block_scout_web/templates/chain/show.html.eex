@@ -136,7 +136,7 @@
   <img class="dashboard-banner-img" src="<%= static_path(@conn, "/images/banner_inner_bg.png") %>"/>
 </div>
 <section class="container">
-  <div class="card card-chain-blocks js-ad-dependant-mb-3">
+  <div class="card card-chain-blocks js-ad-dependant-mb-3" style="margin-bottom: 10px;">
     <div class="card-body">
       <%= link(gettext("View All Blocks"), to: blocks_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %>
       <h2 class="card-title"><%= gettext "Blocks" %></h2>
