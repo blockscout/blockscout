@@ -36,6 +36,24 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     %{"items" => Enum.map(tokens, &prepare_token_balance/1), "next_page_params" => next_page_params}
   end
 
+  def render("addresses.json", %{
+        addresses: addresses,
+        next_page_params: next_page_params,
+        exchange_rate: exchange_rate,
+        total_supply: total_supply
+      }) do
+    %{
+      items: Enum.map(addresses, &prepare_address/1),
+      next_page_params: next_page_params,
+      exchange_rate: exchange_rate.usd_value,
+      total_supply: total_supply && to_string(total_supply)
+    }
+  end
+
+  def prepare_address({address, nonce}) do
+    nil |> Helper.address_with_info(address, address.hash) |> Map.put(:nonce, to_string(nonce))
+  end
+
   def prepare_address(address, conn \\ nil) do
     base_info = Helper.address_with_info(conn, address, address.hash)
     is_proxy = AddressView.smart_contract_is_proxy?(address)

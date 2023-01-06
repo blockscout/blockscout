@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   alias BlockScoutWeb.AccessHelpers
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView}
+  alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
   alias Indexer.Fetcher.TokenBalanceOnDemand
 
@@ -295,5 +296,28 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       |> put_status(200)
       |> render(:tokens, %{tokens: tokens, next_page_params: next_page_params})
     end
+  end
+
+  def addresses_list(conn, params) do
+    addresses =
+      params
+      |> paging_options()
+      |> Chain.list_top_addresses()
+
+    {addresses, next_page} = split_list_by_page(addresses)
+
+    next_page_params = next_page_params(next_page, addresses, params)
+
+    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    total_supply = Chain.total_supply()
+
+    conn
+    |> put_status(200)
+    |> render(:addresses, %{
+      addresses: addresses,
+      next_page_params: next_page_params,
+      exchange_rate: exchange_rate,
+      total_supply: total_supply
+    })
   end
 end

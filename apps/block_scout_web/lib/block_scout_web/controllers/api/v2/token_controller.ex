@@ -78,9 +78,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       params
       |> paging_options()
 
-    tokens = filter |> Chain.list_top_tokens(paging_params) |> Market.add_price()
-
-    {tokens, next_page} = split_list_by_page(tokens)
+    {tokens, next_page} = filter |> Chain.list_top_tokens(paging_params) |> Market.add_price() |> split_list_by_page()
 
     next_page_params = next_page |> next_page_params(tokens, params) |> delete_parameters_from_next_page_params()
 
