@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   alias BlockScoutWeb.AccessHelpers
   alias BlockScoutWeb.API.V2.TransactionView
-  alias Explorer.Chain
+  alias Explorer.{Chain, Market}
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
   import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash)} do
       conn
       |> put_status(200)
-      |> render(:token, %{token: token})
+      |> render(:token, %{token: Market.add_price(token)})
     end
   end
 
@@ -64,5 +64,28 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> put_status(200)
       |> render(:token_balances, %{token_balances: token_balances, next_page_params: next_page_params, token: token})
     end
+  end
+
+  def tokens_list(conn, params) do
+    filter =
+      if Map.has_key?(params, "filter") do
+        Map.get(params, "filter")
+      else
+        nil
+      end
+
+    paging_params =
+      params
+      |> paging_options()
+
+    tokens = filter |> Chain.list_top_tokens(paging_params) |> Market.add_price()
+
+    {tokens, next_page} = split_list_by_page(tokens)
+
+    next_page_params = next_page |> next_page_params(tokens, params) |> delete_parameters_from_next_page_params()
+
+    conn
+    |> put_status(200)
+    |> render(:tokens, %{tokens: tokens, next_page_params: next_page_params})
   end
 end

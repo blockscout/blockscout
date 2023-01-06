@@ -134,6 +134,7 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/tokens" do
+      get("/", V2.TokenController, :tokens_list)
       get("/:address_hash", V2.TokenController, :token)
       get("/:address_hash/counters", V2.TokenController, :counters)
       get("/:address_hash/transfers", V2.TokenController, :transfers)
