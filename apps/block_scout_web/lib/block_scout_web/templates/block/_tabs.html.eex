@@ -1,0 +1,19 @@
+<div class="card-tabs js-card-tabs">
+  <%=
+    link(
+      gettext("Transactions"),
+      class: "card-tab #{tab_status("transactions", @conn.request_path)}",
+      to: block_transaction_path(@conn, :index, @conn.params["block_hash_or_number"])
+    )
+  %>
+  
+  <%= if Chain.check_if_withdrawals_in_block(@block.hash) do %>
+    <%=
+      link(
+        gettext("Withdrawals"),
+        class: "card-tab #{tab_status("withdrawals", @conn.request_path)}",
+        to: block_withdrawal_path(@conn, :index, @conn.params["block_hash_or_number"])
+      )
+    %>
+  <% end %>
+</div>
