@@ -29,6 +29,7 @@ Some data has to be extracted from already fetched data, and there're several tr
 - `pending_transaction`: fetches pending transactions (i.e. not yet collated into a block) every second (`pending_transaction_interval`)
 - `block/realtime`: listens for new blocks from websocket and polls node for new blocks, imports new ones one by one
 - `block/catchup`: gets unfetched ranges of blocks, imports them in batches
+- `withdrawals`: optionally fetches withdrawals for old blocks (in the given from boundary of block numbers)
 
 Both block fetchers retrieve/extract the blocks themselves and the following additional data:
 
@@ -37,6 +38,7 @@ Both block fetchers retrieve/extract the blocks themselves and the following add
 - `logs`
 - `token_transfers`
 - `addresses`
+- `withdrawals`
 
 The following stubs for further async fetching are inserted as well:
 

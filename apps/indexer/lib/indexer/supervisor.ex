@@ -28,7 +28,8 @@ defmodule Indexer.Supervisor do
     TokenInstance,
     TokenTotalSupplyOnDemand,
     TokenUpdater,
-    UncleBlock
+    UncleBlock,
+    Withdrawal
   }
 
   alias Indexer.Temporary.{
@@ -141,7 +142,8 @@ defmodule Indexer.Supervisor do
         {BlocksTransactionsMismatch.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {PendingOpsCleaner, [[], []]},
-        {PendingBlockOperationsSanitizer, [[]]}
+        {PendingBlockOperationsSanitizer, [[]]},
+        {Withdrawal.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]}
       ]
       |> List.flatten()
 

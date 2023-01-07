@@ -129,6 +129,7 @@ defmodule Indexer.Block.Fetcher do
            %Blocks{
              blocks_params: blocks_params,
              transactions_params: transactions_params_without_receipts,
+             withdrawals_params: withdrawals_params,
              block_second_degree_relations_params: block_second_degree_relations_params,
              errors: blocks_errors
            }}} <- {:blocks, fetched_blocks},
@@ -147,14 +148,16 @@ defmodule Indexer.Block.Fetcher do
              logs: logs,
              mint_transfers: mint_transfers,
              token_transfers: token_transfers,
-             transactions: transactions_with_receipts
+             transactions: transactions_with_receipts,
+             withdrawals: withdrawals_params
            }),
          coin_balances_params_set =
            %{
              beneficiary_params: MapSet.to_list(beneficiary_params_set),
              blocks_params: blocks,
              logs_params: logs,
-             transactions_params: transactions_with_receipts
+             transactions_params: transactions_with_receipts,
+             withdrawals: withdrawals_params
            }
            |> AddressCoinBalances.params_set(),
          coin_balances_params_daily_set =
@@ -180,7 +183,8 @@ defmodule Indexer.Block.Fetcher do
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
-               transactions: %{params: transactions_with_receipts}
+               transactions: %{params: transactions_with_receipts},
+               withdrawals: %{params: withdrawals_params}
              }
            ) do
       Prometheus.Instrumenter.block_batch_fetch(fetch_time, callback_module)
