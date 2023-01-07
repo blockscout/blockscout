@@ -27,7 +27,8 @@ defmodule Indexer.Supervisor do
     TokenInstance,
     TokenUpdater,
     TransactionAction,
-    UncleBlock
+    UncleBlock,
+    Withdrawal
   }
 
   alias Indexer.Temporary.{
@@ -141,7 +142,8 @@ defmodule Indexer.Supervisor do
          [
            %{block_fetcher: block_fetcher, block_interval: block_interval, memory_monitor: memory_monitor},
            [name: Catchup.Supervisor]
-         ]}
+         ]},
+        {Withdrawal.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]}
       ]
       |> List.flatten()
 

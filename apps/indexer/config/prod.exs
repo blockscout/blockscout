@@ -42,3 +42,9 @@ config :logger, :block_import_timings,
   path: Path.absname("logs/prod/indexer/block_import_timings.log"),
   metadata_filter: [fetcher: :block_import_timings],
   rotate: %{max_bytes: 52_428_800, keep: 19}
+
+config :logger, :withdrawal,
+  level: :info,
+  path: Path.absname("logs/dev/indexer/withdrawal.log"),
+  metadata_filter: [fetcher: :withdrawal],
+  rotate: %{max_bytes: 52_428_800, keep: 19}
