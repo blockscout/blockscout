@@ -61,7 +61,8 @@ defmodule Explorer.Chain do
     Token.Instance,
     TokenTransfer,
     Transaction,
-    Wei
+    Wei,
+    Withdrawal
   }
 
   alias Explorer.Chain.Block.{EmissionReward, Reward}
@@ -615,6 +616,21 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
+  @spec address_hash_to_withdrawals(
+          Hash.Address.t(),
+          [paging_options | necessity_by_association_option]
+        ) :: [Withdrawal.t()]
+  def address_hash_to_withdrawals(address_hash, options \\ []) when is_list(options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    address_hash
+    |> Withdrawal.address_hash_to_withdrawals_query()
+    |> join_associations(necessity_by_association)
+    |> handle_withdrawals_paging_options(paging_options)
+    |> Repo.all()
+  end
+
   @doc """
   address_hash_to_token_transfers_including_contract/2 function returns token transfers on address (to/from/contract).
   It is used by CSV export of token transfers button.
@@ -990,6 +1006,21 @@ defmodule Explorer.Chain do
         )).()
   end
 
+  @spec block_to_withdrawals(
+          Hash.Full.t(),
+          [paging_options | necessity_by_association_option]
+        ) :: [Withdrawal.t()]
+  def block_to_withdrawals(block_hash, options \\ []) when is_list(options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    block_hash
+    |> Withdrawal.block_hash_to_withdrawals_query()
+    |> join_associations(necessity_by_association)
+    |> handle_withdrawals_paging_options(paging_options)
+    |> Repo.all()
+  end
+
   @doc """
   Finds sum of gas_used for new (EIP-1559) txs belongs to block
   """
@@ -1064,6 +1095,13 @@ defmodule Explorer.Chain do
       )
 
     Repo.aggregate(query, :count, :hash)
+  end
+
+  @spec check_if_withdrawals_in_block(Hash.Full.t()) :: boolean()
+  def check_if_withdrawals_in_block(block_hash) do
+    block_hash
+    |> Withdrawal.block_hash_to_withdrawals_query()
+    |> Repo.exists?()
   end
 
   @spec address_to_incoming_transaction_count(Hash.Address.t()) :: non_neg_integer()
@@ -2650,6 +2688,13 @@ defmodule Explorer.Chain do
         where: tb.value > 0
       )
     )
+  end
+
+  @spec check_if_withdrawals_at_address(Hash.Address.t()) :: boolean()
+  def check_if_withdrawals_at_address(address_hash) do
+    address_hash
+    |> Withdrawal.address_hash_to_withdrawals_query()
+    |> Repo.exists?()
   end
 
   @doc """
@@ -4562,6 +4607,14 @@ defmodule Explorer.Chain do
   defp handle_token_transfer_paging_options(query, paging_options) do
     query
     |> TokenTransfer.page_token_transfer(paging_options)
+    |> limit(^paging_options.page_size)
+  end
+
+  defp handle_withdrawals_paging_options(query, nil), do: query
+
+  defp handle_withdrawals_paging_options(query, paging_options) do
+    query
+    |> Withdrawal.page_withdrawals(paging_options)
     |> limit(^paging_options.page_size)
   end
 
