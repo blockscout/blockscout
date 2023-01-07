@@ -239,6 +239,7 @@ if ($addressDetailsPage.length) {
   const shouldScroll = pathParts.includes('transactions') ||
   pathParts.includes('token-transfers') ||
   pathParts.includes('tokens') ||
+  pathParts.includes('withdrawals') ||
   pathParts.includes('internal-transactions') ||
   pathParts.includes('coin-balances') ||
   pathParts.includes('logs') ||

@@ -154,9 +154,9 @@ defmodule BlockScoutWeb.BlockTransactionController do
     end
   end
 
-  defp block_above_tip("0x" <> _), do: {:error, :hash}
+  def block_above_tip("0x" <> _), do: {:error, :hash}
 
-  defp block_above_tip(block_hash_or_number) when is_binary(block_hash_or_number) do
+  def block_above_tip(block_hash_or_number) when is_binary(block_hash_or_number) do
     case Chain.max_consensus_block_number() do
       {:ok, max_consensus_block_number} ->
         {block_number, _} = Integer.parse(block_hash_or_number)
