@@ -39,7 +39,8 @@ defmodule Explorer.Factory do
     Token,
     TokenTransfer,
     Token.Instance,
-    Transaction
+    Transaction,
+    Withdrawal
   }
 
   alias Explorer.SmartContract.Helper
@@ -945,6 +946,29 @@ defmodule Explorer.Factory do
       from_number: 1,
       to_number: 0
     }
+  end
+
+  def withdrawal_factory do
+    block = build(:block)
+    address = build(:address)
+
+    %Withdrawal{
+      index: withdrawal_index(),
+      validator_index: withdrawal_validator_index(),
+      amount: Enum.random(1..100_000),
+      block: block,
+      block_hash: block.hash,
+      address: address,
+      address_hash: address.hash
+    }
+  end
+
+  def withdrawal_index do
+    sequence("withdrawal_index", & &1)
+  end
+
+  def withdrawal_validator_index do
+    sequence("withdrawal_validator_index", & &1)
   end
 
   def random_bool, do: Enum.random([true, false])
