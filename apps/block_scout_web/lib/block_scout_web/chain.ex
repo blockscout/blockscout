@@ -28,7 +28,8 @@ defmodule BlockScoutWeb.Chain do
     Token,
     TokenTransfer,
     Transaction,
-    Wei
+    Wei,
+    Withdrawal
   }
 
   alias Explorer.PagingOptions
@@ -361,6 +362,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%SmartContract{} = smart_contract) do
     %{"smart_contract_id" => smart_contract.id}
+  end
+
+  defp paging_params(%Withdrawal{index: index}) do
+    %{"index" => index}
   end
 
   defp paging_params(%{

@@ -1,0 +1,21 @@
+<tr data-identifier-hash="<%= @withdrawal.index %>">
+  <!-- Index -->
+  <td class="stakes-td">
+    <span><%= @withdrawal.index %></span>
+  </td>
+  <!-- Validator Index -->
+  <td class="stakes-td">
+    <span><%= @withdrawal.validator_index %></span>
+  </td>
+  <!-- Block -->
+  <td class="stakes-td">
+    <%= render BlockScoutWeb.BlockView,
+        "_link.html",
+        block: @withdrawal.block
+    %>
+  </td>
+  <!-- Amount -->
+  <td class="stakes-td">
+    <span><%=  format_wei_value(@withdrawal.amount, :ether) %></span>
+  </td>
+</tr>

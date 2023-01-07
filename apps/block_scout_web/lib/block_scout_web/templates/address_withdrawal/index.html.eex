@@ -1,0 +1,60 @@
+<section class="container">
+
+  <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
+
+  <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path, tags: @tags %>
+
+  <section data-page="address-withdrawals" id="withdrawals">
+    <div class="card">
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
+      <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+        <div class="clearfix">
+        
+          <h2 class="card-title float-left"><%= gettext "Withdrawals" %></h2>
+          <div class="top-pagination-outer-container float-right">
+            <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+          </div>
+        </div>
+        
+        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+          <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+        </button>
+        
+        <div class="addresses-table-container">
+          <div class="stakes-table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "Index" %></div>
+                  </th>
+                  <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "Validator index" %></div>
+                  </th>
+                  <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "Block" %></div>
+                  </th>
+                  <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "Amount" %></div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody data-items data-selector="address-withdrawals">
+                <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 4 %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div data-empty-response-message style="display: none;">
+          <div class="tile tile-muted text-center" data-selector="empty-withdrawals-list">
+            <%= gettext "There are no withdrawals for this address." %>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/address.js") %>"></script>
+  </section>
+</section>
