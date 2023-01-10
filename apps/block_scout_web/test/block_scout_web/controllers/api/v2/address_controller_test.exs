@@ -1215,7 +1215,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get empty list", %{conn: conn} do
       request = get(conn, "/api/v2/addresses")
 
-      assert %{"items" => [], "next_page_params" => nil, "exchange_rate" => nil, "total_supply" => "0"} =
+      total_supply = to_string(Chain.total_supply())
+
+      assert %{"items" => [], "next_page_params" => nil, "exchange_rate" => nil, "total_supply" => ^total_supply} =
                json_response(request, 200)
     end
 
@@ -1248,7 +1250,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   defp compare_item(%Address{} = address, json) do
     assert Address.checksum(address.hash) == json["hash"]
-    assert to_string(address.nonce + 1) == json["nonce"]
+    assert to_string(address.nonce + 1) == json["tx_count"]
   end
 
   defp compare_item(%Transaction{} = transaction, json) do
