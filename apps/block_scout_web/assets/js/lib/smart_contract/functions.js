@@ -1,10 +1,10 @@
 import $ from 'jquery'
-import { connectSelector, disconnectSelector, getContractABI, getMethodInputs, prepareMethodArgs } from './common_helpers'
+import { connectSelector, disconnectSelector, getCurrentAccountPromise, getContractABI, getMethodInputs, prepareMethodArgs } from './common_helpers'
 import { queryMethod, callMethod } from './interact'
 import { walletEnabled, connectToWallet, disconnectWallet, web3ModalInit } from './connect.js'
 import '../../pages/address'
 
-const loadFunctions = (element, isCustomABI) => {
+const loadFunctions = (element, isCustomABI, from) => {
   const $element = $(element)
   const url = $element.data('url')
   const hash = $element.data('hash')
@@ -13,7 +13,7 @@ const loadFunctions = (element, isCustomABI) => {
 
   $.get(
     url,
-    { hash, type, action, is_custom_abi: isCustomABI },
+    { hash, type, action, is_custom_abi: isCustomABI, from },
     response => $element.html(response)
   )
     .done(function () {
@@ -96,11 +96,19 @@ const readWriteFunction = (element) => {
 const container = $('[data-smart-contract-functions]')
 
 if (container.length) {
-  loadFunctions(container, false)
+  getWalletAndLoadFunctions()
 }
 
 const customABIContainer = $('[data-smart-contract-functions-custom]')
 
 if (customABIContainer.length) {
-  loadFunctions(customABIContainer, true)
+  getWalletAndLoadFunctions()
+}
+
+function getWalletAndLoadFunctions () {
+  getCurrentAccountPromise(window.web3 && window.web3.currentProvider).then((currentAccount) => {
+    loadFunctions(container, false, currentAccount)
+  }, () => {
+    loadFunctions(container, false, null)
+  })
 }

@@ -57,7 +57,7 @@ defmodule Explorer.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:bamboo, "~> 2.2.0"},
+      {:bamboo, "~> 2.3.0"},
       {:mime, "~> 1.4"},
       {:bcrypt_elixir, "~> 3.0"},
       # benchmark optimizations
@@ -113,7 +113,7 @@ defmodule Explorer.Mixfile do
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},
-      {:tesla, "~> 1.4.4"},
+      {:tesla, "~> 1.5.0"},
       {:cbor, "~> 1.0"},
       {:cloak_ecto, "~> 1.2.0"},
       {:redix, "~> 1.1"}
