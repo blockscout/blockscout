@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#6694](https://github.com/blockscout/blockscout/pull/6694) - Add withdrawals support (EIP-4895)
 - [#6542](https://github.com/blockscout/blockscout/pull/6542) - Init mixpanel and amplitude analytics
 - [#6574](https://github.com/blockscout/blockscout/pull/6574), [#6601](https://github.com/blockscout/blockscout/pull/6601) - Allow and manage insecure HTTP connection to the archive node
 - [#6433](https://github.com/blockscout/blockscout/pull/6433) - Update error pagess
