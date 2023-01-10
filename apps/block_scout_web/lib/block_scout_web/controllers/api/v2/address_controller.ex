@@ -299,12 +299,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   end
 
   def addresses_list(conn, params) do
-    addresses =
+    {addresses, next_page} =
       params
       |> paging_options()
       |> Chain.list_top_addresses()
-
-    {addresses, next_page} = split_list_by_page(addresses)
+      |> split_list_by_page()
 
     next_page_params = next_page_params(next_page, addresses, params)
 

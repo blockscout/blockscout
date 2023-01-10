@@ -1222,7 +1222,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "check pagination", %{conn: conn} do
       addresses =
         for i <- 0..50 do
-          insert(:address, nonce: i)
+          insert(:address, nonce: i, fetched_coin_balance: i + 1)
         end
 
       request = get(conn, "/api/v2/addresses")
@@ -1236,19 +1236,19 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
 
     test "check nil", %{conn: conn} do
-      token = insert(:token)
+      address = insert(:address, nonce: 1, fetched_coin_balance: 1)
 
       request = get(conn, "/api/v2/addresses")
 
-      assert %{"items" => [token_json], "next_page_params" => nil} = json_response(request, 200)
+      assert %{"items" => [address_json], "next_page_params" => nil} = json_response(request, 200)
 
-      compare_item(token, token_json)
+      compare_item(address, address_json)
     end
   end
 
   defp compare_item(%Address{} = address, json) do
     assert Address.checksum(address.hash) == json["hash"]
-    assert "0" == json["nonce"]
+    assert to_string(address.nonce + 1) == json["nonce"]
   end
 
   defp compare_item(%Transaction{} = transaction, json) do
@@ -1304,8 +1304,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   end
 
   defp compare_item(%Log{} = log, json) do
-    assert to_string(log.data) == json["data"]
     assert log.index == json["index"]
+    assert to_string(log.data) == json["data"]
     assert Address.checksum(log.address_hash) == json["address"]["hash"]
   end
 
