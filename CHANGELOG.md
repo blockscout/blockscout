@@ -40,6 +40,7 @@
 ### Fixes
 
 - [#6699](https://github.com/blockscout/blockscout/pull/6699) - L1 tx fields fix for Goerli Optimism BedRock update
+- [#6676](https://github.com/blockscout/blockscout/pull/6676) - Fix `/smart-contracts` bugs in API v2
 - [#6603](https://github.com/blockscout/blockscout/pull/6603) - Add to MM button explorer URL fix
 - [#6512](https://github.com/blockscout/blockscout/pull/6512) - Allow gasUsed in failed internal txs; Leave error field for staticcall
 - [#6532](https://github.com/blockscout/blockscout/pull/6532) - Fix index creation migration
