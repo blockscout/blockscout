@@ -1,23 +1,50 @@
 // general
-$primary: #35D07F;
-$secondary: #FBCC5C;
+$primary: #56DF7C;
+$secondary: #FCFF52;
 $tertiary: #fff;
 $additional-font: #fff;
 $white: #fff;
-$celo-dark: #2E3338;
+$celo-dark: #000000;
 $celo-blue: #0c74d4;
+$celo-background: #FCF6F1;
+$celo-error: #FF616B;
+
 
 $purple: #BF97FF;
 $happy-purple: #C955FF;
-$orange: #FFB765;
+$orange: #FF9A51;
+$yellow: #FF9A51;
 $cyan: #7ADEFF;
-$green: #35D07F;
+$green: $primary;
+
+$alert-danger-color: $celo-error;
+$btn-dropdown-line-color-hover: $celo-background;
+
+$check-tooltip-background: $celo-background;
+$check-tooltip-check: $celo-dark;
+
+$pagination-page-link-background: $celo-background;
+$pagination-page-link-color: $celo-dark;
+
+$progress-from-to-background: $celo-background;
+
+$new-smart-contract-container-tooltips-background-color: $celo-background;
+
+$header-textfield-background-color: $celo-background;
+
+$me-tooltip-background: $celo-background;
+$me-tooltip-text: $celo-dark;
+
+$layout-container-main-background-color: $celo-background;
+
 
 // Tile
 
 $tile-body-a-color: $primary;
 $tile-type-block-color: $primary;
 $tile-type-progress-bar-color: $primary;
+$tile-status-error-reason: $celo-error;
+
 .tile {
     a.tile-title {
         color: $primary !important;
@@ -27,7 +54,7 @@ $tile-type-progress-bar-color: $primary;
 }
 
 // footer
-$footer-background-color: #282d31;
+$footer-background-color: $celo-dark;
 $footer-title-color: #fff;
 $footer-text-color: $additional-font;
 $footer-item-disc-color: $secondary;
@@ -74,7 +101,7 @@ $dashboard-banner-network-plain-container-background-color: #2ea780; // stats bg
 
 
 // navigation
-$header-background-color: #2e3338;
+$header-background-color: $celo-dark;
 .navbar { box-shadow: none; } // header shadow
 $dropdown-menu-item-hover-color: $primary;
 $dropdown-menu-item-hover-background: rgba($primary, .1);

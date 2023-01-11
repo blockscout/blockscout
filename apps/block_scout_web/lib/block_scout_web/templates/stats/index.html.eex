@@ -19,7 +19,7 @@
       </li>
       <li class="stats-link" data-tab-id="3">
         <a  href="<%= cstables_url %>" target="myiframe" >
-          <%=  gettext("cStables") %>
+          <%=  gettext("Mento") %>
         </a>
       </li>
       <li class="stats-link" data-tab-id="4">
