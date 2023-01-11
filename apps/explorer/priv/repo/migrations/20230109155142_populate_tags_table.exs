@@ -104,6 +104,7 @@ defmodule Explorer.Repo.Local.Migrations.PopulateTagsTable do
     execute("""
       DELETE FROM address_to_tags;
       DELETE FROM address_tags;
+      DROP PROCEDURE IF EXISTS update_validators_tags_bindings;
     """)
   end
 end
