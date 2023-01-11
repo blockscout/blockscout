@@ -28,42 +28,54 @@ defmodule Explorer.Repo.Local.Migrations.PopulateTagsTable do
         CROSS JOIN (
           SELECT * FROM tag_id WHERE label='black-hole'
         ) t
+        JOIN addresses adr
+        ON adr.hash = a.address
       )
     """)
 
-    # Initially pre-populate all EOAs and contracts
     execute("""
-      WITH tag_ids AS (
-        SELECT id, label FROM address_tags
-      )
-      INSERT INTO address_to_tags (address_hash, tag_id, inserted_at, updated_at)
-      SELECT
-        s1.hash, t.id, NOW(), NOW()
-      FROM (
+      CREATE OR REPLACE PROCEDURE update_validators_tags_bindings()
+      LANGUAGE plpgsql AS $$
+      BEGIN
+        -- remove old addresses that are not validators anymore
+        WITH existing_validators AS (
+          SELECT DISTINCT
+            UNNEST(ARRAY['validator', 'validator-group', 'validator-signer']) AS "label",
+            UNNEST(ARRAY[address, group_address_hash, signer_address_hash]) AS "address"
+          FROM celo_validator
+          WHERE member > 0
+        )
+        DELETE FROM address_to_tags
+        USING address_to_tags at
+        LEFT JOIN address_tags t
+        ON at.tag_id = t.id
+        WHERE
+          t.label IN ('validator', 'validator-group', 'validator-signer') AND
+          at.address_hash NOT IN (
+            SELECT address FROM existing_validators
+          );
+
+        -- insert new rows
+        WITH tag_ids AS (
+          SELECT id, label FROM address_tags
+        )
+        INSERT INTO address_to_tags (address_hash, tag_id, inserted_at, updated_at)
         SELECT
-          a.hash,
-          CASE WHEN contract_code IS NULL THEN 'eoa' ELSE 'contract' END as label
-        FROM addresses a
-      ) s1
-      LEFT JOIN (
-        SELECT * FROM tag_ids
-      ) t
-      ON s1.label = t.label;
-    """)
-
-    # Pre-populate proxies
-    execute("""
-      WITH tag_ids AS (
-        SELECT id, label FROM address_tags
-      )
-      INSERT INTO address_to_tags (address_hash, tag_id, inserted_at, updated_at)
-      SELECT
-        s.address_hash, t.id, NOW(), NOW()
-      FROM smart_contracts s
-      LEFT JOIN (
-        SELECT * FROM tag_ids
-      ) t ON t.label = 'proxy'
-      WHERE implementation_name IS NOT NULL;
+          s1.address, t.id, NOW(), NOW()
+        FROM (
+          SELECT DISTINCT
+            UNNEST(ARRAY['validator', 'validator-group', 'validator-signer']) AS "label",
+            UNNEST(ARRAY[address, group_address_hash, signer_address_hash]) AS "address"
+          FROM celo_validator
+          WHERE member > 0
+        ) s1
+        LEFT JOIN address_tags t
+        ON s1.label = t.label
+        JOIN addresses a
+        ON s1.address = a.hash
+        ON CONFLICT DO NOTHING;
+      COMMIT;
+      END;$$;
     """)
 
     # Validators, validator signers and validator groups
@@ -82,24 +94,11 @@ defmodule Explorer.Repo.Local.Migrations.PopulateTagsTable do
         WHERE member > 0
       ) s1
       LEFT JOIN address_tags t
-      ON s1.label = t.label;
+      ON s1.label = t.label
+      JOIN addresses a
+      ON s1.address = a.hash;
     """)
-
-    # Tokens
-    execute("""
-      WITH tag_ids AS (
-        SELECT id, label FROM address_tags
-      )
-      INSERT INTO address_to_tags (address_hash, tag_id, inserted_at, updated_at)
-      SELECT
-        s.contract_address_hash, t.id, NOW(), NOW()
-      FROM tokens s
-      LEFT JOIN (
-        SELECT * FROM tag_ids
-      ) t ON t.label = 'token'
-      WHERE implementation_name IS NOT NULL;
-    """)
-    end
+  end
 
   def down do
     execute("""
