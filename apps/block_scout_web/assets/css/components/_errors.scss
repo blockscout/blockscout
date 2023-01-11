@@ -19,7 +19,7 @@ main:has(section.error-container) {
 .block-not-found {
 	display: flex;
 	flex-direction: column;
-	padding-bottom: 50px;
+	padding: 6rem 0 9rem 0;
 	@media (min-width: $error-tablet-breakpoint) {
 		flex-direction: row;
 		align-items: center;
@@ -95,7 +95,7 @@ main:has(section.error-container) {
 	justify-content: center;
 	flex-direction: column;
 	margin: auto;
-	padding-bottom: 3rem;
+	padding: 6rem 0 9rem 0;
 	max-width: 827px;
 	gap: 12px;
 
