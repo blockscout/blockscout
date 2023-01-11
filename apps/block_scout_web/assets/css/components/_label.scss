@@ -31,13 +31,31 @@
         background: #153550;
         color: #fff;
     }
-    &.bridged {
-        background: #70aee3;
-        color: #fff;
-    }
-    &.validator {
+    &.validator,
+    &.validator-group,
+    &.validator-signer {
         background: $primary;
         color: #fff;
+    }
+    &.eoa {
+      background: #007bff;
+      color: #fff;
+    }
+    &.contract {
+      background: #923dc3;
+      color: #fff;
+    }
+    &.proxy {
+      background: #2a9e51;
+      color: #fff;
+    }
+    &.black-hole {
+      background: #000;
+      color: #fff;
+    }
+    &.token {
+      background: #5d26c4;
+      color: #fff;
     }
     &.reward,
     &.epoch-number {
