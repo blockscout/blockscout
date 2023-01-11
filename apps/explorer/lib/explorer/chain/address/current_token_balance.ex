@@ -158,7 +158,22 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   @doc """
   Builds an `t:Ecto.Query.t/0` to fetch the current token balances of the given address.
   """
-  def last_token_balances(address_hash) do
+  def last_token_balances(address_hash, type \\ [])
+
+  def last_token_balances(address_hash, [type | _]) do
+    from(
+      ctb in __MODULE__,
+      where: ctb.address_hash == ^address_hash,
+      where: ctb.value > 0,
+      where: ctb.token_type == ^type,
+      left_join: t in Token,
+      on: ctb.token_contract_address_hash == t.contract_address_hash,
+      select: {ctb, t},
+      order_by: [desc: ctb.value, asc: t.type, asc: t.name]
+    )
+  end
+
+  def last_token_balances(address_hash, _) do
     from(
       ctb in __MODULE__,
       where: ctb.address_hash == ^address_hash,
@@ -173,11 +188,11 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   @doc """
   Builds an `t:Ecto.Query.t/0` to fetch the current token balances of the given address (paginated version).
   """
-  def last_token_balances(address_hash, options) do
+  def last_token_balances(address_hash, options, type) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     address_hash
-    |> last_token_balances()
+    |> last_token_balances(type)
     |> limit(^paging_options.page_size)
   end
 

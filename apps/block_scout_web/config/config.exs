@@ -99,6 +99,10 @@ config :block_scout_web, BlockScoutWeb.ApiRouter,
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
 
+config :block_scout_web, BlockScoutWeb.CSPHeader,
+  mixpanel_url: System.get_env("MIXPANEL_URL", "https://api-js.mixpanel.com"),
+  amplitude_url: System.get_env("AMPLITUDE_URL", "https://api2.amplitude.com/2/httpapi")
+
 # Configures Ueberauth local settings
 config :ueberauth, Ueberauth,
   providers: [
