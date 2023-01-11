@@ -5,8 +5,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   use GenServer
 
-  alias Explorer.EnvVarTranslator
-  alias Explorer.Repo
+  alias Explorer.{EnvVarTranslator, Repo}
   alias Explorer.Tags.{AddressTag, AddressToTag}
   require Explorer.Celo.Telemetry, as: Telemetry
 
@@ -54,8 +53,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     {:noreply, state}
   end
 
-  defp update_validators_tags_bindings() do
-    IO.inspect("Updating validators stuff")
+  defp update_validators_tags_bindings do
     Repo.query!("CALL update_validators_tags_bindings();", [], timeout: :timer.seconds(30))
   end
 
