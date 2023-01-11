@@ -9,6 +9,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Visualize.Sol2uml
 
+  require Logger
+
   def render("smart_contract.json", %{address: address}) do
     prepare_smart_contract(address)
   end
@@ -94,10 +96,20 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         |> Map.drop(["abi_outputs"])
 
       _ ->
-        function
-        |> Map.drop(["abi_outputs"])
+        result =
+          function
+          |> Map.drop(["abi_outputs"])
+
+        outputs = Enum.map(result["outputs"], &prepare_output/1)
+        Map.replace(result, "outputs", outputs)
     end
   end
+
+  defp prepare_output(%{"type" => type, "value" => value} = output) do
+    Map.replace(output, "value", ABIEncodedValueView.value_json(type, value))
+  end
+
+  defp prepare_output(output), do: output
 
   # credo:disable-for-next-line
   def prepare_smart_contract(%Address{smart_contract: %SmartContract{}} = address) do
@@ -201,6 +213,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
     result
   rescue
-    _ -> nil
+    exception ->
+      Logger.warn(fn ->
+        [
+          "Error formating constructor arguments for abi: #{inspect(abi)}, args: #{inspect(constructor_arguments)}: ",
+          Exception.format(:error, exception)
+        ]
+      end)
+
+      nil
   end
 end

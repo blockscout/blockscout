@@ -276,10 +276,73 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       assert %{
                "type" => "function",
                "stateMutability" => "view",
-               "outputs" => [%{"type" => "bool", "name" => "", "internalType" => "bool", "value" => ""}],
+               "outputs" => [%{"type" => "bool", "name" => "", "internalType" => "bool"}],
                "name" => "isWhitelist",
                "inputs" => [%{"type" => "address", "name" => "_address", "internalType" => "address"}],
                "method_id" => "c683630d"
+             } in response
+    end
+
+    test "get array of addresses within read-methods", %{conn: conn} do
+      abi = [
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "payable" => false,
+          "outputs" => [%{"type" => "address[]", "name" => ""}],
+          "name" => "getOwners",
+          "inputs" => [],
+          "constant" => true
+        }
+      ]
+
+      id =
+        abi
+        |> ABI.parse_specification()
+        |> Enum.at(0)
+        |> Map.fetch!(:method_id)
+
+      target_contract = insert(:smart_contract, abi: abi)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: "eth_call", params: _params}], _opts ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result:
+                 "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000400000000000000000000000064631b5d259ead889e8b06d12c8b74742804e5f1000000000000000000000000234fe7224ce480ca97d01897311b8c3d35162f8600000000000000000000000087877d9d68c9e014ea81e6f4a8bd44528484567d0000000000000000000000009c28f1bb95d7e7fe88e6e8458d53be127cc2dc4f"
+             }
+           ]}
+        end
+      )
+
+      request = get(conn, "/api/v2/smart-contracts/#{target_contract.address_hash}/methods-read")
+      assert response = json_response(request, 200)
+
+      assert %{
+               "type" => "function",
+               "stateMutability" => "view",
+               "payable" => false,
+               "outputs" => [
+                 %{
+                   "type" => "address[]",
+                   "name" => "",
+                   "value" => [
+                     "0x64631b5d259ead889e8b06d12c8b74742804e5f1",
+                     "0x234fe7224ce480ca97d01897311b8c3d35162f86",
+                     "0x87877d9d68c9e014ea81e6f4a8bd44528484567d",
+                     "0x9c28f1bb95d7e7fe88e6e8458d53be127cc2dc4f"
+                   ]
+                 }
+               ],
+               "name" => "getOwners",
+               "inputs" => [],
+               "constant" => true,
+               "method_id" => Base.encode16(id, case: :lower)
              } in response
     end
   end
@@ -785,7 +848,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       assert %{
                "type" => "function",
                "stateMutability" => "view",
-               "outputs" => [%{"type" => "bool", "name" => "", "internalType" => "bool", "value" => ""}],
+               "outputs" => [%{"type" => "bool", "name" => "", "internalType" => "bool"}],
                "name" => "isWhitelist",
                "inputs" => [%{"type" => "address", "name" => "_address", "internalType" => "address"}],
                "method_id" => "c683630d"
@@ -965,7 +1028,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       assert %{
                "type" => "function",
                "stateMutability" => "view",
-               "outputs" => [%{"type" => "bool", "name" => "", "internalType" => "bool", "value" => ""}],
+               "outputs" => [%{"type" => "bool", "name" => "", "internalType" => "bool"}],
                "name" => "isWhitelist",
                "inputs" => [%{"type" => "address", "name" => "_address", "internalType" => "address"}],
                "method_id" => "c683630d"
