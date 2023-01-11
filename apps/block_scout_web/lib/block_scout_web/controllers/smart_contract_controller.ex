@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.SmartContractController do
           if contract_type == "proxy" do
             Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string)
           else
-            Reader.read_only_functions(address_hash)
+            Reader.read_only_functions(address_hash, params["from"])
           end
         end
 
@@ -101,7 +101,7 @@ defmodule BlockScoutWeb.SmartContractController do
 
   def index(conn, _), do: not_found(conn)
 
-  defp custom_abi_render(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action}) do
+  defp custom_abi_render(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action} = params) do
     with custom_abi <- AddressView.fetch_custom_abi(conn, address_hash_string),
          false <- is_nil(custom_abi),
          abi <- custom_abi.abi,
@@ -110,7 +110,7 @@ defmodule BlockScoutWeb.SmartContractController do
         if action == "write" do
           Writer.filter_write_functions(abi)
         else
-          Reader.read_only_functions_from_abi(abi, address_hash)
+          Reader.read_only_functions_from_abi_with_sender(abi, address_hash, params["from"])
         end
 
       read_functions_required_wallet =

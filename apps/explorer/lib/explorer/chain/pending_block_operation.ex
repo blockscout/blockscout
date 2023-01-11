@@ -7,7 +7,7 @@ defmodule Explorer.Chain.PendingBlockOperation do
 
   alias Explorer.Chain.{Block, Hash}
 
-  @required_attrs ~w(block_hash)a
+  @required_attrs ~w(block_hash block_number)a
 
   @typedoc """
    * `block_hash` - the hash of the block that has pending operations.
@@ -19,6 +19,8 @@ defmodule Explorer.Chain.PendingBlockOperation do
   @primary_key false
   schema "pending_block_operations" do
     timestamps()
+
+    field(:block_number, :integer)
 
     belongs_to(:block, Block, foreign_key: :block_hash, primary_key: true, references: :hash, type: Hash.Full)
   end
