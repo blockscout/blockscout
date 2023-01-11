@@ -191,13 +191,50 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
   end
 
+  describe "/tokens" do
+    test "get empty list", %{conn: conn} do
+      request = get(conn, "/api/v2/tokens")
+
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
+    test "check pagination", %{conn: conn} do
+      tokens =
+        for i <- 0..50 do
+          insert(:token, holder_count: i)
+        end
+
+      request = get(conn, "/api/v2/tokens")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/tokens", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, tokens)
+    end
+
+    test "check nil", %{conn: conn} do
+      token = insert(:token)
+
+      request = get(conn, "/api/v2/tokens")
+
+      assert %{"items" => [token_json], "next_page_params" => nil} = json_response(request, 200)
+
+      compare_item(token, token_json)
+    end
+  end
+
   def compare_item(%Token{} = token, json) do
     assert Address.checksum(token.contract_address.hash) == json["address"]
     assert token.symbol == json["symbol"]
     assert token.name == json["name"]
     assert to_string(token.decimals) == json["decimals"]
     assert token.type == json["type"]
-    assert token.holder_count == json["holders"]
+
+    assert (is_nil(token.holder_count) and is_nil(json["holders"])) or
+             (to_string(token.holder_count) == json["holders"] and !is_nil(token.holder_count))
+
     assert to_string(token.total_supply) == json["total_supply"]
     assert Map.has_key?(json, "exchange_rate")
   end

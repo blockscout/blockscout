@@ -8,7 +8,7 @@ defmodule Indexer.PendingOpsCleanerTest do
     test "deletes non-consensus pending ops on init" do
       block = insert(:block, consensus: false)
 
-      insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
 
       assert Repo.one(from(block in PendingBlockOperation, where: block.block_hash == ^block.hash))
 
@@ -24,7 +24,7 @@ defmodule Indexer.PendingOpsCleanerTest do
 
       block = insert(:block, consensus: false)
 
-      insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
 
       Process.sleep(2_000)
 

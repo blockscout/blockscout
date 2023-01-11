@@ -1,10 +1,11 @@
 import $ from 'jquery'
+import Cookies from 'js-cookie'
 
-$('.dark-mode-changer').click(function () {
-  if (localStorage.getItem('current-color-mode') === 'dark') {
-    localStorage.setItem('current-color-mode', 'light')
+$('.dark-mode-changer').on('click', function () {
+  if (Cookies.get('chakra-ui-color-mode') === 'dark') {
+    Cookies.set('chakra-ui-color-mode', 'light')
   } else {
-    localStorage.setItem('current-color-mode', 'dark')
+    Cookies.set('chakra-ui-color-mode', 'dark')
   }
   // reload each theme switch
   document.location.reload(true)
