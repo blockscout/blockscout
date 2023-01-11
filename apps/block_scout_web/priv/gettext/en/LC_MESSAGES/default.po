@@ -94,7 +94,7 @@ msgstr ""
 msgid "(query)"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:227
+#: lib/block_scout_web/templates/layout/app.html.eex:225
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
@@ -313,7 +313,7 @@ msgstr ""
 msgid "Block Pending"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:44
+#: lib/block_scout_web/templates/layout/app.html.eex:42
 #, elixir-autogen, elixir-format
 msgid "Block Proposed, awaiting import..."
 msgstr ""
@@ -355,7 +355,7 @@ msgstr ""
 msgid "Blocks"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:43
+#: lib/block_scout_web/templates/layout/app.html.eex:41
 #, elixir-autogen, elixir-format
 msgid "Blocks Indexed"
 msgstr ""
@@ -1297,7 +1297,7 @@ msgstr ""
 msgid "Learn, Borrow, Earn"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:46
+#: lib/block_scout_web/templates/layout/app.html.eex:44
 #, elixir-autogen, elixir-format
 msgid "Less than"
 msgstr ""
@@ -1379,7 +1379,7 @@ msgid "Main Networks"
 msgstr ""
 
 #: lib/block_scout_web/templates/chain/show.html.eex:51
-#: lib/block_scout_web/templates/layout/app.html.eex:47
+#: lib/block_scout_web/templates/layout/app.html.eex:45
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:83
 #: lib/block_scout_web/views/address_view.ex:203
 #, elixir-autogen, elixir-format
@@ -1672,7 +1672,7 @@ msgid "Press / and focus will be moved to the search field"
 msgstr ""
 
 #: lib/block_scout_web/templates/chain/show.html.eex:40
-#: lib/block_scout_web/templates/layout/app.html.eex:48
+#: lib/block_scout_web/templates/layout/app.html.eex:46
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:94
 #, elixir-autogen, elixir-format
 msgid "Price"
@@ -2492,7 +2492,7 @@ msgstr ""
 msgid "Twitter"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:50
+#: lib/block_scout_web/templates/layout/app.html.eex:48
 #, elixir-autogen, elixir-format
 msgid "Tx/day"
 msgstr ""
@@ -2802,11 +2802,6 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract/index.html.eex:27
 #, elixir-autogen, elixir-format
 msgid "button"
-msgstr ""
-
-#: lib/block_scout_web/templates/stats/index.html.eex:22
-#, elixir-autogen, elixir-format
-msgid "cStables"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:242
@@ -3673,7 +3668,7 @@ msgstr ""
 msgid "Your name*"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:45
+#: lib/block_scout_web/templates/layout/app.html.eex:43
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Indexing Internal Transactions"
 msgstr ""
@@ -3729,4 +3724,9 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:130
 #, elixir-autogen, elixir-format
 msgid "Contract was precompiled and created at genesis or contract creation transaction is missing"
+msgstr ""
+
+#: lib/block_scout_web/templates/stats/index.html.eex:22
+#, elixir-autogen, elixir-format
+msgid "Mento"
 msgstr ""
