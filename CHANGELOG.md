@@ -33,6 +33,7 @@
 
 ### Fixes
 
+- [#6699](https://github.com/blockscout/blockscout/pull/6699) - L1 tx fields fix for Goerli Optimism BedRock update
 - [#6512](https://github.com/blockscout/blockscout/pull/6512) - Allow gasUsed in failed internal txs; Leave error field for staticcall
 - [#6532](https://github.com/blockscout/blockscout/pull/6532) - Fix index creation migration
 - [#6473](https://github.com/blockscout/blockscout/pull/6473) - Fix state changes for contract creation transactions
