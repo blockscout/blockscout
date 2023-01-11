@@ -41,7 +41,7 @@
             </div>
           </div>
           <%= if Enum.count(@custom_abis) < CustomABI.get_max_custom_abis_count() do %>
-            <a class="button button-primary button-sm" href="<%= custom_abi_path(@conn, :new) %>"><%= gettext "Add Custom ABI" %></a>
+            <a class="add-custom-abi-button button button-primary button-sm" href="<%= custom_abi_path(@conn, :new) %>"><%= gettext "Add Custom ABI" %></a>
           <% end %>
         </div>
       </div>

@@ -23,8 +23,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   alias Ecto.Changeset
   alias Explorer.Chain
+  alias Explorer.Utility.MissingBlockRange
   alias Indexer.{Block, Tracer}
-  alias Indexer.Block.Catchup.{MissingRangesCollector, Sequence}
+  alias Indexer.Block.Catchup.Sequence
   alias Indexer.Memory.Shrinkable
   alias Indexer.Prometheus
 
@@ -44,7 +45,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   def task(state) do
     Logger.metadata(fetcher: :block_catchup)
 
-    case MissingRangesCollector.get_latest_batch() do
+    case MissingBlockRange.get_latest_batch() do
       [] ->
         %{
           first_block_number: nil,
@@ -73,6 +74,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
         stream_fetch_and_import(state, sequence)
 
         shrunk = Shrinkable.shrunk?(sequence)
+
+        MissingBlockRange.clear_batch(missing_ranges)
 
         %{
           first_block_number: first,
