@@ -111,7 +111,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
     block_number = 1_000_006
     block = insert(:block, number: block_number)
-    insert(:pending_block_operation, block_hash: block.hash)
+    insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
 
     assert :ok = InternalTransaction.run([block_number], json_rpc_named_arguments)
 
@@ -127,7 +127,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
       block = insert(:block)
-      insert(:pending_block_operation, block_hash: block.hash)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
 
       assert InternalTransaction.init(
                [],
@@ -179,7 +179,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
       block = insert(:block)
       block_hash = block.hash
-      insert(:pending_block_operation, block_hash: block_hash)
+      insert(:pending_block_operation, block_hash: block_hash, block_number: block.number)
 
       assert %{block_hash: block_hash} = Repo.get(PendingBlockOperation, block_hash)
 
@@ -194,7 +194,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       block = insert(:block)
       transaction = insert(:transaction) |> with_block(block)
       block_hash = block.hash
-      insert(:pending_block_operation, block_hash: block_hash)
+      insert(:pending_block_operation, block_hash: block_hash, block_number: block.number)
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
@@ -307,7 +307,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       block = insert(:block)
       insert(:transaction) |> with_block(block)
       block_hash = block.hash
-      insert(:pending_block_operation, block_hash: block_hash)
+      insert(:pending_block_operation, block_hash: block_hash, block_number: block.number)
 
       assert %{block_hash: ^block_hash} = Repo.get(PendingBlockOperation, block_hash)
 
@@ -322,7 +322,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       block = insert(:block)
       transaction = :transaction |> insert() |> with_block(block)
       block_number = block.number
-      insert(:pending_block_operation, block_hash: block.hash)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do

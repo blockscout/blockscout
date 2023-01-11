@@ -185,7 +185,19 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   defp last_block do
     case Integer.parse(Application.get_env(:indexer, :last_block)) do
       {block, ""} -> block + 1
-      _ -> BlockNumber.get_max()
+      _ -> fetch_max_block_number()
+    end
+  end
+
+  defp fetch_max_block_number do
+    case BlockNumber.get_max() do
+      0 ->
+        json_rpc_named_arguments = Application.get_env(:indexer, :json_rpc_named_arguments)
+        {:ok, number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
+        number
+
+      number ->
+        number
     end
   end
 

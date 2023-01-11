@@ -27,6 +27,10 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     }
   end
 
+  def render("tokens.json", %{tokens: tokens, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(tokens, &render("token.json", %{token: &1})), "next_page_params" => next_page_params}
+  end
+
   def exchange_rate(%{usd_value: usd_value}) when not is_nil(usd_value), do: to_string(usd_value)
   def exchange_rate(_), do: nil
 

@@ -40,6 +40,15 @@ defmodule Indexer.Block.Catchup.FetcherTest do
   end
 
   describe "import/1" do
+    setup do
+      configuration = Application.get_env(:indexer, :last_block)
+      Application.put_env(:indexer, :last_block, "0")
+
+      on_exit(fn ->
+        Application.put_env(:indexer, :last_block, configuration)
+      end)
+    end
+
     test "fetches uncles asynchronously", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
