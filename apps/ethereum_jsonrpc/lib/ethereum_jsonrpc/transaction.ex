@@ -358,7 +358,6 @@ defmodule EthereumJSONRPC.Transaction do
   # doesn't return gas price and L1 fields for system transactions
   def elixir_to_params(
         %{
-          nil => nil,
           "blockHash" => block_hash,
           "blockNumber" => block_number,
           "from" => from_address_hash,
