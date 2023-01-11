@@ -82,11 +82,13 @@ defmodule Mix.Tasks.ListEvents do
       topic = SmartContractHelper.event_abi_to_topic_str(event)
       tracked = MapSet.member?(tracked_topics, topic)
 
-      IO.puts("  #{name} - #{topic} - #{if tracked do
-        "tracked"
-      else
-        "untracked"
-      end} ")
+      IO.puts(
+        "  #{name} - #{topic} - #{if tracked do
+          "tracked"
+        else
+          "untracked"
+        end} "
+      )
     end)
   end
 end
