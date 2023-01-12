@@ -120,8 +120,7 @@ defmodule Explorer.Chain.InternalTransaction do
       foreign_key: :block_hash,
       define_field: false,
       references: :block_hash,
-      type: Hash.Full,
-      where: [fetch_internal_transactions: true]
+      type: Hash.Full
     )
   end
 

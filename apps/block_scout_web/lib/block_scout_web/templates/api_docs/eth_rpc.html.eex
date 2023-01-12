@@ -1,7 +1,7 @@
 <section class="container">
   <div class="card">
     <div class="card-body">
-      <h1 class="card-title margin-bottom-sm"><%= gettext("ETH RPC API Documentation") %></h2>
+      <h1 class="card-title margin-bottom-sm"><%= gettext("ETH RPC API Documentation") %></h1>
       <p class="api-text-monospace" data-endpoint-url="<%= eth_rpc_api_url() %>">[ <%= gettext "Base URL:" %> <%= eth_rpc_api_url()%> ]</p>
       <p class="card-subtitle margin-bottom-0">
         <%= gettext "This API is provided to support some rpc methods in the exact format specified for ethereum nodes, which can be found " %>

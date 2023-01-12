@@ -32,7 +32,7 @@
       if (reCaptchaClientKey) {
         widgetId1 = grecaptcha.render('recaptcha', {
           'sitekey': reCaptchaClientKey,
-          'theme': localStorage.getItem('current-color-mode'),
+          'theme': getCookie('chakra-ui-color-mode'),
           'callback': function () {
             document.getElementById('export-csv-button').disabled = false
           }

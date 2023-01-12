@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
   describe "run/1" do
     test "transaction's status becomes :error when its internal_transaction has an error" do
       transaction = insert(:transaction) |> with_block(status: :ok)
-      insert(:pending_block_operation, block_hash: transaction.block_hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
 
       assert :ok == transaction.status
 
@@ -24,7 +24,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
     test "transaction's has_error_in_internal_txs become true when its internal_transaction (where index != 0) has an error" do
       transaction = insert(:transaction) |> with_block(status: :ok)
-      insert(:pending_block_operation, block_hash: transaction.block_hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
 
       assert :ok == transaction.status
       assert nil == transaction.has_error_in_internal_txs
@@ -48,7 +48,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
     test "transaction's has_error_in_internal_txs become false when its internal_transaction (where index == 0) has an error" do
       transaction = insert(:transaction) |> with_block(status: :ok)
-      insert(:pending_block_operation, block_hash: transaction.block_hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
 
       assert :ok == transaction.status
       assert nil == transaction.has_error_in_internal_txs
@@ -67,7 +67,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
     test "transaction's has_error_in_internal_txs become false when its internal_transaction has no error" do
       transaction = insert(:transaction) |> with_block(status: :ok)
-      insert(:pending_block_operation, block_hash: transaction.block_hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
 
       assert :ok == transaction.status
       assert nil == transaction.has_error_in_internal_txs
@@ -92,7 +92,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
     test "simple coin transfer's status becomes :error when its internal_transaction has an error" do
       transaction = insert(:transaction) |> with_block(status: :ok)
-      insert(:pending_block_operation, block_hash: transaction.block_hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
 
       assert :ok == transaction.status
 
@@ -112,7 +112,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       transaction1 = insert(:transaction) |> with_block(a_block, status: :ok)
       transaction2 = insert(:transaction) |> with_block(a_block, status: :ok)
 
-      insert(:pending_block_operation, block_hash: a_block.hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: a_block.hash, block_number: a_block.number)
 
       assert :ok == transaction1.status
       assert :ok == transaction2.status
@@ -136,7 +136,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       a_block = insert(:block, number: 1000)
       transaction1 = insert(:transaction) |> with_block(a_block, status: :ok)
       transaction2 = insert(:transaction) |> with_block(a_block, status: :ok)
-      insert(:pending_block_operation, block_hash: a_block.hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: a_block.hash, block_number: a_block.number)
 
       assert :ok == transaction1.status
       assert :ok == transaction2.status
@@ -161,7 +161,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       transaction0 = insert(:transaction) |> with_block(a_block, status: :ok)
       transaction1 = insert(:transaction) |> with_block(a_block, status: :ok)
       transaction2 = insert(:transaction) |> with_block(a_block, status: :ok)
-      insert(:pending_block_operation, block_hash: a_block.hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: a_block.hash, block_number: a_block.number)
 
       assert :ok == transaction0.status
       assert :ok == transaction1.status
@@ -203,7 +203,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
     test "simple coin transfer has no internal transaction inserted" do
       transaction = insert(:transaction) |> with_block(status: :ok)
-      insert(:pending_block_operation, block_hash: transaction.block_hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
 
       assert :ok == transaction.status
 
@@ -221,7 +221,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       transaction = insert(:transaction) |> with_block(status: :ok)
       pending = insert(:transaction)
 
-      insert(:pending_block_operation, block_hash: transaction.block_hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
 
       assert :ok == transaction.status
       assert is_nil(pending.block_hash)
@@ -246,14 +246,14 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       empty_block = insert(:block)
       pending = insert(:transaction)
 
-      insert(:pending_block_operation, block_hash: empty_block.hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: empty_block.hash, block_number: empty_block.number)
 
       assert is_nil(pending.block_hash)
 
       full_block = insert(:block)
       inserted = insert(:transaction) |> with_block(full_block)
 
-      insert(:pending_block_operation, block_hash: full_block.hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: full_block.hash, block_number: full_block.number)
 
       assert full_block.hash == inserted.block_hash
 
@@ -290,7 +290,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         block_index: 0
       )
 
-      insert(:pending_block_operation, block_hash: full_block.hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: full_block.hash, block_number: full_block.number)
 
       transaction_changes = make_internal_transaction_changes(transaction, 0, nil)
 
@@ -309,7 +309,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       transaction_a = insert(:transaction) |> with_block(full_block)
       transaction_b = insert(:transaction) |> with_block(full_block)
 
-      insert(:pending_block_operation, block_hash: full_block.hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: full_block.hash, block_number: full_block.number)
 
       transaction_a_changes = make_internal_transaction_changes(transaction_a, 0, nil)
 
@@ -325,12 +325,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
     test "does not remove consensus when block is empty and no transactions are missing" do
       empty_block = insert(:block)
 
-      insert(:pending_block_operation, block_hash: empty_block.hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: empty_block.hash, block_number: empty_block.number)
 
       full_block = insert(:block)
       inserted = insert(:transaction) |> with_block(full_block)
 
-      insert(:pending_block_operation, block_hash: full_block.hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: full_block.hash, block_number: full_block.number)
 
       assert full_block.hash == inserted.block_hash
 
