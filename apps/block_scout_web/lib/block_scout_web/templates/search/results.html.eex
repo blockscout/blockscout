@@ -38,7 +38,7 @@
                             </th>
                         </tr>
                     </thead>
-                    <tbody data-items data-selector="search-results-list">
+                    <tbody id='search_results_table_body' data-items data-selector="search-results-list">
                         <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 5 %>
                     </tbody>
                 </table>

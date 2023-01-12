@@ -192,7 +192,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block(block, status: :error)
 
-      insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
 
       status = TransactionView.transaction_status(transaction)
       assert TransactionView.formatted_result(status) == "Error: (Awaiting internal transactions for reason)"
