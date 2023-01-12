@@ -143,7 +143,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "file_path" => target_contract.file_path,
       "additional_sources" => Enum.map(additional_sources, &prepare_additional_sourse/1),
       "compiler_settings" => target_contract.compiler_settings,
-      "external_libraries" => target_contract.external_libraries,
+      "external_libraries" => prepare_external_libraries(target_contract.external_libraries),
       "constructor_args" => target_contract.constructor_arguments,
       "decoded_constructor_args" =>
         format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
@@ -173,6 +173,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     end
   end
 
+  defp prepare_external_libraries(libraries) when is_list(libraries) do
+    Enum.map(libraries, fn %Explorer.Chain.SmartContract.ExternalLibrary{name: name, address_hash: address_hash} ->
+      %{name: name, address_hash: address_hash}
+    end)
+  end
+
   defp prepare_additional_sourse(source) do
     %{
       "source_code" => source.contract_source_code,
@@ -190,7 +196,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       |> AddressContractView.decode_data(input_types)
       |> Enum.zip(constructor_abi["inputs"])
       |> Enum.map(fn {value, %{"type" => type} = input_arg} ->
-        {ABIEncodedValueView.value_json(type, value), input_arg}
+        [ABIEncodedValueView.value_json(type, value), input_arg]
       end)
 
     result
