@@ -23,7 +23,7 @@ defmodule Explorer.KnownTokens.Source do
 
   @spec known_tokens_source() :: module()
   defp known_tokens_source do
-    config(:source) || Explorer.KnownTokens.Source.MyEtherWallet
+    config(:source) || Explorer.KnownTokens.Source.CeloTokens
   end
 
   @spec config(atom()) :: term
