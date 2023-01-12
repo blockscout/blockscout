@@ -81,6 +81,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
   def is_smart_contract(_), do: false
 
   def is_verified(%Address{smart_contract: nil}), do: false
+  def is_verified(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false
   def is_verified(%Address{smart_contract: %NotLoaded{}}), do: nil
   def is_verified(%Address{smart_contract: _}), do: true
 

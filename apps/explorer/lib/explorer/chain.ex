@@ -30,6 +30,7 @@ defmodule Explorer.Chain do
   require Logger
 
   alias ABI.TypeDecoder
+  alias Ecto.Association.NotLoaded
   alias Ecto.{Changeset, Multi}
 
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
@@ -1894,7 +1895,7 @@ defmodule Explorer.Chain do
       case address_result do
         %{smart_contract: smart_contract} ->
           if smart_contract do
-            check_bytecode_matching(address_result)
+            check_bytecode_matching(address_result, smart_contract)
           else
             address_verified_twin_contract =
               Chain.get_minimal_proxy_template(hash) ||
@@ -1927,7 +1928,9 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp check_bytecode_matching(address) do
+  defp check_bytecode_matching(address, %NotLoaded{}), do: address
+
+  defp check_bytecode_matching(address, _) do
     now = DateTime.utc_now()
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
@@ -5142,10 +5145,13 @@ defmodule Explorer.Chain do
   end
 
   @spec fetch_last_token_balances(Hash.Address.t(), [paging_options]) :: []
-  def fetch_last_token_balances(address_hash, paging_options) do
+  def fetch_last_token_balances(address_hash, options) do
+    filter = Keyword.get(options, :token_type)
+    options = Keyword.delete(options, :token_type)
+
     address_hash
-    |> CurrentTokenBalance.last_token_balances(paging_options)
-    |> page_current_token_balances(paging_options)
+    |> CurrentTokenBalance.last_token_balances(options, filter)
+    |> page_current_token_balances(options)
     |> Repo.all()
   end
 
