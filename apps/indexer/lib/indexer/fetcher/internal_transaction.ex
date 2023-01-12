@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Explorer.Chain
   alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.{Accounts, Blocks}
+  alias Explorer.Chain.Import.Runner.Blocks, as: BlocksRunner
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
   alias Indexer.Transform.Addresses
@@ -275,7 +276,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   defp handle_foreign_key_violation(internal_transactions_params, block_numbers) do
-    Chain.remove_blocks_consensus(block_numbers)
+    BlocksRunner.invalidate_consensus_blocks(block_numbers)
 
     transaction_hashes =
       internal_transactions_params

@@ -457,6 +457,13 @@ config :explorer, :token_id_migration,
   concurrency: token_id_migration_concurrency,
   batch_size: token_id_migration_batch_size
 
+min_missing_block_number_batch_size_default_str = "100000"
+
+{min_missing_block_number_batch_size, _} =
+  Integer.parse(System.get_env("MIN_MISSING_BLOCK_NUMBER_BATCH_SIZE", min_missing_block_number_batch_size_default_str))
+
+config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber, batch_size: min_missing_block_number_batch_size
+
 ###############
 ### Indexer ###
 ###############
@@ -489,7 +496,7 @@ config :indexer,
   block_transformer: block_transformer,
   metadata_updater_seconds_interval:
     String.to_integer(System.get_env("TOKEN_METADATA_UPDATE_INTERVAL") || "#{1 * 24 * 60 * 60}"),
-  block_ranges: System.get_env("BLOCK_RANGES") || "",
+  block_ranges: System.get_env("BLOCK_RANGES"),
   first_block: System.get_env("FIRST_BLOCK") || "",
   last_block: System.get_env("LAST_BLOCK") || "",
   trace_first_block: System.get_env("TRACE_FIRST_BLOCK") || "",
@@ -568,6 +575,19 @@ blocks_catchup_fetcher_concurrency_default_str = "10"
 config :indexer, Indexer.Block.Catchup.Fetcher,
   batch_size: blocks_catchup_fetcher_batch_size,
   concurrency: blocks_catchup_fetcher_concurrency
+
+blocks_catchup_fetcher_missing_ranges_batch_size_default_str = "100000"
+
+{blocks_catchup_fetcher_missing_ranges_batch_size, _} =
+  Integer.parse(
+    System.get_env(
+      "INDEXER_CATCHUP_MISSING_RANGES_BATCH_SIZE",
+      blocks_catchup_fetcher_missing_ranges_batch_size_default_str
+    )
+  )
+
+config :indexer, Indexer.Block.Catchup.MissingRangesCollector,
+  missing_ranges_batch_size: blocks_catchup_fetcher_missing_ranges_batch_size
 
 {internal_transaction_fetcher_batch_size, _} =
   Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", "10"))

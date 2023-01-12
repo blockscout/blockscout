@@ -17,7 +17,7 @@ function getTokenIconUrl (chainID, addressHash) {
   if (chainName) {
     return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chainName}/assets/${addressHash}/logo.png`
   } else {
-    return null
+    return '/images/icons/token_icon_default.svg'
   }
 }
 

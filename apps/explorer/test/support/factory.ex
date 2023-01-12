@@ -51,6 +51,8 @@ defmodule Explorer.Factory do
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
+  alias Explorer.Utility.MissingBlockRange
+
   alias Ueberauth.Strategy.Auth0
   alias Ueberauth.Auth.Info
   alias Ueberauth.Auth
@@ -817,7 +819,9 @@ defmodule Explorer.Factory do
       contract_source_code: contract_code_info.source_code,
       optimization: contract_code_info.optimized,
       abi: contract_code_info.abi,
-      contract_code_md5: bytecode_md5
+      contract_code_md5: bytecode_md5,
+      verified_via_sourcify: Enum.random([true, false]),
+      is_vyper_contract: Enum.random([true, false])
     }
   end
 
@@ -875,13 +879,16 @@ defmodule Explorer.Factory do
   end
 
   def address_current_token_balance_with_token_id_factory do
+    {token_type, token_id} = Enum.random([{"ERC-20", nil}, {"ERC-721", nil}, {"ERC-1155", Enum.random(1..100_000)}])
+
     %CurrentTokenBalance{
       address: build(:address),
       token_contract_address_hash: insert(:token).contract_address_hash,
       block_number: block_number(),
       value: Enum.random(1..100_000),
       value_fetched_at: DateTime.utc_now(),
-      token_id: Enum.random([nil, Enum.random(1..100_000)])
+      token_id: token_id,
+      token_type: token_type
     }
   end
 
@@ -934,6 +941,13 @@ defmodule Explorer.Factory do
     %Administrator{
       role: "owner",
       user: build(:user)
+    }
+  end
+
+  def missing_block_range_factory do
+    %MissingBlockRange{
+      from_number: 1,
+      to_number: 0
     }
   end
 

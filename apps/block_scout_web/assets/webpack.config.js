@@ -174,7 +174,11 @@ const appJs =
         'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT),
         'process.env.COIN': JSON.stringify(process.env.COIN),
         'process.env.NETWORK_PATH': JSON.stringify(process.env.NETWORK_PATH),
-        'process.env.SENTRY_DSN_CLIENT_GNOSIS': JSON.stringify(process.env.SENTRY_DSN_CLIENT_GNOSIS)
+        'process.env.SENTRY_DSN_CLIENT_GNOSIS': JSON.stringify(process.env.SENTRY_DSN_CLIENT_GNOSIS),
+        'process.env.MIXPANEL_TOKEN': JSON.stringify(process.env.MIXPANEL_TOKEN),
+        'process.env.MIXPANEL_URL': JSON.stringify(process.env.MIXPANEL_URL),
+        'process.env.AMPLITUDE_API_KEY': JSON.stringify(process.env.AMPLITUDE_API_KEY),
+        'process.env.AMPLITUDE_URL': JSON.stringify(process.env.AMPLITUDE_URL)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
