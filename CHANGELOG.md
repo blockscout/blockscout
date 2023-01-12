@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#6705](https://github.com/blockscout/blockscout/pull/6705) - Fix `/smart-contracts` bugs in API v2
+
 ### Chore
 
 <details>
