@@ -18,10 +18,8 @@ defmodule Explorer.Chain.Import.Stage.BlockPending do
       Runner.InternalTransactions
     ]
 
-  @chunk_size 50
-
   @impl Stage
   def multis(runner_to_changes_list, options) do
-    Stage.chunk_every(runner_to_changes_list, Runner.InternalTransactions, @chunk_size, options)
+    Stage.split_multis(runners(), runner_to_changes_list, options)
   end
 end
