@@ -13,8 +13,10 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
-  alias BlockScoutWeb.{API.RPC.RPCTranslator}
+  alias BlockScoutWeb.{API.RPC.RPCTranslator, SmartContractsApiV2Router}
   alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2}
+
+  forward("/v2/smart-contracts", SmartContractsApiV2Router)
 
   pipeline :api do
     plug(:accepts, ["json"])
@@ -122,6 +124,7 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash", V2.AddressController, :address)
       get("/:address_hash/counters", V2.AddressController, :counters)
       get("/:address_hash/token-balances", V2.AddressController, :token_balances)
+      get("/:address_hash/tokens", V2.AddressController, :tokens)
       get("/:address_hash/transactions", V2.AddressController, :transactions)
       get("/:address_hash/token-transfers", V2.AddressController, :token_transfers)
       get("/:address_hash/internal-transactions", V2.AddressController, :internal_transactions)
