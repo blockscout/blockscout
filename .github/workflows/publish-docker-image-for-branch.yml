@@ -14,7 +14,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 4.1.8
+      RELEASE_VERSION: 5.0.0
       DOCKER_CHAIN_NAME: klaytn
     steps:
       - name: Check out the repo
