@@ -36,7 +36,6 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
         left_join: att in AddressToTag,
         on: tt.id == att.tag_id,
         where: att.address_hash == ^address_hash,
-        where: tt.label != ^"validator",
         select: %{label: tt.label, display_name: tt.display_name, address_hash: att.address_hash}
       )
 

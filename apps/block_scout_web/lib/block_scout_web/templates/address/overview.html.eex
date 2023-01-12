@@ -27,6 +27,17 @@
           <% end %>
           <h1 class="card-title lg-card-title mb-2">
             <div class="title-with-label"><%= address_title(@address) %> <%= gettext "Details" %></div>
+              <%= if contract?(@address) do %>
+                <%= render BlockScoutWeb.FormView, "_tag.html", text: "contract", additional_classes: ["contract", "ml-1"] %>
+                <%= if @is_proxy do %>
+                  <%= render BlockScoutWeb.FormView, "_tag.html", text: "proxy", additional_classes: ["proxy", "ml-1"] %>
+                <% end %>
+                <%= if @address.token do %>
+                  <%= render BlockScoutWeb.FormView, "_tag.html", text: "token", additional_classes: ["token", "ml-1"] %>
+                <% end %>
+              <% else %>
+                <%= render BlockScoutWeb.FormView, "_tag.html", text: "EOA", additional_classes: ["eoa", "ml-1"] %>
+              <% end %>
             <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @address.hash, tags: @tags %>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">

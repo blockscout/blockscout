@@ -14,7 +14,7 @@ defmodule Indexer.Memory.Monitor do
 
   alias Indexer.Memory.Shrinkable
 
-  defstruct limit: Application.get_env(:indexer, :memory_limit),
+  defstruct limit: Application.compile_env(:indexer, :memory_limit),
             timer_interval: :timer.minutes(1),
             timer_reference: nil,
             shrinkable_set: MapSet.new()
