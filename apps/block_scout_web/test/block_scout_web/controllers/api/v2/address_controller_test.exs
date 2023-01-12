@@ -50,7 +50,18 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "exchange_rate" => nil,
         "implementation_name" => nil,
         "implementation_address" => nil,
-        "block_number_balance_updated_at" => nil
+        "block_number_balance_updated_at" => nil,
+        "has_custom_methods_read" => false,
+        "has_custom_methods_write" => false,
+        "has_methods_read" => false,
+        "has_methods_write" => false,
+        "has_methods_read_proxy" => false,
+        "has_methods_write_proxy" => false,
+        "has_decompiled_code" => false,
+        "has_validated_blocks" => false,
+        "has_logs" => false,
+        "has_tokens" => false,
+        "has_token_transfers" => false
       }
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
@@ -135,9 +146,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -336,9 +345,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -717,9 +724,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -864,9 +869,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/blocks-validated")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -910,8 +913,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-balances")
 
-      assert response = json_response(request, 200)
-      assert response == []
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -945,9 +947,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -994,8 +994,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history-by-day")
 
-      assert response = json_response(request, 200)
-      assert response == []
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -1032,9 +1031,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/logs")
 
-      assert response = json_response(request, 200)
-      assert response["items"] == []
-      assert response["next_page_params"] == nil
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -1136,6 +1133,126 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
   end
 
+  describe "/addresses/{address_hash}/tokens" do
+    test "get empty list on non existing address", %{conn: conn} do
+      address = build(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tokens")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/addresses/0x/tokens")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get tokens", %{conn: conn} do
+      address = insert(:address)
+
+      ctbs_erc_20 =
+        for _ <- 0..50 do
+          insert(:address_current_token_balance_with_token_id, address: address, token_type: "ERC-20", token_id: nil)
+          |> Repo.preload([:token])
+        end
+        |> Enum.sort_by(fn x -> x.value end, :asc)
+
+      ctbs_erc_721 =
+        for _ <- 0..50 do
+          insert(:address_current_token_balance_with_token_id, address: address, token_type: "ERC-721", token_id: nil)
+          |> Repo.preload([:token])
+        end
+        |> Enum.sort_by(fn x -> x.value end, :asc)
+
+      ctbs_erc_1155 =
+        for _ <- 0..50 do
+          insert(:address_current_token_balance_with_token_id,
+            address: address,
+            token_type: "ERC-1155",
+            token_id: Enum.random(1..100_000)
+          )
+          |> Repo.preload([:token])
+        end
+        |> Enum.sort_by(fn x -> x.value end, :asc)
+
+      filter = %{"type" => "ERC-20"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tokens", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/tokens", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, ctbs_erc_20)
+
+      filter = %{"type" => "ERC-721"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tokens", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/tokens", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, ctbs_erc_721)
+
+      filter = %{"type" => "ERC-1155"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tokens", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/tokens", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, ctbs_erc_1155)
+    end
+  end
+
+  describe "/addresses" do
+    test "get empty list", %{conn: conn} do
+      request = get(conn, "/api/v2/addresses")
+
+      total_supply = to_string(Chain.total_supply())
+
+      assert %{"items" => [], "next_page_params" => nil, "exchange_rate" => nil, "total_supply" => ^total_supply} =
+               json_response(request, 200)
+    end
+
+    test "check pagination", %{conn: conn} do
+      addresses =
+        for i <- 0..50 do
+          insert(:address, nonce: i, fetched_coin_balance: i + 1)
+        end
+
+      request = get(conn, "/api/v2/addresses")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/addresses", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, addresses)
+    end
+
+    test "check nil", %{conn: conn} do
+      address = insert(:address, nonce: 1, fetched_coin_balance: 1)
+
+      request = get(conn, "/api/v2/addresses")
+
+      assert %{"items" => [address_json], "next_page_params" => nil} = json_response(request, 200)
+
+      compare_item(address, address_json)
+    end
+  end
+
+  defp compare_item(%Address{} = address, json) do
+    assert Address.checksum(address.hash) == json["hash"]
+    assert to_string(address.nonce + 1) == json["tx_count"]
+  end
+
   defp compare_item(%Transaction{} = transaction, json) do
     assert to_string(transaction.hash) == json["hash"]
     assert transaction.block_number == json["block"]
@@ -1189,8 +1306,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   end
 
   defp compare_item(%Log{} = log, json) do
-    assert to_string(log.data) == json["data"]
     assert log.index == json["index"]
+    assert to_string(log.data) == json["data"]
     assert Address.checksum(log.address_hash) == json["address"]["hash"]
   end
 

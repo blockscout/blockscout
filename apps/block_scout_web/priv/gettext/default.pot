@@ -3438,6 +3438,16 @@ msgstr ""
 msgid "truffle flattener"
 msgstr ""
 
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:29
+#, elixir-autogen, elixir-format
+msgid "Sign in"
+msgstr ""
+
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:11
+#, elixir-autogen, elixir-format
+msgid "Signed in as "
+msgstr ""
+
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:8
 #, elixir-autogen, elixir-format
 msgid "1. If you have just submitted this transaction please wait for at least 30 seconds before refreshing this page."
@@ -3446,6 +3456,11 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:9
 #, elixir-autogen, elixir-format
 msgid "2. It could still be in the TX Pool of a different node, waiting to be broadcasted."
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:10
+#, elixir-autogen, elixir-format
+msgid "3. During times when the network is busy (i.e during ICOs) it can take a while for your transaction to propagate through the network and for us to index it."
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:11
@@ -3489,9 +3504,4 @@ msgstr ""
 #: lib/block_scout_web/templates/error422/index.html.eex:8
 #, elixir-autogen, elixir-format
 msgid "Your request contained an error, perhaps a mistyped tx/block/address hash. Try again, and check the developer tools console for more info."
-msgstr ""
-
-#: lib/block_scout_web/templates/transaction/not_found.html.eex:10
-#, elixir-autogen, elixir-format
-msgid "3. During times when the network is busy (i.e during ICOs) it can take a while for your transaction to propagate through the network and for us to index it."
 msgstr ""

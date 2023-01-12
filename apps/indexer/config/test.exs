@@ -2,7 +2,7 @@ import Config
 
 config :indexer, Indexer.Tracer, disabled?: false
 
-config :indexer, Indexer.Block.Catchup.MissingRangesCollector, future_check_interval: 100
+config :indexer, Indexer.Block.Catchup.MissingRangesCollector, future_check_interval: 1
 
 config :logger, :indexer,
   level: :warn,
