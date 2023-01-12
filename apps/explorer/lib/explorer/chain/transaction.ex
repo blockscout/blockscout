@@ -556,7 +556,7 @@ defmodule Explorer.Chain.Transaction do
         extract_names?
       ) do
     case do_decoded_input_data(data, smart_contract, hash) do
-      # In some cases transactions use methods of some unpredictadle contracts, so we can try to look up for method in a whole DB
+      # In some cases transactions use methods of some unpredictable contracts, so we can try to look up for method in a whole DB
       {:error, :could_not_decode} ->
         case decoded_input_data(
                %__MODULE__{
