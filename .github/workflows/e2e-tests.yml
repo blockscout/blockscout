@@ -1,8 +1,8 @@
 name: Run E2E tests k8s
 
 on:
-  # push:
-  pull_request:
+  pull_request_review:
+    types: [submitted]
   workflow_dispatch:
 
 env:
@@ -15,6 +15,7 @@ env:
 
 jobs:
   push_to_registry:
+    if: github.event.review.state == 'approved'
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     outputs:
@@ -76,6 +77,7 @@ jobs:
 
   deploy_and_tests:
     needs: push_to_registry
+    if: github.event.review.state == 'approved'
     uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_new.yaml@master
     with:
       blockscoutImage: blockscout/blockscout:pr-${{ needs.push_to_registry.outputs.short-sha }}

@@ -44,10 +44,10 @@ defmodule Explorer.ChainTest do
   describe "remove_nonconsensus_blocks_from_pending_ops/0" do
     test "removes pending ops for nonconsensus blocks" do
       block = insert(:block)
-      insert(:pending_block_operation, block: block, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block: block, block_number: block.number)
 
       nonconsensus_block = insert(:block, consensus: false)
-      insert(:pending_block_operation, block: nonconsensus_block, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block: nonconsensus_block, block_number: nonconsensus_block.number)
 
       :ok = Chain.remove_nonconsensus_blocks_from_pending_ops()
 
@@ -57,13 +57,13 @@ defmodule Explorer.ChainTest do
 
     test "removes pending ops for nonconsensus blocks by block hashes" do
       block = insert(:block)
-      insert(:pending_block_operation, block: block, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block: block, block_number: block.number)
 
       nonconsensus_block = insert(:block, consensus: false)
-      insert(:pending_block_operation, block: nonconsensus_block, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block: nonconsensus_block, block_number: nonconsensus_block.number)
 
       nonconsensus_block1 = insert(:block, consensus: false)
-      insert(:pending_block_operation, block: nonconsensus_block1, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block: nonconsensus_block1, block_number: nonconsensus_block1.number)
 
       :ok = Chain.remove_nonconsensus_blocks_from_pending_ops([nonconsensus_block1.hash])
 
@@ -1217,7 +1217,7 @@ defmodule Explorer.ChainTest do
       |> insert()
       |> with_block(block)
 
-      insert(:pending_block_operation, block: block, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block: block, block_number: block.number)
 
       refute Chain.finished_internal_transactions_indexing?()
     end
@@ -1528,7 +1528,7 @@ defmodule Explorer.ChainTest do
         block = insert(:block, number: index)
 
         if index === 0 || index === 5 || index === 7 do
-          insert(:pending_block_operation, block: block, fetch_internal_transactions: true)
+          insert(:pending_block_operation, block: block, block_number: block.number)
         end
       end
 

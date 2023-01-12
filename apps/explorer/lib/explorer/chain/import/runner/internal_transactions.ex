@@ -12,6 +12,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Explorer.Chain.Import.Runner
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
+  alias Explorer.Utility.MissingBlockRange
 
   import Ecto.Query, only: [from: 2, or_where: 3]
 
@@ -303,7 +304,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       from(
         pending_ops in PendingBlockOperation,
         where: pending_ops.block_hash in ^block_hashes,
-        where: pending_ops.fetch_internal_transactions,
         select: pending_ops.block_hash,
         # Enforce PendingBlockOperation ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: pending_ops.block_hash],
@@ -696,6 +696,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       try do
         {_num, result} = repo.update_all(update_block_query, [])
         {_num, _result} = repo.update_all(update_transaction_query, [])
+
+        MissingBlockRange.add_ranges_by_block_numbers(invalid_block_numbers)
 
         Logger.debug(fn ->
           [
