@@ -11,6 +11,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   alias Explorer.Chain.{Block, Hash, Import, Transaction}
   alias Explorer.Chain.Import.Runner.TokenTransfers
   alias Explorer.Prometheus.Instrumenter
+  alias Explorer.Utility.MissingBlockRange
 
   @behaviour Import.Runner
 
@@ -231,10 +232,12 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       try do
         {_, result} =
           repo.update_all(
-            from(b in Block, join: s in subquery(query), on: b.hash == s.hash),
+            from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: b.number),
             [set: [consensus: false, updated_at: updated_at]],
             timeout: timeout
           )
+
+        MissingBlockRange.add_ranges_by_block_numbers(result)
 
         {:ok, result}
       rescue
