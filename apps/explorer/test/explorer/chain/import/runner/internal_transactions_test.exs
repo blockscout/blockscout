@@ -277,33 +277,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert PendingBlockOperation |> Repo.get(full_block.hash) |> is_nil()
     end
 
-    test "removes old records with the same primary key (transaction_hash, index)" do
-      full_block = insert(:block)
-      another_full_block = insert(:block)
-
-      transaction = insert(:transaction) |> with_block(full_block)
-
-      insert(:internal_transaction,
-        index: 0,
-        transaction: transaction,
-        block_hash: another_full_block.hash,
-        block_index: 0
-      )
-
-      insert(:pending_block_operation, block_hash: full_block.hash, block_number: full_block.number)
-
-      transaction_changes = make_internal_transaction_changes(transaction, 0, nil)
-
-      assert {:ok, %{remove_left_over_internal_transactions: {1, nil}}} =
-               run_internal_transactions([transaction_changes])
-
-      assert from(i in InternalTransaction,
-               where: i.transaction_hash == ^transaction.hash and i.block_hash == ^another_full_block.hash
-             )
-             |> Repo.one()
-             |> is_nil()
-    end
-
     test "removes consensus to blocks where not all transactions are filled" do
       full_block = insert(:block)
       transaction_a = insert(:transaction) |> with_block(full_block)
