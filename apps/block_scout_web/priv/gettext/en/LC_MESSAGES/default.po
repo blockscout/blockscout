@@ -3711,16 +3711,6 @@ msgstr ""
 msgid "Epoch Blocks"
 msgstr ""
 
-#: lib/block_scout_web/templates/block/overview.html.eex:74
-#, elixir-autogen, elixir-format, fuzzy
-msgid "View next epoch"
-msgstr ""
-
-#: lib/block_scout_web/templates/block/overview.html.eex:27
-#, elixir-autogen, elixir-format, fuzzy
-msgid "View previous epoch"
-msgstr ""
-
 #: lib/block_scout_web/templates/address/overview.html.eex:137
 #, elixir-autogen, elixir-format
 msgid "Contract was precompiled and created at genesis or contract creation transaction is missing"
@@ -3729,4 +3719,14 @@ msgstr ""
 #: lib/block_scout_web/templates/stats/index.html.eex:22
 #, elixir-autogen, elixir-format
 msgid "Mento"
+msgstr ""
+
+#: lib/block_scout_web/templates/block/overview.html.eex:74
+#, elixir-autogen, elixir-format, fuzzy
+msgid "View next epoch block"
+msgstr ""
+
+#: lib/block_scout_web/templates/block/overview.html.eex:27
+#, elixir-autogen, elixir-format, fuzzy
+msgid "View previous epoch block"
 msgstr ""
