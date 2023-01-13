@@ -156,9 +156,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "additional_sources" => Enum.map(additional_sources, &prepare_additional_sourse/1),
       "compiler_settings" => target_contract.compiler_settings,
       "external_libraries" => prepare_external_libraries(target_contract.external_libraries),
-      "constructor_args" => target_contract.constructor_arguments,
+      "constructor_args" => if(smart_contract_verified, do: target_contract.constructor_arguments),
       "decoded_constructor_args" =>
-        format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
+        if(smart_contract_verified,
+          do: format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
+        )
     }
     |> Map.merge(bytecode_info(address))
   end

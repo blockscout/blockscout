@@ -102,15 +102,15 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "deployed_bytecode" =>
           "0x6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
         "creation_bytecode" =>
-          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
+        "abi" => target_contract.abi
       }
 
       blockchain_get_code_mock()
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
 
-      assert ^correct_response = Map.drop(response, ["abi"])
-      assert response["abi"] == target_contract.abi
+      assert correct_response == response
     end
 
     test "get smart-contract with decoded constructor", %{conn: conn} do
@@ -191,15 +191,110 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "deployed_bytecode" =>
           "0x6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
         "creation_bytecode" =>
-          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
+        "abi" => target_contract.abi
       }
 
       blockchain_get_code_mock()
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
 
-      assert ^correct_response = Map.drop(response, ["abi"])
-      assert response["abi"] == target_contract.abi
+      assert correct_response == response
+    end
+
+    test "get smart-contract data from twin without constructor args", %{conn: conn} do
+      lib_address_string = to_string(build(:address))
+
+      target_contract =
+        insert(:smart_contract,
+          external_libraries: [%{name: "ABC", address_hash: lib_address_string}],
+          constructor_arguments:
+            "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000002cf6e7c9ec35d0b08a1062e13854f74b1aaae54e",
+          abi: [
+            %{
+              "type" => "constructor",
+              "inputs" => [
+                %{"type" => "address", "name" => "_proxyStorage"},
+                %{"type" => "address", "name" => "_implementationAddress"}
+              ]
+            },
+            %{
+              "constant" => false,
+              "inputs" => [%{"name" => "x", "type" => "uint256"}],
+              "name" => "set",
+              "outputs" => [],
+              "payable" => false,
+              "stateMutability" => "nonpayable",
+              "type" => "function"
+            },
+            %{
+              "constant" => true,
+              "inputs" => [],
+              "name" => "get",
+              "outputs" => [%{"name" => "", "type" => "uint256"}],
+              "payable" => false,
+              "stateMutability" => "view",
+              "type" => "function"
+            }
+          ]
+        )
+
+      insert(:transaction,
+        created_contract_address_hash: target_contract.address_hash,
+        input:
+          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+      )
+      |> with_block()
+
+      address = insert(:contract_address)
+
+      insert(:transaction,
+        created_contract_address_hash: address.hash,
+        input:
+          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+      )
+      |> with_block()
+
+      correct_response = %{
+        "verified_twin_address_hash" => Address.checksum(target_contract.address_hash),
+        "is_verified" => false,
+        "is_changed_bytecode" => false,
+        "is_partially_verified" => target_contract.partially_verified,
+        "is_fully_verified" => false,
+        "is_verified_via_sourcify" => target_contract.verified_via_sourcify,
+        "is_vyper_contract" => target_contract.is_vyper_contract,
+        "minimal_proxy_address_hash" => nil,
+        "sourcify_repo_url" =>
+          if(target_contract.verified_via_sourcify,
+            do: AddressContractView.sourcify_repo_url(target_contract.address_hash, target_contract.partially_verified)
+          ),
+        "can_be_visualized_via_sol2uml" => false,
+        "name" => target_contract && target_contract.name,
+        "compiler_version" => target_contract.compiler_version,
+        "optimization_enabled" => if(target_contract.is_vyper_contract, do: nil, else: target_contract.optimization),
+        "optimization_runs" => target_contract.optimization_runs,
+        "evm_version" => target_contract.evm_version,
+        "verified_at" => target_contract.inserted_at |> to_string() |> String.replace(" ", "T"),
+        "source_code" => target_contract.contract_source_code,
+        "file_path" => target_contract.file_path,
+        "additional_sources" => [],
+        "compiler_settings" => target_contract.compiler_settings,
+        "external_libraries" => [%{"name" => "ABC", "address_hash" => lib_address_string}],
+        "constructor_args" => nil,
+        "decoded_constructor_args" => nil,
+        "is_self_destructed" => false,
+        "deployed_bytecode" =>
+          "0x6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
+        "creation_bytecode" =>
+          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
+        "abi" => target_contract.abi
+      }
+
+      blockchain_get_code_mock()
+      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+      response = json_response(request, 200)
+
+      assert correct_response == response
     end
   end
 
