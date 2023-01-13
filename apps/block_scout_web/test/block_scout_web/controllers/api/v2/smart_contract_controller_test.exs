@@ -244,7 +244,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         input:
           "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
       )
-      |> with_block()
+      |> with_block(status: :ok)
 
       address = insert(:contract_address)
 
@@ -253,7 +253,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         input:
           "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
       )
-      |> with_block()
+      |> with_block(status: :ok)
 
       correct_response = %{
         "verified_twin_address_hash" => Address.checksum(target_contract.address_hash),
@@ -261,13 +261,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_changed_bytecode" => false,
         "is_partially_verified" => target_contract.partially_verified,
         "is_fully_verified" => false,
-        "is_verified_via_sourcify" => target_contract.verified_via_sourcify,
+        "is_verified_via_sourcify" => false,
         "is_vyper_contract" => target_contract.is_vyper_contract,
         "minimal_proxy_address_hash" => nil,
-        "sourcify_repo_url" =>
-          if(target_contract.verified_via_sourcify,
-            do: AddressContractView.sourcify_repo_url(target_contract.address_hash, target_contract.partially_verified)
-          ),
+        "sourcify_repo_url" => nil,
         "can_be_visualized_via_sol2uml" => false,
         "name" => target_contract && target_contract.name,
         "compiler_version" => target_contract.compiler_version,
