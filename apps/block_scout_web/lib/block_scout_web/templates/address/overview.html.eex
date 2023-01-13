@@ -51,6 +51,13 @@
             </span>
           </h1>
           <h3 class="address-detail-hash-title mb-4 <%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
+          <%= if smart_contract_is_gnosis_safe_proxy?(@address) do %>
+            <span class="ml-2 mr-4">
+              <a data-test="external_url" href=https://safe.celo.org/<%= Chain.get_celo_chain_name_by_id(BlockScoutWeb.chain_id()) %>:<%= @address.hash %>/transactions/history target="_blank">
+              View In Celo Safe App <span class="external-token-icon"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span>
+              </a>
+            </span>
+          <% end %>
           <!-- Verify in other explorers -->
           <!--
           <%# <%= render "_verify_other_explorers.html", hash: @address.hash, type: "address" %> %>

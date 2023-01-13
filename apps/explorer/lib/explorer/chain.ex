@@ -6375,13 +6375,44 @@ defmodule Explorer.Chain do
     implementation_method_abi =
       abi
       |> Enum.find(fn method ->
-        master_copy_pattern?(method)
+        singleton_pattern?(method) || master_copy_pattern?(method)
       end)
 
     if implementation_method_abi, do: true, else: false
   end
 
   def gnosis_safe_contract?(abi) when is_nil(abi), do: false
+
+  defp master_copy_pattern?(method) do
+    method
+    |> contructor_accepts_named_input("_masterCopy")
+  end
+
+  defp singleton_pattern?(method) do
+    method
+    |> contructor_accepts_named_input("_singleton")
+  end
+
+  defp contructor_accepts_named_input(method, name) do
+    Map.get(method, "type") == "constructor" &&
+      method
+      |> Enum.find(fn item ->
+        case item do
+          {"inputs", inputs} ->
+            get_input_by_name(inputs, name)
+
+          _ ->
+            false
+        end
+      end)
+  end
+
+  defp get_input_by_name(inputs, name) do
+    inputs
+    |> Enum.find(fn input ->
+      Map.get(input, "name") == name
+    end)
+  end
 
   @spec get_implementation_address_hash(Hash.Address.t(), list()) :: {String.t() | nil, String.t() | nil}
   def get_implementation_address_hash(proxy_address_hash, abi)
@@ -6541,27 +6572,6 @@ defmodule Explorer.Chain do
       )
 
     abi_decode_address_output(implementation_address)
-  end
-
-  defp master_copy_pattern?(method) do
-    Map.get(method, "type") == "constructor" &&
-      method
-      |> Enum.find(fn item ->
-        case item do
-          {"inputs", inputs} ->
-            master_copy_input?(inputs)
-
-          _ ->
-            false
-        end
-      end)
-  end
-
-  defp master_copy_input?(inputs) do
-    inputs
-    |> Enum.find(fn input ->
-      Map.get(input, "name") == "_masterCopy"
-    end)
   end
 
   defp save_implementation_name(empty_address_hash_string, _)
@@ -6900,6 +6910,23 @@ defmodule Explorer.Chain do
       try_url
     else
       nil
+    end
+  end
+
+  @spec get_celo_chain_name_by_id(String.t()) :: String.t() | nil
+  def get_celo_chain_name_by_id(chain_id) do
+    case chain_id do
+      "42220" ->
+        "mainnet"
+
+      "44787" ->
+        "alfajores"
+
+      "62320" ->
+        "baklava"
+
+      _ ->
+        nil
     end
   end
 
