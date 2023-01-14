@@ -6,7 +6,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias Explorer.{Chain, Market}
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
-  import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
+
+  import BlockScoutWeb.PagingHelper,
+    only: [delete_parameters_from_next_page_params: 1, token_transfers_types_options: 1]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -77,6 +79,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     paging_params =
       params
       |> paging_options()
+      |> Keyword.merge(token_transfers_types_options(params))
 
     {tokens, next_page} = filter |> Chain.list_top_tokens(paging_params) |> Market.add_price() |> split_list_by_page()
 
