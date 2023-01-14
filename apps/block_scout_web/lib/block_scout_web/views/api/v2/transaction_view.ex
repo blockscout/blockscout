@@ -89,7 +89,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "total" => prepare_token_transfer_total(token_transfer),
       "token" => TokenView.render("token.json", %{token: Market.add_price(token_transfer.token)}),
       "type" => Chain.get_token_transfer_type(token_transfer),
-      "timestamp" => block_timestamp(token_transfer.block)
+      "timestamp" =>
+        if(match?(%NotLoaded{}, token_transfer.block),
+          do: block_timestamp(token_transfer.transaction),
+          else: block_timestamp(token_transfer.block)
+        )
     }
   end
 
@@ -445,6 +449,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
+  defp block_timestamp(%Transaction{block: %Block{} = block}), do: block.timestamp
   defp block_timestamp(%Block{} = block), do: block.timestamp
   defp block_timestamp(_), do: nil
 end
