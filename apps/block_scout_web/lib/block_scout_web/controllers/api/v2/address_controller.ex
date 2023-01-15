@@ -115,7 +115,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   def token_transfers(
         conn,
-        %{"address_hash" => address_hash_string, "token_address_hash" => token_address_hash_string} = params
+        %{"address_hash" => address_hash_string, "token" => token_address_hash_string} = params
       ) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:format, {:ok, token_address_hash}} <- {:format, Chain.string_to_address_hash(token_address_hash_string)},

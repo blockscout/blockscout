@@ -359,8 +359,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token = build(:address)
 
-      request =
-        get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", %{"token_address_hash" => to_string(token.hash)})
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", %{"token" => to_string(token.hash)})
 
       assert %{"message" => "Not found"} = json_response(request, 404)
     end
@@ -368,7 +367,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get 422 on invalid token address hash", %{conn: conn} do
       address = insert(:address)
 
-      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", %{"token_address_hash" => "0x"})
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", %{"token" => "0x"})
 
       assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
     end
@@ -413,7 +412,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request =
         get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", %{
-          "token_address_hash" => to_string(token.contract_address)
+          "token" => to_string(token.contract_address)
         })
 
       assert response = json_response(request, 200)
@@ -442,7 +441,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
         end
 
-      params = %{"token_address_hash" => to_string(token.contract_address)}
+      params = %{"token" => to_string(token.contract_address)}
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", params)
       assert response = json_response(request, 200)
 
