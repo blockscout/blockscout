@@ -70,3 +70,9 @@ services:
     ports:
       - 8050:8050
 
+  sig-provider:
+    image: ghcr.io/blockscout/sig-provider:${SIG_PROVIDER_DOCKER_TAG:-latest}
+    restart: always
+    container_name: 'sig-provider'
+    ports:
+      - 8051:8050
