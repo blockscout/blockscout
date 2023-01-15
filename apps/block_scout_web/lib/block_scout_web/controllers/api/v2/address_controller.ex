@@ -34,7 +34,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     necessity_by_association: %{
       :to_address => :optional,
       :from_address => :optional,
-      :block => :optional
+      :block => :optional,
+      :transaction => :optional
     }
   ]
 
@@ -129,7 +130,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             :to_address => :optional,
             :from_address => :optional,
             :block => :optional,
-            :token => :optional
+            :token => :optional,
+            :transaction => :optional
           }
         ]
         |> Keyword.merge(paging_options(params))

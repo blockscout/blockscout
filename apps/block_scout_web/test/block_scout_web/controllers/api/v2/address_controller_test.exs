@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     Address,
     Address.CoinBalance,
     Block,
+    Data,
     InternalTransaction,
     Log,
     Token,
@@ -36,7 +37,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       correct_reponse = %{
         "hash" => Address.checksum(address.hash),
-        "implementation_name" => nil,
         "is_contract" => false,
         "is_verified" => false,
         "name" => nil,
@@ -375,7 +375,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get relevant token transfer", %{conn: conn} do
       address = insert(:address)
 
-      tx = insert(:transaction) |> with_block()
+      tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number)
 
@@ -390,12 +390,54 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(token_transfer, Enum.at(response["items"], 0))
     end
 
+    test "method in token transer could be decoded", %{conn: conn} do
+      insert(:contract_method,
+        identifier: Base.decode16!("731133e9", case: :lower),
+        abi: %{
+          "constant" => false,
+          "inputs" => [
+            %{"name" => "account", "type" => "address"},
+            %{"name" => "id", "type" => "uint256"},
+            %{"name" => "amount", "type" => "uint256"},
+            %{"name" => "data", "type" => "bytes"}
+          ],
+          "name" => "mint",
+          "outputs" => [],
+          "payable" => false,
+          "stateMutability" => "nonpayable",
+          "type" => "function"
+        }
+      )
+
+      address = insert(:address)
+
+      tx =
+        insert(:transaction,
+          input:
+            "0x731133e9000000000000000000000000bb36c792b9b45aaf8b848a1392b0d6559202729e000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000001700000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000"
+        )
+        |> with_block()
+
+      insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number)
+
+      token_transfer =
+        insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+      compare_item(token_transfer, Enum.at(response["items"], 0))
+      assert Enum.at(response["items"], 0)["method"] == "mint"
+    end
+
     test "get relevant token transfer filtered by token", %{conn: conn} do
       token = insert(:token)
 
       address = insert(:address)
 
-      tx = insert(:transaction) |> with_block()
+      tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number)
 
@@ -428,7 +470,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token_tranfers =
         for _ <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
 
@@ -456,7 +498,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get only :to token transfer", %{conn: conn} do
       address = insert(:address)
 
-      tx = insert(:transaction) |> with_block()
+      tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
 
@@ -474,7 +516,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get only :from token transfer", %{conn: conn} do
       address = insert(:address)
 
-      tx = insert(:transaction) |> with_block()
+      tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       token_transfer =
         insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
@@ -493,7 +535,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token_tranfers =
         for _ <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
         end
@@ -511,13 +553,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       address = insert(:address)
 
       for _ <- 0..50 do
-        tx = insert(:transaction) |> with_block()
+        tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
         insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
       end
 
       token_tranfers =
         for _ <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
           insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, to_address: address)
         end
 
@@ -538,13 +580,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token_tranfers =
         for _ <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
         end
 
       for _ <- 0..50 do
-        tx = insert(:transaction) |> with_block()
+        tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
         insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, to_address: address)
       end
 
@@ -565,14 +607,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       tt_from =
         for _ <- 0..49 do
-          tx = insert(:transaction) |> with_block()
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
         end
 
       tt_to =
         for _ <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
           insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, to_address: address)
         end
 
@@ -606,7 +648,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       erc_20_tt =
         for _ <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
             transaction: tx,
@@ -621,7 +663,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       erc_721_tt =
         for x <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
             transaction: tx,
@@ -637,7 +679,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       erc_1155_tt =
         for x <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
             transaction: tx,
@@ -731,7 +773,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       erc_20_tt =
         for _ <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
             transaction: tx,
@@ -746,7 +788,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       erc_721_tt =
         for x <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
             transaction: tx,
@@ -1347,6 +1389,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
     assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
     assert json["timestamp"] != nil
+    assert json["method"] != nil
   end
 
   defp compare_item(%InternalTransaction{} = internal_tx, json) do

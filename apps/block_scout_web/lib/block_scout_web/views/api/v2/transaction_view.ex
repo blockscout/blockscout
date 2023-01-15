@@ -82,6 +82,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def prepare_token_transfer(token_transfer, conn) do
+    decoded_input = token_transfer.transaction |> Transaction.decoded_input_data() |> format_decoded_input()
+
     %{
       "tx_hash" => token_transfer.transaction_hash,
       "from" => Helper.address_with_info(conn, token_transfer.from_address, token_transfer.from_address_hash),
@@ -93,7 +95,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         if(match?(%NotLoaded{}, token_transfer.block),
           do: block_timestamp(token_transfer.transaction),
           else: block_timestamp(token_transfer.block)
-        )
+        ),
+      "method" => method_name(token_transfer.transaction, decoded_input, true)
     }
   end
 
@@ -375,19 +378,25 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> Timex.diff(right, :milliseconds)
   end
 
-  defp method_name(_, {:ok, _method_id, text, _mapping}) do
+  defp method_name(_, _, skip_sc_check? \\ false)
+
+  defp method_name(_, {:ok, _method_id, text, _mapping}, _) do
     Transaction.parse_method_name(text, false)
   end
 
-  defp method_name(%Transaction{to_address: to_address, input: %{bytes: <<method_id::binary-size(4), _::binary>>}}, _) do
-    if Helper.is_smart_contract(to_address) do
+  defp method_name(
+         %Transaction{to_address: to_address, input: %{bytes: <<method_id::binary-size(4), _::binary>>}},
+         _,
+         skip_sc_check?
+       ) do
+    if Helper.is_smart_contract(to_address) || skip_sc_check? do
       "0x" <> Base.encode16(method_id, case: :lower)
     else
       nil
     end
   end
 
-  defp method_name(_, _) do
+  defp method_name(_, _, _) do
     nil
   end
 

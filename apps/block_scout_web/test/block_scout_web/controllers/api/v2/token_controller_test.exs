@@ -122,7 +122,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       token_tranfers =
         for _ <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
             transaction: tx,
@@ -244,6 +244,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
     assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
     assert json["timestamp"] != nil
+    assert json["method"] != nil
   end
 
   def compare_item(%CurrentTokenBalance{} = ctb, json) do
