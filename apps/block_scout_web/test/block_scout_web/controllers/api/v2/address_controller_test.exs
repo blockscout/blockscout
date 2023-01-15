@@ -340,7 +340,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   end
 
   describe "/addresses/{address_hash}/token-transfers" do
-    test "get empty list on non existing address", %{conn: conn} do
+    test "get 404 on non existing address", %{conn: conn} do
       address = build(:address)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
@@ -350,6 +350,25 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
     test "get 422 on invalid address", %{conn: conn} do
       request = get(conn, "/api/v2/addresses/0x/token-transfers")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get 404 on non existing address of token", %{conn: conn} do
+      address = insert(:address)
+
+      token = build(:address)
+
+      request =
+        get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", %{"token_address_hash" => to_string(token.hash)})
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid token address hash", %{conn: conn} do
+      address = insert(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", %{"token_address_hash" => "0x"})
 
       assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
     end
@@ -370,6 +389,69 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert Enum.count(response["items"]) == 1
       assert response["next_page_params"] == nil
       compare_item(token_transfer, Enum.at(response["items"], 0))
+    end
+
+    test "get relevant token transfer filtered by token", %{conn: conn} do
+      token = insert(:token)
+
+      address = insert(:address)
+
+      tx = insert(:transaction) |> with_block()
+
+      insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number)
+
+      insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+
+      token_transfer =
+        insert(:token_transfer,
+          transaction: tx,
+          block: tx.block,
+          block_number: tx.block_number,
+          from_address: address,
+          token_contract_address: token.contract_address
+        )
+
+      request =
+        get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", %{
+          "token_address_hash" => to_string(token.contract_address)
+        })
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+      compare_item(token_transfer, Enum.at(response["items"], 0))
+    end
+
+    test "token transfers by token can paginate", %{conn: conn} do
+      address = insert(:address)
+
+      token = insert(:token)
+
+      token_tranfers =
+        for _ <- 0..50 do
+          tx = insert(:transaction) |> with_block()
+
+          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            from_address: address,
+            token_contract_address: token.contract_address
+          )
+        end
+
+      params = %{"token_address_hash" => to_string(token.contract_address)}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", params)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", Map.merge(params, response["next_page_params"]))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_tranfers)
     end
 
     test "get only :to token transfer", %{conn: conn} do

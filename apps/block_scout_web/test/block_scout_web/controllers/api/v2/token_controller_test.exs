@@ -75,7 +75,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         token_contract_address: contract_token_address
       )
 
-      second_page_token_balances =
+      _second_page_token_balances =
         1..5
         |> Enum.map(
           &insert(
@@ -100,7 +100,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/transfers")
 
-      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do

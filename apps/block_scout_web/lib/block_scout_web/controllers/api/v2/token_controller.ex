@@ -34,7 +34,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   def transfers(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
+         {:not_found, {:ok, _}} <- {:not_found, Chain.token_from_address_hash(address_hash)} do
       results_plus_one = Chain.fetch_token_transfers_from_token_hash(address_hash, paging_options(params))
 
       {token_transfers, next_page} = split_list_by_page(results_plus_one)
