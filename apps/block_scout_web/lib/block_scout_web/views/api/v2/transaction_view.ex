@@ -152,6 +152,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     decoded = decode_log(log, transaction_or_hash)
 
     %{
+      "tx_hash" => get_tx_hash(transaction_or_hash),
       "address" => Helper.address_with_info(log.address, log.address_hash),
       "topics" => [
         log.first_topic,
@@ -165,6 +166,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "smart_contract" => smart_contract_info(transaction_or_hash)
     }
   end
+
+  defp get_tx_hash(%Transaction{} = tx), do: to_string(tx.hash)
+  defp get_tx_hash(hash), do: to_string(hash)
 
   defp smart_contract_info(%Transaction{} = tx), do: Helper.address_with_info(tx.to_address, tx.to_address_hash)
   defp smart_contract_info(_), do: nil

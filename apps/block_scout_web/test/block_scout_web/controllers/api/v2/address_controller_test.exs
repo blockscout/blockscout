@@ -1434,6 +1434,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert log.index == json["index"]
     assert to_string(log.data) == json["data"]
     assert Address.checksum(log.address_hash) == json["address"]["hash"]
+    assert to_string(log.transaction_hash) == json["tx_hash"]
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, list) do
