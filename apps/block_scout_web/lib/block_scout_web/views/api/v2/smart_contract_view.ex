@@ -129,7 +129,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     target_contract = if smart_contract_verified, do: address.smart_contract, else: metadata_for_verification
 
     %{
-      "verified_twin_address_hash" => metadata_for_verification && metadata_for_verification.address_hash,
+      "verified_twin_address_hash" =>
+        metadata_for_verification && Address.checksum(metadata_for_verification.address_hash),
       "is_verified" => smart_contract_verified,
       "is_changed_bytecode" => smart_contract_verified && address.smart_contract.is_changed_bytecode,
       "is_partially_verified" => address.smart_contract.partially_verified && smart_contract_verified,
@@ -189,7 +190,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   defp prepare_external_libraries(libraries) when is_list(libraries) do
     Enum.map(libraries, fn %Explorer.Chain.SmartContract.ExternalLibrary{name: name, address_hash: address_hash} ->
-      %{name: name, address_hash: address_hash}
+      {:ok, hash} = Chain.string_to_address_hash(address_hash)
+
+      %{name: name, address_hash: Address.checksum(hash)}
     end)
   end
 
