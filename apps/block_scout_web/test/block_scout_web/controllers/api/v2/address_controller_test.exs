@@ -1358,6 +1358,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, addresses)
+
+      assert Enum.at(response["items"], 0)["coin_balance"] ==
+               to_string(Enum.at(addresses, 50).fetched_coin_balance.value)
     end
 
     test "check nil", %{conn: conn} do
