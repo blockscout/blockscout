@@ -8,6 +8,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
   import Mox
 
   alias Explorer.Celo.ContractEvents.Common.TransferEvent
+  alias Explorer.Celo.ContractEvents.Validators.ValidatorEpochPaymentDistributedEvent
 
   alias Explorer.Celo.ContractEvents.Election.{
     ValidatorGroupVoteActivatedEvent,
@@ -28,6 +29,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
   }
 
   alias Indexer.Fetcher.CeloEpochData, as: CeloEpochDataFetcher
+  alias Explorer.Celo.ContractEvents.Accounts.PaymentDelegationSetEvent
   alias Explorer.Celo.ContractEvents.Lockedgold.GoldLockedEvent
 
   @moduletag :capture_log
@@ -222,11 +224,17 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     setup [:save_validator_and_group_contract_events]
 
     test "it fetches them from the db for a block", context do
-      assert CeloEpochDataFetcher.get_validator_and_group_rewards(%{
-               block_number: context.block_number,
-               block_timestamp: context.block_timestamp,
-               block_hash: context.block_hash
-             }) == %{
+      validator_and_group_rewards =
+        ValidatorEpochPaymentDistributedEvent.get_validator_and_group_rewards_for_block(context.block_number)
+
+      assert CeloEpochDataFetcher.get_validator_and_group_rewards(
+               %{
+                 block_number: context.block_number,
+                 block_timestamp: context.block_timestamp,
+                 block_hash: context.block_hash
+               },
+               validator_and_group_rewards
+             ) == %{
                block_number: context.block_number,
                block_timestamp: context.block_timestamp,
                block_hash: context.block_hash,
@@ -278,31 +286,37 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     setup [:save_validator_and_group_contract_events]
 
     test "it fetches them from the db for a block", context do
-      assert CeloEpochDataFetcher.get_validator_and_group_rewards(%{
-               block_number: context.block_number,
-               block_timestamp: context.block_timestamp,
-               block_hash: context.block_hash,
-               validator_rewards: [
-                 %{
-                   account_hash: context.validator_1_hash,
-                   amount: 100_000,
-                   associated_account_hash: context.group_hash,
-                   block_number: context.block_number,
-                   block_timestamp: context.block_timestamp,
-                   block_hash: context.block_hash,
-                   reward_type: "validator"
-                 },
-                 %{
-                   account_hash: context.validator_2_hash,
-                   amount: 200_000,
-                   associated_account_hash: context.group_hash,
-                   block_number: context.block_number,
-                   block_timestamp: context.block_timestamp,
-                   block_hash: context.block_hash,
-                   reward_type: "validator"
-                 }
-               ]
-             }) == %{
+      validator_and_group_rewards =
+        ValidatorEpochPaymentDistributedEvent.get_validator_and_group_rewards_for_block(context.block_number)
+
+      assert CeloEpochDataFetcher.get_validator_and_group_rewards(
+               %{
+                 block_number: context.block_number,
+                 block_timestamp: context.block_timestamp,
+                 block_hash: context.block_hash,
+                 validator_rewards: [
+                   %{
+                     account_hash: context.validator_1_hash,
+                     amount: 100_000,
+                     associated_account_hash: context.group_hash,
+                     block_number: context.block_number,
+                     block_timestamp: context.block_timestamp,
+                     block_hash: context.block_hash,
+                     reward_type: "validator"
+                   },
+                   %{
+                     account_hash: context.validator_2_hash,
+                     amount: 200_000,
+                     associated_account_hash: context.group_hash,
+                     block_number: context.block_number,
+                     block_timestamp: context.block_timestamp,
+                     block_hash: context.block_hash,
+                     reward_type: "validator"
+                   }
+                 ]
+               },
+               validator_and_group_rewards
+             ) == %{
                block_number: context.block_number,
                block_timestamp: context.block_timestamp,
                block_hash: context.block_hash,
@@ -442,6 +456,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
       %Address{hash: voter_hash} = insert(:address)
       %Address{hash: validator_hash} = insert(:address)
       %Address{hash: group_hash} = insert(:address)
+      %Address{hash: beneficiary_hash} = insert(:address)
 
       %Block{hash: block_hash, number: block_number} = insert(:block, number: 10_679_040)
       insert(:celo_pending_epoch_operations, block_number: block_number)
@@ -524,6 +539,17 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
             block_timestamp: ~U[2022-05-10 14:18:54.093055Z],
             block_hash: block_hash,
             reward_type: "group"
+          }
+        ],
+        delegated_payments: [
+          %{
+            account_hash: beneficiary_hash,
+            amount: 4_503_599_627_369_846,
+            associated_account_hash: validator_hash,
+            block_number: block_number,
+            block_timestamp: ~U[2022-05-10 14:18:54.093055Z],
+            block_hash: block_hash,
+            reward_type: "delegated_payment"
           }
         ]
       }
@@ -645,6 +671,72 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
              }) == %{
                block_number: block_number,
                block_hash: block_hash,
+               error: "mock_reason"
+             }
+    end
+  end
+
+  describe "get_delegated_payments/2 when there are multiple payments" do
+    setup [:save_validator_and_group_contract_events, :setup_delegated_payments_mox_and_events]
+
+    test "it fetches a list of accounts", %{
+      block_number: block_number,
+      block_hash: block_hash,
+      block_timestamp: block_timestamp,
+      beneficiary_hash: beneficiary_hash,
+      validator_2_hash: validator_hash
+    } do
+      validator_and_group_rewards =
+        ValidatorEpochPaymentDistributedEvent.get_validator_and_group_rewards_for_block(block_number)
+
+      assert CeloEpochDataFetcher.get_delegated_payments(
+               %{
+                 block_number: block_number,
+                 block_hash: block_hash,
+                 block_timestamp: block_timestamp
+               },
+               validator_and_group_rewards
+             ) == %{
+               block_number: block_number,
+               block_hash: block_hash,
+               block_timestamp: block_timestamp,
+               delegated_payments: [
+                 %{
+                   account_hash: beneficiary_hash,
+                   amount: 123_456_789_012_345_678_901,
+                   associated_account_hash: validator_hash,
+                   block_hash: block_hash,
+                   block_number: block_number,
+                   block_timestamp: block_timestamp,
+                   reward_type: "delegated_payment"
+                 }
+               ]
+             }
+    end
+  end
+
+  describe "get_delegated_payments/2 when there is an error" do
+    setup [:save_validator_and_group_contract_events, :setup_delegated_payments_mox_with_error]
+
+    test "it handles error", %{
+      block_number: block_number,
+      block_hash: block_hash,
+      block_timestamp: block_timestamp
+    } do
+      validator_and_group_rewards =
+        ValidatorEpochPaymentDistributedEvent.get_validator_and_group_rewards_for_block(block_number)
+
+      assert CeloEpochDataFetcher.get_delegated_payments(
+               %{
+                 block_number: block_number,
+                 block_hash: block_hash,
+                 block_timestamp: block_timestamp
+               },
+               validator_and_group_rewards
+             ) == %{
+               block_number: block_number,
+               block_hash: block_hash,
+               block_timestamp: block_timestamp,
                error: "mock_reason"
              }
     end
@@ -805,6 +897,123 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     Map.merge(context, %{address_1_hash: address_1_hash, address_2_hash: address_2_hash})
   end
 
+  defp setup_delegated_payments_mox_with_error(
+         %{validator_1_hash: validator_1_hash, validator_2_hash: validator_2_hash} = context
+       ) do
+    set_test_addresses(%{
+      "Accounts" => "0x8d6677192144292870907e3fa8a5527fe55a7ff6"
+    })
+
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [
+           %{
+             id: _,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: "0x9f024f4b000000000000000000000000" <> validator_1_hash, to: _}, "0xA2F300"]
+           },
+           %{
+             id: _,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: "0x9f024f4b000000000000000000000000" <> validator_2_hash, to: _}, "0xA2F300"]
+           }
+         ],
+         _ ->
+        {
+          :error,
+          :mock_reason
+        }
+      end
+    )
+
+    context
+  end
+
+  defp setup_delegated_payments_mox_and_events(
+         %{
+           block: block,
+           validator_1_hash: validator_1_hash,
+           validator_2_hash: validator_2_hash
+         } = context
+       ) do
+    %Address{hash: beneficiary_hash} = insert(:address)
+    stable_token_address = "0x765de816845861e75a25fca122bb6898b8b1282a"
+
+    set_test_addresses(%{
+      "Accounts" => "0x8d6677192144292870907e3fa8a5527fe55a7ff6",
+      "StableToken" => stable_token_address
+    })
+
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [
+           %{
+             id: validator_1_payment_delegation,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: "0x9f024f4b000000000000000000000000" <> validator_1_hash, to: _}, "0xA2F300"]
+           },
+           %{
+             id: validator_2_payment_delegation,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: "0x9f024f4b000000000000000000000000" <> validator_2_hash, to: _}, "0xA2F300"]
+           }
+         ],
+         _ ->
+        {
+          :ok,
+          [
+            %{
+              id: validator_1_payment_delegation,
+              jsonrpc: "2.0",
+              result:
+                "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            },
+            %{
+              id: validator_2_payment_delegation,
+              jsonrpc: "2.0",
+              result:
+                "0x000000000000000000000000#{String.replace(to_string(beneficiary_hash), "0x", "")}0000000000000000000000000000000000000000000069e10de76676d0800000"
+            }
+          ]
+        }
+      end
+    )
+
+    %Address{hash: validator_1_hash} = insert(:address)
+    %Address{hash: validator_2_hash} = insert(:address)
+    %Address{hash: group_hash} = insert(:address)
+    #    %Explorer.Chain.CeloCoreContract{address_hash: contract_hash} = insert(:core_contract)
+
+    insert(
+      :core_contract,
+      address_hash: stable_token_address,
+      name: "StableToken"
+    )
+
+    log = insert(:log, block: block, index: 10)
+
+    insert(:contract_event, %{
+      event: %TransferEvent{
+        __block_number: block.number,
+        __contract_address_hash: stable_token_address,
+        __log_index: log.index,
+        value: 123_456_789_012_345_678_901,
+        from: "0x0000000000000000000000000000000000000000",
+        to: beneficiary_hash
+      }
+    })
+
+    Map.merge(context, %{
+      beneficiary_hash: beneficiary_hash
+    })
+  end
+
   defp save_locked_gold_events(context) do
     block = insert(:block, number: 172_800)
     log_1 = insert(:log, block: block, index: 1)
@@ -930,6 +1139,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     })
 
     Map.merge(context, %{
+      block: block,
       block_number: block_number,
       block_timestamp: block_timestamp,
       block_hash: block_hash,

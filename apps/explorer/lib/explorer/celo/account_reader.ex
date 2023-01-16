@@ -417,6 +417,31 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
+  def fetch_payment_delegations(validator_hashes, block_number) do
+    payment_delegations =
+      validator_hashes
+      |> Enum.map(fn hash ->
+        {:accounts, "getPaymentDelegation", [to_string(hash)], block_number, to_string(hash)}
+      end)
+      |> call_methods()
+
+    error_result =
+      Enum.find(payment_delegations, fn
+        {_, {:ok, _}} ->
+          false
+
+        {_, {:error, _}} ->
+          true
+      end)
+
+    if is_nil(error_result) do
+      {:ok, payment_delegations}
+    else
+      {_, {:error, error_message}} = error_result
+      {:error, error_message}
+    end
+  end
+
   def fetch_account_usd(address) do
     call_methods([{:usd, "balanceOf", [address]}])
   end

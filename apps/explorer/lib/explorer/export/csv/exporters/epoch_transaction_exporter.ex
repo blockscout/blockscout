@@ -108,10 +108,16 @@ defmodule Explorer.Export.CSV.EpochTransactionExporter do
     ]
   end
 
-  defp validator_address_if_applicable(validator_address, "group"), do: validator_address |> to_string()
+  defp validator_address_if_applicable(validator_address, reward_type)
+       when reward_type in ["group", "delegated_payment"],
+       do: validator_address |> to_string()
+
   defp validator_address_if_applicable(_validator_address, _reward_type), do: "N/A"
 
-  defp validator_group_address_if_applicable(_group_address, "group"), do: "N/A"
+  defp validator_group_address_if_applicable(_group_address, reward_type)
+       when reward_type in ["group", "delegated_payment"],
+       do: "N/A"
+
   defp validator_group_address_if_applicable(group_address, _reward_type), do: group_address |> to_string()
 
   # Unlikely case when there's no locked/activated gold data for a particular account
@@ -119,13 +125,15 @@ defmodule Explorer.Export.CSV.EpochTransactionExporter do
   defp locked_or_activated_gold_when_applicable(%Wei{} = value, "voter"), do: value |> Wei.to(:ether)
   defp locked_or_activated_gold_when_applicable(%Decimal{} = value, "voter"), do: %Wei{value: value} |> Wei.to(:ether)
 
-  defp locked_or_activated_gold_when_applicable(_value, reward_type) when reward_type in ["validator", "group"],
-    do: "N/A"
+  defp locked_or_activated_gold_when_applicable(_value, reward_type)
+       when reward_type in ["validator", "group", "delegated_payment"],
+       do: "N/A"
 
   defp reward_type_to_human_readable("voter"), do: "Voter Rewards"
   defp reward_type_to_human_readable("validator"), do: "Validator Rewards"
   defp reward_type_to_human_readable("group"), do: "Validator Group Rewards"
+  defp reward_type_to_human_readable("delegated_payment"), do: "Delegated Validator Rewards"
 
   defp token_symbol("voter"), do: "CELO"
-  defp token_symbol(type) when type in ["validator", "group"], do: "cUSD"
+  defp token_symbol(type) when type in ["validator", "group", "delegated_payment"], do: "cUSD"
 end

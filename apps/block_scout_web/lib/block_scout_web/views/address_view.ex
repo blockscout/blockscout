@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.AddressView do
 
   alias Explorer.Chain.{
     Address,
+    CeloElectionRewards,
     CeloSigners,
     CeloValidator,
     CeloValidatorHistory,
@@ -50,6 +51,10 @@ defmodule BlockScoutWeb.AddressView do
 
   def celo_account?(address) do
     address.celo_account != nil and Ecto.assoc_loaded?(address.celo_account)
+  end
+
+  def should_display_epoch_transactions_tab?(address) do
+    CeloElectionRewards.reward_for_address_hash_exists?(address.hash)
   end
 
   def address_partial_selector(struct_to_render_from, direction, current_address, truncate \\ false)

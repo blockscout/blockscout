@@ -13,6 +13,7 @@ defmodule Indexer.Fetcher.CeloEpochData do
   alias Explorer.Chain
   alias Explorer.Chain.{Block, CeloAccountEpoch, CeloElectionRewards, CeloEpochRewards, CeloPendingEpochOperation, Hash}
 
+  alias Explorer.Celo.ContractEvents.Common.TransferEvent
   alias Explorer.Celo.ContractEvents.EventMap
   alias Explorer.Celo.ContractEvents.Lockedgold.GoldLockedEvent
 
@@ -58,11 +59,15 @@ defmodule Indexer.Fetcher.CeloEpochData do
     response =
       entries
       |> Enum.map(fn entry ->
+        validator_and_group_rewards =
+          ValidatorEpochPaymentDistributedEvent.get_validator_and_group_rewards_for_block(entry.block_number)
+
         entry
         |> get_voter_rewards()
-        |> get_validator_and_group_rewards()
+        |> get_validator_and_group_rewards(validator_and_group_rewards)
         |> get_epoch_rewards()
         |> get_accounts_epochs()
+        |> get_delegated_payments(validator_and_group_rewards)
         |> import_items()
       end)
 
@@ -83,6 +88,51 @@ defmodule Indexer.Fetcher.CeloEpochData do
     |> EventMap.query_all()
     |> Enum.map(fn event -> event.account end)
     |> fetch_accounts_epochs(block)
+  end
+
+  def get_delegated_payments(%{delegated_payments: _delegated_payments} = block_with_delegated_payments),
+    do: block_with_delegated_payments
+
+  def get_delegated_payments(block, validator_and_group_rewards) do
+    case AccountReader.fetch_payment_delegations(
+           Enum.map(validator_and_group_rewards, fn reward -> reward.validator end),
+           block.block_number
+         ) do
+      {:ok, delegations} ->
+        delegated_payments =
+          delegations
+          |> Map.filter(fn {_, {:ok, [_, fraction]}} -> fraction > 0 end)
+          |> Enum.map(fn {validator_address, {:ok, [beneficiary_address, _]}} ->
+            {:ok, validator_hash} = Chain.string_to_address_hash(validator_address)
+            {:ok, beneficiary_hash} = Chain.string_to_address_hash(beneficiary_address)
+
+            delegation_transfer =
+              TransferEvent.payment_delegation_transfers_for(
+                beneficiary_hash,
+                block.block_number
+              )
+
+            %{
+              account_hash: beneficiary_hash,
+              amount:
+                case delegation_transfer do
+                  nil -> 0
+                  transfer -> transfer.value
+                end,
+              associated_account_hash: validator_hash,
+              block_number: block.block_number,
+              block_hash: block.block_hash,
+              block_timestamp: block.block_timestamp,
+              reward_type: "delegated_payment"
+            }
+          end)
+          |> Enum.filter(fn reward -> reward.amount > 0 end)
+
+        Map.put(block, :delegated_payments, delegated_payments)
+
+      {:error, error} ->
+        Map.put(block, :error, error)
+    end
   end
 
   def fetch_accounts_epochs([], block, acc), do: Map.put(block, :accounts_epochs, acc)
@@ -176,11 +226,9 @@ defmodule Indexer.Fetcher.CeloEpochData do
       do: block_with_rewards
 
   def get_validator_and_group_rewards(
-        %{block_number: block_number, block_timestamp: block_timestamp, block_hash: block_hash} = block
+        %{block_number: block_number, block_timestamp: block_timestamp, block_hash: block_hash} = block,
+        validator_and_group_rewards
       ) do
-    validator_and_group_rewards =
-      ValidatorEpochPaymentDistributedEvent.get_validator_and_group_rewards_for_block(block_number)
-
     validator_rewards =
       Enum.map(validator_and_group_rewards, fn reward ->
         %{
@@ -242,7 +290,8 @@ defmodule Indexer.Fetcher.CeloEpochData do
           :validator_rewards,
           :group_rewards,
           :epoch_rewards,
-          :accounts_epochs
+          :accounts_epochs,
+          :delegated_payments
         ])
       )
 
@@ -316,6 +365,9 @@ defmodule Indexer.Fetcher.CeloEpochData do
   def chain_import(block_with_changes) when not is_map_key(block_with_changes, :accounts_epochs),
     do: {:error, :changeset}
 
+  def chain_import(block_with_changes) when not is_map_key(block_with_changes, :delegated_payments),
+    do: {:error, :changeset}
+
   def chain_import(block_with_changes) do
     import_params = %{
       celo_accounts_epochs: %{
@@ -329,7 +381,8 @@ defmodule Indexer.Fetcher.CeloEpochData do
           List.flatten([
             block_with_changes.voter_rewards,
             block_with_changes.validator_rewards,
-            block_with_changes.group_rewards
+            block_with_changes.group_rewards,
+            block_with_changes.delegated_payments
           ])
       },
       timeout: :infinity

@@ -152,9 +152,21 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
           reward_type: "group"
         )
 
+      delegated_payment =
+        insert(
+          :celo_election_rewards,
+          account_hash: to_address.hash,
+          associated_account_hash: from_address_hash_validator,
+          block_number: block.number,
+          block_timestamp: block.timestamp,
+          block_hash: block.hash,
+          amount: 212_345_678_901_234_567_890,
+          reward_type: "delegated_payment"
+        )
+
       {:ok, csv} = Explorer.Export.CSV.export_epoch_transactions(to_address, "2022-10-12", "2022-10-13", [])
 
-      [result_validator, result_voter_2, result_group, result_voter] =
+      [result_validator, result_voter_2, result_delegated_payment, result_group, result_voter] =
         csv
         |> Enum.drop(1)
         |> Enum.map(fn [
@@ -250,6 +262,21 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
       assert result_validator.value == [[], to_string(validator_reward.amount |> Wei.to(:ether))]
       assert result_validator.value_wei == [[], to_string(validator_reward.amount)]
 
+      assert result_delegated_payment.epoch_number == [[], "902"]
+      assert result_delegated_payment.block_number == [[], to_string(block.number)]
+      assert result_delegated_payment.timestamp == [[], to_string(delegated_payment.block_timestamp)]
+      assert result_delegated_payment.epoch_tx_type == [[], "Delegated Validator Rewards"]
+      assert result_delegated_payment.validator_address == [[], from_address_hash_validator |> normalize_address()]
+      assert result_delegated_payment.validator_group_address == [[], "N/A"]
+      assert result_delegated_payment.to_address == [[], to_address.hash |> normalize_address()]
+      assert result_delegated_payment.tx_currency == [[], "cUSD"]
+      assert result_delegated_payment.tx_currency_contract_address == [[], cusd_address |> normalize_address()]
+      assert result_delegated_payment.type == [[], "IN"]
+      assert result_delegated_payment.locked_gold == [[], "N/A"]
+      assert result_delegated_payment.activated_gold == [[], "N/A"]
+      assert result_delegated_payment.value == [[], to_string(delegated_payment.amount |> Wei.to(:ether))]
+      assert result_delegated_payment.value_wei == [[], to_string(delegated_payment.amount)]
+
       assert result_group.epoch_number == [[], "902"]
       assert result_group.block_number == [[], to_string(block.number)]
       assert result_group.timestamp == [[], to_string(group_reward.block_timestamp)]
@@ -260,8 +287,8 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
       assert result_group.tx_currency == [[], "cUSD"]
       assert result_group.tx_currency_contract_address == [[], cusd_address |> normalize_address()]
       assert result_group.type == [[], "IN"]
-      assert result_validator.locked_gold == [[], "N/A"]
-      assert result_validator.activated_gold == [[], "N/A"]
+      assert result_group.locked_gold == [[], "N/A"]
+      assert result_group.activated_gold == [[], "N/A"]
       assert result_group.value == [[], to_string(group_reward.amount |> Wei.to(:ether))]
       assert result_group.value_wei == [[], to_string(group_reward.amount)]
     end

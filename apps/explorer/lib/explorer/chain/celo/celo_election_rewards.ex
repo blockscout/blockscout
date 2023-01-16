@@ -390,4 +390,17 @@ defmodule Explorer.Chain.CeloElectionRewards do
 
     {items_count, page_size}
   end
+
+  def reward_for_address_hash_exists?(address_hash) do
+    reward =
+      Repo.one(
+        from(
+          r in __MODULE__,
+          where: r.account_hash == ^address_hash,
+          limit: 1
+        )
+      )
+
+    not is_nil(reward)
+  end
 end

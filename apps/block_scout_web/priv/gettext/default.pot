@@ -163,7 +163,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_address.html.eex:4
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:42
-#: lib/block_scout_web/views/address_view.ex:165
+#: lib/block_scout_web/views/address_view.ex:170
 #, elixir-autogen, elixir-format
 msgid "Address"
 msgstr ""
@@ -283,7 +283,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/block/_link.html.eex:2
 #: lib/block_scout_web/templates/epoch_transaction/_election_aggregated_tile.html.eex:91
-#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:105
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:130
 #: lib/block_scout_web/templates/epoch_transaction/_epoch_tile.html.eex:58
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:32
 #: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:43
@@ -362,7 +362,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:56
 #: lib/block_scout_web/templates/address/overview.html.eex:358
 #: lib/block_scout_web/templates/address_validation/index.html.eex:11
-#: lib/block_scout_web/views/address_view.ex:438
+#: lib/block_scout_web/views/address_view.ex:443
 #, elixir-autogen, elixir-format
 msgid "Blocks Validated"
 msgstr ""
@@ -377,7 +377,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:223
 #: lib/block_scout_web/templates/address/overview.html.eex:236
 #: lib/block_scout_web/templates/address/overview.html.eex:249
-#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:24
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:26
 #: lib/block_scout_web/templates/epoch_transaction/_epoch_tile.html.eex:23
 #: lib/block_scout_web/templates/verified_contracts/_tile.html.eex:29
 #: lib/block_scout_web/views/transaction_view.ex:509
@@ -453,13 +453,13 @@ msgstr ""
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:187
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:126
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:149
-#: lib/block_scout_web/views/address_view.ex:431
+#: lib/block_scout_web/views/address_view.ex:436
 #, elixir-autogen, elixir-format
 msgid "Code"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:34
-#: lib/block_scout_web/views/address_view.ex:437
+#: lib/block_scout_web/views/address_view.ex:442
 #, elixir-autogen, elixir-format
 msgid "Coin Balance History"
 msgstr ""
@@ -567,14 +567,14 @@ msgstr ""
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:18
 #: lib/block_scout_web/templates/account/custom_abi/index.html.eex:29
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_contract_address_field.html.eex:4
-#: lib/block_scout_web/views/address_view.ex:163
+#: lib/block_scout_web/views/address_view.ex:168
 #, elixir-autogen, elixir-format
 msgid "Contract Address"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:16
-#: lib/block_scout_web/views/address_view.ex:67
-#: lib/block_scout_web/views/address_view.ex:101
+#: lib/block_scout_web/views/address_view.ex:72
+#: lib/block_scout_web/views/address_view.ex:106
 #, elixir-autogen, elixir-format
 msgid "Contract Address Pending"
 msgstr ""
@@ -829,7 +829,7 @@ msgstr ""
 msgid "Decoded"
 msgstr ""
 
-#: lib/block_scout_web/views/address_view.ex:432
+#: lib/block_scout_web/views/address_view.ex:437
 #, elixir-autogen, elixir-format
 msgid "Decompiled Code"
 msgstr ""
@@ -972,7 +972,7 @@ msgid "Enter the Vyper Contract Code"
 msgstr ""
 
 #: lib/block_scout_web/templates/epoch_transaction/_election_aggregated_tile.html.eex:87
-#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:101
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:126
 #: lib/block_scout_web/templates/epoch_transaction/_epoch_tile.html.eex:54
 #, elixir-autogen, elixir-format
 msgid "Epoch #"
@@ -1178,7 +1178,7 @@ msgid "IMPORTANT: This information is a best guess based on similar functions fr
 msgstr ""
 
 #: lib/block_scout_web/templates/epoch_transaction/_election_aggregated_tile.html.eex:97
-#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:111
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:136
 #: lib/block_scout_web/templates/epoch_transaction/_epoch_tile.html.eex:64
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:42
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:92
@@ -1245,7 +1245,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:17
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:11
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:6
-#: lib/block_scout_web/views/address_view.ex:428
+#: lib/block_scout_web/views/address_view.ex:433
 #: lib/block_scout_web/views/transaction_view.ex:530
 #, elixir-autogen, elixir-format
 msgid "Internal Transactions"
@@ -1366,7 +1366,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/index.html.eex:10
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:17
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:8
-#: lib/block_scout_web/views/address_view.ex:439
+#: lib/block_scout_web/views/address_view.ex:444
 #: lib/block_scout_web/views/transaction_view.ex:531
 #, elixir-autogen, elixir-format
 msgid "Logs"
@@ -1380,7 +1380,7 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/show.html.eex:51
 #: lib/block_scout_web/templates/layout/app.html.eex:45
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:83
-#: lib/block_scout_web/views/address_view.ex:203
+#: lib/block_scout_web/views/address_view.ex:208
 #, elixir-autogen, elixir-format
 msgid "Market Cap"
 msgstr ""
@@ -1729,7 +1729,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:105
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:27
-#: lib/block_scout_web/views/address_view.ex:433
+#: lib/block_scout_web/views/address_view.ex:438
 #: lib/block_scout_web/views/tokens/overview_view.ex:41
 #, elixir-autogen, elixir-format
 msgid "Read Contract"
@@ -1737,7 +1737,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:112
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:41
-#: lib/block_scout_web/views/address_view.ex:434
+#: lib/block_scout_web/views/address_view.ex:439
 #, elixir-autogen, elixir-format
 msgid "Read Proxy"
 msgstr ""
@@ -1801,9 +1801,10 @@ msgid "Reward"
 msgstr ""
 
 #: lib/block_scout_web/templates/epoch_transaction/_election_aggregated_tile.html.eex:24
-#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:24
-#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:46
-#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:69
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:26
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:48
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:71
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:101
 #, elixir-autogen, elixir-format
 msgid "Rewards: "
 msgstr ""
@@ -2299,7 +2300,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:15
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
-#: lib/block_scout_web/views/address_view.ex:430
+#: lib/block_scout_web/views/address_view.ex:435
 #: lib/block_scout_web/views/tokens/instance/overview_view.ex:197
 #: lib/block_scout_web/views/tokens/overview_view.ex:39
 #: lib/block_scout_web/views/transaction_view.ex:529
@@ -2317,7 +2318,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token/overview.html.eex:58
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:13
 #: lib/block_scout_web/templates/tokens/index.html.eex:9
-#: lib/block_scout_web/views/address_view.ex:427
+#: lib/block_scout_web/views/address_view.ex:432
 #, elixir-autogen, elixir-format
 msgid "Tokens"
 msgstr ""
@@ -2456,7 +2457,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block/overview.html.eex:120
 #: lib/block_scout_web/templates/chain/show.html.eex:210
 #: lib/block_scout_web/templates/stats/index.html.eex:32
-#: lib/block_scout_web/views/address_view.ex:429
+#: lib/block_scout_web/views/address_view.ex:434
 #, elixir-autogen, elixir-format
 msgid "Transactions"
 msgstr ""
@@ -2586,8 +2587,8 @@ msgstr ""
 msgid "Validator Group Rewards"
 msgstr ""
 
-#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:38
-#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:61
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:40
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:63
 #, elixir-autogen, elixir-format
 msgid "Validator Group:"
 msgstr ""
@@ -2768,14 +2769,14 @@ msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:119
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:34
-#: lib/block_scout_web/views/address_view.ex:435
+#: lib/block_scout_web/views/address_view.ex:440
 #, elixir-autogen, elixir-format
 msgid "Write Contract"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:126
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:48
-#: lib/block_scout_web/views/address_view.ex:436
+#: lib/block_scout_web/views/address_view.ex:441
 #, elixir-autogen, elixir-format
 msgid "Write Proxy"
 msgstr ""
@@ -3728,4 +3729,14 @@ msgstr ""
 #: lib/block_scout_web/templates/block/overview.html.eex:27
 #, elixir-autogen, elixir-format
 msgid "View previous epoch block"
+msgstr ""
+
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:17
+#, elixir-autogen, elixir-format
+msgid "Delegated Validator Rewards"
+msgstr ""
+
+#: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:116
+#, elixir-autogen, elixir-format
+msgid "Delegating Validator:"
 msgstr ""

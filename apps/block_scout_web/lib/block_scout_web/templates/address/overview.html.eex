@@ -224,7 +224,7 @@
             </dd>
           </dl>
           <% end %>
-          <%= if not is_nil(assigns[:voting_sum]) and @address.celo_account.account_type == "normal" do %>
+          <%= if not is_nil(assigns[:voting_sum]) and not is_nil(@address.celo_account) and @address.celo_account.account_type == "normal" do %>
           <!-- Voter Rewards -->
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
@@ -237,7 +237,7 @@
             </dd>
           </dl>
           <% end %>
-          <%= if not is_nil(assigns[:validator_or_group_sum]) and not is_nil(assigns[:voting_sum]) and (@address.celo_account.account_type == "validator" or @address.celo_account.account_type == "group") do %>
+          <%= if not is_nil(assigns[:validator_or_group_sum]) and not is_nil(assigns[:voting_sum]) and not is_nil(@address.celo_account) and (@address.celo_account.account_type == "validator" or @address.celo_account.account_type == "group") do %>
           <!-- Validator / Group Rewards -->
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
