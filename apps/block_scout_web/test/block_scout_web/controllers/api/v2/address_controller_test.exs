@@ -1390,6 +1390,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
     assert json["timestamp"] != nil
     assert json["method"] != nil
+    assert to_string(token_transfer.block_hash) == json["block_hash"]
+    assert to_string(token_transfer.log_index) == json["log_index"]
   end
 
   defp compare_item(%InternalTransaction{} = internal_tx, json) do

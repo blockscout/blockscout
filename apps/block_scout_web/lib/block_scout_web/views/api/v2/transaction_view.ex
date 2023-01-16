@@ -96,7 +96,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           do: block_timestamp(token_transfer.transaction),
           else: block_timestamp(token_transfer.block)
         ),
-      "method" => method_name(token_transfer.transaction, decoded_input, true)
+      "method" => method_name(token_transfer.transaction, decoded_input, true),
+      "block_hash" => to_string(token_transfer.block_hash),
+      "log_index" => to_string(token_transfer.log_index)
     }
   end
 

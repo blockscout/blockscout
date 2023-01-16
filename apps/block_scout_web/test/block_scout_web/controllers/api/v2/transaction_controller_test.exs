@@ -562,6 +562,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
     assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
+    assert to_string(token_transfer.block_hash) == json["block_hash"]
+    assert to_string(token_transfer.log_index) == json["log_index"]
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, txs) do
