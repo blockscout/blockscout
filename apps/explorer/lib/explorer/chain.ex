@@ -583,6 +583,23 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  @spec address_hash_to_token_transfers_by_token_address_hash(
+          Hash.Address.t() | String.t(),
+          Hash.Address.t() | String.t(),
+          Keyword.t()
+        ) :: [TokenTransfer.t()]
+  def address_hash_to_token_transfers_by_token_address_hash(address_hash, token_address_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    necessity_by_association = Keyword.get(options, :necessity_by_association)
+
+    address_hash
+    |> TokenTransfer.token_transfers_by_address_hash_and_token_address_hash(token_address_hash)
+    |> join_associations(necessity_by_association)
+    |> TokenTransfer.handle_paging_options(paging_options)
+    |> Repo.all()
+  end
+
   @doc """
   address_hash_to_token_transfers_including_contract/2 function returns token transfers on address (to/from/contract).
   It is used by CSV export of token transfers button.
@@ -2462,17 +2479,13 @@ defmodule Explorer.Chain do
   @spec list_top_tokens(String.t()) :: [{Token.t(), non_neg_integer()}]
   def list_top_tokens(filter, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    token_type = Keyword.get(options, :token_type, nil)
 
-    fetch_top_tokens(filter, paging_options)
+    fetch_top_tokens(filter, paging_options, token_type)
   end
 
-  defp fetch_top_tokens(filter, paging_options) do
-    base_query =
-      from(t in Token,
-        where: t.total_supply > ^0,
-        order_by: [desc_nulls_last: t.holder_count, asc: t.name],
-        preload: [:contract_address]
-      )
+  defp fetch_top_tokens(filter, paging_options, token_type) do
+    base_query = base_token_query(token_type)
 
     base_query_with_paging =
       base_query
@@ -2495,6 +2508,21 @@ defmodule Explorer.Chain do
 
     query
     |> Repo.all()
+  end
+
+  defp base_token_query(empty_type) when empty_type in [nil, []] do
+    from(t in Token,
+      order_by: [desc_nulls_last: t.holder_count, asc: t.name],
+      preload: [:contract_address]
+    )
+  end
+
+  defp base_token_query(token_types) when is_list(token_types) do
+    from(t in Token,
+      where: t.type in ^token_types,
+      order_by: [desc_nulls_last: t.holder_count, asc: t.name],
+      preload: [:contract_address]
+    )
   end
 
   @doc """
