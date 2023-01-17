@@ -9,6 +9,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Visualize.Sol2uml
 
+  require Logger
+
   def render("smart_contract.json", %{address: address}) do
     prepare_smart_contract(address)
   end
@@ -94,10 +96,20 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         |> Map.drop(["abi_outputs"])
 
       _ ->
-        function
-        |> Map.drop(["abi_outputs"])
+        result =
+          function
+          |> Map.drop(["abi_outputs"])
+
+        outputs = Enum.map(result["outputs"], &prepare_output/1)
+        Map.replace(result, "outputs", outputs)
     end
   end
+
+  defp prepare_output(%{"type" => type, "value" => value} = output) do
+    Map.replace(output, "value", ABIEncodedValueView.value_json(type, value))
+  end
+
+  defp prepare_output(output), do: output
 
   # credo:disable-for-next-line
   def prepare_smart_contract(%Address{smart_contract: %SmartContract{}} = address) do
@@ -117,7 +129,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     target_contract = if smart_contract_verified, do: address.smart_contract, else: metadata_for_verification
 
     %{
-      "verified_twin_address_hash" => metadata_for_verification && metadata_for_verification.address_hash,
+      "verified_twin_address_hash" =>
+        metadata_for_verification && Address.checksum(metadata_for_verification.address_hash),
       "is_verified" => smart_contract_verified,
       "is_changed_bytecode" => smart_contract_verified && address.smart_contract.is_changed_bytecode,
       "is_partially_verified" => address.smart_contract.partially_verified && smart_contract_verified,
@@ -143,10 +156,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "file_path" => target_contract.file_path,
       "additional_sources" => Enum.map(additional_sources, &prepare_additional_sourse/1),
       "compiler_settings" => target_contract.compiler_settings,
-      "external_libraries" => target_contract.external_libraries,
-      "constructor_args" => target_contract.constructor_arguments,
+      "external_libraries" => prepare_external_libraries(target_contract.external_libraries),
+      "constructor_args" => if(smart_contract_verified, do: target_contract.constructor_arguments),
       "decoded_constructor_args" =>
-        format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
+        if(smart_contract_verified,
+          do: format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
+        )
     }
     |> Map.merge(bytecode_info(address))
   end
@@ -173,6 +188,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     end
   end
 
+  defp prepare_external_libraries(libraries) when is_list(libraries) do
+    Enum.map(libraries, fn %Explorer.Chain.SmartContract.ExternalLibrary{name: name, address_hash: address_hash} ->
+      {:ok, hash} = Chain.string_to_address_hash(address_hash)
+
+      %{name: name, address_hash: Address.checksum(hash)}
+    end)
+  end
+
   defp prepare_additional_sourse(source) do
     %{
       "source_code" => source.contract_source_code,
@@ -190,11 +213,19 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       |> AddressContractView.decode_data(input_types)
       |> Enum.zip(constructor_abi["inputs"])
       |> Enum.map(fn {value, %{"type" => type} = input_arg} ->
-        {ABIEncodedValueView.value_json(type, value), input_arg}
+        [ABIEncodedValueView.value_json(type, value), input_arg]
       end)
 
     result
   rescue
-    _ -> nil
+    exception ->
+      Logger.warn(fn ->
+        [
+          "Error formating constructor arguments for abi: #{inspect(abi)}, args: #{inspect(constructor_arguments)}: ",
+          Exception.format(:error, exception)
+        ]
+      end)
+
+      nil
   end
 end
