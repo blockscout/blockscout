@@ -162,7 +162,7 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "constant" => true,
                  "inputs" => [%{"name" => "x", "type" => "uint256"}],
                  "name" => "with_arguments",
-                 "outputs" => [%{"name" => "", "type" => "bool", "value" => ""}],
+                 "outputs" => [%{"name" => "", "type" => "bool"}],
                  "payable" => _,
                  "stateMutability" => _,
                  "type" => _
@@ -246,7 +246,7 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "constant" => true,
                  "inputs" => [%{"name" => "x", "type" => "uint256"}],
                  "name" => "with_arguments",
-                 "outputs" => [%{"name" => "", "type" => "bool", "value" => ""}],
+                 "outputs" => [%{"name" => "", "type" => "bool"}],
                  "payable" => _,
                  "stateMutability" => _,
                  "type" => _
