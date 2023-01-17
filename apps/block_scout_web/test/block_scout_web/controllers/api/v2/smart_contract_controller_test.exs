@@ -55,7 +55,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     end
 
     test "get smart-contract", %{conn: conn} do
-      lib_address_string = to_string(build(:address))
+      lib_address = build(:address)
+      lib_address_string = to_string(lib_address)
 
       target_contract =
         insert(:smart_contract,
@@ -95,7 +96,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "file_path" => target_contract.file_path,
         "additional_sources" => [],
         "compiler_settings" => target_contract.compiler_settings,
-        "external_libraries" => [%{"name" => "ABC", "address_hash" => lib_address_string}],
+        "external_libraries" => [%{"name" => "ABC", "address_hash" => Address.checksum(lib_address)}],
         "constructor_args" => target_contract.constructor_arguments,
         "decoded_constructor_args" => nil,
         "is_self_destructed" => false,
@@ -114,7 +115,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     end
 
     test "get smart-contract with decoded constructor", %{conn: conn} do
-      lib_address_string = to_string(build(:address))
+      lib_address = build(:address)
+      lib_address_string = to_string(lib_address)
 
       target_contract =
         insert(:smart_contract,
@@ -181,7 +183,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "file_path" => target_contract.file_path,
         "additional_sources" => [],
         "compiler_settings" => target_contract.compiler_settings,
-        "external_libraries" => [%{"name" => "ABC", "address_hash" => lib_address_string}],
+        "external_libraries" => [%{"name" => "ABC", "address_hash" => Address.checksum(lib_address)}],
         "constructor_args" => target_contract.constructor_arguments,
         "decoded_constructor_args" => [
           ["0x0000000000000000000000000000000000000000", %{"name" => "_proxyStorage", "type" => "address"}],
@@ -203,7 +205,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     end
 
     test "get smart-contract data from twin without constructor args", %{conn: conn} do
-      lib_address_string = to_string(build(:address))
+      lib_address = build(:address)
+      lib_address_string = to_string(lib_address)
 
       target_contract =
         insert(:smart_contract,
@@ -276,7 +279,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "file_path" => target_contract.file_path,
         "additional_sources" => [],
         "compiler_settings" => target_contract.compiler_settings,
-        "external_libraries" => [%{"name" => "ABC", "address_hash" => lib_address_string}],
+        "external_libraries" => [%{"name" => "ABC", "address_hash" => Address.checksum(lib_address)}],
         "constructor_args" => nil,
         "decoded_constructor_args" => nil,
         "is_self_destructed" => false,
