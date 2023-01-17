@@ -163,14 +163,6 @@ defmodule BlockScoutWeb.AddressView do
     matching_address_check(current_address, address, false, truncate)
   end
 
-  def address_title(%Address{} = address) do
-    if contract?(address) do
-      gettext("Contract Address")
-    else
-      gettext("Address")
-    end
-  end
-
   @doc """
   Returns a formatted address balance and includes the unit.
   """

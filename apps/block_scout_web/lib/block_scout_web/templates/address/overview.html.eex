@@ -26,7 +26,7 @@
               <%= nil %>
           <% end %>
           <h1 class="card-title lg-card-title mb-2">
-            <div class="title-with-label"><%= address_title(@address) %> <%= gettext "Details" %></div>
+            <div class="title-with-label"><%= gettext "Address Details" %></div>
               <%= if contract?(@address) do %>
                 <%= render BlockScoutWeb.FormView, "_tag.html", text: "contract", additional_classes: ["contract", "ml-1"] %>
                 <%= if @is_proxy do %>
