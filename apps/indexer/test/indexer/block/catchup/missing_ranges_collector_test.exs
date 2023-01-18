@@ -24,7 +24,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
       MissingBlockRange.clear_batch(batch)
 
       insert(:block, number: 1_200_000)
-      Process.sleep(500)
+      Process.sleep(1000)
 
       assert [1_199_999..1_100_001//-1] = batch = MissingBlockRange.get_latest_batch(1)
       MissingBlockRange.clear_batch(batch)
