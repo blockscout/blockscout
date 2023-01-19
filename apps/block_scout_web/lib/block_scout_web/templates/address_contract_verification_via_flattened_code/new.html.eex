@@ -93,36 +93,6 @@
 
           <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_libraries_other.html" %>
 
-          <div class="contract-library-form-group js-contract-library-form-group">
-            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_name.html", library: :library6, library_name: :library4_name %>
-
-            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_address.html", library: :library6, library_address: :library4_address %>
-          </div>
-
-          <div class="contract-library-form-group js-contract-library-form-group">
-            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_name.html", library: :library7, library_name: :library4_name %>
-
-            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_address.html", library: :library7, library_address: :library4_address %>
-          </div>
-
-          <div class="contract-library-form-group js-contract-library-form-group">
-            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_name.html", library: :library8, library_name: :library4_name %>
-
-            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_address.html", library: :library8, library_address: :library4_address %>
-          </div>
-
-          <div class="contract-library-form-group js-contract-library-form-group">
-            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_name.html", library: :library9, library_name: :library4_name %>
-
-            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_address.html", library: :library9, library_address: :library4_address %>
-          </div>
-
-          <div class="contract-library-form-group js-contract-library-form-group">
-            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_name.html", library: :library10, library_name: :library4_name %>
-
-            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_address.html", library: :library10, library_address: :library4_address %>
-          </div>
-
           <div class="add-contract-library-wrapper js-add-contract-library-wrapper">
             <span class="btn-line js-btn-add-contract-library"><%= gettext "Add Library" %></span>
           </div>
