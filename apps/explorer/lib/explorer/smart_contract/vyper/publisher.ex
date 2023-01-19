@@ -40,6 +40,9 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
 
       {:error, error} ->
         {:error, unverified_smart_contract(address_hash, params, error, nil)}
+
+      _ ->
+        {:error, unverified_smart_contract(address_hash, params, "Unexpected error", nil)}
     end
   end
 

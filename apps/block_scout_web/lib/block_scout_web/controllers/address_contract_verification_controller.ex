@@ -1,14 +1,13 @@
 defmodule BlockScoutWeb.AddressContractVerificationController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.API.RPC.ContractController
   alias BlockScoutWeb.Controller
-  alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
+  alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.SmartContract.Vyper.PublisherWorker, as: VyperPublisherWorker
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
@@ -57,7 +56,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     files_array =
       files
       |> Map.values()
-      |> read_files()
+      |> PublishHelper.read_files()
 
     Que.add(SolidityPublisherWorker, {"multipart", smart_contract, files_array, external_libraries, conn})
 
@@ -85,9 +84,9 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           "verification_type" => "json:standard"
         }
       ) do
-    files_array = prepare_files_array(files)
+    files_array = PublishHelper.prepare_files_array(files)
 
-    with %Plug.Upload{path: path} <- get_one_json(files_array),
+    with %Plug.Upload{path: path} <- PublishHelper.get_one_json(files_array),
          {:ok, json_input} <- File.read(path) do
       Que.add(SolidityPublisherWorker, {"json_web", smart_contract, json_input, conn})
     else
@@ -118,14 +117,14 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           "verification_type" => "json:metadata"
         }
       ) do
-    files_array = prepare_files_array(files)
+    files_array = PublishHelper.prepare_files_array(files)
 
-    json_file = get_one_json(files_array)
+    json_file = PublishHelper.get_one_json(files_array)
 
     if json_file do
       if Chain.smart_contract_fully_verified?(address_hash_string) do
         EventsPublisher.broadcast(
-          prepare_verification_error(
+          PublishHelper.prepare_verification_error(
             "This contract already verified in Blockscout.",
             address_hash_string,
             conn
@@ -135,15 +134,15 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
       else
         case Sourcify.check_by_address(address_hash_string) do
           {:ok, _verified_status} ->
-            get_metadata_and_publish(address_hash_string, conn)
+            PublishHelper.get_metadata_and_publish(address_hash_string, conn)
 
           _ ->
-            verify_and_publish(address_hash_string, files_array, conn)
+            PublishHelper.verify_and_publish(address_hash_string, files_array, conn)
         end
       end
     else
       EventsPublisher.broadcast(
-        prepare_verification_error(
+        PublishHelper.prepare_verification_error(
           "Please attach JSON file with metadata of contract's compilation.",
           address_hash_string,
           conn
@@ -159,151 +158,5 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     Que.add(SolidityPublisherWorker, {"", %{}, %{}, conn})
 
     send_resp(conn, 204, "")
-  end
-
-  defp verify_and_publish(address_hash_string, files_array, conn) do
-    with {:ok, _verified_status} <- Sourcify.verify(address_hash_string, files_array),
-         {:ok, _verified_status} <- Sourcify.check_by_address(address_hash_string) do
-      get_metadata_and_publish(address_hash_string, conn)
-    else
-      {:error, "partial"} ->
-        {:ok, status, metadata} = Sourcify.check_by_address_any(address_hash_string)
-        process_metadata_and_publish(address_hash_string, metadata, status == "partial", conn)
-
-      {:error, %{"error" => error}} ->
-        EventsPublisher.broadcast(
-          prepare_verification_error(error, address_hash_string, conn),
-          :on_demand
-        )
-
-      {:error, error} ->
-        EventsPublisher.broadcast(
-          prepare_verification_error(error, address_hash_string, conn),
-          :on_demand
-        )
-
-      _ ->
-        EventsPublisher.broadcast(
-          prepare_verification_error("Unexpected error", address_hash_string, conn),
-          :on_demand
-        )
-    end
-  end
-
-  def get_metadata_and_publish(address_hash_string, conn) do
-    case Sourcify.get_metadata(address_hash_string) do
-      {:ok, verification_metadata} ->
-        process_metadata_and_publish(address_hash_string, verification_metadata, false, conn)
-
-      {:error, %{"error" => error}} ->
-        return_sourcify_error(conn, error, address_hash_string)
-    end
-  end
-
-  defp process_metadata_and_publish(address_hash_string, verification_metadata, is_partial, conn \\ nil) do
-    case Sourcify.parse_params_from_sourcify(address_hash_string, verification_metadata) do
-      %{
-        "params_to_publish" => params_to_publish,
-        "abi" => abi,
-        "secondary_sources" => secondary_sources,
-        "compilation_target_file_path" => compilation_target_file_path
-      } ->
-        ContractController.publish(conn, %{
-          "addressHash" => address_hash_string,
-          "params" => Map.put(params_to_publish, "partially_verified", is_partial),
-          "abi" => abi,
-          "secondarySources" => secondary_sources,
-          "compilationTargetFilePath" => compilation_target_file_path
-        })
-
-      {:error, :metadata} ->
-        return_sourcify_error(conn, Sourcify.no_metadata_message(), address_hash_string)
-
-      _ ->
-        return_sourcify_error(conn, Sourcify.failed_verification_message(), address_hash_string)
-    end
-  end
-
-  defp return_sourcify_error(nil, error, _address_hash_string) do
-    {:error, error: error}
-  end
-
-  defp return_sourcify_error(conn, error, address_hash_string) do
-    EventsPublisher.broadcast(
-      prepare_verification_error(error, address_hash_string, conn),
-      :on_demand
-    )
-  end
-
-  def prepare_files_array(files) do
-    if is_map(files), do: Enum.map(files, fn {_, file} -> file end), else: []
-  end
-
-  defp get_one_json(files_array) do
-    files_array
-    |> Enum.filter(fn file -> file.content_type == "application/json" end)
-    |> Enum.at(0)
-  end
-
-  # sobelow_skip ["Traversal.FileModule"]
-  defp read_files(plug_uploads) do
-    Enum.reduce(plug_uploads, %{}, fn %Plug.Upload{path: path, filename: file_name}, acc ->
-      {:ok, file_content} = File.read(path)
-      Map.put(acc, file_name, file_content)
-    end)
-  end
-
-  defp prepare_verification_error(msg, address_hash_string, conn) do
-    [
-      {:contract_verification_result,
-       {address_hash_string,
-        {:error,
-         %Changeset{
-           action: :insert,
-           errors: [
-             file: {msg, []}
-           ],
-           data: %SmartContract{address_hash: address_hash_string},
-           valid?: false
-         }}, conn}}
-    ]
-  end
-
-  def parse_optimization_runs(%{"runs" => runs}) do
-    case Integer.parse(runs) do
-      {integer, ""} -> integer
-      _ -> 200
-    end
-  end
-
-  def check_and_verify(address_hash_string) do
-    if Chain.smart_contract_fully_verified?(address_hash_string) do
-      {:ok, :already_fully_verified}
-    else
-      if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
-        if Chain.smart_contract_verified?(address_hash_string) do
-          case Sourcify.check_by_address(address_hash_string) do
-            {:ok, _verified_status} ->
-              get_metadata_and_publish(address_hash_string, nil)
-
-            _ ->
-              {:error, :not_verified}
-          end
-        else
-          case Sourcify.check_by_address_any(address_hash_string) do
-            {:ok, "full", metadata} ->
-              process_metadata_and_publish(address_hash_string, metadata, false)
-
-            {:ok, "partial", metadata} ->
-              process_metadata_and_publish(address_hash_string, metadata, true)
-
-            _ ->
-              {:error, :not_verified}
-          end
-        end
-      else
-        {:error, :sourcify_disabled}
-      end
-    end
   end
 end

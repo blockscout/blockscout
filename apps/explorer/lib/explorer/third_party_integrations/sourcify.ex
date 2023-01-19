@@ -44,24 +44,38 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       |> Multipart.add_field("chain", chain_id)
       |> Multipart.add_field("address", address_hash_string)
 
-    multipart_body =
-      files
-      |> Enum.reduce(multipart_text_params, fn file, acc ->
-        if file do
-          acc
-          |> Multipart.add_file(file.path,
-            name: "files",
-            file_name: Path.basename(file.path)
-          )
-        else
-          acc
-        end
-      end)
+    multipart_body = prepare_body_for_sourcify(files, multipart_text_params)
 
     http_post_request(verify_url(), multipart_body)
   end
 
-  # sobelow_skip ["Traversal.FileModule"]
+  defp prepare_body_for_sourcify(files, multipart_text_params) when is_map(files) do
+    files
+    |> Enum.reduce(multipart_text_params, fn {name, content}, acc ->
+      if content do
+        acc
+        |> Multipart.add_file_content(content, name, name: "files")
+      else
+        acc
+      end
+    end)
+  end
+
+  defp prepare_body_for_sourcify(files, multipart_text_params) do
+    files
+    |> Enum.reduce(multipart_text_params, fn file, acc ->
+      if file do
+        acc
+        |> Multipart.add_file(file.path,
+          name: "files",
+          file_name: Path.basename(file.path)
+        )
+      else
+        acc
+      end
+    end)
+  end
+
   def verify_via_rust_microservice(address_hash_string, files) do
     chain_id = config(__MODULE__, :chain_id)
 
@@ -70,33 +84,58 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       |> Map.put("chain", chain_id)
       |> Map.put("address", address_hash_string)
 
-    files_body =
-      files
-      |> Enum.reduce(Map.new(), fn file, acc ->
-        if file do
-          {:ok, file_content} = File.read(file.path)
-
-          file_content =
-            if Helper.json_file?(file.filename) do
-              file_content
-              |> Jason.decode!()
-              |> Jason.encode!()
-            else
-              file_content
-            end
-
-          acc
-          |> Map.put(file.filename, file_content)
-        else
-          acc
-        end
-      end)
+    files_body = prepare_body_for_microservice(files)
 
     body =
       body_params
       |> Map.put("files", files_body)
 
     http_post_request_rust_microservice(verify_url_rust_microservice(), body)
+  end
+
+  defp prepare_body_for_microservice(files) when is_map(files) do
+    files
+    |> Enum.reduce(Map.new(), fn {name, content}, acc ->
+      if content do
+        file_content =
+          if Helper.json_file?(name) do
+            content
+            |> Jason.decode!()
+            |> Jason.encode!()
+          else
+            content
+          end
+
+        acc
+        |> Map.put(name, file_content)
+      else
+        acc
+      end
+    end)
+  end
+
+  # sobelow_skip ["Traversal.FileModule"]
+  defp prepare_body_for_microservice(files) do
+    files
+    |> Enum.reduce(Map.new(), fn file, acc ->
+      if file do
+        {:ok, file_content} = File.read(file.path)
+
+        file_content =
+          if Helper.json_file?(file.filename) do
+            file_content
+            |> Jason.decode!()
+            |> Jason.encode!()
+          else
+            file_content
+          end
+
+        acc
+        |> Map.put(file.filename, file_content)
+      else
+        acc
+      end
+    end)
   end
 
   def http_get_request(url, params) do
@@ -118,10 +157,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       {:error, %Error{reason: reason}} ->
         {:error, reason}
 
-      {:error, :nxdomain} ->
-        {:error, "Sourcify is not responsive"}
-
-      {:error, _} ->
+      _ ->
         {:error, "Unexpected response from Sourcify"}
     end
   end
