@@ -75,4 +75,11 @@ defmodule Explorer.Celo.Metrics.DatabaseMetrics do
       _ -> 0
     end
   end
+
+  def fetch_connections_by_app do
+    {:ok, %{rows: result}} =
+      SQL.query(Repo, "SELECT count(*), application_name from pg_stat_activity group by application_name;")
+
+    result |> Enum.into(%{}, fn [count, app] -> {app, count} end)
+  end
 end

@@ -20,7 +20,7 @@ config :logger_json, :indexer,
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :indexer]
 
-config :logger, :indexer, backends: [LoggerJSON, {LoggerBackend, :logger_backend}]
+config :logger, :indexer, backends: [LoggerJSON]
 
 config :logger, :logger_backend, level: :error
 # config :logger, :indexer,
@@ -31,7 +31,9 @@ config :logger, :logger_backend, level: :error
 #       block_number step count error_count shrunk import_id transaction_id)a,
 #  metadata_filter: [application: :indexer]
 
-import_config "telemetry/telemetry.exs"
+config :indexer, Indexer.Celo.MetricsCron,
+  metrics_fetcher_blocks_count: 1000,
+  metrics_cron_interval_seconds: System.get_env("METRICS_CRON_INTERVAL") || "5"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

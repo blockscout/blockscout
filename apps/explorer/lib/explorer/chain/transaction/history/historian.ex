@@ -17,10 +17,10 @@ defmodule Explorer.Chain.Transaction.History.Historian do
 
   @impl Historian
   def compile_records(num_days, records \\ []) do
-    Logger.info("tx/per day chart: collect records for txs per day stats")
+    Logger.debug("tx/per day chart: collect records for txs per day stats")
 
     if num_days == 1 do
-      Logger.info("tx/per day chart: records collected #{inspect(records)}")
+      Logger.debug("tx/per day chart: records collected #{inspect(records)}")
 
       records = [%{date: date_today(), number_of_transactions: 0, gas_used: 0, total_fee: 0} | records]
       # base case
@@ -31,9 +31,9 @@ defmodule Explorer.Chain.Transaction.History.Historian do
       earliest = datetime(day_to_fetch, ~T[00:00:00])
       latest = datetime(day_to_fetch, ~T[23:59:59])
 
-      Logger.info("tx/per day chart: earliest date #{DateTime.to_string(earliest)}")
+      Logger.debug("tx/per day chart: earliest date #{DateTime.to_string(earliest)}")
 
-      Logger.info("tx/per day chart: latest date #{DateTime.to_string(latest)}")
+      Logger.debug("tx/per day chart: latest date #{DateTime.to_string(latest)}")
 
       from_api = false
 
@@ -81,7 +81,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
   end
 
   defp compile_records_in_range(min_block, max_block) do
-    Logger.info("tx/per day chart: min/max block numbers [#{min_block}, #{max_block}]")
+    Logger.debug("tx/per day chart: min/max block numbers [#{min_block}, #{max_block}]")
 
     all_transactions_query =
       from(
@@ -105,9 +105,9 @@ defmodule Explorer.Chain.Transaction.History.Historian do
       )
 
     num_transactions = Repo.aggregate(query, :count, :hash, timeout: :infinity)
-    Logger.info("tx/per day chart: num of transactions #{num_transactions}")
+    Logger.debug("tx/per day chart: num of transactions #{num_transactions}")
     gas_used = Repo.aggregate(query, :sum, :gas_used, timeout: :infinity)
-    Logger.info("tx/per day chart: total gas used #{gas_used}")
+    Logger.debug("tx/per day chart: total gas used #{gas_used}")
 
     total_fee_query =
       from(transaction in subquery(all_transactions_query),
@@ -118,19 +118,19 @@ defmodule Explorer.Chain.Transaction.History.Historian do
       )
 
     total_fee = Repo.one(total_fee_query, timeout: :infinity)
-    Logger.info("tx/per day chart: total fee #{total_fee}")
+    Logger.debug("tx/per day chart: total fee #{total_fee}")
 
     %{number_of_transactions: num_transactions, gas_used: gas_used, total_fee: total_fee}
   end
 
   @impl Historian
   def save_records(records) do
-    Logger.info("tx/per day chart: save records")
+    Logger.debug("tx/per day chart: save records")
 
     {num_inserted, _} =
       Repo.insert_all(TransactionStats, records, on_conflict: {:replace_all_except, [:id]}, conflict_target: [:date])
 
-    Logger.info("tx/per day chart: number of inserted #{num_inserted}")
+    Logger.debug("tx/per day chart: number of inserted #{num_inserted}")
 
     Publisher.broadcast(:transaction_stats)
     num_inserted

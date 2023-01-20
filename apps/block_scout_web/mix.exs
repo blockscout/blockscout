@@ -105,19 +105,13 @@ defmodule BlockScoutWeb.Mixfile do
       {:phoenix_html, "== 3.0.4"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
       {:phoenix_pubsub, "~> 2.0"},
-      {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
       # use `:cowboy` for WebServer with `:plug`
       {:plug_cowboy, "~> 2.2"},
       # Waiting for the Pretty Print to be implemented at the Jason lib
       # https://github.com/michalmuskala/jason/issues/15
       {:poison, "~> 4.0.1"},
       {:postgrex, ">= 0.0.0"},
-      # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
-      {:prometheus, "~> 4.0", override: true},
-      # Expose metrics from URL Prometheus server can scrape
-      {:prometheus_plugs, "~> 1.1"},
-      # OS process metrics for Prometheus
-      {:prometheus_process_collector, "~> 1.3"},
+      {:telemetry, "~> 1.0", override: true},
       {:remote_ip, "~> 1.0"},
       {:qrcode, "~> 0.1.0"},
       {:sobelow, ">= 0.11.1", only: [:dev, :test], runtime: false},
@@ -137,10 +131,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:ueberauth_auth0, "~> 2.0"},
       {:bureaucrat, "~> 0.2.9", only: :test},
       # Log json format
-      {:logger_json, "~> 3.2"},
-      # {:jason, "~> 1.1"}
-      # phoenix instrumenter for Phoenix > 1.5 compatibility
-      {:prometheus_phx, github: "theblitzapp/prometheus-phx"}
+      {:logger_json, "~> 3.2"}
     ]
   end
 

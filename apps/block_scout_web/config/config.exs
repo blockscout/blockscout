@@ -121,6 +121,18 @@ config :hammer,
 
 config :prometheus, BlockScoutWeb.Prometheus.Exporter, path: "/metrics/web"
 
+config :block_scout_web, :rpc_module_map, %{
+  "block" => {BlockScoutWeb.API.RPC.BlockController, []},
+  "account" => {BlockScoutWeb.API.RPC.AddressController, []},
+  "logs" => {BlockScoutWeb.API.RPC.LogsController, []},
+  "token" => {BlockScoutWeb.API.RPC.TokenController, []},
+  "stats" => {BlockScoutWeb.API.RPC.StatsController, []},
+  "contract" => {BlockScoutWeb.API.RPC.ContractController, [:verify]},
+  "transaction" => {BlockScoutWeb.API.RPC.TransactionController, []},
+  "reward" => {BlockScoutWeb.API.RPC.RewardController, []},
+  "epoch" => {BlockScoutWeb.API.RPC.EpochController, []}
+}
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

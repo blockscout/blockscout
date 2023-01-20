@@ -63,7 +63,6 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   def source_url(input) do
     case Chain.Hash.Address.cast(input) do
       {:ok, _} ->
-        # todo: find symbol by contract address hash
         nil
 
       _ ->

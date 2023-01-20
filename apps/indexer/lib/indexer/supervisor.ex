@@ -15,7 +15,7 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Block.{Catchup, Realtime}
 
-  alias Indexer.Celo.TrackedEventCache
+  alias Indexer.Celo.{MetricsCron, TrackedEventCache}
 
   alias Indexer.Fetcher.{
     BlockReward,
@@ -48,8 +48,6 @@ defmodule Indexer.Supervisor do
     BlocksTransactionsMismatch,
     UnclesWithoutIndex
   }
-
-  alias Indexer.Prometheus.MetricsCron
 
   def child_spec([]) do
     child_spec([[]])
@@ -183,7 +181,7 @@ defmodule Indexer.Supervisor do
       if metrics_enabled do
         metrics_processes = [
           {MetricsCron, [[]]},
-          {Task.Supervisor, name: Indexer.Prometheus.MetricsCron.TaskSupervisor}
+          {Task.Supervisor, name: Indexer.Celo.MetricsCron.TaskSupervisor}
         ]
 
         metrics_processes ++ basic_fetchers

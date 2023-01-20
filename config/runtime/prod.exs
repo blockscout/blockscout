@@ -64,7 +64,7 @@ config :explorer, Explorer.Repo.Replica1,
 # Configures Account database
 config :explorer, Explorer.Repo.Account,
   url: ConfigHelper.get_account_db_url(),
-  pool_size: ConfigHelper.get_account_db_pool_size("50"),
+  pool_size: 1,
   ssl: ConfigHelper.ssl_enabled?()
 
 variant = Variant.get()

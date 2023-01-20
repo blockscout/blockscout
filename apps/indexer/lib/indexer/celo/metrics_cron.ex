@@ -1,13 +1,13 @@
-defmodule Indexer.Prometheus.MetricsCron do
+defmodule Indexer.Celo.MetricsCron do
   @moduledoc """
   Periodically retrieves and updates prometheus metrics
   """
   use GenServer
-  alias EthereumJSONRPC.HTTP.RpcResponseEts
   alias Explorer.Celo.Metrics.{BlockchainMetrics, DatabaseMetrics}
+  alias Explorer.Celo.Telemetry
   alias Explorer.Chain
   alias Explorer.Counters.AverageBlockTime
-  alias Indexer.Prometheus.RPCInstrumenter
+  alias Indexer.Celo.MetricsCron.TaskSupervisor, as: TaskSupervisor
   alias Timex.Duration
 
   require DateTime
@@ -35,10 +35,10 @@ defmodule Indexer.Prometheus.MetricsCron do
     :number_of_locks,
     :number_of_deadlocks,
     :longest_query_duration,
-    :rpc_response_times,
     :transaction_count,
     :address_count,
-    :total_token_supply
+    :total_token_supply,
+    :db_connections_by_app
   ]
 
   @impl true
@@ -51,7 +51,7 @@ defmodule Indexer.Prometheus.MetricsCron do
       @metric_operations
       |> Enum.filter(&(!Enum.member?(running, &1)))
       |> Enum.map(fn operation ->
-        Task.Supervisor.async_nolink(Indexer.Prometheus.MetricsCron.TaskSupervisor, fn ->
+        Task.Supervisor.async_nolink(TaskSupervisor, fn ->
           apply(__MODULE__, operation, [])
           {:completed, operation}
         end)
@@ -108,15 +108,6 @@ defmodule Indexer.Prometheus.MetricsCron do
     :telemetry.execute([:indexer, :db, :longest_query_duration], %{value: longest_query_duration})
   end
 
-  def rpc_response_times do
-    response_times = RpcResponseEts.get_all()
-
-    response_times
-    |> Enum.filter(&Map.has_key?(elem(&1, 1), :finish))
-    |> Enum.map(&elem(&1, 0))
-    |> Enum.each(&calculate_and_add_rpc_response_metrics(&1, :proplists.get_all_values(&1, response_times)))
-  end
-
   def transaction_count do
     total_transaction_count = Chain.transaction_estimated_count()
     :telemetry.execute([:indexer, :transactions, :total], %{value: total_transaction_count})
@@ -151,18 +142,17 @@ defmodule Indexer.Prometheus.MetricsCron do
     :telemetry.execute([:indexer, :blocks, :last_block_number], %{value: last_block_number})
   end
 
-  defp calculate_and_add_rpc_response_metrics(id, [start, finish]) do
-    RPCInstrumenter.instrument(%{
-      time: Map.get(finish, :finish) - Map.get(start, :start),
-      method: Map.get(start, :method),
-      status_code: Map.get(finish, :status_code)
-    })
-
-    RpcResponseEts.delete(id)
+  defp repeat do
+    {interval, _} = Integer.parse(config(:metrics_cron_interval_seconds))
+    Process.send_after(self(), :import_and_reschedule, :timer.seconds(interval))
   end
 
-  defp repeat do
-    {interval, _} = Integer.parse(config(:metrics_cron_interval))
-    Process.send_after(self(), :import_and_reschedule, :timer.seconds(interval))
+  def db_connections_by_app do
+    connection_map = DatabaseMetrics.fetch_connections_by_app()
+
+    connection_map
+    |> Enum.each(fn {app, count} ->
+      Telemetry.event([:db, :connections], %{count: count}, %{app: app})
+    end)
   end
 end

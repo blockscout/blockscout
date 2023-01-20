@@ -96,7 +96,10 @@ defmodule EthereumJsonrpc.MixProject do
       # Log json format
       {:logger_json, "~> 3.2"},
       # Uuid
-      {:uuid, "~> 1.1"}
+      {:uuid, "~> 1.1"},
+      # metrics
+      {:telemetry, "~> 1.0", override: true},
+      {:telemetry_metrics, "~> 0.6.1"}
     ]
   end
 end

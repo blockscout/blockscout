@@ -36,6 +36,8 @@ lib/block_scout_web/views/transaction_view.ex:152
 lib/block_scout_web/views/transaction_view.ex:197
 lib/block_scout_web/templates/address_contract/index.html.eex:168
 lib/block_scout_web/templates/address_contract/index.html.eex:211
+lib/explorer/smart_contract/reader.ex:213
+lib/explorer/smart_contract/reader.ex:219
 lib/explorer/smart_contract/reader.ex:474
 lib/explorer/smart_contract/reader.ex:536
 lib/indexer/buffered_task.ex:402

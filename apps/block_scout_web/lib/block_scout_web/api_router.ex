@@ -83,9 +83,10 @@ defmodule BlockScoutWeb.ApiRouter do
     end
   end
 
+  @rpc_module_map Application.compile_env(:block_scout_web, :rpc_module_map)
   scope "/v1", as: :api_v1 do
     pipe_through(:api)
-    alias BlockScoutWeb.API.{EthRPC, RPC, V1}
+    alias BlockScoutWeb.API.{EthRPC, RPC.RPCTranslator, V1}
     alias BlockScoutWeb.API.V1.HealthController
     alias BlockScoutWeb.SearchController
 
@@ -94,50 +95,30 @@ defmodule BlockScoutWeb.ApiRouter do
     get("/health/liveness", HealthController, :alive?)
     get("/gas-price-oracle", V1.GasPriceOracleController, :gas_price_oracle)
 
-    if Application.compile_env(:block_scout_web, __MODULE__)[:reading_enabled] do
+    if Application.compile_env(:block_scout_web, [__MODULE__, :reading_enabled]) do
       get("/supply", V1.SupplyController, :supply)
       post("/eth-rpc", EthRPC.EthController, :eth_request)
     end
 
-    if Application.compile_env(:block_scout_web, __MODULE__)[:writing_enabled] do
+    if Application.compile_env(:block_scout_web, [__MODULE__, :writing_enabled]) do
       post("/decompiled_smart_contract", V1.DecompiledSmartContractController, :create)
       post("/verified_smart_contracts", V1.VerifiedSmartContractController, :create)
     end
 
-    if Application.compile_env(:block_scout_web, __MODULE__)[:reading_enabled] do
-      forward("/", RPC.RPCTranslator, %{
-        "block" => {RPC.BlockController, []},
-        "account" => {RPC.AddressController, []},
-        "logs" => {RPC.LogsController, []},
-        "token" => {RPC.TokenController, []},
-        "stats" => {RPC.StatsController, []},
-        "contract" => {RPC.ContractController, [:verify]},
-        "transaction" => {RPC.TransactionController, []},
-        "reward" => {RPC.RewardController, []},
-        "epoch" => {RPC.EpochController, []}
-      })
+    if Application.compile_env(:block_scout_web, [__MODULE__, :reading_enabled]) do
+      forward("/", RPCTranslator, @rpc_module_map)
     end
   end
 
   # For backward compatibility. Should be removed
   scope "/" do
     pipe_through(:api)
-    alias BlockScoutWeb.API.{EthRPC, RPC}
+    alias BlockScoutWeb.API.EthRPC
 
-    if Application.compile_env(:block_scout_web, __MODULE__)[:reading_enabled] do
+    if Application.compile_env(:block_scout_web, [__MODULE__, :reading_enabled]) do
       post("/eth-rpc", EthRPC.EthController, :eth_request)
 
-      forward("/", RPCTranslatorForwarder, %{
-        "block" => {RPC.BlockController, []},
-        "account" => {RPC.AddressController, []},
-        "logs" => {RPC.LogsController, []},
-        "token" => {RPC.TokenController, []},
-        "stats" => {RPC.StatsController, []},
-        "contract" => {RPC.ContractController, [:verify]},
-        "transaction" => {RPC.TransactionController, []},
-        "reward" => {RPC.RewardController, []},
-        "epoch" => {RPC.EpochController, []}
-      })
+      forward("/", RPCTranslatorForwarder, @rpc_module_map)
     end
   end
 end

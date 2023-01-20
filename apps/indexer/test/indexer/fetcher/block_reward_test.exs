@@ -14,6 +14,9 @@ defmodule Indexer.Fetcher.BlockRewardTest do
 
   @moduletag :capture_log
 
+  # no block rewards in celo protocol
+  @moduletag :celo_exclude
+
   # MUST use global mode because we aren't guaranteed to get `start_supervised`'s pid back fast enough to `allow` it to
   # use expectations and stubs from test's pid.
   setup :set_mox_global

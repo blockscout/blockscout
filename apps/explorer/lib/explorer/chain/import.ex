@@ -6,6 +6,7 @@ defmodule Explorer.Chain.Import do
   alias Ecto.Changeset
   alias Explorer.Account.Notify
   alias Explorer.Celo.Telemetry
+  alias Explorer.Celo.Telemetry.Helper, as: TelemetryHelper
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import
   alias Explorer.Repo
@@ -148,7 +149,13 @@ defmodule Explorer.Chain.Import do
       _, acc ->
         acc
     end)
-    |> then(&Telemetry.event(:ingested, &1))
+    |> TelemetryHelper.filter_imports()
+    |> then(fn imports ->
+      imports
+      |> Enum.each(fn {primitive, import_count} ->
+        Telemetry.event(:ingested, %{count: import_count}, %{type: primitive})
+      end)
+    end)
   end
 
   defp runner_to_changes_list(runner_options_pairs) when is_list(runner_options_pairs) do

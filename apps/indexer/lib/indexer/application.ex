@@ -5,8 +5,12 @@ defmodule Indexer.Application do
 
   use Application
 
-  alias Indexer.{LoggerBackend, Memory}
-  alias Indexer.Prometheus.Setup, as: CeloTelemetry
+  alias EthereumJSONRPC.Celo.Instrumentation, as: EthRPC
+  alias Explorer.Celo.Telemetry.Instrumentation.{Blockchain, Database, FlyPostgres}
+  alias Explorer.Celo.Telemetry.MetricsCollector, as: CeloPrometheusCollector
+
+  alias Indexer.Celo.Telemetry.Instrumentation, as: IndexerMetrics
+  alias Indexer.Memory
 
   @impl Application
   def start(_type, _args) do
@@ -17,13 +21,15 @@ defmodule Indexer.Application do
       end
 
     memory_monitor_name = Memory.Monitor
-    CeloTelemetry.setup()
 
     base_children =
       [
         {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
+        {CeloPrometheusCollector, metrics: [IndexerMetrics, FlyPostgres, Blockchain, EthRPC, Database]},
         {Plug.Cowboy,
-         scheme: :http, plug: Indexer.Stack, options: [port: Application.get_env(:indexer, :health_check_port)]}
+         scheme: :http,
+         plug: Indexer.Celo.MonitorStack,
+         options: [port: Application.get_env(:indexer, :health_check_port)]}
       ]
       |> cluster_process(Application.get_env(:indexer, :environment))
 
@@ -39,8 +45,6 @@ defmodule Indexer.Application do
       strategy: :rest_for_one,
       name: Indexer.Application
     ]
-
-    Logger.add_backend(LoggerBackend)
 
     Supervisor.start_link(children, opts)
   end

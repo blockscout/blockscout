@@ -185,6 +185,11 @@ defmodule Indexer.BufferedTask do
     GenServer.call(server, :debug_count)
   end
 
+  @doc false
+  def get_state(server, val) do
+    GenServer.call(server, {:get_state, val})
+  end
+
   @doc """
   Starts `callback_module` as a buffered task.
 
@@ -306,6 +311,10 @@ defmodule Indexer.BufferedTask do
     count = length(current_buffer) + Enum.count(bound_queue) * max_batch_size
 
     {:reply, %{buffer: count, tasks: Enum.count(task_ref_to_batch)}, state}
+  end
+
+  def handle_call({:get_state, key}, _from, state) do
+    {:reply, Map.get(state, key, nil), state}
   end
 
   def handle_call({:push_back, entries}, _from, state) when is_list(entries) do

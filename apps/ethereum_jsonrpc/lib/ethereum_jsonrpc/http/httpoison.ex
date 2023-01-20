@@ -3,8 +3,8 @@ defmodule EthereumJSONRPC.HTTP.HTTPoison do
   Uses `HTTPoison` for `EthereumJSONRPC.HTTP`
   """
 
+  alias EthereumJSONRPC.Celo.Telemetry
   alias EthereumJSONRPC.HTTP
-  alias HTTP.RpcResponseEts
 
   require UUID
   require Logger
@@ -13,16 +13,15 @@ defmodule EthereumJSONRPC.HTTP.HTTPoison do
 
   @impl HTTP
   def json_rpc(url, json, options, method) when is_binary(url) and is_list(options) do
-    id = UUID.uuid4()
-    RpcResponseEts.put(id, %{:method => method, :start => :os.system_time(:millisecond)})
+    start_time = Telemetry.start(:http_request, %{method: method})
 
     case HTTPoison.post(url, json, [{"Content-Type", "application/json"}], options) do
       {:ok, %HTTPoison.Response{body: body, status_code: status_code}} ->
-        RpcResponseEts.put(id, %{:finish => :os.system_time(:millisecond), :status_code => status_code})
+        Telemetry.stop(:http_request, start_time, %{method: method, status_code: status_code})
         {:ok, %{body: body, status_code: status_code}}
 
       {:error, %HTTPoison.Error{reason: reason}} ->
-        RpcResponseEts.delete(id)
+        Telemetry.event(:http_error, %{method: method, json: json}, %{reason: reason})
 
         if reason == :checkout_timeout do
           # https://github.com/edgurgel/httpoison/issues/414#issuecomment-693758760
