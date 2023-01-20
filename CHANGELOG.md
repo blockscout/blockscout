@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- [#6736](https://github.com/blockscout/blockscout/pull/6736) - Fix `/tokens` in old UI
 - [#6705](https://github.com/blockscout/blockscout/pull/6705) - Fix `/smart-contracts` bugs in API v2
 
 ### Chore
@@ -52,6 +53,7 @@
 - [#6568](https://github.com/blockscout/blockscout/pull/6568) - Drop unfetched_token_balances index
 - [#6647](https://github.com/blockscout/blockscout/pull/6647) - Pending block operations update
 - [#6542](https://github.com/blockscout/blockscout/pull/6542) - Init mixpanel and amplitude analytics
+- [#6713](https://github.com/blockscout/blockscout/pull/6713) - Remove internal transactions deletion
 
 ### Fixes
 
