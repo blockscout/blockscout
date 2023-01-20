@@ -21,4 +21,15 @@ defmodule BlockScoutWeb.API.V2.SearchController do
     |> put_status(200)
     |> render(:search_results, %{search_results: search_results, next_page_params: next_page_params})
   end
+
+  def check_redirect(conn, %{"q" => query}) do
+    result =
+      query
+      |> String.trim()
+      |> BlockScoutWeb.Chain.from_param()
+
+    conn
+    |> put_status(200)
+    |> render(:search_results, %{result: result})
+  end
 end
