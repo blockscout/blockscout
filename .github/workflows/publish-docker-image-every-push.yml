@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - np-add-coin-balance-trigger
 env:
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
