@@ -98,7 +98,10 @@ defmodule BlockScoutWeb.ApiRouter do
 
     alias BlockScoutWeb.API.V2
 
-    get("/search", V2.SearchController, :search)
+    scope "/search" do
+      get("/", V2.SearchController, :search)
+      get("/check-redirect", V2.SearchController, :check_redirect)
+    end
 
     scope "/config" do
       get("/json-rpc-url", V2.ConfigController, :json_rpc_url)
