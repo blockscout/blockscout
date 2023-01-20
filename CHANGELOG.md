@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- [#6736](https://github.com/blockscout/blockscout/pull/6736) - Fix `/tokens` in old UI
 - [#6705](https://github.com/blockscout/blockscout/pull/6705) - Fix `/smart-contracts` bugs in API v2
 
 ### Chore
