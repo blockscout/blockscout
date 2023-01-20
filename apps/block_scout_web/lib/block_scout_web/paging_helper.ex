@@ -133,6 +133,7 @@ defmodule BlockScoutWeb.PagingHelper do
     |> Map.delete("type")
     |> Map.delete("method")
     |> Map.delete("filter")
+    |> Map.delete("token_address_hash")
   end
 
   def delete_parameters_from_next_page_params(_), do: nil

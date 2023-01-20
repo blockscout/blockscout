@@ -75,7 +75,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         token_contract_address: contract_token_address
       )
 
-      second_page_token_balances =
+      _second_page_token_balances =
         1..5
         |> Enum.map(
           &insert(
@@ -100,7 +100,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/transfers")
 
-      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -122,7 +122,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       token_tranfers =
         for _ <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
             transaction: tx,
@@ -243,6 +243,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
     assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
+    assert json["timestamp"] != nil
+    assert json["method"] != nil
+    assert to_string(token_transfer.block_hash) == json["block_hash"]
+    assert to_string(token_transfer.log_index) == json["log_index"]
   end
 
   def compare_item(%CurrentTokenBalance{} = ctb, json) do
