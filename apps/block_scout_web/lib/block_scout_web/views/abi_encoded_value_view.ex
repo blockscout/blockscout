@@ -207,7 +207,8 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     hex(value)
   end
 
-  defp base_value_json(_, value), do: value
+  defp base_value_json(_, value), do: to_string(value)
 
+  defp hex("0x" <> value), do: "0x" <> value
   defp hex(value), do: "0x" <> Base.encode16(value, case: :lower)
 end
