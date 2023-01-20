@@ -488,11 +488,24 @@ defmodule Explorer.Chain.Transaction do
 
   # Because there is no contract association, we know the contract was not verified
   def decoded_input_data(%__MODULE__{to_address: nil}), do: {:error, :no_to_address}
+  def decoded_input_data(%NotLoaded{}), do: {:error, :not_loaded}
   def decoded_input_data(%__MODULE__{input: %{bytes: bytes}}) when bytes in [nil, <<>>], do: {:error, :no_input_data}
   def decoded_input_data(%__MODULE__{to_address: %{contract_code: nil}}), do: {:error, :not_a_contract_call}
 
   def decoded_input_data(%__MODULE__{
         to_address: %{smart_contract: %NotLoaded{}},
+        input: input,
+        hash: hash
+      }) do
+    decoded_input_data(%__MODULE__{
+      to_address: %{smart_contract: nil},
+      input: input,
+      hash: hash
+    })
+  end
+
+  def decoded_input_data(%__MODULE__{
+        to_address: %NotLoaded{},
         input: input,
         hash: hash
       }) do
