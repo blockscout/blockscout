@@ -4,7 +4,7 @@
 
 ### Features
 
-- [#6712](https://github.com/blockscout/blockscout/pull/6712) - API v2 update
+- [#6712](https://github.com/blockscout/blockscout/pull/6712), [#6743](https://github.com/blockscout/blockscout/pull/6743) - API v2 update
 
 ### Fixes
 
