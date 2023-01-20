@@ -1,4 +1,4 @@
-FROM bitwalker/alpine-elixir-phoenix:1.13 AS builder
+FROM blockscout/alpine-elixir-phoenix:1.14.3 AS builder
 
 WORKDIR /app
 
