@@ -83,11 +83,11 @@ defmodule BlockScoutWeb.AddressContractView do
     end
   end
 
-  defp decode_data("0x" <> encoded_data, types) do
+  def decode_data("0x" <> encoded_data, types) do
     decode_data(encoded_data, types)
   end
 
-  defp decode_data(encoded_data, types) do
+  def decode_data(encoded_data, types) do
     encoded_data
     |> Base.decode16!(case: :mixed)
     |> TypeDecoder.decode_raw(types)
