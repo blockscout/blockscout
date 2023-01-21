@@ -13,6 +13,8 @@
 
 ### Chore
 
+- [#6695](https://github.com/blockscout/blockscout/pull/6695) - Process errors and warnings with enables check-js feature in VS code
+
 <details>
   <summary>Dependencies version bumps</summary>
 </details>
