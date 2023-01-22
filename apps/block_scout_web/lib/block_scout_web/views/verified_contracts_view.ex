@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.VerifiedContractsView do
     case filter do
       "solidity" -> gettext("Solidity")
       "vyper" -> gettext("Vyper")
+      "yul" -> gettext("Yul")
       _ -> gettext("All")
     end
   end
