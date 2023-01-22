@@ -20,6 +20,7 @@ defmodule Indexer.Supervisor do
     ContractCode,
     EmptyBlocksSanitizer,
     InternalTransaction,
+    PendingBlockOperationsSanitizer,
     PendingTransaction,
     ReplacedTransaction,
     Token,
@@ -141,7 +142,8 @@ defmodule Indexer.Supervisor do
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {BlocksTransactionsMismatch.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-        {PendingOpsCleaner, [[], []]}
+        {PendingOpsCleaner, [[], []]},
+        {PendingBlockOperationsSanitizer, [[]]}
       ]
       |> List.flatten()
 

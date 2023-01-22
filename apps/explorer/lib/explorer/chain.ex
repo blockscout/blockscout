@@ -30,6 +30,7 @@ defmodule Explorer.Chain do
   require Logger
 
   alias ABI.TypeDecoder
+  alias Ecto.Association.NotLoaded
   alias Ecto.{Changeset, Multi}
 
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
@@ -577,6 +578,23 @@ defmodule Explorer.Chain do
 
     direction
     |> TokenTransfer.token_transfers_by_address_hash(address_hash, filters)
+    |> join_associations(necessity_by_association)
+    |> TokenTransfer.handle_paging_options(paging_options)
+    |> Repo.all()
+  end
+
+  @spec address_hash_to_token_transfers_by_token_address_hash(
+          Hash.Address.t() | String.t(),
+          Hash.Address.t() | String.t(),
+          Keyword.t()
+        ) :: [TokenTransfer.t()]
+  def address_hash_to_token_transfers_by_token_address_hash(address_hash, token_address_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    necessity_by_association = Keyword.get(options, :necessity_by_association)
+
+    address_hash
+    |> TokenTransfer.token_transfers_by_address_hash_and_token_address_hash(token_address_hash)
     |> join_associations(necessity_by_association)
     |> TokenTransfer.handle_paging_options(paging_options)
     |> Repo.all()
@@ -1894,7 +1912,7 @@ defmodule Explorer.Chain do
       case address_result do
         %{smart_contract: smart_contract} ->
           if smart_contract do
-            check_bytecode_matching(address_result)
+            check_bytecode_matching(address_result, smart_contract)
           else
             address_verified_twin_contract =
               Chain.get_minimal_proxy_template(hash) ||
@@ -1927,7 +1945,9 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp check_bytecode_matching(address) do
+  defp check_bytecode_matching(address, %NotLoaded{}), do: address
+
+  defp check_bytecode_matching(address, _) do
     now = DateTime.utc_now()
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
@@ -2456,17 +2476,13 @@ defmodule Explorer.Chain do
   @spec list_top_tokens(String.t()) :: [{Token.t(), non_neg_integer()}]
   def list_top_tokens(filter, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    token_type = Keyword.get(options, :token_type, nil)
 
-    fetch_top_tokens(filter, paging_options)
+    fetch_top_tokens(filter, paging_options, token_type)
   end
 
-  defp fetch_top_tokens(filter, paging_options) do
-    base_query =
-      from(t in Token,
-        where: t.total_supply > ^0,
-        order_by: [desc_nulls_last: t.holder_count, asc: t.name],
-        preload: [:contract_address]
-      )
+  defp fetch_top_tokens(filter, paging_options, token_type) do
+    base_query = base_token_query(token_type)
 
     base_query_with_paging =
       base_query
@@ -2489,6 +2505,21 @@ defmodule Explorer.Chain do
 
     query
     |> Repo.all()
+  end
+
+  defp base_token_query(empty_type) when empty_type in [nil, []] do
+    from(t in Token,
+      order_by: [desc_nulls_last: t.holder_count, asc: t.name],
+      preload: [:contract_address]
+    )
+  end
+
+  defp base_token_query(token_types) when is_list(token_types) do
+    from(t in Token,
+      where: t.type in ^token_types,
+      order_by: [desc_nulls_last: t.holder_count, asc: t.name],
+      preload: [:contract_address]
+    )
   end
 
   @doc """
@@ -2728,20 +2759,14 @@ defmodule Explorer.Chain do
   Returns a stream of all blocks with unfetched internal transactions, using
   the `pending_block_operation` table.
 
-  Only blocks with consensus are returned.
-
-      iex> non_consensus = insert(:block, consensus: false)
-      iex> insert(:pending_block_operation, block: non_consensus)
       iex> unfetched = insert(:block)
-      iex> insert(:pending_block_operation, block: unfetched)
+      iex> insert(:pending_block_operation, block: unfetched, block_number: unfetched.number)
       iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
       ...>   MapSet.new(),
       ...>   fn number, acc ->
       ...>     MapSet.put(acc, number)
       ...>   end
       ...> )
-      iex> non_consensus.number in number_set
-      false
       iex> unfetched.number in number_set
       true
 
@@ -2754,10 +2779,9 @@ defmodule Explorer.Chain do
   def stream_blocks_with_unfetched_internal_transactions(initial, reducer) when is_function(reducer, 2) do
     query =
       from(
-        b in Block,
-        join: pending_ops in assoc(b, :pending_operations),
-        where: b.consensus,
-        select: b.number
+        po in PendingBlockOperation,
+        where: not is_nil(po.block_number),
+        select: po.block_number
       )
 
     Repo.stream_reduce(query, initial, reducer)
@@ -3029,44 +3053,32 @@ defmodule Explorer.Chain do
 
   defp block_status(nil), do: {:error, :no_blocks}
 
-  def fetch_min_missing_block_cache do
-    max_block_number = BlockNumber.get_max()
+  def fetch_min_missing_block_cache(from \\ nil, to \\ nil) do
+    from_block_number = from || 0
+    to_block_number = to || BlockNumber.get_max()
 
-    if max_block_number > 0 do
+    if to_block_number > 0 do
       query =
         from(b in Block,
           right_join:
             missing_range in fragment(
               """
                 (SELECT b1.number
-                FROM generate_series(0, (?)::integer) AS b1(number)
+                FROM generate_series((?)::integer, (?)::integer) AS b1(number)
                 WHERE NOT EXISTS
                   (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus))
               """,
-              ^max_block_number
+              ^from_block_number,
+              ^to_block_number
             ),
           on: b.number == missing_range.number,
           select: min(missing_range.number)
         )
 
-      query
-      |> Repo.one(timeout: :infinity) || 0
+      Repo.one(query, timeout: :infinity)
     else
-      0
+      nil
     end
-  end
-
-  def remove_blocks_consensus(block_numbers) do
-    numbers = List.wrap(block_numbers)
-
-    query =
-      from(
-        block in Block,
-        where: block.number in ^numbers,
-        where: block.consensus
-      )
-
-    Repo.update_all(query, set: [consensus: false])
   end
 
   @doc """
@@ -3144,7 +3156,6 @@ defmodule Explorer.Chain do
               WHERE NOT EXISTS
                 (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus)
               ORDER BY b1.number DESC
-              LIMIT 500000
             )
             """,
             ^range_min,
@@ -5162,10 +5173,13 @@ defmodule Explorer.Chain do
   end
 
   @spec fetch_last_token_balances(Hash.Address.t(), [paging_options]) :: []
-  def fetch_last_token_balances(address_hash, paging_options) do
+  def fetch_last_token_balances(address_hash, options) do
+    filter = Keyword.get(options, :token_type)
+    options = Keyword.delete(options, :token_type)
+
     address_hash
-    |> CurrentTokenBalance.last_token_balances(paging_options)
-    |> page_current_token_balances(paging_options)
+    |> CurrentTokenBalance.last_token_balances(options, filter)
+    |> page_current_token_balances(options)
     |> Repo.all()
   end
 

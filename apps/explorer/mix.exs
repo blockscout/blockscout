@@ -24,7 +24,7 @@ defmodule Explorer.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "4.1.8",
+      version: "5.0.0",
       xref: [exclude: [BlockScoutWeb.WebRouter.Helpers]]
     ]
   end
@@ -57,8 +57,8 @@ defmodule Explorer.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:bamboo, "~> 2.2.0"},
-      {:mime, "~> 1.4"},
+      {:bamboo, "~> 2.3.0"},
+      {:mime, "~> 2.0"},
       {:bcrypt_elixir, "~> 3.0"},
       # benchmark optimizations
       {:benchee, "~> 1.1.0", only: :test},
