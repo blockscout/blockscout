@@ -163,45 +163,36 @@ defmodule Indexer.Transform.TransactionActions do
   defp uniswap_handle_action(log, legitimate, chain_id) do
     first_topic = String.downcase(log.first_topic)
 
-    if first_topic == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" do
-      []
-    else
-      # check UniswapV3Pool contract is legitimate
-      pool_address = String.downcase(address_hash_to_string(log.address_hash))
+    with false <- first_topic == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+         # check UniswapV3Pool contract is legitimate
+         pool_address <- String.downcase(address_hash_to_string(log.address_hash)),
+         false <- Enum.empty?(legitimate[pool_address]),
+         # this is legitimate uniswap pool, so handle this event
+         token_address <- legitimate[pool_address],
+         token_data <- get_token_data(token_address),
+         false <- token_data === false do
+      case first_topic do
+        "0x7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde" ->
+          # this is Mint event
+          uniswap_handle_mint_event(log, token_address, token_data, chain_id)
 
-      if Enum.empty?(legitimate[pool_address]) do
-        # this is not legitimate uniswap pool, so skip this event
-        []
-      else
-        token_address = legitimate[pool_address]
+        "0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c" ->
+          # this is Burn event
+          uniswap_handle_burn_event(log, token_address, token_data, chain_id)
 
-        token_data = get_token_data(token_address)
+        "0x70935338e69775456a85ddef226c395fb668b63fa0115f5f20610b388e6ca9c0" ->
+          # this is Collect event
+          uniswap_handle_collect_event(log, token_address, token_data, chain_id)
 
-        if token_data === false do
+        "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67" ->
+          # this is Swap event
+          uniswap_handle_swap_event(log, token_address, token_data, chain_id)
+
+        _ ->
           []
-        else
-          case first_topic do
-            "0x7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde" ->
-              # this is Mint event
-              uniswap_handle_mint_event(log, token_address, token_data, chain_id)
-
-            "0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c" ->
-              # this is Burn event
-              uniswap_handle_burn_event(log, token_address, token_data, chain_id)
-
-            "0x70935338e69775456a85ddef226c395fb668b63fa0115f5f20610b388e6ca9c0" ->
-              # this is Collect event
-              uniswap_handle_collect_event(log, token_address, token_data, chain_id)
-
-            "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67" ->
-              # this is Swap event
-              uniswap_handle_swap_event(log, token_address, token_data, chain_id)
-
-            _ ->
-              []
-          end
-        end
       end
+    else
+      _ -> []
     end
   end
 
