@@ -199,48 +199,52 @@ defmodule Indexer.Transform.TransactionActions do
   defp uniswap_handle_mint_nft_actions(tx_hash, tx_logs, actions_acc) do
     first_log = Enum.at(tx_logs, 0)
 
-    tx_logs
-    |> Enum.reduce(%{}, fn log, acc ->
-      first_topic = String.downcase(log.first_topic)
+    local_acc =
+      tx_logs
+      |> Enum.reduce(%{}, fn log, acc ->
+        first_topic = String.downcase(log.first_topic)
 
-      if first_topic == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" do
-        # This is Transfer event for NFT
-        from = truncate_address_hash(log.second_topic)
+        if first_topic == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" do
+          # This is Transfer event for NFT
+          from = truncate_address_hash(log.second_topic)
 
-        if from == "0x0000000000000000000000000000000000000000" do
-          to = truncate_address_hash(log.third_topic)
-          [token_id] = decode_data(log.fourth_topic, [{:uint, 256}])
-          mint_nft_ids = Map.put_new(acc, to, %{ids: [], log_index: log.index})
+          if from == "0x0000000000000000000000000000000000000000" do
+            to = truncate_address_hash(log.third_topic)
+            [token_id] = decode_data(log.fourth_topic, [{:uint, 256}])
+            mint_nft_ids = Map.put_new(acc, to, %{ids: [], log_index: log.index})
 
-          Map.put(mint_nft_ids, to, %{
-            ids: Enum.reverse([to_string(token_id) | Enum.reverse(mint_nft_ids[to].ids)]),
-            log_index: mint_nft_ids[to].log_index
-          })
+            Map.put(mint_nft_ids, to, %{
+              ids: Enum.reverse([to_string(token_id) | Enum.reverse(mint_nft_ids[to].ids)]),
+              log_index: mint_nft_ids[to].log_index
+            })
+          else
+            acc
+          end
         else
           acc
         end
-      else
-        acc
-      end
-    end)
-    |> Enum.reduce(actions_acc, fn {to, %{ids: ids, log_index: log_index}}, acc ->
-      action = %{
-        hash: tx_hash,
-        protocol: "uniswap_v3",
-        data: %{
-          name: "Uniswap V3: Positions NFT",
-          symbol: "UNI-V3-POS",
-          address: @uniswap_v3_positions_nft,
-          to: Address.checksum(to),
-          ids: ids,
-          block_number: first_log.block_number
-        },
-        type: "mint_nft",
-        log_index: log_index
-      }
+      end)
+      |> Enum.reduce([], fn {to, %{ids: ids, log_index: log_index}}, acc ->
+        action = %{
+          hash: tx_hash,
+          protocol: "uniswap_v3",
+          data: %{
+            name: "Uniswap V3: Positions NFT",
+            symbol: "UNI-V3-POS",
+            address: @uniswap_v3_positions_nft,
+            to: Address.checksum(to),
+            ids: ids,
+            block_number: first_log.block_number
+          },
+          type: "mint_nft",
+          log_index: log_index
+        }
 
-      Enum.reverse([action | Enum.reverse(acc)])
-    end)
+        [action | acc]
+      end)
+      |> Enum.reverse()
+
+    actions_acc ++ local_acc
   end
 
   defp uniswap_handle_burn_event(log, token_address, token_data, chain_id) do
@@ -557,11 +561,12 @@ defmodule Indexer.Transform.TransactionActions do
       token_data_from_cache
       |> Enum.reduce([], fn {address, data}, acc ->
         if is_nil(data.symbol) or is_nil(data.decimals) do
-          Enum.reverse([address | Enum.reverse(acc)])
+          [address | acc]
         else
           acc
         end
       end)
+      |> Enum.reverse()
 
     if Enum.empty?(select_tokens_from_db) do
       # we don't need to read data from db, so will use the cache
@@ -610,11 +615,12 @@ defmodule Indexer.Transform.TransactionActions do
       token_data
       |> Enum.reduce([], fn {address, data}, acc ->
         if is_nil(data.symbol) or data.symbol == "" or is_nil(data.decimals) do
-          Enum.reverse([address | Enum.reverse(acc)])
+          [address | acc]
         else
           acc
         end
       end)
+      |> Enum.reverse()
 
     if Enum.empty?(token_addresses) do
       token_data
