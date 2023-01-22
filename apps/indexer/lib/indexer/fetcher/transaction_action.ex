@@ -39,12 +39,11 @@ defmodule Indexer.Fetcher.TransactionAction do
   @impl GenServer
   def init(opts) when is_list(opts) do
     opts =
-      :indexer
-      |> Application.get_all_env()
+      Application.get_all_env(:indexer)[__MODULE__]
       |> Keyword.merge(opts)
 
-    first_block = Keyword.get(opts, :tx_actions_reindex_first_block)
-    last_block = Keyword.get(opts, :tx_actions_reindex_last_block)
+    first_block = Keyword.get(opts, :reindex_first_block)
+    last_block = Keyword.get(opts, :reindex_last_block)
 
     cond do
       !is_nil(first_block) and !is_nil(last_block) ->
@@ -175,7 +174,7 @@ defmodule Indexer.Fetcher.TransactionAction do
 
         protocols =
           opts
-          |> Keyword.get(:tx_actions_reindex_protocols, "")
+          |> Keyword.get(:reindex_protocols, "")
           |> String.trim()
           |> String.split(",")
           |> Enum.map(&String.trim(&1))

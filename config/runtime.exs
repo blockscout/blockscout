@@ -422,11 +422,15 @@ config :indexer,
   last_block: System.get_env("LAST_BLOCK") || "",
   trace_first_block: System.get_env("TRACE_FIRST_BLOCK") || "",
   trace_last_block: System.get_env("TRACE_LAST_BLOCK") || "",
-  fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block"),
-  tx_actions_reindex_first_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_FIRST_BLOCK"),
-  tx_actions_reindex_last_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_LAST_BLOCK"),
-  tx_actions_reindex_protocols: System.get_env("INDEXER_TX_ACTIONS_REINDEX_PROTOCOLS", ""),
-  tx_actions_max_token_cache_size: System.get_env("INDEXER_TX_ACTIONS_MAX_TOKEN_CACHE_SIZE")
+  fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block")
+
+config :indexer, Indexer.Fetcher.TransactionAction,
+  reindex_first_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_FIRST_BLOCK"),
+  reindex_last_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_LAST_BLOCK"),
+  reindex_protocols: System.get_env("INDEXER_TX_ACTIONS_REINDEX_PROTOCOLS", "")
+
+config :indexer, Indexer.Transform.TransactionActions,
+  max_token_cache_size: System.get_env("INDEXER_TX_ACTIONS_MAX_TOKEN_CACHE_SIZE")
 
 {receipts_batch_size, _} = Integer.parse(System.get_env("INDEXER_RECEIPTS_BATCH_SIZE", "250"))
 {receipts_concurrency, _} = Integer.parse(System.get_env("INDEXER_RECEIPTS_CONCURRENCY", "10"))

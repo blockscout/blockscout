@@ -48,16 +48,16 @@
         <% symbol1 = if symbol1 != "Ether", do: link(symbol1, to: token_path(BlockScoutWeb.Endpoint, :show, address1), "data-test": "token_link"), else: raw(symbol1) %>
 
         <%= if @action.type == :mint do %>
-          <%= gettext("<span class=\"text-muted\">Add</span> %{amount0} %{symbol0} <span class=\"text-muted\">And</span> %{amount1} %{symbol1} <span class=\"text-muted\">Liquidity To Uniswap V3</span>", amount0: amount0, symbol0: safe_to_string(symbol0), amount1: amount1, symbol1: safe_to_string(symbol1)) |> raw() %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_uniswap.html", action: "Add", amount0: amount0, symbol0: symbol0, conjunction: "And", amount1: amount1, symbol1: symbol1, tail: "Liquidity To Uniswap V3" %>
         <% end %>
         <%= if @action.type == :burn do %>
-          <%= gettext("<span class=\"text-muted\">Remove</span> %{amount0} %{symbol0} <span class=\"text-muted\">And</span> %{amount1} %{symbol1} <span class=\"text-muted\">Liquidity From Uniswap V3</span>", amount0: amount0, symbol0: safe_to_string(symbol0), amount1: amount1, symbol1: safe_to_string(symbol1)) |> raw() %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_uniswap.html", action: "Remove", amount0: amount0, symbol0: symbol0, conjunction: "And", amount1: amount1, symbol1: symbol1, tail: "Liquidity From Uniswap V3" %>
         <% end %>
         <%= if @action.type == :collect do %>
-          <%= gettext("<span class=\"text-muted\">Collect</span> %{amount0} %{symbol0} <span class=\"text-muted\">And</span> %{amount1} %{symbol1} <span class=\"text-muted\">From Uniswap V3</span>", amount0: amount0, symbol0: safe_to_string(symbol0), amount1: amount1, symbol1: safe_to_string(symbol1)) |> raw() %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_uniswap.html", action: "Collect", amount0: amount0, symbol0: symbol0, conjunction: "And", amount1: amount1, symbol1: symbol1, tail: "From Uniswap V3" %>
         <% end %>
         <%= if @action.type == :swap do %>
-          <%= gettext("<span class=\"text-muted\">Swap</span> %{amount0} %{symbol0} <span class=\"text-muted\">For</span> %{amount1} %{symbol1} <span class=\"text-muted\">On Uniswap V3</span>", amount0: amount0, symbol0: safe_to_string(symbol0), amount1: amount1, symbol1: safe_to_string(symbol1)) |> raw() %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_uniswap.html", action: "Swap", amount0: amount0, symbol0: symbol0, conjunction: "For", amount1: amount1, symbol1: symbol1, tail: "On Uniswap V3" %>
         <% end %>
       </span>
       <br />

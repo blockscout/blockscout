@@ -513,8 +513,11 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp get_max_token_cache_size do
-    case Application.get_env(:indexer, :tx_actions_max_token_cache_size, @default_max_token_cache_size) do
+    case Application.get_env(:indexer, __MODULE__)[:max_token_cache_size] do
       nil ->
+        @default_max_token_cache_size
+
+      "" ->
         @default_max_token_cache_size
 
       max_cache_size ->

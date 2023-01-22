@@ -3516,26 +3516,6 @@ msgstr ""
 msgid "%{qty} of <span class=\"text-muted\">Token ID [%{link_to_id}]</span>"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/_actions.html.eex:51
-#, elixir-autogen, elixir-format
-msgid "<span class=\"text-muted\">Add</span> %{amount0} %{symbol0} <span class=\"text-muted\">And</span> %{amount1} %{symbol1} <span class=\"text-muted\">Liquidity To Uniswap V3</span>"
-msgstr ""
-
-#: lib/block_scout_web/templates/transaction/_actions.html.eex:57
-#, elixir-autogen, elixir-format
-msgid "<span class=\"text-muted\">Collect</span> %{amount0} %{symbol0} <span class=\"text-muted\">And</span> %{amount1} %{symbol1} <span class=\"text-muted\">From Uniswap V3</span>"
-msgstr ""
-
-#: lib/block_scout_web/templates/transaction/_actions.html.eex:54
-#, elixir-autogen, elixir-format
-msgid "<span class=\"text-muted\">Remove</span> %{amount0} %{symbol0} <span class=\"text-muted\">And</span> %{amount1} %{symbol1} <span class=\"text-muted\">Liquidity From Uniswap V3</span>"
-msgstr ""
-
-#: lib/block_scout_web/templates/transaction/_actions.html.eex:60
-#, elixir-autogen, elixir-format
-msgid "<span class=\"text-muted\">Swap</span> %{amount0} %{symbol0} <span class=\"text-muted\">For</span> %{amount1} %{symbol1} <span class=\"text-muted\">On Uniswap V3</span>"
-msgstr ""
-
 #: lib/block_scout_web/templates/transaction/overview.html.eex:201
 #, elixir-autogen, elixir-format
 msgid "Highlighted events of the transaction."
@@ -3554,4 +3534,9 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:202
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Transaction Action"
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction/_actions_uniswap.html.eex:1
+#, elixir-autogen, elixir-format, fuzzy
+msgid "<span class=\"text-muted\">%{action}</span> %{amount0} %{symbol0} <span class=\"text-muted\">%{conjunction}</span> %{amount1} %{symbol1} <span class=\"text-muted\">%{tail}</span>"
 msgstr ""
