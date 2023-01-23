@@ -14,6 +14,7 @@ defmodule Indexer.Transform.TransactionActions do
   alias Explorer.SmartContract.Reader
 
   @mainnet 1
+  @goerli 5
   @optimism 10
   @polygon 137
   # @gnosis 100
@@ -119,7 +120,7 @@ defmodule Indexer.Transform.TransactionActions do
 
     # handle uniswap v3
     tx_actions =
-      if Enum.member?([@mainnet, @optimism, @polygon], chain_id) and
+      if Enum.member?([@mainnet, @goerli, @optimism, @polygon], chain_id) and
            (Enum.empty?(protocols_to_rewrite) or Enum.member?(protocols_to_rewrite, "uniswap_v3")) do
         logs
         |> uniswap_filter_logs()
@@ -149,7 +150,7 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp uniswap_clarify_token_symbol(symbol, chain_id) do
-    if symbol == "WETH" && Enum.member?([@mainnet, @optimism], chain_id) do
+    if symbol == "WETH" && Enum.member?([@mainnet, @goerli, @optimism], chain_id) do
       "Ether"
     else
       symbol
