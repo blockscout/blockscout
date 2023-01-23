@@ -5,10 +5,8 @@
         <i class="fa fa-caret-right"></i>
 
         <% address_string = Map.get(@action.data, "address") %>
-        <% {address_hash_status, address_hash} = Chain.string_to_address_hash(address_string) %>
-        <% {address_status, address} = Chain.hash_to_address(address_hash) %>
-        <% address_is_ok = (address_hash_status == :ok and address_status == :ok) %>
-        <% address = if address_is_ok, do: render_to_string(BlockScoutWeb.AddressView, "_link.html", address: address, contract: BlockScoutWeb.AddressView.contract?(address), use_custom_tooltip: false, trimmed: false), else: render_to_string(BlockScoutWeb.TransactionView, "_actions_address.html", address_string: address_string, action: @action) %>
+        <% {address_status, address} = transaction_action_string_to_address(address_string) %>
+        <% address = if address_status == :ok, do: render_to_string(BlockScoutWeb.AddressView, "_link.html", address: address, contract: BlockScoutWeb.AddressView.contract?(address), use_custom_tooltip: false, trimmed: false), else: render_to_string(BlockScoutWeb.TransactionView, "_actions_address.html", address_string: address_string, action: @action) %>
         <% to_address = Map.get(@action.data, "to") %>
         <% to_content = raw(render_to_string BlockScoutWeb.TransactionView, "_actions_to.html", address: to_address) %>
         <% to = link to: address_path(BlockScoutWeb.Endpoint, :show, to_address), "data-test": "address_hash_link", do: to_content %>

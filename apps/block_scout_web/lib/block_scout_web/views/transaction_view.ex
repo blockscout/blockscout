@@ -329,6 +329,14 @@ defmodule BlockScoutWeb.TransactionView do
     |> BlockScoutWeb.CldrHelper.Number.to_string!(format: "#,##0.##################")
   end
 
+  def transaction_action_string_to_address(address) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address) do
+      Chain.hash_to_address(address_hash)
+    else
+      _ -> {:error, nil}
+    end
+  end
+
   def transaction_status(transaction) do
     Chain.transaction_to_status(transaction)
   end

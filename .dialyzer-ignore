@@ -33,4 +33,3 @@ lib/block_scout_web/views/transaction_view.ex:197
 lib/indexer/buffered_task.ex:402
 lib/indexer/buffered_task.ex:451
 lib/indexer/memory/monitor.ex:160
-lib/block_scout_web/templates/transaction/_actions.html.eex:1
