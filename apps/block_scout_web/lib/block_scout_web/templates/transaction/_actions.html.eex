@@ -31,10 +31,8 @@
   <%= if Enum.member?([:mint, :burn, :collect, :swap], @action.type) do %>
     <div class="<%= if @isLast, do: "lastItem", else: "" %>">
       <span class="actions-item">
-        <% amount0 = Map.get(@action.data, "amount0") %>
-        <% amount0 = BlockScoutWeb.CldrHelper.Number.to_string!(Decimal.new(amount0), format: "#,##0.##################") %>
-        <% amount1 = Map.get(@action.data, "amount1") %>
-        <% amount1 = BlockScoutWeb.CldrHelper.Number.to_string!(Decimal.new(amount1), format: "#,##0.##################") %>
+        <% amount0 = formatted_action_amount(@action.data, "amount0") %>
+        <% amount1 = formatted_action_amount(@action.data, "amount1") %>
 
         <% symbol0 = Map.get(@action.data, "symbol0") %>
         <% address0 = Map.get(@action.data, "address0") %>

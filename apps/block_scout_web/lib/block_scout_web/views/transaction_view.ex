@@ -322,6 +322,13 @@ defmodule BlockScoutWeb.TransactionView do
     end
   end
 
+  def formatted_action_amount(data, field_name) do
+    data
+    |> Map.get(field_name)
+    |> Decimal.new()
+    |> BlockScoutWeb.CldrHelper.Number.to_string!(format: "#,##0.##################")
+  end
+
   def transaction_status(transaction) do
     Chain.transaction_to_status(transaction)
   end
