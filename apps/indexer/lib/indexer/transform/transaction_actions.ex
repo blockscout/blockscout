@@ -702,12 +702,6 @@ defmodule Indexer.Transform.TransactionActions do
   defp logs_group_by_txs(logs) do
     logs
     |> Enum.group_by(& &1.transaction_hash)
-
-    # logs
-    # |> Enum.reduce(%{}, fn log, acc ->
-    #   acc = Map.put_new(acc, log.transaction_hash, [])
-    #   Map.put(acc, log.transaction_hash, Enum.reverse([log | Enum.reverse(acc[log.transaction_hash])]))
-    # end)
   end
 
   defp put_token_data_to_cache(address, data) do
