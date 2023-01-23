@@ -1,12 +1,12 @@
 defmodule Explorer.Chain.Import.Runner.TransactionActions do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.TransactionActions.t/0`.
+  Bulk imports `t:Explorer.Chain.TransactionAction.t/0`.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, TransactionActions}
+  alias Explorer.Chain.{Import, TransactionAction}
   alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
@@ -14,10 +14,10 @@ defmodule Explorer.Chain.Import.Runner.TransactionActions do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [TransactionActions.t()]
+  @type imported :: [TransactionAction.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: TransactionActions
+  def ecto_schema_module, do: TransactionAction
 
   @impl Import.Runner
   def option_key, do: :transaction_actions
@@ -53,17 +53,17 @@ defmodule Explorer.Chain.Import.Runner.TransactionActions do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [TransactionActions.t()]}
+          {:ok, [TransactionAction.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = _options) when is_list(changes_list) do
-    # Enforce TransactionActions ShareLocks order (see docs: sharelocks.md)
+    # Enforce TransactionAction ShareLocks order (see docs: sharelock.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.hash, &1.log_index})
 
     {:ok, inserted} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        for: TransactionActions,
+        for: TransactionAction,
         returning: true,
         timeout: timeout,
         timestamps: timestamps,

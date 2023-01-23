@@ -9,7 +9,7 @@ defmodule Indexer.Transform.TransactionActions do
 
   alias ABI.TypeDecoder
   alias Explorer.Chain.Cache.NetVersion
-  alias Explorer.Chain.{Address, Data, Hash, Token, TransactionActions}
+  alias Explorer.Chain.{Address, Data, Hash, Token, TransactionAction}
   alias Explorer.Repo
   alias Explorer.SmartContract.Reader
 
@@ -490,9 +490,9 @@ defmodule Indexer.Transform.TransactionActions do
     |> Enum.each(fn {tx_hash, _} ->
       query =
         if Enum.empty?(protocols_to_clear) do
-          from(ta in TransactionActions, where: ta.hash == ^tx_hash)
+          from(ta in TransactionAction, where: ta.hash == ^tx_hash)
         else
-          from(ta in TransactionActions, where: ta.hash == ^tx_hash and ta.protocol in ^protocols_to_clear)
+          from(ta in TransactionAction, where: ta.hash == ^tx_hash and ta.protocol in ^protocols_to_clear)
         end
 
       Repo.delete_all(query)

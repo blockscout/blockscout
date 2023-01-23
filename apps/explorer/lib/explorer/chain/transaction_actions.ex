@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.TransactionActions do
+defmodule Explorer.Chain.TransactionAction do
   @moduledoc "Models transaction actions."
 
   use Explorer.Schema
