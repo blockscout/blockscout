@@ -9,7 +9,7 @@ defmodule Explorer.Chain.TransactionActions do
   }
 
   @required_attrs ~w(hash protocol data type log_index)a
-  @supported_protocols [:uniswap_v3, :"opensea_v1.1", :wrapping, :approval, :zkbob]
+  @supported_protocols [:uniswap_v3, :opensea_v1_1, :wrapping, :approval, :zkbob]
 
   @typedoc """
   * `hash` - transaction hash

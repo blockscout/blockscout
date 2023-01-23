@@ -3,7 +3,7 @@ defmodule Explorer.Repo.Migrations.AddTransactionActionsTable do
 
   def change do
     execute(
-      "CREATE TYPE transaction_actions_protocol AS ENUM ('uniswap_v3', 'opensea_v1.1', 'wrapping', 'approval', 'zkbob')",
+      "CREATE TYPE transaction_actions_protocol AS ENUM ('uniswap_v3', 'opensea_v1_1', 'wrapping', 'approval', 'zkbob')",
       "DROP TYPE transaction_actions_protocol"
     )
 
