@@ -462,29 +462,24 @@ defmodule Indexer.Transform.Addresses do
 
   def extract_addresses_from_item(item, fields, state), do: Enum.flat_map(fields, &extract_fields(&1, item, state))
 
-  defp find_tx_action_addresses(data, accumulator \\ []) do
-    map = is_map(data)
+  defp find_tx_action_addresses(data, accumulator \\ [])
 
-    if map or is_list(data) do
-      Enum.reduce(data, accumulator, fn item, acc ->
-        value =
-          if map do
-            {_field, value} = item
-            value
-          else
-            item
-          end
+  defp find_tx_action_addresses(data, accumulator) when is_map(data) or is_list(data) do
+    Enum.reduce(data, accumulator, fn
+      {_, value}, acc -> find_tx_action_addresses(value, acc)
+      value, acc -> find_tx_action_addresses(value, acc)
+    end)
+  end
 
-        cond do
-          is_list(value) or is_map(value) -> find_tx_action_addresses(value, acc)
-          is_address?(value) -> [value | acc]
-          true -> acc
-        end
-      end)
+  defp find_tx_action_addresses(value, accumulator) when is_binary(value) do
+    if is_address?(value) do
+      [value | accumulator]
     else
       accumulator
     end
   end
+
+  defp find_tx_action_addresses(_value, accumulator), do: accumulator
 
   def merge_addresses(addresses) when is_list(addresses) do
     addresses
