@@ -19,7 +19,7 @@ defmodule Indexer.Transform.TransactionActions do
   # @gnosis 100
 
   @default_max_token_cache_size 100_000
-  @null_address "0x0000000000000000000000000000000000000000"
+  @burn_address "0x0000000000000000000000000000000000000000"
   @uniswap_v3_positions_nft "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
   @uniswap_v3_factory "0x1F98431c8aD98523631AE4a59f267346ea31F984"
   @uniswap_v3_factory_abi [
@@ -78,6 +78,21 @@ defmodule Indexer.Transform.TransactionActions do
       "type" => "function"
     }
   ]
+
+  # 32-byte signature of the event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+  @uniswap_v3_transfer_nft_event "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+
+  # 32-byte signature of the event Mint(address sender, address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)
+  @uniswap_v3_mint_event "0x7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde"
+
+  # 32-byte signature of the event Burn(address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)
+  @uniswap_v3_burn_event "0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c"
+
+  # 32-byte signature of the event Collect(address indexed owner, address recipient, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount0, uint128 amount1)
+  @uniswap_v3_collect_event "0x70935338e69775456a85ddef226c395fb668b63fa0115f5f20610b388e6ca9c0"
+
+  # 32-byte signature of the event Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick);
+  @uniswap_v3_swap_event "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67"
 
   @doc """
   Returns a list of transaction actions given a list of logs.
@@ -148,14 +163,14 @@ defmodule Indexer.Transform.TransactionActions do
 
       Enum.member?(
         [
-          "0x7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde",
-          "0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c",
-          "0x70935338e69775456a85ddef226c395fb668b63fa0115f5f20610b388e6ca9c0",
-          "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67"
+          @uniswap_v3_mint_event,
+          @uniswap_v3_burn_event,
+          @uniswap_v3_collect_event,
+          @uniswap_v3_swap_event
         ],
         first_topic
       ) ||
-        (first_topic == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" &&
+        (first_topic == @uniswap_v3_transfer_nft_event &&
            String.downcase(address_hash_to_string(log.address_hash)) == String.downcase(@uniswap_v3_positions_nft))
     end)
   end
@@ -163,7 +178,7 @@ defmodule Indexer.Transform.TransactionActions do
   defp uniswap_handle_action(log, legitimate, chain_id) do
     first_topic = String.downcase(log.first_topic)
 
-    with false <- first_topic == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+    with false <- first_topic == @uniswap_v3_transfer_nft_event,
          # check UniswapV3Pool contract is legitimate
          pool_address <- String.downcase(address_hash_to_string(log.address_hash)),
          false <- Enum.empty?(legitimate[pool_address]),
@@ -172,19 +187,19 @@ defmodule Indexer.Transform.TransactionActions do
          token_data <- get_token_data(token_address),
          false <- token_data === false do
       case first_topic do
-        "0x7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde" ->
+        @uniswap_v3_mint_event ->
           # this is Mint event
           uniswap_handle_mint_event(log, token_address, token_data, chain_id)
 
-        "0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c" ->
+        @uniswap_v3_burn_event ->
           # this is Burn event
           uniswap_handle_burn_event(log, token_address, token_data, chain_id)
 
-        "0x70935338e69775456a85ddef226c395fb668b63fa0115f5f20610b388e6ca9c0" ->
+        @uniswap_v3_collect_event ->
           # this is Collect event
           uniswap_handle_collect_event(log, token_address, token_data, chain_id)
 
-        "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67" ->
+        @uniswap_v3_swap_event ->
           # this is Swap event
           uniswap_handle_swap_event(log, token_address, token_data, chain_id)
 
@@ -204,11 +219,11 @@ defmodule Indexer.Transform.TransactionActions do
       |> Enum.reduce(%{}, fn log, acc ->
         first_topic = String.downcase(log.first_topic)
 
-        if first_topic == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" do
+        if first_topic == @uniswap_v3_transfer_nft_event do
           # This is Transfer event for NFT
           from = truncate_address_hash(log.second_topic)
 
-          if from == "0x0000000000000000000000000000000000000000" do
+          if from == @burn_address do
             to = truncate_address_hash(log.third_topic)
             [token_id] = decode_data(log.fourth_topic, [{:uint, 256}])
             mint_nft_ids = Map.put_new(acc, to, %{ids: [], log_index: log.index})
@@ -340,7 +355,7 @@ defmodule Indexer.Transform.TransactionActions do
         tx_logs
         |> Enum.filter(fn log ->
           first_topic = String.downcase(log.first_topic)
-          first_topic != "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+          first_topic != @uniswap_v3_transfer_nft_event
         end)
         |> Enum.reduce(addresses_acc, fn log, acc ->
           pool_address = String.downcase(address_hash_to_string(log.address_hash))
@@ -398,8 +413,8 @@ defmodule Indexer.Transform.TransactionActions do
         Map.put(acc, request.contract_address, item)
       end)
       |> Enum.map(fn {pool_address, pool} ->
-        token0 = if is_address_correct?(pool.token0), do: String.downcase(pool.token0), else: @null_address
-        token1 = if is_address_correct?(pool.token1), do: String.downcase(pool.token1), else: @null_address
+        token0 = if is_address_correct?(pool.token0), do: String.downcase(pool.token0), else: @burn_address
+        token1 = if is_address_correct?(pool.token1), do: String.downcase(pool.token1), else: @burn_address
         fee = if pool.fee == "", do: 0, else: pool.fee
 
         # we will call getPool(token0, token1, fee) public getter
@@ -747,7 +762,7 @@ defmodule Indexer.Transform.TransactionActions do
     end
   end
 
-  defp truncate_address_hash(nil), do: "0x0000000000000000000000000000000000000000"
+  defp truncate_address_hash(nil), do: @burn_address
 
   defp truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
     "0x#{truncated_hash}"

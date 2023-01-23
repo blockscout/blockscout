@@ -330,9 +330,8 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def transaction_action_string_to_address(address) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address) do
-      Chain.hash_to_address(address_hash)
-    else
+    case Chain.string_to_address_hash(address) do
+      {:ok, address_hash} -> Chain.hash_to_address(address_hash)
       _ -> {:error, nil}
     end
   end
