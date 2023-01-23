@@ -69,6 +69,18 @@ defmodule Explorer.Repo do
   def account_repo, do: Explorer.Repo.Account
 end
 
+defmodule Explorer.RemoteRepo do
+  @moduledoc "RPC wrapper for Explorer library, will forward all operations for execution on indexer pod"
+
+  use Fly.RemoteRepo, local_repo: Explorer.Repo.Local
+  require Logger
+
+  use Explorer.Repo.RepoHelper
+
+  def replica, do: __MODULE__
+  def account_repo, do: Explorer.Repo.Account
+end
+
 defmodule Explorer.Repo.Account do
   use Ecto.Repo,
     otp_app: :explorer,
