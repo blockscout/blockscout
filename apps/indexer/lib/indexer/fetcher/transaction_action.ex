@@ -14,7 +14,7 @@ defmodule Indexer.Fetcher.TransactionAction do
     ]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Log
+  alias Explorer.Chain.{Log, TransactionAction}
   alias Indexer.Transform.{Addresses, TransactionActions}
 
   defstruct first_block: nil, last_block: nil, protocols: [], task: nil
@@ -169,7 +169,7 @@ defmodule Indexer.Fetcher.TransactionAction do
 
       true ->
         supported_protocols =
-          Explorer.Chain.TransactionAction.supported_protocols()
+          TransactionAction.supported_protocols()
           |> Enum.map(&Atom.to_string(&1))
 
         protocols =
