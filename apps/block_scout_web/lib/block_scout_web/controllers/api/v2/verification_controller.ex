@@ -85,7 +85,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
           "address_hash" => String.downcase(address_hash_string),
           "compiler_version" => compiler_version
         }
-        |> Map.put("autodetect_constructor_args", Map.get(params, "autodetect_constructor_args", false))
+        |> Map.put("autodetect_constructor_args", Map.get(params, "autodetect_constructor_args", true))
         |> Map.put("constructor_arguments", Map.get(params, "constructor_args", ""))
         |> Map.put("name", Map.get(params, "contract_name", ""))
 

@@ -23,18 +23,17 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     do: {:error, :contract_source_code}
 
   def evaluate_authenticity(address_hash, params) do
-    # TODO: remove comments
-    # try do
-    evaluate_authenticity_inner(RustVerifierInterface.enabled?(), address_hash, params)
-    # rescue
-    #   exception ->
-    #     Logger.error(fn ->
-    #       [
-    #         "Error while verifying smart-contract address: #{address_hash}, params: #{inspect(params, limit: :infinity, printable_limit: :infinity)}: ",
-    #         Exception.format(:error, exception)
-    #       ]
-    #     end)
-    # end
+    try do
+      evaluate_authenticity_inner(RustVerifierInterface.enabled?(), address_hash, params)
+    rescue
+      exception ->
+        Logger.error(fn ->
+          [
+            "Error while verifying smart-contract address: #{address_hash}, params: #{inspect(params, limit: :infinity, printable_limit: :infinity)}: ",
+            Exception.format(:error, exception)
+          ]
+        end)
+    end
   end
 
   defp evaluate_authenticity_inner(true, address_hash, params) do
