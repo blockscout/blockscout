@@ -194,7 +194,7 @@ defmodule Explorer.Chain do
     if is_nil(cached_value) || cached_value == 0 do
       %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'addresses';")
 
-      count
+      max(count, 0)
     else
       cached_value
     end
