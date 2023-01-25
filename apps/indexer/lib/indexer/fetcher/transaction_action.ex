@@ -150,6 +150,8 @@ defmodule Indexer.Fetcher.TransactionAction do
       :ets.insert(:tx_actions_last_block_processed, {:block_number, block_number})
     end
 
+    :ets.delete(:tx_actions_last_block_processed)
+
     :ok
   end
 
