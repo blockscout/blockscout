@@ -562,11 +562,7 @@ defmodule Indexer.Transform.Addresses do
        when is_integer(first_integer) and is_integer(second_integer),
        do: max(first_integer, second_integer)
 
-  defp is_address?(value) do
-    if is_binary(value) do
-      String.match?(value, ~r/^0x[[:xdigit:]]{40}$/i)
-    else
-      false
-    end
+  defp is_address?(value) when is_binary(value) do
+    String.match?(value, ~r/^0x[[:xdigit:]]{40}$/i)
   end
 end
