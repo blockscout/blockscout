@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     ]
 
   alias BlockScoutWeb.AccessHelpers
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain
   alias Explorer.Chain.Import
   alias Explorer.Chain.Import.Runner.InternalTransactions
 
@@ -66,14 +66,12 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
            {:not_found,
             Chain.hash_to_transaction(
               transaction_hash,
-              necessity_by_association: @transaction_necessity_by_association
+              necessity_by_association: Map.put(@transaction_necessity_by_association, :transaction_actions, :optional)
             )},
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params),
          preloaded <-
-           Chain.preload_token_transfers(transaction, @token_transfers_in_tx_neccessity_by_association, false),
-         preloaded <-
-           Repo.preload(preloaded, :transaction_actions) do
+           Chain.preload_token_transfers(transaction, @token_transfers_in_tx_neccessity_by_association, false) do
       conn
       |> put_status(200)
       |> render(:transaction, %{transaction: preloaded})

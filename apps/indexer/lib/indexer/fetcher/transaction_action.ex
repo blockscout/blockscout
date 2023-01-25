@@ -152,7 +152,7 @@ defmodule Indexer.Fetcher.TransactionAction do
     end
 
     :ets.delete(:tx_actions_last_block_processed)
-    Process.exit(pid, :normal);
+    Process.exit(pid, :normal)
 
     :ok
   end
