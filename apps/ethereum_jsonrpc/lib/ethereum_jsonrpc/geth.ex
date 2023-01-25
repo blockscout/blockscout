@@ -231,9 +231,10 @@ defmodule EthereumJSONRPC.Geth do
 
   defp parse_call_tracer_calls(calls, acc, trace_address, inner? \\ true)
   defp parse_call_tracer_calls([], acc, _trace_address, _inner?), do: acc
+  defp parse_call_tracer_calls({%{"type" => 0}, _}, acc, _trace_address, _inner?), do: acc
 
   defp parse_call_tracer_calls(
-         {%{"type" => type, "from" => from, "to" => to} = call, index},
+         {%{"type" => type, "from" => from} = call, index},
          acc,
          trace_address,
          inner?
@@ -245,8 +246,8 @@ defmodule EthereumJSONRPC.Geth do
         "type" => if(type in ~w(CALL CALLCODE DELEGATECALL STATICCALL), do: "call", else: String.downcase(type)),
         "callType" => String.downcase(type),
         "from" => from,
-        "to" => to,
-        "createdContractAddressHash" => to,
+        "to" => Map.get(call, "to", "0x"),
+        "createdContractAddressHash" => Map.get(call, "to", "0x"),
         "value" => Map.get(call, "value", "0x0"),
         "gas" => Map.get(call, "gas", "0x0"),
         "gasUsed" => Map.get(call, "gasUsed", "0x0"),
