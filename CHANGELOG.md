@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#6763](https://github.com/blockscout/blockscout/pull/6763) - Permanent UI dark mode
 - [#6721](https://github.com/blockscout/blockscout/pull/6721) - Implement fetching internal transactions from callTracer
 - [#6712](https://github.com/blockscout/blockscout/pull/6712) - API v2 update
 
