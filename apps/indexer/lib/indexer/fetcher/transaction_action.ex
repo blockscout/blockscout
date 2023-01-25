@@ -29,7 +29,7 @@ defmodule Indexer.Fetcher.TransactionAction do
       start: {__MODULE__, :start_link, start_link_arguments}
     }
 
-    Supervisor.child_spec(default, [])
+    Supervisor.child_spec(default, restart: :transient)
   end
 
   def start_link(arguments, gen_server_options \\ []) do
@@ -64,6 +64,11 @@ defmodule Indexer.Fetcher.TransactionAction do
   def handle_info(:fetch, %__MODULE__{} = state) do
     task = Task.Supervisor.async_nolink(Indexer.Fetcher.TransactionAction.TaskSupervisor, fn -> task(state) end)
     {:noreply, %__MODULE__{state | task: task}}
+  end
+
+  def handle_info(:stop_server, %__MODULE__{} = state) do
+    :ets.delete(:tx_actions_last_block_processed)
+    {:stop, :normal, state}
   end
 
   def handle_info({ref, _result}, %__MODULE__{task: %Task{ref: ref}} = state) do
@@ -151,8 +156,7 @@ defmodule Indexer.Fetcher.TransactionAction do
       :ets.insert(:tx_actions_last_block_processed, {:block_number, block_number})
     end
 
-    :ets.delete(:tx_actions_last_block_processed)
-    Process.exit(pid, :normal)
+    Process.send(pid, :stop_server, [])
 
     :ok
   end
