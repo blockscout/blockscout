@@ -17,7 +17,7 @@ defmodule Indexer.Fetcher.TransactionAction do
   alias Explorer.Chain.{Log, TransactionAction}
   alias Indexer.Transform.{Addresses, TransactionActions}
 
-  defstruct first_block: nil, last_block: nil, protocols: [], task: nil
+  defstruct first_block: nil, last_block: nil, protocols: [], task: nil, pid: nil
 
   def child_spec([init_arguments]) do
     child_spec([init_arguments, []])
@@ -85,11 +85,12 @@ defmodule Indexer.Fetcher.TransactionAction do
   end
 
   defp run_fetch(state) do
-    Process.send(self(), :fetch, [])
-    %__MODULE__{state | task: nil}
+    pid = self()
+    Process.send(pid, :fetch, [])
+    %__MODULE__{state | task: nil, pid: pid}
   end
 
-  defp task(%__MODULE__{first_block: first_block, last_block: last_block_init, protocols: protocols} = _state) do
+  defp task(%__MODULE__{first_block: first_block, last_block: last_block_init, protocols: protocols, pid: pid} = _state) do
     Logger.metadata(fetcher: :transaction_action)
 
     last_block =
@@ -151,6 +152,7 @@ defmodule Indexer.Fetcher.TransactionAction do
     end
 
     :ets.delete(:tx_actions_last_block_processed)
+    Process.exit(pid, :normal);
 
     :ok
   end
