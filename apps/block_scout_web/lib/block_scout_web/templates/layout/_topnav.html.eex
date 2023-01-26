@@ -38,12 +38,6 @@
                     gettext("Blocks"),
                     to: blocks_path(@conn, :index),
                     class: "dropdown-item #{tab_status("blocks", @conn.request_path)}")%>
-              <%= link(gettext("Uncles"),
-                    to: uncle_path(@conn, :uncle),
-                    class: "dropdown-item #{tab_status("uncles", @conn.request_path)}")%>
-              <%= link(gettext("Forked Blocks (Reorgs)"),
-                    to: reorg_path(@conn, :reorg),
-                    class: "border-bottom dropdown-item #{tab_status("reorgs", @conn.request_path)}")%>
               <div class="nav-submenu">
                 <span>
                   <%= gettext("Transactions") %>
@@ -57,14 +51,6 @@
                     class: "#{if variant == EthereumJSONRPC.Besu, do: "border-bottom", else: ""} dropdown-item #{tab_status("txs", @conn.request_path)}"
                   ) %>
 
-              <%= if variant !== EthereumJSONRPC.Besu do %>
-                <%= link(
-                      gettext("Pending"),
-                      class: "border-bottom dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",
-                      "data-test": "pending_transactions_link",
-                      to: pending_transaction_path(@conn, :index)
-                    ) %>
-              <% end %>
               <%= link(gettext("Verified contracts"),
                     to: verified_contracts_path(@conn, :index),
                     class: "dropdown-item #{tab_status("reorgs", @conn.request_path)}")%>
