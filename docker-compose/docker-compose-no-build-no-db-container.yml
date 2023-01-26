@@ -56,6 +56,7 @@ services:
 
   sig-provider:
     image: ghcr.io/blockscout/sig-provider:${SIG_PROVIDER_DOCKER_TAG:-latest}
+    pull_policy: always
     restart: always
     container_name: 'sig-provider'
     ports:
