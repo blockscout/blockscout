@@ -25,8 +25,8 @@ lib/explorer/exchange_rates/source.ex:119
 lib/explorer/smart_contract/solidity/verifier.ex:317
 lib/block_scout_web/templates/address_contract/index.html.eex:158
 lib/block_scout_web/templates/address_contract/index.html.eex:195
-lib/explorer/third_party_integrations/sourcify.ex:120
-lib/explorer/third_party_integrations/sourcify.ex:123
+lib/explorer/third_party_integrations/sourcify.ex:121
+lib/explorer/third_party_integrations/sourcify.ex:124
 lib/block_scout_web/views/transaction_view.ex:137
 lib/block_scout_web/views/transaction_view.ex:152
 lib/block_scout_web/views/transaction_view.ex:197
