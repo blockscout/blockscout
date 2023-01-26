@@ -8,5 +8,5 @@ $('.dark-mode-changer').on('click', function () {
     Cookies.set('chakra-ui-color-mode', 'dark')
   }
   // reload each theme switch
-  document.location.reload(true)
+  document.location.reload()
 })

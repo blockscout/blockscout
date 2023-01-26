@@ -47,11 +47,13 @@ if ($('[data-page="search-results"]').length) {
       analytics.trackEvent(eventName, eventProperties)
     }, waitTime)
 
+    // @ts-ignore
     $('.js-search-results-query-display').text(value)
 
     const loc = window.location.pathname
 
-    if (value.length >= 3 || value === '') {
+    // @ts-ignore
+    if ((value && value.length >= 3) || value === '') {
       store.dispatch({ type: 'START_SEARCH' })
       store.dispatch({ type: 'START_REQUEST' })
       $.ajax({

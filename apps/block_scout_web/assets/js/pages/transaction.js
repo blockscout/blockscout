@@ -21,10 +21,13 @@ export function reducer (state = initialState, action) {
       return Object.assign({}, state, omit(action, 'type'))
     }
     case 'RECEIVED_NEW_BLOCK': {
-      if ((action.msg.blockNumber - state.blockNumber) > state.confirmations) {
-        return Object.assign({}, state, {
-          confirmations: action.msg.blockNumber - state.blockNumber
-        })
+      if (state.blockNumber) {
+        // @ts-ignore
+        if ((action.msg.blockNumber - state.blockNumber) > state.confirmations) {
+          return Object.assign({}, state, {
+            confirmations: action.msg.blockNumber - state.blockNumber
+          })
+        } else return state
       } else return state
     }
     default:
@@ -60,7 +63,8 @@ if ($transactionDetailsPage.length) {
   pathParts.includes('raw-trace') ||
   pathParts.includes('state')
   if (shouldScroll) {
-    document.getElementById('transaction-tabs').scrollIntoView()
+    const txTabsObj = document.getElementById('transaction-tabs')
+    txTabsObj && txTabsObj.scrollIntoView()
   }
 
   const blocksChannel = socket.channel('blocks:new_block', {})
@@ -77,6 +81,7 @@ if ($transactionDetailsPage.length) {
 
   $('.js-cancel-transaction').on('click', (event) => {
     const btn = $(event.target)
+    // @ts-ignore
     if (!window.ethereum) {
       btn
         .attr('data-original-title', `Please unlock ${btn.data('from')} account in Metamask`)
@@ -89,6 +94,7 @@ if ($transactionDetailsPage.length) {
       }, 3000)
       return
     }
+    // @ts-ignore
     const { chainId: walletChainIdHex } = window.ethereum
     compareChainIDs(btn.data('chainId'), walletChainIdHex)
       .then(() => {
@@ -98,6 +104,7 @@ if ($transactionDetailsPage.length) {
           value: 0,
           nonce: btn.data('nonce').toString()
         }
+        // @ts-ignore
         window.ethereum.request({
           method: 'eth_sendTransaction',
           params: [txParams]
@@ -142,26 +149,26 @@ $(function () {
   $collapseButton.on('click', event => {
     const $button = event.target
     const $parent = $button.parentElement
-    const $collapseButton = $parent.querySelector('[button-collapse-input]')
-    const $expandButton = $parent.querySelector('[button-expand-input]')
-    const $hiddenText = $parent.querySelector('[data-hidden-text]')
-    const $placeHolder = $parent.querySelector('[data-placeholder-dots]')
-    $collapseButton.classList.add('d-none')
-    $expandButton.classList.remove('d-none')
-    $hiddenText.classList.add('d-none')
-    $placeHolder.classList.remove('d-none')
+    const $collapseButton = $parent && $parent.querySelector('[button-collapse-input]')
+    const $expandButton = $parent && $parent.querySelector('[button-expand-input]')
+    const $hiddenText = $parent && $parent.querySelector('[data-hidden-text]')
+    const $placeHolder = $parent && $parent.querySelector('[data-placeholder-dots]')
+    $collapseButton && $collapseButton.classList.add('d-none')
+    $expandButton && $expandButton.classList.remove('d-none')
+    $hiddenText && $hiddenText.classList.add('d-none')
+    $placeHolder && $placeHolder.classList.remove('d-none')
   })
 
   $expandButton.on('click', event => {
     const $button = event.target
     const $parent = $button.parentElement
-    const $collapseButton = $parent.querySelector('[button-collapse-input]')
-    const $expandButton = $parent.querySelector('[button-expand-input]')
-    const $hiddenText = $parent.querySelector('[data-hidden-text]')
-    const $placeHolder = $parent.querySelector('[data-placeholder-dots]')
-    $expandButton.classList.add('d-none')
-    $collapseButton.classList.remove('d-none')
-    $hiddenText.classList.remove('d-none')
-    $placeHolder.classList.add('d-none')
+    const $collapseButton = $parent && $parent.querySelector('[button-collapse-input]')
+    const $expandButton = $parent && $parent.querySelector('[button-expand-input]')
+    const $hiddenText = $parent && $parent.querySelector('[data-hidden-text]')
+    const $placeHolder = $parent && $parent.querySelector('[data-placeholder-dots]')
+    $expandButton && $expandButton.classList.add('d-none')
+    $collapseButton && $collapseButton.classList.remove('d-none')
+    $hiddenText && $hiddenText.classList.remove('d-none')
+    $placeHolder && $placeHolder.classList.add('d-none')
   })
 })

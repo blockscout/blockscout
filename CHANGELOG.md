@@ -4,14 +4,20 @@
 
 ### Features
 
+- [#6721](https://github.com/blockscout/blockscout/pull/6721) - Implement fetching internal transactions from callTracer
 - [#6712](https://github.com/blockscout/blockscout/pull/6712) - API v2 update
 
 ### Fixes
 
+- [#6746](https://github.com/blockscout/blockscout/pull/6746) - Fix -1 address counter
 - [#6736](https://github.com/blockscout/blockscout/pull/6736) - Fix `/tokens` in old UI
 - [#6705](https://github.com/blockscout/blockscout/pull/6705) - Fix `/smart-contracts` bugs in API v2
+- [#6740](https://github.com/blockscout/blockscout/pull/6740) - Fix tokens deadlock
+- [#6759](https://github.com/blockscout/blockscout/pull/6759) - Add `jq` in docker image
 
 ### Chore
+
+- [#6695](https://github.com/blockscout/blockscout/pull/6695) - Process errors and warnings with enables check-js feature in VS code
 
 <details>
   <summary>Dependencies version bumps</summary>
