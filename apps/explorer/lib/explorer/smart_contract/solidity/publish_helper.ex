@@ -10,8 +10,8 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
   alias Explorer.SmartContract.Solidity.Publisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
-  def verify_and_publish(address_hash_string, files_array, conn, api_v2? \\ false) do
-    with {:ok, _verified_status} <- Sourcify.verify(address_hash_string, files_array),
+  def verify_and_publish(address_hash_string, files_array, conn, api_v2?, chosen_contract \\ nil) do
+    with {:ok, _verified_status} <- Sourcify.verify(address_hash_string, files_array, chosen_contract),
          {:ok, _verified_status} <- Sourcify.check_by_address(address_hash_string) do
       get_metadata_and_publish(address_hash_string, conn, api_v2?)
     else

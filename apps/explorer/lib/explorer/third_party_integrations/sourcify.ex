@@ -28,9 +28,9 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     http_get_request(get_metadata_full_url, [])
   end
 
-  def verify(address_hash_string, files) do
+  def verify(address_hash_string, files, chosen_contract) do
     if RustVerifierInterface.enabled?() do
-      verify_via_rust_microservice(address_hash_string, files)
+      verify_via_rust_microservice(address_hash_string, files, chosen_contract)
     else
       verify_via_sourcify_server(address_hash_string, files)
     end
@@ -76,13 +76,14 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     end)
   end
 
-  def verify_via_rust_microservice(address_hash_string, files) do
+  def verify_via_rust_microservice(address_hash_string, files, chosen_contract) do
     chain_id = config(__MODULE__, :chain_id)
 
     body_params =
       Map.new()
       |> Map.put("chain", chain_id)
       |> Map.put("address", address_hash_string)
+      |> add_chosen_contract(chosen_contract)
 
     files_body = prepare_body_for_microservice(files)
 
@@ -92,6 +93,24 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
 
     http_post_request_rust_microservice(verify_url_rust_microservice(), body)
   end
+
+  defp add_chosen_contract(params, nil), do: params
+
+  defp add_chosen_contract(params, index) when is_binary(index) do
+    case Integer.parse(index) do
+      {integer, ""} ->
+        Map.put(params, "chosenContract", integer)
+
+      _ ->
+        params
+    end
+  end
+
+  defp add_chosen_contract(params, index) when is_number(index) do
+    Map.put(params, "chosenContract", index)
+  end
+
+  defp add_chosen_contract(params, _index), do: params
 
   defp prepare_body_for_microservice(files) when is_map(files) do
     files

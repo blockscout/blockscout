@@ -46,6 +46,51 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
     end
   end
 
+  def publish(address_hash, params, files) do
+    case Verifier.evaluate_authenticity(address_hash, params, files) do
+      {
+        :ok,
+        %{
+          "abi" => abi_string,
+          "compiler_version" => _,
+          "constructor_arguments" => _,
+          "contract_libraries" => contract_libraries,
+          "contract_name" => contract_name,
+          "evm_version" => _,
+          "file_name" => file_name,
+          "optimization" => _,
+          "optimization_runs" => _,
+          "sources" => sources
+        } = result_params
+      } ->
+        secondary_sources =
+          for {file, source} <- sources,
+              file != file_name,
+              do: %{"file_name" => file, "contract_source_code" => source, "address_hash" => address_hash}
+
+        %{^file_name => contract_source_code} = sources
+
+        prepared_params =
+          result_params
+          |> Map.put("contract_source_code", contract_source_code)
+          |> Map.put("external_libraries", contract_libraries)
+          |> Map.put("name", contract_name)
+          |> Map.put("file_path", file_name)
+          |> Map.put("secondary_sources", secondary_sources)
+
+        publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
+
+      {:ok, %{abi: abi}} ->
+        publish_smart_contract(address_hash, params, abi)
+
+      {:error, error} ->
+        {:error, unverified_smart_contract(address_hash, params, error, nil)}
+
+      _ ->
+        {:error, unverified_smart_contract(address_hash, params, "Unexpected error", nil)}
+    end
+  end
+
   def publish_smart_contract(address_hash, params, abi) do
     attrs = address_hash |> attributes(params, abi)
 

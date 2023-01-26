@@ -137,7 +137,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
             PublishHelper.get_metadata_and_publish(address_hash_string, conn)
 
           _ ->
-            PublishHelper.verify_and_publish(address_hash_string, files_array, conn)
+            PublishHelper.verify_and_publish(address_hash_string, files_array, conn, false)
         end
       end
     else

@@ -25,13 +25,15 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
             else: &1
           )).()
       |> (&if(RustVerifierInterface.enabled?(), do: ["multi_part" | &1], else: &1)).()
+      |> (&if(RustVerifierInterface.enabled?(), do: ["vyper_multi_part" | &1], else: &1)).()
 
     conn
     |> json(%{
-      evm_versions: evm_versions,
+      solidity_evm_versions: evm_versions,
       solidity_compiler_versions: solidity_compiler_versions,
       vyper_compiler_versions: vyper_compiler_versions,
-      verification_options: verification_options
+      verification_options: verification_options,
+      vyper_evm_versions: ["byzantium", "constantinople", "petersburg", "istanbul"]
     })
   end
 
@@ -107,7 +109,9 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
          {:no_json_file, %Plug.Upload{path: _path}} <-
            {:no_json_file, PublishHelper.get_one_json(files_array)},
          files_content <- PublishHelper.read_files(files_array) do
-      Que.add(SolidityPublisherWorker, {"sourcify_api_v2", address_hash_string, files_content, conn})
+      chosen_contract = params["chosen_contract_index"]
+
+      Que.add(SolidityPublisherWorker, {"sourcify_api_v2", address_hash_string, files_content, conn, chosen_contract})
 
       conn
       |> put_view(ApiView)
@@ -167,8 +171,39 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         }
         |> Map.put("constructor_arguments", Map.get(params, "constructor_args", "") || "")
         |> Map.put("name", Map.get(params, "contract_name", "Vyper_contract"))
+        # |> Map.put("optimization", Map.get(params, "is_optimization_enabled", false))
+        |> Map.put("evm_version", Map.get(params, "evm_version", "istanbul"))
 
       Que.add(VyperPublisherWorker, {address_hash_string, verification_params})
+
+      conn
+      |> put_view(ApiView)
+      |> render(:message, %{message: "Verification started"})
+    end
+  end
+
+  def verification_via_vyper_multipart(
+        conn,
+        %{"address_hash" => address_hash_string, "compiler_version" => compiler_version, "files" => files} = params
+      ) do
+    with {:not_found, true} <- {:not_found, RustVerifierInterface.enabled?()},
+         {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
+         {:already_verified, false} <- {:already_verified, Chain.smart_contract_fully_verified?(address_hash)} do
+      verification_params =
+        %{
+          "address_hash" => String.downcase(address_hash_string),
+          "compiler_version" => compiler_version
+        }
+        # |> Map.put("optimization", Map.get(params, "is_optimization_enabled", false))
+        |> Map.put("evm_version", Map.get(params, "evm_version", "istanbul"))
+
+      files_array =
+        files
+        |> Map.values()
+        |> PublishHelper.read_files()
+
+      Que.add(VyperPublisherWorker, {address_hash_string, verification_params, files_array})
 
       conn
       |> put_view(ApiView)

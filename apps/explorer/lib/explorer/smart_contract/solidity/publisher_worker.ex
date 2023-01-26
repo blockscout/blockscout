@@ -75,13 +75,13 @@ defmodule Explorer.SmartContract.Solidity.PublisherWorker do
     EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result}}], :on_demand)
   end
 
-  def perform({"sourcify_api_v2", address_hash_string, files_array, conn}) do
+  def perform({"sourcify_api_v2", address_hash_string, files_array, conn, chosen_contract}) do
     case Sourcify.check_by_address(address_hash_string) do
       {:ok, _verified_status} ->
         PublishHelper.get_metadata_and_publish(address_hash_string, conn, true)
 
       _ ->
-        PublishHelper.verify_and_publish(address_hash_string, files_array, conn, true)
+        PublishHelper.verify_and_publish(address_hash_string, files_array, conn, true, chosen_contract)
     end
   end
 

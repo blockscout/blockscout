@@ -255,7 +255,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   end
 
   defp verify_and_publish(address_hash_string, files_array, conn) do
-    case Sourcify.verify(address_hash_string, files_array) do
+    case Sourcify.verify(address_hash_string, files_array, nil) do
       {:ok, _verified_status} ->
         case Sourcify.check_by_address(address_hash_string) do
           {:ok, _verified_status} ->

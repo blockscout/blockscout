@@ -9,22 +9,14 @@ defmodule Explorer.SmartContract.SolcDownloader do
 
   @latest_compiler_refetch_time :timer.minutes(30)
 
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-  end
-
   def ensure_exists(version) do
-    path = file_path(version) |> debug("filepath")
+    path = file_path(version)
 
     if File.exists?(path) && version !== "latest" do
-      path |> debug("first if")
+      path
     else
       compiler_versions =
-        case CompilerVersion.fetch_versions(:solc) |> debug("fetch version") do
+        case CompilerVersion.fetch_versions(:solc) do
           {:ok, compiler_versions} ->
             compiler_versions
 
@@ -102,7 +94,6 @@ defmodule Explorer.SmartContract.SolcDownloader do
 
     download_path
     |> HTTPoison.get!([], timeout: 60_000, recv_timeout: 60_000)
-    |> debug("HTTPoison download solcjs")
     |> Map.get(:body)
   end
 end

@@ -13,10 +13,11 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
 
       assert response = json_response(request, 200)
 
-      assert is_list(response["evm_versions"])
+      assert is_list(response["solidity_evm_versions"])
       assert is_list(response["solidity_compiler_versions"])
       assert is_list(response["vyper_compiler_versions"])
       assert is_list(response["verification_options"])
+      assert is_list(response["vyper_evm_versions"])
     end
   end
 
@@ -226,7 +227,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
   end
 
   describe "/api/v2/smart-contracts/{address_hash}/verification/via/multi-part" do
-    test "get 200 for verified contract", %{conn: conn} do
+    test "get 404", %{conn: conn} do
       contract = insert(:smart_contract)
 
       params = %{"compiler_version" => "", "files" => ""}
@@ -294,6 +295,17 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
                      :timer.seconds(300)
 
       Application.put_env(:explorer, :solc_bin_api_url, before)
+    end
+  end
+
+  describe "/api/v2/smart-contracts/{address_hash}/verification/via/vyper-multi-part" do
+    test "get 404", %{conn: conn} do
+      contract = insert(:smart_contract)
+
+      params = %{"compiler_version" => "", "files" => ""}
+      request = post(conn, "/api/v2/smart-contracts/#{contract.address_hash}/verification/via/vyper-multi-part", params)
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
   end
 
