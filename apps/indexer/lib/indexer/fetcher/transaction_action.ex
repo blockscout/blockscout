@@ -14,10 +14,12 @@ defmodule Indexer.Fetcher.TransactionAction do
     ]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Log, TransactionAction}
+  alias Explorer.Chain.{Log, Options, TransactionAction}
   alias Indexer.Transform.{Addresses, TransactionActions}
 
-  defstruct first_block: nil, last_block: nil, protocols: [], task: nil, pid: nil
+  @stage_option_name "tx_actions_fetcher_stage"
+
+  defstruct first_block: nil, next_block: nil, last_block: nil, protocols: [], task: nil, pid: nil
 
   def child_spec([init_arguments]) do
     child_spec([init_arguments, []])
@@ -67,7 +69,6 @@ defmodule Indexer.Fetcher.TransactionAction do
   end
 
   def handle_info(:stop_server, %__MODULE__{} = state) do
-    :ets.delete(:tx_actions_last_block_processed)
     {:stop, :normal, state}
   end
 
@@ -95,19 +96,19 @@ defmodule Indexer.Fetcher.TransactionAction do
     %__MODULE__{state | task: nil, pid: pid}
   end
 
-  defp task(%__MODULE__{first_block: first_block, last_block: last_block_init, protocols: protocols, pid: pid} = _state) do
+  defp task(
+         %__MODULE__{
+           first_block: first_block,
+           next_block: next_block,
+           last_block: last_block,
+           protocols: protocols,
+           pid: pid
+         } = _state
+       ) do
     Logger.metadata(fetcher: :transaction_action)
 
-    last_block =
-      with info when info != :undefined <- :ets.info(:tx_actions_last_block_processed),
-           [{_, block_number}] <- :ets.lookup(:tx_actions_last_block_processed, :block_number) do
-        block_number - 1
-      else
-        _ -> last_block_init
-      end
-
-    block_range = Range.new(last_block, first_block, -1)
-    block_range_init_length = last_block_init - first_block + 1
+    block_range = Range.new(next_block, first_block, -1)
+    block_range_init_length = last_block - first_block + 1
 
     for block_number <- block_range do
       query =
@@ -139,7 +140,7 @@ defmodule Indexer.Fetcher.TransactionAction do
           timeout: :infinity
         })
 
-      blocks_processed = last_block_init - block_number + 1
+      blocks_processed = last_block - block_number + 1
 
       progress_percentage =
         blocks_processed
@@ -148,12 +149,19 @@ defmodule Indexer.Fetcher.TransactionAction do
         |> Decimal.round(2)
         |> Decimal.to_string()
 
+      next_block = block_number - 1
+
       Logger.info(
-        "Block #{block_number} handled successfully. Progress: #{progress_percentage}%. Initial block range: #{first_block}..#{last_block_init}." <>
-          if(block_number > first_block, do: " Remaining block range: #{first_block}..#{block_number - 1}", else: "")
+        "Block #{block_number} handled successfully. Progress: #{progress_percentage}%. Initial block range: #{first_block}..#{last_block}." <>
+          if(next_block >= first_block, do: " Remaining block range: #{first_block}..#{next_block}", else: "")
       )
 
-      :ets.insert(:tx_actions_last_block_processed, {:block_number, block_number})
+      %Options{}
+      |> Options.changeset(%{
+        name: @stage_option_name,
+        value: %{"init_range" => [first_block, last_block], "next_block" => next_block}
+      })
+      |> Repo.insert(on_conflict: {:replace, [:value]}, conflict_target: :name)
     end
 
     Process.send(pid, :stop_server, [])
@@ -188,19 +196,12 @@ defmodule Indexer.Fetcher.TransactionAction do
           |> Enum.map(&String.trim(&1))
           |> Enum.filter(&Enum.member?(supported_protocols, &1))
 
-        Logger.info(
-          "Running #{__MODULE__} for the block range #{first_block}..#{last_block} and " <>
-            if(Enum.empty?(protocols),
-              do: "all protocols.",
-              else: "the following protocols: #{Enum.join(protocols, ", ")}."
-            )
-        )
-
-        init_last_block_processed()
+        next_block = get_next_block(first_block, last_block, protocols)
 
         state =
           %__MODULE__{
             first_block: first_block,
+            next_block: next_block,
             last_block: last_block,
             protocols: protocols
           }
@@ -210,16 +211,45 @@ defmodule Indexer.Fetcher.TransactionAction do
     end
   end
 
-  defp init_last_block_processed do
-    if :ets.whereis(:tx_actions_last_block_processed) == :undefined do
-      :ets.new(:tx_actions_last_block_processed, [
-        :set,
-        :named_table,
-        :public,
-        read_concurrency: true,
-        write_concurrency: true
-      ])
+  defp get_next_block(first_block, last_block, protocols) do
+    stage =
+      Repo.one(
+        from(
+          o in Options,
+          where: o.name == @stage_option_name,
+          select: o.value
+        )
+      ) || %{"init_range" => [first_block, last_block], "next_block" => last_block}
+
+    init_range = Map.get(stage, "init_range")
+
+    next_block =
+      if Enum.at(init_range, 0, first_block) != first_block or Enum.at(init_range, 1, last_block) != last_block do
+        last_block
+      else
+        Map.get(stage, "next_block")
+      end
+
+    if next_block < first_block do
+      Logger.warn(
+        "It seems #{__MODULE__} already finished work for the block range #{first_block}..#{last_block} and " <>
+          if(Enum.empty?(protocols),
+            do: "all supported protocols.",
+            else: "the following protocols: #{Enum.join(protocols, ", ")}."
+          ) <>
+          " To run it again for a different block range, please change the range through environment variables."
+      )
+    else
+      Logger.info(
+        "Running #{__MODULE__} for the block range #{first_block}..#{next_block} and " <>
+          if(Enum.empty?(protocols),
+            do: "all supported protocols.",
+            else: "the following protocols: #{Enum.join(protocols, ", ")}."
+          ) <> if(next_block < last_block, do: " Initial block range: #{first_block}..#{last_block}.", else: "")
+      )
     end
+
+    next_block
   end
 
   defp parse_integer(integer_string) do
