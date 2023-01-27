@@ -3,9 +3,9 @@ apiVersion: v1
 kind: Service
 metadata:
   annotations:
+    cloud.google.com/backend-config: {{ printf "{\"default\":\"prime-%s\"}" (include "quai-blockscout.name" $) | toRawJson }}
   name: prime-{{ include "quai-blockscout.name" $ }}
   namespace: {{ .Values.quaiBlockscout.env }}
-  cloud.google.com/backend-config: {{ printf "{\"default\":\"prime-%s\"}" (include "quai-blockscout.name" $) | toRawJson }}
 spec:
   ports:
   - port: 4000
