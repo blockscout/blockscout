@@ -46,12 +46,7 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
               ""
           end
 
-        params
-        |> Map.put("creation_bytecode", creation_tx_input)
-        |> Map.put("deployed_bytecode", deployed_bytecode)
-        |> Map.put("evm_version", params["evm_version"])
-        |> Map.put("sources", files)
-        |> RustVerifierInterface.vyper_verify_multipart()
+        vyper_verify_multipart(params, creation_tx_input, deployed_bytecode, params["evm_version"], files)
       end
     rescue
       exception ->
@@ -76,11 +71,17 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
           ""
       end
 
+    vyper_verify_multipart(params, creation_tx_input, deployed_bytecode, params["evm_version"], %{
+      "#{params["name"]}.vy" => params["contract_source_code"]
+    })
+  end
+
+  defp vyper_verify_multipart(params, creation_tx_input, deployed_bytecode, evm_version, files) do
     params
     |> Map.put("creation_bytecode", creation_tx_input)
     |> Map.put("deployed_bytecode", deployed_bytecode)
-    |> Map.put("evm_version", params["evm_version"] || "istanbul")
-    |> Map.put("sources", %{"#{params["name"]}.vy" => params["contract_source_code"]})
+    |> Map.put("evm_version", evm_version || "istanbul")
+    |> Map.put("sources", files)
     |> RustVerifierInterface.vyper_verify_multipart()
   end
 
