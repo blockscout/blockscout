@@ -15,7 +15,7 @@ defmodule Explorer.SmartContract.SigProviderInterface do
     url =
       base_url
       |> URI.parse()
-      |> URI.append_query(URI.encode_query(%{"txInput" => to_string(input)}))
+      |> Map.put(:query, URI.encode_query(%{"txInput" => to_string(input)}))
       |> URI.to_string()
 
     http_get_request(url)
@@ -27,7 +27,8 @@ defmodule Explorer.SmartContract.SigProviderInterface do
     url =
       base_url
       |> URI.parse()
-      |> URI.append_query(
+      |> Map.put(
+        :query,
         URI.encode_query(%{"topics" => topics |> Enum.reject(&is_nil/1) |> Enum.join(","), "data" => to_string(data)})
       )
       |> URI.to_string()
