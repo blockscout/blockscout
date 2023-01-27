@@ -18,8 +18,18 @@ const grid = {
   drawOnChartArea: false
 }
 
+function isDarkMode () {
+  // @ts-ignore
+  const permanentDarkModeEnabled = document.getElementById('permanent-dark-mode').textContent === 'true'
+  if (!permanentDarkModeEnabled) {
+    return Cookies.get('chakra-ui-color-mode') === 'dark'
+  } else {
+    return true
+  }
+}
+
 function getTxChartColor () {
-  if (Cookies.get('chakra-ui-color-mode') === 'dark') {
+  if ((isDarkMode())) {
     return sassVariables.dashboardLineColorTransactionsDarkTheme
   } else {
     return sassVariables.dashboardLineColorTransactions
@@ -27,7 +37,7 @@ function getTxChartColor () {
 }
 
 function getPriceChartColor () {
-  if (Cookies.get('chakra-ui-color-mode') === 'dark') {
+  if ((isDarkMode())) {
     return sassVariables.dashboardLineColorPriceDarkTheme
   } else {
     return sassVariables.dashboardLineColorPrice
@@ -35,7 +45,7 @@ function getPriceChartColor () {
 }
 
 function getMarketCapChartColor () {
-  if (Cookies.get('chakra-ui-color-mode') === 'dark') {
+  if ((isDarkMode())) {
     return sassVariables.dashboardLineColorMarketDarkTheme
   } else {
     return sassVariables.dashboardLineColorMarket

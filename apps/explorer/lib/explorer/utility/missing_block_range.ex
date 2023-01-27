@@ -73,6 +73,6 @@ defmodule Explorer.Utility.MissingBlockRange do
   end
 
   def include_bound_query(bound) do
-    from(r in __MODULE__, where: r.from_number > ^bound, where: r.to_number < ^bound)
+    from(r in __MODULE__, where: r.from_number >= ^bound, where: r.to_number <= ^bound)
   end
 end

@@ -32,7 +32,7 @@ defmodule Explorer.Chain.Cache.Transaction do
       %Postgrex.Result{rows: [[rows]]} =
         SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
 
-      rows
+      max(rows, 0)
     else
       cached_value
     end

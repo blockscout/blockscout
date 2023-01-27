@@ -27,6 +27,7 @@ services:
       - smart-contract-verifier
       - redis_db
     image: blockscout/blockscout:${DOCKER_TAG:-latest}
+    pull_policy: always
     restart: always
     container_name: 'blockscout'
     links:
@@ -53,6 +54,7 @@ services:
 
   smart-contract-verifier:
     image: ghcr.io/blockscout/smart-contract-verifier:${SMART_CONTRACT_VERIFIER_DOCKER_TAG:-latest}
+    pull_policy: always
     restart: always
     container_name: 'smart-contract-verifier'
     env_file:
@@ -62,6 +64,7 @@ services:
 
   visualizer:
     image: ghcr.io/blockscout/visualizer:${VISUALIZER_DOCKER_TAG:-latest}
+    pull_policy: always
     restart: always
     container_name: 'visualizer'
     env_file:
