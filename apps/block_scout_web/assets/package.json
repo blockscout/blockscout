@@ -78,7 +78,7 @@
     "util": "^0.12.5",
     "viewerjs": "^1.11.2",
     "web3": "^1.8.1",
-    "web3modal": "^1.9.11",
+    "web3modal": "^1.9.12",
     "xss": "^1.0.14"
   },
   "devDependencies": {
