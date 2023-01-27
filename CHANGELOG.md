@@ -15,6 +15,7 @@
 - [#6705](https://github.com/blockscout/blockscout/pull/6705) - Fix `/smart-contracts` bugs in API v2
 - [#6740](https://github.com/blockscout/blockscout/pull/6740) - Fix tokens deadlock
 - [#6759](https://github.com/blockscout/blockscout/pull/6759) - Add `jq` in docker image
+- [#6779](https://github.com/blockscout/blockscout/pull/6779) - Fix missing ranges bounds clearing
 
 ### Chore
 
