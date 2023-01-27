@@ -14,10 +14,12 @@ defmodule Indexer.Fetcher.TransactionAction do
     ]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Log, Options, TransactionAction}
+  alias Explorer.Chain.{Log, TransactionAction}
   alias Indexer.Transform.{Addresses, TransactionActions}
 
-  @stage_option_name "tx_actions_fetcher_stage"
+  @stage_first_block "tx_action_first_block"
+  @stage_next_block "tx_action_next_block"
+  @stage_last_block "tx_action_last_block"
 
   defstruct first_block: nil, next_block: nil, last_block: nil, protocols: [], task: nil, pid: nil
 
@@ -149,19 +151,32 @@ defmodule Indexer.Fetcher.TransactionAction do
         |> Decimal.round(2)
         |> Decimal.to_string()
 
-      next_block = block_number - 1
+      next_block_new = block_number - 1
 
       Logger.info(
         "Block #{block_number} handled successfully. Progress: #{progress_percentage}%. Initial block range: #{first_block}..#{last_block}." <>
-          if(next_block >= first_block, do: " Remaining block range: #{first_block}..#{next_block}", else: "")
+          if(next_block_new >= first_block, do: " Remaining block range: #{first_block}..#{next_block_new}", else: "")
       )
 
-      %Options{}
-      |> Options.changeset(%{
-        name: @stage_option_name,
-        value: %{"init_range" => [first_block, last_block], "next_block" => next_block}
-      })
-      |> Repo.insert(on_conflict: {:replace, [:value]}, conflict_target: :name)
+      if block_number == next_block do
+        {:ok, _} =
+          Chain.upsert_last_fetched_counter(%{
+            counter_type: @stage_first_block,
+            value: first_block
+          })
+
+        {:ok, _} =
+          Chain.upsert_last_fetched_counter(%{
+            counter_type: @stage_last_block,
+            value: last_block
+          })
+      end
+
+      {:ok, _} =
+        Chain.upsert_last_fetched_counter(%{
+          counter_type: @stage_next_block,
+          value: next_block_new
+        })
     end
 
     Process.send(pid, :stop_server, [])
@@ -212,22 +227,21 @@ defmodule Indexer.Fetcher.TransactionAction do
   end
 
   defp get_next_block(first_block, last_block, protocols) do
-    stage =
-      Repo.one(
-        from(
-          o in Options,
-          where: o.name == @stage_option_name,
-          select: o.value
-        )
-      ) || %{"init_range" => [first_block, last_block], "next_block" => last_block}
+    first_block_from_stage = get_stage_block(@stage_first_block)
+    last_block_from_stage = get_stage_block(@stage_last_block)
 
-    init_range = Map.get(stage, "init_range")
+    {stage_first_block, stage_next_block, stage_last_block} =
+      if first_block_from_stage == 0 or last_block_from_stage == 0 do
+        {first_block, last_block, last_block}
+      else
+        {first_block_from_stage, get_stage_block(@stage_next_block), last_block_from_stage}
+      end
 
     next_block =
-      if Enum.at(init_range, 0, first_block) != first_block or Enum.at(init_range, 1, last_block) != last_block do
-        last_block
+      if Decimal.eq?(stage_first_block, first_block) and Decimal.eq?(stage_last_block, last_block) do
+        stage_next_block
       else
-        Map.get(stage, "next_block")
+        last_block
       end
 
     if next_block < first_block do
@@ -250,6 +264,14 @@ defmodule Indexer.Fetcher.TransactionAction do
     end
 
     next_block
+  end
+
+  defp get_stage_block(type) do
+    type
+    |> Chain.get_last_fetched_counter()
+    |> Decimal.to_integer()
+  rescue
+    _e in Ecto.NoResultsError -> 0
   end
 
   defp parse_integer(integer_string) do
