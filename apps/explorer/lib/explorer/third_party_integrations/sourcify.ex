@@ -8,6 +8,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   alias HTTPoison.{Error, Response}
   alias Tesla.Multipart
 
+  @post_timeout :timer.seconds(30)
   @no_metadata_message "Sourcify did not return metadata"
   @failed_verification_message "Unsuccessful Sourcify verification"
 
@@ -138,7 +139,8 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   def http_post_request_rust_microservice(url, body) do
-    request = HTTPoison.post(url, Jason.encode!(body), [{"Content-Type", "application/json"}], recv_timeout: :infinity)
+    request =
+      HTTPoison.post(url, Jason.encode!(body), [{"Content-Type", "application/json"}], recv_timeout: @post_timeout)
 
     case request do
       {:ok, %Response{body: body, status_code: 200}} ->

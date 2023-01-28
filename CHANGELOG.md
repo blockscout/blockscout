@@ -4,16 +4,20 @@
 
 ### Features
 
+- [#6763](https://github.com/blockscout/blockscout/pull/6763) - Permanent UI dark mode
 - [#6721](https://github.com/blockscout/blockscout/pull/6721) - Implement fetching internal transactions from callTracer
+- [#6541](https://github.com/blockscout/blockscout/pull/6541) - Integrate sig provider
 - [#6712](https://github.com/blockscout/blockscout/pull/6712) - API v2 update
 
 ### Fixes
 
+- [#6777](https://github.com/blockscout/blockscout/pull/6777) - Fix -1 transaction counter
 - [#6746](https://github.com/blockscout/blockscout/pull/6746) - Fix -1 address counter
 - [#6736](https://github.com/blockscout/blockscout/pull/6736) - Fix `/tokens` in old UI
 - [#6705](https://github.com/blockscout/blockscout/pull/6705) - Fix `/smart-contracts` bugs in API v2
 - [#6740](https://github.com/blockscout/blockscout/pull/6740) - Fix tokens deadlock
 - [#6759](https://github.com/blockscout/blockscout/pull/6759) - Add `jq` in docker image
+- [#6779](https://github.com/blockscout/blockscout/pull/6779) - Fix missing ranges bounds clearing
 
 ### Chore
 

@@ -63,59 +63,6 @@
   </head>
 
   <body>
-    <script defer data-cfasync="false">
-      function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-      }
-
-      function applyDarkMode() {
-        if (getCookie('chakra-ui-color-mode') === "dark") {
-          document.body.className += " " + "dark-theme-applied";
-          document.body.style.backgroundColor = "#1c1d31";
-        }
-      }
-      window.onload = applyDarkMode()
-    </script>
-    <script defer data-cfasync="false">
-      if (getCookie('chakra-ui-color-mode') === "dark") {
-        if (document.getElementById("top-navbar")) {
-          document.getElementById("top-navbar").style.backgroundColor = "#282945";
-        }
-        if (document.getElementById("navbar-logo")) {
-          document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
-        }
-        let modeChanger = document.getElementById("dark-mode-changer");
-        if (modeChanger) {
-          modeChanger.className += " " + "dark-mode-changer--dark";
-        }
-      }
-    </script>
-    <script defer data-cfasync="false">
-      if (getCookie('chakra-ui-color-mode') === "dark") {
-        const search = document.getElementById("main-search-autocomplete")
-        const searchMobile = document.getElementById("main-search-autocomplete-mobile")
-            if (search && search.style) {
-          search.style.backgroundColor = "#22223a";
-              search.style.borderColor = "#22223a";
-        }
-        if (searchMobile && searchMobile.style) {
-          searchMobile.style.backgroundColor = "#22223a";
-          searchMobile.style.borderColor = "#22223a";
-        }
-      }
-    </script>
-    <% raw_dark_forest_addresses_0_4 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses) || "" %>
-    <% raw_dark_forest_addresses_0_5 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses_v_0_5) || "" %>
-    <% raw_dark_forest_addresses_0_6 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses_v_0_6) || "" %>
-    <% raw_dark_forest_addresses_0_6_r2 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses_v_0_6_r2) || "" %>
-    <% raw_dark_forest_addresses = raw_dark_forest_addresses_0_4 %>
-    <% raw_dark_forest_addresses = if raw_dark_forest_addresses_0_5 !== "", do: raw_dark_forest_addresses <> "," <> raw_dark_forest_addresses_0_5, else: raw_dark_forest_addresses %>
-    <% raw_dark_forest_addresses = if raw_dark_forest_addresses_0_6 !== "", do: raw_dark_forest_addresses <> "," <> raw_dark_forest_addresses_0_6, else: raw_dark_forest_addresses %>
-    <% raw_dark_forest_addresses = if raw_dark_forest_addresses_0_6_r2 !== "", do: raw_dark_forest_addresses <> "," <> raw_dark_forest_addresses_0_6_r2, else: raw_dark_forest_addresses %>
-
-    <% raw_circles_addresses = CustomContractsHelpers.get_raw_custom_addresses_list(:circles_addresses) %>
     <%= cond do %>
       <% (
         @view_module == Elixir.BlockScoutWeb.TransactionInternalTransactionView ||
@@ -128,10 +75,6 @@
         <% {:ok, created_from_address} = if @transaction.to_address_hash, do: Chain.hash_to_address(@transaction.to_address_hash), else: {:ok, nil} %>
         <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
         <script>
-          function applyCustomMode() {
-            applyCustomTheme("<%= raw_dark_forest_addresses %>", "dark-forest-theme-applied")
-            applyCustomTheme("<%= raw_circles_addresses %>", "circles-theme-applied")
-          }
           function applyCustomTheme(contractAddressHashesRaw, customClass) {
             if (contractAddressHashesRaw !== "") {
               const contractAddressHashes = contractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
@@ -169,19 +112,15 @@
       ) -> %>
         <% created_from_address = if @address && from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
         <script>
-          function applyCustomMode() {
-            applyCustomTheme("<%= raw_dark_forest_addresses %>", "dark-forest-theme-applied")
-            applyCustomTheme("<%= raw_circles_addresses %>", "circles-theme-applied")
-          }
           function applyCustomTheme(contractAddressHashesRaw, customClass) {
             if (contractAddressHashesRaw !== "") {
               const contractAddressHashes = contractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
-              const created_from_address = "<%= created_from_address %>"
+              const createdFromAddress = "<%= created_from_address %>"
               contractAddressHashes.forEach(contractAddressHash => {
                 if (window.location.pathname.toLowerCase().includes(contractAddressHash)) {
                   document.body.className += " " + customClass;
                   return;
-                } else if (contractAddressHash == created_from_address) {
+                } else if (contractAddressHash == createdFromAddress) {
                   document.body.className += " " + customClass;
                   return;
                 }
@@ -189,7 +128,6 @@
             }
           }
 
-          window.onload = applyCustomMode()
         </script>
       <% (
         @view_module == Elixir.BlockScoutWeb.Tokens.TransferView ||
@@ -202,10 +140,6 @@
         <% {:ok, created_from_address} = if @token && @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
         <% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
         <script>
-          function applyCustomMode() {
-            applyCustomTheme("<%= raw_dark_forest_addresses %>", "dark-forest-theme-applied")
-            applyCustomTheme("<%= raw_circles_addresses %>", "circles-theme-applied")
-          }
           function applyCustomTheme(contractAddressHashesRaw, customClass) {
             if (contractAddressHashesRaw !== "") {
               const contractAddressHashes = contractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
@@ -228,6 +162,7 @@
         <%= nil %>
     <% end %>
     <div class="layout-container">
+      <div id="permanent-dark-mode" class="d-none" ><%= Application.get_env(:block_scout_web, :permanent_dark_mode_enabled) %></div>
       <% show_maintenance_alert = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:show_maintenance_alert] %>
       <%= if show_maintenance_alert do %>
         <div class="alert alert-warning text-center mb-0 p-3" data-selector="indexed-status">
@@ -321,5 +256,53 @@
     <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/dropzone.js") %>"></script>
     <% end %>
+    <script defer data-cfasync="false">
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+      }
+
+      function isDarkMode() {
+        const permanentDarkModeEnabled = document.getElementById('permanent-dark-mode').textContent === 'true'
+        if (!permanentDarkModeEnabled) {
+          return getCookie('chakra-ui-color-mode') === 'dark'
+        } else {
+          return true
+        }
+      }
+
+      function applyDarkMode() {
+        if (isDarkMode()) {
+          document.body.className += " " + "dark-theme-applied";
+          document.body.style.backgroundColor = "#1c1d31";
+        }
+      }
+      window.onload = applyDarkMode()
+
+      if (isDarkMode()) {
+        if (document.getElementById("top-navbar")) {
+          document.getElementById("top-navbar").style.backgroundColor = "#282945";
+        }
+        if (document.getElementById("navbar-logo")) {
+          document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
+        }
+        let modeChanger = document.getElementById("dark-mode-changer");
+        if (modeChanger) {
+          modeChanger.className += " " + "dark-mode-changer--dark";
+        }
+
+        const search = document.getElementById("main-search-autocomplete")
+        const searchMobile = document.getElementById("main-search-autocomplete-mobile")
+            if (search && search.style) {
+          search.style.backgroundColor = "#22223a";
+              search.style.borderColor = "#22223a";
+        }
+        if (searchMobile && searchMobile.style) {
+          searchMobile.style.backgroundColor = "#22223a";
+          searchMobile.style.borderColor = "#22223a";
+        }
+      }
+    </script>
   </body>
 </html>
