@@ -76,15 +76,6 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
     })
   end
 
-  defp vyper_verify_multipart(params, creation_tx_input, deployed_bytecode, evm_version, files) do
-    params
-    |> Map.put("creation_bytecode", creation_tx_input)
-    |> Map.put("deployed_bytecode", deployed_bytecode)
-    |> Map.put("evm_version", evm_version || "istanbul")
-    |> Map.put("sources", files)
-    |> RustVerifierInterface.vyper_verify_multipart()
-  end
-
   defp evaluate_authenticity_inner(false, address_hash, params) do
     verify(address_hash, params)
   end
@@ -130,5 +121,14 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
     else
       {:error, :generated_bytecode}
     end
+  end
+
+  defp vyper_verify_multipart(params, creation_tx_input, deployed_bytecode, evm_version, files) do
+    params
+    |> Map.put("creation_bytecode", creation_tx_input)
+    |> Map.put("deployed_bytecode", deployed_bytecode)
+    |> Map.put("evm_version", evm_version || "istanbul")
+    |> Map.put("sources", files)
+    |> RustVerifierInterface.vyper_verify_multipart()
   end
 end
