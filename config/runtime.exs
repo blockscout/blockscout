@@ -170,6 +170,12 @@ config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
 
 config :block_scout_web, BlockScoutWeb.API.V2, enabled: System.get_env("API_V2_ENABLED") == "true"
 
+# Configures Google Analytics
+config :block_scout_web,
+  google_analytics_enabled: System.get_env("GOOGLE_ANALYTICS_ENABLED", "false") == "true",
+  google_analytics_tracking_id: System.get_env("GOOGLE_ANALYTICS_TRACKING_ID")
+
+
 ########################
 ### Ethereum JSONRPC ###
 ########################

@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en-US">
   <head>
+    <%= if Application.get_env(:block_scout_web, :google_analytics_enabled) do %>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=<%= Application.get_env(:block_scout_web, :google_analytics_tracking_id) %>"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', '<%= Application.get_env(:block_scout_web, :google_analytics_tracking_id) %>');
+    </script>
+    <% end %>
+
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
