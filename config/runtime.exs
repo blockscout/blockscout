@@ -100,7 +100,8 @@ config :block_scout_web,
   new_tags: System.get_env("NEW_TAGS"),
   chain_id: System.get_env("CHAIN_ID"),
   json_rpc: System.get_env("JSON_RPC"),
-  verification_max_libraries: verification_max_libraries
+  verification_max_libraries: verification_max_libraries,
+  permanent_dark_mode_enabled: System.get_env("PERMANENT_DARK_MODE_ENABLED", "false") == "true"
 
 default_api_rate_limit = 50
 default_api_rate_limit_str = Integer.to_string(default_api_rate_limit)
@@ -221,10 +222,6 @@ config :explorer,
   implementation_data_fetching_timeout: :timer.seconds(2),
   restricted_list: System.get_env("RESTRICTED_LIST", nil),
   restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil)
-
-config :explorer, Explorer.Visualize.Sol2uml,
-  service_url: System.get_env("VISUALIZE_SOL2UML_SERVICE_URL"),
-  enabled: System.get_env("VISUALIZE_SOL2UML_ENABLED") == "true"
 
 config :explorer, Explorer.Chain.Events.Listener,
   enabled:
@@ -356,6 +353,14 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
 config :explorer, Explorer.SmartContract.RustVerifierInterface,
   service_url: System.get_env("RUST_VERIFICATION_SERVICE_URL"),
   enabled: System.get_env("ENABLE_RUST_VERIFICATION_SERVICE") == "true"
+
+config :explorer, Explorer.Visualize.Sol2uml,
+  service_url: System.get_env("VISUALIZE_SOL2UML_SERVICE_URL"),
+  enabled: System.get_env("VISUALIZE_SOL2UML_ENABLED") == "true"
+
+config :explorer, Explorer.SmartContract.SigProviderInterface,
+  service_url: System.get_env("SIG_PROVIDER_SERVICE_URL"),
+  enabled: System.get_env("SIG_PROVIDER_ENABLED") == "true"
 
 config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
   table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
