@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Log do
   alias ABI.{Event, FunctionSelector}
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Transaction}
+  alias Explorer.SmartContract.SigProviderInterface
 
   @required_attrs ~w(address_hash data block_hash index transaction_hash)a
   @optional_attrs ~w(first_topic second_topic third_topic fourth_topic type block_number)a
@@ -139,13 +140,13 @@ defmodule Explorer.Chain.Log do
           {:error, :could_not_decode} ->
             case find_candidates(log, transaction) do
               {:error, :contract_not_verified, []} ->
-                {:error, :could_not_decode}
+                decode_event_via_sig_provider(log, transaction)
 
               {:error, :contract_not_verified, candidates} ->
                 {:error, :contract_verified, candidates}
 
               _ ->
-                {:error, :could_not_decode}
+                decode_event_via_sig_provider(log, transaction)
             end
 
           output ->
@@ -199,7 +200,8 @@ defmodule Explorer.Chain.Log do
       end)
       |> Enum.take(1)
 
-    {:error, :contract_not_verified, candidates}
+    {:error, :contract_not_verified,
+     if(candidates == [], do: decode_event_via_sig_provider(log, transaction, true), else: candidates)}
   end
 
   defp find_and_decode(abi, log, transaction) do
@@ -238,6 +240,39 @@ defmodule Explorer.Chain.Log do
       |> Enum.intersperse(", ")
 
     IO.iodata_to_binary([name, "(", text, ")"])
+  end
+
+  defp decode_event_via_sig_provider(log, transaction, only_candidates? \\ false) do
+    with true <- SigProviderInterface.enabled?(),
+         {:ok, result} <-
+           SigProviderInterface.decode_event(
+             [
+               log.first_topic,
+               log.second_topic,
+               log.third_topic,
+               log.fourth_topic
+             ],
+             log.data
+           ),
+         true <- is_list(result),
+         false <- Enum.empty?(result),
+         abi <- [result |> List.first() |> Map.put("type", "event")],
+         {:ok, selector, mapping} <- find_and_decode(abi, log, transaction),
+         identifier <- Base.encode16(selector.method_id, case: :lower),
+         text <- function_call(selector.function, mapping) do
+      if only_candidates? do
+        [{:ok, identifier, text, mapping}]
+      else
+        {:error, :contract_not_verified, [{:ok, identifier, text, mapping}]}
+      end
+    else
+      _ ->
+        if only_candidates? do
+          []
+        else
+          {:error, :could_not_decode}
+        end
+    end
   end
 
   def decode16!(nil), do: nil
