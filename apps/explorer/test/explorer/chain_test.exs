@@ -103,6 +103,11 @@ defmodule Explorer.ChainTest do
       assert is_integer(addresses_with_balance)
       assert addresses_with_balance == 3
     end
+
+    test "returns 0 on empty table" do
+      start_supervised!(AddressesCounter)
+      assert 0 == Chain.address_estimated_count()
+    end
   end
 
   describe "last_db_block_status/0" do

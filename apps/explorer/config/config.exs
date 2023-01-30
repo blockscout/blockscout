@@ -8,7 +8,9 @@ import Config
 # General application configuration
 config :explorer,
   ecto_repos: [Explorer.Repo, Explorer.Repo.Account],
-  token_functions_reader_max_retries: 1
+  token_functions_reader_max_retries: 1,
+  # for not fully indexed blockchains
+  decode_not_a_contract_calls: System.get_env("DECODE_NOT_A_CONTRACT_CALLS") == "true"
 
 config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
