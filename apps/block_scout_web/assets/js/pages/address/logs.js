@@ -3,6 +3,7 @@ import omit from 'lodash.omit'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore, loadPage } from '../../lib/async_listing_load'
 import '../address'
+// @ts-ignore
 import { utils } from 'web3'
 
 export const initialState = {
