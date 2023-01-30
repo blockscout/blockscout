@@ -1,5 +1,5 @@
 defmodule Explorer.Chain.TransactionAction do
-  @moduledoc "Models transaction actions."
+  @moduledoc "Models transaction action."
 
   use Explorer.Schema
 
