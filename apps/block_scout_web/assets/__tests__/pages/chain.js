@@ -99,11 +99,12 @@ describe('RECEIVED_NEW_BLOCK', () => {
     ])
   })
 
-  test('displays only sequential blocks', () => {
+  test('inserts place holders if block received out of order', () => {
     window.localized = {}
     const state = Object.assign({}, initialState, {
       blocks: [
         { blockNumber: 3, chainBlockHtml: 'test 3' },
+        { blockNumber: 2, chainBlockHtml: 'test 2' },
         { blockNumber: 1, chainBlockHtml: 'test 1' },
         { blockNumber: 0, chainBlockHtml: 'test 0' }
       ]
@@ -111,14 +112,16 @@ describe('RECEIVED_NEW_BLOCK', () => {
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
       msg: {
-        chainBlockHtml: 'test 4',
-        blockNumber: 4
+        chainBlockHtml: 'test 6',
+        blockNumber: 6
       }
     }
     const output = reducer(state, action)
 
     expect(output.blocks).toEqual([
-      { blockNumber: 4, chainBlockHtml: 'test 4' },
+      { blockNumber: 6, chainBlockHtml: 'test 6' },
+      { blockNumber: 5, chainBlockHtml: placeHolderBlock(5) },
+      { blockNumber: 4, chainBlockHtml: placeHolderBlock(4) },
       { blockNumber: 3, chainBlockHtml: 'test 3' }
     ])
   })
