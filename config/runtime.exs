@@ -223,10 +223,6 @@ config :explorer,
   restricted_list: System.get_env("RESTRICTED_LIST", nil),
   restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil)
 
-config :explorer, Explorer.Visualize.Sol2uml,
-  service_url: System.get_env("VISUALIZE_SOL2UML_SERVICE_URL"),
-  enabled: System.get_env("VISUALIZE_SOL2UML_ENABLED") == "true"
-
 config :explorer, Explorer.Chain.Events.Listener,
   enabled:
     if(disable_webapp == "true" && disable_indexer == "true",
@@ -357,6 +353,14 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
 config :explorer, Explorer.SmartContract.RustVerifierInterface,
   service_url: System.get_env("RUST_VERIFICATION_SERVICE_URL"),
   enabled: System.get_env("ENABLE_RUST_VERIFICATION_SERVICE") == "true"
+
+config :explorer, Explorer.Visualize.Sol2uml,
+  service_url: System.get_env("VISUALIZE_SOL2UML_SERVICE_URL"),
+  enabled: System.get_env("VISUALIZE_SOL2UML_ENABLED") == "true"
+
+config :explorer, Explorer.SmartContract.SigProviderInterface,
+  service_url: System.get_env("SIG_PROVIDER_SERVICE_URL"),
+  enabled: System.get_env("SIG_PROVIDER_ENABLED") == "true"
 
 config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
   table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),

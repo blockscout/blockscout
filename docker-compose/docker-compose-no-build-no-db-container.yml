@@ -11,6 +11,7 @@ services:
       - ./redis-data:/data
 
   blockscout:
+    platform: linux/x86_64
     depends_on:
       - smart-contract-verifier
       - redis_db
@@ -35,6 +36,7 @@ services:
       - ./logs/:/app/logs/
 
   smart-contract-verifier:
+    platform: linux/x86_64
     image: ghcr.io/blockscout/smart-contract-verifier:${SMART_CONTRACT_VERIFIER_DOCKER_TAG:-latest}
     pull_policy: always
     restart: always
@@ -45,6 +47,7 @@ services:
       - 8043:8043
 
   visualizer:
+    platform: linux/x86_64
     image: ghcr.io/blockscout/visualizer:${VISUALIZER_DOCKER_TAG:-latest}
     pull_policy: always
     restart: always
@@ -54,3 +57,11 @@ services:
     ports:
       - 8050:8050
 
+  sig-provider:
+    platform: linux/x86_64
+    image: ghcr.io/blockscout/sig-provider:${SIG_PROVIDER_DOCKER_TAG:-latest}
+    pull_policy: always
+    restart: always
+    container_name: 'sig-provider'
+    ports:
+      - 8051:8050
