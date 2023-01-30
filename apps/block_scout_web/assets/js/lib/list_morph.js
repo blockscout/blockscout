@@ -27,6 +27,7 @@ import { updateAllAges } from './from_now'
 //   key:        the path to the unique identifier of each element
 //   horizontal: our horizontal animations are handled in CSS, so passing in `true` will not play JS
 //               animations
+// @ts-ignore
 export default function (container, newElements, { key, horizontal } = {}) {
   if (!container) return
   const oldElements = $(container).children().not('.shrink-out').get()
@@ -49,6 +50,7 @@ export default function (container, newElements, { key, horizontal } = {}) {
     if (overlap[i]) {
       return ({
         id: overlap[i].id,
+        // @ts-ignore
         el: el.outerHTML === overlap[i].el && overlap[i].el.outerHTML ? el : morph(el, overlap[i].el)
       })
     } else {
@@ -64,6 +66,7 @@ export default function (container, newElements, { key, horizontal } = {}) {
     if (el.parentElement) return
     if (!canAnimate) return container.insertBefore(el, get(finalList, `[${i - 1}]`))
     if (!get(finalList, `[${i - 1}]`)) return slideDownAppend($(container), el)
+    // @ts-ignore
     slideDownBefore($(get(finalList, `[${i - 1}]`)), el)
   })
 }

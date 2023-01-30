@@ -22,6 +22,7 @@ services:
       - 7432:5432
 
   blockscout:
+    platform: linux/x86_64
     depends_on:
       - db
       - redis_db
