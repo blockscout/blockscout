@@ -21,6 +21,7 @@
 
 ### Chore
 
+- [#6786](https://github.com/blockscout/blockscout/pull/6786) - Refactor `try rescue` statements to keep stacktrace
 - [#6695](https://github.com/blockscout/blockscout/pull/6695) - Process errors and warnings with enables check-js feature in VS code
 
 <details>
