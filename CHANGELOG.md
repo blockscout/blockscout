@@ -12,6 +12,7 @@
 
 ### Fixes
 
+- [#6793](https://github.com/blockscout/blockscout/pull/6793) - Change sig-provider default image tag to main
 - [#6777](https://github.com/blockscout/blockscout/pull/6777) - Fix -1 transaction counter
 - [#6746](https://github.com/blockscout/blockscout/pull/6746) - Fix -1 address counter
 - [#6736](https://github.com/blockscout/blockscout/pull/6736) - Fix `/tokens` in old UI
