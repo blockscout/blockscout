@@ -6,6 +6,7 @@ defmodule Explorer.Chain.Cache.TransactionTest do
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, Transaction.child_id())
     Supervisor.restart_child(Explorer.Supervisor, Transaction.child_id())
+    on_exit(fn -> Supervisor.terminate_child(Explorer.Supervisor, Transaction.child_id()) end)
     :ok
   end
 
@@ -50,5 +51,9 @@ defmodule Explorer.Chain.Cache.TransactionTest do
     updated_value = Transaction.get_count()
 
     assert updated_value == 2
+  end
+
+  test "returns 0 on empty table" do
+    assert 0 == Transaction.estimated_count()
   end
 end

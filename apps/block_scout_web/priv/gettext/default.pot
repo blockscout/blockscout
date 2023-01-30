@@ -66,7 +66,7 @@ msgstr ""
 msgid ") may be added for each contract. Click the Add Library button to add an additional one."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:236
+#: lib/block_scout_web/templates/layout/app.html.eex:171
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
@@ -198,6 +198,14 @@ msgstr ""
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:81
 #, elixir-autogen, elixir-format
 msgid "Back to Watch list (Cancel)"
+msgstr ""
+
+#: lib/block_scout_web/templates/error422/index.html.eex:9
+#: lib/block_scout_web/templates/internal_server_error/index.html.eex:9
+#: lib/block_scout_web/templates/page_not_found/index.html.eex:9
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:13
+#, elixir-autogen, elixir-format
+msgid "Back to home"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/watchlist/show.html.eex:24
@@ -1294,6 +1302,10 @@ msgid "Pending Transactions"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:18
+#, elixir-autogen, elixir-format
+msgid "Potential matches from contract method database:"
+msgstr ""
+
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:32
 #, elixir-autogen, elixir-format
 msgid "Potential matches from our contract method database:"
@@ -3449,16 +3461,6 @@ msgstr ""
 msgid "UML diagram"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:29
-#, elixir-autogen, elixir-format
-msgid "Sign in"
-msgstr ""
-
-#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:11
-#, elixir-autogen, elixir-format
-msgid "Signed in as "
-msgstr ""
-
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:8
 #, elixir-autogen, elixir-format
 msgid "1. If you have just submitted this transaction please wait for at least 30 seconds before refreshing this page."
@@ -3484,14 +3486,6 @@ msgstr ""
 msgid "An unexpected error has occurred. Try reloading the page, or come back soon and try again."
 msgstr ""
 
-#: lib/block_scout_web/templates/error422/index.html.eex:9
-#: lib/block_scout_web/templates/internal_server_error/index.html.eex:9
-#: lib/block_scout_web/templates/page_not_found/index.html.eex:9
-#: lib/block_scout_web/templates/transaction/not_found.html.eex:13
-#, elixir-autogen, elixir-format
-msgid "Back to home"
-msgstr ""
-
 #: lib/block_scout_web/templates/internal_server_error/index.html.eex:7
 #, elixir-autogen, elixir-format
 msgid "Internal server error"
@@ -3500,6 +3494,16 @@ msgstr ""
 #: lib/block_scout_web/templates/error422/index.html.eex:7
 #, elixir-autogen, elixir-format
 msgid "Request cannot be processed"
+msgstr ""
+
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:29
+#, elixir-autogen, elixir-format
+msgid "Sign in"
+msgstr ""
+
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:11
+#, elixir-autogen, elixir-format
+msgid "Signed in as "
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:6

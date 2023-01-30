@@ -64,7 +64,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
           order_by: [
             token.contract_address_hash
           ],
-          lock: "FOR UPDATE"
+          lock: "FOR NO KEY UPDATE"
         )
       end
 
@@ -79,7 +79,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
             token.contract_address_hash,
             instance.token_id
           ],
-          lock: "FOR UPDATE"
+          lock: "FOR NO KEY UPDATE OF t0"
         )
       end
 
