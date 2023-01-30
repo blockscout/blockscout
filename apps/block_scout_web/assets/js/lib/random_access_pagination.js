@@ -73,6 +73,7 @@ export function asyncReducer (state = asyncInitialState, action) {
       if (action.nextPageParams !== null) {
         const pageNumber = parseInt(action.nextPageParams.pageNumber)
         if (typeof action.path !== 'undefined') {
+          // @ts-ignore
           history.replaceState({}, null, URI(action.path).query(humps.decamelizeKeys(action.nextPageParams)))
         }
         delete action.nextPageParams.pageNumber
@@ -149,7 +150,7 @@ export const elements = {
       if (state.itemKey) {
         const container = $el[0]
         const newElements = map(state.items, (item) => $(item)[0])
-        listMorph(container, newElements, { key: state.itemKey })
+        listMorph(container, newElements, { key: state.itemKey, horizontal: null })
         return
       }
 
@@ -343,6 +344,7 @@ function pagesNumbersGenerate (pagesLimit, $container, currentPageNumber, loadin
     resultHTML += renderPaginationElements(pagesLimit - groupedPagesNumber, pagesLimit, currentPageNumber, loading)
   } else {
     resultHTML += renderPaginationElement(1, currentPageNumber === 1, loading)
+    // @ts-ignore
     const step = parseInt(groupedPagesNumber / 2)
     if (currentPageNumber - step - 1 === 2) {
       resultHTML += renderPaginationElement(2, currentPageNumber === 2, loading)
