@@ -18,6 +18,7 @@ function tryUpdateIndexedStatus (el, indexedRatioBlocks = el.dataset.indexedRati
   let indexedText
   if (blocksPercentComplete === '100%') {
     const intTxsPercentComplete = numeral(el.dataset.indexedRatio).format('0%')
+    // @ts-ignore
     indexedText = `${intTxsPercentComplete} ${window.localized['Blocks With Internal Transactions Indexed']}`
   } else {
     indexedText = `${blocksPercentComplete} Blocks Indexed`

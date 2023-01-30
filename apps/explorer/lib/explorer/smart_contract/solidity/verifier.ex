@@ -87,6 +87,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     })
     |> Map.put("contract_libraries", params["external_libraries"])
     |> Map.put("optimization_runs", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
+    |> Map.put("evm_version", Map.get(params, "evm_version", "default"))
     |> RustVerifierInterface.verify_multi_part()
   end
 

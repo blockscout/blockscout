@@ -59,7 +59,10 @@ if ($('[data-page="verified-contracts-list"]').length) {
   const $element = $('[data-async-listing]')
 
   $element.on('click', '[data-next-page-button], [data-prev-page-button]', (event) => {
-    document.getElementById('verified-contracts-list').scrollIntoView()
+    const obj = document.getElementById('verified-contracts-list')
+    if (obj) {
+      obj.scrollIntoView()
+    }
   })
 
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')

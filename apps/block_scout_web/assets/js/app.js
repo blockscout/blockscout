@@ -27,4 +27,5 @@ import './lib/sentry_config'
 import './lib/ad'
 
 import swal from 'sweetalert2'
+// @ts-ignore
 window.Swal = swal

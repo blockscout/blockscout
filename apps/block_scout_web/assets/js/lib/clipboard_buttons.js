@@ -14,7 +14,9 @@ clipboard.on('success', ({ trigger }) => {
     .attr('data-original-title', copyButton.data('token-hash') ? `${copyButton.data('token-address')} copied!` : 'Copied!')
     .tooltip('show')
 
-  copyButton.attr('data-original-title', originalTitle)
+  if (originalTitle) {
+    copyButton.attr('data-original-title', originalTitle)
+  }
 
   setTimeout(() => {
     copyButton.tooltip('dispose')

@@ -15,7 +15,7 @@
       <% end %>
     </div>
     <%= unless Enum.empty?(candidates) do %>
-      <h3><%= gettext "Potential matches from our contract method database:" %></h3>
+      <h3><%= gettext "Potential matches from contract method database:" %></h3>
       <%= gettext "IMPORTANT: This information is a best guess based on similar functions from other verified contracts." %>
       <%= gettext "To have guaranteed accuracy, use the link above to verify the contract's source code." %>
 
