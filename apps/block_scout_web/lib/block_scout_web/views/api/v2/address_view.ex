@@ -51,7 +51,10 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   end
 
   def prepare_address({address, nonce}) do
-    nil |> Helper.address_with_info(address, address.hash) |> Map.put(:tx_count, to_string(nonce))
+    nil
+    |> Helper.address_with_info(address, address.hash)
+    |> Map.put(:tx_count, to_string(nonce))
+    |> Map.put(:coin_balance, if(address.fetched_coin_balance, do: address.fetched_coin_balance.value))
   end
 
   def prepare_address(address, conn \\ nil) do
