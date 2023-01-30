@@ -69,7 +69,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         }
       }
   """
-  @spec run(Keyword.t()) :: {:ok, map} | {:error, :compilation | :name}
+  @spec run(Keyword.t()) :: {:ok, map} | {:error, :compilation | :name} | {:error, :compilation, String.t()}
   def run(params) do
     name = Keyword.fetch!(params, :name)
     compiler_version = Keyword.fetch!(params, :compiler_version)

@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#6744](https://github.com/blockscout/blockscout/pull/6744) - API v2: smart contracts verification
 - [#6763](https://github.com/blockscout/blockscout/pull/6763) - Permanent UI dark mode
 - [#6721](https://github.com/blockscout/blockscout/pull/6721) - Implement fetching internal transactions from callTracer
 - [#6541](https://github.com/blockscout/blockscout/pull/6541) - Integrate sig provider
