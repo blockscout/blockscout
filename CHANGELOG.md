@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#6744](https://github.com/blockscout/blockscout/pull/6744) - API v2: smart contracts verification
 - [#6763](https://github.com/blockscout/blockscout/pull/6763) - Permanent UI dark mode
 - [#6721](https://github.com/blockscout/blockscout/pull/6721) - Implement fetching internal transactions from callTracer
 - [#6541](https://github.com/blockscout/blockscout/pull/6541) - Integrate sig provider
@@ -11,6 +12,7 @@
 
 ### Fixes
 
+- [#6793](https://github.com/blockscout/blockscout/pull/6793) - Change sig-provider default image tag to main
 - [#6777](https://github.com/blockscout/blockscout/pull/6777) - Fix -1 transaction counter
 - [#6746](https://github.com/blockscout/blockscout/pull/6746) - Fix -1 address counter
 - [#6736](https://github.com/blockscout/blockscout/pull/6736) - Fix `/tokens` in old UI
@@ -21,6 +23,7 @@
 
 ### Chore
 
+- [#6786](https://github.com/blockscout/blockscout/pull/6786) - Refactor `try rescue` statements to keep stacktrace
 - [#6695](https://github.com/blockscout/blockscout/pull/6695) - Process errors and warnings with enables check-js feature in VS code
 
 <details>

@@ -19,6 +19,16 @@ defmodule Explorer.SmartContract.CompilerVersion do
     end
   end
 
+  def fetch_version_list(compiler) do
+    case fetch_versions(compiler) do
+      {:ok, compiler_versions} ->
+        compiler_versions
+
+      {:error, _} ->
+        []
+    end
+  end
+
   defp fetch_solc_versions do
     if RustVerifierInterface.enabled?() do
       RustVerifierInterface.get_versions_list()
@@ -156,7 +166,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
     case compiler do
       :solc ->
         if compiler_version == "latest" do
-          compiler_versions = get_compiler_versions(:solc)
+          compiler_versions = fetch_version_list(:solc)
 
           if Enum.count(compiler_versions) > 1 do
             latest_stable_version =
@@ -180,7 +190,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
 
       :vyper ->
         if compiler_version == "latest" do
-          compiler_versions = get_compiler_versions(:vyper)
+          compiler_versions = fetch_version_list(:vyper)
 
           if Enum.count(compiler_versions) > 1 do
             latest_stable_version =
@@ -194,16 +204,6 @@ defmodule Explorer.SmartContract.CompilerVersion do
         else
           compiler_version
         end
-    end
-  end
-
-  defp get_compiler_versions(compiler) do
-    case fetch_versions(compiler) do
-      {:ok, compiler_versions} ->
-        compiler_versions
-
-      {:error, _} ->
-        []
     end
   end
 end
