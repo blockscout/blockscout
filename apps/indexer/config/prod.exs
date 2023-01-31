@@ -45,13 +45,4 @@ config :logger, :block_import_timings,
   metadata_filter: [fetcher: :block_import_timings],
   rotate: %{max_bytes: 52_428_800, keep: 19}
 
-config :libcluster,
-  topologies: [
-    blockscout: [
-      strategy: Cluster.Strategy.Kubernetes.DNS,
-      config: [
-        service: System.get_env("EPMD_SERVICE_NAME"),
-        application_name: "blockscout"
-      ]
-    ]
-  ]
+config :logger, :indexer, backends: [LoggerJSON]

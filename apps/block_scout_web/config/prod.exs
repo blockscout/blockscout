@@ -35,15 +35,4 @@ config :logger, :api,
 config :explorer, Explorer.ExchangeRates,
   enabled: if(System.get_env("DISABLE_EXCHANGE_RATES", "false") == "false", do: false, else: true)
 
-config :libcluster,
-  topologies: [
-    blockscout: [
-      strategy: Cluster.Strategy.Kubernetes.DNS,
-      config: [
-        service: System.get_env("EPMD_SERVICE_NAME"),
-        application_name: "blockscout"
-      ]
-    ]
-  ]
-
 config :block_scout_web, :captcha_helper, BlockScoutWeb.CaptchaHelper

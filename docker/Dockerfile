@@ -41,6 +41,7 @@ ADD apps/block_scout_web/mix.exs ./apps/block_scout_web/
 ADD apps/explorer/mix.exs ./apps/explorer/
 ADD apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
 ADD apps/indexer/mix.exs ./apps/indexer/
+ADD apps/event_stream/mix.exs ./apps/event_stream/
 ADD config/ ./config/
 
 RUN mix do deps.get, local.rebar --force, deps.compile

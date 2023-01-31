@@ -2,6 +2,17 @@
 # and its dependencies with the aid of the Config module.
 import Config
 
+config :event_stream,
+  generators: [context_app: false]
+
+# Configures the endpoint
+config :event_stream, EventStream.Endpoint,
+  url: [host: "localhost"],
+  secret_key_base: "aLrSfc9OKq6D0clgO1EmLIC44Qgyc7XFhJn6NO4jY6keg3rqdH5c9uMdmt+DB6GA",
+  render_errors: [view: EventStream.ErrorView, accepts: ~w(html json), layout: false],
+  pubsub_server: EventStream.PubSub,
+  live_view: [signing_salt: "q4YJwC0h"]
+
 # By default, the umbrella project as well as each child
 # application will require this configuration file, ensuring
 # they all use the same configuration. While one could
