@@ -26,7 +26,7 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
         Logger.error(fn ->
           [
             "Error while verifying smart-contract address: #{address_hash}, params: #{inspect(params, limit: :infinity, printable_limit: :infinity)}: ",
-            Exception.format(:error, exception)
+            Exception.format(:error, exception, __STACKTRACE__)
           ]
         end)
     end
