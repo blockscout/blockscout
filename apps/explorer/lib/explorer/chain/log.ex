@@ -218,8 +218,14 @@ defmodule Explorer.Chain.Log do
       {:ok, selector, mapping}
     end
   rescue
-    _ ->
-      Logger.warn(fn -> ["Could not decode input data for log from transaction: ", Hash.to_iodata(transaction.hash)] end)
+    e ->
+      Logger.warn(fn ->
+        [
+          "Could not decode input data for log from transaction: ",
+          Hash.to_iodata(transaction.hash),
+          Exception.format(:error, e, __STACKTRACE__)
+        ]
+      end)
 
       {:error, :could_not_decode}
   end
