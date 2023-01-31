@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
 
   alias Explorer.Chain.{Address, Token, TokenTransfer}
 
