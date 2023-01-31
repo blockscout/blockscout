@@ -3535,8 +3535,3 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Transaction Action"
 msgstr ""
-
-#: lib/block_scout_web/templates/transaction/_actions_uniswap.html.eex:1
-#, elixir-autogen, elixir-format
-msgid "<span class=\"text-muted\">%{action}</span> %{amount0} %{symbol0} <span class=\"text-muted\">%{conjunction}</span> %{amount1} %{symbol1} <span class=\"text-muted\">%{tail}</span>"
-msgstr ""
