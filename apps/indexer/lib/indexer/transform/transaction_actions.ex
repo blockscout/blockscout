@@ -99,38 +99,42 @@ defmodule Indexer.Transform.TransactionActions do
   Returns a list of transaction actions given a list of logs.
   """
   def parse(logs, protocols_to_rewrite \\ []) do
-    actions = []
+    if Application.get_env(:indexer, Indexer.Fetcher.TransactionAction.Supervisor)[:enabled] do
+      actions = []
 
-    chain_id = NetVersion.get_version()
+      chain_id = NetVersion.get_version()
 
-    logs
-    |> logs_group_by_txs()
-    |> clear_actions(protocols_to_rewrite)
+      logs
+      |> logs_group_by_txs()
+      |> clear_actions(protocols_to_rewrite)
 
-    # create tokens cache if not exists
-    if :ets.whereis(:tx_actions_tokens_data_cache) == :undefined do
-      :ets.new(:tx_actions_tokens_data_cache, [
-        :set,
-        :named_table,
-        :public,
-        read_concurrency: true,
-        write_concurrency: true
-      ])
-    end
-
-    # handle uniswap v3
-    tx_actions =
-      if Enum.member?([@mainnet, @goerli, @optimism, @polygon], chain_id) and
-           (Enum.empty?(protocols_to_rewrite) or Enum.member?(protocols_to_rewrite, "uniswap_v3")) do
-        logs
-        |> uniswap_filter_logs()
-        |> logs_group_by_txs()
-        |> uniswap(actions, chain_id)
-      else
-        actions
+      # create tokens cache if not exists
+      if :ets.whereis(:tx_actions_tokens_data_cache) == :undefined do
+        :ets.new(:tx_actions_tokens_data_cache, [
+          :set,
+          :named_table,
+          :public,
+          read_concurrency: true,
+          write_concurrency: true
+        ])
       end
 
-    %{transaction_actions: tx_actions}
+      # handle uniswap v3
+      tx_actions =
+        if Enum.member?([@mainnet, @goerli, @optimism, @polygon], chain_id) and
+             (Enum.empty?(protocols_to_rewrite) or Enum.member?(protocols_to_rewrite, "uniswap_v3")) do
+          logs
+          |> uniswap_filter_logs()
+          |> logs_group_by_txs()
+          |> uniswap(actions, chain_id)
+        else
+          actions
+        end
+
+      %{transaction_actions: tx_actions}
+    else
+      %{transaction_actions: []}
+    end
   end
 
   defp uniswap(logs_grouped, actions, chain_id) do

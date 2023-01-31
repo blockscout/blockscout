@@ -432,6 +432,9 @@ config :indexer,
   trace_last_block: System.get_env("TRACE_LAST_BLOCK") || "",
   fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block")
 
+config :indexer, Indexer.Fetcher.TransactionAction.Supervisor,
+  enabled: System.get_env("INDEXER_TX_ACTIONS_ENABLE", "false") == "true"
+
 config :indexer, Indexer.Fetcher.TransactionAction,
   reindex_first_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_FIRST_BLOCK"),
   reindex_last_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_LAST_BLOCK"),
