@@ -123,7 +123,7 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
         Logger.error(fn ->
           [
             "failed to update replaced transactions for transactions: ",
-            inspect(reason)
+            Exception.format(:error, reason, __STACKTRACE__)
           ]
         end)
 
