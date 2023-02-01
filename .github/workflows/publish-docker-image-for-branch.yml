@@ -8,7 +8,7 @@ name: Publish Docker image for specific chain branches
 on:
   push:
     branches:
-      - vb-production-withdrawals
+      - vb-production-withdrawals-stg
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
