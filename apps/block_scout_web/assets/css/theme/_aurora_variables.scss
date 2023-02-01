@@ -1,0 +1,12 @@
+.navbar-logo {
+  height: 48px;
+}
+
+.dark-theme-applied {
+  .navbar-brand {
+    .navbar-logo {
+      content: url(../static/images/aurora_logo_primary_light.svg);
+      filter: none !important;
+    }
+  }
+}
