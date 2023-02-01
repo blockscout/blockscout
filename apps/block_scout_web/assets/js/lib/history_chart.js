@@ -167,16 +167,16 @@ function setDataToLocalStorage (key, data) {
 
 function getPriceData (marketHistoryData) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('priceData')
+    return getDataFromLocalStorage('priceDataZhejiangTestnet')
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
-  setDataToLocalStorage('priceData', data)
+  setDataToLocalStorage('priceDataZhejiangTestnet', data)
   return data
 }
 
 function getTxHistoryData (transactionHistory) {
   if (transactionHistory.length === 0) {
-    return getDataFromLocalStorage('txHistoryData')
+    return getDataFromLocalStorage('txHistoryDataZhejiangTestnet')
   }
   const data = transactionHistory.map(dataPoint => ({ x: dataPoint.date, y: dataPoint.number_of_transactions }))
 
@@ -186,13 +186,13 @@ function getTxHistoryData (transactionHistory) {
   const curDay = prevDay.plus({ days: 1 }).toISODate()
   data.unshift({ x: curDay, y: null })
 
-  setDataToLocalStorage('txHistoryData', data)
+  setDataToLocalStorage('txHistoryDataZhejiangTestnet', data)
   return data
 }
 
 function getMarketCapData (marketHistoryData, availableSupply) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('marketCapData')
+    return getDataFromLocalStorage('marketCapDataZhejiangTestnet')
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => {
     const supply = (availableSupply !== null && typeof availableSupply === 'object')
@@ -200,7 +200,7 @@ function getMarketCapData (marketHistoryData, availableSupply) {
       : availableSupply
     return { x: date, y: closingPrice * supply }
   })
-  setDataToLocalStorage('marketCapData', data)
+  setDataToLocalStorage('marketCapDataZhejiangTestnet', data)
   return data
 }
 
@@ -288,7 +288,7 @@ class MarketHistoryChart {
     // @ts-ignore
     config.data.datasets = [this.price, this.marketCap, this.numTransactions]
 
-    const isChartLoadedKey = 'isChartLoaded'
+    const isChartLoadedKey = 'isChartLoadedPOACore'
     const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
     if (isChartLoaded) {
       config.options.animation = false
