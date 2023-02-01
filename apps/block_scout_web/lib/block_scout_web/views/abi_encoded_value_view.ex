@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   rescue
     exception ->
       Logger.warn(fn ->
-        ["Error determining value html for #{inspect(type)}: ", Exception.format(:error, exception)]
+        ["Error determining value html for #{inspect(type)}: ", Exception.format(:error, exception, __STACKTRACE__)]
       end)
 
       :error
@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   rescue
     exception ->
       Logger.warn(fn ->
-        ["Error determining value json for #{inspect(type)}: ", Exception.format(:error, exception)]
+        ["Error determining value json for #{inspect(type)}: ", Exception.format(:error, exception, __STACKTRACE__)]
       end)
 
       nil
@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   rescue
     exception ->
       Logger.warn(fn ->
-        ["Error determining copy text for #{inspect(type)}: ", Exception.format(:error, exception)]
+        ["Error determining copy text for #{inspect(type)}: ", Exception.format(:error, exception, __STACKTRACE__)]
       end)
 
       :error
@@ -207,7 +207,8 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     hex(value)
   end
 
-  defp base_value_json(_, value), do: value
+  defp base_value_json(_, value), do: to_string(value)
 
+  defp hex("0x" <> value), do: "0x" <> value
   defp hex(value), do: "0x" <> Base.encode16(value, case: :lower)
 end

@@ -11,10 +11,12 @@ services:
       - ./redis-data:/data
 
   blockscout:
+    platform: linux/x86_64
     depends_on:
       - smart-contract-verifier
       - redis_db
     image: blockscout/blockscout:${DOCKER_TAG:-latest}
+    pull_policy: always
     restart: always
     container_name: 'blockscout'
     command: bash -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
@@ -34,7 +36,9 @@ services:
       - ./logs/:/app/logs/
 
   smart-contract-verifier:
+    platform: linux/x86_64
     image: ghcr.io/blockscout/smart-contract-verifier:${SMART_CONTRACT_VERIFIER_DOCKER_TAG:-latest}
+    pull_policy: always
     restart: always
     container_name: 'smart-contract-verifier'
     env_file:
@@ -43,7 +47,9 @@ services:
       - 8043:8043
 
   visualizer:
+    platform: linux/x86_64
     image: ghcr.io/blockscout/visualizer:${VISUALIZER_DOCKER_TAG:-latest}
+    pull_policy: always
     restart: always
     container_name: 'visualizer'
     env_file:
@@ -51,3 +57,11 @@ services:
     ports:
       - 8050:8050
 
+  sig-provider:
+    platform: linux/x86_64
+    image: ghcr.io/blockscout/sig-provider:${SIG_PROVIDER_DOCKER_TAG:-main}
+    pull_policy: always
+    restart: always
+    container_name: 'sig-provider'
+    ports:
+      - 8051:8050

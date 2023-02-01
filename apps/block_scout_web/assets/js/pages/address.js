@@ -56,12 +56,14 @@ export function reducer (state = initialState, action) {
     case 'RECEIVED_NEW_BLOCK': {
       if (state.channelDisconnected) return state
 
+      // @ts-ignore
       const validationCount = state.validationCount + 1
       return Object.assign({}, state, { validationCount })
     }
     case 'RECEIVED_NEW_TRANSACTION': {
       if (state.channelDisconnected) return state
 
+      // @ts-ignore
       const transactionCount = (action.msg.fromAddressHash === state.addressHash) ? state.transactionCount + 1 : state.transactionCount
 
       return Object.assign({}, state, { transactionCount })
@@ -69,6 +71,7 @@ export function reducer (state = initialState, action) {
     case 'RECEIVED_NEW_TOKEN_TRANSFER': {
       if (state.channelDisconnected) return state
 
+      // @ts-ignore
       const tokenTransferCount = (action.msg.fromAddressHash === state.addressHash) ? state.tokenTransferCount + 1 : state.tokenTransferCount
 
       return Object.assign({}, state, { tokenTransferCount })
@@ -107,6 +110,7 @@ function loadTokenBalance (blockNumber) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
+      // @ts-ignore
       if (state.channelDisconnected && !window.loading) $el.show()
     }
   },
@@ -252,11 +256,13 @@ if ($addressDetailsPage.length) {
   }
 
   window.onbeforeunload = () => {
+    // @ts-ignore
     window.loading = true
   }
 
   const store = createStore(reducer)
   const addressHash = $addressDetailsPage[0].dataset.pageAddressHash
+  // @ts-ignore
   const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
   store.dispatch({
     type: 'PAGE_LOAD',

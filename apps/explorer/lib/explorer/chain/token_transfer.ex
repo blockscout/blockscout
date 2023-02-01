@@ -315,6 +315,13 @@ defmodule Explorer.Chain.TokenTransfer do
     )
   end
 
+  def token_transfers_by_address_hash_and_token_address_hash(address_hash, token_address_hash) do
+    TokenTransfer
+    |> where([tt], tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
+    |> where([tt], tt.token_contract_address_hash == ^token_address_hash)
+    |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+  end
+
   def token_transfers_by_address_hash(direction, address_hash, token_types) do
     TokenTransfer
     |> filter_by_direction(direction, address_hash)

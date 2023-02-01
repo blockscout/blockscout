@@ -10,15 +10,15 @@ on:
     types: [published]
 
 env:
-  OTP_VERSION: '24.3.4.1'
-  ELIXIR_VERSION: '1.13.4'
+  OTP_VERSION: '25.2.1'
+  ELIXIR_VERSION: '1.14.3'
 
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 4.1.8
+      RELEASE_VERSION: 5.0.0
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
