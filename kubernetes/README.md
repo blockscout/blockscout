@@ -4,7 +4,7 @@
 - Kubernetes Cluster
 - kubectl commandline
 
-Note, i use longhorn block storage for persistant volume and nginx ingress controller. Kubernetes engine which i use is RKE (Rancher Kubernetes Engine). If you use different block storage and ingress maybe you need to change some configuration.
+Note, i use longhorn block storage for persistant volume and nginx ingress controller. Kubernetes engine which i use is RKE (Rancher Kubernetes Engine). If you use different block storage and ingress maybe you need to change some configuration. If you doesn't have Ingress, you can use different kubernetes resource like loadbalancer or nodeport, just comment it on ingress section.
 
 ## deploy to kubernetes cluster
 
