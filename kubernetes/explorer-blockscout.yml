@@ -1,0 +1,300 @@
+# redis-explorer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-explorer-service
+spec:
+  selector:
+    app: redis-explorer
+  ports:
+    - name: redis-explorer
+      protocol: TCP
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-explorer
+spec:
+  selector:
+    matchLabels:
+      app: redis-explorer
+  serviceName: "redis-explorer"
+  replicas: 1
+  minReadySeconds: 10
+  template:
+    metadata:
+      labels:
+        app: redis-explorer
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: redis-explorer
+          image: redis:alpine
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: redis-explorer-volume
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-explorer-volume
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 2Gi
+
+# postgresql database
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-explorer-service
+spec:
+  selector:
+    app: postgresql-explorer
+  ports:
+    - name: postgresql-explorer
+      protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql-explorer
+spec:
+  selector:
+    matchLabels:
+      app: postgresql-explorer
+  serviceName: "postgresql-explorer"
+  replicas: 1
+  minReadySeconds: 10
+  template:
+    metadata:
+      labels:
+        app: postgresql-explorer
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: postgresql-explorer
+          image: postgres:14
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgresql-explorer-volume
+              mountPath: /data
+          env:
+            - name: POSTGRES_PASSWORD
+              value: ''
+            - name: POSTGRES_USER
+              value: 'postgres'
+            - name: POSTGRES_HOST_AUTH_METHOD
+              value: 'trust'
+
+  volumeClaimTemplates:
+    - metadata:
+        name: postgresql-explorer-volume
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 2Gi
+---
+# this is configuration for nginx ingress, if you use another ingress controller maybe you need to configure this
+# ingress is optional, if you need to use loadbalancer or nodeport comment this.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-explorer-blockscout-test-blockchain
+spec:
+  tls:
+    - hosts:
+        - explorer-blockscout-test.blockchain.khayangan.id
+      secretName: wildcard-blockchain-khayangan
+  rules:
+    - host: explorer-blockscout-test.blockchain.khayangan.id
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: blockscout-explorer-service
+                port:
+                  number: 4000
+  ingressClassName: nginx
+# blockscout explorer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blockscout-explorer-service
+spec:
+  type: NodePort
+  selector:
+    app: blockscout-explorer
+  ports:
+    - name: blockscout-explorer
+      protocol: TCP
+      port: 4000
+      targetPort: 4000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+
+  name: blockscout-explorer-deployment
+  labels:
+  
+    app: blockscout-explorer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+    
+      app: blockscout-explorer
+  template:
+    metadata:
+      name: blockscout-explorer
+      labels:
+        app: blockscout-explorer
+    spec:
+      containers:
+        - name: blockscout-explorer
+          image: blockscout/blockscout:latest
+          envFrom:
+          - configMapRef:
+              name: blockscout-explorer-env
+          ports:
+            - containerPort: 4000
+          command: ["bash", "-c","/app/bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && /app/bin/blockscout start"]
+# smart-contract-verifier
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blockscout-smart-contract-verifier-service
+spec:
+  selector:
+    app: blockscout-smart-contract-verifier
+  ports:
+    - name: blockscout-smart-contract-verifier
+      protocol: TCP
+      port: 8043
+      targetPort: 8043
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+
+  name: blockscout-smart-contract-verifier-deployment
+  labels:
+  
+    app: blockscout-smart-contract-verifier
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blockscout-smart-contract-verifier
+  template:
+    metadata:
+      name: blockscout-smart-contract-verifier
+      labels:
+        app: blockscout-smart-contract-verifier
+    spec:
+      containers:
+      
+        - name: blockscout-smart-contract-verifier
+          image: ghcr.io/blockscout/smart-contract-verifier:latest
+          ports:
+            - containerPort: 8043
+          # read env from file
+          envFrom:
+          - configMapRef:
+              name: smart-contract-verifier-env
+
+# visualizer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blockscout-smart-visualizer-service
+spec:
+  selector:
+    app: blockscout-smart-visualizer
+  ports:
+    - name: blockscout-smart-visualizer
+      protocol: TCP
+      port: 8050
+      targetPort: 8050
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blockscout-smart-visualizer-deployment
+  labels:
+    app: blockscout-smart-visualizer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blockscout-smart-visualizer
+  template:
+    metadata:
+      name: blockscout-smart-visualizer
+      labels:
+        app: blockscout-smart-visualizer
+    spec:
+      containers:
+        - name: blockscout-smart-visualizer
+          image: ghcr.io/blockscout/visualizer:latest
+          ports:
+            - containerPort: 8050
+          envFrom:
+          - configMapRef:
+              name: common-visualizer-env
+# sig provider
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blockscout-sig-provider-service
+spec:
+  selector:
+    app: blockscout-sig-provider
+  ports:
+    - name: blockscout-sig-provider
+      protocol: TCP
+      port: 8051
+      targetPort: 8051
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blockscout-sig-provider-deployment
+  labels:
+    app: blockscout-sig-provider
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blockscout-sig-provider
+  template:
+    metadata:
+      name: blockscout-sig-provider
+      labels:
+        app: blockscout-sig-provider
+    spec:
+      containers:
+        - name: blockscout-sig-provider
+          image: ghcr.io/blockscout/sig-provider:main
+          ports:
+            - containerPort: 8051
