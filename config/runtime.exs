@@ -505,6 +505,13 @@ config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
 
 config :indexer, Indexer.Fetcher.Withdrawal, first_block: System.get_env("WITHDRAWALS_FIRST_BLOCK")
 
+config :indexer,
+  optimism_rpc_l1: System.get_env("INDEXER_OPTIMISM_RPC_L1")
+
+config :indexer, Indexer.Fetcher.OptimismOutputRoot,
+  start_block_l1: System.get_env("INDEXER_OPTIMISM_OUTPUT_ROOTS_START_BLOCK_L1"),
+  output_oracle: System.get_env("INDEXER_OPTIMISM_OUTPUT_ORACLE_L1")
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
