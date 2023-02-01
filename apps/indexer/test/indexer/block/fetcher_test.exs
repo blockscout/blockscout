@@ -389,9 +389,6 @@ defmodule Indexer.Block.FetcherTest do
                  }
                ]}
             end)
-            |> expect(:json_rpc, fn %{id: _id, jsonrpc: "2.0", method: "net_version", params: []}, _options ->
-              {:ok, "1"}
-            end)
             |> expect(:json_rpc, fn [%{id: id, method: "trace_block", params: [^block_quantity]}], _options ->
               {:ok, [%{id: id, result: []}]}
             end)
