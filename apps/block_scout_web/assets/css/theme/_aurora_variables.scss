@@ -1,12 +1,64 @@
+$dashboard-banner-network-plain-container-background-color: #A044FF;
+
 .navbar-logo {
   height: 48px;
 }
 
-.dark-theme-applied {
+.dashboard-banner-network-stats-item::before {
+  background-color: #5DEB5A !important;
+}
+
+.tile.tile-type-block {
+  border-left-color: #362693;
+}
+
+body {
+  a {
+    color: #362693;
+  }
+
+  .tile {
+    .tile-body {
+      a {
+        color: #362693;
+      }
+    }
+
+    span[data-address-hash] {
+      color: #362693;
+    }
+  }
+}
+
+body.dark-theme-applied {
   .navbar-brand {
     .navbar-logo {
       content: url(../static/images/aurora_logo_primary_light.svg);
       filter: none !important;
     }
+  }
+
+  .layout-container main {
+    background-color: #101820;
+  }
+
+  a {
+    color: #A044FF;
+  }
+
+  .tile .tile-body a,
+  .tile a:hover,
+  .tile span[data-address-hash],
+  .tile a[data-test=token_link] {
+    color: #A044FF;
+  }
+
+  .btn-line {
+    border-color: #A044FF;
+    color: #A044FF;
+  }
+
+  .tile.tile-type-block {
+    border-left-color: #A044FF;
   }
 }
