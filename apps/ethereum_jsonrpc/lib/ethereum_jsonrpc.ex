@@ -294,7 +294,7 @@ defmodule EthereumJSONRPC do
   """
   @spec fetch_block_number_by_tag(tag(), json_rpc_named_arguments) ::
           {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | :not_found | term()}
-  def fetch_block_number_by_tag(tag, json_rpc_named_arguments) when tag in ~w(earliest latest pending) do
+  def fetch_block_number_by_tag(tag, json_rpc_named_arguments) when tag in ~w(earliest latest pending safe) do
     %{id: 0, tag: tag}
     |> Block.ByTag.request()
     |> json_rpc(json_rpc_named_arguments)
