@@ -16,6 +16,16 @@ spec:
       port:
         name: http
   rules:
+    - host: {{ include "quai-blockscout.envPrefix" . -}}quaiscan.io
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: prime-{{ $name }}
+              port:
+                name: http
 {{- range $chain := .Values.quaiBlockscout.chains }}
 {{ include "quai-blockscout.ingress" $ | replace "prime" $chain.name | indent 4 }}
 {{- end }}

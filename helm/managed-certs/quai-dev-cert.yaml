@@ -7,16 +7,16 @@ metadata:
 spec:
   domains:
   - garden.quaiscan.io
-  - garden.prime.quaiscan.io
-  - garden.cyprus.quaiscan.io
-  - garden.paxos.quaiscan.io
-  - garden.hydra.quaiscan.io
-  - garden.cyprus1.quaiscan.io
-  - garden.cyprus2.quaiscan.io
-  - garden.cyprus3.quaiscan.io
-  - garden.paxos1.quaiscan.io
-  - garden.paxos2.quaiscan.io
-  - garden.paxos3.quaiscan.io
-  - garden.hydra1.quaiscan.io
-  - garden.hydra2.quaiscan.io
-  - garden.hydra3.quaiscan.io
+  - prime.garden.quaiscan.io
+  - cyprus.garden.quaiscan.io
+  - paxos.garden.quaiscan.io
+  - hydra.garden.quaiscan.io
+  - cyprus1.garden.quaiscan.io
+  - cyprus2.garden.quaiscan.io
+  - cyprus3.garden.quaiscan.io
+  - paxos1.garden.quaiscan.io
+  - paxos2.garden.quaiscan.io
+  - paxos3.garden.quaiscan.io
+  - hydra1.garden.quaiscan.io
+  - hydra2.garden.quaiscan.io
+  - hydra3.garden.quaiscan.io

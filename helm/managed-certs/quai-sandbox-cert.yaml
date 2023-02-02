@@ -7,16 +7,16 @@ metadata:
 spec:
   domains:
   - colosseum.quaiscan.io
-  - colosseum.prime.quaiscan.io
-  - colosseum.cyprus.quaiscan.io
-  - colosseum.paxos.quaiscan.io
-  - colosseum.hydra.quaiscan.io
-  - colosseum.cyprus1.quaiscan.io
-  - colosseum.cyprus2.quaiscan.io
-  - colosseum.cyprus3.quaiscan.io
-  - colosseum.paxos1.quaiscan.io
-  - colosseum.paxos2.quaiscan.io
-  - colosseum.paxos3.quaiscan.io
-  - colosseum.hydra1.quaiscan.io
-  - colosseum.hydra2.quaiscan.io
-  - colosseum.hydra3.quaiscan.io
+  - prime.colosseum.quaiscan.io
+  - cyprus.colosseum.quaiscan.io
+  - paxos.colosseum.quaiscan.io
+  - hydra.colosseum.quaiscan.io
+  - cyprus1.colosseum.quaiscan.io
+  - cyprus2.colosseum.quaiscan.io
+  - cyprus3.colosseum.quaiscan.io
+  - paxos1.colosseum.quaiscan.io
+  - paxos2.colosseum.quaiscan.io
+  - paxos3.colosseum.quaiscan.io
+  - hydra1.colosseum.quaiscan.io
+  - hydra2.colosseum.quaiscan.io
+  - hydra3.colosseum.quaiscan.io
