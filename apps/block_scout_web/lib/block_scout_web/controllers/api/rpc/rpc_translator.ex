@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
     with :valid <- valid_api_request_path(conn),
          {:ok, {controller, write_actions}} <- translate_module(translations, module),
          {:ok, action} <- translate_action(action),
-         true <- action_accessed?(action, write_actions),
+         true <- action_permitted?(action, write_actions),
          :ok <- AccessHelpers.check_rate_limit(conn),
          {:ok, conn} <- call_controller(conn, controller, action) do
       APILogger.log(conn)
@@ -115,13 +115,13 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
       {:error, :no_action}
   end
 
-  defp action_accessed?(_action, _write_actions) do
+  defp action_permitted?(action, write_actions) do
     conf = Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)
 
-    if conf[:writing_enabled] do
-      true
+    if action in write_actions do
+      conf[:writing_enabled] || {:error, :write_not_permitted}
     else
-      {:error, :no_action}
+      conf[:reading_enabled] || {:error, :read_not_permitted}
     end
   end
 
