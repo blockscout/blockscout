@@ -1,5 +1,5 @@
 {{- define "quai-blockscout.ingress" }}
-- host: {{ include "quai-blockscout.envPrefix" . -}}prime.quaiscan.io
+- host: prime.{{ include "quai-blockscout.envPrefix" . -}}quaiscan.io
   http:
     paths:
     - path: /
