@@ -9,10 +9,13 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
   require Logger
 
   import Ecto.Query
-  import EthereumJSONRPC, only: [request: 1, json_rpc: 2]
+  import EthereumJSONRPC, only: [request: 1, json_rpc: 2, fetch_block_number_by_tag: 2, integer_to_quantity: 1, quantity_to_integer: 1]
 
   alias Explorer.Chain.OptimismOutputRoot
   alias Explorer.Repo
+
+  @avg_block_time_range_size 100
+  @eth_get_logs_range_size 1000
 
   # 32-byte signature of the event OutputProposed(bytes32 indexed outputRoot, uint256 indexed l2OutputIndex, uint256 indexed l2BlockNumber, uint256 l1Timestamp)
   @output_proposed_event "0xa7aaf2512769da4e444e3de247be2564225c2e7a8f74cfe528e46e17d24868e2"
@@ -50,13 +53,21 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
          json_rpc_named_arguments <- json_rpc_named_arguments(optimism_rpc_l1),
          {:ok, last_l1_tx} <- get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments),
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_tx_hash) && is_nil(last_l1_tx)} do
-      # INSERT INTO op_output_roots (l2_output_index, l2_block_number, l1_tx_hash, l1_timestamp, l1_block_number, output_root, inserted_at, updated_at) VALUES (1, 1, decode('d6c0399c881c98d4d5fa931bb727d08ebfb86cb37ce380071fa03e59731dffbf', 'hex'), NOW(), 8299683, decode('013d7d16d7ad4fefb61bd95b765c8ceb', 'hex'), NOW(), NOW())
+         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_tx_hash) && is_nil(last_l1_tx)},
+         {:ok, last_safe_block} <- fetch_block_number_by_tag("safe", json_rpc_named_arguments) do
+      # INSERT INTO op_output_roots (l2_output_index, l2_block_number, l1_tx_hash, l1_timestamp, l1_block_number, output_root, inserted_at, updated_at) VALUES (1, 1, decode('d6c0399c881c98d4d5fa931bb727d08ebfb86cb37ce380071fa03e59731dffbe', 'hex'), NOW(), 8299683, decode('013d7d16d7ad4fefb61bd95b765c8ceb', 'hex'), NOW(), NOW())
       # {:ok, last_l1_tx_hash} = Explorer.Chain.string_to_transaction_hash("0xd6c0399c881c98d4d5fa931bb727d08ebfb86cb37ce380071fa03e59731dffbe")
       # tx = get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments)
       # Logger.warn("tx = #{inspect(tx)}")
 
-      {:ok, %{output_oracle: env[:output_oracle]}, {:continue, json_rpc_named_arguments}}
+      first_block = max(last_safe_block - @avg_block_time_range_size, 1)
+      first_block_timestamp = get_block_timestamp_by_number(first_block, json_rpc_named_arguments)
+      last_safe_block_timestamp = get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments)
+      avg_block_time = ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000)
+
+      start_block = max(start_block_l1, last_l1_block_number)
+
+      {:ok, %{output_oracle: env[:output_oracle], avg_block_time: avg_block_time, start_block: start_block, end_block: last_safe_block}, {:continue, json_rpc_named_arguments}}
     else
       {:start_block_l1_undefined, true} ->
         # the process shoudln't start if the start block is not defined
@@ -75,7 +86,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         :ignore
 
       {:error, error_data} ->
-        Logger.error("Cannot get last L1 transaction from RPC by its hash due to RPC error: #{inspect(error_data)}")
+        Logger.error("Cannot get last L1 transaction from RPC by its hash or last safe block due to RPC error: #{inspect(error_data)}")
         :ignore
 
       {:l1_tx_not_found, true} ->
@@ -92,8 +103,40 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
   end
 
   @impl GenServer
-  def handle_continue(_json_rpc_named_arguments, state) do
-    {:noreply, state}
+  def handle_continue(json_rpc_named_arguments, %{output_oracle: output_oracle, avg_block_time: avg_block_time, start_block: start_block, end_block: end_block} = state) do
+    time_before = Timex.now()
+
+    chunks_number = ceil((end_block - start_block + 1) / @eth_get_logs_range_size)
+    chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
+    last_written_block =
+      chunk_range
+      |> Enum.reduce_while(start_block - 1, fn current_chank, _ ->
+        chunk_start = start_block + @eth_get_logs_range_size * current_chank
+        chunk_end = min(chunk_start + @eth_get_logs_range_size - 1, end_block)
+
+        if chunk_end >= chunk_start do
+          {:ok, results} = get_logs(chunk_start, chunk_end, output_oracle, @output_proposed_event, json_rpc_named_arguments)
+          # todo: write to db...
+        end
+
+        if !is_nil(reorg_block) && reorg_block > 0 do
+          Repo.delete_all(from(r in OptimismOutputRoot, where: r.l1_block_number >= ^reorg_block))
+          # todo: reset reorg block in memory...
+          {:halt, (if reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
+        else
+          {:cont, chunk_end}
+        end
+      end)
+
+    new_start_block = last_written_block + 1
+    new_end_block = fetch_block_number_by_tag("latest", json_rpc_named_arguments)
+
+    if new_end_block == last_written_block do
+      # there is no new block, so wait for some time to let the chain issue the new block
+      :timer.sleep(max(avg_block_time - Timex.diff(Timex.now(), time_before, :milliseconds), 0))
+    end
+
+    {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}, {:continue, json_rpc_named_arguments}}
   end
 
   defp get_last_l1_item do
@@ -117,6 +160,28 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         id: 0,
         method: "eth_getTransactionByHash",
         params: [hash]
+      })
+
+    json_rpc(req, json_rpc_named_arguments)
+  end
+
+  defp get_block_timestamp_by_number(number, json_rpc_named_arguments) do
+    {:ok, block} =
+      %{id: 0, number: number}
+      |> EthereumJSONRPC.Block.ByNumber.request(false)
+      |> json_rpc(json_rpc_named_arguments)
+
+    block
+    |> Map.get("timestamp")
+    |> quantity_to_integer()
+  end
+
+  defp get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments) do
+    req =
+      request(%{
+        id: 0,
+        method: "eth_getLogs",
+        params: [%{:fromBlock => integer_to_quantity(from_block), :toBlock => integer_to_quantity(to_block), :address => address, :topics => [topic0]}]
       })
 
     json_rpc(req, json_rpc_named_arguments)
