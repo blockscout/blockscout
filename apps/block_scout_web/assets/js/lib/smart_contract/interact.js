@@ -127,6 +127,7 @@ const sanctionedAddresses = [
   '0x308ed4b7b49797e1a98d3818bff6fe5385410370',
   '0x330bdfade01ee9bf63c209ee33102dd334618e0a',
   '0x35fb6f6db4fb05e6a4ce86f2c93691425626d4b1',
+  '0x39d908dac893cbcb53cc86e0ecc369aa4def1a29',
   '0x3aac1cc67c2ec5db4ea850957b967ba153ad6279',
   '0x3cbded43efdaf0fc77b9c55f6fc9988fcc9b757d',
   '0x3cffd56b47b7b41c56258d9c7731abadc360e073',
