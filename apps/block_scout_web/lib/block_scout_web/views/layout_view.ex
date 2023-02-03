@@ -47,6 +47,10 @@ defmodule BlockScoutWeb.LayoutView do
     Keyword.get(application_config(), :logo_text) || nil
   end
 
+  def aurora_token_contract_address do
+    Keyword.get(application_config(), :aurora_token_contract_address) || nil
+  end
+
   def subnetwork_title do
     Keyword.get(application_config(), :subnetwork) || "Sokol"
   end
