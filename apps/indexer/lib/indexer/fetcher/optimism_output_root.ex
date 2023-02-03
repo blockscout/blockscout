@@ -13,8 +13,10 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
   import EthereumJSONRPC,
     only: [request: 1, json_rpc: 2, fetch_block_number_by_tag: 2, integer_to_quantity: 1, quantity_to_integer: 1]
 
+  alias ABI.TypeDecoder
   alias EthereumJSONRPC.Block.ByNumber
-  alias Explorer.Chain.OptimismOutputRoot
+  alias Explorer.Chain
+  alias Explorer.Chain.{Data, OptimismOutputRoot}
   alias Explorer.Repo
   alias Indexer.BoundQueue
 
@@ -76,8 +78,6 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismOutputRoot.TaskSupervisor, fn ->
           reorg_monitor(avg_block_time, json_rpc_named_arguments)
         end)
-
-      # todo: restart process when abnormal exit
 
       {:ok,
        %{
@@ -148,13 +148,34 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         chunk_end = min(chunk_start + @eth_get_logs_range_size - 1, end_block)
 
         if chunk_end >= chunk_start do
-          {:ok, results} =
-            get_logs(chunk_start, chunk_end, output_oracle, @output_proposed_event, json_rpc_named_arguments)
+          {:ok, result} =
+            get_logs(chunk_start, chunk_end, output_oracle, @output_proposed_event, json_rpc_named_arguments, 100_000_000)
 
-          # todo: write to db...
+          output_roots =
+            Enum.map(result, fn r ->
+              [l1_timestamp] = decode_data(r["data"], [{:uint, 256}])
+              {:ok, l1_timestamp} = DateTime.from_unix(l1_timestamp)
+
+              %{
+                l2_output_index: quantity_to_integer(Enum.at(r["topics"], 2)),
+                l2_block_number: quantity_to_integer(Enum.at(r["topics"], 3)),
+                l1_tx_hash: r["transactionHash"],
+                l1_timestamp: l1_timestamp,
+                l1_block_number: quantity_to_integer(r["blockNumber"]),
+                output_root: Enum.at(r["topics"], 1)
+              }
+            end)
+
+          {:ok, _} =
+            Chain.import(%{
+              output_roots: %{params: output_roots},
+              timeout: :infinity
+            })
         end
 
         reorg_block = reorg_block_pop()
+        # todo: Logger should print info about reorg
+        # todo: Logger should print info about progress
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           Repo.delete_all(from(r in OptimismOutputRoot, where: r.l1_block_number >= ^reorg_block))
@@ -363,7 +384,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
     end
   end
 
-  defp get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments) do
+  defp get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments, retries_left) do
     req =
       request(%{
         id: 0,
@@ -378,9 +399,26 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         ]
       })
 
-    json_rpc(req, json_rpc_named_arguments)
+    case json_rpc(req, json_rpc_named_arguments) do
+      {:ok, results} ->
+        {:ok, results}
 
-    # todo: repeat 3 times when error
+      {:error, message} ->
+        retries_left = retries_left - 1
+
+        Logger.metadata(fetcher: :optimism_output_root)
+
+        error_message = "Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(message)}"
+
+        if retries_left <= 0 do
+          Logger.error(error_message)
+          {:error, message}
+        else
+          Logger.error("#{error_message} Retrying...")
+          :timer.sleep(3000)
+          get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments, retries_left)
+        end
+    end
   end
 
   defp parse_integer(integer_string) when is_binary(integer_string) do
@@ -404,7 +442,6 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
           hackney: [pool: :ethereum_jsonrpc]
         ]
       ]
-      # variant: EthereumJSONRPC.Nethermind
     ]
   end
 
@@ -414,5 +451,21 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   defp is_address?(_value) do
     false
+  end
+
+  defp decode_data("0x", types) do
+    for _ <- types, do: nil
+  end
+
+  defp decode_data("0x" <> encoded_data, types) do
+    encoded_data
+    |> Base.decode16!(case: :mixed)
+    |> TypeDecoder.decode_raw(types)
+  end
+
+  defp decode_data(%Data{} = data, types) do
+    data
+    |> Data.to_string()
+    |> decode_data(types)
   end
 end
