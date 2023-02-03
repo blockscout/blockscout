@@ -58,15 +58,14 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
          json_rpc_named_arguments <- json_rpc_named_arguments(optimism_rpc_l1),
          {:ok, last_l1_tx} <- get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_tx_hash) && is_nil(last_l1_tx)},
-         {:ok, last_safe_block} <- fetch_block_number_by_tag("safe", json_rpc_named_arguments) do
+         {:ok, last_safe_block} <- get_block_number_by_tag("safe", json_rpc_named_arguments),
+         first_block <- max(last_safe_block - @avg_block_time_range_size, 1),
+         {:ok, first_block_timestamp} <- get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
+         {:ok, last_safe_block_timestamp} <- get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
       # INSERT INTO op_output_roots (l2_output_index, l2_block_number, l1_tx_hash, l1_timestamp, l1_block_number, output_root, inserted_at, updated_at) VALUES (1, 1, decode('d6c0399c881c98d4d5fa931bb727d08ebfb86cb37ce380071fa03e59731dffbe', 'hex'), NOW(), 8299683, decode('013d7d16d7ad4fefb61bd95b765c8ceb', 'hex'), NOW(), NOW())
       # {:ok, last_l1_tx_hash} = Explorer.Chain.string_to_transaction_hash("0xd6c0399c881c98d4d5fa931bb727d08ebfb86cb37ce380071fa03e59731dffbe")
       # tx = get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments)
       # Logger.warn("tx = #{inspect(tx)}")
-
-      first_block = max(last_safe_block - @avg_block_time_range_size, 1)
-      first_block_timestamp = get_block_timestamp_by_number(first_block, json_rpc_named_arguments)
-      last_safe_block_timestamp = get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments)
 
       avg_block_time =
         ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000)
@@ -108,7 +107,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
       {:error, error_data} ->
         Logger.error(
-          "Cannot get last L1 transaction from RPC by its hash or last safe block due to RPC error: #{inspect(error_data)}"
+          "Cannot get last L1 transaction from RPC by its hash, last safe block, or block timestamp by its number due to RPC error: #{inspect(error_data)}"
         )
 
         :ignore
@@ -166,7 +165,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
       end)
 
     new_start_block = last_written_block + 1
-    new_end_block = fetch_block_number_by_tag("latest", json_rpc_named_arguments)
+    {:ok, new_end_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
 
     if new_end_block == last_written_block do
       # there is no new block, so wait for some time to let the chain issue the new block
@@ -206,12 +205,10 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
   end
 
   defp reorg_monitor(avg_block_time, json_rpc_named_arguments) do
-    Logger.metadata(fetcher: :optimism_output_root)
-
     # infinite loop
     # credo:disable-for-next-line
     Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), 0, fn _i, prev_latest ->
-      {:ok, latest} = fetch_block_number_by_tag("latest", json_rpc_named_arguments)
+      {:ok, latest} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
 
       if latest < prev_latest do
         reorg_block_push(latest)
@@ -273,9 +270,11 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
     |> Kernel.||({0, nil})
   end
 
-  defp get_transaction_by_hash(hash, _json_rpc_named_arguments) when is_nil(hash), do: {:ok, nil}
+  defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
 
-  defp get_transaction_by_hash(hash, json_rpc_named_arguments) do
+  defp get_transaction_by_hash(hash, _json_rpc_named_arguments, _retries_left) when is_nil(hash), do: {:ok, nil}
+
+  defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left) do
     req =
       request(%{
         id: 0,
@@ -283,22 +282,85 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         params: [hash]
       })
 
-    json_rpc(req, json_rpc_named_arguments)
+    case json_rpc(req, json_rpc_named_arguments) do
+      {:ok, tx} ->
+        {:ok, tx}
 
-    # todo: repeat 3 times when error
+      {:error, message} ->
+        retries_left = retries_left - 1
+
+        if retries_left <= 0 do
+          {:error, message}
+        else
+          :timer.sleep(1000)
+          get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left)
+        end
+    end
   end
 
-  defp get_block_timestamp_by_number(number, json_rpc_named_arguments) do
-    {:ok, block} =
+  defp get_block_number_by_tag(tag, json_rpc_named_arguments, retries_left \\ 3) do
+    case fetch_block_number_by_tag(tag, json_rpc_named_arguments) do
+      {:ok, block_number} ->
+        {:ok, block_number}
+
+      {:error, message} ->
+        retries_left = retries_left - 1
+
+        Logger.metadata(fetcher: :optimism_output_root)
+
+        error_message = "Cannot fetch #{tag} block number. Error: #{inspect(message)}"
+
+        if retries_left <= 0 do
+          Logger.error(error_message)
+          {:error, message}
+        else
+          Logger.error("#{error_message} Retrying...")
+          :timer.sleep(3000)
+          get_block_number_by_tag(tag, json_rpc_named_arguments, retries_left)
+        end
+    end
+  end
+
+  defp get_block_timestamp_by_number(number, json_rpc_named_arguments, retries_left \\ 3) do
+    Logger.metadata(fetcher: :optimism_output_root)
+
+    result =
       %{id: 0, number: number}
       |> ByNumber.request(false)
       |> json_rpc(json_rpc_named_arguments)
 
-    block
-    |> Map.get("timestamp")
-    |> quantity_to_integer()
+    return =
+      with {:ok, block} <- result,
+           false <- is_nil(block),
+           timestamp <- Map.get(block, "timestamp"),
+           false <- is_nil(timestamp) do
+        {:ok, quantity_to_integer(timestamp)}
+      else
+        {:error, message} ->
+          {:error, message}
 
-    # todo: repeat 3 times when error
+        true ->
+          {:error, "RPC returned nil."}
+      end
+
+    case return do
+      {:ok, timestamp} ->
+        {:ok, timestamp}
+
+      {:error, message} ->
+        retries_left = retries_left - 1
+
+        error_message = "Cannot fetch block ##{number} or its timestamp. Error: #{inspect(message)}"
+
+        if retries_left <= 0 do
+          Logger.error(error_message)
+          {:error, message}
+        else
+          Logger.error("#{error_message} Retrying...")
+          :timer.sleep(3000)
+          get_block_timestamp_by_number(number, json_rpc_named_arguments, retries_left)
+        end
+    end
   end
 
   defp get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments) do
@@ -321,8 +383,6 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
     # todo: repeat 3 times when error
   end
 
-  # todo: repeat 3 times when error in fetch_block_number_by_tag
-
   defp parse_integer(integer_string) when is_binary(integer_string) do
     case Integer.parse(integer_string) do
       {integer, ""} -> integer
@@ -343,9 +403,8 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
           timeout: :timer.minutes(10),
           hackney: [pool: :ethereum_jsonrpc]
         ]
-      ],
-      variant: EthereumJSONRPC.Nethermind
-      # todo: try to remove variant
+      ]
+      # variant: EthereumJSONRPC.Nethermind
     ]
   end
 
