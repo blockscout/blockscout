@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.Chain do
     Hash,
     InternalTransaction,
     Log,
+    OptimismOutputRoot,
     SmartContract,
     Token,
     Token.Instance,
@@ -465,6 +466,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%SmartContract{} = smart_contract) do
     %{"smart_contract_id" => smart_contract.id}
+  end
+
+  defp paging_params(%OptimismOutputRoot{l2_output_index: index}) do
+    %{"index" => index}
   end
 
   defp paging_params(%Withdrawal{index: index}) do
