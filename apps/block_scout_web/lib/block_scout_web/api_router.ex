@@ -164,6 +164,10 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/market", V2.StatsController, :market_chart)
       end
     end
+
+    scope "/optimism" do
+      get("/output-roots", V2.OptimismController, :output_roots)
+    end
   end
 
   scope "/v1", as: :api_v1 do
