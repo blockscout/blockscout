@@ -193,6 +193,10 @@ defmodule BlockScoutWeb.ApiRouter do
       end
     end
 
+    scope "/optimism" do
+      get("/output-roots", V2.OptimismController, :output_roots)
+    end
+
     scope "/withdrawals" do
       get("/", V2.WithdrawalController, :withdrawals_list)
       get("/counters", V2.WithdrawalController, :withdrawals_counters)
