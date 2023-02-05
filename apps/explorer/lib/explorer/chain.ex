@@ -52,6 +52,7 @@ defmodule Explorer.Chain do
     Import,
     InternalTransaction,
     Log,
+    OptimismOutputRoot,
     PendingBlockOperation,
     SmartContract,
     SmartContractAdditionalSource,
@@ -2492,6 +2493,26 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Lists `t:Explorer.Chain.OptimismOutputRoot.t/0`'s' in descending order based on output root index.
+
+  """
+  @spec list_output_roots :: [OptimismOutputRoot.t()]
+  def list_output_roots(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(r in OptimismOutputRoot,
+        order_by: [desc: r.l2_output_index],
+        select: r
+      )
+
+    base_query
+    |> page_output_roots(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
+  end
+
+  @doc """
   Lists the top `t:Explorer.Chain.Token.t/0`'s'.
 
   """
@@ -4619,6 +4640,12 @@ defmodule Explorer.Chain do
         (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
           address.fetched_coin_balance < ^coin_balance
     )
+  end
+
+  defp page_output_roots(query, %PagingOptions{key: nil}), do: query
+
+  defp page_output_roots(query, %PagingOptions{key: {index}}) do
+    from(r in query, where: r.l2_output_index < ^index)
   end
 
   defp page_tokens(query, %PagingOptions{key: nil}), do: query
