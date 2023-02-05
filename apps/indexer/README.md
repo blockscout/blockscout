@@ -31,6 +31,7 @@ Some data has to be extracted from already fetched data, and there're several tr
 - `block/realtime`: listens for new blocks from websocket and polls node for new blocks, imports new ones one by one
 - `block/catchup`: gets unfetched ranges of blocks, imports them in batches
 - `transaction_action`: optionally fetches/rewrites transaction actions for old blocks (in a given range of blocks for given protocols)
+- `optimism_output_root`: fetches output roots of Optimism chain
 - `withdrawals`: optionally fetches withdrawals for old blocks (in the given from boundary of block numbers)
 
 Both block fetchers retrieve/extract the blocks themselves and the following additional data:
