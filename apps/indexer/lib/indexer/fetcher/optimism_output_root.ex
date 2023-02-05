@@ -15,12 +15,11 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   alias ABI.TypeDecoder
   alias EthereumJSONRPC.Block.ByNumber
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Data, OptimismOutputRoot}
-  alias Explorer.Repo
   alias Indexer.BoundQueue
 
-  @avg_block_time_range_size 100
+  @block_check_interval_range_size 100
   @eth_get_logs_range_size 1000
 
   # 32-byte signature of the event OutputProposed(bytes32 indexed outputRoot, uint256 indexed l2OutputIndex, uint256 indexed l2BlockNumber, uint256 l1Timestamp)
@@ -61,28 +60,25 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
          {:ok, last_l1_tx} <- get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_tx_hash) && is_nil(last_l1_tx)},
          {:ok, last_safe_block} <- get_block_number_by_tag("safe", json_rpc_named_arguments),
-         first_block <- max(last_safe_block - @avg_block_time_range_size, 1),
+         first_block <- max(last_safe_block - @block_check_interval_range_size, 1),
          {:ok, first_block_timestamp} <- get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
          {:ok, last_safe_block_timestamp} <- get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
-      # INSERT INTO op_output_roots (l2_output_index, l2_block_number, l1_tx_hash, l1_timestamp, l1_block_number, output_root, inserted_at, updated_at) VALUES (1, 1, decode('d6c0399c881c98d4d5fa931bb727d08ebfb86cb37ce380071fa03e59731dffbe', 'hex'), NOW(), 8299683, decode('013d7d16d7ad4fefb61bd95b765c8ceb', 'hex'), NOW(), NOW())
-      # {:ok, last_l1_tx_hash} = Explorer.Chain.string_to_transaction_hash("0xd6c0399c881c98d4d5fa931bb727d08ebfb86cb37ce380071fa03e59731dffbe")
-      # tx = get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments)
-      # Logger.warn("tx = #{inspect(tx)}")
+      block_check_interval =
+        ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
-      avg_block_time =
-        ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000)
+      Logger.info("Block check interval is calculated as #{block_check_interval} ms.")
 
       start_block = max(start_block_l1, last_l1_block_number)
 
       reorg_monitor_task =
         Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismOutputRoot.TaskSupervisor, fn ->
-          reorg_monitor(avg_block_time, json_rpc_named_arguments)
+          reorg_monitor(block_check_interval, json_rpc_named_arguments)
         end)
 
       {:ok,
        %{
          output_oracle: env[:output_oracle],
-         avg_block_time: avg_block_time,
+         block_check_interval: block_check_interval,
          start_block: start_block,
          end_block: last_safe_block,
          reorg_monitor_task: reorg_monitor_task,
@@ -130,7 +126,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         _,
         %{
           output_oracle: output_oracle,
-          avg_block_time: avg_block_time,
+          block_check_interval: block_check_interval,
           start_block: start_block,
           end_block: end_block,
           json_rpc_named_arguments: json_rpc_named_arguments
@@ -148,37 +144,40 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         chunk_end = min(chunk_start + @eth_get_logs_range_size - 1, end_block)
 
         if chunk_end >= chunk_start do
+          log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil)
+
           {:ok, result} =
-            get_logs(chunk_start, chunk_end, output_oracle, @output_proposed_event, json_rpc_named_arguments, 100_000_000)
+            get_logs(
+              chunk_start,
+              chunk_end,
+              output_oracle,
+              @output_proposed_event,
+              json_rpc_named_arguments,
+              100_000_000
+            )
 
-          output_roots =
-            Enum.map(result, fn r ->
-              [l1_timestamp] = decode_data(r["data"], [{:uint, 256}])
-              {:ok, l1_timestamp} = DateTime.from_unix(l1_timestamp)
-
-              %{
-                l2_output_index: quantity_to_integer(Enum.at(r["topics"], 2)),
-                l2_block_number: quantity_to_integer(Enum.at(r["topics"], 3)),
-                l1_tx_hash: r["transactionHash"],
-                l1_timestamp: l1_timestamp,
-                l1_block_number: quantity_to_integer(r["blockNumber"]),
-                output_root: Enum.at(r["topics"], 1)
-              }
-            end)
+          output_roots = events_to_output_roots(result)
 
           {:ok, _} =
             Chain.import(%{
               output_roots: %{params: output_roots},
               timeout: :infinity
             })
+
+          log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, Enum.count(output_roots))
         end
 
         reorg_block = reorg_block_pop()
-        # todo: Logger should print info about reorg
-        # todo: Logger should print info about progress
 
         if !is_nil(reorg_block) && reorg_block > 0 do
-          Repo.delete_all(from(r in OptimismOutputRoot, where: r.l1_block_number >= ^reorg_block))
+          {deleted_count, _} = Repo.delete_all(from(r in OptimismOutputRoot, where: r.l1_block_number >= ^reorg_block))
+
+          if deleted_count > 0 do
+            Logger.warning(
+              "As L1 reorg was detected, all rows with l1_block_number >= #{reorg_block} were removed from the op_output_roots table. Number of removed rows: #{deleted_count}."
+            )
+          end
+
           {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
         else
           {:cont, chunk_end}
@@ -190,7 +189,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
     if new_end_block == last_written_block do
       # there is no new block, so wait for some time to let the chain issue the new block
-      :timer.sleep(max(avg_block_time - Timex.diff(Timex.now(), time_before, :milliseconds), 0))
+      :timer.sleep(max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0))
     end
 
     {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}, {:continue, nil}}
@@ -206,36 +205,54 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         {:DOWN, ref, :process, pid, reason},
         %{
           reorg_monitor_task: %Task{pid: pid, ref: ref},
-          avg_block_time: avg_block_time,
+          block_check_interval: block_check_interval,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
     if reason === :normal do
       {:noreply, %{state | reorg_monitor_task: nil}}
     else
-      Logger.metadata(fetcher: :optimism_output_root)
       Logger.error(fn -> "Reorgs monitor task exited due to #{inspect(reason)}. Rerunning..." end)
 
       task =
         Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismOutputRoot.TaskSupervisor, fn ->
-          reorg_monitor(avg_block_time, json_rpc_named_arguments)
+          reorg_monitor(block_check_interval, json_rpc_named_arguments)
         end)
 
       {:noreply, %{state | reorg_monitor_task: task}}
     end
   end
 
-  defp reorg_monitor(avg_block_time, json_rpc_named_arguments) do
+  defp events_to_output_roots(events) do
+    Enum.map(events, fn event ->
+      [l1_timestamp] = decode_data(event["data"], [{:uint, 256}])
+      {:ok, l1_timestamp} = DateTime.from_unix(l1_timestamp)
+
+      %{
+        l2_output_index: quantity_to_integer(Enum.at(event["topics"], 2)),
+        l2_block_number: quantity_to_integer(Enum.at(event["topics"], 3)),
+        l1_tx_hash: event["transactionHash"],
+        l1_timestamp: l1_timestamp,
+        l1_block_number: quantity_to_integer(event["blockNumber"]),
+        output_root: Enum.at(event["topics"], 1)
+      }
+    end)
+  end
+
+  defp reorg_monitor(block_check_interval, json_rpc_named_arguments) do
+    Logger.metadata(fetcher: :optimism_output_root)
+
     # infinite loop
     # credo:disable-for-next-line
     Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), 0, fn _i, prev_latest ->
       {:ok, latest} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
 
       if latest < prev_latest do
+        Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
         reorg_block_push(latest)
       end
 
-      :timer.sleep(avg_block_time)
+      :timer.sleep(block_check_interval)
 
       {:cont, latest}
     end)
@@ -313,7 +330,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         if retries_left <= 0 do
           {:error, message}
         else
-          :timer.sleep(1000)
+          :timer.sleep(3000)
           get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left)
         end
     end
@@ -326,8 +343,6 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
       {:error, message} ->
         retries_left = retries_left - 1
-
-        Logger.metadata(fetcher: :optimism_output_root)
 
         error_message = "Cannot fetch #{tag} block number. Error: #{inspect(message)}"
 
@@ -343,8 +358,6 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
   end
 
   defp get_block_timestamp_by_number(number, json_rpc_named_arguments, retries_left \\ 3) do
-    Logger.metadata(fetcher: :optimism_output_root)
-
     result =
       %{id: 0, number: number}
       |> ByNumber.request(false)
@@ -406,8 +419,6 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
       {:error, message} ->
         retries_left = retries_left - 1
 
-        Logger.metadata(fetcher: :optimism_output_root)
-
         error_message = "Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(message)}"
 
         if retries_left <= 0 do
@@ -418,6 +429,42 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
           :timer.sleep(3000)
           get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments, retries_left)
         end
+    end
+  end
+
+  defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, output_roots_count) do
+    {type, found} =
+      if is_nil(output_roots_count) do
+        {"Start", ""}
+      else
+        {"Finish", " Found #{output_roots_count} OutputProposed event(s)."}
+      end
+
+    if chunk_start == chunk_end do
+      Logger.info("#{type} handling L1 block ##{chunk_start}.#{found}")
+    else
+      target_range =
+        if chunk_start != start_block or chunk_end != end_block do
+          progress =
+            if is_nil(output_roots_count) do
+              ""
+            else
+              percentage =
+                (chunk_end - start_block + 1)
+                |> Decimal.div(end_block - start_block + 1)
+                |> Decimal.mult(100)
+                |> Decimal.round(2)
+                |> Decimal.to_string()
+
+              " Progress: #{percentage}%"
+            end
+
+          " Target range: #{start_block}..#{end_block}.#{progress}"
+        else
+          ""
+        end
+
+      Logger.info("#{type} handling L1 block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
     end
   end
 
