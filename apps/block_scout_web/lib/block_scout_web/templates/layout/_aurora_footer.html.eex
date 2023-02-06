@@ -36,4 +36,7 @@
     </div>
 
   </div>
+  <input id="js-chain-id" class="d-none" value="<%= Application.get_env(:block_scout_web, :chain_id) %>" />
+  <input id="js-coin-name" class="d-none" value="<%= Explorer.coin_name() %>" />
+  <input id="js-json-rpc" class="d-none" value="<%= Application.get_env(:block_scout_web, :json_rpc) %>" />
 </footer>
