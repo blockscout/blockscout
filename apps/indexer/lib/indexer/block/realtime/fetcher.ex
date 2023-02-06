@@ -32,7 +32,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
-  alias Indexer.Fetcher.CoinBalance
+  alias Indexer.Fetcher.{CoinBalance, OptimismWithdrawal}
   alias Indexer.Prometheus
   alias Indexer.Transform.Addresses
   alias Timex.Duration
@@ -272,6 +272,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Indexer.Logger.metadata(
       fn ->
         if reorg? do
+          # we need to remove all rows from `op_withdrawals` table previously written starting from reorg block number
+          OptimismWithdrawal.remove(block_number_to_fetch)
+
           # give previous fetch attempt (for same block number) a chance to finish
           # before fetching again, to reduce block consensus mistakes
           :timer.sleep(@reorg_delay)
