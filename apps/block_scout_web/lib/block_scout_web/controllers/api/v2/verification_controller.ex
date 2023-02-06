@@ -19,13 +19,13 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     vyper_compiler_versions = CompilerVersion.fetch_version_list(:vyper)
 
     verification_options =
-      ["flattened_code", "standard_input", "vyper_code"]
+      ["flattened-code", "standard-input", "vyper-code"]
       |> (&if(Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled],
             do: ["sourcify" | &1],
             else: &1
           )).()
-      |> (&if(RustVerifierInterface.enabled?(), do: ["multi_part" | &1], else: &1)).()
-      |> (&if(RustVerifierInterface.enabled?(), do: ["vyper_multi_part" | &1], else: &1)).()
+      |> (&if(RustVerifierInterface.enabled?(), do: ["multi-part" | &1], else: &1)).()
+      |> (&if(RustVerifierInterface.enabled?(), do: ["vyper-multi-part" | &1], else: &1)).()
 
     conn
     |> json(%{
@@ -33,7 +33,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
       solidity_compiler_versions: solidity_compiler_versions,
       vyper_compiler_versions: vyper_compiler_versions,
       verification_options: verification_options,
-      vyper_evm_versions: ["byzantium", "constantinople", "petersburg", "istanbul"]
+      vyper_evm_versions: ["byzantium", "constantinople", "petersburg", "istanbul"],
+      is_rust_verifier_microservice_enabled: RustVerifierInterface.enabled?()
     })
   end
 
@@ -61,6 +62,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         |> Map.put("constructor_arguments", Map.get(params, "constructor_args", ""))
         |> Map.put("name", Map.get(params, "contract_name", ""))
         |> Map.put("external_libraries", Map.get(params, "libraries", %{}))
+        |> Map.put("is_yul", Map.get(params, "is_yul_contract", false))
 
       Que.add(SolidityPublisherWorker, {"flattened_api_v2", verification_params})
 
