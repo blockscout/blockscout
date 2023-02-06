@@ -18,6 +18,16 @@ defmodule Indexer.Celo.Telemetry.Instrumentation do
         measurement: :count,
         description: "Pubsub notifications sent via erlang cluster"
       ),
+      counter("indexer_pending_transactions_sanitizer_count",
+        event_name: [:blockscout, :pending_transactions_sanitize],
+        measurement: :count,
+        description: "Invocations of pending transaction sanitizer"
+      ),
+      counter("indexer_empty_block_sanitizer_count",
+        event_name: [:blockscout, :empty_block_sanitize],
+        measurement: :count,
+        description: "Invocations of empty block sanitizer"
+      ),
       last_value(
         "indexer_blocks_pending_blockcount_current",
         event_name: [:indexer, :blocks, :pending_blockcount],
@@ -29,6 +39,20 @@ defmodule Indexer.Celo.Telemetry.Instrumentation do
         event_name: [:indexer, :blocks, :pending],
         measurement: :value,
         description: "Number of blocks still to be fetched in past range"
+      ),
+      last_value(
+        "indexer_fetcher_config_concurrency_current",
+        event_name: [:blockscout, :fetcher, :config],
+        measurement: :concurrency,
+        description: "Max concurrent fetcher processes",
+        tags: [:fetcher]
+      ),
+      last_value(
+        "indexer_fetcher_config_batch_size_current",
+        event_name: [:blockscout, :fetcher, :config],
+        measurement: :batch_size,
+        description: "Max batch size for fetcher (number of items each fetcher process will work upon)",
+        tags: [:fetcher]
       )
     ]
   end

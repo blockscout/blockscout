@@ -133,6 +133,8 @@ config :block_scout_web, :rpc_module_map, %{
   "epoch" => {BlockScoutWeb.API.RPC.EpochController, []}
 }
 
+config :block_scout_web, BlockScoutWeb.Celo.MetricsCron, metrics_cron_interval_seconds: 10
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

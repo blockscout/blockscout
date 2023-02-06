@@ -3,6 +3,7 @@ defmodule Indexer.Celo.MetricsCron do
   Periodically retrieves and updates prometheus metrics
   """
   use GenServer
+  alias Indexer.BufferedTask
   alias Explorer.Celo.Metrics.{BlockchainMetrics, DatabaseMetrics}
   alias Explorer.Celo.Telemetry
   alias Explorer.Chain
@@ -38,7 +39,8 @@ defmodule Indexer.Celo.MetricsCron do
     :transaction_count,
     :address_count,
     :total_token_supply,
-    :db_connections_by_app
+    :db_connections_by_app,
+    :fetcher_config
   ]
 
   @impl true
@@ -95,17 +97,17 @@ defmodule Indexer.Celo.MetricsCron do
 
   def number_of_locks do
     number_of_locks = DatabaseMetrics.fetch_number_of_locks()
-    :telemetry.execute([:indexer, :db, :locks], %{value: number_of_locks})
+    Telemetry.event([:db, :locks], %{value: number_of_locks})
   end
 
   def number_of_deadlocks do
     number_of_dead_locks = DatabaseMetrics.fetch_number_of_dead_locks()
-    :telemetry.execute([:indexer, :db, :deadlocks], %{value: number_of_dead_locks})
+    Telemetry.event([:db, :deadlocks], %{value: number_of_dead_locks})
   end
 
   def longest_query_duration do
     longest_query_duration = DatabaseMetrics.fetch_name_and_duration_of_longest_query()
-    :telemetry.execute([:indexer, :db, :longest_query_duration], %{value: longest_query_duration})
+    Telemetry.event([:db, :longest_query_duration], %{value: longest_query_duration})
   end
 
   def transaction_count do
@@ -153,6 +155,24 @@ defmodule Indexer.Celo.MetricsCron do
     connection_map
     |> Enum.each(fn {app, count} ->
       Telemetry.event([:db, :connections], %{count: count}, %{app: app})
+    end)
+  end
+
+  @fetchers [Indexer.Fetcher.InternalTransaction]
+  def fetcher_config do
+    @fetchers
+    |> Enum.map(&{to_string(&1), Process.whereis(&1)})
+    |> Enum.each(fn
+      {fetcher_module, nil} ->
+        Logger.error("Couldn't get config values for fetcher #{fetcher_module} - no pid")
+
+      {fetcher_module, fetcher_process_id} ->
+        max_concurrency = fetcher_process_id |> BufferedTask.get_state(:max_concurrency)
+        batch_size = fetcher_process_id |> BufferedTask.get_state(:max_batch_size)
+
+        Telemetry.event([:fetcher, :config], %{concurrency: max_concurrency, batch_size: batch_size}, %{
+          fetcher: fetcher_module
+        })
     end)
   end
 end

@@ -13,6 +13,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, request: 1]
 
   alias Ecto.Changeset
+  alias Explorer.Celo.Telemetry
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Import.Runner.Blocks
@@ -68,6 +69,8 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   end
 
   defp sanitize_empty_blocks(json_rpc_named_arguments) do
+    Telemetry.event(:empty_block_sanitize)
+
     unprocessed_non_empty_blocks_from_db = unprocessed_non_empty_blocks_query_list(limit())
 
     uniq_block_hashes = unprocessed_non_empty_blocks_from_db

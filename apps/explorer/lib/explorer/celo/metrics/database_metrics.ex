@@ -82,4 +82,17 @@ defmodule Explorer.Celo.Metrics.DatabaseMetrics do
 
     result |> Enum.into(%{}, fn [count, app] -> {app, count} end)
   end
+
+  @doc "Returns a map of the top 10 largest table names by size"
+  def fetch_top_10_tables_by_size do
+    {:ok, %{rows: result}} =
+      SQL.query(Repo, """
+        select table_name, pg_relation_size(quote_ident(table_name))
+        from information_schema.tables
+        where table_schema = 'public'
+        order by 2 desc limit 10;
+      """)
+
+    result |> Enum.into(%{}, fn [name, size] -> {name, size} end)
+  end
 end

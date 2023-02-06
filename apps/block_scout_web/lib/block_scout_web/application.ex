@@ -9,11 +9,12 @@ defmodule BlockScoutWeb.Application do
 
   alias BlockScoutWeb.API.APILogger
   alias BlockScoutWeb.{CampaignBannerCache, LoggerBackend}
+  alias BlockScoutWeb.Celo.MetricsCron
   alias BlockScoutWeb.Counters.BlocksIndexedCounter
   alias BlockScoutWeb.{Endpoint, RealtimeEventHandler}
 
   alias EthereumJSONRPC.Celo.Instrumentation, as: EthRPC
-  alias Explorer.Celo.Telemetry.Instrumentation.FlyPostgres
+  alias Explorer.Celo.Telemetry.Instrumentation.{Database, FlyPostgres}
   alias Explorer.Celo.Telemetry.MetricsCollector, as: CeloPrometheusCollector
 
   def start(_type, _args) do
@@ -40,12 +41,13 @@ defmodule BlockScoutWeb.Application do
         {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
         child_spec(Endpoint, []),
         {Absinthe.Subscription, Endpoint},
-        {CeloPrometheusCollector, metrics: [EthRPC.metrics(), FlyPostgres.metrics()]},
+        {CeloPrometheusCollector, metrics: [EthRPC.metrics(), Database.metrics(), FlyPostgres.metrics()]},
         {RealtimeEventHandler, name: RealtimeEventHandler},
         {BlocksIndexedCounter, name: BlocksIndexedCounter},
         {CampaignBannerCache, name: CampaignBannerCache}
       ]
       |> cluster_process(Application.get_env(:block_scout_web, :environment))
+      |> metrics_processes()
 
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
     Supervisor.start_link(children, opts)
@@ -56,6 +58,14 @@ defmodule BlockScoutWeb.Application do
   def config_change(changed, _new, removed) do
     Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  def metrics_processes(sibling_processes) do
+    sibling_processes ++
+      [
+        {MetricsCron, [[]]},
+        {Task.Supervisor, name: BlockScoutWeb.Celo.MetricsCron.TaskSupervisor}
+      ]
   end
 
   def cluster_process(acc, :prod) do
