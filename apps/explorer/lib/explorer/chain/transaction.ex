@@ -26,6 +26,7 @@ defmodule Explorer.Chain.Transaction do
     SmartContract,
     TokenTransfer,
     Transaction,
+    TransactionAction,
     Wei
   }
 
@@ -286,6 +287,7 @@ defmodule Explorer.Chain.Transaction do
     has_many(:internal_transactions, InternalTransaction, foreign_key: :transaction_hash)
     has_many(:logs, Log, foreign_key: :transaction_hash)
     has_many(:token_transfers, TokenTransfer, foreign_key: :transaction_hash)
+    has_many(:transaction_actions, TransactionAction, foreign_key: :hash, preload_order: [asc: :log_index])
 
     belongs_to(
       :to_address,

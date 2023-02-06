@@ -3,6 +3,8 @@ defmodule EthereumJSONRPC.Geth do
   Ethereum JSONRPC methods that are only supported by [Geth](https://github.com/ethereum/go-ethereum/wiki/geth).
   """
 
+  require Logger
+
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
   alias EthereumJSONRPC.{FetchedBalance, FetchedCode, PendingTransaction}
@@ -238,7 +240,8 @@ defmodule EthereumJSONRPC.Geth do
          acc,
          trace_address,
          inner?
-       ) do
+       )
+       when type in ~w(CALL CALLCODE DELEGATECALL STATICCALL CREATE CREATE2 SELFDESTRUCT REWARD) do
     new_trace_address = [index | trace_address]
 
     formatted_call =
@@ -273,6 +276,11 @@ defmodule EthereumJSONRPC.Geth do
       [formatted_call | acc],
       if(inner?, do: new_trace_address, else: [])
     )
+  end
+
+  defp parse_call_tracer_calls({call, _}, acc, _trace_address, _inner?) do
+    Logger.warning("Call from a callTracer with an unknown type: #{inspect(call)}")
+    acc
   end
 
   defp parse_call_tracer_calls(calls, acc, trace_address, _inner) when is_list(calls) do
