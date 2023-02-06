@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Import.Runner.OptimismOutputRoots do
   def ecto_schema_module, do: OptimismOutputRoot
 
   @impl Import.Runner
-  def option_key, do: :output_roots
+  def option_key, do: :optimism_output_roots
 
   @impl Import.Runner
   def imported_table_row do
@@ -45,8 +45,8 @@ defmodule Explorer.Chain.Import.Runner.OptimismOutputRoots do
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :output_roots,
-        :output_roots
+        :optimism_output_roots,
+        :optimism_output_roots
       )
     end)
   end

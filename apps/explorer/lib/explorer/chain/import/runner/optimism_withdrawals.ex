@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Import.Runner.OptimismWithdrawals do
   def ecto_schema_module, do: OptimismWithdrawal
 
   @impl Import.Runner
-  def option_key, do: :withdrawals
+  def option_key, do: :optimism_withdrawals
 
   @impl Import.Runner
   def imported_table_row do
@@ -45,8 +45,8 @@ defmodule Explorer.Chain.Import.Runner.OptimismWithdrawals do
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :withdrawals,
-        :withdrawals
+        :optimism_withdrawals,
+        :optimism_withdrawals
       )
     end)
   end

@@ -160,7 +160,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
           {:ok, _} =
             Chain.import(%{
-              output_roots: %{params: output_roots},
+              optimism_output_roots: %{params: output_roots},
               timeout: :infinity
             })
 
