@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.V2.TokenView do
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.NFTHelpers
+  alias Explorer.Chain
   alias Explorer.Chain.Address
 
   def render("token.json", %{token: token}) do
@@ -69,7 +70,9 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "token" => render("token.json", %{token: token}),
       "external_app_url" => NFTHelpers.external_url(instance),
       "animation_url" => instance.metadata && NFTHelpers.retrieve_image(instance.metadata["animation_url"]),
-      "image_url" => instance.metadata && NFTHelpers.get_media_src(instance.metadata, false)
+      "image_url" => instance.metadata && NFTHelpers.get_media_src(instance.metadata, false),
+      "is_unique" =>
+        not (token.type == "ERC-1155") or Chain.token_id_1155_is_unique?(token.contract_address_hash, instance.token_id)
     }
   end
 end

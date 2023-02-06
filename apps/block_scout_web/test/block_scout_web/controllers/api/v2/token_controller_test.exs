@@ -485,6 +485,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   def compare_item(%Instance{} = instance, json) do
     assert to_string(instance.token_id) == json["id"]
     assert Jason.decode!(Jason.encode!(instance.metadata)) == json["metadata"]
+    assert json["is_unique"]
     compare_item(Repo.preload(instance, [{:token, :contract_address}]).token, json["token"])
   end
 
