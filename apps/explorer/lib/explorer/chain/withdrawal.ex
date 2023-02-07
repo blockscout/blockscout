@@ -77,4 +77,16 @@ defmodule Explorer.Chain.Withdrawal do
       where: block.consensus
     )
   end
+
+  @spec blocks_without_withdrowals_query(non_neg_integer()) :: Ecto.Query.t()
+  def blocks_without_withdrowals_query(from_block) do
+    from(withdrawal in __MODULE__,
+      right_join: block in assoc(withdrawal, :block),
+      select: block.number,
+      distinct: block.number,
+      where: block.number >= ^from_block,
+      where: block.consensus == ^true,
+      where: is_nil(withdrawal.index)
+    )
+  end
 end
