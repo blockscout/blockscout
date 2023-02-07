@@ -17,7 +17,7 @@ defmodule Indexer.Transform.OptimismWithdrawals do
   Returns a list of withdrawals given a list of logs.
   """
   def parse(logs) do
-    Logger.metadata(fetcher: :optimism_withdrawals)
+    Logger.metadata(fetcher: :optimism_withdrawals_realtime)
 
     with false <- is_nil(Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:start_block_l2]),
          message_passer = Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:message_passer],
