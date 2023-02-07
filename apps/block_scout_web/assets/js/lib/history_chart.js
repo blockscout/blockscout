@@ -21,10 +21,14 @@ const grid = {
 function isDarkMode () {
   // @ts-ignore
   const permanentDarkModeEnabled = document.getElementById('permanent-dark-mode').textContent === 'true'
-  if (!permanentDarkModeEnabled) {
-    return Cookies.get('chakra-ui-color-mode') === 'dark'
-  } else {
+  // @ts-ignore
+  const permanentLightModeEnabled = document.getElementById('permanent-light-mode').textContent === 'true'
+  if (permanentLightModeEnabled) {
+    return false
+  } else if (permanentDarkModeEnabled) {
     return true
+  } else {
+    return Cookies.get('chakra-ui-color-mode') === 'dark'
   }
 }
 

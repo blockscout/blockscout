@@ -157,6 +157,7 @@
     <div class="layout-container">
       <!-- Block for passing backend runtime env variables to frontend -->
       <div id="permanent-dark-mode" class="d-none" ><%= Application.get_env(:block_scout_web, :permanent_dark_mode_enabled) %></div>
+      <div id="permanent-light-mode" class="d-none" ><%= Application.get_env(:block_scout_web, :permanent_light_mode_enabled) %></div>
       <div id="indexer-first-block" class="d-none" ><%= Application.get_env(:indexer, :first_block) %></div>
       <!-- -->
       <% show_maintenance_alert = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:show_maintenance_alert] %>
@@ -264,10 +265,13 @@
 
       function isDarkMode() {
         const permanentDarkModeEnabled = document.getElementById('permanent-dark-mode').textContent === 'true'
-        if (!permanentDarkModeEnabled) {
-          return getCookie('chakra-ui-color-mode') === 'dark'
-        } else {
+        const permanentLightModeEnabled = document.getElementById('permanent-light-mode').textContent === 'true'
+        if (permanentLightModeEnabled) {
+          return false
+        } else if (permanentDarkModeEnabled) {
           return true
+        } else {
+          return getCookie('chakra-ui-color-mode') === 'dark'
         }
       }
 
