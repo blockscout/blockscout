@@ -165,10 +165,10 @@ defmodule Indexer.Transform.TransactionActions do
     logs
     |> Enum.filter(fn log ->
       first_topic =
-        if !is_nil(log.first_topic) do
-          String.downcase(log.first_topic)
-        else
+        if is_nil(log.first_topic) do
           ""
+        else
+          String.downcase(log.first_topic)
         end
 
       Enum.member?(
