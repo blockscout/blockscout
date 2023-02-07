@@ -14,6 +14,7 @@
 ### Fixes
 
 - [#6831](https://github.com/blockscout/blockscout/pull/6831) - Copy of [#6028](https://github.com/blockscout/blockscout/pull/6028)
+- [#6832](https://github.com/blockscout/blockscout/pull/6832) - Transaction actions fix
 - [#6827](https://github.com/blockscout/blockscout/pull/6827) - Fix handling unknown calls from `callTracer`
 - [#6793](https://github.com/blockscout/blockscout/pull/6793) - Change sig-provider default image tag to main
 - [#6777](https://github.com/blockscout/blockscout/pull/6777) - Fix -1 transaction counter
