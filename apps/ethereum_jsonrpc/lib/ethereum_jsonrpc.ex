@@ -192,7 +192,7 @@ defmodule EthereumJSONRPC do
           _ -> false
         end)
       else
-        params_list
+        remove_external_addresses(params_list)
       end
 
     id_to_params = id_to_params(filtered_params)
@@ -203,6 +203,49 @@ defmodule EthereumJSONRPC do
            |> json_rpc(json_rpc_named_arguments) do
       {:ok, FetchedBalances.from_responses(responses, id_to_params)}
     end
+  end
+
+  @quai_contexts [
+    %{shard: "prime", context: 0, byte: ["00", "09"]},
+    %{shard: "cyprus", context: 1, byte: ["0a", "13"]},
+    %{shard: "cyprus1", context: 2, byte: ["14", "1d"]},
+    %{shard: "cyprus2", context: 2, byte: ["1e", "27"]},
+    %{shard: "cyprus3", context: 2, byte: ["28", "31"]},
+    %{shard: "paxos", context: 1, byte: ["32", "3b"]},
+    %{shard: "paxos1", context: 2, byte: ["3c", "45"]},
+    %{shard: "paxos2", context: 2, byte: ["46", "4f"]},
+    %{shard: "paxos3", context: 2, byte: ["50", "59"]},
+    %{shard: "hydra", context: 1, byte: ["5a", "63"]},
+    %{shard: "hydra1", context: 2, byte: ["64", "6d"]},
+    %{shard: "hydra2", context: 2, byte: ["6e", "77"]},
+    %{shard: "hydra3", context: 2, byte: ["78", "81"]}
+  ]
+
+  def get_shard_from_address(address) do
+    get_in(
+      Enum.at(
+        Enum.filter(
+          @quai_contexts,
+          fn obj ->
+            num = address
+                  |> String.slice(2, 2)
+                  |> String.to_integer(16)
+            start = String.to_integer(Enum.at(obj.byte, 0), 16)
+            finish = String.to_integer(Enum.at(obj.byte, 1), 16)
+            num >= start and num <= finish
+          end
+        ),
+        0
+      ),
+      [:shard]
+    )
+  end
+
+  def remove_external_addresses(addresses) do
+    addresses
+    |> Enum.reject(fn address ->
+      get_shard_from_address(address.hash_data) != String.downcase(System.get_env("SUBNETWORK"))
+    end)
   end
 
   @doc """
