@@ -25,8 +25,7 @@ defmodule Indexer.Transform.OptimismWithdrawals do
          message_passer = String.downcase(message_passer) do
       logs
       |> Enum.filter(fn log ->
-        String.downcase(log.first_topic) == @message_passed_event &&
-          String.downcase(address_hash_to_string(log.address_hash)) == message_passer
+        !is_nil(log.first_topic) && String.downcase(log.first_topic) == @message_passed_event && String.downcase(address_hash_to_string(log.address_hash)) == message_passer
       end)
       |> Enum.map(fn log ->
         [_value, _gas_limit, _data, withdrawal_hash] =
