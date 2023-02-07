@@ -25,6 +25,8 @@ spec:
         - /bin/bash
         - -c
         env:
+        - name: INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
+          value: "true"
         - name: NETWORK
           value: QUAI
         - name: ECTO_USE_SSL
