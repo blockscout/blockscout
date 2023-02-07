@@ -628,6 +628,10 @@ config :indexer, Indexer.Fetcher.OptimismOutputRoot,
   start_block_l1: System.get_env("INDEXER_OPTIMISM_OUTPUT_ROOTS_START_BLOCK_L1"),
   output_oracle: System.get_env("INDEXER_OPTIMISM_OUTPUT_ORACLE_L1")
 
+config :indexer, Indexer.Fetcher.OptimismWithdrawal,
+  start_block_l2: System.get_env("INDEXER_OPTIMISM_WITHDRAWALS_START_BLOCK_L2"),
+  message_passer: System.get_env("INDEXER_OPTIMISM_MESSAGE_PASSER_L2")
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
