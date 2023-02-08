@@ -164,7 +164,12 @@ defmodule Indexer.Transform.TransactionActions do
   defp uniswap_filter_logs(logs) do
     logs
     |> Enum.filter(fn log ->
-      first_topic = String.downcase(log.first_topic)
+      first_topic =
+        if is_nil(log.first_topic) do
+          ""
+        else
+          String.downcase(log.first_topic)
+        end
 
       Enum.member?(
         [
