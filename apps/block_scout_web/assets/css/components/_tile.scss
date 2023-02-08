@@ -361,11 +361,6 @@ $tile-body-a-color: #5959d8 !default;
         margin-left: -6px;
         margin-right: -6px;
       }
-      @include media-breakpoint-up(md) {
-        &:nth-child(n + 2) {
-          justify-content: flex-end;
-        }
-      }
     }
   }
 }

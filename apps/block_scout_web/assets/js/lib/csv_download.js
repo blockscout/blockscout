@@ -28,6 +28,7 @@ const _instance2 = new Pikaday({
 })
 
 $button.on('click', () => {
+  // @ts-ignore
   // eslint-disable-next-line
   const recaptchaResponse = grecaptcha.getResponse()
   if (recaptchaResponse) {
@@ -52,6 +53,7 @@ $button.on('click', () => {
       $button.prop('disabled', false)
       clearInterval(interval)
       Cookies.remove('csv-downloaded')
+      // @ts-ignore
       // eslint-disable-next-line
       grecaptcha.reset()
     }

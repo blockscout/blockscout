@@ -32,7 +32,7 @@ defmodule Explorer.Chain.Cache.Transaction do
       %Postgrex.Result{rows: [[rows]]} =
         SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
 
-      rows
+      max(rows, 0)
     else
       cached_value
     end
@@ -58,7 +58,8 @@ defmodule Explorer.Chain.Cache.Transaction do
         rescue
           e ->
             Logger.debug([
-              "Coudn't update transaction count test #{inspect(e)}"
+              "Coudn't update transaction count: ",
+              Exception.format(:error, e, __STACKTRACE__)
             ])
         end
 
