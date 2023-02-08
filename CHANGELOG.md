@@ -5,6 +5,7 @@
 ### Features
 
 - [#6838](https://github.com/blockscout/blockscout/pull/6838) - Disable dark mode env var
+- [#6843](https://github.com/blockscout/blockscout/pull/6843) - Add env variable to hide Add to MM button
 - [#6744](https://github.com/blockscout/blockscout/pull/6744) - API v2: smart contracts verification
 - [#6763](https://github.com/blockscout/blockscout/pull/6763) - Permanent UI dark mode
 - [#6721](https://github.com/blockscout/blockscout/pull/6721) - Implement fetching internal transactions from callTracer

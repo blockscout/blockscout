@@ -100,6 +100,7 @@ config :block_scout_web,
   new_tags: System.get_env("NEW_TAGS"),
   chain_id: System.get_env("CHAIN_ID"),
   json_rpc: System.get_env("JSON_RPC"),
+  disable_add_to_mm_button: System.get_env("DISABLE_ADD_TO_MM_BUTTON", "false") == "true",
   verification_max_libraries: verification_max_libraries,
   permanent_dark_mode_enabled: System.get_env("PERMANENT_DARK_MODE_ENABLED", "false") == "true",
   permanent_light_mode_enabled: System.get_env("PERMANENT_LIGHT_MODE_ENABLED", "false") == "true"
