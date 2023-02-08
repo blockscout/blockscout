@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
   def render("output_roots.json", %{
         roots: roots,
+        total: total,
         next_page_params: next_page_params
       }) do
     %{
@@ -17,6 +18,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "output_root" => r.output_root
           }
         end),
+      total: total,
       next_page_params: next_page_params
     }
   end
