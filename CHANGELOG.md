@@ -13,6 +13,7 @@
 
 ### Fixes
 
+- [#6840](https://github.com/blockscout/blockscout/pull/6840) - Fix realtime block fetcher
 - [#6831](https://github.com/blockscout/blockscout/pull/6831) - Copy of [#6028](https://github.com/blockscout/blockscout/pull/6028)
 - [#6832](https://github.com/blockscout/blockscout/pull/6832) - Transaction actions fix
 - [#6827](https://github.com/blockscout/blockscout/pull/6827) - Fix handling unknown calls from `callTracer`
