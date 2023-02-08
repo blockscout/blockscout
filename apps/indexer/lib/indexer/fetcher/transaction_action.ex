@@ -155,6 +155,7 @@ defmodule Indexer.Fetcher.TransactionAction do
 
       Logger.info(
         "Block #{block_number} handled successfully. Progress: #{progress_percentage}%. Initial block range: #{first_block}..#{last_block}." <>
+          " Actions found: #{Enum.count(tx_actions)}." <>
           if(next_block_new >= first_block, do: " Remaining block range: #{first_block}..#{next_block_new}", else: "")
       )
 
