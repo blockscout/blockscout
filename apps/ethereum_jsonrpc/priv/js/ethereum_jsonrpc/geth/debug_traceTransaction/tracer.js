@@ -207,14 +207,15 @@
 
         const inputOffset = log.stack.peek(2 + stackOffset).valueOf();
         const inputLength = log.stack.peek(3 + stackOffset).valueOf();
-        const inputEnd = inputOffset + inputLength;
+        const inputEnd = Math.min(inputOffset + inputLength, log.memory.length());
+        const input = (inputLength == 0 ? '0x0' : toHex(log.memory.slice(inputOffset, inputEnd)));
 
         const call = {
             type: 'call',
             callType: op.toLowerCase(),
             from: toHex(log.contract.getAddress()),
             to: toHex(to),
-            input: toHex(log.memory.slice(inputOffset, inputEnd)),
+            input: input,
             outputOffset: log.stack.peek(4 + stackOffset).valueOf(),
             outputLength: log.stack.peek(5 + stackOffset).valueOf()
         };
