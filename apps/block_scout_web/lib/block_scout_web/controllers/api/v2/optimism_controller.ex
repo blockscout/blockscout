@@ -19,12 +19,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       |> Chain.list_output_roots()
       |> split_list_by_page()
 
+    total = Chain.output_roots_total_count()
+
     next_page_params = next_page_params(next_page, roots, params)
 
     conn
     |> put_status(200)
     |> render(:output_roots, %{
       roots: roots,
+      total: total,
       next_page_params: next_page_params
     })
   end
