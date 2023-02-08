@@ -21,11 +21,13 @@ defmodule Indexer.Transform.OptimismWithdrawals do
 
     with false <- is_nil(Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:start_block_l2]),
          message_passer = Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:message_passer],
-         true <- is_address_correct?(message_passer),
-         message_passer = String.downcase(message_passer) do
+         true <- is_address_correct?(message_passer) do
+      message_passer = String.downcase(message_passer)
+
       logs
       |> Enum.filter(fn log ->
-        !is_nil(log.first_topic) && String.downcase(log.first_topic) == @message_passed_event && String.downcase(address_hash_to_string(log.address_hash)) == message_passer
+        !is_nil(log.first_topic) && String.downcase(log.first_topic) == @message_passed_event &&
+          String.downcase(address_hash_to_string(log.address_hash)) == message_passer
       end)
       |> Enum.map(fn log ->
         [_value, _gas_limit, _data, withdrawal_hash] =

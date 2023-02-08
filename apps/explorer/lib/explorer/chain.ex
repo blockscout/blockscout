@@ -2543,6 +2543,10 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  def output_roots_total_count do
+    Repo.aggregate(OptimismOutputRoot, :count, timeout: :infinity)
+  end
+
   @doc """
   Lists the top `t:Explorer.Chain.Token.t/0`'s'.
 
