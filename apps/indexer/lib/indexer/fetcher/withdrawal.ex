@@ -8,11 +8,6 @@ defmodule Indexer.Fetcher.Withdrawal do
 
   require Logger
 
-  import Ecto.Query,
-    only: [
-      from: 2
-    ]
-
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Withdrawal
@@ -146,23 +141,14 @@ defmodule Indexer.Fetcher.Withdrawal do
     if reason === :normal do
       {:noreply, state}
     else
-      Logger.metadata(fetcher: :transaction_action)
+      Logger.metadata(fetcher: :withdrawal)
       Logger.error(fn -> "Withdrawals fetcher task exited due to #{inspect(reason)}." end)
       {:noreply, state}
     end
   end
 
   defp missing_block_numbers(from) do
-    query =
-      from(withdrawal in Withdrawal,
-        right_join: block in assoc(withdrawal, :block),
-        select: block.number,
-        distinct: block.number,
-        where: block.number >= ^from,
-        where: is_nil(withdrawal.index)
-      )
-
-    blocks = Repo.all(query)
+    blocks = from |> Withdrawal.blocks_without_withdrowals_query() |> Repo.all()
     Logger.debug("missing_block_numbers #{length(blocks)}")
     blocks
   end

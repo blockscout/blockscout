@@ -10,12 +10,12 @@
   <!-- Block -->
   <td class="stakes-td">
     <%= render BlockScoutWeb.BlockView,
-        "_link.html",
+        "_number_link.html",
         block: @withdrawal.block
     %>
   </td>
   <!-- Amount -->
   <td class="stakes-td">
-    <span><%=  format_wei_value(@withdrawal.amount, :ether) %></span>
+    <span><%= format_wei_value(@withdrawal.amount, :ether) %></span>
   </td>
 </tr>

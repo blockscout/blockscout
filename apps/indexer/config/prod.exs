@@ -45,6 +45,6 @@ config :logger, :block_import_timings,
 
 config :logger, :withdrawal,
   level: :info,
-  path: Path.absname("logs/dev/indexer/withdrawal.log"),
+  path: Path.absname("logs/prod/indexer/withdrawal.log"),
   metadata_filter: [fetcher: :withdrawal],
   rotate: %{max_bytes: 52_428_800, keep: 19}
