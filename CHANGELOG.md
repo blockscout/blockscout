@@ -24,9 +24,12 @@
 - [#6740](https://github.com/blockscout/blockscout/pull/6740) - Fix tokens deadlock
 - [#6759](https://github.com/blockscout/blockscout/pull/6759) - Add `jq` in docker image
 - [#6779](https://github.com/blockscout/blockscout/pull/6779) - Fix missing ranges bounds clearing
+- [#6652](https://github.com/blockscout/blockscout/pull/6652) - Fix geth transaction tracer
 
 ### Chore
 
+- [#6834](https://github.com/blockscout/blockscout/pull/6834) - Take into account FIRST_BLOCK in "Total blocks" counter on the main page
+- [#6340](https://github.com/blockscout/blockscout/pull/6340) - Rollback to websocket_client 1.3.0
 - [#6786](https://github.com/blockscout/blockscout/pull/6786) - Refactor `try rescue` statements to keep stacktrace
 - [#6695](https://github.com/blockscout/blockscout/pull/6695) - Process errors and warnings with enables check-js feature in VS code
 
