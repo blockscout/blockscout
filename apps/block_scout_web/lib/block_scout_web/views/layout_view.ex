@@ -1,11 +1,9 @@
 defmodule BlockScoutWeb.LayoutView do
   use BlockScoutWeb, :view
 
-  alias Explorer.{Chain, CustomContractsHelpers}
+  alias Explorer.Chain
   alias Plug.Conn
   alias Poison.Parser
-
-  import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
 
   @default_other_networks [
     %{

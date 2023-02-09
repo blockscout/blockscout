@@ -114,7 +114,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     end
   end
 
-  def publish_with_multi_part_files(%{"address_hash" => address_hash} = params, external_libraries, files) do
+  def publish_with_multi_part_files(%{"address_hash" => address_hash} = params, external_libraries \\ %{}, files) do
     params_with_external_libaries = add_external_libraries(params, external_libraries)
 
     case Verifier.evaluate_authenticity_via_multi_part_files(address_hash, params_with_external_libaries, files) do
@@ -282,6 +282,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       %{name: key, address_hash: value}
     end)
   end
+
+  defp add_external_libraries(%{"external_libraries" => _} = params, _external_libraries), do: params
 
   defp add_external_libraries(params, external_libraries) do
     clean_external_libraries =

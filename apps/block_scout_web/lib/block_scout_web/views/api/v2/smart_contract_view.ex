@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias BlockScoutWeb.API.V2.TransactionView
   alias BlockScoutWeb.SmartContractView
   alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
+  alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Visualize.Sol2uml
@@ -21,6 +22,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   def render("function_response.json", %{output: output, names: names, contract_address_hash: contract_address_hash}) do
     prepare_function_response(output, names, contract_address_hash)
+  end
+
+  def render("changeset_errors.json", %{changeset: changeset}) do
+    Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
+        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      end)
+    end)
   end
 
   def prepare_function_response(outputs, names, contract_address_hash) do
@@ -129,7 +138,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     target_contract = if smart_contract_verified, do: address.smart_contract, else: metadata_for_verification
 
     %{
-      "verified_twin_address_hash" => metadata_for_verification && metadata_for_verification.address_hash,
+      "verified_twin_address_hash" =>
+        metadata_for_verification && Address.checksum(metadata_for_verification.address_hash),
       "is_verified" => smart_contract_verified,
       "is_changed_bytecode" => smart_contract_verified && address.smart_contract.is_changed_bytecode,
       "is_partially_verified" => address.smart_contract.partially_verified && smart_contract_verified,
@@ -189,7 +199,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   defp prepare_external_libraries(libraries) when is_list(libraries) do
     Enum.map(libraries, fn %Explorer.Chain.SmartContract.ExternalLibrary{name: name, address_hash: address_hash} ->
-      %{name: name, address_hash: address_hash}
+      {:ok, hash} = Chain.string_to_address_hash(address_hash)
+
+      %{name: name, address_hash: Address.checksum(hash)}
     end)
   end
 

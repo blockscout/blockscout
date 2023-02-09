@@ -187,7 +187,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       params: params,
       conn: conn
     } do
-      [contract_1, contract_2, contract_3] = prepare_contracts()
+      [_contract_1, contract_2, _contract_3] = prepare_contracts()
 
       filter_params =
         params
@@ -213,7 +213,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
            params: params,
            conn: conn
          } do
-      [contract_1, contract_2, contract_3] = prepare_contracts()
+      [_contract_1, contract_2, contract_3] = prepare_contracts()
 
       filter_params =
         params
@@ -238,7 +238,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
            params: params,
            conn: conn
          } do
-      [contract_1, contract_2, contract_3] = prepare_contracts()
+      [contract_1, contract_2, _contract_3] = prepare_contracts()
 
       filter_params =
         params

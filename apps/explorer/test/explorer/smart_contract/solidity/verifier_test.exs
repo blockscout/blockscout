@@ -309,7 +309,8 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         "evm_version" => "petersburg",
         "name" => "TestToken",
         "optimization" => false,
-        "constructor_arguments" => wrong_constructor_arguments
+        "constructor_arguments" => wrong_constructor_arguments,
+        "autodetect_constructor_args" => false
       }
 
       assert {:error, :constructor_arguments} = Verifier.evaluate_authenticity(contract_address_1.hash, params_1)

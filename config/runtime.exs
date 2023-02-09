@@ -100,7 +100,9 @@ config :block_scout_web,
   new_tags: System.get_env("NEW_TAGS"),
   chain_id: System.get_env("CHAIN_ID"),
   json_rpc: System.get_env("JSON_RPC"),
-  verification_max_libraries: verification_max_libraries
+  verification_max_libraries: verification_max_libraries,
+  permanent_dark_mode_enabled: System.get_env("PERMANENT_DARK_MODE_ENABLED", "false") == "true",
+  permanent_light_mode_enabled: System.get_env("PERMANENT_LIGHT_MODE_ENABLED", "false") == "true"
 
 default_api_rate_limit = 50
 default_api_rate_limit_str = Integer.to_string(default_api_rate_limit)
@@ -180,7 +182,10 @@ config :ethereum_jsonrpc,
   disable_archive_balances?: System.get_env("ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES", "false") == "true"
 
 debug_trace_transaction_timeout = System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s")
-config :ethereum_jsonrpc, EthereumJSONRPC.Geth, debug_trace_transaction_timeout: debug_trace_transaction_timeout
+
+config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
+  debug_trace_transaction_timeout: debug_trace_transaction_timeout,
+  tracer: System.get_env("INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE", "call_tracer")
 
 config :ethereum_jsonrpc, EthereumJSONRPC.PendingTransaction,
   type: System.get_env("ETHEREUM_JSONRPC_PENDING_TRANSACTIONS_TYPE", "default")
@@ -218,10 +223,6 @@ config :explorer,
   implementation_data_fetching_timeout: :timer.seconds(2),
   restricted_list: System.get_env("RESTRICTED_LIST", nil),
   restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil)
-
-config :explorer, Explorer.Visualize.Sol2uml,
-  service_url: System.get_env("VISUALIZE_SOL2UML_SERVICE_URL"),
-  enabled: System.get_env("VISUALIZE_SOL2UML_ENABLED") == "true"
 
 config :explorer, Explorer.Chain.Events.Listener,
   enabled:
@@ -354,6 +355,14 @@ config :explorer, Explorer.SmartContract.RustVerifierInterface,
   service_url: System.get_env("RUST_VERIFICATION_SERVICE_URL"),
   enabled: System.get_env("ENABLE_RUST_VERIFICATION_SERVICE") == "true"
 
+config :explorer, Explorer.Visualize.Sol2uml,
+  service_url: System.get_env("VISUALIZE_SOL2UML_SERVICE_URL"),
+  enabled: System.get_env("VISUALIZE_SOL2UML_ENABLED") == "true"
+
+config :explorer, Explorer.SmartContract.SigProviderInterface,
+  service_url: System.get_env("SIG_PROVIDER_SERVICE_URL"),
+  enabled: System.get_env("SIG_PROVIDER_ENABLED") == "true"
+
 config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
   table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
   api_key: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
@@ -423,6 +432,17 @@ config :indexer,
   trace_first_block: System.get_env("TRACE_FIRST_BLOCK") || "",
   trace_last_block: System.get_env("TRACE_LAST_BLOCK") || "",
   fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block")
+
+config :indexer, Indexer.Fetcher.TransactionAction.Supervisor,
+  enabled: System.get_env("INDEXER_TX_ACTIONS_ENABLE", "false") == "true"
+
+config :indexer, Indexer.Fetcher.TransactionAction,
+  reindex_first_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_FIRST_BLOCK"),
+  reindex_last_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_LAST_BLOCK"),
+  reindex_protocols: System.get_env("INDEXER_TX_ACTIONS_REINDEX_PROTOCOLS", "")
+
+config :indexer, Indexer.Transform.TransactionActions,
+  max_token_cache_size: System.get_env("INDEXER_TX_ACTIONS_MAX_TOKEN_CACHE_SIZE")
 
 {receipts_batch_size, _} = Integer.parse(System.get_env("INDEXER_RECEIPTS_BATCH_SIZE", "250"))
 {receipts_concurrency, _} = Integer.parse(System.get_env("INDEXER_RECEIPTS_CONCURRENCY", "10"))

@@ -59,6 +59,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     prepare_token_transfer(token_transfer, conn)
   end
 
+  def render("transaction_actions.json", %{actions: actions}) do
+    Enum.map(actions, &prepare_transaction_action(&1))
+  end
+
   def render("internal_transactions.json", %{
         internal_transactions: internal_transactions,
         next_page_params: next_page_params,
@@ -82,6 +86,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def prepare_token_transfer(token_transfer, conn) do
+    decoded_input = token_transfer.transaction |> Transaction.decoded_input_data() |> format_decoded_input()
+
     %{
       "tx_hash" => token_transfer.transaction_hash,
       "from" => Helper.address_with_info(conn, token_transfer.from_address, token_transfer.from_address_hash),
@@ -89,7 +95,22 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "total" => prepare_token_transfer_total(token_transfer),
       "token" => TokenView.render("token.json", %{token: Market.add_price(token_transfer.token)}),
       "type" => Chain.get_token_transfer_type(token_transfer),
-      "timestamp" => block_timestamp(token_transfer.block)
+      "timestamp" =>
+        if(match?(%NotLoaded{}, token_transfer.block),
+          do: block_timestamp(token_transfer.transaction),
+          else: block_timestamp(token_transfer.block)
+        ),
+      "method" => method_name(token_transfer.transaction, decoded_input, true),
+      "block_hash" => to_string(token_transfer.block_hash),
+      "log_index" => to_string(token_transfer.log_index)
+    }
+  end
+
+  def prepare_transaction_action(action) do
+    %{
+      "protocol" => action.protocol,
+      "type" => action.type,
+      "data" => action.data
     }
   end
 
@@ -145,6 +166,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     decoded = decode_log(log, transaction_or_hash)
 
     %{
+      "tx_hash" => get_tx_hash(transaction_or_hash),
       "address" => Helper.address_with_info(log.address, log.address_hash),
       "topics" => [
         log.first_topic,
@@ -158,6 +180,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "smart_contract" => smart_contract_info(transaction_or_hash)
     }
   end
+
+  defp get_tx_hash(%Transaction{} = tx), do: to_string(tx.hash)
+  defp get_tx_hash(hash), do: to_string(hash)
 
   defp smart_contract_info(%Transaction{} = tx), do: Helper.address_with_info(tx.to_address, tx.to_address_hash)
   defp smart_contract_info(_), do: nil
@@ -231,6 +256,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "decoded_input" => decoded_input_data,
       "token_transfers" => token_transfers(transaction.token_transfers, conn, single_tx?),
       "token_transfers_overflow" => token_transfers_overflow(transaction.token_transfers, single_tx?),
+      "actions" => transaction_actions(transaction.transaction_actions),
       "exchange_rate" => (Market.get_exchange_rate(Explorer.coin()) || TokenRate.null()).usd_value,
       "method" => method_name(transaction, decoded_input),
       "tx_types" => tx_types(transaction),
@@ -253,6 +279,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def token_transfers_overflow(token_transfers, _),
     do: Enum.count(token_transfers) > Chain.get_token_transfers_per_transaction_preview_count()
+
+  defp transaction_actions(%NotLoaded{}), do: []
+
+  defp transaction_actions(actions) do
+    render("transaction_actions.json", %{actions: actions})
+  end
 
   defp priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas) do
     if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas),
@@ -371,19 +403,25 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> Timex.diff(right, :milliseconds)
   end
 
-  defp method_name(_, {:ok, _method_id, text, _mapping}) do
+  defp method_name(_, _, skip_sc_check? \\ false)
+
+  defp method_name(_, {:ok, _method_id, text, _mapping}, _) do
     Transaction.parse_method_name(text, false)
   end
 
-  defp method_name(%Transaction{to_address: to_address, input: %{bytes: <<method_id::binary-size(4), _::binary>>}}, _) do
-    if Helper.is_smart_contract(to_address) do
+  defp method_name(
+         %Transaction{to_address: to_address, input: %{bytes: <<method_id::binary-size(4), _::binary>>}},
+         _,
+         skip_sc_check?
+       ) do
+    if Helper.is_smart_contract(to_address) || skip_sc_check? do
       "0x" <> Base.encode16(method_id, case: :lower)
     else
       nil
     end
   end
 
-  defp method_name(_, _) do
+  defp method_name(_, _, _) do
     nil
   end
 
@@ -445,6 +483,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
+  defp block_timestamp(%Transaction{block: %Block{} = block}), do: block.timestamp
   defp block_timestamp(%Block{} = block), do: block.timestamp
   defp block_timestamp(_), do: nil
 end

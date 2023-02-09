@@ -57,7 +57,8 @@ defmodule Explorer.Chain.Cache.GasUsage do
           rescue
             e ->
               Logger.debug([
-                "Coudn't update gas used sum test #{inspect(e)}"
+                "Coudn't update gas used sum: ",
+                Exception.format(:error, e, __STACKTRACE__)
               ])
           end
 
