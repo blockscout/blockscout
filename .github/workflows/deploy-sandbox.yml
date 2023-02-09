@@ -1,0 +1,21 @@
+name: Build and Deploy to Sandbox
+on:
+  pull_request:
+    types: [closed]
+    branches:
+    - 'v?[0-9]+.[0-9]+'
+jobs:
+  buildDeploySandbox:
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/build-deploy.yml
+    secrets:
+      DOCKER: ${{ secrets.DOCKER }}
+      GH_PAT: ${{ secrets.GH_PAT }}
+      GKE_SA_KEY: ${{ secrets.GKE_SA_KEY }}
+      GKE_PROJECT: ${{ secrets.GKE_PROJECT }}
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+    with:
+      env: quai-sandbox
+      awk : sed -e "s/pre/rc/g" | read a; if [[ "$a" =~ "rc" ]];then echo $a | awk -F . '{print $1"."$2"."$3"."$4+1}';else echo $a; fi 
+      rails: '[[ ! "$VERSION" =~ "pre" ]]'

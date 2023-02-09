@@ -1,0 +1,164 @@
+name: Build and Deploy sub-action
+on:
+  workflow_call:
+    # Define the inputs required for the action to run
+    inputs:
+      # The environment where the deployment should occur
+      env:
+        required: true
+        type: string
+        description: The environment where the deployment should occur (e.g. dev, staging, prod).
+
+      # The awk command to update the version environment variable
+      awk:
+        required: true
+        type: string
+        description: The awk command to update the version environment variable.
+
+      # The rails command for a sanity check
+      rails:
+        required: false
+        type: string
+        default: echo "continuing."
+        description: The rails command for a sanity check.
+
+      # The branch where the action should be triggered
+      branch:
+        required: false
+        type: string
+        default: ${{ github.ref }}
+        description: The branch where the action should be triggered.
+
+    # Define the secrets required for the action to run
+    secrets:
+      # GitHub Personal Access Token for logging into GitHub
+      GH_PAT:
+        description: 'Personal Access Token (PAT) for logging into GitHub'
+        required: true
+
+      # Docker registry login credentials
+      DOCKER:
+        description: 'Docker registry login credentials'
+        required: true
+
+      # Google Cloud Platform Service Account Key for logging into the GKE cluster
+      GKE_SA_KEY:
+        description: 'Google Cloud Platform Service Account Key for logging into the GKE cluster'
+        required: true
+
+      # Project ID for the Google Cloud Platform project
+      GKE_PROJECT:
+        description: 'Project ID for the Google Cloud Platform project'
+        required: true
+
+      # Private key for signing commits and tags with GPG
+      GPG_PRIVATE_KEY:
+        description: 'Private key for signing commits and tags with GPG'
+        required: true
+
+      # Passphrase for using the GPG private key
+      GPG_PASSPHRASE:
+        description: 'Passphrase for using the GPG private key'
+        required: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}
+    steps:
+      # Checkout the specified branch from GitHub
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.branch }}
+        ssh-key: ${{ secrets.GH_PAT }}
+
+      # Import the GPG key for signing Git commits and tags
+    - name: Import GPG key
+      uses: crazy-max/ghaction-import-gpg@v5
+      with:
+        gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+        passphrase: ${{ secrets.GPG_PASSPHRASE }}
+        git_user_signingkey: true
+        git_tag_gpgsign: true
+        git_commit_gpgsign: true
+
+      # Install 'yq' for editing YAML files
+    - name: Install yq
+      run: sudo snap install yq
+
+      # Get the current version from the 'VERSION' file
+    - name: get Version
+      run: echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
+
+      # Sanity check the version we are trying to release
+    - name: Sanity Check Branch
+      run: ${{ inputs.rails }}
+
+      # Sync the version in the 'Chart.yaml' and 'values.yaml' files
+    - name: Sync Chart.yaml version
+      run: yq eval -i ".appVersion=\"${{ env.VERSION }}\"" ./helm/Chart.yaml
+
+    - name: Sync values.yaml version
+      run: yq eval -i ".quaiBlockscout.image.version=\"${{ env.VERSION }}\"" ./helm/values.yaml
+      # Login to the Docker registry
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: quaibuild
+        password: ${{ secrets.DOCKER }}
+      
+      # Build and push the Docker image to the registry
+    - name: Build Docker
+      run: docker build -t quainetwork/quai-blockscout:${{ env.VERSION }} .
+
+    - name: Push to Docker Hub
+      run: docker push quainetwork/quai-blockscout:${{ env.VERSION }}
+
+      # Tag the Git repository with the current version
+    - name: git tag
+      run: git tag -s ${{ env.VERSION }} -m ${{ env.VERSION }} && git push origin tag ${{ env.VERSION }}
+
+      # Set up Google Cloud Platform with the correct service account key and project id
+    - uses: google-github-actions/setup-gcloud@94337306dda8180d967a56932ceb4ddcf01edae7
+      with:
+        service_account_key: ${{ secrets.GKE_SA_KEY }}
+        project_id: ${{ secrets.GKE_PROJECT }}
+
+      # Get credentials for accessing the GKE cluster.
+    - uses: google-github-actions/get-gke-credentials@fb08709ba27618c31c09e014e1d8364b02e5042e
+      with:
+        cluster_name: ${{ inputs.env }}
+        location: us-central1-c
+        credentials: ${{ secrets.GKE_SA_KEY }}
+
+      # Deploy the helm chart
+    - name: Deploy the helm chart
+      uses: WyriHaximus/github-action-helm3@v2
+      with:
+        exec: helm upgrade quai-blockscout ./helm --install --wait --atomic --namespace=${{ inputs.env }} --values=./helm/env/${{ inputs.env }}.values.yaml
+
+      # Rev the version
+    - name: Update version environment variable
+      run: echo "VERSION=$(echo $VERSION | ${{ inputs.awk  }})" >> $GITHUB_ENV
+
+      # Update the 'VERSION' file to reflect the rev'd version
+    - name: Update VERSION file 
+      run: echo "$VERSION" > VERSION 
+
+      # Sync the version in the 'Chart.yaml' and 'values.yaml' files
+    - name: Update Chart.yaml version
+      run: yq eval -P -i ".appVersion=\"${{ env.VERSION }}\"" ./helm/Chart.yaml
+
+    - name: Update values.yaml version
+      run: yq eval -P -i ".quaiBlockscout.image.version=\"${{ env.VERSION }}\"" ./helm/values.yaml
+
+      # Remove the kubernetes acces file
+    - name: remove kubeconfig
+      run: rm $KUBECONFIG
+
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        branch: ${{ inputs.branch }}
+        commit_message: Rev'd 'VERSION' file to {{ env.VERSION }}
+        commit_options: -S
+        commit_user_name: ci@dominant-strategies.io
+        commit_user_email: ci-dominantstrategies

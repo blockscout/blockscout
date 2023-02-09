@@ -1,7 +1,7 @@
 quaiBlockscout:
   image:
-    name: quainetwork/blockscout
-    version: v0.1.0-pre.54
+    name: quainetwork/quai-blockscout
+    version: v0.1.0-pre.0
   env: "quai-dev"
   chains:
     - name: prime

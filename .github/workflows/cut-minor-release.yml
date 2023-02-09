@@ -1,0 +1,82 @@
+name: Cut a new Minor Release Branch
+on: workflow_dispatch
+jobs:
+  cutReleaseCandidate:
+    runs-on: ubuntu-latest
+    outputs:
+      branch: ${{ steps.set-branch.outputs.branch }}
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ssh-key: ${{ secrets.GH_PAT }}
+
+    - name: get Version
+      run: echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
+
+    - name: Update version environment variable
+      run: echo "VERSION=$(echo $VERSION | sed 's/pre/rc/g' | awk -F. '{print $1"."$2"."$3"."0}')" >> $GITHUB_ENV
+
+    - name: Update 'VERSION' file
+      run: echo "$VERSION" > VERSION
+
+    - name: Update Chart.yaml version
+      run: yq eval -P -i ".appVersion=\"${{ env.VERSION }}\"" ./helm/Chart.yaml
+
+    - name: Update values.yaml version
+      run: yq eval -P -i ".quaiBlockscout.image.version=\"${{ env.VERSION }}\"" ./helm/values.yaml
+
+    - name: Update version environment variable e.g. v0.1.0-pre.0 -> v0.1
+      run: echo "BRANCH=$(echo $VERSION | sed 's/\.[0-9]*-.*//g')" >> $GITHUB_ENV
+
+    - name: Store version in branch variable
+      id: set-branch
+      run: echo "::set-output name=branch::${{ env.BRANCH }}"
+
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: Rev'd 'VERSION' file to {{ env.VERSION }}
+        branch: ${{ env.BRANCH }}
+        create_branch: true
+        commit_options: -S
+        commit_username: ci@dominant-strategies.io
+        commit_user_email: ci-dominantstrategies
+
+
+    - uses: actions/checkout@v3
+      with:
+        ssh-key: ${{ secrets.GH_PAT }}
+
+    - name: get Version
+      run: echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
+
+    - name: Update version environment variable
+      run: echo "VERSION=$(echo $VERSION | sed "s/-.*//g" | awk -F. '{print $1"."$2+1"."0"-pre.0"}')" >> $GITHUB_ENV
+
+    - name: Update 'VERSION' file
+      run: echo "$VERSION" > VERSION
+
+    - name: Update Chart.yaml version
+      run: yq eval -P -i ".appVersion=\"${{ env.VERSION }}\"" ./helm/Chart.yaml
+
+
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: Rev'd 'VERSION' file to {{ env.VERSION }}
+        branch: main
+        commit_options: -S
+        commit_username: ci@dominant-strategies.io
+        commit_user_email: ci-dominantstrategies
+  deployReleaseCandidate:
+    uses: ./.github/workflows/build-deploy.yml
+    secrets:
+      DOCKER: ${{ secrets.DOCKER }}
+      GH_PAT: ${{ secrets.GH_PAT }}
+      GKE_SA_KEY: ${{ secrets.GKE_SA_KEY }}
+      GKE_PROJECT: ${{ secrets.GKE_PROJECT }}
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+    with:
+      env: quai-sandbox
+      awk : sed -e "s/pre/rc/g" | read a; if [[ "$a" =~ "rc" ]];then echo $a | awk -F . '{print $1"."$2"."$3"."$4+1}';else echo $a; fi 
+      rails: '[[ ! "$VERSION" =~ "pre" ]]'
+    needs: [cutReleaseCandidate]
