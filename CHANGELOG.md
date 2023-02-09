@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#6838](https://github.com/blockscout/blockscout/pull/6838) - Disable dark mode env var
 - [#6744](https://github.com/blockscout/blockscout/pull/6744) - API v2: smart contracts verification
 - [#6763](https://github.com/blockscout/blockscout/pull/6763) - Permanent UI dark mode
 - [#6721](https://github.com/blockscout/blockscout/pull/6721) - Implement fetching internal transactions from callTracer
@@ -28,6 +29,7 @@
 
 ### Chore
 
+- [#6853](https://github.com/blockscout/blockscout/pull/6853) - Fix 503 page
 - [#6845](https://github.com/blockscout/blockscout/pull/6845) - Extract Docker-compose services into separate files
 - [#6834](https://github.com/blockscout/blockscout/pull/6834) - Take into account FIRST_BLOCK in "Total blocks" counter on the main page
 - [#6340](https://github.com/blockscout/blockscout/pull/6340) - Rollback to websocket_client 1.3.0
