@@ -13,6 +13,7 @@
 
 ### Fixes
 
+- [#6833](https://github.com/blockscout/blockscout/pull/6833) - Fix "not found" page error due to an error occured when decoding base64 encoded json
 - [#6831](https://github.com/blockscout/blockscout/pull/6831) - Copy of [#6028](https://github.com/blockscout/blockscout/pull/6028)
 - [#6832](https://github.com/blockscout/blockscout/pull/6832) - Transaction actions fix
 - [#6827](https://github.com/blockscout/blockscout/pull/6827) - Fix handling unknown calls from `callTracer`
@@ -346,7 +347,7 @@
 - [#5921](https://github.com/blockscout/blockscout/pull/5921) - Bump briefly from 25942fb to 1dd66ee
 - [#6033](https://github.com/blockscout/blockscout/pull/6033) - Bump sass from 1.54.7 to 1.54.8 in /apps/block_scout_web/assets
 - [#6046](https://github.com/blockscout/blockscout/pull/6046) - Bump credo from 1.6.6 to 1.6.7
-- [#6045](https://github.com/blockscout/blockscout/pull/6045) - Re-use _btn_copy.html for raw trace page
+- [#6045](https://github.com/blockscout/blockscout/pull/6045) - Re-use \_btn_copy.html for raw trace page
 - [#6035](https://github.com/blockscout/blockscout/pull/6035) - Hide copy btn if no raw trace
 - [#6034](https://github.com/blockscout/blockscout/pull/6034) - Suppress empty sections in supported chain dropdown
 - [#5939](https://github.com/blockscout/blockscout/pull/5939) - Bump sweetalert2 from 11.4.26 to 11.4.27 in /apps/block_scout_web/assets
@@ -1311,7 +1312,7 @@
 - [#3190](https://github.com/blockscout/blockscout/pull/3190) - Contract log/method decoded view improvements: eliminate horizontal scroll, remove excess borders, whitespaces
 - [#3185](https://github.com/blockscout/blockscout/pull/3185) - Transaction page: decoding logs from nested contracts calls
 - [#3182](https://github.com/blockscout/blockscout/pull/3182) - Besu: support revertReason key in eth_getTransactionReceipt endpoint
-- [#3178](https://github.com/blockscout/blockscout/pull/3178) - Fix permanent fetching tokens...  when read/write proxy tab is active
+- [#3178](https://github.com/blockscout/blockscout/pull/3178) - Fix permanent fetching tokens... when read/write proxy tab is active
 - [#3178](https://github.com/blockscout/blockscout/pull/3178) - Fix unavailable navbar menu when read/write proxy tab is active
 
 ### Chore
@@ -1360,7 +1361,7 @@
 
 ### Features
 
-- [#3125](https://github.com/blockscout/blockscout/pull/3125)  - Availability to configure a number of days to consider at coin balance history chart via environment variable
+- [#3125](https://github.com/blockscout/blockscout/pull/3125) - Availability to configure a number of days to consider at coin balance history chart via environment variable
 
 ### Fixes
 
@@ -1604,7 +1605,7 @@
 - [#2746](https://github.com/blockscout/blockscout/pull/2746) - fixed wrong alignment in logs decoded view
 - [#2745](https://github.com/blockscout/blockscout/pull/2745) - optimize addresses page
 - [#2742](https://github.com/blockscout/blockscout/pull/2742) -
-fixed menu hovers in dark mode desktop view
+  fixed menu hovers in dark mode desktop view
 - [#2737](https://github.com/blockscout/blockscout/pull/2737) - switched hardcoded subnetwork value to elixir expression for mobile menu
 - [#2736](https://github.com/blockscout/blockscout/pull/2736) - do not update cache if no blocks were inserted
 - [#2731](https://github.com/blockscout/blockscout/pull/2731) - fix library verification
@@ -1908,7 +1909,7 @@ fixed menu hovers in dark mode desktop view
 
 - [#2044](https://github.com/blockscout/blockscout/pull/2044) - New network selector.
 - [#2091](https://github.com/blockscout/blockscout/pull/2091) - Added "Question" modal.
-- [#1963](https://github.com/blockscout/blockscout/pull/1963), [#1959](https://github.com/blockscout/blockscout/pull/1959), [#1948](https://github.com/blockscout/blockscout/pull/1948), [#1936](https://github.com/blockscout/blockscout/pull/1936), [#1925](https://github.com/blockscout/blockscout/pull/1925), [#1922](https://github.com/blockscout/blockscout/pull/1922), [#1903](https://github.com/blockscout/blockscout/pull/1903), [#1874](https://github.com/blockscout/blockscout/pull/1874), [#1895](https://github.com/blockscout/blockscout/pull/1895), [#2031](https://github.com/blockscout/blockscout/pull/2031), [#2073](https://github.com/blockscout/blockscout/pull/2073), [#2074](https://github.com/blockscout/blockscout/pull/2074),  - added new themes and logos for poa, eth, rinkeby, goerli, ropsten, kovan, sokol, xdai, etc, rsk and default theme
+- [#1963](https://github.com/blockscout/blockscout/pull/1963), [#1959](https://github.com/blockscout/blockscout/pull/1959), [#1948](https://github.com/blockscout/blockscout/pull/1948), [#1936](https://github.com/blockscout/blockscout/pull/1936), [#1925](https://github.com/blockscout/blockscout/pull/1925), [#1922](https://github.com/blockscout/blockscout/pull/1922), [#1903](https://github.com/blockscout/blockscout/pull/1903), [#1874](https://github.com/blockscout/blockscout/pull/1874), [#1895](https://github.com/blockscout/blockscout/pull/1895), [#2031](https://github.com/blockscout/blockscout/pull/2031), [#2073](https://github.com/blockscout/blockscout/pull/2073), [#2074](https://github.com/blockscout/blockscout/pull/2074), - added new themes and logos for poa, eth, rinkeby, goerli, ropsten, kovan, sokol, xdai, etc, rsk and default theme
 - [#1726](https://github.com/blockscout/blockscout/pull/2071) - Updated styles for the new smart contract page.
 - [#2081](https://github.com/blockscout/blockscout/pull/2081) - Tooltip for 'more' button, explorers logos added
 - [#2010](https://github.com/blockscout/blockscout/pull/2010) - added "block not found" and "tx not found pages"
