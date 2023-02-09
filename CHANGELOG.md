@@ -31,6 +31,7 @@
 
 - [#6853](https://github.com/blockscout/blockscout/pull/6853) - Fix 503 page
 - [#6845](https://github.com/blockscout/blockscout/pull/6845) - Extract Docker-compose services into separate files
+- [#6839](https://github.com/blockscout/blockscout/pull/6839) - Add cache to transaction actions parser
 - [#6834](https://github.com/blockscout/blockscout/pull/6834) - Take into account FIRST_BLOCK in "Total blocks" counter on the main page
 - [#6340](https://github.com/blockscout/blockscout/pull/6340) - Rollback to websocket_client 1.3.0
 - [#6786](https://github.com/blockscout/blockscout/pull/6786) - Refactor `try rescue` statements to keep stacktrace
