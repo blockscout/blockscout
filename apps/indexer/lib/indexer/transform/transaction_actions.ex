@@ -720,9 +720,9 @@ defmodule Indexer.Transform.TransactionActions do
     end
   end
 
-  defp init_token_data_cache do
-    if :ets.whereis(:tx_actions_tokens_data_cache) == :undefined do
-      :ets.new(:tx_actions_tokens_data_cache, [
+  defp init_cache(table) do
+    if :ets.whereis(table) == :undefined do
+      :ets.new(table, [
         :set,
         :named_table,
         :public,
@@ -732,16 +732,12 @@ defmodule Indexer.Transform.TransactionActions do
     end
   end
 
+  defp init_token_data_cache do
+    init_cache(:tx_actions_tokens_data_cache)
+  end
+
   defp init_uniswap_pools_cache do
-    if :ets.whereis(:tx_actions_uniswap_pools_cache) == :undefined do
-      :ets.new(:tx_actions_uniswap_pools_cache, [
-        :set,
-        :named_table,
-        :public,
-        read_concurrency: true,
-        write_concurrency: true
-      ])
-    end
+    init_cache(:tx_actions_uniswap_pools_cache)
   end
 
   defp is_address_correct?(address) do
