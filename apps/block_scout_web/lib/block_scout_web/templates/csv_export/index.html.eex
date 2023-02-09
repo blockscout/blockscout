@@ -34,7 +34,10 @@
           'sitekey': reCaptchaClientKey,
           'theme': function () {
             const permanentDarkModeEnabled = document.getElementById('permanent-dark-mode').textContent === 'true'
-            if (permanentDarkModeEnabled) {
+            const permanentLightModeEnabled = document.getElementById('permanent-light-mode').textContent === 'true'
+            if (permanentLightModeEnabled) {
+              return 'light'
+            } else if (permanentDarkModeEnabled) {
               return 'dark'
             } else {
               return getCookie('chakra-ui-color-mode')
