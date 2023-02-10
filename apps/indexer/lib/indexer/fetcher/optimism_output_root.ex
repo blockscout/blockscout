@@ -11,16 +11,16 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
   import Ecto.Query
 
   import EthereumJSONRPC,
-    only: [request: 1, json_rpc: 2, fetch_block_number_by_tag: 2, integer_to_quantity: 1, quantity_to_integer: 1]
+    only: [json_rpc: 2, fetch_block_number_by_tag: 2, quantity_to_integer: 1]
 
   alias ABI.TypeDecoder
   alias EthereumJSONRPC.Block.ByNumber
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Data, OptimismOutputRoot}
   alias Indexer.BoundQueue
+  alias Indexer.Fetcher.Optimism
 
   @block_check_interval_range_size 100
-  @eth_get_logs_range_size 1000
 
   # 32-byte signature of the event OutputProposed(bytes32 indexed outputRoot, uint256 indexed l2OutputIndex, uint256 indexed l2BlockNumber, uint256 l1Timestamp)
   @output_proposed_event "0xa7aaf2512769da4e444e3de247be2564225c2e7a8f74cfe528e46e17d24868e2"
@@ -57,7 +57,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
          json_rpc_named_arguments <- json_rpc_named_arguments(optimism_rpc_l1),
-         {:ok, last_l1_tx} <- get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments),
+         {:ok, last_l1_tx} <- Optimism.get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_tx_hash) && is_nil(last_l1_tx)},
          {:ok, last_safe_block} <- get_block_number_by_tag("safe", json_rpc_named_arguments),
          first_block <- max(last_safe_block - @block_check_interval_range_size, 1),
@@ -134,20 +134,20 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
       ) do
     time_before = Timex.now()
 
-    chunks_number = ceil((end_block - start_block + 1) / @eth_get_logs_range_size)
+    chunks_number = ceil((end_block - start_block + 1) / Optimism.get_logs_range_size())
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
 
     last_written_block =
       chunk_range
       |> Enum.reduce_while(start_block - 1, fn current_chank, _ ->
-        chunk_start = start_block + @eth_get_logs_range_size * current_chank
-        chunk_end = min(chunk_start + @eth_get_logs_range_size - 1, end_block)
+        chunk_start = start_block + Optimism.get_logs_range_size() * current_chank
+        chunk_end = min(chunk_start + Optimism.get_logs_range_size() - 1, end_block)
 
         if chunk_end >= chunk_start do
           log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil)
 
           {:ok, result} =
-            get_logs(
+            Optimism.get_logs(
               chunk_start,
               chunk_end,
               output_oracle,
@@ -308,34 +308,6 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
     |> Kernel.||({0, nil})
   end
 
-  defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
-
-  defp get_transaction_by_hash(hash, _json_rpc_named_arguments, _retries_left) when is_nil(hash), do: {:ok, nil}
-
-  defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left) do
-    req =
-      request(%{
-        id: 0,
-        method: "eth_getTransactionByHash",
-        params: [hash]
-      })
-
-    case json_rpc(req, json_rpc_named_arguments) do
-      {:ok, tx} ->
-        {:ok, tx}
-
-      {:error, message} ->
-        retries_left = retries_left - 1
-
-        if retries_left <= 0 do
-          {:error, message}
-        else
-          :timer.sleep(3000)
-          get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left)
-        end
-    end
-  end
-
   defp get_block_number_by_tag(tag, json_rpc_named_arguments, retries_left \\ 3) do
     case fetch_block_number_by_tag(tag, json_rpc_named_arguments) do
       {:ok, block_number} ->
@@ -393,41 +365,6 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
           Logger.error("#{error_message} Retrying...")
           :timer.sleep(3000)
           get_block_timestamp_by_number(number, json_rpc_named_arguments, retries_left)
-        end
-    end
-  end
-
-  defp get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments, retries_left) do
-    req =
-      request(%{
-        id: 0,
-        method: "eth_getLogs",
-        params: [
-          %{
-            :fromBlock => integer_to_quantity(from_block),
-            :toBlock => integer_to_quantity(to_block),
-            :address => address,
-            :topics => [topic0]
-          }
-        ]
-      })
-
-    case json_rpc(req, json_rpc_named_arguments) do
-      {:ok, results} ->
-        {:ok, results}
-
-      {:error, message} ->
-        retries_left = retries_left - 1
-
-        error_message = "Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(message)}"
-
-        if retries_left <= 0 do
-          Logger.error(error_message)
-          {:error, message}
-        else
-          Logger.error("#{error_message} Retrying...")
-          :timer.sleep(3000)
-          get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments, retries_left)
         end
     end
   end
