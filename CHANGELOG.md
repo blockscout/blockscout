@@ -11,6 +11,7 @@
 - [#6541](https://github.com/blockscout/blockscout/pull/6541) - Integrate sig provider
 - [#6712](https://github.com/blockscout/blockscout/pull/6712), [#6798](https://github.com/blockscout/blockscout/pull/6798) - API v2 update
 - [#6582](https://github.com/blockscout/blockscout/pull/6582) - Transaction actions indexer
+- [#6863](https://github.com/blockscout/blockscout/pull/6863) - Move OnDemand fetchers from indexer supervisor
 
 ### Fixes
 
