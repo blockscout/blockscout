@@ -53,18 +53,12 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
            {:start_block_l2_valid, start_block_l2 <= last_l2_block_number || last_l2_block_number == 0},
          {:ok, last_l2_tx} <- Optimism.get_transaction_by_hash(last_l2_tx_hash, json_rpc_named_arguments),
          {:l2_tx_not_found, false} <- {:l2_tx_not_found, !is_nil(last_l2_tx_hash) && is_nil(last_l2_tx)} do
-      fill_msg_nonce_gaps(start_block_l2, env[:message_passer], json_rpc_named_arguments)
-
-      start_block = max(start_block_l2, last_l2_block_number)
-
-      :ignore
-      # {:ok,
-      #  %{
-      #    message_passer: env[:message_passer],
-      #    start_block: start_block,
-      #    end_block: end_block,
-      #    json_rpc_named_arguments: json_rpc_named_arguments
-      #  }, {:continue, nil}}
+      {:ok,
+       %{
+         start_block: max(start_block_l2, last_l2_block_number),
+         message_passer: env[:message_passer],
+         json_rpc_named_arguments: json_rpc_named_arguments
+       }, {:continue, start_block_l2}}
     else
       {:start_block_l2_undefined, true} ->
         # the process shoudln't start if the start block is not defined
@@ -96,111 +90,39 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
     end
   end
 
+  @impl GenServer
+  def handle_continue(
+        start_block_l2,
+        %{
+          message_passer: message_passer,
+          json_rpc_named_arguments: json_rpc_named_arguments
+        } = state
+      ) do
+    fill_msg_nonce_gaps(start_block_l2, message_passer, json_rpc_named_arguments)
+    Process.send(self(), :find_new_events, [])
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_info(
+        :find_new_events,
+        %{start_block: start_block, message_passer: message_passer, json_rpc_named_arguments: json_rpc_named_arguments} =
+          state
+      ) do
+    {:ok, safe_block_number} = get_block_number_by_tag("safe", json_rpc_named_arguments)
+    fill_between_blocks(start_block, safe_block_number, message_passer, json_rpc_named_arguments, true)
+    fill_between_blocks(start_block, safe_block_number, message_passer, json_rpc_named_arguments, false)
+
+    {:ok, latest_block_number} = get_block_number_by_tag("latest", json_rpc_named_arguments)
+    fill_between_blocks(safe_block_number + 1, latest_block_number, message_passer, json_rpc_named_arguments, true)
+    fill_between_blocks(safe_block_number + 1, latest_block_number, message_passer, json_rpc_named_arguments, false)
+
+    {:stop, :normal, state}
+  end
+
   def remove(starting_block) do
     Repo.delete_all(from(w in OptimismWithdrawal, where: w.l2_block_number >= ^starting_block))
   end
-
-  # @impl GenServer
-  # def handle_continue(
-  #       _,
-  #       %{
-  #         output_oracle: output_oracle,
-  #         block_check_interval: block_check_interval,
-  #         start_block: start_block,
-  #         end_block: end_block,
-  #         json_rpc_named_arguments: json_rpc_named_arguments
-  #       } = state
-  #     ) do
-  #   time_before = Timex.now()
-
-  #   chunks_number = ceil((end_block - start_block + 1) / @eth_get_logs_range_size)
-  #   chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
-
-  #   last_written_block =
-  #     chunk_range
-  #     |> Enum.reduce_while(start_block - 1, fn current_chank, _ ->
-  #       chunk_start = start_block + @eth_get_logs_range_size * current_chank
-  #       chunk_end = min(chunk_start + @eth_get_logs_range_size - 1, end_block)
-
-  #       if chunk_end >= chunk_start do
-  #         log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil)
-
-  #         {:ok, result} =
-  #           get_logs(
-  #             chunk_start,
-  #             chunk_end,
-  #             output_oracle,
-  #             @output_proposed_event,
-  #             json_rpc_named_arguments,
-  #             100_000_000
-  #           )
-
-  #         output_roots = events_to_output_roots(result)
-
-  #         {:ok, _} =
-  #           Chain.import(%{
-  #             output_roots: %{params: output_roots},
-  #             timeout: :infinity
-  #           })
-
-  #         log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, Enum.count(output_roots))
-  #       end
-
-  #       reorg_block = reorg_block_pop()
-
-  #       if !is_nil(reorg_block) && reorg_block > 0 do
-  #         {deleted_count, _} = Repo.delete_all(from(r in OptimismOutputRoot, where: r.l1_block_number >= ^reorg_block))
-
-  #         if deleted_count > 0 do
-  #           Logger.warning(
-  #             "As L1 reorg was detected, all rows with l1_block_number >= #{reorg_block} were removed from the op_output_roots table. Number of removed rows: #{deleted_count}."
-  #           )
-  #         end
-
-  #         {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
-  #       else
-  #         {:cont, chunk_end}
-  #       end
-  #     end)
-
-  #   new_start_block = last_written_block + 1
-  #   {:ok, new_end_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-
-  #   if new_end_block == last_written_block do
-  #     # there is no new block, so wait for some time to let the chain issue the new block
-  #     :timer.sleep(max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0))
-  #   end
-
-  #   {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}, {:continue, nil}}
-  # end
-
-  # @impl GenServer
-  # def handle_info({ref, _result}, %{reorg_monitor_task: %Task{ref: ref}} = state) do
-  #   Process.demonitor(ref, [:flush])
-  #   {:noreply, %{state | reorg_monitor_task: nil}}
-  # end
-
-  # def handle_info(
-  #       {:DOWN, ref, :process, pid, reason},
-  #       %{
-  #         reorg_monitor_task: %Task{pid: pid, ref: ref},
-  #         block_check_interval: block_check_interval,
-  #         json_rpc_named_arguments: json_rpc_named_arguments
-  #       } = state
-  #     ) do
-  #   if reason === :normal do
-  #     {:noreply, %{state | reorg_monitor_task: nil}}
-  #   else
-  #     Logger.error(fn -> "Reorgs monitor task exited due to #{inspect(reason)}. Rerunning..." end)
-
-  #     task =
-  #       Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismOutputRoot.TaskSupervisor, fn ->
-  #         reorg_monitor(block_check_interval, json_rpc_named_arguments)
-  #       end)
-
-  #     {:noreply, %{state | reorg_monitor_task: task}}
-  #   end
-  # end
 
   def event_to_withdrawal(second_topic, data, l2_tx_hash, l2_block_number) do
     [_value, _gas_limit, _data, withdrawal_hash] = decode_data(data, [{:uint, 256}, {:uint, 256}, :bytes, {:bytes, 32}])
@@ -211,62 +133,6 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
       l2_tx_hash: l2_tx_hash,
       l2_block_number: quantity_to_integer(l2_block_number)
     }
-  end
-
-  defp events_to_withdrawals(
-         scan_db,
-         message_passer,
-         l2_block_start,
-         l2_block_end,
-         current_chank,
-         json_rpc_named_arguments
-       ) do
-    chunk_start = l2_block_start + Optimism.get_logs_range_size() * current_chank
-
-    chunk_end =
-      if scan_db do
-        l2_block_end
-      else
-        min(chunk_start + Optimism.get_logs_range_size() - 1, l2_block_end)
-      end
-
-    if scan_db do
-      query =
-        from(log in Log,
-          select: {log.second_topic, log.data, log.transaction_hash, log.block_number},
-          where:
-            log.first_topic == @message_passed_event and log.address_hash == ^message_passer and
-              log.block_number >= ^l2_block_start and log.block_number <= ^l2_block_end
-        )
-
-      query
-      |> Repo.all()
-      |> db_events_to_withdrawals()
-    else
-      {:ok, result} =
-        Optimism.get_logs(
-          chunk_start,
-          chunk_end,
-          message_passer,
-          @message_passed_event,
-          json_rpc_named_arguments,
-          3
-        )
-
-      rpc_events_to_withdrawals(result)
-    end
-  end
-
-  defp db_events_to_withdrawals(events) do
-    Enum.map(events, fn {second_topic, data, l2_tx_hash, l2_block_number} ->
-      event_to_withdrawal(second_topic, data, l2_tx_hash, l2_block_number)
-    end)
-  end
-
-  defp rpc_events_to_withdrawals(events) do
-    Enum.map(events, fn event ->
-      event_to_withdrawal(Enum.at(event["topics"], 1), event["data"], event["transactionHash"], event["blockNumber"])
-    end)
   end
 
   defp msg_nonce_gap_starts(nonce_max) do
@@ -299,16 +165,56 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
     )
   end
 
-  defp l2_block_number_by_msg_nonce(msg_nonce) do
-    Repo.one(from(w in OptimismWithdrawal, select: w.l2_block_number, where: w.msg_nonce == ^msg_nonce))
-  end
+  defp find_and_save_withdrawals(
+         scan_db,
+         message_passer,
+         block_start,
+         block_end,
+         json_rpc_named_arguments
+       ) do
+    withdrawals =
+      if scan_db do
+        query =
+          from(log in Log,
+            select: {log.second_topic, log.data, log.transaction_hash, log.block_number},
+            where:
+              log.first_topic == @message_passed_event and log.address_hash == ^message_passer and
+                log.block_number >= ^block_start and log.block_number <= ^block_end
+          )
 
-  defp log_fill_msg_nonce_gaps(scan_db, l2_block_start, l2_block_end, withdrawals_count) do
-    find_place = if scan_db, do: "in DB", else: "through RPC"
+        query
+        |> Repo.all()
+        |> Enum.map(fn {second_topic, data, l2_tx_hash, l2_block_number} ->
+          event_to_withdrawal(second_topic, data, l2_tx_hash, l2_block_number)
+        end)
+      else
+        {:ok, result} =
+          Optimism.get_logs(
+            block_start,
+            block_end,
+            message_passer,
+            @message_passed_event,
+            json_rpc_named_arguments,
+            3
+          )
 
-    Logger.info(
-      "Filled gaps between L2 blocks #{l2_block_start} and #{l2_block_end}. #{withdrawals_count} event(s) were found #{find_place} and written to op_withdrawals table."
-    )
+        Enum.map(result, fn event ->
+          event_to_withdrawal(
+            Enum.at(event["topics"], 1),
+            event["data"],
+            event["transactionHash"],
+            event["blockNumber"]
+          )
+        end)
+      end
+
+    {:ok, _} =
+      Chain.import(%{
+        optimism_withdrawals: %{params: withdrawals},
+        timeout: :infinity
+      })
+
+    Enum.count(withdrawals)
   end
 
   defp fill_between_blocks(l2_block_start, l2_block_end, message_passer, json_rpc_named_arguments, scan_db) do
@@ -322,23 +228,29 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
 
     Enum.reduce(chunk_range, 0, fn current_chank, withdrawals_count_acc ->
-      withdrawals =
-        events_to_withdrawals(
+      chunk_start = l2_block_start + Optimism.get_logs_range_size() * current_chank
+
+      chunk_end =
+        if scan_db do
+          l2_block_end
+        else
+          min(chunk_start + Optimism.get_logs_range_size() - 1, l2_block_end)
+        end
+
+      log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil)
+
+      withdrawals_count =
+        find_and_save_withdrawals(
           scan_db,
           message_passer,
-          l2_block_start,
-          l2_block_end,
-          current_chank,
+          chunk_start,
+          chunk_end,
           json_rpc_named_arguments
         )
 
-      {:ok, _} =
-        Chain.import(%{
-          optimism_withdrawals: %{params: withdrawals},
-          timeout: :infinity
-        })
+      log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, withdrawals_count)
 
-      withdrawals_count_acc + Enum.count(withdrawals)
+      withdrawals_count_acc + withdrawals_count
     end)
   end
 
@@ -359,7 +271,8 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
       new_starts
       |> Enum.zip(new_ends)
       |> Enum.each(fn {l2_block_start, l2_block_end} ->
-        withdrawals_count = fill_between_blocks(l2_block_start, l2_block_end, message_passer, json_rpc_named_arguments, scan_db)
+        withdrawals_count =
+          fill_between_blocks(l2_block_start, l2_block_end, message_passer, json_rpc_named_arguments, scan_db)
 
         if withdrawals_count > 0 do
           log_fill_msg_nonce_gaps(scan_db, l2_block_start, l2_block_end, withdrawals_count)
@@ -369,6 +282,27 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
       if scan_db do
         fill_msg_nonce_gaps(start_block_l2, message_passer, json_rpc_named_arguments, false)
       end
+    end
+  end
+
+  defp get_block_number_by_tag(tag, json_rpc_named_arguments, retries_left \\ 3) do
+    case fetch_block_number_by_tag(tag, json_rpc_named_arguments) do
+      {:ok, block_number} ->
+        {:ok, block_number}
+
+      {:error, message} ->
+        retries_left = retries_left - 1
+
+        error_message = "Cannot fetch #{tag} block number. Error: #{inspect(message)}"
+
+        if retries_left <= 0 do
+          Logger.error(error_message)
+          {:error, message}
+        else
+          Logger.error("#{error_message} Retrying...")
+          :timer.sleep(3000)
+          get_block_number_by_tag(tag, json_rpc_named_arguments, retries_left)
+        end
     end
   end
 
@@ -385,78 +319,54 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
     |> Kernel.||({0, nil})
   end
 
-  # defp get_block_number_by_tag(tag, json_rpc_named_arguments, retries_left \\ 3) do
-  #   case fetch_block_number_by_tag(tag, json_rpc_named_arguments) do
-  #     {:ok, block_number} ->
-  #       {:ok, block_number}
+  defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, withdrawals_count) do
+    is_start = is_nil(withdrawals_count)
 
-  #     {:error, message} ->
-  #       retries_left = retries_left - 1
+    {type, found} =
+      if is_start do
+        {"Start", ""}
+      else
+        {"Finish", " Found #{withdrawals_count} MessagePassed event(s)."}
+      end
 
-  #       error_message = "Cannot fetch #{tag} block number. Error: #{inspect(message)}"
+    if chunk_start == chunk_end do
+      Logger.info("#{type} handling L2 block ##{chunk_start}.#{found}")
+    else
+      target_range =
+        if chunk_start != start_block or chunk_end != end_block do
+          progress =
+            if is_start do
+              ""
+            else
+              percentage =
+                (chunk_end - start_block + 1)
+                |> Decimal.div(end_block - start_block + 1)
+                |> Decimal.mult(100)
+                |> Decimal.round(2)
+                |> Decimal.to_string()
 
-  #       if retries_left <= 0 do
-  #         Logger.error(error_message)
-  #         {:error, message}
-  #       else
-  #         Logger.error("#{error_message} Retrying...")
-  #         :timer.sleep(3000)
-  #         get_block_number_by_tag(tag, json_rpc_named_arguments, retries_left)
-  #       end
-  #   end
-  # end
+              " Progress: #{percentage}%"
+            end
 
-  # defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, output_roots_count) do
-  #   {type, found} =
-  #     if is_nil(output_roots_count) do
-  #       {"Start", ""}
-  #     else
-  #       {"Finish", " Found #{output_roots_count} OutputProposed event(s)."}
-  #     end
+          " Target range: #{start_block}..#{end_block}.#{progress}"
+        else
+          ""
+        end
 
-  #   if chunk_start == chunk_end do
-  #     Logger.info("#{type} handling L1 block ##{chunk_start}.#{found}")
-  #   else
-  #     target_range =
-  #       if chunk_start != start_block or chunk_end != end_block do
-  #         progress =
-  #           if is_nil(output_roots_count) do
-  #             ""
-  #           else
-  #             percentage =
-  #               (chunk_end - start_block + 1)
-  #               |> Decimal.div(end_block - start_block + 1)
-  #               |> Decimal.mult(100)
-  #               |> Decimal.round(2)
-  #               |> Decimal.to_string()
-
-  #             " Progress: #{percentage}%"
-  #           end
-
-  #         " Target range: #{start_block}..#{end_block}.#{progress}"
-  #       else
-  #         ""
-  #       end
-
-  #     Logger.info("#{type} handling L1 block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
-  #   end
-  # end
-
-  defp parse_integer(integer_string) when is_binary(integer_string) do
-    case Integer.parse(integer_string) do
-      {integer, ""} -> integer
-      _ -> nil
+      Logger.info("#{type} handling L2 block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
     end
   end
 
-  defp parse_integer(_integer_string), do: nil
+  defp log_fill_msg_nonce_gaps(scan_db, l2_block_start, l2_block_end, withdrawals_count) do
+    find_place = if scan_db, do: "in DB", else: "through RPC"
 
-  defp is_address?(value) when is_binary(value) do
-    String.match?(value, ~r/^0x[[:xdigit:]]{40}$/i)
+    Logger.info(
+      "Filled gaps between L2 blocks #{l2_block_start} and #{l2_block_end}. #{withdrawals_count} event(s) were found #{find_place} and written to op_withdrawals table."
+    )
   end
 
-  defp is_address?(_value) do
-    false
+  defp l2_block_number_by_msg_nonce(nonce) do
+    Repo.one(from(w in OptimismWithdrawal, select: w.l2_block_number, where: w.msg_nonce == ^nonce))
   end
 
   defp decode_data("0x", types) do
@@ -474,4 +384,21 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
     |> Data.to_string()
     |> decode_data(types)
   end
+
+  defp is_address?(value) when is_binary(value) do
+    String.match?(value, ~r/^0x[[:xdigit:]]{40}$/i)
+  end
+
+  defp is_address?(_value) do
+    false
+  end
+
+  defp parse_integer(integer_string) when is_binary(integer_string) do
+    case Integer.parse(integer_string) do
+      {integer, ""} -> integer
+      _ -> nil
+    end
+  end
+
+  defp parse_integer(_integer_string), do: nil
 end
