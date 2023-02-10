@@ -5,10 +5,8 @@ defmodule Indexer.Transform.OptimismWithdrawals do
 
   require Logger
 
-  import EthereumJSONRPC, only: [quantity_to_integer: 1]
-
-  alias ABI.TypeDecoder
-  alias Explorer.Chain.{Data, Hash}
+  alias Explorer.Chain.Hash
+  alias Indexer.Fetcher.OptimismWithdrawal
 
   # 32-byte signature of the event MessagePassed(uint256 indexed nonce, address indexed sender, address indexed target, uint256 value, uint256 gasLimit, bytes data, bytes32 withdrawalHash)
   @message_passed_event "0x02a52367d10742d8032712c1bb8e0144ff1ec5ffda1ed7d70bb05a2744955054"
@@ -30,17 +28,8 @@ defmodule Indexer.Transform.OptimismWithdrawals do
           String.downcase(address_hash_to_string(log.address_hash)) == message_passer
       end)
       |> Enum.map(fn log ->
-        [_value, _gas_limit, _data, withdrawal_hash] =
-          decode_data(log.data, [{:uint, 256}, {:uint, 256}, :bytes, {:bytes, 32}])
-
         Logger.info("Withdrawal message found, nonce: #{log.second_topic}.")
-
-        %{
-          msg_nonce: Decimal.new(quantity_to_integer(log.second_topic)),
-          withdrawal_hash: withdrawal_hash,
-          l2_tx_hash: log.transaction_hash,
-          l2_block_number: log.block_number
-        }
+        OptimismWithdrawal.event_to_withdrawal(log.second_topic, log.data, log.transaction_hash, log.block_number)
       end)
     else
       true ->
@@ -58,22 +47,6 @@ defmodule Indexer.Transform.OptimismWithdrawals do
 
   defp address_hash_to_string(hash) do
     Hash.to_string(hash)
-  end
-
-  defp decode_data("0x", types) do
-    for _ <- types, do: nil
-  end
-
-  defp decode_data("0x" <> encoded_data, types) do
-    encoded_data
-    |> Base.decode16!(case: :mixed)
-    |> TypeDecoder.decode_raw(types)
-  end
-
-  defp decode_data(%Data{} = data, types) do
-    data
-    |> Data.to_string()
-    |> decode_data(types)
   end
 
   defp is_address_correct?(address) do
