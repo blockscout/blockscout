@@ -1,4 +1,8 @@
 defmodule Indexer.Fetcher.Optimism do
+  @moduledoc """
+  Contains common functions for Optimism* fetchers.
+  """
+
   require Logger
 
   import EthereumJSONRPC,
