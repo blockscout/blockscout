@@ -10,8 +10,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   import Ecto.Query
 
-  import EthereumJSONRPC,
-    only: [json_rpc: 2, fetch_block_number_by_tag: 2, quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
 
   alias ABI.TypeDecoder
   alias EthereumJSONRPC.Block.ByNumber
@@ -59,7 +58,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
          json_rpc_named_arguments <- json_rpc_named_arguments(optimism_rpc_l1),
          {:ok, last_l1_tx} <- Optimism.get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_tx_hash) && is_nil(last_l1_tx)},
-         {:ok, last_safe_block} <- get_block_number_by_tag("safe", json_rpc_named_arguments),
+         {:ok, last_safe_block} <- Optimism.get_block_number_by_tag("safe", json_rpc_named_arguments),
          first_block <- max(last_safe_block - @block_check_interval_range_size, 1),
          {:ok, first_block_timestamp} <- get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
          {:ok, last_safe_block_timestamp} <- get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
@@ -185,7 +184,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
       end)
 
     new_start_block = last_written_block + 1
-    {:ok, new_end_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+    {:ok, new_end_block} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
 
     if new_end_block == last_written_block do
       # there is no new block, so wait for some time to let the chain issue the new block
@@ -245,7 +244,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
     # infinite loop
     # credo:disable-for-next-line
     Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), 0, fn _i, prev_latest ->
-      {:ok, latest} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+      {:ok, latest} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
 
       if latest < prev_latest do
         Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
@@ -306,27 +305,6 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
     query
     |> Repo.one()
     |> Kernel.||({0, nil})
-  end
-
-  defp get_block_number_by_tag(tag, json_rpc_named_arguments, retries_left \\ 3) do
-    case fetch_block_number_by_tag(tag, json_rpc_named_arguments) do
-      {:ok, block_number} ->
-        {:ok, block_number}
-
-      {:error, message} ->
-        retries_left = retries_left - 1
-
-        error_message = "Cannot fetch #{tag} block number. Error: #{inspect(message)}"
-
-        if retries_left <= 0 do
-          Logger.error(error_message)
-          {:error, message}
-        else
-          Logger.error("#{error_message} Retrying...")
-          :timer.sleep(3000)
-          get_block_number_by_tag(tag, json_rpc_named_arguments, retries_left)
-        end
-    end
   end
 
   defp get_block_timestamp_by_number(number, json_rpc_named_arguments, retries_left \\ 3) do
