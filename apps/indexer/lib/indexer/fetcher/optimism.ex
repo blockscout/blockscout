@@ -8,6 +8,9 @@ defmodule Indexer.Fetcher.Optimism do
   import EthereumJSONRPC,
     only: [fetch_block_number_by_tag: 2, json_rpc: 2, integer_to_quantity: 1, request: 1]
 
+  alias ABI.TypeDecoder
+  alias Explorer.Chain.Data
+
   @eth_get_logs_range_size 1000
 
   def get_block_number_by_tag(tag, json_rpc_named_arguments, retries_left \\ 3) do
@@ -94,7 +97,40 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
+  def decode_data("0x", types) do
+    for _ <- types, do: nil
+  end
+
+  def decode_data("0x" <> encoded_data, types) do
+    encoded_data
+    |> Base.decode16!(case: :mixed)
+    |> TypeDecoder.decode_raw(types)
+  end
+
+  def decode_data(%Data{} = data, types) do
+    data
+    |> Data.to_string()
+    |> decode_data(types)
+  end
+
   def get_logs_range_size do
     @eth_get_logs_range_size
   end
+
+  def is_address?(value) when is_binary(value) do
+    String.match?(value, ~r/^0x[[:xdigit:]]{40}$/i)
+  end
+
+  def is_address?(_value) do
+    false
+  end
+
+  def parse_integer(integer_string) when is_binary(integer_string) do
+    case Integer.parse(integer_string) do
+      {integer, ""} -> integer
+      _ -> nil
+    end
+  end
+
+  def parse_integer(_integer_string), do: nil
 end
