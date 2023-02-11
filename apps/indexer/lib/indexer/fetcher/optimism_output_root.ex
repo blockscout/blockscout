@@ -12,10 +12,9 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
 
-  alias ABI.TypeDecoder
   alias EthereumJSONRPC.Block.ByNumber
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Data, OptimismOutputRoot}
+  alias Explorer.Chain.OptimismOutputRoot
   alias Indexer.BoundQueue
   alias Indexer.Fetcher.Optimism
 
@@ -48,8 +47,8 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
          optimism_rpc_l1 <- Application.get_env(:indexer, :optimism_rpc_l1),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_rpc_l1)},
-         {:output_oracle_valid, true} <- {:output_oracle_valid, is_address?(env[:output_oracle])},
-         start_block_l1 <- parse_integer(env[:start_block_l1]),
+         {:output_oracle_valid, true} <- {:output_oracle_valid, Optimism.is_address?(env[:output_oracle])},
+         start_block_l1 <- Optimism.parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
          {last_l1_block_number, last_l1_tx_hash} <- get_last_l1_item(),
@@ -224,7 +223,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   defp events_to_output_roots(events) do
     Enum.map(events, fn event ->
-      [l1_timestamp] = decode_data(event["data"], [{:uint, 256}])
+      [l1_timestamp] = Optimism.decode_data(event["data"], [{:uint, 256}])
       {:ok, l1_timestamp} = DateTime.from_unix(l1_timestamp)
 
       %{
@@ -383,15 +382,6 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
     end
   end
 
-  defp parse_integer(integer_string) when is_binary(integer_string) do
-    case Integer.parse(integer_string) do
-      {integer, ""} -> integer
-      _ -> nil
-    end
-  end
-
-  defp parse_integer(_integer_string), do: nil
-
   defp json_rpc_named_arguments(optimism_rpc_l1) do
     [
       transport: EthereumJSONRPC.HTTP,
@@ -405,29 +395,5 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         ]
       ]
     ]
-  end
-
-  defp is_address?(value) when is_binary(value) do
-    String.match?(value, ~r/^0x[[:xdigit:]]{40}$/i)
-  end
-
-  defp is_address?(_value) do
-    false
-  end
-
-  defp decode_data("0x", types) do
-    for _ <- types, do: nil
-  end
-
-  defp decode_data("0x" <> encoded_data, types) do
-    encoded_data
-    |> Base.decode16!(case: :mixed)
-    |> TypeDecoder.decode_raw(types)
-  end
-
-  defp decode_data(%Data{} = data, types) do
-    data
-    |> Data.to_string()
-    |> decode_data(types)
   end
 end
