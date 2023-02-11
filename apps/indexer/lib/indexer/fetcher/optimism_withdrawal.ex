@@ -12,9 +12,8 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
-  alias ABI.TypeDecoder
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Data, Log, OptimismWithdrawal}
+  alias Explorer.Chain.{Log, OptimismWithdrawal}
   alias Indexer.Fetcher.Optimism
 
   # 32-byte signature of the event MessagePassed(uint256 indexed nonce, address indexed sender, address indexed target, uint256 value, uint256 gasLimit, bytes data, bytes32 withdrawalHash)
@@ -43,8 +42,8 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_l2_undefined, false} <- {:start_block_l2_undefined, is_nil(env[:start_block_l2])},
-         {:message_passer_valid, true} <- {:message_passer_valid, is_address?(env[:message_passer])},
-         start_block_l2 <- parse_integer(env[:start_block_l2]),
+         {:message_passer_valid, true} <- {:message_passer_valid, Optimism.is_address?(env[:message_passer])},
+         start_block_l2 <- Optimism.parse_integer(env[:start_block_l2]),
          false <- is_nil(start_block_l2),
          true <- start_block_l2 > 0,
          {last_l2_block_number, last_l2_tx_hash} <- get_last_l2_item(),
@@ -130,7 +129,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
   end
 
   def event_to_withdrawal(second_topic, data, l2_tx_hash, l2_block_number) do
-    [_value, _gas_limit, _data, withdrawal_hash] = decode_data(data, [{:uint, 256}, {:uint, 256}, :bytes, {:bytes, 32}])
+    [_value, _gas_limit, _data, withdrawal_hash] = Optimism.decode_data(data, [{:uint, 256}, {:uint, 256}, :bytes, {:bytes, 32}])
 
     %{
       msg_nonce: Decimal.new(quantity_to_integer(second_topic)),
@@ -359,37 +358,4 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
   defp l2_block_number_by_msg_nonce(nonce) do
     Repo.one(from(w in OptimismWithdrawal, select: w.l2_block_number, where: w.msg_nonce == ^nonce))
   end
-
-  defp decode_data("0x", types) do
-    for _ <- types, do: nil
-  end
-
-  defp decode_data("0x" <> encoded_data, types) do
-    encoded_data
-    |> Base.decode16!(case: :mixed)
-    |> TypeDecoder.decode_raw(types)
-  end
-
-  defp decode_data(%Data{} = data, types) do
-    data
-    |> Data.to_string()
-    |> decode_data(types)
-  end
-
-  defp is_address?(value) when is_binary(value) do
-    String.match?(value, ~r/^0x[[:xdigit:]]{40}$/i)
-  end
-
-  defp is_address?(_value) do
-    false
-  end
-
-  defp parse_integer(integer_string) when is_binary(integer_string) do
-    case Integer.parse(integer_string) do
-      {integer, ""} -> integer
-      _ -> nil
-    end
-  end
-
-  defp parse_integer(_integer_string), do: nil
 end
