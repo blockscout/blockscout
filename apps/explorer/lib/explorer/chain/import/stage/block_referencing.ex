@@ -22,6 +22,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       Runner.TransactionActions,
       Runner.OptimismOutputRoots,
       Runner.OptimismWithdrawals,
+      Runner.OptimismWithdrawalEvents,
       Runner.Withdrawals
     ]
 
