@@ -94,8 +94,6 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     http_post_request_rust_microservice(verify_url_rust_microservice(), body)
   end
 
-  defp add_chosen_contract(params, nil), do: params
-
   defp add_chosen_contract(params, index) when is_binary(index) do
     case Integer.parse(index) do
       {integer, ""} ->
@@ -214,6 +212,9 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       url =~ "/verify" ->
         parse_verify_http_response(body)
 
+      url =~ "/sourcify/sources:verify" ->
+        parse_verify_http_response(body)
+
       url =~ "/files/any" ->
         parse_get_metadata_any_http_response(body)
 
@@ -234,10 +235,10 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
         {:ok, body_json}
 
       # Success status code from Rust microservice
-      %{"status" => "0"} ->
+      %{"status" => "SUCCESS"} ->
         {:ok, body_json}
 
-      %{"status" => "1", "message" => message} ->
+      %{"status" => "FAILURE", "message" => message} ->
         {:error, message}
 
       %{"result" => [%{"status" => unknown_status}]} ->
@@ -423,7 +424,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp verify_url_rust_microservice do
-    "#{RustVerifierInterface.base_api_url()}" <> "/sourcify/verify"
+    "#{RustVerifierInterface.base_api_url()}" <> "/verifier/sourcify/sources:verify"
   end
 
   defp check_by_address_url do

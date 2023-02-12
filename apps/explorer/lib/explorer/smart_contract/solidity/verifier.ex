@@ -45,19 +45,19 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           init
 
         _ ->
-          ""
+          nil
       end
 
-    params
-    |> Map.put("creation_bytecode", creation_tx_input)
-    |> Map.put("deployed_bytecode", deployed_bytecode)
-    |> Map.put("sources", %{
+    %{}
+    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
+    |> Map.put("sourceFiles", %{
       "#{params["name"]}.#{smart_contract_source_file_extension(parse_boolean(params["is_yul"]))}" =>
         params["contract_source_code"]
     })
-    |> Map.put("contract_libraries", params["external_libraries"])
-    |> Map.put("optimization_runs", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
-    |> Map.put("evm_version", Map.get(params, "evm_version", "default"))
+    |> Map.put("libraries", params["external_libraries"])
+    |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
+    |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
+    |> Map.put("compilerVersion", params["compiler_version"])
     |> RustVerifierInterface.verify_multi_part()
   end
 
@@ -132,12 +132,11 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           init
 
         _ ->
-          ""
+          nil
       end
 
-    params
-    |> Map.put("creation_bytecode", creation_tx_input)
-    |> Map.put("deployed_bytecode", deployed_bytecode)
+    %{"compilerVersion" => params["compiler_version"]}
+    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
     |> Map.put("input", json_input)
     |> RustVerifierInterface.verify_standard_json_input()
   end
@@ -155,15 +154,16 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           init
 
         _ ->
-          ""
+          nil
       end
 
-    params
-    |> Map.put("creation_bytecode", creation_tx_input)
-    |> Map.put("deployed_bytecode", deployed_bytecode)
-    |> Map.put("sources", files)
-    |> Map.put("contract_libraries", params["external_libraries"])
-    |> Map.put("optimization_runs", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
+    %{}
+    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
+    |> Map.put("sourceFiles", files)
+    |> Map.put("libraries", params["external_libraries"])
+    |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
+    |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
+    |> Map.put("compilerVersion", params["compiler_version"])
     |> RustVerifierInterface.verify_multi_part()
   end
 
@@ -548,4 +548,18 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   def parse_boolean(false), do: false
 
   def parse_boolean(_), do: false
+
+  defp prepare_bytecode_for_microservice(body, creation_input, deployed_bytecode)
+
+  defp prepare_bytecode_for_microservice(body, empty, deployed_bytecode) when is_nil(empty) do
+    body
+    |> Map.put("bytecodeType", "DEPLOYED_BYTECODE")
+    |> Map.put("bytecode", deployed_bytecode)
+  end
+
+  defp prepare_bytecode_for_microservice(body, creation_bytecode, _deployed_bytecode) do
+    body
+    |> Map.put("bytecodeType", "CREATION_INPUT")
+    |> Map.put("bytecode", creation_bytecode)
+  end
 end

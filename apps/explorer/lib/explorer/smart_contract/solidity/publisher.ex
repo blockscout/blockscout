@@ -31,28 +31,16 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       {
         :ok,
         %{
-          "abi" => abi_string,
-          "compiler_version" => _,
-          "constructor_arguments" => _,
-          "contract_libraries" => contract_libraries,
-          "contract_name" => contract_name,
-          "evm_version" => _,
-          "file_name" => file_name,
-          "optimization" => _,
-          "optimization_runs" => _,
-          "sources" => sources
+          "abi" => _,
+          "compilerVersion" => _,
+          "constructorArguments" => _,
+          "contractName" => _,
+          "fileName" => _,
+          "compilerSettings" => _,
+          "sourceFiles" => _
         } = result_params
       } ->
-        %{^file_name => contract_source_code} = sources
-
-        prepared_params =
-          result_params
-          |> Map.put("contract_source_code", contract_source_code)
-          |> Map.put("external_libraries", contract_libraries)
-          |> Map.put("name", contract_name)
-          |> cast_compiler_settings(false)
-
-        publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
+        proccess_rust_verifier_response(result_params, address_hash, false, false)
 
       {:ok, %{abi: abi, constructor_arguments: constructor_arguments}} ->
         params_with_constructor_arguments =
@@ -79,17 +67,14 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       {:ok,
        %{
          "abi" => _,
-         "compiler_version" => _,
-         "constructor_arguments" => _,
-         "contract_libraries" => _,
-         "contract_name" => _,
-         "evm_version" => _,
-         "file_name" => _,
-         "optimization" => _,
-         "optimization_runs" => _,
-         "sources" => _
+         "compilerVersion" => _,
+         "constructorArguments" => _,
+         "contractName" => _,
+         "fileName" => _,
+         "sourceFiles" => _,
+         "compilerSettings" => _
        } = result_params} ->
-        proccess_rust_verifier_response(result_params, address_hash, true)
+        proccess_rust_verifier_response(result_params, address_hash, true, true)
 
       {:ok, %{abi: abi, constructor_arguments: constructor_arguments}, additional_params} ->
         params_with_constructor_arguments =
@@ -121,17 +106,14 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       {:ok,
        %{
          "abi" => _,
-         "compiler_version" => _,
-         "constructor_arguments" => _,
-         "contract_libraries" => _,
-         "contract_name" => _,
-         "evm_version" => _,
-         "file_name" => _,
-         "optimization" => _,
-         "optimization_runs" => _,
-         "sources" => _
+         "compilerVersion" => _,
+         "constructorArguments" => _,
+         "contractName" => _,
+         "fileName" => _,
+         "sourceFiles" => _,
+         "compilerSettings" => _
        } = result_params} ->
-        proccess_rust_verifier_response(result_params, address_hash)
+        proccess_rust_verifier_response(result_params, address_hash, false, true)
 
       {:error, error} ->
         {:error, unverified_smart_contract(address_hash, params, error, nil, true)}
@@ -144,18 +126,16 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   def proccess_rust_verifier_response(
         %{
           "abi" => abi_string,
-          "compiler_version" => _,
-          "constructor_arguments" => _,
-          "contract_libraries" => contract_libraries,
-          "contract_name" => contract_name,
-          "evm_version" => _,
-          "file_name" => file_name,
-          "optimization" => _,
-          "optimization_runs" => _,
-          "sources" => sources
-        } = result_params,
+          "compilerVersion" => compiler_version,
+          "constructorArguments" => constructor_arguments,
+          "contractName" => contract_name,
+          "fileName" => file_name,
+          "sourceFiles" => sources,
+          "compilerSettings" => compiler_settings_string
+        },
         address_hash,
-        is_standard_json? \\ false
+        is_standard_json?,
+        save_file_path?
       ) do
     secondary_sources =
       for {file, source} <- sources,
@@ -164,16 +144,31 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
     %{^file_name => contract_source_code} = sources
 
+    compiler_settings = Jason.decode!(compiler_settings_string)
+
+    optimization = (compiler_settings["optimizer"] && compiler_settings["optimizer"]["enabled"]) || false
+
     prepared_params =
-      result_params
+      %{}
+      |> Map.put("optimization", optimization)
+      |> Map.put("optimization_runs", if(optimization, do: compiler_settings["optimizer"]["runs"]))
+      |> Map.put("evm_version", compiler_settings["evmVersion"] || "default")
+      |> Map.put("compiler_version", compiler_version)
+      |> Map.put("constructor_arguments", constructor_arguments)
       |> Map.put("contract_source_code", contract_source_code)
-      |> Map.put("external_libraries", contract_libraries)
+      |> Map.put("external_libraries", cast_libraries(compiler_settings["libraries"] || %{}))
       |> Map.put("name", contract_name)
-      |> Map.put("file_path", file_name)
+      |> Map.put("file_path", if(save_file_path?, do: file_name))
       |> Map.put("secondary_sources", secondary_sources)
       |> cast_compiler_settings(is_standard_json?)
 
-    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
+    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
+  end
+
+  def cast_libraries(map) do
+    map
+    |> Map.values()
+    |> Enum.reduce(%{}, fn map, acc -> Map.merge(acc, map) end)
   end
 
   def cast_compiler_settings(params, false), do: Map.put(params, "compiler_settings", nil)
