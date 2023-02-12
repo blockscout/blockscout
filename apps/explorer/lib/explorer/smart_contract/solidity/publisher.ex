@@ -3,6 +3,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   Module responsible to control the contract verification.
   """
 
+  import Explorer.SmartContract.Helper, only: [cast_libraries: 1]
+
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{CompilerVersion, Helper}
@@ -163,12 +165,6 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> cast_compiler_settings(is_standard_json?)
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
-  end
-
-  def cast_libraries(map) do
-    map
-    |> Map.values()
-    |> Enum.reduce(%{}, fn map, acc -> Map.merge(acc, map) end)
   end
 
   def cast_compiler_settings(params, false), do: Map.put(params, "compiler_settings", nil)

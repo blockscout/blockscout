@@ -8,6 +8,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   then Verified.
   """
 
+  import Explorer.SmartContract.Helper, only: [prepare_bytecode_for_microservice: 3]
+
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
   alias Explorer.SmartContract.RustVerifierInterface
@@ -548,18 +550,4 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   def parse_boolean(false), do: false
 
   def parse_boolean(_), do: false
-
-  defp prepare_bytecode_for_microservice(body, creation_input, deployed_bytecode)
-
-  defp prepare_bytecode_for_microservice(body, empty, deployed_bytecode) when is_nil(empty) do
-    body
-    |> Map.put("bytecodeType", "DEPLOYED_BYTECODE")
-    |> Map.put("bytecode", deployed_bytecode)
-  end
-
-  defp prepare_bytecode_for_microservice(body, creation_bytecode, _deployed_bytecode) do
-    body
-    |> Map.put("bytecodeType", "CREATION_INPUT")
-    |> Map.put("bytecode", creation_bytecode)
-  end
 end

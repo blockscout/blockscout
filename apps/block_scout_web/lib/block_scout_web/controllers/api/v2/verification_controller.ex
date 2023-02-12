@@ -173,7 +173,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         }
         |> Map.put("constructor_arguments", Map.get(params, "constructor_args", "") || "")
         |> Map.put("name", Map.get(params, "contract_name", "Vyper_contract"))
-        # |> Map.put("optimization", Map.get(params, "is_optimization_enabled", false))
+        |> Map.put("optimizations", Map.get(params, "is_optimization_enabled", false))
         |> Map.put("evm_version", Map.get(params, "evm_version", "istanbul"))
 
       Que.add(VyperPublisherWorker, {address_hash_string, verification_params})
@@ -197,7 +197,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
           "address_hash" => String.downcase(address_hash_string),
           "compiler_version" => compiler_version
         }
-        # |> Map.put("optimization", Map.get(params, "is_optimization_enabled", false))
+        |> Map.put("optimizations", Map.get(params, "is_optimization_enabled", false))
         |> Map.put("evm_version", Map.get(params, "evm_version", "istanbul"))
 
       files_array =

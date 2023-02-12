@@ -36,10 +36,10 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
 
   def vyper_verify_multipart(
         %{
-          "creation_bytecode" => _,
-          "deployed_bytecode" => _,
-          "compiler_version" => _,
-          "sources" => _
+          "bytecode" => _,
+          "bytecodeType" => _,
+          "compilerVersion" => _,
+          "sourceFiles" => _
         } = body
       ) do
     http_post_request(vyper_multiple_files_verification_url(), body)
@@ -49,9 +49,6 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
     headers = [{"Content-Type", "application/json"}]
 
     case HTTPoison.post(url, Jason.encode!(normalize_creation_bytecode(body)), headers, recv_timeout: @post_timeout) do
-      {:ok, %Response{body: body, status_code: 200}} ->
-        proccess_verifier_response(body)
-
       {:ok, %Response{body: body, status_code: _}} ->
         proccess_verifier_response(body)
 
