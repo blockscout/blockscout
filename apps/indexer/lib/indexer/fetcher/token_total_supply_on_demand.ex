@@ -1,7 +1,6 @@
 defmodule Indexer.Fetcher.TokenTotalSupplyOnDemand do
   @moduledoc """
-  Ensures that we have a reasonably up to date token supply.
-
+    Ensures that we have a reasonably up to date token supply.
   """
 
   use GenServer
@@ -15,7 +14,7 @@ defmodule Indexer.Fetcher.TokenTotalSupplyOnDemand do
 
   @spec trigger_fetch(Address.t()) :: :ok
   def trigger_fetch(address) do
-    do_trigger_fetch(address)
+    GenServer.cast(__MODULE__, {:fetch_and_update, address})
   end
 
   ## Callbacks
@@ -24,8 +23,16 @@ defmodule Indexer.Fetcher.TokenTotalSupplyOnDemand do
     GenServer.start_link(__MODULE__, init_opts, server_opts)
   end
 
+  @impl true
   def init(init_arg) do
     {:ok, init_arg}
+  end
+
+  @impl true
+  def handle_cast({:fetch_and_update, address}, state) do
+    do_trigger_fetch(address)
+
+    {:noreply, state}
   end
 
   ## Implementation

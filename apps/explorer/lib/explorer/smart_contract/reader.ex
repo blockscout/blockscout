@@ -109,22 +109,12 @@ defmodule Explorer.SmartContract.Reader do
   """
   @spec query_contract(
           String.t(),
-          term(),
-          functions(),
-          true | false
-        ) :: functions_results()
-  def query_contract(contract_address, abi, functions, leave_error_as_map) do
-    query_contract_inner(contract_address, abi, functions, nil, nil, leave_error_as_map)
-  end
-
-  @spec query_contract(
-          String.t(),
           String.t() | nil,
           term(),
           functions(),
           true | false
         ) :: functions_results()
-  def query_contract(contract_address, from, abi, functions, leave_error_as_map) do
+  def query_contract(contract_address, from \\ nil, abi, functions, leave_error_as_map) do
     query_contract_inner(contract_address, abi, functions, nil, from, leave_error_as_map)
   end
 

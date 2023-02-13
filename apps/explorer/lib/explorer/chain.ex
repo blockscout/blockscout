@@ -1952,7 +1952,7 @@ defmodule Explorer.Chain do
   defp check_bytecode_matching(address, _) do
     now = DateTime.utc_now()
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
+    # 'false and' here
     if !address.smart_contract.is_changed_bytecode and
          address.smart_contract.bytecode_checked_at
          |> DateTime.add(@check_bytecode_interval, :second)
