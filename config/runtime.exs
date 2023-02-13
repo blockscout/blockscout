@@ -506,7 +506,8 @@ config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
 config :indexer, Indexer.Fetcher.Withdrawal, first_block: System.get_env("WITHDRAWALS_FIRST_BLOCK")
 
 config :indexer,
-  optimism_rpc_l1: System.get_env("INDEXER_OPTIMISM_RPC_L1")
+  optimism_rpc_l1: System.get_env("INDEXER_OPTIMISM_RPC_L1"),
+  optimism_portal_l1: System.get_env("INDEXER_OPTIMISM_PORTAL_L1")
 
 config :indexer, Indexer.Fetcher.OptimismOutputRoot,
   start_block_l1: System.get_env("INDEXER_OPTIMISM_OUTPUT_ROOTS_START_BLOCK_L1"),
@@ -515,6 +516,9 @@ config :indexer, Indexer.Fetcher.OptimismOutputRoot,
 config :indexer, Indexer.Fetcher.OptimismWithdrawal,
   start_block_l2: System.get_env("INDEXER_OPTIMISM_WITHDRAWALS_START_BLOCK_L2"),
   message_passer: System.get_env("INDEXER_OPTIMISM_MESSAGE_PASSER_L2")
+
+config :indexer, Indexer.Fetcher.OptimismWithdrawalEvent,
+  start_block_l1: System.get_env("INDEXER_OPTIMISM_WITHDRAWALS_START_BLOCK_L1")
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
