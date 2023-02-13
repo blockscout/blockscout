@@ -1,11 +1,11 @@
 import $ from 'jquery'
-import Cookies from 'js-cookie'
 import { Chart, LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip } from 'chart.js'
 import 'chartjs-adapter-luxon'
 import humps from 'humps'
 import numeral from 'numeral'
 import { DateTime } from 'luxon'
 import { formatUsdValue } from '../lib/currency'
+import { isDarkMode } from '../lib/dark_mode'
 // @ts-ignore
 import sassVariables from '../../css/export-vars-to-js.module.scss'
 
@@ -16,16 +16,6 @@ const grid = {
   display: false,
   drawBorder: false,
   drawOnChartArea: false
-}
-
-function isDarkMode () {
-  // @ts-ignore
-  const permanentDarkModeEnabled = document.getElementById('permanent-dark-mode').textContent === 'true'
-  if (!permanentDarkModeEnabled) {
-    return Cookies.get('chakra-ui-color-mode') === 'dark'
-  } else {
-    return true
-  }
 }
 
 function getTxChartColor () {
