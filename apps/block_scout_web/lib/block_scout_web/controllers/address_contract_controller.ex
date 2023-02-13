@@ -6,9 +6,9 @@ defmodule BlockScoutWeb.AddressContractController do
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.AccessHelpers
-  alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
+  alias Explorer.SmartContract.Solidity.PublishHelper
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.AddressContractController do
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
-         _ <- VerificationController.check_and_verify(address_hash_string),
+         _ <- PublishHelper.check_and_verify(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
       render(
         conn,

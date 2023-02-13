@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
     test "check pagination", %{conn: conn} do
       name = "contract"
-      contracts = insert_list(51, :smart_contract, name: name)
+      _contracts = insert_list(51, :smart_contract, name: name)
 
       request = get(conn, "/api/v2/search?q=#{name}")
       assert response = json_response(request, 200)

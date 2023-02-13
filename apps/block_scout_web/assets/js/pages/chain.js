@@ -47,6 +47,8 @@ function baseReducer (state = initialState, action) {
       })
     }
     case 'RECEIVED_NEW_BLOCK': {
+      const firstBlock = ($('#indexer-first-block').text() && parseInt($('#indexer-first-block').text(), 10)) || 0
+      const blockCount = (action.msg.blockNumber - firstBlock) + 1
       // @ts-ignore
       if (!state.blocks.length || state.blocks[0].blockNumber < action.msg.blockNumber) {
         let pastBlocks
@@ -62,13 +64,13 @@ function baseReducer (state = initialState, action) {
             action.msg,
             ...pastBlocks
           ],
-          blockCount: action.msg.blockNumber + 1
+          blockCount
         })
       } else {
         return Object.assign({}, state, {
           // @ts-ignore
           blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block),
-          blockCount: action.msg.blockNumber + 1
+          blockCount
         })
       }
     }

@@ -154,7 +154,7 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
         [%{id: id, method: "eth_getBalance", params: _}], _options ->
           {:ok, [%{id: id, result: integer_to_quantity(123)}]}
 
-        [%{id: id, method: "eth_getBlockByNumber", params: _}], _options ->
+        [%{id: _id, method: "eth_getBlockByNumber", params: _}], _options ->
           {:ok,
            [
              %{

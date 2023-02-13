@@ -26,6 +26,7 @@ defmodule Explorer.Chain.Transaction do
     SmartContract,
     TokenTransfer,
     Transaction,
+    TransactionAction,
     Wei
   }
 
@@ -286,6 +287,7 @@ defmodule Explorer.Chain.Transaction do
     has_many(:internal_transactions, InternalTransaction, foreign_key: :transaction_hash)
     has_many(:logs, Log, foreign_key: :transaction_hash)
     has_many(:token_transfers, TokenTransfer, foreign_key: :transaction_hash)
+    has_many(:transaction_actions, TransactionAction, foreign_key: :hash, preload_order: [asc: :log_index])
 
     belongs_to(
       :to_address,
@@ -699,8 +701,15 @@ defmodule Explorer.Chain.Transaction do
 
     {:ok, result}
   rescue
-    _ ->
-      Logger.warn(fn -> ["Could not decode input data for transaction: ", Hash.to_iodata(hash)] end)
+    e ->
+      Logger.warn(fn ->
+        [
+          "Could not decode input data for transaction: ",
+          Hash.to_iodata(hash),
+          Exception.format(:error, e, __STACKTRACE__)
+        ]
+      end)
+
       {:error, :could_not_decode}
   end
 
@@ -711,8 +720,15 @@ defmodule Explorer.Chain.Transaction do
 
     {:ok, mapping}
   rescue
-    _ ->
-      Logger.warn(fn -> ["Could not decode input data for transaction: ", Hash.to_iodata(hash)] end)
+    e ->
+      Logger.warn(fn ->
+        [
+          "Could not decode input data for transaction: ",
+          Hash.to_iodata(hash),
+          Exception.format(:error, e, __STACKTRACE__)
+        ]
+      end)
+
       {:error, :could_not_decode}
   end
 
