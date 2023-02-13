@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias BlockScoutWeb.API.V2.TransactionView
   alias BlockScoutWeb.SmartContractView
   alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
+  alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Visualize.Sol2uml
@@ -21,6 +22,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   def render("function_response.json", %{output: output, names: names, contract_address_hash: contract_address_hash}) do
     prepare_function_response(output, names, contract_address_hash)
+  end
+
+  def render("changeset_errors.json", %{changeset: changeset}) do
+    Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
+        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      end)
+    end)
   end
 
   def prepare_function_response(outputs, names, contract_address_hash) do
