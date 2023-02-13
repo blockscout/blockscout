@@ -1,6 +1,6 @@
-defmodule Indexer.Fetcher.OptimismOutputRoot do
+defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
   @moduledoc """
-  Fills op_output_roots DB table.
+  Fills op_withdrawal_events DB table.
   """
 
   use GenServer
@@ -10,17 +10,20 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   import Ecto.Query
 
-  import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.OptimismOutputRoot
+  alias Explorer.Chain.OptimismWithdrawalEvent
   alias Indexer.BoundQueue
   alias Indexer.Fetcher.Optimism
 
   @block_check_interval_range_size 100
 
-  # 32-byte signature of the event OutputProposed(bytes32 indexed outputRoot, uint256 indexed l2OutputIndex, uint256 indexed l2BlockNumber, uint256 l1Timestamp)
-  @output_proposed_event "0xa7aaf2512769da4e444e3de247be2564225c2e7a8f74cfe528e46e17d24868e2"
+  # 32-byte signature of the event WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to)
+  @withdrawal_proven_event "0x67a6208cfcc0801d50f6cbe764733f4fddf66ac0b04442061a8a8c0cb6b63f62"
+
+  # 32-byte signature of the event WithdrawalFinalized(bytes32 indexed withdrawalHash, bool success)
+  @withdrawal_finalized_event "0xdb5c7652857aa163daadd670e116628fb42e869d8ac4251ef8971d9e5727df1b"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -39,14 +42,15 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   @impl GenServer
   def init(_args) do
-    Logger.metadata(fetcher: :optimism_output_root)
+    Logger.metadata(fetcher: :optimism_withdrawal_event)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
          optimism_rpc_l1 <- Application.get_env(:indexer, :optimism_rpc_l1),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_rpc_l1)},
-         {:output_oracle_valid, true} <- {:output_oracle_valid, Optimism.is_address?(env[:output_oracle])},
+         optimism_portal_l1 = Application.get_env(:indexer, :optimism_portal_l1),
+         {:optimism_portal_valid, true} <- {:optimism_portal_valid, Optimism.is_address?(optimism_portal_l1)},
          start_block_l1 <- Optimism.parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
@@ -69,13 +73,13 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
       start_block = max(start_block_l1, last_l1_block_number)
 
       reorg_monitor_task =
-        Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismOutputRoot.TaskSupervisor, fn ->
+        Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismWithdrawalEvent.TaskSupervisor, fn ->
           reorg_monitor(block_check_interval, json_rpc_named_arguments)
         end)
 
       {:ok,
        %{
-         output_oracle: env[:output_oracle],
+         optimism_portal: optimism_portal_l1,
          block_check_interval: block_check_interval,
          start_block: start_block,
          end_block: last_safe_block,
@@ -91,12 +95,12 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         Logger.error("L1 RPC URL is not defined.")
         :ignore
 
-      {:output_oracle_valid, false} ->
-        Logger.error("Output Oracle address is invalid or not defined.")
+      {:optimism_portal_valid, false} ->
+        Logger.error("Optimism Portal address is invalid or not defined.")
         :ignore
 
       {:start_block_l1_valid, false} ->
-        Logger.error("Invalid L1 Start Block value. Please, check the value and op_output_roots table.")
+        Logger.error("Invalid L1 Start Block value. Please, check the value and op_withdrawal_events table.")
         :ignore
 
       {:error, error_data} ->
@@ -108,13 +112,13 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
       {:l1_tx_not_found, true} ->
         Logger.error(
-          "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check op_output_roots table."
+          "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check op_withdrawal_events table."
         )
 
         :ignore
 
       _ ->
-        Logger.error("Output Roots Start Block is invalid or zero.")
+        Logger.error("Withdrawals L1 Start Block is invalid or zero.")
         :ignore
     end
   end
@@ -123,7 +127,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
   def handle_continue(
         _,
         %{
-          output_oracle: output_oracle,
+          optimism_portal: optimism_portal,
           block_check_interval: block_check_interval,
           start_block: start_block,
           end_block: end_block,
@@ -148,31 +152,32 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
             Optimism.get_logs(
               chunk_start,
               chunk_end,
-              output_oracle,
-              @output_proposed_event,
+              optimism_portal,
+              [@withdrawal_proven_event, @withdrawal_finalized_event],
               json_rpc_named_arguments,
               100_000_000
             )
 
-          output_roots = events_to_output_roots(result)
+          withdrawal_events = prepare_events(result, json_rpc_named_arguments)
 
           {:ok, _} =
             Chain.import(%{
-              optimism_output_roots: %{params: output_roots},
+              optimism_withdrawal_events: %{params: withdrawal_events},
               timeout: :infinity
             })
 
-          log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, Enum.count(output_roots))
+          log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, Enum.count(withdrawal_events))
         end
 
         reorg_block = reorg_block_pop()
 
         if !is_nil(reorg_block) && reorg_block > 0 do
-          {deleted_count, _} = Repo.delete_all(from(r in OptimismOutputRoot, where: r.l1_block_number >= ^reorg_block))
+          {deleted_count, _} =
+            Repo.delete_all(from(we in OptimismWithdrawalEvent, where: we.l1_block_number >= ^reorg_block))
 
           if deleted_count > 0 do
             Logger.warning(
-              "As L1 reorg was detected, all rows with l1_block_number >= #{reorg_block} were removed from the op_output_roots table. Number of removed rows: #{deleted_count}."
+              "As L1 reorg was detected, all rows with l1_block_number >= #{reorg_block} were removed from the op_withdrawal_events table. Number of removed rows: #{deleted_count}."
             )
           end
 
@@ -213,7 +218,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
       Logger.error(fn -> "Reorgs monitor task exited due to #{inspect(reason)}. Rerunning..." end)
 
       task =
-        Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismOutputRoot.TaskSupervisor, fn ->
+        Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismWithdrawalEvent.TaskSupervisor, fn ->
           reorg_monitor(block_check_interval, json_rpc_named_arguments)
         end)
 
@@ -221,24 +226,38 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
     end
   end
 
-  defp events_to_output_roots(events) do
+  defp prepare_events(events, json_rpc_named_arguments) do
+    timestamps =
+      events
+      |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+      |> Enum.reduce(%{}, fn block, acc ->
+        block_number = quantity_to_integer(Map.get(block, "number"))
+        {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
+        Map.put(acc, block_number, timestamp)
+      end)
+
     Enum.map(events, fn event ->
-      [l1_timestamp] = Optimism.decode_data(event["data"], [{:uint, 256}])
-      {:ok, l1_timestamp} = DateTime.from_unix(l1_timestamp)
+      l1_event_type =
+        if Enum.at(event["topics"], 0) == @withdrawal_proven_event do
+          "WithdrawalProven"
+        else
+          "WithdrawalFinalized"
+        end
+
+      l1_block_number = quantity_to_integer(event["blockNumber"])
 
       %{
-        l2_output_index: quantity_to_integer(Enum.at(event["topics"], 2)),
-        l2_block_number: quantity_to_integer(Enum.at(event["topics"], 3)),
+        withdrawal_hash: Enum.at(event["topics"], 1),
+        l1_event_type: l1_event_type,
+        l1_timestamp: Map.get(timestamps, l1_block_number),
         l1_tx_hash: event["transactionHash"],
-        l1_timestamp: l1_timestamp,
-        l1_block_number: quantity_to_integer(event["blockNumber"]),
-        output_root: Enum.at(event["topics"], 1)
+        l1_block_number: l1_block_number
       }
     end)
   end
 
   defp reorg_monitor(block_check_interval, json_rpc_named_arguments) do
-    Logger.metadata(fetcher: :optimism_output_root)
+    Logger.metadata(fetcher: :optimism_withdrawal_event)
 
     # infinite loop
     # credo:disable-for-next-line
@@ -261,7 +280,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
   defp reorg_block_pop do
     case BoundQueue.pop_front(reorg_queue_get()) do
       {:ok, {block_number, updated_queue}} ->
-        :ets.insert(:op_output_roots_reorgs, {:queue, updated_queue})
+        :ets.insert(:op_withdrawal_events_reorgs, {:queue, updated_queue})
         block_number
 
       {:error, :empty} ->
@@ -271,12 +290,12 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   defp reorg_block_push(block_number) do
     {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(), block_number)
-    :ets.insert(:op_output_roots_reorgs, {:queue, updated_queue})
+    :ets.insert(:op_withdrawal_events_reorgs, {:queue, updated_queue})
   end
 
   defp reorg_queue_get do
-    if :ets.whereis(:op_output_roots_reorgs) == :undefined do
-      :ets.new(:op_output_roots_reorgs, [
+    if :ets.whereis(:op_withdrawal_events_reorgs) == :undefined do
+      :ets.new(:op_withdrawal_events_reorgs, [
         :set,
         :named_table,
         :public,
@@ -285,8 +304,8 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
       ])
     end
 
-    with info when info != :undefined <- :ets.info(:op_output_roots_reorgs),
-         [{_, value}] <- :ets.lookup(:op_output_roots_reorgs, :queue) do
+    with info when info != :undefined <- :ets.info(:op_withdrawal_events_reorgs),
+         [{_, value}] <- :ets.lookup(:op_withdrawal_events_reorgs, :queue) do
       value
     else
       _ -> %BoundQueue{}
@@ -295,9 +314,9 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   defp get_last_l1_item do
     query =
-      from(root in OptimismOutputRoot,
-        select: {root.l1_block_number, root.l1_tx_hash},
-        order_by: [desc: root.l2_output_index],
+      from(we in OptimismWithdrawalEvent,
+        select: {we.l1_block_number, we.l1_tx_hash},
+        order_by: [desc: we.l1_timestamp],
         limit: 1
       )
 
@@ -306,12 +325,45 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
     |> Kernel.||({0, nil})
   end
 
-  defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, output_roots_count) do
+  defp get_blocks_by_events(events, json_rpc_named_arguments, retries_left) do
+    request =
+      events
+      |> Enum.reduce(%{}, fn event, acc ->
+        Map.put(acc, event["blockNumber"], 0)
+      end)
+      |> Enum.map(fn {block_number, _} -> block_number end)
+      |> Enum.with_index()
+      |> Enum.map(fn {block_number, id} ->
+        %{id: id, method: "eth_getBlockByNumber", params: [block_number, false], jsonrpc: "2.0"}
+      end)
+
+    case json_rpc(request, json_rpc_named_arguments) do
+      {:ok, responses} ->
+        Enum.map(responses, fn %{result: result} -> result end)
+
+      {:error, message} ->
+        retries_left = retries_left - 1
+
+        error_message =
+          "Cannot fetch blocks with batch request. Error: #{inspect(message)}. Request: #{inspect(request)}"
+
+        if retries_left <= 0 do
+          Logger.error(error_message)
+          []
+        else
+          Logger.error("#{error_message} Retrying...")
+          :timer.sleep(3000)
+          get_blocks_by_events(events, json_rpc_named_arguments, retries_left)
+        end
+    end
+  end
+
+  defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, events_count) do
     {type, found} =
-      if is_nil(output_roots_count) do
+      if is_nil(events_count) do
         {"Start", ""}
       else
-        {"Finish", " Found #{output_roots_count} OutputProposed event(s)."}
+        {"Finish", " Found #{events_count} WithdrawalProven/WithdrawalFinalized event(s)."}
       end
 
     if chunk_start == chunk_end do
@@ -320,7 +372,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
       target_range =
         if chunk_start != start_block or chunk_end != end_block do
           progress =
-            if is_nil(output_roots_count) do
+            if is_nil(events_count) do
               ""
             else
               percentage =

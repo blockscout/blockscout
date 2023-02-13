@@ -6,9 +6,10 @@ defmodule Indexer.Fetcher.Optimism do
   require Logger
 
   import EthereumJSONRPC,
-    only: [fetch_block_number_by_tag: 2, json_rpc: 2, integer_to_quantity: 1, request: 1]
+    only: [fetch_block_number_by_tag: 2, json_rpc: 2, integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
 
   alias ABI.TypeDecoder
+  alias EthereumJSONRPC.Block.ByNumber
   alias Explorer.Chain.Data
 
   @eth_get_logs_range_size 1000
@@ -30,6 +31,46 @@ defmodule Indexer.Fetcher.Optimism do
           Logger.error("#{error_message} Retrying...")
           :timer.sleep(3000)
           get_block_number_by_tag(tag, json_rpc_named_arguments, retries_left)
+        end
+    end
+  end
+
+  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries_left \\ 3) do
+    result =
+      %{id: 0, number: number}
+      |> ByNumber.request(false)
+      |> json_rpc(json_rpc_named_arguments)
+
+    return =
+      with {:ok, block} <- result,
+           false <- is_nil(block),
+           timestamp <- Map.get(block, "timestamp"),
+           false <- is_nil(timestamp) do
+        {:ok, quantity_to_integer(timestamp)}
+      else
+        {:error, message} ->
+          {:error, message}
+
+        true ->
+          {:error, "RPC returned nil."}
+      end
+
+    case return do
+      {:ok, timestamp} ->
+        {:ok, timestamp}
+
+      {:error, message} ->
+        retries_left = retries_left - 1
+
+        error_message = "Cannot fetch block ##{number} or its timestamp. Error: #{inspect(message)}"
+
+        if retries_left <= 0 do
+          Logger.error(error_message)
+          {:error, message}
+        else
+          Logger.error("#{error_message} Retrying...")
+          :timer.sleep(3000)
+          get_block_timestamp_by_number(number, json_rpc_named_arguments, retries_left)
         end
     end
   end
