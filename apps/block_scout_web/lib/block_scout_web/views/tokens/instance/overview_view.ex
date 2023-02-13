@@ -1,15 +1,13 @@
 defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.CurrencyHelpers
+  alias BlockScoutWeb.{CurrencyHelpers, NFTHelpers}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, Token}
   alias Explorer.SmartContract.Helper
-  alias FileInfo
-  alias MIME
-  alias Path
 
   import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1, blockscout_url: 2]
+  import BlockScoutWeb.NFTHelpers, only: [external_url: 1]
 
   @tabs ["token-transfers", "metadata"]
   @stub_image "/images/controller.svg"
@@ -27,30 +25,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def media_src(nil, _), do: @stub_image
 
   def media_src(instance, high_quality_media?) do
-    result = get_media_src(instance.metadata, high_quality_media?)
-
-    if String.trim(result) == "", do: media_src(nil), else: result
-  end
-
-  defp get_media_src(nil, _), do: media_src(nil)
-
-  defp get_media_src(metadata, high_quality_media?) do
-    cond do
-      metadata["animation_url"] && high_quality_media? ->
-        retrieve_image(metadata["animation_url"])
-
-      metadata["image_url"] ->
-        retrieve_image(metadata["image_url"])
-
-      metadata["image"] ->
-        retrieve_image(metadata["image"])
-
-      metadata["properties"]["image"]["description"] ->
-        metadata["properties"]["image"]["description"]
-
-      true ->
-        media_src(nil)
-    end
+    NFTHelpers.get_media_src(instance.metadata, high_quality_media?) || media_src(nil)
   end
 
   def media_type("data:image/" <> _data) do
@@ -100,19 +75,6 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
 
   def media_type(nil), do: nil
 
-  def external_url(nil), do: nil
-
-  def external_url(instance) do
-    result =
-      if instance.metadata && instance.metadata["external_url"] do
-        instance.metadata["external_url"]
-      else
-        external_url(nil)
-      end
-
-    if !result || (result && String.trim(result)) == "", do: external_url(nil), else: result
-  end
-
   def total_supply_usd(token) do
     tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
     price = token.usd_value
@@ -160,38 +122,6 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     @tabs
     |> Enum.filter(&tab_active?(&1, request_path))
     |> tab_name()
-  end
-
-  defp retrieve_image(image) when is_nil(image), do: @stub_image
-
-  defp retrieve_image(image) when is_map(image) do
-    image["description"]
-  end
-
-  defp retrieve_image(image) when is_list(image) do
-    image_url = image |> Enum.at(0)
-    retrieve_image(image_url)
-  end
-
-  defp retrieve_image(image_url) do
-    image_url
-    |> URI.encode()
-    |> compose_ipfs_url()
-  end
-
-  defp compose_ipfs_url(image_url) do
-    cond do
-      image_url =~ ~r/^ipfs:\/\/ipfs/ ->
-        "ipfs://ipfs" <> ipfs_uid = image_url
-        "https://ipfs.io/ipfs/" <> ipfs_uid
-
-      image_url =~ ~r/^ipfs:\/\// ->
-        "ipfs://" <> ipfs_uid = image_url
-        "https://ipfs.io/ipfs/" <> ipfs_uid
-
-      true ->
-        image_url
-    end
   end
 
   defp tab_name(["token-transfers"]), do: gettext("Token Transfers")

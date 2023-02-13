@@ -67,8 +67,11 @@ defmodule Indexer.Transform.TokenTransfers do
       token_transfers: [token_transfer | token_transfers]
     }
   rescue
-    _ in [FunctionClauseError, MatchError] ->
-      Logger.error(fn -> "Unknown token transfer format: #{inspect(log)}" end)
+    e in [FunctionClauseError, MatchError] ->
+      Logger.error(fn ->
+        ["Unknown token transfer format: #{inspect(log)}", Exception.format(:error, e, __STACKTRACE__)]
+      end)
+
       acc
   end
 

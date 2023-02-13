@@ -410,6 +410,11 @@ defmodule Indexer.Transform.Addresses do
               required(:block_number) => non_neg_integer()
             }
           ],
+          optional(:transaction_actions) => [
+            %{
+              required(:data) => map()
+            }
+          ],
           optional(:mint_transfers) => [
             %{
               required(:from_address_hash) => String.t(),
@@ -432,7 +437,18 @@ defmodule Indexer.Transform.Addresses do
           (entity_items = Map.get(fetched_data, entity_key)) != nil,
           do: extract_addresses_from_collection(entity_items, entity_fields, state)
 
+    tx_actions_addresses =
+      fetched_data
+      |> Map.get(:transaction_actions, [])
+      |> Enum.map(fn tx_action ->
+        tx_action.data
+        |> Map.get(:block_number)
+        |> find_tx_action_addresses(tx_action.data)
+      end)
+      |> List.flatten()
+
     addresses
+    |> Enum.concat(tx_actions_addresses)
     |> List.flatten()
     |> merge_addresses()
   end
@@ -441,6 +457,25 @@ defmodule Indexer.Transform.Addresses do
     do: Enum.flat_map(items, &extract_addresses_from_item(&1, fields, state))
 
   def extract_addresses_from_item(item, fields, state), do: Enum.flat_map(fields, &extract_fields(&1, item, state))
+
+  defp find_tx_action_addresses(block_number, data, accumulator \\ [])
+
+  defp find_tx_action_addresses(block_number, data, accumulator) when is_map(data) or is_list(data) do
+    Enum.reduce(data, accumulator, fn
+      {_, value}, acc -> find_tx_action_addresses(block_number, value, acc)
+      value, acc -> find_tx_action_addresses(block_number, value, acc)
+    end)
+  end
+
+  defp find_tx_action_addresses(block_number, value, accumulator) when is_binary(value) do
+    if is_address?(value) do
+      [%{:fetched_coin_balance_block_number => block_number, :hash => value} | accumulator]
+    else
+      accumulator
+    end
+  end
+
+  defp find_tx_action_addresses(_block_number, _value, accumulator), do: accumulator
 
   def merge_addresses(addresses) when is_list(addresses) do
     addresses
@@ -526,4 +561,8 @@ defmodule Indexer.Transform.Addresses do
   defp max_nil_last(first_integer, second_integer)
        when is_integer(first_integer) and is_integer(second_integer),
        do: max(first_integer, second_integer)
+
+  defp is_address?(value) when is_binary(value) do
+    String.match?(value, ~r/^0x[[:xdigit:]]{40}$/i)
+  end
 end

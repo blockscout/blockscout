@@ -7,7 +7,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     Address,
     Address.CoinBalance,
     Block,
-    Data,
     InternalTransaction,
     Log,
     Token,
