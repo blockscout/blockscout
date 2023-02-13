@@ -36,6 +36,7 @@ const appJs =
   {
     entry: {
       'app': './js/app.js',
+      'app_extra': './js/app_extra.js',
       'chart-loader': './js/chart-loader.js',
       'balance-chart-loader': './js/balance-chart-loader.js',
       'chain': './js/pages/chain.js',
@@ -68,6 +69,8 @@ const appJs =
       'text-ad': './js/lib/text_ad.js',
       'banner': './js/lib/banner.js',
       'autocomplete': './js/lib/autocomplete.js',
+      'custom-scrollbar': './js/lib/custom_scrollbar.js',
+      'custom-scrollbar-styles': './css/custom-scrollbar.scss',
       'search-results': './js/pages/search-results/search.js',
       'token-overview': './js/pages/token/overview.js',
       'export-csv': './css/export-csv.scss',
