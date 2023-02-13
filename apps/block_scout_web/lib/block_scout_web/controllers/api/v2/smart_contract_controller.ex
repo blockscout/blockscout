@@ -4,11 +4,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
 
   alias BlockScoutWeb.{AccessHelpers, AddressView}
-  alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{Reader, Writer}
+  alias Explorer.SmartContract.Solidity.PublishHelper
 
   @smart_contract_address_options [
     necessity_by_association: %{
@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   def smart_contract(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
-         _ <- VerificationController.check_and_verify(address_hash_string),
+         _ <- PublishHelper.check_and_verify(address_hash_string),
          {:not_found, {:ok, address}} <-
            {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options, true)} do
       conn

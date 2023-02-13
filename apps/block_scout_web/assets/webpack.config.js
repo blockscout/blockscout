@@ -37,6 +37,7 @@ const appJs =
     entry: {
       'app': './js/app.js',
       'stakes': './js/pages/stakes.js',
+      'app_extra': './js/app_extra.js',
       'chart-loader': './js/chart-loader.js',
       'balance-chart-loader': './js/balance-chart-loader.js',
       'gas-tracker-chart-loader': './js/gas-tracker-chart-loader.js',
@@ -75,6 +76,8 @@ const appJs =
       'coinzilla_banner': './js/lib/coinzilla_banner.js',
       'adbutler_banner': './js/lib/adbutler_banner.js',
       'autocomplete': './js/lib/autocomplete.js',
+      'custom-scrollbar': './js/lib/custom_scrollbar.js',
+      'custom-scrollbar-styles': './css/custom-scrollbar.scss',
       'search-results': './js/pages/search-results/search.js',
       'token-overview': './js/pages/token/overview.js',
       'export-csv': './css/export-csv.scss',

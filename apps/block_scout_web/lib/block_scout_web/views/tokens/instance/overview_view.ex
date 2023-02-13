@@ -1,12 +1,10 @@
 defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   use BlockScoutWeb, :view
 
+  alias BlockScoutWeb.{CurrencyHelpers, NFTHelpers}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, CurrencyHelpers, SmartContract, Token}
   alias Explorer.SmartContract.Helper
-  alias FileInfo
-  alias MIME
-  alias Path
 
   import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1, blockscout_url: 2]
 
@@ -98,19 +96,6 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   end
 
   def media_type(nil), do: nil
-
-  def external_url(nil), do: nil
-
-  def external_url(instance) do
-    result =
-      if instance.metadata && instance.metadata["external_url"] do
-        instance.metadata["external_url"]
-      else
-        external_url(nil)
-      end
-
-    if !result || (result && String.trim(result)) == "", do: external_url(nil), else: result
-  end
 
   def total_supply_usd(token) do
     tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)

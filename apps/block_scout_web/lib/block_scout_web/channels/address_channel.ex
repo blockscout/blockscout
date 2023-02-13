@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.AddressChannel do
   use BlockScoutWeb, :channel
 
   alias BlockScoutWeb.API.V2.AddressView, as: AddressViewAPI
+  alias BlockScoutWeb.API.V2.SmartContractView, as: SmartContractViewAPI
   alias BlockScoutWeb.API.V2.TransactionView, as: TransactionViewAPI
 
   alias BlockScoutWeb.{
@@ -93,10 +94,33 @@ defmodule BlockScoutWeb.AddressChannel do
     end
   end
 
+  def handle_out(
+        "verification_result",
+        %{result: result},
+        %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
+      ) do
+    case result do
+      {:ok, _contract} ->
+        push(socket, "verification_result", %{status: "success"})
+        {:noreply, socket}
+
+      {:error, changeset} ->
+        push(socket, "verification_result", %{
+          status: "error",
+          errors: SmartContractViewAPI.render("changeset_errors.json", %{changeset: changeset})
+        })
+
+        {:noreply, socket}
+    end
+  end
+
   def handle_out("verification_result", result, socket) do
     case result[:result] do
       {:ok, _contract} ->
         push(socket, "verification", %{verification_result: :ok})
+        {:noreply, socket}
+
+      {:error, %Ecto.Changeset{}} ->
         {:noreply, socket}
 
       {:error, result} ->

@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.TokensView do
   use BlockScoutWeb, :view
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, CurrencyHelpers, BridgedToken, Token}
+  alias Explorer.Chain.{Address, BridgedToken, CurrencyHelpers, Token}
 
   def decimals?(%Token{decimals: nil}), do: false
   def decimals?(%Token{decimals: _}), do: true

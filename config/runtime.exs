@@ -126,8 +126,10 @@ config :block_scout_web,
   chain_id: System.get_env("CHAIN_ID"),
   json_rpc: System.get_env("JSON_RPC"),
   alert_to_addresses: System.get_env("ALERT_TO_ADDRESSES"),
+  disable_add_to_mm_button: System.get_env("DISABLE_ADD_TO_MM_BUTTON", "false") == "true",
   verification_max_libraries: verification_max_libraries,
-  permanent_dark_mode_enabled: System.get_env("PERMANENT_DARK_MODE_ENABLED", "false") == "true"
+  permanent_dark_mode_enabled: System.get_env("PERMANENT_DARK_MODE_ENABLED", "false") == "true",
+  permanent_light_mode_enabled: System.get_env("PERMANENT_LIGHT_MODE_ENABLED", "false") == "true"
 
 config :block_scout_web, :gas_tracker,
   enabled: System.get_env("GAS_TRACKER_ENABLED", "false") == "true",
@@ -510,6 +512,17 @@ config :indexer,
   trace_first_block: System.get_env("TRACE_FIRST_BLOCK") || "",
   trace_last_block: System.get_env("TRACE_LAST_BLOCK") || "",
   fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block")
+
+config :indexer, Indexer.Fetcher.TransactionAction.Supervisor,
+  enabled: System.get_env("INDEXER_TX_ACTIONS_ENABLE", "false") == "true"
+
+config :indexer, Indexer.Fetcher.TransactionAction,
+  reindex_first_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_FIRST_BLOCK"),
+  reindex_last_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_LAST_BLOCK"),
+  reindex_protocols: System.get_env("INDEXER_TX_ACTIONS_REINDEX_PROTOCOLS", "")
+
+config :indexer, Indexer.Transform.TransactionActions,
+  max_token_cache_size: System.get_env("INDEXER_TX_ACTIONS_MAX_TOKEN_CACHE_SIZE")
 
 {receipts_batch_size, _} = Integer.parse(System.get_env("INDEXER_RECEIPTS_BATCH_SIZE", "250"))
 {receipts_concurrency, _} = Integer.parse(System.get_env("INDEXER_RECEIPTS_CONCURRENCY", "10"))

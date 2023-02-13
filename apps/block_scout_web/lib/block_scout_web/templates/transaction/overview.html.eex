@@ -199,6 +199,29 @@
               </dd>
             </dl>
           <% end %>
+          <!-- Transaction Action -->
+          <% %{transaction_actions: transaction_actions} = transaction_actions(@transaction) %>
+          <%= if not Enum.empty?(transaction_actions) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("Highlighted events of the transaction.") %>
+                <%= gettext "Transaction Action" %>
+                <p id="actions-list-scroll-note"><%= gettext "Scroll to see more" %></p>
+              </dt>
+              <dd class="col-sm-9 col-lg-10 actions-list-mobile-container">
+                <div class="mCustomScrollbar" style="max-height:100px;width:90%">
+                  <% transaction_actions_indexed = Enum.with_index(transaction_actions) %>
+                  <% transaction_actions_length = Enum.count(transaction_actions) %>
+                  <%= for {action, i} <- transaction_actions_indexed do %>
+                    <% action_assigns = Map.put(assigns, :action, action) %>
+                    <% action_assigns = Map.put(action_assigns, :isLast, (i == transaction_actions_length - 1)) %>
+                    <%= render BlockScoutWeb.TransactionView, "_actions.html", action_assigns %>
+                  <% end %>
+                </div>
+              </dd>
+            </dl>
+          <% end %>
           <!-- From -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">

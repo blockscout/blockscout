@@ -27,6 +27,7 @@ defmodule BlockScoutWeb.Chain do
     SmartContract,
     StakingPool,
     Token,
+    Token.Instance,
     TokenTransfer,
     Transaction,
     Wei
@@ -398,6 +399,10 @@ defmodule BlockScoutWeb.Chain do
     }
   end
 
+  defp paging_params(%Instance{token_id: token_id}) do
+    %{"unique_token" => Decimal.to_integer(token_id)}
+  end
+
   defp block_or_transaction_from_param(param) do
     with {:error, :not_found} <- transaction_from_param(param) do
       hash_string_to_block(param)
@@ -422,5 +427,16 @@ defmodule BlockScoutWeb.Chain do
       :error ->
         {:error, :not_found}
     end
+  end
+
+  def unique_tokens_paging_options(%{"unique_token" => token_id}),
+    do: [paging_options: %{default_paging_options() | key: {token_id}}]
+
+  def unique_tokens_paging_options(_params), do: [paging_options: default_paging_options()]
+
+  def unique_tokens_next_page([], _list, _params), do: nil
+
+  def unique_tokens_next_page(_, list, params) do
+    Map.merge(params, paging_params(List.last(list)))
   end
 end
