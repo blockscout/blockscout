@@ -26,7 +26,7 @@
             <div class="dropzone-1 dropzone-previews" style="display: flex; margin: 0 auto;", id="dropzone-previews">
               <div style="text-align: center;">
                 <span class="dz-message btn-full-primary" id="dz-button-message"><%= gettext("Drop the standard input JSON file or click here") %></span>
-                <%= error_tag f, :file, id: "file-help-block", class: "text-danger form-error", style: "max-width: 600px;" %>
+                <%= error_tag f, :files, id: "file-help-block", class: "text-danger form-error", style: "max-width: 600px;" %>
               </div>
             </div>
           </div>

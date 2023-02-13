@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
            {:not_found,
             Chain.hash_to_transaction(
               transaction_hash,
-              necessity_by_association: @transaction_necessity_by_association
+              necessity_by_association: Map.put(@transaction_necessity_by_association, :transaction_actions, :optional)
             )},
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params),

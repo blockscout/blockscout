@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  visualizer:
+    platform: linux/x86_64
+    image: ghcr.io/blockscout/visualizer:${VISUALIZER_DOCKER_TAG:-latest}
+    pull_policy: always
+    restart: always
+    container_name: 'visualizer'
+    env_file:
+      -  ../envs/common-visualizer.env
+    ports:
+      - 8050:8050
