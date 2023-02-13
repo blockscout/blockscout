@@ -109,15 +109,7 @@ defmodule Indexer.Transform.TransactionActions do
       |> clear_actions(protocols_to_rewrite)
 
       # create tokens cache if not exists
-      if :ets.whereis(:tx_actions_tokens_data_cache) == :undefined do
-        :ets.new(:tx_actions_tokens_data_cache, [
-          :set,
-          :named_table,
-          :public,
-          read_concurrency: true,
-          write_concurrency: true
-        ])
-      end
+      init_token_data_cache()
 
       # handle uniswap v3
       tx_actions =
@@ -164,7 +156,12 @@ defmodule Indexer.Transform.TransactionActions do
   defp uniswap_filter_logs(logs) do
     logs
     |> Enum.filter(fn log ->
-      first_topic = String.downcase(log.first_topic)
+      first_topic =
+        if is_nil(log.first_topic) do
+          ""
+        else
+          String.downcase(log.first_topic)
+        end
 
       Enum.member?(
         [
@@ -186,6 +183,7 @@ defmodule Indexer.Transform.TransactionActions do
     with false <- first_topic == @uniswap_v3_transfer_nft_event,
          # check UniswapV3Pool contract is legitimate
          pool_address <- String.downcase(address_hash_to_string(log.address_hash)),
+         false <- is_nil(legitimate[pool_address]),
          false <- Enum.empty?(legitimate[pool_address]),
          # this is legitimate uniswap pool, so handle this event
          token_address <- legitimate[pool_address],
@@ -354,51 +352,60 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp uniswap_legitimate_pools(logs_grouped) do
-    pools =
+    init_uniswap_pools_cache()
+
+    {pools_to_request, pools_cached} =
       logs_grouped
       |> Enum.reduce(%{}, fn {_tx_hash, tx_logs}, addresses_acc ->
         tx_logs
         |> Enum.filter(fn log ->
-          first_topic = String.downcase(log.first_topic)
-          first_topic != @uniswap_v3_transfer_nft_event
+          String.downcase(log.first_topic) != @uniswap_v3_transfer_nft_event
         end)
         |> Enum.reduce(addresses_acc, fn log, acc ->
           pool_address = String.downcase(address_hash_to_string(log.address_hash))
-          Map.put_new(acc, pool_address, true)
+          Map.put(acc, pool_address, true)
         end)
       end)
+      |> Enum.reduce({[], %{}}, fn {pool_address, _}, {to_request, cached} ->
+        value_from_cache = get_uniswap_pool_from_cache(pool_address)
 
-    req_resp = uniswap_request_tokens_and_fees(pools)
+        if is_nil(value_from_cache) do
+          {[pool_address | to_request], cached}
+        else
+          {to_request, Map.put(cached, pool_address, value_from_cache)}
+        end
+      end)
 
-    if req_resp === false do
-      %{}
-    else
-      case uniswap_request_get_pools(req_resp) do
-        {requests_get_pool, responses_get_pool} ->
-          requests_get_pool
-          |> Enum.zip(responses_get_pool)
-          |> Enum.reduce(%{}, fn {request, {_status, response} = _resp}, acc ->
-            response =
-              case response do
-                [item] -> item
-                items -> items
-              end
+    req_resp = uniswap_request_tokens_and_fees(pools_to_request)
 
-            Map.put(
-              acc,
-              request.pool_address,
-              if request.pool_address == String.downcase(response) do
-                [token0, token1, _] = request.args
-                [token0, token1]
-              else
-                []
-              end
-            )
-          end)
+    case uniswap_request_get_pools(req_resp) do
+      {requests_get_pool, responses_get_pool} ->
+        requests_get_pool
+        |> Enum.zip(responses_get_pool)
+        |> Enum.reduce(%{}, fn {request, {_status, response} = _resp}, acc ->
+          value = uniswap_pool_is_legitimate(request, response)
+          put_uniswap_pool_to_cache(request.pool_address, value)
+          Map.put(acc, request.pool_address, value)
+        end)
+        |> Map.merge(pools_cached)
 
-        _ ->
-          %{}
+      _ ->
+        pools_cached
+    end
+  end
+
+  defp uniswap_pool_is_legitimate(request, response) do
+    response =
+      case response do
+        [item] -> item
+        items -> items
       end
+
+    if request.pool_address == String.downcase(response) do
+      [token0, token1, _] = request.args
+      [token0, token1]
+    else
+      []
     end
   end
 
@@ -406,16 +413,20 @@ defmodule Indexer.Transform.TransactionActions do
     requests_get_pool =
       requests_tokens_and_fees
       |> Enum.zip(responses_tokens_and_fees)
-      |> Enum.reduce(%{}, fn {request, {_status, response} = _resp}, acc ->
-        response =
-          case response do
-            [item] -> item
-            items -> items
-          end
+      |> Enum.reduce(%{}, fn {request, {status, response} = _resp}, acc ->
+        if status == :ok do
+          response =
+            case response do
+              [item] -> item
+              items -> items
+            end
 
-        acc = Map.put_new(acc, request.contract_address, %{token0: "", token1: "", fee: ""})
-        item = Map.put(acc[request.contract_address], atomized_key(request.method_id), response)
-        Map.put(acc, request.contract_address, item)
+          acc = Map.put_new(acc, request.contract_address, %{token0: "", token1: "", fee: ""})
+          item = Map.put(acc[request.contract_address], atomized_key(request.method_id), response)
+          Map.put(acc, request.contract_address, item)
+        else
+          acc
+        end
       end)
       |> Enum.map(fn {pool_address, pool} ->
         token0 = if is_address_correct?(pool.token0), do: String.downcase(pool.token0), else: @burn_address
@@ -438,7 +449,7 @@ defmodule Indexer.Transform.TransactionActions do
 
     if !Enum.empty?(error_messages) or Enum.count(requests_get_pool) != Enum.count(responses_get_pool) do
       Logger.error(
-        "Cannot read Uniswap V3 Factory contract getPool public getter. Error messages: #{Enum.join(error_messages, ", ")}"
+        "Cannot read Uniswap V3 Factory contract getPool public getter. Error messages: #{Enum.join(error_messages, ", ")}. Requests: #{inspect(requests_get_pool)}"
       )
 
       false
@@ -450,7 +461,7 @@ defmodule Indexer.Transform.TransactionActions do
   defp uniswap_request_tokens_and_fees(pools) do
     requests =
       pools
-      |> Enum.map(fn {pool_address, _} ->
+      |> Enum.map(fn pool_address ->
         # we will call token0(), token1(), fee() public getters
         Enum.map(["0dfe1681", "d21220a7", "ddca3f43"], fn method_id ->
           %{
@@ -466,15 +477,30 @@ defmodule Indexer.Transform.TransactionActions do
 
     {responses, error_messages} = read_contracts_with_retries(requests, @uniswap_v3_pool_abi, max_retries)
 
-    if !Enum.empty?(error_messages) or Enum.count(requests) != Enum.count(responses) do
-      Logger.error(
-        "Cannot read Uniswap V3 Pool contract public getters: token0(), token1(), fee(). Error messages: #{Enum.join(error_messages, ", ")}. Pools: #{Enum.join(Map.keys(pools), ", ")}"
-      )
+    if !Enum.empty?(error_messages) do
+      incorrect_pools = uniswap_get_incorrect_pools(requests, responses)
 
-      false
-    else
-      {requests, responses}
+      Logger.warning(
+        "Cannot read Uniswap V3 Pool contract public getters for some pools: token0(), token1(), fee(). Error messages: #{Enum.join(error_messages, ", ")}. Incorrect pools: #{Enum.join(incorrect_pools, ", ")} - they will be marked as not legitimate."
+      )
     end
+
+    {requests, responses}
+  end
+
+  defp uniswap_get_incorrect_pools(requests, responses) do
+    responses
+    |> Enum.with_index()
+    |> Enum.reduce([], fn {{status, _}, i}, acc ->
+      if status == :error do
+        pool_address = Enum.at(requests, i)[:contract_address]
+        put_uniswap_pool_to_cache(pool_address, [])
+        [pool_address | acc]
+      else
+        acc
+      end
+    end)
+    |> Enum.reverse()
   end
 
   defp atomized_key("token0"), do: :token0
@@ -642,40 +668,34 @@ defmodule Indexer.Transform.TransactionActions do
       end)
       |> Enum.reverse()
 
-    if Enum.empty?(token_addresses) do
-      token_data
-    else
-      req_resp = get_token_data_request_symbol_decimals(token_addresses)
+    {requests, responses} = get_token_data_request_symbol_decimals(token_addresses)
 
-      if req_resp === false do
-        token_data
+    requests
+    |> Enum.zip(responses)
+    |> Enum.reduce(token_data, fn {request, {status, response} = _resp}, token_data_acc ->
+      if status == :ok do
+        response =
+          case response do
+            [item] -> item
+            items -> items
+          end
+
+        data = token_data_acc[request.contract_address]
+
+        new_data =
+          if atomized_key(request.method_id) == :symbol do
+            %{data | symbol: response}
+          else
+            %{data | decimals: response}
+          end
+
+        put_token_data_to_cache(request.contract_address, new_data)
+
+        Map.put(token_data_acc, request.contract_address, new_data)
       else
-        {requests, responses} = req_resp
-
-        requests
-        |> Enum.zip(responses)
-        |> Enum.reduce(token_data, fn {request, {_status, response} = _resp}, token_data_acc ->
-          response =
-            case response do
-              [item] -> item
-              items -> items
-            end
-
-          data = token_data_acc[request.contract_address]
-
-          new_data =
-            if atomized_key(request.method_id) == :symbol do
-              %{data | symbol: response}
-            else
-              %{data | decimals: response}
-            end
-
-          put_token_data_to_cache(request.contract_address, new_data)
-
-          Map.put(token_data_acc, request.contract_address, new_data)
-        end)
+        token_data_acc
       end
-    end
+    end)
   end
 
   defp get_token_data_request_symbol_decimals(token_addresses) do
@@ -697,14 +717,41 @@ defmodule Indexer.Transform.TransactionActions do
     {responses, error_messages} = read_contracts_with_retries(requests, @erc20_abi, max_retries)
 
     if !Enum.empty?(error_messages) or Enum.count(requests) != Enum.count(responses) do
-      Logger.error(
+      Logger.warning(
         "Cannot read symbol and decimals of an ERC-20 token contract. Error messages: #{Enum.join(error_messages, ", ")}. Addresses: #{Enum.join(token_addresses, ", ")}"
       )
-
-      false
-    else
-      {requests, responses}
     end
+
+    {requests, responses}
+  end
+
+  defp get_uniswap_pool_from_cache(pool_address) do
+    with info when info != :undefined <- :ets.info(:tx_actions_uniswap_pools_cache),
+         [{_, value}] <- :ets.lookup(:tx_actions_uniswap_pools_cache, pool_address) do
+      value
+    else
+      _ -> nil
+    end
+  end
+
+  defp init_cache(table) do
+    if :ets.whereis(table) == :undefined do
+      :ets.new(table, [
+        :set,
+        :named_table,
+        :public,
+        read_concurrency: true,
+        write_concurrency: true
+      ])
+    end
+  end
+
+  defp init_token_data_cache do
+    init_cache(:tx_actions_tokens_data_cache)
+  end
+
+  defp init_uniswap_pools_cache do
+    init_cache(:tx_actions_uniswap_pools_cache)
   end
 
   defp is_address_correct?(address) do
@@ -741,6 +788,10 @@ defmodule Indexer.Transform.TransactionActions do
     :ets.insert(:tx_actions_tokens_data_cache, {address, data})
   end
 
+  defp put_uniswap_pool_to_cache(address, value) do
+    :ets.insert(:tx_actions_uniswap_pools_cache, {address, value})
+  end
+
   defp read_contracts_with_retries(requests, abi, retries_left) when retries_left > 0 do
     responses = Reader.query_contracts(requests, abi)
 
@@ -760,7 +811,7 @@ defmodule Indexer.Transform.TransactionActions do
       retries_left = retries_left - 1
 
       if retries_left == 0 do
-        {[], Enum.uniq(error_messages)}
+        {responses, Enum.uniq(error_messages)}
       else
         read_contracts_with_retries(requests, abi, retries_left)
       end
