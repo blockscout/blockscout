@@ -5,8 +5,6 @@ defmodule BlockScoutWeb.LayoutView do
   alias Plug.Conn
   alias Poison.Parser
 
-  import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
-
   @default_other_networks [
     %{
       title: "POA",

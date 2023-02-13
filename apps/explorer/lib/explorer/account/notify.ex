@@ -20,7 +20,7 @@ defmodule Explorer.Account.Notify do
   rescue
     err ->
       Logger.info("--- Notifier error", fetcher: :account)
-      Logger.info(err, fetcher: :account)
+      :error |> Exception.format(err, __STACKTRACE__) |> Logger.info(fetcher: :account)
   end
 
   defp check_envs do
