@@ -129,7 +129,6 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
     |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
     |> Map.put("evmVersion", evm_version || "istanbul")
     |> Map.put("sourceFiles", files)
-    |> Map.put("optimizations", params["optimizations"])
     |> Map.put("compilerVersion", params["compiler_version"])
     |> RustVerifierInterface.vyper_verify_multipart()
   end
