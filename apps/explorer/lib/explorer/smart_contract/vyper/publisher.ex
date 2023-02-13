@@ -143,7 +143,8 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       abi: abi,
       verified_via_sourcify: false,
       partially_verified: false,
-      is_vyper_contract: true
+      is_vyper_contract: true,
+      file_path: params["file_path"]
     }
   end
 end

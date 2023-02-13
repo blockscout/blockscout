@@ -148,7 +148,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
     compiler_settings = Jason.decode!(compiler_settings_string)
 
-    optimization = (compiler_settings["optimizer"] && compiler_settings["optimizer"]["enabled"]) || false
+    optimization = extract_optimization(compiler_settings)
 
     prepared_params =
       %{}
@@ -162,22 +162,13 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("name", contract_name)
       |> Map.put("file_path", if(save_file_path?, do: file_name))
       |> Map.put("secondary_sources", secondary_sources)
-      |> cast_compiler_settings(is_standard_json?)
+      |> Map.put("compiler_settings", if(is_standard_json?, do: compiler_settings))
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
   end
 
-  def cast_compiler_settings(params, false), do: Map.put(params, "compiler_settings", nil)
-
-  def cast_compiler_settings(params, true) do
-    case Jason.decode(params["compiler_settings"]) do
-      {:ok, map} ->
-        Map.put(params, "compiler_settings", map)
-
-      _ ->
-        Map.put(params, "compiler_settings", nil)
-    end
-  end
+  def extract_optimization(compiler_settings),
+    do: (compiler_settings["optimizer"] && compiler_settings["optimizer"]["enabled"]) || false
 
   def publish_smart_contract(address_hash, params, abi) do
     attrs = address_hash |> attributes(params, abi)

@@ -8,7 +8,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   then Verified.
   """
 
-  import Explorer.SmartContract.Helper, only: [prepare_bytecode_for_microservice: 3]
+  import Explorer.SmartContract.Helper, only: [cast_libraries: 1, prepare_bytecode_for_microservice: 3]
 
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
@@ -213,6 +213,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
                     |> Map.put("name", contract_name)
                     |> Map.put("secondary_sources", secondary_sources)
                     |> Map.put("compiler_settings", map_json_input["settings"])
+                    |> Map.put("external_libraries", cast_libraries(map_json_input["settings"]["libraries"] || %{}))
 
                   {:halt, {:ok, verified_data, additional_params}}
 

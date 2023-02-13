@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#6871](https://github.com/blockscout/blockscout/pull/6871) - Integrate new smart contract verifier version
 - [#6838](https://github.com/blockscout/blockscout/pull/6838) - Disable dark mode env var
 - [#6744](https://github.com/blockscout/blockscout/pull/6744) - API v2: smart contracts verification
 - [#6763](https://github.com/blockscout/blockscout/pull/6763) - Permanent UI dark mode
