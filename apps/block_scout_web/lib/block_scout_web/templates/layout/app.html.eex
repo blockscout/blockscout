@@ -11,6 +11,10 @@
         <link rel="preload" href="<%= static_path(@conn, "/js/chain.js") %>" as="script">
         <link rel="preload" href="<%= static_path(@conn, "/js/chart-loader.js") %>" as="script">
         <link rel="preload" href="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>" as="script">
+      <% Elixir.BlockScoutWeb.TransactionView -> %>
+        <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+        <link rel="stylesheet" href="<%= static_path(@conn, "/css/custom-scrollbar-styles.css") %>">
+        <link rel="preload" href="<%= static_path(@conn, "/js/custom-scrollbar.js") %>" as="script">
       <% _ -> %>
         <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
     <% end %>
@@ -99,106 +103,14 @@
   </head>
 
   <body>
-    <%= cond do %>
-      <% (
-        @view_module == Elixir.BlockScoutWeb.TransactionInternalTransactionView ||
-        @view_module == Elixir.BlockScoutWeb.TransactionLogView ||
-        @view_module == Elixir.BlockScoutWeb.TransactionRawTraceView ||
-        @view_module == Elixir.BlockScoutWeb.TransactionTokenTransferView ||
-        @view_module == Elixir.BlockScoutWeb.TransactionStateView
-      ) -> %>
-        <% to_address = @transaction && @transaction.to_address && "0x" <> Base.encode16(@transaction.to_address.hash.bytes, case: :lower) %>
-        <% {:ok, created_from_address} = if @transaction.to_address_hash, do: Chain.hash_to_address(@transaction.to_address_hash), else: {:ok, nil} %>
-        <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
-        <script>
-          function applyCustomTheme(contractAddressHashesRaw, customClass) {
-            if (contractAddressHashesRaw !== "") {
-              const contractAddressHashes = contractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
-              const to_address = "<%= to_address %>"
-              const created_from_address_hash_str = "<%= created_from_address_hash_str %>"
-
-              contractAddressHashes.forEach(contractAddressHash => {
-                if (contractAddressHash == to_address) {
-                  document.body.className += " " + customClass;
-                  return;
-                } else if (contractAddressHash == created_from_address_hash_str) {
-                  document.body.className += " " + customClass;
-                  return;
-                }
-              })
-            }
-
-          }
-
-          window.onload = applyCustomMode()
-        </script>
-      <% (
-        @view_module == Elixir.BlockScoutWeb.AddressTransactionView ||
-        @view_module == Elixir.BlockScoutWeb.AddressTokenTransferView ||
-        @view_module == Elixir.BlockScoutWeb.AddressTokenView ||
-        @view_module == Elixir.BlockScoutWeb.AddressInternalTransactionView ||
-        @view_module == Elixir.BlockScoutWeb.AddressCoinBalanceView ||
-        @view_module == Elixir.BlockScoutWeb.AddressLogsView ||
-        @view_module == Elixir.BlockScoutWeb.AddressValidationView ||
-        @view_module == Elixir.BlockScoutWeb.AddressContractView ||
-        @view_module == Elixir.BlockScoutWeb.AddressReadContractView ||
-        @view_module == Elixir.BlockScoutWeb.AddressReadProxyView ||
-        @view_module == Elixir.BlockScoutWeb.AddressWriteContractView ||
-        @view_module == Elixir.BlockScoutWeb.AddressWriteProxyView
-      ) -> %>
-        <% created_from_address = if @address && from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
-        <script>
-          function applyCustomTheme(contractAddressHashesRaw, customClass) {
-            if (contractAddressHashesRaw !== "") {
-              const contractAddressHashes = contractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
-              const createdFromAddress = "<%= created_from_address %>"
-              contractAddressHashes.forEach(contractAddressHash => {
-                if (window.location.pathname.toLowerCase().includes(contractAddressHash)) {
-                  document.body.className += " " + customClass;
-                  return;
-                } else if (contractAddressHash == createdFromAddress) {
-                  document.body.className += " " + customClass;
-                  return;
-                }
-              })
-            }
-          }
-
-        </script>
-      <% (
-        @view_module == Elixir.BlockScoutWeb.Tokens.TransferView ||
-        @view_module == Elixir.BlockScoutWeb.Tokens.ReadContractView ||
-        @view_module == Elixir.BlockScoutWeb.Tokens.HolderView ||
-        @view_module == Elixir.BlockScoutWeb.Tokens.Instance.TransferView ||
-        @view_module == Elixir.BlockScoutWeb.Tokens.Instance.MetadataView ||
-        @view_module == Elixir.BlockScoutWeb.PageNotFoundView
-      ) -> %>
-        <% {:ok, created_from_address} = if @token && @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
-        <% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
-        <script>
-          function applyCustomTheme(contractAddressHashesRaw, customClass) {
-            if (contractAddressHashesRaw !== "") {
-              const contractAddressHashes = contractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
-              const created_from_address_hash = "<%= created_from_address_hash %>"
-              contractAddressHashes.forEach(contractAddressHash => {
-                if (window.location.pathname.toLowerCase().includes(contractAddressHash)) {
-                  document.body.className += " " + customClass;
-                  return;
-                } else if (contractAddressHash == created_from_address_hash) {
-                  document.body.className += " " + customClass;
-                  return;
-                }
-              })
-            }
-          }
-
-          window.onload = applyCustomMode()
-        </script>
-      <% true -> %>
-        <%= nil %>
-    <% end %>
     <div class="layout-container">
+      <!-- Block for passing backend runtime env variables to frontend -->
       <div id="permanent-dark-mode" class="d-none" ><%= Application.get_env(:block_scout_web, :permanent_dark_mode_enabled) %></div>
+      <div id="permanent-light-mode" class="d-none" ><%= Application.get_env(:block_scout_web, :permanent_light_mode_enabled) %></div>
+      <div id="indexer-first-block" class="d-none" ><%= Application.get_env(:indexer, :first_block) %></div>
+      <input id="js-chain-id" class="d-none" value="<%= Application.get_env(:block_scout_web, :chain_id) %>" />
+      <input id="js-json-rpc" class="d-none" value="<%= Application.get_env(:block_scout_web, :json_rpc) %>" />
+      <!-- -->
       <% show_maintenance_alert = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:show_maintenance_alert] %>
       <%= if show_maintenance_alert do %>
         <div class="alert alert-warning text-center mb-0 p-3" data-selector="indexed-status">
@@ -289,6 +201,9 @@
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
     <% end %>
+    <%= if @view_module == Elixir.BlockScoutWeb.TransactionView do %>
+      <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/custom-scrollbar.js") %>"></script>
+    <% end %>
     <script defer src="<%= static_path(@conn, "/js/autocomplete.js") %>"></script>
     <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationView, Elixir.BlockScoutWeb.AddressContractVerificationVyperView, Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView, Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
@@ -296,53 +211,6 @@
     <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/dropzone.js") %>"></script>
     <% end %>
-    <script defer data-cfasync="false">
-      function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-      }
-
-      function isDarkMode() {
-        const permanentDarkModeEnabled = document.getElementById('permanent-dark-mode').textContent === 'true'
-        if (!permanentDarkModeEnabled) {
-          return getCookie('chakra-ui-color-mode') === 'dark'
-        } else {
-          return true
-        }
-      }
-
-      function applyDarkMode() {
-        if (isDarkMode()) {
-          document.body.className += " " + "dark-theme-applied";
-          document.body.style.backgroundColor = "#1c1d31";
-        }
-      }
-      window.onload = applyDarkMode()
-
-      if (isDarkMode()) {
-        if (document.getElementById("top-navbar")) {
-          document.getElementById("top-navbar").style.backgroundColor = "#282945";
-        }
-        if (document.getElementById("navbar-logo")) {
-          document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
-        }
-        let modeChanger = document.getElementById("dark-mode-changer");
-        if (modeChanger) {
-          modeChanger.className += " " + "dark-mode-changer--dark";
-        }
-
-        const search = document.getElementById("main-search-autocomplete")
-        const searchMobile = document.getElementById("main-search-autocomplete-mobile")
-            if (search && search.style) {
-          search.style.backgroundColor = "#22223a";
-              search.style.borderColor = "#22223a";
-        }
-        if (searchMobile && searchMobile.style) {
-          searchMobile.style.backgroundColor = "#22223a";
-          searchMobile.style.borderColor = "#22223a";
-        }
-      }
-    </script>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app_extra.js") %>"></script>
   </body>
 </html>

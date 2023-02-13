@@ -76,6 +76,34 @@
 	}
 }
 
+.actions-item {
+	margin-bottom: 4px;
+	display: inline-block;
+
+	i {
+		font-size: 10px;
+	}
+	&.subitem {
+		margin-left: 10px;
+	}
+}
+
+.actions-list-mobile-container {
+	@include media-breakpoint-down(sm) {
+		margin-top: 0.5rem;
+	}
+}
+
+#actions-list-scroll-note {
+	padding-left: 19px;
+	font-size: 11px;
+	display: none;
+
+	@media (max-width: $breakpoint-md) {
+		padding-left: 0;
+	}
+}
+
 .transfers-list-mobile-container {
 	@include media-breakpoint-down(sm) {
 		margin-top: 0.5rem;

@@ -840,8 +840,8 @@ defmodule Explorer.Factory do
 
   def token_instance_factory do
     %Instance{
-      token_contract_address_hash: build(:address),
-      token_id: 5,
+      token_contract_address_hash: insert(:token).contract_address_hash,
+      token_id: sequence("token_id", & &1),
       metadata: %{key: "value"},
       error: nil
     }

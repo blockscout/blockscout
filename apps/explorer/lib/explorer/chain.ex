@@ -5453,14 +5453,16 @@ defmodule Explorer.Chain do
     |> Instance.page_token_instance(paging_options)
     |> limit(^paging_options.page_size)
     |> Repo.all()
-    |> Enum.map(fn instance ->
-      owner =
-        instance
-        |> Instance.owner_query()
-        |> Repo.one()
+    |> Enum.map(&put_owner_to_token_instance/1)
+  end
 
-      %{instance | owner: owner}
-    end)
+  def put_owner_to_token_instance(%Instance{} = token_instance) do
+    owner =
+      token_instance
+      |> Instance.owner_query()
+      |> Repo.one()
+
+    %{token_instance | owner: owner}
   end
 
   @spec data() :: Dataloader.Ecto.t()

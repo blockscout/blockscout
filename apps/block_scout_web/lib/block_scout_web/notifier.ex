@@ -49,6 +49,18 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event(
+        {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result}}
+      ) do
+    Endpoint.broadcast(
+      "addresses:#{address_hash}",
+      "verification_result",
+      %{
+        result: contract_verification_result
+      }
+    )
+  end
+
+  def handle_event(
         {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result, conn}}
       ) do
     %{view: view, compiler: compiler} = select_contract_type_and_form_view(conn.params)
