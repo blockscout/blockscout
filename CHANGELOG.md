@@ -34,6 +34,7 @@
 
 ### Chore
 
+- [#6877](https://github.com/blockscout/blockscout/pull/6877) - Docker-compose: increase default max connections and db pool size
 - [#6853](https://github.com/blockscout/blockscout/pull/6853) - Fix 503 page
 - [#6845](https://github.com/blockscout/blockscout/pull/6845) - Extract Docker-compose services into separate files
 - [#6839](https://github.com/blockscout/blockscout/pull/6839) - Add cache to transaction actions parser

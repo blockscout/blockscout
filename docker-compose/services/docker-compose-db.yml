@@ -5,6 +5,7 @@ services:
     image: postgres:14
     restart: always
     container_name: 'postgres'
+    command: postgres -c 'max_connections=200'
     environment:
         POSTGRES_PASSWORD: ''
         POSTGRES_USER: 'postgres'
