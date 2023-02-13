@@ -59,6 +59,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     prepare_token_transfer(token_transfer, conn)
   end
 
+  def render("transaction_actions.json", %{actions: actions}) do
+    Enum.map(actions, &prepare_transaction_action(&1))
+  end
+
   def render("internal_transactions.json", %{
         internal_transactions: internal_transactions,
         next_page_params: next_page_params,
@@ -99,6 +103,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "method" => method_name(token_transfer.transaction, decoded_input, true),
       "block_hash" => to_string(token_transfer.block_hash),
       "log_index" => to_string(token_transfer.log_index)
+    }
+  end
+
+  def prepare_transaction_action(action) do
+    %{
+      "protocol" => action.protocol,
+      "type" => action.type,
+      "data" => action.data
     }
   end
 
@@ -244,6 +256,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "decoded_input" => decoded_input_data,
       "token_transfers" => token_transfers(transaction.token_transfers, conn, single_tx?),
       "token_transfers_overflow" => token_transfers_overflow(transaction.token_transfers, single_tx?),
+      "actions" => transaction_actions(transaction.transaction_actions),
       "exchange_rate" => (Market.get_exchange_rate(Explorer.coin()) || TokenRate.null()).usd_value,
       "method" => method_name(transaction, decoded_input),
       "tx_types" => tx_types(transaction),
@@ -266,6 +279,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def token_transfers_overflow(token_transfers, _),
     do: Enum.count(token_transfers) > Chain.get_token_transfers_per_transaction_preview_count()
+
+  defp transaction_actions(%NotLoaded{}), do: []
+
+  defp transaction_actions(actions) do
+    render("transaction_actions.json", %{actions: actions})
+  end
 
   defp priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas) do
     if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas),
