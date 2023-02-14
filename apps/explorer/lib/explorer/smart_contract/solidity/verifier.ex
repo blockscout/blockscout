@@ -8,6 +8,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   then Verified.
   """
 
+  import Explorer.SmartContract.Helper, only: [cast_libraries: 1, prepare_bytecode_for_microservice: 3]
+
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
   alias Explorer.SmartContract.RustVerifierInterface
@@ -30,7 +32,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
         Logger.error(fn ->
           [
             "Error while verifying smart-contract address: #{address_hash}, params: #{inspect(params, limit: :infinity, printable_limit: :infinity)}: ",
-            Exception.format(:error, exception)
+            Exception.format(:error, exception, __STACKTRACE__)
           ]
         end)
     end
@@ -45,19 +47,19 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           init
 
         _ ->
-          ""
+          nil
       end
 
-    params
-    |> Map.put("creation_bytecode", creation_tx_input)
-    |> Map.put("deployed_bytecode", deployed_bytecode)
-    |> Map.put("sources", %{
+    %{}
+    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
+    |> Map.put("sourceFiles", %{
       "#{params["name"]}.#{smart_contract_source_file_extension(parse_boolean(params["is_yul"]))}" =>
         params["contract_source_code"]
     })
-    |> Map.put("contract_libraries", params["external_libraries"])
-    |> Map.put("optimization_runs", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
-    |> Map.put("evm_version", Map.get(params, "evm_version", "default"))
+    |> Map.put("libraries", params["external_libraries"])
+    |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
+    |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
+    |> Map.put("compilerVersion", params["compiler_version"])
     |> RustVerifierInterface.verify_multi_part()
   end
 
@@ -90,6 +92,10 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   defp prepare_optimization_runs(false_, _) when false_ in [false, "false"], do: nil
 
+  defp prepare_optimization_runs(true_, runs) when true_ in [true, "true"] and is_number(runs) do
+    runs
+  end
+
   defp prepare_optimization_runs(true_, runs) when true_ in [true, "true"] do
     case Integer.parse(runs) do
       {runs_integer, ""} ->
@@ -113,7 +119,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
         Logger.error(fn ->
           [
             "Error while verifying smart-contract address: #{address_hash}, params: #{inspect(params, limit: :infinity, printable_limit: :infinity)}, json_input: #{inspect(json_input, limit: :infinity, printable_limit: :infinity)}: ",
-            Exception.format(:error, exception)
+            Exception.format(:error, exception, __STACKTRACE__)
           ]
         end)
     end
@@ -128,12 +134,11 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           init
 
         _ ->
-          ""
+          nil
       end
 
-    params
-    |> Map.put("creation_bytecode", creation_tx_input)
-    |> Map.put("deployed_bytecode", deployed_bytecode)
+    %{"compilerVersion" => params["compiler_version"]}
+    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
     |> Map.put("input", json_input)
     |> RustVerifierInterface.verify_standard_json_input()
   end
@@ -151,15 +156,16 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           init
 
         _ ->
-          ""
+          nil
       end
 
-    params
-    |> Map.put("creation_bytecode", creation_tx_input)
-    |> Map.put("deployed_bytecode", deployed_bytecode)
-    |> Map.put("sources", files)
-    |> Map.put("contract_libraries", params["external_libraries"])
-    |> Map.put("optimization_runs", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
+    %{}
+    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
+    |> Map.put("sourceFiles", files)
+    |> Map.put("libraries", params["external_libraries"])
+    |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
+    |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
+    |> Map.put("compilerVersion", params["compiler_version"])
     |> RustVerifierInterface.verify_multi_part()
   end
 
@@ -207,6 +213,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
                     |> Map.put("name", contract_name)
                     |> Map.put("secondary_sources", secondary_sources)
                     |> Map.put("compiler_settings", map_json_input["settings"])
+                    |> Map.put("external_libraries", cast_libraries(map_json_input["settings"]["libraries"] || %{}))
 
                   {:halt, {:ok, verified_data, additional_params}}
 
@@ -240,7 +247,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     constructor_arguments = Map.get(params, "constructor_arguments", "")
     evm_version = Map.get(params, "evm_version")
     optimization_runs = Map.get(params, "optimization_runs", 200)
-    autodetect_constructor_arguments = params |> Map.get("autodetect_constructor_args", "false") |> parse_boolean()
+    autodetect_constructor_arguments = params |> Map.get("autodetect_constructor_args", "true") |> parse_boolean()
 
     if is_compiler_version_at_least_0_6_0?(compiler_version) do
       Enum.reduce_while(@bytecode_hash_options, false, fn option, acc ->
@@ -298,18 +305,22 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   defp is_compiler_version_at_least_0_6_0?("latest"), do: true
 
   defp is_compiler_version_at_least_0_6_0?(compiler_version) do
-    [version, _] = compiler_version |> String.split("+", parts: 2)
+    case compiler_version |> String.split("+", parts: 2) do
+      [version, _] ->
+        digits =
+          version
+          |> String.replace("v", "")
+          |> String.split(".")
+          |> Enum.map(fn str ->
+            {num, _} = Integer.parse(str)
+            num
+          end)
 
-    digits =
-      version
-      |> String.replace("v", "")
-      |> String.split(".")
-      |> Enum.map(fn str ->
-        {num, _} = Integer.parse(str)
-        num
-      end)
+        Enum.fetch!(digits, 0) > 0 || Enum.fetch!(digits, 1) >= 6
 
-    Enum.fetch!(digits, 0) > 0 || Enum.fetch!(digits, 1) >= 6
+      _ ->
+        false
+    end
   end
 
   defp compare_bytecodes({:error, :name}, _, _, _), do: {:error, :name}

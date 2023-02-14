@@ -50,7 +50,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defstruct block_fetcher: nil,
             subscription: nil,
             previous_number: nil,
-            max_number_seen: nil,
             timer: nil,
             blocks_concurrency: @blocks_concurrency
 
@@ -64,7 +63,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
           },
           subscription: Subscription.t(),
           previous_number: pos_integer() | nil,
-          max_number_seen: pos_integer() | nil,
           timer: reference(),
           blocks_concurrency: pos_integer()
         }
@@ -94,7 +92,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
           block_fetcher: %Block.Fetcher{} = block_fetcher,
           subscription: %Subscription{} = subscription,
           previous_number: previous_number,
-          max_number_seen: max_number_seen,
           timer: timer,
           blocks_concurrency: blocks_concurrency
         } = state
@@ -110,9 +107,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
     # Subscriptions don't support getting all the blocks and transactions data,
     # so we need to go back and get the full block
-    start_fetch_and_import(number, block_fetcher, blocks_concurrency, previous_number, max_number_seen)
-
-    new_max_number = new_max_number(number, max_number_seen)
+    start_fetch_and_import(number, block_fetcher, blocks_concurrency, previous_number)
 
     Process.cancel_timer(timer)
     new_timer = schedule_polling()
@@ -121,7 +116,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
      %{
        state
        | previous_number: number,
-         max_number_seen: new_max_number,
          timer: new_timer
      }}
   end
@@ -132,21 +126,20 @@ defmodule Indexer.Block.Realtime.Fetcher do
         %__MODULE__{
           block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher,
           previous_number: previous_number,
-          max_number_seen: max_number_seen,
           blocks_concurrency: blocks_concurrency
         } = state
       ) do
-    {new_previous_number, new_max_number} =
+    new_previous_number =
       case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
-        {:ok, number} when is_nil(max_number_seen) or number > max_number_seen ->
+        {:ok, number} when is_nil(previous_number) or number != previous_number ->
           Logger.info("Block manual at #{:os.system_time(:second)} find_by_this: #{inspect(number)}")
-          start_fetch_and_import(number, block_fetcher, blocks_concurrency, previous_number, max_number_seen)
+          start_fetch_and_import(number, block_fetcher, blocks_concurrency, previous_number)
 
-          {number, number}
+          number
 
         _ ->
           Logger.info("No latest block at #{:os.system_time(:second)} find_by_this:")
-          {previous_number, max_number_seen}
+          previous_number
       end
 
     timer = schedule_polling()
@@ -155,7 +148,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
      %{
        state
        | previous_number: new_previous_number,
-         max_number_seen: new_max_number,
          timer: timer
      }}
   end
@@ -186,10 +178,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   defp subscribe_to_new_heads(state, _), do: state
-
-  defp new_max_number(number, nil), do: number
-
-  defp new_max_number(number, max_number_seen), do: max(number, max_number_seen)
 
   defp schedule_polling do
     polling_period =
@@ -259,13 +247,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
     {:ok, []}
   end
 
-  defp start_fetch_and_import(number, block_fetcher, blocks_concurrency, previous_number, max_number_seen) do
-    start_at = determine_start_at(number, previous_number, max_number_seen)
+  defp start_fetch_and_import(number, block_fetcher, blocks_concurrency, previous_number) do
+    start_at = determine_start_at(number, previous_number)
+    is_reorg = reorg?(number, previous_number)
 
     TaskSupervisor
     |> Task.Supervisor.async_stream(
       start_at..number,
-      &fetch_and_import_block(&1, block_fetcher, reorg?(number, max_number_seen)),
+      &fetch_and_import_block(&1, block_fetcher, is_reorg),
       max_concurrency: blocks_concurrency,
       timeout: :infinity,
       shutdown: @shutdown_after
@@ -273,14 +262,10 @@ defmodule Indexer.Block.Realtime.Fetcher do
     |> Stream.run()
   end
 
-  defp determine_start_at(number, nil, nil), do: number
+  defp determine_start_at(number, nil), do: number
 
-  defp determine_start_at(number, nil, max_number_seen) do
-    determine_start_at(number, number - 1, max_number_seen)
-  end
-
-  defp determine_start_at(number, previous_number, max_number_seen) do
-    if reorg?(number, max_number_seen) do
+  defp determine_start_at(number, previous_number) do
+    if reorg?(number, previous_number) do
       # set start_at to NOT fill in skipped numbers
       number
     else
@@ -289,7 +274,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
-  defp reorg?(number, max_number_seen) when is_integer(max_number_seen) and number <= max_number_seen do
+  defp reorg?(number, previous_number) when is_integer(previous_number) and number <= previous_number do
     true
   end
 

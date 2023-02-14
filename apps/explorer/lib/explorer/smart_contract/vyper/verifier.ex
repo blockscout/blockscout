@@ -12,6 +12,7 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
   alias Explorer.Chain
   alias Explorer.SmartContract.Vyper.CodeCompiler
   alias Explorer.SmartContract.RustVerifierInterface
+  import Explorer.SmartContract.Helper, only: [prepare_bytecode_for_microservice: 3]
 
   def evaluate_authenticity(_, %{"name" => ""}), do: {:error, :name}
 
@@ -26,6 +27,33 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
         Logger.error(fn ->
           [
             "Error while verifying smart-contract address: #{address_hash}, params: #{inspect(params, limit: :infinity, printable_limit: :infinity)}: ",
+            Exception.format(:error, exception, __STACKTRACE__)
+          ]
+        end)
+    end
+  end
+
+  def evaluate_authenticity(address_hash, params, files) do
+    try do
+      if RustVerifierInterface.enabled?() do
+        deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
+
+        creation_tx_input =
+          case Chain.smart_contract_creation_tx_bytecode(address_hash) do
+            %{init: init, created_contract_code: _created_contract_code} ->
+              init
+
+            _ ->
+              nil
+          end
+
+        vyper_verify_multipart(params, creation_tx_input, deployed_bytecode, params["evm_version"], files)
+      end
+    rescue
+      exception ->
+        Logger.error(fn ->
+          [
+            "Error while verifying multi-part vyper smart-contract address: #{address_hash}, params: #{inspect(params, limit: :infinity, printable_limit: :infinity)}: ",
             Exception.format(:error, exception)
           ]
         end)
@@ -41,14 +69,12 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
           init
 
         _ ->
-          ""
+          nil
       end
 
-    params
-    |> Map.put("creation_bytecode", creation_tx_input)
-    |> Map.put("deployed_bytecode", deployed_bytecode)
-    |> Map.put("sources", %{"#{params["name"]}.vy" => params["contract_source_code"]})
-    |> RustVerifierInterface.vyper_verify_multipart()
+    vyper_verify_multipart(params, creation_tx_input, deployed_bytecode, params["evm_version"], %{
+      "#{params["name"]}.vy" => params["contract_source_code"]
+    })
   end
 
   defp evaluate_authenticity_inner(false, address_hash, params) do
@@ -96,5 +122,14 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
     else
       {:error, :generated_bytecode}
     end
+  end
+
+  defp vyper_verify_multipart(params, creation_tx_input, deployed_bytecode, evm_version, files) do
+    %{}
+    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
+    |> Map.put("evmVersion", evm_version || "istanbul")
+    |> Map.put("sourceFiles", files)
+    |> Map.put("compilerVersion", params["compiler_version"])
+    |> RustVerifierInterface.vyper_verify_multipart()
   end
 end

@@ -105,8 +105,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       first_address_hash = to_string(first_address.hash)
       second_address_hash = to_string(second_address.hash)
 
-      first_address_inserted_at = to_string(first_address.inserted_at)
-      second_address_inserted_at = to_string(second_address.inserted_at)
+      _first_address_inserted_at = to_string(first_address.inserted_at)
+      _second_address_inserted_at = to_string(second_address.inserted_at)
 
       response =
         conn

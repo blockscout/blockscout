@@ -67,6 +67,10 @@ defmodule BlockScoutWeb.TransactionView do
     if type, do: {type, transaction_with_transfers_filtered}, else: {nil, transaction_with_transfers_filtered}
   end
 
+  def transaction_actions(transaction) do
+    Repo.preload(transaction, :transaction_actions)
+  end
+
   def aggregate_token_transfers(token_transfers) do
     %{
       transfers: {ft_transfers, nft_transfers},
@@ -320,6 +324,20 @@ defmodule BlockScoutWeb.TransactionView do
     |> case do
       {:actual, value} -> value
       {:maximum, value} -> "#{gettext("Max of")} #{value}"
+    end
+  end
+
+  def formatted_action_amount(data, field_name) do
+    data
+    |> Map.get(field_name)
+    |> Decimal.new()
+    |> BlockScoutWeb.CldrHelper.Number.to_string!(format: "#,##0.##################")
+  end
+
+  def transaction_action_string_to_address(address) do
+    case Chain.string_to_address_hash(address) do
+      {:ok, address_hash} -> Chain.hash_to_address(address_hash)
+      _ -> {:error, nil}
     end
   end
 

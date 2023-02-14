@@ -37,7 +37,8 @@ defmodule Indexer.Block.Fetcher do
     Addresses,
     AddressTokenBalances,
     MintTransfers,
-    TokenTransfers
+    TokenTransfers,
+    TransactionActions
   }
 
   alias Indexer.Transform.Blocks, as: TransformBlocks
@@ -145,6 +146,7 @@ defmodule Indexer.Block.Fetcher do
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          Logger.info("### BEFORE token_transfers CHANGESET ###"),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
+         %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          Logger.info("### BEFORE mint_transfers CHANGESET ###"),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          Logger.info("### BEFORE FetchedBeneficiaries CHANGESET ###"),
@@ -158,7 +160,8 @@ defmodule Indexer.Block.Fetcher do
              logs: logs,
              mint_transfers: mint_transfers,
              token_transfers: token_transfers,
-             transactions: transactions_with_receipts
+             transactions: transactions_with_receipts,
+             transaction_actions: transaction_actions
            }),
          Logger.info("### BEFORE coin_balances_params_set CHANGESET ###"),
          coin_balances_params_set =
@@ -180,6 +183,8 @@ defmodule Indexer.Block.Fetcher do
            beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_receipts),
          Logger.info("### BEFORE address_token_balances CHANGESET ###"),
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
+         transaction_actions =
+           Enum.map(transaction_actions, fn action -> Map.put(action, :data, Map.delete(action.data, :block_number)) end),
          Logger.info("### BEFORE INSERT BLOCK CHANGESETS ###"),
          {:ok, inserted} <-
            __MODULE__.import(
@@ -195,7 +200,8 @@ defmodule Indexer.Block.Fetcher do
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
-               transactions: %{params: transactions_with_receipts}
+               transactions: %{params: transactions_with_receipts},
+               transaction_actions: %{params: transaction_actions}
              }
            ) do
       Logger.info(["### fetch_and_import_range FINALIZED ", inspect(range), " ###"])

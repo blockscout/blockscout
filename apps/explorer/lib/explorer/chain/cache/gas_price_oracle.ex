@@ -105,7 +105,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
         rescue
           e ->
             Logger.debug([
-              "Coudn't update gas used gas_prices #{inspect(e)}"
+              "Coudn't update gas used gas_prices",
+              Exception.format(:error, e, __STACKTRACE__)
             ])
         end
 

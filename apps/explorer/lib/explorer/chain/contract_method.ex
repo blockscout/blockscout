@@ -87,7 +87,7 @@ defmodule Explorer.Chain.ContractMethod do
     end
   rescue
     e ->
-      message = Exception.format(:error, e)
+      message = Exception.format(:error, e, __STACKTRACE__)
 
       {:error, message}
   end
