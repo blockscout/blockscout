@@ -8,6 +8,7 @@
 
 - [#6891](https://github.com/blockscout/blockscout/pull/6891) - Fix read contract for geth
 - [#6889](https://github.com/blockscout/blockscout/pull/6889) - Fix Internal Server Error on tx input decoding
+- [#6893](https://github.com/blockscout/blockscout/pull/6893) - Fix token type definition for multiple interface tokens
 
 ### Chore
 
