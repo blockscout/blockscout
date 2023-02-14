@@ -1,13 +1,15 @@
 import Config
 
-hackney_opts_base = [pool: :ethereum_jsonrpc]
+basic_auth_user = System.get_env("ETHEREUM_JSONRPC_USER", "")
+basic_auth_pass = System.get_env("ETHEREUM_JSONRPC_PASSWORD", "")
 
 hackney_opts =
-  if System.get_env("ETHEREUM_JSONRPC_HTTP_INSECURE", "") == "true" do
-    [:insecure] ++ hackney_opts_base
-  else
-    hackney_opts_base
-  end
+  [pool: :ethereum_jsonrpc]
+  |> (&if(System.get_env("ETHEREUM_JSONRPC_HTTP_INSECURE", "") == "true", do: [:insecure] ++ &1, else: &1)).()
+  |> (&if(basic_auth_user != "" && basic_auth_pass != "",
+        do: [basic_auth: {basic_auth_user, basic_auth_pass}] ++ &1,
+        else: &1
+      )).()
 
 config :indexer,
   block_interval: :timer.seconds(5),
