@@ -81,7 +81,7 @@ msgstr ""
 msgid ") may be added for each contract. Click the Add Library button to add an additional one."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:176
+#: lib/block_scout_web/templates/layout/app.html.eex:83
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
@@ -176,7 +176,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:7
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:8
-#: lib/block_scout_web/templates/layout/_add_chain_to_mm.html.eex:11
+#: lib/block_scout_web/templates/layout/_add_chain_to_mm.html.eex:10
 #, elixir-autogen, elixir-format
 msgid "Add"
 msgstr ""

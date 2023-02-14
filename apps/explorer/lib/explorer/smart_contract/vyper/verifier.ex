@@ -12,6 +12,7 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
   alias Explorer.Chain
   alias Explorer.SmartContract.Vyper.CodeCompiler
   alias Explorer.SmartContract.RustVerifierInterface
+  import Explorer.SmartContract.Helper, only: [prepare_bytecode_for_microservice: 3]
 
   def evaluate_authenticity(_, %{"name" => ""}), do: {:error, :name}
 
@@ -43,7 +44,7 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
               init
 
             _ ->
-              ""
+              nil
           end
 
         vyper_verify_multipart(params, creation_tx_input, deployed_bytecode, params["evm_version"], files)
@@ -68,7 +69,7 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
           init
 
         _ ->
-          ""
+          nil
       end
 
     vyper_verify_multipart(params, creation_tx_input, deployed_bytecode, params["evm_version"], %{
@@ -124,11 +125,11 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
   end
 
   defp vyper_verify_multipart(params, creation_tx_input, deployed_bytecode, evm_version, files) do
-    params
-    |> Map.put("creation_bytecode", creation_tx_input)
-    |> Map.put("deployed_bytecode", deployed_bytecode)
-    |> Map.put("evm_version", evm_version || "istanbul")
-    |> Map.put("sources", files)
+    %{}
+    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
+    |> Map.put("evmVersion", evm_version || "istanbul")
+    |> Map.put("sourceFiles", files)
+    |> Map.put("compilerVersion", params["compiler_version"])
     |> RustVerifierInterface.vyper_verify_multipart()
   end
 end
