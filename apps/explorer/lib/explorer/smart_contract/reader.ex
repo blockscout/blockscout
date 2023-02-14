@@ -144,11 +144,11 @@ defmodule Explorer.SmartContract.Reader do
       |> Enum.map(fn {method_id, args} ->
         %{
           contract_address: contract_address,
-          from: from,
           method_id: method_id,
           args: args,
           block_number: block_number
         }
+        |> (&if(!is_nil(from) && from != "", do: Map.put(&1, :from, from), else: &1)).()
       end)
 
     requests
