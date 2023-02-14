@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#6889](https://github.com/blockscout/blockscout/pull/6889) - Fix Internal Server Error on tx input decoding
+
 ### Chore
 
 <details>
