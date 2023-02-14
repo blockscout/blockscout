@@ -29,6 +29,7 @@
 
 ### Fixes
 
+- [#6889](https://github.com/blockscout/blockscout/pull/6889) - Fix Internal Server Error on tx input decoding
 - [#6864](https://github.com/blockscout/blockscout/pull/6864) - Fix pool checker in tx actions fetcher
 - [#6860](https://github.com/blockscout/blockscout/pull/6860) - JSON RPC to CSP header
 - [#6859](https://github.com/blockscout/blockscout/pull/6859) - Fix task restart in transaction actions fetcher
