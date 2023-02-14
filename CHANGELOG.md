@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- [#6891](https://github.com/blockscout/blockscout/pull/6891) - Fix read contract for geth
 - [#6889](https://github.com/blockscout/blockscout/pull/6889) - Fix Internal Server Error on tx input decoding
 
 ### Chore
