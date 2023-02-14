@@ -30,7 +30,6 @@ defmodule Explorer.Chain do
   require Logger
 
   alias ABI.TypeDecoder
-  alias Ecto.Association.NotLoaded
   alias Ecto.{Changeset, Multi}
 
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
@@ -81,6 +80,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
+  alias Explorer.Chain.Checker.CheckBytecodeMatchingOnDemand
 
   alias Explorer.Counters.{
     AddressesCounter,
@@ -127,9 +127,6 @@ defmodule Explorer.Chain do
   @revert_error_method_id "08c379a0"
 
   @burn_address_hash_str "0x0000000000000000000000000000000000000000"
-
-  # seconds
-  @check_bytecode_interval 86_400
 
   @limit_showing_transactions 10_000
   @default_page_size 50
@@ -1914,7 +1911,8 @@ defmodule Explorer.Chain do
       case address_result do
         %{smart_contract: smart_contract} ->
           if smart_contract do
-            check_bytecode_matching(address_result, smart_contract)
+            CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
+            address_result
           else
             address_verified_twin_contract =
               Chain.get_minimal_proxy_template(hash) ||
@@ -1944,48 +1942,6 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
-    end
-  end
-
-  defp check_bytecode_matching(address, %NotLoaded{}), do: address
-
-  defp check_bytecode_matching(address, _) do
-    now = DateTime.utc_now()
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-    # 'false and' here
-    if !address.smart_contract.is_changed_bytecode and
-         address.smart_contract.bytecode_checked_at
-         |> DateTime.add(@check_bytecode_interval, :second)
-         |> DateTime.compare(now) != :gt do
-      case EthereumJSONRPC.fetch_codes(
-             [%{block_quantity: "latest", address: address.smart_contract.address_hash}],
-             json_rpc_named_arguments
-           ) do
-        {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} ->
-          bytecode_from_node = fetched_codes |> List.first() |> Map.get(:code)
-          bytecode_from_db = "0x" <> (address.contract_code.bytes |> Base.encode16(case: :lower))
-
-          if bytecode_from_node == bytecode_from_db do
-            {:ok, smart_contract} =
-              address.smart_contract
-              |> Changeset.change(%{bytecode_checked_at: now})
-              |> Repo.update()
-
-            %{address | smart_contract: smart_contract}
-          else
-            {:ok, smart_contract} =
-              address.smart_contract
-              |> Changeset.change(%{bytecode_checked_at: now, is_changed_bytecode: true})
-              |> Repo.update()
-
-            %{address | smart_contract: smart_contract}
-          end
-
-        _ ->
-          address
-      end
-    else
-      address
     end
   end
 
