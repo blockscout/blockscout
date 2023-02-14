@@ -20,6 +20,9 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
     host: System.get_env("BLOCKSCOUT_HOST") || "localhost"
   ]
 
+config :block_scout_web, BlockScoutWeb.CsvExportController,
+  itx_export_enabled: System.get_env("ITX_CSV_EXPORT_ENABLED", "") == "true"
+
 ########################
 ### Ethereum JSONRPC ###
 ########################

@@ -25,12 +25,19 @@ defmodule BlockScoutWeb.CsvExportController do
   end
 
   defp supported_types do
-    [
-      "internal-transactions",
+    base_types = [
       "transactions",
       "token-transfers",
       "logs",
       "epoch-transactions"
     ]
+
+    itx_export = Application.get_env(:block_scout_web, __MODULE__)[:itx_export_enabled]
+
+    if itx_export do
+      ["internal-transactions" | base_types]
+    else
+      base_types
+    end
   end
 end

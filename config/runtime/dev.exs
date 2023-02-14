@@ -31,6 +31,8 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
     keyfile: System.get_env("KEYFILE") || "priv/cert/selfsigned_key.pem"
   ]
 
+config :block_scout_web, BlockScoutWeb.CsvExportController, itx_export_enabled: true
+
 ########################
 ### Ethereum JSONRPC ###
 ########################

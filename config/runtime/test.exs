@@ -6,6 +6,8 @@ alias EthereumJSONRPC.Variant
 ### BlockScout Web ###
 ######################
 
+config :block_scout_web, BlockScoutWeb.CsvExportController, itx_export_enabled: true
+
 ########################
 ### Ethereum JSONRPC ###
 ########################
