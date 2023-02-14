@@ -1,6 +1,5 @@
 defmodule BlockScoutWeb.TransactionController do
   use BlockScoutWeb, :controller
-
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
   import BlockScoutWeb.Chain,
@@ -127,7 +126,13 @@ defmodule BlockScoutWeb.TransactionController do
     )
   end
 
+  defp is_nonempty_array(%{"items" => items} = value) when is_map(value) and is_list(items) and length(items) > 0, do: true
+  defp is_nonempty_array(_), do: false
+
+
   def show(conn, %{"id" => transaction_hash_string, "type" => "JSON"}) do
+    IO.puts("show transaction json")
+    conn |> redirect(external: "www.google.com")
     case Chain.string_to_transaction_hash(transaction_hash_string) do
       {:ok, transaction_hash} ->
         if Chain.transaction_has_token_transfers?(transaction_hash) do
@@ -232,6 +237,14 @@ defmodule BlockScoutWeb.TransactionController do
         unprocessable_entity(conn)
 
       :not_found ->
+        {:ok, response} = HTTPoison.get("http://0.0.0.0:8044/api/v1/search?q=" <> id, [], params: [])
+        chain_with_tx = response.body |> Poison.decode() |> elem(1) |> Map.values() |> Enum.find(
+                                                                         fn x ->
+                                                                           x |> Map.get("content") |> Poison.decode() |> elem(1) |> is_nonempty_array()
+                                                                         end)
+        if chain_with_tx != nil do
+          conn |> redirect(external: chain_with_tx |> Map.get("uri") |> String.replace("/api/v1", ""))
+        end
         set_not_found_view(conn, id)
     end
   end
