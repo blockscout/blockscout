@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Application do
   alias BlockScoutWeb.{Endpoint, RealtimeEventHandler}
 
   alias EthereumJSONRPC.Celo.Instrumentation, as: EthRPC
-  alias Explorer.Celo.Telemetry.Instrumentation.{Database, FlyPostgres}
+  alias Explorer.Celo.Telemetry.Instrumentation.{Api, Database, FlyPostgres}
   alias Explorer.Celo.Telemetry.MetricsCollector, as: CeloPrometheusCollector
 
   def start(_type, _args) do
@@ -41,7 +41,8 @@ defmodule BlockScoutWeb.Application do
         {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
         child_spec(Endpoint, []),
         {Absinthe.Subscription, Endpoint},
-        {CeloPrometheusCollector, metrics: [EthRPC.metrics(), Database.metrics(), FlyPostgres.metrics()]},
+        {CeloPrometheusCollector,
+         metrics: [EthRPC.metrics(), Database.metrics(), FlyPostgres.metrics(), Api.metrics()]},
         {RealtimeEventHandler, name: RealtimeEventHandler},
         {BlocksIndexedCounter, name: BlocksIndexedCounter},
         {CampaignBannerCache, name: CampaignBannerCache}
