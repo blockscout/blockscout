@@ -12,6 +12,8 @@
 
 ### Chore
 
+- [#6902](https://github.com/blockscout/blockscout/pull/6902) - Increase verification timeout to 120 seconds for microservice verification
+
 <details>
   <summary>Dependencies version bumps</summary>
 </details>
