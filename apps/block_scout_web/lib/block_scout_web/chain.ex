@@ -255,6 +255,20 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {index}}]
   end
 
+  def paging_options(%{"nonce" => nonce_string}) when is_binary(nonce_string) do
+    case Integer.parse(nonce_string) do
+      {nonce, ""} ->
+        [paging_options: %{@default_paging_options | key: {nonce}}]
+
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{"nonce" => nonce}) when is_integer(nonce) do
+    [paging_options: %{@default_paging_options | key: {nonce}}]
+  end
+
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string}) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
          {:ok, hash} <- string_to_transaction_hash(hash_string) do
@@ -445,6 +459,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%Withdrawal{index: index}) do
     %{"index" => index}
+  end
+
+  defp paging_params(%{msg_nonce: nonce}) do
+    %{"nonce" => nonce}
   end
 
   # clause for search results pagination

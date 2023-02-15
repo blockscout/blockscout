@@ -55,6 +55,8 @@ defmodule Explorer.Chain do
     InternalTransaction,
     Log,
     OptimismOutputRoot,
+    OptimismWithdrawal,
+    OptimismWithdrawalEvent,
     PendingBlockOperation,
     SmartContract,
     SmartContractAdditionalSource,
@@ -2587,6 +2589,44 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Lists `t:Explorer.Chain.OptimismWithdrawal.t/0`'s' in descending order based on message nonce.
+
+  """
+  @spec list_optimism_withdrawals :: [OptimismWithdrawal.t()]
+  def list_optimism_withdrawals(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(w in OptimismWithdrawal,
+        order_by: [desc: w.msg_nonce],
+        left_join: l2_tx in Transaction,
+        on: w.l2_tx_hash == l2_tx.hash,
+        left_join: l2_block in Block,
+        on: w.l2_block_number == l2_block.number,
+        left_join: we in OptimismWithdrawalEvent,
+        on: w.withdrawal_hash == we.withdrawal_hash and we.l1_event_type == :WithdrawalFinalized,
+        select: %{
+          msg_nonce: w.msg_nonce,
+          withdrawal_hash: w.withdrawal_hash,
+          l2_block_number: w.l2_block_number,
+          l2_timestamp: l2_block.timestamp,
+          l2_tx_hash: w.l2_tx_hash,
+          l1_tx_hash: we.l1_tx_hash,
+          from: l2_tx.from_address_hash
+        }
+      )
+
+    base_query
+    |> page_optimism_withdrawals(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
+  end
+
+  def optimism_withdrawals_total_count do
+    Repo.aggregate(OptimismWithdrawal, :count, timeout: :infinity)
+  end
+
+  @doc """
   Lists the top `t:Explorer.Chain.Token.t/0`'s'.
 
   """
@@ -4753,6 +4793,12 @@ defmodule Explorer.Chain do
 
   defp page_output_roots(query, %PagingOptions{key: {index}}) do
     from(r in query, where: r.l2_output_index < ^index)
+  end
+
+  defp page_optimism_withdrawals(query, %PagingOptions{key: nil}), do: query
+
+  defp page_optimism_withdrawals(query, %PagingOptions{key: {nonce}}) do
+    from(w in query, where: w.msg_nonce < ^nonce)
   end
 
   defp page_tokens(query, %PagingOptions{key: nil}), do: query
