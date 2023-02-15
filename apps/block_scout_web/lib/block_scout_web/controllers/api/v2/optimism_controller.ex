@@ -31,4 +31,24 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       next_page_params: next_page_params
     })
   end
+
+  def withdrawals(conn, params) do
+    {withdrawals, next_page} =
+      params
+      |> paging_options()
+      |> Chain.list_optimism_withdrawals()
+      |> split_list_by_page()
+
+    total = Chain.optimism_withdrawals_total_count()
+
+    next_page_params = next_page_params(next_page, withdrawals, params)
+
+    conn
+    |> put_status(200)
+    |> render(:optimism_withdrawals, %{
+      withdrawals: withdrawals,
+      total: total,
+      next_page_params: next_page_params
+    })
+  end
 end
