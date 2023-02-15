@@ -1,6 +1,11 @@
 defmodule BlockScoutWeb.API.V2.OptimismView do
   use BlockScoutWeb, :view
 
+  import Ecto.Query, only: [from: 2]
+
+  alias Explorer.Repo
+  alias Explorer.Chain.{OptimismOutputRoot, OptimismWithdrawalEvent}
+
   def render("output_roots.json", %{
         roots: roots,
         total: total,
@@ -21,5 +26,78 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       total: total,
       next_page_params: next_page_params
     }
+  end
+
+  def render("optimism_withdrawals.json", %{
+        withdrawals: withdrawals,
+        total: total,
+        next_page_params: next_page_params
+      }) do
+    %{
+      items:
+        Enum.map(withdrawals, fn w ->
+          msg_nonce =
+            Bitwise.band(
+              Decimal.to_integer(w.msg_nonce),
+              0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+            )
+
+          msg_nonce_version = Bitwise.bsr(Decimal.to_integer(w.msg_nonce), 240)
+
+          {status, challenge_period_end} = withdrawal_status(w)
+
+          %{
+            "msg_nonce_raw" => Decimal.to_string(w.msg_nonce, :normal),
+            "msg_nonce" => msg_nonce,
+            "msg_nonce_version" => msg_nonce_version,
+            "from" => w.from,
+            "l2_tx_hash" => w.l2_tx_hash,
+            "l2_timestamp" => w.l2_timestamp,
+            "status" => status,
+            "l1_tx_hash" => w.l1_tx_hash,
+            "challenge_period_end" => challenge_period_end
+          }
+        end),
+      total: total,
+      next_page_params: next_page_params
+    }
+  end
+
+  defp withdrawal_status(w) do
+    if is_nil(w.l1_tx_hash) do
+      l1_timestamp =
+        Repo.one(
+          from(
+            we in OptimismWithdrawalEvent,
+            select: we.l1_timestamp,
+            where: we.withdrawal_hash == ^w.withdrawal_hash and we.l1_event_type == :WithdrawalProven
+          )
+        )
+
+      if is_nil(l1_timestamp) do
+        last_root_timestamp =
+          Repo.one(
+            from(root in OptimismOutputRoot,
+              select: root.l1_timestamp,
+              order_by: [desc: root.l2_output_index],
+              limit: 1
+            )
+          ) || 0
+
+        if w.l2_timestamp > last_root_timestamp do
+          {"Waiting for state root", nil}
+        else
+          {"Ready to prove", nil}
+        end
+      else
+        if DateTime.compare(l1_timestamp, DateTime.add(DateTime.utc_now(), -604_800, :second)) == :lt do
+          {"Ready for relay", nil}
+        else
+          {"In challenge period", DateTime.add(l1_timestamp, 604_800, :second)}
+        end
+      end
+    else
+      {"Relayed", nil}
+    end
   end
 end

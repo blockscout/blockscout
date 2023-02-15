@@ -134,6 +134,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
+    # credo:disable-for-next-line
     time_before = Timex.now()
 
     chunks_number = ceil((end_block - start_block + 1) / Optimism.get_logs_range_size())
