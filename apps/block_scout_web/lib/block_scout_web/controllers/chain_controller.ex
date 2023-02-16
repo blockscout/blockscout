@@ -85,6 +85,34 @@ defmodule BlockScoutWeb.ChainController do
 
   def search(conn, _), do: not_found(conn)
 
+  defp is_nonempty_array(%{"items" => items} = value) when is_map(value) and is_list(items) and length(items) > 0, do: true
+  defp is_nonempty_array(_), do: false
+
+  defp extract_items_from_chain_with_tx(chain_with_tx) do
+    if chain_with_tx == nil do
+      []
+    else
+      [chain_with_tx |> Map.get("content") |> Poison.decode() |> elem(1) |> Map.get("items") |> Enum.at(0) |> Enum.reduce(%{}, fn {key, value}, acc ->
+        new_key = if key == "address", do: "address_hash", else: key
+        Map.put(acc, new_key, value)
+      end)]
+
+    end
+  end
+
+  defp check_external_chains(encoded_results, query) do
+     if encoded_results != [] do
+       encoded_results
+     else
+       {:ok, response} = HTTPoison.get("http://0.0.0.0:8044/api/v1/search?q=" <> query, [], params: [])
+       chain_with_tx = response.body |> Poison.decode() |> elem(1) |> Map.values() |> Enum.find(
+                                                                                        fn x ->
+                                                                                          x |> Map.get("content") |> Poison.decode() |> elem(1) |> is_nonempty_array()
+                                                                                        end)
+       chain_with_tx |> extract_items_from_chain_with_tx()
+     end
+  end
+
   def token_autocomplete(conn, %{"q" => term} = params) when is_binary(term) do
     [paging_options: paging_options] = paging_options(params)
     offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
@@ -117,7 +145,7 @@ defmodule BlockScoutWeb.ChainController do
 
         item
       end)
-
+    encoded_results = encoded_results |> check_external_chains(term)
     json(conn, encoded_results)
   end
 
@@ -172,7 +200,6 @@ defmodule BlockScoutWeb.ChainController do
       conn
       |> transaction_path(:show, item)
       |> Controller.full_path()
-
     redirect(conn, to: transaction_path)
   end
 end

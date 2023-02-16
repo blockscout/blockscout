@@ -131,8 +131,6 @@ defmodule BlockScoutWeb.TransactionController do
 
 
   def show(conn, %{"id" => transaction_hash_string, "type" => "JSON"}) do
-    IO.puts("show transaction json")
-    conn |> redirect(external: "www.google.com")
     case Chain.string_to_transaction_hash(transaction_hash_string) do
       {:ok, transaction_hash} ->
         if Chain.transaction_has_token_transfers?(transaction_hash) do
