@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   use Explorer.Schema
 
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2, limit: 2, offset: 2, order_by: 3, preload: 2]
+  import Ecto.Query, only: [from: 2, limit: 2, offset: 2, order_by: 3, preload: 2, dynamic: 2]
 
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Hash, Token}
@@ -155,12 +155,18 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     )
   end
 
+  def fiat_value_query do
+    dynamic([ctb, t], ctb.value * t.fiat_value / fragment("10 ^ ?", t.decimals))
+  end
+
   @doc """
   Builds an `t:Ecto.Query.t/0` to fetch the current token balances of the given address.
   """
   def last_token_balances(address_hash, type \\ [])
 
   def last_token_balances(address_hash, [type | _]) do
+    fiat_balance = fiat_value_query()
+
     from(
       ctb in __MODULE__,
       where: ctb.address_hash == ^address_hash,
@@ -169,11 +175,14 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       left_join: t in Token,
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       select: {ctb, t},
-      order_by: [desc: ctb.value, asc: t.type, asc: t.name]
+      order_by: ^[desc_nulls_last: fiat_balance],
+      order_by: [asc: t.type, asc: t.name, desc: ctb.id]
     )
   end
 
   def last_token_balances(address_hash, _) do
+    fiat_balance = fiat_value_query()
+
     from(
       ctb in __MODULE__,
       where: ctb.address_hash == ^address_hash,
@@ -181,7 +190,8 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       left_join: t in Token,
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       select: {ctb, t},
-      order_by: [desc: ctb.value, asc: t.type, asc: t.name]
+      order_by: ^[desc_nulls_last: fiat_balance],
+      order_by: [asc: t.type, asc: t.name, desc: ctb.id]
     )
   end
 
