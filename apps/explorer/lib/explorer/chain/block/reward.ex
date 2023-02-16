@@ -5,9 +5,11 @@ defmodule Explorer.Chain.Block.Reward do
 
   use Explorer.Schema
 
+  alias Explorer.Application.Constants
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reward.AddressType
-  alias Explorer.Chain.{Address, Block, Hash, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, Wei, Validator}
+  alias Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.SmartContract.Reader
 
@@ -149,6 +151,39 @@ defmodule Explorer.Chain.Block.Reward do
       call_contract(validators_contract_address, @is_validator_abi, is_validator_params)
     else
       nil
+    end
+  end
+
+  def get_validator_payout_key_by_mining_from_db(mining_key) do
+    contract_address_from_db = Constants.get_keys_manager_contract_address()
+
+    contract_address_from_env =
+      Application.get_env(:explorer, Explorer.Chain.Block.Reward, %{})[:keys_manager_contract_address]
+
+    cond do
+      is_nil(contract_address_from_env) ->
+        %{is_validator: nil, payout_key: mining_key}
+
+      is_nil(contract_address_from_db) ->
+        FetchValidatorInfoOnDemand.trigger_fetch(mining_key)
+        %{is_validator: nil, payout_key: mining_key}
+
+      contract_address_from_db.value |> String.downcase() == contract_address_from_env |> String.downcase() ->
+        FetchValidatorInfoOnDemand.trigger_fetch(mining_key)
+        validator = Validator.get_validator_by_address_hash(mining_key)
+        is_validator = validator && validator.is_validator
+
+        with {:is_validator, true} <- {:is_validator, is_validator},
+             false <- is_nil(validator.payout_key_hash) do
+          %{is_validator: is_validator, payout_key: validator.payout_key_hash}
+        else
+          _ ->
+            %{is_validator: is_validator, payout_key: mining_key}
+        end
+
+      true ->
+        FetchValidatorInfoOnDemand.trigger_fetch(mining_key)
+        %{is_validator: nil, payout_key: mining_key}
     end
   end
 

@@ -80,7 +80,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
-  alias Explorer.Chain.Checker.CheckBytecodeMatchingOnDemand
+  alias Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand
 
   alias Explorer.Counters.{
     AddressesCounter,
