@@ -19,32 +19,21 @@
 
     <div class="row">
       <div class="col-xs-12 col-lg-3">
-        <p class="footer-info-text"><%= gettext("Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks.") %></p>
+        <p class="footer-info-text"><%= gettext("edeXa Business Blockchain, private and public ecosystem built to enable scalable and business-
+oriented dApps for the world.") %></p>
         <div class="footer-social-icons">
-          <a href="<%= Application.get_env(:block_scout_web, :footer)[:github_link] %>" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
-            <div class="footer-social-icon-container fontawesome-icon github"></div>
-          </a>
-          <a href="https://www.twitter.com/blockscoutcom/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
+          <a href="https://twitter.com/edexablockchain" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
             <div class="footer-social-icon-container fontawesome-icon twitter"></div>
           </a>
-          <a href="https://t.me/poa_network" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
-            <div class="footer-social-icon-container fontawesome-icon telegram"></div>
+          <a href="https://github.com/devEdexa" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
+            <div class="footer-social-icon-container fontawesome-icon github"></div>
           </a>
+         <!-- <a href="https://www.linkedin.com/company/edexablockchain/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("LinkedIn") %>'>
+            <div class="footer-social-icon-container fontawesome-icon linkedin"></div>
+          </a> -->
         </div>
       </div>
 
-      <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
-        <h3>BlockScout</h3>
-        <ul>
-          <li><a href="<%= issue_link(@conn) %>" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Submit an Issue") %></a></li>
-          <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:github_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
-          <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:chat_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Chat (#blockscout)") %></a></li>
-          <%= if Application.get_env(:block_scout_web, :footer)[:enable_forum_link] do %>
-            <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:forum_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Forum") %></a></li>
-          <% end %>
-          <%= render BlockScoutWeb.LayoutView, "_add_chain_to_mm.html" %>
-        </ul>
-      </div>
       <% main_nets = main_nets(other_networks()) %>
 
       <%= unless Enum.empty?(main_nets) do %>
@@ -88,7 +77,7 @@
     <%= unless ignore_version?(version) do %>
       <% release_link = release_link(version) %>
       <div>
-        <%= gettext("Version") %>: <%= release_link %>
+        <!-- <%= gettext("Version") %>: <%= release_link || 0.1 %> -->
       </div>
     <% end %>
   </div>

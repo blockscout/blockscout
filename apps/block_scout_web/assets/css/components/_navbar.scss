@@ -11,7 +11,7 @@ $header-textfield-background-color: #f5f6fa !default;
 $header-textfield-magnifier-color: $header-links-color !default;
 $header-link-horizontal-padding: 0.71rem;
 $navbar-logo-height: auto !default;
-$navbar-logo-width: 100% !default;
+$navbar-logo-width: 125px !default;
 
 .navbar.navbar-primary {
   background-color: $header-background-color;
@@ -23,12 +23,6 @@ $navbar-logo-width: 100% !default;
   }
 
   .navbar-nav {
-
-    .nav-submenu {
-      padding: 10px 20px;
-      color: $header-links-color; 
-    }
-    
     .nav-link {
       outline: none;
       align-items: center;
@@ -50,9 +44,7 @@ $navbar-logo-width: 100% !default;
         top: -10px;
         transform: translateX(-50%);
         transition: $transition-cont;
-        width: calc(
-          100% - #{$header-link-horizontal-padding} - #{$header-link-horizontal-padding}
-        );
+        width: calc(100% - #{$header-link-horizontal-padding} - #{$header-link-horizontal-padding});
       }
 
       &.active,
@@ -137,20 +129,24 @@ $navbar-logo-width: 100% !default;
     width: 100%;
     z-index: 1;
 
-    &[placeholder]{
+    &[placeholder] {
       text-overflow: ellipsis !important;
     }
-    &::-webkit-input-placeholder { /* Chrome/Opera/Safari */
-        text-overflow: ellipsis  !important;
+    &::-webkit-input-placeholder {
+      /* Chrome/Opera/Safari */
+      text-overflow: ellipsis !important;
     }
-    &::-moz-placeholder { /* Firefox 19+ */
-        text-overflow: ellipsis  !important;
+    &::-moz-placeholder {
+      /* Firefox 19+ */
+      text-overflow: ellipsis !important;
     }
-    &:-ms-input-placeholder { /* IE 10+ */
-        text-overflow: ellipsis  !important;
+    &:-ms-input-placeholder {
+      /* IE 10+ */
+      text-overflow: ellipsis !important;
     }
-    &:-moz-placeholder { /* Firefox 18- */
-        text-overflow: ellipsis  !important;
+    &:-moz-placeholder {
+      /* Firefox 18- */
+      text-overflow: ellipsis !important;
     }
 
     &:focus {
@@ -227,7 +223,6 @@ $navbar-logo-width: 100% !default;
     form {
       flex-grow: 1;
     }
-
   }
   .input-group {
     width: 100%;
@@ -275,7 +270,7 @@ $navbar-logo-width: 100% !default;
 }
 
 .add-border {
-  border: 1px solid transparentize($white, 0.30);
+  border: 1px solid transparentize($white, 0.3);
 }
 
 .navbar-collapse {
@@ -287,7 +282,8 @@ $navbar-logo-width: 100% !default;
   }
 }
 
-.navbar-container, .navbar-primary {
+.navbar-container,
+.navbar-primary {
   @media (min-width: 992px) {
     padding-right: 0;
   }
@@ -301,4 +297,7 @@ $navbar-logo-width: 100% !default;
 
 .visually-hidden {
   display: block;
+}
+.title-custom{
+  margin: 15px;
 }

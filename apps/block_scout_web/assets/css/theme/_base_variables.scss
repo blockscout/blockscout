@@ -3,7 +3,7 @@
 // Variables should follow the `$component-state-property-size` formula for
 // consistent naming. Ex: $nav-link-disabled-color and $modal-content-box-shadow-xs.
 
-@use 'sass:math';
+@use "sass:math";
 
 $dashboard-line-color-price: #8286a9 !default;
 $base-border-color: #e2e5ec !default;
@@ -33,7 +33,7 @@ $grays: map-merge(
     "600": $gray-600,
     "700": $gray-700,
     "800": $gray-800,
-    "900": $gray-900
+    "900": $gray-900,
   ),
   $grays
 );
@@ -66,7 +66,7 @@ $colors: map-merge(
     "cyan": $cyan,
     "white": $white,
     "gray": $gray-600,
-    "gray-dark": $gray-800
+    "gray-dark": $gray-800,
   ),
   $colors
 );
@@ -94,7 +94,7 @@ $theme-colors: map-merge(
     "warning": $warning,
     "danger": $danger,
     "light": $light,
-    "dark": $dark
+    "dark": $dark,
   ),
   $theme-colors
 );
@@ -136,18 +136,18 @@ $spacers: map-merge(
   (
     0: 0,
     1: (
-      $spacer * 0.25
+      $spacer * 0.25,
     ),
     2: (
-      $spacer * 0.5
+      $spacer * 0.5,
     ),
     3: $spacer,
     4: (
-      $spacer * 1.5
+      $spacer * 1.5,
     ),
     5: (
-      $spacer * 3
-    )
+      $spacer * 3,
+    ),
   ),
   $spacers
 );
@@ -160,7 +160,7 @@ $sizes: map-merge(
     50: 50%,
     75: 75%,
     100: 100%,
-    auto: auto
+    auto: auto,
   ),
   $sizes
 );
@@ -198,7 +198,7 @@ $grid-breakpoints: (
   sm: 576px,
   md: 768px,
   lg: 992px,
-  xl: 1200px
+  xl: 1200px,
 ) !default;
 
 @include _assert-ascending($grid-breakpoints, "$grid-breakpoints");
@@ -212,16 +212,16 @@ $container-max-widths: (
   sm: 540px,
   md: 720px,
   lg: 960px,
-  xl: 1140px
+  xl: 1140px,
 ) !default;
 
 @include _assert-ascending($container-max-widths, "$container-max-widths");
 
-@media (min-width: 1200px) { 
+@media (min-width: 1200px) {
   .container {
     max-width: 1300px !important;
   }
- }
+}
 
 // Grid columns
 //
@@ -263,10 +263,8 @@ $transition-cont: all 0.4s ease-in-out !default;
 // Font, line-height, and color for body text, headings, and more.
 
 // stylelint-disable value-keyword-case
-$font-family: Nunito, "Helvetica Neue", Arial, sans-serif,
-  "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !default;
-$font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas,
-  "Liberation Mono", "Courier New", monospace !default;
+$font-family: Nunito, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !default;
+$font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !default;
 $font-family-base: $font-family !default;
 // stylelint-enable value-keyword-case
 
@@ -415,8 +413,8 @@ $btn-border-radius: $border-radius !default;
 $btn-border-radius-lg: $border-radius-lg !default;
 $btn-border-radius-sm: $border-radius-sm !default;
 
-$btn-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
-  border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !default;
+$btn-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
+  box-shadow 0.15s ease-in-out !default;
 
 // Forms
 
@@ -457,21 +455,14 @@ $input-plaintext-color: $body-color !default;
 
 $input-height-border: $input-border-width * 2 !default;
 
-$input-height-inner: ($font-size-base * $input-btn-line-height) +
-  ($input-btn-padding-y * 2) !default;
+$input-height-inner: ($font-size-base * $input-btn-line-height) + ($input-btn-padding-y * 2) !default;
 $input-height: calc(#{$input-height-inner} + #{$input-height-border}) !default;
 
-$input-height-inner-sm: ($font-size-sm * $input-btn-line-height-sm) +
-  ($input-btn-padding-y-sm * 2) !default;
-$input-height-sm: calc(
-  #{$input-height-inner-sm} + #{$input-height-border}
-) !default;
+$input-height-inner-sm: ($font-size-sm * $input-btn-line-height-sm) + ($input-btn-padding-y-sm * 2) !default;
+$input-height-sm: calc(#{$input-height-inner-sm} + #{$input-height-border}) !default;
 
-$input-height-inner-lg: ($font-size-lg * $input-btn-line-height-lg) +
-  ($input-btn-padding-y-lg * 2) !default;
-$input-height-lg: calc(
-  #{$input-height-inner-lg} + #{$input-height-border}
-) !default;
+$input-height-inner-lg: ($font-size-lg * $input-btn-line-height-lg) + ($input-btn-padding-y-lg * 2) !default;
+$input-height-lg: calc(#{$input-height-inner-lg} + #{$input-height-border}) !default;
 
 $input-transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !default;
 
@@ -503,20 +494,13 @@ $custom-control-label-disabled-color: $gray-600 !default;
 
 $custom-control-indicator-checked-color: $component-active-color !default;
 $custom-control-indicator-checked-bg: $component-active-bg !default;
-$custom-control-indicator-checked-disabled-bg: rgba(
-  theme-color("primary"),
-  0.5
-) !default;
+$custom-control-indicator-checked-disabled-bg: rgba(theme-color("primary"), 0.5) !default;
 $custom-control-indicator-checked-box-shadow: none !default;
 
-$custom-control-indicator-focus-box-shadow: 0 0 0 1px $body-bg,
-  $input-btn-focus-box-shadow !default;
+$custom-control-indicator-focus-box-shadow: 0 0 0 1px $body-bg, $input-btn-focus-box-shadow !default;
 
 $custom-control-indicator-active-color: $component-active-color !default;
-$custom-control-indicator-active-bg: lighten(
-  $component-active-bg,
-  35%
-) !default;
+$custom-control-indicator-active-bg: lighten($component-active-bg, 35%) !default;
 $custom-control-indicator-active-box-shadow: none !default;
 
 $custom-checkbox-indicator-border-radius: $border-radius !default;
@@ -585,8 +569,7 @@ $custom-range-thumb-bg: $component-active-bg !default;
 $custom-range-thumb-border: 0 !default;
 $custom-range-thumb-border-radius: 1rem !default;
 $custom-range-thumb-box-shadow: 0 0.1rem 0.25rem rgba($black, 0.1) !default;
-$custom-range-thumb-focus-box-shadow: 0 0 0 1px $body-bg,
-  $input-btn-focus-box-shadow !default;
+$custom-range-thumb-focus-box-shadow: 0 0 0 1px $body-bg, $input-btn-focus-box-shadow !default;
 $custom-range-thumb-active-bg: lighten($component-active-bg, 35%) !default;
 
 $custom-file-height: $input-height !default;
@@ -605,7 +588,7 @@ $custom-file-box-shadow: $input-box-shadow !default;
 $custom-file-button-color: $custom-file-color !default;
 $custom-file-button-bg: $input-group-addon-bg !default;
 $custom-file-text: (
-  en: "Browse"
+  en: "Browse",
 ) !default;
 
 // Form validation
@@ -685,9 +668,7 @@ $navbar-nav-link-padding-x: 0.5rem !default;
 
 $navbar-brand-font-size: $font-size-lg !default;
 // Compute the navbar-brand padding-y so the navbar-brand will have the same height as navbar-text and nav-link
-$nav-link-height: (
-  $font-size-base * $line-height-base + $nav-link-padding-y * 2
-) !default;
+$nav-link-height: ($font-size-base * $line-height-base + $nav-link-padding-y * 2) !default;
 $navbar-brand-height: $navbar-brand-font-size * $line-height-base !default;
 $navbar-brand-padding-y: math.div($nav-link-height - $navbar-brand-height, 2) !default;
 
@@ -760,9 +741,7 @@ $card-spacer-x: 1.25rem !default;
 $card-border-width: $border-width !default;
 $card-border-radius: $border-radius !default;
 $card-border-color: rgba($black, 0.125) !default;
-$card-inner-border-radius: calc(
-  #{$card-border-radius} - #{$card-border-width}
-) !default;
+$card-inner-border-radius: calc(#{$card-border-radius} - #{$card-border-width}) !default;
 $card-cap-bg: rgba($black, 0.03) !default;
 $card-bg: $white !default;
 

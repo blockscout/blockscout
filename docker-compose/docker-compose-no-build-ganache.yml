@@ -29,19 +29,18 @@ services:
     env_file:
       -  ./envs/common-blockscout.env
     environment:
+        PORT: 5080
         ETHEREUM_JSONRPC_VARIANT: 'ganache'
-        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
-        INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
-        INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
+        ETHEREUM_JSONRPC_HTTP_URL: https://testnet.edexa.com/rpc
+        ETHEREUM_JSONRPC_WS_URL: wss://testnet.edexa.com/ws
+        ETHEREUM_JSONRPC_TRACE_URL: https://testnet.edexa.com/rpc
+        INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'false'
         DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
         ECTO_USE_SSL: 'false'
         SECRET_KEY_BASE: '56NtB48ear7+wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN'
         CHAIN_ID: '1337'
     ports:
-      - 4000:4000
-    volumes:
-      - ./logs/:/app/logs/
+      - 5080:5080
 
   smart-contract-verifier:
     extends:
