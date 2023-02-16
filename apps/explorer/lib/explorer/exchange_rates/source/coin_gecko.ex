@@ -3,7 +3,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   Adapter for fetching exchange rates from https://coingecko.com
   """
 
-  alias Explorer.{Chain, ExchangeRates}
+  alias Explorer.Chain
   alias Explorer.ExchangeRates.{Source, Token}
 
   import Source, only: [to_decimal: 1]
@@ -44,11 +44,28 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   @impl Source
+  def format_data(%{} = fiat_values_for_tokens) do
+    currency = currency()
+
+    fiat_values_for_tokens
+    |> Enum.reduce(%{}, fn
+      {address_hash_string, %{^currency => value}}, acc ->
+        case Explorer.Chain.Hash.Address.cast(address_hash_string) do
+          {:ok, address_hash} -> acc |> Map.put(address_hash, value)
+          _ -> acc
+        end
+
+      _, acc ->
+        acc
+    end)
+  end
+
+  @impl Source
   def format_data(_), do: []
 
   @impl Source
   def source_url do
-    explicit_coin_id = Application.get_env(:explorer, ExchangeRates)[:coingecko_coin_id]
+    explicit_coin_id = config(:coin_id)
 
     {:ok, id} =
       if explicit_coin_id do
@@ -67,11 +84,18 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   @impl Source
+  def source_url(token_addresses) when is_list(token_addresses) do
+    concatanated_addresses = token_addresses |> Enum.map_join(",", &to_string/1)
+
+    "#{base_url()}/simple/token_price/#{platform()}?vs_currencies=#{currency()}&contract_addresses=#{concatanated_addresses}"
+  end
+
+  @impl Source
   def source_url(input) do
     case Chain.Hash.Address.cast(input) do
       {:ok, _} ->
         address_hash_str = input
-        "#{base_url()}/coins/ethereum/contract/#{address_hash_str}"
+        "#{base_url()}/coins/#{platform()}/contract/#{address_hash_str}"
 
       _ ->
         symbol = input
@@ -99,7 +123,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   defp api_key do
-    Application.get_env(:explorer, ExchangeRates)[:coingecko_api_key] || nil
+    config(:api_key) || nil
   end
 
   def coin_id do
@@ -175,6 +199,14 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
       _ ->
         1
     end
+  end
+
+  defp platform do
+    config(:platform) || "ethereum"
+  end
+
+  defp currency do
+    config(:currency) || "usd"
   end
 
   defp base_url do
