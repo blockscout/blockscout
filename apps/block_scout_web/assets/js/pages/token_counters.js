@@ -86,6 +86,7 @@ function updateCounters () {
 
 if ($('[data-page="token-holders-list"]').length) {
   window.onbeforeunload = () => {
+    // @ts-ignore
     window.loading = true
   }
 

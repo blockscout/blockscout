@@ -6,18 +6,18 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
   alias HTTPoison.Response
   require Logger
 
-  @post_timeout :infinity
+  @post_timeout :timer.seconds(120)
   @request_error_msg "Error while sending request to verification microservice"
 
   def verify_multi_part(
         %{
-          "creation_bytecode" => _,
-          "deployed_bytecode" => _,
-          "compiler_version" => _,
-          "sources" => _,
-          "evm_version" => _,
-          "optimization_runs" => _,
-          "contract_libraries" => _
+          "bytecode" => _,
+          "bytecodeType" => _,
+          "compilerVersion" => _,
+          "sourceFiles" => _,
+          "evmVersion" => _,
+          "optimizationRuns" => _,
+          "libraries" => _
         } = body
       ) do
     http_post_request(multiple_files_verification_url(), body)
@@ -25,9 +25,9 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
 
   def verify_standard_json_input(
         %{
-          "creation_bytecode" => _,
-          "deployed_bytecode" => _,
-          "compiler_version" => _,
+          "bytecode" => _,
+          "bytecodeType" => _,
+          "compilerVersion" => _,
           "input" => _
         } = body
       ) do
@@ -36,10 +36,10 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
 
   def vyper_verify_multipart(
         %{
-          "creation_bytecode" => _,
-          "deployed_bytecode" => _,
-          "compiler_version" => _,
-          "sources" => _
+          "bytecode" => _,
+          "bytecodeType" => _,
+          "compilerVersion" => _,
+          "sourceFiles" => _
         } = body
       ) do
     http_post_request(vyper_multiple_files_verification_url(), body)
@@ -49,9 +49,6 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
     headers = [{"Content-Type", "application/json"}]
 
     case HTTPoison.post(url, Jason.encode!(normalize_creation_bytecode(body)), headers, recv_timeout: @post_timeout) do
-      {:ok, %Response{body: body, status_code: 200}} ->
-        proccess_verifier_response(body)
-
       {:ok, %Response{body: body, status_code: _}} ->
         proccess_verifier_response(body)
 
@@ -113,15 +110,15 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
     end
   end
 
-  def proccess_verifier_response(%{"status" => zero, "result" => result}) when zero in ["0", 0] do
-    {:ok, result}
+  def proccess_verifier_response(%{"status" => "SUCCESS", "source" => source}) do
+    {:ok, source}
   end
 
-  def proccess_verifier_response(%{"status" => one, "message" => error}) when one in ["1", 1] do
+  def proccess_verifier_response(%{"status" => "FAILURE", "message" => error}) do
     {:error, error}
   end
 
-  def proccess_verifier_response(%{"versions" => versions}), do: {:ok, versions}
+  def proccess_verifier_response(%{"compilerVersions" => versions}), do: {:ok, versions}
 
   def proccess_verifier_response(other), do: {:error, other}
 
@@ -129,17 +126,17 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
 
   def normalize_creation_bytecode(map), do: map
 
-  def multiple_files_verification_url, do: "#{base_api_url()}" <> "/solidity/verify/multiple-files"
+  def multiple_files_verification_url, do: "#{base_api_url()}" <> "/verifier/solidity/sources:verify-multi-part"
 
-  def vyper_multiple_files_verification_url, do: "#{base_api_url()}" <> "/vyper/verify/multiple-files"
+  def vyper_multiple_files_verification_url, do: "#{base_api_url()}" <> "/verifier/vyper/sources:verify-multi-part"
 
-  def standard_json_input_verification_url, do: "#{base_api_url()}" <> "/solidity/verify/standard-json"
+  def standard_json_input_verification_url, do: "#{base_api_url()}" <> "/verifier/solidity/sources:verify-standard-json"
 
-  def versions_list_url, do: "#{base_api_url()}" <> "/solidity/versions"
+  def versions_list_url, do: "#{base_api_url()}" <> "/verifier/solidity/versions"
 
-  def vyper_versions_list_url, do: "#{base_api_url()}" <> "/vyper/versions"
+  def vyper_versions_list_url, do: "#{base_api_url()}" <> "/verifier/vyper/versions"
 
-  def base_api_url, do: "#{base_url()}" <> "/api/v1"
+  def base_api_url, do: "#{base_url()}" <> "/api/v2"
 
   def base_url do
     RustService.base_url(__MODULE__)

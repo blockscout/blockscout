@@ -2,33 +2,23 @@ version: '3.8'
 
 services:
   redis_db:
-    image: 'redis:alpine'
-    ports:
-      - 6379:6379
-    container_name: redis_db
-    command: redis-server
-    volumes:
-      - ./redis-data:/data
+    extends:
+      file: ./services/docker-compose-redis.yml
+      service: redis_db
 
   db:
-    image: postgres:14
-    restart: always
-    container_name: 'postgres'
-    environment:
-        POSTGRES_PASSWORD: ''
-        POSTGRES_USER: 'postgres'
-        POSTGRES_HOST_AUTH_METHOD: 'trust'
-    volumes:
-      - ./postgres-data:/var/lib/postgresql/data
-    ports:
-      - 7432:5432
+    extends:
+      file: ./services/docker-compose-db.yml
+      service: db
 
   blockscout:
+    platform: linux/x86_64
     depends_on:
       - db
       - smart-contract-verifier
       - redis_db
     image: blockscout/blockscout:${DOCKER_TAG:-latest}
+    pull_policy: always
     restart: always
     container_name: 'blockscout'
     links:
@@ -51,20 +41,16 @@ services:
       - ./logs/:/app/logs/
 
   smart-contract-verifier:
-    image: ghcr.io/blockscout/smart-contract-verifier:${SMART_CONTRACT_VERIFIER_DOCKER_TAG:-latest}
-    restart: always
-    container_name: 'smart-contract-verifier'
-    env_file:
-      -  ./envs/common-smart-contract-verifier.env
-    ports:
-      - 8043:8043
+    extends:
+      file: ./services/docker-compose-smart-contract-verifier.yml
+      service: smart-contract-verifier
 
   visualizer:
-    image: ghcr.io/blockscout/visualizer:${VISUALIZER_DOCKER_TAG:-latest}
-    restart: always
-    container_name: 'visualizer'
-    env_file:
-      -  ./envs/common-visualizer.env
-    ports:
-      - 8050:8050
+    extends:
+      file: ./services/docker-compose-visualizer.yml
+      service: visualizer
 
+  sig-provider:
+    extends:
+      file: ./services/docker-compose-sig-provider.yml
+      service: sig-provider

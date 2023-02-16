@@ -111,26 +111,28 @@ export function asyncReducer (state = asyncInitialState, action) {
       })
     }
     case 'NAVIGATE_TO_OLDER': {
-      history.replaceState({}, null, state.nextPagePath)
+      history.replaceState({}, '', state.nextPagePath)
 
       if (state.pagesStack.length === 0) {
         if (window.location.pathname.includes('/search-results')) {
           const urlParams = new URLSearchParams(window.location.search)
           const queryParam = urlParams.get('q')
+          // @ts-ignore
           state.pagesStack.push(window.location.href.split('?')[0] + `?q=${queryParam}`)
         } else {
+          // @ts-ignore
           state.pagesStack.push(window.location.href.split('?')[0])
         }
       }
 
-      if (state.pagesStack[state.pagesStack.length - 1] !== state.nextPagePath) {
+      if (state.pagesStack[state.pagesStack.length - 1] !== state.nextPagePath && state.nextPagePath) {
         state.pagesStack.push(state.nextPagePath)
       }
 
       return Object.assign({}, state, { beyondPageOne: true })
     }
     case 'NAVIGATE_TO_NEWER': {
-      history.replaceState({}, null, state.prevPagePath)
+      history.replaceState({}, '', state.prevPagePath)
 
       state.pagesStack.pop()
 
@@ -183,7 +185,7 @@ export const elements = {
       if (state.itemKey) {
         const container = $el[0]
         const newElements = map(state.items, (item) => $(item)[0])
-        listMorph(container, newElements, { key: state.itemKey })
+        listMorph(container, newElements, { key: state.itemKey, horizontal: null })
         return
       }
 

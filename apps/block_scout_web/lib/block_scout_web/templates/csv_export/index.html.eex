@@ -32,7 +32,17 @@
       if (reCaptchaClientKey) {
         widgetId1 = grecaptcha.render('recaptcha', {
           'sitekey': reCaptchaClientKey,
-          'theme': getCookie('chakra-ui-color-mode'),
+          'theme': function () {
+            const permanentDarkModeEnabled = document.getElementById('permanent-dark-mode').textContent === 'true'
+            const permanentLightModeEnabled = document.getElementById('permanent-light-mode').textContent === 'true'
+            if (permanentLightModeEnabled) {
+              return 'light'
+            } else if (permanentDarkModeEnabled) {
+              return 'dark'
+            } else {
+              return getCookie('chakra-ui-color-mode')
+            }
+          },
           'callback': function () {
             document.getElementById('export-csv-button').disabled = false
           }

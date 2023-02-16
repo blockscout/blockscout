@@ -1,11 +1,12 @@
 import $ from 'jquery'
-import Cookies from 'js-cookie'
 import { Chart, LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip } from 'chart.js'
 import 'chartjs-adapter-luxon'
 import humps from 'humps'
 import numeral from 'numeral'
 import { DateTime } from 'luxon'
 import { formatUsdValue } from '../lib/currency'
+import { isDarkMode } from '../lib/dark_mode'
+// @ts-ignore
 import sassVariables from '../../css/export-vars-to-js.module.scss'
 
 Chart.defaults.font.family = 'Nunito, "Helvetica Neue", Arial, sans-serif,"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
@@ -18,7 +19,7 @@ const grid = {
 }
 
 function getTxChartColor () {
-  if (Cookies.get('chakra-ui-color-mode') === 'dark') {
+  if ((isDarkMode())) {
     return sassVariables.dashboardLineColorTransactionsDarkTheme
   } else {
     return sassVariables.dashboardLineColorTransactions
@@ -26,7 +27,7 @@ function getTxChartColor () {
 }
 
 function getPriceChartColor () {
-  if (Cookies.get('chakra-ui-color-mode') === 'dark') {
+  if ((isDarkMode())) {
     return sassVariables.dashboardLineColorPriceDarkTheme
   } else {
     return sassVariables.dashboardLineColorPrice
@@ -34,7 +35,7 @@ function getPriceChartColor () {
 }
 
 function getMarketCapChartColor () {
-  if (Cookies.get('chakra-ui-color-mode') === 'dark') {
+  if ((isDarkMode())) {
     return sassVariables.dashboardLineColorMarketDarkTheme
   } else {
     return sassVariables.dashboardLineColorMarket
@@ -172,8 +173,7 @@ function getTxHistoryData (transactionHistory) {
   // it should be empty value for tx history the current day
   const prevDayStr = data[0].x
   const prevDay = DateTime.fromISO(prevDayStr)
-  let curDay = prevDay.plus({ days: 1 })
-  curDay = curDay.toISODate()
+  const curDay = prevDay.plus({ days: 1 }).toISODate()
   data.unshift({ x: curDay, y: null })
 
   setDataToLocalStorage('txHistoryData', data)
@@ -206,6 +206,7 @@ class MarketHistoryChart {
     let marketCapActivated = true
 
     this.price = {
+      // @ts-ignore
       label: window.localized.Price,
       yAxisID: 'price',
       data: [],
@@ -223,6 +224,7 @@ class MarketHistoryChart {
     }
 
     this.marketCap = {
+      // @ts-ignore
       label: window.localized['Market Cap'],
       yAxisID: 'marketCap',
       data: [],
@@ -242,6 +244,7 @@ class MarketHistoryChart {
     }
 
     this.numTransactions = {
+      // @ts-ignore
       label: window.localized['Tx/day'],
       yAxisID: 'numTransactions',
       data: [],
@@ -272,6 +275,7 @@ class MarketHistoryChart {
     }
     config.options.plugins.title.text = chartTitle
 
+    // @ts-ignore
     config.data.datasets = [this.price, this.marketCap, this.numTransactions]
 
     const isChartLoadedKey = 'isChartLoaded'
@@ -279,9 +283,10 @@ class MarketHistoryChart {
     if (isChartLoaded) {
       config.options.animation = false
     } else {
-      window.sessionStorage.setItem(isChartLoadedKey, true)
+      window.sessionStorage.setItem(isChartLoadedKey, 'true')
     }
 
+    // @ts-ignore
     this.chart = new Chart(el, config)
   }
 
