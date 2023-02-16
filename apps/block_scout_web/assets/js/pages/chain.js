@@ -64,13 +64,13 @@ function baseReducer (state = initialState, action) {
             action.msg,
             ...pastBlocks
           ],
-          blockCount: blockCount
+          blockCount
         })
       } else {
         return Object.assign({}, state, {
           // @ts-ignore
           blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block),
-          blockCount: blockCount
+          blockCount
         })
       }
     }

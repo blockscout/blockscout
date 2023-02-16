@@ -88,13 +88,13 @@ defmodule Indexer.Fetcher.TransactionAction do
     else
       Logger.metadata(fetcher: :transaction_action)
       Logger.error(fn -> "Transaction action fetcher task exited due to #{inspect(reason)}. Rerunning..." end)
-      {:noreply, run_fetch(state)}
+      {:noreply, run_fetch(%__MODULE__{state | next_block: get_stage_block(@stage_next_block)})}
     end
   end
 
   defp run_fetch(state) do
     pid = self()
-    Process.send(pid, :fetch, [])
+    Process.send_after(pid, :fetch, 3000, [])
     %__MODULE__{state | task: nil, pid: pid}
   end
 
@@ -122,7 +122,7 @@ defmodule Indexer.Fetcher.TransactionAction do
 
       %{transaction_actions: transaction_actions} =
         query
-        |> Repo.all()
+        |> Repo.all(timeout: :infinity)
         |> TransactionActions.parse(protocols)
 
       addresses =
@@ -155,6 +155,7 @@ defmodule Indexer.Fetcher.TransactionAction do
 
       Logger.info(
         "Block #{block_number} handled successfully. Progress: #{progress_percentage}%. Initial block range: #{first_block}..#{last_block}." <>
+          " Actions found: #{Enum.count(tx_actions)}." <>
           if(next_block_new >= first_block, do: " Remaining block range: #{first_block}..#{next_block_new}", else: "")
       )
 
