@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.Tokens.ContractController do
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, TabHelpers}
-  alias Explorer.{Chain, Market}
+  alias Explorer.Chain
   alias Explorer.Chain.Address
 
   def index(conn, %{"token_id" => address_hash_string} = params) do
@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.Tokens.ContractController do
         "index.html",
         type: type,
         action: action,
-        token: Market.add_price(token),
+        token: token,
         counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)}),
         tags: get_address_tags(address_hash, current_user(conn))
       )
