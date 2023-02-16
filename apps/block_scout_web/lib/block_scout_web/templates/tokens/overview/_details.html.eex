@@ -78,7 +78,7 @@
             </dd>
           </dl>
           <%= if total_supply?(@token) do %>
-            <%= if @token.usd_value do %>
+            <%= if @token.fiat_value do %>
               <dl class="row">
                 <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
                   <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -97,7 +97,7 @@
                     <%= gettext("Price") %>
                   </dt>
                   <dd class="col-sm-8 col-md-8 col-lg-9">
-                    <span data-selector="token-price" data-usd-value="<%= @token.usd_value %>"></span>
+                    <span data-selector="token-price" data-usd-value="<%= @token.fiat_value %>"></span>
                   </dd>
                 </dl>
               <% end %>  

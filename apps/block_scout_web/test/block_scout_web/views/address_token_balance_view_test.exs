@@ -72,48 +72,48 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
     end
   end
 
-  describe "sort_by_usd_value_and_name/1" do
-    test "sorts the given tokens by its name and usd_value" do
+  describe "sort_by_fiat_value_and_name/1" do
+    test "sorts the given tokens by its name and fiat_value" do
       token_balance_a =
         build(:token_balance,
-          token: build(:token, name: "token name", decimals: Decimal.new(18)) |> Map.put(:usd_value, Decimal.new(2)),
+          token: build(:token, name: "token name", decimals: Decimal.new(18)) |> Map.put(:fiat_value, Decimal.new(2)),
           value: Decimal.new(100_500)
         )
 
       token_balance_b =
         build(:token_balance,
           token:
-            build(:token, name: "token", decimals: Decimal.new(18)) |> Map.put(:usd_value, Decimal.from_float(3.45)),
+            build(:token, name: "token", decimals: Decimal.new(18)) |> Map.put(:fiat_value, Decimal.from_float(3.45)),
           value: Decimal.new(100_500)
         )
 
       token_balance_c =
         build(:token_balance,
-          token: build(:token, name: nil, decimals: Decimal.new(18)) |> Map.put(:usd_value, Decimal.new(2)),
+          token: build(:token, name: nil, decimals: Decimal.new(18)) |> Map.put(:fiat_value, Decimal.new(2)),
           value: Decimal.new(100_500)
         )
 
       token_balance_d =
         build(:token_balance,
-          token: build(:token, name: "Atoken", decimals: Decimal.new(18)) |> Map.put(:usd_value, Decimal.new(1)),
+          token: build(:token, name: "Atoken", decimals: Decimal.new(18)) |> Map.put(:fiat_value, Decimal.new(1)),
           value: Decimal.new(100_500)
         )
 
       token_balance_e =
         build(:token_balance,
-          token: build(:token, name: "atoken", decimals: Decimal.new(18)) |> Map.put(:usd_value, nil),
+          token: build(:token, name: "atoken", decimals: Decimal.new(18)) |> Map.put(:fiat_value, nil),
           value: Decimal.new(100_500)
         )
 
       token_balance_f =
         build(:token_balance,
-          token: build(:token, name: "Btoken", decimals: Decimal.new(18)) |> Map.put(:usd_value, nil),
+          token: build(:token, name: "Btoken", decimals: Decimal.new(18)) |> Map.put(:fiat_value, nil),
           value: Decimal.new(100_500)
         )
 
       token_balance_g =
         build(:token_balance,
-          token: build(:token, name: "Btoken", decimals: Decimal.new(18)) |> Map.put(:usd_value, Decimal.new(1)),
+          token: build(:token, name: "Btoken", decimals: Decimal.new(18)) |> Map.put(:fiat_value, Decimal.new(1)),
           value: Decimal.new(100_500)
         )
 
@@ -137,7 +137,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
         {token_balance_f, token_balance_f.token}
       ]
 
-      assert AddressTokenBalanceView.sort_by_usd_value_and_name(token_balances) == expected
+      assert AddressTokenBalanceView.sort_by_fiat_value_and_name(token_balances) == expected
     end
   end
 
@@ -146,7 +146,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
       token =
         :token
         |> build(decimals: Decimal.new(0))
-        |> Map.put(:usd_value, Decimal.new(3))
+        |> Map.put(:fiat_value, Decimal.new(3))
 
       token_balance = build(:token_balance, value: Decimal.new(10), token: token)
 
@@ -155,11 +155,11 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
       assert Decimal.compare(result, 30) == :eq
     end
 
-    test "return nil if usd_value is not present" do
+    test "return nil if fiat_value is not present" do
       token =
         :token
         |> build(decimals: Decimal.new(0))
-        |> Map.put(:usd_value, nil)
+        |> Map.put(:fiat_value, nil)
 
       token_balance = build(:token_balance, value: 10, token: token)
 
@@ -170,7 +170,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
       token =
         :token
         |> build(decimals: Decimal.new(2))
-        |> Map.put(:usd_value, Decimal.new(3))
+        |> Map.put(:fiat_value, Decimal.new(3))
 
       token_balance = build(:token_balance, value: Decimal.new(10), token: token)
 
