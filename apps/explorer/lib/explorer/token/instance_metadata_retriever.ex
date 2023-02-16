@@ -169,7 +169,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   end
 
   def fetch_json(%{@token_uri => {:ok, ["data:application/json;base64," <> base64_encoded_json]}}, hex_token_id) do
-    case Base.url_decode64(base64_encoded_json) do
+    case Base.decode64(base64_encoded_json) do
       {:ok, base64_decoded} ->
         fetch_json(%{@token_uri => {:ok, [base64_decoded]}}, hex_token_id)
 
@@ -190,7 +190,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   end
 
   def fetch_json(%{@uri => {:ok, ["data:application/json;base64," <> base64_encoded_json]}}, hex_token_id) do
-    case Base.url_decode64(base64_encoded_json) do
+    case Base.decode64(base64_encoded_json) do
       {:ok, base64_decoded} ->
         fetch_json(%{@uri => {:ok, [base64_decoded]}}, hex_token_id)
 
