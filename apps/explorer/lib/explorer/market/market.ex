@@ -3,11 +3,9 @@ defmodule Explorer.Market do
   Context for data related to the cryptocurrency market.
   """
 
-  alias Explorer.Chain.Address.CurrentTokenBalance
-  alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market.{MarketHistory, MarketHistoryCache}
-  alias Explorer.{ExchangeRates, KnownTokens, Repo}
+  alias Explorer.{ExchangeRates, Repo}
 
   @doc """
   Get most recent exchange rate for the given symbol.
@@ -15,17 +13,6 @@ defmodule Explorer.Market do
   @spec get_exchange_rate(String.t()) :: Token.t() | nil
   def get_exchange_rate(symbol) do
     ExchangeRates.lookup(symbol)
-  end
-
-  @doc """
-  Get the address of the token with the given symbol.
-  """
-  @spec get_known_address(String.t()) :: Hash.Address.t() | nil
-  def get_known_address(symbol) do
-    case KnownTokens.lookup(symbol) do
-      {:ok, address} -> address
-      nil -> nil
-    end
   end
 
   @doc """
@@ -50,46 +37,4 @@ defmodule Explorer.Market do
 
     Repo.insert_all(MarketHistory, records_without_zeroes, on_conflict: :nothing, conflict_target: [:date])
   end
-
-  def add_price(%{symbol: symbol} = token) do
-    known_address = get_known_address(symbol)
-
-    matches_known_address = known_address && known_address == token.contract_address_hash
-
-    usd_value =
-      if matches_known_address do
-        fetch_token_usd_value(matches_known_address, symbol)
-      else
-        nil
-      end
-
-    Map.put(token, :usd_value, usd_value)
-  end
-
-  def add_price(%CurrentTokenBalance{token: token} = token_balance) do
-    token_with_price = add_price(token)
-
-    Map.put(token_balance, :token, token_with_price)
-  end
-
-  def add_price(tokens) when is_list(tokens) do
-    Enum.map(tokens, fn item ->
-      case item do
-        {token_balance, token} ->
-          {token_balance, add_price(token)}
-
-        token_balance ->
-          add_price(token_balance)
-      end
-    end)
-  end
-
-  defp fetch_token_usd_value(true, symbol) do
-    case get_exchange_rate(symbol) do
-      %{usd_value: usd_value} -> usd_value
-      nil -> nil
-    end
-  end
-
-  defp fetch_token_usd_value(_matches_known_address, _symbol), do: nil
 end
