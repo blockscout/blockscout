@@ -2644,24 +2644,25 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Return the balance in usd corresponding to this token. Return nil if the usd_value of the token is not present.
+  Return the balance in usd corresponding to this token. Return nil if the fiat_value of the token is not present.
   """
-  def balance_in_usd(_token_balance, %{usd_value: nil}) do
+  def balance_in_fiat(_token_balance, %{fiat_value: fiat_value, decimals: decimals})
+      when nil in [fiat_value, decimals] do
     nil
   end
 
-  def balance_in_usd(token_balance, %{usd_value: usd_value, decimals: decimals}) do
+  def balance_in_fiat(token_balance, %{fiat_value: fiat_value, decimals: decimals}) do
     tokens = CurrencyHelpers.divide_decimals(token_balance.value, decimals)
-    Decimal.mult(tokens, usd_value)
+    Decimal.mult(tokens, fiat_value)
   end
 
-  def balance_in_usd(%{token: %{usd_value: nil}}) do
+  def balance_in_fiat(%{token: %{fiat_value: nil}}) do
     nil
   end
 
-  def balance_in_usd(token_balance) do
+  def balance_in_fiat(token_balance) do
     tokens = CurrencyHelpers.divide_decimals(token_balance.value, token_balance.token.decimals)
-    price = token_balance.token.usd_value
+    price = token_balance.token.fiat_value
     Decimal.mult(tokens, price)
   end
 
@@ -4728,12 +4729,38 @@ defmodule Explorer.Chain do
 
   def page_current_token_balances(query, %PagingOptions{key: nil}), do: query
 
-  def page_current_token_balances(query, %PagingOptions{key: {name, type, value}}) do
+  def page_current_token_balances(query, %PagingOptions{key: nil}), do: query
+
+  def page_current_token_balances(query, %PagingOptions{key: {fiat_value, name, type, id}}) do
+    fiat_balance = CurrentTokenBalance.fiat_value_query()
+
+    condition =
+      cond do
+        is_nil(fiat_value) and is_nil(name) ->
+          dynamic(
+            [ctb, t],
+            is_nil(^fiat_balance) and
+              (t.type > ^type or
+                 (t.type == ^type and ctb.id < ^id))
+          )
+
+        is_nil(fiat_value) ->
+          dynamic(
+            [ctb, t],
+            is_nil(^fiat_balance) and
+              (t.type > ^type or
+                 (t.type == ^type and t.name > ^name) or
+                 (t.type == ^type and (t.name == ^name or is_nil(^name)) and ctb.id < ^id))
+          )
+
+        true ->
+          dynamic([ctb, t], ^fiat_balance < ^fiat_value or is_nil(^fiat_balance))
+      end
+
     where(
       query,
       [ctb, t],
-      ctb.value < ^value or (ctb.value == ^value and t.type < ^type) or
-        (ctb.value == ^value and t.type == ^type and t.name < ^name)
+      ^condition
     )
   end
 
