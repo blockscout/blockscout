@@ -6,8 +6,6 @@ config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets, fetch_btc
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: false
 
-config :explorer, Explorer.KnownTokens, enabled: false, store: :ets
-
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: false
 
 config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: false, enable_consolidation: false
