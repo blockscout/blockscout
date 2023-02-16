@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.Chain do
 
   import Explorer.Chain,
     only: [
+      balance_in_fiat: 2,
       find_or_insert_address_from_hash: 1,
       hash_to_block: 1,
       hash_to_transaction: 1,
@@ -214,8 +215,27 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {value, address_hash}}]
   end
 
-  def paging_options(%{"token_name" => name, "token_type" => type, "value" => value}) do
-    [paging_options: %{@default_paging_options | key: {name, type, value}}]
+  # def paging_options(%{"fiat_value" => fiat_value_string, "token_name" => name, "token_type" => type, "id" => id_string}) when nil in [fiat_value_string, name] do
+  #   with {id, ""} <- Integer.parse(id_string) do
+  #     [paging_options: %{@default_paging_options | key: {nil, name, type, id}}]
+  #   else
+  #     _ ->
+  #       [paging_options: @default_paging_options]
+  # end
+
+  def paging_options(%{"fiat_value" => fiat_value_string, "token_name" => name, "token_type" => type, "id" => id_string}) do
+    name = if name === "", do: nil, else: name
+
+    with {id, ""} <- Integer.parse(id_string),
+         {_id, {fiat_value, ""}} <- {id, Decimal.parse(fiat_value_string)} do
+      [paging_options: %{@default_paging_options | key: {Decimal.round(fiat_value, 16), name, type, id}}]
+    else
+      :error ->
+        [paging_options: @default_paging_options]
+
+      {id, :error} ->
+        [paging_options: %{@default_paging_options | key: {nil, name, type, id}}]
+    end
   end
 
   def paging_options(%{"smart_contract_id" => id}) do
@@ -352,8 +372,8 @@ defmodule BlockScoutWeb.Chain do
     %{"address_hash" => to_string(address_hash), "value" => Decimal.to_integer(value)}
   end
 
-  defp paging_params({%CurrentTokenBalance{value: value}, %Token{name: name, type: type}}) do
-    %{"token_name" => name, "token_type" => type, "value" => Decimal.to_integer(value)}
+  defp paging_params({%CurrentTokenBalance{id: id, value: value} = ctb, %Token{name: name, type: type} = token}) do
+    %{"fiat_value" => balance_in_fiat(ctb, token), "token_name" => name, "token_type" => type, "id" => id}
   end
 
   defp paging_params(%CoinBalance{block_number: block_number}) do
