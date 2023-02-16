@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     }
   end
 
-  def exchange_rate(%{usd_value: usd_value}) when not is_nil(usd_value), do: to_string(usd_value)
+  def exchange_rate(%{fiat_value: fiat_value}) when not is_nil(fiat_value), do: to_string(fiat_value)
   def exchange_rate(_), do: nil
 
   def prepare_token_balance(token_balance, conn, token) do

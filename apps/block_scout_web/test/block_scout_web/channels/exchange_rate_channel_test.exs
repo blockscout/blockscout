@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
       market_cap_usd: Decimal.new("1000000.0"),
       name: "test",
       symbol: Explorer.coin(),
-      usd_value: Decimal.new("2.5"),
+      fiat_value: Decimal.new("2.5"),
       volume_24h_usd: Decimal.new("1000.0")
     }
 
@@ -76,7 +76,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
           }
         end
 
-      records = [%{date: today, closing_price: token.usd_value} | old_records]
+      records = [%{date: today, closing_price: token.fiat_value} | old_records]
 
       Market.bulk_insert_history(records)
 
