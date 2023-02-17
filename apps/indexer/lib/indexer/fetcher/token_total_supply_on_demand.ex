@@ -8,7 +8,10 @@ defmodule Indexer.Fetcher.TokenTotalSupplyOnDemand do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Token}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Token.MetadataRetriever
+
+  @ttl_in_blocks 1
 
   ## Interface
 
@@ -38,18 +41,26 @@ defmodule Indexer.Fetcher.TokenTotalSupplyOnDemand do
   ## Implementation
 
   defp do_trigger_fetch(address) when not is_nil(address) do
-    token_address_hash = "0x" <> Base.encode16(address.bytes)
-
-    token_params =
-      token_address_hash
-      |> MetadataRetriever.get_total_supply_of()
-
     token =
       Token
       |> Repo.get_by(contract_address_hash: address)
       |> Repo.preload([:contract_address])
 
-    {:ok, _} = Chain.update_token(%{token | updated_at: DateTime.utc_now()}, token_params)
-    :ok
+    if is_nil(token.total_supply_updated_at_block) or
+         BlockNumber.get_max() - token.total_supply_updated_at_block > @ttl_in_blocks do
+      token_address_hash = "0x" <> Base.encode16(address.bytes)
+
+      token_params =
+        token_address_hash
+        |> MetadataRetriever.get_total_supply_of()
+
+      token =
+        Token
+        |> Repo.get_by(contract_address_hash: address)
+        |> Repo.preload([:contract_address])
+
+      {:ok, _} = Chain.update_token(token, Map.put(token_params, :total_supply_updated_at_block, BlockNumber.get_max()))
+      :ok
+    end
   end
 end

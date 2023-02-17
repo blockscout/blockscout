@@ -5,6 +5,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   use GenServer
 
+  alias Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand
   alias Explorer.EnvVarTranslator
   alias Explorer.Tags.{AddressTag, AddressToTag}
   alias Explorer.Validator.MetadataRetriever
@@ -150,6 +151,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_validator_tag do
     validators = MetadataRetriever.fetch_validators_list()
+    FetchValidatorInfoOnDemand.trigger_fetch(validators)
     tag_id = AddressTag.get_tag_id("validator")
     AddressToTag.set_tag_to_addresses(tag_id, validators)
   end

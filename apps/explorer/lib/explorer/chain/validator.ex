@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Validator do
     field(:address_hash, Address, primary_key: true)
     field(:is_validator, :boolean)
     field(:payout_key_hash, Address)
-    field(:last_block_updated_at, :integer)
+    field(:info_updated_at_block, :integer)
 
     timestamps()
   end
@@ -35,7 +35,7 @@ defmodule Explorer.Chain.Validator do
   end
 
   @required_attrs ~w(address_hash)a
-  @optional_attrs ~w(is_validator payout_key_hash last_block_updated_at)a
+  @optional_attrs ~w(is_validator payout_key_hash info_updated_at_block)a
   def changeset(%__MODULE__{} = constant, attrs) do
     constant
     |> cast(attrs, @required_attrs ++ @optional_attrs)

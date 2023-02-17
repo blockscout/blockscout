@@ -13,7 +13,7 @@ defmodule Explorer.Repo.Migrations.AddValidatorsAndConstantsTables do
       add(:address_hash, :bytea, primary_key: true, null: false)
       add(:is_validator, :boolean)
       add(:payout_key_hash, :bytea)
-      add(:last_block_updated_at, :bigint)
+      add(:info_updated_at_block, :bigint)
 
       timestamps()
     end
