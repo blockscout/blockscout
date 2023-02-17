@@ -6,7 +6,7 @@ defmodule Explorer.ExchangeRates.TokenExchangeRates do
 
   require Logger
 
-  alias Explorer.{ExchangeRates, ExchangeRates.Source}
+  alias Explorer.ExchangeRates.Source
   alias Explorer.{Chain.Token, Repo}
 
   @batch_size 150
@@ -25,7 +25,7 @@ defmodule Explorer.ExchangeRates.TokenExchangeRates do
 
   @impl GenServer
   def init(_args) do
-    if Application.get_env(:explorer, ExchangeRates)[:enabled] do
+    if Application.get_env(:explorer, __MODULE__)[:enabled] do
       state = %__MODULE__{
         max_batch_size: Application.get_env(:explorer, __MODULE__)[:max_batch_size] || @batch_size,
         interval: Application.get_env(:explorer, __MODULE__)[:interval] || @interval,

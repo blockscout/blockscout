@@ -2,6 +2,8 @@ defmodule Explorer.ExchangeRates.Source do
   @moduledoc """
   Behaviour for fetching exchange rates from external sources.
   """
+
+  alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Source.CoinGecko
   alias Explorer.ExchangeRates.Token
   alias HTTPoison.{Error, Response}
@@ -29,6 +31,8 @@ defmodule Explorer.ExchangeRates.Source do
     fetch_exchange_rates_request(CoinGecko, source_url, headers)
   end
 
+  @spec fetch_fiat_value_for_token_addresses([Hash.Address.t()]) ::
+          {:ok, %{Hash.Address.t() => float()}} | {:error, any}
   def fetch_fiat_value_for_token_addresses(address_hashes) do
     source_url = CoinGecko.source_url(address_hashes)
     headers = CoinGecko.headers()
