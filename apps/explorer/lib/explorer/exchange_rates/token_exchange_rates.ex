@@ -52,8 +52,6 @@ defmodule Explorer.ExchangeRates.TokenExchangeRates do
       ) do
     tokens_to_update = last_fetched |> Token.tokens_to_update_fiat_value(batch_size) |> Repo.all()
 
-    Logger.info("#{length(tokens_to_update)}")
-
     case tokens_to_update |> Enum.map(& &1.contract_address_hash) |> Source.fetch_fiat_value_for_token_addresses() do
       {:ok, fiat_values} ->
         timestamp = %{updated_at: DateTime.utc_now()}
@@ -74,7 +72,6 @@ defmodule Explorer.ExchangeRates.TokenExchangeRates do
       {:noreply, %{state | last_fetched_token_contract_address: nil}}
     else
       Process.send_after(self(), :fetch, interval)
-      Logger.info("#{List.last(tokens_to_update).contract_address_hash}")
       {:noreply, %{state | last_fetched_token_contract_address: List.last(tokens_to_update).contract_address_hash}}
     end
   end

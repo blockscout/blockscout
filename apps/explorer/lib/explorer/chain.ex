@@ -4731,31 +4731,47 @@ defmodule Explorer.Chain do
 
   def page_current_token_balances(query, %PagingOptions{key: nil}), do: query
 
-  def page_current_token_balances(query, %PagingOptions{key: {fiat_value, name, type, id}}) do
+  def page_current_token_balances(query, %PagingOptions{key: {nil, nil, type, id}}) do
     fiat_balance = CurrentTokenBalance.fiat_value_query()
 
     condition =
-      cond do
-        is_nil(fiat_value) and is_nil(name) ->
-          dynamic(
-            [ctb, t],
-            is_nil(^fiat_balance) and
-              (t.type > ^type or
-                 (t.type == ^type and ctb.id < ^id))
-          )
+      dynamic(
+        [ctb, t],
+        is_nil(^fiat_balance) and
+          (t.type > ^type or
+             (t.type == ^type and ctb.id < ^id))
+      )
 
-        is_nil(fiat_value) ->
-          dynamic(
-            [ctb, t],
-            is_nil(^fiat_balance) and
-              (t.type > ^type or
-                 (t.type == ^type and t.name > ^name) or
-                 (t.type == ^type and (t.name == ^name or is_nil(^name)) and ctb.id < ^id))
-          )
+    where(
+      query,
+      [ctb, t],
+      ^condition
+    )
+  end
 
-        true ->
-          dynamic([ctb, t], ^fiat_balance < ^fiat_value or is_nil(^fiat_balance))
-      end
+  def page_current_token_balances(query, paging_options: %PagingOptions{key: {nil, name, type, id}}) do
+    fiat_balance = CurrentTokenBalance.fiat_value_query()
+
+    condition =
+      dynamic(
+        [ctb, t],
+        is_nil(^fiat_balance) and
+          (t.type > ^type or
+             (t.type == ^type and t.name > ^name) or
+             (t.type == ^type and t.name == ^name and ctb.id < ^id))
+      )
+
+    where(
+      query,
+      [ctb, t],
+      ^condition
+    )
+  end
+
+  def page_current_token_balances(query, paging_options: %PagingOptions{key: {fiat_value, _name, _type, _id}}) do
+    fiat_balance = CurrentTokenBalance.fiat_value_query()
+
+    condition = dynamic([ctb, t], ^fiat_balance < ^fiat_value or is_nil(^fiat_balance))
 
     where(
       query,
