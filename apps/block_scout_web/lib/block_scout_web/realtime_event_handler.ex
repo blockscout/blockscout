@@ -21,6 +21,7 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
     Subscriber.to(:block_rewards, :realtime)
     Subscriber.to(:blocks, :realtime)
     Subscriber.to(:internal_transactions, :realtime)
+    Subscriber.to(:internal_transactions, :on_demand)
     Subscriber.to(:token_transfers, :realtime)
     Subscriber.to(:transactions, :realtime)
     Subscriber.to(:addresses, :on_demand)

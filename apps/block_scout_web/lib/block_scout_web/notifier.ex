@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint
   }
 
+  alias BlockScoutWeb.API.V2.TransactionView
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, TokenTransfer, Transaction}
   alias Explorer.Chain.Supply.RSK
@@ -133,6 +134,23 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("exchange_rate:new_rate", "new_rate", %{
       exchange_rate: exchange_rate_with_available_supply,
       market_history_data: Enum.map(market_history_data, fn day -> Map.take(day, [:closing_price, :date]) end)
+    })
+  end
+
+  defp debug(value, key) do
+    require Logger
+    Logger.configure(truncate: :infinity)
+    Logger.info(key)
+    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
+    value
+  end
+
+  def handle_event({:chain_event, :internal_transactions, :on_demand, [internal_transaction]}) do
+    internal_transactions = Chain.all_transaction_to_internal_transactions(internal_transaction.transaction_hash)
+
+    Endpoint.broadcast("transactions:#{internal_transaction.transaction_hash}", "raw_trace", %{
+      raw_trace:
+        TransactionView.render("raw_trace.json", %{internal_transactions: internal_transactions}) |> debug("render")
     })
   end
 

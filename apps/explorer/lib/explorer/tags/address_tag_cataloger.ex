@@ -3,7 +3,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
   Actualizes address tags.
   """
 
-  use GenServer
+  use GenServer, restart: :transient
 
   alias Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand
   alias Explorer.EnvVarTranslator
@@ -58,7 +58,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
       end
     end)
 
-    {:noreply, state}
+    {:stop, :normal, state}
   end
 
   defp tag_name_to_env_var_part(tag_name) do
