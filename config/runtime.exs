@@ -340,13 +340,13 @@ token_excange_rate_interval =
   case "TOKEN_EXCANGE_RATE_INTERVAL" |> System.get_env("") |> String.downcase() |> Integer.parse() do
     {hours, "h"} -> :timer.hours(hours)
     {minutes, "m"} -> :timer.minutes(minutes)
-    {seconds, "s"} -> :timer.seconds(seconds)
+    {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
     _ -> nil
   end
 
 token_excange_rate_refetch_interval =
   case "TOKEN_EXCANGE_RATE_REFETCH_INTERVAL" |> System.get_env("") |> String.downcase() |> Integer.parse() do
-    {hours, "h"} -> :timer.hours(hours)
+    {hours, h} when h in ["h", ""] -> :timer.hours(hours)
     {minutes, "m"} -> :timer.minutes(minutes)
     {seconds, "s"} -> :timer.seconds(seconds)
     _ -> nil

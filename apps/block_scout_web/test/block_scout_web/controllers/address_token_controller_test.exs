@@ -148,7 +148,10 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
           acc ++ [token.name]
         end)
 
-      conn = get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)), %{"type" => "JSON"})
+      conn =
+        get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)), %{
+          "type" => "JSON"
+        })
 
       assert response = json_response(conn, 200)
 
