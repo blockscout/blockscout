@@ -7,14 +7,16 @@ indexer_memory_limit_default = 1
 indexer_memory_limit =
   "INDEXER_MEMORY_LIMIT"
   |> System.get_env(to_string(indexer_memory_limit_default))
+  |> String.downcase()
   |> Integer.parse()
   |> case do
-    {integer, ""} -> integer
-    _ -> indexer_memory_limit_default
+    {integer, g} when g in ["g", "gb", ""] -> integer <<< 30
+    {integer, m} when m in ["m", "mb"] -> integer <<< 20
+    _ -> indexer_memory_limit_default <<< 30
   end
 
 config :indexer,
-  memory_limit: indexer_memory_limit <<< 30
+  memory_limit: indexer_memory_limit
 
 indexer_empty_blocks_sanitizer_batch_size_default = 100
 
