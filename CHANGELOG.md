@@ -5,6 +5,7 @@
 ### Features
 
 - [#6897](https://github.com/blockscout/blockscout/pull/6897) - Support basic auth in JSON RPC endpoint
+- [#6908](https://github.com/blockscout/blockscout/pull/6908) - Allow disable API rate limit
 
 ### Fixes
 
