@@ -215,14 +215,6 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {value, address_hash}}]
   end
 
-  # def paging_options(%{"fiat_value" => fiat_value_string, "token_name" => name, "token_type" => type, "id" => id_string}) when nil in [fiat_value_string, name] do
-  #   with {id, ""} <- Integer.parse(id_string) do
-  #     [paging_options: %{@default_paging_options | key: {nil, name, type, id}}]
-  #   else
-  #     _ ->
-  #       [paging_options: @default_paging_options]
-  # end
-
   def paging_options(%{"fiat_value" => fiat_value_string, "token_name" => name, "token_type" => type, "id" => id_string}) do
     name = if name === "", do: nil, else: name
 
