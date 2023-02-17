@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#6897](https://github.com/blockscout/blockscout/pull/6897) - Support basic auth in JSON RPC endpoint
+
 ### Fixes
 
 - [#6912](https://github.com/blockscout/blockscout/pull/6912) - Docker compose fix exposed ports
