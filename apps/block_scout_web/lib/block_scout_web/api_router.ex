@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
+  alias BlockScoutWeb.API.RPC.RPCTranslator
   alias BlockScoutWeb.SmartContractsApiV2Router
   alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2}
 
