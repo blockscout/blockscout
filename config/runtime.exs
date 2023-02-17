@@ -136,6 +136,7 @@ api_rate_limit_by_ip_value =
   end
 
 config :block_scout_web, :api_rate_limit,
+  disabled: System.get_env("API_RATE_LIMIT_DISABLED", "false") == "true",
   global_limit: global_api_rate_limit_value,
   limit_by_key: api_rate_limit_by_key_value,
   limit_by_ip: api_rate_limit_by_ip_value,
