@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.SearchController do
     if search_results != [] do
       search_results
     else
-      {:ok, response} = HTTPoison.get("http://0.0.0.0:8044/api/v1/search?q=" <> query, [], params: [])
+      {:ok, response} = HTTPoison.get("#{System.get_env("RUST_MULTICHAIN_SEARCH_URL")}}/api/v1/search?q=" <> query, [], params: [])
       chain_with_tx = response.body |> Poison.decode() |> elem(1) |> Map.values() |> Enum.find(
                                                                                        fn x ->
                                                                                          x |> Map.get("content") |> Poison.decode() |> elem(1) |> is_nonempty_array()
