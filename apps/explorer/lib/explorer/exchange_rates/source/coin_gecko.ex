@@ -85,9 +85,9 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
   @impl Source
   def source_url(token_addresses) when is_list(token_addresses) do
-    concatanated_addresses = token_addresses |> Enum.map_join(",", &to_string/1)
+    joined_addresses = token_addresses |> Enum.map_join(",", &to_string/1)
 
-    "#{base_url()}/simple/token_price/#{platform()}?vs_currencies=#{currency()}&contract_addresses=#{concatanated_addresses}"
+    "#{base_url()}/simple/token_price/#{platform()}?vs_currencies=#{currency()}&contract_addresses=#{joined_addresses}"
   end
 
   @impl Source

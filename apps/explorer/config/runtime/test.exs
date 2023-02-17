@@ -4,6 +4,8 @@ alias EthereumJSONRPC.Variant
 
 config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets, fetch_btc_value: true
 
+config :explorer, Explorer.ExchangeRates.TokenExchangeRates, enabled: false
+
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: false
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: false
