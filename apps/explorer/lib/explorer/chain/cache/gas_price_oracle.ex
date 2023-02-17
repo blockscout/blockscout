@@ -17,8 +17,6 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
   alias Explorer.Repo
 
-  @default_cache_period :timer.seconds(30)
-
   @num_of_blocks (case Integer.parse(System.get_env("GAS_PRICE_ORACLE_NUM_OF_BLOCKS", "200")) do
                     {integer, ""} -> integer
                     _ -> 200
@@ -43,7 +41,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
     name: :gas_price,
     key: :gas_prices,
     key: :async_task,
-    global_ttl: cache_period(),
+    global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl],
     ttl_check_interval: :timer.minutes(5),
     callback: &async_task_on_deletion(&1)
 
@@ -155,14 +153,4 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
   defp async_task_on_deletion({:delete, _, :gas_prices}), do: get_async_task()
 
   defp async_task_on_deletion(_data), do: nil
-
-  defp cache_period do
-    "GAS_PRICE_ORACLE_CACHE_PERIOD"
-    |> System.get_env("")
-    |> Integer.parse()
-    |> case do
-      {integer, ""} -> :timer.seconds(integer)
-      _ -> @default_cache_period
-    end
-  end
 end
