@@ -77,10 +77,9 @@ defmodule Explorer.Chain do
   }
 
   alias Explorer.Chain.Cache.Block, as: BlockCache
-
+  alias Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
-  alias Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand
 
   alias Explorer.Counters.{
     AddressesCounter,

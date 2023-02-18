@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Block.Reward do
   alias Explorer.Application.Constants
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reward.AddressType
-  alias Explorer.Chain.{Address, Block, Hash, Wei, Validator}
+  alias Explorer.Chain.{Address, Block, Hash, Validator, Wei}
   alias Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.SmartContract.Reader

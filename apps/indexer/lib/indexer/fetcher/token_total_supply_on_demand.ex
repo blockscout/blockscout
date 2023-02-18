@@ -7,16 +7,16 @@ defmodule Indexer.Fetcher.TokenTotalSupplyOnDemand do
   use Indexer.Fetcher, restart: :permanent
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Token}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Events.Publisher
+  alias Explorer.Chain.Token
   alias Explorer.Token.MetadataRetriever
 
   @ttl_in_blocks 1
 
   ## Interface
 
-  @spec trigger_fetch(Address.t()) :: :ok
+  @spec trigger_fetch(Chain.Hash.Address.t()) :: :ok
   def trigger_fetch(address) do
     GenServer.cast(__MODULE__, {:fetch_and_update, address})
   end

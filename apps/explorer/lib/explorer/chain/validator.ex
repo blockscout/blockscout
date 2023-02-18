@@ -49,7 +49,7 @@ defmodule Explorer.Chain.Validator do
     |> Repo.one()
   end
 
-  def drop_all_validators() do
+  def drop_all_validators do
     __MODULE__
     |> Repo.delete_all()
   end

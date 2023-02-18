@@ -5,7 +5,7 @@ defmodule Indexer.Application do
 
   use Application
 
-  alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenTotalSupplyOnDemand, FirstTraceOnDemand}
+  alias Indexer.Fetcher.{CoinBalanceOnDemand, FirstTraceOnDemand, TokenTotalSupplyOnDemand}
   alias Indexer.Memory
   alias Indexer.Prometheus.PendingBlockOperationsCollector
   alias Prometheus.Registry

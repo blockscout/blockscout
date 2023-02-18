@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Events.Subscriber do
   Subscribes to events related to the Chain context.
   """
 
-  @allowed_broadcast_events ~w(addresses address_coin_balances address_token_balances blocks block_rewards internal_transactions last_block_number token_transfers transactions contract_verification_result token_total_supply)a
+  @allowed_broadcast_events ~w(addresses address_coin_balances address_token_balances blocks block_rewards internal_transactions last_block_number token_transfers transactions contract_verification_result token_total_supply changed_bytecode)a
 
   @allowed_broadcast_types ~w(catchup realtime on_demand contract_verification_result)a
 

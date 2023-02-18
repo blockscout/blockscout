@@ -221,6 +221,10 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("tokens:#{to_string(contract_address_hash)}", "token_total_supply", %{token: token})
   end
 
+  def handle_event({:chain_event, :changed_bytecode, :on_demand, [address_hash]}) do
+    Endpoint.broadcast("addresses:#{to_string(address_hash)}", "changed_bytecode", %{})
+  end
+
   def handle_event(_), do: nil
 
   def fetch_compiler_version(compiler) do

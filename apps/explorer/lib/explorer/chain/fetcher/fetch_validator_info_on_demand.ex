@@ -12,17 +12,8 @@ defmodule Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand do
   alias Explorer.Chain.Validator
 
   @ttl_in_blocks 1
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-  end
 
   def trigger_fetch(list) when is_list(list) do
-    debug(list, "trigger")
-
     Enum.each(list, fn hash_string ->
       case Chain.string_to_address_hash(hash_string) do
         {:ok, address_hash} ->
@@ -35,7 +26,6 @@ defmodule Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand do
   end
 
   def trigger_fetch(address_hash) do
-    debug(address_hash, "trigger")
     GenServer.cast(__MODULE__, {:fetch_or_update, address_hash})
   end
 
@@ -50,31 +40,26 @@ defmodule Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand do
         :ignore
 
       is_nil(contract_address_from_db) ->
-        debug(1, "result")
-        Validator.drop_all_validators() |> debug("drop")
-        Constants.insert_keys_manager_contract_address(contract_address_from_env) |> debug("insert")
+        Validator.drop_all_validators()
+        Constants.insert_keys_manager_contract_address(contract_address_from_env)
         fetch_and_store_validator_info(address_hash)
 
       String.downcase(contract_address_from_db.value) == contract_address_from_env |> String.downcase() ->
-        debug(2, "result")
         fetch_and_store_validator_info(address_hash)
 
       true ->
-        debug(3, "result")
-        Validator.drop_all_validators() |> debug("drop")
-        Constants.insert_keys_manager_contract_address(contract_address_from_env) |> debug("insert")
+        Validator.drop_all_validators()
+        Constants.insert_keys_manager_contract_address(contract_address_from_env)
         fetch_and_store_validator_info(address_hash)
     end
-    |> debug("result")
   end
 
   defp fetch_and_store_validator_info(validator_address) do
-    validator = Validator.get_validator_by_address_hash(validator_address) |> debug("validator")
-    debug(BlockNumber.get_max(), "BlockNumber.get_max()")
+    validator = Validator.get_validator_by_address_hash(validator_address)
 
     if is_nil(validator) or BlockNumber.get_max() - validator.info_updated_at_block > @ttl_in_blocks do
       %{is_validator: is_validator, payout_key: payout_key} =
-        Reward.get_validator_payout_key_by_mining(validator_address) |> debug("reward")
+        Reward.get_validator_payout_key_by_mining(validator_address)
 
       Validator.insert_or_update(validator, %{
         address_hash: validator_address,
