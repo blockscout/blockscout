@@ -99,8 +99,7 @@ defmodule BlockScoutWeb.TransactionChannel do
     internal_transactions = Chain.all_transaction_to_internal_transactions(transaction_hash)
 
     push(socket, "raw_trace", %{
-      raw_trace:
-        TransactionViewV2.render("raw_trace.json", %{internal_transactions: internal_transactions})
+      raw_trace: TransactionViewV2.render("raw_trace.json", %{internal_transactions: internal_transactions})
     })
 
     {:noreply, socket}

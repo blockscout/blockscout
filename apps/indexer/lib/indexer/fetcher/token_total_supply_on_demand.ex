@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.TokenTotalSupplyOnDemand do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Token}
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Events.Publisher
   alias Explorer.Token.MetadataRetriever
 
   @ttl_in_blocks 1
@@ -33,14 +34,14 @@ defmodule Indexer.Fetcher.TokenTotalSupplyOnDemand do
 
   @impl true
   def handle_cast({:fetch_and_update, address}, state) do
-    do_trigger_fetch(address)
+    do_fetch(address)
 
     {:noreply, state}
   end
 
   ## Implementation
 
-  defp do_trigger_fetch(address) when not is_nil(address) do
+  defp do_fetch(address) when not is_nil(address) do
     token =
       Token
       |> Repo.get_by(contract_address_hash: address)
@@ -54,12 +55,10 @@ defmodule Indexer.Fetcher.TokenTotalSupplyOnDemand do
         token_address_hash
         |> MetadataRetriever.get_total_supply_of()
 
-      token =
-        Token
-        |> Repo.get_by(contract_address_hash: address)
-        |> Repo.preload([:contract_address])
+      {:ok, token} =
+        Chain.update_token(token, Map.put(token_params, :total_supply_updated_at_block, BlockNumber.get_max()))
 
-      {:ok, _} = Chain.update_token(token, Map.put(token_params, :total_supply_updated_at_block, BlockNumber.get_max()))
+      Publisher.broadcast(%{token_total_supply: [token]}, :on_demand)
       :ok
     end
   end

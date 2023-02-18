@@ -62,13 +62,13 @@
             </dd>
           </dl>
           <%= if total_supply?(@token) do %>
-            <dl class="row">
+            <dl class="row" data-selector="total-supply-row">
               <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                 text: gettext("The total amount of tokens issued") %>
                 <%= gettext("Total supply") %>
               </dt>
-              <dd class="col-sm-8 col-md-8 col-lg-9">
+              <dd class="col-sm-8 col-md-8 col-lg-9" data-selector="total-supply-value" data-token-symbol="<%= @token.symbol %>">
                 <%= if decimals?(@token) do %>
                   <%= format_according_to_decimals(@token.total_supply, @token.decimals) %>
                 <% else %>
@@ -76,6 +76,18 @@
                 <% end %> <%= @token.symbol %>
               </dd>
             </dl>
+          <% else %>
+            <dl class="row d-none" data-selector="total-supply-row">
+              <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("The total amount of tokens issued") %>
+                <%= gettext("Total supply") %>
+              </dt>
+              <dd class="col-sm-8 col-md-8 col-lg-9" data-selector="total-supply-value" data-token-symbol="<%= @token.symbol %>">
+              </dd>
+            </dl>
+          <% end %>
+          <%= if total_supply?(@token) do %>
             <%= if @token.usd_value do %>
               <dl class="row">
                 <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">

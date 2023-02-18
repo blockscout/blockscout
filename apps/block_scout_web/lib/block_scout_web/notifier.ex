@@ -213,6 +213,14 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("transactions:stats", "update", %{stats: stats})
   end
 
+  def handle_event(
+        {:chain_event, :token_total_supply, :on_demand,
+         [%Explorer.Chain.Token{contract_address_hash: contract_address_hash, total_supply: total_supply} = token]}
+      )
+      when not is_nil(total_supply) do
+    Endpoint.broadcast("tokens:#{to_string(contract_address_hash)}", "token_total_supply", %{token: token})
+  end
+
   def handle_event(_), do: nil
 
   def fetch_compiler_version(compiler) do
