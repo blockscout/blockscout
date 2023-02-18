@@ -505,6 +505,11 @@ config :indexer, Indexer.Fetcher.OptimismWithdrawal,
 config :indexer, Indexer.Fetcher.OptimismWithdrawalEvent,
   start_block_l1: System.get_env("INDEXER_OPTIMISM_WITHDRAWALS_START_BLOCK_L1")
 
+config :indexer, Indexer.Fetcher.OptimismTxnBatch,
+  start_block_l1: System.get_env("INDEXER_OPTIMISM_BATCH_START_BLOCK_L1"),
+  batch_inbox: System.get_env("INDEXER_OPTIMISM_BATCH_INBOX"),
+  batch_submitter: System.get_env("INDEXER_OPTIMISM_BATCH_SUBMITTER")
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
