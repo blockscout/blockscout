@@ -49,7 +49,12 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
           from_address =
             with false <- is_nil(w.from),
-                 {:ok, address} <- Chain.hash_to_address(w.from, [necessity_by_association: %{:names => :optional, :smart_contract => :optional}], false) do
+                 {:ok, address} <-
+                   Chain.hash_to_address(
+                     w.from,
+                     [necessity_by_association: %{:names => :optional, :smart_contract => :optional}],
+                     false
+                   ) do
               address
             else
               _ -> nil
