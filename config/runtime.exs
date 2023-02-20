@@ -256,6 +256,42 @@ config :explorer, Explorer.Chain.Cache.AddressSum, global_ttl: address_sum_globa
 
 config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt, global_ttl: address_sum_global_ttl
 
+block_count_global_ttl =
+  "CACHE_BLOCK_COUNT_PERIOD"
+  |> System.get_env("")
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> 7200
+  end
+  |> :timer.seconds()
+
+config :explorer, Explorer.Chain.Cache.Block, global_ttl: block_count_global_ttl
+
+transaction_count_global_ttl =
+  "CACHE_TXS_COUNT_PERIOD"
+  |> System.get_env("")
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> 7200
+  end
+  |> :timer.seconds()
+
+config :explorer, Explorer.Chain.Cache.Transaction, global_ttl: transaction_count_global_ttl
+
+gas_price_oracle_global_ttl =
+  "GAS_PRICE_ORACLE_CACHE_PERIOD"
+  |> System.get_env("")
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> 30
+  end
+  |> :timer.seconds()
+
+config :explorer, Explorer.Chain.Cache.GasPriceOracle, global_ttl: gas_price_oracle_global_ttl
+
 config :explorer, Explorer.ExchangeRates,
   store: :ets,
   enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true",
