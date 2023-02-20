@@ -10,6 +10,7 @@
 ### Fixes
 
 - [#6940](https://github.com/blockscout/blockscout/pull/6940) - Reduce ttl_check_interval for cache module
+- [#6941](https://github.com/blockscout/blockscout/pull/6941) - Sanitize search query before displaying
 - [#6912](https://github.com/blockscout/blockscout/pull/6912) - Docker compose fix exposed ports
 - [#6913](https://github.com/blockscout/blockscout/pull/6913) - Fix an error occurred when decoding base64 encoded json
 - [#6911](https://github.com/blockscout/blockscout/pull/6911) - Fix bugs in verification API v2
