@@ -286,5 +286,24 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                   }
                 }}
     end
+
+    test "decodes base64 encoded JSON in tokenURI" do
+      data = %{
+        "c87b56dd" =>
+          {:ok,
+           [
+             "data:application/json;base64,eyJuYW1lIjoiVmFsb3JhIEV4cGxvcmEiLCJpbWFnZSI6ImlwZnM6Ly9RbWVuelZlOUJzQXFzSjlvQ3BpU3JtdVBaY0JhVjJyZFlNb3ljcnR2UWUzZktnIn0="
+           ]}
+      }
+
+      assert InstanceMetadataRetriever.fetch_json(data) ==
+               {:ok,
+                %{
+                  metadata: %{
+                    "name" => "Valora Explora",
+                    "image" => "ipfs://QmenzVe9BsAqsJ9oCpiSrmuPZcBaV2rdYMoycrtvQe3fKg"
+                  }
+                }}
+    end
   end
 end

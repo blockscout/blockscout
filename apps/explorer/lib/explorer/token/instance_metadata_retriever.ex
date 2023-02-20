@@ -155,6 +155,20 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       {:error, json}
   end
 
+  def fetch_json(%{@token_uri => {:ok, ["data:application/json;base64," <> base64_encoded_json]}}, hex_token_id) do
+    case Base.decode64(base64_encoded_json) do
+      {:ok, json} ->
+        fetch_json(%{@token_uri => {:ok, [json]}}, hex_token_id)
+
+      :error ->
+        Logger.debug(["Failed decoding base64 encoded JSON: #{inspect(base64_encoded_json)}"],
+          fetcher: :token_instances
+        )
+
+        {:error, base64_encoded_json}
+    end
+  end
+
   def fetch_json(%{@uri => {:ok, ["data:application/json," <> json]}}, hex_token_id) do
     decoded_json = URI.decode(json)
 
