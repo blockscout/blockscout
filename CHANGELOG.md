@@ -4,9 +4,23 @@
 
 ### Features
 
+- [#6897](https://github.com/blockscout/blockscout/pull/6897) - Support basic auth in JSON RPC endpoint
+- [#6908](https://github.com/blockscout/blockscout/pull/6908) - Allow disable API rate limit
+
 ### Fixes
 
+- [#6912](https://github.com/blockscout/blockscout/pull/6912) - Docker compose fix exposed ports
+- [#6913](https://github.com/blockscout/blockscout/pull/6913) - Fix an error occurred when decoding base64 encoded json
+- [#6911](https://github.com/blockscout/blockscout/pull/6911) - Fix bugs in verification API v2
+- [#6903](https://github.com/blockscout/blockscout/pull/6903), [#6937](https://github.com/blockscout/blockscout/pull/6937) - Fix indexed blocks value in "Indexing tokens" banner
+- [#6891](https://github.com/blockscout/blockscout/pull/6891) - Fix read contract for geth
+- [#6889](https://github.com/blockscout/blockscout/pull/6889) - Fix Internal Server Error on tx input decoding
+- [#6893](https://github.com/blockscout/blockscout/pull/6893) - Fix token type definition for multiple interface tokens
+- [#6922](https://github.com/blockscout/blockscout/pull/6922) - Fix WebSocketClient
+
 ### Chore
+
+- [#6902](https://github.com/blockscout/blockscout/pull/6902) - Increase verification timeout to 120 seconds for microservice verification
 
 <details>
   <summary>Dependencies version bumps</summary>
