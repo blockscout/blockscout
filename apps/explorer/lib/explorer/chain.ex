@@ -2232,7 +2232,16 @@ defmodule Explorer.Chain do
         Decimal.new(0)
 
       _ ->
-        result = Decimal.div(BlockCache.estimated_count(), max - min_blockchain_block_number + 1)
+        result =
+          BlockCache.estimated_count()
+          |> Decimal.div(max - min_blockchain_block_number + 1)
+          |> (&if(
+                (Decimal.compare(&1, Decimal.from_float(0.99)) == :gt ||
+                   Decimal.compare(&1, Decimal.from_float(0.99)) == :eq) &&
+                  min == min_blockchain_block_number,
+                do: Decimal.new(1),
+                else: &1
+              )).()
 
         result
         |> Decimal.round(2, :down)
