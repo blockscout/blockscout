@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
   import EthereumJSONRPC, only: [fetch_blocks_by_range: 2, quantity_to_integer: 1]
 
+  alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.OptimismTxnBatch
   alias Indexer.BoundQueue
@@ -77,13 +78,13 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
       {:ok,
        %{
-         batch_inbox: env[:batch_inbox],
-         batch_submitter: env[:batch_submitter],
+         batch_inbox: String.downcase(env[:batch_inbox]),
+         batch_submitter: String.downcase(env[:batch_submitter]),
          block_check_interval: block_check_interval,
          start_block: start_block,
          end_block: last_safe_block,
          reorg_monitor_task: reorg_monitor_task,
-         uncompleted_frame_sequence: <<>>,
+         uncompleted_frame_sequence: %{bytes: <<>>, last_frame_number: -1},
          json_rpc_named_arguments: json_rpc_named_arguments
        }, {:continue, nil}}
     else
@@ -167,11 +168,11 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
                 100_000_000
               )
 
-            {:ok, _} =
-              Chain.import(%{
-                optimism_txn_batches: %{params: batches},
-                timeout: :infinity
-              })
+            # {:ok, _} =
+            #   Chain.import(%{
+            #     optimism_txn_batches: %{params: batches},
+            #     timeout: :infinity
+            #   })
 
             log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, Enum.count(batches))
 
@@ -229,37 +230,82 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   end
 
   defp get_txn_batches(from_block, to_block, batch_inbox, batch_submitter, uncompleted_frame_sequence, json_rpc_named_arguments, retries_left) do
-    batches =
-      if is_nil(uncompleted_frame_sequence) do
-        # there was a reorg, so try to rewind to a full frame sequence if the `from_block` starts from a frame with non-zero index.
-        # if we cannot solve the puzzle, ignore the incomplete frame sequence and find the nearest full one.
-        # anyway, once we find the nearest full frame sequence, we first need to remove irrelevant items from op_transaction_batches table
+    if is_nil(uncompleted_frame_sequence) do
+      # there was a reorg, so try to rewind to a full frame sequence if the `from_block` starts from a frame with non-zero index.
+      # if we cannot solve the puzzle, ignore the incomplete frame sequence and find the nearest full one.
+      # anyway, once we find the nearest full frame sequence, we first need to remove irrelevant items from op_transaction_batches table
 
-        # {deleted_count, _} = Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^l2_block_before_reorg))
+      # {deleted_count, _} = Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^l2_block_before_reorg))
 
-        # if deleted_count > 0 do
-        #   Logger.warning(
-        #     "As L1 reorg was detected, all rows with l2_block_number >= #{l2_block_before_reorg} were removed from the op_transaction_batches table. Number of removed rows: #{deleted_count}."
-        #   )
-        # end
-        
-        # todo: ...
-        []
-      else
-        # ...
-        Logger.warn("from_block = #{from_block}")
-        Logger.warn("to_block = #{to_block}")
-        
-        {:ok, blocks} = fetch_blocks_by_range(from_block..to_block, json_rpc_named_arguments)
+      # if deleted_count > 0 do
+      #   Logger.warning(
+      #     "As L1 reorg was detected, all rows with l2_block_number >= #{l2_block_before_reorg} were removed from the op_transaction_batches table. Number of removed rows: #{deleted_count}."
+      #   )
+      # end
+      
+      # todo: ...
+      {:ok, [], uncompleted_frame_sequence}
+    else
+      case fetch_blocks_by_range(from_block..to_block, json_rpc_named_arguments) do
+        {:ok, %Blocks{transactions_params: transactions_params, errors: []}} ->
+          transactions_params
+          |> Enum.filter(fn t ->
+            from_address_hash = Map.get(t, :from_address_hash)
+            to_address_hash = Map.get(t, :to_address_hash)
 
-        Logger.warn(inspect(blocks))
+            if is_nil(from_address_hash) or is_nil(to_address_hash) do
+              false
+            else
+              String.downcase(from_address_hash) == batch_submitter and String.downcase(to_address_hash) == batch_inbox
+            end
+          end)
+          |> Enum.sort(fn t1, t2 ->
+            t1.block_number < t2.block_number or t1.block_number == t2.block_number and t1.transaction_index < t2.transaction_index
+          end)
+          |> Enum.reduce_while({:ok, [], uncompleted_frame_sequence}, fn t, {_, batches, uncompleted_frame_sequence_acc} = _acc ->
+            frame = input_to_frame(t.input)
 
-        []
+            frame_sequence = uncompleted_frame_sequence_acc.bytes <> frame.data
+            last_frame_number = uncompleted_frame_sequence_acc.last_frame_number
+
+            with {:frame_number_valid, last_frame_number + 1} <- {:frame_number_valid, frame.number},
+                 {:frame_is_last, true} <- {:frame_is_last, frame.is_last},
+                 parsed = parse_frame_sequence(frame_sequence),
+                 true <- parsed != :error do
+              {:cont, {:ok, batches ++ parsed, %{bytes: <<>>, last_frame_number: -1}}}
+            else
+              {:frame_number_valid, _} ->
+                {:halt, {:error, "Invalid frame sequence. Last frame number: #{last_frame_number}. Next frame number: #{frame.number}. Tx hash: #{t.hash}."}}
+              
+              false ->
+                {:halt, {:error, "Invalid RLP in frame sequence. Tx hash of the last frame: #{t.hash}. Compressed bytes of the sequence: #{Base.encode16(frame_sequence, case: :lower)}"}}
+
+              {:frame_is_last, false} ->
+                {:cont, {:ok, batches, %{bytes: frame_sequence, last_frame_number: frame.number}}}
+            end
+          end)
+
+        {_, message_or_errors} ->
+          message =
+            case message_or_errors do
+              %Blocks{errors: errors} -> errors
+              msg -> msg
+            end
+
+          retries_left = retries_left - 1
+
+          error_message = "Cannot fetch blocks #{from_block}..#{to_block}. Error(s): #{inspect(message)}"
+
+          if retries_left <= 0 do
+            Logger.error(error_message)
+            {:error, message}
+          else
+            Logger.error("#{error_message} Retrying...")
+            :timer.sleep(3000)
+            get_txn_batches(from_block, to_block, batch_inbox, batch_submitter, uncompleted_frame_sequence, json_rpc_named_arguments, retries_left)
+          end
       end
-
-    new_uncompleted_frame_sequence = uncompleted_frame_sequence
-
-    {:ok, batches, new_uncompleted_frame_sequence}
+    end
   end
 
   # defp events_to_output_roots(events) do
