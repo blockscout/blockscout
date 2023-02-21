@@ -69,6 +69,7 @@ defmodule EthereumJSONRPCTest do
            [
              %{
                id: 0,
+               result: nil,
                error: %{
                  code: -32602,
                  message: expected_message
