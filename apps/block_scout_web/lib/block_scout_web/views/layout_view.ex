@@ -37,8 +37,12 @@ defmodule BlockScoutWeb.LayoutView do
     Keyword.get(application_config(), :logo)
   end
 
+  def logo_dark_mode do
+    Keyword.get(application_config(), :logo_dark_mode) || logo()
+  end
+
   def logo_footer do
-    Keyword.get(application_config(), :logo_footer) || Keyword.get(application_config(), :logo)
+    Keyword.get(application_config(), :logo_footer) || logo()
   end
 
   def logo_text do
