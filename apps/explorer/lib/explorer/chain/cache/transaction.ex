@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Cache.Transaction do
     key: :count,
     key: :async_task,
     global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl],
-    ttl_check_interval: :timer.minutes(15),
+    ttl_check_interval: :timer.seconds(1),
     callback: &async_task_on_deletion(&1)
 
   require Logger

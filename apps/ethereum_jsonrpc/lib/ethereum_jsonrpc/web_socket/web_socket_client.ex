@@ -62,6 +62,8 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
     %URI{host: host} = URI.parse(url)
     host_charlist = String.to_charlist(host)
 
+    :ssl.start()
+
     # `:depth`, `:verify`, and `:verify_fun`, are based on `:hackney_connect.ssl_opts_1/2` as we use `:hackney` through
     # `:httpoison` and this keeps the SSL rules consistent between HTTP and WebSocket
     :websocket_client.start_link(
@@ -76,7 +78,10 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
         depth: 99,
         # SNI extension discloses host name in the clear, but allows for compatibility with Virtual Hosting for TLS
         server_name_indication: host_charlist,
-        verify_fun: {&:ssl_verify_hostname.verify_fun/3, [check_hostname: host_charlist]}
+        verify_fun: {&:ssl_verify_hostname.verify_fun/3, [check_hostname: host_charlist]},
+        customize_hostname_check: [
+          match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+        ]
       ]
     )
   end
