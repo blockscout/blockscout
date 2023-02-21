@@ -20,7 +20,7 @@ defmodule Explorer.Chain.OptimismDeposit do
     field(:l1_block_number, :integer)
     field(:l1_block_timestamp, :utc_datetime_usec)
     field(:l1_tx_hash, Hash.Full)
-    field(:l1_tx_origin, Hash.Full)
+    field(:l1_tx_origin, Hash.Address)
     field(:l2_tx_hash, Hash.Full, primary_key: true)
 
     timestamps()
