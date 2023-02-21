@@ -3,14 +3,12 @@ defmodule Explorer.Chain.Cache.Transaction do
   Cache for estimated transaction count.
   """
 
-  @default_cache_period :timer.hours(2)
-
   use Explorer.Chain.MapCache,
     name: :transaction_count,
     key: :count,
     key: :async_task,
-    global_ttl: cache_period(),
-    ttl_check_interval: :timer.minutes(15),
+    global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl],
+    ttl_check_interval: :timer.seconds(1),
     callback: &async_task_on_deletion(&1)
 
   require Logger
@@ -74,14 +72,4 @@ defmodule Explorer.Chain.Cache.Transaction do
   defp async_task_on_deletion({:delete, _, :count}), do: get_async_task()
 
   defp async_task_on_deletion(_data), do: nil
-
-  defp cache_period do
-    "CACHE_TXS_COUNT_PERIOD"
-    |> System.get_env("")
-    |> Integer.parse()
-    |> case do
-      {integer, ""} -> :timer.seconds(integer)
-      _ -> @default_cache_period
-    end
-  end
 end
