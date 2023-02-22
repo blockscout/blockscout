@@ -68,15 +68,6 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
       start_block = max(start_block_l1, last_l1_block_number)
 
-      # exist in DB:
-      # {:ok, hash1} = Base.decode16("34e7321a419c3c6dbe71555698505f7e6674f4566d153840fcb6608c6a75cdbb", case: :mixed)
-      # {:ok, hash2} = Base.decode16("57fd394571e1d5c684df505f4356b6e91447d3c15c7ff0beb317e27e915fd7ba", case: :mixed)
-      # not exist in DB:
-      # {:ok, hash1} = Base.decode16("ca18ec70a817597d870b9d15838831ea4af37cd11f06d8b1f2a6d6426e4f63d8", case: :mixed)
-      # {:ok, hash2} = Base.decode16("d0daaa7c0ec137f25bf3e16fad60f50fc8318637b941ae4fc2a62196a642d3ee", case: :mixed)
-      # hashes = [hash1, hash2]
-      # Logger.warn(inspect(get_block_numbers_by_hashes(hashes, json_rpc_named_arguments_l2)))
-
       reorg_monitor_task =
         Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismTxnBatch.TaskSupervisor, fn ->
           reorg_monitor(block_check_interval, json_rpc_named_arguments)
@@ -177,6 +168,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
                 json_rpc_named_arguments_l2,
                 100_000_000
               )
+
+            batches = remove_duplicates(batches)
 
             if byte_size(new_uncompleted_frame_sequence.bytes) > 0 do
               Logger.warn("new_uncompleted_frame_sequence = #{inspect(new_uncompleted_frame_sequence)}")
@@ -576,6 +569,17 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         |> Map.delete(:parent_hash)
       end)
     end
+  end
+
+  defp remove_duplicates(batches) do
+    batches
+    |> Enum.sort(fn b1, b2 ->
+      b1.l2_block_number < b2.l2_block_number or (b1.l2_block_number == b2.l2_block_number and b1.l1_tx_timestamp < b2.l1_tx_timestamp)
+    end)
+    |> Enum.reduce(%{}, fn b, acc ->
+      Map.put(acc, b.l2_block_number, b)
+    end)
+    |> Map.values()
   end
 
   defp reorg_monitor(block_check_interval, json_rpc_named_arguments) do
