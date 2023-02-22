@@ -49,7 +49,7 @@
 
       <%= unless Enum.empty?(main_nets) do %>
         <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
-          <h3><%= gettext("Main Networks") %></h3>
+          <h3><%= gettext("Colosseum") %></h3>
           <ul>
             <%= for %{title: title, url: url} <- main_nets do %>
               <li><a href="<%= url %>" rel="norefferer" class="footer-link"> <%= title %> </a></li>
@@ -62,7 +62,7 @@
 
       <%= unless Enum.empty?(test_nets) do %>
         <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
-          <h3><%= gettext("Test Networks") %></h3>
+          <h3><%= gettext("Garden") %></h3>
           <ul>
             <%= for %{title: title, url: url} <- test_nets do %>
               <li><a href="<%= url %>" rel="noreferrer" class="footer-link"> <%= title %> </a></li>

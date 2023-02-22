@@ -10,68 +10,120 @@ defmodule BlockScoutWeb.LayoutView do
   @default_other_networks [
     %{
       title: "Prime",
-      url: "https://dev.prime.quaiscan.io",
+      url: "https://prime.garden.quaiscan.io",
       test_net?: true
     },
     %{
       title: "Cyprus",
-      url: "https://dev.cyprus.quaiscan.io",
+      url: "https://cyprus.garden.quaiscan.io",
       test_net?: true
     },
     %{
       title: "Paxos",
-      url: "https://dev.paxos.quaiscan.io",
+      url: "https://paxos.garden.quaiscan.io",
       test_net?: true
     },
     %{
       title: "Hydra",
-      url: "https://dev.hydra.quaiscan.io",
+      url: "https://hydra.garden.quaiscan.io",
       test_net?: true
     },
     %{
       title: "Cyprus1",
-      url: "https://dev.cyprus1.quaiscan.io",
+      url: "https://cyprus1.garden.quaiscan.io",
       test_net?: true
     },
     %{
       title: "Cyprus2",
-      url: "https://dev.cyprus2.quaiscan.io",
+      url: "https://cyprus2.garden.quaiscan.io",
       test_net?: true
     },
     %{
       title: "Cyprus3",
-      url: "https://dev.cyprus3.quaiscan.io",
+      url: "https://cyprus3.garden.quaiscan.io",
       test_net?: true
     },
     %{
       title: "Paxos1",
-      url: "https://dev.paxos1.quaiscan.io",
+      url: "https://paxos1.garden.quaiscan.io",
       test_net?: true
     },
     %{
       title: "Paxos2",
-      url: "https://dev.paxos2.quaiscan.io",
+      url: "https://paxos2.garden.quaiscan.io",
       test_net?: true
     },
     %{
       title: "Paxos3",
-      url: "https://dev.paxos3.quaiscan.io",
+      url: "https://paxos3.garden.quaiscan.io",
       test_net?: true
     },
     %{
       title: "Hydra1",
-      url: "https://dev.hydra1.quaiscan.io",
+      url: "https://hydra1.garden.quaiscan.io",
       test_net?: true
     },
     %{
       title: "Hydra2",
-      url: "https://dev.hydra2.quaiscan.io",
+      url: "https://hydra2.garden.quaiscan.io",
       test_net?: true
     },
     %{
       title: "Hydra3",
-      url: "https://dev.hydra3.quaiscan.io",
+      url: "https://hydra3.garden.quaiscan.io",
       test_net?: true
+    },
+    %{
+      title: "Prime",
+      url: "https://prime.colosseum.quaiscan.io",
+    },
+    %{
+      title: "Cyprus",
+      url: "https://cyprus.colosseum.quaiscan.io",
+    },
+    %{
+      title: "Paxos",
+      url: "https://paxos.colosseum.quaiscan.io",
+    },
+    %{
+      title: "Hydra",
+      url: "https://hydra.colosseum.quaiscan.io",
+    },
+    %{
+      title: "Cyprus1",
+      url: "https://cyprus1.colosseum.quaiscan.io",
+    },
+    %{
+      title: "Cyprus2",
+      url: "https://cyprus2.colosseum.quaiscan.io",
+    },
+    %{
+      title: "Cyprus3",
+      url: "https://cyprus3.colosseum.quaiscan.io",
+    },
+    %{
+      title: "Paxos1",
+      url: "https://paxos1.colosseum.quaiscan.io",
+    },
+    %{
+      title: "Paxos2",
+      url: "https://paxos2.colosseum.quaiscan.io",
+    },
+    %{
+      title: "Paxos3",
+      url: "https://paxos3.colosseum.quaiscan.io",
+    },
+    %{
+      title: "Hydra1",
+      url: "https://hydra1.colosseum.quaiscan.io",
+    },
+    %{
+      title: "Hydra2",
+      url: "https://hydra2.colosseum.quaiscan.io",
+    },
+    %{
+      title: "Hydra3",
+      url: "https://hydra3.colosseum.quaiscan.io",
     },
 #    %{
 #      title: "Gnosis Chain",
