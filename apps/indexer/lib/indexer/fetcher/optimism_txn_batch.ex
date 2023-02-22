@@ -68,6 +68,15 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
       start_block = max(start_block_l1, last_l1_block_number)
 
+      # exist in DB:
+      # {:ok, hash1} = Base.decode16("34e7321a419c3c6dbe71555698505f7e6674f4566d153840fcb6608c6a75cdbb", case: :mixed)
+      # {:ok, hash2} = Base.decode16("57fd394571e1d5c684df505f4356b6e91447d3c15c7ff0beb317e27e915fd7ba", case: :mixed)
+      # not exist in DB:
+      # {:ok, hash1} = Base.decode16("ca18ec70a817597d870b9d15838831ea4af37cd11f06d8b1f2a6d6426e4f63d8", case: :mixed)
+      # {:ok, hash2} = Base.decode16("d0daaa7c0ec137f25bf3e16fad60f50fc8318637b941ae4fc2a62196a642d3ee", case: :mixed)
+      # hashes = [hash1, hash2]
+      # Logger.warn(inspect(get_block_numbers_by_hashes(hashes, json_rpc_named_arguments_l2)))
+
       reorg_monitor_task =
         Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismTxnBatch.TaskSupervisor, fn ->
           reorg_monitor(block_check_interval, json_rpc_named_arguments)
@@ -240,32 +249,42 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     end
   end
 
-  defp get_block_number_by_hash(hash, json_rpc_named_arguments) do
-    block_number =
-      Repo.one(
-        from(
-          b in Block,
-          select: b.number,
-          where: b.hash == ^hash
-        )
-      )
+  defp get_block_numbers_by_hashes(hashes, json_rpc_named_arguments) do
+    query = from(
+      b in Block,
+      select: {b.hash, b.number},
+      where: b.hash in ^hashes
+    )
 
-    if is_nil(block_number) do
-      {:ok, block} =
-        json_rpc(
-          %{
-            id: 0,
-            method: "eth_getBlockByHash",
-            params: ["0x" <> Base.encode16(hash, case: :lower), false],
-            jsonrpc: "2.0"
-          },
-          json_rpc_named_arguments
-        )
+    number_by_hash =
+      query
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn {hash, number}, acc ->
+        Map.put(acc, hash.bytes, number)
+      end)
 
-      quantity_to_integer(Map.get(block, "number"))
-    else
-      block_number
-    end
+    {:ok, responses} =
+      hashes
+      |> Enum.filter(fn hash -> is_nil(Map.get(number_by_hash, hash)) end)
+      |> Enum.with_index()
+      |> Enum.map(fn {hash, id} ->
+        %{
+          id: id,
+          method: "eth_getBlockByHash",
+          params: ["0x" <> Base.encode16(hash, case: :lower), false],
+          jsonrpc: "2.0"
+        }
+      end)
+      |> json_rpc(json_rpc_named_arguments)
+
+    responses
+    |> Enum.map(fn %{result: result} -> result end)
+    |> Enum.reduce(number_by_hash, fn block, acc ->
+      block_number = quantity_to_integer(Map.get(block, "number"))
+      "0x" <> hash = Map.get(block, "hash")
+      {:ok, hash} = Base.decode16(hash, case: :lower)
+      Map.put(acc, hash, block_number)
+    end)
   end
 
   defp get_block_timestamp_by_number(block_number, blocks_params) do
@@ -494,55 +513,69 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
     :zlib.close(z)
 
-    Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), {uncompressed_bytes, []}, fn _i, {remainder, batch_acc} ->
-      first_byte =
-        case :binary.bin_to_list(binary_slice(remainder, 0, 1)) do
-          [first_byte] -> first_byte
-          _ -> nil
-        end
+    batches =
+      Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), {uncompressed_bytes, []}, fn _i, {remainder, batch_acc} ->
+        first_byte =
+          case :binary.bin_to_list(binary_slice(remainder, 0, 1)) do
+            [first_byte] -> first_byte
+            _ -> nil
+          end
 
-      if Enum.member?(0xB8..0xBF, first_byte) do
-        batch_size_length = first_byte - 0xB7
+        if Enum.member?(0xB8..0xBF, first_byte) do
+          batch_size_length = first_byte - 0xB7
 
-        batch_size =
-          remainder
-          |> binary_slice(1, batch_size_length)
-          |> :binary.decode_unsigned()
+          batch_size =
+            remainder
+            |> binary_slice(1, batch_size_length)
+            |> :binary.decode_unsigned()
 
-        batch =
-          remainder
-          |> binary_slice(1 + batch_size_length + 1, batch_size - 1)
-          |> ExRLP.decode()
+          batch =
+            remainder
+            |> binary_slice(1 + batch_size_length + 1, batch_size - 1)
+            |> ExRLP.decode()
 
-        parent_hash = Enum.at(batch, 0)
-        epoch_number = :binary.decode_unsigned(Enum.at(batch, 1))
+          parent_hash = Enum.at(batch, 0)
+          epoch_number = :binary.decode_unsigned(Enum.at(batch, 1))
 
-        l2_block_number = get_block_number_by_hash(parent_hash, json_rpc_named_arguments_l2) + 1
+          new_remainder_offset = 1 + batch_size_length + batch_size
+          new_remainder_size = byte_size(remainder) - new_remainder_offset
+          new_remainder = binary_slice(remainder, new_remainder_offset, new_remainder_size)
 
-        new_remainder_offset = 1 + batch_size_length + batch_size
-        new_remainder_size = byte_size(remainder) - new_remainder_offset
-        new_remainder = binary_slice(remainder, new_remainder_offset, new_remainder_size)
+          new_batch_acc =
+            batch_acc ++
+              [
+                %{
+                  parent_hash: parent_hash,
+                  epoch_number: epoch_number,
+                  l1_tx_hashes: l1_tx_hashes,
+                  l1_tx_timestamp: l1_tx_timestamp
+                }
+              ]
 
-        new_batch_acc =
-          batch_acc ++
-            [
-              %{
-                l2_block_number: l2_block_number,
-                epoch_number: epoch_number,
-                l1_tx_hashes: l1_tx_hashes,
-                l1_tx_timestamp: l1_tx_timestamp
-              }
-            ]
-
-        if new_remainder_size > 0 do
-          {:cont, {new_remainder, new_batch_acc}}
+          if new_remainder_size > 0 do
+            {:cont, {new_remainder, new_batch_acc}}
+          else
+            {:halt, new_batch_acc}
+          end
         else
-          {:halt, new_batch_acc}
+          {:halt, :error}
         end
-      else
-        {:halt, :error}
-      end
-    end)
+      end)
+
+    if batches == :error do
+      :error
+    else
+      numbers_by_hashes =
+        batches
+        |> Enum.map(fn batch -> batch.parent_hash end)
+        |> get_block_numbers_by_hashes(json_rpc_named_arguments_l2)
+
+      Enum.map(batches, fn batch ->
+        batch
+        |> Map.put(:l2_block_number, numbers_by_hashes[batch.parent_hash] + 1)
+        |> Map.delete(:parent_hash)
+      end)
+    end
   end
 
   defp reorg_monitor(block_check_interval, json_rpc_named_arguments) do
