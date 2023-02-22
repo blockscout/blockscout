@@ -566,6 +566,14 @@ blocks_catchup_fetcher_missing_ranges_batch_size_default_str = "100000"
 config :indexer, Indexer.Block.Catchup.MissingRangesCollector,
   missing_ranges_batch_size: blocks_catchup_fetcher_missing_ranges_batch_size
 
+{block_reward_fetcher_batch_size, _} = Integer.parse(System.get_env("INDEXER_BLOCK_REWARD_BATCH_SIZE", "10"))
+
+{block_reward_fetcher_concurrency, _} = Integer.parse(System.get_env("INDEXER_BLOCK_REWARD_CONCURRENCY", "4"))
+
+config :indexer, Indexer.Fetcher.BlockReward,
+  batch_size: block_reward_fetcher_batch_size,
+  concurrency: block_reward_fetcher_concurrency
+
 {internal_transaction_fetcher_batch_size, _} =
   Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", "10"))
 
