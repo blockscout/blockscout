@@ -53,11 +53,11 @@ jobs:
           tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:latest, blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
-            DISABLE_READ_API=false
+            DISABLE_READ_API=true
             API_PATH=/
             NETWORK_PATH=/
             DISABLE_WEBAPP=false
-            DISABLE_WRITE_API=false
+            DISABLE_WRITE_API=true
             CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER=
             WOBSERVER_ENABLED=false
             ADMIN_PANEL_ENABLED=false
