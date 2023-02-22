@@ -31,15 +31,32 @@ indexer_empty_blocks_sanitizer_batch_size =
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer, batch_size: indexer_empty_blocks_sanitizer_batch_size
 
+######################
+### BlockScout Web ###
+######################
+
+network_path =
+  "NETWORK_PATH"
+  |> System.get_env("/")
+  |> (&(if String.ends_with?(&1, "/") do
+          String.trim_trailing(&1, "/")
+        else
+          &1
+        end)).()
+
+# Configures the endpoint
+config :block_scout_web, BlockScoutWeb.Endpoint,
+  url: [
+    path: network_path
+  ],
+  render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
+  pubsub_server: BlockScoutWeb.PubSub
+
 config :block_scout_web, :footer,
   chat_link: System.get_env("FOOTER_CHAT_LINK", "https://discord.gg/blockscout"),
   forum_link: System.get_env("FOOTER_FORUM_LINK", "https://forum.poa.network/c/blockscout"),
   github_link: System.get_env("FOOTER_GITHUB_LINK", "https://github.com/blockscout/blockscout"),
   enable_forum_link: System.get_env("FOOTER_ENABLE_FORUM_LINK", "false") == "true"
-
-######################
-### BlockScout Web ###
-######################
 
 # Configures Ueberauth's Auth0 auth provider
 config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,

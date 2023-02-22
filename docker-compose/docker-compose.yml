@@ -24,13 +24,10 @@ services:
       args:
         CACHE_EXCHANGE_RATES_PERIOD: ""
         DISABLE_READ_API: "false"
-        API_PATH: "/"
-        NETWORK_PATH: "/"
         DISABLE_WEBAPP: "false"
         DISABLE_WRITE_API: "false"
         CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER: ""
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
-        SOCKET_ROOT: "/"
         WOBSERVER_ENABLED: "false"
         ADMIN_PANEL_ENABLED: ""
     restart: always
