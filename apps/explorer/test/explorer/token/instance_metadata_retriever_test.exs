@@ -307,5 +307,23 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                   }
                 }}
     end
+
+    test "decodes base64 encoded json file (with unicode string) in tokenURI" do
+      data = %{
+        "c87b56dd" =>
+          {:ok,
+           [
+             "data:application/json;base64,eyJkZXNjcmlwdGlvbiI6ICJQdW5rIERvbWFpbnMgZGlnaXRhbCBpZGVudGl0eSDDry4gVmlzaXQgaHR0cHM6Ly9wdW5rLmRvbWFpbnMvIn0="
+           ]}
+      }
+
+      assert InstanceMetadataRetriever.fetch_json(data) ==
+               {:ok,
+                %{
+                  metadata: %{
+                    "description" => "Punk Domains digital identity ï. Visit https://punk.domains/"
+                  }
+                }}
+    end
   end
 end
