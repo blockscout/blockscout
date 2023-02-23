@@ -18,6 +18,7 @@ defmodule Indexer.Fetcher.TokenInstance do
     flush_interval: 300,
     max_batch_size: 1,
     max_concurrency: 10,
+    poll: true,
     task_supervisor: Indexer.Fetcher.TokenInstance.TaskSupervisor
   ]
 

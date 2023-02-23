@@ -6,7 +6,7 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
   alias HTTPoison.Response
   require Logger
 
-  @post_timeout :timer.seconds(30)
+  @post_timeout :timer.seconds(120)
   @request_error_msg "Error while sending request to verification microservice"
 
   def verify_multi_part(
