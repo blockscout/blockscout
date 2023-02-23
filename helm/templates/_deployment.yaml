@@ -25,18 +25,46 @@ spec:
         - /bin/bash
         - -c
         env:
-        - name: INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
+        - name: ACCOUNT_ENABLED
           value: "true"
-        - name: NETWORK
+        - name: BLOCKSCOUT_VERSION
+          value: {{ .Values.quaiBlockscout.image.version }}
+        - name: COIN
+          value: QUAI
+        - name: COIN_NAME
           value: QUAI
         - name: ECTO_USE_SSL
           value: "false"
-        - name: SUBNETWORK
-          value: Prime
-        - name: LOGO
-          value: /images/quai_logo.png
         - name: ETHEREUM_JSONRPC_VARIANT
           value: geth
+        - name: INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
+          value: "true"
+        - name: LOGO
+          value: /images/quai_logo.png
+        - name: NETWORK
+          value: QUAI
+        - name: SUBNETWORK
+          value: Prime
+        - name: ACCOUNT_AUTH0_CALLBACK_URL 
+            configMapKeyRef:
+              key: ACCOUNT_AUTH0_CALLBACK_URL
+              name: prime-{{ include "quai-blockscout.name" $ }}
+        - name: ACCOUNT_AUTH0_LOGOUT_URL 
+            configMapKeyRef:
+              key: ACCOUNT_AUTH0_LOGOUT_URL
+              name: prime-{{ include "quai-blockscout.name" $ }}
+        - name: ACCOUNT_AUTH0_LOGOUT_RETURN_URL 
+            configMapKeyRef:
+              key: ACCOUNT_AUTH0_LOGOUT_RETURN_URL
+              name: prime-{{ include "quai-blockscout.name" $ }}
+        - name: BLOCKSCOUT_HOST
+            configMapKeyRef:
+              key: BLOCKSCOUT_HOST
+              name: prime-{{ include "quai-blockscout.name" $ }}
+        - name: CHAIN_INDEX
+            configMapKeyRef:
+              key: CHAIN_INDEX 
+              name: prime-{{ include "quai-blockscout.name" $ }}
         - name: ETHEREUM_JSONRPC_WS_URL
           valueFrom:
             configMapKeyRef:
@@ -47,19 +75,49 @@ spec:
             configMapKeyRef:
               key: ETHEREUM_JSONRPC_HTTP_URL
               name: prime-{{ include "quai-blockscout.name" $ }}
+        - name: RUST_MULTICHAIN_SEARCH_URL 
+            configMapKeyRef:
+              key: RUST_MULTICHAIN_SEARCH_URL
+              name: prime-{{ include "quai-blockscout.name" $ }}
+        - name: SESSION_COOKIE_DOMAIN 
+            configMapKeyRef:
+              key: SESSION_COOKIE_DOMAIN
+              name: prime-{{ include "quai-blockscout.name" $ }}
+        - name: ACCOUNT_AUTH0_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              key: ACCOUNT_AUTH0_CLIENT_ID 
+              name: prime-{{ include "quai-blockscout.name" $ }}
+        - name: ACCOUNT_AUTH0_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: ACCOUNT_AUTH0_CLIENT_SECRET 
+              name: prime-{{ include "quai-blockscout.name" $ }}
+        - name: ACCOUNT_AUTH0_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              key: ACCOUNT_AUTH0_DOMAIN 
+              name: prime-{{ include "quai-blockscout.name" $ }}
+        - name: ACCOUNT_CLOAK_KEY
+          valueFrom:
+            secretKeyRef:
+              key: ACCOUNT_CLOAK_KEY
+              name: prime-{{ include "quai-blockscout.name" $ }}
+        - name: ACCOUNT_DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              key: ACCOUNT_DATABASE_URL
+              name: prime-{{ include "quai-blockscout.name" $ }}
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
               key: DATABASE_URL
               name: prime-{{ include "quai-blockscout.name" $ }}
-        - name: QUAI_CHAIN
-          value: PRIME / REGION1 /ZONE23
-        - name: COIN
-          value: QUAI
-        - name: COIN_NAME
-          value: QUAI
-        - name: CHAIN_INDEX
-          value: "<INDEX>"
+        - name: ACCOUNT_REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              key: ACCOUNT_REDIS_URL 
+              name: prime-{{ include "quai-blockscout.name" $ }}
         image: {{ .Values.quaiBlockscout.image.name }}:{{ .Values.quaiBlockscout.image.version }}
         imagePullPolicy: Always
         livenessProbe:
