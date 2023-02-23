@@ -120,6 +120,9 @@ defmodule BlockScoutWeb.AddressChannel do
         push(socket, "verification", %{verification_result: :ok})
         {:noreply, socket}
 
+      {:error, %Ecto.Changeset{}} ->
+        {:noreply, socket}
+
       {:error, result} ->
         push(socket, "verification", %{verification_result: result})
         {:noreply, socket}
