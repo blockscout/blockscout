@@ -57,7 +57,7 @@
             </dt>
             <dd class="col-sm-9 col-lg-10" data-test="block_detail_number">
               <%= if block_type(@block) == "Block" do %>
-                <%= @block.number %> <%= if @block.number == 0, do: " - " <> gettext("Genesis Block")%>
+                <%= @block.number %> <%= if @block.number < [9,3,1] |> Enum.at(System.get_env("CHAIN_INDEX") |> String.to_integer()), do: " - " <> gettext("Genesis Block")%>
               <% else %>
                 <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block.number)) %>
               <% end %>
