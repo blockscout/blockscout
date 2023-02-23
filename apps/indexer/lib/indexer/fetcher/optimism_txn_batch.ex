@@ -81,7 +81,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          start_block: start_block,
          end_block: last_safe_block,
          reorg_monitor_task: reorg_monitor_task,
-         uncompleted_frame_sequence: %{bytes: <<>>, last_frame_number: -1, l1_tx_hashes: []},
+         incomplete_frame_sequence: empty_incomplete_frame_sequence(),
          json_rpc_named_arguments: json_rpc_named_arguments,
          json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
        }, {:continue, nil}}
@@ -135,7 +135,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           block_check_interval: block_check_interval,
           start_block: start_block,
           end_block: end_block,
-          uncompleted_frame_sequence: uncompleted_frame_sequence,
+          incomplete_frame_sequence: incomplete_frame_sequence,
           json_rpc_named_arguments: json_rpc_named_arguments,
           json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
         } = state
@@ -146,24 +146,24 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     chunks_number = ceil((end_block - start_block + 1) / @eth_get_block_range_size)
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
 
-    {last_written_block, new_uncompleted_frame_sequence} =
+    {last_written_block, new_incomplete_frame_sequence} =
       chunk_range
-      |> Enum.reduce_while({start_block - 1, uncompleted_frame_sequence}, fn current_chank,
-                                                                             {_, uncompleted_frame_sequence_acc} ->
+      |> Enum.reduce_while({start_block - 1, incomplete_frame_sequence}, fn current_chank,
+                                                                             {_, incomplete_frame_sequence_acc} ->
         chunk_start = start_block + @eth_get_block_range_size * current_chank
         chunk_end = min(chunk_start + @eth_get_block_range_size - 1, end_block)
 
-        new_uncompleted_frame_sequence =
+        new_incomplete_frame_sequence =
           if chunk_end >= chunk_start do
             log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil)
 
-            {:ok, batches, new_uncompleted_frame_sequence} =
+            {:ok, batches, new_incomplete_frame_sequence} =
               get_txn_batches(
                 chunk_start,
                 chunk_end,
                 batch_inbox,
                 batch_submitter,
-                uncompleted_frame_sequence_acc,
+                incomplete_frame_sequence_acc,
                 json_rpc_named_arguments,
                 json_rpc_named_arguments_l2,
                 100_000_000
@@ -171,8 +171,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
             batches = remove_duplicates(batches)
 
-            if byte_size(new_uncompleted_frame_sequence.bytes) > 0 do
-              Logger.warn("new_uncompleted_frame_sequence = #{inspect(new_uncompleted_frame_sequence)}")
+            if byte_size(new_incomplete_frame_sequence.bytes) > 0 do
+              Logger.warn("new_incomplete_frame_sequence = #{inspect(new_incomplete_frame_sequence)}")
             end
 
             {:ok, _} =
@@ -183,9 +183,9 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
             log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, Enum.count(batches))
 
-            new_uncompleted_frame_sequence
+            new_incomplete_frame_sequence
           else
-            uncompleted_frame_sequence_acc
+            incomplete_frame_sequence_acc
           end
 
         reorg_block = reorg_block_pop()
@@ -193,7 +193,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         if !is_nil(reorg_block) && reorg_block > 0 do
           {:halt, {if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end), nil}}
         else
-          {:cont, {chunk_end, new_uncompleted_frame_sequence}}
+          {:cont, {chunk_end, new_incomplete_frame_sequence}}
         end
       end)
 
@@ -210,7 +210,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
        state
        | start_block: new_start_block,
          end_block: new_end_block,
-         uncompleted_frame_sequence: new_uncompleted_frame_sequence
+         incomplete_frame_sequence: new_incomplete_frame_sequence
      }, {:continue, nil}}
   end
 
@@ -242,7 +242,11 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     end
   end
 
-  defp get_block_numbers_by_hashes(hashes, json_rpc_named_arguments) do
+  defp empty_incomplete_frame_sequence(last_frame_number \\ -1) do
+    %{bytes: <<>>, last_frame_number: last_frame_number, l1_tx_hashes: []}
+  end
+
+  defp get_block_numbers_by_hashes(hashes, json_rpc_named_arguments_l2, l1_tx_hashes) do
     query = from(
       b in Block,
       select: {b.hash, b.number},
@@ -256,7 +260,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         Map.put(acc, hash.bytes, number)
       end)
 
-    {:ok, responses} =
+    requests =
       hashes
       |> Enum.filter(fn hash -> is_nil(Map.get(number_by_hash, hash)) end)
       |> Enum.with_index()
@@ -268,7 +272,27 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           jsonrpc: "2.0"
         }
       end)
-      |> json_rpc(json_rpc_named_arguments)
+
+    {:ok, responses} =
+      requests
+      |> json_rpc(json_rpc_named_arguments_l2)
+
+    # Logger.warn("requests_count = #{Enum.count(requests)}")
+    # Enum.each(requests, fn req ->
+    #   Logger.warn(req)
+    # end)
+    # Logger.warn("responses_count = #{Enum.count(responses)}")
+    # Enum.each(responses, fn %{result: result} ->
+    #   if is_nil(result) do
+    #     Logger.warn("nil")
+    #   else
+    #     Logger.warn("NOT nil")
+    #   end
+    # end)
+    # Logger.warn("l1_tx_hashes:")
+    # Enum.each(l1_tx_hashes, fn h ->
+    #   Logger.warn("l1_tx_hash = #{inspect(h)}")
+    # end)
 
     responses
     |> Enum.map(fn %{result: result} -> result end)
@@ -317,112 +341,92 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          to_block,
          batch_inbox,
          batch_submitter,
-         uncompleted_frame_sequence,
+         incomplete_frame_sequence,
          json_rpc_named_arguments,
          json_rpc_named_arguments_l2,
          retries_left
        ) do
-    if is_nil(uncompleted_frame_sequence) do
-      # there was a reorg, so try to rewind to a full frame sequence if the `from_block` starts from a frame with non-zero index.
-      # if we cannot solve the puzzle, ignore the incomplete frame sequence and find the nearest full one.
-      # anyway, once we find the nearest full frame sequence, we first need to remove irrelevant items from op_transaction_batches table
+    case fetch_blocks_by_range(from_block..to_block, json_rpc_named_arguments) do
+      {:ok, %Blocks{transactions_params: transactions_params, blocks_params: blocks_params, errors: []}} ->
+        transactions_params
+        |> txs_filter_sort(batch_submitter, batch_inbox)
+        |> Enum.reduce_while({:ok, [], incomplete_frame_sequence}, fn t, {_, batches, incomplete_frame_sequence_acc} ->
 
-      # {deleted_count, _} = Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^l2_block_before_reorg))
+          after_reorg = is_nil(incomplete_frame_sequence_acc)
 
-      # if deleted_count > 0 do
-      #   Logger.warning(
-      #     "As L1 reorg was detected, all rows with l2_block_number >= #{l2_block_before_reorg} were removed from the op_transaction_batches table. Number of removed rows: #{deleted_count}."
-      #   )
-      # end
+          frame = input_to_frame(t.input)
 
-      # todo: ...
-      {:ok, [], uncompleted_frame_sequence}
-    else
-      case fetch_blocks_by_range(from_block..to_block, json_rpc_named_arguments) do
-        {:ok, %Blocks{transactions_params: transactions_params, blocks_params: blocks_params, errors: []}} ->
-          transactions_params
-          |> Enum.filter(fn t ->
-            from_address_hash = Map.get(t, :from_address_hash)
-            to_address_hash = Map.get(t, :to_address_hash)
-
-            if is_nil(from_address_hash) or is_nil(to_address_hash) do
-              false
+          {batches, incomplete_frame_sequence_acc} =
+            if after_reorg do
+              # there was a reorg, so try to rewind and concat bytes to build incomplete frame sequence if the `from_block` block starts with a frame with non-zero number.
+              # if we cannot solve the puzzle, ignore the incomplete frame sequence and then find the nearest full one.
+              {[], rewind_after_reorg(from_block, frame.number, batch_submitter, batch_inbox, json_rpc_named_arguments)}
             else
-              String.downcase(from_address_hash) == batch_submitter and String.downcase(to_address_hash) == batch_inbox
-            end
-          end)
-          |> Enum.sort(fn t1, t2 ->
-            t1.block_number < t2.block_number or
-              (t1.block_number == t2.block_number and t1.transaction_index < t2.transaction_index)
-          end)
-          |> Enum.reduce_while({:ok, [], uncompleted_frame_sequence}, fn t,
-                                                                         {_, batches, uncompleted_frame_sequence_acc} =
-                                                                           _acc ->
-            frame = input_to_frame(t.input)
-
-            if Enum.empty?(batches) and byte_size(uncompleted_frame_sequence_acc.bytes) == 0 and frame.number > 0 do
-              # if this is the first launch and the head of tx sequence, skip all transactions until frame.number is 0
-              {:cont, {:ok, [], %{bytes: <<>>, last_frame_number: -1, l1_tx_hashes: []}}}
-            else
-              frame_sequence = uncompleted_frame_sequence_acc.bytes <> frame.data
-              l1_tx_hashes = uncompleted_frame_sequence_acc.l1_tx_hashes ++ [t.hash]
-              last_frame_number = uncompleted_frame_sequence_acc.last_frame_number
-
-              with {:frame_number_valid, true} <- {:frame_number_valid, frame.number == last_frame_number + 1},
-                   {:frame_is_last, true} <- {:frame_is_last, frame.is_last},
-                   l1_tx_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params),
-                   batches_parsed =
-                     parse_frame_sequence(frame_sequence, l1_tx_hashes, l1_tx_timestamp, json_rpc_named_arguments_l2),
-                   true <- batches_parsed != :error do
-                {:cont, {:ok, batches ++ batches_parsed, %{bytes: <<>>, last_frame_number: -1, l1_tx_hashes: []}}}
-              else
-                {:frame_number_valid, false} ->
-                  {:halt,
-                   {:error,
-                    "Invalid frame sequence. Last frame number: #{last_frame_number}. Next frame number: #{frame.number}. Tx hash: #{t.hash}."}}
-
-                false ->
-                  {:halt,
-                   {:error,
-                    "Invalid RLP in frame sequence. Tx hash of the last frame: #{t.hash}. Compressed bytes of the sequence: 0x#{Base.encode16(frame_sequence, case: :lower)}"}}
-
-                {:frame_is_last, false} ->
-                  {:cont,
-                   {:ok, batches, %{bytes: frame_sequence, last_frame_number: frame.number, l1_tx_hashes: l1_tx_hashes}}}
-              end
-            end
-          end)
-
-        {_, message_or_errors} ->
-          message =
-            case message_or_errors do
-              %Blocks{errors: errors} -> errors
-              msg -> msg
+              {batches, incomplete_frame_sequence_acc}
             end
 
-          retries_left = retries_left - 1
-
-          error_message = "Cannot fetch blocks #{from_block}..#{to_block}. Error(s): #{inspect(message)}"
-
-          if retries_left <= 0 do
-            Logger.error(error_message)
-            {:error, message}
+          if Enum.empty?(batches) and byte_size(incomplete_frame_sequence_acc.bytes) == 0 and frame.number > 0 do
+            # if this is the first launch and the head of tx sequence, skip all transactions until frame.number is 0
+            {:cont, {:ok, [], empty_incomplete_frame_sequence()}}
           else
-            Logger.error("#{error_message} Retrying...")
-            :timer.sleep(3000)
+            frame_sequence = incomplete_frame_sequence_acc.bytes <> frame.data
+            l1_tx_hashes = incomplete_frame_sequence_acc.l1_tx_hashes ++ [t.hash]
+            last_frame_number = incomplete_frame_sequence_acc.last_frame_number
 
-            get_txn_batches(
-              from_block,
-              to_block,
-              batch_inbox,
-              batch_submitter,
-              uncompleted_frame_sequence,
-              json_rpc_named_arguments,
-              json_rpc_named_arguments_l2,
-              retries_left
-            )
+            with {:frame_number_valid, true} <- {:frame_number_valid, frame.number == last_frame_number + 1},
+                 {:frame_is_last, true} <- {:frame_is_last, frame.is_last},
+                 l1_tx_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params),
+                 batches_parsed =
+                   parse_frame_sequence(frame_sequence, l1_tx_hashes, l1_tx_timestamp, json_rpc_named_arguments_l2, after_reorg),
+                 true <- batches_parsed != :error do
+              {:cont, {:ok, batches ++ batches_parsed, empty_incomplete_frame_sequence()}}
+            else
+              {:frame_number_valid, false} ->
+                {:halt,
+                 {:error,
+                  "Invalid frame sequence. Last frame number: #{last_frame_number}. Next frame number: #{frame.number}. Tx hash: #{t.hash}."}}
+
+              false ->
+                {:halt,
+                 {:error,
+                  "Invalid RLP in frame sequence. Tx hash of the last frame: #{t.hash}. Compressed bytes of the sequence: 0x#{Base.encode16(frame_sequence, case: :lower)}"}}
+
+              {:frame_is_last, false} ->
+                {:cont,
+                 {:ok, batches, %{bytes: frame_sequence, last_frame_number: frame.number, l1_tx_hashes: l1_tx_hashes}}}
+            end
           end
-      end
+        end)
+
+      {_, message_or_errors} ->
+        message =
+          case message_or_errors do
+            %Blocks{errors: errors} -> errors
+            msg -> msg
+          end
+
+        retries_left = retries_left - 1
+
+        error_message = "Cannot fetch blocks #{from_block}..#{to_block}. Error(s): #{inspect(message)}"
+
+        if retries_left <= 0 do
+          Logger.error(error_message)
+          {:error, message}
+        else
+          Logger.error("#{error_message} Retrying...")
+          :timer.sleep(3000)
+
+          get_txn_batches(
+            from_block,
+            to_block,
+            batch_inbox,
+            batch_submitter,
+            incomplete_frame_sequence,
+            json_rpc_named_arguments,
+            json_rpc_named_arguments_l2,
+            retries_left
+          )
+        end
     end
   end
 
@@ -491,7 +495,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     end
   end
 
-  defp parse_frame_sequence(bytes, l1_tx_hashes, l1_tx_timestamp, json_rpc_named_arguments_l2) do
+  defp parse_frame_sequence(bytes, l1_tx_hashes, l1_tx_timestamp, json_rpc_named_arguments_l2, after_reorg) do
     z = :zlib.open()
     :zlib.inflateInit(z)
 
@@ -556,18 +560,37 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       end)
 
     if batches == :error do
-      :error
+      if after_reorg do
+        []
+      else
+        :error
+      end
     else
       numbers_by_hashes =
         batches
         |> Enum.map(fn batch -> batch.parent_hash end)
-        |> get_block_numbers_by_hashes(json_rpc_named_arguments_l2)
+        |> get_block_numbers_by_hashes(json_rpc_named_arguments_l2, l1_tx_hashes)
 
-      Enum.map(batches, fn batch ->
+      return = Enum.map(batches, fn batch ->
         batch
         |> Map.put(:l2_block_number, numbers_by_hashes[batch.parent_hash] + 1)
         |> Map.delete(:parent_hash)
       end)
+
+      if after_reorg do
+        # once we find the nearest full frame sequence after reorg, we first need to remove irrelevant items from op_transaction_batches table
+        first_batch_l2_block_number = Enum.at(return, 0).l2_block_number
+
+        {deleted_count, _} = Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^first_batch_l2_block_number))
+
+        if deleted_count > 0 do
+          Logger.warning(
+            "As L1 reorg was detected, all rows with l2_block_number >= #{first_batch_l2_block_number} were removed from the op_transaction_batches table. Number of removed rows: #{deleted_count}."
+          )
+        end
+      end
+
+      return
     end
   end
 
@@ -636,6 +659,62 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     else
       _ -> %BoundQueue{}
     end
+  end
+
+  defp rewind_after_reorg(block_number, frame_number, batch_submitter, batch_inbox, json_rpc_named_arguments) do
+    if frame_number == 0 do
+      empty_incomplete_frame_sequence()
+    else
+      Enum.reduce_while(Stream.iterate(1, &(&1 + 1)), empty_incomplete_frame_sequence(frame_number), fn i, sequence_acc ->
+        prev_block_number = block_number - i
+
+        case fetch_blocks_by_range(prev_block_number..prev_block_number, json_rpc_named_arguments) do
+          {:ok, %Blocks{transactions_params: transactions, errors: []}} ->
+            txs = txs_filter_sort(transactions, batch_submitter, batch_inbox, :desc)
+
+            seq =
+              Enum.reduce_while(txs, sequence_acc, fn t, acc ->
+                frame = input_to_frame(t.input)
+
+                if frame.number == acc.last_frame_number - 1 do
+                  {if(frame.number == 0, do: :halt, else: :cont), %{bytes: frame.data <> acc.bytes, last_frame_number: frame.number, l1_tx_hashes: [t.hash | acc.l1_tx_hashes]}}
+                else
+                  {:halt, :error}
+                end
+              end)
+
+            if seq == :error do
+              {:halt, empty_incomplete_frame_sequence()}
+            else
+              {if(seq.last_frame_number == 0, do: :halt, else: :cont), %{seq | last_frame_number: frame_number - 1}}
+            end
+
+          _ ->
+            {:halt, empty_incomplete_frame_sequence()}
+        end
+      end)
+    end
+  end
+
+  defp txs_filter_sort(transactions_params, batch_submitter, batch_inbox, direction \\ :asc) do
+    transactions_params
+    |> Enum.filter(fn t ->
+      from_address_hash = Map.get(t, :from_address_hash)
+      to_address_hash = Map.get(t, :to_address_hash)
+
+      if is_nil(from_address_hash) or is_nil(to_address_hash) do
+        false
+      else
+        String.downcase(from_address_hash) == batch_submitter and String.downcase(to_address_hash) == batch_inbox
+      end
+    end)
+    |> Enum.sort(fn t1, t2 ->
+      if direction == :asc do
+        t1.block_number < t2.block_number or (t1.block_number == t2.block_number and t1.transaction_index < t2.transaction_index)
+      else
+        t1.block_number > t2.block_number or (t1.block_number == t2.block_number and t1.transaction_index > t2.transaction_index)
+      end
+    end)
   end
 
   defp zlib_inflate_handler(z, {:continue, [uncompressed_bytes]}, acc) do
