@@ -14,3 +14,4 @@ jobs:
       env: quai-prod
       awk: sed "s/-.*//g" | awk -F. '{print $1"."$2"."$3+1}'
       rails: '[[ ! "$VERSION" =~ "rc" ]] && [[ ! "$VERSION" =~ "pre" ]]'
+      SESSION_COOKIE_DOMAIN: ${{ vars.SESSION_COOKIE_DOMAIN }}

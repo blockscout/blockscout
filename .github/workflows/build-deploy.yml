@@ -29,6 +29,12 @@ on:
         default: ${{ github.ref }}
         description: The branch where the action should be triggered.
 
+      # The cookie sessions subdomain
+      SESSION_COOKIE_DOMAIN:
+        required: true
+        type: string
+        description: The cookie sessions subdomain
+
     # Define the secrets required for the action to run
     secrets:
       # GitHub Personal Access Token for logging into GitHub
@@ -108,7 +114,7 @@ jobs:
       
       # Build and push the Docker image to the registry
     - name: Build Docker
-      run: docker build -t quainetwork/quai-blockscout:${{ env.VERSION }} .
+      run: docker build . --build-arg SESSION_COOKIE_DOMAIN=${{ inputs.SESSION_COOKIE_DOMAIN }} -t quainetwork/quai-blockscout:${{ env.VERSION }}
 
     - name: Push to Docker Hub
       run: docker push quainetwork/quai-blockscout:${{ env.VERSION }}

@@ -17,3 +17,4 @@ jobs:
     with:
       env: quai-dev
       awk: awk -F. '{print $1"."$2"."$3"."$4+1}'
+      SESSION_COOKIE_DOMAIN: ${{ vars.SESSION_COOKIE_DOMAIN }}
