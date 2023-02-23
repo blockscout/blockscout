@@ -247,7 +247,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     %{bytes: <<>>, last_frame_number: last_frame_number, l1_tx_hashes: []}
   end
 
-  defp get_block_numbers_by_hashes(hashes, json_rpc_named_arguments_l2, l1_tx_hashes) do
+  defp get_block_numbers_by_hashes(hashes, json_rpc_named_arguments_l2) do
     query =
       from(
         b in Block,
@@ -560,7 +560,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       numbers_by_hashes =
         batches
         |> Enum.map(fn batch -> batch.parent_hash end)
-        |> get_block_numbers_by_hashes(json_rpc_named_arguments_l2, l1_tx_hashes)
+        |> get_block_numbers_by_hashes(json_rpc_named_arguments_l2)
 
       return =
         batches
