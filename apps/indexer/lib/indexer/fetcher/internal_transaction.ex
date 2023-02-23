@@ -193,6 +193,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   defp safe_import_internal_transaction(internal_transactions_params, block_numbers) do
+    Process.flag(:trap_exit, true)
     import_internal_transaction(internal_transactions_params, block_numbers)
   rescue
     Postgrex.Error ->
@@ -251,6 +252,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
         )
 
         # re-queue the de-duped entries
+        {:retry, unique_numbers}
+
+      {:error, [{:exit, {%Postgrex.Error{}, _}}]} ->
+        handle_foreign_key_violation(internal_transactions_params, unique_numbers)
         {:retry, unique_numbers}
     end
   end
