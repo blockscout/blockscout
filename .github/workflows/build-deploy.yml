@@ -158,7 +158,7 @@ jobs:
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
         branch: ${{ inputs.branch }}
-        commit_message: Rev'd 'VERSION' file to {{ env.VERSION }}
+        commit_message: Rev'd 'VERSION' file to ${{ env.VERSION }}
         commit_options: -S
-        commit_user_name: ci@dominant-strategies.io
-        commit_user_email: ci-dominantstrategies
+        commit_user_email: ci@dominantstrategies.io
+        commit_user_name: ci-dominantstrategies
