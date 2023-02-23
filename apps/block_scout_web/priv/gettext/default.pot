@@ -81,7 +81,7 @@ msgstr ""
 msgid ") may be added for each contract. Click the Add Library button to add an additional one."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:83
+#: lib/block_scout_web/templates/layout/app.html.eex:85
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
@@ -1672,7 +1672,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/tokens/instance/metadata/index.html.eex:18
 #: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:10
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:128
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:111
 #, elixir-autogen, elixir-format
 msgid "Metadata"
 msgstr ""
@@ -2736,7 +2736,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
 #: lib/block_scout_web/views/address_view.ex:373
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:127
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:110
 #: lib/block_scout_web/views/tokens/overview_view.ex:39
 #: lib/block_scout_web/views/transaction_view.ex:527
 #, elixir-autogen, elixir-format

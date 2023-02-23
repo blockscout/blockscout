@@ -6,9 +6,11 @@
 
 - [#6897](https://github.com/blockscout/blockscout/pull/6897) - Support basic auth in JSON RPC endpoint
 - [#6908](https://github.com/blockscout/blockscout/pull/6908) - Allow disable API rate limit
+- [#6951](https://github.com/blockscout/blockscout/pull/6951) - Set poll: true for TokenInstance fetcher
 
 ### Fixes
 
+- [#6953](https://github.com/blockscout/blockscout/pull/6953) - reCAPTCHA dark mode
 - [#6940](https://github.com/blockscout/blockscout/pull/6940) - Reduce ttl_check_interval for cache module
 - [#6941](https://github.com/blockscout/blockscout/pull/6941) - Sanitize search query before displaying
 - [#6912](https://github.com/blockscout/blockscout/pull/6912) - Docker compose fix exposed ports
@@ -23,6 +25,9 @@
 
 ### Chore
 
+- [#6954](https://github.com/blockscout/blockscout/pull/6954) - Move some compile time vars to runtime
+- [#6952](https://github.com/blockscout/blockscout/pull/6952) - Manage BlockReward fetcher params
+- [#6929](https://github.com/blockscout/blockscout/pull/6929) - Extend `INDEXER_MEMORY_LIMIT` env parsing
 - [#6902](https://github.com/blockscout/blockscout/pull/6902) - Increase verification timeout to 120 seconds for microservice verification
 
 <details>
