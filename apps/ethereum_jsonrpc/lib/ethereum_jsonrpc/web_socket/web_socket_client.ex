@@ -62,6 +62,8 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
     %URI{host: host} = URI.parse(url)
     host_charlist = String.to_charlist(host)
 
+    :ssl.start()
+
     # `:depth`, `:verify`, and `:verify_fun`, are based on `:hackney_connect.ssl_opts_1/2` as we use `:hackney` through
     # `:httpoison` and this keeps the SSL rules consistent between HTTP and WebSocket
     :websocket_client.start_link(
@@ -76,7 +78,10 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
         depth: 99,
         # SNI extension discloses host name in the clear, but allows for compatibility with Virtual Hosting for TLS
         server_name_indication: host_charlist,
-        verify_fun: {&:ssl_verify_hostname.verify_fun/3, [check_hostname: host_charlist]}
+        verify_fun: {&:ssl_verify_hostname.verify_fun/3, [check_hostname: host_charlist]},
+        customize_hostname_check: [
+          match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+        ]
       ]
     )
   end
@@ -104,20 +109,20 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
   @impl WebSocket
   @spec json_rpc(WebSocket.web_socket(), Transport.request()) :: {:ok, Transport.result()} | {:error, reason :: term()}
   def json_rpc(web_socket, request) do
-    GenServer.call(web_socket, {:json_rpc, request})
+    GenServer.call(web_socket, {:gen_call, {:json_rpc, request}})
   end
 
   @impl WebSocket
   @spec subscribe(WebSocket.web_socket(), Subscription.event(), Subscription.params()) ::
           {:ok, Subscription.t()} | {:error, reason :: term()}
   def subscribe(web_socket, event, params) when is_binary(event) and is_list(params) do
-    GenServer.call(web_socket, {:subscribe, event, params})
+    GenServer.call(web_socket, {:gen_call, {:subscribe, event, params}})
   end
 
   @impl WebSocket
   @spec unsubscribe(WebSocket.web_socket(), Subscription.t()) :: :ok | {:error, :not_found}
   def unsubscribe(web_socket, %Subscription{} = subscription) do
-    GenServer.call(web_socket, {:unsubscribe, subscription})
+    GenServer.call(web_socket, {:gen_call, {:unsubscribe, subscription}})
   end
 
   @impl :websocket_client
@@ -158,7 +163,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
   end
 
   @impl :websocket_client
-  def websocket_info({:"$gen_call", from, request}, _, %__MODULE__{} = state) do
+  def websocket_info({{:gen_call, request}, from}, _, %__MODULE__{} = state) do
     case handle_call(request, from, state) do
       {:reply, _, %__MODULE__{}} = reply -> reply
       {:noreply, %__MODULE__{} = new_state} -> {:ok, new_state}

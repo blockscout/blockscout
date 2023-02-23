@@ -72,6 +72,7 @@
       <div id="indexer-first-block" class="d-none" ><%= Application.get_env(:indexer, :first_block) %></div>
       <input id="js-chain-id" class="d-none" value="<%= Application.get_env(:block_scout_web, :chain_id) %>" />
       <input id="js-json-rpc" class="d-none" value="<%= Application.get_env(:block_scout_web, :json_rpc) %>" />
+      <input id="re-captcha-client-key" class="d-none" value="<%= Application.get_env(:block_scout_web, :re_captcha_client_key) %>" />
       <!-- -->
       <% show_maintenance_alert = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:show_maintenance_alert] %>
       <%= if show_maintenance_alert do %>

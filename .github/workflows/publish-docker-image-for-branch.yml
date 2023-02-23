@@ -45,18 +45,9 @@ jobs:
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
-            API_PATH=/poa/core
-            NETWORK_PATH=/poa/core
             DISABLE_WEBAPP=false
             DISABLE_WRITE_API=false
             CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER=
             WOBSERVER_ENABLED=false
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            DISABLE_BRIDGE_MARKET_CAP_UPDATER=false
-            CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL=
-            SOCKET_ROOT=/poa/core
-            CHAIN_ID=99
-            JSON_RPC=https://core.poa.network	
-            COIN_NAME=POA
-            SUBNETWORK=POA Network Core

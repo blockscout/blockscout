@@ -563,7 +563,7 @@ defmodule Explorer.Chain.Transaction do
         case decoded_input_data(
                %__MODULE__{
                  to_address: %{smart_contract: nil},
-                 input: %{bytes: data},
+                 input: input,
                  hash: hash
                },
                extract_names?

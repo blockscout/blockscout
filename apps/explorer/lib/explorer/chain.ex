@@ -77,6 +77,8 @@ defmodule Explorer.Chain do
     VerifiedContractsCounter
   }
 
+  alias Explorer.Chain.Cache.Block, as: BlockCache
+
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
 
@@ -2209,13 +2211,6 @@ defmodule Explorer.Chain do
   @doc """
   The percentage of indexed blocks on the chain.
 
-      iex> for index <- 5..9 do
-      ...>   insert(:block, number: index)
-      ...>   Process.sleep(200)
-      ...> end
-      iex> Explorer.Chain.indexed_ratio_blocks()
-      Decimal.new(1, 50, -2)
-
   If there are no blocks, the percentage is 0.
 
       iex> Explorer.Chain.indexed_ratio_blocks()
@@ -2237,7 +2232,16 @@ defmodule Explorer.Chain do
         Decimal.new(0)
 
       _ ->
-        result = Decimal.div(max - min + 1, max - min_blockchain_block_number + 1)
+        result =
+          BlockCache.estimated_count()
+          |> Decimal.div(max - min_blockchain_block_number + 1)
+          |> (&if(
+                (Decimal.compare(&1, Decimal.from_float(0.99)) == :gt ||
+                   Decimal.compare(&1, Decimal.from_float(0.99)) == :eq) &&
+                  min == min_blockchain_block_number,
+                do: Decimal.new(1),
+                else: &1
+              )).()
 
         result
         |> Decimal.round(2, :down)
