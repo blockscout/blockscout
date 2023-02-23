@@ -18,10 +18,10 @@
     <% end %>
   <% end %>
 <% end %>
-<%= if smart_contract_verified && @address.smart_contract.is_changed_bytecode do %>
-  <%= render BlockScoutWeb.CommonComponentsView, "_changed_bytecode_warning.html" %>
-<% else %>
-  <%= if smart_contract_verified do %>
+<%= if smart_contract_verified do %>
+  <%= if @address.smart_contract.is_changed_bytecode do %>
+    <%= render BlockScoutWeb.CommonComponentsView, "_changed_bytecode_warning.html" %>
+  <% else %>
     <div class="d-none" data-selector="hidden-bytecode-warning">
       <%= render BlockScoutWeb.CommonComponentsView, "_changed_bytecode_warning.html" %>
     </div>

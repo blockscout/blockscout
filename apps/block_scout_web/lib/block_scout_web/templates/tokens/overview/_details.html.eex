@@ -61,32 +61,22 @@
               %>
             </dd>
           </dl>
-          <%= if total_supply?(@token) do %>
-            <dl class="row" data-selector="total-supply-row">
-              <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
-                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("The total amount of tokens issued") %>
-                <%= gettext("Total supply") %>
-              </dt>
-              <dd class="col-sm-8 col-md-8 col-lg-9" data-selector="total-supply-value" data-token-symbol="<%= @token.symbol %>">
+          <dl class="row <%= if !total_supply?(@token), do: "d-none" %>" data-selector="total-supply-row">
+            <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+              text: gettext("The total amount of tokens issued") %>
+              <%= gettext("Total supply") %>
+            </dt>
+            <dd class="col-sm-8 col-md-8 col-lg-9" data-selector="total-supply-value" data-token-symbol="<%= @token.symbol %>">
+              <%= if total_supply?(@token) do %>
                 <%= if decimals?(@token) do %>
                   <%= format_according_to_decimals(@token.total_supply, @token.decimals) %>
                 <% else %>
                   <%= format_integer_to_currency(@token.total_supply) %>
                 <% end %> <%= @token.symbol %>
-              </dd>
-            </dl>
-          <% else %>
-            <dl class="row d-none" data-selector="total-supply-row">
-              <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
-                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("The total amount of tokens issued") %>
-                <%= gettext("Total supply") %>
-              </dt>
-              <dd class="col-sm-8 col-md-8 col-lg-9" data-selector="total-supply-value" data-token-symbol="<%= @token.symbol %>">
-              </dd>
-            </dl>
-          <% end %>
+              <% end %>
+            </dd>
+          </dl>
           <%= if total_supply?(@token) do %>
             <%= if @token.usd_value do %>
               <dl class="row">
