@@ -20,6 +20,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
   @block_check_interval_range_size 100
   @eth_get_block_range_size 4
+  @reorg_rewind_limit 10
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -149,7 +150,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     {last_written_block, new_incomplete_frame_sequence} =
       chunk_range
       |> Enum.reduce_while({start_block - 1, incomplete_frame_sequence}, fn current_chank,
-                                                                             {_, incomplete_frame_sequence_acc} ->
+                                                                            {_, incomplete_frame_sequence_acc} ->
         chunk_start = start_block + @eth_get_block_range_size * current_chank
         chunk_end = min(chunk_start + @eth_get_block_range_size - 1, end_block)
 
@@ -247,11 +248,12 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   end
 
   defp get_block_numbers_by_hashes(hashes, json_rpc_named_arguments_l2, l1_tx_hashes) do
-    query = from(
-      b in Block,
-      select: {b.hash, b.number},
-      where: b.hash in ^hashes
-    )
+    query =
+      from(
+        b in Block,
+        select: {b.hash, b.number},
+        where: b.hash in ^hashes
+      )
 
     number_by_hash =
       query
@@ -260,7 +262,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         Map.put(acc, hash.bytes, number)
       end)
 
-    requests =
+    {:ok, responses} =
       hashes
       |> Enum.filter(fn hash -> is_nil(Map.get(number_by_hash, hash)) end)
       |> Enum.with_index()
@@ -272,35 +274,19 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           jsonrpc: "2.0"
         }
       end)
-
-    {:ok, responses} =
-      requests
       |> json_rpc(json_rpc_named_arguments_l2)
-
-    # Logger.warn("requests_count = #{Enum.count(requests)}")
-    # Enum.each(requests, fn req ->
-    #   Logger.warn(req)
-    # end)
-    # Logger.warn("responses_count = #{Enum.count(responses)}")
-    # Enum.each(responses, fn %{result: result} ->
-    #   if is_nil(result) do
-    #     Logger.warn("nil")
-    #   else
-    #     Logger.warn("NOT nil")
-    #   end
-    # end)
-    # Logger.warn("l1_tx_hashes:")
-    # Enum.each(l1_tx_hashes, fn h ->
-    #   Logger.warn("l1_tx_hash = #{inspect(h)}")
-    # end)
 
     responses
     |> Enum.map(fn %{result: result} -> result end)
     |> Enum.reduce(number_by_hash, fn block, acc ->
-      block_number = quantity_to_integer(Map.get(block, "number"))
-      "0x" <> hash = Map.get(block, "hash")
-      {:ok, hash} = Base.decode16(hash, case: :lower)
-      Map.put(acc, hash, block_number)
+      if is_nil(block) do
+        acc
+      else
+        block_number = quantity_to_integer(Map.get(block, "number"))
+        "0x" <> hash = Map.get(block, "hash")
+        {:ok, hash} = Base.decode16(hash, case: :lower)
+        Map.put(acc, hash, block_number)
+      end
     end)
   end
 
@@ -351,7 +337,6 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         transactions_params
         |> txs_filter_sort(batch_submitter, batch_inbox)
         |> Enum.reduce_while({:ok, [], incomplete_frame_sequence}, fn t, {_, batches, incomplete_frame_sequence_acc} ->
-
           after_reorg = is_nil(incomplete_frame_sequence_acc)
 
           frame = input_to_frame(t.input)
@@ -377,7 +362,13 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
                  {:frame_is_last, true} <- {:frame_is_last, frame.is_last},
                  l1_tx_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params),
                  batches_parsed =
-                   parse_frame_sequence(frame_sequence, l1_tx_hashes, l1_tx_timestamp, json_rpc_named_arguments_l2, after_reorg),
+                   parse_frame_sequence(
+                     frame_sequence,
+                     l1_tx_hashes,
+                     l1_tx_timestamp,
+                     json_rpc_named_arguments_l2,
+                     after_reorg
+                   ),
                  true <- batches_parsed != :error do
               {:cont, {:ok, batches ++ batches_parsed, empty_incomplete_frame_sequence()}}
             else
@@ -571,17 +562,29 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         |> Enum.map(fn batch -> batch.parent_hash end)
         |> get_block_numbers_by_hashes(json_rpc_named_arguments_l2, l1_tx_hashes)
 
-      return = Enum.map(batches, fn batch ->
-        batch
-        |> Map.put(:l2_block_number, numbers_by_hashes[batch.parent_hash] + 1)
-        |> Map.delete(:parent_hash)
-      end)
+      return =
+        batches
+        |> Enum.reduce([], fn batch, acc ->
+          case Map.fetch(numbers_by_hashes, batch.parent_hash) do
+            {:ok, number} ->
+              acc ++
+                [
+                  batch
+                  |> Map.put(:l2_block_number, number + 1)
+                  |> Map.delete(:parent_hash)
+                ]
+
+            _ ->
+              acc
+          end
+        end)
 
       if after_reorg do
         # once we find the nearest full frame sequence after reorg, we first need to remove irrelevant items from op_transaction_batches table
         first_batch_l2_block_number = Enum.at(return, 0).l2_block_number
 
-        {deleted_count, _} = Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^first_batch_l2_block_number))
+        {deleted_count, _} =
+          Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^first_batch_l2_block_number))
 
         if deleted_count > 0 do
           Logger.warning(
@@ -597,7 +600,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   defp remove_duplicates(batches) do
     batches
     |> Enum.sort(fn b1, b2 ->
-      b1.l2_block_number < b2.l2_block_number or (b1.l2_block_number == b2.l2_block_number and b1.l1_tx_timestamp < b2.l1_tx_timestamp)
+      b1.l2_block_number < b2.l2_block_number or
+        (b1.l2_block_number == b2.l2_block_number and b1.l1_tx_timestamp < b2.l1_tx_timestamp)
     end)
     |> Enum.reduce(%{}, fn b, acc ->
       Map.put(acc, b.l2_block_number, b)
@@ -665,28 +669,37 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     if frame_number == 0 do
       empty_incomplete_frame_sequence()
     else
-      Enum.reduce_while(Stream.iterate(1, &(&1 + 1)), empty_incomplete_frame_sequence(frame_number), fn i, sequence_acc ->
+      Enum.reduce_while(Stream.iterate(1, &(&1 + 1)), empty_incomplete_frame_sequence(frame_number), fn i,
+                                                                                                        sequence_acc ->
         prev_block_number = block_number - i
 
         case fetch_blocks_by_range(prev_block_number..prev_block_number, json_rpc_named_arguments) do
           {:ok, %Blocks{transactions_params: transactions, errors: []}} ->
-            txs = txs_filter_sort(transactions, batch_submitter, batch_inbox, :desc)
-
             seq =
-              Enum.reduce_while(txs, sequence_acc, fn t, acc ->
+              transactions
+              |> txs_filter_sort(batch_submitter, batch_inbox, :desc)
+              |> Enum.reduce_while(sequence_acc, fn t, acc ->
                 frame = input_to_frame(t.input)
 
                 if frame.number == acc.last_frame_number - 1 do
-                  {if(frame.number == 0, do: :halt, else: :cont), %{bytes: frame.data <> acc.bytes, last_frame_number: frame.number, l1_tx_hashes: [t.hash | acc.l1_tx_hashes]}}
+                  {if(frame.number == 0, do: :halt, else: :cont),
+                   %{
+                     bytes: frame.data <> acc.bytes,
+                     last_frame_number: frame.number,
+                     l1_tx_hashes: [t.hash | acc.l1_tx_hashes]
+                   }}
                 else
                   {:halt, :error}
                 end
               end)
 
-            if seq == :error do
-              {:halt, empty_incomplete_frame_sequence()}
+            with true <- seq != :error,
+                 false <- seq.last_frame_number == 0,
+                 true <- i < @reorg_rewind_limit do
+              {:cont, seq}
             else
-              {if(seq.last_frame_number == 0, do: :halt, else: :cont), %{seq | last_frame_number: frame_number - 1}}
+              true -> {:halt, %{seq | last_frame_number: frame_number - 1}}
+              false -> {:halt, empty_incomplete_frame_sequence()}
             end
 
           _ ->
@@ -710,9 +723,11 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     end)
     |> Enum.sort(fn t1, t2 ->
       if direction == :asc do
-        t1.block_number < t2.block_number or (t1.block_number == t2.block_number and t1.transaction_index < t2.transaction_index)
+        t1.block_number < t2.block_number or
+          (t1.block_number == t2.block_number and t1.transaction_index < t2.transaction_index)
       else
-        t1.block_number > t2.block_number or (t1.block_number == t2.block_number and t1.transaction_index > t2.transaction_index)
+        t1.block_number > t2.block_number or
+          (t1.block_number == t2.block_number and t1.transaction_index > t2.transaction_index)
       end
     end)
   end
