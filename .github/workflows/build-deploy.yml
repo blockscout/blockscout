@@ -114,7 +114,7 @@ jobs:
       
       # Build and push the Docker image to the registry
     - name: Build Docker
-      run: docker build . --build-arg SESSION_COOKIE_DOMAIN=${{ inputs.SESSION_COOKIE_DOMAIN }} -t quainetwork/quai-blockscout:${{ env.VERSION }}
+      run: docker build . --build-arg SESSION_COOKIE_DOMAIN=${{ inputs.SESSION_COOKIE_DOMAIN }} -t quainetwork/quai-blockscout:${{ env.VERSION }} -f docker/Dockerfile
 
     - name: Push to Docker Hub
       run: docker push quainetwork/quai-blockscout:${{ env.VERSION }}

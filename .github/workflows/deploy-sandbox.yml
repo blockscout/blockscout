@@ -19,4 +19,4 @@ jobs:
       env: quai-sandbox
       awk : sed -e "s/pre/rc/g" | read a; if [[ "$a" =~ "rc" ]];then echo $a | awk -F . '{print $1"."$2"."$3"."$4+1}';else echo $a; fi 
       rails: '[[ ! "$VERSION" =~ "pre" ]]'
-      SESSION_COOKIE_DOMAIN: ${{ vars.SESSION_COOKIE_DOMAIN }}
+      SESSION_COOKIE_DOMAIN: .colosseum.quaiscan.io 
