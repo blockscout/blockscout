@@ -156,13 +156,13 @@
           </a>
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown"> 
             <%= if Enum.count(main_nets) > 0 do %>
-              <a class="dropdown-item header division">Mainnets</a> 
-              <%= for %{url: url, title: title} <- main_nets do %>  
+              <a class="dropdown-item header division">Colosseum</a>
+              <%= for %{url: url, title: title} <- main_nets do %>
                 <a class="dropdown-item" href="<%= url %>"><%= title %></a>
               <% end %>
             <% end %>
             <%= if Enum.count(test_nets) > 0 do %>
-              <a class="dropdown-item header division">Testnets</a> 
+              <a class="dropdown-item header division">Garden</a>
               <%= for %{url: url, title: title} <- test_nets do %> 
                 <a class="dropdown-item" href="<%= url %>"><%= title %></a>
               <% end %>
