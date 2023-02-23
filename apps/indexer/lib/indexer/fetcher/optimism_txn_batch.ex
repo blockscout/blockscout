@@ -646,6 +646,10 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     acc <> uncompressed_bytes
   end
 
+  defp zlib_inflate_handler(_z, {:finished, []}, acc) do
+    acc
+  end
+
   defp zlib_inflate(z, compressed_bytes, acc \\ <<>>) do
     result = :zlib.safeInflate(z, compressed_bytes)
     zlib_inflate_handler(z, result, acc)
