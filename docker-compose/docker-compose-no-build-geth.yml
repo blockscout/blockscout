@@ -20,6 +20,7 @@ services:
     image: blockscout/blockscout:${DOCKER_TAG:-latest}
     pull_policy: always
     restart: always
+    stop_grace_period: 5m
     container_name: 'blockscout'
     links:
       - db:database

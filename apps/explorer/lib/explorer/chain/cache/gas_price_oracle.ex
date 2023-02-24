@@ -42,7 +42,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
     key: :gas_prices,
     key: :async_task,
     global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl],
-    ttl_check_interval: :timer.minutes(5),
+    ttl_check_interval: :timer.seconds(1),
     callback: &async_task_on_deletion(&1)
 
   def get_average_gas_price(num_of_blocks, safelow_percentile, average_percentile, fast_percentile) do
