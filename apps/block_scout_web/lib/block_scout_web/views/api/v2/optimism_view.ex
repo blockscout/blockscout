@@ -4,8 +4,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   import Ecto.Query, only: [from: 2]
 
   alias BlockScoutWeb.API.V2.Helper
-  alias Explorer.Chain
-  alias Explorer.Repo
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, OptimismOutputRoot, OptimismWithdrawalEvent}
 
   def render("optimism_txn_batches.json", %{

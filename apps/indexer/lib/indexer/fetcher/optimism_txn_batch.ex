@@ -330,60 +330,16 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
        ) do
     case fetch_blocks_by_range(from_block..to_block, json_rpc_named_arguments) do
       {:ok, %Blocks{transactions_params: transactions_params, blocks_params: blocks_params, errors: []}} ->
-        transactions_params
-        |> txs_filter_sort(batch_submitter, batch_inbox)
-        |> Enum.reduce_while({:ok, [], incomplete_frame_sequence}, fn t, {_, batches, incomplete_frame_sequence_acc} ->
-          after_reorg = is_nil(incomplete_frame_sequence_acc)
-
-          frame = input_to_frame(t.input)
-
-          {batches, incomplete_frame_sequence_acc} =
-            if after_reorg do
-              # there was a reorg, so try to rewind and concat bytes to build incomplete frame sequence if the `from_block` block starts with a frame with non-zero number.
-              # if we cannot solve the puzzle, ignore the incomplete frame sequence and then find the nearest full one.
-              {[], rewind_after_reorg(from_block, frame.number, batch_submitter, batch_inbox, json_rpc_named_arguments)}
-            else
-              {batches, incomplete_frame_sequence_acc}
-            end
-
-          if Enum.empty?(batches) and byte_size(incomplete_frame_sequence_acc.bytes) == 0 and frame.number > 0 do
-            # if this is the first launch and the head of tx sequence, skip all transactions until frame.number is 0
-            {:cont, {:ok, [], empty_incomplete_frame_sequence()}}
-          else
-            frame_sequence = incomplete_frame_sequence_acc.bytes <> frame.data
-            l1_tx_hashes = incomplete_frame_sequence_acc.l1_tx_hashes ++ [t.hash]
-            last_frame_number = incomplete_frame_sequence_acc.last_frame_number
-
-            with {:frame_number_valid, true} <- {:frame_number_valid, frame.number == last_frame_number + 1},
-                 {:frame_is_last, true} <- {:frame_is_last, frame.is_last},
-                 l1_tx_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params),
-                 batches_parsed =
-                   parse_frame_sequence(
-                     frame_sequence,
-                     l1_tx_hashes,
-                     l1_tx_timestamp,
-                     json_rpc_named_arguments_l2,
-                     after_reorg
-                   ),
-                 true <- batches_parsed != :error do
-              {:cont, {:ok, batches ++ batches_parsed, empty_incomplete_frame_sequence()}}
-            else
-              {:frame_number_valid, false} ->
-                {:halt,
-                 {:error,
-                  "Invalid frame sequence. Last frame number: #{last_frame_number}. Next frame number: #{frame.number}. Tx hash: #{t.hash}."}}
-
-              false ->
-                {:halt,
-                 {:error,
-                  "Invalid RLP in frame sequence. Tx hash of the last frame: #{t.hash}. Compressed bytes of the sequence: 0x#{Base.encode16(frame_sequence, case: :lower)}"}}
-
-              {:frame_is_last, false} ->
-                {:cont,
-                 {:ok, batches, %{bytes: frame_sequence, last_frame_number: frame.number, l1_tx_hashes: l1_tx_hashes}}}
-            end
-          end
-        end)
+        get_txn_batches_inner(
+          transactions_params,
+          blocks_params,
+          from_block,
+          batch_inbox,
+          batch_submitter,
+          incomplete_frame_sequence,
+          json_rpc_named_arguments,
+          json_rpc_named_arguments_l2
+        )
 
       {_, message_or_errors} ->
         message =
@@ -415,6 +371,73 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           )
         end
     end
+  end
+
+  defp get_txn_batches_inner(
+         transactions_params,
+         blocks_params,
+         from_block,
+         batch_inbox,
+         batch_submitter,
+         incomplete_frame_sequence,
+         json_rpc_named_arguments,
+         json_rpc_named_arguments_l2
+       ) do
+    transactions_params
+    |> txs_filter_sort(batch_submitter, batch_inbox)
+    |> Enum.reduce_while({:ok, [], incomplete_frame_sequence}, fn t, {_, batches, incomplete_frame_sequence_acc} ->
+      after_reorg = is_nil(incomplete_frame_sequence_acc)
+
+      frame = input_to_frame(t.input)
+
+      {batches, incomplete_frame_sequence_acc} =
+        if after_reorg do
+          # there was a reorg, so try to rewind and concat bytes to build incomplete frame sequence if the `from_block` block starts with a frame with non-zero number.
+          # if we cannot solve the puzzle, ignore the incomplete frame sequence and then find the nearest full one.
+          {[], rewind_after_reorg(from_block, frame.number, batch_submitter, batch_inbox, json_rpc_named_arguments)}
+        else
+          {batches, incomplete_frame_sequence_acc}
+        end
+
+      if Enum.empty?(batches) and byte_size(incomplete_frame_sequence_acc.bytes) == 0 and frame.number > 0 do
+        # if this is the first launch and the head of tx sequence, skip all transactions until frame.number is 0
+        {:cont, {:ok, [], empty_incomplete_frame_sequence()}}
+      else
+        frame_sequence = incomplete_frame_sequence_acc.bytes <> frame.data
+        # credo:disable-for-next-line
+        l1_tx_hashes = incomplete_frame_sequence_acc.l1_tx_hashes ++ [t.hash]
+        last_frame_number = incomplete_frame_sequence_acc.last_frame_number
+
+        with {:frame_number_valid, true} <- {:frame_number_valid, frame.number == last_frame_number + 1},
+             {:frame_is_last, true} <- {:frame_is_last, frame.is_last},
+             l1_tx_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params),
+             batches_parsed =
+               parse_frame_sequence(
+                 frame_sequence,
+                 l1_tx_hashes,
+                 l1_tx_timestamp,
+                 json_rpc_named_arguments_l2,
+                 after_reorg
+               ),
+             true <- batches_parsed != :error do
+          {:cont, {:ok, batches ++ batches_parsed, empty_incomplete_frame_sequence()}}
+        else
+          {:frame_number_valid, false} ->
+            {:halt,
+             {:error,
+              "Invalid frame sequence. Last frame number: #{last_frame_number}. Next frame number: #{frame.number}. Tx hash: #{t.hash}."}}
+
+          false ->
+            {:halt,
+             {:error,
+              "Invalid RLP in frame sequence. Tx hash of the last frame: #{t.hash}. Compressed bytes of the sequence: 0x#{Base.encode16(frame_sequence, case: :lower)}"}}
+
+          {:frame_is_last, false} ->
+            {:cont,
+             {:ok, batches, %{bytes: frame_sequence, last_frame_number: frame.number, l1_tx_hashes: l1_tx_hashes}}}
+        end
+      end
+    end)
   end
 
   defp input_to_frame("0x" <> input) do
@@ -483,19 +506,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   end
 
   defp parse_frame_sequence(bytes, l1_tx_hashes, l1_tx_timestamp, json_rpc_named_arguments_l2, after_reorg) do
-    z = :zlib.open()
-    :zlib.inflateInit(z)
-
-    uncompressed_bytes =
-      try do
-        res = zlib_inflate(z, bytes)
-        :zlib.inflateEnd(z)
-        res
-      rescue
-        _ -> <<>>
-      end
-
-    :zlib.close(z)
+    uncompressed_bytes = zlib_decompress(bytes)
 
     batches =
       Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), {uncompressed_bytes, []}, fn _i, {remainder, batch_acc} ->
@@ -503,21 +514,17 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           {decoded, new_remainder} = ExRLP.decode(remainder, stream: true)
           batch = ExRLP.decode(binary_slice(decoded, 1, byte_size(decoded) - 1))
 
-          new_batch_acc =
-            batch_acc ++
-              [
-                %{
-                  parent_hash: Enum.at(batch, 0),
-                  epoch_number: :binary.decode_unsigned(Enum.at(batch, 1)),
-                  l1_tx_hashes: l1_tx_hashes,
-                  l1_tx_timestamp: l1_tx_timestamp
-                }
-              ]
+          batch = %{
+            parent_hash: Enum.at(batch, 0),
+            epoch_number: :binary.decode_unsigned(Enum.at(batch, 1)),
+            l1_tx_hashes: l1_tx_hashes,
+            l1_tx_timestamp: l1_tx_timestamp
+          }
 
           if byte_size(new_remainder) > 0 do
-            {:cont, {new_remainder, new_batch_acc}}
+            {:cont, {new_remainder, [batch | batch_acc]}}
           else
-            {:halt, new_batch_acc}
+            {:halt, [batch | batch_acc]}
           end
         rescue
           _ -> {:halt, :error}
@@ -531,6 +538,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         :error
       end
     else
+      batches = Enum.reverse(batches)
+
       numbers_by_hashes =
         batches
         |> Enum.map(fn batch -> batch.parent_hash end)
@@ -541,17 +550,18 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         |> Enum.reduce([], fn batch, acc ->
           case Map.fetch(numbers_by_hashes, batch.parent_hash) do
             {:ok, number} ->
-              acc ++
-                [
-                  batch
-                  |> Map.put(:l2_block_number, number + 1)
-                  |> Map.delete(:parent_hash)
-                ]
+              batch =
+                batch
+                |> Map.put(:l2_block_number, number + 1)
+                |> Map.delete(:parent_hash)
+
+              [batch | acc]
 
             _ ->
               acc
           end
         end)
+        |> Enum.reverse()
 
       if after_reorg do
         # once we find the nearest full frame sequence after reorg, we first need to remove irrelevant items from op_transaction_batches table
@@ -704,6 +714,24 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           (t1.block_number == t2.block_number and t1.transaction_index > t2.transaction_index)
       end
     end)
+  end
+
+  defp zlib_decompress(bytes) do
+    z = :zlib.open()
+    :zlib.inflateInit(z)
+
+    uncompressed_bytes =
+      try do
+        res = zlib_inflate(z, bytes)
+        :zlib.inflateEnd(z)
+        res
+      rescue
+        _ -> <<>>
+      end
+
+    :zlib.close(z)
+
+    uncompressed_bytes
   end
 
   defp zlib_inflate_handler(z, {:continue, [uncompressed_bytes]}, acc) do
