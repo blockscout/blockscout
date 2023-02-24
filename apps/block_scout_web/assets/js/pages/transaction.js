@@ -129,7 +129,10 @@ if ($transactionDetailsPage.length) {
           params: [txParams]
         })
           .then(function (txHash) {
-            const successMsg = `<a href="/tx/${txHash}">Canceling transaction</a> successfully sent to the network. The current one will change the status once canceling transaction will be confirmed.`
+            const pathObj = document.getElementById('network-path')
+            // @ts-ignore
+            const path = (pathObj && pathObj.value) || ''
+            const successMsg = `<a href="${path}/tx/${txHash}">Canceling transaction</a> successfully sent to the network. The current one will change the status once canceling transaction will be confirmed.`
             Swal.fire({
               title: 'Success',
               html: successMsg,
