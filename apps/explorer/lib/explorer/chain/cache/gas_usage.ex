@@ -19,7 +19,7 @@ defmodule Explorer.Chain.Cache.GasUsage do
     key: :sum,
     key: :async_task,
     global_ttl: cache_period(),
-    ttl_check_interval: :timer.minutes(15),
+    ttl_check_interval: :timer.seconds(1),
     callback: &async_task_on_deletion(&1)
 
   alias Explorer.Chain.Transaction

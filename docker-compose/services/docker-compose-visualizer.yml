@@ -10,4 +10,4 @@ services:
     env_file:
       -  ../envs/common-visualizer.env
     ports:
-      - 8050:8050
+      - 8152:8050
