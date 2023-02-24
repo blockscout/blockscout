@@ -11,6 +11,7 @@
 
 ### Fixes
 
+- [#6933](https://github.com/blockscout/blockscout/pull/6933) - Extract blocking UI requests to separate GenServers
 - [#6953](https://github.com/blockscout/blockscout/pull/6953) - reCAPTCHA dark mode
 - [#6940](https://github.com/blockscout/blockscout/pull/6940) - Reduce ttl_check_interval for cache module
 - [#6941](https://github.com/blockscout/blockscout/pull/6941) - Sanitize search query before displaying

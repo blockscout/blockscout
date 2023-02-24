@@ -136,6 +136,13 @@ defmodule BlockScoutWeb.Notifier do
     })
   end
 
+  def handle_event(
+        {:chain_event, :internal_transactions, :on_demand,
+         [%InternalTransaction{index: 0, transaction_hash: transaction_hash}]}
+      ) do
+    Endpoint.broadcast("transactions:#{transaction_hash}", "raw_trace", %{raw_trace_origin: transaction_hash})
+  end
+
   def handle_event({:chain_event, :internal_transactions, :realtime, internal_transactions}) do
     internal_transactions
     |> Stream.map(
@@ -204,6 +211,18 @@ defmodule BlockScoutWeb.Notifier do
     stats = Enum.map(date_range, fn item -> Map.drop(item, [:__meta__]) end)
 
     Endpoint.broadcast("transactions:stats", "update", %{stats: stats})
+  end
+
+  def handle_event(
+        {:chain_event, :token_total_supply, :on_demand,
+         [%Explorer.Chain.Token{contract_address_hash: contract_address_hash, total_supply: total_supply} = token]}
+      )
+      when not is_nil(total_supply) do
+    Endpoint.broadcast("tokens:#{to_string(contract_address_hash)}", "token_total_supply", %{token: token})
+  end
+
+  def handle_event({:chain_event, :changed_bytecode, :on_demand, [address_hash]}) do
+    Endpoint.broadcast("addresses:#{to_string(address_hash)}", "changed_bytecode", %{})
   end
 
   def handle_event(_), do: nil
