@@ -499,50 +499,28 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
     batches =
       Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), {uncompressed_bytes, []}, fn _i, {remainder, batch_acc} ->
-        first_byte =
-          case :binary.bin_to_list(binary_slice(remainder, 0, 1)) do
-            [first_byte] -> first_byte
-            _ -> nil
-          end
-
-        if Enum.member?(0xB8..0xBF, first_byte) do
-          batch_size_length = first_byte - 0xB7
-
-          batch_size =
-            remainder
-            |> binary_slice(1, batch_size_length)
-            |> :binary.decode_unsigned()
-
-          batch =
-            remainder
-            |> binary_slice(1 + batch_size_length + 1, batch_size - 1)
-            |> ExRLP.decode()
-
-          parent_hash = Enum.at(batch, 0)
-          epoch_number = :binary.decode_unsigned(Enum.at(batch, 1))
-
-          new_remainder_offset = 1 + batch_size_length + batch_size
-          new_remainder_size = byte_size(remainder) - new_remainder_offset
-          new_remainder = binary_slice(remainder, new_remainder_offset, new_remainder_size)
+        try do
+          {decoded, new_remainder} = ExRLP.decode(remainder, stream: true)
+          batch = ExRLP.decode(binary_slice(decoded, 1, byte_size(decoded) - 1))
 
           new_batch_acc =
             batch_acc ++
               [
                 %{
-                  parent_hash: parent_hash,
-                  epoch_number: epoch_number,
+                  parent_hash: Enum.at(batch, 0),
+                  epoch_number: :binary.decode_unsigned(Enum.at(batch, 1)),
                   l1_tx_hashes: l1_tx_hashes,
                   l1_tx_timestamp: l1_tx_timestamp
                 }
               ]
 
-          if new_remainder_size > 0 do
+          if byte_size(new_remainder) > 0 do
             {:cont, {new_remainder, new_batch_acc}}
           else
             {:halt, new_batch_acc}
           end
-        else
-          {:halt, :error}
+        rescue
+          _ -> {:halt, :error}
         end
       end)
 
