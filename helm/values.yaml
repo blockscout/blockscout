@@ -1,9 +1,9 @@
 quaiBlockscout:
   image:
     name: quainetwork/quai-blockscout
-    version: v0.1.0-pre.0
-  env: "quai-dev"
-  chain: "garden"
+    version: v0.1.0-pre.1
+  env: quai-dev
+  chain: garden
   shards:
     - name: prime
       ports:
