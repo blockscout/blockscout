@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
 
   use Indexer.Fetcher
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Hash

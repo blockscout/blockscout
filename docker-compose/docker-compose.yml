@@ -31,6 +31,7 @@ services:
         WOBSERVER_ENABLED: "false"
         ADMIN_PANEL_ENABLED: ""
     restart: always
+    stop_grace_period: 5m
     container_name: 'blockscout'
     links:
       - db:database
