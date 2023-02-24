@@ -6,7 +6,31 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.Chain
   alias Explorer.Repo
-  alias Explorer.Chain.{OptimismOutputRoot, OptimismWithdrawalEvent}
+  alias Explorer.Chain.{Block, OptimismOutputRoot, OptimismWithdrawalEvent}
+
+  def render("optimism_txn_batches.json", %{
+        batches: batches,
+        total: total,
+        next_page_params: next_page_params
+      }) do
+    %{
+      items:
+        Enum.map(batches, fn batch ->
+          tx_count =
+            Repo.aggregate(from(b in Block, where: b.number == ^batch.l2_block_number), :count, timeout: :infinity)
+
+          %{
+            "l2_block_number" => batch.l2_block_number,
+            "tx_count" => tx_count,
+            "epoch_number" => batch.epoch_number,
+            "l1_tx_hashes" => batch.l1_tx_hashes,
+            "l1_tx_timestamp" => batch.l1_tx_timestamp
+          }
+        end),
+      total: total,
+      next_page_params: next_page_params
+    }
+  end
 
   def render("output_roots.json", %{
         roots: roots,
