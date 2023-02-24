@@ -53,6 +53,7 @@ defmodule Explorer.Chain do
     InternalTransaction,
     Log,
     OptimismOutputRoot,
+    OptimismTxnBatch,
     OptimismWithdrawal,
     OptimismWithdrawalEvent,
     PendingBlockOperation,
@@ -2495,6 +2496,30 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Lists `t:Explorer.Chain.OptimismTxnBatch.t/0`'s' in descending order based on l2_block_number.
+
+  """
+  @spec list_txn_batches :: [OptimismTxnBatch.t()]
+  def list_txn_batches(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(tb in OptimismTxnBatch,
+        order_by: [desc: tb.l2_block_number],
+        select: tb
+      )
+
+    base_query
+    |> page_txn_batches(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
+  end
+
+  def optimism_txn_batches_total_count do
+    Repo.aggregate(OptimismTxnBatch, :count, timeout: :infinity)
+  end
+
+  @doc """
   Lists `t:Explorer.Chain.OptimismOutputRoot.t/0`'s' in descending order based on output root index.
 
   """
@@ -4684,6 +4709,12 @@ defmodule Explorer.Chain do
         (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
           address.fetched_coin_balance < ^coin_balance
     )
+  end
+
+  defp page_txn_batches(query, %PagingOptions{key: nil}), do: query
+
+  defp page_txn_batches(query, %PagingOptions{key: {block_number}}) do
+    from(tb in query, where: tb.l2_block_number < ^block_number)
   end
 
   defp page_output_roots(query, %PagingOptions{key: nil}), do: query
