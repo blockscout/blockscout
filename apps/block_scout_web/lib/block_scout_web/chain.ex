@@ -25,6 +25,7 @@ defmodule BlockScoutWeb.Chain do
     InternalTransaction,
     Log,
     OptimismOutputRoot,
+    OptimismTxnBatch,
     SmartContract,
     Token,
     Token.Instance,
@@ -381,6 +382,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%OptimismOutputRoot{l2_output_index: index}) do
     %{"index" => index}
+  end
+
+  defp paging_params(%OptimismTxnBatch{l2_block_number: block_number}) do
+    %{"block_number" => block_number}
   end
 
   defp paging_params(%{msg_nonce: nonce}) do
