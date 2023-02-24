@@ -1,0 +1,23 @@
+name: Deploy testing environment
+
+on:
+  pull_request:
+  # push:
+  workflow_dispatch:
+
+env:
+  K8S_LOCAL_PORT: ${{ secrets.K8S_LOCAL_PORT }}
+  K8S_HOST: ${{ secrets.K8S_HOST }}
+  BASTION_HOST: ${{ secrets.BASTION_HOST }}
+  K8S_PORT: ${{ secrets.K8S_PORT }}
+  USERNAME: ${{ secrets.USERNAME }}
+  BASTION_SSH_KEY: ${{secrets.BASTION_SSH_KEY}}
+
+jobs:
+  deploy_testing:
+    name: Deploy testing
+    uses: blockscout/blockscout-ci-cd/.github/workflows/deploy.yaml@master
+    with:
+      env_vars: VALUES_DIR=deploy/values/testing/eth-goerli,APP_NAME=bs-stack
+      appNamespace: bs-indexers-ethereum-goerli
+    secrets: inherit
