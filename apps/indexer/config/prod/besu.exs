@@ -1,5 +1,11 @@
 import Config
 
+~w(config config_helper.exs)
+|> Path.join()
+|> Code.eval_file()
+
+hackney_opts = ConfigHelper.hackney_options()
+
 config :indexer,
   block_interval: :timer.seconds(5),
   json_rpc_named_arguments: [
@@ -16,7 +22,7 @@ config :indexer,
         trace_block: System.get_env("ETHEREUM_JSONRPC_TRACE_URL"),
         trace_replayTransaction: System.get_env("ETHEREUM_JSONRPC_TRACE_URL")
       ],
-      http_options: [recv_timeout: :timer.minutes(10), timeout: :timer.minutes(10), hackney: [pool: :ethereum_jsonrpc]]
+      http_options: [recv_timeout: :timer.minutes(10), timeout: :timer.minutes(10), hackney: hackney_opts]
     ],
     variant: EthereumJSONRPC.Besu
   ],

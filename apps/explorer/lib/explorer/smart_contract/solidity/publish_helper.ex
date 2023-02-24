@@ -94,15 +94,29 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
 
   def get_one_json(files_array) do
     files_array
-    |> Enum.filter(fn file -> file.content_type == "application/json" end)
+    |> Enum.filter(fn file ->
+      case file do
+        %Plug.Upload{content_type: content_type} ->
+          content_type == "application/json"
+
+        _ ->
+          false
+      end
+    end)
     |> Enum.at(0)
   end
 
   # sobelow_skip ["Traversal.FileModule"]
   def read_files(plug_uploads) do
-    Enum.reduce(plug_uploads, %{}, fn %Plug.Upload{path: path, filename: file_name}, acc ->
-      {:ok, file_content} = File.read(path)
-      Map.put(acc, file_name, file_content)
+    Enum.reduce(plug_uploads, %{}, fn file, acc ->
+      case file do
+        %Plug.Upload{path: path, filename: file_name} ->
+          {:ok, file_content} = File.read(path)
+          Map.put(acc, file_name, file_content)
+
+        _ ->
+          acc
+      end
     end)
   end
 

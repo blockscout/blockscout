@@ -6,6 +6,8 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Factory
 
+  setup :set_mox_from_context
+
   setup :verify_on_exit!
 
   describe "GET index/3" do
