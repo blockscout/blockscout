@@ -1,4 +1,4 @@
-{{- range $chain := .Values.quaiBlockscout.chains }}
-{{ include "quai-blockscout.bs" $ | replace "prime" $chain.name | replace "Prime" ($chain.name | title) | replace "<INDEX>" $chain.index }}
+{{- range $shard := .Values.quaiBlockscout.shards }}
+{{ include "quai-blockscout.bs" $ | replace "prime" $shard.name | replace "Prime" ($shard.name | title) }}
 ---
 {{- end }}

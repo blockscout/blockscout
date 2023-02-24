@@ -1,5 +1,5 @@
 {{- $name := include "quai-blockscout.name" . -}}
-{{- range $chain := .Values.quaiBlockscout.chains }}
-{{ include "quai-blockscout.backendconfig" $ | replace "prime" $chain.name }}
+{{- range $shard := .Values.quaiBlockscout.shards }}
+{{ include "quai-blockscout.backendconfig" $ | replace "prime" $shard.name }}
 ---
 {{- end }}

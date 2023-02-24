@@ -1,2 +1,3 @@
 quaiBlockscout:
   env: "quai-dev"
+  chain: "garden"

@@ -26,6 +26,6 @@ spec:
               name: prime-{{ $name }}
               port:
                 name: http
-{{- range $chain := .Values.quaiBlockscout.chains }}
-{{ include "quai-blockscout.ingress" $ | replace "prime" $chain.name | indent 4 }}
+{{- range $shard := .Values.quaiBlockscout.shards }}
+{{ include "quai-blockscout.ingress" $ | replace "prime" $shard.name | indent 4 }}
 {{- end }}
