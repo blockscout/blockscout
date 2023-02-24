@@ -1,8 +1,12 @@
 import { Socket } from 'phoenix'
 import { locale } from './locale'
 
-// @ts-ignore
-let websocketRootUrl = process.env.SOCKET_ROOT
+const networkParhObj = document.getElementById('network-path')
+let websocketRootUrl
+if (networkParhObj) {
+  // @ts-ignore
+  websocketRootUrl = networkParhObj.value
+}
 if (!websocketRootUrl) {
   websocketRootUrl = ''
 }
