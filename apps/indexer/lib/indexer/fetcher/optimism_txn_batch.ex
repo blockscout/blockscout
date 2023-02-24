@@ -172,10 +172,6 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
             batches = remove_duplicates(batches)
 
-            if byte_size(new_incomplete_frame_sequence.bytes) > 0 do
-              Logger.warn("new_incomplete_frame_sequence = #{inspect(new_incomplete_frame_sequence)}")
-            end
-
             {:ok, _} =
               Chain.import(%{
                 optimism_txn_batches: %{params: batches},
