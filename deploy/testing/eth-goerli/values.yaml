@@ -55,6 +55,8 @@ blockscout:
       _default: _network_icon.html
     COIN:
       _default: ETH
+    ECTO_USE_SSL:
+      _default: 'false'
     COIN_NAME:
       _default: ETH
     LOGO:
