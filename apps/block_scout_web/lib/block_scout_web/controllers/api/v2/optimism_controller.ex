@@ -12,6 +12,26 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  def txn_batches(conn, params) do
+    {batches, next_page} =
+      params
+      |> paging_options()
+      |> Chain.list_txn_batches()
+      |> split_list_by_page()
+
+    total = Chain.optimism_txn_batches_total_count()
+
+    next_page_params = next_page_params(next_page, batches, params)
+
+    conn
+    |> put_status(200)
+    |> render(:optimism_txn_batches, %{
+      batches: batches,
+      total: total,
+      next_page_params: next_page_params
+    })
+  end
+
   def output_roots(conn, params) do
     {roots, next_page} =
       params
