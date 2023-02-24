@@ -18,6 +18,6 @@ jobs:
     name: Deploy testing
     uses: blockscout/blockscout-ci-cd/.github/workflows/deploy.yaml@master
     with:
-      env_vars: VALUES_DIR=deploy/values/testing/eth-goerli,APP_NAME=bs-stack
+      env_vars: VALUES_DIR=deploy/testing/eth-goerli,APP_NAME=bs-stack
       appNamespace: bs-indexers-ethereum-goerli
     secrets: inherit
