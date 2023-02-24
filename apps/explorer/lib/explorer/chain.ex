@@ -2238,7 +2238,7 @@ defmodule Explorer.Chain do
           |> (&if(
                 (Decimal.compare(&1, Decimal.from_float(0.99)) == :gt ||
                    Decimal.compare(&1, Decimal.from_float(0.99)) == :eq) &&
-                  min == min_blockchain_block_number,
+                  min <= min_blockchain_block_number,
                 do: Decimal.new(1),
                 else: &1
               )).()
