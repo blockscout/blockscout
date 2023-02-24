@@ -4,7 +4,7 @@ global:
 blockscout:
   enabled: true
   image:
-    _default: &image blockscout/blockscout-eth-goerli:main
+    _default: &image blockscout/blockscout-eth-goerli:latest
 
   ingress:
     enabled: true
@@ -169,7 +169,7 @@ frontend:
     enabled: true
     labels:
       _default:
-        app: blockscout
+        app: blockscout-prod
   environment:
     # ui config
     NEXT_PUBLIC_NETWORK_EXPLORERS:
@@ -419,6 +419,12 @@ sigProvider:
 
   # enable Horizontal Pod Autoscaler
   hpa:
+    enabled: false
+
+  # probes
+  livenessProbe:
+    enabled: false
+  readinessProbe:
     enabled: false
 
   environment:
