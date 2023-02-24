@@ -444,12 +444,12 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     input_binary = Base.decode16!(input, case: :mixed)
 
     # the first byte must be zero (so called Derivation Version)
-    [0] = :binary.bin_to_list(binary_slice(input_binary, 0, 1))
+    [0] = :binary.bin_to_list(binary_part(input_binary, 0, 1))
 
-    frame_number = :binary.decode_unsigned(binary_slice(input_binary, 1 + 16, 2))
-    frame_data_length = :binary.decode_unsigned(binary_slice(input_binary, 1 + 16 + 2, 4))
-    frame_data = binary_slice(input_binary, 1 + 16 + 2 + 4, frame_data_length)
-    is_last = :binary.decode_unsigned(binary_slice(input_binary, 1 + 16 + 2 + 4 + frame_data_length, 1)) > 0
+    frame_number = :binary.decode_unsigned(binary_part(input_binary, 1 + 16, 2))
+    frame_data_length = :binary.decode_unsigned(binary_part(input_binary, 1 + 16 + 2, 4))
+    frame_data = binary_part(input_binary, 1 + 16 + 2 + 4, frame_data_length)
+    is_last = :binary.decode_unsigned(binary_part(input_binary, 1 + 16 + 2 + 4 + frame_data_length, 1)) > 0
 
     %{number: frame_number, data: frame_data, is_last: is_last}
   end
@@ -512,7 +512,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), {uncompressed_bytes, []}, fn _i, {remainder, batch_acc} ->
         try do
           {decoded, new_remainder} = ExRLP.decode(remainder, stream: true)
-          batch = ExRLP.decode(binary_slice(decoded, 1, byte_size(decoded) - 1))
+          batch = ExRLP.decode(binary_part(decoded, 1, byte_size(decoded) - 1))
 
           batch = %{
             parent_hash: Enum.at(batch, 0),
