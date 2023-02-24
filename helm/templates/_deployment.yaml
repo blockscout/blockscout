@@ -46,22 +46,27 @@ spec:
         - name: SUBNETWORK
           value: Prime
         - name: ACCOUNT_AUTH0_CALLBACK_URL 
+          valueFrom:
             configMapKeyRef:
               key: ACCOUNT_AUTH0_CALLBACK_URL
               name: prime-{{ include "quai-blockscout.name" $ }}
         - name: ACCOUNT_AUTH0_LOGOUT_URL 
+          valueFrom:
             configMapKeyRef:
               key: ACCOUNT_AUTH0_LOGOUT_URL
               name: prime-{{ include "quai-blockscout.name" $ }}
         - name: ACCOUNT_AUTH0_LOGOUT_RETURN_URL 
+          valueFrom:
             configMapKeyRef:
               key: ACCOUNT_AUTH0_LOGOUT_RETURN_URL
               name: prime-{{ include "quai-blockscout.name" $ }}
         - name: BLOCKSCOUT_HOST
+          valueFrom:
             configMapKeyRef:
               key: BLOCKSCOUT_HOST
               name: prime-{{ include "quai-blockscout.name" $ }}
         - name: CHAIN_INDEX
+          valueFrom:
             configMapKeyRef:
               key: CHAIN_INDEX 
               name: prime-{{ include "quai-blockscout.name" $ }}
@@ -76,10 +81,12 @@ spec:
               key: ETHEREUM_JSONRPC_HTTP_URL
               name: prime-{{ include "quai-blockscout.name" $ }}
         - name: RUST_MULTICHAIN_SEARCH_URL 
+          valueFrom:
             configMapKeyRef:
               key: RUST_MULTICHAIN_SEARCH_URL
               name: prime-{{ include "quai-blockscout.name" $ }}
         - name: SESSION_COOKIE_DOMAIN 
+          valueFrom:
             configMapKeyRef:
               key: SESSION_COOKIE_DOMAIN
               name: prime-{{ include "quai-blockscout.name" $ }}
