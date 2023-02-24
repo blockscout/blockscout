@@ -40,7 +40,10 @@ const resultsListElement = (list, data) => {
   if (data.results.length > 0) {
     info.innerHTML += `Displaying <strong>${data.results.length}</strong> results`
   } else if (data.query !== '###') {
-    info.innerHTML += `Found <strong>${data.matches.length}</strong> matching results for <strong>"${data.query}"</strong>`;
+    info.innerHTML += `Found <strong>${data.matches.length}</strong> matching results for `
+    const strong = document.createElement('strong')
+    strong.appendChild(document.createTextNode(data.query))
+    info.appendChild(strong)
   }
 
   list.prepend(info)
