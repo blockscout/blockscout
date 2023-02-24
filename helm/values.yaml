@@ -10,76 +10,76 @@ quaiBlockscout:
         http: "8546"
         ws: "8547"
         disc: "30303"
-      index: 0
+      index: "0"
     - name: cyprus
       ports:
         http: "8578"
         ws: "8579"
         disc: "30304"
-      index: 1
+      index: "1"
     - name: paxos
       ports:
         http: "8580"
         ws: "8581"
         disc: "30305"
-      index: 1
+      index: "1"
     - name: hydra
       ports:
         http: "8582"
         ws: "8583"
         disc: "30306"
-      index: 1
+      index: "1"
     - name: cyprus1
       ports:
         http: "8610"
         ws: "8611"
         disc: "30307"
-      index: 2
+      index: "2"
     - name: cyprus2
       ports:
         http: "8542"
         ws: "8643"
         disc: "30308"
-      index: 2
+      index: "2"
     - name: cyprus3
       ports:
         http: "8674"
         ws: "8675"
         disc: "30309"
-      index: 2
+      index: "2"
     - name: paxos1
       ports:
         http: "8512"
         ws: "8613"
         disc: "30310"
-      index: 2
+      index: "2"
     - name: paxos2
       ports:
         http: "8544"
         ws: "8645"
         disc: "30311"
-      index: 2
+      index: "2"
     - name: paxos3
       ports:
         http: "8576"
         ws: "8677"
         disc: "30312"
-      index: 2
+      index: "2"
     - name: hydra1
       ports:
         http: "8614"
         ws: "8615"
         disc: "30313"
-      index: 2
+      index: "2"
     - name: hydra2
       ports:
         http: "8646"
         ws: "8647"
         disc: "30314"
-      index: 2
+      index: "2"
     - name: hydra3
       ports:
         http: "8678"
         ws: "8679"
         disc: "30315"
-      index: 2
+      index: "2"
