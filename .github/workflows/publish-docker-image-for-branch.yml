@@ -8,14 +8,14 @@ name: Publish Docker image for specific chain branches
 on:
   push:
     branches:
-      - production-l2-goerli-stg
+      - production-base-goerli-stg
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: 5.1.0
-      DOCKER_CHAIN_NAME: l2-goerli
+      DOCKER_CHAIN_NAME: base-goerli
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
