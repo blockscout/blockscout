@@ -74,7 +74,10 @@ if ($('[data-page="address-logs"]').length) {
     const topic = $('[data-search-field]').val()
     const addressHashPlain = store.getState().addressHash
     const addressHashChecksum = addressHashPlain && utils.toChecksumAddress(addressHashPlain)
-    const path = `${process.env.NETWORK_PATH}/search-logs?topic=${topic}&address_id=${addressHashChecksum}`
+    const pathObj = document.getElementById('network-path')
+    // @ts-ignore
+    const commonPath = (pathObj && pathObj.value) || ''
+    const path = `${commonPath}/search-logs?topic=${topic}&address_id=${addressHashChecksum}`
     loadPage(store, path)
   }
 
