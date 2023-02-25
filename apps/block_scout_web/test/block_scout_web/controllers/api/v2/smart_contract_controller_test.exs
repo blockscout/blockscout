@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
   alias BlockScoutWeb.AddressContractView
   alias BlockScoutWeb.Models.UserFromAuth
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, SmartContract}
 
   setup :set_mox_from_context
 
@@ -1536,6 +1536,61 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                }
              ] == response
     end
+  end
+
+  describe "/smart-contracts" do
+    test "get [] on empty db", %{conn: conn} do
+      request = get(conn, "/api/v2/smart-contracts")
+
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
+    test "get correct smart contract", %{conn: conn} do
+      smart_contract = insert(:smart_contract)
+      request = get(conn, "/api/v2/smart-contracts")
+
+      assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+      compare_item(smart_contract, sc)
+    end
+
+    test "check pagination", %{conn: conn} do
+      smart_contracts =
+        for i <- 0..50 do
+          insert(:smart_contract)
+        end
+
+      request = get(conn, "/api/v2/smart-contracts")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/smart-contracts", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, smart_contracts)
+    end
+  end
+
+  defp compare_item(%SmartContract{} = smart_contract, json) do
+    assert smart_contract.compiler_version == json["compiler_version"]
+
+    assert if(smart_contract.is_vyper_contract, do: nil, else: smart_contract.optimization) ==
+             json["optimization_enabled"]
+
+    assert json["language"] == if(smart_contract.is_vyper_contract, do: "vyper", else: "solidity")
+    assert json["verified_at"]
+    assert !is_nil(smart_contract.constructor_arguments) == json["has_constructor_args"]
+    assert Address.checksum(smart_contract.address_hash) == json["address"]["hash"]
+  end
+
+  defp check_paginated_response(first_page_resp, second_page_resp, list) do
+    assert Enum.count(first_page_resp["items"]) == 50
+    assert first_page_resp["next_page_params"] != nil
+    compare_item(Enum.at(list, 50), Enum.at(first_page_resp["items"], 0))
+    compare_item(Enum.at(list, 1), Enum.at(first_page_resp["items"], 49))
+
+    assert Enum.count(second_page_resp["items"]) == 1
+    assert second_page_resp["next_page_params"] == nil
+    compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
   end
 
   defp blockchain_get_code_mock do
