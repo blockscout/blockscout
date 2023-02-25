@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Tokens.HolderController do
   alias BlockScoutWeb.Tokens.HolderView
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
+  alias Indexer.Fetcher.TokenTotalSupplyOnDemand
   alias Phoenix.View
 
   import BlockScoutWeb.Chain,
@@ -70,6 +71,7 @@ defmodule BlockScoutWeb.Tokens.HolderController do
         current_path: Controller.current_full_path(conn),
         token: Market.add_price(token),
         counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)}),
+        token_total_supply_status: TokenTotalSupplyOnDemand.trigger_fetch(address_hash),
         tags: get_address_tags(address_hash, current_user(conn))
       )
     else

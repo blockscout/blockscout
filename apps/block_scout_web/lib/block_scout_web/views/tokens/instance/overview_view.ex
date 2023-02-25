@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   alias Explorer.Chain.{Address, SmartContract, Token}
   alias Explorer.SmartContract.Helper
 
-  import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1, blockscout_url: 2]
+  import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1]
   import BlockScoutWeb.NFTHelpers, only: [external_url: 1]
 
   @tabs ["token-transfers", "metadata"]
@@ -92,24 +92,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def qr_code(conn, token_id, hash) do
     token_instance_path = token_instance_path(conn, :show, to_string(hash), to_string(token_id))
 
-    url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
-    api_path = url_params[:api_path]
-    path = url_params[:path]
-
-    url_prefix =
-      if String.length(path) > 0 && path != "/" do
-        set_path = false
-        blockscout_url(set_path)
-      else
-        if String.length(api_path) > 0 && api_path != "/" do
-          is_api = true
-          set_path = true
-          blockscout_url(set_path, is_api)
-        else
-          set_path = false
-          blockscout_url(set_path)
-        end
-      end
+    url_prefix = blockscout_url(false)
 
     url = Path.join(url_prefix, token_instance_path)
 

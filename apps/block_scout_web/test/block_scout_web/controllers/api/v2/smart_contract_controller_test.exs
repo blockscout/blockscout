@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Chain.Address
 
+  setup :set_mox_from_context
+
   describe "/smart-contracts/{address_hash}" do
     test "get 404 on non existing SC", %{conn: conn} do
       address = build(:address)
