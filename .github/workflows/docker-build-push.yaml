@@ -17,9 +17,8 @@ jobs:
       context: .
       file: docker/Dockerfile
       build-args: |
-        "FORCE_MIX_COMPILE_CACHE_MISS=$COMMIT_SHA"
+        "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.event.pull_request.head.sha }}"
       trivy: true
-
 
   Build-Blockscout:
    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@main
@@ -33,7 +32,7 @@ jobs:
       context: .
       file: docker/Dockerfile
       build-args: |
-        "FORCE_MIX_COMPILE_CACHE_MISS=$COMMIT_SHA"
+        "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.sha }}"
       trivy: true
 
 
@@ -48,7 +47,7 @@ jobs:
       context: .
       file: docker/Dockerfile
       build-args: |
-        "FORCE_MIX_COMPILE_CACHE_MISS=$COMMIT_SHA"
+        "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.event.pull_request.head.sha }}"
         "DISABLE_WRITE_API=true",
         "DISABLE_INDEXER=true",
         "DISABLE_WEBAPP=true",
@@ -66,7 +65,7 @@ jobs:
       context: .
       file: docker/Dockerfile
       build-args: |
-        "FORCE_MIX_COMPILE_CACHE_MISS=$COMMIT_SHA"
+        "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.sha }}"
         "DISABLE_WRITE_API=true",
         "DISABLE_INDEXER=true",
         "DISABLE_WEBAPP=true",
