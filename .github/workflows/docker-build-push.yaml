@@ -19,6 +19,7 @@ jobs:
       build-args: |
         "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.event.pull_request.head.sha }}"
       trivy: true
+      trivy-timeout: 20m
 
   Build-Blockscout:
    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@main
@@ -34,7 +35,7 @@ jobs:
       build-args: |
         "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.sha }}"
       trivy: true
-
+      trivy-timeout: 20m
 
   Build-Blockscout-api-Dev:
     uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@main
@@ -52,7 +53,7 @@ jobs:
         "DISABLE_INDEXER=true",
         "DISABLE_WEBAPP=true",
       trivy: true
-
+      trivy-timeout: 20m
 
   Build-Blockscout-api:
    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@main
@@ -70,4 +71,4 @@ jobs:
         "DISABLE_INDEXER=true",
         "DISABLE_WEBAPP=true",
       trivy: true
-
+      trivy-timeout: 20m
