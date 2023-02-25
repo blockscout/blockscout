@@ -1,0 +1,73 @@
+name: Docker Build Push
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+jobs:
+  Build-Blockscout-Dev:
+    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@main
+    if: github.ref != 'refs/heads/main'
+    with:
+      workload-id-provider: ${{ vars.WORKLOAD_ID_PROVIDER_NON_PROD }}
+      service-account:  'blockscout-images-dev@devopsre.iam.gserviceaccount.com'
+      artifact-registry: ${{ vars.DEV_IMAGE_REPO }}/blockscout
+      tag: testing
+      context: .
+      file: docker/Dockerfile
+      build-args: |
+        "FORCE_MIX_COMPILE_CACHE_MISS=$COMMIT_SHA"
+      trivy: true
+
+
+  Build-Blockscout:
+   uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@main
+   if: github.ref == 'refs/heads/main'
+   with:
+      workload-id-provider: ${{ vars.WORKLOAD_ID_PROVIDER_PROD }}
+      service-account:  'blockscout-images@devopsre.iam.gserviceaccount.com'
+      artifact-registry: ${{ vars.BLOCKSCOUT_IMAGE_REPO }}/blockscout
+      tag: latest
+      context: .
+      file: docker/Dockerfile
+      build-args: |
+        "FORCE_MIX_COMPILE_CACHE_MISS=$COMMIT_SHA"
+      trivy: true
+
+
+  Build-Blockscout-api-Dev:
+    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@main
+    if: github.ref != 'refs/heads/main'
+    with:
+      workload-id-provider: ${{ vars.WORKLOAD_ID_PROVIDER_NON_PROD }}
+      service-account:  'blockscout-images-dev@devopsre.iam.gserviceaccount.com'
+      artifact-registry: ${{ vars.DEV_IMAGE_REPO }}/blockscout
+      tag: testing
+      context: .
+      file: docker/Dockerfile
+      build-args: |
+        "FORCE_MIX_COMPILE_CACHE_MISS=$COMMIT_SHA"
+        "DISABLE_WRITE_API=true",
+        "DISABLE_INDEXER=true",
+        "DISABLE_WEBAPP=true",
+      trivy: true
+
+
+  Build-Blockscout-api:
+   uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@main
+   if: github.ref == 'refs/heads/main'
+   with:
+      workload-id-provider: ${{ vars.WORKLOAD_ID_PROVIDER_PROD }}
+      service-account:  'blockscout-images@devopsre.iam.gserviceaccount.com'
+      artifact-registry: ${{ vars.BLOCKSCOUT_IMAGE_REPO }}/blockscout
+      tag: latest
+      context: .
+      file: docker/Dockerfile
+      build-args: |
+        "FORCE_MIX_COMPILE_CACHE_MISS=$COMMIT_SHA"
+        "DISABLE_WRITE_API=true",
+        "DISABLE_INDEXER=true",
+        "DISABLE_WEBAPP=true",
+      trivy: true
+
