@@ -72,4 +72,3 @@ jobs:
         "DISABLE_WEBAPP=true",
       trivy: true
       trivy-timeout: 20m
-     ##
