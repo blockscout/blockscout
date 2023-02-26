@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
 
   @burn_address_hash burn_address_hash
 
+  # credo:disable-for-next-line /Complexity/
   def state_changes(transaction) do
     transaction_hash = transaction.hash
 
@@ -129,20 +130,26 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
     |> Enum.sort_by(fn state_change -> to_string(state_change.address && state_change.address.hash) end)
   end
 
-  defp coin_balance(address_hash, _block_number) when is_nil(address_hash) do
+  defp coin_balance(address_hash, block_number, retry? \\ false)
+
+  defp coin_balance(address_hash, _block_number, _retry?) when is_nil(address_hash) do
     %Wei{value: Decimal.new(0)}
   end
 
-  defp coin_balance(address_hash, block_number) do
+  defp coin_balance(address_hash, block_number, retry?) do
     case Chain.get_coin_balance(address_hash, block_number) do
       %{value: val} when not is_nil(val) ->
         val
 
       _ ->
-        json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-        CoinBalance.run([{address_hash.bytes, block_number}], json_rpc_named_arguments)
-        # after CoinBalance.run balance is fetched and imported, so we can call coin_balance again
-        coin_balance(address_hash, block_number)
+        if retry? do
+          %Wei{value: Decimal.new(0)}
+        else
+          json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+          CoinBalance.run([{address_hash.bytes, block_number}], json_rpc_named_arguments)
+          # after CoinBalance.run balance is fetched and imported, so we can call coin_balance again
+          coin_balance(address_hash, block_number, true)
+        end
     end
   end
 
@@ -181,11 +188,13 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
     |> (&if(address_hash == miner, do: Wei.sum(&1, miner_profit(tx, block)), else: &1)).()
   end
 
-  defp token_balance(@burn_address_hash, _token_transfer, _block_number) do
+  defp token_balance(address_hash, token_transfer, block_number, retry? \\ false)
+
+  defp token_balance(@burn_address_hash, _token_transfer, _block_number, _retry?) do
     Decimal.new(0)
   end
 
-  defp token_balance(address_hash, token_transfer, block_number, retry? \\ false) do
+  defp token_balance(address_hash, token_transfer, block_number, retry?) do
     token = token_transfer.token
     token_contract_address_hash = token.contract_address_hash
 
