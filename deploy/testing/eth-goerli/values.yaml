@@ -109,10 +109,6 @@ blockscout:
       _default: 'true'
     INDEXER_TX_ACTIONS_ENABLE:
       _default: 'true'
-    INDEXER_TX_ACTIONS_REINDEX_FIRST_BLOCK:
-      _default: '4734394'
-    INDEXER_TX_ACTIONS_REINDEX_LAST_BLOCK:
-      _default: '8485360'
     DISABLE_EXCHANGE_RATES:
       _default: 'true'
     ENABLE_SOURCIFY_INTEGRATION:
