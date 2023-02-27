@@ -6,6 +6,7 @@ import socket from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import '../lib/transaction_input_dropdown'
 import '../lib/async_listing_load'
+import { commonPath } from '../lib/path_helper'
 import '../app'
 import Swal from 'sweetalert2'
 import { compareChainIDs, formatError } from '../lib/smart_contract/common_helpers'
@@ -129,10 +130,7 @@ if ($transactionDetailsPage.length) {
           params: [txParams]
         })
           .then(function (txHash) {
-            const pathObj = document.getElementById('network-path')
-            // @ts-ignore
-            const path = (pathObj && pathObj.value) || ''
-            const successMsg = `<a href="${path}/tx/${txHash}">Canceling transaction</a> successfully sent to the network. The current one will change the status once canceling transaction will be confirmed.`
+            const successMsg = `<a href="${commonPath}/tx/${txHash}">Canceling transaction</a> successfully sent to the network. The current one will change the status once canceling transaction will be confirmed.`
             Swal.fire({
               title: 'Success',
               html: successMsg,

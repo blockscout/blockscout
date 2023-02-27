@@ -1,6 +1,7 @@
 import $ from 'jquery'
 import { addChainToMM } from '../lib/add_chain_to_mm'
 import * as analytics from '../lib/analytics'
+import { commonPath } from '../lib/path_helper'
 
 analytics.init()
 
@@ -174,12 +175,8 @@ const search = (value) => {
 
   analytics.trackEvent(eventName, eventProperties)
 
-  const pathObj = document.getElementById('network-path')
-  // @ts-ignore
-  const path = (pathObj && pathObj.value) || ''
-
   if (value) {
-    window.location.href = `${path}/search?q=${value}`
+    window.location.href = `${commonPath}/search?q=${value}`
   }
 }
 

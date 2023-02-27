@@ -5,6 +5,7 @@ import { getTextAdData, fetchTextAdData } from './ad'
 import { DateTime } from 'luxon'
 import { appendTokenIcon } from './token_icon'
 import { escapeHtml } from './utils'
+import { commonPath } from './path_helper'
 import xss from 'xss'
 
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
@@ -18,7 +19,7 @@ const dataSrc = async (query, id) => {
 
     // Fetch External Data Source
     const source = await fetch(
-      `/token-autocomplete?q=${query}`
+      `${commonPath}/token-autocomplete?q=${query}`
     )
     const data = await source.json()
     // Post Loading placeholder text
@@ -144,10 +145,6 @@ const autoCompleteJSMobile = document.querySelector('#main-search-autocomplete-m
 
 const selection = (event) => {
   const selectionValue = event.detail.selection.value
-
-  const pathObj = document.getElementById('network-path')
-  // @ts-ignore
-  const commonPath = (pathObj && pathObj.value) || ''
 
   if (selectionValue.type === 'contract' || selectionValue.type === 'address' || selectionValue.type === 'label') {
     window.location.href = `${commonPath}/address/${selectionValue.address_hash}`
