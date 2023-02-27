@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     with {:ok, block} <-
            BlockTransactionController.param_block_hash_or_number_to_block(block_hash_or_number,
              necessity_by_association: %{
-               [miner: :names] => :required,
+               [miner: :names] => :optional,
                :uncles => :optional,
                :nephews => :optional,
                :rewards => :optional,
