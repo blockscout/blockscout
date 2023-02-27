@@ -7,6 +7,8 @@ defmodule Explorer.Chain.LogTest do
   alias Explorer.Chain.{Log, SmartContract}
   alias Explorer.Repo
 
+  setup :set_mox_from_context
+
   doctest Log
 
   describe "changeset/2" do

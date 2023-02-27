@@ -1,4 +1,5 @@
 import 'bootstrap'
+import { commonPath } from './path_helper'
 
 export async function addChainToMM ({ btn }) {
   try {
@@ -15,11 +16,8 @@ export async function addChainToMM ({ btn }) {
     const jsonRPCObj = document.getElementById('js-json-rpc')
     // @ts-ignore
     const jsonRPC = jsonRPCObj && jsonRPCObj.value
-    const pathObj = document.getElementById('network-path')
-    // @ts-ignore
-    const path = (pathObj && pathObj.value) || '/'
 
-    const blockscoutURL = location.protocol + '//' + location.host + path
+    const blockscoutURL = location.protocol + '//' + location.host + commonPath
     if (chainIDFromWallet !== chainIDFromInstance) {
       // @ts-ignore
       await window.ethereum.request({
