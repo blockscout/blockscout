@@ -19,6 +19,7 @@ services:
       - redis_db
     image: new-blockscout:latest
     restart: always
+    stop_grace_period: 5m
     container_name: 'blockscout'
     links:
       - db:database

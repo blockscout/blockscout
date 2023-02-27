@@ -20,6 +20,11 @@ export function reducer (state = initialState, action) {
     case 'ELEMENTS_LOAD': {
       return Object.assign({}, state, omit(action, 'type'))
     }
+    case 'RECEIVED_NEW_RAW_TRACE': {
+      return Object.assign({}, state, {
+        rawTrace: action.msg.rawTrace
+      })
+    }
     case 'RECEIVED_NEW_BLOCK': {
       if (state.blockNumber) {
         // @ts-ignore
@@ -47,6 +52,16 @@ const elements = {
         $el.empty().append(numeral(state.confirmations).format())
       }
     }
+  },
+  '[data-selector="raw-trace"]': {
+    render ($el, state) {
+      if (state.rawTrace) {
+        $el[0].innerHTML = state.rawTrace
+        state.rawTrace = null
+        return $el
+      }
+      return $el
+    }
   }
 }
 
@@ -54,6 +69,15 @@ const $transactionDetailsPage = $('[data-page="transaction-details"]')
 if ($transactionDetailsPage.length) {
   const store = createStore(reducer)
   connectElements({ store, elements })
+
+  const transactionHash = $transactionDetailsPage[0].dataset.pageTransactionHash
+  const transactionChannel = socket.channel(`transactions:${transactionHash}`, {})
+  transactionChannel.join()
+  transactionChannel.on('collated', () => window.location.reload())
+  transactionChannel.on('raw_trace', (msg) => store.dispatch({
+    type: 'RECEIVED_NEW_RAW_TRACE',
+    msg: humps.camelizeKeys(msg)
+  }))
 
   const pathParts = window.location.pathname.split('/')
   const shouldScroll = pathParts.includes('internal-transactions') ||
@@ -73,11 +97,6 @@ if ($transactionDetailsPage.length) {
     type: 'RECEIVED_NEW_BLOCK',
     msg: humps.camelizeKeys(msg)
   }))
-
-  const transactionHash = $transactionDetailsPage[0].dataset.pageTransactionHash
-  const transactionChannel = socket.channel(`transactions:${transactionHash}`, {})
-  transactionChannel.join()
-  transactionChannel.on('collated', () => window.location.reload())
 
   $('.js-cancel-transaction').on('click', (event) => {
     const btn = $(event.target)
