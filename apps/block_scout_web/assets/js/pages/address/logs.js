@@ -2,6 +2,7 @@ import $ from 'jquery'
 import omit from 'lodash.omit'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore, loadPage } from '../../lib/async_listing_load'
+import { commonPath } from '../../lib/path_helper'
 import '../address'
 // @ts-ignore
 import { utils } from 'web3'
@@ -74,7 +75,7 @@ if ($('[data-page="address-logs"]').length) {
     const topic = $('[data-search-field]').val()
     const addressHashPlain = store.getState().addressHash
     const addressHashChecksum = addressHashPlain && utils.toChecksumAddress(addressHashPlain)
-    const path = `/search-logs?topic=${topic}&address_id=${addressHashChecksum}`
+    const path = `${commonPath}/search-logs?topic=${topic}&address_id=${addressHashChecksum}`
     loadPage(store, path)
   }
 

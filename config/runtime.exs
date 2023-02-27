@@ -522,7 +522,9 @@ token_balance_on_demand_fetcher_threshold =
     _ -> 60
   end
 
-config :indexer, Indexer.Fetcher.TokenBalanceOnDemand, threshold: token_balance_on_demand_fetcher_threshold
+config :indexer, Indexer.Fetcher.TokenBalanceOnDemand,
+  threshold: token_balance_on_demand_fetcher_threshold,
+  fallback_treshold_in_blocks: 500
 
 coin_balance_on_demand_fetcher_threshold_minutes = System.get_env("COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES")
 
@@ -533,7 +535,9 @@ coin_balance_on_demand_fetcher_threshold =
     _ -> 60
   end
 
-config :indexer, Indexer.Fetcher.CoinBalanceOnDemand, threshold: coin_balance_on_demand_fetcher_threshold
+config :indexer, Indexer.Fetcher.CoinBalanceOnDemand,
+  threshold: coin_balance_on_demand_fetcher_threshold,
+  fallback_treshold_in_blocks: 500
 
 config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_BLOCK_REWARD_FETCHER", "false") == "true"
