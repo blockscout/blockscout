@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     ]
 
   alias BlockScoutWeb.AccessHelpers
+  alias BlockScoutWeb.Models.TransactionStateHelper
   alias Explorer.Chain
   alias Indexer.Fetcher.FirstTraceOnDemand
 
@@ -219,6 +220,24 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         logs: logs,
         next_page_params: next_page_params
       })
+    end
+  end
+
+  def state_changes(conn, %{"transaction_hash" => transaction_hash_string} = params) do
+    with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
+         {:not_found, {:ok, transaction}} <-
+           {:not_found,
+            Chain.hash_to_transaction(transaction_hash,
+              necessity_by_association:
+                Map.merge(@transaction_necessity_by_association, %{[block: [miner: :names]] => :optional})
+            )},
+         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
+         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+      state_changes = TransactionStateHelper.state_changes(transaction)
+
+      conn
+      |> put_status(200)
+      |> render(:state_changes, %{state_changes: state_changes})
     end
   end
 end
