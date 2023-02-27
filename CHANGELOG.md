@@ -8,6 +8,8 @@
 
 ### Chore
 
+- [#6987](https://github.com/blockscout/blockscout/pull/6987) - Change tx actions warning importance
+
 <details>
   <summary>Dependencies version bumps</summary>
 </details>
