@@ -5,7 +5,7 @@ defmodule Indexer.Application do
 
   use Application
 
-  alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenTotalSupplyOnDemand}
+  alias Indexer.Fetcher.{CoinBalanceOnDemand, FirstTraceOnDemand, TokenTotalSupplyOnDemand}
   alias Indexer.Memory
   alias Indexer.Prometheus.PendingBlockOperationsCollector
   alias Prometheus.Registry
@@ -27,7 +27,8 @@ defmodule Indexer.Application do
     base_children = [
       {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
       {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
-      {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]}
+      {TokenTotalSupplyOnDemand.Supervisor, []},
+      {FirstTraceOnDemand.Supervisor, [json_rpc_named_arguments]}
     ]
 
     children =

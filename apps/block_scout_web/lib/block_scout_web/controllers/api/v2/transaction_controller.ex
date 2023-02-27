@@ -15,8 +15,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   alias BlockScoutWeb.AccessHelpers
   alias Explorer.Chain
-  alias Explorer.Chain.Import
-  alias Explorer.Chain.Import.Runner.InternalTransactions
+  alias Indexer.Fetcher.FirstTraceOnDemand
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -118,42 +117,9 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
             trace.index == 0
           end)
 
-        json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-        internal_transactions =
-          if first_trace_exists do
-            internal_transactions
-          else
-            response =
-              Chain.fetch_first_trace(
-                [
-                  %{
-                    block_hash: transaction.block_hash,
-                    block_number: transaction.block_number,
-                    hash_data: transaction_hash_string,
-                    transaction_index: transaction.index
-                  }
-                ],
-                json_rpc_named_arguments
-              )
-
-            case response do
-              {:ok, first_trace_params} ->
-                InternalTransactions.run_insert_only(first_trace_params, %{
-                  timeout: :infinity,
-                  timestamps: Import.timestamps(),
-                  internal_transactions: %{params: first_trace_params}
-                })
-
-                Chain.all_transaction_to_internal_transactions(transaction_hash)
-
-              {:error, _} ->
-                internal_transactions
-
-              :ignore ->
-                internal_transactions
-            end
-          end
+        if !first_trace_exists do
+          FirstTraceOnDemand.trigger_fetch(transaction)
+        end
 
         conn
         |> put_status(200)
