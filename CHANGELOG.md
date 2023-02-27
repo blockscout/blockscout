@@ -12,13 +12,14 @@
 
 ### Fixes
 
+- [#6933](https://github.com/blockscout/blockscout/pull/6933) - Extract blocking UI requests to separate GenServers
 - [#6953](https://github.com/blockscout/blockscout/pull/6953) - reCAPTCHA dark mode
 - [#6940](https://github.com/blockscout/blockscout/pull/6940) - Reduce ttl_check_interval for cache module
 - [#6941](https://github.com/blockscout/blockscout/pull/6941) - Sanitize search query before displaying
 - [#6912](https://github.com/blockscout/blockscout/pull/6912) - Docker compose fix exposed ports
 - [#6913](https://github.com/blockscout/blockscout/pull/6913) - Fix an error occurred when decoding base64 encoded json
 - [#6911](https://github.com/blockscout/blockscout/pull/6911) - Fix bugs in verification API v2
-- [#6903](https://github.com/blockscout/blockscout/pull/6903), [#6937](https://github.com/blockscout/blockscout/pull/6937) - Fix indexed blocks value in "Indexing tokens" banner
+- [#6903](https://github.com/blockscout/blockscout/pull/6903), [#6937](https://github.com/blockscout/blockscout/pull/6937), [#6961](https://github.com/blockscout/blockscout/pull/6961) - Fix indexed blocks value in "Indexing tokens" banner
 - [#6891](https://github.com/blockscout/blockscout/pull/6891) - Fix read contract for geth
 - [#6889](https://github.com/blockscout/blockscout/pull/6889) - Fix Internal Server Error on tx input decoding
 - [#6893](https://github.com/blockscout/blockscout/pull/6893) - Fix token type definition for multiple interface tokens
@@ -27,7 +28,7 @@
 
 ### Chore
 
-- [#6954](https://github.com/blockscout/blockscout/pull/6954) - Move some compile time vars to runtime
+- [#6954](https://github.com/blockscout/blockscout/pull/6954), [#6979](https://github.com/blockscout/blockscout/pull/6979) - Move some compile time vars to runtime
 - [#6952](https://github.com/blockscout/blockscout/pull/6952) - Manage BlockReward fetcher params
 - [#6929](https://github.com/blockscout/blockscout/pull/6929) - Extend `INDEXER_MEMORY_LIMIT` env parsing
 - [#6902](https://github.com/blockscout/blockscout/pull/6902) - Increase verification timeout to 120 seconds for microservice verification

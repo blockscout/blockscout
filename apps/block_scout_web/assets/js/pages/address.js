@@ -92,6 +92,11 @@ export function reducer (state = initialState, action) {
         newBlockNumber: action.msg.currentCoinBalanceBlockNumber
       })
     }
+    case 'RECEIVED_CHANGED_BYTECODE_EVENT': {
+      return Object.assign({}, state, {
+        isChangedBytecode: true
+      })
+    }
     default:
       return state
   }
@@ -218,6 +223,13 @@ const elements = {
     load ($el) {
       return { initialBlockNumber: numeral($el.data('last-balance-update')).value() }
     }
+  },
+  '[data-selector="hidden-bytecode-warning"]': {
+    render ($el, state) {
+      if (state.isChangedBytecode) {
+        return $el.removeClass('d-none')
+      }
+    }
   }
 }
 
@@ -301,6 +313,9 @@ if ($addressDetailsPage.length) {
       type: 'RECEIVED_NEW_CURRENT_COIN_BALANCE',
       msg: humps.camelizeKeys(msg)
     })
+  })
+  addressChannel.on('changed_bytecode', () => {
+    store.dispatch({ type: 'RECEIVED_CHANGED_BYTECODE_EVENT' })
   })
 
   const blocksChannel = socket.channel(`blocks:${addressHash}`, {})
