@@ -5,6 +5,7 @@ import { getTextAdData, fetchTextAdData } from './ad'
 import { DateTime } from 'luxon'
 import { appendTokenIcon } from './token_icon'
 import { escapeHtml } from './utils'
+import { commonPath } from './path_helper'
 import xss from 'xss'
 
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
@@ -18,7 +19,7 @@ const dataSrc = async (query, id) => {
 
     // Fetch External Data Source
     const source = await fetch(
-      `${process.env.NETWORK_PATH}/token-autocomplete?q=${query}`
+      `${commonPath}/token-autocomplete?q=${query}`
     )
     const data = await source.json()
     // Post Loading placeholder text
