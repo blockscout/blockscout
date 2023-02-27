@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Import.Runner.OptimismDeposits do
   def ecto_schema_module, do: OptimismDeposit
 
   @impl Import.Runner
-  def option_key, do: :op_deposits
+  def option_key, do: :optimism_deposits
 
   @impl Import.Runner
   def imported_table_row do
@@ -41,12 +41,12 @@ defmodule Explorer.Chain.Import.Runner.OptimismDeposits do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_op_deposits, fn repo, _ ->
+    Multi.run(multi, :insert_optimism_deposits, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :insert_op_deposits,
-        :insert_op_deposits
+        :insert_optimism_deposits,
+        :insert_optimism_deposits
       )
     end)
   end

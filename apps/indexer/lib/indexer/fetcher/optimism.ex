@@ -138,6 +138,77 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
+  def get_new_filter(from_block, to_block, address, topic0, json_rpc_named_arguments, retries_left \\ 3) do
+    processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
+    processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
+
+    req =
+      request(%{
+        id: 0,
+        method: "eth_newFilter",
+        params: [
+          %{
+            :fromBlock => processed_from_block,
+            :toBlock => processed_to_block,
+            :address => address,
+            :topics => [topic0]
+          }
+        ]
+      })
+
+    error_message = &"Cannot create new log filter. Error: #{inspect(&1)}"
+
+    repeated_request(req, error_message, json_rpc_named_arguments, retries_left)
+  end
+
+  def get_filter_changes(filter_id, json_rpc_named_arguments, retries_left \\ 3) do
+    req =
+      request(%{
+        id: 0,
+        method: "eth_getFilterChanges",
+        params: [filter_id]
+      })
+
+    error_message = &"Cannot fetch filter changes. Error: #{inspect(&1)}"
+
+    repeated_request(req, error_message, json_rpc_named_arguments, retries_left)
+  end
+
+  defp repeated_request(req, error_message, json_rpc_named_arguments, retries_left) do
+    case json_rpc(req, json_rpc_named_arguments) do
+      {:ok, _results} = res ->
+        res
+
+      {:error, error} = err ->
+        retries_left = retries_left - 1
+
+        if retries_left <= 0 do
+          Logger.error(error_message.(error))
+          err
+        else
+          Logger.error("#{error_message.(error)} Retrying...")
+          :timer.sleep(3000)
+          repeated_request(req, error_message, json_rpc_named_arguments, retries_left)
+        end
+    end
+  end
+
+  def decode_data("0x", types) do
+    for _ <- types, do: nil
+  end
+
+  def decode_data("0x" <> encoded_data, types) do
+    encoded_data
+    |> Base.decode16!(case: :mixed)
+    |> TypeDecoder.decode_raw(types)
+  end
+
+  def decode_data(%Data{} = data, types) do
+    data
+    |> Data.to_string()
+    |> decode_data(types)
+  end
+
   def get_logs_range_size do
     @eth_get_logs_range_size
   end
@@ -351,5 +422,20 @@ defmodule Indexer.Fetcher.Optimism do
 
   defp reorg_table_name(fetcher_name) do
     :"#{fetcher_name}#{:_reorgs}"
+  end
+
+  def json_rpc_named_arguments(optimism_rpc_l1) do
+    [
+      transport: EthereumJSONRPC.HTTP,
+      transport_options: [
+        http: EthereumJSONRPC.HTTP.HTTPoison,
+        url: optimism_rpc_l1,
+        http_options: [
+          recv_timeout: :timer.minutes(10),
+          timeout: :timer.minutes(10),
+          hackney: [pool: :ethereum_jsonrpc]
+        ]
+      ]
+    ]
   end
 end

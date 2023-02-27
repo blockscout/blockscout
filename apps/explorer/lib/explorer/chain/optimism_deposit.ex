@@ -31,4 +31,11 @@ defmodule Explorer.Chain.OptimismDeposit do
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
   end
+
+  def last_deposit_l1_block_number_query() do
+    from(d in __MODULE__,
+      order_by: [desc: d.l1_tx_origin],
+      limit: 1
+    )
+  end
 end
