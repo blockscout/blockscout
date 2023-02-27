@@ -195,11 +195,13 @@ defmodule Indexer.Fetcher.TransactionAction do
       is_nil(first_block) or is_nil(last_block) or first_block <= 0 or last_block <= 0 or first_block > last_block ->
         {:stop, "Correct block range must be provided to #{__MODULE__}."}
 
-      last_block > (max_block_number = Chain.fetch_max_block_number()) ->
-        {:stop,
-         "The last block number (#{last_block}) provided to #{__MODULE__} is incorrect as it exceeds max block number available in DB (#{max_block_number})."}
-
       true ->
+        if last_block > (max_block_number = Chain.fetch_max_block_number()) do
+          Logger.warning(
+            "Note, that the last block number (#{last_block}) provided to #{__MODULE__} exceeds max block number available in DB (#{max_block_number})."
+          )
+        end
+
         supported_protocols =
           TransactionAction.supported_protocols()
           |> Enum.map(&Atom.to_string(&1))
