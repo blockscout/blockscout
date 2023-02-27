@@ -336,7 +336,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
 
     test "get token transfers by instance", %{conn: conn} do
-      token = insert(:token, type: "ERC-721")
+      token = insert(:token, type: "ERC-1155")
 
       for _ <- 0..50 do
         insert(:token_instance, token_id: 0)
@@ -354,14 +354,16 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       insert_list(100, :token_transfer,
         token_contract_address: token.contract_address,
         transaction: transaction,
-        token_ids: [id + 1]
+        token_ids: [id + 1],
+        amounts: [1]
       )
 
       transfers_0 =
         insert_list(26, :token_transfer,
           token_contract_address: token.contract_address,
           transaction: transaction,
-          token_ids: [id, id + 1]
+          token_ids: [id, id + 1],
+          amounts: [1, 2]
         )
 
       transfers_1 =

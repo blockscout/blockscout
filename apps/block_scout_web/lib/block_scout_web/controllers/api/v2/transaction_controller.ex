@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.V2.TransactionController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain, only: [next_page_params: 3, paging_options: 1, split_list_by_page: 1]
+  import BlockScoutWeb.Chain,
+    only: [next_page_params: 3, token_tranfers_next_page_params: 3, paging_options: 1, split_list_by_page: 1]
 
   import BlockScoutWeb.PagingHelper,
     only: [
@@ -135,18 +136,24 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
            {:not_found, Chain.hash_to_transaction(transaction_hash)},
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+      paging_options = paging_options(params)
+
       full_options =
         [necessity_by_association: @token_transfers_necessity_by_association]
-        |> Keyword.merge(paging_options(params))
+        |> Keyword.merge(paging_options)
         |> Keyword.merge(token_transfers_types_options(params))
 
-      token_transfers_plus_one = Chain.transaction_to_token_transfers(transaction_hash, full_options)
+      results =
+        transaction_hash
+        |> Chain.transaction_to_token_transfers(full_options)
+        |> Chain.flat_1155_batch_token_transfers()
+        |> Chain.paginate_1155_batch_token_transfers(paging_options)
 
-      {token_transfers, next_page} = split_list_by_page(token_transfers_plus_one)
+      {token_transfers, next_page} = split_list_by_page(results)
 
       next_page_params =
         next_page
-        |> next_page_params(token_transfers, params)
+        |> token_tranfers_next_page_params(token_transfers, params)
         |> delete_parameters_from_next_page_params()
 
       conn

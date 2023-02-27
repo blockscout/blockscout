@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       split_list_by_page: 1,
       paging_options: 1,
       next_page_params: 3,
+      token_tranfers_next_page_params: 3,
       unique_tokens_paging_options: 1,
       unique_tokens_next_page: 3
     ]
@@ -46,12 +47,20 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, _}} <- {:not_found, Chain.token_from_address_hash(address_hash)} do
-      results_plus_one = Chain.fetch_token_transfers_from_token_hash(address_hash, paging_options(params))
+      paging_options = paging_options(params)
 
-      {token_transfers, next_page} = split_list_by_page(results_plus_one)
+      results =
+        address_hash
+        |> Chain.fetch_token_transfers_from_token_hash(paging_options)
+        |> Chain.flat_1155_batch_token_transfers()
+        |> Chain.paginate_1155_batch_token_transfers(paging_options)
+
+      {token_transfers, next_page} = split_list_by_page(results)
 
       next_page_params =
-        next_page |> next_page_params(token_transfers, params) |> delete_parameters_from_next_page_params()
+        next_page
+        |> token_tranfers_next_page_params(token_transfers, params)
+        |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
@@ -114,13 +123,20 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:not_found, {:ok, _token}} <- {:not_found, Chain.token_from_address_hash(address_hash)},
          {:not_found, {:ok, _token_instance}} <-
            {:not_found, Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, address_hash)} do
-      results_plus_one =
-        Chain.fetch_token_transfers_from_token_hash_and_token_id(address_hash, token_id, paging_options(params))
+      paging_options = paging_options(params)
 
-      {token_transfers, next_page} = split_list_by_page(results_plus_one)
+      results =
+        address_hash
+        |> Chain.fetch_token_transfers_from_token_hash_and_token_id(token_id, paging_options)
+        |> Chain.flat_1155_batch_token_transfers(Decimal.new(token_id))
+        |> Chain.paginate_1155_batch_token_transfers(paging_options)
+
+      {token_transfers, next_page} = split_list_by_page(results)
 
       next_page_params =
-        next_page |> next_page_params(token_transfers, params) |> delete_parameters_from_next_page_params()
+        next_page
+        |> token_tranfers_next_page_params(token_transfers, params)
+        |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)

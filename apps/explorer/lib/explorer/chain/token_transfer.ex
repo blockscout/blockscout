@@ -65,7 +65,8 @@ defmodule Explorer.Chain.TokenTransfer do
           transaction_hash: Hash.Full.t(),
           log_index: non_neg_integer(),
           amounts: [Decimal.t()] | nil,
-          token_ids: [non_neg_integer()] | nil
+          token_ids: [non_neg_integer()] | nil,
+          index_in_batch: non_neg_integer() | nil
         }
 
   @typep paging_options :: {:paging_options, PagingOptions.t()}
@@ -84,6 +85,7 @@ defmodule Explorer.Chain.TokenTransfer do
     field(:token_id, :decimal)
     field(:amounts, {:array, :decimal})
     field(:token_ids, {:array, :decimal})
+    field(:index_in_batch, :integer, virtual: true)
 
     belongs_to(:from_address, Address, foreign_key: :from_address_hash, references: :hash, type: Hash.Address)
     belongs_to(:to_address, Address, foreign_key: :to_address_hash, references: :hash, type: Hash.Address)

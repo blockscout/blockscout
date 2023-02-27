@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   import BlockScoutWeb.Chain,
     only: [
       next_page_params: 3,
+      token_tranfers_next_page_params: 3,
       paging_options: 1,
       split_list_by_page: 1,
       current_filter: 1
@@ -126,6 +127,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
          {:ok, false} <- AccessHelpers.restricted_access?(token_address_hash_string, params),
          {:not_found, {:ok, _address}} <- {:not_found, Chain.hash_to_address(address_hash, [], false)},
          {:not_found, {:ok, _}} <- {:not_found, Chain.token_from_address_hash(token_address_hash)} do
+      paging_options = paging_options(params)
+
       options =
         [
           necessity_by_association: %{
@@ -136,19 +139,23 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             :transaction => :optional
           }
         ]
-        |> Keyword.merge(paging_options(params))
+        |> Keyword.merge(paging_options)
 
-      results_plus_one =
-        Chain.address_hash_to_token_transfers_by_token_address_hash(
-          address_hash,
+      results =
+        address_hash
+        |> Chain.address_hash_to_token_transfers_by_token_address_hash(
           token_address_hash,
           options
         )
+        |> Chain.flat_1155_batch_token_transfers()
+        |> Chain.paginate_1155_batch_token_transfers(paging_options)
 
-      {token_transfers, next_page} = split_list_by_page(results_plus_one)
+      {token_transfers, next_page} = split_list_by_page(results)
 
       next_page_params =
-        next_page |> next_page_params(token_transfers, params) |> delete_parameters_from_next_page_params()
+        next_page
+        |> token_tranfers_next_page_params(token_transfers, params)
+        |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
@@ -161,22 +168,26 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, _address}} <- {:not_found, Chain.hash_to_address(address_hash, [], false)} do
+      paging_options = paging_options(params)
+
       options =
         @token_transfer_necessity_by_association
-        |> Keyword.merge(paging_options(params))
+        |> Keyword.merge(paging_options)
         |> Keyword.merge(current_filter(params))
         |> Keyword.merge(token_transfers_types_options(params))
 
-      results_plus_one =
-        Chain.address_hash_to_token_transfers_new(
-          address_hash,
-          options
-        )
+      results =
+        address_hash
+        |> Chain.address_hash_to_token_transfers_new(options)
+        |> Chain.flat_1155_batch_token_transfers()
+        |> Chain.paginate_1155_batch_token_transfers(paging_options)
 
-      {token_transfers, next_page} = split_list_by_page(results_plus_one)
+      {token_transfers, next_page} = split_list_by_page(results)
 
       next_page_params =
-        next_page |> next_page_params(token_transfers, params) |> delete_parameters_from_next_page_params()
+        next_page
+        |> token_tranfers_next_page_params(token_transfers, params)
+        |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
