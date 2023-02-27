@@ -8,6 +8,8 @@
 
 ### Chore
 
+- [#6987](https://github.com/blockscout/blockscout/pull/6987) - Change tx actions warning importance
+
 <details>
   <summary>Dependencies version bumps</summary>
 </details>
@@ -40,7 +42,6 @@
 
 ### Chore
 
-- [#6987](https://github.com/blockscout/blockscout/pull/6987) - Change tx actions warning importance
 - [#6981](https://github.com/blockscout/blockscout/pull/6981) - Token instance fetcher batch size and concurrency env vars
 - [#6954](https://github.com/blockscout/blockscout/pull/6954), [#6979](https://github.com/blockscout/blockscout/pull/6979) - Move some compile time vars to runtime
 - [#6952](https://github.com/blockscout/blockscout/pull/6952) - Manage BlockReward fetcher params
