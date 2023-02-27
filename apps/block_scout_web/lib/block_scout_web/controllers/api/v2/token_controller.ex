@@ -142,12 +142,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   def tokens_list(conn, params) do
-    filter =
-      if Map.has_key?(params, "filter") do
-        Map.get(params, "filter")
-      else
-        nil
-      end
+    filter = params["q"]
 
     paging_params =
       params

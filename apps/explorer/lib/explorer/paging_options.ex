@@ -14,7 +14,7 @@ defmodule Explorer.PagingOptions do
         }
 
   @typep key :: any()
-  @typep page_size :: non_neg_integer()
+  @typep page_size :: non_neg_integer() | nil
   @typep page_number :: pos_integer()
   @typep is_pending_tx :: atom()
   @typep is_index_in_asc_order :: atom()
