@@ -595,6 +595,14 @@ config :indexer, Indexer.Fetcher.BlockReward,
   batch_size: block_reward_fetcher_batch_size,
   concurrency: block_reward_fetcher_concurrency
 
+{token_instance_fetcher_batch_size, _} = Integer.parse(System.get_env("INDEXER_TOKEN_INSTANCE_BATCH_SIZE", "1"))
+
+{token_instance_fetcher_concurrency, _} = Integer.parse(System.get_env("INDEXER_TOKEN_INSTANCE_CONCURRENCY", "10"))
+
+config :indexer, Indexer.Fetcher.TokenInstance,
+  batch_size: token_instance_fetcher_batch_size,
+  concurrency: token_instance_fetcher_concurrency
+
 {internal_transaction_fetcher_batch_size, _} =
   Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", "10"))
 
