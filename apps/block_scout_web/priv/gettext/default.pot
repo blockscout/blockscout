@@ -321,12 +321,12 @@ msgstr ""
 msgid "Compiler"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:137
+#: lib/block_scout_web/templates/address_contract/index.html.eex:143
 #, elixir-autogen, elixir-format
 msgid "Compiler Settings"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:66
+#: lib/block_scout_web/templates/address_contract/index.html.eex:72
 #, elixir-autogen, elixir-format
 msgid "Compiler version"
 msgstr ""
@@ -380,7 +380,7 @@ msgstr ""
 msgid "Connection Lost, click to load newer validations"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:91
+#: lib/block_scout_web/templates/address_contract/index.html.eex:97
 #, elixir-autogen, elixir-format
 msgid "Constructor Arguments"
 msgstr ""
@@ -415,8 +415,8 @@ msgstr ""
 msgid "Contract Creation"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:169
-#: lib/block_scout_web/templates/address_contract/index.html.eex:184
+#: lib/block_scout_web/templates/address_contract/index.html.eex:175
+#: lib/block_scout_web/templates/address_contract/index.html.eex:190
 #, elixir-autogen, elixir-format
 msgid "Contract Creation Code"
 msgstr ""
@@ -438,7 +438,7 @@ msgstr ""
 msgid "Contract name:"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:101
+#: lib/block_scout_web/templates/address_contract/index.html.eex:107
 #, elixir-autogen, elixir-format
 msgid "Contract source code"
 msgstr ""
@@ -453,7 +453,7 @@ msgstr ""
 msgid "Contracts"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:175
+#: lib/block_scout_web/templates/address_contract/index.html.eex:181
 #, elixir-autogen, elixir-format
 msgid "Contracts that self destruct in their constructors have no contract code published and cannot be verified."
 msgstr ""
@@ -463,7 +463,7 @@ msgstr ""
 msgid "Contribute"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:154
+#: lib/block_scout_web/templates/address_contract/index.html.eex:160
 #, elixir-autogen, elixir-format
 msgid "Copy ABI"
 msgstr ""
@@ -489,7 +489,7 @@ msgstr ""
 msgid "Copy Address"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:139
+#: lib/block_scout_web/templates/address_contract/index.html.eex:145
 #, elixir-autogen, elixir-format
 msgid "Copy Compiler Settings"
 msgstr ""
@@ -500,8 +500,8 @@ msgstr ""
 msgid "Copy Contract Address"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:171
-#: lib/block_scout_web/templates/address_contract/index.html.eex:187
+#: lib/block_scout_web/templates/address_contract/index.html.eex:177
+#: lib/block_scout_web/templates/address_contract/index.html.eex:193
 #, elixir-autogen, elixir-format
 msgid "Copy Contract Creation Code"
 msgstr ""
@@ -670,7 +670,7 @@ msgstr ""
 msgid "ETH RPC API Documentation"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:77
+#: lib/block_scout_web/templates/address_contract/index.html.eex:83
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:30
 #: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:22
 #, elixir-autogen, elixir-format
@@ -763,7 +763,7 @@ msgstr ""
 msgid "Nonce"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:243
+#: lib/block_scout_web/templates/address_contract/index.html.eex:249
 #, elixir-autogen, elixir-format
 msgid "External libraries"
 msgstr ""
@@ -1149,7 +1149,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/chain/show.html.eex:52
 #: lib/block_scout_web/templates/layout/app.html.eex:50
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:84
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:86
 #: lib/block_scout_web/views/address_view.ex:145
 #, elixir-autogen, elixir-format
 msgid "Market Cap"
@@ -1255,7 +1255,7 @@ msgstr ""
 msgid "Optimization enabled"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:71
+#: lib/block_scout_web/templates/address_contract/index.html.eex:77
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:62
 #: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:54
 #, elixir-autogen, elixir-format
@@ -1341,7 +1341,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/chain/show.html.eex:41
 #: lib/block_scout_web/templates/layout/app.html.eex:51
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:95
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:97
 #, elixir-autogen, elixir-format
 msgid "Price"
 msgstr ""
@@ -1353,7 +1353,7 @@ msgstr ""
 msgid "QR Code"
 msgstr ""
 
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:100
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:106
 #, elixir-autogen, elixir-format
 msgid "Query"
 msgstr ""
@@ -2699,7 +2699,7 @@ msgstr ""
 msgid "The compiler version is specified in <span class=\"tooltip-quote\">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class=\"tooltip-quote\">solc —version</span> to check."
 msgstr ""
 
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:38
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:44
 #, elixir-autogen, elixir-format
 msgid "The fallback function is executed on a call to the contract if none of the other functions match the given function signature, or if no data was supplied at all and there is no receive Ether function. The fallback function always receives data, but in order to also receive Ether it must be marked payable."
 msgstr ""
@@ -2724,7 +2724,7 @@ msgstr ""
 msgid "The number of transactions in the block."
 msgstr ""
 
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:40
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:46
 #, elixir-autogen, elixir-format
 msgid "The receive function is executed on a call to the contract with empty calldata. This is the function that is executed on plain Ether transfers (e.g. via .send() or .transfer()). If no such function exists, but a payable fallback function exists, the fallback function will be called on a plain Ether transfer. If neither a receive Ether nor a payable fallback function is present, the contract cannot receive Ether through regular transactions and throws an exception."
 msgstr ""
@@ -2739,7 +2739,7 @@ msgstr ""
 msgid "The status of the transaction: Confirmed or Unconfirmed."
 msgstr ""
 
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:68
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:67
 #, elixir-autogen, elixir-format
 msgid "The total amount of tokens issued"
 msgstr ""
@@ -2776,7 +2776,7 @@ msgstr ""
 msgid "Token name and symbol."
 msgstr ""
 
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:142
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:144
 #, elixir-autogen, elixir-format
 msgid "Token type"
 msgstr ""
@@ -2925,7 +2925,7 @@ msgstr ""
 msgid "Verified Contracts"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:83
+#: lib/block_scout_web/templates/address_contract/index.html.eex:89
 #, elixir-autogen, elixir-format
 msgid "Verified at"
 msgstr ""
