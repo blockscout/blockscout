@@ -12,12 +12,12 @@ defmodule Indexer.Fetcher.OptimismDeposit do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
-  alias ABI.TypeDecoder
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Log, OptimismDeposit}
+  alias Explorer.Chain.OptimismDeposit
   alias Indexer.Fetcher.Optimism
 
   defstruct [
+    :batch_size,
     :start_block,
     :safe_block,
     :optimism_portal,
@@ -32,6 +32,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   @retry_interval_minutes 3
   @retry_interval :timer.minutes(@retry_interval_minutes)
   @address_prefix "0x000000000000000000000000"
+  @batch_size 500
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -53,10 +54,11 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     Logger.metadata(fetcher: :optimism_deposits)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
+    optimism_portal = Application.get_env(:indexer, :optimism_portal_l1)
+    optimism_rpc_l1 = Application.get_env(:indexer, :optimism_rpc_l1)
 
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
-         {:optimism_portal_valid, true} <- {:optimism_portal_valid, Optimism.is_address?(env[:optimism_portal])},
-         optimism_rpc_l1 = Application.get_env(:indexer, :optimism_rpc_l1),
+         {:optimism_portal_valid, true} <- {:optimism_portal_valid, Optimism.is_address?(optimism_portal)},
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_rpc_l1)},
          start_block_l1 <- Optimism.parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
@@ -73,8 +75,9 @@ defmodule Indexer.Fetcher.OptimismDeposit do
        %__MODULE__{
          start_block: max(start_block_l1, last_l1_block_number),
          safe_block: safe_block,
-         optimism_portal: env[:optimism_portal],
-         json_rpc_named_arguments: json_rpc_named_arguments
+         optimism_portal: optimism_portal,
+         json_rpc_named_arguments: json_rpc_named_arguments,
+         batch_size: Optimism.parse_integer(env[:batch_size]) || @batch_size
        }}
     else
       {:start_block_l1_undefined, true} ->
@@ -95,7 +98,6 @@ defmodule Indexer.Fetcher.OptimismDeposit do
 
       {:error, error_data} ->
         Logger.error("Cannot get safe block from Optimism RPC due to the error: #{inspect(error_data)}")
-
         :ignore
 
       _ ->
@@ -112,25 +114,37 @@ defmodule Indexer.Fetcher.OptimismDeposit do
           safe_block: safe_block,
           optimism_portal: optimism_portal,
           json_rpc_named_arguments: json_rpc_named_arguments,
-          mode: :catch_up
+          mode: :catch_up,
+          batch_size: batch_size
         } = state
       ) do
+    Logger.metadata(fetcher: :optimism_deposits)
+    to_block = min(start_block + batch_size, safe_block)
+
     with {:logs, {:ok, logs}} <-
            {:logs,
             Optimism.get_logs(
               start_block,
-              safe_block,
+              to_block,
               optimism_portal,
               @transaction_deposited_event,
               json_rpc_named_arguments,
               3
             )},
-         deposits = events_to_deposits(logs),
+         deposits = events_to_deposits(logs, json_rpc_named_arguments),
          {:import, {:ok, _imported}} <-
            {:import, Chain.import(%{optimism_deposits: %{params: deposits}, timeout: :infinity})} do
-      Process.send(self(), :switch_to_realtime, [])
-      {:noreply, state}
+      if to_block == safe_block do
+        Process.send(self(), :switch_to_realtime, [])
+        {:noreply, state}
+      else
+        Process.send(self(), :fetch, [])
+        {:noreply, %{state | start_block: to_block + 1}}
+      end
     else
+      err ->
+        Logger.error("#{inspect(err)}")
+
       {:logs, {:error, _error}} ->
         Logger.error("Cannot fetch logs. Retrying in #{@retry_interval_minutes} minutes...")
         Process.send_after(self(), :fetch, @retry_interval)
@@ -161,6 +175,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
           mode: :catch_up
         } = state
       ) do
+    Logger.metadata(fetcher: :optimism_deposits)
     with {:ok, filter_id} <-
            Optimism.get_new_filter(
              safe_block + 1,
@@ -202,9 +217,11 @@ defmodule Indexer.Fetcher.OptimismDeposit do
           check_interval: check_interval
         } = state
       ) do
+    Logger.metadata(fetcher: :optimism_deposits)
+
     case Optimism.get_filter_changes(filter_id, json_rpc_named_arguments) do
       {:ok, logs} ->
-        handle_new_logs(logs)
+        handle_new_logs(logs, json_rpc_named_arguments)
         Process.send_after(self(), :fetch, check_interval)
         {:noreply, state}
 
@@ -215,7 +232,13 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     end
   end
 
-  defp handle_new_logs(logs) do
+  @impl GenServer
+  def handle_info({ref, _result}, state) do
+    Process.demonitor(ref, [:flush])
+    {:noreply, state}
+  end
+
+  defp handle_new_logs(logs, json_rpc_named_arguments) do
     {reorgs, logs_to_parse} =
       logs
       |> Enum.reduce({MapSet.new(), []}, fn
@@ -226,28 +249,40 @@ defmodule Indexer.Fetcher.OptimismDeposit do
           {reorgs, [log | logs_to_parse]}
       end)
 
-    {deleted_count, _} = Repo.delete_all(from(d in OptimismDeposit, where: d.l1_block_number in ^reorgs))
+    handle_reorgs(reorgs)
 
-    if deleted_count > 0 do
-      Logger.warning(
-        "As L1 reorg was detected, all affected rows were removed from the op_deposits table. Number of removed rows: #{deleted_count}."
-      )
-    end
-
-    deposits = events_to_deposits(logs_to_parse)
+    deposits = events_to_deposits(logs_to_parse, json_rpc_named_arguments)
     {:ok, _imported} = Chain.import(%{optimism_deposits: %{params: deposits}, timeout: :infinity})
   end
 
-  def events_to_deposits(logs) do
-    Enum.map(logs, &event_to_deposit/1)
+  defp events_to_deposits(logs, json_rpc_named_arguments) do
+    timestamps =
+      logs
+      |> Enum.reduce(%{}, fn %{"blockNumber" => block_number_quantity}, acc ->
+        block_number = quantity_to_integer(block_number_quantity)
+
+        if Map.has_key?(acc, block_number) do
+          acc
+        else
+          {:ok, timestamp} = Optimism.get_block_timestamp_by_number(block_number, json_rpc_named_arguments)
+          Map.put(acc, block_number, timestamp)
+        end
+      end)
+
+    Enum.map(logs, &event_to_deposit(&1, timestamps))
   end
 
-  defp event_to_deposit(%{
-         "blockHash" => "0x" <> stripped_block_hash,
-         "logIndex" => "0x" <> stripped_log_index,
-         "topics" => [_, @address_prefix <> from_stripped, @address_prefix <> to_stripped, _],
-         "data" => opaque_data
-       }) do
+  defp event_to_deposit(
+         %{
+           "blockHash" => "0x" <> stripped_block_hash,
+           "blockNumber" => block_number_quantity,
+           "transactionHash" => transaction_hash,
+           "logIndex" => "0x" <> stripped_log_index,
+           "topics" => [_, @address_prefix <> from_stripped, @address_prefix <> to_stripped, _],
+           "data" => opaque_data
+         },
+         timestamps
+       ) do
     {_, prefixed_block_hash} = (String.pad_leading("", 64, "0") <> stripped_block_hash) |> String.split_at(-64)
     {_, prefixed_log_index} = (String.pad_leading("", 64, "0") <> stripped_log_index) |> String.split_at(-64)
 
@@ -278,10 +313,10 @@ defmodule Indexer.Fetcher.OptimismDeposit do
           source_hash,
           from_stripped |> Base.decode16!(case: :mixed),
           to_stripped |> Base.decode16!(case: :mixed),
-          String.replace_leading(msg_value, <<0>>, <<>>),
-          String.replace_leading(value, <<0>>, <<>>),
-          String.replace_leading(gas_limit, <<0>>, <<>>),
-          String.replace_leading(is_creation, <<0>>, <<>>),
+          msg_value |> String.replace_leading(<<0>>, <<>>),
+          value |> String.replace_leading(<<0>>, <<>>),
+          gas_limit |> String.replace_leading(<<0>>, <<>>),
+          is_creation |> String.replace_leading(<<0>>, <<>>),
           data
         ],
         encoding: :hex
@@ -289,6 +324,31 @@ defmodule Indexer.Fetcher.OptimismDeposit do
 
     l2_tx_hash =
       "0x" <> ("7e#{rlp_encoded}" |> Base.decode16!(case: :mixed) |> ExKeccak.hash_256() |> Base.encode16(case: :lower))
+
+    block_number = quantity_to_integer(block_number_quantity)
+    {:ok, timestamp} = DateTime.from_unix(timestamps[block_number])
+
+    %{
+      l1_block_number: block_number,
+      l1_block_timestamp: timestamp,
+      l1_tx_hash: transaction_hash,
+      l1_tx_origin: "0x" <> from_stripped,
+      l2_tx_hash: l2_tx_hash
+    }
+  end
+
+  defp handle_reorgs(reorgs) do
+    Logger.metadata(fetcher: :optimism_deposits)
+
+    if MapSet.size(reorgs) > 0 do
+      {deleted_count, _} = Repo.delete_all(from(d in OptimismDeposit, where: d.l1_block_number in ^reorgs))
+
+      if deleted_count > 0 do
+        Logger.warning(
+          "As L1 reorg was detected, all affected rows were removed from the op_deposits table. Number of removed rows: #{deleted_count}."
+        )
+      end
+    end
   end
 
   defp get_last_l1_item do

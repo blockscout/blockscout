@@ -16,7 +16,7 @@ defmodule Explorer.Chain.OptimismDeposit do
         }
 
   @primary_key false
-  schema "op_output_roots" do
+  schema "op_deposits" do
     field(:l1_block_number, :integer)
     field(:l1_block_timestamp, :utc_datetime_usec)
     field(:l1_tx_hash, Hash.Full)
@@ -32,8 +32,9 @@ defmodule Explorer.Chain.OptimismDeposit do
     |> validate_required(@required_attrs)
   end
 
-  def last_deposit_l1_block_number_query() do
+  def last_deposit_l1_block_number_query do
     from(d in __MODULE__,
+      select: d.l1_block_number,
       order_by: [desc: d.l1_tx_origin],
       limit: 1
     )

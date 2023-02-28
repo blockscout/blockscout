@@ -84,7 +84,7 @@ defmodule Indexer.Fetcher.Optimism do
           %{
             :fromBlock => integer_to_quantity(from_block),
             :toBlock => integer_to_quantity(to_block),
-            :address => address,
+            :addresses => address,
             :topics => [topic0]
           }
         ]
@@ -150,7 +150,7 @@ defmodule Indexer.Fetcher.Optimism do
           %{
             :fromBlock => processed_from_block,
             :toBlock => processed_to_block,
-            :address => address,
+            :addresses => address,
             :topics => [topic0]
           }
         ]
