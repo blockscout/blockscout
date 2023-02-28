@@ -4,8 +4,8 @@ defmodule BlockScoutWeb.API.RPC.LogsController do
   alias Explorer.{Chain, Etherscan}
 
   def getlogs(conn, params) do
-    with {:required_params, {:ok, fetched_params}} <- fetch_required_params(params),
-         {:format, {:ok, validated_params}} <- to_valid_format(fetched_params),
+    with {:required_params, {:ok, fetched_params}} <- fetch_required_params(params) |> IO.inspect(label: "fetched_params"),
+         {:format, {:ok, validated_params}} <- to_valid_format(fetched_params) |> IO.inspect(label: "validated_params"),
          {:ok, logs} <- list_logs(validated_params) do
       render(conn, :getlogs, %{logs: logs})
     else
