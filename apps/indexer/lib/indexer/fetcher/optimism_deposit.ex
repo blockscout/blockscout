@@ -63,8 +63,10 @@ defmodule Indexer.Fetcher.OptimismDeposit do
          start_block_l1 <- Optimism.parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
-         last_l1_block_number <- get_last_l1_item(),
+         {last_l1_block_number, last_l1_tx_hash} <- get_last_l1_item(),
          json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_rpc_l1),
+         {:ok, last_l1_tx} <- Optimism.get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments),
+         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_tx_hash) && is_nil(last_l1_tx)},
          {:ok, safe_block} <- Optimism.get_block_number_by_tag("safe", json_rpc_named_arguments),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid,
@@ -98,6 +100,13 @@ defmodule Indexer.Fetcher.OptimismDeposit do
 
       {:error, error_data} ->
         Logger.error("Cannot get safe block from Optimism RPC due to the error: #{inspect(error_data)}")
+        :ignore
+
+      {:l1_tx_not_found, true} ->
+        Logger.error(
+          "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check op_deposits table."
+        )
+
         :ignore
 
       _ ->
@@ -176,6 +185,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         } = state
       ) do
     Logger.metadata(fetcher: :optimism_deposits)
+
     with {:ok, filter_id} <-
            Optimism.get_new_filter(
              safe_block + 1,
@@ -354,6 +364,6 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   defp get_last_l1_item do
     OptimismDeposit.last_deposit_l1_block_number_query()
     |> Repo.one()
-    |> Kernel.||(0)
+    |> Kernel.||({0, nil})
   end
 end

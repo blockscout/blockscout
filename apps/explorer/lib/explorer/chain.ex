@@ -52,6 +52,7 @@ defmodule Explorer.Chain do
     Import,
     InternalTransaction,
     Log,
+    OptimismDeposit,
     OptimismFrameSequence,
     OptimismOutputRoot,
     OptimismTxnBatch,
@@ -2435,6 +2436,31 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Lists `t:Explorer.Chain.OptimismDeposits.t/0`'s' in descending order based on l1_block_number and l2_tx_hash.
+
+  """
+  @spec list_deposits :: [OptimismDeposits.t()]
+  @spec list_deposits([paging_options]) :: [OptimismDeposits.t()]
+  def list_deposits(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(d in OptimismDeposit,
+        left_join: tx in assoc(d, :transaction),
+        order_by: [desc: d.l1_block_number, desc: d.l2_tx_hash]
+      )
+
+    base_query
+    |> page_deposits(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
+  end
+
+  def optimism_deposits_total_count do
+    Repo.aggregate(OptimismDeposit, :count, timeout: :infinity)
+  end
+
+  @doc """
   Lists `t:Explorer.Chain.OptimismTxnBatch.t/0`'s' in descending order based on l2_block_number.
 
   """
@@ -4653,6 +4679,15 @@ defmodule Explorer.Chain do
       where:
         (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
           address.fetched_coin_balance < ^coin_balance
+    )
+  end
+
+  defp page_deposits(query, %PagingOptions{key: nil}), do: query
+
+  defp page_deposits(query, %PagingOptions{key: {block_number, l2_tx_hash}}) do
+    from(d in query,
+      where: d.l1_block_number < ^block_number,
+      or_where: d.l1_block_number == ^block_number and d.l2_tx_hash < ^l2_tx_hash
     )
   end
 

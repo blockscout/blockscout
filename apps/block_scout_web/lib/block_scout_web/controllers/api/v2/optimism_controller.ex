@@ -13,6 +13,26 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  def deposits(conn, params) do
+    {deposits, next_page} =
+      params
+      |> paging_options()
+      |> Chain.list_deposits()
+      |> split_list_by_page()
+
+    total = Chain.optimism_deposits_total_count()
+
+    next_page_params = next_page_params(next_page, deposits, params)
+
+    conn
+    |> put_status(200)
+    |> render(:optimism_deposits, %{
+      deposits: deposits,
+      total: total,
+      next_page_params: next_page_params
+    })
+  end
+
   def txn_batches(conn, params) do
     {batches, next_page} =
       params

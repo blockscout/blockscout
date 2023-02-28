@@ -169,6 +169,7 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/txn-batches", V2.OptimismController, :txn_batches)
       get("/output-roots", V2.OptimismController, :output_roots)
       get("/withdrawals", V2.OptimismController, :withdrawals)
+      get("/deposits", V2.OptimismController, :deposits)
     end
   end
 

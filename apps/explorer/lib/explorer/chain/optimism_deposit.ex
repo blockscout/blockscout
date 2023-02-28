@@ -3,7 +3,7 @@ defmodule Explorer.Chain.OptimismDeposit do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Hash, Transaction}
 
   @required_attrs ~w(l1_block_number l1_block_timestamp l1_tx_hash l1_tx_origin l2_tx_hash)a
 
@@ -21,7 +21,13 @@ defmodule Explorer.Chain.OptimismDeposit do
     field(:l1_block_timestamp, :utc_datetime_usec)
     field(:l1_tx_hash, Hash.Full)
     field(:l1_tx_origin, Hash.Address)
-    field(:l2_tx_hash, Hash.Full, primary_key: true)
+
+    belongs_to(:transaction, Transaction,
+      foreign_key: :l2_tx_hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full
+    )
 
     timestamps()
   end
@@ -34,7 +40,7 @@ defmodule Explorer.Chain.OptimismDeposit do
 
   def last_deposit_l1_block_number_query do
     from(d in __MODULE__,
-      select: d.l1_block_number,
+      select: {d.l1_block_number, d.l1_tx_hash},
       order_by: [desc: d.l1_tx_origin],
       limit: 1
     )
