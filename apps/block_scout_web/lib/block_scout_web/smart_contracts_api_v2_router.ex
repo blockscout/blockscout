@@ -21,6 +21,7 @@ defmodule BlockScoutWeb.SmartContractsApiV2Router do
 
     alias BlockScoutWeb.API.V2
 
+    get("/", V2.SmartContractController, :smart_contracts_list)
     get("/:address_hash", V2.SmartContractController, :smart_contract)
     get("/:address_hash/methods-read", V2.SmartContractController, :methods_read)
     get("/:address_hash/methods-write", V2.SmartContractController, :methods_write)
