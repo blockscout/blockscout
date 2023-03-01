@@ -45,14 +45,14 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
-         optimism_rpc_l1 = Application.get_env(:indexer, :optimism_rpc_l1),
-         {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_rpc_l1)},
+         optimism_l1_rpc = Application.get_env(:indexer, :optimism_l1_rpc),
+         {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          {:batch_inbox_valid, true} <- {:batch_inbox_valid, Optimism.is_address?(env[:batch_inbox])},
          {:batch_submitter_valid, true} <- {:batch_submitter_valid, Optimism.is_address?(env[:batch_submitter])},
          start_block_l1 = Optimism.parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
-         json_rpc_named_arguments = json_rpc_named_arguments(optimism_rpc_l1),
+         json_rpc_named_arguments = json_rpc_named_arguments(optimism_l1_rpc),
          {last_l1_block_number, last_l1_transaction_hash, last_l1_tx} = get_last_l1_item(json_rpc_named_arguments),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
@@ -455,12 +455,12 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     %{number: frame_number, data: frame_data, is_last: is_last}
   end
 
-  defp json_rpc_named_arguments(optimism_rpc_l1) do
+  defp json_rpc_named_arguments(optimism_l1_rpc) do
     [
       transport: EthereumJSONRPC.HTTP,
       transport_options: [
         http: EthereumJSONRPC.HTTP.HTTPoison,
-        url: optimism_rpc_l1,
+        url: optimism_l1_rpc,
         http_options: [
           recv_timeout: :timer.minutes(10),
           timeout: :timer.minutes(10),
