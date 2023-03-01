@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- [#7008](https://github.com/blockscout/blockscout/pull/7008) - Fetch image/video content from IPFS link
 - [#7007](https://github.com/blockscout/blockscout/pull/7007) - Token instance fetcher fixes
 
 ### Chore
