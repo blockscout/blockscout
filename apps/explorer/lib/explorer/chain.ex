@@ -2597,7 +2597,7 @@ defmodule Explorer.Chain do
           l2_block_number: w.l2_block_number,
           l2_timestamp: l2_block.timestamp,
           l2_transaction_hash: w.l2_transaction_hash,
-          l1_tx_hash: we.l1_tx_hash,
+          l1_transaction_hash: we.l1_transaction_hash,
           from: l2_tx.from_address_hash
         }
       )
