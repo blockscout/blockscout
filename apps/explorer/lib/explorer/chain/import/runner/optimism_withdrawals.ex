@@ -85,7 +85,7 @@ defmodule Explorer.Chain.Import.Runner.OptimismWithdrawals do
         set: [
           # don't update `msg_nonce` as it is a primary key and used for the conflict target
           withdrawal_hash: fragment("EXCLUDED.withdrawal_hash"),
-          l2_tx_hash: fragment("EXCLUDED.l2_tx_hash"),
+          l2_transaction_hash: fragment("EXCLUDED.l2_transaction_hash"),
           l2_block_number: fragment("EXCLUDED.l2_block_number"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", withdrawal.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", withdrawal.updated_at)
@@ -93,9 +93,9 @@ defmodule Explorer.Chain.Import.Runner.OptimismWithdrawals do
       ],
       where:
         fragment(
-          "(EXCLUDED.withdrawal_hash, EXCLUDED.l2_tx_hash, EXCLUDED.l2_block_number) IS DISTINCT FROM (?, ?, ?)",
+          "(EXCLUDED.withdrawal_hash, EXCLUDED.l2_transaction_hash, EXCLUDED.l2_block_number) IS DISTINCT FROM (?, ?, ?)",
           withdrawal.withdrawal_hash,
-          withdrawal.l2_tx_hash,
+          withdrawal.l2_transaction_hash,
           withdrawal.l2_block_number
         )
     )

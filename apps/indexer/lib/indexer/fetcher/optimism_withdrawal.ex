@@ -46,13 +46,13 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
          start_block_l2 <- Optimism.parse_integer(env[:start_block_l2]),
          false <- is_nil(start_block_l2),
          true <- start_block_l2 > 0,
-         {last_l2_block_number, last_l2_tx_hash} <- get_last_l2_item(),
+         {last_l2_block_number, last_l2_transaction_hash} <- get_last_l2_item(),
          {:ok, safe_block} = Optimism.get_block_number_by_tag("safe", json_rpc_named_arguments),
          {:start_block_l2_valid, true} <-
            {:start_block_l2_valid,
             (start_block_l2 <= last_l2_block_number || last_l2_block_number == 0) && start_block_l2 <= safe_block},
-         {:ok, last_l2_tx} <- Optimism.get_transaction_by_hash(last_l2_tx_hash, json_rpc_named_arguments),
-         {:l2_tx_not_found, false} <- {:l2_tx_not_found, !is_nil(last_l2_tx_hash) && is_nil(last_l2_tx)} do
+         {:ok, last_l2_tx} <- Optimism.get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments),
+         {:l2_tx_not_found, false} <- {:l2_tx_not_found, !is_nil(last_l2_transaction_hash) && is_nil(last_l2_tx)} do
       {:ok,
        %{
          start_block: max(start_block_l2, last_l2_block_number),
@@ -128,14 +128,14 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
     Repo.delete_all(from(w in OptimismWithdrawal, where: w.l2_block_number >= ^starting_block))
   end
 
-  def event_to_withdrawal(second_topic, data, l2_tx_hash, l2_block_number) do
+  def event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number) do
     [_value, _gas_limit, _data, withdrawal_hash] =
       Optimism.decode_data(data, [{:uint, 256}, {:uint, 256}, :bytes, {:bytes, 32}])
 
     %{
       msg_nonce: Decimal.new(quantity_to_integer(second_topic)),
       withdrawal_hash: withdrawal_hash,
-      l2_tx_hash: l2_tx_hash,
+      l2_transaction_hash: l2_transaction_hash,
       l2_block_number: quantity_to_integer(l2_block_number)
     }
   end
@@ -189,8 +189,8 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
 
         query
         |> Repo.all(timeout: :infinity)
-        |> Enum.map(fn {second_topic, data, l2_tx_hash, l2_block_number} ->
-          event_to_withdrawal(second_topic, data, l2_tx_hash, l2_block_number)
+        |> Enum.map(fn {second_topic, data, l2_transaction_hash, l2_block_number} ->
+          event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number)
         end)
       else
         {:ok, result} =
@@ -300,7 +300,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
   defp get_last_l2_item do
     query =
       from(w in OptimismWithdrawal,
-        select: {w.l2_block_number, w.l2_tx_hash},
+        select: {w.l2_block_number, w.l2_transaction_hash},
         order_by: [desc: w.msg_nonce],
         limit: 1
       )
