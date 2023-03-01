@@ -240,7 +240,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   end
 
   defp empty_incomplete_frame_sequence(last_frame_number \\ -1) do
-    %{bytes: <<>>, last_frame_number: last_frame_number, l1_tx_hashes: []}
+    %{bytes: <<>>, last_frame_number: last_frame_number, l1_transaction_hashes: []}
   end
 
   defp get_block_numbers_by_hashes(hashes, json_rpc_named_arguments_l2) do
@@ -292,21 +292,21 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   end
 
   defp get_last_l1_item(json_rpc_named_arguments) do
-    l1_tx_hashes =
+    l1_transaction_hashes =
       Repo.one(
         from(
           tb in OptimismTxnBatch,
-          select: tb.l1_tx_hashes,
+          select: tb.l1_transaction_hashes,
           order_by: [desc: tb.l2_block_number],
           limit: 1
         )
       )
 
     last_l1_transaction_hash =
-      if is_nil(l1_tx_hashes) do
+      if is_nil(l1_transaction_hashes) do
         nil
       else
-        List.last(l1_tx_hashes)
+        List.last(l1_transaction_hashes)
       end
 
     if is_nil(last_l1_transaction_hash) do
@@ -405,17 +405,17 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       else
         frame_sequence = incomplete_frame_sequence_acc.bytes <> frame.data
         # credo:disable-for-next-line
-        l1_tx_hashes = incomplete_frame_sequence_acc.l1_tx_hashes ++ [t.hash]
+        l1_transaction_hashes = incomplete_frame_sequence_acc.l1_transaction_hashes ++ [t.hash]
         last_frame_number = incomplete_frame_sequence_acc.last_frame_number
 
         with {:frame_number_valid, true} <- {:frame_number_valid, frame.number == last_frame_number + 1},
              {:frame_is_last, true} <- {:frame_is_last, frame.is_last},
-             l1_tx_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params),
+             l1_transaction_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params),
              batches_parsed =
                parse_frame_sequence(
                  frame_sequence,
-                 l1_tx_hashes,
-                 l1_tx_timestamp,
+                 l1_transaction_hashes,
+                 l1_transaction_timestamp,
                  json_rpc_named_arguments_l2,
                  after_reorg
                ),
@@ -434,7 +434,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
           {:frame_is_last, false} ->
             {:cont,
-             {:ok, batches, %{bytes: frame_sequence, last_frame_number: frame.number, l1_tx_hashes: l1_tx_hashes}}}
+             {:ok, batches,
+              %{bytes: frame_sequence, last_frame_number: frame.number, l1_transaction_hashes: l1_transaction_hashes}}}
         end
       end
     end)
@@ -505,7 +506,13 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     end
   end
 
-  defp parse_frame_sequence(bytes, l1_tx_hashes, l1_tx_timestamp, json_rpc_named_arguments_l2, after_reorg) do
+  defp parse_frame_sequence(
+         bytes,
+         l1_transaction_hashes,
+         l1_transaction_timestamp,
+         json_rpc_named_arguments_l2,
+         after_reorg
+       ) do
     uncompressed_bytes = zlib_decompress(bytes)
 
     batches =
@@ -517,8 +524,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           batch = %{
             parent_hash: Enum.at(batch, 0),
             epoch_number: :binary.decode_unsigned(Enum.at(batch, 1)),
-            l1_tx_hashes: l1_tx_hashes,
-            l1_tx_timestamp: l1_tx_timestamp
+            l1_transaction_hashes: l1_transaction_hashes,
+            l1_transaction_timestamp: l1_transaction_timestamp
           }
 
           if byte_size(new_remainder) > 0 do
@@ -585,7 +592,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     batches
     |> Enum.sort(fn b1, b2 ->
       b1.l2_block_number < b2.l2_block_number or
-        (b1.l2_block_number == b2.l2_block_number and b1.l1_tx_timestamp < b2.l1_tx_timestamp)
+        (b1.l2_block_number == b2.l2_block_number and b1.l1_transaction_timestamp < b2.l1_transaction_timestamp)
     end)
     |> Enum.reduce(%{}, fn b, acc ->
       Map.put(acc, b.l2_block_number, b)
@@ -670,7 +677,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
                    %{
                      bytes: frame.data <> acc.bytes,
                      last_frame_number: frame.number,
-                     l1_tx_hashes: [t.hash | acc.l1_tx_hashes]
+                     l1_transaction_hashes: [t.hash | acc.l1_transaction_hashes]
                    }}
                 else
                   {:halt, :error}
