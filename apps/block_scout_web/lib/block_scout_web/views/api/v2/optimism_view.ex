@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, OptimismOutputRoot, OptimismWithdrawalEvent}
+  alias Explorer.Chain.{OptimismOutputRoot, OptimismWithdrawalEvent, Transaction}
 
   def render("optimism_txn_batches.json", %{
         batches: batches,
@@ -16,7 +16,9 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       items:
         Enum.map(batches, fn batch ->
           tx_count =
-            Repo.aggregate(from(b in Block, where: b.number == ^batch.l2_block_number), :count, timeout: :infinity)
+            Repo.aggregate(from(t in Transaction, where: t.block_number == ^batch.l2_block_number), :count,
+              timeout: :infinity
+            )
 
           %{
             "l2_block_number" => batch.l2_block_number,
