@@ -660,15 +660,15 @@ config :indexer, Indexer.Fetcher.CoinBalance,
 
 config :indexer,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
-  optimism_l1_portal: System.get_env("INDEXER_OPTIMISM_L1_PORTAL")
+  optimism_l1_portal: System.get_env("INDEXER_OPTIMISM_L1_PORTAL_CONTRACT")
 
 config :indexer, Indexer.Fetcher.OptimismOutputRoot,
   start_block_l1: System.get_env("INDEXER_OPTIMISM_L1_OUTPUT_ROOTS_START_BLOCK"),
-  output_oracle: System.get_env("INDEXER_OPTIMISM_L1_OUTPUT_ORACLE")
+  output_oracle: System.get_env("INDEXER_OPTIMISM_L1_OUTPUT_ORACLE_CONTRACT")
 
 config :indexer, Indexer.Fetcher.OptimismWithdrawal,
   start_block_l2: System.get_env("INDEXER_OPTIMISM_L2_WITHDRAWALS_START_BLOCK"),
-  message_passer: System.get_env("INDEXER_OPTIMISM_L2_MESSAGE_PASSER")
+  message_passer: System.get_env("INDEXER_OPTIMISM_L2_MESSAGE_PASSER_CONTRACT")
 
 config :indexer, Indexer.Fetcher.OptimismWithdrawalEvent,
   start_block_l1: System.get_env("INDEXER_OPTIMISM_L1_WITHDRAWALS_START_BLOCK")
