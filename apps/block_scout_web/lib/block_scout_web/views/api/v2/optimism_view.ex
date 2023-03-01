@@ -22,8 +22,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "l2_block_number" => batch.l2_block_number,
             "tx_count" => tx_count,
             "epoch_number" => batch.epoch_number,
-            "l1_tx_hashes" => batch.l1_tx_hashes,
-            "l1_tx_timestamp" => batch.l1_tx_timestamp
+            "l1_tx_hashes" => batch.l1_transaction_hashes,
+            "l1_tx_timestamp" => batch.l1_transaction_timestamp
           }
         end),
       total: total,
