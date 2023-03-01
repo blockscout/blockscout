@@ -61,7 +61,7 @@ defmodule Explorer.Chain.Import.Runner.OptimismDeposits do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce OptimismDeposit ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.l2_tx_hash)
+    ordered_changes_list = Enum.sort_by(changes_list, & &1.l2_transaction_hash)
 
     {:ok, inserted} =
       Import.insert_changes_list(
@@ -71,7 +71,7 @@ defmodule Explorer.Chain.Import.Runner.OptimismDeposits do
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
-        conflict_target: :l2_tx_hash,
+        conflict_target: :l2_transaction_hash,
         on_conflict: on_conflict
       )
 
@@ -83,22 +83,22 @@ defmodule Explorer.Chain.Import.Runner.OptimismDeposits do
       deposit in OptimismDeposit,
       update: [
         set: [
-          # don't update `l2_tx_hash` as it is a primary key and used for the conflict target
+          # don't update `l2_transaction_hash` as it is a primary key and used for the conflict target
           l1_block_number: fragment("EXCLUDED.l1_block_number"),
           l1_block_timestamp: fragment("EXCLUDED.l1_block_timestamp"),
-          l1_tx_hash: fragment("EXCLUDED.l1_tx_hash"),
-          l1_tx_origin: fragment("EXCLUDED.l1_tx_origin"),
+          l1_transaction_hash: fragment("EXCLUDED.l1_transaction_hash"),
+          l1_transaction_origin: fragment("EXCLUDED.l1_transaction_origin"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", deposit.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", deposit.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.l1_block_number, EXCLUDED.l1_block_timestamp, EXCLUDED.l1_tx_hash, EXCLUDED.l1_tx_origin) IS DISTINCT FROM (?, ?, ?, ?)",
+          "(EXCLUDED.l1_block_number, EXCLUDED.l1_block_timestamp, EXCLUDED.l1_transaction_hash, EXCLUDED.l1_transaction_origin) IS DISTINCT FROM (?, ?, ?, ?)",
           deposit.l1_block_number,
           deposit.l1_block_timestamp,
-          deposit.l1_tx_hash,
-          deposit.l1_tx_origin
+          deposit.l1_transaction_hash,
+          deposit.l1_transaction_origin
         )
     )
   end

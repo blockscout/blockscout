@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.OptimismDeposit
   alias Indexer.Fetcher.Optimism
+  alias Indexer.Helpers
 
   defstruct [
     :batch_size,
@@ -58,7 +59,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     optimism_rpc_l1 = Application.get_env(:indexer, :optimism_rpc_l1)
 
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
-         {:optimism_portal_valid, true} <- {:optimism_portal_valid, Optimism.is_address?(optimism_portal)},
+         {:optimism_portal_valid, true} <- {:optimism_portal_valid, Helpers.is_address_correct?(optimism_portal)},
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_rpc_l1)},
          start_block_l1 <- Optimism.parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
@@ -341,9 +342,9 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     %{
       l1_block_number: block_number,
       l1_block_timestamp: timestamp,
-      l1_tx_hash: transaction_hash,
-      l1_tx_origin: "0x" <> from_stripped,
-      l2_tx_hash: l2_tx_hash
+      l1_transaction_hash: transaction_hash,
+      l1_transaction_origin: "0x" <> from_stripped,
+      l2_transaction_hash: l2_tx_hash
     }
   end
 

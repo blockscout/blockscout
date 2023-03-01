@@ -384,7 +384,7 @@ defmodule BlockScoutWeb.Chain do
     %{"smart_contract_id" => smart_contract.id}
   end
 
-  defp paging_params(%OptimismDeposit{l1_block_number: l1_block_number, l2_tx_hash: l2_tx_hash}) do
+  defp paging_params(%OptimismDeposit{l1_block_number: l1_block_number, l2_transaction_hash: l2_tx_hash}) do
     %{"l1_block_number" => l1_block_number, "tx_hash" => l2_tx_hash}
   end
 

@@ -2436,7 +2436,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Lists `t:Explorer.Chain.OptimismDeposits.t/0`'s' in descending order based on l1_block_number and l2_tx_hash.
+  Lists `t:Explorer.Chain.OptimismDeposits.t/0`'s' in descending order based on l1_block_number and l2_transaction_hash.
 
   """
   @spec list_deposits :: [OptimismDeposits.t()]
@@ -2447,7 +2447,7 @@ defmodule Explorer.Chain do
     base_query =
       from(d in OptimismDeposit,
         left_join: tx in assoc(d, :transaction),
-        order_by: [desc: d.l1_block_number, desc: d.l2_tx_hash]
+        order_by: [desc: d.l1_block_number, desc: d.l2_transaction_hash]
       )
 
     base_query
@@ -4687,7 +4687,7 @@ defmodule Explorer.Chain do
   defp page_deposits(query, %PagingOptions{key: {block_number, l2_tx_hash}}) do
     from(d in query,
       where: d.l1_block_number < ^block_number,
-      or_where: d.l1_block_number == ^block_number and d.l2_tx_hash < ^l2_tx_hash
+      or_where: d.l1_block_number == ^block_number and d.l2_transaction_hash < ^l2_tx_hash
     )
   end
 
