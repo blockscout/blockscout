@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#7007](https://github.com/blockscout/blockscout/pull/7007) - Token instance fetcher fixes
+
 ### Chore
 
 - [#6989](https://github.com/blockscout/blockscout/pull/6989) - Update bitwalker/alpine-elixir-phoenix: 1.13 -> 1.14
