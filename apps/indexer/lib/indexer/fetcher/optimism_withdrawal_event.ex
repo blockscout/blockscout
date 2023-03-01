@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
 
   import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
 
+  alias EthereumJSONRPC.Block.ByNumber
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.OptimismWithdrawalEvent
   alias Indexer.{BoundQueue, Helpers}
@@ -335,7 +336,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
       |> Enum.map(fn {block_number, _} -> block_number end)
       |> Enum.with_index()
       |> Enum.map(fn {block_number, id} ->
-        %{id: id, method: "eth_getBlockByNumber", params: [block_number, false], jsonrpc: "2.0"}
+        ByNumber.request(%{number: block_number, id: id}, false, false)
       end)
 
     case json_rpc(request, json_rpc_named_arguments) do
