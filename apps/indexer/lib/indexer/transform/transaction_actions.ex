@@ -174,7 +174,8 @@ defmodule Indexer.Transform.TransactionActions do
         first_topic
       ) ||
         (first_topic == @uniswap_v3_transfer_nft_event &&
-           String.downcase(address_hash_to_string(log.address_hash)) == String.downcase(@uniswap_v3_positions_nft))
+           String.downcase(Helpers.address_hash_to_string(log.address_hash)) ==
+             String.downcase(@uniswap_v3_positions_nft))
     end)
   end
 
@@ -183,7 +184,7 @@ defmodule Indexer.Transform.TransactionActions do
 
     with false <- first_topic == @uniswap_v3_transfer_nft_event,
          # check UniswapV3Pool contract is legitimate
-         pool_address <- String.downcase(address_hash_to_string(log.address_hash)),
+         pool_address <- String.downcase(Helpers.address_hash_to_string(log.address_hash)),
          false <- is_nil(legitimate[pool_address]),
          false <- Enum.empty?(legitimate[pool_address]),
          # this is legitimate uniswap pool, so handle this event
@@ -363,7 +364,7 @@ defmodule Indexer.Transform.TransactionActions do
           String.downcase(log.first_topic) != @uniswap_v3_transfer_nft_event
         end)
         |> Enum.reduce(addresses_acc, fn log, acc ->
-          pool_address = String.downcase(address_hash_to_string(log.address_hash))
+          pool_address = String.downcase(Helpers.address_hash_to_string(log.address_hash))
           Map.put(acc, pool_address, true)
         end)
       end)
@@ -753,14 +754,6 @@ defmodule Indexer.Transform.TransactionActions do
 
   defp init_uniswap_pools_cache do
     init_cache(:tx_actions_uniswap_pools_cache)
-  end
-
-  defp address_hash_to_string(hash) do
-    if is_binary(hash) do
-      hash
-    else
-      Hash.to_string(hash)
-    end
   end
 
   defp logs_group_by_txs(logs) do

@@ -5,7 +5,6 @@ defmodule Indexer.Transform.OptimismWithdrawals do
 
   require Logger
 
-  alias Explorer.Chain.Hash
   alias Indexer.Fetcher.OptimismWithdrawal
   alias Indexer.Helpers
 
@@ -26,7 +25,7 @@ defmodule Indexer.Transform.OptimismWithdrawals do
       logs
       |> Enum.filter(fn log ->
         !is_nil(log.first_topic) && String.downcase(log.first_topic) == @message_passed_event &&
-          String.downcase(address_hash_to_string(log.address_hash)) == message_passer
+          String.downcase(Helpers.address_hash_to_string(log.address_hash)) == message_passer
       end)
       |> Enum.map(fn log ->
         Logger.info("Withdrawal message found, nonce: #{log.second_topic}.")
@@ -40,13 +39,5 @@ defmodule Indexer.Transform.OptimismWithdrawals do
         Logger.error("L2ToL1MessagePasser contract address is incorrect. Cannot use #{__MODULE__} for parsing logs.")
         []
     end
-  end
-
-  defp address_hash_to_string(hash) when is_binary(hash) do
-    hash
-  end
-
-  defp address_hash_to_string(hash) do
-    Hash.to_string(hash)
   end
 end
