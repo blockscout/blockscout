@@ -2517,7 +2517,7 @@ defmodule Explorer.Chain do
       from(w in OptimismWithdrawal,
         order_by: [desc: w.msg_nonce],
         left_join: l2_tx in Transaction,
-        on: w.l2_tx_hash == l2_tx.hash,
+        on: w.l2_transaction_hash == l2_tx.hash,
         left_join: l2_block in Block,
         on: w.l2_block_number == l2_block.number,
         left_join: we in OptimismWithdrawalEvent,
@@ -2527,7 +2527,7 @@ defmodule Explorer.Chain do
           withdrawal_hash: w.withdrawal_hash,
           l2_block_number: w.l2_block_number,
           l2_timestamp: l2_block.timestamp,
-          l2_tx_hash: w.l2_tx_hash,
+          l2_transaction_hash: w.l2_transaction_hash,
           l1_tx_hash: we.l1_tx_hash,
           from: l2_tx.from_address_hash
         }
