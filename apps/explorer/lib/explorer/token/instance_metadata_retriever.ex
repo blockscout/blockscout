@@ -255,8 +255,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     {:error, result}
   end
 
-  defp fetch_from_ipfs(right, hex_token_id) do
-    ipfs_uid = right |> String.split("/") |> List.first()
+  defp fetch_from_ipfs(ipfs_uid, hex_token_id) do
     ipfs_url = "https://ipfs.io/ipfs/" <> ipfs_uid
     fetch_metadata_inner(ipfs_url, hex_token_id)
   end
@@ -277,8 +276,13 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   def fetch_metadata_from_uri(uri, hex_token_id \\ nil) do
     case HTTPoison.get(uri, [], timeout: 60_000, recv_timeout: 60_000, follow_redirect: true) do
       {:ok, %Response{body: body, status_code: 200, headers: headers}} ->
-        if Enum.member?(headers, {"Content-Type", "image/png"}) do
-          json = %{"image" => uri}
+        content_type = get_content_type_from_headers(headers)
+
+        image = is_image?(content_type)
+        video = is_video?(content_type)
+
+        if content_type && (image || video) do
+          json = if image, do: %{"image" => uri}, else: %{"animation_url" => uri}
 
           check_type(json, nil)
         else
@@ -301,6 +305,23 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       )
 
       {:error, :request_error}
+  end
+
+  defp get_content_type_from_headers(headers) do
+    {_, content_type} =
+      Enum.find(headers, fn {header_name, _header_value} ->
+        header_name == "Content-Type"
+      end) || {nil, nil}
+
+    content_type
+  end
+
+  defp is_image?(content_type) do
+    content_type && String.starts_with?(content_type, "image/")
+  end
+
+  defp is_video?(content_type) do
+    content_type && String.starts_with?(content_type, "video/")
   end
 
   defp decode_json(body) do

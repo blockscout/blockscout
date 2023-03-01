@@ -347,20 +347,42 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                 }}
     end
 
-    test "fetches json metadata from ipfs://${uid}/something" do
+    test "fetches image from ipfs link directly" do
       data = %{
         "c87b56dd" =>
           {:ok,
            [
-             "ipfs://bafkreigvdbls327yodd77iinrijqdfhyrtvfav6xwl2i3r7pjl6q4qmqgm/1732.json"
+             "ipfs://bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
            ]}
       }
 
-      {:ok, %{metadata: metadata}} = InstanceMetadataRetriever.fetch_json(data)
+      assert {:ok,
+              %{
+                metadata: %{
+                  "image" => "https://ipfs.io/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+                }
+              }} = InstanceMetadataRetriever.fetch_json(data)
+    end
 
-      assert metadata
-             |> Map.get("links")
-             |> Map.get("website") == "https://base.org/"
+    test "Fetches metadata from ipfs" do
+      data = %{
+        "c87b56dd" =>
+          {:ok,
+           [
+             "ipfs://bafybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json"
+           ]}
+      }
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "image" => "ipfs://bafybeihxuj3gxk7x5p36amzootyukbugmx3pw7dyntsrohg3se64efkuga/51.png",
+                  "attributes" => _,
+                  "description" => "No roadmap Just OP NOK...But This NFT can use in Sobta ecosystem (if any)",
+                  "edition" => 51,
+                  "name" => "SobtaOpGenesis #51"
+                }
+              }} = InstanceMetadataRetriever.fetch_json(data)
     end
   end
 end
