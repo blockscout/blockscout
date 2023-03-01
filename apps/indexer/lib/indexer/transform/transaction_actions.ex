@@ -12,6 +12,7 @@ defmodule Indexer.Transform.TransactionActions do
   alias Explorer.Chain.{Address, Data, Hash, Token, TransactionAction}
   alias Explorer.Repo
   alias Explorer.SmartContract.Reader
+  alias Indexer.Helpers
 
   @mainnet 1
   @goerli 5
@@ -429,8 +430,8 @@ defmodule Indexer.Transform.TransactionActions do
         end
       end)
       |> Enum.map(fn {pool_address, pool} ->
-        token0 = if is_address_correct?(pool.token0), do: String.downcase(pool.token0), else: @burn_address
-        token1 = if is_address_correct?(pool.token1), do: String.downcase(pool.token1), else: @burn_address
+        token0 = if Helpers.is_address_correct?(pool.token0), do: String.downcase(pool.token0), else: @burn_address
+        token1 = if Helpers.is_address_correct?(pool.token1), do: String.downcase(pool.token1), else: @burn_address
         fee = if pool.fee == "", do: 0, else: pool.fee
 
         # we will call getPool(token0, token1, fee) public getter
@@ -752,10 +753,6 @@ defmodule Indexer.Transform.TransactionActions do
 
   defp init_uniswap_pools_cache do
     init_cache(:tx_actions_uniswap_pools_cache)
-  end
-
-  defp is_address_correct?(address) do
-    String.match?(address, ~r/^0x[[:xdigit:]]{40}$/i)
   end
 
   defp address_hash_to_string(hash) do
