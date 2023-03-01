@@ -276,8 +276,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
 
   def fetch_metadata_from_uri(uri, hex_token_id \\ nil) do
     case HTTPoison.get(uri, [], timeout: 60_000, recv_timeout: 60_000, follow_redirect: true) do
-      {:ok, %Response{body: body, status_code: status_code, headers: headers}}
-      when status_code in [200, 301, 302, 307] ->
+      {:ok, %Response{body: body, status_code: 200, headers: headers}} ->
         if Enum.member?(headers, {"Content-Type", "image/png"}) do
           json = %{"image" => uri}
 
