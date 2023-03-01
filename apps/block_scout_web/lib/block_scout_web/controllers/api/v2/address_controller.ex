@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView}
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
-  alias Indexer.Fetcher.TokenBalanceOnDemand
+  alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
 
   @transaction_necessity_by_association [
     necessity_by_association: %{
@@ -45,6 +45,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash)} do
+      CoinBalanceOnDemand.trigger_fetch(address)
+
       conn
       |> put_status(200)
       |> render(:address, %{address: address})
