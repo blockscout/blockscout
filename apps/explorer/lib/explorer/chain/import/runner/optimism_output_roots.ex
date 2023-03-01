@@ -85,7 +85,7 @@ defmodule Explorer.Chain.Import.Runner.OptimismOutputRoots do
         set: [
           # don't update `l2_output_index` as it is a primary key and used for the conflict target
           l2_block_number: fragment("EXCLUDED.l2_block_number"),
-          l1_tx_hash: fragment("EXCLUDED.l1_tx_hash"),
+          l1_transaction_hash: fragment("EXCLUDED.l1_transaction_hash"),
           l1_timestamp: fragment("EXCLUDED.l1_timestamp"),
           l1_block_number: fragment("EXCLUDED.l1_block_number"),
           output_root: fragment("EXCLUDED.output_root"),
@@ -95,9 +95,9 @@ defmodule Explorer.Chain.Import.Runner.OptimismOutputRoots do
       ],
       where:
         fragment(
-          "(EXCLUDED.l2_block_number, EXCLUDED.l1_tx_hash, EXCLUDED.l1_timestamp, EXCLUDED.l1_block_number, EXCLUDED.output_root) IS DISTINCT FROM (?, ?, ?, ?, ?)",
+          "(EXCLUDED.l2_block_number, EXCLUDED.l1_transaction_hash, EXCLUDED.l1_timestamp, EXCLUDED.l1_block_number, EXCLUDED.output_root) IS DISTINCT FROM (?, ?, ?, ?, ?)",
           root.l2_block_number,
-          root.l1_tx_hash,
+          root.l1_transaction_hash,
           root.l1_timestamp,
           root.l1_block_number,
           root.output_root

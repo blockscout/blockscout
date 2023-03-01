@@ -53,10 +53,10 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
          json_rpc_named_arguments = json_rpc_named_arguments(optimism_rpc_l1),
-         {last_l1_block_number, last_l1_tx_hash, last_l1_tx} = get_last_l1_item(json_rpc_named_arguments),
+         {last_l1_block_number, last_l1_transaction_hash, last_l1_tx} = get_last_l1_item(json_rpc_named_arguments),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_tx_hash) && is_nil(last_l1_tx)},
+         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
          {:ok, last_safe_block} <- Optimism.get_block_number_by_tag("safe", json_rpc_named_arguments),
          first_block = max(last_safe_block - @block_check_interval_range_size, 1),
          {:ok, first_block_timestamp} <- Optimism.get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
@@ -302,19 +302,19 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         )
       )
 
-    last_l1_tx_hash =
+    last_l1_transaction_hash =
       if is_nil(l1_tx_hashes) do
         nil
       else
         List.last(l1_tx_hashes)
       end
 
-    if is_nil(last_l1_tx_hash) do
+    if is_nil(last_l1_transaction_hash) do
       {0, nil, nil}
     else
-      {:ok, last_l1_tx} = Optimism.get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments)
+      {:ok, last_l1_tx} = Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments)
       last_l1_block_number = quantity_to_integer(Map.get(last_l1_tx || %{}, "blockNumber", 0))
-      {last_l1_block_number, last_l1_tx_hash, last_l1_tx}
+      {last_l1_block_number, last_l1_transaction_hash, last_l1_tx}
     end
   end
 

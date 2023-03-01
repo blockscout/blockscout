@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           %{
             "l2_output_index" => r.l2_output_index,
             "l2_block_number" => r.l2_block_number,
-            "l1_tx_hash" => r.l1_tx_hash,
+            "l1_tx_hash" => r.l1_transaction_hash,
             "l1_timestamp" => r.l1_timestamp,
             "l1_block_number" => r.l1_block_number,
             "output_root" => r.output_root
@@ -93,7 +93,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "l2_tx_hash" => w.l2_transaction_hash,
             "l2_timestamp" => w.l2_timestamp,
             "status" => status,
-            "l1_tx_hash" => w.l1_tx_hash,
+            "l1_tx_hash" => w.l1_transaction_hash,
             "challenge_period_end" => challenge_period_end
           }
         end),
@@ -103,7 +103,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   end
 
   defp withdrawal_status(w) do
-    if is_nil(w.l1_tx_hash) do
+    if is_nil(w.l1_transaction_hash) do
       l1_timestamp =
         Repo.one(
           from(

@@ -86,7 +86,7 @@ defmodule Explorer.Chain.Import.Runner.OptimismWithdrawalEvents do
           # don't update `withdrawal_hash` as it is a part of the composite primary key and used for the conflict target
           # don't update `l1_event_type` as it is a part of the composite primary key and used for the conflict target
           l1_timestamp: fragment("EXCLUDED.l1_timestamp"),
-          l1_tx_hash: fragment("EXCLUDED.l1_tx_hash"),
+          l1_transaction_hash: fragment("EXCLUDED.l1_transaction_hash"),
           l1_block_number: fragment("EXCLUDED.l1_block_number"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", we.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", we.updated_at)
@@ -94,9 +94,9 @@ defmodule Explorer.Chain.Import.Runner.OptimismWithdrawalEvents do
       ],
       where:
         fragment(
-          "(EXCLUDED.l1_timestamp, EXCLUDED.l1_tx_hash, EXCLUDED.l1_block_number) IS DISTINCT FROM (?, ?, ?)",
+          "(EXCLUDED.l1_timestamp, EXCLUDED.l1_transaction_hash, EXCLUDED.l1_block_number) IS DISTINCT FROM (?, ?, ?)",
           we.l1_timestamp,
-          we.l1_tx_hash,
+          we.l1_transaction_hash,
           we.l1_block_number
         )
     )
