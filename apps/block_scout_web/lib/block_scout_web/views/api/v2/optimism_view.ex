@@ -90,7 +90,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "msg_nonce" => msg_nonce,
             "msg_nonce_version" => msg_nonce_version,
             "from" => Helper.address_with_info(conn, from_address, w.from),
-            "l2_tx_hash" => w.l2_tx_hash,
+            "l2_tx_hash" => w.l2_transaction_hash,
             "l2_timestamp" => w.l2_timestamp,
             "status" => status,
             "l1_tx_hash" => w.l1_tx_hash,
