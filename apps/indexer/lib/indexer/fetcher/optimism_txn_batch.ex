@@ -15,7 +15,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, OptimismTxnBatch}
-  alias Indexer.BoundQueue
+  alias Indexer.{BoundQueue, Helpers}
   alias Indexer.Fetcher.Optimism
 
   @block_check_interval_range_size 100
@@ -47,8 +47,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
          optimism_l1_rpc = Application.get_env(:indexer, :optimism_l1_rpc),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-         {:batch_inbox_valid, true} <- {:batch_inbox_valid, Optimism.is_address?(env[:batch_inbox])},
-         {:batch_submitter_valid, true} <- {:batch_submitter_valid, Optimism.is_address?(env[:batch_submitter])},
+         {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helpers.is_address_correct?(env[:batch_inbox])},
+         {:batch_submitter_valid, true} <- {:batch_submitter_valid, Helpers.is_address_correct?(env[:batch_submitter])},
          start_block_l1 = Optimism.parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,

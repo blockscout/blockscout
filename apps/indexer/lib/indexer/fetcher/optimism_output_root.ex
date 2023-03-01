@@ -14,7 +14,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.OptimismOutputRoot
-  alias Indexer.BoundQueue
+  alias Indexer.{BoundQueue, Helpers}
   alias Indexer.Fetcher.Optimism
 
   @block_check_interval_range_size 100
@@ -46,7 +46,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
          optimism_l1_rpc <- Application.get_env(:indexer, :optimism_l1_rpc),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-         {:output_oracle_valid, true} <- {:output_oracle_valid, Optimism.is_address?(env[:output_oracle])},
+         {:output_oracle_valid, true} <- {:output_oracle_valid, Helpers.is_address_correct?(env[:output_oracle])},
          start_block_l1 <- Optimism.parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,

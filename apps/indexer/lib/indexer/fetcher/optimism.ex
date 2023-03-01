@@ -158,14 +158,6 @@ defmodule Indexer.Fetcher.Optimism do
     @eth_get_logs_range_size
   end
 
-  def is_address?(value) when is_binary(value) do
-    String.match?(value, ~r/^0x[[:xdigit:]]{40}$/i)
-  end
-
-  def is_address?(_value) do
-    false
-  end
-
   def parse_integer(integer_string) when is_binary(integer_string) do
     case Integer.parse(integer_string) do
       {integer, ""} -> integer
