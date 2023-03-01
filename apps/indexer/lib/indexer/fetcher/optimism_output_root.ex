@@ -50,12 +50,12 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
          start_block_l1 <- Optimism.parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
-         {last_l1_block_number, last_l1_tx_hash} <- get_last_l1_item(),
+         {last_l1_block_number, last_l1_transaction_hash} <- get_last_l1_item(),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
          json_rpc_named_arguments <- json_rpc_named_arguments(optimism_rpc_l1),
-         {:ok, last_l1_tx} <- Optimism.get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments),
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_tx_hash) && is_nil(last_l1_tx)},
+         {:ok, last_l1_tx} <- Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
          {:ok, last_safe_block} <- Optimism.get_block_number_by_tag("safe", json_rpc_named_arguments),
          first_block <- max(last_safe_block - @block_check_interval_range_size, 1),
          {:ok, first_block_timestamp} <- Optimism.get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
@@ -230,7 +230,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
       %{
         l2_output_index: quantity_to_integer(Enum.at(event["topics"], 2)),
         l2_block_number: quantity_to_integer(Enum.at(event["topics"], 3)),
-        l1_tx_hash: event["transactionHash"],
+        l1_transaction_hash: event["transactionHash"],
         l1_timestamp: l1_timestamp,
         l1_block_number: quantity_to_integer(event["blockNumber"]),
         output_root: Enum.at(event["topics"], 1)
@@ -297,7 +297,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
   defp get_last_l1_item do
     query =
       from(root in OptimismOutputRoot,
-        select: {root.l1_block_number, root.l1_tx_hash},
+        select: {root.l1_block_number, root.l1_transaction_hash},
         order_by: [desc: root.l2_output_index],
         limit: 1
       )
