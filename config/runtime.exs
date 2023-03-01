@@ -626,8 +626,8 @@ config :indexer,
   optimism_l1_portal: System.get_env("INDEXER_OPTIMISM_L1_PORTAL_CONTRACT")
 
 config :indexer, Indexer.Fetcher.OptimismDeposit,
-  start_block_l1: System.get_env("INDEXER_OPTIMISM_DEPOSITS_START_BLOCK_L1"),
-  batch_size: System.get_env("INDEXER_OPTIMISM_DEPOSITS_BATCH_SIZE")
+  start_block_l1: System.get_env("INDEXER_OPTIMISM_L1_DEPOSITS_START_BLOCK"),
+  batch_size: System.get_env("INDEXER_OPTIMISM_L1_DEPOSITS_BATCH_SIZE")
 
 config :indexer, Indexer.Fetcher.OptimismOutputRoot,
   start_block_l1: System.get_env("INDEXER_OPTIMISM_L1_OUTPUT_ROOTS_START_BLOCK"),
