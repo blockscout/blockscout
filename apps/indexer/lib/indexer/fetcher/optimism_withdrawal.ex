@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Log, OptimismWithdrawal}
   alias Indexer.Fetcher.Optimism
+  alias Indexer.Helpers
 
   # 32-byte signature of the event MessagePassed(uint256 indexed nonce, address indexed sender, address indexed target, uint256 value, uint256 gasLimit, bytes data, bytes32 withdrawalHash)
   @message_passed_event "0x02a52367d10742d8032712c1bb8e0144ff1ec5ffda1ed7d70bb05a2744955054"
@@ -42,7 +43,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_l2_undefined, false} <- {:start_block_l2_undefined, is_nil(env[:start_block_l2])},
-         {:message_passer_valid, true} <- {:message_passer_valid, Optimism.is_address?(env[:message_passer])},
+         {:message_passer_valid, true} <- {:message_passer_valid, Helpers.is_address_correct?(env[:message_passer])},
          start_block_l2 <- Optimism.parse_integer(env[:start_block_l2]),
          false <- is_nil(start_block_l2),
          true <- start_block_l2 > 0,

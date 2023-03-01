@@ -14,7 +14,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.OptimismWithdrawalEvent
-  alias Indexer.BoundQueue
+  alias Indexer.{BoundQueue, Helpers}
   alias Indexer.Fetcher.Optimism
 
   @block_check_interval_range_size 100
@@ -50,7 +50,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
          optimism_l1_rpc <- Application.get_env(:indexer, :optimism_l1_rpc),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          optimism_l1_portal = Application.get_env(:indexer, :optimism_l1_portal),
-         {:optimism_portal_valid, true} <- {:optimism_portal_valid, Optimism.is_address?(optimism_l1_portal)},
+         {:optimism_portal_valid, true} <- {:optimism_portal_valid, Helpers.is_address_correct?(optimism_l1_portal)},
          start_block_l1 <- Optimism.parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,

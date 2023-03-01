@@ -7,6 +7,7 @@ defmodule Indexer.Transform.OptimismWithdrawals do
 
   alias Explorer.Chain.Hash
   alias Indexer.Fetcher.OptimismWithdrawal
+  alias Indexer.Helpers
 
   # 32-byte signature of the event MessagePassed(uint256 indexed nonce, address indexed sender, address indexed target, uint256 value, uint256 gasLimit, bytes data, bytes32 withdrawalHash)
   @message_passed_event "0x02a52367d10742d8032712c1bb8e0144ff1ec5ffda1ed7d70bb05a2744955054"
@@ -19,7 +20,7 @@ defmodule Indexer.Transform.OptimismWithdrawals do
 
     with false <- is_nil(Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:start_block_l2]),
          message_passer = Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:message_passer],
-         true <- is_address_correct?(message_passer) do
+         true <- Helpers.is_address_correct?(message_passer) do
       message_passer = String.downcase(message_passer)
 
       logs
@@ -47,9 +48,5 @@ defmodule Indexer.Transform.OptimismWithdrawals do
 
   defp address_hash_to_string(hash) do
     Hash.to_string(hash)
-  end
-
-  defp is_address_correct?(address) do
-    String.match?(address, ~r/^0x[[:xdigit:]]{40}$/i)
   end
 end
