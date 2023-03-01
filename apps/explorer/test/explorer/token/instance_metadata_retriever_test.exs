@@ -167,6 +167,27 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                })
     end
 
+    test "fetches json metadata for kitties" do
+      {:ok, %{metadata: metadata}} =
+        InstanceMetadataRetriever.fetch_metadata("0x06012c8cf97bead5deae237070f9587f8e7a266d", 100_500)
+
+      assert Map.get(metadata, "name") == "KittyBlue_2_Lemonade"
+    end
+
+    test "fetches json metadata when HTTP status 301" do
+      {:ok, %{metadata: metadata}} =
+        InstanceMetadataRetriever.fetch_metadata_from_uri("https://metadata.billyli.workers.dev/1302")
+
+      assert Map.get(metadata, "attributes") == [
+               %{"trait_type" => "Mouth", "value" => "Discomfort"},
+               %{"trait_type" => "Background", "value" => "Army Green"},
+               %{"trait_type" => "Eyes", "value" => "Wide Eyed"},
+               %{"trait_type" => "Fur", "value" => "Black"},
+               %{"trait_type" => "Earring", "value" => "Silver Hoop"},
+               %{"trait_type" => "Hat", "value" => "Sea Captain's Hat"}
+             ]
+    end
+
     test "replace {id} with actual token_id", %{bypass: bypass} do
       json = """
       {
@@ -324,6 +345,22 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                     "description" => "Punk Domains digital identity ï. Visit https://punk.domains/"
                   }
                 }}
+    end
+
+    test "fetches json metadata from ipfs://${uid}/something" do
+      data = %{
+        "c87b56dd" =>
+          {:ok,
+           [
+             "ipfs://bafkreigvdbls327yodd77iinrijqdfhyrtvfav6xwl2i3r7pjl6q4qmqgm/1732.json"
+           ]}
+      }
+
+      {:ok, %{metadata: metadata}} = InstanceMetadataRetriever.fetch_json(data)
+
+      assert metadata
+             |> Map.get("links")
+             |> Map.get("website") == "https://base.org/"
     end
   end
 end

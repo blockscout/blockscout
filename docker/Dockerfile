@@ -1,4 +1,4 @@
-FROM bitwalker/alpine-elixir-phoenix:1.13 AS builder
+FROM bitwalker/alpine-elixir-phoenix:1.14 AS builder
 
 WORKDIR /app
 
@@ -68,7 +68,7 @@ RUN mkdir -p /opt/release \
   && mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
 ##############################################################
-FROM bitwalker/alpine-elixir-phoenix:1.13
+FROM bitwalker/alpine-elixir-phoenix:1.14
 
 RUN apk --no-cache --update add jq
 

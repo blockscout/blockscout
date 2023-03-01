@@ -5,11 +5,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
   alias BlockScoutWeb.Tokens.Helpers
+  alias BlockScoutWeb.TransactionStateView
   alias Ecto.Association.NotLoaded
   alias Explorer.ExchangeRates.Token, as: TokenRate
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Transaction.StateChange
   alias Explorer.Counters.AverageBlockTime
   alias Timex.Duration
 
@@ -83,6 +85,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "items" => Enum.map(logs, fn log -> prepare_log(log, log.transaction) end),
       "next_page_params" => next_page_params
     }
+  end
+
+  def render("state_changes.json", %{state_changes: state_changes, conn: conn}) do
+    Enum.map(state_changes, &prepare_state_change(&1, conn))
   end
 
   def prepare_token_transfer(token_transfer, conn) do
@@ -486,4 +492,53 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp block_timestamp(%Transaction{block: %Block{} = block}), do: block.timestamp
   defp block_timestamp(%Block{} = block), do: block.timestamp
   defp block_timestamp(_), do: nil
+
+  defp prepare_state_change(%StateChange{} = state_change, conn) do
+    coin_or_transfer =
+      if state_change.coin_or_token_transfers == :coin,
+        do: :coin,
+        else: elem(List.first(state_change.coin_or_token_transfers), 1)
+
+    type = if coin_or_transfer == :coin, do: "coin", else: "token"
+
+    %{
+      "address" =>
+        Helper.address_with_info(conn, state_change.address, state_change.address && state_change.address.hash),
+      "is_miner" => state_change.miner?,
+      "type" => type,
+      "token" => if(type == "token", do: TokenView.render("token.json", %{token: coin_or_transfer.token}))
+    }
+    |> append_balances(state_change.balance_before, state_change.balance_after)
+    |> append_balance_change(state_change, coin_or_transfer)
+  end
+
+  defp append_balances(map, balance_before, balance_after) do
+    balances =
+      if TransactionStateView.not_negative?(balance_before) and TransactionStateView.not_negative?(balance_after) do
+        %{
+          "balance_before" => balance_before,
+          "balance_after" => balance_after
+        }
+      else
+        %{
+          "balance_before" => nil,
+          "balance_after" => nil
+        }
+      end
+
+    Map.merge(map, balances)
+  end
+
+  defp append_balance_change(map, state_change, coin_or_transfer) do
+    change =
+      if is_list(state_change.coin_or_token_transfers) and coin_or_transfer.token.type != "ERC-20" do
+        for {direction, token_transfer} <- state_change.coin_or_token_transfers do
+          %{"total" => prepare_token_transfer_total(token_transfer), "direction" => direction}
+        end
+      else
+        state_change.balance_diff
+      end
+
+    Map.merge(map, %{"change" => change})
+  end
 end
