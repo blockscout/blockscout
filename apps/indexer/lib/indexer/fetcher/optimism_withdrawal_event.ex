@@ -15,10 +15,8 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
   alias EthereumJSONRPC.Block.ByNumber
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.OptimismWithdrawalEvent
-  alias Indexer.{BoundQueue, Helpers}
+  alias Indexer.BoundQueue
   alias Indexer.Fetcher.Optimism
-
-  @block_check_interval_range_size 100
 
   # 32-byte signature of the event WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to)
   @withdrawal_proven_event "0x67a6208cfcc0801d50f6cbe764733f4fddf66ac0b04442061a8a8c0cb6b63f62"
@@ -46,89 +44,16 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
     Logger.metadata(fetcher: :optimism_withdrawal_event)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
+    optimism_l1_portal = Application.get_env(:indexer, :optimism_l1_portal)
 
-    with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
-         optimism_l1_rpc <- Application.get_env(:indexer, :optimism_l1_rpc),
-         {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-         optimism_l1_portal = Application.get_env(:indexer, :optimism_l1_portal),
-         {:optimism_portal_valid, true} <- {:optimism_portal_valid, Helpers.is_address_correct?(optimism_l1_portal)},
-         start_block_l1 <- Optimism.parse_integer(env[:start_block_l1]),
-         false <- is_nil(start_block_l1),
-         true <- start_block_l1 > 0,
-         {last_l1_block_number, last_l1_transaction_hash} <- get_last_l1_item(),
-         {:start_block_l1_valid, true} <-
-           {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
-         json_rpc_named_arguments <- json_rpc_named_arguments(optimism_l1_rpc),
-         {:ok, last_l1_tx} <- Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
-         {:ok, last_safe_block} <- Optimism.get_block_number_by_tag("safe", json_rpc_named_arguments),
-         first_block <- max(last_safe_block - @block_check_interval_range_size, 1),
-         {:ok, first_block_timestamp} <- Optimism.get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
-         {:ok, last_safe_block_timestamp} <-
-           Optimism.get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
-      block_check_interval =
-        ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
-
-      Logger.info("Block check interval is calculated as #{block_check_interval} ms.")
-
-      start_block = max(start_block_l1, last_l1_block_number)
-
-      reorg_monitor_task =
-        Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismWithdrawalEvent.TaskSupervisor, fn ->
-          reorg_monitor(block_check_interval, json_rpc_named_arguments)
-        end)
-
-      {:ok,
-       %{
-         optimism_portal: optimism_l1_portal,
-         block_check_interval: block_check_interval,
-         start_block: start_block,
-         end_block: last_safe_block,
-         reorg_monitor_task: reorg_monitor_task,
-         json_rpc_named_arguments: json_rpc_named_arguments
-       }, {:continue, nil}}
-    else
-      {:start_block_l1_undefined, true} ->
-        # the process shoudln't start if the start block is not defined
-        :ignore
-
-      {:rpc_l1_undefined, true} ->
-        Logger.error("L1 RPC URL is not defined.")
-        :ignore
-
-      {:optimism_portal_valid, false} ->
-        Logger.error("Optimism Portal address is invalid or not defined.")
-        :ignore
-
-      {:start_block_l1_valid, false} ->
-        Logger.error("Invalid L1 Start Block value. Please, check the value and op_withdrawal_events table.")
-        :ignore
-
-      {:error, error_data} ->
-        Logger.error(
-          "Cannot get last L1 transaction from RPC by its hash, last safe block, or block timestamp by its number due to RPC error: #{inspect(error_data)}"
-        )
-
-        :ignore
-
-      {:l1_tx_not_found, true} ->
-        Logger.error(
-          "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check op_withdrawal_events table."
-        )
-
-        :ignore
-
-      _ ->
-        Logger.error("Withdrawals L1 Start Block is invalid or zero.")
-        :ignore
-    end
+    Optimism.init(env, optimism_l1_portal, __MODULE__)
   end
 
   @impl GenServer
   def handle_continue(
         _,
         %{
-          optimism_portal: optimism_portal,
+          contract_address: optimism_portal,
           block_check_interval: block_check_interval,
           start_block: start_block,
           end_block: end_block,
@@ -265,7 +190,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
     end)
   end
 
-  defp reorg_monitor(block_check_interval, json_rpc_named_arguments) do
+  def reorg_monitor(block_check_interval, json_rpc_named_arguments) do
     Logger.metadata(fetcher: :optimism_withdrawal_event)
 
     # infinite loop
@@ -321,7 +246,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
     end
   end
 
-  defp get_last_l1_item do
+  def get_last_l1_item do
     query =
       from(we in OptimismWithdrawalEvent,
         select: {we.l1_block_number, we.l1_transaction_hash},
@@ -365,20 +290,5 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
           get_blocks_by_events(events, json_rpc_named_arguments, retries_left)
         end
     end
-  end
-
-  defp json_rpc_named_arguments(optimism_l1_rpc) do
-    [
-      transport: EthereumJSONRPC.HTTP,
-      transport_options: [
-        http: EthereumJSONRPC.HTTP.HTTPoison,
-        url: optimism_l1_rpc,
-        http_options: [
-          recv_timeout: :timer.minutes(10),
-          timeout: :timer.minutes(10),
-          hackney: [pool: :ethereum_jsonrpc]
-        ]
-      ]
-    ]
   end
 end
