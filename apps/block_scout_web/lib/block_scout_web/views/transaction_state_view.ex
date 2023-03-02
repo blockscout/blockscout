@@ -4,15 +4,7 @@ defmodule BlockScoutWeb.TransactionStateView do
   alias Explorer.Chain
   alias Explorer.Chain.{CurrencyHelpers, Wei}
 
-  import BlockScoutWeb.TransactionStateController, only: [from_loss: 1, to_profit: 1]
-
-  def has_diff?(%Wei{value: val}) do
-    not Decimal.eq?(val, Decimal.new(0))
-  end
-
-  def has_diff?(val) do
-    not Decimal.eq?(val, Decimal.new(0))
-  end
+  import BlockScoutWeb.Models.TransactionStateHelper, only: [from_loss: 1, has_diff?: 1, to_profit: 1]
 
   def not_negative?(%Wei{value: val}) do
     not Decimal.negative?(val)

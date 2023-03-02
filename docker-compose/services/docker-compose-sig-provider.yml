@@ -8,4 +8,4 @@ services:
     restart: always
     container_name: 'sig-provider'
     ports:
-      - 8051:8050
+      - 8151:8050

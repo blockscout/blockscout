@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "owner" => instance.owner && Helper.address_with_info(conn, instance.owner, instance.owner.hash),
       "token" => render("token.json", %{token: token}),
       "external_app_url" => NFTHelpers.external_url(instance),
-      "animation_url" => instance.metadata && NFTHelpers.retrieve_image(instance.metadata["animation_url"]),
+      "animation_url" => instance.metadata && NFTHelpers.retrieve_image(instance.metadata["animation_url"], nil),
       "image_url" => instance.metadata && NFTHelpers.get_media_src(instance.metadata, false),
       "is_unique" =>
         not (token.type == "ERC-1155") or Chain.token_id_1155_is_unique?(token.contract_address_hash, instance.token_id)

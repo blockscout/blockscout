@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.AccessHelpers
   alias BlockScoutWeb.API.V2.TransactionView
   alias Explorer.{Chain, Market}
+  alias Indexer.Fetcher.TokenTotalSupplyOnDemand
 
   import BlockScoutWeb.Chain,
     only: [
@@ -23,6 +24,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash)} do
+      TokenTotalSupplyOnDemand.trigger_fetch(address_hash)
+
       conn
       |> put_status(200)
       |> render(:token, %{token: Market.add_price(token)})
@@ -139,12 +142,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   def tokens_list(conn, params) do
-    filter =
-      if Map.has_key?(params, "filter") do
-        Map.get(params, "filter")
-      else
-        nil
-      end
+    filter = params["q"]
 
     paging_params =
       params

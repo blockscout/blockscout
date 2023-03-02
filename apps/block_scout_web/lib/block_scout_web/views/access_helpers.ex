@@ -55,7 +55,7 @@ defmodule BlockScoutWeb.AccessHelpers do
   end
 
   def check_rate_limit(conn) do
-    if Mix.env() == :test do
+    if Application.get_env(:block_scout_web, :api_rate_limit)[:disabled] == true do
       :ok
     else
       global_api_rate_limit = Application.get_env(:block_scout_web, :api_rate_limit)[:global_limit]
@@ -72,15 +72,15 @@ defmodule BlockScoutWeb.AccessHelpers do
 
       cond do
         check_api_key(conn) && get_api_key(conn) == static_api_key ->
-          rate_limit_by_key(static_api_key, api_rate_limit_by_key)
+          rate_limit_by_param(static_api_key, api_rate_limit_by_key)
 
         check_api_key(conn) && !is_nil(plan) ->
           conn
           |> get_api_key()
-          |> rate_limit_by_key(plan.max_req_per_second)
+          |> rate_limit_by_param(plan.max_req_per_second)
 
         Enum.member?(api_rate_limit_whitelisted_ips(), ip_string) ->
-          rate_limit_by_ip(ip_string, api_rate_limit_by_ip)
+          rate_limit(ip_string, api_rate_limit_by_ip)
 
         true ->
           global_rate_limit(global_api_rate_limit)
@@ -88,13 +88,9 @@ defmodule BlockScoutWeb.AccessHelpers do
     end
   end
 
-  defp check_api_key(conn) do
-    conn.query_params && Map.has_key?(conn.query_params, "apikey")
-  end
+  defp check_api_key(conn), do: conn.query_params && Map.has_key?(conn.query_params, "apikey")
 
-  defp get_api_key(conn) do
-    Map.get(conn.query_params, "apikey")
-  end
+  defp get_api_key(conn), do: Map.get(conn.query_params, "apikey")
 
   defp get_plan(query_params) do
     with true <- query_params && Map.has_key?(query_params, "apikey"),
@@ -108,28 +104,16 @@ defmodule BlockScoutWeb.AccessHelpers do
     end
   end
 
-  defp rate_limit_by_key(api_key, api_rate_limit_by_key) do
-    case Hammer.check_rate("api-#{api_key}", 1_000, api_rate_limit_by_key) do
-      {:allow, _count} ->
-        :ok
-
-      {:deny, _limit} ->
-        :rate_limit_reached
-    end
-  end
-
-  defp rate_limit_by_ip(ip_string, api_rate_limit_by_ip) do
-    case Hammer.check_rate("api-#{ip_string}", 1_000, api_rate_limit_by_ip) do
-      {:allow, _count} ->
-        :ok
-
-      {:deny, _limit} ->
-        :rate_limit_reached
-    end
+  defp rate_limit_by_param(key, value) do
+    rate_limit("api-#{key}", value)
   end
 
   defp global_rate_limit(global_api_rate_limit) do
-    case Hammer.check_rate("api", 1_000, global_api_rate_limit) do
+    rate_limit("api", global_api_rate_limit)
+  end
+
+  defp rate_limit(key, value) do
+    case Hammer.check_rate(key, 1_000, value) do
       {:allow, _count} ->
         :ok
 
@@ -138,9 +122,7 @@ defmodule BlockScoutWeb.AccessHelpers do
     end
   end
 
-  defp get_restricted_key(%Phoenix.Socket{}) do
-    nil
-  end
+  defp get_restricted_key(%Phoenix.Socket{}), do: nil
 
   defp get_restricted_key(conn) do
     conn_with_params = Conn.fetch_query_params(conn)

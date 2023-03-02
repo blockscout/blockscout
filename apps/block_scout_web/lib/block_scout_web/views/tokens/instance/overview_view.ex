@@ -3,10 +3,11 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
 
   alias BlockScoutWeb.{CurrencyHelpers, NFTHelpers}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, CurrencyHelpers, SmartContract, Token}
+  alias Explorer.Chain.{Address, SmartContract, Token}
   alias Explorer.SmartContract.Helper
 
-  import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1, blockscout_url: 2]
+  import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1]
+  import BlockScoutWeb.NFTHelpers, only: [external_url: 1]
 
   @tabs ["token-transfers", "metadata"]
   @stub_image "/images/controller.svg"
@@ -24,30 +25,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def media_src(nil, _), do: @stub_image
 
   def media_src(instance, high_quality_media?) do
-    result = get_media_src(instance, high_quality_media?)
-
-    if String.trim(result) == "", do: media_src(nil), else: result
-  end
-
-  defp get_media_src(nil, _), do: media_src(nil)
-
-  defp get_media_src(%{metadata: metadata} = instance, high_quality_media?) do
-    cond do
-      metadata["animation_url"] && high_quality_media? ->
-        retrieve_image(metadata["animation_url"], instance.token_contract_address_hash)
-
-      metadata["image_url"] ->
-        retrieve_image(metadata["image_url"], instance.token_contract_address_hash)
-
-      metadata["image"] ->
-        retrieve_image(metadata["image"], instance.token_contract_address_hash)
-
-      metadata["properties"]["image"]["description"] ->
-        metadata["properties"]["image"]["description"]
-
-      true ->
-        media_src(nil)
-    end
+    NFTHelpers.get_media_src(instance.metadata, high_quality_media?) || media_src(nil)
   end
 
   def media_type("data:image/" <> _data) do
@@ -114,24 +92,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def qr_code(conn, token_id, hash) do
     token_instance_path = token_instance_path(conn, :show, to_string(hash), to_string(token_id))
 
-    url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
-    api_path = url_params[:api_path]
-    path = url_params[:path]
-
-    url_prefix =
-      if String.length(path) > 0 && path != "/" do
-        set_path = false
-        blockscout_url(set_path)
-      else
-        if String.length(api_path) > 0 && api_path != "/" do
-          is_api = true
-          set_path = true
-          blockscout_url(set_path, is_api)
-        else
-          set_path = false
-          blockscout_url(set_path)
-        end
-      end
+    url_prefix = blockscout_url(false)
 
     url = Path.join(url_prefix, token_instance_path)
 
@@ -144,55 +105,6 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     @tabs
     |> Enum.filter(&tab_active?(&1, request_path))
     |> tab_name()
-  end
-
-  defp retrieve_image(image, _) when is_nil(image), do: @stub_image
-
-  defp retrieve_image(image, _) when is_map(image) do
-    image["description"]
-  end
-
-  defp retrieve_image(image, token_contract_address_hash) when is_list(image) do
-    image_url = image |> Enum.at(0)
-    retrieve_image(image_url, token_contract_address_hash)
-  end
-
-  defp retrieve_image(image_url, token_contract_address_hash) do
-    image_url
-    |> URI.encode()
-    |> compose_ipfs_url(token_contract_address_hash)
-  end
-
-  defp compose_ipfs_url(image_url, token_contract_address_hash) do
-    cond do
-      image_url =~ ~r/^ipfs:\/\/ipfs/ ->
-        "ipfs://ipfs" <> ipfs_uid = image_url
-        "https://ipfs.io/ipfs/" <> ipfs_uid
-
-      image_url =~ ~r/^ipfs:\/\// ->
-        "ipfs://" <> ipfs_uid = image_url
-        "https://ipfs.io/ipfs/" <> ipfs_uid
-
-      true ->
-        case URI.parse(image_url) do
-          %URI{host: host} ->
-            process_kudos_relative_url(image_url, host, token_contract_address_hash)
-        end
-    end
-  end
-
-  def process_kudos_relative_url(image_url, host, token_contract_address_hash) do
-    if host do
-      image_url
-    else
-      # Gitcoin Kudos token
-      if Base.encode16(token_contract_address_hash.bytes, case: :lower) ==
-           "74e596525c63393f42c76987b6a66f4e52733efa" do
-        "https://s.gitcoin.co/static/" <> image_url
-      else
-        image_url
-      end
-    end
   end
 
   defp tab_name(["token-transfers"]), do: gettext("Token Transfers")

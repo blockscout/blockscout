@@ -113,7 +113,10 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
          files_content <- PublishHelper.read_files(files_array) do
       chosen_contract = params["chosen_contract_index"]
 
-      Que.add(SolidityPublisherWorker, {"sourcify_api_v2", address_hash_string, files_content, conn, chosen_contract})
+      Que.add(
+        SolidityPublisherWorker,
+        {"sourcify_api_v2", String.downcase(address_hash_string), files_content, conn, chosen_contract}
+      )
 
       conn
       |> put_view(ApiView)

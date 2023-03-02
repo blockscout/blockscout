@@ -7,6 +7,7 @@ import '../app'
 import {
   openQrModal
 } from '../lib/modals'
+import { subscribeChannel } from '../socket'
 
 import './token/add_to_mm'
 import './token/swap'
@@ -27,6 +28,11 @@ export function reducer (state = initialState, action) {
       return Object.assign({}, state, {
         transferCount: action.transferCount,
         tokenHolderCount: action.tokenHolderCount
+      })
+    }
+    case 'RECEIVED_NEW_TOTAL_SUPPLY': {
+      return Object.assign({}, state, {
+        totalSupply: action.msg.totalSupply
       })
     }
     default:
@@ -58,6 +64,16 @@ const elements = {
         return $el.show()
       }
     }
+  },
+  '[data-selector="total-supply-row"]': {
+    render ($el, state) {
+      if (state.totalSupply) {
+        const value = $el.find('[data-selector="total-supply-value"]')
+        value.empty().append(state.totalSupply + ' ' + value[0].dataset.tokenSymbol)
+        state.totalSupply = null
+        return $el.removeClass('d-none')
+      }
+    }
   }
 }
 
@@ -84,6 +100,15 @@ if ($tokenPage.length) {
 function updateCounters () {
   const store = createStore(reducer)
   connectElements({ store, elements })
+  const addressHash = $('[data-page="token-details"]')[0].dataset.pageAddressHash
+  const tokensChannel = subscribeChannel(`tokens:${addressHash}`)
+  tokensChannel.on('total_supply', (msg) => {
+    store.dispatch({
+      type: 'RECEIVED_NEW_TOTAL_SUPPLY',
+      msg: humps.camelizeKeys(msg)
+    })
+  })
+
   loadCounters(store)
 }
 
