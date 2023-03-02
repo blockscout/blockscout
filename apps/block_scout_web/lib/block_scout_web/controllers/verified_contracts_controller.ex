@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.VerifiedContractsController do
   import BlockScoutWeb.Chain,
     only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1, fetch_page_number: 1]
 
+  import BlockScoutWeb.PagingHelper, only: [current_filter: 1, search_query: 1]
+
   alias BlockScoutWeb.{Controller, VerifiedContractsView}
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
@@ -54,22 +56,4 @@ defmodule BlockScoutWeb.VerifiedContractsController do
       new_verified_contracts_count: Chain.count_new_verified_contracts_from_cache()
     )
   end
-
-  defp current_filter(%{"filter" => "solidity"}) do
-    [filter: :solidity]
-  end
-
-  defp current_filter(%{"filter" => "vyper"}) do
-    [filter: :vyper]
-  end
-
-  defp current_filter(_), do: []
-
-  defp search_query(%{"search" => ""}), do: []
-
-  defp search_query(%{"search" => search_string}) do
-    [search: search_string]
-  end
-
-  defp search_query(_), do: []
 end

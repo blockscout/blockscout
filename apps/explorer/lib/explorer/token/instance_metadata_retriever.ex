@@ -64,8 +64,8 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   @erc1155_token_id_placeholder "{id}"
 
   def fetch_metadata(unquote(@cryptokitties_address_hash), token_id) do
-    %{"tokenURI" => {:ok, ["https://api.cryptokitties.co/kitties/#{token_id}"]}}
-    |> fetch_json()
+    %{@token_uri => {:ok, ["https://api.cryptokitties.co/kitties/{id}"]}}
+    |> fetch_json(to_string(token_id))
   end
 
   def fetch_metadata(contract_address_hash, token_id) do
@@ -169,7 +169,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   end
 
   def fetch_json(%{@token_uri => {:ok, ["data:application/json;base64," <> base64_encoded_json]}}, hex_token_id) do
-    case Base.url_decode64(base64_encoded_json) do
+    case Base.decode64(base64_encoded_json) do
       {:ok, base64_decoded} ->
         fetch_json(%{@token_uri => {:ok, [base64_decoded]}}, hex_token_id)
 
@@ -190,7 +190,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   end
 
   def fetch_json(%{@uri => {:ok, ["data:application/json;base64," <> base64_encoded_json]}}, hex_token_id) do
-    case Base.url_decode64(base64_encoded_json) do
+    case Base.decode64(base64_encoded_json) do
       {:ok, base64_decoded} ->
         fetch_json(%{@uri => {:ok, [base64_decoded]}}, hex_token_id)
 
@@ -207,24 +207,20 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       {:error, base64_encoded_json}
   end
 
-  def fetch_json(%{@token_uri => {:ok, ["ipfs://ipfs/" <> ipfs_uid]}}, hex_token_id) do
-    ipfs_url = "https://ipfs.io/ipfs/" <> ipfs_uid
-    fetch_metadata_inner(ipfs_url, hex_token_id)
+  def fetch_json(%{@token_uri => {:ok, ["ipfs://ipfs/" <> right]}}, hex_token_id) do
+    fetch_from_ipfs(right, hex_token_id)
   end
 
-  def fetch_json(%{@uri => {:ok, ["ipfs://ipfs/" <> ipfs_uid]}}, hex_token_id) do
-    ipfs_url = "https://ipfs.io/ipfs/" <> ipfs_uid
-    fetch_metadata_inner(ipfs_url, hex_token_id)
+  def fetch_json(%{@uri => {:ok, ["ipfs://ipfs/" <> right]}}, hex_token_id) do
+    fetch_from_ipfs(right, hex_token_id)
   end
 
-  def fetch_json(%{@token_uri => {:ok, ["ipfs://" <> ipfs_uid]}}, hex_token_id) do
-    ipfs_url = "https://ipfs.io/ipfs/" <> ipfs_uid
-    fetch_metadata_inner(ipfs_url, hex_token_id)
+  def fetch_json(%{@token_uri => {:ok, ["ipfs://" <> right]}}, hex_token_id) do
+    fetch_from_ipfs(right, hex_token_id)
   end
 
-  def fetch_json(%{@uri => {:ok, ["ipfs://" <> ipfs_uid]}}, hex_token_id) do
-    ipfs_url = "https://ipfs.io/ipfs/" <> ipfs_uid
-    fetch_metadata_inner(ipfs_url, hex_token_id)
+  def fetch_json(%{@uri => {:ok, ["ipfs://" <> right]}}, hex_token_id) do
+    fetch_from_ipfs(right, hex_token_id)
   end
 
   def fetch_json(%{@token_uri => {:ok, [json]}}, hex_token_id) do
@@ -259,13 +255,34 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     {:error, result}
   end
 
+  defp fetch_from_ipfs(ipfs_uid, hex_token_id) do
+    ipfs_url = "https://ipfs.io/ipfs/" <> ipfs_uid
+    fetch_metadata_inner(ipfs_url, hex_token_id)
+  end
+
   defp fetch_metadata_inner(uri, hex_token_id) do
     prepared_uri = substitute_token_id_to_token_uri(uri, hex_token_id)
+    fetch_metadata_from_uri(prepared_uri, hex_token_id)
+  rescue
+    e ->
+      Logger.debug(
+        ["Could not prepare token uri #{inspect(uri)}.", Exception.format(:error, e, __STACKTRACE__)],
+        fetcher: :token_instances
+      )
 
-    case HTTPoison.get(prepared_uri) do
+      {:error, :request_error}
+  end
+
+  def fetch_metadata_from_uri(uri, hex_token_id \\ nil) do
+    case HTTPoison.get(uri, [], timeout: 60_000, recv_timeout: 60_000, follow_redirect: true) do
       {:ok, %Response{body: body, status_code: 200, headers: headers}} ->
-        if Enum.member?(headers, {"Content-Type", "image/png"}) do
-          json = %{"image" => prepared_uri}
+        content_type = get_content_type_from_headers(headers)
+
+        image = is_image?(content_type)
+        video = is_video?(content_type)
+
+        if content_type && (image || video) do
+          json = if image, do: %{"image" => uri}, else: %{"animation_url" => uri}
 
           check_type(json, nil)
         else
@@ -273,11 +290,6 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
 
           check_type(json, hex_token_id)
         end
-
-      {:ok, %Response{body: body, status_code: 301}} ->
-        {:ok, json} = decode_json(body)
-
-        check_type(json, hex_token_id)
 
       {:ok, %Response{body: body}} ->
         {:error, body}
@@ -293,6 +305,23 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       )
 
       {:error, :request_error}
+  end
+
+  defp get_content_type_from_headers(headers) do
+    {_, content_type} =
+      Enum.find(headers, fn {header_name, _header_value} ->
+        header_name == "Content-Type"
+      end) || {nil, nil}
+
+    content_type
+  end
+
+  defp is_image?(content_type) do
+    content_type && String.starts_with?(content_type, "image/")
+  end
+
+  defp is_video?(content_type) do
+    content_type && String.starts_with?(content_type, "video/")
   end
 
   defp decode_json(body) do

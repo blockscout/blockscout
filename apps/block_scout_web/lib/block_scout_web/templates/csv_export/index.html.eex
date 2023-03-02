@@ -25,38 +25,6 @@
       </a>
     </div>
   </div>
-  <script type="text/javascript">
-    var widgetId1
-    var onloadCallback = function() {
-      var reCaptchaClientKey = '<%= Application.get_env(:block_scout_web, :re_captcha_client_key) %>' 
-      if (reCaptchaClientKey) {
-        widgetId1 = grecaptcha.render('recaptcha', {
-          'sitekey': reCaptchaClientKey,
-          'theme': function () {
-            const permanentDarkModeEnabled = document.getElementById('permanent-dark-mode').textContent === 'true'
-            const permanentLightModeEnabled = document.getElementById('permanent-light-mode').textContent === 'true'
-            if (permanentLightModeEnabled) {
-              return 'light'
-            } else if (permanentDarkModeEnabled) {
-              return 'dark'
-            } else {
-              return getCookie('chakra-ui-color-mode')
-            }
-          },
-          'callback': function () {
-            document.getElementById('export-csv-button').disabled = false
-          }
-        })
-      } else {
-        Swal.fire({
-          title: 'Warning',
-          html: 'CSV download will not work since reCAPTCHA is not configured. Please advise server maintainer to configure RE_CAPTCHA_CLIENT_KEY and RE_CAPTCHA_SECRET_KEY environment variables.',
-          icon: 'warning'
-        })
-      }
-    }
-  </script>
-  <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer>
-  </script>
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/csv-download.js") %>"></script>
+  <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" defer></script>
 </section>
