@@ -99,7 +99,7 @@ defmodule BlockScoutWeb.BlockTransactionController do
   def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number}) do
     case param_block_hash_or_number_to_block(formatted_block_hash_or_number,
            necessity_by_association: %{
-             [miner: :names] => :required,
+             [miner: :names] => :optional,
              :uncles => :optional,
              :nephews => :optional,
              :rewards => :optional
