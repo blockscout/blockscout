@@ -341,6 +341,10 @@ defmodule Indexer.BufferedTask do
     %{state | current_buffer: [entries | state.current_buffer]}
   end
 
+  defp do_initial_stream(%BufferedTask{init_task: init_task} = state) when is_reference(init_task) do
+    schedule_next_buffer_flush(state)
+  end
+
   defp do_initial_stream(
          %BufferedTask{
            callback_module: callback_module,
