@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
 
     test "adds slash before path" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
-        url: [scheme: "https", host: "blockscout.com", port: 9999, api_path: "/chain/dog"]
+        url: [scheme: "https", host: "blockscout.com", port: 9999, path: "/chain/dog"]
       )
 
       assert APIDocsView.api_url() == "https://blockscout.com/chain/dog/api"
@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
 
     test "does not add slash to empty path" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
-        url: [scheme: "https", host: "blockscout.com", port: 9999, api_path: ""]
+        url: [scheme: "https", host: "blockscout.com", port: 9999, path: ""]
       )
 
       assert APIDocsView.api_url() == "https://blockscout.com/api"
@@ -38,7 +38,7 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
     end
   end
 
-  describe "blockscout_url/2" do
+  describe "blockscout_url/1" do
     setup do
       original = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)
 
@@ -49,34 +49,18 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
 
     test "set_path = true returns url with path" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
-        url: [scheme: "https", host: "blockscout.com", api_path: "/eth/mainnet", path: "/eth/mainnet"]
+        url: [scheme: "https", host: "blockscout.com", path: "/eth/mainnet"]
       )
 
-      assert APIDocsView.blockscout_url(true, true) == "https://blockscout.com/eth/mainnet"
+      assert APIDocsView.blockscout_url(true) == "https://blockscout.com/eth/mainnet"
     end
 
     test "set_path = false returns url w/out path" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
-        url: [scheme: "https", host: "blockscout.com", api_path: "/eth/mainnet", path: "/eth/mainnet"]
+        url: [scheme: "https", host: "blockscout.com", path: "/eth/mainnet"]
       )
 
       assert APIDocsView.blockscout_url(false) == "https://blockscout.com"
-    end
-
-    test "set_path = true is_api returns url with api_path" do
-      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
-        url: [scheme: "https", host: "blockscout.com", api_path: "/eth/mainnet", path: "/"]
-      )
-
-      assert APIDocsView.blockscout_url(true, true) == "https://blockscout.com/eth/mainnet"
-    end
-
-    test "set_path = true is_api returns url with path" do
-      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
-        url: [scheme: "https", host: "blockscout.com", api_path: "/eth/mainnet", path: "/eth/mainnet2"]
-      )
-
-      assert APIDocsView.blockscout_url(true, false) == "https://blockscout.com/eth/mainnet2"
     end
   end
 
@@ -91,7 +75,7 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
 
     test "adds slash before path" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
-        url: [scheme: "https", host: "blockscout.com", port: 9999, api_path: "/chain/dog"]
+        url: [scheme: "https", host: "blockscout.com", port: 9999, path: "/chain/dog"]
       )
 
       assert APIDocsView.eth_rpc_api_url() == "https://blockscout.com/chain/dog/api/eth-rpc"
