@@ -167,6 +167,27 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                })
     end
 
+    test "fetches json metadata for kitties" do
+      {:ok, %{metadata: metadata}} =
+        InstanceMetadataRetriever.fetch_metadata("0x06012c8cf97bead5deae237070f9587f8e7a266d", 100_500)
+
+      assert Map.get(metadata, "name") == "KittyBlue_2_Lemonade"
+    end
+
+    test "fetches json metadata when HTTP status 301" do
+      {:ok, %{metadata: metadata}} =
+        InstanceMetadataRetriever.fetch_metadata_from_uri("https://metadata.billyli.workers.dev/1302")
+
+      assert Map.get(metadata, "attributes") == [
+               %{"trait_type" => "Mouth", "value" => "Discomfort"},
+               %{"trait_type" => "Background", "value" => "Army Green"},
+               %{"trait_type" => "Eyes", "value" => "Wide Eyed"},
+               %{"trait_type" => "Fur", "value" => "Black"},
+               %{"trait_type" => "Earring", "value" => "Silver Hoop"},
+               %{"trait_type" => "Hat", "value" => "Sea Captain's Hat"}
+             ]
+    end
+
     test "replace {id} with actual token_id", %{bypass: bypass} do
       json = """
       {
@@ -324,6 +345,44 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                     "description" => "Punk Domains digital identity ï. Visit https://punk.domains/"
                   }
                 }}
+    end
+
+    test "fetches image from ipfs link directly" do
+      data = %{
+        "c87b56dd" =>
+          {:ok,
+           [
+             "ipfs://bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+           ]}
+      }
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "image" => "https://ipfs.io/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+                }
+              }} = InstanceMetadataRetriever.fetch_json(data)
+    end
+
+    test "Fetches metadata from ipfs" do
+      data = %{
+        "c87b56dd" =>
+          {:ok,
+           [
+             "ipfs://bafybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json"
+           ]}
+      }
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "image" => "ipfs://bafybeihxuj3gxk7x5p36amzootyukbugmx3pw7dyntsrohg3se64efkuga/51.png",
+                  "attributes" => _,
+                  "description" => "No roadmap Just OP NOK...But This NFT can use in Sobta ecosystem (if any)",
+                  "edition" => 51,
+                  "name" => "SobtaOpGenesis #51"
+                }
+              }} = InstanceMetadataRetriever.fetch_json(data)
     end
   end
 end
