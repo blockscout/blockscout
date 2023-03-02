@@ -12,6 +12,7 @@
 
 ### Chore
 
+- [#7012](https://github.com/blockscout/blockscout/pull/7012) - Refactor socket.js
 - [#6960](https://github.com/blockscout/blockscout/pull/6960) - Add deploy + workflow for testing (bs-indexers-ethereum-goerli)
 - [#6989](https://github.com/blockscout/blockscout/pull/6989) - Update bitwalker/alpine-elixir-phoenix: 1.13 -> 1.14
 - [#6987](https://github.com/blockscout/blockscout/pull/6987) - Change tx actions warning importance
@@ -73,6 +74,7 @@
 - [#6966](https://github.com/blockscout/blockscout/pull/6966) - Bump solc from 0.8.18 to 0.8.19 in /apps/explorer
 - [#6967](https://github.com/blockscout/blockscout/pull/6967) - Bump photoswipe from 5.3.5 to 5.3.6 in /apps/block_scout_web/assets
 - [#6968](https://github.com/blockscout/blockscout/pull/6968) - Bump ex_rlp from 0.5.5 to 0.6.0
+
 </details>
 
 ## 5.1.0-beta
@@ -160,6 +162,7 @@
 - [#6857](https://github.com/blockscout/blockscout/pull/6857) - Bump @amplitude/analytics-browser from 1.7.1 to 1.8.0 in /apps/block_scout_web/assets
 - [#6847](https://github.com/blockscout/blockscout/pull/6847) - Bump @fortawesome/fontawesome-free from 6.2.1 to 6.3.0 in /apps/block_scout_web/assets
 - [#6866](https://github.com/blockscout/blockscout/pull/6866) - Bump chart.js from 4.2.0 to 4.2.1 in /apps/block_scout_web/assets
+
 </details>
 
 ## 5.0.0-beta
