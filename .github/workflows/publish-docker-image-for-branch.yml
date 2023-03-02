@@ -14,7 +14,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.1.0
+      RELEASE_VERSION: 5.1.1
       DOCKER_CHAIN_NAME: withdrawals
     steps:
       - name: Check out the repo
@@ -45,14 +45,9 @@ jobs:
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
-            API_PATH=/eth/zhejiang-testnet
-            NETWORK_PATH=/eth/zhejiang-testnet
             DISABLE_WEBAPP=false
             DISABLE_WRITE_API=false
             CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER=
             WOBSERVER_ENABLED=false
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            DISABLE_BRIDGE_MARKET_CAP_UPDATER=false
-            CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL=
-            SOCKET_ROOT=/eth/zhejiang-testnet
