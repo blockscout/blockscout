@@ -243,7 +243,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
           min(chunk_start + Optimism.get_logs_range_size() - 1, l2_block_end)
         end
 
-      log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil)
+      Optimism.log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, "L2")
 
       withdrawals_count =
         find_and_save_withdrawals(
@@ -254,7 +254,14 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
           json_rpc_named_arguments
         )
 
-      log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, withdrawals_count)
+      Optimism.log_blocks_chunk_handling(
+        chunk_start,
+        chunk_end,
+        l2_block_start,
+        l2_block_end,
+        "#{withdrawals_count} MessagePassed event(s)",
+        "L2"
+      )
 
       withdrawals_count_acc + withdrawals_count
     end)
@@ -309,44 +316,6 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
     query
     |> Repo.one()
     |> Kernel.||({0, nil})
-  end
-
-  defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, withdrawals_count) do
-    is_start = is_nil(withdrawals_count)
-
-    {type, found} =
-      if is_start do
-        {"Start", ""}
-      else
-        {"Finish", " Found #{withdrawals_count} MessagePassed event(s)."}
-      end
-
-    if chunk_start == chunk_end do
-      Logger.info("#{type} handling L2 block ##{chunk_start}.#{found}")
-    else
-      target_range =
-        if chunk_start != start_block or chunk_end != end_block do
-          progress =
-            if is_start do
-              ""
-            else
-              percentage =
-                (chunk_end - start_block + 1)
-                |> Decimal.div(end_block - start_block + 1)
-                |> Decimal.mult(100)
-                |> Decimal.round(2)
-                |> Decimal.to_string()
-
-              " Progress: #{percentage}%"
-            end
-
-          " Target range: #{start_block}..#{end_block}.#{progress}"
-        else
-          ""
-        end
-
-      Logger.info("#{type} handling L2 block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
-    end
   end
 
   defp log_fill_msg_nonce_gaps(scan_db, l2_block_start, l2_block_end, withdrawals_count) do

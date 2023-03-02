@@ -143,7 +143,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         chunk_end = min(chunk_start + Optimism.get_logs_range_size() - 1, end_block)
 
         if chunk_end >= chunk_start do
-          log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil)
+          Optimism.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
 
           {:ok, result} =
             Optimism.get_logs(
@@ -163,7 +163,14 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
               timeout: :infinity
             })
 
-          log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, Enum.count(output_roots))
+          Optimism.log_blocks_chunk_handling(
+            chunk_start,
+            chunk_end,
+            start_block,
+            end_block,
+            "#{Enum.count(output_roots)} OutputProposed event(s)",
+            "L1"
+          )
         end
 
         reorg_block = reorg_block_pop()
@@ -305,42 +312,6 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
     query
     |> Repo.one()
     |> Kernel.||({0, nil})
-  end
-
-  defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, output_roots_count) do
-    {type, found} =
-      if is_nil(output_roots_count) do
-        {"Start", ""}
-      else
-        {"Finish", " Found #{output_roots_count} OutputProposed event(s)."}
-      end
-
-    if chunk_start == chunk_end do
-      Logger.info("#{type} handling L1 block ##{chunk_start}.#{found}")
-    else
-      target_range =
-        if chunk_start != start_block or chunk_end != end_block do
-          progress =
-            if is_nil(output_roots_count) do
-              ""
-            else
-              percentage =
-                (chunk_end - start_block + 1)
-                |> Decimal.div(end_block - start_block + 1)
-                |> Decimal.mult(100)
-                |> Decimal.round(2)
-                |> Decimal.to_string()
-
-              " Progress: #{percentage}%"
-            end
-
-          " Target range: #{start_block}..#{end_block}.#{progress}"
-        else
-          ""
-        end
-
-      Logger.info("#{type} handling L1 block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
-    end
   end
 
   defp json_rpc_named_arguments(optimism_l1_rpc) do
