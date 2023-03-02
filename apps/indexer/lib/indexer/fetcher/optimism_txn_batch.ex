@@ -53,7 +53,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          start_block_l1 = Optimism.parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
-         json_rpc_named_arguments = json_rpc_named_arguments(optimism_l1_rpc),
+         json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
          {last_l1_block_number, last_l1_transaction_hash, last_l1_tx} = get_last_l1_item(json_rpc_named_arguments),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
@@ -456,21 +456,6 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     is_last = :binary.decode_unsigned(binary_part(input_binary, 1 + 16 + 2 + 4 + frame_data_length, 1)) > 0
 
     %{number: frame_number, data: frame_data, is_last: is_last}
-  end
-
-  defp json_rpc_named_arguments(optimism_l1_rpc) do
-    [
-      transport: EthereumJSONRPC.HTTP,
-      transport_options: [
-        http: EthereumJSONRPC.HTTP.HTTPoison,
-        url: optimism_l1_rpc,
-        http_options: [
-          recv_timeout: :timer.minutes(10),
-          timeout: :timer.minutes(10),
-          hackney: [pool: :ethereum_jsonrpc]
-        ]
-      ]
-    ]
   end
 
   defp parse_frame_sequence(
