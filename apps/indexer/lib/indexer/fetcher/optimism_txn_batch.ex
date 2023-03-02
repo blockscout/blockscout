@@ -254,7 +254,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
     number_by_hash =
       query
-      |> Repo.all()
+      |> Repo.all(timeout: :infinity)
       |> Enum.reduce(%{}, fn {hash, number}, acc ->
         Map.put(acc, hash.bytes, number)
       end)
