@@ -1,6 +1,11 @@
 defmodule BlockScoutWeb.API.V2.SmartContractController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+
+  import BlockScoutWeb.PagingHelper,
+    only: [current_filter: 1, delete_parameters_from_next_page_params: 1, search_query: 1]
+
   import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
 
   alias BlockScoutWeb.{AccessHelpers, AddressView}
@@ -167,6 +172,26 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       |> put_status(200)
       |> render(:function_response, %{output: output, names: names, contract_address_hash: address_hash})
     end
+  end
+
+  def smart_contracts_list(conn, params) do
+    full_options =
+      [necessity_by_association: %{[address: :token] => :optional, [address: :names] => :optional}]
+      |> Keyword.merge(paging_options(params))
+      |> Keyword.merge(current_filter(params))
+      |> Keyword.merge(search_query(params))
+
+    smart_contracts_plus_one = Chain.verified_contracts(full_options)
+    {smart_contracts, next_page} = split_list_by_page(smart_contracts_plus_one)
+
+    next_page_params =
+      next_page
+      |> next_page_params(smart_contracts, params)
+      |> delete_parameters_from_next_page_params()
+
+    conn
+    |> put_status(200)
+    |> render(:smart_contracts, %{smart_contracts: smart_contracts, next_page_params: next_page_params})
   end
 
   def prepare_args(list) when is_list(list), do: list

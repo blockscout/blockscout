@@ -6,12 +6,11 @@ defmodule Indexer.Transform.TokenTransfers do
   require Logger
 
   alias ABI.TypeDecoder
-  # alias Explorer.{Chain, Repo}
-  alias Explorer.Repo
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Token, TokenTransfer}
-  # alias Explorer.Token.MetadataRetriever
+  alias Explorer.Token.MetadataRetriever
 
-  # @burn_address "0x0000000000000000000000000000000000000000"
+  @burn_address "0x0000000000000000000000000000000000000000"
 
   @doc """
   Returns a list of token transfers given a list of logs.
@@ -37,16 +36,15 @@ defmodule Indexer.Transform.TokenTransfers do
 
     {tokens, token_transfers} = sanitize_token_types(rough_tokens, rough_token_transfers)
 
-    # todo
-    # token_transfers
-    # |> Enum.filter(fn token_transfer ->
-    #   token_transfer.to_address_hash == @burn_address || token_transfer.from_address_hash == @burn_address
-    # end)
-    # |> Enum.map(fn token_transfer ->
-    #   token_transfer.token_contract_address_hash
-    # end)
-    # |> Enum.uniq()
-    # |> Enum.each(&update_token/1)
+    token_transfers
+    |> Enum.filter(fn token_transfer ->
+      token_transfer.to_address_hash == @burn_address || token_transfer.from_address_hash == @burn_address
+    end)
+    |> Enum.map(fn token_transfer ->
+      token_transfer.token_contract_address_hash
+    end)
+    |> Enum.uniq()
+    |> Enum.each(&update_token/1)
 
     tokens_uniq = tokens |> Enum.uniq()
 
@@ -216,29 +214,29 @@ defmodule Indexer.Transform.TokenTransfers do
     {token, token_transfer}
   end
 
-  # defp update_token(nil), do: :ok
+  defp update_token(nil), do: :ok
 
-  # defp update_token(address_hash_string) do
-  #   {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
+  defp update_token(address_hash_string) do
+    {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
 
-  #   token = Repo.get_by(Token, contract_address_hash: address_hash)
+    token = Repo.get_by(Token, contract_address_hash: address_hash)
 
-  #   if token && !token.skip_metadata do
-  #     token_params =
-  #       address_hash_string
-  #       |> MetadataRetriever.get_total_supply_of()
+    if token && !token.skip_metadata do
+      token_params =
+        address_hash_string
+        |> MetadataRetriever.get_total_supply_of()
 
-  #     token_to_update =
-  #       token
-  #       |> Repo.preload([:contract_address])
+      token_to_update =
+        token
+        |> Repo.preload([:contract_address])
 
-  #     if token_params !== %{} do
-  #       Chain.update_token(%{token_to_update | updated_at: DateTime.utc_now()}, token_params)
-  #     end
-  #   end
+      if token_params !== %{} do
+        {:ok, _} = Chain.update_token(token_to_update, token_params)
+      end
+    end
 
-  #   :ok
-  # end
+    :ok
+  end
 
   def parse_erc1155_params(
         %{

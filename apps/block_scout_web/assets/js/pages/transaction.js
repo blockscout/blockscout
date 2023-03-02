@@ -6,6 +6,7 @@ import socket from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import '../lib/transaction_input_dropdown'
 import '../lib/async_listing_load'
+import { commonPath } from '../lib/path_helper'
 import '../app'
 import Swal from 'sweetalert2'
 import { compareChainIDs, formatError } from '../lib/smart_contract/common_helpers'
@@ -19,6 +20,11 @@ export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
       return Object.assign({}, state, omit(action, 'type'))
+    }
+    case 'RECEIVED_NEW_RAW_TRACE': {
+      return Object.assign({}, state, {
+        rawTrace: action.msg.rawTrace
+      })
     }
     case 'RECEIVED_NEW_BLOCK': {
       if (state.blockNumber) {
@@ -47,6 +53,16 @@ const elements = {
         $el.empty().append(numeral(state.confirmations).format())
       }
     }
+  },
+  '[data-selector="raw-trace"]': {
+    render ($el, state) {
+      if (state.rawTrace) {
+        $el[0].innerHTML = state.rawTrace
+        state.rawTrace = null
+        return $el
+      }
+      return $el
+    }
   }
 }
 
@@ -54,6 +70,15 @@ const $transactionDetailsPage = $('[data-page="transaction-details"]')
 if ($transactionDetailsPage.length) {
   const store = createStore(reducer)
   connectElements({ store, elements })
+
+  const transactionHash = $transactionDetailsPage[0].dataset.pageTransactionHash
+  const transactionChannel = socket.channel(`transactions:${transactionHash}`, {})
+  transactionChannel.join()
+  transactionChannel.on('collated', () => window.location.reload())
+  transactionChannel.on('raw_trace', (msg) => store.dispatch({
+    type: 'RECEIVED_NEW_RAW_TRACE',
+    msg: humps.camelizeKeys(msg)
+  }))
 
   const pathParts = window.location.pathname.split('/')
   const shouldScroll = pathParts.includes('internal-transactions') ||
@@ -73,11 +98,6 @@ if ($transactionDetailsPage.length) {
     type: 'RECEIVED_NEW_BLOCK',
     msg: humps.camelizeKeys(msg)
   }))
-
-  const transactionHash = $transactionDetailsPage[0].dataset.pageTransactionHash
-  const transactionChannel = socket.channel(`transactions:${transactionHash}`, {})
-  transactionChannel.join()
-  transactionChannel.on('collated', () => window.location.reload())
 
   $('.js-cancel-transaction').on('click', (event) => {
     const btn = $(event.target)
@@ -110,10 +130,7 @@ if ($transactionDetailsPage.length) {
           params: [txParams]
         })
           .then(function (txHash) {
-            const pathObj = document.getElementById('network-path')
-            // @ts-ignore
-            const path = (pathObj && pathObj.value) || ''
-            const successMsg = `<a href="${path}/tx/${txHash}">Canceling transaction</a> successfully sent to the network. The current one will change the status once canceling transaction will be confirmed.`
+            const successMsg = `<a href="${commonPath}/tx/${txHash}">Canceling transaction</a> successfully sent to the network. The current one will change the status once canceling transaction will be confirmed.`
             Swal.fire({
               title: 'Success',
               html: successMsg,
