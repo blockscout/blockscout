@@ -718,7 +718,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block/_tile.html.eex:41
 #: lib/block_scout_web/templates/block/overview.html.eex:98
 #: lib/block_scout_web/templates/chain/_block.html.eex:16
-#: lib/block_scout_web/templates/transaction_state/_state_change.html.eex:23
+#: lib/block_scout_web/templates/transaction_state/_state_change.html.eex:22
 #, elixir-autogen, elixir-format
 msgid "Miner"
 msgstr ""
@@ -2156,7 +2156,7 @@ msgid "64-bit hash of value verifying proof-of-work (note: null for POA chains).
 msgstr ""
 
 #: lib/block_scout_web/templates/block/overview.html.eex:97
-#: lib/block_scout_web/templates/transaction_state/_state_change.html.eex:22
+#: lib/block_scout_web/templates/transaction_state/_state_change.html.eex:21
 #, elixir-autogen, elixir-format
 msgid "A block producer who successfully included the block onto the blockchain."
 msgstr ""
@@ -2898,12 +2898,12 @@ msgstr ""
 msgid "A library name called in the .sol file. Multiple libraries (up to "
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction_state/_state_change.html.eex:8
+#: lib/block_scout_web/templates/transaction_state/_state_change.html.eex:7
 #, elixir-autogen, elixir-format
 msgid "Address used in token mintings and burnings."
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction_state/_state_change.html.eex:9
+#: lib/block_scout_web/templates/transaction_state/_state_change.html.eex:8
 #, elixir-autogen, elixir-format
 msgid "Burn address"
 msgstr ""
