@@ -271,11 +271,13 @@ postgres:
   port: 5432
 
   command: '["docker-entrypoint.sh", "-c"]'
-  args: '["max_connections=300"]'
+  args: '["max_connections=500"]'
 
   files:
     enabled: true
     mountPath: /docker-entrypoint-initdb.d
+
+  persistence: true
 
   resources:
     limits:
