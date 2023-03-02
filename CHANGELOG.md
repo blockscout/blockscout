@@ -6,10 +6,12 @@
 
 ### Fixes
 
+- [#7008](https://github.com/blockscout/blockscout/pull/7008) - Fetch image/video content from IPFS link
 - [#7007](https://github.com/blockscout/blockscout/pull/7007) - Token instance fetcher fixes
 
 ### Chore
 
+- [#6960](https://github.com/blockscout/blockscout/pull/6960) - Add deploy + workflow for testing (bs-indexers-ethereum-goerli)
 - [#6989](https://github.com/blockscout/blockscout/pull/6989) - Update bitwalker/alpine-elixir-phoenix: 1.13 -> 1.14
 - [#6987](https://github.com/blockscout/blockscout/pull/6987) - Change tx actions warning importance
 
@@ -24,7 +26,7 @@
 - [#6973](https://github.com/blockscout/blockscout/pull/6973) - API v2: `/smart-contracts` and `/state-changes` endpoints
 - [#6897](https://github.com/blockscout/blockscout/pull/6897) - Support basic auth in JSON RPC endpoint
 - [#6908](https://github.com/blockscout/blockscout/pull/6908) - Allow disable API rate limit
-- [#6951](https://github.com/blockscout/blockscout/pull/6951), [#6958](https://github.com/blockscout/blockscout/pull/6958) - Set poll: true for TokenInstance fetcher
+- [#6951](https://github.com/blockscout/blockscout/pull/6951), [#6958](https://github.com/blockscout/blockscout/pull/6958), [#6991](https://github.com/blockscout/blockscout/pull/6991) - Set poll: true for TokenInstance fetcher
 - [#5720](https://github.com/blockscout/blockscout/pull/5720) - Fetchers graceful shutdown
 
 ### Fixes
