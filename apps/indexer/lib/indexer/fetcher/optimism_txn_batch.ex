@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
   import EthereumJSONRPC, only: [fetch_blocks_by_range: 2, json_rpc: 2, quantity_to_integer: 1]
 
+  alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, OptimismTxnBatch}
@@ -263,12 +264,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       |> Enum.filter(fn hash -> is_nil(Map.get(number_by_hash, hash)) end)
       |> Enum.with_index()
       |> Enum.map(fn {hash, id} ->
-        %{
-          id: id,
-          method: "eth_getBlockByHash",
-          params: ["0x" <> Base.encode16(hash, case: :lower), false],
-          jsonrpc: "2.0"
-        }
+        ByHash.request(%{hash: "0x" <> Base.encode16(hash, case: :lower), id: id}, false)
       end)
       |> json_rpc(json_rpc_named_arguments_l2)
 
