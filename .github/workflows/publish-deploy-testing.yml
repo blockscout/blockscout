@@ -2,6 +2,7 @@ name: Deploy testing environment
 
 on:
   pull_request:
+    types: [ labeled ]
   # push:
   workflow_dispatch:
 
@@ -16,6 +17,7 @@ env:
 jobs:
   deploy_testing:
     name: Deploy testing
+    if: ${{ github.event.label.name == 'testing' }}
     uses: blockscout/blockscout-ci-cd/.github/workflows/deploy.yaml@master
     with:
       env_vars: VALUES_DIR=deploy/testing/eth-goerli,APP_NAME=bs-stack

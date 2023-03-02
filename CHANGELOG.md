@@ -11,6 +11,7 @@
 
 ### Chore
 
+- [#6960](https://github.com/blockscout/blockscout/pull/6960) - Add deploy + workflow for testing (bs-indexers-ethereum-goerli)
 - [#6989](https://github.com/blockscout/blockscout/pull/6989) - Update bitwalker/alpine-elixir-phoenix: 1.13 -> 1.14
 - [#6987](https://github.com/blockscout/blockscout/pull/6987) - Change tx actions warning importance
 
