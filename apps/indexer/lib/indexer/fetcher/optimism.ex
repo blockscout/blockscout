@@ -175,7 +175,8 @@ defmodule Indexer.Fetcher.Optimism do
     ]
   end
 
-  def init(env, contract_address, caller) when caller in [Indexer.Fetcher.OptimismWithdrawalEvent, Indexer.Fetcher.OptimismOutputRoot] do
+  def init(env, contract_address, caller)
+      when caller in [Indexer.Fetcher.OptimismWithdrawalEvent, Indexer.Fetcher.OptimismOutputRoot] do
     {contract_name, table_name, start_block_note} =
       if caller == Indexer.Fetcher.OptimismWithdrawalEvent do
         {"Optimism Portal", "op_withdrawal_events", "Withdrawals L1"}
