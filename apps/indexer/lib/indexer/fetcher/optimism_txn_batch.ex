@@ -157,7 +157,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
         new_incomplete_frame_sequence =
           if chunk_end >= chunk_start do
-            log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil)
+            Optimism.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
 
             {:ok, batches, new_incomplete_frame_sequence} =
               get_txn_batches(
@@ -179,7 +179,14 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
                 timeout: :infinity
               })
 
-            log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, Enum.count(batches))
+            Optimism.log_blocks_chunk_handling(
+              chunk_start,
+              chunk_end,
+              start_block,
+              end_block,
+              "#{Enum.count(batches)} batch(es)",
+              "L1"
+            )
 
             new_incomplete_frame_sequence
           else
@@ -464,42 +471,6 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         ]
       ]
     ]
-  end
-
-  defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, batches_count) do
-    {type, found} =
-      if is_nil(batches_count) do
-        {"Start", ""}
-      else
-        {"Finish", " Found #{batches_count} batch(es)."}
-      end
-
-    target_range =
-      if chunk_start != start_block or chunk_end != end_block do
-        progress =
-          if is_nil(batches_count) do
-            ""
-          else
-            percentage =
-              (chunk_end - start_block + 1)
-              |> Decimal.div(end_block - start_block + 1)
-              |> Decimal.mult(100)
-              |> Decimal.round(2)
-              |> Decimal.to_string()
-
-            " Progress: #{percentage}%"
-          end
-
-        " Target range: #{start_block}..#{end_block}.#{progress}"
-      else
-        ""
-      end
-
-    if chunk_start == chunk_end do
-      Logger.info("#{type} handling L1 block ##{chunk_start}.#{found}#{target_range}")
-    else
-      Logger.info("#{type} handling L1 block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
-    end
   end
 
   defp parse_frame_sequence(
