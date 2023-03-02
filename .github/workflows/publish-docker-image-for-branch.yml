@@ -17,7 +17,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.1.0
+      RELEASE_VERSION: 5.1.1
       DOCKER_CHAIN_NAME: polygon-supernets
     steps:
       - name: Check out the repo
@@ -54,16 +54,10 @@ jobs:
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=true
-            API_PATH=/
-            NETWORK_PATH=/
             DISABLE_WEBAPP=false
             DISABLE_WRITE_API=true
             CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER=
             WOBSERVER_ENABLED=false
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            DISABLE_BRIDGE_MARKET_CAP_UPDATER=false
-            CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL=
-            SOCKET_ROOT=/
-            SUBNETWORK=Polygon Supernets
             SENTRY_DSN_CLIENT_GNOSIS=${{ secrets.SENTRY_DSN_CLIENT_GNOSIS }}
