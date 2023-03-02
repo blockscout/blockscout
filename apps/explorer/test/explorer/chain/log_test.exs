@@ -7,6 +7,8 @@ defmodule Explorer.Chain.LogTest do
   alias Explorer.Chain.{Log, SmartContract}
   alias Explorer.Repo
 
+  setup :set_mox_from_context
+
   doctest Log
 
   describe "changeset/2" do
@@ -102,8 +104,6 @@ defmodule Explorer.Chain.LogTest do
           data: data
         )
 
-      blockchain_get_code_mock()
-
       get_eip1967_implementation()
 
       assert Log.decode(log, transaction) ==
@@ -173,16 +173,6 @@ defmodule Explorer.Chain.LogTest do
                    ]}
                 ]}
     end
-  end
-
-  defp blockchain_get_code_mock do
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn [%{id: id, method: "eth_getCode", params: [_, _]}], _options ->
-        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0"}]}
-      end
-    )
   end
 
   def get_eip1967_implementation do

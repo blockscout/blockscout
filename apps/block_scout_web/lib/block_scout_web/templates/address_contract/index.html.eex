@@ -32,8 +32,14 @@
           <% end %>
         <% end %>
       <% end %>
-      <%= if smart_contract_verified && @address.smart_contract.is_changed_bytecode do %>
-        <%= render BlockScoutWeb.CommonComponentsView, "_changed_bytecode_warning.html" %>
+      <%= if smart_contract_verified do %>
+        <%= if @address.smart_contract.is_changed_bytecode do %>
+          <%= render BlockScoutWeb.CommonComponentsView, "_changed_bytecode_warning.html" %>
+        <% else %>
+          <div class="d-none" data-selector="hidden-bytecode-warning">
+            <%= render BlockScoutWeb.CommonComponentsView, "_changed_bytecode_warning.html" %>
+          </div>
+        <% end %>
       <% end %>
       <%= if smart_contract_verified || (!smart_contract_verified && metadata_for_verification) do %>
         <% target_contract = if smart_contract_verified, do: @address.smart_contract, else: metadata_for_verification %>
