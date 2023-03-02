@@ -4,7 +4,7 @@ global:
 blockscout:
   enabled: true
   image:
-    _default: &image blockscout/blockscout-eth-goerli:latest
+    _default: &image blockscout/blockscout:latest
 
   ingress:
     enabled: true
@@ -267,7 +267,7 @@ stats:
 
 postgres:
   enabled: true
-  image: postgres:13.8
+  image: postgres:14.7
   port: 5432
 
   command: '["docker-entrypoint.sh", "-c"]'
