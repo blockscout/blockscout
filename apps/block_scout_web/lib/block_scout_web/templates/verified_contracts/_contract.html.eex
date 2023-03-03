@@ -41,7 +41,7 @@
             <i style="color: #dc3545;" class="fa-regular fa-circle-xmark"></i>
         <% end %>
     </td>
-    <!-- Construcor agruments -->
+    <!-- Constructor arguments -->
     <td class="stakes-td text-center">
         <%= if @contract.constructor_arguments do %>
             <i style="color: #20b760;" class="fa-regular fa-circle-check"></i>

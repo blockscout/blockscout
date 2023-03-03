@@ -168,7 +168,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "abi" => target_contract.abi,
       "source_code" => target_contract.contract_source_code,
       "file_path" => target_contract.file_path,
-      "additional_sources" => Enum.map(additional_sources, &prepare_additional_sourse/1),
+      "additional_sources" => Enum.map(additional_sources, &prepare_additional_source/1),
       "compiler_settings" => target_contract.compiler_settings,
       "external_libraries" => prepare_external_libraries(target_contract.external_libraries),
       "constructor_args" => if(smart_contract_verified, do: target_contract.constructor_arguments),
@@ -210,7 +210,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     end)
   end
 
-  defp prepare_additional_sourse(source) do
+  defp prepare_additional_source(source) do
     %{
       "source_code" => source.contract_source_code,
       "file_path" => source.file_name

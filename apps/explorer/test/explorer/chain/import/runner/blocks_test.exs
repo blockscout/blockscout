@@ -264,7 +264,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
     end
 
     # Regression test for https://github.com/poanetwork/blockscout/issues/1644
-    test "discards neighbouring blocks if they aren't related to the current one because of reorg and/or import timeout",
+    test "discards neighboring blocks if they aren't related to the current one because of reorg and/or import timeout",
          %{consensus_block: %{number: block_number, hash: block_hash, miner_hash: miner_hash}, options: options} do
       insert(:block, %{number: block_number, hash: block_hash})
       old_block1 = params_for(:block, miner_hash: miner_hash, parent_hash: block_hash, number: block_number + 1)
