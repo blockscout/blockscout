@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, Helpers, Repo}
   alias Explorer.Chain.OptimismOutputRoot
   alias Indexer.BoundQueue
   alias Indexer.Fetcher.Optimism
@@ -156,7 +156,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   defp events_to_output_roots(events) do
     Enum.map(events, fn event ->
-      [l1_timestamp] = Optimism.decode_data(event["data"], [{:uint, 256}])
+      [l1_timestamp] = Helpers.decode_data(event["data"], [{:uint, 256}])
       {:ok, l1_timestamp} = DateTime.from_unix(l1_timestamp)
 
       %{
