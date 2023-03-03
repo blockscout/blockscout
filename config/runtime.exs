@@ -463,7 +463,8 @@ config :indexer, Indexer.Fetcher.OptimismWithdrawalEvent,
 config :indexer, Indexer.Fetcher.OptimismTxnBatch,
   start_block_l1: System.get_env("INDEXER_OPTIMISM_L1_BATCH_START_BLOCK"),
   batch_inbox: System.get_env("INDEXER_OPTIMISM_L1_BATCH_INBOX"),
-  batch_submitter: System.get_env("INDEXER_OPTIMISM_L1_BATCH_SUBMITTER")
+  batch_submitter: System.get_env("INDEXER_OPTIMISM_L1_BATCH_SUBMITTER"),
+  blocks_chunk_size: System.get_env("INDEXER_OPTIMISM_L1_BATCH_BLOCKS_CHUNK_SIZE", 4)
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
