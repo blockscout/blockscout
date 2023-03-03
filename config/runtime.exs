@@ -329,20 +329,20 @@ config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
   api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY")
 
 config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
-  platfortm: System.get_env("EXCHANGE_RATES_COINGECKO_PLATFORM_ID"),
+  platform: System.get_env("EXCHANGE_RATES_COINGECKO_PLATFORM_ID"),
   api_key: System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),
   coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID")
 
-token_excange_rate_interval =
-  case "TOKEN_EXCANGE_RATE_INTERVAL" |> System.get_env("") |> String.downcase() |> Integer.parse() do
+token_exchange_rate_interval =
+  case "TOKEN_EXCHANGE_RATE_INTERVAL" |> System.get_env("") |> String.downcase() |> Integer.parse() do
     {hours, "h"} -> :timer.hours(hours)
     {minutes, "m"} -> :timer.minutes(minutes)
     {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
     _ -> nil
   end
 
-token_excange_rate_refetch_interval =
-  case "TOKEN_EXCANGE_RATE_REFETCH_INTERVAL" |> System.get_env("") |> String.downcase() |> Integer.parse() do
+token_exchange_rate_refetch_interval =
+  case "TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL" |> System.get_env("") |> String.downcase() |> Integer.parse() do
     {hours, h} when h in ["h", ""] -> :timer.hours(hours)
     {minutes, "m"} -> :timer.minutes(minutes)
     {seconds, "s"} -> :timer.seconds(seconds)
@@ -350,15 +350,15 @@ token_excange_rate_refetch_interval =
   end
 
 token_exchange_rate_max_batch_size =
-  case "TOKEN_EXCANGE_RATE_MAX_BATCH_SIZE" |> System.get_env("") |> Integer.parse() do
+  case "TOKEN_EXCHANGE_RATE_MAX_BATCH_SIZE" |> System.get_env("") |> Integer.parse() do
     {batch_size, ""} -> batch_size
     _ -> nil
   end
 
 config :explorer, Explorer.ExchangeRates.TokenExchangeRates,
-  enabled: System.get_env("DISABLE_TOKEN_EXCANGE_RATE") != "true",
-  interval: token_excange_rate_interval,
-  refetch_interval: token_excange_rate_refetch_interval,
+  enabled: System.get_env("DISABLE_TOKEN_EXCHANGE_RATE") != "true",
+  interval: token_exchange_rate_interval,
+  refetch_interval: token_exchange_rate_refetch_interval,
   max_batch_size: token_exchange_rate_max_batch_size
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: disable_indexer != "true"
