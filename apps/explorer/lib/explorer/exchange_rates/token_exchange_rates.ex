@@ -52,15 +52,21 @@ defmodule Explorer.ExchangeRates.TokenExchangeRates do
       ) do
     tokens_to_update = last_fetched |> Token.tokens_to_update_fiat_value(batch_size) |> Repo.all()
 
-    case tokens_to_update |> Enum.map(& &1.contract_address_hash) |> Source.fetch_fiat_value_for_token_addresses() do
+    case tokens_to_update |> Enum.map(& &1.contract_address_hash) |> Source.fetch_market_data_for_token_addresses() do
       {:ok, fiat_values} ->
         timestamp = %{updated_at: DateTime.utc_now()}
 
         tokens_to_update
         |> Enum.each(fn %{contract_address_hash: contract_address_hash} = token ->
-          token
-          |> Token.changeset(Map.put(timestamp, :fiat_value, Map.get(fiat_values, contract_address_hash)))
-          |> Repo.update(returning: false)
+          case Map.get(fiat_values, contract_address_hash) do
+            %{} = market_data ->
+              token
+              |> Token.changeset(Map.merge(timestamp, market_data))
+              |> Repo.update(returning: false)
+
+            _ ->
+              nil
+          end
         end)
 
       err ->

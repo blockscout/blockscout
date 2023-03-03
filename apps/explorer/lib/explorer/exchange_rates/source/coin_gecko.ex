@@ -44,15 +44,23 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   @impl Source
-  def format_data(%{} = fiat_values_for_tokens) do
+  def format_data(%{} = market_data_for_tokens) do
     currency = currency()
+    market_cap = currency <> "_market_cap"
 
-    fiat_values_for_tokens
+    market_data_for_tokens
     |> Enum.reduce(%{}, fn
-      {address_hash_string, %{^currency => value}}, acc ->
+      {address_hash_string, market_data}, acc ->
         case Explorer.Chain.Hash.Address.cast(address_hash_string) do
-          {:ok, address_hash} -> acc |> Map.put(address_hash, value)
-          _ -> acc
+          {:ok, address_hash} ->
+            acc
+            |> Map.put(address_hash, %{
+              fiat_value: Map.get(market_data, currency),
+              market_cap: Map.get(market_data, market_cap)
+            })
+
+          _ ->
+            acc
         end
 
       _, acc ->
@@ -87,7 +95,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   def source_url(token_addresses) when is_list(token_addresses) do
     joined_addresses = token_addresses |> Enum.map_join(",", &to_string/1)
 
-    "#{base_url()}/simple/token_price/#{platform()}?vs_currencies=#{currency()}&contract_addresses=#{joined_addresses}"
+    "#{base_url()}/simple/token_price/#{platform()}?vs_currencies=#{currency()}&include_market_cap=true&contract_addresses=#{joined_addresses}"
   end
 
   @impl Source
