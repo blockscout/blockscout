@@ -111,7 +111,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           from(
             we in OptimismWithdrawalEvent,
             select: we.l1_timestamp,
-            where: we.withdrawal_hash == ^w.withdrawal_hash and we.l1_event_type == :WithdrawalProven
+            where: we.withdrawal_hash == ^w.hash and we.l1_event_type == :WithdrawalProven
           )
         )
 
