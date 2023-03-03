@@ -2559,10 +2559,10 @@ defmodule Explorer.Chain do
         left_join: l2_block in Block,
         on: w.l2_block_number == l2_block.number,
         left_join: we in OptimismWithdrawalEvent,
-        on: w.withdrawal_hash == we.withdrawal_hash and we.l1_event_type == :WithdrawalFinalized,
+        on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
         select: %{
           msg_nonce: w.msg_nonce,
-          withdrawal_hash: w.withdrawal_hash,
+          hash: w.hash,
           l2_block_number: w.l2_block_number,
           l2_timestamp: l2_block.timestamp,
           l2_transaction_hash: w.l2_transaction_hash,
