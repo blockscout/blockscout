@@ -8,7 +8,6 @@ defmodule Indexer.Transform.TransactionActions do
   import Ecto.Query, only: [from: 2]
   import Explorer.Helpers, only: [decode_data: 2]
 
-  alias ABI.TypeDecoder
   alias Explorer.Chain.Cache.NetVersion
   alias Explorer.Chain.Cache.{TransactionActionTokensData, TransactionActionUniswapPools}
   alias Explorer.Chain.{Address, Data, Hash, Token, TransactionAction}

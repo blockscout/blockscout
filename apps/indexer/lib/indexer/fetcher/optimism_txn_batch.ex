@@ -20,7 +20,6 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   alias Indexer.Fetcher.Optimism
 
   @block_check_interval_range_size 100
-  @eth_get_block_range_size 4
   @reorg_rewind_limit 10
 
   def child_spec(start_link_arguments) do
@@ -53,6 +52,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          start_block_l1 = Optimism.parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
+         chunk_size = Optimism.parse_integer(env[:blocks_chunk_size]),
+         {:chunk_size_valid, true} <- {:chunk_size_valid, !is_nil(chunk_size) && chunk_size > 0},
          json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
          {last_l1_block_number, last_l1_transaction_hash, last_l1_tx} = get_last_l1_item(json_rpc_named_arguments),
          {:start_block_l1_valid, true} <-
@@ -82,6 +83,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          block_check_interval: block_check_interval,
          start_block: start_block,
          end_block: last_safe_block,
+         chunk_size: chunk_size,
          reorg_monitor_task: reorg_monitor_task,
          incomplete_frame_sequence: empty_incomplete_frame_sequence(),
          json_rpc_named_arguments: json_rpc_named_arguments,
@@ -106,6 +108,10 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
       {:start_block_l1_valid, false} ->
         Logger.error("Invalid L1 Start Block value. Please, check the value and op_transaction_batches table.")
+        :ignore
+
+      {:chunk_size_valid, false} ->
+        Logger.error("Invalid blocks chunk size value.")
         :ignore
 
       {:error, error_data} ->
@@ -137,6 +143,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           block_check_interval: block_check_interval,
           start_block: start_block,
           end_block: end_block,
+          chunk_size: chunk_size,
           incomplete_frame_sequence: incomplete_frame_sequence,
           json_rpc_named_arguments: json_rpc_named_arguments,
           json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
@@ -144,15 +151,15 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       ) do
     time_before = Timex.now()
 
-    chunks_number = ceil((end_block - start_block + 1) / @eth_get_block_range_size)
+    chunks_number = ceil((end_block - start_block + 1) / chunk_size)
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
 
     {last_written_block, new_incomplete_frame_sequence} =
       chunk_range
       |> Enum.reduce_while({start_block - 1, incomplete_frame_sequence}, fn current_chank,
                                                                             {_, incomplete_frame_sequence_acc} ->
-        chunk_start = start_block + @eth_get_block_range_size * current_chank
-        chunk_end = min(chunk_start + @eth_get_block_range_size - 1, end_block)
+        chunk_start = start_block + chunk_size * current_chank
+        chunk_end = min(chunk_start + chunk_size - 1, end_block)
 
         new_incomplete_frame_sequence =
           if chunk_end >= chunk_start do

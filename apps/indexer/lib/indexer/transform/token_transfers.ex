@@ -5,7 +5,6 @@ defmodule Indexer.Transform.TokenTransfers do
 
   require Logger
 
-  alias ABI.TypeDecoder
   alias Explorer.{Chain, Helpers, Repo}
   alias Explorer.Chain.{Token, TokenTransfer}
   alias Explorer.Token.MetadataRetriever

@@ -286,5 +286,9 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
+  def parse_integer(value) when is_integer(value) do
+    value
+  end
+
   def parse_integer(_integer_string), do: nil
 end
