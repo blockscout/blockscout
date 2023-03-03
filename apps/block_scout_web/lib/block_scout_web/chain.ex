@@ -477,9 +477,9 @@ defmodule BlockScoutWeb.Chain do
     Map.merge(params, paging_params(List.last(list)))
   end
 
-  def token_tranfers_next_page_params([], _list, _params), do: nil
+  def token_transfers_next_page_params([], _list, _params), do: nil
 
-  def token_tranfers_next_page_params(next_page, list, params) do
+  def token_transfers_next_page_params(next_page, list, params) do
     next_token_transfer = List.first(next_page)
     current_token_transfer = List.last(list)
 
@@ -488,7 +488,7 @@ defmodule BlockScoutWeb.Chain do
          next_token_transfer.transaction_hash == current_token_transfer.transaction_hash do
       new_params =
         list
-        |> last_token_trasfer_before_current(current_token_transfer)
+        |> last_token_transfer_before_current(current_token_transfer)
         |> (&if(is_nil(&1), do: %{}, else: paging_params(&1))).()
 
       params
@@ -504,7 +504,7 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  defp last_token_trasfer_before_current(list, current_token_transfer) do
+  defp last_token_transfer_before_current(list, current_token_transfer) do
     Enum.reduce_while(list, nil, fn tt, acc ->
       if tt.log_index == current_token_transfer.log_index and tt.block_hash == current_token_transfer.block_hash and
            tt.transaction_hash == current_token_transfer.transaction_hash do

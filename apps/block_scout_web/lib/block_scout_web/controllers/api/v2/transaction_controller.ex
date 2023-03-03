@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
-    only: [next_page_params: 3, token_tranfers_next_page_params: 3, paging_options: 1, split_list_by_page: 1]
+    only: [next_page_params: 3, token_transfers_next_page_params: 3, paging_options: 1, split_list_by_page: 1]
 
   import BlockScoutWeb.PagingHelper,
     only: [
@@ -153,7 +153,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       next_page_params =
         next_page
-        |> token_tranfers_next_page_params(token_transfers, params)
+        |> token_transfers_next_page_params(token_transfers, params)
         |> delete_parameters_from_next_page_params()
 
       conn

@@ -162,7 +162,7 @@ defmodule Explorer.Chain.TokenTransfer do
         tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number),
         preload: [{:transaction, :block}, :token, :from_address, :to_address],
-        order_by: [desc: tt.block_number]
+        order_by: [desc: tt.block_number, desc: tt.log_index]
       )
 
     query
@@ -182,7 +182,7 @@ defmodule Explorer.Chain.TokenTransfer do
         where: fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)),
         where: not is_nil(tt.block_number),
         preload: [{:transaction, :block}, :token, :from_address, :to_address],
-        order_by: [desc: tt.block_number]
+        order_by: [desc: tt.block_number, desc: tt.log_index]
       )
 
     query

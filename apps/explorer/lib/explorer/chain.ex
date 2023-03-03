@@ -6499,6 +6499,22 @@ defmodule Explorer.Chain do
       end
     end)
     |> Enum.reject(&is_nil/1)
+    |> squash_token_transfers_in_batch()
+  end
+
+  defp squash_token_transfers_in_batch(token_transfers) do
+    token_transfers
+    |> Enum.group_by(fn tt -> {List.first(tt.token_ids), tt.from_address_hash, tt.to_address_hash} end)
+    |> Enum.map(fn {_k, v} -> Enum.reduce(v, nil, &group_batch_reducer/2) end)
+    |> Enum.sort_by(fn tt -> tt.index_in_batch end, :desc)
+  end
+
+  defp group_batch_reducer(transfer, nil) do
+    transfer
+  end
+
+  defp group_batch_reducer(transfer, acc) do
+    %TokenTransfer{acc | amount: Decimal.add(acc.amount, transfer.amount)}
   end
 
   @spec paginate_1155_batch_token_transfers([TokenTransfer.t()], [paging_options]) :: [TokenTransfer.t()]
