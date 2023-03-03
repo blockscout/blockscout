@@ -8,9 +8,7 @@ defmodule Indexer.Fetcher.Optimism do
   import EthereumJSONRPC,
     only: [fetch_block_number_by_tag: 2, json_rpc: 2, integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
 
-  alias ABI.TypeDecoder
   alias EthereumJSONRPC.Block.ByNumber
-  alias Explorer.Chain.Data
   alias Indexer.Helpers
 
   @block_check_interval_range_size 100
@@ -138,22 +136,6 @@ defmodule Indexer.Fetcher.Optimism do
           get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left)
         end
     end
-  end
-
-  def decode_data("0x", types) do
-    for _ <- types, do: nil
-  end
-
-  def decode_data("0x" <> encoded_data, types) do
-    encoded_data
-    |> Base.decode16!(case: :mixed)
-    |> TypeDecoder.decode_raw(types)
-  end
-
-  def decode_data(%Data{} = data, types) do
-    data
-    |> Data.to_string()
-    |> decode_data(types)
   end
 
   def get_logs_range_size do

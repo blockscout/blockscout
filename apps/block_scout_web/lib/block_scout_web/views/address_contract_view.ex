@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.AddressContractView do
   use BlockScoutWeb, :view
 
   alias ABI.{FunctionSelector, TypeDecoder}
-  alias Explorer.Chain
+  alias Explorer.{Chain, Helpers}
   alias Explorer.Chain.{Address, Data, InternalTransaction, Transaction}
 
   def render("scripts.html", %{conn: conn}) do
@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.AddressContractView do
 
     {_, result} =
       contract.constructor_arguments
-      |> decode_data(input_types)
+      |> Helpers.decode_data(input_types)
       |> Enum.zip(constructor_abi["inputs"])
       |> Enum.reduce({0, "#{contract.constructor_arguments}\n\n"}, fn {val, %{"type" => type}}, {count, acc} ->
         formatted_val = val_to_string(val, type, conn)
@@ -85,16 +85,6 @@ defmodule BlockScoutWeb.AddressContractView do
     else
       address_hash
     end
-  end
-
-  def decode_data("0x" <> encoded_data, types) do
-    decode_data(encoded_data, types)
-  end
-
-  def decode_data(encoded_data, types) do
-    encoded_data
-    |> Base.decode16!(case: :mixed)
-    |> TypeDecoder.decode_raw(types)
   end
 
   def format_external_libraries(libraries, conn) do
