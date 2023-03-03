@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressContractView do
   use BlockScoutWeb, :view
 
-  alias ABI.{FunctionSelector, TypeDecoder}
+  alias ABI.FunctionSelector
   alias Explorer.{Chain, Helpers}
   alias Explorer.Chain.{Address, Data, InternalTransaction, Transaction}
 
