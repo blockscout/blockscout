@@ -86,17 +86,17 @@ defmodule Explorer.Chain.Import.Runner.OptimismTxnBatches do
           # don't update `l2_block_number` as it is a primary key and used for the conflict target
           epoch_number: fragment("EXCLUDED.epoch_number"),
           l1_transaction_hashes: fragment("EXCLUDED.l1_transaction_hashes"),
-          l1_transaction_timestamp: fragment("EXCLUDED.l1_transaction_timestamp"),
+          l1_timestamp: fragment("EXCLUDED.l1_timestamp"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", tb.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", tb.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.epoch_number, EXCLUDED.l1_transaction_hashes, EXCLUDED.l1_transaction_timestamp) IS DISTINCT FROM (?, ?, ?)",
+          "(EXCLUDED.epoch_number, EXCLUDED.l1_transaction_hashes, EXCLUDED.l1_timestamp) IS DISTINCT FROM (?, ?, ?)",
           tb.epoch_number,
           tb.l1_transaction_hashes,
-          tb.l1_transaction_timestamp
+          tb.l1_timestamp
         )
     )
   end

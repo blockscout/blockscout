@@ -5,13 +5,13 @@ defmodule Explorer.Chain.OptimismTxnBatch do
 
   alias Explorer.Chain.Hash
 
-  @required_attrs ~w(l2_block_number epoch_number l1_transaction_hashes l1_transaction_timestamp)a
+  @required_attrs ~w(l2_block_number epoch_number l1_transaction_hashes l1_timestamp)a
 
   @type t :: %__MODULE__{
           l2_block_number: non_neg_integer(),
           epoch_number: non_neg_integer(),
           l1_transaction_hashes: [Hash.t()],
-          l1_transaction_timestamp: DateTime.t()
+          l1_timestamp: DateTime.t()
         }
 
   @primary_key false
@@ -19,7 +19,7 @@ defmodule Explorer.Chain.OptimismTxnBatch do
     field(:l2_block_number, :integer, primary_key: true)
     field(:epoch_number, :integer)
     field(:l1_transaction_hashes, {:array, Hash.Full})
-    field(:l1_transaction_timestamp, :utc_datetime_usec)
+    field(:l1_timestamp, :utc_datetime_usec)
 
     timestamps()
   end

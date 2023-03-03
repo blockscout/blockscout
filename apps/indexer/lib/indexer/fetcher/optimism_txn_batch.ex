@@ -413,12 +413,12 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
         with {:frame_number_valid, true} <- {:frame_number_valid, frame.number == last_frame_number + 1},
              {:frame_is_last, true} <- {:frame_is_last, frame.is_last},
-             l1_transaction_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params),
+             l1_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params),
              batches_parsed =
                parse_frame_sequence(
                  frame_sequence,
                  l1_transaction_hashes,
-                 l1_transaction_timestamp,
+                 l1_timestamp,
                  json_rpc_named_arguments_l2,
                  after_reorg
                ),
@@ -461,7 +461,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   defp parse_frame_sequence(
          bytes,
          l1_transaction_hashes,
-         l1_transaction_timestamp,
+         l1_timestamp,
          json_rpc_named_arguments_l2,
          after_reorg
        ) do
@@ -477,7 +477,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
             parent_hash: Enum.at(batch, 0),
             epoch_number: :binary.decode_unsigned(Enum.at(batch, 1)),
             l1_transaction_hashes: l1_transaction_hashes,
-            l1_transaction_timestamp: l1_transaction_timestamp
+            l1_timestamp: l1_timestamp
           }
 
           if byte_size(new_remainder) > 0 do
@@ -544,7 +544,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     batches
     |> Enum.sort(fn b1, b2 ->
       b1.l2_block_number < b2.l2_block_number or
-        (b1.l2_block_number == b2.l2_block_number and b1.l1_transaction_timestamp < b2.l1_transaction_timestamp)
+        (b1.l2_block_number == b2.l2_block_number and b1.l1_timestamp < b2.l1_timestamp)
     end)
     |> Enum.reduce(%{}, fn b, acc ->
       Map.put(acc, b.l2_block_number, b)
