@@ -5,11 +5,11 @@ defmodule Explorer.Chain.OptimismWithdrawal do
 
   alias Explorer.Chain.Hash
 
-  @required_attrs ~w(msg_nonce withdrawal_hash l2_transaction_hash l2_block_number)a
+  @required_attrs ~w(msg_nonce hash l2_transaction_hash l2_block_number)a
 
   @type t :: %__MODULE__{
           msg_nonce: Decimal.t(),
-          withdrawal_hash: Hash.t(),
+          hash: Hash.t(),
           l2_transaction_hash: Hash.t(),
           l2_block_number: non_neg_integer()
         }
@@ -17,7 +17,7 @@ defmodule Explorer.Chain.OptimismWithdrawal do
   @primary_key false
   schema "op_withdrawals" do
     field(:msg_nonce, :decimal, primary_key: true)
-    field(:withdrawal_hash, Hash.Full)
+    field(:hash, Hash.Full)
     field(:l2_transaction_hash, Hash.Full)
     field(:l2_block_number, :integer)
 
