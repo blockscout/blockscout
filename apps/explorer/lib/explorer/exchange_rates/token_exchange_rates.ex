@@ -1,6 +1,6 @@
 defmodule Explorer.ExchangeRates.TokenExchangeRates do
   @moduledoc """
-  Periodically fethes fiat value of tokens.
+  Periodically fetches fiat value of tokens.
   """
   use GenServer
 
