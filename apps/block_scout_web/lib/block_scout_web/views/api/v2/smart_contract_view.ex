@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias BlockScoutWeb.SmartContractView
   alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
   alias Ecto.Changeset
-  alias Explorer.{Chain, Market}
+  alias Explorer.{Chain, Helpers, Market}
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.ExchangeRates.Token
   alias Explorer.Visualize.Sol2uml
@@ -224,7 +224,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
     result =
       constructor_arguments
-      |> AddressContractView.decode_data(input_types)
+      |> Helpers.decode_data(input_types)
       |> Enum.zip(constructor_abi["inputs"])
       |> Enum.map(fn {value, %{"type" => type} = input_arg} ->
         [ABIEncodedValueView.value_json(type, value), input_arg]
