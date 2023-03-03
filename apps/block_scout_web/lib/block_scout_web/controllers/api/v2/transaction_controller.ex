@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     [to_address: :smart_contract] => :optional
   }
 
-  @token_transfers_neccessity_by_association %{
+  @token_transfers_necessity_by_association %{
     [from_address: :smart_contract] => :optional,
     [to_address: :smart_contract] => :optional,
     [from_address: :names] => :optional,
@@ -38,7 +38,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     to_address: :required
   }
 
-  @token_transfers_in_tx_neccessity_by_association %{
+  @token_transfers_in_tx_necessity_by_association %{
     [from_address: :smart_contract] => :optional,
     [to_address: :smart_contract] => :optional,
     [from_address: :names] => :optional,
@@ -48,7 +48,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     token: :required
   }
 
-  @internal_transaction_neccessity_by_association [
+  @internal_transaction_necessity_by_association [
     necessity_by_association: %{
       [created_contract_address: :names] => :optional,
       [from_address: :names] => :optional,
@@ -71,7 +71,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params),
          preloaded <-
-           Chain.preload_token_transfers(transaction, @token_transfers_in_tx_neccessity_by_association, false) do
+           Chain.preload_token_transfers(transaction, @token_transfers_in_tx_necessity_by_association, false) do
       conn
       |> put_status(200)
       |> render(:transaction, %{transaction: preloaded})
@@ -136,7 +136,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
       full_options =
-        [necessity_by_association: @token_transfers_neccessity_by_association]
+        [necessity_by_association: @token_transfers_necessity_by_association]
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(token_transfers_types_options(params))
 
@@ -163,7 +163,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
       full_options =
         Keyword.merge(
-          @internal_transaction_neccessity_by_association,
+          @internal_transaction_necessity_by_association,
           paging_options(params)
         )
 

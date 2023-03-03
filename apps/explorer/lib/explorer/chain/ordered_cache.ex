@@ -246,7 +246,7 @@ defmodule Explorer.Chain.OrderedCache do
 
       defp merge_and_update([], existing, size) do
         # if there are no more candidates to be inserted keep as many of the
-        # exsisting elements and remove the rest
+        # existing elements and remove the rest
         {remaining, to_remove} = Enum.split(existing, size)
         remove(to_remove)
         remaining
@@ -274,7 +274,7 @@ defmodule Explorer.Chain.OrderedCache do
             [head | merge_and_update(to_check, tail, size - 1)]
 
           prevails?(head, candidate_id) ->
-            # keep the prevaling existing value and compare all candidates against the rest
+            # keep the prevailing existing value and compare all candidates against the rest
             [head | merge_and_update(candidates, tail, size - 1)]
 
           true ->

@@ -303,7 +303,7 @@ export const elements = {
  * values passed here will overwrite the values on asyncInitialState.
  *
  * itemKey: it will be added to the state as the key for diffing the elements and
- * adding or removing with the correct animation. Check list_morph.js for more informantion.
+ * adding or removing with the correct animation. Check list_morph.js for more information.
  */
 export function createAsyncLoadStore (reducer, initialState, itemKey) {
   const state = merge(asyncInitialState, initialState)

@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
       finished_indexing_blocks: finished_indexing_blocks,
       finished_indexing: Chain.finished_indexing?(indexed_ratio_blocks),
       indexed_blocks_ratio: indexed_ratio_blocks,
-      indexed_inernal_transactions_ratio: if(finished_indexing_blocks, do: Chain.indexed_ratio_internal_transactions())
+      indexed_internal_transactions_ratio: if(finished_indexing_blocks, do: Chain.indexed_ratio_internal_transactions())
     })
   end
 end

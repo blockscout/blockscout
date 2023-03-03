@@ -46,7 +46,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
     callback: &async_task_on_deletion(&1)
 
   def get_average_gas_price(num_of_blocks, safelow_percentile, average_percentile, fast_percentile) do
-    lates_gas_price_query =
+    latest_gas_price_query =
       from(
         block in Block,
         left_join: transaction in assoc(block, :transactions),
@@ -60,7 +60,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       )
 
     latest_gas_prices =
-      lates_gas_price_query
+      latest_gas_price_query
       |> Repo.all(timeout: :infinity)
 
     latest_ordered_gas_prices =
@@ -103,7 +103,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
         rescue
           e ->
             Logger.debug([
-              "Coudn't update gas used gas_prices",
+              "Couldn't update gas used gas_prices",
               Exception.format(:error, e, __STACKTRACE__)
             ])
         end

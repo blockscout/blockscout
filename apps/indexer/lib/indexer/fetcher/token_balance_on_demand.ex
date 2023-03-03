@@ -93,8 +93,8 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
   defp stale_balance_window(block_number) do
     case AverageBlockTime.average_block_time() do
       {:error, :disabled} ->
-        fallback_treshold_in_blocks = Application.get_env(:indexer, __MODULE__)[:fallback_treshold_in_blocks]
-        block_number - fallback_treshold_in_blocks
+        fallback_threshold_in_blocks = Application.get_env(:indexer, __MODULE__)[:fallback_threshold_in_blocks]
+        block_number - fallback_threshold_in_blocks
 
       duration ->
         average_block_time =
