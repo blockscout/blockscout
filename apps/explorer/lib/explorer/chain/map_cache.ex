@@ -28,7 +28,7 @@ defmodule Explorer.Chain.MapCache do
 
   ## Callbacks
   Apart from the `callback` that can be set as part of the `ConCache` options,
-  two callbacks esist and can be overridden:
+  two callbacks exist and can be overridden:
 
   `c:handle_update/3` will be called whenever an update is issued. It will receive
   the `t:key/0` that is going to be updated, the current `t:value/0` that is
