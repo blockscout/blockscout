@@ -139,10 +139,16 @@ defmodule BlockScoutWeb.Chain do
     ]
   end
 
-  def paging_options(%{"holder_count" => holder_count, "name" => token_name}) do
+  def paging_options(%{"market_cap" => market_cap, "holder_count" => holder_count, "name" => token_name}) do
+    market_cap_decimal =
+      case Decimal.parse(market_cap) do
+        {decimal, ""} -> Decimal.round(decimal, 16)
+        _ -> nil
+      end
+
     case Integer.parse(holder_count) do
       {holder_count, ""} ->
-        [paging_options: %{@default_paging_options | key: {holder_count, token_name}}]
+        [paging_options: %{@default_paging_options | key: {market_cap_decimal, holder_count, token_name}}]
 
       _ ->
         [paging_options: @default_paging_options]
@@ -313,12 +319,12 @@ defmodule BlockScoutWeb.Chain do
     %{"hash" => hash, "fetched_coin_balance" => Decimal.to_string(fetched_coin_balance.value)}
   end
 
-  defp paging_params(%Token{holder_count: holder_count, name: token_name}) do
-    %{"holder_count" => holder_count, "name" => token_name}
+  defp paging_params(%Token{market_cap: market_cap, holder_count: holder_count, name: token_name}) do
+    %{"market_cap" => market_cap, "holder_count" => holder_count, "name" => token_name}
   end
 
-  defp paging_params([%Token{holder_count: holder_count, name: token_name}, _]) do
-    %{"holder_count" => holder_count, "name" => token_name}
+  defp paging_params([%Token{market_cap: market_cap, holder_count: holder_count, name: token_name}, _]) do
+    %{"market_cap" => market_cap, "holder_count" => holder_count, "name" => token_name}
   end
 
   defp paging_params({%Reward{block: %{number: number}}, _}) do

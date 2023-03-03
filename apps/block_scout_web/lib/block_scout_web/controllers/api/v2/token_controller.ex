@@ -6,7 +6,6 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias Explorer.Chain
   alias Indexer.Fetcher.TokenTotalSupplyOnDemand
 
-
   import BlockScoutWeb.Chain,
     only: [
       split_list_by_page: 1,
