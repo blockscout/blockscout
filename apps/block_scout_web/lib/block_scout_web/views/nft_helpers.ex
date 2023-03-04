@@ -5,15 +5,23 @@ defmodule BlockScoutWeb.NFTHelpers do
   def get_media_src(nil, _), do: nil
 
   def get_media_src(%{metadata: metadata} = instance, high_quality_media?) do
+    fetch_media_src(metadata, instance.token_contract_address_hash, high_quality_media?)
+  end
+
+  def get_media_src(metadata, high_quality_media?) do
+    fetch_media_src(metadata, nil, high_quality_media?)
+  end
+
+  defp fetch_media_src(metadata, token_contract_address_hash, high_quality_media?) do
     cond do
       metadata["animation_url"] && high_quality_media? ->
-        retrieve_image(metadata["animation_url"], instance.token_contract_address_hash)
+        retrieve_image(metadata["animation_url"], token_contract_address_hash)
 
       metadata["image_url"] ->
-        retrieve_image(metadata["image_url"], instance.token_contract_address_hash)
+        retrieve_image(metadata["image_url"], token_contract_address_hash)
 
       metadata["image"] ->
-        retrieve_image(metadata["image"], instance.token_contract_address_hash)
+        retrieve_image(metadata["image"], token_contract_address_hash)
 
       metadata["properties"]["image"]["description"] ->
         metadata["properties"]["image"]["description"]

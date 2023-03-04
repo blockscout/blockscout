@@ -839,21 +839,20 @@ defmodule Explorer.Staking.ContractState do
     if start_snapshotting do
       # eebc7a39 = keccak256(getPendingValidators())
       # 004a8803 = keccak256(validatorsToBeFinalized())
-      if global_responses.validator_set_apply_block == 0 do
-        %{
-          "eebc7a39" => {:ok, [validators_pending]},
-          "004a8803" => {:ok, [validators_to_be_finalized]}
-        } =
-          Reader.query_contract_by_block_number(
-            contracts.validator_set,
-            abi,
-            %{
-              "eebc7a39" => [],
-              "004a8803" => []
-            },
-            block_number
-          )
-
+      with 0 <- global_responses.validator_set_apply_block,
+           %{
+             "eebc7a39" => {:ok, [validators_pending]},
+             "004a8803" => {:ok, [validators_to_be_finalized]}
+           } <-
+             Reader.query_contract_by_block_number(
+               contracts.validator_set,
+               abi,
+               %{
+                 "eebc7a39" => [],
+                 "004a8803" => []
+               },
+               block_number
+             ) do
         validators_pending = Enum.uniq(validators_pending ++ validators_to_be_finalized)
 
         %{
@@ -861,10 +860,11 @@ defmodule Explorer.Staking.ContractState do
           for_snapshot: validators_pending
         }
       else
-        %{
-          all: global_responses.validators,
-          for_snapshot: global_responses.validators
-        }
+        _ ->
+          %{
+            all: global_responses.validators,
+            for_snapshot: global_responses.validators
+          }
       end
     else
       %{all: global_responses.validators}
