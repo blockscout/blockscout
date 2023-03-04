@@ -17,6 +17,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
+  @api_true [api?: true]
+
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
   end
@@ -242,7 +244,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "created_contract" =>
         Helper.address_with_info(conn, transaction.created_contract_address, transaction.created_contract_address_hash),
       "confirmations" =>
-        transaction.block |> Chain.confirmations(block_height: Chain.block_height()) |> format_confirmations(),
+        transaction.block |> Chain.confirmations(block_height: Chain.block_height(@api_true)) |> format_confirmations(),
       "confirmation_duration" => processing_time_duration(transaction),
       "value" => transaction.value,
       "fee" => transaction |> Chain.fee(:wei) |> format_fee(),

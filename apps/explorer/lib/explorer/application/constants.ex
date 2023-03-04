@@ -4,7 +4,7 @@ defmodule Explorer.Application.Constants do
   """
 
   use Explorer.Schema
-  alias Explorer.Repo
+  alias Explorer.{Chain, Repo}
 
   @keys_manager_contract_address_key "keys_manager_contract_address"
 
@@ -28,10 +28,10 @@ defmodule Explorer.Application.Constants do
     |> validate_required(@required_attrs)
   end
 
-  def get_constant_by_key(key) do
+  def get_constant_by_key(key, options) do
     __MODULE__
     |> where([constant], constant.key == ^key)
-    |> Repo.one()
+    |> Chain.select_repo(options).one()
   end
 
   def insert_keys_manager_contract_address(value) do
@@ -40,7 +40,7 @@ defmodule Explorer.Application.Constants do
     |> Repo.insert!()
   end
 
-  def get_keys_manager_contract_address do
-    get_constant_by_key(@keys_manager_contract_address_key)
+  def get_keys_manager_contract_address(options \\ []) do
+    get_constant_by_key(@keys_manager_contract_address_key, options)
   end
 end

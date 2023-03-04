@@ -7,9 +7,9 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
 
   def blocks(conn, _params) do
     blocks =
-      [paging_options: %PagingOptions{page_size: 4}]
+      [paging_options: %PagingOptions{page_size: 4}, api?: true]
       |> Chain.list_blocks()
-      |> Repo.preload([[miner: :names], :transactions, :rewards])
+      |> Repo.replica().preload([[miner: :names], :transactions, :rewards])
 
     conn
     |> put_status(200)
@@ -29,7 +29,8 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
           [from_address: :smart_contract] => :optional,
           [to_address: :smart_contract] => :optional
         },
-        paging_options: %PagingOptions{page_size: 6}
+        paging_options: %PagingOptions{page_size: 6},
+        api?: true
       )
 
     conn
@@ -44,7 +45,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
 
     json(conn, %{
       finished_indexing_blocks: finished_indexing_blocks,
-      finished_indexing: Chain.finished_indexing?(indexed_ratio_blocks),
+      finished_indexing: Chain.finished_indexing?(indexed_ratio_blocks, api?: true),
       indexed_blocks_ratio: indexed_ratio_blocks,
       indexed_internal_transactions_ratio: if(finished_indexing_blocks, do: Chain.indexed_ratio_internal_transactions())
     })
