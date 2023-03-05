@@ -15,8 +15,9 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
   alias EthereumJSONRPC.Block.ByNumber
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.OptimismWithdrawalEvent
-  alias Indexer.BoundQueue
   alias Indexer.Fetcher.Optimism
+
+  @fetcher_name :optimism_withdrawal_event
 
   # 32-byte signature of the event WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to)
   @withdrawal_proven_event "0x67a6208cfcc0801d50f6cbe764733f4fddf66ac0b04442061a8a8c0cb6b63f62"
@@ -35,13 +36,15 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
     Supervisor.child_spec(spec, [])
   end
 
+  def fetcher_name, do: @fetcher_name
+
   def start_link(args, gen_server_options \\ []) do
     GenServer.start_link(__MODULE__, args, Keyword.put_new(gen_server_options, :name, __MODULE__))
   end
 
   @impl GenServer
   def init(_args) do
-    Logger.metadata(fetcher: :optimism_withdrawal_event)
+    Logger.metadata(fetcher: @fetcher_name)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
     optimism_l1_portal = Application.get_env(:indexer, :optimism_l1_portal)
@@ -103,7 +106,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
           )
         end
 
-        reorg_block = reorg_block_pop()
+        reorg_block = Optimism.reorg_block_pop(@fetcher_name)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           {deleted_count, _} =
@@ -153,7 +156,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
 
       task =
         Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismWithdrawalEvent.TaskSupervisor, fn ->
-          reorg_monitor(block_check_interval, json_rpc_named_arguments)
+          Optimism.reorg_monitor(@fetcher_name, block_check_interval, json_rpc_named_arguments)
         end)
 
       {:noreply, %{state | reorg_monitor_task: task}}
@@ -188,59 +191,6 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
         l1_block_number: l1_block_number
       }
     end)
-  end
-
-  def reorg_monitor(block_check_interval, json_rpc_named_arguments) do
-    Logger.metadata(fetcher: :optimism_withdrawal_event)
-
-    # infinite loop
-    Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), 0, fn _i, prev_latest ->
-      {:ok, latest} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-
-      if latest < prev_latest do
-        Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
-        reorg_block_push(latest)
-      end
-
-      :timer.sleep(block_check_interval)
-
-      {:cont, latest}
-    end)
-  end
-
-  defp reorg_block_pop do
-    case BoundQueue.pop_front(reorg_queue_get()) do
-      {:ok, {block_number, updated_queue}} ->
-        :ets.insert(:op_withdrawal_events_reorgs, {:queue, updated_queue})
-        block_number
-
-      {:error, :empty} ->
-        nil
-    end
-  end
-
-  defp reorg_block_push(block_number) do
-    {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(), block_number)
-    :ets.insert(:op_withdrawal_events_reorgs, {:queue, updated_queue})
-  end
-
-  defp reorg_queue_get do
-    if :ets.whereis(:op_withdrawal_events_reorgs) == :undefined do
-      :ets.new(:op_withdrawal_events_reorgs, [
-        :set,
-        :named_table,
-        :public,
-        read_concurrency: true,
-        write_concurrency: true
-      ])
-    end
-
-    with info when info != :undefined <- :ets.info(:op_withdrawal_events_reorgs),
-         [{_, value}] <- :ets.lookup(:op_withdrawal_events_reorgs, :queue) do
-      value
-    else
-      _ -> %BoundQueue{}
-    end
   end
 
   def get_last_l1_item do
