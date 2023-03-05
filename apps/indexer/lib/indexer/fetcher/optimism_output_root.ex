@@ -14,8 +14,9 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   alias Explorer.{Chain, Helpers, Repo}
   alias Explorer.Chain.OptimismOutputRoot
-  alias Indexer.BoundQueue
   alias Indexer.Fetcher.Optimism
+
+  @fetcher_name :optimism_output_root
 
   # 32-byte signature of the event OutputProposed(bytes32 indexed outputRoot, uint256 indexed l2OutputIndex, uint256 indexed l2BlockNumber, uint256 l1Timestamp)
   @output_proposed_event "0xa7aaf2512769da4e444e3de247be2564225c2e7a8f74cfe528e46e17d24868e2"
@@ -31,13 +32,15 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
     Supervisor.child_spec(spec, [])
   end
 
+  def fetcher_name, do: @fetcher_name
+
   def start_link(args, gen_server_options \\ []) do
     GenServer.start_link(__MODULE__, args, Keyword.put_new(gen_server_options, :name, __MODULE__))
   end
 
   @impl GenServer
   def init(_args) do
-    Logger.metadata(fetcher: :optimism_output_root)
+    Logger.metadata(fetcher: @fetcher_name)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
 
@@ -98,7 +101,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
           )
         end
 
-        reorg_block = reorg_block_pop()
+        reorg_block = Optimism.reorg_block_pop(@fetcher_name)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           {deleted_count, _} = Repo.delete_all(from(r in OptimismOutputRoot, where: r.l1_block_number >= ^reorg_block))
@@ -147,7 +150,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
       task =
         Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismOutputRoot.TaskSupervisor, fn ->
-          reorg_monitor(block_check_interval, json_rpc_named_arguments)
+          Optimism.reorg_monitor(@fetcher_name, block_check_interval, json_rpc_named_arguments)
         end)
 
       {:noreply, %{state | reorg_monitor_task: task}}
@@ -168,59 +171,6 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         output_root: Enum.at(event["topics"], 1)
       }
     end)
-  end
-
-  def reorg_monitor(block_check_interval, json_rpc_named_arguments) do
-    Logger.metadata(fetcher: :optimism_output_root)
-
-    # infinite loop
-    Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), 0, fn _i, prev_latest ->
-      {:ok, latest} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-
-      if latest < prev_latest do
-        Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
-        reorg_block_push(latest)
-      end
-
-      :timer.sleep(block_check_interval)
-
-      {:cont, latest}
-    end)
-  end
-
-  defp reorg_block_pop do
-    case BoundQueue.pop_front(reorg_queue_get()) do
-      {:ok, {block_number, updated_queue}} ->
-        :ets.insert(:op_output_roots_reorgs, {:queue, updated_queue})
-        block_number
-
-      {:error, :empty} ->
-        nil
-    end
-  end
-
-  defp reorg_block_push(block_number) do
-    {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(), block_number)
-    :ets.insert(:op_output_roots_reorgs, {:queue, updated_queue})
-  end
-
-  defp reorg_queue_get do
-    if :ets.whereis(:op_output_roots_reorgs) == :undefined do
-      :ets.new(:op_output_roots_reorgs, [
-        :set,
-        :named_table,
-        :public,
-        read_concurrency: true,
-        write_concurrency: true
-      ])
-    end
-
-    with info when info != :undefined <- :ets.info(:op_output_roots_reorgs),
-         [{_, value}] <- :ets.lookup(:op_output_roots_reorgs, :queue) do
-      value
-    else
-      _ -> %BoundQueue{}
-    end
   end
 
   def get_last_l1_item do
