@@ -194,7 +194,6 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
     Logger.metadata(fetcher: :optimism_withdrawal_event)
 
     # infinite loop
-    # credo:disable-for-next-line
     Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), 0, fn _i, prev_latest ->
       {:ok, latest} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
 
@@ -207,8 +206,6 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
 
       {:cont, latest}
     end)
-
-    :ok
   end
 
   defp reorg_block_pop do
