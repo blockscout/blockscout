@@ -30,6 +30,7 @@ defmodule Explorer.Chain do
   require Logger
 
   alias ABI.TypeDecoder
+  alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
@@ -2546,8 +2547,20 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-  def optimism_txn_batches_total_count do
-    Repo.aggregate(OptimismTxnBatch, :count, timeout: :infinity)
+  def get_table_rows_total_count(module) do
+    table_name = module.__schema__(:source)
+
+    %Postgrex.Result{rows: [[count]]} =
+      SQL.query!(
+        Repo,
+        "SELECT (CASE WHEN c.reltuples < 0 THEN NULL WHEN c.relpages = 0 THEN float8 '0' ELSE c.reltuples / c.relpages END * (pg_catalog.pg_relation_size(c.oid) / pg_catalog.current_setting('block_size')::int))::bigint FROM pg_catalog.pg_class c WHERE c.oid = '#{table_name}'::regclass"
+      )
+
+    if is_nil(count) do
+      Repo.aggregate(module, :count, timeout: :infinity)
+    else
+      count
+    end
   end
 
   @doc """
@@ -2568,10 +2581,6 @@ defmodule Explorer.Chain do
     |> page_output_roots(paging_options)
     |> limit(^paging_options.page_size)
     |> Repo.all()
-  end
-
-  def output_roots_total_count do
-    Repo.aggregate(OptimismOutputRoot, :count, timeout: :infinity)
   end
 
   @doc """
@@ -2606,10 +2615,6 @@ defmodule Explorer.Chain do
     |> page_optimism_withdrawals(paging_options)
     |> limit(^paging_options.page_size)
     |> Repo.all()
-  end
-
-  def optimism_withdrawals_total_count do
-    Repo.aggregate(OptimismWithdrawal, :count, timeout: :infinity)
   end
 
   @doc """
