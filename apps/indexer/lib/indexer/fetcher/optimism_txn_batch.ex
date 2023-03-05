@@ -456,13 +456,44 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   defp input_to_frame("0x" <> input) do
     input_binary = Base.decode16!(input, case: :mixed)
 
-    # the first byte must be zero (so called Derivation Version)
-    [0] = :binary.bin_to_list(binary_part(input_binary, 0, 1))
+    # the structure of the input is as follows:
+    #
+    # input = derivation_version ++ channel_id ++ frame_number ++ frame_data_length ++ frame_data ++ is_last
+    #
+    # derivation_version = uint8
+    # channel_id         = bytes16
+    # frame_number       = uint16
+    # frame_data_length  = uint32
+    # frame_data         = bytes
+    # is_last            = bool (uint8)
 
-    frame_number = :binary.decode_unsigned(binary_part(input_binary, 1 + 16, 2))
-    frame_data_length = :binary.decode_unsigned(binary_part(input_binary, 1 + 16 + 2, 4))
-    frame_data = binary_part(input_binary, 1 + 16 + 2 + 4, frame_data_length)
-    is_last = :binary.decode_unsigned(binary_part(input_binary, 1 + 16 + 2 + 4 + frame_data_length, 1)) > 0
+    # the first byte must be zero (so called Derivation Version)
+    derivation_version_length = 1
+    [0] = :binary.bin_to_list(binary_part(input_binary, 0, derivation_version_length))
+
+    # channel id is a random value (we don't use it)
+    channel_id_length = 16
+
+    # frame number consists of 2 bytes
+    frame_number_offset = derivation_version_length + channel_id_length
+    frame_number_size = 2
+    frame_number = :binary.decode_unsigned(binary_part(input_binary, frame_number_offset, frame_number_size))
+
+    # frame data length consists of 4 bytes
+    frame_data_length_offset = frame_number_offset + frame_number_size
+    frame_data_length_size = 4
+
+    frame_data_length =
+      :binary.decode_unsigned(binary_part(input_binary, frame_data_length_offset, frame_data_length_size))
+
+    # frame data is a byte array of frame_data_length size
+    frame_data_offset = frame_data_length_offset + frame_data_length_size
+    frame_data = binary_part(input_binary, frame_data_offset, frame_data_length)
+
+    # is_last is 1-byte item
+    is_last_offset = frame_data_offset + frame_data_length
+    is_last_size = 1
+    is_last = :binary.decode_unsigned(binary_part(input_binary, is_last_offset, is_last_size)) > 0
 
     %{number: frame_number, data: frame_data, is_last: is_last}
   end
