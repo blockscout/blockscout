@@ -9,7 +9,7 @@ defmodule Indexer.Fetcher.Optimism do
     only: [fetch_block_number_by_tag: 2, json_rpc: 2, integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
-  alias Indexer.Helpers
+  alias Indexer.{BoundQueue, Helpers}
 
   @block_check_interval_range_size 100
   @eth_get_logs_range_size 1000
@@ -192,7 +192,7 @@ defmodule Indexer.Fetcher.Optimism do
 
       reorg_monitor_task =
         Task.Supervisor.async_nolink(Module.concat(caller, TaskSupervisor), fn ->
-          caller.reorg_monitor(block_check_interval, json_rpc_named_arguments)
+          reorg_monitor(caller.fetcher_name(), block_check_interval, json_rpc_named_arguments)
         end)
 
       {:ok,
@@ -291,4 +291,65 @@ defmodule Indexer.Fetcher.Optimism do
   end
 
   def parse_integer(_integer_string), do: nil
+
+  def reorg_monitor(fetcher_name, block_check_interval, json_rpc_named_arguments) do
+    Logger.metadata(fetcher: fetcher_name)
+
+    table_name = reorg_table_name(fetcher_name)
+
+    # infinite loop
+    Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), 0, fn _i, prev_latest ->
+      {:ok, latest} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+
+      if latest < prev_latest do
+        Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
+        reorg_block_push(table_name, latest)
+      end
+
+      :timer.sleep(block_check_interval)
+
+      {:cont, latest}
+    end)
+  end
+
+  def reorg_block_pop(fetcher_name) do
+    table_name = reorg_table_name(fetcher_name)
+
+    case BoundQueue.pop_front(reorg_queue_get(table_name)) do
+      {:ok, {block_number, updated_queue}} ->
+        :ets.insert(table_name, {:queue, updated_queue})
+        block_number
+
+      {:error, :empty} ->
+        nil
+    end
+  end
+
+  defp reorg_block_push(table_name, block_number) do
+    {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(table_name), block_number)
+    :ets.insert(table_name, {:queue, updated_queue})
+  end
+
+  defp reorg_queue_get(table_name) do
+    if :ets.whereis(table_name) == :undefined do
+      :ets.new(table_name, [
+        :set,
+        :named_table,
+        :public,
+        read_concurrency: true,
+        write_concurrency: true
+      ])
+    end
+
+    with info when info != :undefined <- :ets.info(table_name),
+         [{_, value}] <- :ets.lookup(table_name, :queue) do
+      value
+    else
+      _ -> %BoundQueue{}
+    end
+  end
+
+  defp reorg_table_name(fetcher_name) do
+    :"#{fetcher_name}#{:_reorgs}"
+  end
 end
