@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     ]
 
   alias Explorer.Chain
+  alias Explorer.Chain.{OptimismOutputRoot, OptimismTxnBatch, OptimismWithdrawal}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -19,7 +20,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       |> Chain.list_txn_batches()
       |> split_list_by_page()
 
-    total = Chain.optimism_txn_batches_total_count()
+    total = Chain.get_table_rows_total_count(OptimismTxnBatch)
 
     next_page_params = next_page_params(next_page, batches, params)
 
@@ -39,7 +40,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       |> Chain.list_output_roots()
       |> split_list_by_page()
 
-    total = Chain.output_roots_total_count()
+    total = Chain.get_table_rows_total_count(OptimismOutputRoot)
 
     next_page_params = next_page_params(next_page, roots, params)
 
@@ -59,7 +60,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       |> Chain.list_optimism_withdrawals()
       |> split_list_by_page()
 
-    total = Chain.optimism_withdrawals_total_count()
+    total = Chain.get_table_rows_total_count(OptimismWithdrawal)
 
     next_page_params = next_page_params(next_page, withdrawals, params)
 
