@@ -4588,7 +4588,8 @@ defmodule Explorer.Chain do
       where:
         token.circulating_market_cap < ^circulating_market_cap or
           (token.circulating_market_cap == ^circulating_market_cap and token.holder_count < ^holder_count) or
-          (token.circulating_market_cap == ^circulating_market_cap and token.holder_count == ^holder_count and token.name > ^name)
+          (token.circulating_market_cap == ^circulating_market_cap and token.holder_count == ^holder_count and
+             token.name > ^name)
     )
   end
 

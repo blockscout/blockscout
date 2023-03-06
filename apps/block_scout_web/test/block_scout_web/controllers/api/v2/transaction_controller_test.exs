@@ -805,9 +805,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                }
              }
            ]}
-           a, b ->
-            IO.inspect(a, label: "a")
-            IO.inspect(b, label: "b")
       end)
 
       insert(:block)
