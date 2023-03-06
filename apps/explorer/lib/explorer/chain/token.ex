@@ -37,6 +37,8 @@ defmodule Explorer.Chain.Token do
   * `contract_address_hash` - Address hash foreign key
   * `holder_count` - the number of `t:Explorer.Chain.Address.t/0` (except the burn address) that have a
     `t:Explorer.Chain.CurrentTokenBalance.t/0` `value > 0`.  Can be `nil` when data not migrated.
+  * `fiat_value` - The price of a token in a configured currency (USD by default).
+  * `circulating_market_cap` - The circulating market cap of a token in a configured currency (USD by default).
   """
   @type t :: %Token{
           name: String.t(),
@@ -51,7 +53,7 @@ defmodule Explorer.Chain.Token do
           skip_metadata: boolean(),
           total_supply_updated_at_block: non_neg_integer() | nil,
           fiat_value: Decimal.t() | nil,
-          market_cap: Decimal.t() | nil
+          circulating_market_cap: Decimal.t() | nil
         }
 
   @derive {Poison.Encoder,
@@ -82,7 +84,7 @@ defmodule Explorer.Chain.Token do
     field(:skip_metadata, :boolean)
     field(:total_supply_updated_at_block, :integer)
     field(:fiat_value, :decimal)
-    field(:market_cap, :decimal)
+    field(:circulating_market_cap, :decimal)
 
     belongs_to(
       :contract_address,
@@ -97,7 +99,7 @@ defmodule Explorer.Chain.Token do
   end
 
   @required_attrs ~w(contract_address_hash type)a
-  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block fiat_value market_cap)a
+  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block fiat_value circulating_market_cap)a
 
   @doc false
   def changeset(%Token{} = token, params \\ %{}) do

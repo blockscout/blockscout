@@ -2468,7 +2468,7 @@ defmodule Explorer.Chain do
 
   defp base_token_query(empty_type) when empty_type in [nil, []] do
     from(t in Token,
-      order_by: [desc_nulls_last: t.market_cap, desc_nulls_last: t.holder_count, asc: t.name],
+      order_by: [desc_nulls_last: t.circulating_market_cap, desc_nulls_last: t.holder_count, asc: t.name],
       preload: [:contract_address]
     )
   end
@@ -2476,7 +2476,7 @@ defmodule Explorer.Chain do
   defp base_token_query(token_types) when is_list(token_types) do
     from(t in Token,
       where: t.type in ^token_types,
-      order_by: [desc_nulls_last: t.market_cap, desc_nulls_last: t.holder_count, asc: t.name],
+      order_by: [desc_nulls_last: t.circulating_market_cap, desc_nulls_last: t.holder_count, asc: t.name],
       preload: [:contract_address]
     )
   end
@@ -4563,17 +4563,17 @@ defmodule Explorer.Chain do
   defp page_tokens(query, %PagingOptions{key: {nil, holder_count, name}}) do
     from(token in query,
       where:
-        is_nil(token.market_cap) and
+        is_nil(token.circulating_market_cap) and
           (token.holder_count < ^holder_count or (token.holder_count == ^holder_count and token.name > ^name))
     )
   end
 
-  defp page_tokens(query, %PagingOptions{key: {market_cap, holder_count, name}}) do
+  defp page_tokens(query, %PagingOptions{key: {circulating_market_cap, holder_count, name}}) do
     from(token in query,
       where:
-        token.market_cap < ^market_cap or
-          (token.market_cap == ^market_cap and token.holder_count < ^holder_count) or
-          (token.market_cap == ^market_cap and token.holder_count == ^holder_count and token.name > ^name)
+        token.circulating_market_cap < ^circulating_market_cap or
+          (token.circulating_market_cap == ^circulating_market_cap and token.holder_count < ^holder_count) or
+          (token.circulating_market_cap == ^circulating_market_cap and token.holder_count == ^holder_count and token.name > ^name)
     )
   end
 
