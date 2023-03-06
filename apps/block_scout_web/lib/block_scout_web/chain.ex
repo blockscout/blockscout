@@ -319,11 +319,18 @@ defmodule BlockScoutWeb.Chain do
     %{"hash" => hash, "fetched_coin_balance" => Decimal.to_string(fetched_coin_balance.value)}
   end
 
-  defp paging_params(%Token{circulating_market_cap: circulating_market_cap, holder_count: holder_count, name: token_name}) do
+  defp paging_params(%Token{
+         circulating_market_cap: circulating_market_cap,
+         holder_count: holder_count,
+         name: token_name
+       }) do
     %{"market_cap" => circulating_market_cap, "holder_count" => holder_count, "name" => token_name}
   end
 
-  defp paging_params([%Token{circulating_market_cap: circulating_market_cap, holder_count: holder_count, name: token_name}, _]) do
+  defp paging_params([
+         %Token{circulating_market_cap: circulating_market_cap, holder_count: holder_count, name: token_name},
+         _
+       ]) do
     %{"market_cap" => circulating_market_cap, "holder_count" => holder_count, "name" => token_name}
   end
 

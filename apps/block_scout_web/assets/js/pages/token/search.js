@@ -2,7 +2,9 @@ import $ from 'jquery'
 import omit from 'lodash.omit'
 import humps from 'humps'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
+import { connectElements } from '../../lib/redux_helpers.js'
 import '../address'
+import { formatUsdValue } from '../../lib/currency'
 
 const $searchInput = $('.tokens-list-search-input')
 
@@ -24,11 +26,25 @@ export function reducer (state, action) {
   }
 }
 
+const elements = {
+  '[data-usd-value]': {
+    render ($el, state) {
+      console.log($el)
+      console.log($el.dataset)
+      formatUsdValue($el.dataset.usdValue)
+      // @ts-ignore
+      if (state.channelDisconnected && !window.loading) $el.show()
+    }
+  }
+}
+
 if ($('[data-page="tokens"]').length) {
   let timer
   const waitTime = 500
 
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
+
+  connectElements({ store, elements })
 
   store.dispatch({
     type: 'PAGE_LOAD'
