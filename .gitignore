@@ -55,3 +55,5 @@ screenshots/
 *.iml
 
 .vscode
+
+**.dec**

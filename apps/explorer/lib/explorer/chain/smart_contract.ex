@@ -544,7 +544,7 @@ defmodule Explorer.Chain.SmartContract do
       ) do
     updated_smart_contract =
       if Application.get_env(:explorer, :enable_caching_implementation_data_of_proxy) &&
-           check_implementation_refetch_neccessity(implementation_fetched_at) do
+           check_implementation_refetch_necessity(implementation_fetched_at) do
         Chain.address_hash_to_smart_contract_without_twin(address_hash)
       else
         smart_contract
@@ -564,7 +564,7 @@ defmodule Explorer.Chain.SmartContract do
            metadata_from_verified_twin: metadata_from_verified_twin
          }}
       ) do
-    if check_implementation_refetch_neccessity(implementation_fetched_at) do
+    if check_implementation_refetch_necessity(implementation_fetched_at) do
       get_implementation_address_hash_task =
         Task.async(fn -> get_implementation_address_hash(address_hash, abi, metadata_from_verified_twin) end)
 
@@ -594,9 +594,9 @@ defmodule Explorer.Chain.SmartContract do
   defp db_implementation_data_converter(string) when is_binary(string), do: string
   defp db_implementation_data_converter(other), do: to_string(other)
 
-  defp check_implementation_refetch_neccessity(nil), do: true
+  defp check_implementation_refetch_necessity(nil), do: true
 
-  defp check_implementation_refetch_neccessity(timestamp) do
+  defp check_implementation_refetch_necessity(timestamp) do
     if Application.get_env(:explorer, :enable_caching_implementation_data_of_proxy) do
       now = DateTime.utc_now()
 
