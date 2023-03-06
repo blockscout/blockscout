@@ -77,31 +77,29 @@
               <% end %>
             </dd>
           </dl>
-          <%= if total_supply?(@token) do %>
-            <%= if @token.fiat_value do %>
+          <%= if @token.total_supply && @token.fiat_value do %>
+            <dl class="row">
+              <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Total Supply * Price") %>
+                <%= gettext("Market Cap") %>
+              </dt>
+              <dd class="col-sm-8 col-md-8 col-lg-9">
+                <span data-selector="token-supply-usd" data-usd-value="<%= total_supply_usd(@token) %>"></span>
+              </dd>
+            </dl>
+            <%= unless Map.has_key?(@token, :custom_cap) && @token.custom_cap do %>
               <dl class="row">
                 <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
                   <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("Total Supply * Price") %>
-                  <%= gettext("Market Cap") %>
+                  text: gettext("Price per token on the exchanges") %>
+                  <%= gettext("Price") %>
                 </dt>
                 <dd class="col-sm-8 col-md-8 col-lg-9">
-                  <span data-selector="token-supply-usd" data-usd-value="<%= total_supply_usd(@token) %>"></span>
+                  <span data-selector="token-price" data-usd-value="<%= @token.fiat_value %>"></span>
                 </dd>
               </dl>
-              <%= unless Map.has_key?(@token, :custom_cap) && @token.custom_cap do %>
-                <dl class="row">
-                  <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
-                    <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                    text: gettext("Price per token on the exchanges") %>
-                    <%= gettext("Price") %>
-                  </dt>
-                  <dd class="col-sm-8 col-md-8 col-lg-9">
-                    <span data-selector="token-price" data-usd-value="<%= @token.fiat_value %>"></span>
-                  </dd>
-                </dl>
-              <% end %>  
-            <% end %>
+            <% end %>  
           <% end %>
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">

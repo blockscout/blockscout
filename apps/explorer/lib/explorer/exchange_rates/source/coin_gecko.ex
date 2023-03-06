@@ -56,7 +56,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
             acc
             |> Map.put(address_hash, %{
               fiat_value: Map.get(market_data, currency),
-              market_cap: Map.get(market_data, market_cap)
+              circulating_market_cap: Map.get(market_data, market_cap)
             })
 
           _ ->

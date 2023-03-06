@@ -7,8 +7,7 @@ defmodule BlockScoutWeb.VerifiedContractsController do
   import BlockScoutWeb.PagingHelper, only: [current_filter: 1, search_query: 1]
 
   alias BlockScoutWeb.{Controller, VerifiedContractsView}
-  alias Explorer.{Chain, Market}
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Chain
   alias Phoenix.View
 
   @necessity_by_association %{[address: :token] => :optional}
@@ -25,14 +24,9 @@ defmodule BlockScoutWeb.VerifiedContractsController do
 
     items =
       for contract <- verified_contracts do
-        token =
-          if contract.address.token,
-            do: Market.get_exchange_rate(contract.address.token.symbol),
-            else: Token.null()
-
         View.render_to_string(VerifiedContractsView, "_contract.html",
           contract: contract,
-          token: token
+          token: contract.address.token
         )
       end
 
