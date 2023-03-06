@@ -426,19 +426,19 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   end
 
   defp check_users_constructor_args_validity(bc_bytecode, local_bytecode, bc_splitter, local_splitter, user_arguments) do
-    clear_bc_bytecode = bc_bytecode |> replace_last_occurence(user_arguments) |> replace_last_occurence(bc_splitter)
-    clear_local_bytecode = replace_last_occurence(local_bytecode, local_splitter)
+    clear_bc_bytecode = bc_bytecode |> replace_last_occurrence(user_arguments) |> replace_last_occurrence(bc_splitter)
+    clear_local_bytecode = replace_last_occurrence(local_bytecode, local_splitter)
     clear_bc_bytecode == clear_local_bytecode
   end
 
-  defp replace_last_occurence(where, what) when is_binary(where) and is_binary(what) do
+  defp replace_last_occurrence(where, what) when is_binary(where) and is_binary(what) do
     where
     |> String.reverse()
     |> String.replace(String.reverse(what), "", global: false)
     |> String.reverse()
   end
 
-  defp replace_last_occurence(_, _), do: nil
+  defp replace_last_occurrence(_, _), do: nil
 
   defp parse_constructor_and_return_check_function(abi) do
     constructor_abi = Enum.find(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
@@ -513,7 +513,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
     bytecode_without_meta =
       bytecode
-      |> replace_last_occurence(meta <> meta_length)
+      |> replace_last_occurrence(meta <> meta_length)
 
     %{
       "metadata_hash_with_length" => meta <> meta_length,
