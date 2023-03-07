@@ -278,7 +278,7 @@ defmodule BlockScoutWeb.TransactionView do
     case block do
       %Block{consensus: true} ->
         {:ok, confirmations} = Chain.confirmations(block, named_arguments)
-        BlockScoutWeb.Cldr.Number.to_string!(confirmations, format: "#,###")
+        Number.to_string!(confirmations, format: "#,###")
 
       _ ->
         0
@@ -326,7 +326,7 @@ defmodule BlockScoutWeb.TransactionView do
     data
     |> Map.get(field_name)
     |> Decimal.new()
-    |> BlockScoutWeb.CldrHelper.Number.to_string!(format: "#,##0.##################")
+    |> Number.to_string!(format: "#,##0.##################")
   end
 
   def transaction_action_string_to_address(address) do
@@ -377,7 +377,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def gas(%type{gas: gas}) when is_transaction_type(type) do
-    BlockScoutWeb.Cldr.Number.to_string!(gas)
+    Number.to_string!(gas)
   end
 
   def skip_decoding?(transaction) do
