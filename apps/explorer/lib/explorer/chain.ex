@@ -2997,7 +2997,7 @@ defmodule Explorer.Chain do
     )
   end
 
-  def get_last_fetched_counter(type) do
+  def get_last_fetched_counter(type, options \\ []) do
     query =
       from(
         last_fetched_counter in LastFetchedCounter,
@@ -3005,7 +3005,7 @@ defmodule Explorer.Chain do
         select: last_fetched_counter.value
       )
 
-    Repo.one!(query) || Decimal.new(0)
+    select_repo(options).one(query) || Decimal.new(0)
   end
 
   defp block_status({number, timestamp}) do
@@ -5885,13 +5885,15 @@ defmodule Explorer.Chain do
     end
   end
 
-  def combine_proxy_implementation_abi(%SmartContract{abi: abi} = smart_contract) when not is_nil(abi) do
-    implementation_abi = get_implementation_abi_from_proxy(smart_contract)
+  def combine_proxy_implementation_abi(smart_contract, options \\ [])
+
+  def combine_proxy_implementation_abi(%SmartContract{abi: abi} = smart_contract, options) when not is_nil(abi) do
+    implementation_abi = get_implementation_abi_from_proxy(smart_contract, options)
 
     if Enum.empty?(implementation_abi), do: abi, else: implementation_abi ++ abi
   end
 
-  def combine_proxy_implementation_abi(_) do
+  def combine_proxy_implementation_abi(_, _) do
     []
   end
 
@@ -5928,12 +5930,15 @@ defmodule Explorer.Chain do
     end)
   end
 
-  def get_implementation_abi(implementation_address_hash_string) when not is_nil(implementation_address_hash_string) do
+  def get_implementation_abi(implementation_address_hash_string, options \\ [])
+
+  def get_implementation_abi(implementation_address_hash_string, options)
+      when not is_nil(implementation_address_hash_string) do
     case Chain.string_to_address_hash(implementation_address_hash_string) do
       {:ok, implementation_address_hash} ->
         implementation_smart_contract =
           implementation_address_hash
-          |> Chain.address_hash_to_smart_contract()
+          |> address_hash_to_smart_contract(options)
 
         if implementation_smart_contract do
           implementation_smart_contract
@@ -5947,17 +5952,20 @@ defmodule Explorer.Chain do
     end
   end
 
-  def get_implementation_abi(implementation_address_hash_string) when is_nil(implementation_address_hash_string) do
+  def get_implementation_abi(implementation_address_hash_string, _) when is_nil(implementation_address_hash_string) do
     []
   end
 
-  def get_implementation_abi_from_proxy(%SmartContract{address_hash: proxy_address_hash, abi: abi} = smart_contract)
+  def get_implementation_abi_from_proxy(
+        %SmartContract{address_hash: proxy_address_hash, abi: abi} = smart_contract,
+        options
+      )
       when not is_nil(proxy_address_hash) and not is_nil(abi) do
-    {implementation_address_hash_string, _name} = SmartContract.get_implementation_address_hash(smart_contract)
+    {implementation_address_hash_string, _name} = SmartContract.get_implementation_address_hash(smart_contract, options)
     get_implementation_abi(implementation_address_hash_string)
   end
 
-  def get_implementation_abi_from_proxy(_), do: []
+  def get_implementation_abi_from_proxy(_, _), do: []
 
   defp format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments) do
     {:ok, to_address_hash} =
@@ -6389,20 +6397,20 @@ defmodule Explorer.Chain do
     |> Repo.aggregate(:count, timeout: :infinity)
   end
 
-  def count_verified_contracts_from_cache do
-    VerifiedContractsCounter.fetch()
+  def count_verified_contracts_from_cache(options \\ []) do
+    VerifiedContractsCounter.fetch(options)
   end
 
-  def count_new_verified_contracts_from_cache do
-    NewVerifiedContractsCounter.fetch()
+  def count_new_verified_contracts_from_cache(options \\ []) do
+    NewVerifiedContractsCounter.fetch(options)
   end
 
-  def count_contracts_from_cache do
-    ContractsCounter.fetch()
+  def count_contracts_from_cache(options \\ []) do
+    ContractsCounter.fetch(options)
   end
 
-  def count_new_contracts_from_cache do
-    NewContractsCounter.fetch()
+  def count_new_contracts_from_cache(options \\ []) do
+    NewContractsCounter.fetch(options)
   end
 
   def address_counters(address, options \\ []) do

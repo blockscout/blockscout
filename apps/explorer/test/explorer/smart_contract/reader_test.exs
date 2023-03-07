@@ -118,7 +118,7 @@ defmodule Explorer.SmartContract.ReaderTest do
   end
 
   describe "read_only_functions/1" do
-    test "fetches the smart contract read only functions with the blockchain value" do
+    test "fetches the smart contract read only functions with the blockchain value with provided smart_contract" do
       smart_contract =
         insert(
           :smart_contract,
@@ -146,7 +146,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       blockchain_get_function_mock()
 
-      response = Reader.read_only_functions(smart_contract.address_hash)
+      response = Reader.read_only_functions(smart_contract, smart_contract.address_hash, nil)
 
       assert [
                %{
@@ -229,7 +229,8 @@ defmodule Explorer.SmartContract.ReaderTest do
       response =
         Reader.read_only_functions_proxy(
           proxy_smart_contract.address_hash,
-          "0x" <> implementation_contract_address_hash_string
+          "0x" <> implementation_contract_address_hash_string,
+          nil
         )
 
       assert [

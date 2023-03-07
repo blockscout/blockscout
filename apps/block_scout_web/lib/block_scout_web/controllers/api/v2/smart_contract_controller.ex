@@ -63,9 +63,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          smart_contract <- Chain.address_hash_to_smart_contract(address_hash, @api_true),
          {:not_found, false} <- {:not_found, is_nil(smart_contract)} do
-      read_only_functions_from_abi = Reader.read_only_functions(address_hash, params["from"])
+      read_only_functions_from_abi = Reader.read_only_functions(smart_contract, address_hash, params["from"])
 
-      read_functions_required_wallet_from_abi = Reader.read_functions_required_wallet(address_hash)
+      read_functions_required_wallet_from_abi = Reader.read_functions_required_wallet(smart_contract)
 
       conn
       |> put_status(200)
@@ -91,7 +91,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:not_found, false} <- {:not_found, is_nil(smart_contract)} do
       conn
       |> put_status(200)
-      |> json(Writer.write_functions(address_hash))
+      |> json(Writer.write_functions(smart_contract))
     end
   end
 
@@ -110,7 +110,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       conn
       |> put_status(200)
       |> render(:read_functions, %{
-        functions: Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string)
+        functions: Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string, nil, @api_true)
       })
     end
   end
@@ -129,7 +129,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
       conn
       |> put_status(200)
-      |> json(Writer.write_functions_proxy(implementation_address_hash_string))
+      |> json(Writer.write_functions_proxy(implementation_address_hash_string, @api_true))
     end
   end
 
@@ -168,7 +168,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
             address_hash,
             %{method_id: params["method_id"], args: prepare_args(args)},
             contract_type,
-            params["from"]
+            params["from"],
+            @api_true
           )
         end
 
@@ -197,6 +198,16 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     conn
     |> put_status(200)
     |> render(:smart_contracts, %{smart_contracts: smart_contracts, next_page_params: next_page_params})
+  end
+
+  def smart_contracts_counters(conn, _params) do
+    conn
+    |> json(%{
+      smart_contracts: Chain.count_contracts_from_cache(@api_true),
+      new_smart_contracts_24h: Chain.count_new_contracts_from_cache(@api_true),
+      verified_smart_contracts: Chain.count_verified_contracts_from_cache(@api_true),
+      new_verified_smart_contracts_24h: Chain.count_new_verified_contracts_from_cache(@api_true)
+    })
   end
 
   def prepare_args(list) when is_list(list), do: list

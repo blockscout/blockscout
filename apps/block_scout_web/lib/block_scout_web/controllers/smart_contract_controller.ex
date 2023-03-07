@@ -38,13 +38,13 @@ defmodule BlockScoutWeb.SmartContractController do
           if contract_type == "proxy" do
             Writer.write_functions_proxy(implementation_address_hash_string)
           else
-            Writer.write_functions(address_hash)
+            Writer.write_functions(address.smart_contract)
           end
         else
           if contract_type == "proxy" do
-            Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string)
+            Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string, nil)
           else
-            Reader.read_only_functions(address_hash, params["from"])
+            Reader.read_only_functions(address.smart_contract, address_hash, params["from"])
           end
         end
 
@@ -53,7 +53,7 @@ defmodule BlockScoutWeb.SmartContractController do
           if contract_type == "proxy" do
             Reader.read_functions_required_wallet_proxy(implementation_address_hash_string)
           else
-            Reader.read_functions_required_wallet(address_hash)
+            Reader.read_functions_required_wallet(address.smart_contract)
           end
         else
           []
