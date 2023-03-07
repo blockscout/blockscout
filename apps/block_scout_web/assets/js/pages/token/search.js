@@ -29,9 +29,9 @@ export function reducer (state, action) {
 const elements = {
   '[data-usd-value]': {
     render ($el, state) {
-      console.log($el)
-      console.log($el.dataset)
-      formatUsdValue($el.dataset.usdValue)
+      $el.each((i, el) => {
+        el.innerHTML = formatUsdValue(el.dataset.usdValue)
+      })
       // @ts-ignore
       if (state.channelDisconnected && !window.loading) $el.show()
     }
