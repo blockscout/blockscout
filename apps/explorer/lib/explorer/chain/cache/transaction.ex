@@ -27,7 +27,7 @@ defmodule Explorer.Chain.Cache.Transaction do
     cached_value = __MODULE__.get_count()
 
     if is_nil(cached_value) do
-      count = Helper.estimated_count_from("blocks")
+      count = Helper.estimated_count_from("transactions")
 
       max(count, 0)
     else
