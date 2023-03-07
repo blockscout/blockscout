@@ -1,5 +1,4 @@
 defmodule Explorer.TokenExchangeRatesTest do
-  # use ExUnit.Case, async: false
   use Explorer.DataCase
 
   import Mox
@@ -57,7 +56,7 @@ defmodule Explorer.TokenExchangeRatesTest do
         assert conn.method == "GET"
 
         assert "#{conn.request_path}?#{conn.query_string}" ==
-          "/simple/token_price/ethereum?vs_currencies=usd&include_market_cap=true&contract_addresses=#{joined_addresses}"
+                 "/simple/token_price/ethereum?vs_currencies=usd&include_market_cap=true&contract_addresses=#{joined_addresses}"
 
         Conn.resp(conn, 200, Jason.encode!(token_exchange_rates))
       end)
@@ -94,7 +93,7 @@ defmodule Explorer.TokenExchangeRatesTest do
         assert conn.method == "GET"
 
         assert "#{conn.request_path}?#{conn.query_string}" ==
-          "/simple/token_price/ethereum?vs_currencies=usd&include_market_cap=true&contract_addresses=#{joined_addresses}"
+                 "/simple/token_price/ethereum?vs_currencies=usd&include_market_cap=true&contract_addresses=#{joined_addresses}"
 
         Conn.resp(conn, 200, "{}")
       end)
@@ -129,7 +128,7 @@ defmodule Explorer.TokenExchangeRatesTest do
         assert conn.method == "GET"
 
         assert "#{conn.request_path}?#{conn.query_string}" ==
-          "/simple/token_price/ethereum?vs_currencies=usd&include_market_cap=true&contract_addresses=#{joined_addresses}"
+                 "/simple/token_price/ethereum?vs_currencies=usd&include_market_cap=true&contract_addresses=#{joined_addresses}"
 
         Conn.resp(conn, 429, "Too Many Requests")
       end)

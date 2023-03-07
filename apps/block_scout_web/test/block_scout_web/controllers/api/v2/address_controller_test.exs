@@ -1273,7 +1273,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         for _ <- 0..50 do
           insert(:address_current_token_balance_with_token_id, address: address) |> Repo.preload([:token])
         end
-        |> Enum.sort_by(fn x -> x.id end, :desc)
+        |> Enum.sort_by(fn x -> x.value end, :desc)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-balances")
 
@@ -1500,14 +1500,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           insert(:address_current_token_balance_with_token_id, address: address, token_type: "ERC-20", token_id: nil)
           |> Repo.preload([:token])
         end
-        |> Enum.sort_by(fn x -> x.id end, :asc)
+        |> Enum.sort_by(fn x -> x.value end, :asc)
 
       ctbs_erc_721 =
         for _ <- 0..50 do
           insert(:address_current_token_balance_with_token_id, address: address, token_type: "ERC-721", token_id: nil)
           |> Repo.preload([:token])
         end
-        |> Enum.sort_by(fn x -> x.id end, :asc)
+        |> Enum.sort_by(fn x -> x.value end, :asc)
 
       ctbs_erc_1155 =
         for _ <- 0..50 do
@@ -1518,7 +1518,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
         end
-        |> Enum.sort_by(fn x -> x.id end, :asc)
+        |> Enum.sort_by(fn x -> x.value end, :asc)
 
       filter = %{"type" => "ERC-20"}
       request = get(conn, "/api/v2/addresses/#{address.hash}/tokens", filter)

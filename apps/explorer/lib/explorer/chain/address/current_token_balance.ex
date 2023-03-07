@@ -176,7 +176,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       select: {ctb, t},
       order_by: ^[desc_nulls_last: fiat_balance],
-      order_by: [asc: t.type, asc: t.name, desc: ctb.id]
+      order_by: [desc: ctb.value, desc: ctb.id]
     )
   end
 
@@ -191,7 +191,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       select: {ctb, t},
       order_by: ^[desc_nulls_last: fiat_balance],
-      order_by: [asc: t.type, asc: t.name, desc: ctb.id]
+      order_by: [desc: ctb.value, desc: ctb.id]
     )
   end
 

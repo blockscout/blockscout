@@ -20,7 +20,6 @@ defmodule BlockScoutWeb.AddressTokenController do
         address_hash
         |> Chain.fetch_paginated_last_token_balances(paging_options(params))
 
-
       {tokens, next_page} = split_list_by_page(token_balances_plus_one)
 
       next_page_path =

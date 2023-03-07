@@ -4586,10 +4586,11 @@ defmodule Explorer.Chain do
   defp page_tokens(query, %PagingOptions{key: {circulating_market_cap, holder_count, name}}) do
     from(token in query,
       where:
-        token.circulating_market_cap < ^circulating_market_cap or
-          (token.circulating_market_cap == ^circulating_market_cap and token.holder_count < ^holder_count) or
-          (token.circulating_market_cap == ^circulating_market_cap and token.holder_count == ^holder_count and
-             token.name > ^name)
+        is_nil(token.circulating_market_cap) or
+          (token.circulating_market_cap < ^circulating_market_cap or
+             (token.circulating_market_cap == ^circulating_market_cap and token.holder_count < ^holder_count) or
+             (token.circulating_market_cap == ^circulating_market_cap and token.holder_count == ^holder_count and
+                token.name > ^name))
     )
   end
 
@@ -4739,17 +4740,15 @@ defmodule Explorer.Chain do
 
   def page_current_token_balances(query, %PagingOptions{key: nil}), do: query
 
-  def page_current_token_balances(query, %PagingOptions{key: nil}), do: query
-
-  def page_current_token_balances(query, %PagingOptions{key: {nil, nil, type, id}}) do
+  def page_current_token_balances(query, %PagingOptions{key: {nil, value, id}}) do
     fiat_balance = CurrentTokenBalance.fiat_value_query()
 
     condition =
       dynamic(
         [ctb, t],
         is_nil(^fiat_balance) and
-          (t.type > ^type or
-             (t.type == ^type and ctb.id < ^id))
+          (ctb.value < ^value or
+             (ctb.value == ^value and ctb.id < ^id))
       )
 
     where(
@@ -4759,29 +4758,17 @@ defmodule Explorer.Chain do
     )
   end
 
-  def page_current_token_balances(query, paging_options: %PagingOptions{key: {nil, name, type, id}}) do
+  def page_current_token_balances(query, %PagingOptions{key: {fiat_value, value, id}}) do
     fiat_balance = CurrentTokenBalance.fiat_value_query()
 
     condition =
       dynamic(
         [ctb, t],
-        is_nil(^fiat_balance) and
-          (t.type > ^type or
-             (t.type == ^type and t.name > ^name) or
-             (t.type == ^type and t.name == ^name and ctb.id < ^id))
+        ^fiat_balance < ^fiat_value or is_nil(^fiat_balance) or
+          (^fiat_balance == ^fiat_value and
+             (ctb.value < ^value or
+                (ctb.value == ^value and ctb.id < ^id)))
       )
-
-    where(
-      query,
-      [ctb, t],
-      ^condition
-    )
-  end
-
-  def page_current_token_balances(query, paging_options: %PagingOptions{key: {fiat_value, _name, _type, _id}}) do
-    fiat_balance = CurrentTokenBalance.fiat_value_query()
-
-    condition = dynamic([ctb, t], ^fiat_balance < ^fiat_value or is_nil(^fiat_balance))
 
     where(
       query,
