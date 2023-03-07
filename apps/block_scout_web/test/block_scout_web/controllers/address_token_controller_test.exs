@@ -130,6 +130,38 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
              end)
     end
 
+    test "returns next page of results based on last seen token for erc-1155", %{conn: conn} do
+      address = insert(:address)
+
+      tokens =
+        1..51
+        |> Enum.reduce([], fn i, acc ->
+          token = insert(:token, name: "FN2 Token", type: "ERC-1155")
+
+          insert(
+            :address_current_token_balance,
+            token_contract_address_hash: token.contract_address_hash,
+            address: address,
+            value: 3
+          )
+
+          acc ++ [token.name]
+        end)
+
+      conn =
+        get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)), %{
+          "type" => "JSON"
+        })
+
+      assert response = json_response(conn, 200)
+
+      request_2nd_page = get(conn, response["next_page_path"], %{"type" => "JSON"})
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert 1 = length(response_2nd_page["items"])
+    end
+
     test "next_page_params exists if not on last page", %{conn: conn} do
       address = insert(:address)
 

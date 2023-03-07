@@ -1,6 +1,6 @@
 defmodule Explorer.ExchangeRates do
   @moduledoc """
-  Local cache for token exchange rates.
+  Local cache for native coin exchange rates.
 
   Exchange rate data is updated every 10 minutes or CACHE_EXCHANGE_RATES_PERIOD seconds.
   """

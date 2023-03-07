@@ -78,7 +78,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
     creator_hash = AddressView.from_address_hash(address)
     creation_tx = creator_hash && AddressView.transaction_hash(address)
-    token = address.token && TokenView.render("token.json", %{token: Market.add_price(address.token)})
+    token = address.token && TokenView.render("token.json", %{token: address.token})
 
     write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
     read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)

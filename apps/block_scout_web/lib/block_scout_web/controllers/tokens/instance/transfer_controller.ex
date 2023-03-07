@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
 
   alias BlockScoutWeb.Controller
   alias BlockScoutWeb.Tokens.TransferView
-  alias Explorer.{Chain, Market}
+  alias Explorer.Chain
   alias Explorer.Chain.Address
   alias Phoenix.View
 
@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
         "index.html",
         token_instance: %{instance: token_instance, token_id: Decimal.new(token_id)},
         current_path: Controller.current_full_path(conn),
-        token: Market.add_price(token),
+        token: token,
         total_token_transfers: Chain.count_token_transfers_from_token_hash_and_token_id(hash, token_id)
       )
     else

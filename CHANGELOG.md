@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#6925](https://github.com/blockscout/blockscout/pull/6925) - Rework token price fetching mechanism and sort token balances by fiat value 
+
 ### Fixes
 
 - [#7008](https://github.com/blockscout/blockscout/pull/7008) - Fetch image/video content from IPFS link

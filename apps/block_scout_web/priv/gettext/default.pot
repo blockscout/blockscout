@@ -246,6 +246,7 @@ msgstr ""
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:12
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_address.html.eex:4
+#: lib/block_scout_web/templates/tokens/index.html.eex:34
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20
 #: lib/block_scout_web/templates/transaction_state/index.html.eex:29
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:54
@@ -1022,7 +1023,7 @@ msgid "Date & time of transaction inclusion, including length of time for confir
 msgstr ""
 
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:52
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:133
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:131
 #, elixir-autogen, elixir-format
 msgid "Decimals"
 msgstr ""
@@ -1308,7 +1309,7 @@ msgstr ""
 msgid "Fetching gas used..."
 msgstr ""
 
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:114
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:112
 #, elixir-autogen, elixir-format
 msgid "Fetching holders..."
 msgstr ""
@@ -1326,7 +1327,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:219
 #: lib/block_scout_web/templates/address/overview.html.eex:227
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:125
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:123
 #, elixir-autogen, elixir-format
 msgid "Fetching transfers..."
 msgstr ""
@@ -1449,7 +1450,7 @@ msgstr ""
 msgid "Hex (Default)"
 msgstr ""
 
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:110
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:108
 #, elixir-autogen, elixir-format
 msgid "Holders"
 msgstr ""
@@ -1662,7 +1663,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/chain/show.html.eex:52
 #: lib/block_scout_web/templates/layout/app.html.eex:50
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:86
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:85
 #: lib/block_scout_web/views/address_view.ex:145
 #, elixir-autogen, elixir-format
 msgid "Market Cap"
@@ -1768,6 +1769,7 @@ msgstr ""
 msgid "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name."
 msgstr ""
 
+#: lib/block_scout_web/templates/tokens/_tile.html.eex:40
 #: lib/block_scout_web/templates/verified_contracts/_contract.html.eex:21
 #: lib/block_scout_web/templates/verified_contracts/_contract.html.eex:58
 #, elixir-autogen, elixir-format
@@ -1881,7 +1883,7 @@ msgstr ""
 msgid "Not unique Token"
 msgstr ""
 
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:109
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:107
 #, elixir-autogen, elixir-format
 msgid "Number of accounts holding the token"
 msgstr ""
@@ -1891,7 +1893,7 @@ msgstr ""
 msgid "Number of blocks validated by this validator."
 msgstr ""
 
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:132
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:130
 #, elixir-autogen, elixir-format
 msgid "Number of digits that come after the decimal place when displaying token value"
 msgstr ""
@@ -1901,7 +1903,7 @@ msgstr ""
 msgid "Number of transactions related to this address."
 msgstr ""
 
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:120
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:118
 #, elixir-autogen, elixir-format
 msgid "Number of transfers for the token"
 msgstr ""
@@ -2035,12 +2037,12 @@ msgstr ""
 
 #: lib/block_scout_web/templates/chain/show.html.eex:41
 #: lib/block_scout_web/templates/layout/app.html.eex:51
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:97
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:96
 #, elixir-autogen, elixir-format
 msgid "Price"
 msgstr ""
 
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:96
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:95
 #, elixir-autogen, elixir-format
 msgid "Price per token on the exchanges"
 msgstr ""
@@ -2719,6 +2721,7 @@ msgid "Toggle navigation"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:53
+#: lib/block_scout_web/templates/tokens/index.html.eex:31
 #, elixir-autogen, elixir-format
 msgid "Token"
 msgstr ""
@@ -2791,7 +2794,7 @@ msgstr ""
 msgid "Token name and symbol."
 msgstr ""
 
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:144
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:142
 #, elixir-autogen, elixir-format
 msgid "Token type"
 msgstr ""
@@ -2854,7 +2857,7 @@ msgstr ""
 msgid "Total Difficulty"
 msgstr ""
 
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:85
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:84
 #, elixir-autogen, elixir-format
 msgid "Total Supply * Price"
 msgstr ""
@@ -2976,7 +2979,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:217
 #: lib/block_scout_web/templates/address/overview.html.eex:225
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:50
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:121
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:119
 #, elixir-autogen, elixir-format
 msgid "Transfers"
 msgstr ""
@@ -3013,7 +3016,7 @@ msgstr ""
 msgid "Type"
 msgstr ""
 
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:143
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:141
 #, elixir-autogen, elixir-format
 msgid "Type of the token standard"
 msgstr ""
@@ -3538,4 +3541,19 @@ msgstr ""
 #: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:7
 #, elixir-autogen, elixir-format
 msgid "Verified contracts, %{subnetwork}, %{coin}"
+msgstr ""
+
+#: lib/block_scout_web/templates/tokens/index.html.eex:38
+#, elixir-autogen, elixir-format
+msgid "Circulating Market Cap"
+msgstr ""
+
+#: lib/block_scout_web/templates/tokens/index.html.eex:48
+#, elixir-autogen, elixir-format
+msgid "Holders Count"
+msgstr ""
+
+#: lib/block_scout_web/templates/tokens/index.html.eex:43
+#, elixir-autogen, elixir-format
+msgid "Total Supply"
 msgstr ""
