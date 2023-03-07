@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Cache.Transaction do
 
   require Logger
 
-  alias Ecto.Adapters.SQL
+  alias Explorer.Chain.Cache.Helper
   alias Explorer.Chain.Transaction
   alias Explorer.Repo
 
@@ -27,10 +27,9 @@ defmodule Explorer.Chain.Cache.Transaction do
     cached_value = __MODULE__.get_count()
 
     if is_nil(cached_value) do
-      %Postgrex.Result{rows: [[rows]]} =
-        SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
+      count = Helper.estimated_count_from("blocks")
 
-      max(rows, 0)
+      max(count, 0)
     else
       cached_value
     end
