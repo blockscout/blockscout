@@ -13,7 +13,7 @@
 ### Chore
 
 - [#7034](https://github.com/blockscout/blockscout/pull/7034) - Resolve "Unexpected var, use let or const instead"
-- [#7014](https://github.com/blockscout/blockscout/pull/7014), [#7036](https://github.com/blockscout/blockscout/pull/7036) - Fix spell in namings, add spell checking in CI
+- [#7014](https://github.com/blockscout/blockscout/pull/7014), [#7036](https://github.com/blockscout/blockscout/pull/7036), [7041](https://github.com/blockscout/blockscout/pull/7041) - Fix spell in namings, add spell checking in CI
 - [#7012](https://github.com/blockscout/blockscout/pull/7012) - Refactor socket.js
 - [#6960](https://github.com/blockscout/blockscout/pull/6960) - Add deploy + workflow for testing (bs-indexers-ethereum-goerli)
 - [#6989](https://github.com/blockscout/blockscout/pull/6989) - Update bitwalker/alpine-elixir-phoenix: 1.13 -> 1.14
