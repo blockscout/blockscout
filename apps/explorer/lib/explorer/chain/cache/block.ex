@@ -59,7 +59,7 @@ defmodule Explorer.Chain.Cache.Block do
         rescue
           e ->
             Logger.debug([
-              "Coudn't update block count: ",
+              "Couldn't update block count: ",
               Exception.format(:error, e, __STACKTRACE__)
             ])
         end

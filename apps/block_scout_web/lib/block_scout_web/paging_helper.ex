@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.PagingHelper do
   @moduledoc """
-    Helper for fetching filters and other url query paramters
+    Helper for fetching filters and other url query parameters
   """
   import Explorer.Chain, only: [string_to_transaction_hash: 1]
   alias Explorer.PagingOptions

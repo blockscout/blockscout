@@ -77,8 +77,9 @@ const readWriteFunction = (element) => {
       const contractAbi = getContractABI($form)
       const inputs = getMethodInputs(contractAbi, functionName)
       const $methodId = $form.find('input[name=method_id]')
+      let args
       try {
-        var args = prepareMethodArgs($functionInputs, inputs)
+        args = prepareMethodArgs($functionInputs, inputs)
       } catch (exception) {
         $errorContainer.show()
         $errorContainer.text(exception)

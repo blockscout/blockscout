@@ -181,19 +181,19 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
   def publish_without_broadcast(
         %{"addressHash" => address_hash, "abi" => abi, "compilationTargetFilePath" => file_path} = input
       ) do
-    params = proccess_params(input)
+    params = process_params(input)
 
     address_hash
     |> Publisher.publish_smart_contract(params, abi, file_path)
-    |> proccess_response()
+    |> process_response()
   end
 
   def publish_without_broadcast(%{"addressHash" => address_hash, "abi" => abi} = input) do
-    params = proccess_params(input)
+    params = process_params(input)
 
     address_hash
     |> Publisher.publish_smart_contract(params, abi)
-    |> proccess_response()
+    |> process_response()
   end
 
   def publish(nil, %{"addressHash" => _address_hash} = input, _) do
@@ -210,7 +210,7 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
     end
   end
 
-  def proccess_params(input) do
+  def process_params(input) do
     if Map.has_key?(input, "secondarySources") do
       input["params"]
       |> Map.put("secondary_sources", Map.get(input, "secondarySources"))
@@ -219,7 +219,7 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
     end
   end
 
-  def proccess_response(response) do
+  def process_response(response) do
     case response do
       {:ok, _contract} = result ->
         result

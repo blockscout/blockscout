@@ -2246,11 +2246,6 @@ msgstr ""
 msgid "Search tokens"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract_verification_common_fields/_yul_contracts_switcher.html.eex:19
-#, elixir-autogen, elixir-format
-msgid "Select Yes if you want to vefify Yul contract."
-msgstr ""
-
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_include_nightly_builds_field.html.eex:19
 #, elixir-autogen, elixir-format
 msgid "Select yes if you want to show nightly builds."
@@ -3109,11 +3104,6 @@ msgstr ""
 msgid "Value sent in the native token (and USD) if applicable."
 msgstr ""
 
-#: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:7
-#, elixir-autogen, elixir-format
-msgid "Verifed contracts, %{subnetwork}, %{coin}"
-msgstr ""
-
 #: lib/block_scout_web/templates/address_read_contract/index.html.eex:17
 #: lib/block_scout_web/templates/address_write_contract/index.html.eex:15
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:75
@@ -3538,4 +3528,14 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:200
 #, elixir-autogen, elixir-format
 msgid "Transaction Action"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_yul_contracts_switcher.html.eex:19
+#, elixir-autogen, elixir-format
+msgid "Select Yes if you want to verify Yul contract."
+msgstr ""
+
+#: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Verified contracts, %{subnetwork}, %{coin}"
 msgstr ""

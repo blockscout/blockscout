@@ -6124,7 +6124,7 @@ defmodule Explorer.ChainTest do
       assert implementation_abi == @implementation_abi
     end
 
-    test "get_implementation_abi/1 returns empty [] abi if implmentation address is null" do
+    test "get_implementation_abi/1 returns empty [] abi if implementation address is null" do
       assert Chain.get_implementation_abi(nil) == []
     end
 

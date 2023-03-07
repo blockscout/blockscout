@@ -324,7 +324,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     acquire_query =
       from(
-        block in where_invalid_neighbour(changes_list),
+        block in where_invalid_neighbor(changes_list),
         or_where: block.number in ^consensus_block_numbers,
         # we also need to acquire blocks that will be upserted here, for ordering
         or_where: block.hash in ^hashes,
@@ -501,7 +501,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end)
   end
 
-  defp where_invalid_neighbour(blocks_changes) when is_list(blocks_changes) do
+  defp where_invalid_neighbor(blocks_changes) when is_list(blocks_changes) do
     initial = from(b in Block, where: false)
 
     Enum.reduce(blocks_changes, initial, fn %{

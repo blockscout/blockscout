@@ -1,7 +1,7 @@
 # This file in ignore list of `sobelow`, be careful while adding new endpoints here
 defmodule BlockScoutWeb.SmartContractsApiV2Router do
   @moduledoc """
-    Router for /api/v2/smart-contracts. This route has separate router in order to ignore solelow's warning about missing CSRF protection
+    Router for /api/v2/smart-contracts. This route has separate router in order to ignore sobelow's warning about missing CSRF protection
   """
   use BlockScoutWeb, :router
   alias BlockScoutWeb.Plug.CheckApiV2

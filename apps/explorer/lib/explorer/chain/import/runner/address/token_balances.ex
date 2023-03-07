@@ -49,7 +49,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :token_blances,
+        :token_balances,
         :address_token_balances
       )
     end)

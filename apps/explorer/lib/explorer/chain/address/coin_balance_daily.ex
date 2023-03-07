@@ -1,7 +1,7 @@
 defmodule Explorer.Chain.Address.CoinBalanceDaily do
   @moduledoc """
   Maximum `t:Explorer.Chain.Wei.t/0` `value` of `t:Explorer.Chain.Address.t/0` at the day.
-  This table is used to display coinn balance history chart.
+  This table is used to display coin balance history chart.
   """
 
   use Explorer.Schema

@@ -2,6 +2,8 @@ defmodule BlockScoutWeb.NFTHelpers do
   @moduledoc """
     Module with functions for NFT view
   """
+  @ipfs_protocol "ipfs://"
+
   def get_media_src(nil, _), do: nil
 
   def get_media_src(metadata, high_quality_media?) do
@@ -56,18 +58,29 @@ defmodule BlockScoutWeb.NFTHelpers do
     |> compose_ipfs_url()
   end
 
-  def compose_ipfs_url(image_url) do
-    cond do
-      image_url =~ ~r/^ipfs:\/\/ipfs/ ->
-        "ipfs://ipfs" <> ipfs_uid = image_url
-        "https://ipfs.io/ipfs/" <> ipfs_uid
+  def compose_ipfs_url(nil), do: nil
 
-      image_url =~ ~r/^ipfs:\/\// ->
-        "ipfs://" <> ipfs_uid = image_url
-        "https://ipfs.io/ipfs/" <> ipfs_uid
+  def compose_ipfs_url(image_url) do
+    image_url_downcase =
+      image_url
+      |> String.downcase()
+
+    cond do
+      image_url_downcase =~ ~r/^ipfs:\/\/ipfs/ ->
+        prefix = @ipfs_protocol <> "ipfs/"
+        ipfs_link(image_url, prefix)
+
+      image_url_downcase =~ ~r/^ipfs:\/\// ->
+        prefix = @ipfs_protocol
+        ipfs_link(image_url, prefix)
 
       true ->
         image_url
     end
+  end
+
+  defp ipfs_link(image_url, prefix) do
+    ipfs_uid = String.slice(image_url, String.length(prefix)..-1)
+    "https://ipfs.io/ipfs/" <> ipfs_uid
   end
 end

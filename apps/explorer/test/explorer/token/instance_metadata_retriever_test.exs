@@ -361,7 +361,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                 metadata: %{
                   "image" => "https://ipfs.io/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
                 }
-              }} = InstanceMetadataRetriever.fetch_json(data)
+              }} == InstanceMetadataRetriever.fetch_json(data)
     end
 
     test "Fetches metadata from ipfs" do
@@ -373,16 +373,84 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
            ]}
       }
 
+      {:ok,
+       %{
+         metadata: metadata
+       }} = InstanceMetadataRetriever.fetch_json(data)
+
+      assert "ipfs://bafybeihxuj3gxk7x5p36amzootyukbugmx3pw7dyntsrohg3se64efkuga/51.png" == Map.get(metadata, "image")
+    end
+
+    test "Fetches metadata from '${url}'" do
+      data = %{
+        "c87b56dd" =>
+          {:ok,
+           [
+             "'https://cards.collecttrumpcards.com/data/8/8578.json'"
+           ]}
+      }
+
       assert {:ok,
               %{
                 metadata: %{
-                  "image" => "ipfs://bafybeihxuj3gxk7x5p36amzootyukbugmx3pw7dyntsrohg3se64efkuga/51.png",
-                  "attributes" => _,
-                  "description" => "No roadmap Just OP NOK...But This NFT can use in Sobta ecosystem (if any)",
-                  "edition" => 51,
-                  "name" => "SobtaOpGenesis #51"
+                  "attributes" => [
+                    %{"trait_type" => "Character", "value" => "Blue Suit Boxing Glove"},
+                    %{"trait_type" => "Face", "value" => "Wink"},
+                    %{"trait_type" => "Hat", "value" => "Blue"},
+                    %{"trait_type" => "Background", "value" => "Red Carpet"}
+                  ],
+                  "image" => "https://cards.collecttrumpcards.com/cards/0c68b1ab6.jpg",
+                  "name" => "Trump Digital Trading Card #8578",
+                  "tokenId" => 8578
                 }
-              }} = InstanceMetadataRetriever.fetch_json(data)
+              }} == InstanceMetadataRetriever.fetch_json(data)
+    end
+
+    test "Process custom execution reverted" do
+      data = %{
+        "c87b56dd" =>
+          {:error,
+           "(3) execution reverted: Nonexistent token (0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000114e6f6e6578697374656e7420746f6b656e000000000000000000000000000000)"}
+      }
+
+      assert {:ok, %{error: "VM execution error"}} == InstanceMetadataRetriever.fetch_json(data)
+    end
+
+    test "Process CIDv0 IPFS links" do
+      data = "QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "collectionId" => "1871_1665123820823",
+                  "description" => "asda",
+                  "img_hash" => "QmUfW3PVnh9GGuHcQgc3ZeNEbhwp5HE8rS5ac9MDWWQebz",
+                  "name" => "asda",
+                  "salePrice" => 34
+                }
+              }} == InstanceMetadataRetriever.fetch_json(data)
+    end
+
+    test "Process URI directly from link" do
+      data = "https://dejob.io/api/dejobio/v1/nftproduct/1"
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "description" =>
+                    "\\\"Blue Reign: The Dragon Football Champion of the Floral City\\\" is a science fiction story about a dragon who loves playing football and dreams of becoming a champion. The story takes place in a futuristic city full of flowers and blue light, and it is raining throughout the story.\r\n\r\nThroughout the story, the dragon faces challenges on and off the field, including intense training regimens, rival teams, and personal struggles. He perseveres through these obstacles and incorporates new techniques and strategies into his gameplay.\r\n\r\nAs the playoffs approach, the dragon\\'s team faces increasingly tough opponents, culminating in a highly anticipated championship game against their long-standing rivals, the Storm Hawks. The dragon\\'s heart-pumping performance and his team\\'s impressive plays lead them to victory, and they celebrate their status as champions.\r\n\r\nThe story ultimately focuses on the dragon\\'s journey towards achieving his dream and the teamwork and dedication required to succeed in a highly competitive sport.",
+                  "name" => "Blue Reign: The Dragon Football Champion of the Floral City",
+                  "attributes" => [
+                    %{"trait_type" => "Product Type", "value" => "Book"},
+                    %{"display_type" => "number", "trait_type" => "Total Sold", "value" => "0"},
+                    %{"display_type" => "number", "trait_type" => "Success Sold", "value" => "0"},
+                    %{"max_value" => "100", "trait_type" => "Success Rate", "value" => "0"}
+                  ],
+                  "external_url" => "https://dejob.io/?p=49",
+                  "image" =>
+                    "https://cdn.discordapp.com/attachments/1008567215739650078/1080111780858187796/savechives_a_dragon_playing_football_in_a_city_full_of_flowers__0739cc42-aae1-4909-a964-3f9c0ed1a9ed.png"
+                }
+              }} == InstanceMetadataRetriever.fetch_json(data)
     end
   end
 end

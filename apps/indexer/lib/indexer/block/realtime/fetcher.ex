@@ -460,7 +460,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
         importable_balances_daily_params =
           Enum.map(params_list, fn param ->
             day = Map.get(block_timestamp_map, "#{param.block_number}")
-            Map.put(param, :day, day)
+            (day && Map.put(param, :day, day)) || param
           end)
 
         {:ok,
