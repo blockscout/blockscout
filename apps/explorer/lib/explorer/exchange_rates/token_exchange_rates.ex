@@ -57,17 +57,7 @@ defmodule Explorer.ExchangeRates.TokenExchangeRates do
         timestamp = %{updated_at: DateTime.utc_now()}
 
         tokens_to_update
-        |> Enum.each(fn %{contract_address_hash: contract_address_hash} = token ->
-          case Map.get(fiat_values, contract_address_hash) do
-            %{} = market_data ->
-              token
-              |> Token.changeset(Map.merge(timestamp, market_data))
-              |> Repo.update(returning: false)
-
-            _ ->
-              nil
-          end
-        end)
+        |> Enum.each(&update_tokens(&1, fiat_values, timestamp))
 
       err ->
         Logger.error("Error while fetching fiat values for tokens: #{inspect(err)}")
@@ -79,6 +69,18 @@ defmodule Explorer.ExchangeRates.TokenExchangeRates do
     else
       Process.send_after(self(), :fetch, interval)
       {:noreply, %{state | last_fetched_token_contract_address: List.last(tokens_to_update).contract_address_hash}}
+    end
+  end
+
+  defp update_tokens(%{contract_address_hash: contract_address_hash} = token, fiat_values, timestamp) do
+    case Map.get(fiat_values, contract_address_hash) do
+      %{} = market_data ->
+        token
+        |> Token.changeset(Map.merge(timestamp, market_data))
+        |> Repo.update(returning: false)
+
+      _ ->
+        nil
     end
   end
 end
