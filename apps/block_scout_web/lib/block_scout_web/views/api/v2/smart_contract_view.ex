@@ -235,7 +235,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     exception ->
       Logger.warn(fn ->
         [
-          "Error formating constructor arguments for abi: #{inspect(abi)}, args: #{inspect(constructor_arguments)}: ",
+          "Error formatting constructor arguments for abi: #{inspect(abi)}, args: #{inspect(constructor_arguments)}: ",
           Exception.format(:error, exception)
         ]
       end)
