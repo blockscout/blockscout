@@ -3,23 +3,21 @@ defmodule Explorer.Chain.OptimismTxnBatch do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.OptimismFrameSequence
 
-  @required_attrs ~w(l2_block_number epoch_number l1_transaction_hashes l1_timestamp)a
+  @required_attrs ~w(l2_block_number epoch_number frame_sequence_id)a
 
   @type t :: %__MODULE__{
           l2_block_number: non_neg_integer(),
           epoch_number: non_neg_integer(),
-          l1_transaction_hashes: [Hash.t()],
-          l1_timestamp: DateTime.t()
+          frame_sequence_id: non_neg_integer()
         }
 
   @primary_key false
   schema "op_transaction_batches" do
     field(:l2_block_number, :integer, primary_key: true)
     field(:epoch_number, :integer)
-    field(:l1_transaction_hashes, {:array, Hash.Full})
-    field(:l1_timestamp, :utc_datetime_usec)
+    belongs_to(:frame_sequence, OptimismFrameSequence, foreign_key: :frame_sequence_id, references: :id, type: :integer)
 
     timestamps()
   end
@@ -28,5 +26,6 @@ defmodule Explorer.Chain.OptimismTxnBatch do
     batches
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
+    |> foreign_key_constraint(:frame_sequence_id)
   end
 end
