@@ -193,22 +193,6 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
-  def decode_data("0x", types) do
-    for _ <- types, do: nil
-  end
-
-  def decode_data("0x" <> encoded_data, types) do
-    encoded_data
-    |> Base.decode16!(case: :mixed)
-    |> TypeDecoder.decode_raw(types)
-  end
-
-  def decode_data(%Data{} = data, types) do
-    data
-    |> Data.to_string()
-    |> decode_data(types)
-  end
-
   def get_logs_range_size do
     @eth_get_logs_range_size
   end

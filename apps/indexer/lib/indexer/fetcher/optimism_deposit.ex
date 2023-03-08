@@ -11,6 +11,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   import Ecto.Query
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  import Explorer.Helpers, only: [decode_data: 2]
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.OptimismDeposit
@@ -84,7 +85,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
        }}
     else
       {:start_block_l1_undefined, true} ->
-        # the process shoudln't start if the start block is not defined
+        # the process shouldn't start if the start block is not defined
         :ignore
 
       {:start_block_l1_valid, false} ->
@@ -204,7 +205,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
       {:noreply, %{state | mode: :realtime, filter_id: filter_id, check_interval: check_interval}}
     else
       {:error, _error} ->
-        Logger.error("Faield to set logs filter. Retrying in #{@retry_interval_minutes} minutes...")
+        Logger.error("Failed to set logs filter. Retrying in #{@retry_interval_minutes} minutes...")
         Process.send_after(self(), :switch_to_realtime, @retry_interval)
         {:noreply, state}
 
@@ -237,7 +238,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         {:noreply, state}
 
       {:error, _error} ->
-        Logger.error("Faield to set logs filter. Retrying in #{@retry_interval_minutes} minutes...")
+        Logger.error("Failed to set logs filter. Retrying in #{@retry_interval_minutes} minutes...")
         Process.send_after(self(), :fetch, @retry_interval)
         {:noreply, state}
     end
@@ -316,7 +317,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         is_creation::binary-size(1),
         data::binary
       >>
-    ] = Optimism.decode_data(opaque_data, [:bytes])
+    ] = decode_data(opaque_data, [:bytes])
 
     rlp_encoded =
       ExRLP.encode(
