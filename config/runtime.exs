@@ -359,7 +359,7 @@ token_exchange_rate_max_batch_size =
   end
 
 config :explorer, Explorer.ExchangeRates.TokenExchangeRates,
-  enabled: System.get_env("DISABLE_TOKEN_EXCHANGE_RATE") != "true",
+  enabled: System.get_env("DISABLE_TOKEN_EXCHANGE_RATE", "true") != "true",
   interval: token_exchange_rate_interval,
   refetch_interval: token_exchange_rate_refetch_interval,
   max_batch_size: token_exchange_rate_max_batch_size
