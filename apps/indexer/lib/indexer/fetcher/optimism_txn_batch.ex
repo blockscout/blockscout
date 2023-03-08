@@ -15,7 +15,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, OptimismTxnBatch}
+  alias Explorer.Chain.{Block, OptimismFrameSequence, OptimismTxnBatch}
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helpers
 
@@ -168,7 +168,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           if chunk_end >= chunk_start do
             Optimism.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
 
-            {:ok, batches, new_incomplete_frame_sequence} =
+            {:ok, batches, sequences, new_incomplete_frame_sequence} =
               get_txn_batches(
                 chunk_start,
                 chunk_end,
@@ -180,10 +180,11 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
                 100_000_000
               )
 
-            batches = remove_duplicates(batches)
+            {batches, sequences} = remove_duplicates(batches, sequences)
 
             {:ok, _} =
               Chain.import(%{
+                optimism_frame_sequences: %{params: sequences},
                 optimism_txn_batches: %{params: batches},
                 timeout: :infinity
               })
@@ -308,7 +309,9 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       Repo.one(
         from(
           tb in OptimismTxnBatch,
-          select: tb.l1_transaction_hashes,
+          inner_join: fs in OptimismFrameSequence,
+          on: fs.id == tb.frame_sequence_id,
+          select: fs.l1_transaction_hashes,
           order_by: [desc: tb.l2_block_number],
           limit: 1
         )
@@ -397,7 +400,9 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
        ) do
     transactions_params
     |> txs_filter_sort(batch_submitter, batch_inbox)
-    |> Enum.reduce_while({:ok, [], incomplete_frame_sequence}, fn t, {_, batches, incomplete_frame_sequence_acc} ->
+    |> Enum.reduce_while({:ok, [], [], incomplete_frame_sequence}, fn t,
+                                                                      {_, batches, sequences,
+                                                                       incomplete_frame_sequence_acc} ->
       after_reorg = is_nil(incomplete_frame_sequence_acc)
 
       frame = input_to_frame(t.input)
@@ -413,7 +418,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
       if Enum.empty?(batches) and byte_size(incomplete_frame_sequence_acc.bytes) == 0 and frame.number > 0 do
         # if this is the first launch and the head of tx sequence, skip all transactions until frame.number is 0
-        {:cont, {:ok, [], empty_incomplete_frame_sequence()}}
+        {:cont, {:ok, [], [], empty_incomplete_frame_sequence()}}
       else
         frame_sequence = incomplete_frame_sequence_acc.bytes <> frame.data
         # credo:disable-for-next-line
@@ -423,16 +428,22 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         with {:frame_number_valid, true} <- {:frame_number_valid, frame.number == last_frame_number + 1},
              {:frame_is_last, true} <- {:frame_is_last, frame.is_last},
              l1_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params),
+             frame_sequence_last = List.first(sequences),
+             frame_sequence_id = next_frame_sequence_id(frame_sequence_last),
              batches_parsed =
                parse_frame_sequence(
                  frame_sequence,
-                 l1_transaction_hashes,
-                 l1_timestamp,
+                 frame_sequence_id,
                  json_rpc_named_arguments_l2,
                  after_reorg
                ),
+             seq = %{
+               id: frame_sequence_id,
+               l1_transaction_hashes: l1_transaction_hashes,
+               l1_timestamp: l1_timestamp
+             },
              true <- batches_parsed != :error do
-          {:cont, {:ok, batches ++ batches_parsed, empty_incomplete_frame_sequence()}}
+          {:cont, {:ok, batches ++ batches_parsed, [seq | sequences], empty_incomplete_frame_sequence()}}
         else
           {:frame_number_valid, false} ->
             {:halt,
@@ -446,7 +457,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
           {:frame_is_last, false} ->
             {:cont,
-             {:ok, batches,
+             {:ok, batches, sequences,
               %{bytes: frame_sequence, last_frame_number: frame.number, l1_transaction_hashes: l1_transaction_hashes}}}
         end
       end
@@ -498,10 +509,31 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     %{number: frame_number, data: frame_data, is_last: is_last}
   end
 
+  defp next_frame_sequence_id(last_known_sequence) when is_nil(last_known_sequence) do
+    last_known_id =
+      Repo.one(
+        from(
+          fs in OptimismFrameSequence,
+          select: fs.id,
+          order_by: [desc: fs.id],
+          limit: 1
+        )
+      )
+
+    if is_nil(last_known_id) do
+      1
+    else
+      last_known_id + 1
+    end
+  end
+
+  defp next_frame_sequence_id(last_known_sequence) do
+    last_known_sequence.id + 1
+  end
+
   defp parse_frame_sequence(
          bytes,
-         l1_transaction_hashes,
-         l1_timestamp,
+         id,
          json_rpc_named_arguments_l2,
          after_reorg
        ) do
@@ -516,8 +548,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           batch = %{
             parent_hash: Enum.at(batch, 0),
             epoch_number: :binary.decode_unsigned(Enum.at(batch, 1)),
-            l1_transaction_hashes: l1_transaction_hashes,
-            l1_timestamp: l1_timestamp
+            frame_sequence_id: id
           }
 
           if byte_size(new_remainder) > 0 do
@@ -566,8 +597,20 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         # once we find the nearest full frame sequence after reorg, we first need to remove irrelevant items from op_transaction_batches table
         first_batch_l2_block_number = Enum.at(return, 0).l2_block_number
 
+        frame_sequence_ids =
+          Repo.all(
+            from(
+              tb in OptimismTxnBatch,
+              select: tb.frame_sequence_id,
+              where: tb.l2_block_number >= ^first_batch_l2_block_number
+            ),
+            timeout: :infinity
+          )
+
         {deleted_count, _} =
           Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^first_batch_l2_block_number))
+
+        Repo.delete_all(from(fs in OptimismFrameSequence, where: fs.id in ^frame_sequence_ids))
 
         if deleted_count > 0 do
           Logger.warning(
@@ -580,16 +623,36 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     end
   end
 
-  defp remove_duplicates(batches) do
-    batches
-    |> Enum.sort(fn b1, b2 ->
-      b1.l2_block_number < b2.l2_block_number or
-        (b1.l2_block_number == b2.l2_block_number and b1.l1_timestamp < b2.l1_timestamp)
-    end)
-    |> Enum.reduce(%{}, fn b, acc ->
-      Map.put(acc, b.l2_block_number, b)
-    end)
-    |> Map.values()
+  defp remove_duplicates(batches, sequences) do
+    unique_batches =
+      batches
+      |> Enum.sort(fn b1, b2 ->
+        b1.l2_block_number < b2.l2_block_number or
+          (b1.l2_block_number == b2.l2_block_number and b1.l1_timestamp < b2.l1_timestamp)
+      end)
+      |> Enum.reduce(%{}, fn b, acc ->
+        Map.put(acc, b.l2_block_number, b)
+      end)
+      |> Map.values()
+
+    unique_sequences =
+      if Enum.empty?(sequences) do
+        []
+      else
+        first_sequence_id = List.last(sequences).id
+
+        sequences
+        |> Enum.reverse()
+        |> Enum.filter(fn seq ->
+          Enum.any?(unique_batches, fn batch -> batch.frame_sequence_id == seq.id end)
+        end)
+        |> Enum.with_index(first_sequence_id)
+        |> Enum.map(fn {seq, id} ->
+          %{seq | id: id}
+        end)
+      end
+
+    {unique_batches, unique_sequences}
   end
 
   defp rewind_after_reorg(block_number, frame_number, batch_submitter, batch_inbox, json_rpc_named_arguments) do
