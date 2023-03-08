@@ -13,6 +13,7 @@
 ### Chore
 
 - [#7040](https://github.com/blockscout/blockscout/pull/7040) - Use alias BlockScoutWeb.Cldr.Number
+- [#7037](https://github.com/blockscout/blockscout/pull/7037) - Define common function for "reltuples" query
 - [#7034](https://github.com/blockscout/blockscout/pull/7034) - Resolve "Unexpected var, use let or const instead"
 - [#7014](https://github.com/blockscout/blockscout/pull/7014), [#7036](https://github.com/blockscout/blockscout/pull/7036), [7041](https://github.com/blockscout/blockscout/pull/7041) - Fix spell in namings, add spell checking in CI
 - [#7012](https://github.com/blockscout/blockscout/pull/7012) - Refactor socket.js
