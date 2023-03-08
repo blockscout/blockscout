@@ -53,6 +53,7 @@ defmodule Explorer.Chain do
     Import,
     InternalTransaction,
     Log,
+    OptimismFrameSequence,
     OptimismOutputRoot,
     OptimismTxnBatch,
     OptimismWithdrawal,
@@ -2444,8 +2445,15 @@ defmodule Explorer.Chain do
 
     base_query =
       from(tb in OptimismTxnBatch,
+        inner_join: fs in OptimismFrameSequence,
+        on: fs.id == tb.frame_sequence_id,
         order_by: [desc: tb.l2_block_number],
-        select: tb
+        select: %{
+          l2_block_number: tb.l2_block_number,
+          epoch_number: tb.epoch_number,
+          l1_transaction_hashes: fs.l1_transaction_hashes,
+          l1_timestamp: fs.l1_timestamp
+        }
       )
 
     base_query
