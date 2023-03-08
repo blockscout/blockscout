@@ -335,6 +335,7 @@ config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
 
 token_exchange_rate_interval =
   case "TOKEN_EXCHANGE_RATE_INTERVAL" |> System.get_env("") |> String.downcase() |> Integer.parse() do
+    {milliseconds, "ms"} -> milliseconds
     {hours, "h"} -> :timer.hours(hours)
     {minutes, "m"} -> :timer.minutes(minutes)
     {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
