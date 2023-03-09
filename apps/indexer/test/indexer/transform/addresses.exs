@@ -231,7 +231,7 @@ defmodule Indexer.Transform.AddressesTest do
     test "only entities data defined in @entity_to_address_map are collected" do
       blockchain_data = %{
         blocks: [%{miner_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca", number: 34}],
-        unkown_entity: [%{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"}]
+        unknown_entity: [%{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"}]
       }
 
       assert Addresses.extract_addresses(blockchain_data) == [

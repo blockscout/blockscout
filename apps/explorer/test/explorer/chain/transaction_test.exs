@@ -244,7 +244,7 @@ defmodule Explorer.Chain.TransactionTest do
   end
 
   describe "decoded_input_data/1" do
-    test "that a tranasction that is not a contract call returns a commensurate error" do
+    test "that a transaction that is not a contract call returns a commensurate error" do
       transaction = insert(:transaction)
 
       assert Transaction.decoded_input_data(transaction) == {:error, :not_a_contract_call}

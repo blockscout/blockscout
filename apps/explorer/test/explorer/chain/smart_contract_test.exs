@@ -58,7 +58,7 @@ defmodule Explorer.Chain.SmartContractTest do
       verify!(EthereumJSONRPC.Mox)
     end
 
-    test "test get_implementation_adddress_hash/1" do
+    test "test get_implementation_address_hash/1" do
       smart_contract = insert(:smart_contract)
       implementation_smart_contract = insert(:smart_contract, name: "proxy")
 
@@ -137,7 +137,7 @@ defmodule Explorer.Chain.SmartContractTest do
       assert_empty_implementation(smart_contract.address_hash)
     end
 
-    test "test get_implementation_adddress_hash/1 for twins contract" do
+    test "test get_implementation_address_hash/1 for twins contract" do
       # return nils for nil
       assert {nil, nil} = SmartContract.get_implementation_address_hash(nil)
       smart_contract = insert(:smart_contract)
