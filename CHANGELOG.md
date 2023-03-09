@@ -12,6 +12,7 @@
 
 ### Chore
 
+- [#7056](https://github.com/blockscout/blockscout/pull/7056) - Add path_helper in interact.js
 - [#7040](https://github.com/blockscout/blockscout/pull/7040) - Use alias BlockScoutWeb.Cldr.Number
 - [#7037](https://github.com/blockscout/blockscout/pull/7037) - Define common function for "reltuples" query
 - [#7034](https://github.com/blockscout/blockscout/pull/7034) - Resolve "Unexpected var, use let or const instead"
