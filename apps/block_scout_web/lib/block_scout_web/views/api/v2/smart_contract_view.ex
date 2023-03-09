@@ -2,15 +2,20 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   use BlockScoutWeb, :view
 
   alias ABI.FunctionSelector
-  alias BlockScoutWeb.API.V2.TransactionView
+  alias BlockScoutWeb.API.V2.{Helper, TransactionView}
   alias BlockScoutWeb.SmartContractView
   alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
   alias Ecto.Changeset
-  alias Explorer.Chain
+  alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.ExchangeRates.Token
   alias Explorer.Visualize.Sol2uml
 
   require Logger
+
+  def render("smart_contracts.json", %{smart_contracts: smart_contracts, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(smart_contracts, &prepare_smart_contract_for_list/1), "next_page_params" => next_page_params}
+  end
 
   def render("smart_contract.json", %{address: address}) do
     prepare_smart_contract(address)
@@ -163,7 +168,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "abi" => target_contract.abi,
       "source_code" => target_contract.contract_source_code,
       "file_path" => target_contract.file_path,
-      "additional_sources" => Enum.map(additional_sources, &prepare_additional_sourse/1),
+      "additional_sources" => Enum.map(additional_sources, &prepare_additional_source/1),
       "compiler_settings" => target_contract.compiler_settings,
       "external_libraries" => prepare_external_libraries(target_contract.external_libraries),
       "constructor_args" => if(smart_contract_verified, do: target_contract.constructor_arguments),
@@ -205,7 +210,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     end)
   end
 
-  defp prepare_additional_sourse(source) do
+  defp prepare_additional_source(source) do
     %{
       "source_code" => source.contract_source_code,
       "file_path" => source.file_name
@@ -230,11 +235,44 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     exception ->
       Logger.warn(fn ->
         [
-          "Error formating constructor arguments for abi: #{inspect(abi)}, args: #{inspect(constructor_arguments)}: ",
+          "Error formatting constructor arguments for abi: #{inspect(abi)}, args: #{inspect(constructor_arguments)}: ",
           Exception.format(:error, exception)
         ]
       end)
 
       nil
+  end
+
+  defp prepare_smart_contract_for_list(%SmartContract{} = smart_contract) do
+    token =
+      if smart_contract.address.token,
+        do: Market.get_exchange_rate(smart_contract.address.token.symbol),
+        else: Token.null()
+
+    %{
+      "address" => Helper.address_with_info(nil, smart_contract.address, smart_contract.address.hash),
+      "compiler_version" => smart_contract.compiler_version,
+      "optimization_enabled" => if(smart_contract.is_vyper_contract, do: nil, else: smart_contract.optimization),
+      "tx_count" => smart_contract.address.transactions_count,
+      "language" => smart_contract_language(smart_contract),
+      "verified_at" => smart_contract.inserted_at,
+      "market_cap" => token && token.market_cap_usd,
+      "has_constructor_args" => !is_nil(smart_contract.constructor_arguments),
+      "coin_balance" =>
+        if(smart_contract.address.fetched_coin_balance, do: smart_contract.address.fetched_coin_balance.value)
+    }
+  end
+
+  defp smart_contract_language(smart_contract) do
+    cond do
+      smart_contract.is_vyper_contract ->
+        "vyper"
+
+      is_nil(smart_contract.abi) ->
+        "yul"
+
+      true ->
+        "solidity"
+    end
   end
 end

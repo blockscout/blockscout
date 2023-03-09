@@ -17,8 +17,6 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
   alias Explorer.Repo
 
-  @default_cache_period :timer.seconds(30)
-
   @num_of_blocks (case Integer.parse(System.get_env("GAS_PRICE_ORACLE_NUM_OF_BLOCKS", "200")) do
                     {integer, ""} -> integer
                     _ -> 200
@@ -43,12 +41,12 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
     name: :gas_price,
     key: :gas_prices,
     key: :async_task,
-    global_ttl: cache_period(),
-    ttl_check_interval: :timer.minutes(5),
+    global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl],
+    ttl_check_interval: :timer.seconds(1),
     callback: &async_task_on_deletion(&1)
 
   def get_average_gas_price(num_of_blocks, safelow_percentile, average_percentile, fast_percentile) do
-    lates_gas_price_query =
+    latest_gas_price_query =
       from(
         block in Block,
         left_join: transaction in assoc(block, :transactions),
@@ -62,7 +60,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       )
 
     latest_gas_prices =
-      lates_gas_price_query
+      latest_gas_price_query
       |> Repo.all(timeout: :infinity)
 
     latest_ordered_gas_prices =
@@ -105,7 +103,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
         rescue
           e ->
             Logger.debug([
-              "Coudn't update gas used gas_prices",
+              "Couldn't update gas used gas_prices",
               Exception.format(:error, e, __STACKTRACE__)
             ])
         end
@@ -155,14 +153,4 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
   defp async_task_on_deletion({:delete, _, :gas_prices}), do: get_async_task()
 
   defp async_task_on_deletion(_data), do: nil
-
-  defp cache_period do
-    "GAS_PRICE_ORACLE_CACHE_PERIOD"
-    |> System.get_env("")
-    |> Integer.parse()
-    |> case do
-      {integer, ""} -> :timer.seconds(integer)
-      _ -> @default_cache_period
-    end
-  end
 end

@@ -30,7 +30,6 @@ defmodule Explorer.Chain do
   require Logger
 
   alias ABI.TypeDecoder
-  alias Ecto.Association.NotLoaded
   alias Ecto.{Changeset, Multi}
 
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
@@ -77,6 +76,9 @@ defmodule Explorer.Chain do
     VerifiedContractsCounter
   }
 
+  alias Explorer.Chain.Cache.Block, as: BlockCache
+  alias Explorer.Chain.Cache.Helper, as: CacheHelper
+  alias Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
 
@@ -97,7 +99,7 @@ defmodule Explorer.Chain do
   @default_paging_options %PagingOptions{page_size: 50}
 
   @token_transfers_per_transaction_preview 10
-  @token_transfers_neccessity_by_association %{
+  @token_transfers_necessity_by_association %{
     [from_address: :smart_contract] => :optional,
     [to_address: :smart_contract] => :optional,
     [from_address: :names] => :optional,
@@ -125,9 +127,6 @@ defmodule Explorer.Chain do
   @revert_error_method_id "08c379a0"
 
   @burn_address_hash_str "0x0000000000000000000000000000000000000000"
-
-  # seconds
-  @check_bytecode_interval 86_400
 
   @limit_showing_transactions 10_000
   @default_page_size 50
@@ -192,7 +191,7 @@ defmodule Explorer.Chain do
     cached_value = AddressesCounter.fetch()
 
     if is_nil(cached_value) || cached_value == 0 do
-      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'addresses';")
+      count = CacheHelper.estimated_count_from("addresses")
 
       max(count, 0)
     else
@@ -348,7 +347,7 @@ defmodule Explorer.Chain do
   This query is divided into multiple subqueries intentionally in order to
   improve the listing performance.
 
-  The `token_trasfers` table tends to grow exponentially, and the query results
+  The `token_transfers` table tends to grow exponentially, and the query results
   with a `transactions` `join` statement takes too long.
 
   To solve this the `transaction_hashes` are fetched in a separate query, and
@@ -475,7 +474,7 @@ defmodule Explorer.Chain do
 
     options
     |> address_to_transactions_tasks_query()
-    |> Transaction.not_dropped_or_replaced_transacions()
+    |> Transaction.not_dropped_or_replaced_transactions()
     |> where_block_number_in_period(from_block, to_block)
     |> join_associations(necessity_by_association)
     |> Transaction.matching_address_queries_list(direction, address_hash)
@@ -969,7 +968,7 @@ defmodule Explorer.Chain do
     |> Repo.all()
     |> (&if(old_ui?,
           do: &1,
-          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_necessity_by_association) end)
         )).()
   end
 
@@ -1912,7 +1911,8 @@ defmodule Explorer.Chain do
       case address_result do
         %{smart_contract: smart_contract} ->
           if smart_contract do
-            check_bytecode_matching(address_result, smart_contract)
+            CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
+            address_result
           else
             address_verified_twin_contract =
               Chain.get_minimal_proxy_template(hash) ||
@@ -1942,48 +1942,6 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
-    end
-  end
-
-  defp check_bytecode_matching(address, %NotLoaded{}), do: address
-
-  defp check_bytecode_matching(address, _) do
-    now = DateTime.utc_now()
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-    if !address.smart_contract.is_changed_bytecode and
-         address.smart_contract.bytecode_checked_at
-         |> DateTime.add(@check_bytecode_interval, :second)
-         |> DateTime.compare(now) != :gt do
-      case EthereumJSONRPC.fetch_codes(
-             [%{block_quantity: "latest", address: address.smart_contract.address_hash}],
-             json_rpc_named_arguments
-           ) do
-        {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} ->
-          bytecode_from_node = fetched_codes |> List.first() |> Map.get(:code)
-          bytecode_from_db = "0x" <> (address.contract_code.bytes |> Base.encode16(case: :lower))
-
-          if bytecode_from_node == bytecode_from_db do
-            {:ok, smart_contract} =
-              address.smart_contract
-              |> Changeset.change(%{bytecode_checked_at: now})
-              |> Repo.update()
-
-            %{address | smart_contract: smart_contract}
-          else
-            {:ok, smart_contract} =
-              address.smart_contract
-              |> Changeset.change(%{bytecode_checked_at: now, is_changed_bytecode: true})
-              |> Repo.update()
-
-            %{address | smart_contract: smart_contract}
-          end
-
-        _ ->
-          address
-      end
-    else
-      address
     end
   end
 
@@ -2130,7 +2088,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  # preload_to_detect_tt?: we don't need to preload more than one token transfer in case the tx inside the list (we dont't show any token transfers on tx tile in new UI)
+  # preload_to_detect_tt?: we don't need to preload more than one token transfer in case the tx inside the list (we don't show any token transfers on tx tile in new UI)
   def preload_token_transfers(
         %Transaction{hash: tx_hash, block_hash: block_hash} = transaction,
         necessity_by_association,
@@ -2209,13 +2167,6 @@ defmodule Explorer.Chain do
   @doc """
   The percentage of indexed blocks on the chain.
 
-      iex> for index <- 5..9 do
-      ...>   insert(:block, number: index)
-      ...>   Process.sleep(200)
-      ...> end
-      iex> Explorer.Chain.indexed_ratio_blocks()
-      Decimal.new(1, 50, -2)
-
   If there are no blocks, the percentage is 0.
 
       iex> Explorer.Chain.indexed_ratio_blocks()
@@ -2237,7 +2188,16 @@ defmodule Explorer.Chain do
         Decimal.new(0)
 
       _ ->
-        result = Decimal.div(max - min + 1, max - min_blockchain_block_number + 1)
+        result =
+          BlockCache.estimated_count()
+          |> Decimal.div(max - min_blockchain_block_number + 1)
+          |> (&if(
+                (Decimal.compare(&1, Decimal.from_float(0.99)) == :gt ||
+                   Decimal.compare(&1, Decimal.from_float(0.99)) == :eq) &&
+                  min <= min_blockchain_block_number,
+                do: Decimal.new(1),
+                else: &1
+              )).()
 
         result
         |> Decimal.round(2, :down)
@@ -3443,7 +3403,7 @@ defmodule Explorer.Chain do
     |> Repo.all()
     |> (&if(old_ui?,
           do: &1,
-          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_necessity_by_association) end)
         )).()
   end
 
@@ -3493,7 +3453,7 @@ defmodule Explorer.Chain do
     |> Repo.all()
     |> (&if(old_ui?,
           do: &1,
-          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_necessity_by_association) end)
         )).()
   end
 
@@ -4511,7 +4471,7 @@ defmodule Explorer.Chain do
 
   defp handle_random_access_paging_options(query, paging_options) do
     query
-    |> (&if(paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1,
+    |> (&if(paging_options |> Map.get(:page_number, 1) |> process_page_number() == 1,
           do: &1,
           else: page_transaction(&1, paging_options)
         )).()
@@ -4519,7 +4479,7 @@ defmodule Explorer.Chain do
   end
 
   defp handle_page(query, paging_options) do
-    page_number = paging_options |> Map.get(:page_number, 1) |> proccess_page_number()
+    page_number = paging_options |> Map.get(:page_number, 1) |> process_page_number()
     page_size = Map.get(paging_options, :page_size, @default_page_size)
 
     cond do
@@ -4538,9 +4498,9 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp proccess_page_number(number) when number < 1, do: 1
+  defp process_page_number(number) when number < 1, do: 1
 
-  defp proccess_page_number(number), do: number
+  defp process_page_number(number), do: number
 
   defp page_in_bounds?(page_number, page_size),
     do: page_size <= @limit_showing_transactions && @limit_showing_transactions - page_number * page_size >= 0
@@ -5149,7 +5109,7 @@ defmodule Explorer.Chain do
       )
       |> Multi.run(:token, fn repo, _ ->
         with {:error, %Changeset{errors: [{^stale_error_field, {^stale_error_message, [_]}}]}} <-
-               repo.insert(token_changeset, token_opts) do
+               repo.update(token_changeset, token_opts) do
           # the original token passed into `update_token/2` as stale error means it is unchanged
           {:ok, token}
         end

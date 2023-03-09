@@ -167,6 +167,27 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                })
     end
 
+    test "fetches json metadata for kitties" do
+      {:ok, %{metadata: metadata}} =
+        InstanceMetadataRetriever.fetch_metadata("0x06012c8cf97bead5deae237070f9587f8e7a266d", 100_500)
+
+      assert Map.get(metadata, "name") == "KittyBlue_2_Lemonade"
+    end
+
+    test "fetches json metadata when HTTP status 301" do
+      {:ok, %{metadata: metadata}} =
+        InstanceMetadataRetriever.fetch_metadata_from_uri("https://metadata.billyli.workers.dev/1302")
+
+      assert Map.get(metadata, "attributes") == [
+               %{"trait_type" => "Mouth", "value" => "Discomfort"},
+               %{"trait_type" => "Background", "value" => "Army Green"},
+               %{"trait_type" => "Eyes", "value" => "Wide Eyed"},
+               %{"trait_type" => "Fur", "value" => "Black"},
+               %{"trait_type" => "Earring", "value" => "Silver Hoop"},
+               %{"trait_type" => "Hat", "value" => "Sea Captain's Hat"}
+             ]
+    end
+
     test "replace {id} with actual token_id", %{bypass: bypass} do
       json = """
       {
@@ -306,6 +327,130 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                       "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MDAgNTAwIiB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJncmFkIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6cmdiKDU4LDE3LDExNik7c3RvcC1vcGFjaXR5OjEiIC8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjpyZ2IoMTE2LDI1LDE3KTtzdG9wLW9wYWNpdHk6MSIgLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0idXJsKCNncmFkKSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSJ4LWxhcmdlIj4ueGRhaTwvdGV4dD48dGV4dCB4PSI1MCUiIHk9IjcwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPnB1bmsuZG9tYWluczwvdGV4dD48L3N2Zz4="
                   }
                 }}
+    end
+
+    test "decodes base64 encoded json file (with unicode string) in tokenURI" do
+      data = %{
+        "c87b56dd" =>
+          {:ok,
+           [
+             "data:application/json;base64,eyJkZXNjcmlwdGlvbiI6ICJQdW5rIERvbWFpbnMgZGlnaXRhbCBpZGVudGl0eSDDry4gVmlzaXQgaHR0cHM6Ly9wdW5rLmRvbWFpbnMvIn0="
+           ]}
+      }
+
+      assert InstanceMetadataRetriever.fetch_json(data) ==
+               {:ok,
+                %{
+                  metadata: %{
+                    "description" => "Punk Domains digital identity ï. Visit https://punk.domains/"
+                  }
+                }}
+    end
+
+    test "fetches image from ipfs link directly" do
+      data = %{
+        "c87b56dd" =>
+          {:ok,
+           [
+             "ipfs://bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+           ]}
+      }
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "image" => "https://ipfs.io/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+                }
+              }} == InstanceMetadataRetriever.fetch_json(data)
+    end
+
+    test "Fetches metadata from ipfs" do
+      data = %{
+        "c87b56dd" =>
+          {:ok,
+           [
+             "ipfs://bafybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json"
+           ]}
+      }
+
+      {:ok,
+       %{
+         metadata: metadata
+       }} = InstanceMetadataRetriever.fetch_json(data)
+
+      assert "ipfs://bafybeihxuj3gxk7x5p36amzootyukbugmx3pw7dyntsrohg3se64efkuga/51.png" == Map.get(metadata, "image")
+    end
+
+    test "Fetches metadata from '${url}'" do
+      data = %{
+        "c87b56dd" =>
+          {:ok,
+           [
+             "'https://cards.collecttrumpcards.com/data/8/8578.json'"
+           ]}
+      }
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "attributes" => [
+                    %{"trait_type" => "Character", "value" => "Blue Suit Boxing Glove"},
+                    %{"trait_type" => "Face", "value" => "Wink"},
+                    %{"trait_type" => "Hat", "value" => "Blue"},
+                    %{"trait_type" => "Background", "value" => "Red Carpet"}
+                  ],
+                  "image" => "https://cards.collecttrumpcards.com/cards/0c68b1ab6.jpg",
+                  "name" => "Trump Digital Trading Card #8578",
+                  "tokenId" => 8578
+                }
+              }} == InstanceMetadataRetriever.fetch_json(data)
+    end
+
+    test "Process custom execution reverted" do
+      data = %{
+        "c87b56dd" =>
+          {:error,
+           "(3) execution reverted: Nonexistent token (0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000114e6f6e6578697374656e7420746f6b656e000000000000000000000000000000)"}
+      }
+
+      assert {:ok, %{error: "VM execution error"}} == InstanceMetadataRetriever.fetch_json(data)
+    end
+
+    test "Process CIDv0 IPFS links" do
+      data = "QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "collectionId" => "1871_1665123820823",
+                  "description" => "asda",
+                  "img_hash" => "QmUfW3PVnh9GGuHcQgc3ZeNEbhwp5HE8rS5ac9MDWWQebz",
+                  "name" => "asda",
+                  "salePrice" => 34
+                }
+              }} == InstanceMetadataRetriever.fetch_json(data)
+    end
+
+    test "Process URI directly from link" do
+      data = "https://dejob.io/api/dejobio/v1/nftproduct/1"
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "description" =>
+                    "\\\"Blue Reign: The Dragon Football Champion of the Floral City\\\" is a science fiction story about a dragon who loves playing football and dreams of becoming a champion. The story takes place in a futuristic city full of flowers and blue light, and it is raining throughout the story.\r\n\r\nThroughout the story, the dragon faces challenges on and off the field, including intense training regimens, rival teams, and personal struggles. He perseveres through these obstacles and incorporates new techniques and strategies into his gameplay.\r\n\r\nAs the playoffs approach, the dragon\\'s team faces increasingly tough opponents, culminating in a highly anticipated championship game against their long-standing rivals, the Storm Hawks. The dragon\\'s heart-pumping performance and his team\\'s impressive plays lead them to victory, and they celebrate their status as champions.\r\n\r\nThe story ultimately focuses on the dragon\\'s journey towards achieving his dream and the teamwork and dedication required to succeed in a highly competitive sport.",
+                  "name" => "Blue Reign: The Dragon Football Champion of the Floral City",
+                  "attributes" => [
+                    %{"trait_type" => "Product Type", "value" => "Book"},
+                    %{"display_type" => "number", "trait_type" => "Total Sold", "value" => "0"},
+                    %{"display_type" => "number", "trait_type" => "Success Sold", "value" => "0"},
+                    %{"max_value" => "100", "trait_type" => "Success Rate", "value" => "0"}
+                  ],
+                  "external_url" => "https://dejob.io/?p=49",
+                  "image" =>
+                    "https://cdn.discordapp.com/attachments/1008567215739650078/1080111780858187796/savechives_a_dragon_playing_football_in_a_city_full_of_flowers__0739cc42-aae1-4909-a964-3f9c0ed1a9ed.png"
+                }
+              }} == InstanceMetadataRetriever.fetch_json(data)
     end
   end
 end

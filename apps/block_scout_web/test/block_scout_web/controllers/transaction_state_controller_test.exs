@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
 
     test "with duplicated from, to or miner fields", %{conn: conn} do
       address = insert(:address)
-
+      to_address = insert(:address)
       insert(:block)
       block = insert(:block, miner: address)
 
@@ -41,12 +41,19 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
         block_number: block.number - 1
       )
 
-      transaction = insert(:transaction, from_address: address, to_address: address) |> with_block(block, status: :ok)
+      insert(:fetched_balance,
+        address_hash: to_address.hash,
+        value: 1_000_000,
+        block_number: block.number - 1
+      )
+
+      transaction =
+        insert(:transaction, from_address: address, to_address: to_address) |> with_block(block, status: :ok)
 
       conn = get(conn, transaction_state_path(conn, :index, transaction), %{type: "JSON"})
       {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
 
-      assert(items |> Enum.filter(fn item -> item != nil end) |> length() == 1)
+      assert(items |> Enum.filter(fn item -> item != nil end) |> length() == 2)
     end
 
     test "returns state changes for the transaction with contract creation", %{conn: conn} do

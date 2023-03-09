@@ -43,8 +43,8 @@ defmodule Indexer.Fetcher.TokenUpdater do
 
   @impl BufferedTask
   def init(initial, reducer, _) do
-    metadata_updater_inverval = Application.get_env(:indexer, :metadata_updater_seconds_interval)
-    interval_in_minutes = Kernel.round(metadata_updater_inverval / 60)
+    metadata_updater_interval = Application.get_env(:indexer, :metadata_updater_seconds_interval)
+    interval_in_minutes = Kernel.round(metadata_updater_interval / 60)
 
     {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes(initial, reducer, interval_in_minutes)
 
@@ -85,6 +85,6 @@ defmodule Indexer.Fetcher.TokenUpdater do
   end
 
   def update_metadata(%Token{} = token, metadata) do
-    Chain.update_token(%{token | updated_at: DateTime.utc_now()}, metadata)
+    Chain.update_token(token, metadata)
   end
 end

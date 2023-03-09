@@ -19,7 +19,7 @@ defmodule Explorer.Chain.Cache.GasUsage do
     key: :sum,
     key: :async_task,
     global_ttl: cache_period(),
-    ttl_check_interval: :timer.minutes(15),
+    ttl_check_interval: :timer.seconds(1),
     callback: &async_task_on_deletion(&1)
 
   alias Explorer.Chain.Transaction
@@ -57,7 +57,7 @@ defmodule Explorer.Chain.Cache.GasUsage do
           rescue
             e ->
               Logger.debug([
-                "Coudn't update gas used sum: ",
+                "Couldn't update gas used sum: ",
                 Exception.format(:error, e, __STACKTRACE__)
               ])
           end

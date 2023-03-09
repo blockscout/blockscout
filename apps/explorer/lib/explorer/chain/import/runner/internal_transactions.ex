@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Block, Hash, Import, InternalTransaction, PendingBlockOperation, Transaction}
+  alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import.Runner
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
@@ -177,11 +178,14 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     internal_transactions_params = Enum.filter(changes_list, &Map.has_key?(&1, :type))
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    Multi.new()
-    |> Multi.run(:internal_transactions, fn repo, _ ->
-      insert(repo, internal_transactions_params, insert_options)
-    end)
-    |> ExplorerRepo.transaction()
+    with {:ok, data} <-
+           Multi.new()
+           |> Multi.run(:internal_transactions, fn repo, _ ->
+             insert(repo, internal_transactions_params, insert_options)
+           end)
+           |> ExplorerRepo.transaction() do
+      Publisher.broadcast(data, :on_demand)
+    end
   end
 
   @impl Runner
@@ -674,7 +678,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       )
 
     try do
-      # ShreLocks order already enforced by `acquire_pending_internal_txs` (see docs: sharelocks.md)
+      # ShareLocks order already enforced by `acquire_pending_internal_txs` (see docs: sharelocks.md)
       {_count, deleted} = repo.delete_all(delete_query, [])
 
       {:ok, deleted}

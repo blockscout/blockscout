@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.PagingHelper do
   @moduledoc """
-    Helper for fetching filters and other url query paramters
+    Helper for fetching filters and other url query parameters
   """
   import Explorer.Chain, only: [string_to_transaction_hash: 1]
   alias Explorer.PagingOptions
@@ -134,7 +134,32 @@ defmodule BlockScoutWeb.PagingHelper do
     |> Map.delete("method")
     |> Map.delete("filter")
     |> Map.delete("token_address_hash")
+    |> Map.delete("q")
   end
 
   def delete_parameters_from_next_page_params(_), do: nil
+
+  def current_filter(%{"filter" => "solidity"}) do
+    [filter: :solidity]
+  end
+
+  def current_filter(%{"filter" => "vyper"}) do
+    [filter: :vyper]
+  end
+
+  def current_filter(_), do: []
+
+  def search_query(%{"search" => ""}), do: []
+
+  def search_query(%{"search" => search_string}) do
+    [search: search_string]
+  end
+
+  def search_query(%{"q" => ""}), do: []
+
+  def search_query(%{"q" => search_string}) do
+    [search: search_string]
+  end
+
+  def search_query(_), do: []
 end

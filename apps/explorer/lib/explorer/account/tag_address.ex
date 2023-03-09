@@ -41,7 +41,7 @@ defmodule Explorer.Account.TagAddress do
     |> validate_length(:name, min: 1, max: 35)
     |> put_hashed_fields()
     |> unique_constraint([:identity_id, :address_hash_hash], message: "Address tag already exists")
-    |> check_existance_or_create_address()
+    |> check_existence_or_create_address()
     |> tag_address_count_constraint()
   end
 
@@ -56,13 +56,13 @@ defmodule Explorer.Account.TagAddress do
     |> put_change(:address_hash_hash, hash_to_lower_case_string(get_field(changeset, :address_hash)))
   end
 
-  defp check_existance_or_create_address(%Changeset{changes: %{address_hash: address_hash}, valid?: true} = changeset) do
-    check_existance_or_create_address_inner(changeset, address_hash)
+  defp check_existence_or_create_address(%Changeset{changes: %{address_hash: address_hash}, valid?: true} = changeset) do
+    check_existence_or_create_address_inner(changeset, address_hash)
   end
 
-  defp check_existance_or_create_address(changeset), do: changeset
+  defp check_existence_or_create_address(changeset), do: changeset
 
-  defp check_existance_or_create_address_inner(changeset, address_hash) do
+  defp check_existence_or_create_address_inner(changeset, address_hash) do
     with {:ok, hash} <- Hash.Address.cast(address_hash),
          {:ok, %Address{}} <- Chain.find_or_insert_address_from_hash(hash, []) do
       changeset

@@ -94,15 +94,29 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
 
   def get_one_json(files_array) do
     files_array
-    |> Enum.filter(fn file -> file.content_type == "application/json" end)
+    |> Enum.filter(fn file ->
+      case file do
+        %Plug.Upload{content_type: content_type} ->
+          content_type == "application/json"
+
+        _ ->
+          false
+      end
+    end)
     |> Enum.at(0)
   end
 
   # sobelow_skip ["Traversal.FileModule"]
   def read_files(plug_uploads) do
-    Enum.reduce(plug_uploads, %{}, fn %Plug.Upload{path: path, filename: file_name}, acc ->
-      {:ok, file_content} = File.read(path)
-      Map.put(acc, file_name, file_content)
+    Enum.reduce(plug_uploads, %{}, fn file, acc ->
+      case file do
+        %Plug.Upload{path: path, filename: file_name} ->
+          {:ok, file_content} = File.read(path)
+          Map.put(acc, file_name, file_content)
+
+        _ ->
+          acc
+      end
     end)
   end
 
@@ -167,19 +181,19 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
   def publish_without_broadcast(
         %{"addressHash" => address_hash, "abi" => abi, "compilationTargetFilePath" => file_path} = input
       ) do
-    params = proccess_params(input)
+    params = process_params(input)
 
     address_hash
     |> Publisher.publish_smart_contract(params, abi, file_path)
-    |> proccess_response()
+    |> process_response()
   end
 
   def publish_without_broadcast(%{"addressHash" => address_hash, "abi" => abi} = input) do
-    params = proccess_params(input)
+    params = process_params(input)
 
     address_hash
     |> Publisher.publish_smart_contract(params, abi)
-    |> proccess_response()
+    |> process_response()
   end
 
   def publish(nil, %{"addressHash" => _address_hash} = input, _) do
@@ -196,7 +210,7 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
     end
   end
 
-  def proccess_params(input) do
+  def process_params(input) do
     if Map.has_key?(input, "secondarySources") do
       input["params"]
       |> Map.put("secondary_sources", Map.get(input, "secondarySources"))
@@ -205,7 +219,7 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
     end
   end
 
-  def proccess_response(response) do
+  def process_response(response) do
     case response do
       {:ok, _contract} = result ->
         result

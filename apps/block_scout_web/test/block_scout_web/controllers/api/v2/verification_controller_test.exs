@@ -183,7 +183,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
 
       _contract = insert(:address, hash: address, contract_code: "0x01")
 
-      topic = "addresses:#{address}"
+      topic = "addresses:#{String.downcase(address)}"
 
       {:ok, _reply, _socket} =
         UserSocketV2
