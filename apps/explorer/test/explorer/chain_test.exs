@@ -6030,7 +6030,10 @@ defmodule Explorer.ChainTest do
     test "get_implementation_abi_from_proxy/2 returns empty [] abi if proxy abi is null" do
       proxy_contract_address = insert(:contract_address)
 
-      assert Chain.get_implementation_abi_from_proxy(%SmartContract{address_hash: proxy_contract_address.hash, abi: nil}) ==
+      assert Chain.get_implementation_abi_from_proxy(
+               %SmartContract{address_hash: proxy_contract_address.hash, abi: nil},
+               []
+             ) ==
                []
     end
 
@@ -6051,7 +6054,7 @@ defmodule Explorer.ChainTest do
       smart_contract =
         insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
-      assert Chain.get_implementation_abi_from_proxy(smart_contract) == []
+      assert Chain.get_implementation_abi_from_proxy(smart_contract, []) == []
     end
 
     test "get_implementation_abi_from_proxy/2 returns implementation abi if implementation is verified" do
@@ -6086,7 +6089,7 @@ defmodule Explorer.ChainTest do
         end
       )
 
-      implementation_abi = Chain.get_implementation_abi_from_proxy(smart_contract)
+      implementation_abi = Chain.get_implementation_abi_from_proxy(smart_contract, [])
 
       assert implementation_abi == @implementation_abi
     end
@@ -6125,7 +6128,7 @@ defmodule Explorer.ChainTest do
         end
       )
 
-      implementation_abi = Chain.get_implementation_abi_from_proxy(smart_contract)
+      implementation_abi = Chain.get_implementation_abi_from_proxy(smart_contract, [])
 
       assert implementation_abi == @implementation_abi
     end

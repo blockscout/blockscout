@@ -270,7 +270,8 @@ defmodule BlockScoutWeb.SmartContractView do
 
     Transaction.decoded_revert_reason(
       %Transaction{to_address: %{smart_contract: smart_contract}, hash: to_address},
-      revert_reason
+      revert_reason,
+      options
     )
   end
 

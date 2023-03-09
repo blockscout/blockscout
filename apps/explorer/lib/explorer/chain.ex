@@ -192,7 +192,7 @@ defmodule Explorer.Chain do
     cached_value = AddressesCounter.fetch()
 
     if is_nil(cached_value) || cached_value == 0 do
-      count = CacheHelper.estimated_count_from("addresses")
+      count = CacheHelper.estimated_count_from("addresses", options)
 
       max(count, 0)
     else
