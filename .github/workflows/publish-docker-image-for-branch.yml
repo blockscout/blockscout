@@ -8,7 +8,7 @@ name: Publish Docker image for specific chain branches
 on:
   push:
     branches:
-      - production-optimism-stg
+      - production-gc-optimism-stg
 
 env:
   OTP_VERSION: '24.3.4.1'
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: 5.1.1
-      DOCKER_CHAIN_NAME: optimism
+      DOCKER_CHAIN_NAME: gc-optimism
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
