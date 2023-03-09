@@ -335,6 +335,7 @@ config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
 
 token_exchange_rate_interval =
   case "TOKEN_EXCHANGE_RATE_INTERVAL" |> System.get_env("") |> String.downcase() |> Integer.parse() do
+    {milliseconds, "ms"} -> milliseconds
     {hours, "h"} -> :timer.hours(hours)
     {minutes, "m"} -> :timer.minutes(minutes)
     {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
@@ -356,7 +357,7 @@ token_exchange_rate_max_batch_size =
   end
 
 config :explorer, Explorer.ExchangeRates.TokenExchangeRates,
-  enabled: System.get_env("DISABLE_TOKEN_EXCHANGE_RATE") != "true",
+  enabled: System.get_env("DISABLE_TOKEN_EXCHANGE_RATE", "true") != "true",
   interval: token_exchange_rate_interval,
   refetch_interval: token_exchange_rate_refetch_interval,
   max_batch_size: token_exchange_rate_max_batch_size
