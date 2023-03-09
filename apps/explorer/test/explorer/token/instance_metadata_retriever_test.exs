@@ -381,28 +381,38 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
       assert "ipfs://bafybeihxuj3gxk7x5p36amzootyukbugmx3pw7dyntsrohg3se64efkuga/51.png" == Map.get(metadata, "image")
     end
 
-    test "Fetches metadata from '${url}'" do
+    test "Fetches metadata from '${url}'", %{bypass: bypass} do
+      path = "/data/8/8578.json"
+
       data = %{
         "c87b56dd" =>
           {:ok,
            [
-             "'https://cards.collecttrumpcards.com/data/8/8578.json'"
+             "'http://localhost:#{bypass.port}#{path}'"
            ]}
       }
 
+      json = """
+      {
+        "attributes": [
+          {"trait_type": "Character", "value": "Blue Suit Boxing Glove"},
+          {"trait_type": "Face", "value": "Wink"},
+          {"trait_type": "Hat", "value": "Blue"},
+          {"trait_type": "Background", "value": "Red Carpet"}
+        ],
+        "image": "https://cards.collecttrumpcards.com/cards/0c68b1ab6.jpg",
+        "name": "Trump Digital Trading Card #8578",
+        "tokeId": 8578
+      }
+      """
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        Conn.resp(conn, 200, json)
+      end)
+
       assert {:ok,
               %{
-                metadata: %{
-                  "attributes" => [
-                    %{"trait_type" => "Character", "value" => "Blue Suit Boxing Glove"},
-                    %{"trait_type" => "Face", "value" => "Wink"},
-                    %{"trait_type" => "Hat", "value" => "Blue"},
-                    %{"trait_type" => "Background", "value" => "Red Carpet"}
-                  ],
-                  "image" => "https://cards.collecttrumpcards.com/cards/0c68b1ab6.jpg",
-                  "name" => "Trump Digital Trading Card #8578",
-                  "tokenId" => 8578
-                }
+                metadata: Jason.decode!(json)
               }} == InstanceMetadataRetriever.fetch_json(data)
     end
 
@@ -431,26 +441,47 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
               }} == InstanceMetadataRetriever.fetch_json(data)
     end
 
-    test "Process URI directly from link" do
-      data = "https://dejob.io/api/dejobio/v1/nftproduct/1"
+    test "Process URI directly from link", %{bypass: bypass} do
+      path = "/api/dejobio/v1/nftproduct/1"
+
+      json = """
+      {
+          "image": "https:\/\/cdn.discordapp.com\/attachments\/1008567215739650078\/1080111780858187796\/savechives_a_dragon_playing_football_in_a_city_full_of_flowers__0739cc42-aae1-4909-a964-3f9c0ed1a9ed.png",
+          "external_url": "https:\/\/dejob.io\/blue-reign-the-dragon-football-champion-of-the-floral-city\/",
+          "name": "Blue Reign: The Dragon Football Champion of the Floral City",
+          "description": "Test",
+          "attributes": [
+              {
+                  "trait_type": "Product Type",
+                  "value": "Book"
+              },
+              {
+                  "display_type": "number",
+                  "trait_type": "Total Sold",
+                  "value": "0"
+              },
+              {
+                  "display_type": "number",
+                  "trait_type": "Success Sold",
+                  "value": "0"
+              },
+              {
+                  "max_value": "100",
+                  "trait_type": "Success Rate",
+                  "value": "0"
+              }
+          ]
+      }
+      """
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        Conn.resp(conn, 200, json)
+      end)
 
       assert {:ok,
               %{
-                metadata: %{
-                  "description" =>
-                    "\\\"Blue Reign: The Dragon Football Champion of the Floral City\\\" is a science fiction story about a dragon who loves playing football and dreams of becoming a champion. The story takes place in a futuristic city full of flowers and blue light, and it is raining throughout the story.\r\n\r\nThroughout the story, the dragon faces challenges on and off the field, including intense training regimens, rival teams, and personal struggles. He perseveres through these obstacles and incorporates new techniques and strategies into his gameplay.\r\n\r\nAs the playoffs approach, the dragon\\'s team faces increasingly tough opponents, culminating in a highly anticipated championship game against their long-standing rivals, the Storm Hawks. The dragon\\'s heart-pumping performance and his team\\'s impressive plays lead them to victory, and they celebrate their status as champions.\r\n\r\nThe story ultimately focuses on the dragon\\'s journey towards achieving his dream and the teamwork and dedication required to succeed in a highly competitive sport.",
-                  "name" => "Blue Reign: The Dragon Football Champion of the Floral City",
-                  "attributes" => [
-                    %{"trait_type" => "Product Type", "value" => "Book"},
-                    %{"display_type" => "number", "trait_type" => "Total Sold", "value" => "0"},
-                    %{"display_type" => "number", "trait_type" => "Success Sold", "value" => "0"},
-                    %{"max_value" => "100", "trait_type" => "Success Rate", "value" => "0"}
-                  ],
-                  "external_url" => "https://dejob.io/?p=49",
-                  "image" =>
-                    "https://cdn.discordapp.com/attachments/1008567215739650078/1080111780858187796/savechives_a_dragon_playing_football_in_a_city_full_of_flowers__0739cc42-aae1-4909-a964-3f9c0ed1a9ed.png"
-                }
-              }} == InstanceMetadataRetriever.fetch_json(data)
+                metadata: Jason.decode!(json)
+              }} == InstanceMetadataRetriever.fetch_json("http://localhost:#{bypass.port}#{path}")
     end
   end
 end
