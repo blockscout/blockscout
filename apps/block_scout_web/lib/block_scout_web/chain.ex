@@ -263,9 +263,9 @@ defmodule BlockScoutWeb.Chain do
 
   def param_to_block_timestamp(timestamp_string) when is_binary(timestamp_string) do
     case Integer.parse(timestamp_string) do
-      {temstamp_int, ""} ->
+      {timestamp_int, ""} ->
         timestamp =
-          temstamp_int
+          timestamp_int
           |> DateTime.from_unix!(:second)
 
         {:ok, timestamp}

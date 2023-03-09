@@ -82,6 +82,7 @@ defmodule Explorer.Chain do
   }
 
   alias Explorer.Chain.Cache.Block, as: BlockCache
+  alias Explorer.Chain.Cache.Helper, as: CacheHelper
   alias Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
@@ -105,7 +106,7 @@ defmodule Explorer.Chain do
   @default_paging_options %PagingOptions{page_size: 50}
 
   @token_transfers_per_transaction_preview 10
-  @token_transfers_neccessity_by_association %{
+  @token_transfers_necessity_by_association %{
     [from_address: :smart_contract] => :optional,
     [to_address: :smart_contract] => :optional,
     [from_address: :names] => :optional,
@@ -197,7 +198,7 @@ defmodule Explorer.Chain do
     cached_value = AddressesCounter.fetch()
 
     if is_nil(cached_value) || cached_value == 0 do
-      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'addresses';")
+      count = CacheHelper.estimated_count_from("addresses")
 
       max(count, 0)
     else
@@ -353,7 +354,7 @@ defmodule Explorer.Chain do
   This query is divided into multiple subqueries intentionally in order to
   improve the listing performance.
 
-  The `token_trasfers` table tends to grow exponentially, and the query results
+  The `token_transfers` table tends to grow exponentially, and the query results
   with a `transactions` `join` statement takes too long.
 
   To solve this the `transaction_hashes` are fetched in a separate query, and
@@ -480,7 +481,7 @@ defmodule Explorer.Chain do
 
     options
     |> address_to_transactions_tasks_query()
-    |> Transaction.not_dropped_or_replaced_transacions()
+    |> Transaction.not_dropped_or_replaced_transactions()
     |> where_block_number_in_period(from_block, to_block)
     |> join_associations(necessity_by_association)
     |> Transaction.matching_address_queries_list(direction, address_hash)
@@ -974,7 +975,7 @@ defmodule Explorer.Chain do
     |> Repo.all()
     |> (&if(old_ui?,
           do: &1,
-          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_necessity_by_association) end)
         )).()
   end
 
@@ -2178,7 +2179,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  # preload_to_detect_tt?: we don't need to preload more than one token transfer in case the tx inside the list (we dont't show any token transfers on tx tile in new UI)
+  # preload_to_detect_tt?: we don't need to preload more than one token transfer in case the tx inside the list (we don't show any token transfers on tx tile in new UI)
   def preload_token_transfers(
         %Transaction{hash: tx_hash, block_hash: block_hash} = transaction,
         necessity_by_association,
@@ -3639,7 +3640,7 @@ defmodule Explorer.Chain do
     |> Repo.all()
     |> (&if(old_ui?,
           do: &1,
-          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_necessity_by_association) end)
         )).()
   end
 
@@ -3689,7 +3690,7 @@ defmodule Explorer.Chain do
     |> Repo.all()
     |> (&if(old_ui?,
           do: &1,
-          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_necessity_by_association) end)
         )).()
   end
 
@@ -4707,7 +4708,7 @@ defmodule Explorer.Chain do
 
   defp handle_random_access_paging_options(query, paging_options) do
     query
-    |> (&if(paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1,
+    |> (&if(paging_options |> Map.get(:page_number, 1) |> process_page_number() == 1,
           do: &1,
           else: page_transaction(&1, paging_options)
         )).()
@@ -4715,7 +4716,7 @@ defmodule Explorer.Chain do
   end
 
   defp handle_page(query, paging_options) do
-    page_number = paging_options |> Map.get(:page_number, 1) |> proccess_page_number()
+    page_number = paging_options |> Map.get(:page_number, 1) |> process_page_number()
     page_size = Map.get(paging_options, :page_size, @default_page_size)
 
     cond do
@@ -4734,9 +4735,9 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp proccess_page_number(number) when number < 1, do: 1
+  defp process_page_number(number) when number < 1, do: 1
 
-  defp proccess_page_number(number), do: number
+  defp process_page_number(number), do: number
 
   defp page_in_bounds?(page_number, page_size),
     do: page_size <= @limit_showing_transactions && @limit_showing_transactions - page_number * page_size >= 0

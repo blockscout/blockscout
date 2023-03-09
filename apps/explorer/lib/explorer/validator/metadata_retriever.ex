@@ -1,6 +1,6 @@
 defmodule Explorer.Validator.MetadataRetriever do
   @moduledoc """
-  Consults the configured smart contracts to fetch the valivators' metadata
+  Consults the configured smart contracts to fetch the validators' metadata
   """
 
   alias Explorer.SmartContract.Reader
@@ -10,7 +10,7 @@ defmodule Explorer.Validator.MetadataRetriever do
     |> Enum.map(fn validator ->
       validator
       |> fetch_validator_metadata_by_id
-      |> transalate_posdao_metadata
+      |> translate_posdao_metadata
       |> Map.merge(%{address_hash: validator, primary: true})
     end)
   end
@@ -69,7 +69,6 @@ defmodule Explorer.Validator.MetadataRetriever do
     validator_name
   end
 
-  # deprecated
   # defp translate_metadata([
   #        first_name,
   #        last_name,
@@ -80,22 +79,15 @@ defmodule Explorer.Validator.MetadataRetriever do
   #        expiration_date,
   #        created_date,
   #        _updated_date,
-  #        _min_treshold
+  #        _min_threshold
   #      ]) do
-  #   %{
-  #     name: trim_null_bytes(first_name) <> " " <> trim_null_bytes(last_name),
-  #     metadata: %{
-  #       license_id: trim_null_bytes(license_id),
-  #       address: full_address,
-  #       state: trim_null_bytes(state),
-  #       zipcode: trim_null_bytes(zipcode),
-  #       expiration_date: expiration_date,
-  #       created_date: created_date
-  #     }
-  #   }
+  #       %{
+  #         name: name,
+  #         metadata: nil
+  #       }
   # end
 
-  defp transalate_posdao_metadata(name) do
+  defp translate_posdao_metadata(name) do
     %{
       name: name,
       metadata: nil

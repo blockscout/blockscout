@@ -16,6 +16,6 @@
       </div>
       <%= error_tag @f, :is_yul, id: "is_yul-help-block", class: "text-danger form-error" %>
     </div>
-    <div class="smart-contract-form-group-tooltip"><%= gettext("Select Yes if you want to vefify Yul contract.") %></div>
+    <div class="smart-contract-form-group-tooltip"><%= gettext("Select Yes if you want to verify Yul contract.") %></div>
   </div>
 </div>

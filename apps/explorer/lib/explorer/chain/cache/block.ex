@@ -19,6 +19,7 @@ defmodule Explorer.Chain.Cache.Block do
   require Logger
 
   alias Explorer.Chain.Block
+  alias Explorer.Chain.Cache.Helper
   alias Explorer.Repo
 
   @doc """
@@ -31,7 +32,7 @@ defmodule Explorer.Chain.Cache.Block do
     cached_value = __MODULE__.get_count()
 
     if is_nil(cached_value) do
-      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
+      count = Helper.estimated_count_from("blocks")
 
       trunc(count * 0.90)
     else
@@ -59,7 +60,7 @@ defmodule Explorer.Chain.Cache.Block do
         rescue
           e ->
             Logger.debug([
-              "Coudn't update block count: ",
+              "Couldn't update block count: ",
               Exception.format(:error, e, __STACKTRACE__)
             ])
         end

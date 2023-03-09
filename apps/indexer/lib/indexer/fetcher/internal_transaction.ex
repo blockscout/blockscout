@@ -231,7 +231,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     case imports do
       {:ok, imported} ->
-        Accounts.drop(imported[:addreses])
+        Accounts.drop(imported[:addresses])
         Blocks.drop_nonconsensus(imported[:remove_consensus_of_missing_transactions_blocks])
 
         async_import_coin_balances(imported, %{
