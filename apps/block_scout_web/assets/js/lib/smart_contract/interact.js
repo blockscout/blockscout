@@ -98,7 +98,7 @@ function onTransactionHash (txHash, functionName) {
     })
       .then(txReceipt => {
         if (txReceipt) {
-          const successMsg = `Successfully sent <a href="${process.env.NETWORK_PATH}/tx/${txHash}">transaction</a> for method "${functionName}"`
+          const successMsg = `Successfully sent <a href="/tx/${txHash}">transaction</a> for method "${functionName}"`
           openSuccessModal('Success', successMsg)
           clearInterval(txReceiptPollingIntervalId)
         }
