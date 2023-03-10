@@ -34,7 +34,7 @@ defmodule Explorer.Chain.Cache.Block do
     if is_nil(cached_value) do
       count = Helper.estimated_count_from("blocks")
 
-      trunc(count * 0.90)
+      if is_nil(count), do: 0, else: trunc(count * 0.90)
     else
       cached_value
     end
