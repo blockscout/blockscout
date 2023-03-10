@@ -290,7 +290,7 @@ msgstr ""
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:11
 #: lib/block_scout_web/views/address_token_transfer_view.ex:11
 #: lib/block_scout_web/views/address_transaction_view.ex:11
-#: lib/block_scout_web/views/verified_contracts_view.ex:11
+#: lib/block_scout_web/views/verified_contracts_view.ex:12
 #, elixir-autogen, elixir-format
 msgid "All"
 msgstr ""
@@ -1743,7 +1743,6 @@ msgstr ""
 
 #: lib/block_scout_web/templates/tokens/_tile.html.eex:40
 #: lib/block_scout_web/templates/verified_contracts/_contract.html.eex:21
-#: lib/block_scout_web/templates/verified_contracts/_contract.html.eex:58
 #, elixir-autogen, elixir-format
 msgid "N/A"
 msgstr ""
@@ -2304,7 +2303,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/verified_contracts/_contract.html.eex:28
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:26
-#: lib/block_scout_web/views/verified_contracts_view.ex:9
+#: lib/block_scout_web/views/verified_contracts_view.ex:10
 #, elixir-autogen, elixir-format
 msgid "Solidity"
 msgstr ""
@@ -3209,7 +3208,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/verified_contracts/_contract.html.eex:28
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:32
-#: lib/block_scout_web/views/verified_contracts_view.ex:10
+#: lib/block_scout_web/views/verified_contracts_view.ex:11
 #, elixir-autogen, elixir-format
 msgid "Vyper"
 msgstr ""
