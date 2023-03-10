@@ -50,7 +50,7 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
 
     case HTTPoison.post(url, Jason.encode!(normalize_creation_bytecode(body)), headers, recv_timeout: @post_timeout) do
       {:ok, %Response{body: body, status_code: _}} ->
-        proccess_verifier_response(body)
+        process_verifier_response(body)
 
       {:error, error} ->
         old_truncate = Application.get_env(:logger, :truncate)
@@ -71,7 +71,7 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
   def http_get_request(url) do
     case HTTPoison.get(url) do
       {:ok, %Response{body: body, status_code: 200}} ->
-        proccess_verifier_response(body)
+        process_verifier_response(body)
 
       {:ok, %Response{body: body, status_code: _}} ->
         {:error, body}
@@ -100,27 +100,27 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
     http_get_request(vyper_versions_list_url())
   end
 
-  def proccess_verifier_response(body) when is_binary(body) do
+  def process_verifier_response(body) when is_binary(body) do
     case Jason.decode(body) do
       {:ok, decoded} ->
-        proccess_verifier_response(decoded)
+        process_verifier_response(decoded)
 
       _ ->
         {:error, body}
     end
   end
 
-  def proccess_verifier_response(%{"status" => "SUCCESS", "source" => source}) do
+  def process_verifier_response(%{"status" => "SUCCESS", "source" => source}) do
     {:ok, source}
   end
 
-  def proccess_verifier_response(%{"status" => "FAILURE", "message" => error}) do
+  def process_verifier_response(%{"status" => "FAILURE", "message" => error}) do
     {:error, error}
   end
 
-  def proccess_verifier_response(%{"compilerVersions" => versions}), do: {:ok, versions}
+  def process_verifier_response(%{"compilerVersions" => versions}), do: {:ok, versions}
 
-  def proccess_verifier_response(other), do: {:error, other}
+  def process_verifier_response(other), do: {:error, other}
 
   def normalize_creation_bytecode(%{"creation_bytecode" => ""} = map), do: Map.replace(map, "creation_bytecode", nil)
 

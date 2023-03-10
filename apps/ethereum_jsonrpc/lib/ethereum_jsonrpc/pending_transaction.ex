@@ -35,7 +35,7 @@ defmodule EthereumJSONRPC.PendingTransaction do
   end
 
   @doc """
-  Зфкшен-style fetching of pending transactions (from `parity_pendingTransactions`)
+  parity-style fetching of pending transactions (from `parity_pendingTransactions`)
   """
   @spec fetch_pending_transactions_parity(EthereumJSONRPC.json_rpc_named_arguments()) ::
           {:ok, [Transaction.params()]} | {:error, reason :: term}

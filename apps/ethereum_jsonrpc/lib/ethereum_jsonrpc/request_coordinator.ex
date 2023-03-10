@@ -16,11 +16,11 @@ defmodule EthereumJSONRPC.RequestCoordinator do
     * `:table` - name of the ets table to store the data in
   * `:wait_per_timeout` - Milliseconds to wait for each recent timeout within
     the tracked window
-  * `:max_jitter` - Maximimum amount of time in milliseconds to be added to each
+  * `:max_jitter` - Maximum amount of time in milliseconds to be added to each
     wait before multiplied by timeout count
   * `:throttle_rolling_window_opts` - Options for the process tracking all requests
     * `:window_count` - Number of windows
-    * `:duration` - Total amount of time to coumt events in milliseconds
+    * `:duration` - Total amount of time to count events in milliseconds
     * `:table` - name of the ets table to store the data in
   * `:throttle_rate_limit` - The total number of requests allowed in the all windows.
 

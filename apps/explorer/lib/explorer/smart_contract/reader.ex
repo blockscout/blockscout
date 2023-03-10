@@ -360,7 +360,7 @@ defmodule Explorer.SmartContract.Reader do
 
   @doc """
     Method performs query of read functions of a smart contract.
-    `type` could be :proxy or :reqular
+    `type` could be :proxy or :regular
     `from` is a address of a function caller
   """
   @spec query_function_with_names(
@@ -377,7 +377,7 @@ defmodule Explorer.SmartContract.Reader do
 
   @doc """
     Method performs query of read functions of a smart contract.
-    `type` could be :proxy or :reqular
+    `type` could be :proxy or :regular
     `from` is a address of a function caller
   """
   @spec query_function_with_names_custom_abi(
@@ -427,7 +427,7 @@ defmodule Explorer.SmartContract.Reader do
       abi
       |> ABI.parse_specification()
 
-    case proccess_abi(parsed_final_abi, method_id) do
+    case process_abi(parsed_final_abi, method_id) do
       %{outputs: outputs, method_id: method_id} ->
         query_contract_and_link_outputs(contract_address_hash, args, from, abi, outputs, method_id, leave_error_as_map)
 
@@ -493,7 +493,7 @@ defmodule Explorer.SmartContract.Reader do
       custom_abi
       |> ABI.parse_specification()
 
-    %{outputs: outputs, method_id: method_id} = proccess_abi(parsed_abi, method_id)
+    %{outputs: outputs, method_id: method_id} = process_abi(parsed_abi, method_id)
 
     query_contract_and_link_outputs(
       contract_address_hash,
@@ -506,9 +506,9 @@ defmodule Explorer.SmartContract.Reader do
     )
   end
 
-  defp proccess_abi([], _method_id), do: nil
+  defp process_abi([], _method_id), do: nil
 
-  defp proccess_abi(abi, method_id) do
+  defp process_abi(abi, method_id) do
     function_object = find_function_by_method(abi, method_id)
 
     if function_object do

@@ -120,7 +120,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "check pagination", %{conn: conn} do
       token = insert(:token)
 
-      token_tranfers =
+      token_transfers =
         for _ <- 0..50 do
           tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
@@ -140,7 +140,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, token_tranfers)
+      check_paginated_response(response, response_2nd_page, token_transfers)
     end
   end
 
@@ -408,7 +408,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
     end
 
-    test "recieve 0 count", %{conn: conn} do
+    test "receive 0 count", %{conn: conn} do
       token = insert(:token)
 
       insert(:token_instance, token_id: 0, token_contract_address_hash: token.contract_address_hash)

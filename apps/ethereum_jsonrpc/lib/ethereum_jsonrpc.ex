@@ -83,7 +83,7 @@ defmodule EthereumJSONRPC do
    * `:transport` - the `t:EthereumJSONRPC.Transport.t/0` callback module
    * `:transport_options` - options passed to `c:EthereumJSONRPC.Transport.json_rpc/2`
    * `:variant` - the `t:EthereumJSONRPC.Variant.t/0` callback module
-   * `:throttle_timout` - the maximum amount of time in milliseconds to throttle
+   * `:throttle_timeout` - the maximum amount of time in milliseconds to throttle
      before automatically returning a timeout. Defaults to #{@default_throttle_timeout} milliseconds.
   """
   @type json_rpc_named_arguments :: [

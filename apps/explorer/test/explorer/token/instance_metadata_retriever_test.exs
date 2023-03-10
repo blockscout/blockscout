@@ -151,19 +151,21 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
     end
 
     test "fetches json with latin1 encoding", %{bypass: bypass} do
+      path = "/api/card/55265"
+
       json = """
       {
         "name": "Sérgio Mendonça"
       }
       """
 
-      Bypass.expect(bypass, "GET", "/api/card/55265", fn conn ->
+      Bypass.expect(bypass, "GET", path, fn conn ->
         Conn.resp(conn, 200, json)
       end)
 
       assert {:ok, %{metadata: %{"name" => "Sérgio Mendonça"}}} ==
                InstanceMetadataRetriever.fetch_json(%{
-                 "c87b56dd" => {:ok, ["http://localhost:#{bypass.port}/api/card/55265"]}
+                 "c87b56dd" => {:ok, ["http://localhost:#{bypass.port}#{path}"]}
                })
     end
 
@@ -174,18 +176,34 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
       assert Map.get(metadata, "name") == "KittyBlue_2_Lemonade"
     end
 
-    test "fetches json metadata when HTTP status 301" do
-      {:ok, %{metadata: metadata}} =
-        InstanceMetadataRetriever.fetch_metadata_from_uri("https://metadata.billyli.workers.dev/1302")
+    test "fetches json metadata when HTTP status 301", %{bypass: bypass} do
+      path = "/1302"
 
-      assert Map.get(metadata, "attributes") == [
-               %{"trait_type" => "Mouth", "value" => "Discomfort"},
-               %{"trait_type" => "Background", "value" => "Army Green"},
-               %{"trait_type" => "Eyes", "value" => "Wide Eyed"},
-               %{"trait_type" => "Fur", "value" => "Black"},
-               %{"trait_type" => "Earring", "value" => "Silver Hoop"},
-               %{"trait_type" => "Hat", "value" => "Sea Captain's Hat"}
-             ]
+      attributes = """
+      [
+        {"trait_type": "Mouth", "value": "Discomfort"},
+        {"trait_type": "Background", "value": "Army Green"},
+        {"trait_type": "Eyes", "value": "Wide Eyed"},
+        {"trait_type": "Fur", "value": "Black"},
+        {"trait_type": "Earring", "value": "Silver Hoop"},
+        {"trait_type": "Hat", "value": "Sea Captain's Hat"}
+      ]
+      """
+
+      json = """
+      {
+        "attributes": #{attributes}
+      }
+      """
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        Conn.resp(conn, 200, json)
+      end)
+
+      {:ok, %{metadata: metadata}} =
+        InstanceMetadataRetriever.fetch_metadata_from_uri("http://localhost:#{bypass.port}#{path}")
+
+      assert Map.get(metadata, "attributes") == Jason.decode!(attributes)
     end
 
     test "replace {id} with actual token_id", %{bypass: bypass} do
@@ -347,12 +365,24 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                 }}
     end
 
-    test "fetches image from ipfs link directly" do
+    test "fetches image from ipfs link directly", %{bypass: bypass} do
+      path = "/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+
+      json = """
+      {
+        "image": "https://ipfs.io/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+      }
+      """
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        Conn.resp(conn, 200, json)
+      end)
+
       data = %{
         "c87b56dd" =>
           {:ok,
            [
-             "ipfs://bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+             "http://localhost:#{bypass.port}#{path}"
            ]}
       }
 
@@ -361,28 +391,139 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                 metadata: %{
                   "image" => "https://ipfs.io/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
                 }
-              }} = InstanceMetadataRetriever.fetch_json(data)
+              }} == InstanceMetadataRetriever.fetch_json(data)
     end
 
-    test "Fetches metadata from ipfs" do
+    test "Fetches metadata from ipfs", %{bypass: bypass} do
+      path = "/ipfs/bafybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json"
+
+      json = """
+      {
+        "image": "ipfs://bafybeihxuj3gxk7x5p36amzootyukbugmx3pw7dyntsrohg3se64efkuga/51.png"
+      }
+      """
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        Conn.resp(conn, 200, json)
+      end)
+
       data = %{
         "c87b56dd" =>
           {:ok,
            [
-             "ipfs://bafybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json"
+             "http://localhost:#{bypass.port}#{path}"
            ]}
       }
+
+      {:ok,
+       %{
+         metadata: metadata
+       }} = InstanceMetadataRetriever.fetch_json(data)
+
+      assert "ipfs://bafybeihxuj3gxk7x5p36amzootyukbugmx3pw7dyntsrohg3se64efkuga/51.png" == Map.get(metadata, "image")
+    end
+
+    test "Fetches metadata from '${url}'", %{bypass: bypass} do
+      path = "/data/8/8578.json"
+
+      data = %{
+        "c87b56dd" =>
+          {:ok,
+           [
+             "'http://localhost:#{bypass.port}#{path}'"
+           ]}
+      }
+
+      json = """
+      {
+        "attributes": [
+          {"trait_type": "Character", "value": "Blue Suit Boxing Glove"},
+          {"trait_type": "Face", "value": "Wink"},
+          {"trait_type": "Hat", "value": "Blue"},
+          {"trait_type": "Background", "value": "Red Carpet"}
+        ],
+        "image": "https://cards.collecttrumpcards.com/cards/0c68b1ab6.jpg",
+        "name": "Trump Digital Trading Card #8578",
+        "tokeId": 8578
+      }
+      """
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        Conn.resp(conn, 200, json)
+      end)
+
+      assert {:ok,
+              %{
+                metadata: Jason.decode!(json)
+              }} == InstanceMetadataRetriever.fetch_json(data)
+    end
+
+    test "Process custom execution reverted" do
+      data = %{
+        "c87b56dd" =>
+          {:error,
+           "(3) execution reverted: Nonexistent token (0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000114e6f6e6578697374656e7420746f6b656e000000000000000000000000000000)"}
+      }
+
+      assert {:ok, %{error: "VM execution error"}} == InstanceMetadataRetriever.fetch_json(data)
+    end
+
+    test "Process CIDv0 IPFS links" do
+      data = "QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
 
       assert {:ok,
               %{
                 metadata: %{
-                  "image" => "ipfs://bafybeihxuj3gxk7x5p36amzootyukbugmx3pw7dyntsrohg3se64efkuga/51.png",
-                  "attributes" => _,
-                  "description" => "No roadmap Just OP NOK...But This NFT can use in Sobta ecosystem (if any)",
-                  "edition" => 51,
-                  "name" => "SobtaOpGenesis #51"
+                  "collectionId" => "1871_1665123820823",
+                  "description" => "asda",
+                  "img_hash" => "QmUfW3PVnh9GGuHcQgc3ZeNEbhwp5HE8rS5ac9MDWWQebz",
+                  "name" => "asda",
+                  "salePrice" => 34
                 }
-              }} = InstanceMetadataRetriever.fetch_json(data)
+              }} == InstanceMetadataRetriever.fetch_json(data)
+    end
+
+    test "Process URI directly from link", %{bypass: bypass} do
+      path = "/api/dejobio/v1/nftproduct/1"
+
+      json = """
+      {
+          "image": "https:\/\/cdn.discordapp.com\/attachments\/1008567215739650078\/1080111780858187796\/savechives_a_dragon_playing_football_in_a_city_full_of_flowers__0739cc42-aae1-4909-a964-3f9c0ed1a9ed.png",
+          "external_url": "https:\/\/dejob.io\/blue-reign-the-dragon-football-champion-of-the-floral-city\/",
+          "name": "Blue Reign: The Dragon Football Champion of the Floral City",
+          "description": "Test",
+          "attributes": [
+              {
+                  "trait_type": "Product Type",
+                  "value": "Book"
+              },
+              {
+                  "display_type": "number",
+                  "trait_type": "Total Sold",
+                  "value": "0"
+              },
+              {
+                  "display_type": "number",
+                  "trait_type": "Success Sold",
+                  "value": "0"
+              },
+              {
+                  "max_value": "100",
+                  "trait_type": "Success Rate",
+                  "value": "0"
+              }
+          ]
+      }
+      """
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        Conn.resp(conn, 200, json)
+      end)
+
+      assert {:ok,
+              %{
+                metadata: Jason.decode!(json)
+              }} == InstanceMetadataRetriever.fetch_json("http://localhost:#{bypass.port}#{path}")
     end
   end
 end
