@@ -169,6 +169,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
             %{method_id: params["method_id"], args: prepare_args(args)},
             contract_type,
             params["from"],
+            address.smart_contract.abi,
             @api_true
           )
         end

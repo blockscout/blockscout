@@ -642,13 +642,14 @@ defmodule Explorer.Chain.Transaction do
     if transaction.created_contract_address_hash do
       nil
     else
-      case Transaction.decoded_input_data(
+      case decoded_input_data(
              %__MODULE__{
                to_address: %{smart_contract: nil},
                input: transaction.input,
                hash: transaction.hash
              },
-             true
+             true,
+             []
            ) do
         {:error, :contract_not_verified, [{:ok, _method_id, decoded_func, _}]} ->
           parse_method_name(decoded_func)

@@ -261,18 +261,6 @@ defmodule Explorer.SmartContract.ReaderTest do
       smart_contract = insert(:smart_contract, contract_code_md5: "123")
 
       blockchain_get_function_mock()
-
-      assert [
-               %{
-                 "type" => "uint256",
-                 "value" => 0
-               }
-             ] = Reader.query_function(smart_contract.address_hash, %{method_id: "6d4ce63c", args: []}, :regular, false)
-    end
-
-    test "nil arguments is treated as []" do
-      smart_contract = insert(:smart_contract, contract_code_md5: "123")
-
       blockchain_get_function_mock()
 
       assert [
@@ -281,7 +269,62 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "value" => 0
                }
              ] =
-               Reader.query_function(smart_contract.address_hash, %{method_id: "6d4ce63c", args: nil}, :regular, false)
+               Reader.query_function(
+                 smart_contract.address_hash,
+                 %{method_id: "6d4ce63c", args: []},
+                 :regular,
+                 nil,
+                 false
+               )
+
+      assert [
+               %{
+                 "type" => "uint256",
+                 "value" => 0
+               }
+             ] =
+               Reader.query_function_with_custom_abi(
+                 smart_contract.address_hash,
+                 %{method_id: "6d4ce63c", args: []},
+                 nil,
+                 false,
+                 smart_contract.abi
+               )
+    end
+
+    test "nil arguments is treated as []" do
+      smart_contract = insert(:smart_contract, contract_code_md5: "123")
+
+      blockchain_get_function_mock()
+      blockchain_get_function_mock()
+
+      assert [
+               %{
+                 "type" => "uint256",
+                 "value" => 0
+               }
+             ] =
+               Reader.query_function(
+                 smart_contract.address_hash,
+                 %{method_id: "6d4ce63c", args: nil},
+                 :regular,
+                 nil,
+                 false
+               )
+
+      assert [
+               %{
+                 "type" => "uint256",
+                 "value" => 0
+               }
+             ] =
+               Reader.query_function_with_custom_abi(
+                 smart_contract.address_hash,
+                 %{method_id: "6d4ce63c", args: []},
+                 nil,
+                 false,
+                 smart_contract.abi
+               )
     end
   end
 
