@@ -30,7 +30,6 @@ defmodule Explorer.Chain do
   require Logger
 
   alias ABI.TypeDecoder
-  alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
@@ -200,7 +199,7 @@ defmodule Explorer.Chain do
     if is_nil(cached_value) || cached_value == 0 do
       count = CacheHelper.estimated_count_from("addresses", options)
 
-      max(count, 0)
+      if is_nil(count), do: 0, else: count
     else
       cached_value
     end
@@ -2489,11 +2488,7 @@ defmodule Explorer.Chain do
   def get_table_rows_total_count(module) do
     table_name = module.__schema__(:source)
 
-    %Postgrex.Result{rows: [[count]]} =
-      SQL.query!(
-        Repo,
-        "SELECT (CASE WHEN c.reltuples < 0 THEN NULL WHEN c.relpages = 0 THEN float8 '0' ELSE c.reltuples / c.relpages END * (pg_catalog.pg_relation_size(c.oid) / pg_catalog.current_setting('block_size')::int))::bigint FROM pg_catalog.pg_class c WHERE c.oid = '#{table_name}'::regclass"
-      )
+    count = CacheHelper.estimated_count_from(table_name)
 
     if is_nil(count) do
       Repo.aggregate(module, :count, timeout: :infinity)
