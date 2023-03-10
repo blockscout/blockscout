@@ -5083,7 +5083,7 @@ defmodule Explorer.Chain do
   """
   @spec update_token(Token.t(), map()) :: {:ok, Token.t()} | {:error, Ecto.Changeset.t()}
   def update_token(%Token{contract_address_hash: address_hash} = token, params \\ %{}) do
-    token_changeset = Token.changeset(token, params)
+    token_changeset = Token.changeset(token, Map.put(params, :updated_at, DateTime.utc_now()))
     address_name_changeset = Address.Name.changeset(%Address.Name{}, Map.put(params, :address_hash, address_hash))
 
     stale_error_field = :contract_address_hash
