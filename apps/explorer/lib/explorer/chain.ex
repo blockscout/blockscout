@@ -77,6 +77,7 @@ defmodule Explorer.Chain do
   }
 
   alias Explorer.Chain.Cache.Block, as: BlockCache
+  alias Explorer.Chain.Cache.Helper, as: CacheHelper
   alias Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
@@ -190,7 +191,7 @@ defmodule Explorer.Chain do
     cached_value = AddressesCounter.fetch()
 
     if is_nil(cached_value) || cached_value == 0 do
-      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'addresses';")
+      count = CacheHelper.estimated_count_from("addresses")
 
       max(count, 0)
     else
