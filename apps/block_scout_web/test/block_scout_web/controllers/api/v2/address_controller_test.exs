@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get address & get the same response for checksummed and downcased parameter", %{conn: conn} do
       address = insert(:address)
 
-      correct_reponse = %{
+      correct_response = %{
         "hash" => Address.checksum(address.hash),
         "is_contract" => false,
         "is_verified" => false,
@@ -64,10 +64,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       }
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
-      assert ^correct_reponse = json_response(request, 200)
+      assert ^correct_response = json_response(request, 200)
 
       request = get(conn, "/api/v2/addresses/#{String.downcase(to_string(address.hash))}")
-      assert ^correct_reponse = json_response(request, 200)
+      assert ^correct_response = json_response(request, 200)
     end
   end
 
@@ -389,7 +389,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(token_transfer, Enum.at(response["items"], 0))
     end
 
-    test "method in token transer could be decoded", %{conn: conn} do
+    test "method in token transfer could be decoded", %{conn: conn} do
       insert(:contract_method,
         identifier: Base.decode16!("731133e9", case: :lower),
         abi: %{
@@ -467,7 +467,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token = insert(:token)
 
-      token_tranfers =
+      token_transfers =
         for _ <- 0..50 do
           tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
@@ -491,7 +491,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, token_tranfers)
+      check_paginated_response(response, response_2nd_page, token_transfers)
     end
 
     test "get only :to token transfer", %{conn: conn} do
@@ -532,7 +532,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "token transfers can paginate", %{conn: conn} do
       address = insert(:address)
 
-      token_tranfers =
+      token_transfers =
         for _ <- 0..50 do
           tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
@@ -545,7 +545,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", response["next_page_params"])
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, token_tranfers)
+      check_paginated_response(response, response_2nd_page, token_transfers)
     end
 
     test ":to token transfers can paginate", %{conn: conn} do
@@ -556,7 +556,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
       end
 
-      token_tranfers =
+      token_transfers =
         for _ <- 0..50 do
           tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
           insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, to_address: address)
@@ -571,13 +571,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, token_tranfers)
+      check_paginated_response(response, response_2nd_page, token_transfers)
     end
 
     test ":from token transfers can paginate", %{conn: conn} do
       address = insert(:address)
 
-      token_tranfers =
+      token_transfers =
         for _ <- 0..50 do
           tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
@@ -598,7 +598,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, token_tranfers)
+      check_paginated_response(response, response_2nd_page, token_transfers)
     end
 
     test ":from + :to tt can paginate", %{conn: conn} do

@@ -200,7 +200,7 @@ defmodule Explorer.Chain.InternalTransaction do
         bytes: <<120, 164, 45, 55, 5, 251, 60, 38, 164, 181, 71, 55, 167, 132, 191, 6, 79, 8, 21, 251>>
       }
 
-  `:call` type traces are generated when a method in a contrat is call.
+  `:call` type traces are generated when a method in a contract is call.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -608,7 +608,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @doc """
-  Filters out internal_transactions of blocks that are flagged as needing fethching
+  Filters out internal_transactions of blocks that are flagged as needing fetching
   of internal_transactions
   """
   def where_nonpending_block(query \\ nil) do

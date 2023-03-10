@@ -287,7 +287,7 @@ defmodule BlockScoutWeb.TransactionView do
     case block do
       %Block{consensus: true} ->
         {:ok, confirmations} = Chain.confirmations(block, named_arguments)
-        BlockScoutWeb.Cldr.Number.to_string!(confirmations, format: "#,###")
+        Number.to_string!(confirmations, format: "#,###")
 
       _ ->
         0
@@ -335,7 +335,7 @@ defmodule BlockScoutWeb.TransactionView do
     data
     |> Map.get(field_name)
     |> Decimal.new()
-    |> BlockScoutWeb.CldrHelper.Number.to_string!(format: "#,##0.##################")
+    |> Number.to_string!(format: "#,##0.##################")
   end
 
   def transaction_action_string_to_address(address) do
@@ -386,7 +386,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def gas(%type{gas: gas}) when is_transaction_type(type) do
-    BlockScoutWeb.Cldr.Number.to_string!(gas)
+    Number.to_string!(gas)
   end
 
   def skip_decoding?(transaction) do
@@ -599,19 +599,19 @@ defmodule BlockScoutWeb.TransactionView do
 
     case revert_reason do
       "0x" <> hex_part ->
-        proccess_hex_revert_reason(hex_part)
+        process_hex_revert_reason(hex_part)
 
       hex_part ->
-        proccess_hex_revert_reason(hex_part)
+        process_hex_revert_reason(hex_part)
     end
   end
 
   # Function converts hex revert reason to the binary
-  @spec proccess_hex_revert_reason(nil) :: nil
-  defp proccess_hex_revert_reason(nil), do: nil
+  @spec process_hex_revert_reason(nil) :: nil
+  defp process_hex_revert_reason(nil), do: nil
 
-  @spec proccess_hex_revert_reason(binary()) :: binary()
-  defp proccess_hex_revert_reason(hex_revert_reason) do
+  @spec process_hex_revert_reason(binary()) :: binary()
+  defp process_hex_revert_reason(hex_revert_reason) do
     case Integer.parse(hex_revert_reason, 16) do
       {number, ""} ->
         :binary.encode_unsigned(number)

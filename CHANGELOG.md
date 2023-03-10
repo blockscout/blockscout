@@ -7,10 +7,18 @@
 ### Fixes
 
 - [#7008](https://github.com/blockscout/blockscout/pull/7008) - Fetch image/video content from IPFS link
-- [#7007](https://github.com/blockscout/blockscout/pull/7007) - Token instance fetcher fixes
+- [#7007](https://github.com/blockscout/blockscout/pull/7007), [#7031](https://github.com/blockscout/blockscout/pull/7031), [#7058](https://github.com/blockscout/blockscout/pull/7058), [#7061](https://github.com/blockscout/blockscout/pull/7061) - Token instance fetcher fixes
+- [#7009](https://github.com/blockscout/blockscout/pull/7009) - Fix updating coin balances with empty value
 
 ### Chore
 
+- [#7056](https://github.com/blockscout/blockscout/pull/7056) - Add path_helper in interact.js
+- [#7040](https://github.com/blockscout/blockscout/pull/7040) - Use alias BlockScoutWeb.Cldr.Number
+- [#7037](https://github.com/blockscout/blockscout/pull/7037) - Define common function for "reltuples" query
+- [#7034](https://github.com/blockscout/blockscout/pull/7034) - Resolve "Unexpected var, use let or const instead"
+- [#7014](https://github.com/blockscout/blockscout/pull/7014), [#7036](https://github.com/blockscout/blockscout/pull/7036), [7041](https://github.com/blockscout/blockscout/pull/7041) - Fix spell in namings, add spell checking in CI
+- [#7012](https://github.com/blockscout/blockscout/pull/7012) - Refactor socket.js
+- [#6960](https://github.com/blockscout/blockscout/pull/6960) - Add deploy + workflow for testing (bs-indexers-ethereum-goerli)
 - [#6989](https://github.com/blockscout/blockscout/pull/6989) - Update bitwalker/alpine-elixir-phoenix: 1.13 -> 1.14
 - [#6987](https://github.com/blockscout/blockscout/pull/6987) - Change tx actions warning importance
 
@@ -71,6 +79,7 @@
 - [#6966](https://github.com/blockscout/blockscout/pull/6966) - Bump solc from 0.8.18 to 0.8.19 in /apps/explorer
 - [#6967](https://github.com/blockscout/blockscout/pull/6967) - Bump photoswipe from 5.3.5 to 5.3.6 in /apps/block_scout_web/assets
 - [#6968](https://github.com/blockscout/blockscout/pull/6968) - Bump ex_rlp from 0.5.5 to 0.6.0
+
 </details>
 
 ## 5.1.0-beta
@@ -158,6 +167,7 @@
 - [#6857](https://github.com/blockscout/blockscout/pull/6857) - Bump @amplitude/analytics-browser from 1.7.1 to 1.8.0 in /apps/block_scout_web/assets
 - [#6847](https://github.com/blockscout/blockscout/pull/6847) - Bump @fortawesome/fontawesome-free from 6.2.1 to 6.3.0 in /apps/block_scout_web/assets
 - [#6866](https://github.com/blockscout/blockscout/pull/6866) - Bump chart.js from 4.2.0 to 4.2.1 in /apps/block_scout_web/assets
+
 </details>
 
 ## 5.0.0-beta
@@ -172,7 +182,7 @@
 - [#6401](https://github.com/blockscout/blockscout/pull/6401) - Add Sol2Uml contract visualization
 - [#6583](https://github.com/blockscout/blockscout/pull/6583), [#6687](https://github.com/blockscout/blockscout/pull/6687) - Missing ranges collector
 - [#6574](https://github.com/blockscout/blockscout/pull/6574), [#6601](https://github.com/blockscout/blockscout/pull/6601) - Allow and manage insecure HTTP connection to the archive node
-- [#6433](https://github.com/blockscout/blockscout/pull/6433), [#6698](https://github.com/blockscout/blockscout/pull/6698) - Update error pagess
+- [#6433](https://github.com/blockscout/blockscout/pull/6433), [#6698](https://github.com/blockscout/blockscout/pull/6698) - Update error pages
 - [#6544](https://github.com/blockscout/blockscout/pull/6544) - API improvements
 - [#5561](https://github.com/blockscout/blockscout/pull/5561), [#6523](https://github.com/blockscout/blockscout/pull/6523), [#6549](https://github.com/blockscout/blockscout/pull/6549) - Improve working with contracts implementations
 - [#6481](https://github.com/blockscout/blockscout/pull/6481) - Smart contract verification improvements
@@ -219,7 +229,7 @@
 - [#6158](https://github.com/blockscout/blockscout/pull/6158) - Add missing clause for merge_twin_vyper_contract_with_changeset function
 - [#6090](https://github.com/blockscout/blockscout/pull/6090) - Fix metadata fetching for ERC-1155 tokens instances
 - [#6091](https://github.com/blockscout/blockscout/pull/6091) - Improve fetching media type for NFT
-- [#6094](https://github.com/blockscout/blockscout/pull/6094) - Fix inconsistent behaviour of `getsourcecode` method
+- [#6094](https://github.com/blockscout/blockscout/pull/6094) - Fix inconsistent behavior of `getsourcecode` method
 - [#6105](https://github.com/blockscout/blockscout/pull/6105) - Fix some token transfers broadcasting
 - [#6106](https://github.com/blockscout/blockscout/pull/6106) - Fix 500 response on `/coin-balance` for empty address
 - [#6118](https://github.com/blockscout/blockscout/pull/6118) - Fix unfetched token balances
@@ -640,7 +650,7 @@
 - [#5656](https://github.com/blockscout/blockscout/pull/5656) - Gas price oracle
 - [#5613](https://github.com/blockscout/blockscout/pull/5613) - Exchange rates CoinMarketCap source module
 - [#5588](https://github.com/blockscout/blockscout/pull/5588) - Add broadcasting of coin balance
-- [#5560](https://github.com/blockscout/blockscout/pull/5560) - Manual fetch benefeciaries
+- [#5560](https://github.com/blockscout/blockscout/pull/5560) - Manual fetch beneficiaries
 - [#5479](https://github.com/blockscout/blockscout/pull/5479) - Remake of solidity verifier module; Verification UX improvements
 - [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
 
@@ -828,7 +838,7 @@
 ### Features
 
 - [#5030](https://github.com/blockscout/blockscout/pull/5030) - API rate limiting
-- [#4924](https://github.com/blockscout/blockscout/pull/4924) - Add daily bytecode verifcation to prevent metamorphic contracts vulnerablity
+- [#4924](https://github.com/blockscout/blockscout/pull/4924) - Add daily bytecode verification to prevent metamorphic contracts vulnerability
 - [#4908](https://github.com/blockscout/blockscout/pull/4908) - Add verification via standard JSON input
 - [#5004](https://github.com/blockscout/blockscout/pull/5004) - Add ability to set up a separate DB endpoint for the API endpoints
 - [#4989](https://github.com/blockscout/blockscout/pull/4989), [#4991](https://github.com/blockscout/blockscout/pull/4991) - Bridged tokens list API endpoint
@@ -838,7 +848,7 @@
 
 - [#5045](https://github.com/blockscout/blockscout/pull/5045) - Contracts interaction improvements
 - [#5032](https://github.com/blockscout/blockscout/pull/5032) - Fix token transfer csv export
-- [#5020](https://github.com/blockscout/blockscout/pull/5020) - Token instance image display imrovement
+- [#5020](https://github.com/blockscout/blockscout/pull/5020) - Token instance image display improvement
 - [#5019](https://github.com/blockscout/blockscout/pull/5019) - Fix fetch_last_token_balance function termination
 - [#5011](https://github.com/blockscout/blockscout/pull/5011) - Fix `0x0` implementation address
 - [#5008](https://github.com/blockscout/blockscout/pull/5008) - Extend decimals cap in format_according_to_decimals up to 24
@@ -852,7 +862,7 @@
 - [#4945](https://github.com/blockscout/blockscout/pull/4945) - Fix `Verify & Publish` button link
 - [#4938](https://github.com/blockscout/blockscout/pull/4938) - Fix displaying of nested arrays for contracts read
 - [#4888](https://github.com/blockscout/blockscout/pull/4888) - Fix fetch_top_tokens method: add nulls last for token holders desc order
-- [#4867](https://github.com/blockscout/blockscout/pull/4867) - Fix bug in quering contracts method and improve contracts interactions
+- [#4867](https://github.com/blockscout/blockscout/pull/4867) - Fix bug in querying contracts method and improve contracts interactions
 
 ### Chore
 
@@ -964,13 +974,13 @@
 
 - [#4569](https://github.com/blockscout/blockscout/pull/4569) - Smart-Contract: remove comment with the submission date
 - [#4568](https://github.com/blockscout/blockscout/pull/4568) - TX page: Token transfer and minting section improvements
-- [#4540](https://github.com/blockscout/blockscout/pull/4540) - Allign copy buttons for `Block Details` and `Transaction Details` pages
+- [#4540](https://github.com/blockscout/blockscout/pull/4540) - Align copy buttons for `Block Details` and `Transaction Details` pages
 - [#4528](https://github.com/blockscout/blockscout/pull/4528) - Block Details page: rework view
 - [#4531](https://github.com/blockscout/blockscout/pull/4531) - Add Arbitrum support
 - [#4524](https://github.com/blockscout/blockscout/pull/4524) - Add index position of transaction in the block
 - [#4489](https://github.com/blockscout/blockscout/pull/4489) - Search results page
 - [#4475](https://github.com/blockscout/blockscout/pull/4475) - Tx page facelifting
-- [#4452](https://github.com/blockscout/blockscout/pull/4452) - Add names for smart-conrtact's function response
+- [#4452](https://github.com/blockscout/blockscout/pull/4452) - Add names for smart-contract's function response
 
 ### Fixes
 
@@ -994,7 +1004,7 @@
 ### Chore
 
 - [#4550](https://github.com/blockscout/blockscout/pull/4550) - Update con_cache package to 1.0
-- [#4523](https://github.com/blockscout/blockscout/pull/4523) - Change order of transations in block's view
+- [#4523](https://github.com/blockscout/blockscout/pull/4523) - Change order of transactions in block's view
 - [#4521](https://github.com/blockscout/blockscout/pull/4521) - Rewrite transaction page tooltips
 - [#4516](https://github.com/blockscout/blockscout/pull/4516) - Add DB migrations step into Docker start script
 - [#4497](https://github.com/blockscout/blockscout/pull/4497) - Handle error in fetch_validators_list method
@@ -1019,7 +1029,7 @@
 - [#4418](https://github.com/blockscout/blockscout/pull/4418) - Fix empty search results for the full-word search criteria
 - [#4406](https://github.com/blockscout/blockscout/pull/4406) - Fix internal server error on the validator's txs page
 - [#4360](https://github.com/blockscout/blockscout/pull/4360) - Fix false-pending transactions in reorg blocks
-- [#4388](https://github.com/blockscout/blockscout/pull/4388) - Fix internal server error on contract page for insctances without sourcify envs
+- [#4388](https://github.com/blockscout/blockscout/pull/4388) - Fix internal server error on contract page for instances without sourcify envs
 - [#4385](https://github.com/blockscout/blockscout/pull/4385) - Fix html template for transaction's input; Add copy text for tuples
 
 ### Chore
@@ -1062,7 +1072,7 @@
 - [#4295](https://github.com/blockscout/blockscout/pull/4295) - Mobile view fix: transaction tile tx hash overflow
 - [#4294](https://github.com/blockscout/blockscout/pull/4294) - User wont be able to open verification pages for verified smart-contract
 - [#4240](https://github.com/blockscout/blockscout/pull/4240) - `[]` is accepted in write contract page
-- [#4236](https://github.com/blockscout/blockscout/pull/4236), [#4242](https://github.com/blockscout/blockscout/pull/4242) - Fix typo, constructor instead of contructor
+- [#4236](https://github.com/blockscout/blockscout/pull/4236), [#4242](https://github.com/blockscout/blockscout/pull/4242) - Fix typo, constructor instead of constructor
 - [#4167](https://github.com/blockscout/blockscout/pull/4167) - Deduplicate block numbers in acquire_blocks function
 - [#4149](https://github.com/blockscout/blockscout/pull/4149) - Exclude smart_contract_additional_sources from JSON encoding in address schema
 - [#4137](https://github.com/blockscout/blockscout/pull/4137) - Get token balance query improvement
@@ -2050,7 +2060,7 @@ fixed menu hovers in dark mode desktop view
 - [#2036](https://github.com/blockscout/blockscout/pull/2036) - New tables for staking pools and delegators
 - [#1974](https://github.com/blockscout/blockscout/pull/1974) - feat: previous page button logic
 - [#1999](https://github.com/blockscout/blockscout/pull/1999) - load data async on addresses page
-- [#1807](https://github.com/blockscout/blockscout/pull/1807) - New theming capabilites.
+- [#1807](https://github.com/blockscout/blockscout/pull/1807) - New theming capabilities.
 - [#2040](https://github.com/blockscout/blockscout/pull/2040) - Verification links to other explorers for ETH
 - [#2037](https://github.com/blockscout/blockscout/pull/2037) - add address logs search functionality
 - [#2012](https://github.com/blockscout/blockscout/pull/2012) - make all pages pagination async
@@ -2097,7 +2107,7 @@ fixed menu hovers in dark mode desktop view
 - [#2014](https://github.com/blockscout/blockscout/pull/2014) - fix: use better queries for listLogs endpoint
 - [#2027](https://github.com/blockscout/blockscout/pull/2027) - fix: `BlocksTransactionsMismatch` ignoring blocks without transactions
 - [#2070](https://github.com/blockscout/blockscout/pull/2070) - reduce `max_concurrency` of `BlocksTransactionsMismatch` fetcher
-- [#2083](https://github.com/blockscout/blockscout/pull/2083) - allow total_difficuly to be nil
+- [#2083](https://github.com/blockscout/blockscout/pull/2083) - allow total_difficulty to be nil
 - [#2086](https://github.com/blockscout/blockscout/pull/2086) - fix geth's staticcall without output
 
 ### Chore
@@ -2174,7 +2184,7 @@ Reverting of synchronous block counter, implemented in #1848
 
 ### Chore
 
-- [#1814](https://github.com/blockscout/blockscout/pull/1814) - Clear build artefacts script
+- [#1814](https://github.com/blockscout/blockscout/pull/1814) - Clear build artifacts script
 - [#1837](https://github.com/blockscout/blockscout/pull/1837) - Add -f flag to clear_build.sh script delete static folder
 
 ## 1.3.10-beta

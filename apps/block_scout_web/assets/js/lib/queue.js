@@ -18,7 +18,7 @@ http://creativecommons.org/publicdomain/zero/1.0/legalcode
  */
 export default function Queue(){
 
-  // initialise the queue and offset
+  // initialize the queue and offset
   var queue  = [];
   var offset = 0;
 
