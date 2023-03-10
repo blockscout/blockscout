@@ -42,7 +42,7 @@ defmodule Explorer.Chain.Cache.Block do
       if cached_value_from_db === 0 do
         count = Helper.estimated_count_from("blocks")
 
-        trunc(count * 0.90)
+        if is_nil(count), do: 0, else: trunc(count * 0.90)
       else
         cached_value_from_db
       end
