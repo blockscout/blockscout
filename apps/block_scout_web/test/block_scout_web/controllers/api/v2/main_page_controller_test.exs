@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.API.V2.MainPageControllerTest do
       assert Map.has_key?(request, "finished_indexing_blocks")
       assert Map.has_key?(request, "finished_indexing")
       assert Map.has_key?(request, "indexed_blocks_ratio")
-      assert Map.has_key?(request, "indexed_inernal_transactions_ratio")
+      assert Map.has_key?(request, "indexed_internal_transactions_ratio")
     end
   end
 

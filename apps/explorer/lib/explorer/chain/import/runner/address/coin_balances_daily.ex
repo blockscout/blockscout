@@ -126,12 +126,13 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesDaily do
           value:
             fragment(
               """
-              CASE WHEN EXCLUDED.value IS NOT NULL AND EXCLUDED.value > ? THEN
+              CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value > ?) THEN
                      EXCLUDED.value
                    ELSE
                      ?
               END
               """,
+              balance.value,
               balance.value,
               balance.value
             ),

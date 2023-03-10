@@ -13,7 +13,7 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   @typedoc """
   * `address_hash` - address of the contract which was tried to verify
   * `status` - try status: :pending | :pass | :fail 
-  * `uid` - unique verification try identifer
+  * `uid` - unique verification try identifier
   """
 
   @type t :: %__MODULE__{

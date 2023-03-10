@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Cache.NewVerifiedContractsCounter do
   @moduledoc """
-  Caches the number of new verfied contracts (verified in last 24 hours).
+  Caches the number of new verified contracts (verified in last 24 hours).
 
   It loads the count asynchronously and in a time interval of 30 minutes.
   """
