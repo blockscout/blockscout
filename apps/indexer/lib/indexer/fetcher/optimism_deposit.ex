@@ -56,8 +56,8 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     Logger.metadata(fetcher: :optimism_deposits)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
-    optimism_portal = Application.get_env(:indexer, :optimism_portal_l1)
-    optimism_rpc_l1 = Application.get_env(:indexer, :optimism_rpc_l1)
+    optimism_portal = Application.get_env(:indexer, :optimism_l1_portal)
+    optimism_rpc_l1 = Application.get_env(:indexer, :optimism_l1_rpc)
 
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
          {:optimism_portal_valid, true} <- {:optimism_portal_valid, Helpers.is_address_correct?(optimism_portal)},
@@ -89,7 +89,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         :ignore
 
       {:start_block_l1_valid, false} ->
-        Logger.error("Invalid L2 Start Block value. Please, check the value and op_withdrawals table.")
+        Logger.error("Invalid L1 Start Block value. Please, check the value and op_deposits table.")
         :ignore
 
       {:rpc_l1_undefined, true} ->
@@ -101,7 +101,10 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         :ignore
 
       {:error, error_data} ->
-        Logger.error("Cannot get safe block from Optimism RPC due to the error: #{inspect(error_data)}")
+        Logger.error(
+          "Cannot get last L1 transaction from RPC by its hash or last safe block due to the RPC error: #{inspect(error_data)}"
+        )
+
         :ignore
 
       {:l1_tx_not_found, true} ->
@@ -153,9 +156,6 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         {:noreply, %{state | start_block: to_block + 1}}
       end
     else
-      err ->
-        Logger.error("#{inspect(err)}")
-
       {:logs, {:error, _error}} ->
         Logger.error("Cannot fetch logs. Retrying in #{@retry_interval_minutes} minutes...")
         Process.send_after(self(), :fetch, @retry_interval)
@@ -237,9 +237,44 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         Process.send_after(self(), :fetch, check_interval)
         {:noreply, state}
 
+      {:error, :filter_not_found} ->
+        Logger.error("The old filter not found on the node. Creating new filter...")
+        Process.send(self(), :update_filter, [])
+        {:noreply, state}
+
       {:error, _error} ->
         Logger.error("Failed to set logs filter. Retrying in #{@retry_interval_minutes} minutes...")
         Process.send_after(self(), :fetch, @retry_interval)
+        {:noreply, state}
+    end
+  end
+
+  @impl GenServer
+  def handle_info(
+        :update_filter,
+        %__MODULE__{
+          optimism_portal: optimism_portal,
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          mode: :realtime
+        } = state
+      ) do
+    Logger.metadata(fetcher: :optimism_deposits)
+    {last_l1_block_number, _} = get_last_l1_item()
+
+    case Optimism.get_new_filter(
+           last_l1_block_number + 1,
+           "latest",
+           optimism_portal,
+           @transaction_deposited_event,
+           json_rpc_named_arguments
+         ) do
+      {:ok, filter_id} ->
+        Process.send(self(), :fetch, [])
+        {:noreply, %{state | filter_id: filter_id}}
+
+      {:error, _error} ->
+        Logger.error("Failed to set logs filter. Retrying in #{@retry_interval_minutes} minutes...")
+        Process.send_after(self(), :update_filter, @retry_interval)
         {:noreply, state}
     end
   end
@@ -268,18 +303,27 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   end
 
   defp events_to_deposits(logs, json_rpc_named_arguments) do
+    Logger.metadata(fetcher: :optimism_deposits)
+
     timestamps =
       logs
-      |> Enum.reduce(%{}, fn %{"blockNumber" => block_number_quantity}, acc ->
+      |> Enum.reduce(MapSet.new(), fn %{"blockNumber" => block_number_quantity}, acc ->
         block_number = quantity_to_integer(block_number_quantity)
-
-        if Map.has_key?(acc, block_number) do
-          acc
-        else
-          {:ok, timestamp} = Optimism.get_block_timestamp_by_number(block_number, json_rpc_named_arguments)
-          Map.put(acc, block_number, timestamp)
-        end
+        MapSet.put(acc, block_number)
       end)
+      |> MapSet.to_list()
+      |> Optimism.get_block_timestamps_by_numbers(json_rpc_named_arguments)
+      |> case do
+        {:ok, timestamps} ->
+          timestamps
+
+        {:error, error} ->
+          Logger.error(
+            "Failed to get L1 block timestamps for deposits due to #{inspect(error)}. Timestamps will be set to now."
+          )
+
+          %{}
+      end
 
     Enum.map(logs, &event_to_deposit(&1, timestamps))
   end
@@ -338,11 +382,10 @@ defmodule Indexer.Fetcher.OptimismDeposit do
       "0x" <> ("7e#{rlp_encoded}" |> Base.decode16!(case: :mixed) |> ExKeccak.hash_256() |> Base.encode16(case: :lower))
 
     block_number = quantity_to_integer(block_number_quantity)
-    {:ok, timestamp} = DateTime.from_unix(timestamps[block_number])
 
     %{
       l1_block_number: block_number,
-      l1_block_timestamp: timestamp,
+      l1_block_timestamp: Map.get_lazy(timestamps, block_number, &DateTime.utc_now/0),
       l1_transaction_hash: transaction_hash,
       l1_transaction_origin: "0x" <> from_stripped,
       l2_transaction_hash: l2_tx_hash

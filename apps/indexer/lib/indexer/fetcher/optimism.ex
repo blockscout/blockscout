@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.Optimism do
     only: [fetch_block_number_by_tag: 2, json_rpc: 2, integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
+  alias EthereumJSONRPC.Blocks
   alias Indexer.{BoundQueue, Helpers}
 
   @block_check_interval_range_size 100
@@ -72,6 +73,29 @@ defmodule Indexer.Fetcher.Optimism do
           :timer.sleep(3000)
           get_block_timestamp_by_number(number, json_rpc_named_arguments, retries_left)
         end
+    end
+  end
+
+  def get_block_timestamps_by_numbers(numbers, json_rpc_named_arguments, retries_left \\ 3) do
+    id_to_params =
+      numbers
+      |> Stream.map(fn number -> %{number: number} end)
+      |> Stream.with_index()
+      |> Enum.into(%{}, fn {params, id} -> {id, params} end)
+
+    request = Blocks.requests(id_to_params, &ByNumber.request(&1, false))
+    error_message = &"Cannot fetch timestamps for blocks #{numbers}. Error: #{inspect(&1)}"
+
+    case repeated_request(request, error_message, json_rpc_named_arguments, retries_left) do
+      {:ok, response} ->
+        %Blocks{blocks_params: blocks_params} = Blocks.from_responses(response, id_to_params)
+
+        {:ok,
+         blocks_params
+         |> Enum.reduce(%{}, fn %{number: number, timestamp: timestamp}, acc -> Map.put_new(acc, number, timestamp) end)}
+
+      err ->
+        err
     end
   end
 
@@ -171,7 +195,10 @@ defmodule Indexer.Fetcher.Optimism do
 
     error_message = &"Cannot fetch filter changes. Error: #{inspect(&1)}"
 
-    repeated_request(req, error_message, json_rpc_named_arguments, retries_left)
+    case repeated_request(req, error_message, json_rpc_named_arguments, retries_left) do
+      {:error, %{code: _, message: "filter not found"}} -> {:error, :filter_not_found}
+      response -> response
+    end
   end
 
   defp repeated_request(req, error_message, json_rpc_named_arguments, retries_left) do
@@ -406,20 +433,5 @@ defmodule Indexer.Fetcher.Optimism do
 
   defp reorg_table_name(fetcher_name) do
     :"#{fetcher_name}#{:_reorgs}"
-  end
-
-  def json_rpc_named_arguments(optimism_rpc_l1) do
-    [
-      transport: EthereumJSONRPC.HTTP,
-      transport_options: [
-        http: EthereumJSONRPC.HTTP.HTTPoison,
-        url: optimism_rpc_l1,
-        http_options: [
-          recv_timeout: :timer.minutes(10),
-          timeout: :timer.minutes(10),
-          hackney: [pool: :ethereum_jsonrpc]
-        ]
-      ]
-    ]
   end
 end

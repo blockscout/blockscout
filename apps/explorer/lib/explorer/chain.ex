@@ -2436,31 +2436,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Lists `t:Explorer.Chain.OptimismDeposits.t/0`'s' in descending order based on l1_block_number and l2_transaction_hash.
-
-  """
-  @spec list_deposits :: [OptimismDeposits.t()]
-  @spec list_deposits([paging_options]) :: [OptimismDeposits.t()]
-  def list_deposits(options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    base_query =
-      from(d in OptimismDeposit,
-        left_join: tx in assoc(d, :transaction),
-        order_by: [desc: d.l1_block_number, desc: d.l2_transaction_hash]
-      )
-
-    base_query
-    |> page_deposits(paging_options)
-    |> limit(^paging_options.page_size)
-    |> Repo.all()
-  end
-
-  def optimism_deposits_total_count do
-    Repo.aggregate(OptimismDeposit, :count, timeout: :infinity)
-  end
-
-  @doc """
   Lists `t:Explorer.Chain.OptimismTxnBatch.t/0`'s' in descending order based on l2_block_number.
 
   """
@@ -2515,6 +2490,27 @@ defmodule Explorer.Chain do
 
     base_query
     |> page_output_roots(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
+  end
+
+  @doc """
+  Lists `t:Explorer.Chain.OptimismDeposit.t/0`'s' in descending order based on l1_block_number and l2_transaction_hash.
+
+  """
+  @spec list_optimism_deposits :: [OptimismDeposit.t()]
+  @spec list_optimism_deposits([paging_options]) :: [OptimismDeposit.t()]
+  def list_optimism_deposits(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(d in OptimismDeposit,
+        join: tx in assoc(d, :transaction),
+        order_by: [desc: d.l1_block_number, desc: d.l2_transaction_hash]
+      )
+
+    base_query
+    |> page_deposits(paging_options)
     |> limit(^paging_options.page_size)
     |> Repo.all()
   end

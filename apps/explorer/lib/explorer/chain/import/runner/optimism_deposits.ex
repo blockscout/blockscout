@@ -45,8 +45,8 @@ defmodule Explorer.Chain.Import.Runner.OptimismDeposits do
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :insert_optimism_deposits,
-        :insert_optimism_deposits
+        :optimism_deposits,
+        :optimism_deposits
       )
     end)
   end

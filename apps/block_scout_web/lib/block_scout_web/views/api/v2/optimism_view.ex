@@ -7,27 +7,6 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{OptimismOutputRoot, OptimismWithdrawalEvent, Transaction}
 
-  def render("optimism_deposits.json", %{
-        deposits: deposits,
-        total: total,
-        next_page_params: next_page_params
-      }) do
-    %{
-      items:
-        Enum.map(deposits, fn deposit ->
-          %{
-            "l1_block_number" => deposit.l1_block_number,
-            "l2_tx_hash" => deposit.l2_transaction_hash,
-            "l1_block_timestamp" => deposit.l1_block_timestamp,
-            "l1_tx_hash" => deposit.l1_transaction_hash,
-            "l1_tx_origin" => deposit.l1_transaction_origin
-          }
-        end),
-      total: total,
-      next_page_params: next_page_params
-    }
-  end
-
   def render("optimism_txn_batches.json", %{
         batches: batches,
         total: total,
@@ -69,6 +48,27 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "l1_timestamp" => r.l1_timestamp,
             "l1_block_number" => r.l1_block_number,
             "output_root" => r.output_root
+          }
+        end),
+      total: total,
+      next_page_params: next_page_params
+    }
+  end
+
+  def render("optimism_deposits.json", %{
+        deposits: deposits,
+        total: total,
+        next_page_params: next_page_params
+      }) do
+    %{
+      items:
+        Enum.map(deposits, fn deposit ->
+          %{
+            "l1_block_number" => deposit.l1_block_number,
+            "l2_tx_hash" => deposit.l2_transaction_hash,
+            "l1_block_timestamp" => deposit.l1_block_timestamp,
+            "l1_tx_hash" => deposit.l1_transaction_hash,
+            "l1_tx_origin" => deposit.l1_transaction_origin
           }
         end),
       total: total,

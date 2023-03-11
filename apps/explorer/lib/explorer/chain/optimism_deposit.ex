@@ -41,7 +41,7 @@ defmodule Explorer.Chain.OptimismDeposit do
   def last_deposit_l1_block_number_query do
     from(d in __MODULE__,
       select: {d.l1_block_number, d.l1_transaction_hash},
-      order_by: [desc: d.l1_transaction_origin],
+      order_by: [desc: d.l1_block_number],
       limit: 1
     )
   end
