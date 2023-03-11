@@ -285,6 +285,17 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     {:noreply, state}
   end
 
+  @impl GenServer
+  def terminate(_reason, %__MODULE__{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } = state) do
+    Logger.metadata(fetcher: :optimism_deposits)
+    if state.filter_id do
+      Logger.info("Optimism deposits fetcher is terminating, uninstalling filter")
+      Optimism.uninstall_filter(state.filter_id, json_rpc_named_arguments)
+    end
+  end
+
   defp handle_new_logs(logs, json_rpc_named_arguments) do
     {reorgs, logs_to_parse} =
       logs

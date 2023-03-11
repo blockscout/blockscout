@@ -76,7 +76,7 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
-  def get_block_timestamps_by_numbers(numbers, json_rpc_named_arguments, retries_left \\ 3) do
+  def get_block_timestamps_by_numbers(numbers, json_rpc_named_arguments, retries \\ 3) do
     id_to_params =
       numbers
       |> Stream.map(fn number -> %{number: number} end)
@@ -86,7 +86,7 @@ defmodule Indexer.Fetcher.Optimism do
     request = Blocks.requests(id_to_params, &ByNumber.request(&1, false))
     error_message = &"Cannot fetch timestamps for blocks #{numbers}. Error: #{inspect(&1)}"
 
-    case repeated_request(request, error_message, json_rpc_named_arguments, retries_left) do
+    case repeated_request(request, error_message, json_rpc_named_arguments, retries) do
       {:ok, response} ->
         %Blocks{blocks_params: blocks_params} = Blocks.from_responses(response, id_to_params)
 
@@ -162,7 +162,7 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
-  def get_new_filter(from_block, to_block, address, topic0, json_rpc_named_arguments, retries_left \\ 3) do
+  def get_new_filter(from_block, to_block, address, topic0, json_rpc_named_arguments, retries \\ 3) do
     processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
     processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
 
@@ -182,10 +182,10 @@ defmodule Indexer.Fetcher.Optimism do
 
     error_message = &"Cannot create new log filter. Error: #{inspect(&1)}"
 
-    repeated_request(req, error_message, json_rpc_named_arguments, retries_left)
+    repeated_request(req, error_message, json_rpc_named_arguments, retries)
   end
 
-  def get_filter_changes(filter_id, json_rpc_named_arguments, retries_left \\ 3) do
+  def get_filter_changes(filter_id, json_rpc_named_arguments, retries \\ 3) do
     req =
       request(%{
         id: 0,
@@ -195,10 +195,23 @@ defmodule Indexer.Fetcher.Optimism do
 
     error_message = &"Cannot fetch filter changes. Error: #{inspect(&1)}"
 
-    case repeated_request(req, error_message, json_rpc_named_arguments, retries_left) do
+    case repeated_request(req, error_message, json_rpc_named_arguments, retries) do
       {:error, %{code: _, message: "filter not found"}} -> {:error, :filter_not_found}
       response -> response
     end
+  end
+
+  def uninstall_filter(filter_id, json_rpc_named_arguments, retries \\ 1) do
+    req =
+      request(%{
+        id: 0,
+        method: "eth_getFilterChanges",
+        params: [filter_id]
+      })
+
+    error_message = &"Cannot uninstall filter. Error: #{inspect(&1)}"
+
+    repeated_request(req, error_message, json_rpc_named_arguments, retries)
   end
 
   defp repeated_request(req, error_message, json_rpc_named_arguments, retries_left) do
