@@ -6,7 +6,7 @@
 FROM ethereum/client-go:latest as gethbuilder
 
 # Build postgres && blockscout
-FROM bitwalker/alpine-elixir-phoenix:1.13
+FROM bitwalker/alpine-elixir-phoenix:1.14
 
 # Important!  Update this no-op ENV variable when this Dockerfile
 # is updated with the current date. It will force refresh of all
@@ -213,15 +213,12 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 ARG CACHE_EXCHANGE_RATES_PERIOD
 ARG DISABLE_READ_API
-ARG API_PATH
-ARG NETWORK_PATH
 ARG DISABLE_WEBAPP
 ARG DISABLE_WRITE_API
 ARG CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER
 ARG WOBSERVER_ENABLED
 ARG ADMIN_PANEL_ENABLED
 ARG CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL
-ARG SOCKET_ROOT
 ARG SESSION_COOKIE_DOMAIN
 ARG MIXPANEL_TOKEN
 ARG MIXPANEL_URL
@@ -248,10 +245,11 @@ RUN mix compile && npm install npm@latest
 RUN cd apps/block_scout_web/assets/ && \
     npm install && \
     npm run deploy && \
-    cd /app/apps/explorer/ && \
+    cd - && \
+    cd apps/explorer/ && \
     npm install && \
     apk update && \
-    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
+    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file qemu-x86_64
 
 RUN mix phx.digest
 
