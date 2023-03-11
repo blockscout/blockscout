@@ -172,10 +172,10 @@ defmodule Indexer.Fetcher.Optimism do
         method: "eth_newFilter",
         params: [
           %{
-            :fromBlock => processed_from_block,
-            :toBlock => processed_to_block,
-            :address => address,
-            :topics => [topic0]
+            fromBlock: processed_from_block,
+            toBlock: processed_to_block,
+            address: address,
+            topics: [topic0]
           }
         ]
       })
