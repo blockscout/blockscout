@@ -100,14 +100,17 @@ defmodule Indexer.Fetcher.Optimism do
   end
 
   def get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments, retries_left) do
+    processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
+    processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
+
     req =
       request(%{
         id: 0,
         method: "eth_getLogs",
         params: [
           %{
-            :fromBlock => integer_to_quantity(from_block),
-            :toBlock => integer_to_quantity(to_block),
+            :fromBlock => processed_from_block,
+            :toBlock => processed_to_block,
             :address => address,
             :topics => [topic0]
           }

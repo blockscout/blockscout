@@ -183,12 +183,26 @@ defmodule Indexer.Fetcher.OptimismDeposit do
           safe_block: safe_block,
           optimism_portal: optimism_portal,
           json_rpc_named_arguments: json_rpc_named_arguments,
+          batch_size: batch_size,
           mode: :catch_up
         } = state
       ) do
     Logger.metadata(fetcher: :optimism_deposits)
 
-    with {:ok, filter_id} <-
+    with {:latest_block, {:ok, new_safe}} <-
+           {:latest_block, Optimism.get_block_number_by_tag("safe", json_rpc_named_arguments)},
+         {:catch_up, _, false} <- {:catch_up, new_safe, new_safe - safe_block + 1 > batch_size},
+         {:logs, {:ok, logs}} <-
+           {:logs,
+            Optimism.get_logs(
+              safe_block + 1,
+              "latest",
+              optimism_portal,
+              @transaction_deposited_event,
+              json_rpc_named_arguments,
+              3
+            )},
+         {:ok, filter_id} <-
            Optimism.get_new_filter(
              safe_block + 1,
              "latest",
@@ -201,9 +215,24 @@ defmodule Indexer.Fetcher.OptimismDeposit do
          {:timestamp, {:ok, prev_safe_block_timestamp}} <-
            {:timestamp, Optimism.get_block_timestamp_by_number(safe_block - 1, json_rpc_named_arguments)} do
       check_interval = ceil((safe_block_timestamp - prev_safe_block_timestamp) * 1000 / 2)
+      handle_new_logs(logs, json_rpc_named_arguments)
       Process.send(self(), :fetch, [])
       {:noreply, %{state | mode: :realtime, filter_id: filter_id, check_interval: check_interval}}
     else
+      {:latest_block, {:error, error}} ->
+        Logger.error("Failed to get safe block number while switching to realtime mode, reason: #{inspect(error)}")
+        Process.send_after(self(), :switch_to_realtime, @retry_interval)
+        {:noreply, state}
+
+      {:catch_up, new_safe, true} ->
+        Process.send(self(), :fetch, [])
+        {:noreply, %{state | safe_block: new_safe}}
+
+      {:logs, {:error, error}} ->
+        Logger.error("Failed to get logs while switching to realtime mode, reason: #{inspect(error)}")
+        Process.send_after(self(), :switch_to_realtime, @retry_interval)
+        {:noreply, state}
+
       {:error, _error} ->
         Logger.error("Failed to set logs filter. Retrying in #{@retry_interval_minutes} minutes...")
         Process.send_after(self(), :switch_to_realtime, @retry_interval)
