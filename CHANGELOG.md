@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#7068](https://github.com/blockscout/blockscout/pull/7068) - Add authenticate endpoint
 - [#6990](https://github.com/blockscout/blockscout/pull/6990) - Improved http requests logging, batch transfers pagination; New API v2 endpoint `/smart-contracts/counters`; And some refactoring
 
 ### Fixes
