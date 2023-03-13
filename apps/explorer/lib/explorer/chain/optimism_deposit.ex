@@ -5,7 +5,9 @@ defmodule Explorer.Chain.OptimismDeposit do
 
   alias Explorer.Chain.{Hash, Transaction}
 
-  @required_attrs ~w(l1_block_number l1_block_timestamp l1_transaction_hash l1_transaction_origin l2_transaction_hash)a
+  @required_attrs ~w(l1_block_number l1_transaction_hash l1_transaction_origin l2_transaction_hash)a
+  @optional_attrs ~w(l1_block_timestamp)a
+  @allowed_attrs @required_attrs ++ @optional_attrs
 
   @type t :: %__MODULE__{
           l1_block_number: non_neg_integer(),
@@ -34,7 +36,7 @@ defmodule Explorer.Chain.OptimismDeposit do
 
   def changeset(%__MODULE__{} = deposit, attrs \\ %{}) do
     deposit
-    |> cast(attrs, @required_attrs)
+    |> cast(attrs, @allowed_attrs)
     |> validate_required(@required_attrs)
   end
 

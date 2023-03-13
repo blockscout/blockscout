@@ -68,7 +68,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "l2_tx_hash" => deposit.l2_transaction_hash,
             "l1_block_timestamp" => deposit.l1_block_timestamp,
             "l1_tx_hash" => deposit.l1_transaction_hash,
-            "l1_tx_origin" => deposit.l1_transaction_origin
+            "l1_tx_origin" => deposit.l1_transaction_origin,
+            "gas_limit" => deposit.transaction.gas
           }
         end),
       total: total,

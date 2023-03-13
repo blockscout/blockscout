@@ -236,6 +236,19 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
+  def get_block_check_interval(json_rpc_named_arguments) do
+    with {:ok, last_safe_block} <- get_block_number_by_tag("safe", json_rpc_named_arguments),
+         first_block = max(last_safe_block - @block_check_interval_range_size, 1),
+         {:ok, first_block_timestamp} <- get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
+         {:ok, last_safe_block_timestamp} <- get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
+      {:ok, ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)}
+    else
+      {:error, error} ->
+        Logger.error("Failed to calculate block check interval due to #{inspect(error)}")
+        {:error, error}
+    end
+  end
+
   def get_logs_range_size do
     @eth_get_logs_range_size
   end

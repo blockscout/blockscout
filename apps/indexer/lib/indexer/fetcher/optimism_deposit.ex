@@ -21,6 +21,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   defstruct [
     :batch_size,
     :start_block,
+    :from_block,
     :safe_block,
     :optimism_portal,
     :json_rpc_named_arguments,
@@ -78,6 +79,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
       {:ok,
        %__MODULE__{
          start_block: max(start_block_l1, last_l1_block_number),
+         from_block: max(start_block_l1, last_l1_block_number),
          safe_block: safe_block,
          optimism_portal: optimism_portal,
          json_rpc_named_arguments: json_rpc_named_arguments,
@@ -125,6 +127,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         :fetch,
         %__MODULE__{
           start_block: start_block,
+          from_block: from_block,
           safe_block: safe_block,
           optimism_portal: optimism_portal,
           json_rpc_named_arguments: json_rpc_named_arguments,
@@ -133,12 +136,12 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         } = state
       ) do
     Logger.metadata(fetcher: :optimism_deposits)
-    to_block = min(start_block + batch_size, safe_block)
+    to_block = min(from_block + batch_size, safe_block)
 
     with {:logs, {:ok, logs}} <-
            {:logs,
             Optimism.get_logs(
-              start_block,
+              from_block,
               to_block,
               optimism_portal,
               @transaction_deposited_event,
@@ -148,12 +151,16 @@ defmodule Indexer.Fetcher.OptimismDeposit do
          deposits = events_to_deposits(logs, json_rpc_named_arguments),
          {:import, {:ok, _imported}} <-
            {:import, Chain.import(%{optimism_deposits: %{params: deposits}, timeout: :infinity})} do
+      if to_block |> Kernel.-(start_block) |> Kernel./(batch_size + 1) |> trunc() |> rem(10) == 0 do
+        Optimism.log_blocks_chunk_handling(from_block, to_block, start_block, safe_block, nil, "L1")
+      end
+
       if to_block == safe_block do
         Process.send(self(), :switch_to_realtime, [])
         {:noreply, state}
       else
         Process.send(self(), :fetch, [])
-        {:noreply, %{state | start_block: to_block + 1}}
+        {:noreply, %{state | from_block: to_block + 1}}
       end
     else
       {:logs, {:error, _error}} ->
@@ -180,6 +187,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   def handle_info(
         :switch_to_realtime,
         %__MODULE__{
+          start_block: start_block,
           safe_block: safe_block,
           optimism_portal: optimism_portal,
           json_rpc_named_arguments: json_rpc_named_arguments,
@@ -210,13 +218,11 @@ defmodule Indexer.Fetcher.OptimismDeposit do
              @transaction_deposited_event,
              json_rpc_named_arguments
            ),
-         {:timestamp, {:ok, safe_block_timestamp}} <-
-           {:timestamp, Optimism.get_block_timestamp_by_number(safe_block, json_rpc_named_arguments)},
-         {:timestamp, {:ok, prev_safe_block_timestamp}} <-
-           {:timestamp, Optimism.get_block_timestamp_by_number(safe_block - 1, json_rpc_named_arguments)} do
-      check_interval = ceil((safe_block_timestamp - prev_safe_block_timestamp) * 1000 / 2)
+         {:check_interval, {:ok, check_interval}} <-
+           {:check_interval, Optimism.get_block_check_interval(json_rpc_named_arguments)} do
       handle_new_logs(logs, json_rpc_named_arguments)
       Process.send(self(), :fetch, [])
+      Logger.info("Fetched all L1 blocks (#{start_block}..#{safe_block}), switching to realtime mode.")
       {:noreply, %{state | mode: :realtime, filter_id: filter_id, check_interval: check_interval}}
     else
       {:latest_block, {:error, error}} ->
@@ -238,10 +244,8 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         Process.send_after(self(), :switch_to_realtime, @retry_interval)
         {:noreply, state}
 
-      {:timestamp, {:error, _error}} ->
-        Logger.error(
-          "Failed to get timestamp of a block for check_interval calculation. Retrying in #{@retry_interval_minutes} minutes..."
-        )
+      {:check_interval, {:error, _error}} ->
+        Logger.error("Failed to calculate check_interval. Retrying in #{@retry_interval_minutes} minutes...")
 
         Process.send_after(self(), :switch_to_realtime, @retry_interval)
         {:noreply, state}
@@ -429,7 +433,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
 
     %{
       l1_block_number: block_number,
-      l1_block_timestamp: Map.get_lazy(timestamps, block_number, &DateTime.utc_now/0),
+      l1_block_timestamp: Map.get(timestamps, block_number),
       l1_transaction_hash: transaction_hash,
       l1_transaction_origin: "0x" <> from_stripped,
       l2_transaction_hash: l2_tx_hash
