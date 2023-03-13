@@ -16,7 +16,7 @@ spec:
       port:
         name: http
   rules:
-    - host: {{ include "quai-blockscout.envPrefix" . -}}quaiscan.io
+   - host: {{ if .Values.quaiBlockscout.chain }}{{ .Values.quaiBlockscout.chain }}.quaiscan.io{{ else }}quaiscan.io{{ end }}
       http:
         paths:
         - path: /
