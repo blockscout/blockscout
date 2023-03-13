@@ -10,6 +10,16 @@ jobs:
       with:
         ssh-key: ${{ secrets.GH_PAT }}
 
+      # Import the GPG key for signing Git commits and tags
+    - name: Import GPG key
+      uses: crazy-max/ghaction-import-gpg@v5
+      with:
+        gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+        passphrase: ${{ secrets.GPG_PASSPHRASE }}
+        git_user_signingkey: true
+        git_tag_gpgsign: true
+        git_commit_gpgsign: true
+
     - name: get Version
       run: echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
 
@@ -34,13 +44,12 @@ jobs:
 
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        commit_message: Rev'd 'VERSION' file to {{ env.VERSION }}
+        commit_message: Rev'd 'VERSION' file to ${{ env.VERSION }}
         branch: ${{ env.BRANCH }}
         create_branch: true
         commit_options: -S
-        commit_username: ci@dominant-strategies.io
-        commit_user_email: ci-dominantstrategies
-
+        commit_user_email: ci@dominant-strategies.io
+        commit_user_name: ci-dominantstrategies
 
     - uses: actions/checkout@v3
       with:
@@ -61,11 +70,11 @@ jobs:
 
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        commit_message: Rev'd 'VERSION' file to {{ env.VERSION }}
+        commit_message: Rev'd 'VERSION' file to ${{ env.VERSION }}
         branch: main
         commit_options: -S
-        commit_username: ci@dominant-strategies.io
-        commit_user_email: ci-dominantstrategies
+        commit_user_email: ci@dominant-strategies.io
+        commit_user_name: ci-dominantstrategies
   deployReleaseCandidate:
     uses: ./.github/workflows/build-deploy.yml
     secrets:
