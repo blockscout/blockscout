@@ -122,9 +122,24 @@ defmodule Indexer.Fetcher.BlockReward do
         retry_errors(errors)
 
       beneficiaries_params ->
-        beneficiaries_params
-        |> add_gas_payments()
-        |> add_timestamp()
+        IO.inspect("beneficiaries_params:")
+        IO.inspect(beneficiaries_params)
+
+        with_gas =
+          beneficiaries_params
+          |> add_gas_payments()
+
+        IO.inspect("beneficiaries_params with gas:")
+        IO.inspect(with_gas)
+
+        with_timestamp =
+          with_gas
+          |> add_timestamp()
+
+        IO.inspect("beneficiaries_params with timestamp:")
+        IO.inspect(with_timestamp)
+
+        with_timestamp
         |> import_block_reward_params()
         |> case do
           {:ok, %{address_coin_balances: address_coin_balances, addresses: addresses}} ->
