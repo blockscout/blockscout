@@ -261,11 +261,13 @@ defmodule BlockScoutWeb.AddressView do
 
   def is_read_function?(function), do: Helper.queriable_method?(function) || Helper.read_with_wallet_method?(function)
 
-  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}) do
-    SmartContract.proxy_contract?(smart_contract)
+  def smart_contract_is_proxy?(address, options \\ [])
+
+  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}, options) do
+    SmartContract.proxy_contract?(smart_contract, options)
   end
 
-  def smart_contract_is_proxy?(%Address{smart_contract: nil}), do: false
+  def smart_contract_is_proxy?(%Address{smart_contract: nil}, _), do: false
 
   def smart_contract_with_write_functions?(%Address{smart_contract: %SmartContract{}} = address) do
     Enum.any?(

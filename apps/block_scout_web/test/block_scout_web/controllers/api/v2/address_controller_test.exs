@@ -838,6 +838,228 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       check_paginated_response(response, response_2nd_page, erc_20_tt)
     end
+
+    test "check that same token_ids within batch squashes", %{conn: conn} do
+      address = insert(:address)
+
+      token = insert(:token, type: "ERC-1155")
+
+      id = 0
+
+      insert(:token_instance, token_id: id, token_contract_address_hash: token.contract_address_hash)
+
+      tt =
+        for _ <- 0..50 do
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+
+          insert(:token_transfer,
+            to_address: address,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            token_contract_address: token.contract_address,
+            token_ids: Enum.map(0..50, fn _x -> id end),
+            amounts: Enum.map(0..50, fn x -> x end)
+          )
+        end
+
+      token_transfers =
+        for i <- tt do
+          %TokenTransfer{i | token_ids: [id], amount: Decimal.new(1275)}
+        end
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_transfers)
+    end
+
+    test "check that pagination works for 721 tokens", %{conn: conn} do
+      address = insert(:address)
+
+      token = insert(:token, type: "ERC-721")
+
+      token_transfers =
+        for i <- 0..50 do
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+
+          insert(:token_transfer,
+            transaction: tx,
+            to_address: address,
+            block: tx.block,
+            block_number: tx.block_number,
+            token_contract_address: token.contract_address,
+            token_ids: [i]
+          )
+        end
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_transfers)
+    end
+
+    test "check that pagination works fine with 1155 batches #1 (large batch) + check filters", %{conn: conn} do
+      address = insert(:address)
+
+      token = insert(:token, type: "ERC-1155")
+      tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+
+      tt =
+        insert(:token_transfer,
+          transaction: tx,
+          to_address: address,
+          block: tx.block,
+          block_number: tx.block_number,
+          token_contract_address: token.contract_address,
+          token_ids: Enum.map(0..50, fn x -> x end),
+          amounts: Enum.map(0..50, fn x -> x end)
+        )
+
+      token_transfers =
+        for i <- 0..50 do
+          %TokenTransfer{tt | token_ids: [i], amount: i}
+        end
+
+      filter = %{"type" => "ERC-1155", "filter" => "to"}
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_transfers)
+
+      filter = %{"type" => "ERC-1155", "filter" => "from"}
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
+    test "check that pagination works fine with 1155 batches #2 some batches on the first page and one on the second",
+         %{conn: conn} do
+      address = insert(:address)
+
+      token = insert(:token, type: "ERC-1155")
+
+      tx_1 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+
+      tt_1 =
+        insert(:token_transfer,
+          transaction: tx_1,
+          to_address: address,
+          block: tx_1.block,
+          block_number: tx_1.block_number,
+          token_contract_address: token.contract_address,
+          token_ids: Enum.map(0..24, fn x -> x end),
+          amounts: Enum.map(0..24, fn x -> x end)
+        )
+
+      token_transfers_1 =
+        for i <- 0..24 do
+          %TokenTransfer{tt_1 | token_ids: [i], amount: i}
+        end
+
+      tx_2 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+
+      tt_2 =
+        insert(:token_transfer,
+          transaction: tx_2,
+          to_address: address,
+          block: tx_2.block,
+          block_number: tx_2.block_number,
+          token_contract_address: token.contract_address,
+          token_ids: Enum.map(25..49, fn x -> x end),
+          amounts: Enum.map(25..49, fn x -> x end)
+        )
+
+      token_transfers_2 =
+        for i <- 25..49 do
+          %TokenTransfer{tt_2 | token_ids: [i], amount: i}
+        end
+
+      tt_3 =
+        insert(:token_transfer,
+          transaction: tx_2,
+          from_address: address,
+          block: tx_2.block,
+          block_number: tx_2.block_number,
+          token_contract_address: token.contract_address,
+          token_ids: [50],
+          amounts: [50]
+        )
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_transfers_1 ++ token_transfers_2 ++ [tt_3])
+    end
+
+    test "check that pagination works fine with 1155 batches #3", %{conn: conn} do
+      address = insert(:address)
+
+      token = insert(:token, type: "ERC-1155")
+
+      tx_1 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+
+      tt_1 =
+        insert(:token_transfer,
+          transaction: tx_1,
+          from_address: address,
+          block: tx_1.block,
+          block_number: tx_1.block_number,
+          token_contract_address: token.contract_address,
+          token_ids: Enum.map(0..24, fn x -> x end),
+          amounts: Enum.map(0..24, fn x -> x end)
+        )
+
+      token_transfers_1 =
+        for i <- 0..24 do
+          %TokenTransfer{tt_1 | token_ids: [i], amount: i}
+        end
+
+      tx_2 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+
+      tt_2 =
+        insert(:token_transfer,
+          transaction: tx_2,
+          to_address: address,
+          block: tx_2.block,
+          block_number: tx_2.block_number,
+          token_contract_address: token.contract_address,
+          token_ids: Enum.map(25..50, fn x -> x end),
+          amounts: Enum.map(25..50, fn x -> x end)
+        )
+
+      token_transfers_2 =
+        for i <- 25..50 do
+          %TokenTransfer{tt_2 | token_ids: [i], amount: i}
+        end
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_transfers_1 ++ token_transfers_2)
+    end
   end
 
   describe "/addresses/{address_hash}/internal-transactions" do
@@ -1394,6 +1616,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert json["method"] != nil
     assert to_string(token_transfer.block_hash) == json["block_hash"]
     assert to_string(token_transfer.log_index) == json["log_index"]
+    assert check_total(Repo.preload(token_transfer, [{:token, :contract_address}]).token, json["total"], token_transfer)
   end
 
   defp compare_item(%InternalTransaction{} = internal_tx, json) do
@@ -1451,4 +1674,20 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert second_page_resp["next_page_params"] == nil
     compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
   end
+
+  def check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-1155"] do
+    json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end) and
+      json["value"] == to_string(token_transfer.amount)
+  end
+
+  def check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-721"] do
+    json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end)
+  end
+
+  # with the current implementation no transfers should come with list in totals
+  def check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
+    false
+  end
+
+  def check_total(_, _, _), do: true
 end

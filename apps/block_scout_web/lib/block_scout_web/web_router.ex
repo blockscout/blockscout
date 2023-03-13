@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.WebRouter do
     plug(:protect_from_forgery)
     plug(BlockScoutWeb.CSPHeader)
     plug(BlockScoutWeb.ChecksumAddress)
+    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
   end
 
   pipeline :account do
@@ -24,6 +25,7 @@ defmodule BlockScoutWeb.WebRouter do
     plug(:protect_from_forgery)
     plug(BlockScoutWeb.CSPHeader)
     plug(BlockScoutWeb.ChecksumAddress)
+    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
   end
 
   if Mix.env() == :dev do

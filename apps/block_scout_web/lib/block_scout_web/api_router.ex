@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
   pipeline :api do
     plug(:accepts, ["json"])
+    plug(BlockScoutWeb.Plug.Logger, application: :api)
   end
 
   pipeline :account_api do
@@ -29,9 +30,11 @@ defmodule BlockScoutWeb.ApiRouter do
   end
 
   pipeline :api_v2 do
+    plug(:accepts, ["json"])
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
+    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
   end
 
   alias BlockScoutWeb.Account.Api.V1.{TagsController, UserController}
@@ -93,7 +96,6 @@ defmodule BlockScoutWeb.ApiRouter do
   end
 
   scope "/v2", as: :api_v2 do
-    pipe_through(:api)
     pipe_through(:api_v2)
 
     alias BlockScoutWeb.API.V2
