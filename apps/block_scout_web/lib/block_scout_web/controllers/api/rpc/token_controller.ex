@@ -35,11 +35,11 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
           key: nil,
           page_number: options_with_defaults.page_number,
           page_size: options_with_defaults.page_size
-        }
+        },
+        api?: true
       ]
 
-      from_api = true
-      token_holders = Chain.fetch_token_holders_from_token_hash(address_hash, from_api, options)
+      token_holders = Chain.fetch_token_holders_from_token_hash(address_hash, options)
       render(conn, "gettokenholders.json", %{token_holders: token_holders})
     else
       {:contractaddress_param, :error} ->

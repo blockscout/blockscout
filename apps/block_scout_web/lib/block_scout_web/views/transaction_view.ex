@@ -340,8 +340,8 @@ defmodule BlockScoutWeb.TransactionView do
     Chain.transaction_to_status(transaction)
   end
 
-  def transaction_revert_reason(transaction) do
-    transaction |> Chain.transaction_to_revert_reason() |> decoded_revert_reason(transaction)
+  def transaction_revert_reason(transaction, options \\ []) do
+    transaction |> Chain.transaction_to_revert_reason() |> decoded_revert_reason(transaction, options)
   end
 
   def get_pure_transaction_revert_reason(nil), do: nil
@@ -385,11 +385,11 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def decoded_input_data(transaction) do
-    Transaction.decoded_input_data(transaction)
+    Transaction.decoded_input_data(transaction, [])
   end
 
-  def decoded_revert_reason(revert_reason, transaction) do
-    Transaction.decoded_revert_reason(transaction, revert_reason)
+  def decoded_revert_reason(revert_reason, transaction, options) do
+    Transaction.decoded_revert_reason(transaction, revert_reason, options)
   end
 
   @doc """

@@ -35,7 +35,6 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
          true <- action_accessed?(action, write_actions),
          :ok <- AccessHelpers.check_rate_limit(conn),
          {:ok, conn} <- call_controller(conn, controller, action) do
-      APILogger.log(conn)
       conn
     else
       {:error, :no_action} ->
@@ -46,7 +45,9 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
         |> halt()
 
       {:error, error} ->
-        Logger.error(fn -> ["Error while calling RPC action", inspect(error)] end)
+        APILogger.error(fn ->
+          ["Error while calling RPC action", inspect(error, limit: :infinity, printable_limit: :infinity)]
+        end)
 
         conn
         |> put_status(500)
