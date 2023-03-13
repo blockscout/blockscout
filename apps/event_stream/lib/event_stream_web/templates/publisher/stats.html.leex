@@ -1,0 +1,15 @@
+<section class="row">
+    <div>Event Publisher: <%= @publisher %> </div>
+    <%= case @publisher do %>
+    <% EventStream.Publisher.Beanstalkd -> %>
+        <% %{beanstalk: %{host: host, port: port, tube: tube}} = @stats %>
+        <div> Host: <%= host %> </div>
+        <div> Port: <%= port %> </div>
+        <div> Tube: <%= tube %> </div>
+        <% %{remote_info: %{"current-connections" => connection_count, "current-jobs-ready" => queue_size}} = @stats %>
+        <div> Queue Size: <%= queue_size %> </div>
+        <div> Connections: <%= connection_count %> </div>
+    <% EventStream.Publisher.Console -> %>
+        No console stats :(
+    <% end %>
+</section>

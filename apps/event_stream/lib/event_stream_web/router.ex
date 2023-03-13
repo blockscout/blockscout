@@ -18,6 +18,12 @@ defmodule EventStream.Router do
     pipe_through(:browser)
 
     live("/", PageLive, :index)
+    live("/received", ReceivedLive, :index)
+    live("/published", PublishedLive, :index)
+    get("/publisher", PublisherController, :stats)
+
+    get("/ready", HealthController, :ready)
+    get("/live", HealthController, :live)
   end
 
   # Other scopes may use custom stacks.

@@ -6,8 +6,14 @@ defmodule EventStream.Publisher do
   """
   @callback publish(String.t()) :: :ok | {:failed, String.t()}
 
+  @callback live() :: boolean
+
   # credo:disable-for-next-line
   @implementation Application.compile_env!(:event_stream, __MODULE__)
 
   defdelegate publish(contract_name), to: @implementation
+
+  def connected? do
+    @implementation.live()
+  end
 end

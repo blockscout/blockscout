@@ -55,7 +55,8 @@ defmodule EventStream.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.5.2"},
       # publishing implementations
-      {:elixir_talk, "~> 1.2"}
+      {:elixir_talk, "~> 1.2"},
+      {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false}
     ]
   end
 

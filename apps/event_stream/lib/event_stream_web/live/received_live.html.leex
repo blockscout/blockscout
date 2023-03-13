@@ -1,0 +1,39 @@
+<section class="phx-hero">
+  <h1><%= gettext "Welcome to %{name}!", name: "EventStream" %></h1>
+  <p>Events received via cluster pubsub (from indexer)</p>
+
+</section>
+
+<section class="row">
+  <div>Events: <%= length(@events) %></div>
+  <div>Max Block: <%= @max_block %></div>
+  <div>Started: <%= @since %></div>
+</section>
+<section class="row">
+  <table class="zui-table">
+    <tr>
+      <th>Name</th>
+      <th>Topic</th>
+      <th>Block Number</th>
+      <th>Log Index</th>
+      <th>Contract Address </th>
+      <th>Tx</th>
+      <th>Updated At</th>
+      <th>Inserted At</th>
+      <th>Params</th>
+    </tr>
+    <%= for event <- @events do%>
+    <tr>
+      <td><%= event.name  %></td>
+      <td><%= event.topic  %></td>
+      <td><%= event.block_number  %></td>
+      <td><%= event.log_index  %></td>
+      <td><%= event.contract_address_hash  %></td>
+      <td><%= event.transaction_hash  %></td>
+      <td><%= event.updated_at  %></td>
+      <td><%= event.inserted_at  %></td>
+      <td><%= event.params |> inspect()  %></td>
+    </tr>
+    <% end %>
+  </table>
+</section>
