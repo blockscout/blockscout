@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.TokenTest do
+defmodule Explorer.Chain.Token.InstanceTest do
   use Explorer.DataCase
 
   import Explorer.Factory
