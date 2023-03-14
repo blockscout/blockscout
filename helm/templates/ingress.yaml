@@ -27,5 +27,12 @@ spec:
               port:
                 name: http
 {{- range $shard := .Values.quaiBlockscout.shards }}
-{{ include "quai-blockscout.ingress" $ | replace "prime" $shard.name | indent 4 }}
+{{ $host := "" }}
+{{ if .Values.quaiBlockscout.chain }}
+{{ $host = printf "%s.%s.quaiscan.io" $shard.name .Values.quaiBlockscout.chain }}
+{{ else }}
+{{ $host = printf "%s.quaiscan.io" $shard.name }}
+{{ end }}
+{{ $ingress := include "quai-blockscout.ingress" $ | replace "<HOST>" $host | replace "prime" $shard.name | indent 4 }}
+{{ printf "%s\n" $ingress }}
 {{- end }}
