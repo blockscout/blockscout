@@ -8,12 +8,13 @@ defmodule EventStream.Publisher do
 
   @callback live() :: boolean
 
-  # credo:disable-for-next-line
-  @implementation Application.compile_env!(:event_stream, __MODULE__)
-
-  defdelegate publish(contract_name), to: @implementation
+  def publish(event) do
+    implementation = Application.get_env(:event_stream, __MODULE__)
+    implementation.publish(event)
+  end
 
   def connected? do
-    @implementation.live()
+    implementation = Application.get_env(:event_stream, __MODULE__)
+    implementation.live()
   end
 end
