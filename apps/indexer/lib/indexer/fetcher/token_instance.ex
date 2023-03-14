@@ -8,6 +8,7 @@ defmodule Indexer.Fetcher.TokenInstance do
 
   require Logger
 
+  alias Explorer.Celo.Telemetry
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Cache.BlockNumber, Token}
   alias Explorer.Token.{InstanceMetadataRetriever, InstanceOwnerReader}
@@ -77,6 +78,8 @@ defmodule Indexer.Fetcher.TokenInstance do
 
         {:ok, _result} = Chain.upsert_token_instance(params)
 
+        Telemetry.event([:indexer, :nft, :ingested], %{count: 1})
+
       {:ok, %{error: error}} ->
         params = %{
           token_id: token_id,
@@ -86,7 +89,11 @@ defmodule Indexer.Fetcher.TokenInstance do
 
         {:ok, _result} = Chain.upsert_token_instance(params)
 
+        Telemetry.event([:indexer, :nft, :ingestion_error], %{count: 1})
+
       result ->
+        Telemetry.event([:indexer, :nft, :ingestion_error], %{count: 1})
+
         Logger.debug(
           [
             "failed to fetch token instance metadata for #{inspect({to_string(token_contract_address_hash), Decimal.to_integer(token_id)})}: ",
