@@ -1,5 +1,5 @@
 {{- define "quai-blockscout.ingress" }}
-- host: {{ if .Values.quaiBlockscout.chain }}prime.{{ .Values.quaiBlockscout.chain }}.quaiscan.io{{ else }}prime.quaiscan.io{{ end }}
+- host: <HOST>
   http:
     paths:
     - path: /

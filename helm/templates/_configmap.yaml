@@ -1,9 +1,9 @@
 {{- define "quai-blockscout.configmap" }}
 apiVersion: v1
 data:
-  ACCOUNT_AUTH0_CALLBACK_URL: https://prime.{{- .Values.quaiBlockscout.chain -}}.quaiscan.io
-  ACCOUNT_AUTH0_LOGOUT_URL: https://prime.{{- .Values.quaiBlockscout.chain -}}.quaiscan.io
-  ACCOUNT_AUTH0_LOGOUT_RETURN_URL: https://prime.{{- .Values.quaiBlockscout.chain -}}.quaiscan.io
+  ACCOUNT_AUTH0_CALLBACK_URL: https://prime.{{- .Values.quaiBlockscout.chain -}}.quaiscan.io/auth/auth0/callback
+  ACCOUNT_AUTH0_LOGOUT_URL: https://prime.{{- .Values.quaiBlockscout.chain -}}.quaiscan.io/auth/logout
+  ACCOUNT_AUTH0_LOGOUT_RETURN_URL: https://prime.{{- .Values.quaiBlockscout.chain -}}.quaiscan.io/auth/logout
   BLOCKSCOUT_HOST: prime.{{- .Values.quaiBlockscout.chain -}}.quaiscan.io
   CHAIN_INDEX: "<INDEX>"
   ETHEREUM_JSONRPC_HTTP_URL: http://prime-go-quai-{{- include "quai-blockscout.envSuffix" $ -}}.{{- .Values.quaiBlockscout.env -}}.svc.cluster.local:<HTTP>

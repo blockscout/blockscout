@@ -1,4 +1,11 @@
 {{- $name := include "quai-blockscout.name" . -}}
+{{- $chain := .Values.quaiBlockscout.chain }}
+{{- $host := "" }}
+{{ if $chain }}
+{{- $host = printf "%s.quaiscan.io" $chain }}
+{{ else }}
+{{- $host = "quaiscan.io" }}
+{{ end }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -16,16 +23,21 @@ spec:
       port:
         name: http
   rules:
-   - host: {{ if .Values.quaiBlockscout.chain }}{{ .Values.quaiBlockscout.chain }}.quaiscan.io{{ else }}quaiscan.io{{ end }}
-      http:
-        paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: prime-{{ $name }}
-              port:
-                name: http
+  - host: {{ $host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prime-{{ $name }}
+            port:
+              name: http
 {{- range $shard := .Values.quaiBlockscout.shards }}
-{{ include "quai-blockscout.ingress" $ | replace "prime" $shard.name | indent 4 }}
+{{ if $chain }}
+{{- $host = printf "%s.%s.quaiscan.io" $shard.name $chain }}
+{{ else }}
+{{- $host = printf "%s.quaiscan.io" $shard.name }}
+{{ end }}
+{{ include "quai-blockscout.ingress" $ | replace "<HOST>" $host | replace "prime" $shard.name | indent 2 }}
 {{- end }}
