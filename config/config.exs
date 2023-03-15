@@ -37,7 +37,8 @@ config :logger,
     {LoggerFileBackend, :withdrawal},
     {LoggerFileBackend, :api},
     {LoggerFileBackend, :block_import_timings},
-    {LoggerFileBackend, :account}
+    {LoggerFileBackend, :account},
+    {LoggerFileBackend, :api_v2}
   ]
 
 config :logger, :console,

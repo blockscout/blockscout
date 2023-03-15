@@ -32,7 +32,7 @@ defmodule Explorer.Chain.Token do
   * `total_supply` - The total supply of the token
   * `decimals` - Number of decimal places the token can be subdivided to
   * `type` - Type of token
-  * `calatoged` - Flag for if token information has been cataloged
+  * `cataloged` - Flag for if token information has been cataloged
   * `contract_address` - The `t:Address.t/0` of the token's contract
   * `contract_address_hash` - Address hash foreign key
   * `holder_count` - the number of `t:Explorer.Chain.Address.t/0` (except the burn address) that have a
@@ -93,7 +93,7 @@ defmodule Explorer.Chain.Token do
   end
 
   @required_attrs ~w(contract_address_hash type)a
-  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block)a
+  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block updated_at)a
 
   @doc false
   def changeset(%Token{} = token, params \\ %{}) do

@@ -22,7 +22,7 @@ Some data has to be extracted from already fetched data, and there're several tr
 - `token_transfers`: parses logs to extract token transfers
 - `mint_transfers`: parses logs to extract token mint transfers
 - `transaction_actions`: parses logs to extract transaction actions
-- `address_token_balances`: creates token balance entities for futher fetching, based on detected token transfers
+- `address_token_balances`: creates token balance entities for further fetching, based on detected token transfers
 - `blocks`: extracts block signer hash from additional data for Clique chains
 
 ### Root fetchers

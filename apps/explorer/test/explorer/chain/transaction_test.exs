@@ -244,10 +244,10 @@ defmodule Explorer.Chain.TransactionTest do
   end
 
   describe "decoded_input_data/1" do
-    test "that a tranasction that is not a contract call returns a commensurate error" do
+    test "that a transaction that is not a contract call returns a commensurate error" do
       transaction = insert(:transaction)
 
-      assert Transaction.decoded_input_data(transaction) == {:error, :not_a_contract_call}
+      assert Transaction.decoded_input_data(transaction, []) == {:error, :not_a_contract_call}
     end
 
     test "that a contract call transaction that has no verified contract returns a commensurate error" do
@@ -256,7 +256,7 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert(to_address: insert(:contract_address))
         |> Repo.preload(to_address: :smart_contract)
 
-      assert Transaction.decoded_input_data(transaction) == {:error, :contract_not_verified, []}
+      assert Transaction.decoded_input_data(transaction, []) == {:error, :contract_not_verified, []}
     end
 
     test "that a contract call transaction that has a verified contract returns the decoded input data" do
@@ -267,7 +267,8 @@ defmodule Explorer.Chain.TransactionTest do
 
       get_eip1967_implementation()
 
-      assert Transaction.decoded_input_data(transaction) == {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]}
+      assert Transaction.decoded_input_data(transaction, []) ==
+               {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]}
     end
 
     test "that a contract call will look up a match in contract_methods table" do
@@ -289,7 +290,8 @@ defmodule Explorer.Chain.TransactionTest do
 
       get_eip1967_implementation()
 
-      assert Transaction.decoded_input_data(transaction) == {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}
+      assert Transaction.decoded_input_data(transaction, []) ==
+               {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}
     end
   end
 
