@@ -14,7 +14,8 @@ defmodule Explorer.Chain.OptimismDeposit do
           l1_block_timestamp: DateTime.t(),
           l1_transaction_hash: Hash.t(),
           l1_transaction_origin: Hash.t(),
-          l2_transaction_hash: Hash.t()
+          l2_transaction_hash: Hash.t(),
+          l2_transaction: %Ecto.Association.NotLoaded{} | Transaction.t()
         }
 
   @primary_key false
@@ -24,7 +25,7 @@ defmodule Explorer.Chain.OptimismDeposit do
     field(:l1_transaction_hash, Hash.Full)
     field(:l1_transaction_origin, Hash.Address)
 
-    belongs_to(:transaction, Transaction,
+    belongs_to(:l2_transaction, Transaction,
       foreign_key: :l2_transaction_hash,
       primary_key: true,
       references: :hash,
@@ -38,6 +39,7 @@ defmodule Explorer.Chain.OptimismDeposit do
     deposit
     |> cast(attrs, @allowed_attrs)
     |> validate_required(@required_attrs)
+    |> foreign_key_constraint(:l2_transaction_hash)
   end
 
   def last_deposit_l1_block_number_query do

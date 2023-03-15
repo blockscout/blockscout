@@ -2505,11 +2505,11 @@ defmodule Explorer.Chain do
 
     base_query =
       from(d in OptimismDeposit,
-        join: tx in assoc(d, :transaction),
         order_by: [desc: d.l1_block_number, desc: d.l2_transaction_hash]
       )
 
     base_query
+    |> join_association(:l2_transaction, :required)
     |> page_deposits(paging_options)
     |> limit(^paging_options.page_size)
     |> Repo.all()
