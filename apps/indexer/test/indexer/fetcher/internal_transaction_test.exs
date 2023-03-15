@@ -9,9 +9,16 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   alias Explorer.Chain.{PendingBlockOperation, TokenTransfer}
   alias Indexer.Fetcher.{CoinBalance, InternalTransaction, PendingTransaction, TokenBalance}
 
-  # MUST use global mode because we aren't guaranteed to get PendingTransactionFetcher's pid back fast enough to `allow`
-  # it to use expectations and stubs from test's pid.
-  setup :set_mox_global
+  setup do
+    # MUST use global mode because we aren't guaranteed to get PendingTransactionFetcher's pid back fast enough to `allow`
+    # it to use expectations and stubs from test's pid.
+    set_mox_global()
+
+    initial_env = Application.get_all_env(:ethereum_jsonrpc)
+    Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, tracer: "js")
+
+    on_exit(fn -> Application.put_all_env([{:ethereum_jsonrpc, initial_env}]) end)
+  end
 
   setup :verify_on_exit!
 
