@@ -148,12 +148,18 @@ defmodule Indexer.Fetcher.OptimismDeposit do
               json_rpc_named_arguments,
               3
             )},
+         _ = Optimism.log_blocks_chunk_handling(from_block, to_block, start_block, safe_block, nil, "L1"),
          deposits = events_to_deposits(logs, json_rpc_named_arguments),
          {:import, {:ok, _imported}} <-
            {:import, Chain.import(%{optimism_deposits: %{params: deposits}, timeout: :infinity})} do
-      if to_block |> Kernel.-(start_block) |> Kernel./(batch_size + 1) |> trunc() |> rem(10) == 0 do
-        Optimism.log_blocks_chunk_handling(from_block, to_block, start_block, safe_block, nil, "L1")
-      end
+      Optimism.log_blocks_chunk_handling(
+        from_block,
+        to_block,
+        start_block,
+        safe_block,
+        "#{Enum.count(deposits)} TransactionDeposited event(s)",
+        "L1"
+      )
 
       if to_block == safe_block do
         Process.send(self(), :switch_to_realtime, [])
@@ -367,7 +373,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
 
         {:error, error} ->
           Logger.error(
-            "Failed to get L1 block timestamps for deposits due to #{inspect(error)}. Timestamps will be set to now."
+            "Failed to get L1 block timestamps for deposits due to #{inspect(error)}. Timestamps will be set to null."
           )
 
           %{}
