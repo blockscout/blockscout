@@ -17,6 +17,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
+  @api_true [api?: true]
+
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
   end
@@ -92,7 +94,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def prepare_token_transfer(token_transfer, conn) do
-    decoded_input = token_transfer.transaction |> Transaction.decoded_input_data() |> format_decoded_input()
+    decoded_input = token_transfer.transaction |> Transaction.decoded_input_data(@api_true) |> format_decoded_input()
 
     %{
       "tx_hash" => token_transfer.transaction_hash,
@@ -194,7 +196,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp smart_contract_info(_), do: nil
 
   defp decode_log(log, %Transaction{} = tx) do
-    case log |> Log.decode(tx) |> format_decoded_log_input() do
+    case log |> Log.decode(tx, @api_true) |> format_decoded_log_input() do
       {:ok, method_id, text, mapping} ->
         render(__MODULE__, "decoded_log_input.json", method_id: method_id, text: text, mapping: mapping)
 
@@ -228,7 +230,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     revert_reason = revert_reason(status, transaction)
 
-    decoded_input = transaction |> Transaction.decoded_input_data() |> format_decoded_input()
+    decoded_input = transaction |> Transaction.decoded_input_data(@api_true) |> format_decoded_input()
     decoded_input_data = decoded_input(decoded_input)
 
     %{
@@ -242,7 +244,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "created_contract" =>
         Helper.address_with_info(conn, transaction.created_contract_address, transaction.created_contract_address_hash),
       "confirmations" =>
-        transaction.block |> Chain.confirmations(block_height: Chain.block_height()) |> format_confirmations(),
+        transaction.block |> Chain.confirmations(block_height: Chain.block_height(@api_true)) |> format_confirmations(),
       "confirmation_duration" => processing_time_duration(transaction),
       "value" => transaction.value,
       "fee" => transaction |> Chain.fee(:wei) |> format_fee(),
@@ -315,7 +317,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp revert_reason(status, transaction) do
     if is_binary(status) && status |> String.downcase() |> String.contains?("reverted") do
-      case TransactionView.transaction_revert_reason(transaction) do
+      case TransactionView.transaction_revert_reason(transaction, @api_true) do
         {:error, _contract_not_verified, candidates} when candidates != [] ->
           {:ok, method_id, text, mapping} = Enum.at(candidates, 0)
           render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: true)

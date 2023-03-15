@@ -591,9 +591,13 @@ defmodule Explorer.ChainTest do
         keys_manager_contract_address: "0x0000000000000000000000000000000000000006"
       )
 
+      consumer_pid = start_supervised!(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand)
+      :erlang.trace(consumer_pid, true, [:receive])
+
       block = insert(:block)
 
       block_miner_hash_string = Base.encode16(block.miner_hash.bytes, case: :lower)
+      block_miner_hash = block.miner_hash
 
       insert(
         :reward,
@@ -631,8 +635,10 @@ defmodule Explorer.ChainTest do
       )
 
       res = Chain.address_to_transactions_with_rewards(block.miner.hash)
-
       assert [{_, _}] = res
+
+      assert_receive {:trace, ^consumer_pid, :receive, {:"$gen_cast", {:fetch_or_update, ^block_miner_hash}}}, 1000
+      :timer.sleep(500)
 
       on_exit(fn ->
         Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
@@ -652,9 +658,13 @@ defmodule Explorer.ChainTest do
         keys_manager_contract_address: "0x0000000000000000000000000000000000000006"
       )
 
+      consumer_pid = start_supervised!(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand)
+      :erlang.trace(consumer_pid, true, [:receive])
+
       block = insert(:block)
 
       block_miner_hash_string = Base.encode16(block.miner_hash.bytes, case: :lower)
+      block_miner_hash = block.miner_hash
 
       insert(
         :reward,
@@ -697,6 +707,9 @@ defmodule Explorer.ChainTest do
       )
 
       assert [_, {_, _}] = Chain.address_to_transactions_with_rewards(block.miner.hash, direction: :to)
+
+      assert_receive {:trace, ^consumer_pid, :receive, {:"$gen_cast", {:fetch_or_update, ^block_miner_hash}}}, 1000
+      :timer.sleep(500)
 
       on_exit(fn ->
         Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
@@ -3254,7 +3267,7 @@ defmodule Explorer.ChainTest do
     test "without logs" do
       transaction = insert(:transaction)
 
-      assert [] = Chain.transaction_to_logs(transaction.hash, false)
+      assert [] = Chain.transaction_to_logs(transaction.hash)
     end
 
     test "with logs" do
@@ -3266,8 +3279,7 @@ defmodule Explorer.ChainTest do
       %Log{transaction_hash: transaction_hash, index: index} =
         insert(:log, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
 
-      assert [%Log{transaction_hash: ^transaction_hash, index: ^index}] =
-               Chain.transaction_to_logs(transaction.hash, false)
+      assert [%Log{transaction_hash: ^transaction_hash, index: ^index}] = Chain.transaction_to_logs(transaction.hash)
     end
 
     test "with logs can be paginated" do
@@ -3298,7 +3310,7 @@ defmodule Explorer.ChainTest do
 
       assert second_page_indexes ==
                transaction.hash
-               |> Chain.transaction_to_logs(false, paging_options: %PagingOptions{key: {log.index}, page_size: 50})
+               |> Chain.transaction_to_logs(paging_options: %PagingOptions{key: {log.index}, page_size: 50})
                |> Enum.map(& &1.index)
     end
 
@@ -3313,7 +3325,6 @@ defmodule Explorer.ChainTest do
       assert [%Log{address: %Address{}, transaction: %Transaction{}}] =
                Chain.transaction_to_logs(
                  transaction.hash,
-                 false,
                  necessity_by_association: %{
                    address: :optional,
                    transaction: :optional
@@ -3325,7 +3336,7 @@ defmodule Explorer.ChainTest do
                  address: %Ecto.Association.NotLoaded{},
                  transaction: %Ecto.Association.NotLoaded{}
                }
-             ] = Chain.transaction_to_logs(transaction.hash, false)
+             ] = Chain.transaction_to_logs(transaction.hash)
     end
   end
 
@@ -5124,7 +5135,7 @@ defmodule Explorer.ChainTest do
 
       token_holders_count =
         contract_address_hash
-        |> Chain.fetch_token_holders_from_token_hash(false, [])
+        |> Chain.fetch_token_holders_from_token_hash([])
         |> Enum.count()
 
       assert token_holders_count == 2
@@ -6023,7 +6034,10 @@ defmodule Explorer.ChainTest do
     test "get_implementation_abi_from_proxy/2 returns empty [] abi if proxy abi is null" do
       proxy_contract_address = insert(:contract_address)
 
-      assert Chain.get_implementation_abi_from_proxy(%SmartContract{address_hash: proxy_contract_address.hash, abi: nil}) ==
+      assert Chain.get_implementation_abi_from_proxy(
+               %SmartContract{address_hash: proxy_contract_address.hash, abi: nil},
+               []
+             ) ==
                []
     end
 
@@ -6044,7 +6058,7 @@ defmodule Explorer.ChainTest do
       smart_contract =
         insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
-      assert Chain.get_implementation_abi_from_proxy(smart_contract) == []
+      assert Chain.get_implementation_abi_from_proxy(smart_contract, []) == []
     end
 
     test "get_implementation_abi_from_proxy/2 returns implementation abi if implementation is verified" do
@@ -6079,7 +6093,7 @@ defmodule Explorer.ChainTest do
         end
       )
 
-      implementation_abi = Chain.get_implementation_abi_from_proxy(smart_contract)
+      implementation_abi = Chain.get_implementation_abi_from_proxy(smart_contract, [])
 
       assert implementation_abi == @implementation_abi
     end
@@ -6118,7 +6132,7 @@ defmodule Explorer.ChainTest do
         end
       )
 
-      implementation_abi = Chain.get_implementation_abi_from_proxy(smart_contract)
+      implementation_abi = Chain.get_implementation_abi_from_proxy(smart_contract, [])
 
       assert implementation_abi == @implementation_abi
     end
