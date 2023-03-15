@@ -91,12 +91,12 @@ defmodule Indexer.Fetcher.TokenInstance do
 
         {:ok, _result} = Chain.upsert_token_instance(params)
 
-        Telemetry.event([:indexer, :nft, :ingestion_error], %{count: 1})
+        Telemetry.event([:indexer, :nft, :ingestion_errors], %{count: 1})
 
       result ->
-        Telemetry.event([:indexer, :nft, :ingestion_error], %{count: 1})
+        Telemetry.event([:indexer, :nft, :ingestion_errors], %{count: 1})
 
-        Logger.debug(
+        Logger.error(
           [
             "failed to fetch token instance metadata for #{inspect({to_string(token_contract_address_hash), Decimal.to_integer(token_id)})}: ",
             inspect(result)

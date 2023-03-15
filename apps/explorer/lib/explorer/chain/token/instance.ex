@@ -87,7 +87,7 @@ defmodule Explorer.Chain.Token.Instance do
         }
       )
 
-    result = Repo.one(count_query)
+    result = Repo.one(count_query, timeout: :infinity)
 
     case result do
       nil -> 0
