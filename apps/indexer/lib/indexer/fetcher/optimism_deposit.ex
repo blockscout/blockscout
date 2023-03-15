@@ -162,6 +162,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
       )
 
       if to_block == safe_block do
+        Logger.info("Fetched all L1 blocks (#{start_block}..#{safe_block}), switching to realtime mode.")
         Process.send(self(), :switch_to_realtime, [])
         {:noreply, state}
       else
@@ -228,7 +229,6 @@ defmodule Indexer.Fetcher.OptimismDeposit do
            {:check_interval, Optimism.get_block_check_interval(json_rpc_named_arguments)} do
       handle_new_logs(logs, json_rpc_named_arguments)
       Process.send(self(), :fetch, [])
-      Logger.info("Fetched all L1 blocks (#{start_block}..#{safe_block}), switching to realtime mode.")
       {:noreply, %{state | mode: :realtime, filter_id: filter_id, check_interval: check_interval}}
     else
       {:latest_block, {:error, error}} ->
