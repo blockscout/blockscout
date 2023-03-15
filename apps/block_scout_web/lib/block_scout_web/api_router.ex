@@ -37,11 +37,14 @@ defmodule BlockScoutWeb.ApiRouter do
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
   end
 
-  alias BlockScoutWeb.Account.Api.V1.{TagsController, UserController}
+  alias BlockScoutWeb.Account.Api.V1.{AuthenticateController, TagsController, UserController}
 
   scope "/account/v1", as: :account_v1 do
     pipe_through(:api)
     pipe_through(:account_api)
+
+    get("/authenticate", AuthenticateController, :authenticate_get)
+    post("/authenticate", AuthenticateController, :authenticate_post)
 
     get("/get_csrf", UserController, :get_csrf)
 
