@@ -194,7 +194,6 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   def handle_info(
         :switch_to_realtime,
         %__MODULE__{
-          start_block: start_block,
           safe_block: safe_block,
           optimism_portal: optimism_portal,
           json_rpc_named_arguments: json_rpc_named_arguments,
