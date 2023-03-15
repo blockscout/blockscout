@@ -151,41 +151,71 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
     end
 
     test "fetches json with latin1 encoding", %{bypass: bypass} do
+      path = "/api/card/55265"
+
       json = """
       {
         "name": "Sérgio Mendonça"
       }
       """
 
-      Bypass.expect(bypass, "GET", "/api/card/55265", fn conn ->
+      Bypass.expect(bypass, "GET", path, fn conn ->
         Conn.resp(conn, 200, json)
       end)
 
       assert {:ok, %{metadata: %{"name" => "Sérgio Mendonça"}}} ==
                InstanceMetadataRetriever.fetch_json(%{
-                 "c87b56dd" => {:ok, ["http://localhost:#{bypass.port}/api/card/55265"]}
+                 "c87b56dd" => {:ok, ["http://localhost:#{bypass.port}#{path}"]}
                })
     end
 
     test "fetches json metadata for kitties" do
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      result =
+        "{\"id\":100500,\"name\":\"KittyBlue_2_Lemonade\",\"generation\":20,\"genes\":\"623509754227292470437941473598751240781530569131665917719736997423495595\",\"created_at\":\"2017-12-06T01:56:27.000Z\",\"birthday\":\"2017-12-06T00:00:00.000Z\",\"image_url\":\"https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/100500.svg\",\"image_url_cdn\":\"https://img.cn.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/100500.svg\",\"color\":\"strawberry\",\"background_color\":\"#ffe0e5\",\"bio\":\"Shalom! I'm KittyBlue_2_Lemonade. I'm a professional Foreign Film Director and I love cantaloupe. I'm convinced that the world is flat. One day I'll prove it. It's pawesome to meet you!\",\"kitty_type\":null,\"is_fancy\":false,\"is_exclusive\":false,\"is_special_edition\":false,\"fancy_type\":null,\"language\":\"en\",\"is_prestige\":false,\"prestige_type\":null,\"prestige_ranking\":null,\"prestige_time_limit\":null,\"status\":{\"is_ready\":true,\"is_gestating\":false,\"cooldown\":1410310201506,\"dynamic_cooldown\":1475064986478,\"cooldown_index\":10,\"cooldown_end_block\":0,\"pending_tx_type\":null,\"pending_tx_since\":null},\"purrs\":{\"count\":1,\"is_purred\":false},\"watchlist\":{\"count\":0,\"is_watchlisted\":false},\"hatcher\":{\"address\":\"0x7b9ea9ac69b8fde875554321472c732eeff06ca0\",\"image\":\"14\",\"nickname\":\"KittyBlu\",\"hasDapper\":false,\"twitter_id\":null,\"twitter_image_url\":null,\"twitter_handle\":null},\"auction\":{},\"offer\":{},\"owner\":{\"address\":\"0x7b9ea9ac69b8fde875554321472c732eeff06ca0\",\"hasDapper\":false,\"twitter_id\":null,\"twitter_image_url\":null,\"twitter_handle\":null,\"image\":\"14\",\"nickname\":\"KittyBlu\"},\"matron\":{\"id\":46234,\"name\":\"KittyBlue_1_Limegreen\",\"generation\":10,\"enhanced_cattributes\":[{\"type\":\"body\",\"kittyId\":19631,\"position\":105,\"description\":\"cymric\"},{\"type\":\"coloreyes\",\"kittyId\":40356,\"position\":263,\"description\":\"limegreen\"},{\"type\":\"eyes\",\"kittyId\":3185,\"position\":16,\"description\":\"raisedbrow\"},{\"type\":\"pattern\",\"kittyId\":46234,\"position\":-1,\"description\":\"totesbasic\"},{\"type\":\"mouth\",\"kittyId\":46234,\"position\":-1,\"description\":\"happygokitty\"},{\"type\":\"colorprimary\",\"kittyId\":46234,\"position\":-1,\"description\":\"greymatter\"},{\"type\":\"colorsecondary\",\"kittyId\":46234,\"position\":-1,\"description\":\"lemonade\"},{\"type\":\"colortertiary\",\"kittyId\":46234,\"position\":-1,\"description\":\"granitegrey\"}],\"owner_wallet_address\":\"0x7b9ea9ac69b8fde875554321472c732eeff06ca0\",\"owner\":{\"address\":\"0x7b9ea9ac69b8fde875554321472c732eeff06ca0\"},\"created_at\":\"2017-12-03T21:29:17.000Z\",\"image_url\":\"https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/46234.svg\",\"image_url_cdn\":\"https://img.cn.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/46234.svg\",\"color\":\"limegreen\",\"is_fancy\":false,\"kitty_type\":null,\"is_exclusive\":false,\"is_special_edition\":false,\"fancy_type\":null,\"status\":{\"is_ready\":true,\"is_gestating\":false,\"cooldown\":1486487069384},\"hatched\":true,\"wrapped\":false,\"image_url_png\":\"https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/46234.png\"},\"sire\":{\"id\":82090,\"name\":null,\"generation\":19,\"enhanced_cattributes\":[{\"type\":\"body\",\"kittyId\":82090,\"position\":-1,\"description\":\"himalayan\"},{\"type\":\"coloreyes\",\"kittyId\":82090,\"position\":-1,\"description\":\"strawberry\"},{\"type\":\"eyes\",\"kittyId\":82090,\"position\":-1,\"description\":\"thicccbrowz\"},{\"type\":\"pattern\",\"kittyId\":82090,\"position\":-1,\"description\":\"totesbasic\"},{\"type\":\"mouth\",\"kittyId\":82090,\"position\":-1,\"description\":\"pouty\"},{\"type\":\"colorprimary\",\"kittyId\":82090,\"position\":-1,\"description\":\"aquamarine\"},{\"type\":\"colorsecondary\",\"kittyId\":82090,\"position\":-1,\"description\":\"chocolate\"},{\"type\":\"colortertiary\",\"kittyId\":82090,\"position\":-1,\"description\":\"granitegrey\"}],\"owner_wallet_address\":\"0x798fdad0cedc4b298fc7d53a982fa0c5f447eaa5\",\"owner\":{\"address\":\"0x798fdad0cedc4b298fc7d53a982fa0c5f447eaa5\"},\"created_at\":\"2017-12-05T06:30:05.000Z\",\"image_url\":\"https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/82090.svg\",\"image_url_cdn\":\"https://img.cn.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/82090.svg\",\"color\":\"strawberry\",\"is_fancy\":false,\"is_exclusive\":false,\"is_special_edition\":false,\"fancy_type\":null,\"status\":{\"is_ready\":true,\"is_gestating\":false,\"cooldown\":1486619010030},\"kitty_type\":null,\"hatched\":true,\"wrapped\":false,\"image_url_png\":\"https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/82090.png\"},\"children\":[],\"hatched\":true,\"wrapped\":false,\"enhanced_cattributes\":[{\"type\":\"colorprimary\",\"description\":\"greymatter\",\"position\":null,\"kittyId\":100500},{\"type\":\"coloreyes\",\"description\":\"strawberry\",\"position\":null,\"kittyId\":100500},{\"type\":\"body\",\"description\":\"himalayan\",\"position\":null,\"kittyId\":100500},{\"type\":\"colorsecondary\",\"description\":\"lemonade\",\"position\":null,\"kittyId\":100500},{\"type\":\"mouth\",\"description\":\"pouty\",\"position\":null,\"kittyId\":100500},{\"type\":\"pattern\",\"description\":\"totesbasic\",\"position\":null,\"kittyId\":100500},{\"type\":\"eyes\",\"description\":\"thicccbrowz\",\"position\":null,\"kittyId\":100500},{\"type\":\"colortertiary\",\"description\":\"kittencream\",\"position\":null,\"kittyId\":100500},{\"type\":\"secret\",\"description\":\"se5\",\"position\":-1,\"kittyId\":100500},{\"type\":\"purrstige\",\"description\":\"pu20\",\"position\":-1,\"kittyId\":100500}],\"variation\":null,\"variation_ranking\":null,\"image_url_png\":\"https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/100500.png\",\"items\":[]}"
+
+      Explorer.Mox.HTTPoison
+      |> expect(:get, fn "https://api.cryptokitties.co/kitties/100500", _headers, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: result}}
+      end)
+
       {:ok, %{metadata: metadata}} =
         InstanceMetadataRetriever.fetch_metadata("0x06012c8cf97bead5deae237070f9587f8e7a266d", 100_500)
 
       assert Map.get(metadata, "name") == "KittyBlue_2_Lemonade"
+
+      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
-    test "fetches json metadata when HTTP status 301" do
-      {:ok, %{metadata: metadata}} =
-        InstanceMetadataRetriever.fetch_metadata_from_uri("https://metadata.billyli.workers.dev/1302")
+    test "fetches json metadata when HTTP status 301", %{bypass: bypass} do
+      path = "/1302"
 
-      assert Map.get(metadata, "attributes") == [
-               %{"trait_type" => "Mouth", "value" => "Discomfort"},
-               %{"trait_type" => "Background", "value" => "Army Green"},
-               %{"trait_type" => "Eyes", "value" => "Wide Eyed"},
-               %{"trait_type" => "Fur", "value" => "Black"},
-               %{"trait_type" => "Earring", "value" => "Silver Hoop"},
-               %{"trait_type" => "Hat", "value" => "Sea Captain's Hat"}
-             ]
+      attributes = """
+      [
+        {"trait_type": "Mouth", "value": "Discomfort"},
+        {"trait_type": "Background", "value": "Army Green"},
+        {"trait_type": "Eyes", "value": "Wide Eyed"},
+        {"trait_type": "Fur", "value": "Black"},
+        {"trait_type": "Earring", "value": "Silver Hoop"},
+        {"trait_type": "Hat", "value": "Sea Captain's Hat"}
+      ]
+      """
+
+      json = """
+      {
+        "attributes": #{attributes}
+      }
+      """
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        Conn.resp(conn, 200, json)
+      end)
+
+      {:ok, %{metadata: metadata}} =
+        InstanceMetadataRetriever.fetch_metadata_from_uri("http://localhost:#{bypass.port}#{path}")
+
+      assert Map.get(metadata, "attributes") == Jason.decode!(attributes)
     end
 
     test "replace {id} with actual token_id", %{bypass: bypass} do
@@ -347,12 +377,24 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                 }}
     end
 
-    test "fetches image from ipfs link directly" do
+    test "fetches image from ipfs link directly", %{bypass: bypass} do
+      path = "/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+
+      json = """
+      {
+        "image": "https://ipfs.io/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+      }
+      """
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        Conn.resp(conn, 200, json)
+      end)
+
       data = %{
         "c87b56dd" =>
           {:ok,
            [
-             "ipfs://bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+             "http://localhost:#{bypass.port}#{path}"
            ]}
       }
 
@@ -364,12 +406,24 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
               }} == InstanceMetadataRetriever.fetch_json(data)
     end
 
-    test "Fetches metadata from ipfs" do
+    test "Fetches metadata from ipfs", %{bypass: bypass} do
+      path = "/ipfs/bafybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json"
+
+      json = """
+      {
+        "image": "ipfs://bafybeihxuj3gxk7x5p36amzootyukbugmx3pw7dyntsrohg3se64efkuga/51.png"
+      }
+      """
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        Conn.resp(conn, 200, json)
+      end)
+
       data = %{
         "c87b56dd" =>
           {:ok,
            [
-             "ipfs://bafybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json"
+             "http://localhost:#{bypass.port}#{path}"
            ]}
       }
 
@@ -381,28 +435,38 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
       assert "ipfs://bafybeihxuj3gxk7x5p36amzootyukbugmx3pw7dyntsrohg3se64efkuga/51.png" == Map.get(metadata, "image")
     end
 
-    test "Fetches metadata from '${url}'" do
+    test "Fetches metadata from '${url}'", %{bypass: bypass} do
+      path = "/data/8/8578.json"
+
       data = %{
         "c87b56dd" =>
           {:ok,
            [
-             "'https://cards.collecttrumpcards.com/data/8/8578.json'"
+             "'http://localhost:#{bypass.port}#{path}'"
            ]}
       }
 
+      json = """
+      {
+        "attributes": [
+          {"trait_type": "Character", "value": "Blue Suit Boxing Glove"},
+          {"trait_type": "Face", "value": "Wink"},
+          {"trait_type": "Hat", "value": "Blue"},
+          {"trait_type": "Background", "value": "Red Carpet"}
+        ],
+        "image": "https://cards.collecttrumpcards.com/cards/0c68b1ab6.jpg",
+        "name": "Trump Digital Trading Card #8578",
+        "tokeId": 8578
+      }
+      """
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        Conn.resp(conn, 200, json)
+      end)
+
       assert {:ok,
               %{
-                metadata: %{
-                  "attributes" => [
-                    %{"trait_type" => "Character", "value" => "Blue Suit Boxing Glove"},
-                    %{"trait_type" => "Face", "value" => "Wink"},
-                    %{"trait_type" => "Hat", "value" => "Blue"},
-                    %{"trait_type" => "Background", "value" => "Red Carpet"}
-                  ],
-                  "image" => "https://cards.collecttrumpcards.com/cards/0c68b1ab6.jpg",
-                  "name" => "Trump Digital Trading Card #8578",
-                  "tokenId" => 8578
-                }
+                metadata: Jason.decode!(json)
               }} == InstanceMetadataRetriever.fetch_json(data)
     end
 
@@ -419,6 +483,21 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
     test "Process CIDv0 IPFS links" do
       data = "QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
 
+      result = %{
+        "name" => "asda",
+        "description" => "asda",
+        "salePrice" => 34,
+        "img_hash" => "QmUfW3PVnh9GGuHcQgc3ZeNEbhwp5HE8rS5ac9MDWWQebz",
+        "collectionId" => "1871_1665123820823"
+      }
+
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      Explorer.Mox.HTTPoison
+      |> expect(:get, fn "https://ipfs.io/ipfs/QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP", _headers, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(result)}}
+      end)
+
       assert {:ok,
               %{
                 metadata: %{
@@ -429,28 +508,51 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                   "salePrice" => 34
                 }
               }} == InstanceMetadataRetriever.fetch_json(data)
+
+      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
-    test "Process URI directly from link" do
-      data = "https://dejob.io/api/dejobio/v1/nftproduct/1"
+    test "Process URI directly from link", %{bypass: bypass} do
+      path = "/api/dejobio/v1/nftproduct/1"
+
+      json = """
+      {
+          "image": "https:\/\/cdn.discordapp.com\/attachments\/1008567215739650078\/1080111780858187796\/savechives_a_dragon_playing_football_in_a_city_full_of_flowers__0739cc42-aae1-4909-a964-3f9c0ed1a9ed.png",
+          "external_url": "https:\/\/dejob.io\/blue-reign-the-dragon-football-champion-of-the-floral-city\/",
+          "name": "Blue Reign: The Dragon Football Champion of the Floral City",
+          "description": "Test",
+          "attributes": [
+              {
+                  "trait_type": "Product Type",
+                  "value": "Book"
+              },
+              {
+                  "display_type": "number",
+                  "trait_type": "Total Sold",
+                  "value": "0"
+              },
+              {
+                  "display_type": "number",
+                  "trait_type": "Success Sold",
+                  "value": "0"
+              },
+              {
+                  "max_value": "100",
+                  "trait_type": "Success Rate",
+                  "value": "0"
+              }
+          ]
+      }
+      """
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        Conn.resp(conn, 200, json)
+      end)
 
       assert {:ok,
               %{
-                metadata: %{
-                  "description" =>
-                    "\\\"Blue Reign: The Dragon Football Champion of the Floral City\\\" is a science fiction story about a dragon who loves playing football and dreams of becoming a champion. The story takes place in a futuristic city full of flowers and blue light, and it is raining throughout the story.\r\n\r\nThroughout the story, the dragon faces challenges on and off the field, including intense training regimens, rival teams, and personal struggles. He perseveres through these obstacles and incorporates new techniques and strategies into his gameplay.\r\n\r\nAs the playoffs approach, the dragon\\'s team faces increasingly tough opponents, culminating in a highly anticipated championship game against their long-standing rivals, the Storm Hawks. The dragon\\'s heart-pumping performance and his team\\'s impressive plays lead them to victory, and they celebrate their status as champions.\r\n\r\nThe story ultimately focuses on the dragon\\'s journey towards achieving his dream and the teamwork and dedication required to succeed in a highly competitive sport.",
-                  "name" => "Blue Reign: The Dragon Football Champion of the Floral City",
-                  "attributes" => [
-                    %{"trait_type" => "Product Type", "value" => "Book"},
-                    %{"display_type" => "number", "trait_type" => "Total Sold", "value" => "0"},
-                    %{"display_type" => "number", "trait_type" => "Success Sold", "value" => "0"},
-                    %{"max_value" => "100", "trait_type" => "Success Rate", "value" => "0"}
-                  ],
-                  "external_url" => "https://dejob.io/?p=49",
-                  "image" =>
-                    "https://cdn.discordapp.com/attachments/1008567215739650078/1080111780858187796/savechives_a_dragon_playing_football_in_a_city_full_of_flowers__0739cc42-aae1-4909-a964-3f9c0ed1a9ed.png"
-                }
-              }} == InstanceMetadataRetriever.fetch_json(data)
+                metadata: Jason.decode!(json)
+              }} == InstanceMetadataRetriever.fetch_json("http://localhost:#{bypass.port}#{path}")
     end
   end
 end
