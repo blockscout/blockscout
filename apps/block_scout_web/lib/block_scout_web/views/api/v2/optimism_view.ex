@@ -55,6 +55,28 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     }
   end
 
+  def render("optimism_deposits.json", %{
+        deposits: deposits,
+        total: total,
+        next_page_params: next_page_params
+      }) do
+    %{
+      items:
+        Enum.map(deposits, fn deposit ->
+          %{
+            "l1_block_number" => deposit.l1_block_number,
+            "l2_tx_hash" => deposit.l2_transaction_hash,
+            "l1_block_timestamp" => deposit.l1_block_timestamp,
+            "l1_tx_hash" => deposit.l1_transaction_hash,
+            "l1_tx_origin" => deposit.l1_transaction_origin,
+            "l2_tx_gas_limit" => deposit.l2_transaction.gas
+          }
+        end),
+      total: total,
+      next_page_params: next_page_params
+    }
+  end
+
   def render("optimism_withdrawals.json", %{
         withdrawals: withdrawals,
         total: total,

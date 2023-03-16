@@ -52,6 +52,7 @@ defmodule Explorer.Chain do
     Import,
     InternalTransaction,
     Log,
+    OptimismDeposit,
     OptimismFrameSequence,
     OptimismOutputRoot,
     OptimismTxnBatch,
@@ -2518,6 +2519,27 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Lists `t:Explorer.Chain.OptimismDeposit.t/0`'s' in descending order based on l1_block_number and l2_transaction_hash.
+
+  """
+  @spec list_optimism_deposits :: [OptimismDeposit.t()]
+  @spec list_optimism_deposits([paging_options]) :: [OptimismDeposit.t()]
+  def list_optimism_deposits(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(d in OptimismDeposit,
+        order_by: [desc: d.l1_block_number, desc: d.l2_transaction_hash]
+      )
+
+    base_query
+    |> join_association(:l2_transaction, :required)
+    |> page_deposits(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
+  end
+
+  @doc """
   Lists `t:Explorer.Chain.OptimismWithdrawal.t/0`'s' in descending order based on message nonce.
 
   """
@@ -4678,6 +4700,15 @@ defmodule Explorer.Chain do
       where:
         (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
           address.fetched_coin_balance < ^coin_balance
+    )
+  end
+
+  defp page_deposits(query, %PagingOptions{key: nil}), do: query
+
+  defp page_deposits(query, %PagingOptions{key: {block_number, l2_tx_hash}}) do
+    from(d in query,
+      where: d.l1_block_number < ^block_number,
+      or_where: d.l1_block_number == ^block_number and d.l2_transaction_hash < ^l2_tx_hash
     )
   end
 
