@@ -7,7 +7,7 @@ defmodule EthereumJSONRPC.Geth do
 
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
-  alias EthereumJSONRPC.{FetchedBalance, FetchedCode, PendingTransaction}
+  alias EthereumJSONRPC.{FetchedBalance, FetchedCode, PendingTransaction, Utility.CommonHelper}
   alias EthereumJSONRPC.Geth.{Calls, Tracer}
 
   @behaviour EthereumJSONRPC.Variant
@@ -27,10 +27,20 @@ defmodule EthereumJSONRPC.Geth do
   def fetch_internal_transactions(transactions_params, json_rpc_named_arguments) when is_list(transactions_params) do
     id_to_params = id_to_params(transactions_params)
 
+    debug_trace_transaction_timeout =
+      Application.get_env(:ethereum_jsonrpc, __MODULE__)[:debug_trace_transaction_timeout]
+
+    parsed_timeout = CommonHelper.parse_duration(debug_trace_transaction_timeout)
+
+    json_rpc_named_arguments_corrected_timeout =
+      json_rpc_named_arguments
+      |> put_in([:transport_options, :http_options, :timeout], parsed_timeout)
+      |> put_in([:transport_options, :http_options, :recv_timeout], parsed_timeout)
+
     with {:ok, responses} <-
            id_to_params
            |> debug_trace_transaction_requests()
-           |> json_rpc(json_rpc_named_arguments) do
+           |> json_rpc(json_rpc_named_arguments_corrected_timeout) do
       debug_trace_transaction_responses_to_internal_transactions_params(
         responses,
         id_to_params,
