@@ -196,6 +196,11 @@ config :block_scout_web, BlockScoutWeb.API.V2, enabled: System.get_env("API_V2_E
 config :block_scout_web, :account,
   authenticate_endpoint_api_key: System.get_env("ACCOUNT_AUTHENTICATE_ENDPOINT_API_KEY")
 
+# Configures Google Analytics
+config :block_scout_web,
+google_analytics_enabled: System.get_env("GOOGLE_ANALYTICS_ENABLED", "false") == "true",
+google_analytics_tracking_id: System.get_env("GOOGLE_ANALYTICS_TRACKING_ID")
+
 ########################
 ### Ethereum JSONRPC ###
 ########################
