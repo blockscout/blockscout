@@ -22,7 +22,9 @@ defmodule BlockScoutWeb.SmartContractController do
     with true <- ajax?(conn),
          {:custom_abi, false} <- {:custom_abi, is_custom_abi},
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
+         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true),
+         {:contract_interaction_disabled, false} <-
+           {:contract_interaction_disabled, AddressView.contract_interaction_disabled?() && action == "write"} do
       implementation_address_hash_string =
         if contract_type == "proxy" do
           address.smart_contract
@@ -90,6 +92,9 @@ defmodule BlockScoutWeb.SmartContractController do
 
       :error ->
         unprocessable_entity(conn)
+
+      {:contract_interaction_disabled, true} ->
+        not_found(conn)
 
       {:error, :not_found} ->
         not_found(conn)
