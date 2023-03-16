@@ -272,14 +272,15 @@ defmodule BlockScoutWeb.Chain do
 
   def paging_options(%{"fiat_value" => fiat_value_string, "value" => value, "id" => id_string}) do
     with {id, ""} <- Integer.parse(id_string),
-        {value, ""} <- Decimal.parse(value),
+         {value, ""} <- Decimal.parse(value),
          {_id, _value, {fiat_value, ""}} <- {id, value, Decimal.parse(fiat_value_string)} do
       [paging_options: %{@default_paging_options | key: {Decimal.round(fiat_value, 16), value, id}}]
     else
       {id, value, :error} ->
         [paging_options: %{@default_paging_options | key: {nil, value, id}}]
-        _ ->
-          [paging_options: @default_paging_options]
+
+      _ ->
+        [paging_options: @default_paging_options]
     end
   end
 
