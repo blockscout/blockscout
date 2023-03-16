@@ -225,7 +225,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
             )},
          {:ok, filter_id} <-
            Optimism.get_new_filter(
-            max(safe_block, from_block),
+             max(safe_block, from_block),
              "latest",
              optimism_portal,
              @transaction_deposited_event,
