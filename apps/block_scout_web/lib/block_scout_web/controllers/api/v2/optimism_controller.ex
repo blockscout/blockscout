@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     ]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{OptimismOutputRoot, OptimismTxnBatch, OptimismWithdrawal}
+  alias Explorer.Chain.{OptimismDeposit, OptimismOutputRoot, OptimismTxnBatch, OptimismWithdrawal}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -48,6 +48,26 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     |> put_status(200)
     |> render(:output_roots, %{
       roots: roots,
+      total: total,
+      next_page_params: next_page_params
+    })
+  end
+
+  def deposits(conn, params) do
+    {deposits, next_page} =
+      params
+      |> paging_options()
+      |> Chain.list_optimism_deposits()
+      |> split_list_by_page()
+
+    total = Chain.get_table_rows_total_count(OptimismDeposit)
+
+    next_page_params = next_page_params(next_page, deposits, params)
+
+    conn
+    |> put_status(200)
+    |> render(:optimism_deposits, %{
+      deposits: deposits,
       total: total,
       next_page_params: next_page_params
     })
