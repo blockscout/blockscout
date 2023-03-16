@@ -74,12 +74,18 @@ defmodule Indexer.Fetcher.OptimismDeposit do
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid,
             (start_block_l1 <= last_l1_block_number || last_l1_block_number == 0) && start_block_l1 <= safe_block} do
-      Process.send(self(), :fetch, [])
+      start_block = max(start_block_l1, last_l1_block_number)
+
+      if start_block > safe_block do
+        Process.send(self(), :switch_to_realtime, [])
+      else
+        Process.send(self(), :fetch, [])
+      end
 
       {:ok,
        %__MODULE__{
-         start_block: max(start_block_l1, last_l1_block_number),
-         from_block: max(start_block_l1, last_l1_block_number),
+         start_block: start_block,
+         from_block: start_block,
          safe_block: safe_block,
          optimism_portal: optimism_portal,
          json_rpc_named_arguments: json_rpc_named_arguments,
@@ -194,6 +200,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   def handle_info(
         :switch_to_realtime,
         %__MODULE__{
+          from_block: from_block,
           safe_block: safe_block,
           optimism_portal: optimism_portal,
           json_rpc_named_arguments: json_rpc_named_arguments,
@@ -209,7 +216,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
          {:logs, {:ok, logs}} <-
            {:logs,
             Optimism.get_logs(
-              safe_block + 1,
+              max(safe_block, from_block) + 1,
               "latest",
               optimism_portal,
               @transaction_deposited_event,
@@ -339,20 +346,37 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   end
 
   defp handle_new_logs(logs, json_rpc_named_arguments) do
-    {reorgs, logs_to_parse} =
+    {reorgs, logs_to_parse, min_block, max_block, cnt} =
       logs
-      |> Enum.reduce({MapSet.new(), []}, fn
-        %{"removed" => true, "blockNumber" => block_number}, {reorgs, logs_to_parse} ->
-          {MapSet.put(reorgs, block_number), logs_to_parse}
+      |> Enum.reduce({MapSet.new(), [], nil, 0, 0}, fn
+        %{"removed" => true, "blockNumber" => block_number}, {reorgs, logs_to_parse, min_block, max_block, cnt} ->
+          {MapSet.put(reorgs, block_number), logs_to_parse, min_block, max_block, cnt}
 
-        log, {reorgs, logs_to_parse} ->
-          {reorgs, [log | logs_to_parse]}
+        %{"blockNumber" => block_number} = log, {reorgs, logs_to_parse, min_block, max_block, cnt} ->
+          {
+            reorgs,
+            [log | logs_to_parse],
+            min(min_block, quantity_to_integer(block_number)),
+            max(max_block, quantity_to_integer(block_number)),
+            cnt + 1
+          }
       end)
 
     handle_reorgs(reorgs)
 
-    deposits = events_to_deposits(logs_to_parse, json_rpc_named_arguments)
-    {:ok, _imported} = Chain.import(%{optimism_deposits: %{params: deposits}, timeout: :infinity})
+    unless Enum.empty?(logs_to_parse) do
+      deposits = events_to_deposits(logs_to_parse, json_rpc_named_arguments)
+      {:ok, _imported} = Chain.import(%{optimism_deposits: %{params: deposits}, timeout: :infinity})
+
+      Optimism.log_blocks_chunk_handling(
+        min_block,
+        max_block,
+        min_block,
+        max_block,
+        "#{cnt} TransactionDeposited event(s)",
+        "L1"
+      )
+    end
   end
 
   defp events_to_deposits(logs, json_rpc_named_arguments) do
