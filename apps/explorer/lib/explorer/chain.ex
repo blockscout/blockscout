@@ -1321,9 +1321,13 @@ defmodule Explorer.Chain do
   """
   @spec finished_indexing?(Decimal.t(), [api?]) :: boolean()
   def finished_indexing?(indexed_ratio_blocks, options \\ []) do
-    case finished_blocks_indexing?(indexed_ratio_blocks) do
-      false -> false
-      _ -> finished_internal_transactions_indexing?(options)
+    if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
+      case finished_blocks_indexing?(indexed_ratio_blocks) do
+        false -> false
+        _ -> finished_internal_transactions_indexing?(options)
+      end
+    else
+      true
     end
   end
 
