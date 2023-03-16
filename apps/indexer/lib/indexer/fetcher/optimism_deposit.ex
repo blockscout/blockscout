@@ -449,6 +449,8 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     Logger.metadata(fetcher: :optimism_deposits)
 
     if MapSet.size(reorgs) > 0 do
+      Logger.warning("L1 reorg detected. The following L1 blocks were removed: #{inspect(MapSet.to_list(reorgs))}")
+
       {deleted_count, _} = Repo.delete_all(from(d in OptimismDeposit, where: d.l1_block_number in ^reorgs))
 
       if deleted_count > 0 do
