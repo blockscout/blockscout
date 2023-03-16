@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.SmartContractController do
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true),
          {:contract_interaction_disabled, false} <-
-           {:contract_interaction_disabled, AddressView.contract_interaction_disabled?() && action == "write"} do
+           {:contract_interaction_disabled, write_contract_api_disabled?(action)} do
       implementation_address_hash_string =
         if contract_type == "proxy" do
           address.smart_contract
@@ -256,4 +256,6 @@ defmodule BlockScoutWeb.SmartContractController do
   defp is_integer?(integer) when is_integer(integer), do: true
 
   defp is_integer?(_), do: false
+
+  defp write_contract_api_disabled?(action), do: AddressView.contract_interaction_disabled?() && action == "write"
 end
