@@ -74,12 +74,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   end
 
   def methods_write(conn, %{"address_hash" => address_hash_string, "is_custom_abi" => "true"} = params) do
-    with {:format, {:ok, _address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+    with {:contract_interaction_disabled, false} <-
+           {:contract_interaction_disabled, AddressView.contract_interaction_disabled?()},
+         {:format, {:ok, _address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          custom_abi <- AddressView.fetch_custom_abi(conn, address_hash_string),
-         {:not_found, true} <- {:not_found, AddressView.check_custom_abi_for_having_write_functions(custom_abi)},
-         {:contract_interaction_disabled, false} <-
-           {:contract_interaction_disabled, AddressView.contract_interaction_disabled?()} do
+         {:not_found, true} <- {:not_found, AddressView.check_custom_abi_for_having_write_functions(custom_abi)} do
       conn
       |> put_status(200)
       |> json(Writer.filter_write_functions(custom_abi.abi))
@@ -87,12 +87,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   end
 
   def methods_write(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+    with {:contract_interaction_disabled, false} <-
+           {:contract_interaction_disabled, AddressView.contract_interaction_disabled?()},
+         {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          smart_contract <- Chain.address_hash_to_smart_contract(address_hash, @api_true),
-         {:not_found, false} <- {:not_found, is_nil(smart_contract)},
-         {:contract_interaction_disabled, false} <-
-           {:contract_interaction_disabled, AddressView.contract_interaction_disabled?()} do
+         {:not_found, false} <- {:not_found, is_nil(smart_contract)} do
       conn
       |> put_status(200)
       |> json(Writer.write_functions(smart_contract))
@@ -120,13 +120,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   end
 
   def methods_write_proxy(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+    with {:contract_interaction_disabled, false} <-
+           {:contract_interaction_disabled, AddressView.contract_interaction_disabled?()},
+         {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, address}} <-
            {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)},
-         {:not_found, false} <- {:not_found, is_nil(address.smart_contract)},
-         {:contract_interaction_disabled, false} <-
-           {:contract_interaction_disabled, AddressView.contract_interaction_disabled?()} do
+         {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
       implementation_address_hash_string =
         address.smart_contract
         |> SmartContract.get_implementation_address_hash(@api_true)
