@@ -101,19 +101,19 @@ const readWriteFunction = (element) => {
 const container = $('[data-smart-contract-functions]')
 
 if (container.length) {
-  getWalletAndLoadFunctions()
+  getWalletAndLoadFunctions(false, container)
 }
 
 const customABIContainer = $('[data-smart-contract-functions-custom]')
 
 if (customABIContainer.length) {
-  getWalletAndLoadFunctions()
+  getWalletAndLoadFunctions(true, customABIContainer)
 }
 
-function getWalletAndLoadFunctions () {
+function getWalletAndLoadFunctions (isCustomABI, container) {
   getCurrentAccountPromise(window.web3 && window.web3.currentProvider).then((currentAccount) => {
-    loadFunctions(container, false, currentAccount)
+    loadFunctions(container, isCustomABI, currentAccount)
   }, () => {
-    loadFunctions(container, false, null)
+    loadFunctions(container, isCustomABI, null)
   })
 }
