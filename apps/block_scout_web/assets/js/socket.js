@@ -1,15 +1,8 @@
 import { Socket } from 'phoenix'
 import { locale } from './locale'
+import { commonPath } from './lib/path_helper'
 
-const networkParhObj = document.getElementById('network-path')
-let websocketRootUrl
-if (networkParhObj) {
-  // @ts-ignore
-  websocketRootUrl = networkParhObj.value
-}
-if (!websocketRootUrl) {
-  websocketRootUrl = ''
-}
+let websocketRootUrl = commonPath
 if (websocketRootUrl.endsWith('/')) {
   websocketRootUrl = websocketRootUrl.slice(0, -1)
 }

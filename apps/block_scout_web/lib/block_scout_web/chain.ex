@@ -182,6 +182,55 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  def paging_options(%{
+        "block_number" => block_number_string,
+        "index" => index_string,
+        "batch_log_index" => batch_log_index_string,
+        "batch_block_hash" => batch_block_hash_string,
+        "batch_transaction_hash" => batch_transaction_hash_string,
+        "index_in_batch" => index_in_batch_string
+      }) do
+    with {block_number, ""} <- Integer.parse(block_number_string),
+         {index, ""} <- Integer.parse(index_string),
+         {index_in_batch, ""} <- Integer.parse(index_in_batch_string),
+         {:ok, batch_transaction_hash} <- string_to_transaction_hash(batch_transaction_hash_string),
+         {:ok, batch_block_hash} <- string_to_block_hash(batch_block_hash_string),
+         {batch_log_index, ""} <- Integer.parse(batch_log_index_string) do
+      [
+        paging_options: %{
+          @default_paging_options
+          | key: {block_number, index},
+            batch_key: {batch_block_hash, batch_transaction_hash, batch_log_index, index_in_batch}
+        }
+      ]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{
+        "batch_log_index" => batch_log_index_string,
+        "batch_block_hash" => batch_block_hash_string,
+        "batch_transaction_hash" => batch_transaction_hash_string,
+        "index_in_batch" => index_in_batch_string
+      }) do
+    with {index_in_batch, ""} <- Integer.parse(index_in_batch_string),
+         {:ok, batch_transaction_hash} <- string_to_transaction_hash(batch_transaction_hash_string),
+         {:ok, batch_block_hash} <- string_to_block_hash(batch_block_hash_string),
+         {batch_log_index, ""} <- Integer.parse(batch_log_index_string) do
+      [
+        paging_options: %{
+          @default_paging_options
+          | batch_key: {batch_block_hash, batch_transaction_hash, batch_log_index, index_in_batch}
+        }
+      ]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
   def paging_options(%{"block_number" => block_number_string, "index" => index_string}) do
     with {block_number, ""} <- Integer.parse(block_number_string),
          {index, ""} <- Integer.parse(index_string) do
@@ -287,9 +336,9 @@ defmodule BlockScoutWeb.Chain do
 
   def param_to_block_timestamp(timestamp_string) when is_binary(timestamp_string) do
     case Integer.parse(timestamp_string) do
-      {temstamp_int, ""} ->
+      {timestamp_int, ""} ->
         timestamp =
-          temstamp_int
+          timestamp_int
           |> DateTime.from_unix!(:second)
 
         {:ok, timestamp}
@@ -393,6 +442,7 @@ defmodule BlockScoutWeb.Chain do
     %{"smart_contract_id" => smart_contract.id}
   end
 
+  # clause for search results pagination
   defp paging_params(%{
          address_hash: address_hash,
          tx_hash: tx_hash,
@@ -454,5 +504,43 @@ defmodule BlockScoutWeb.Chain do
 
   def unique_tokens_next_page(_, list, params) do
     Map.merge(params, paging_params(List.last(list)))
+  end
+
+  def token_transfers_next_page_params([], _list, _params), do: nil
+
+  def token_transfers_next_page_params(next_page, list, params) do
+    next_token_transfer = List.first(next_page)
+    current_token_transfer = List.last(list)
+
+    if next_token_transfer.log_index == current_token_transfer.log_index and
+         next_token_transfer.block_hash == current_token_transfer.block_hash and
+         next_token_transfer.transaction_hash == current_token_transfer.transaction_hash do
+      new_params =
+        list
+        |> last_token_transfer_before_current(current_token_transfer)
+        |> (&if(is_nil(&1), do: %{}, else: paging_params(&1))).()
+
+      params
+      |> Map.merge(new_params)
+      |> Map.merge(%{
+        "batch_log_index" => current_token_transfer.log_index,
+        "batch_block_hash" => current_token_transfer.block_hash,
+        "batch_transaction_hash" => current_token_transfer.transaction_hash,
+        "index_in_batch" => current_token_transfer.index_in_batch
+      })
+    else
+      Map.merge(params, paging_params(List.last(list)))
+    end
+  end
+
+  defp last_token_transfer_before_current(list, current_token_transfer) do
+    Enum.reduce_while(list, nil, fn tt, acc ->
+      if tt.log_index == current_token_transfer.log_index and tt.block_hash == current_token_transfer.block_hash and
+           tt.transaction_hash == current_token_transfer.transaction_hash do
+        {:halt, acc}
+      else
+        {:cont, tt}
+      end
+    end)
   end
 end

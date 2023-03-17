@@ -104,7 +104,7 @@ export async function disconnect () {
   // If the cached provider is not cleared,
   // WalletConnect will default to the existing session
   // and does not allow to re-scan the QR code with a new wallet.
-  // Depending on your use case you may want or want not his behavir.
+  // Depending on your use case you may want or want not his behavior.
   await web3Modal.clearCachedProvider()
 }
 

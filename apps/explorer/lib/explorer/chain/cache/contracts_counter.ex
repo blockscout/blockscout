@@ -62,8 +62,8 @@ defmodule Explorer.Chain.Cache.ContractsCounter do
   @doc """
   Fetches the value for a `#{@counter_type}` counter type from the `last_fetched_counters` table.
   """
-  def fetch do
-    Chain.get_last_fetched_counter(@counter_type)
+  def fetch(options) do
+    Chain.get_last_fetched_counter(@counter_type, options)
   end
 
   @doc """

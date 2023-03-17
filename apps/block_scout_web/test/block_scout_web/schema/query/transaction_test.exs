@@ -382,7 +382,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
     end
 
     test "with 'last' and 'count' arguments", %{conn: conn} do
-      # "`last: N` must always be acompanied by either a `before:` argument to
+      # "`last: N` must always be accompanied by either a `before:` argument to
       # the query, or an explicit `count:` option to the `from_query` call.
       # Otherwise it is impossible to derive the required offset."
       # https://hexdocs.pm/absinthe_relay/Absinthe.Relay.Connection.html#from_query/4

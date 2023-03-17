@@ -3,7 +3,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
   Fetches `consensus` `t:Explorer.Chain.Block.t/0` and compares their transaction
   number against a node, to revoke `consensus` on mismatch.
 
-  This is meant to fix incorrectly strored transactions that happened as a result
+  This is meant to fix incorrectly stored transactions that happened as a result
   of a race condition due to the asynchronicity of indexer's components.
   """
 

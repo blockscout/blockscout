@@ -688,7 +688,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       )
 
     try do
-      # ShreLocks order already enforced by `acquire_pending_internal_txs` (see docs: sharelocks.md)
+      # ShareLocks order already enforced by `acquire_pending_internal_txs` (see docs: sharelocks.md)
       {_count, deleted} = repo.delete_all(delete_query, [])
 
       {:ok, deleted}

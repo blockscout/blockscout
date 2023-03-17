@@ -13,6 +13,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   require Logger
 
+  @api_true [api?: true]
+
   def render("smart_contracts.json", %{smart_contracts: smart_contracts, next_page_params: next_page_params}) do
     %{"items" => Enum.map(smart_contracts, &prepare_smart_contract_for_list/1), "next_page_params" => next_page_params}
   end
@@ -42,7 +44,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       {:error, %{code: code, message: message, data: data}} ->
         revert_reason = Chain.format_revert_reason_message(data)
 
-        case SmartContractView.decode_revert_reason(contract_address_hash, revert_reason) do
+        case SmartContractView.decode_revert_reason(contract_address_hash, revert_reason, @api_true) do
           {:ok, method_id, text, mapping} ->
             %{
               result:
@@ -127,14 +129,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   # credo:disable-for-next-line
   def prepare_smart_contract(%Address{smart_contract: %SmartContract{}} = address) do
-    minimal_proxy_template = Chain.get_minimal_proxy_template(address.hash)
-
-    metadata_for_verification =
-      minimal_proxy_template || Chain.get_address_verified_twin_contract(address.hash).verified_contract
-
+    minimal_proxy_template = Chain.get_minimal_proxy_template(address.hash, @api_true)
+    twin = Chain.get_address_verified_twin_contract(address.hash, @api_true)
+    metadata_for_verification = minimal_proxy_template || twin.verified_contract
     smart_contract_verified = AddressView.smart_contract_verified?(address)
-    additional_sources_from_twin = Chain.get_address_verified_twin_contract(address.hash).additional_sources
-    fully_verified = Chain.smart_contract_fully_verified?(address.hash)
+    additional_sources_from_twin = twin.additional_sources
+    fully_verified = Chain.smart_contract_fully_verified?(address.hash, @api_true)
 
     additional_sources =
       if smart_contract_verified, do: address.smart_contract_additional_sources, else: additional_sources_from_twin
@@ -168,7 +168,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "abi" => target_contract.abi,
       "source_code" => target_contract.contract_source_code,
       "file_path" => target_contract.file_path,
-      "additional_sources" => Enum.map(additional_sources, &prepare_additional_sourse/1),
+      "additional_sources" => Enum.map(additional_sources, &prepare_additional_source/1),
       "compiler_settings" => target_contract.compiler_settings,
       "external_libraries" => prepare_external_libraries(target_contract.external_libraries),
       "constructor_args" => if(smart_contract_verified, do: target_contract.constructor_arguments),
@@ -210,7 +210,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     end)
   end
 
-  defp prepare_additional_sourse(source) do
+  defp prepare_additional_source(source) do
     %{
       "source_code" => source.contract_source_code,
       "file_path" => source.file_name
@@ -235,7 +235,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     exception ->
       Logger.warn(fn ->
         [
-          "Error formating constructor arguments for abi: #{inspect(abi)}, args: #{inspect(constructor_arguments)}: ",
+          "Error formatting constructor arguments for abi: #{inspect(abi)}, args: #{inspect(constructor_arguments)}: ",
           Exception.format(:error, exception)
         ]
       end)
