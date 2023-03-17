@@ -365,6 +365,7 @@ config :explorer, :datadog, port: ConfigHelper.parse_integer_env_var("DATADOG_PO
 config :explorer, Explorer.Chain.Cache.TransactionActionTokensData,
   max_cache_size: ConfigHelper.parse_integer_env_var("INDEXER_TX_ACTIONS_MAX_TOKEN_CACHE_SIZE", 100_000)
 
+
 ###############
 ### Indexer ###
 ###############
@@ -391,9 +392,6 @@ config :indexer, Indexer.Fetcher.TransactionAction,
   reindex_first_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_FIRST_BLOCK"),
   reindex_last_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_LAST_BLOCK"),
   reindex_protocols: System.get_env("INDEXER_TX_ACTIONS_REINDEX_PROTOCOLS", "")
-
-config :indexer, Indexer.Transform.TransactionActions,
-  max_token_cache_size: System.get_env("INDEXER_TX_ACTIONS_MAX_TOKEN_CACHE_SIZE")
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?:
