@@ -4,14 +4,23 @@
 
 ### Features
 
+- [#7068](https://github.com/blockscout/blockscout/pull/7068) - Add authenticate endpoint
+- [#6990](https://github.com/blockscout/blockscout/pull/6990) - Improved http requests logging, batch transfers pagination; New API v2 endpoint `/smart-contracts/counters`; And some refactoring
+
 ### Fixes
 
+- [#7091](https://github.com/blockscout/blockscout/pull/7091) - Fix custom ABI
+- [#7062](https://github.com/blockscout/blockscout/pull/7062) - Save block count in the DB when calculated in Cache module
 - [#7008](https://github.com/blockscout/blockscout/pull/7008) - Fetch image/video content from IPFS link
-- [#7007](https://github.com/blockscout/blockscout/pull/7007), [#7031](https://github.com/blockscout/blockscout/pull/7031) - Token instance fetcher fixes
+- [#7007](https://github.com/blockscout/blockscout/pull/7007), [#7031](https://github.com/blockscout/blockscout/pull/7031), [#7058](https://github.com/blockscout/blockscout/pull/7058), [#7061](https://github.com/blockscout/blockscout/pull/7061), [#7067](https://github.com/blockscout/blockscout/pull/7067) - Token instance fetcher fixes
 - [#7009](https://github.com/blockscout/blockscout/pull/7009) - Fix updating coin balances with empty value
+- [#7055](https://github.com/blockscout/blockscout/pull/7055) - Set updated_at on token update even if there are no changes
+- [#7080](https://github.com/blockscout/blockscout/pull/7080) - Deduplicate second degree relations before insert
 
 ### Chore
 
+- [#7072](https://github.com/blockscout/blockscout/pull/7072) - Add a separate docker compose for geth with clique consensus
+- [#7056](https://github.com/blockscout/blockscout/pull/7056) - Add path_helper in interact.js
 - [#7040](https://github.com/blockscout/blockscout/pull/7040) - Use alias BlockScoutWeb.Cldr.Number
 - [#7037](https://github.com/blockscout/blockscout/pull/7037) - Define common function for "reltuples" query
 - [#7034](https://github.com/blockscout/blockscout/pull/7034) - Resolve "Unexpected var, use let or const instead"

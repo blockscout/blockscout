@@ -236,7 +236,11 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   end
 
   def fetch_metadata_from_uri(uri, hex_token_id \\ nil) do
-    case HTTPoison.get(uri, [], timeout: 60_000, recv_timeout: 60_000, follow_redirect: true) do
+    case Application.get_env(:explorer, :http_adapter).get(uri, [],
+           timeout: 60_000,
+           recv_timeout: 60_000,
+           follow_redirect: true
+         ) do
       {:ok, %Response{body: body, status_code: 200, headers: headers}} ->
         content_type = get_content_type_from_headers(headers)
 
