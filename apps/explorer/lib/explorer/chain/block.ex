@@ -14,6 +14,8 @@ defmodule Explorer.Chain.Block do
 
   @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
+  @quai_attrs ~w(base_fee_per_gas_full difficulty_full ext_rollup_root_full ext_transactions_root_full gas_limit_full gas_used_full logs_bloom_full manifest_hash_full miner_full number_full parent_hash_full receipts_root_full sha3_uncles_full state_root_full transactions_root_full ext_transactions sub_manifest location)a
+
   @typedoc """
   How much work is required to find a hash with some number of leading 0s.  It is measured in hashes for PoW
   (Proof-of-Work) chains like Ethereum.  In PoA (Proof-of-Authority) chains, it does not apply as blocks are validated
@@ -65,7 +67,27 @@ defmodule Explorer.Chain.Block do
           transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()],
           refetch_needed: boolean(),
           base_fee_per_gas: Wei.t(),
-          is_empty: boolean()
+          is_empty: boolean(),
+          base_fee_per_gas_full: [Wei.t()],
+          difficulty_full: [difficulty()],
+          ext_rollup_root_full: [Hash.Full.t()],
+          ext_transactions_root_full: [Hash.Full.t()],
+#          ext_transactions: [Transaction.t()],
+          ext_transactions: [Hash.Full.t()],
+          sub_manifest: [Hash.Full.t()],
+          gas_limit_full: [Gas.t()],
+          gas_used_full: [Gas.t()],
+          logs_bloom_full: [Hash.Full.t()],
+          manifest_hash_full: [Hash.Full.t()],
+          miner_full: [Address.t()],
+          number_full: [block_number()],
+          parent_hash_full: [Hash.t()],
+          receipts_root_full: [Hash.Full.t()],
+          sha3_uncles_full: [Hash.Full.t()],
+          state_root_full: [Hash.Full.t()],
+          transactions_root_full: [Hash.Full.t()],
+#          location: [:integer],
+          location: :string
         }
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -83,6 +105,24 @@ defmodule Explorer.Chain.Block do
     field(:base_fee_per_gas, Wei)
     field(:is_empty, :boolean)
 
+    field(:base_fee_per_gas_full, {:array, Wei})
+    field(:difficulty_full, {:array, :decimal})
+    field(:ext_rollup_root_full, {:array, Hash.Full})
+    field(:ext_transactions_root_full, {:array, Hash.Full})
+    field(:ext_transactions, {:array, Hash.Full})
+    field(:sub_manifest, {:array, Hash.Full})
+    field(:gas_limit_full, {:array, :decimal})
+    field(:gas_used_full, {:array, :decimal})
+    field(:logs_bloom_full, {:array, Hash.Full})
+    field(:manifest_hash_full, {:array, Hash.Full})
+    field(:miner_full, {:array, Hash.Address})
+    field(:number_full, {:array, :integer})
+    field(:parent_hash_full, {:array, Hash.Full})
+    field(:receipts_root_full, {:array, Hash.Full})
+    field(:sha3_uncles_full, {:array, Hash.Full})
+    field(:state_root_full, {:array, Hash.Full})
+    field(:transactions_root_full, {:array, Hash.Full})
+    field(:location, :string)
     timestamps()
 
     belongs_to(:miner, Address, foreign_key: :miner_hash, references: :hash, type: Hash.Address)
@@ -96,6 +136,7 @@ defmodule Explorer.Chain.Block do
     has_many(:uncles, through: [:uncle_relations, :uncle])
 
     has_many(:transactions, Transaction)
+#    has_many(:ext_transactions, Transaction)
     has_many(:transaction_forks, Transaction.Fork, foreign_key: :uncle_hash)
 
     has_many(:rewards, Reward, foreign_key: :block_hash)
@@ -105,7 +146,7 @@ defmodule Explorer.Chain.Block do
 
   def changeset(%__MODULE__{} = block, attrs) do
     block
-    |> cast(attrs, @required_attrs ++ @optional_attrs)
+    |> cast(attrs, @required_attrs ++ @optional_attrs ++ @quai_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)

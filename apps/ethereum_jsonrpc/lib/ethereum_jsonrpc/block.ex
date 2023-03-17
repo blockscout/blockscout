@@ -11,9 +11,10 @@ defmodule EthereumJSONRPC.Block do
   def map_keys(object) do
     # Use Enum.reduce to iterate over the key-value pairs in the object
     Enum.reduce(object, %{}, fn {key, value}, acc ->
-      if is_list(value) and length(value) == 3 do
+      if is_list(value) and length(value) == 3 do # TODO: this logic doesn't work if a list field has a length of 3 that usually doesn't. Think transactions or etx. This needs to be refactored
         # Replace the value with the chain appropriate element in the list
-        Map.put(acc, key, Enum.at(value, String.to_integer(System.get_env("CHAIN_INDEX"))))
+        acc = Map.put(acc, key, Enum.at(value, String.to_integer(System.get_env("CHAIN_INDEX"))))
+        Map.put(acc, key <> "Full", value)
       else
         # If the value is not a list of size 3, add the original key-value pair to the updated object
         Map.put(acc, key, value)
@@ -225,7 +226,25 @@ defmodule EthereumJSONRPC.Block do
           "totalDifficulty" => total_difficulty,
           "transactionsRoot" => transactions_root,
           "uncles" => uncles,
-          "baseFeePerGas" => base_fee_per_gas
+          "baseFeePerGas" => base_fee_per_gas,
+          "baseFeePerGasFull" => base_fee_per_gas_full,
+          "difficultyFull" => difficulty_full,
+          "extRollupRootFull" => ext_rollup_root_full,
+          "extTransactions" => ext_transactions,
+          "subManifest" => sub_manifest,
+          "location" => location,
+          "extTransactionsRootFull" => ext_transactions_root_full,
+          "gasLimitFull" => gas_limit_full,
+          "gasUsedFull" => gas_used_full,
+          "logsBloomFull" => logs_bloom_full,
+          "manifestHashFull" => manifest_hash_full,
+          "minerFull" => miner_full,
+          "numberFull" => number_full,
+          "parentHashFull" => parent_hash_full,
+          "receiptsRootFull" => receipts_root_full,
+          "sha3UnclesFull" => sha3_uncles_full,
+          "stateRootFull" => state_root_full,
+          "transactionsRootFull" => transactions_root_full
         } = elixir
       ) do
     %{
@@ -236,7 +255,7 @@ defmodule EthereumJSONRPC.Block do
       hash: hash,
       logs_bloom: logs_bloom,
       miner_hash: miner_hash,
-      mix_hash: Map.get(elixir, "mixHash", "0x0"),
+      mix_hash: Map.get(elixir, "mixHash", "0x0"), # maybe consider doing this instead of changing the method header ?
       nonce: Map.get(elixir, "nonce", 0),
       number: number,
       parent_hash: parent_hash,
@@ -248,7 +267,25 @@ defmodule EthereumJSONRPC.Block do
       total_difficulty: total_difficulty,
       transactions_root: transactions_root,
       uncles: uncles,
-      base_fee_per_gas: base_fee_per_gas
+      base_fee_per_gas: base_fee_per_gas,
+      base_fee_per_gas_full: base_fee_per_gas_full,
+      difficulty_full: difficulty_full,
+      ext_rollup_root_full: ext_rollup_root_full,
+      ext_transactions: ext_transactions,
+      sub_manifest: sub_manifest,
+      location: location,
+      ext_transactions_root_full: ext_transactions_root_full,
+      gas_limit_full: gas_limit_full,
+      gas_used_full: gas_used_full,
+      logs_bloom_full: logs_bloom_full,
+      manifest_hash_full: manifest_hash_full,
+      miner_full: miner_full,
+      number_full: number_full,
+      parent_hash_full: parent_hash_full,
+      receipts_root_full: receipts_root_full,
+      sha3_uncles_full: sha3_uncles_full,
+      state_root_full: state_root_full,
+      transactions_root_full: transactions_root_full
     }
   end
 
@@ -273,6 +310,7 @@ defmodule EthereumJSONRPC.Block do
           "baseFeePerGas" => base_fee_per_gas
         } = elixir
       ) do
+    IO.puts("2")
     %{
       difficulty: difficulty,
       extra_data: extra_data,
@@ -317,6 +355,7 @@ defmodule EthereumJSONRPC.Block do
           "uncles" => uncles
         } = elixir
       ) do
+    IO.puts("3")
     %{
       difficulty: difficulty,
       extra_data: extra_data,
@@ -361,6 +400,7 @@ defmodule EthereumJSONRPC.Block do
           "uncles" => uncles
         } = elixir
       ) do
+    IO.puts("4")
     %{
       difficulty: difficulty,
       extra_data: extra_data,
@@ -581,13 +621,18 @@ defmodule EthereumJSONRPC.Block do
 
   """
   def to_elixir(block) when is_map(block) do
-    Enum.into(block, %{}, &entry_to_elixir/1)
+    return = Enum.into(block, %{}, &entry_to_elixir/1)
+    return
   end
 
   defp entry_to_elixir({key, quantity})
        when key in ~w(difficulty gasLimit gasUsed minimumGasPrice baseFeePerGas number size cumulativeDifficulty totalDifficulty paidFees) and
               not is_nil(quantity) do
     {key, quantity_to_integer(quantity)}
+  end
+
+  defp entry_to_elixir({key, quantity}) when key and is_list(quantity) do
+    {key, quantity |> Enum.map(&quantity_to_integer/1)}
   end
 
   # Size and totalDifficulty may be `nil` for uncle blocks
@@ -598,10 +643,10 @@ defmodule EthereumJSONRPC.Block do
   # double check that no new keys are being missed by requiring explicit match for passthrough
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
-  defp entry_to_elixir({key, _} = entry)
-       when key in ~w(author extraData hash logsBloom miner mixHash nonce parentHash receiptsRoot sealFields sha3Uncles
-                     signature stateRoot step transactionsRoot uncles),
-       do: entry
+  defp entry_to_elixir({key, _} = entry) when key in ~w(author extraData hash logsBloom miner mixHash nonce parentHash receiptsRoot sealFields sha3Uncles
+                     signature stateRoot step transactionsRoot uncles location) do
+    entry
+  end
 
   defp entry_to_elixir({"timestamp" = key, timestamp}) do
     {key, timestamp_to_datetime(timestamp)}
@@ -616,6 +661,13 @@ defmodule EthereumJSONRPC.Block do
     {:ignore, :ignore}
   end
 
+  defp entry_to_elixir({key, quantity}) do
+    if is_list(quantity) do
+      {key, quantity |> Enum.map(&quantity_to_integer/1)}
+    else
+      {key, quantity_to_integer(quantity)}
+    end
+  end
   # bitcoinMergedMiningCoinbaseTransaction bitcoinMergedMiningHeader bitcoinMergedMiningMerkleProof hashForMergedMining - RSK https://github.com/blockscout/blockscout/pull/2934
   # committedSeals committee pastCommittedSeals proposerSeal round - Autonity network https://github.com/blockscout/blockscout/pull/3480
   # blockGasCost extDataGasUsed - sgb/ava https://github.com/blockscout/blockscout/pull/5301

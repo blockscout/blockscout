@@ -117,6 +117,7 @@ defmodule EthereumJSONRPC.Blocks do
   """
   @spec elixir_to_params(elixir) :: params()
   def elixir_to_params(elixir) when is_list(elixir) do
+    # extra fields getting removed here
     Enum.map(elixir, &Block.elixir_to_params/1)
   end
 
