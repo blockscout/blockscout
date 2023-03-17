@@ -3238,16 +3238,10 @@ defmodule Explorer.Chain do
         limit: 1
       )
 
-    response =
-      if from_api do
-        query
-        |> Repo.replica().one()
-      else
-        query
-        |> Repo.one()
-      end
+    repo = if from_api, do: Repo.replica(), else: Repo
 
-    response
+    query
+    |> repo.one(timeout: :infinity)
     |> case do
       nil ->
         {:error, :not_found}
