@@ -90,6 +90,8 @@ defmodule Explorer.Application do
       configure(Explorer.Chain.Cache.NewContractsCounter),
       configure(Explorer.Chain.Cache.VerifiedContractsCounter),
       configure(Explorer.Chain.Cache.NewVerifiedContractsCounter),
+      configure(Explorer.Chain.Cache.TransactionActionTokensData),
+      configure(Explorer.Chain.Cache.TransactionActionUniswapPools),
       configure(Explorer.Chain.Transaction.History.Historian),
       configure(Explorer.Chain.Events.Listener),
       configure(Explorer.Counters.AddressesWithBalanceCounter),

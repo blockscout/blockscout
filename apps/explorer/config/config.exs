@@ -70,6 +70,10 @@ config :explorer, Explorer.Chain.Cache.NewVerifiedContractsCounter,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
 
+config :explorer, Explorer.Chain.Cache.TransactionActionTokensData, enabled: true
+
+config :explorer, Explorer.Chain.Cache.TransactionActionUniswapPools, enabled: true
+
 config :explorer, Explorer.ExchangeRates,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_EXCHANGE_RATES_PERIOD", "10m")
 

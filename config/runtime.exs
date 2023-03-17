@@ -355,6 +355,9 @@ config :explorer, :spandex,
 
 config :explorer, :datadog, port: ConfigHelper.parse_integer_env_var("DATADOG_PORT", 8126)
 
+config :explorer, Explorer.Chain.Cache.TransactionActionTokensData,
+  max_cache_size: System.get_env("INDEXER_TX_ACTIONS_MAX_TOKEN_CACHE_SIZE")
+
 ###############
 ### Indexer ###
 ###############
