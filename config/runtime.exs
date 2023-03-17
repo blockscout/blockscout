@@ -89,15 +89,15 @@ config :block_scout_web, BlockScoutWeb.Chain,
   enable_testnet_label: System.get_env("SHOW_TESTNET_LABEL", "false") == "true",
   testnet_label_text: System.get_env("TESTNET_LABEL_TEXT", "Testnet")
 
-verification_max_libraries_default = 10
+contract_verification_max_libraries_default = 10
 
-verification_max_libraries =
+contract_verification_max_libraries =
   "CONTRACT_VERIFICATION_MAX_LIBRARIES"
-  |> System.get_env(to_string(verification_max_libraries_default))
+  |> System.get_env(to_string(contract_verification_max_libraries_default))
   |> Integer.parse()
   |> case do
     {integer, ""} -> integer
-    _ -> verification_max_libraries_default
+    _ -> contract_verification_max_libraries_default
   end
 
 config :block_scout_web,
@@ -113,17 +113,19 @@ config :block_scout_web,
   dark_forest_addresses_v_0_5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5"),
   circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES"),
   test_tokens_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN"),
-  max_size_to_show_array_as_is: Integer.parse(System.get_env("MAX_SIZE_UNLESS_HIDE_ARRAY", "50")),
-  max_length_to_show_string_without_trimming: System.get_env("MAX_STRING_LENGTH_WITHOUT_TRIMMING", "2040"),
   re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY", nil),
   re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil),
   new_tags: System.get_env("NEW_TAGS"),
   chain_id: System.get_env("CHAIN_ID"),
   json_rpc: System.get_env("JSON_RPC"),
   disable_add_to_mm_button: System.get_env("DISABLE_ADD_TO_MM_BUTTON", "false") == "true",
-  verification_max_libraries: verification_max_libraries,
   permanent_dark_mode_enabled: System.get_env("PERMANENT_DARK_MODE_ENABLED", "false") == "true",
   permanent_light_mode_enabled: System.get_env("PERMANENT_LIGHT_MODE_ENABLED", "false") == "true"
+
+config :block_scout_web, :contract,
+  verification_max_libraries: contract_verification_max_libraries,
+  max_length_to_show_string_without_trimming: System.get_env("CONTRACT_MAX_STRING_LENGTH_WITHOUT_TRIMMING", "2040"),
+  disable_interaction: System.get_env("CONTRACT_DISABLE_INTERACTION", "false") == "true"
 
 default_api_rate_limit = 50
 default_api_rate_limit_str = Integer.to_string(default_api_rate_limit)
@@ -194,6 +196,9 @@ config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
 
 config :block_scout_web, BlockScoutWeb.API.V2, enabled: System.get_env("API_V2_ENABLED") == "true"
 
+config :block_scout_web, :account,
+  authenticate_endpoint_api_key: System.get_env("ACCOUNT_AUTHENTICATE_ENDPOINT_API_KEY")
+
 ########################
 ### Ethereum JSONRPC ###
 ########################
@@ -229,7 +234,7 @@ config :explorer,
   coin: System.get_env("COIN", nil) || System.get_env("EXCHANGE_RATES_COIN") || "ETH",
   coin_name: System.get_env("COIN_NAME", nil) || System.get_env("EXCHANGE_RATES_COIN") || "ETH",
   allowed_evm_versions:
-    System.get_env("ALLOWED_EVM_VERSIONS") ||
+    System.get_env("CONTRACT_VERIFICATION_ALLOWED_EVM_VERSIONS") ||
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,default",
   include_uncles_in_average_block_time:
     if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
@@ -525,7 +530,7 @@ token_balance_on_demand_fetcher_threshold =
 
 config :indexer, Indexer.Fetcher.TokenBalanceOnDemand,
   threshold: token_balance_on_demand_fetcher_threshold,
-  fallback_treshold_in_blocks: 500
+  fallback_threshold_in_blocks: 500
 
 coin_balance_on_demand_fetcher_threshold_minutes = System.get_env("COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES")
 
@@ -538,7 +543,7 @@ coin_balance_on_demand_fetcher_threshold =
 
 config :indexer, Indexer.Fetcher.CoinBalanceOnDemand,
   threshold: coin_balance_on_demand_fetcher_threshold,
-  fallback_treshold_in_blocks: 500
+  fallback_threshold_in_blocks: 500
 
 config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_BLOCK_REWARD_FETCHER", "false") == "true"

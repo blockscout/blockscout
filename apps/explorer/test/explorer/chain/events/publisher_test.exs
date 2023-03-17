@@ -52,7 +52,7 @@ defmodule Explorer.Chain.Events.PublisherTest do
   end
 
   describe "broadcast/1" do
-    test "sends event whithout type of broadcast" do
+    test "sends event without type of broadcast" do
       event_type = :exchange_rate
 
       Subscriber.to(event_type)

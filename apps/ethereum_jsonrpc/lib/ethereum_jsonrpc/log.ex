@@ -13,7 +13,7 @@ defmodule EthereumJSONRPC.Log do
    * `"blockHash"` - `t:EthereumJSONRPC.hash/0` of the block this transaction is in.
    * `"blockNumber"` - `t:EthereumJSONRPC.quantity/0` for the block number this transaction is in.
    * `"data"` - Data containing non-indexed log parameter
-   * `"logIndex"` - `t:EthereumJSONRPC.quantity/0` of the event index positon in the block.
+   * `"logIndex"` - `t:EthereumJSONRPC.quantity/0` of the event index position in the block.
    * `"topics"` - `t:list/0` of at most 4 32-byte topics.  Topic 1-3 contains indexed parameters of the log.
    * `"transactionHash"` - `t:EthereumJSONRPC.hash/0` of the transaction
    * `"transactionIndex"` - `t:EthereumJSONRPC.quantity/0` for the index of the transaction in the block.

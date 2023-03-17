@@ -261,17 +261,20 @@ defmodule BlockScoutWeb.AddressView do
 
   def is_read_function?(function), do: Helper.queriable_method?(function) || Helper.read_with_wallet_method?(function)
 
-  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}) do
-    SmartContract.proxy_contract?(smart_contract)
+  def smart_contract_is_proxy?(address, options \\ [])
+
+  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}, options) do
+    SmartContract.proxy_contract?(smart_contract, options)
   end
 
-  def smart_contract_is_proxy?(%Address{smart_contract: nil}), do: false
+  def smart_contract_is_proxy?(%Address{smart_contract: nil}, _), do: false
 
   def smart_contract_with_write_functions?(%Address{smart_contract: %SmartContract{}} = address) do
-    Enum.any?(
-      address.smart_contract.abi || [],
-      &Writer.write_function?(&1)
-    )
+    !contract_interaction_disabled?() &&
+      Enum.any?(
+        address.smart_contract.abi || [],
+        &Writer.write_function?(&1)
+      )
   end
 
   def smart_contract_with_write_functions?(%Address{smart_contract: nil}), do: false
@@ -478,11 +481,17 @@ defmodule BlockScoutWeb.AddressView do
     do: !is_nil(custom_abi) && Enum.any?(custom_abi.abi, &is_read_function?(&1))
 
   def has_address_custom_abi_with_write_functions?(conn, address_hash) do
-    custom_abi = fetch_custom_abi(conn, address_hash)
+    if contract_interaction_disabled?() do
+      false
+    else
+      custom_abi = fetch_custom_abi(conn, address_hash)
 
-    check_custom_abi_for_having_write_functions(custom_abi)
+      check_custom_abi_for_having_write_functions(custom_abi)
+    end
   end
 
   def check_custom_abi_for_having_write_functions(custom_abi),
     do: !is_nil(custom_abi) && Enum.any?(custom_abi.abi, &Writer.write_function?(&1))
+
+  def contract_interaction_disabled?, do: Application.get_env(:block_scout_web, :contract)[:disable_interaction]
 end

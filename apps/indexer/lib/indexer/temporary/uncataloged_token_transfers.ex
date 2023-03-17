@@ -1,6 +1,6 @@
 defmodule Indexer.Temporary.UncatalogedTokenTransfers do
   @moduledoc """
-  Catalogs token tranfer logs missing an accompanying token transfer record.
+  Catalogs token transfer logs missing an accompanying token transfer record.
 
   Missed token transfers happen due to formats that aren't supported at the time
   they were parsed during main indexing. Updated the parser and rebooting will allow

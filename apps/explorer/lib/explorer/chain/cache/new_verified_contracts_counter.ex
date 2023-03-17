@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Cache.NewVerifiedContractsCounter do
   @moduledoc """
-  Caches the number of new verfied contracts (verified in last 24 hours).
+  Caches the number of new verified contracts (verified in last 24 hours).
 
   It loads the count asynchronously and in a time interval of 30 minutes.
   """
@@ -63,8 +63,8 @@ defmodule Explorer.Chain.Cache.NewVerifiedContractsCounter do
   @doc """
   Fetches the value for a `#{@counter_type}` counter type from the `last_fetched_counters` table.
   """
-  def fetch do
-    Chain.get_last_fetched_counter(@counter_type)
+  def fetch(options) do
+    Chain.get_last_fetched_counter(@counter_type, options)
   end
 
   @doc """
