@@ -9,6 +9,7 @@
 
 ### Fixes
 
+- [#7102](https://github.com/blockscout/blockscout/pull/7102) - Set infinity timeout timestamp_to_block_number query
 - [#7091](https://github.com/blockscout/blockscout/pull/7091) - Fix custom ABI
 - [#7062](https://github.com/blockscout/blockscout/pull/7062) - Save block count in the DB when calculated in Cache module
 - [#7008](https://github.com/blockscout/blockscout/pull/7008) - Fetch image/video content from IPFS link
