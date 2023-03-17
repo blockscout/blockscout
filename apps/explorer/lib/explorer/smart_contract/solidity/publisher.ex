@@ -269,7 +269,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
   defp add_external_libraries(params, external_libraries) do
     clean_external_libraries =
-      Enum.reduce(1..Application.get_env(:block_scout_web, :verification_max_libraries), %{}, fn number, acc ->
+      Enum.reduce(1..Application.get_env(:block_scout_web, :contract)[:verification_max_libraries], %{}, fn number,
+                                                                                                            acc ->
         address_key = "library#{number}_address"
         name_key = "library#{number}_name"
 
