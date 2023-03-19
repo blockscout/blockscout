@@ -38,7 +38,8 @@ defmodule BlockScoutWeb.AddressWriteContractController do
       exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
     ]
 
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+    with false <- AddressView.contract_interaction_disabled?(),
+         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true),
          false <- is_nil(address.smart_contract),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
