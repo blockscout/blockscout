@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     {batches, next_page} =
       params
       |> paging_options()
+      |> Keyword.put(:api?, true)
       |> Chain.list_txn_batches()
       |> split_list_by_page()
 
@@ -38,6 +39,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     {roots, next_page} =
       params
       |> paging_options()
+      |> Keyword.put(:api?, true)
       |> Chain.list_output_roots()
       |> split_list_by_page()
 
@@ -59,6 +61,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     {deposits, next_page} =
       params
       |> paging_options()
+      |> Keyword.put(:api?, true)
       |> Chain.list_optimism_deposits()
       |> split_list_by_page()
 
@@ -80,6 +83,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     {withdrawals, next_page} =
       params
       |> paging_options()
+      |> Keyword.put(:api?, true)
       |> Chain.list_optimism_withdrawals()
       |> split_list_by_page()
 
@@ -98,7 +102,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   defp items_count(conn, module) do
-    count = Chain.get_table_rows_total_count(module)
+    count = Chain.get_table_rows_total_count(module, api?: true)
 
     conn
     |> put_status(200)
