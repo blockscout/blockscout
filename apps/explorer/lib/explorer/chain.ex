@@ -1277,7 +1277,9 @@ defmodule Explorer.Chain do
   """
   @spec finished_indexing_internal_transactions?([api?]) :: boolean()
   def finished_indexing_internal_transactions?(options \\ []) do
-    internal_transactions_disabled? = System.get_env("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER", "false") == "true"
+    internal_transactions_disabled? =
+      Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] or
+        not Application.get_env(:indexer, Indexer.Supervisor)[:enabled]
 
     if internal_transactions_disabled? do
       true
