@@ -11,4 +11,7 @@ defmodule EventStream.Publisher.Console do
     |> inspect()
     |> then(&Logger.info("Event to send: #{&1}"))
   end
+
+  @impl Publisher
+  def live, do: true
 end

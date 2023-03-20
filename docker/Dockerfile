@@ -52,10 +52,15 @@ RUN npm install -g npm@7.24.1
 # Cache npm deps before application code
 
 ADD apps/block_scout_web/assets/ ./apps/block_scout_web/assets/
+ADD apps/event_stream/assets/ ./apps/event_stream/assets/
 ADD apps/explorer/package*.json ./apps/explorer/
 
 # Add blockscout npm deps
 RUN cd apps/block_scout_web/assets/ && \
+    npm install && \
+    npm run deploy && \
+    cd - && \
+    cd apps/event_stream/assets/ && \
     npm install && \
     npm run deploy && \
     cd -

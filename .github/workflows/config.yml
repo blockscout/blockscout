@@ -83,6 +83,20 @@ jobs:
         run: npm install
         working-directory: apps/block_scout_web/assets
 
+      - name: Restore EventStream NPM Cache
+        uses: actions/cache@v2
+        id: eventstream-npm-cache
+        with:
+          path: apps/event_stream/assets/node_modules
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-eventstream-npm-${{ hashFiles('apps/event_stream/assets/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-eventstream-npm-
+
+      - name: Conditionally build Event Stream NPM Cache
+        if: steps.eventstream-npm-cache.outputs.cache-hit != 'true'
+        run: npm install
+        working-directory: apps/event_stream/assets
+
   credo:
     name: Credo
     runs-on: ubuntu-latest
@@ -631,6 +645,62 @@ jobs:
         with:
           name: Blockscout Web Test Results
           path: _build/test/junit/block_scout_web/*.xml
+
+
+  test_event_stream:
+    name: Event Stream Tests
+    runs-on: ubuntu-latest
+    needs: build-and-cache
+    steps:
+      - uses: actions/checkout@v2
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
+
+      - name: Mix Deps Cache
+        uses: actions/cache@v2
+        id: deps-cache
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_${{ env.CACHE_VERSION }}-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+
+
+      - name: Restore Event Stream NPM Cache
+        uses: actions/cache@v2
+        id: eventstream-npm-cache
+        with:
+          path: apps/event_stream/assets/node_modules
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-eventstream-npm-${{ hashFiles('apps/explorer/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-eventstream-npm-
+
+      - name: Build assets
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider
+        run: node node_modules/webpack/bin/webpack.js --mode development
+        working-directory: "apps/event_stream/assets"
+
+      - name: mix test
+        run: |
+          cd apps/event_stream
+          mix compile --warnings-as-errors
+          mix test
+        env:
+          MIX_ENV: "test"
+      - name: Upload Unit Test Results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Event Stream Test Results
+          path: _build/test/junit/event_stream/*.xml
+
   publish-test-results:
     name: "Publish Unit Tests Results"
     runs-on: ubuntu-latest
@@ -639,6 +709,7 @@ jobs:
       - test_nethermind_mox_explorer
       - test_nethermind_mox_indexer
       - test_nethermind_mox_block_scout_web
+      - test_event_stream
       - jest
     if: success() || failure()
     steps:

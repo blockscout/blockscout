@@ -53,6 +53,24 @@ defmodule Indexer.Celo.Telemetry.Instrumentation do
         measurement: :batch_size,
         description: "Max batch size for fetcher (number of items each fetcher process will work upon)",
         tags: [:fetcher]
+      ),
+
+      # NFT
+      last_value(
+        "indexer_nft_unfetched_erc_721_token_instances",
+        event_name: [:blockscout, :indexer, :nft, :unfetched_erc_721_token_instances],
+        measurement: :value,
+        description: "Number of unfetched ERC-721 token instances"
+      ),
+      counter("indexer_nft_ingested",
+        event_name: [:blockscout, :indexer, :nft, :ingested],
+        measurement: :count,
+        description: "NFT tokens ingested"
+      ),
+      counter("indexer_nft_ingestion_errors",
+        event_name: [:blockscout, :indexer, :nft, :ingestion_errors],
+        measurement: :count,
+        description: "NFT ingestion errors"
       )
     ]
   end
