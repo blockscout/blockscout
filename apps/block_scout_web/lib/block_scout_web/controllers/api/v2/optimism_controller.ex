@@ -31,11 +31,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   def txn_batches_count(conn, _params) do
-    count = Chain.get_table_rows_total_count(OptimismTxnBatch)
-
-    conn
-    |> put_status(200)
-    |> render(:optimism_txn_batches_count, %{count: count})
+    items_count(conn, OptimismTxnBatch)
   end
 
   def output_roots(conn, params) do
@@ -56,11 +52,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   def output_roots_count(conn, _params) do
-    count = Chain.get_table_rows_total_count(OptimismOutputRoot)
-
-    conn
-    |> put_status(200)
-    |> render(:optimism_output_roots_count, %{count: count})
+    items_count(conn, OptimismOutputRoot)
   end
 
   def deposits(conn, params) do
@@ -81,11 +73,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   def deposits_count(conn, _params) do
-    count = Chain.get_table_rows_total_count(OptimismDeposit)
-
-    conn
-    |> put_status(200)
-    |> render(:optimism_deposits_count, %{count: count})
+    items_count(conn, OptimismDeposit)
   end
 
   def withdrawals(conn, params) do
@@ -106,10 +94,14 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   def withdrawals_count(conn, _params) do
-    count = Chain.get_table_rows_total_count(OptimismWithdrawal)
+    items_count(conn, OptimismWithdrawal)
+  end
+
+  defp items_count(conn, module) do
+    count = Chain.get_table_rows_total_count(module)
 
     conn
     |> put_status(200)
-    |> render(:optimism_withdrawals_count, %{count: count})
+    |> render(:optimism_items_count, %{count: count})
   end
 end
