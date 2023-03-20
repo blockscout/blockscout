@@ -11,35 +11,45 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         batches: batches,
         next_page_params: next_page_params
       }) do
-    %{
-      items:
-        Enum.map(batches, fn batch ->
-          tx_count =
-            Repo.aggregate(
-              from(
-                t in Transaction,
-                inner_join: b in Block,
-                on: b.hash == t.block_hash and b.consensus == true,
-                where: t.block_number == ^batch.l2_block_number
-              ),
-              :count,
-              timeout: :infinity
-            )
+    tx_counts =
+      batches
+      |> Enum.map(fn batch ->
+        Task.async(fn ->
+          Repo.aggregate(
+            from(
+              t in Transaction,
+              inner_join: b in Block,
+              on: b.hash == t.block_hash and b.consensus == true,
+              where: t.block_number == ^batch.l2_block_number
+            ),
+            :count,
+            timeout: :infinity
+          )
+        end)
+      end)
+      |> Task.yield_many(:infinity)
+      |> Enum.map(fn {_task, res} ->
+        {:ok, count} = res
+        count
+      end)
 
-          %{
-            "l2_block_number" => batch.l2_block_number,
-            "tx_count" => tx_count,
-            "epoch_number" => batch.epoch_number,
-            "l1_tx_hashes" => batch.l1_transaction_hashes,
-            "l1_timestamp" => batch.l1_timestamp
-          }
-        end),
+    items =
+      batches
+      |> Enum.with_index()
+      |> Enum.map(fn {batch, i} ->
+        %{
+          "l2_block_number" => batch.l2_block_number,
+          "tx_count" => Enum.at(tx_counts, i),
+          "epoch_number" => batch.epoch_number,
+          "l1_tx_hashes" => batch.l1_transaction_hashes,
+          "l1_timestamp" => batch.l1_timestamp
+        }
+      end)
+
+    %{
+      items: items,
       next_page_params: next_page_params
     }
-  end
-
-  def render("optimism_txn_batches_count.json", %{count: count}) do
-    count
   end
 
   def render("optimism_output_roots.json", %{
@@ -62,10 +72,6 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     }
   end
 
-  def render("optimism_output_roots_count.json", %{count: count}) do
-    count
-  end
-
   def render("optimism_deposits.json", %{
         deposits: deposits,
         next_page_params: next_page_params
@@ -84,10 +90,6 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         end),
       next_page_params: next_page_params
     }
-  end
-
-  def render("optimism_deposits_count.json", %{count: count}) do
-    count
   end
 
   def render("optimism_withdrawals.json", %{
@@ -137,7 +139,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     }
   end
 
-  def render("optimism_withdrawals_count.json", %{count: count}) do
+  def render("optimism_items_count.json", %{count: count}) do
     count
   end
 
