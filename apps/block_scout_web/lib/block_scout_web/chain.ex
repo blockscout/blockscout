@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  @page_size 50
+  @page_size 5
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @address_hash_len 40
   @tx_block_hash_len 64
@@ -305,7 +305,13 @@ defmodule BlockScoutWeb.Chain do
   end
 
   def paging_options(%{"l1_block_number" => block_number, "tx_hash" => tx_hash}) do
-    [paging_options: %{@default_paging_options | key: {block_number, tx_hash}}]
+    with {block_number, ""} <- Integer.parse(block_number),
+         {:ok, tx_hash} <- string_to_transaction_hash(tx_hash) do
+      [paging_options: %{@default_paging_options | key: {block_number, tx_hash}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
   end
 
   def paging_options(_params), do: [paging_options: @default_paging_options]
