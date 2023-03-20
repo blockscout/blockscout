@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 jobs:
   Build-Blockscout-Dev:
-    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.1
+    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.2
     if: github.ref != 'refs/heads/main'
     with:
       workload-id-provider: projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout/providers/github-by-repos
@@ -22,7 +22,7 @@ jobs:
       trivy-timeout: 20m
 
   Build-Blockscout:
-   uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.1
+   uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.2
    if: github.ref == 'refs/heads/main'
    with:
       workload-id-provider: projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos
@@ -38,7 +38,7 @@ jobs:
       trivy-timeout: 20m
 
   Build-Blockscout-api-Dev:
-    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.1
+    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.2
     if: github.ref != 'refs/heads/main'
     with:
       workload-id-provider: projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout/providers/github-by-repos
@@ -56,7 +56,7 @@ jobs:
       trivy-timeout: 20m
 
   Build-Blockscout-api:
-   uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.1
+   uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.2
    if: github.ref == 'refs/heads/main'
    with:
       workload-id-provider: projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos
