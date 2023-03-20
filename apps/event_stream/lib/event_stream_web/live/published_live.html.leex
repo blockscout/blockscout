@@ -1,0 +1,17 @@
+<section class="phx-hero">
+  <h1><%= gettext "Welcome to %{name}!", name: "EventStream" %></h1>
+  <p>Events Published to Beanstalkd</p>
+</section>
+
+<section class="row">
+  <table class="zui-table">
+    <tr>
+      <th>Raw Event Data</th>
+    </tr>
+    <%= for event <- @events do%>
+    <tr>
+      <td><%= event  %></td>
+    </tr>
+    <% end %>
+  </table>
+</section>
