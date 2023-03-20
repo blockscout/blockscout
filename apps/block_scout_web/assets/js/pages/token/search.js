@@ -33,7 +33,7 @@ const elements = {
         el.innerHTML = formatUsdValue(el.dataset.usdValue)
       })
       // @ts-ignore
-      if (state.channelDisconnected && !window.loading) $el.show()
+      if (!window.loading) $el.show()
     }
   }
 }

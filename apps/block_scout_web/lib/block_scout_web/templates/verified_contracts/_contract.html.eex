@@ -55,7 +55,10 @@
     </td>
     <!-- Market cap -->
     <td class="stakes-td">
-        <% market_cap = if @token && @token.market_cap, do: @token.market_cap, else: gettext("N/A") %>
-        <span><%= market_cap %></span>
+        <%= if @token && @token.decimals && @token.total_supply && @token.fiat_value do %>
+            <span data-selector="verified-contract-market-cap-usd" data-usd-value="<%= total_supply_usd(@token) %>"></span>
+        <% else %>
+            <span data-selector="verified-contract-market-cap-usd"> gettext "N/A" </span>
+        <% end %>
     </td>
 </tr>

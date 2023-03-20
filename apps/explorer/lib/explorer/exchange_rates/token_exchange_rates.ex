@@ -54,10 +54,8 @@ defmodule Explorer.ExchangeRates.TokenExchangeRates do
 
     case tokens_to_update |> Enum.map(& &1.contract_address_hash) |> Source.fetch_market_data_for_token_addresses() do
       {:ok, fiat_values} ->
-        timestamp = %{updated_at: DateTime.utc_now()}
-
         tokens_to_update
-        |> Enum.each(&update_tokens(&1, fiat_values, timestamp))
+        |> Enum.each(&update_tokens(&1, fiat_values))
 
       err ->
         Logger.error("Error while fetching fiat values for tokens: #{inspect(err)}")
@@ -72,11 +70,11 @@ defmodule Explorer.ExchangeRates.TokenExchangeRates do
     end
   end
 
-  defp update_tokens(%{contract_address_hash: contract_address_hash} = token, fiat_values, timestamp) do
+  defp update_tokens(%{contract_address_hash: contract_address_hash} = token, fiat_values) do
     case Map.get(fiat_values, contract_address_hash) do
       %{} = market_data ->
         token
-        |> Token.changeset(Map.merge(timestamp, market_data))
+        |> Token.changeset(market_data)
         |> Repo.update(returning: false)
 
       _ ->

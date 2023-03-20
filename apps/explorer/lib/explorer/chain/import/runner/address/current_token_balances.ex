@@ -4,7 +4,6 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   """
 
   require Ecto.Query
-  require Logger
 
   import Ecto.Query, only: [from: 2]
 
@@ -52,10 +51,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
                token_contract_address_hash: Hash.Address.t(),
                value: Decimal.t()
              }
-  def token_holder_count_deltas(%{deleted: deleted, inserted: inserted})
-      when is_list(deleted) and is_list(inserted) do
-    Logger.info("### Blocks token_holder_count_deltas STARTED ###")
-
+  def token_holder_count_deltas(%{deleted: deleted, inserted: inserted}) when is_list(deleted) and is_list(inserted) do
     deleted_holder_address_hash_set_by_token_contract_address_hash =
       to_holder_address_hash_set_by_token_contract_address_hash(deleted)
 
@@ -68,29 +64,24 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         inserted_holder_address_hash_set_by_token_contract_address_hash
       ])
 
-    res =
-      Enum.flat_map(ordered_token_contract_address_hashes, fn token_contract_address_hash ->
-        holder_count_delta =
-          holder_count_delta(%{
-            deleted_holder_address_hash_set_by_token_contract_address_hash:
-              deleted_holder_address_hash_set_by_token_contract_address_hash,
-            inserted_holder_address_hash_set_by_token_contract_address_hash:
-              inserted_holder_address_hash_set_by_token_contract_address_hash,
-            token_contract_address_hash: token_contract_address_hash
-          })
+    Enum.flat_map(ordered_token_contract_address_hashes, fn token_contract_address_hash ->
+      holder_count_delta =
+        holder_count_delta(%{
+          deleted_holder_address_hash_set_by_token_contract_address_hash:
+            deleted_holder_address_hash_set_by_token_contract_address_hash,
+          inserted_holder_address_hash_set_by_token_contract_address_hash:
+            inserted_holder_address_hash_set_by_token_contract_address_hash,
+          token_contract_address_hash: token_contract_address_hash
+        })
 
-        case holder_count_delta do
-          0 ->
-            []
+      case holder_count_delta do
+        0 ->
+          []
 
-          _ ->
-            [%{contract_address_hash: token_contract_address_hash, delta: holder_count_delta}]
-        end
-      end)
-
-    Logger.info("### Blocks token_holder_count_deltas FINISHED ###")
-
-    res
+        _ ->
+          [%{contract_address_hash: token_contract_address_hash, delta: holder_count_delta}]
+      end
+    end)
   end
 
   @impl Import.Runner
@@ -109,8 +100,6 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Address_current_token_balances tun STARTED length #{Enum.count(changes_list)} ###")
-
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -133,18 +122,14 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     end
 
     multi
-    # |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
-    #   token_contract_address_hashes_and_ids =
-    #     changes_list
-    #     |> Enum.map(fn change ->
-    #       token_id = get_tokend_id(change)
-
-    #       {change.token_contract_address_hash, token_id}
-    #     end)
-    #     |> Enum.uniq()
-
-    #   Tokens.acquire_contract_address_tokens(repo, token_contract_address_hashes_and_ids)
-    # end)
+    |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
+      Instrumenter.block_import_stage_runner(
+        fn -> run_func.(repo) end,
+        :block_following,
+        :current_token_balances,
+        :acquire_contract_address_tokens
+      )
+    end)
     |> Multi.run(:address_current_token_balances, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
@@ -247,18 +232,13 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
        when is_atom(repo) and is_list(changes_list) do
-    Logger.info("### Address_current_token_balances insert STARTED length #{Enum.count(changes_list)} ###")
-
-    inserted_changes_list = insert_changes_list(changes_list, repo, timestamps, timeout, options)
-
-    Logger.info("### Address_current_token_balances insert FINISHED ###")
+    inserted_changes_list =
+      insert_changes_list_with_and_without_token_id(changes_list, repo, timestamps, timeout, options)
 
     {:ok, inserted_changes_list}
   end
 
-  def insert_changes_list(changes_list, repo, timestamps, timeout, options) do
-    Logger.info("### Address_current_token_balances insert_changes_list STARTED length #{Enum.count(changes_list)} ###")
-
+  def insert_changes_list_with_and_without_token_id(changes_list, repo, timestamps, timeout, options) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
@@ -300,8 +280,6 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       else
         {:ok, []}
       end
-
-    Logger.info("### Address_current_token_balances insert_changes_list FINISHED ###")
 
     inserted_changes_list
   end

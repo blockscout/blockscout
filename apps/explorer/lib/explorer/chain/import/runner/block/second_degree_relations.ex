@@ -73,7 +73,11 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce SeconDegreeRelation ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.nephew_hash, &1.uncle_hash})
+    ordered_changes_list =
+      changes_list
+      |> Enum.sort_by(&{&1.nephew_hash, &1.uncle_hash})
+      |> Enum.dedup()
+
     Logger.info(["### Second degree relations insert length #{Enum.count(ordered_changes_list)} ###"])
 
     {:ok, second_degree_relations} =

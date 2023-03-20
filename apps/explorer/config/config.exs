@@ -127,6 +127,8 @@ config :explorer, Explorer.Tracer,
 config :explorer,
   solc_bin_api_url: "https://solc-bin.ethereum.org"
 
+config :explorer, :http_adapter, HTTPoison
+
 config :logger, :explorer,
   # keep synced with `config/config.exs`
   format: "$dateT$time $metadata[$level] $message\n",

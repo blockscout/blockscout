@@ -1,13 +1,10 @@
 defmodule BlockScoutWeb.API.V1.HealthController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.API.APILogger
   alias Explorer.Chain
   alias Timex.Duration
 
   def health(conn, _) do
-    APILogger.log(conn)
-
     with {:ok, count} <- Chain.count_db_decompiled_contracts(),
          {:ok, number, timestamp} <- Chain.last_db_block_status(),
          {:ok, cache_number, cache_timestamp} <- Chain.last_cache_block_status() do

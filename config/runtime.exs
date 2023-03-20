@@ -193,6 +193,9 @@ config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
 
 config :block_scout_web, BlockScoutWeb.API.V2, enabled: System.get_env("API_V2_ENABLED") == "true"
 
+config :block_scout_web, :account,
+  authenticate_endpoint_api_key: System.get_env("ACCOUNT_AUTHENTICATE_ENDPOINT_API_KEY")
+
 ########################
 ### Ethereum JSONRPC ###
 ########################
