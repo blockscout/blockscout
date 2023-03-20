@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
   def render("optimism_txn_batches.json", %{
         batches: batches,
-        total: total,
         next_page_params: next_page_params
       }) do
     %{
@@ -28,14 +27,16 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "l1_timestamp" => batch.l1_timestamp
           }
         end),
-      total: total,
       next_page_params: next_page_params
     }
   end
 
-  def render("output_roots.json", %{
+  def render("optimism_txn_batches_count.json", %{count: count}) do
+    count
+  end
+
+  def render("optimism_output_roots.json", %{
         roots: roots,
-        total: total,
         next_page_params: next_page_params
       }) do
     %{
@@ -50,14 +51,16 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "output_root" => r.output_root
           }
         end),
-      total: total,
       next_page_params: next_page_params
     }
   end
 
+  def render("optimism_output_roots_count.json", %{count: count}) do
+    count
+  end
+
   def render("optimism_deposits.json", %{
         deposits: deposits,
-        total: total,
         next_page_params: next_page_params
       }) do
     %{
@@ -72,14 +75,16 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "l2_tx_gas_limit" => deposit.l2_transaction.gas
           }
         end),
-      total: total,
       next_page_params: next_page_params
     }
   end
 
+  def render("optimism_deposits_count.json", %{count: count}) do
+    count
+  end
+
   def render("optimism_withdrawals.json", %{
         withdrawals: withdrawals,
-        total: total,
         next_page_params: next_page_params,
         conn: conn
       }) do
@@ -121,9 +126,12 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "challenge_period_end" => challenge_period_end
           }
         end),
-      total: total,
       next_page_params: next_page_params
     }
+  end
+
+  def render("optimism_withdrawals_count.json", %{count: count}) do
+    count
   end
 
   defp withdrawal_status(w) do
