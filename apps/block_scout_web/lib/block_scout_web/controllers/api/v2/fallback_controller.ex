@@ -22,6 +22,13 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: "Not found"})
   end
 
+  def call(conn, {:contract_interaction_disabled, _}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Contract interaction disabled"})
+  end
+
   def call(conn, {:error, {:invalid, :hash}}) do
     conn
     |> put_status(:unprocessable_entity)

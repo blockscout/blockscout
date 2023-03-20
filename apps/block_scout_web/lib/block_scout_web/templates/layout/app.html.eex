@@ -119,13 +119,13 @@
           <%= raw(System.get_env("MAINTENANCE_ALERT_MESSAGE")) %>
         </div>
       <% end %>
-      <% indexed_ratio_blocks = Explorer.Chain.indexed_ratio_blocks() %>
+      <% indexed_ratio_blocks = Chain.indexed_ratio_blocks() %>
       <% indexed_ratio =
-      case Chain.finished_blocks_indexing?(indexed_ratio_blocks) do
+      case Chain.finished_indexing_from_ratio?(indexed_ratio_blocks) do
        false -> indexed_ratio_blocks
-       _ -> Explorer.Chain.indexed_ratio_internal_transactions()
+       _ -> Chain.indexed_ratio_internal_transactions()
       end %>
-      <%= if not Explorer.Chain.finished_indexing?(indexed_ratio_blocks) do %>
+      <%= if not Chain.finished_indexing_from_ratio?(indexed_ratio) do %>
         <div class="alert alert-warning text-center mb-0 p-3" data-seindexed_ratiolector="indexed-status">
           <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html" %>
           <span data-indexed-ratio-blocks="<%= indexed_ratio_blocks %>" data-indexed-ratio="<%= indexed_ratio %>"></span>

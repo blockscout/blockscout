@@ -1214,7 +1214,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "finished_internal_transactions_indexing?/0" do
+  describe "finished_indexing_internal_transactions?/0" do
     test "finished indexing" do
       block = insert(:block, number: 1)
 
@@ -1222,11 +1222,11 @@ defmodule Explorer.ChainTest do
       |> insert()
       |> with_block(block)
 
-      assert Chain.finished_internal_transactions_indexing?()
+      assert Chain.finished_indexing_internal_transactions?()
     end
 
     test "finished indexing (no txs)" do
-      assert Chain.finished_internal_transactions_indexing?()
+      assert Chain.finished_indexing_internal_transactions?()
     end
 
     test "not finished indexing" do
@@ -1238,7 +1238,7 @@ defmodule Explorer.ChainTest do
 
       insert(:pending_block_operation, block: block, block_number: block.number)
 
-      refute Chain.finished_internal_transactions_indexing?()
+      refute Chain.finished_indexing_internal_transactions?()
     end
   end
 
