@@ -2521,16 +2521,16 @@ defmodule Explorer.Chain do
     base_query
     |> page_txn_batches(paging_options)
     |> limit(^paging_options.page_size)
-    |> Repo.all()
+    |> select_repo(options).all()
   end
 
-  def get_table_rows_total_count(module) do
+  def get_table_rows_total_count(module, options) do
     table_name = module.__schema__(:source)
 
-    count = CacheHelper.estimated_count_from(table_name)
+    count = CacheHelper.estimated_count_from(table_name, options)
 
     if is_nil(count) do
-      Repo.aggregate(module, :count, timeout: :infinity)
+      select_repo(options).aggregate(module, :count, timeout: :infinity)
     else
       count
     end
@@ -2553,7 +2553,7 @@ defmodule Explorer.Chain do
     base_query
     |> page_output_roots(paging_options)
     |> limit(^paging_options.page_size)
-    |> Repo.all()
+    |> select_repo(options).all()
   end
 
   @doc """
@@ -2561,7 +2561,6 @@ defmodule Explorer.Chain do
 
   """
   @spec list_optimism_deposits :: [OptimismDeposit.t()]
-  @spec list_optimism_deposits([paging_options]) :: [OptimismDeposit.t()]
   def list_optimism_deposits(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
@@ -2574,7 +2573,7 @@ defmodule Explorer.Chain do
     |> join_association(:l2_transaction, :required)
     |> page_deposits(paging_options)
     |> limit(^paging_options.page_size)
-    |> Repo.all()
+    |> select_repo(options).all()
   end
 
   @doc """
@@ -2608,7 +2607,7 @@ defmodule Explorer.Chain do
     base_query
     |> page_optimism_withdrawals(paging_options)
     |> limit(^paging_options.page_size)
-    |> Repo.all()
+    |> select_repo(options).all()
   end
 
   @doc """
