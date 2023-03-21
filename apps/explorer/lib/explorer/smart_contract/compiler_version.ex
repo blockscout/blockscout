@@ -5,6 +5,8 @@ defmodule Explorer.SmartContract.CompilerVersion do
 
   alias Explorer.SmartContract.RustVerifierInterface
 
+  import Explorer.Helpers, only: [parse_integer: 1]
+
   @unsupported_solc_versions ~w(0.1.1 0.1.2)
   @unsupported_vyper_versions ~w(v0.2.9 v0.2.10)
 
@@ -104,13 +106,6 @@ defmodule Explorer.SmartContract.CompilerVersion do
       end
 
     ["latest" | versions]
-  end
-
-  defp parse_integer(string) do
-    case Integer.parse(string) do
-      {number, ""} -> number
-      _ -> nil
-    end
   end
 
   @spec remove_unsupported_versions([String.t()], :solc | :vyper) :: [String.t()]

@@ -5,6 +5,8 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
   use GenServer
 
+  import Explorer.Helpers, only: [parse_integer: 1]
+
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Utility.MissingBlockRange
@@ -244,13 +246,6 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
       num ->
         {:infinite_ranges, List.delete_at(ranges, -1), num - 1}
-    end
-  end
-
-  defp parse_integer(integer_string) do
-    case Integer.parse(integer_string) do
-      {integer, ""} -> integer
-      _ -> nil
     end
   end
 end

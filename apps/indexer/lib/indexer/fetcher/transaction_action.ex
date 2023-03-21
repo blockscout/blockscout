@@ -13,6 +13,8 @@ defmodule Indexer.Fetcher.TransactionAction do
       from: 2
     ]
 
+  import Explorer.Helpers, only: [parse_integer: 1]
+
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Log, TransactionAction}
   alias Indexer.Transform.{Addresses, TransactionActions}
@@ -275,12 +277,5 @@ defmodule Indexer.Fetcher.TransactionAction do
     |> Decimal.to_integer()
   rescue
     _e in Ecto.NoResultsError -> 0
-  end
-
-  defp parse_integer(integer_string) do
-    case Integer.parse(integer_string) do
-      {integer, ""} -> integer
-      _ -> nil
-    end
   end
 end
