@@ -102,7 +102,7 @@
     "postcss": "^8.4.21",
     "postcss-loader": "^7.1.0",
     "sass": "^1.59.3",
-    "sass-loader": "^13.2.0",
+    "sass-loader": "^13.2.1",
     "style-loader": "^3.3.2",
     "webpack": "^5.76.2",
     "webpack-cli": "^5.0.1"
