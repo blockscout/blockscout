@@ -11,6 +11,7 @@
 ### Fixes
 
 - [#7096](https://github.com/blockscout/blockscout/pull/7096) - Hide indexing alert, if indexer disabled
+- [#7102](https://github.com/blockscout/blockscout/pull/7102) - Set infinity timeout timestamp_to_block_number query
 - [#7091](https://github.com/blockscout/blockscout/pull/7091) - Fix custom ABI
 - [#7087](https://github.com/blockscout/blockscout/pull/7087) - Allow URI special symbols in `DATABASE_URL`
 - [#7062](https://github.com/blockscout/blockscout/pull/7062) - Save block count in the DB when calculated in Cache module
