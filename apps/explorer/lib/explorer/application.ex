@@ -127,36 +127,15 @@ defmodule Explorer.Application do
   end
 
   defp datadog_port do
-    if System.get_env("DATADOG_PORT") do
-      case Integer.parse(System.get_env("DATADOG_PORT")) do
-        {integer, ""} -> integer
-        _ -> 8126
-      end
-    else
-      8126
-    end
+    Application.get_env(:explorer, :datadog)[:port]
   end
 
   defp spandex_batch_size do
-    if System.get_env("SPANDEX_BATCH_SIZE") do
-      case Integer.parse(System.get_env("SPANDEX_BATCH_SIZE")) do
-        {integer, ""} -> integer
-        _ -> 100
-      end
-    else
-      100
-    end
+    Application.get_env(:explorer, :spandex)[:batch_size]
   end
 
   defp spandex_sync_threshold do
-    if System.get_env("SPANDEX_SYNC_THRESHOLD") do
-      case Integer.parse(System.get_env("SPANDEX_SYNC_THRESHOLD")) do
-        {integer, ""} -> integer
-        _ -> 100
-      end
-    else
-      100
-    end
+    Application.get_env(:explorer, :spandex)[:sync_threshold]
   end
 
   defp datadog_opts do

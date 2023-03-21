@@ -3,9 +3,9 @@ defmodule BlockScoutWeb.AddressView do
 
   require Logger
 
-  alias BlockScoutWeb.{AccessHelpers, LayoutView}
+  alias BlockScoutWeb.{AccessHelper, LayoutView}
   alias Explorer.Account.CustomABI
-  alias Explorer.{Chain, CustomContractsHelpers, Repo}
+  alias Explorer.{Chain, CustomContractsHelper, Repo}
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate

@@ -9,18 +9,18 @@ defmodule Explorer.Counters.AverageBlockTimeTest do
 
   setup do
     start_supervised!(AverageBlockTime)
-    Application.put_env(:explorer, AverageBlockTime, enabled: true)
+    Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 
-    Application.put_env(:explorer, :include_uncles_in_average_block_time, true)
+    Application.put_env(:explorer, :include_uncles_in_average_block_time, true, cache_period: 1_800_000)
 
     on_exit(fn ->
-      Application.put_env(:explorer, AverageBlockTime, enabled: false)
+      Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
     end)
   end
 
   describe "average_block_time/1" do
     test "when disabled, it returns an error" do
-      Application.put_env(:explorer, AverageBlockTime, enabled: false)
+      Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
 
       assert AverageBlockTime.average_block_time() == {:error, :disabled}
     end

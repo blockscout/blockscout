@@ -1,10 +1,10 @@
 defmodule BlockScoutWeb.TransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.{AccessHelpers, AddressView, BlockView, TabHelpers}
+  alias BlockScoutWeb.{AccessHelper, AddressView, BlockView, TabHelper}
   alias BlockScoutWeb.Account.AuthController
   alias BlockScoutWeb.Cldr.Number
-  alias Explorer.{Chain, CustomContractsHelpers, Repo}
+  alias Explorer.{Chain, CustomContractsHelper, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
   alias Explorer.Counters.AverageBlockTime
@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.TransactionView do
 
   import BlockScoutWeb.Gettext
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1, short_token_id: 2, tag_name_to_label: 1]
-  import BlockScoutWeb.Tokens.Helpers
+  import BlockScoutWeb.Tokens.Helper
 
   @tabs ["token-transfers", "internal-transactions", "logs", "raw-trace", "state"]
 
@@ -524,7 +524,7 @@ defmodule BlockScoutWeb.TransactionView do
   """
   def current_tab_name(request_path) do
     @tabs
-    |> Enum.filter(&TabHelpers.tab_active?(&1, request_path))
+    |> Enum.filter(&TabHelper.tab_active?(&1, request_path))
     |> tab_name()
   end
 
@@ -559,7 +559,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   defp show_tenderly_link? do
-    System.get_env("SHOW_TENDERLY_LINK") == "true"
+    Application.get_env(:block_scout_web, :show_tenderly_link)
   end
 
   defp tenderly_chain_path do

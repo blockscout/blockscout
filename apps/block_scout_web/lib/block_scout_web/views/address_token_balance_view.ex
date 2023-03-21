@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressTokenBalanceView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.AccessHelpers
+  alias BlockScoutWeb.AccessHelper
   alias Explorer.Chain
   alias Explorer.Chain.Address
   alias Explorer.Counters.AddressTokenUsdSum

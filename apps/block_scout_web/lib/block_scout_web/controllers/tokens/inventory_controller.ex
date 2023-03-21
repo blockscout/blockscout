@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.Tokens.InventoryController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.AccessHelpers
+  alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.Tokens.{HolderController, InventoryView}
   alias Explorer.Chain
   alias Phoenix.View
@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
   def index(conn, %{"token_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token} <- Chain.token_from_address_hash(address_hash),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       unique_token_instances =
         Chain.address_to_unique_tokens(
           token.contract_address_hash,
