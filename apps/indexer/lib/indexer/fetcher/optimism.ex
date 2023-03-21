@@ -8,6 +8,8 @@ defmodule Indexer.Fetcher.Optimism do
   import EthereumJSONRPC,
     only: [fetch_block_number_by_tag: 2, json_rpc: 2, integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
 
+  import Explorer.Helpers, only: [parse_integer: 1]
+
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
   alias Indexer.{BoundQueue, Helpers}
@@ -306,6 +308,8 @@ defmodule Indexer.Fetcher.Optimism do
           reorg_monitor(caller.fetcher_name(), block_check_interval, json_rpc_named_arguments)
         end)
 
+      Process.send(self(), :continue, [])
+
       {:ok,
        %{
          contract_address: contract_address,
@@ -314,10 +318,10 @@ defmodule Indexer.Fetcher.Optimism do
          end_block: last_safe_block,
          reorg_monitor_task: reorg_monitor_task,
          json_rpc_named_arguments: json_rpc_named_arguments
-       }, {:continue, nil}}
+       }}
     else
       {:start_block_l1_undefined, true} ->
-        # the process shoudln't start if the start block is not defined
+        # the process shouldn't start if the start block is not defined
         :ignore
 
       {:rpc_l1_undefined, true} ->
@@ -389,19 +393,6 @@ defmodule Indexer.Fetcher.Optimism do
       Logger.info("#{type} handling #{layer} block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
     end
   end
-
-  def parse_integer(integer_string) when is_binary(integer_string) do
-    case Integer.parse(integer_string) do
-      {integer, ""} -> integer
-      _ -> nil
-    end
-  end
-
-  def parse_integer(value) when is_integer(value) do
-    value
-  end
-
-  def parse_integer(_integer_string), do: nil
 
   def reorg_monitor(fetcher_name, block_check_interval, json_rpc_named_arguments) do
     Logger.metadata(fetcher: fetcher_name)
