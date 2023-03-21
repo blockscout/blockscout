@@ -63,35 +63,26 @@ defmodule Explorer.Chain.Transaction.History.Historian do
             )
 
           case Repo.one(min_max_block_query, timeout: :infinity) do
-            {min_block, max_block} ->
-              if min_block && max_block do
-                record =
-                  min_block
-                  |> compile_records_in_range(max_block)
-                  |> Map.put(:date, day_to_fetch)
+            {min_block, max_block} when not is_nil(min_block) and not is_nil(max_block) ->
+              record =
+                min_block
+                |> compile_records_in_range(max_block)
+                |> Map.put(:date, day_to_fetch)
 
-                records = [
-                  record
-                  | records
-                ]
+              records = [
+                record
+                | records
+              ]
 
-                compile_records(num_days - 1, records)
-              else
-                Logger.warning("tx/per day chart: min_block or/and max_block is null}")
-                empty_records_for_day(day_to_fetch, records, num_days)
-              end
+              compile_records(num_days - 1, records)
 
             _ ->
               Logger.warning("tx/per day chart: failed to get min/max blocks through a fallback option}")
-              empty_records_for_day(day_to_fetch, records, num_days)
+              records = [%{date: day_to_fetch, number_of_transactions: 0, gas_used: 0, total_fee: 0} | records]
+              compile_records(num_days - 1, records)
           end
       end
     end
-  end
-
-  defp empty_records_for_day(day_to_fetch, records, num_days) do
-    records = [%{date: day_to_fetch, number_of_transactions: 0, gas_used: 0, total_fee: 0} | records]
-    compile_records(num_days - 1, records)
   end
 
   defp compile_records_in_range(min_block, max_block) do
