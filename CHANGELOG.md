@@ -12,6 +12,7 @@
 
 - [#7096](https://github.com/blockscout/blockscout/pull/7096) - Hide indexing alert, if indexer disabled
 - [#7091](https://github.com/blockscout/blockscout/pull/7091) - Fix custom ABI
+- [#7087](https://github.com/blockscout/blockscout/pull/7087) - Allow URI special symbols in `DATABASE_URL`
 - [#7062](https://github.com/blockscout/blockscout/pull/7062) - Save block count in the DB when calculated in Cache module
 - [#7008](https://github.com/blockscout/blockscout/pull/7008) - Fetch image/video content from IPFS link
 - [#7007](https://github.com/blockscout/blockscout/pull/7007), [#7031](https://github.com/blockscout/blockscout/pull/7031), [#7058](https://github.com/blockscout/blockscout/pull/7058), [#7061](https://github.com/blockscout/blockscout/pull/7061), [#7067](https://github.com/blockscout/blockscout/pull/7067) - Token instance fetcher fixes
