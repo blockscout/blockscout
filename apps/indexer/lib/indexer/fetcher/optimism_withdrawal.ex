@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
   import Ecto.Query
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
-  import Explorer.Helpers, only: [decode_data: 2]
+  import Explorer.Helpers, only: [decode_data: 2, parse_integer: 1]
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Log, OptimismWithdrawal}
@@ -45,7 +45,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
 
     with {:start_block_l2_undefined, false} <- {:start_block_l2_undefined, is_nil(env[:start_block_l2])},
          {:message_passer_valid, true} <- {:message_passer_valid, Helpers.is_address_correct?(env[:message_passer])},
-         start_block_l2 <- Optimism.parse_integer(env[:start_block_l2]),
+         start_block_l2 <- parse_integer(env[:start_block_l2]),
          false <- is_nil(start_block_l2),
          true <- start_block_l2 > 0,
          {last_l2_block_number, last_l2_transaction_hash} <- get_last_l2_item(),
@@ -55,16 +55,19 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
             (start_block_l2 <= last_l2_block_number || last_l2_block_number == 0) && start_block_l2 <= safe_block},
          {:ok, last_l2_tx} <- Optimism.get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments),
          {:l2_tx_not_found, false} <- {:l2_tx_not_found, !is_nil(last_l2_transaction_hash) && is_nil(last_l2_tx)} do
+      Process.send(self(), :continue, [])
+
       {:ok,
        %{
          start_block: max(start_block_l2, last_l2_block_number),
+         start_block_l2: start_block_l2,
          safe_block: safe_block,
          message_passer: env[:message_passer],
          json_rpc_named_arguments: json_rpc_named_arguments
-       }, {:continue, start_block_l2}}
+       }}
     else
       {:start_block_l2_undefined, true} ->
-        # the process shoudln't start if the start block is not defined
+        # the process shouldn't start if the start block is not defined
         :ignore
 
       {:message_passer_valid, false} ->
@@ -94,9 +97,10 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
   end
 
   @impl GenServer
-  def handle_continue(
-        start_block_l2,
+  def handle_info(
+        :continue,
         %{
+          start_block_l2: start_block_l2,
           message_passer: message_passer,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
@@ -233,8 +237,8 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
 
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
 
-    Enum.reduce(chunk_range, 0, fn current_chank, withdrawals_count_acc ->
-      chunk_start = l2_block_start + Optimism.get_logs_range_size() * current_chank
+    Enum.reduce(chunk_range, 0, fn current_chunk, withdrawals_count_acc ->
+      chunk_start = l2_block_start + Optimism.get_logs_range_size() * current_chunk
 
       chunk_end =
         if scan_db do

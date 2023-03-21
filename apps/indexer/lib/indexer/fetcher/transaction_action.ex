@@ -13,6 +13,8 @@ defmodule Indexer.Fetcher.TransactionAction do
       from: 2
     ]
 
+  import Explorer.Helpers, only: [parse_integer: 1]
+
   alias Explorer.{Chain, Repo}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Log, TransactionAction}
