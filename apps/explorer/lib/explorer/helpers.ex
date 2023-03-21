@@ -25,4 +25,17 @@ defmodule Explorer.Helpers do
     |> Base.decode16!(case: :mixed)
     |> TypeDecoder.decode_raw(types)
   end
+
+  def parse_integer(integer_string) when is_binary(integer_string) do
+    case Integer.parse(integer_string) do
+      {integer, ""} -> integer
+      _ -> nil
+    end
+  end
+
+  def parse_integer(value) when is_integer(value) do
+    value
+  end
+
+  def parse_integer(_integer_string), do: nil
 end

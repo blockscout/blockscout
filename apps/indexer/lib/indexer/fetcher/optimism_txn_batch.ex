@@ -12,6 +12,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
   import EthereumJSONRPC, only: [fetch_blocks_by_range: 2, json_rpc: 2, quantity_to_integer: 1]
 
+  import Explorer.Helpers, only: [parse_integer: 1]
+
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
@@ -52,10 +54,10 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helpers.is_address_correct?(env[:batch_inbox])},
          {:batch_submitter_valid, true} <- {:batch_submitter_valid, Helpers.is_address_correct?(env[:batch_submitter])},
-         start_block_l1 = Optimism.parse_integer(env[:start_block_l1]),
+         start_block_l1 = parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
-         chunk_size = Optimism.parse_integer(env[:blocks_chunk_size]),
+         chunk_size = parse_integer(env[:blocks_chunk_size]),
          {:chunk_size_valid, true} <- {:chunk_size_valid, !is_nil(chunk_size) && chunk_size > 0},
          json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
          {last_l1_block_number, last_l1_transaction_hash, last_l1_tx} = get_last_l1_item(json_rpc_named_arguments),
@@ -79,6 +81,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           Optimism.reorg_monitor(@fetcher_name, block_check_interval, json_rpc_named_arguments)
         end)
 
+      Process.send(self(), :continue, [])
+
       {:ok,
        %{
          batch_inbox: String.downcase(env[:batch_inbox]),
@@ -91,10 +95,10 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          incomplete_frame_sequence: empty_incomplete_frame_sequence(),
          json_rpc_named_arguments: json_rpc_named_arguments,
          json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
-       }, {:continue, nil}}
+       }}
     else
       {:start_block_l1_undefined, true} ->
-        # the process shoudln't start if the start block is not defined
+        # the process shouldn't start if the start block is not defined
         :ignore
 
       {:rpc_l1_undefined, true} ->
@@ -138,8 +142,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   end
 
   @impl GenServer
-  def handle_continue(
-        _,
+  def handle_info(
+        :continue,
         %{
           batch_inbox: batch_inbox,
           batch_submitter: batch_submitter,
@@ -159,9 +163,9 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
     {last_written_block, new_incomplete_frame_sequence} =
       chunk_range
-      |> Enum.reduce_while({start_block - 1, incomplete_frame_sequence}, fn current_chank,
+      |> Enum.reduce_while({start_block - 1, incomplete_frame_sequence}, fn current_chunk,
                                                                             {_, incomplete_frame_sequence_acc} ->
-        chunk_start = start_block + chunk_size * current_chank
+        chunk_start = start_block + chunk_size * current_chunk
         chunk_end = min(chunk_start + chunk_size - 1, end_block)
 
         new_incomplete_frame_sequence =
@@ -220,13 +224,15 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       :timer.sleep(max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0))
     end
 
+    Process.send(self(), :continue, [])
+
     {:noreply,
      %{
        state
        | start_block: new_start_block,
          end_block: new_end_block,
          incomplete_frame_sequence: new_incomplete_frame_sequence
-     }, {:continue, nil}}
+     }}
   end
 
   @impl GenServer

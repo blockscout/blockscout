@@ -53,8 +53,8 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
   end
 
   @impl GenServer
-  def handle_continue(
-        _,
+  def handle_info(
+        :continue,
         %{
           contract_address: optimism_portal,
           block_check_interval: block_check_interval,
@@ -71,8 +71,8 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
 
     last_written_block =
       chunk_range
-      |> Enum.reduce_while(start_block - 1, fn current_chank, _ ->
-        chunk_start = start_block + Optimism.get_logs_range_size() * current_chank
+      |> Enum.reduce_while(start_block - 1, fn current_chunk, _ ->
+        chunk_start = start_block + Optimism.get_logs_range_size() * current_chunk
         chunk_end = min(chunk_start + Optimism.get_logs_range_size() - 1, end_block)
 
         if chunk_end >= chunk_start do
@@ -132,7 +132,9 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
       :timer.sleep(max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0))
     end
 
-    {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}, {:continue, nil}}
+    Process.send(self(), :continue, [])
+
+    {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
   end
 
   @impl GenServer
