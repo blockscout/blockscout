@@ -10,9 +10,11 @@ defmodule Indexer.Fetcher.OptimismDeposit do
 
   import Ecto.Query
 
-  import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [json_rpc: 2, integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
   import Explorer.Helpers, only: [decode_data: 2, parse_integer: 1]
 
+  alias EthereumJSONRPC.Block.ByNumber
+  alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.OptimismDeposit
   alias Indexer.Fetcher.Optimism
@@ -36,6 +38,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   @retry_interval :timer.minutes(@retry_interval_minutes)
   @address_prefix "0x000000000000000000000000"
   @batch_size 500
+  @fetcher_name :optimism_deposits
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -54,7 +57,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
 
   @impl GenServer
   def init(_args) do
-    Logger.metadata(fetcher: :optimism_deposits)
+    Logger.metadata(fetcher: @fetcher_name)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
     optimism_portal = Application.get_env(:indexer, :optimism_l1_portal)
@@ -141,7 +144,6 @@ defmodule Indexer.Fetcher.OptimismDeposit do
           batch_size: batch_size
         } = state
       ) do
-    Logger.metadata(fetcher: :optimism_deposits)
     to_block = min(from_block + batch_size, safe_block)
 
     with {:logs, {:ok, logs}} <-
@@ -208,10 +210,8 @@ defmodule Indexer.Fetcher.OptimismDeposit do
           mode: :catch_up
         } = state
       ) do
-    Logger.metadata(fetcher: :optimism_deposits)
-
-    with {:latest_block, {:ok, new_safe}} <-
-           {:latest_block, Optimism.get_block_number_by_tag("safe", json_rpc_named_arguments)},
+    with {:check_interval, {:ok, check_interval, new_safe}} <-
+           {:check_interval, Optimism.get_block_check_interval(json_rpc_named_arguments)},
          {:catch_up, _, false} <- {:catch_up, new_safe, new_safe - safe_block + 1 > batch_size},
          {:logs, {:ok, logs}} <-
            {:logs,
@@ -224,24 +224,17 @@ defmodule Indexer.Fetcher.OptimismDeposit do
               3
             )},
          {:ok, filter_id} <-
-           Optimism.get_new_filter(
+           get_new_filter(
              max(safe_block, from_block),
              "latest",
              optimism_portal,
              @transaction_deposited_event,
              json_rpc_named_arguments
-           ),
-         {:check_interval, {:ok, check_interval}} <-
-           {:check_interval, Optimism.get_block_check_interval(json_rpc_named_arguments)} do
+           ) do
       handle_new_logs(logs, json_rpc_named_arguments)
       Process.send(self(), :fetch, [])
       {:noreply, %{state | mode: :realtime, filter_id: filter_id, check_interval: check_interval}}
     else
-      {:latest_block, {:error, error}} ->
-        Logger.error("Failed to get safe block number while switching to realtime mode, reason: #{inspect(error)}")
-        Process.send_after(self(), :switch_to_realtime, @retry_interval)
-        {:noreply, state}
-
       {:catch_up, new_safe, true} ->
         Process.send(self(), :fetch, [])
         {:noreply, %{state | safe_block: new_safe}}
@@ -258,7 +251,6 @@ defmodule Indexer.Fetcher.OptimismDeposit do
 
       {:check_interval, {:error, _error}} ->
         Logger.error("Failed to calculate check_interval. Retrying in #{@retry_interval_minutes} minutes...")
-
         Process.send_after(self(), :switch_to_realtime, @retry_interval)
         {:noreply, state}
     end
@@ -274,9 +266,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
           check_interval: check_interval
         } = state
       ) do
-    Logger.metadata(fetcher: :optimism_deposits)
-
-    case Optimism.get_filter_changes(filter_id, json_rpc_named_arguments) do
+    case get_filter_changes(filter_id, json_rpc_named_arguments) do
       {:ok, logs} ->
         handle_new_logs(logs, json_rpc_named_arguments)
         Process.send_after(self(), :fetch, check_interval)
@@ -303,10 +293,9 @@ defmodule Indexer.Fetcher.OptimismDeposit do
           mode: :realtime
         } = state
       ) do
-    Logger.metadata(fetcher: :optimism_deposits)
     {last_l1_block_number, _} = get_last_l1_item()
 
-    case Optimism.get_new_filter(
+    case get_new_filter(
            last_l1_block_number + 1,
            "latest",
            optimism_portal,
@@ -337,11 +326,9 @@ defmodule Indexer.Fetcher.OptimismDeposit do
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
-    Logger.metadata(fetcher: :optimism_deposits)
-
     if state.filter_id do
       Logger.info("Optimism deposits fetcher is terminating, uninstalling filter")
-      Optimism.uninstall_filter(state.filter_id, json_rpc_named_arguments)
+      uninstall_filter(state.filter_id, json_rpc_named_arguments)
     end
   end
 
@@ -380,8 +367,6 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   end
 
   defp events_to_deposits(logs, json_rpc_named_arguments) do
-    Logger.metadata(fetcher: :optimism_deposits)
-
     timestamps =
       logs
       |> Enum.reduce(MapSet.new(), fn %{"blockNumber" => block_number_quantity}, acc ->
@@ -389,7 +374,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         MapSet.put(acc, block_number)
       end)
       |> MapSet.to_list()
-      |> Optimism.get_block_timestamps_by_numbers(json_rpc_named_arguments)
+      |> get_block_timestamps_by_numbers(json_rpc_named_arguments)
       |> case do
         {:ok, timestamps} ->
           timestamps
@@ -470,8 +455,6 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   end
 
   defp handle_reorgs(reorgs) do
-    Logger.metadata(fetcher: :optimism_deposits)
-
     if MapSet.size(reorgs) > 0 do
       Logger.warning("L1 reorg detected. The following L1 blocks were removed: #{inspect(MapSet.to_list(reorgs))}")
 
@@ -485,9 +468,103 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     end
   end
 
+  defp get_block_timestamps_by_numbers(numbers, json_rpc_named_arguments, retries \\ 3) do
+    id_to_params =
+      numbers
+      |> Stream.map(fn number -> %{number: number} end)
+      |> Stream.with_index()
+      |> Enum.into(%{}, fn {params, id} -> {id, params} end)
+
+    request = Blocks.requests(id_to_params, &ByNumber.request(&1, false))
+    error_message = &"Cannot fetch timestamps for blocks #{numbers}. Error: #{inspect(&1)}"
+
+    case repeated_request(request, error_message, json_rpc_named_arguments, retries) do
+      {:ok, response} ->
+        %Blocks{blocks_params: blocks_params} = Blocks.from_responses(response, id_to_params)
+
+        {:ok,
+         blocks_params
+         |> Enum.reduce(%{}, fn %{number: number, timestamp: timestamp}, acc -> Map.put_new(acc, number, timestamp) end)}
+
+      err ->
+        err
+    end
+  end
+
+  defp get_new_filter(from_block, to_block, address, topic0, json_rpc_named_arguments, retries \\ 3) do
+    processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
+    processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
+
+    req =
+      request(%{
+        id: 0,
+        method: "eth_newFilter",
+        params: [
+          %{
+            fromBlock: processed_from_block,
+            toBlock: processed_to_block,
+            address: address,
+            topics: [topic0]
+          }
+        ]
+      })
+
+    error_message = &"Cannot create new log filter. Error: #{inspect(&1)}"
+
+    repeated_request(req, error_message, json_rpc_named_arguments, retries)
+  end
+
+  defp get_filter_changes(filter_id, json_rpc_named_arguments, retries \\ 3) do
+    req =
+      request(%{
+        id: 0,
+        method: "eth_getFilterChanges",
+        params: [filter_id]
+      })
+
+    error_message = &"Cannot fetch filter changes. Error: #{inspect(&1)}"
+
+    case repeated_request(req, error_message, json_rpc_named_arguments, retries) do
+      {:error, %{code: _, message: "filter not found"}} -> {:error, :filter_not_found}
+      response -> response
+    end
+  end
+
+  defp uninstall_filter(filter_id, json_rpc_named_arguments, retries \\ 1) do
+    req =
+      request(%{
+        id: 0,
+        method: "eth_getFilterChanges",
+        params: [filter_id]
+      })
+
+    error_message = &"Cannot uninstall filter. Error: #{inspect(&1)}"
+
+    repeated_request(req, error_message, json_rpc_named_arguments, retries)
+  end
+
   defp get_last_l1_item do
     OptimismDeposit.last_deposit_l1_block_number_query()
     |> Repo.one()
     |> Kernel.||({0, nil})
+  end
+
+  defp repeated_request(req, error_message, json_rpc_named_arguments, retries_left) do
+    case json_rpc(req, json_rpc_named_arguments) do
+      {:ok, _results} = res ->
+        res
+
+      {:error, error} = err ->
+        retries_left = retries_left - 1
+
+        if retries_left <= 0 do
+          Logger.error(error_message.(error))
+          err
+        else
+          Logger.error("#{error_message.(error)} Retrying...")
+          :timer.sleep(3000)
+          repeated_request(req, error_message, json_rpc_named_arguments, retries_left)
+        end
+    end
   end
 end
