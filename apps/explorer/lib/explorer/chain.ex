@@ -1275,9 +1275,11 @@ defmodule Explorer.Chain do
   Checks to see if the chain is down indexing based on the transaction from the
   oldest block and the pending operation
   """
-  @spec finished_internal_transactions_indexing?([api?]) :: boolean()
-  def finished_internal_transactions_indexing?(options \\ []) do
-    internal_transactions_disabled? = System.get_env("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER", "false") == "true"
+  @spec finished_indexing_internal_transactions?([api?]) :: boolean()
+  def finished_indexing_internal_transactions?(options \\ []) do
+    internal_transactions_disabled? =
+      Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] or
+        not Application.get_env(:indexer, Indexer.Supervisor)[:enabled]
 
     if internal_transactions_disabled? do
       true
@@ -1312,18 +1314,24 @@ defmodule Explorer.Chain do
     end
   end
 
-  def finished_blocks_indexing?(indexed_ratio_blocks) do
-    Decimal.compare(indexed_ratio_blocks, 1) !== :lt
+  def finished_indexing_from_ratio?(ratio) do
+    Decimal.compare(ratio, 1) !== :lt
   end
 
   @doc """
   Checks if indexing of blocks and internal transactions finished aka full indexing
   """
-  @spec finished_indexing?(Decimal.t(), [api?]) :: boolean()
-  def finished_indexing?(indexed_ratio_blocks, options \\ []) do
-    case finished_blocks_indexing?(indexed_ratio_blocks) do
-      false -> false
-      _ -> finished_internal_transactions_indexing?(options)
+  @spec finished_indexing?([api?]) :: boolean()
+  def finished_indexing?(options \\ []) do
+    if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
+      indexed_ratio = indexed_ratio_blocks()
+
+      case finished_indexing_from_ratio?(indexed_ratio) do
+        false -> false
+        _ -> finished_indexing_internal_transactions?(options)
+      end
+    else
+      true
     end
   end
 
@@ -2181,58 +2189,66 @@ defmodule Explorer.Chain do
   """
   @spec indexed_ratio_blocks() :: Decimal.t()
   def indexed_ratio_blocks do
-    %{min: min, max: max} = BlockNumber.get_all()
+    if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
+      %{min: min, max: max} = BlockNumber.get_all()
 
-    min_blockchain_block_number =
-      case Integer.parse(Application.get_env(:indexer, :first_block)) do
-        {block_number, _} -> block_number
-        _ -> 0
+      min_blockchain_block_number =
+        case Integer.parse(Application.get_env(:indexer, :first_block)) do
+          {block_number, _} -> block_number
+          _ -> 0
+        end
+
+      case {min, max} do
+        {0, 0} ->
+          Decimal.new(0)
+
+        _ ->
+          result =
+            BlockCache.estimated_count()
+            |> Decimal.div(max - min_blockchain_block_number + 1)
+            |> (&if(
+                  (Decimal.compare(&1, Decimal.from_float(0.99)) == :gt ||
+                     Decimal.compare(&1, Decimal.from_float(0.99)) == :eq) &&
+                    min <= min_blockchain_block_number,
+                  do: Decimal.new(1),
+                  else: &1
+                )).()
+
+          result
+          |> Decimal.round(2, :down)
+          |> Decimal.min(Decimal.new(1))
       end
-
-    case {min, max} do
-      {0, 0} ->
-        Decimal.new(0)
-
-      _ ->
-        result =
-          BlockCache.estimated_count()
-          |> Decimal.div(max - min_blockchain_block_number + 1)
-          |> (&if(
-                (Decimal.compare(&1, Decimal.from_float(0.99)) == :gt ||
-                   Decimal.compare(&1, Decimal.from_float(0.99)) == :eq) &&
-                  min <= min_blockchain_block_number,
-                do: Decimal.new(1),
-                else: &1
-              )).()
-
-        result
-        |> Decimal.round(2, :down)
-        |> Decimal.min(Decimal.new(1))
+    else
+      Decimal.new(1)
     end
   end
 
   @spec indexed_ratio_internal_transactions() :: Decimal.t()
   def indexed_ratio_internal_transactions do
-    %{max: max} = BlockNumber.get_all()
-    count = Repo.aggregate(PendingBlockOperation, :count, timeout: :infinity)
+    if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
+      %{max: max} = BlockNumber.get_all()
+      count = Repo.aggregate(PendingBlockOperation, :count, timeout: :infinity)
 
-    min_blockchain_trace_block_number =
-      case Integer.parse(Application.get_env(:indexer, :trace_first_block)) do
-        {block_number, _} -> block_number
-        _ -> 0
+      min_blockchain_trace_block_number =
+        case Integer.parse(Application.get_env(:indexer, :trace_first_block)) do
+          {block_number, _} -> block_number
+          _ -> 0
+        end
+
+      case max do
+        0 ->
+          Decimal.new(0)
+
+        _ ->
+          full_blocks_range = max - min_blockchain_trace_block_number + 1
+          result = Decimal.div(full_blocks_range - count, full_blocks_range)
+
+          result
+          |> Decimal.round(2, :down)
+          |> Decimal.min(Decimal.new(1))
       end
-
-    case max do
-      0 ->
-        Decimal.new(0)
-
-      _ ->
-        full_blocks_range = max - min_blockchain_trace_block_number + 1
-        result = Decimal.div(full_blocks_range - count, full_blocks_range)
-
-        result
-        |> Decimal.round(2, :down)
-        |> Decimal.min(Decimal.new(1))
+    else
+      Decimal.new(1)
     end
   end
 
@@ -2477,7 +2493,7 @@ defmodule Explorer.Chain do
 
   defp base_token_query(empty_type) when empty_type in [nil, []] do
     from(t in Token,
-      order_by: [desc_nulls_last: t.holder_count, asc: t.name],
+      order_by: [desc_nulls_last: t.circulating_market_cap, desc_nulls_last: t.holder_count, asc: t.name],
       preload: [:contract_address]
     )
   end
@@ -2485,7 +2501,7 @@ defmodule Explorer.Chain do
   defp base_token_query(token_types) when is_list(token_types) do
     from(t in Token,
       where: t.type in ^token_types,
-      order_by: [desc_nulls_last: t.holder_count, asc: t.name],
+      order_by: [desc_nulls_last: t.circulating_market_cap, desc_nulls_last: t.holder_count, asc: t.name],
       preload: [:contract_address]
     )
   end
@@ -2644,24 +2660,25 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Return the balance in usd corresponding to this token. Return nil if the usd_value of the token is not present.
+  Return the balance in usd corresponding to this token. Return nil if the fiat_value of the token is not present.
   """
-  def balance_in_usd(_token_balance, %{usd_value: nil}) do
+  def balance_in_fiat(_token_balance, %{fiat_value: fiat_value, decimals: decimals})
+      when nil in [fiat_value, decimals] do
     nil
   end
 
-  def balance_in_usd(token_balance, %{usd_value: usd_value, decimals: decimals}) do
+  def balance_in_fiat(token_balance, %{fiat_value: fiat_value, decimals: decimals}) do
     tokens = CurrencyHelpers.divide_decimals(token_balance.value, decimals)
-    Decimal.mult(tokens, usd_value)
+    Decimal.mult(tokens, fiat_value)
   end
 
-  def balance_in_usd(%{token: %{usd_value: nil}}) do
+  def balance_in_fiat(%{token: %{fiat_value: nil}}) do
     nil
   end
 
-  def balance_in_usd(token_balance) do
+  def balance_in_fiat(token_balance) do
     tokens = CurrencyHelpers.divide_decimals(token_balance.value, token_balance.token.decimals)
-    price = token_balance.token.usd_value
+    price = token_balance.token.fiat_value
     Decimal.mult(tokens, price)
   end
 
@@ -4568,11 +4585,22 @@ defmodule Explorer.Chain do
 
   defp page_tokens(query, %PagingOptions{key: nil}), do: query
 
-  defp page_tokens(query, %PagingOptions{key: {holder_count, token_name}}) do
+  defp page_tokens(query, %PagingOptions{key: {nil, holder_count, name}}) do
     from(token in query,
       where:
-        (token.holder_count == ^holder_count and token.name > ^token_name) or
-          token.holder_count < ^holder_count
+        is_nil(token.circulating_market_cap) and
+          (token.holder_count < ^holder_count or (token.holder_count == ^holder_count and token.name > ^name))
+    )
+  end
+
+  defp page_tokens(query, %PagingOptions{key: {circulating_market_cap, holder_count, name}}) do
+    from(token in query,
+      where:
+        is_nil(token.circulating_market_cap) or
+          (token.circulating_market_cap < ^circulating_market_cap or
+             (token.circulating_market_cap == ^circulating_market_cap and token.holder_count < ^holder_count) or
+             (token.circulating_market_cap == ^circulating_market_cap and token.holder_count == ^holder_count and
+                token.name > ^name))
     )
   end
 
@@ -4722,12 +4750,40 @@ defmodule Explorer.Chain do
 
   def page_current_token_balances(query, %PagingOptions{key: nil}), do: query
 
-  def page_current_token_balances(query, %PagingOptions{key: {name, type, value}}) do
+  def page_current_token_balances(query, %PagingOptions{key: {nil, value, id}}) do
+    fiat_balance = CurrentTokenBalance.fiat_value_query()
+
+    condition =
+      dynamic(
+        [ctb, t],
+        is_nil(^fiat_balance) and
+          (ctb.value < ^value or
+             (ctb.value == ^value and ctb.id < ^id))
+      )
+
     where(
       query,
       [ctb, t],
-      ctb.value < ^value or (ctb.value == ^value and t.type < ^type) or
-        (ctb.value == ^value and t.type == ^type and t.name < ^name)
+      ^condition
+    )
+  end
+
+  def page_current_token_balances(query, %PagingOptions{key: {fiat_value, value, id}}) do
+    fiat_balance = CurrentTokenBalance.fiat_value_query()
+
+    condition =
+      dynamic(
+        [ctb, t],
+        ^fiat_balance < ^fiat_value or is_nil(^fiat_balance) or
+          (^fiat_balance == ^fiat_value and
+             (ctb.value < ^value or
+                (ctb.value == ^value and ctb.id < ^id)))
+      )
+
+    where(
+      query,
+      [ctb, t],
+      ^condition
     )
   end
 

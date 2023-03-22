@@ -63,7 +63,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
             )
 
           case Repo.one(min_max_block_query, timeout: :infinity) do
-            {min_block, max_block} ->
+            {min_block, max_block} when not is_nil(min_block) and not is_nil(max_block) ->
               record =
                 min_block
                 |> compile_records_in_range(max_block)

@@ -4,8 +4,6 @@ alias EthereumJSONRPC.Variant
 
 config :explorer, Explorer.ExchangeRates, enabled: false, store: :none
 
-config :explorer, Explorer.KnownTokens, enabled: false, store: :none
-
 config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
   domain: "example.com",
   client_id: "clien_id",

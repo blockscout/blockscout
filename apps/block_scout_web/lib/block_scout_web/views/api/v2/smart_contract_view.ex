@@ -6,9 +6,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias BlockScoutWeb.SmartContractView
   alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
   alias Ecto.Changeset
-  alias Explorer.{Chain, Market}
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
-  alias Explorer.ExchangeRates.Token
   alias Explorer.Visualize.Sol2uml
 
   require Logger
@@ -244,10 +243,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   end
 
   defp prepare_smart_contract_for_list(%SmartContract{} = smart_contract) do
-    token =
-      if smart_contract.address.token,
-        do: Market.get_exchange_rate(smart_contract.address.token.symbol),
-        else: Token.null()
+    token = smart_contract.address.token
 
     %{
       "address" => Helper.address_with_info(nil, smart_contract.address, smart_contract.address.hash),
@@ -256,7 +252,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "tx_count" => smart_contract.address.transactions_count,
       "language" => smart_contract_language(smart_contract),
       "verified_at" => smart_contract.inserted_at,
-      "market_cap" => token && token.market_cap_usd,
+      "market_cap" => token && token.circulating_market_cap,
       "has_constructor_args" => !is_nil(smart_contract.constructor_arguments),
       "coin_balance" =>
         if(smart_contract.address.fetched_coin_balance, do: smart_contract.address.fetched_coin_balance.value)
