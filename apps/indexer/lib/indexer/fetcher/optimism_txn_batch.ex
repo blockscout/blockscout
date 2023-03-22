@@ -21,8 +21,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helpers
 
-  @block_check_interval_range_size 100
-  @fetcher_name :optimism_txn_batch
+  @fetcher_name :optimism_txn_batches
   @reorg_rewind_limit 10
 
   def child_spec(start_link_arguments) do
@@ -64,16 +63,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
-         {:ok, last_safe_block} <- Optimism.get_block_number_by_tag("safe", json_rpc_named_arguments),
-         first_block = max(last_safe_block - @block_check_interval_range_size, 1),
-         {:ok, first_block_timestamp} <- Optimism.get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
-         {:ok, last_safe_block_timestamp} <-
-           Optimism.get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
-      block_check_interval =
-        ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
-
-      Logger.info("Block check interval is calculated as #{block_check_interval} ms.")
-
+         {:ok, block_check_interval, last_safe_block} <- Optimism.get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
 
       reorg_monitor_task =
