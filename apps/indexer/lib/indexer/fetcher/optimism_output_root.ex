@@ -16,7 +16,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
   alias Explorer.Chain.OptimismOutputRoot
   alias Indexer.Fetcher.Optimism
 
-  @fetcher_name :optimism_output_root
+  @fetcher_name :optimism_output_roots
 
   # 32-byte signature of the event OutputProposed(bytes32 indexed outputRoot, uint256 indexed l2OutputIndex, uint256 indexed l2BlockNumber, uint256 l1Timestamp)
   @output_proposed_event "0xa7aaf2512769da4e444e3de247be2564225c2e7a8f74cfe528e46e17d24868e2"

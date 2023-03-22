@@ -17,7 +17,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
   alias Explorer.Chain.OptimismWithdrawalEvent
   alias Indexer.Fetcher.Optimism
 
-  @fetcher_name :optimism_withdrawal_event
+  @fetcher_name :optimism_withdrawal_events
 
   # 32-byte signature of the event WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to)
   @withdrawal_proven_event "0x67a6208cfcc0801d50f6cbe764733f4fddf66ac0b04442061a8a8c0cb6b63f62"
