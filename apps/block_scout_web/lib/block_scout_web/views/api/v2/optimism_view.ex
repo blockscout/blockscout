@@ -13,40 +13,33 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         batches: batches,
         next_page_params: next_page_params
       }) do
-    tx_counts =
+    items =
       batches
       |> Enum.map(fn batch ->
         Task.async(fn ->
-          Repo.replica().aggregate(
-            from(
-              t in Transaction,
-              inner_join: b in Block,
-              on: b.hash == t.block_hash and b.consensus == true,
-              where: t.block_number == ^batch.l2_block_number
-            ),
-            :count,
-            timeout: :infinity
-          )
+          tx_count =
+            Repo.replica().aggregate(
+              from(
+                t in Transaction,
+                inner_join: b in Block,
+                on: b.hash == t.block_hash and b.consensus == true,
+                where: t.block_number == ^batch.l2_block_number
+              ),
+              :count,
+              timeout: :infinity
+            )
+
+          %{
+            "l2_block_number" => batch.l2_block_number,
+            "tx_count" => tx_count,
+            "epoch_number" => batch.epoch_number,
+            "l1_tx_hashes" => batch.l1_transaction_hashes,
+            "l1_timestamp" => batch.l1_timestamp
+          }
         end)
       end)
       |> Task.yield_many(:infinity)
-      |> Enum.map(fn {_task, res} ->
-        {:ok, count} = res
-        count
-      end)
-
-    items =
-      batches
-      |> Enum.with_index()
-      |> Enum.map(fn {batch, i} ->
-        %{
-          "l2_block_number" => batch.l2_block_number,
-          "tx_count" => Enum.at(tx_counts, i),
-          "epoch_number" => batch.epoch_number,
-          "l1_tx_hashes" => batch.l1_transaction_hashes,
-          "l1_timestamp" => batch.l1_timestamp
-        }
-      end)
+      |> Enum.map(fn {_task, {:ok, item}} -> item end)
 
     %{
       items: items,
