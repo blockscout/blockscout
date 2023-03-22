@@ -11,11 +11,26 @@ defmodule Indexer.Fetcher.Optimism do
   import Explorer.Helpers, only: [parse_integer: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
-  alias EthereumJSONRPC.Blocks
   alias Indexer.{BoundQueue, Helpers}
 
   @block_check_interval_range_size 100
   @eth_get_logs_range_size 1000
+
+  def get_block_check_interval(json_rpc_named_arguments) do
+    with {:ok, last_safe_block} <- get_block_number_by_tag("safe", json_rpc_named_arguments),
+         first_block = max(last_safe_block - @block_check_interval_range_size, 1),
+         {:ok, first_block_timestamp} <- get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
+         {:ok, last_safe_block_timestamp} <- get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
+      block_check_interval =
+        ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
+
+      Logger.info("Block check interval is calculated as #{block_check_interval} ms.")
+      {:ok, block_check_interval, last_safe_block}
+    else
+      {:error, error} ->
+        {:error, "Failed to calculate block check interval due to #{inspect(error)}"}
+    end
+  end
 
   def get_block_number_by_tag(tag, json_rpc_named_arguments, retries_left \\ 3) do
     case fetch_block_number_by_tag(tag, json_rpc_named_arguments) do
@@ -75,29 +90,6 @@ defmodule Indexer.Fetcher.Optimism do
           :timer.sleep(3000)
           get_block_timestamp_by_number(number, json_rpc_named_arguments, retries_left)
         end
-    end
-  end
-
-  def get_block_timestamps_by_numbers(numbers, json_rpc_named_arguments, retries \\ 3) do
-    id_to_params =
-      numbers
-      |> Stream.map(fn number -> %{number: number} end)
-      |> Stream.with_index()
-      |> Enum.into(%{}, fn {params, id} -> {id, params} end)
-
-    request = Blocks.requests(id_to_params, &ByNumber.request(&1, false))
-    error_message = &"Cannot fetch timestamps for blocks #{numbers}. Error: #{inspect(&1)}"
-
-    case repeated_request(request, error_message, json_rpc_named_arguments, retries) do
-      {:ok, response} ->
-        %Blocks{blocks_params: blocks_params} = Blocks.from_responses(response, id_to_params)
-
-        {:ok,
-         blocks_params
-         |> Enum.reduce(%{}, fn %{number: number, timestamp: timestamp}, acc -> Map.put_new(acc, number, timestamp) end)}
-
-      err ->
-        err
     end
   end
 
@@ -167,90 +159,6 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
-  def get_new_filter(from_block, to_block, address, topic0, json_rpc_named_arguments, retries \\ 3) do
-    processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
-    processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
-
-    req =
-      request(%{
-        id: 0,
-        method: "eth_newFilter",
-        params: [
-          %{
-            fromBlock: processed_from_block,
-            toBlock: processed_to_block,
-            address: address,
-            topics: [topic0]
-          }
-        ]
-      })
-
-    error_message = &"Cannot create new log filter. Error: #{inspect(&1)}"
-
-    repeated_request(req, error_message, json_rpc_named_arguments, retries)
-  end
-
-  def get_filter_changes(filter_id, json_rpc_named_arguments, retries \\ 3) do
-    req =
-      request(%{
-        id: 0,
-        method: "eth_getFilterChanges",
-        params: [filter_id]
-      })
-
-    error_message = &"Cannot fetch filter changes. Error: #{inspect(&1)}"
-
-    case repeated_request(req, error_message, json_rpc_named_arguments, retries) do
-      {:error, %{code: _, message: "filter not found"}} -> {:error, :filter_not_found}
-      response -> response
-    end
-  end
-
-  def uninstall_filter(filter_id, json_rpc_named_arguments, retries \\ 1) do
-    req =
-      request(%{
-        id: 0,
-        method: "eth_getFilterChanges",
-        params: [filter_id]
-      })
-
-    error_message = &"Cannot uninstall filter. Error: #{inspect(&1)}"
-
-    repeated_request(req, error_message, json_rpc_named_arguments, retries)
-  end
-
-  defp repeated_request(req, error_message, json_rpc_named_arguments, retries_left) do
-    case json_rpc(req, json_rpc_named_arguments) do
-      {:ok, _results} = res ->
-        res
-
-      {:error, error} = err ->
-        retries_left = retries_left - 1
-
-        if retries_left <= 0 do
-          Logger.error(error_message.(error))
-          err
-        else
-          Logger.error("#{error_message.(error)} Retrying...")
-          :timer.sleep(3000)
-          repeated_request(req, error_message, json_rpc_named_arguments, retries_left)
-        end
-    end
-  end
-
-  def get_block_check_interval(json_rpc_named_arguments) do
-    with {:ok, last_safe_block} <- get_block_number_by_tag("safe", json_rpc_named_arguments),
-         first_block = max(last_safe_block - @block_check_interval_range_size, 1),
-         {:ok, first_block_timestamp} <- get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
-         {:ok, last_safe_block_timestamp} <- get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
-      {:ok, ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)}
-    else
-      {:error, error} ->
-        Logger.error("Failed to calculate block check interval due to #{inspect(error)}")
-        {:error, error}
-    end
-  end
-
   def get_logs_range_size do
     @eth_get_logs_range_size
   end
@@ -280,27 +188,19 @@ defmodule Indexer.Fetcher.Optimism do
       end
 
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
-         optimism_l1_rpc <- Application.get_env(:indexer, :optimism_l1_rpc),
+         optimism_l1_rpc = Application.get_env(:indexer, :optimism_l1_rpc),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          {:contract_is_valid, true} <- {:contract_is_valid, Helpers.is_address_correct?(contract_address)},
-         start_block_l1 <- parse_integer(env[:start_block_l1]),
+         start_block_l1 = parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
          {last_l1_block_number, last_l1_transaction_hash} <- caller.get_last_l1_item(),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
-         json_rpc_named_arguments <- json_rpc_named_arguments(optimism_l1_rpc),
+         json_rpc_named_arguments = json_rpc_named_arguments(optimism_l1_rpc),
          {:ok, last_l1_tx} <- get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
-         {:ok, last_safe_block} <- get_block_number_by_tag("safe", json_rpc_named_arguments),
-         first_block <- max(last_safe_block - @block_check_interval_range_size, 1),
-         {:ok, first_block_timestamp} <- get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
-         {:ok, last_safe_block_timestamp} <- get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
-      block_check_interval =
-        ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
-
-      Logger.info("Block check interval is calculated as #{block_check_interval} ms.")
-
+         {:ok, block_check_interval, last_safe_block} <- get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
 
       reorg_monitor_task =
