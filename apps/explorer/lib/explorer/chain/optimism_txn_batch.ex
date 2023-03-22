@@ -10,7 +10,8 @@ defmodule Explorer.Chain.OptimismTxnBatch do
   @type t :: %__MODULE__{
           l2_block_number: non_neg_integer(),
           epoch_number: non_neg_integer(),
-          frame_sequence_id: non_neg_integer()
+          frame_sequence_id: non_neg_integer(),
+          frame_sequence: %Ecto.Association.NotLoaded{} | OptimismFrameSequence.t()
         }
 
   @primary_key false
