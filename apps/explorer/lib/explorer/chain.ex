@@ -2493,7 +2493,7 @@ defmodule Explorer.Chain do
 
   defp base_token_query(empty_type) when empty_type in [nil, []] do
     from(t in Token,
-      order_by: [desc_nulls_last: t.holder_count, asc: t.name],
+      order_by: [desc_nulls_last: t.circulating_market_cap, desc_nulls_last: t.holder_count, asc: t.name],
       preload: [:contract_address]
     )
   end
@@ -2501,7 +2501,7 @@ defmodule Explorer.Chain do
   defp base_token_query(token_types) when is_list(token_types) do
     from(t in Token,
       where: t.type in ^token_types,
-      order_by: [desc_nulls_last: t.holder_count, asc: t.name],
+      order_by: [desc_nulls_last: t.circulating_market_cap, desc_nulls_last: t.holder_count, asc: t.name],
       preload: [:contract_address]
     )
   end
@@ -2660,24 +2660,25 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Return the balance in usd corresponding to this token. Return nil if the usd_value of the token is not present.
+  Return the balance in usd corresponding to this token. Return nil if the fiat_value of the token is not present.
   """
-  def balance_in_usd(_token_balance, %{usd_value: nil}) do
+  def balance_in_fiat(_token_balance, %{fiat_value: fiat_value, decimals: decimals})
+      when nil in [fiat_value, decimals] do
     nil
   end
 
-  def balance_in_usd(token_balance, %{usd_value: usd_value, decimals: decimals}) do
+  def balance_in_fiat(token_balance, %{fiat_value: fiat_value, decimals: decimals}) do
     tokens = CurrencyHelpers.divide_decimals(token_balance.value, decimals)
-    Decimal.mult(tokens, usd_value)
+    Decimal.mult(tokens, fiat_value)
   end
 
-  def balance_in_usd(%{token: %{usd_value: nil}}) do
+  def balance_in_fiat(%{token: %{fiat_value: nil}}) do
     nil
   end
 
-  def balance_in_usd(token_balance) do
+  def balance_in_fiat(token_balance) do
     tokens = CurrencyHelpers.divide_decimals(token_balance.value, token_balance.token.decimals)
-    price = token_balance.token.usd_value
+    price = token_balance.token.fiat_value
     Decimal.mult(tokens, price)
   end
 
@@ -4584,11 +4585,22 @@ defmodule Explorer.Chain do
 
   defp page_tokens(query, %PagingOptions{key: nil}), do: query
 
-  defp page_tokens(query, %PagingOptions{key: {holder_count, token_name}}) do
+  defp page_tokens(query, %PagingOptions{key: {nil, holder_count, name}}) do
     from(token in query,
       where:
-        (token.holder_count == ^holder_count and token.name > ^token_name) or
-          token.holder_count < ^holder_count
+        is_nil(token.circulating_market_cap) and
+          (token.holder_count < ^holder_count or (token.holder_count == ^holder_count and token.name > ^name))
+    )
+  end
+
+  defp page_tokens(query, %PagingOptions{key: {circulating_market_cap, holder_count, name}}) do
+    from(token in query,
+      where:
+        is_nil(token.circulating_market_cap) or
+          (token.circulating_market_cap < ^circulating_market_cap or
+             (token.circulating_market_cap == ^circulating_market_cap and token.holder_count < ^holder_count) or
+             (token.circulating_market_cap == ^circulating_market_cap and token.holder_count == ^holder_count and
+                token.name > ^name))
     )
   end
 
@@ -4738,12 +4750,40 @@ defmodule Explorer.Chain do
 
   def page_current_token_balances(query, %PagingOptions{key: nil}), do: query
 
-  def page_current_token_balances(query, %PagingOptions{key: {name, type, value}}) do
+  def page_current_token_balances(query, %PagingOptions{key: {nil, value, id}}) do
+    fiat_balance = CurrentTokenBalance.fiat_value_query()
+
+    condition =
+      dynamic(
+        [ctb, t],
+        is_nil(^fiat_balance) and
+          (ctb.value < ^value or
+             (ctb.value == ^value and ctb.id < ^id))
+      )
+
     where(
       query,
       [ctb, t],
-      ctb.value < ^value or (ctb.value == ^value and t.type < ^type) or
-        (ctb.value == ^value and t.type == ^type and t.name < ^name)
+      ^condition
+    )
+  end
+
+  def page_current_token_balances(query, %PagingOptions{key: {fiat_value, value, id}}) do
+    fiat_balance = CurrentTokenBalance.fiat_value_query()
+
+    condition =
+      dynamic(
+        [ctb, t],
+        ^fiat_balance < ^fiat_value or is_nil(^fiat_balance) or
+          (^fiat_balance == ^fiat_value and
+             (ctb.value < ^value or
+                (ctb.value == ^value and ctb.id < ^id)))
+      )
+
+    where(
+      query,
+      [ctb, t],
+      ^condition
     )
   end
 

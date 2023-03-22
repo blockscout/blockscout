@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
 
   def total_supply_usd(token) do
     tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
-    price = token.usd_value
+    price = token.fiat_value
     Decimal.mult(tokens, price)
   end
 
