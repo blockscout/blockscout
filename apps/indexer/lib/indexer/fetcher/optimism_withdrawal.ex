@@ -18,6 +18,8 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helpers
 
+  @fetcher_name :optimism_withdrawals
+
   # 32-byte signature of the event MessagePassed(uint256 indexed nonce, address indexed sender, address indexed target, uint256 value, uint256 gasLimit, bytes data, bytes32 withdrawalHash)
   @message_passed_event "0x02a52367d10742d8032712c1bb8e0144ff1ec5ffda1ed7d70bb05a2744955054"
 
@@ -38,14 +40,14 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
 
   @impl GenServer
   def init(args) do
-    Logger.metadata(fetcher: :optimism_withdrawals)
+    Logger.metadata(fetcher: @fetcher_name)
 
     json_rpc_named_arguments = args[:json_rpc_named_arguments]
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_l2_undefined, false} <- {:start_block_l2_undefined, is_nil(env[:start_block_l2])},
          {:message_passer_valid, true} <- {:message_passer_valid, Helpers.is_address_correct?(env[:message_passer])},
-         start_block_l2 <- parse_integer(env[:start_block_l2]),
+         start_block_l2 = parse_integer(env[:start_block_l2]),
          false <- is_nil(start_block_l2),
          true <- start_block_l2 > 0,
          {last_l2_block_number, last_l2_transaction_hash} <- get_last_l2_item(),
