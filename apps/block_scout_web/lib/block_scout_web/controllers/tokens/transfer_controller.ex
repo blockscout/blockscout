@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
 
   alias BlockScoutWeb.{AccessHelpers, Controller}
   alias BlockScoutWeb.Tokens.TransferView
-  alias Explorer.{Chain, Market}
+  alias Explorer.Chain
   alias Explorer.Chain.Address
   alias Indexer.Fetcher.TokenTotalSupplyOnDemand
   alias Phoenix.View
@@ -73,7 +73,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
         "index.html",
         counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)}),
         current_path: Controller.current_full_path(conn),
-        token: Market.add_price(token),
+        token: token,
         token_total_supply_status: TokenTotalSupplyOnDemand.trigger_fetch(address_hash),
         tags: get_address_tags(address_hash, current_user(conn))
       )

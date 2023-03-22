@@ -34,6 +34,13 @@
     %>
   </td>
   <td class="stakes-td">
+    <%= if @token.circulating_market_cap do %>
+      <span data-selector="circulating-market-cap-usd" data-usd-value="<%= @token.circulating_market_cap %>"></span>
+    <% else %>
+      <span data-selector="circulating-market-cap-usd"><%= gettext "N/A" %></span>
+    <% end %>
+  </td>
+  <td class="stakes-td">
     <%= if decimals?(@token) do %>
       <span data-test="token_supply"><%= format_according_to_decimals(@token.total_supply, @token.decimals) %></span>
     <% else %>
