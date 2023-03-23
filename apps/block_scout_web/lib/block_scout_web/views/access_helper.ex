@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.AccessHelper do
 
   alias BlockScoutWeb.API.APILogger
   alias BlockScoutWeb.API.RPC.RPCView
+  alias BlockScoutWeb.API.V2.ApiView
   alias BlockScoutWeb.WebRouter.Helpers
   alias Explorer.AccessHelper
   alias Explorer.Account.Api.Key, as: ApiKey
@@ -37,13 +38,16 @@ defmodule BlockScoutWeb.AccessHelper do
     apply(Helpers, path, full_args)
   end
 
-  def handle_rate_limit_deny(conn) do
+  def handle_rate_limit_deny(conn, api_v2? \\ false) do
     APILogger.message("API rate limit reached")
+
+    view = if api_v2?, do: ApiView, else: RPCView
+    tag = if api_v2?, do: :message, else: :error
 
     conn
     |> Conn.put_status(429)
-    |> put_view(RPCView)
-    |> render(:error, %{error: "429 Too Many Requests"})
+    |> put_view(view)
+    |> render(tag, %{tag => "429 Too Many Requests"})
     |> Conn.halt()
   end
 
@@ -51,13 +55,15 @@ defmodule BlockScoutWeb.AccessHelper do
     if Application.get_env(:block_scout_web, :api_rate_limit)[:disabled] == true do
       :ok
     else
+      is_blockscout_behind_proxy = Application.get_env(:block_scout_web, :api_rate_limit)[:is_blockscout_behind_proxy]
+
       global_api_rate_limit = Application.get_env(:block_scout_web, :api_rate_limit)[:global_limit]
       api_rate_limit_by_key = Application.get_env(:block_scout_web, :api_rate_limit)[:api_rate_limit_by_key]
       api_rate_limit_by_ip = Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_ip]
       static_api_key = Application.get_env(:block_scout_web, :api_rate_limit)[:static_api_key]
 
       remote_ip = conn.remote_ip
-      remote_ip_from_headers = RemoteIp.from(conn.resp_headers)
+      remote_ip_from_headers = is_blockscout_behind_proxy && RemoteIp.from(conn.req_headers)
       ip = remote_ip_from_headers || remote_ip
       ip_string = to_string(:inet_parse.ntoa(ip))
 

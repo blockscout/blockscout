@@ -14,13 +14,13 @@ defmodule BlockScoutWeb.ApiRouter do
   """
   use BlockScoutWeb, :router
   alias BlockScoutWeb.SmartContractsApiV2Router
-  alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2}
+  alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2, RateLimit}
 
   forward("/v2/smart-contracts", SmartContractsApiV2Router)
 
   pipeline :api do
-    plug(:accepts, ["json"])
     plug(BlockScoutWeb.Plug.Logger, application: :api)
+    plug(:accepts, ["json"])
   end
 
   pipeline :account_api do
@@ -30,11 +30,12 @@ defmodule BlockScoutWeb.ApiRouter do
   end
 
   pipeline :api_v2 do
+    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
-    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
+    plug(RateLimit)
   end
 
   alias BlockScoutWeb.Account.Api.V1.{AuthenticateController, TagsController, UserController}
