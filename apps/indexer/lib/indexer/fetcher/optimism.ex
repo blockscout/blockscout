@@ -3,6 +3,9 @@ defmodule Indexer.Fetcher.Optimism do
   Contains common functions for Optimism* fetchers.
   """
 
+  use GenServer
+  use Indexer.Fetcher
+
   require Logger
 
   import EthereumJSONRPC,
@@ -11,10 +14,67 @@ defmodule Indexer.Fetcher.Optimism do
   import Explorer.Helpers, only: [parse_integer: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
+  alias Explorer.Chain.Events.{Publisher, Subscriber}
   alias Indexer.{BoundQueue, Helpers}
 
+  @fetcher_name :optimism
   @block_check_interval_range_size 100
   @eth_get_logs_range_size 1000
+
+  def child_spec(start_link_arguments) do
+    spec = %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, start_link_arguments},
+      restart: :transient,
+      type: :worker
+    }
+
+    Supervisor.child_spec(spec, [])
+  end
+
+  def start_link(args, gen_server_options \\ []) do
+    GenServer.start_link(__MODULE__, args, Keyword.put_new(gen_server_options, :name, __MODULE__))
+  end
+
+  @impl GenServer
+  def init(_args) do
+    Logger.metadata(fetcher: @fetcher_name)
+
+    optimism_l1_rpc = Application.get_all_env(:indexer)[__MODULE__][:optimism_l1_rpc]
+
+    json_rpc_named_arguments = json_rpc_named_arguments(optimism_l1_rpc)
+
+    {:ok, block_check_interval, _} = get_block_check_interval(json_rpc_named_arguments)
+
+    Process.send(self(), :reorg_monitor, [])
+
+    {:ok,
+     %{block_check_interval: block_check_interval, json_rpc_named_arguments: json_rpc_named_arguments, prev_latest: 0}}
+  end
+
+  @impl GenServer
+  def handle_info(
+        :reorg_monitor,
+        %{
+          block_check_interval: block_check_interval,
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          prev_latest: prev_latest
+        } = state
+      ) do
+    {:ok, latest} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+
+    if latest < prev_latest do
+      Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
+
+      Publisher.broadcast([{:optimism_reorg_block, latest}], :realtime)
+    end
+
+    Publisher.broadcast([{:optimism_reorg_block, latest}], :realtime)
+
+    Process.send_after(self(), :reorg_monitor, block_check_interval)
+
+    {:noreply, %{state | prev_latest: latest}}
+  end
 
   def get_block_check_interval(json_rpc_named_arguments) do
     with {:ok, last_safe_block} <- get_block_number_by_tag("safe", json_rpc_named_arguments),
@@ -203,10 +263,7 @@ defmodule Indexer.Fetcher.Optimism do
          {:ok, block_check_interval, last_safe_block} <- get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
 
-      reorg_monitor_task =
-        Task.Supervisor.async_nolink(Module.concat(caller, TaskSupervisor), fn ->
-          reorg_monitor(caller.fetcher_name(), block_check_interval, json_rpc_named_arguments)
-        end)
+      Subscriber.to(:optimism_reorg_block, :realtime)
 
       Process.send(self(), :continue, [])
 
@@ -216,7 +273,6 @@ defmodule Indexer.Fetcher.Optimism do
          block_check_interval: block_check_interval,
          start_block: start_block,
          end_block: last_safe_block,
-         reorg_monitor_task: reorg_monitor_task,
          json_rpc_named_arguments: json_rpc_named_arguments
        }}
     else
@@ -294,26 +350,6 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
-  def reorg_monitor(fetcher_name, block_check_interval, json_rpc_named_arguments) do
-    Logger.metadata(fetcher: fetcher_name)
-
-    table_name = reorg_table_name(fetcher_name)
-
-    # infinite loop
-    Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), 0, fn _i, prev_latest ->
-      {:ok, latest} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-
-      if latest < prev_latest do
-        Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
-        reorg_block_push(table_name, latest)
-      end
-
-      :timer.sleep(block_check_interval)
-
-      {:cont, latest}
-    end)
-  end
-
   def reorg_block_pop(fetcher_name) do
     table_name = reorg_table_name(fetcher_name)
 
@@ -327,7 +363,8 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
-  defp reorg_block_push(table_name, block_number) do
+  def reorg_block_push(fetcher_name, block_number) do
+    table_name = reorg_table_name(fetcher_name)
     {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(table_name), block_number)
     :ets.insert(table_name, {:queue, updated_queue})
   end
