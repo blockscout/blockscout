@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     prepare_block(block, nil, false)
   end
 
-  def prepare_block(block, conn, single_block? \\ false) do
+  def prepare_block(block, _conn, single_block? \\ false) do
     burned_fee = Chain.burned_fees(block.transactions, block.base_fee_per_gas)
     priority_fee = block.base_fee_per_gas && BlockPriorityFeeCounter.fetch(block.hash)
 
@@ -38,7 +38,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "height" => block.number,
       "timestamp" => block.timestamp,
       "tx_count" => count_transactions(block),
-      "miner" => Helper.address_with_info(conn, block.miner, block.miner_hash),
+      "miner" => Helper.address_with_info(block.miner, block.miner_hash),
       "size" => block.size,
       "hash" => block.hash,
       "parent_hash" => block.parent_hash,
