@@ -9,7 +9,8 @@ defmodule Explorer.Chain.OptimismFrameSequence do
 
   @type t :: %__MODULE__{
           l1_transaction_hashes: [Hash.t()],
-          l1_timestamp: DateTime.t()
+          l1_timestamp: DateTime.t(),
+          transaction_batches: %Ecto.Association.NotLoaded{} | [OptimismTxnBatch.t()]
         }
 
   @primary_key {:id, :integer, autogenerate: false}
