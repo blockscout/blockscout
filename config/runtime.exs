@@ -658,7 +658,7 @@ config :indexer, Indexer.Fetcher.CoinBalance,
   batch_size: coin_balance_fetcher_batch_size,
   concurrency: coin_balance_fetcher_concurrency
 
-config :indexer,
+config :indexer, Indexer.Fetcher.Optimism,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
   optimism_l1_portal: System.get_env("INDEXER_OPTIMISM_L1_PORTAL_CONTRACT")
 

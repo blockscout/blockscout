@@ -188,7 +188,7 @@ defmodule Indexer.Fetcher.Optimism do
       end
 
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
-         optimism_l1_rpc = Application.get_env(:indexer, :optimism_l1_rpc),
+         optimism_l1_rpc = Application.get_all_env(:indexer)[__MODULE__][:optimism_l1_rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          {:contract_is_valid, true} <- {:contract_is_valid, Helpers.is_address_correct?(contract_address)},
          start_block_l1 = parse_integer(env[:start_block_l1]),
