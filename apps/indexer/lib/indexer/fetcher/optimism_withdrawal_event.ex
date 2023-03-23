@@ -48,7 +48,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
     Logger.metadata(fetcher: @fetcher_name)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
-    optimism_l1_portal = Application.get_env(:indexer, :optimism_l1_portal)
+    optimism_l1_portal = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_portal]
 
     Optimism.init(env, optimism_l1_portal, __MODULE__)
   end
