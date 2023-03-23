@@ -79,7 +79,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
       token.custom_cap
     else
       tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
-      price = token.usd_value
+      price = token.fiat_value
       Decimal.mult(tokens, price)
     end
   end

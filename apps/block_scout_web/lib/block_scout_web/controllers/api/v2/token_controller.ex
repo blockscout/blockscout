@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   alias BlockScoutWeb.AccessHelpers
   alias BlockScoutWeb.API.V2.TransactionView
-  alias Explorer.{Chain, Market}
+  alias Explorer.Chain
   alias Indexer.Fetcher.TokenTotalSupplyOnDemand
 
   import BlockScoutWeb.Chain,
@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
       conn
       |> put_status(200)
-      |> render(:token, %{token: Market.add_price(token)})
+      |> render(:token, %{token: token})
     end
   end
 
@@ -179,7 +179,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> Keyword.merge(token_transfers_types_options(params))
       |> Keyword.merge(@api_true)
 
-    {tokens, next_page} = filter |> Chain.list_top_tokens(options) |> Market.add_price() |> split_list_by_page()
+    {tokens, next_page} = filter |> Chain.list_top_tokens(options) |> split_list_by_page()
 
     next_page_params = next_page |> next_page_params(tokens, params) |> delete_parameters_from_next_page_params()
 

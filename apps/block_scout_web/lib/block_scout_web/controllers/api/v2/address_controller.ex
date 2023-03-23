@@ -100,13 +100,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         TokenBalanceOnDemand.trigger_fetch(address_hash, token_balances)
       end)
 
-      token_balances_with_price =
-        token_balances
-        |> Market.add_price()
-
       conn
       |> put_status(200)
-      |> render(:token_balances, %{token_balances: token_balances_with_price})
+      |> render(:token_balances, %{token_balances: token_balances})
     end
   end
 
@@ -363,7 +359,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> Keyword.merge(token_transfers_types_options(params))
           |> Keyword.merge(@api_true)
         )
-        |> Market.add_price()
 
       {tokens, next_page} = split_list_by_page(results_plus_one)
 

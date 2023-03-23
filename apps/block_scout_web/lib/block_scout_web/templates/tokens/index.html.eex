@@ -28,25 +28,30 @@
 			<div>&nbsp;</div>
 		  </th>
 	      <th class="stakes-table-th">
-			<div class="stakes-table-th-content">Token</div>
+			<div class="stakes-table-th-content"><%= gettext "Token" %></div>
 	      </th>
 	      <th class="stakes-table-th">
-			<div class="stakes-table-th-content">Address</div>
+			<div class="stakes-table-th-content"><%= gettext "Address" %></div>
 	      </th>
-	      <th class="stakes-table-th">
+		  <th class="stakes-table-th">
 			<div class="stakes-table-th-content">
-			Total Supply
+			<%= gettext "Circulating Market Cap" %>
 			</div>
 	      </th>
 	      <th class="stakes-table-th">
 			<div class="stakes-table-th-content">
-			Holders Count
+			<%= gettext "Total Supply" %>
+			</div>
+	      </th>
+	      <th class="stakes-table-th">
+			<div class="stakes-table-th-content">
+			<%= gettext "Holders Count" %>
 			</div>
 	      </th>
 	    </tr>
 	  </thead>
 	  <tbody data-items data-selector="top-tokens-list">
-	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 6 %>
+	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 7 %>
 	  </tbody>
 	</table>
       </div>
