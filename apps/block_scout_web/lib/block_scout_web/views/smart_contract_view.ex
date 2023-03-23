@@ -168,21 +168,9 @@ defmodule BlockScoutWeb.SmartContractView do
         {arr, to_merge} = acc
 
         if to_merge do
-          if count_string_symbols(val)["]"] > count_string_symbols(val)["["] do
-            updated_arr = update_last_list_item(arr, val)
-            {updated_arr, !to_merge}
-          else
-            updated_arr = update_last_list_item(arr, val)
-            {updated_arr, to_merge}
-          end
+          compose_array_if_to_merge(arr, val, to_merge)
         else
-          if count_string_symbols(val)["["] > count_string_symbols(val)["]"] do
-            # credo:disable-for-next-line
-            {arr ++ [val], !to_merge}
-          else
-            # credo:disable-for-next-line
-            {arr ++ [val], to_merge}
-          end
+          compose_array_else(arr, val, to_merge)
         end
       end)
 
@@ -197,6 +185,26 @@ defmodule BlockScoutWeb.SmartContractView do
     |> Enum.map(fn {{type, value}, index} ->
       values_with_type(value, type, fetch_name(names, index), 0)
     end)
+  end
+
+  defp compose_array_if_to_merge(arr, val, to_merge) do
+    if count_string_symbols(val)["]"] > count_string_symbols(val)["["] do
+      updated_arr = update_last_list_item(arr, val)
+      {updated_arr, !to_merge}
+    else
+      updated_arr = update_last_list_item(arr, val)
+      {updated_arr, to_merge}
+    end
+  end
+
+  defp compose_array_else(arr, val, to_merge) do
+    if count_string_symbols(val)["["] > count_string_symbols(val)["]"] do
+      # credo:disable-for-next-line
+      {arr ++ [val], !to_merge}
+    else
+      # credo:disable-for-next-line
+      {arr ++ [val], to_merge}
+    end
   end
 
   defp update_last_list_item(arr, new_val) do
@@ -226,14 +234,18 @@ defmodule BlockScoutWeb.SmartContractView do
 
       _ ->
         if is_binary(item) do
-          if String.starts_with?(item, "0x") do
-            item
-          else
-            "0x" <> Base.encode16(item, case: :lower)
-          end
+          add_0x(item)
         else
           to_string(item)
         end
+    end
+  end
+
+  defp add_0x(item) do
+    if String.starts_with?(item, "0x") do
+      item
+    else
+      "0x" <> Base.encode16(item, case: :lower)
     end
   end
 

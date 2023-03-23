@@ -114,19 +114,23 @@ defmodule Explorer.Counters.AverageBlockTime do
     timestamps
     |> Enum.reduce({[], nil, nil}, fn {block_number, timestamp}, {durations, last_block_number, last_timestamp} ->
       if last_timestamp do
-        block_numbers_range = last_block_number - block_number
-
-        if block_numbers_range == 0 do
-          {durations, block_number, timestamp}
-        else
-          duration = (last_timestamp - timestamp) / block_numbers_range
-          {[duration | durations], block_number, timestamp}
-        end
+        compose_durations(durations, block_number, last_block_number, last_timestamp, timestamp)
       else
         {durations, block_number, timestamp}
       end
     end)
     |> elem(0)
+  end
+
+  defp compose_durations(durations, block_number, last_block_number, last_timestamp, timestamp) do
+    block_numbers_range = last_block_number - block_number
+
+    if block_numbers_range == 0 do
+      {durations, block_number, timestamp}
+    else
+      duration = (last_timestamp - timestamp) / block_numbers_range
+      {[duration | durations], block_number, timestamp}
+    end
   end
 
   defp average_block_cache_period do

@@ -378,18 +378,21 @@ defmodule Explorer.Chain do
           address_to_transactions_without_rewards(address_hash, options)
 
         address_has_rewards?(address_hash) ->
-          %{payout_key: block_miner_payout_address} =
-            Reward.get_validator_payout_key_by_mining_from_db(address_hash, options)
-
-          if block_miner_payout_address && address_hash == block_miner_payout_address do
-            transactions_with_rewards_results(address_hash, options, paging_options)
-          else
-            address_to_transactions_without_rewards(address_hash, options)
-          end
+          address_with_rewards(address_hash, options, paging_options)
 
         true ->
           address_to_transactions_without_rewards(address_hash, options)
       end
+    else
+      address_to_transactions_without_rewards(address_hash, options)
+    end
+  end
+
+  defp address_with_rewards(address_hash, options, paging_options) do
+    %{payout_key: block_miner_payout_address} = Reward.get_validator_payout_key_by_mining_from_db(address_hash, options)
+
+    if block_miner_payout_address && address_hash == block_miner_payout_address do
+      transactions_with_rewards_results(address_hash, options, paging_options)
     else
       address_to_transactions_without_rewards(address_hash, options)
     end
@@ -409,9 +412,7 @@ defmodule Explorer.Chain do
           {-emission_reward.block.number, 1}
 
         item ->
-          block_number = if item.block_number, do: -item.block_number, else: 0
-          index = if item.index, do: -item.index, else: 0
-          {block_number, index}
+          process_item(item)
       end
     end)
     |> Enum.dedup_by(fn item ->
@@ -424,6 +425,12 @@ defmodule Explorer.Chain do
       end
     end)
     |> Enum.take(paging_options.page_size)
+  end
+
+  defp process_item(item) do
+    block_number = if item.block_number, do: -item.block_number, else: 0
+    index = if item.index, do: -item.index, else: 0
+    {block_number, index}
   end
 
   def address_to_transactions_without_rewards(address_hash, options) do
@@ -519,26 +526,31 @@ defmodule Explorer.Chain do
       current_min_number = Map.get(extremums_result, :min_block_number)
       current_max_number = Map.get(extremums_result, :max_block_number)
 
-      extremums_result =
-        if is_number(current_min_number) do
-          if is_number(min_number) and min_number > 0 and min_number < current_min_number do
-            extremums_result
-            |> Map.put(:min_block_number, min_number)
-          else
-            extremums_result
-          end
-        else
-          extremums_result
-          |> Map.put(:min_block_number, min_number)
-        end
-
-      if is_number(max_number) and max_number > 0 and max_number > current_max_number do
-        extremums_result
-        |> Map.put(:max_block_number, max_number)
-      else
-        extremums_result
-      end
+      extremums_result
+      |> process_extremums_result_against_min_number(current_min_number, min_number)
+      |> process_extremums_result_against_max_number(current_max_number, max_number)
     end)
+  end
+
+  defp process_extremums_result_against_min_number(extremums_result, current_min_number, min_number)
+       when is_number(current_min_number) and
+              not (is_number(min_number) and min_number > 0 and min_number < current_min_number) do
+    extremums_result
+  end
+
+  defp process_extremums_result_against_min_number(extremums_result, _current_min_number, min_number) do
+    extremums_result
+    |> Map.put(:min_block_number, min_number)
+  end
+
+  defp process_extremums_result_against_max_number(extremums_result, current_max_number, max_number)
+       when is_number(max_number) and max_number > 0 and max_number > current_max_number do
+    extremums_result
+    |> Map.put(:max_block_number, max_number)
+  end
+
+  defp process_extremums_result_against_max_number(extremums_result, _current_max_number, _max_number) do
+    extremums_result
   end
 
   defp wait_for_address_transactions(tasks) do
@@ -1404,24 +1416,7 @@ defmodule Explorer.Chain do
           if smart_contract do
             address_result
           else
-            address_verified_twin_contract =
-              get_minimal_proxy_template(hash, options) ||
-                get_address_verified_twin_contract(hash, options).verified_contract
-
-            if address_verified_twin_contract do
-              address_verified_twin_contract_updated =
-                address_verified_twin_contract
-                |> Map.put(:address_hash, hash)
-                |> Map.put(:metadata_from_verified_twin, true)
-                |> Map.put(:implementation_address_hash, nil)
-                |> Map.put(:implementation_name, nil)
-                |> Map.put(:implementation_fetched_at, nil)
-
-              address_result
-              |> Map.put(:smart_contract, address_verified_twin_contract_updated)
-            else
-              address_result
-            end
+            compose_smart_contract(address_result, hash, options)
           end
 
         _ ->
@@ -1432,6 +1427,27 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
+    end
+  end
+
+  defp compose_smart_contract(address_result, hash, options) do
+    address_verified_twin_contract =
+      get_minimal_proxy_template(hash, options) ||
+        get_address_verified_twin_contract(hash, options).verified_contract
+
+    if address_verified_twin_contract do
+      address_verified_twin_contract_updated =
+        address_verified_twin_contract
+        |> Map.put(:address_hash, hash)
+        |> Map.put(:metadata_from_verified_twin, true)
+        |> Map.put(:implementation_address_hash, nil)
+        |> Map.put(:implementation_name, nil)
+        |> Map.put(:implementation_fetched_at, nil)
+
+      address_result
+      |> Map.put(:smart_contract, address_verified_twin_contract_updated)
+    else
+      address_result
     end
   end
 
@@ -1664,19 +1680,20 @@ defmodule Explorer.Chain do
 
         search_results
         |> Enum.map(fn result ->
-          result_checksummed_address_hash =
-            if result.address_hash do
-              result
-              |> Map.put(:address_hash, Address.checksum(result.address_hash))
-            else
-              result
-            end
-
-          result_checksummed_address_hash
+          compose_result_checksummed_address_hash(result)
         end)
 
       _ ->
         []
+    end
+  end
+
+  defp compose_result_checksummed_address_hash(result) do
+    if result.address_hash do
+      result
+      |> Map.put(:address_hash, Address.checksum(result.address_hash))
+    else
+      result
     end
   end
 
@@ -1930,20 +1947,7 @@ defmodule Explorer.Chain do
               get_minimal_proxy_template(hash, options) ||
                 get_address_verified_twin_contract(hash, options).verified_contract
 
-            if address_verified_twin_contract do
-              address_verified_twin_contract_updated =
-                address_verified_twin_contract
-                |> Map.put(:address_hash, hash)
-                |> Map.put(:metadata_from_verified_twin, true)
-                |> Map.put(:implementation_address_hash, nil)
-                |> Map.put(:implementation_name, nil)
-                |> Map.put(:implementation_fetched_at, nil)
-
-              address_result
-              |> Map.put(:smart_contract, address_verified_twin_contract_updated)
-            else
-              address_result
-            end
+            add_twin_info_to_contract(address_result, address_verified_twin_contract, hash)
           end
 
         _ ->
@@ -1955,6 +1959,23 @@ defmodule Explorer.Chain do
       nil -> {:error, :not_found}
       address -> {:ok, address}
     end
+  end
+
+  defp add_twin_info_to_contract(address_result, address_verified_twin_contract, _hash)
+       when is_nil(address_verified_twin_contract),
+       do: address_result
+
+  defp add_twin_info_to_contract(address_result, address_verified_twin_contract, hash) do
+    address_verified_twin_contract_updated =
+      address_verified_twin_contract
+      |> Map.put(:address_hash, hash)
+      |> Map.put(:metadata_from_verified_twin, true)
+      |> Map.put(:implementation_address_hash, nil)
+      |> Map.put(:implementation_name, nil)
+      |> Map.put(:implementation_fetched_at, nil)
+
+    address_result
+    |> Map.put(:smart_contract, address_verified_twin_contract_updated)
   end
 
   @spec find_decompiled_contract_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}
@@ -2412,13 +2433,7 @@ defmodule Explorer.Chain do
       |> Accounts.take_enough()
       |> case do
         nil ->
-          accounts_with_n = fetch_top_addresses(options)
-
-          accounts_with_n
-          |> Enum.map(fn {address, _n} -> address end)
-          |> Accounts.update()
-
-          accounts_with_n
+          get_addresses(options)
 
         accounts ->
           Enum.map(
@@ -2434,6 +2449,16 @@ defmodule Explorer.Chain do
     else
       fetch_top_addresses(options)
     end
+  end
+
+  defp get_addresses(options) do
+    accounts_with_n = fetch_top_addresses(options)
+
+    accounts_with_n
+    |> Enum.map(fn {address, _n} -> address end)
+    |> Accounts.update()
+
+    accounts_with_n
   end
 
   defp fetch_top_addresses(options) do
@@ -3180,25 +3205,25 @@ defmodule Explorer.Chain do
     ordered_block_ranges =
       final_block_ranges
       |> Enum.sort(fn %Range{first: first1, last: _}, %Range{first: first2, last: _} ->
-        if range_start <= range_end do
-          first1 <= first2
-        else
-          first1 >= first2
-        end
+        if range_start <= range_end, do: first1 <= first2, else: first1 >= first2
       end)
       |> Enum.map(fn %Range{first: first, last: last} = range ->
         if range_start <= range_end do
           range
         else
-          if last > first do
-            %Range{first: last, last: first, step: -1}
-          else
-            %Range{first: last, last: first, step: 1}
-          end
+          set_new_range(last, first)
         end
       end)
 
     ordered_block_ranges
+  end
+
+  defp set_new_range(last, first) do
+    if last > first, do: set_range(last, first, -1), else: set_range(last, first, 1)
+  end
+
+  defp set_range(last, first, step) do
+    %Range{first: last, last: first, step: step}
   end
 
   defp block_ranges_extend(block_ranges, block_range_start, block_range_end) do
@@ -5294,31 +5319,54 @@ defmodule Explorer.Chain do
 
       balances_with_dates =
         if blocks_delta > 0 do
-          balances_raw_filtered
-          |> Enum.map(fn balance ->
-            date =
-              trunc(
-                min_block_unix_timestamp +
-                  (balance.block_number - min_block_number) * (max_block_unix_timestamp - min_block_unix_timestamp) /
-                    blocks_delta
-              )
-
-            formatted_date = Timex.from_unix(date)
-            %{balance | block_timestamp: formatted_date}
-          end)
+          add_block_timestamp_to_balances(
+            balances_raw_filtered,
+            min_block_number,
+            min_block_unix_timestamp,
+            max_block_unix_timestamp,
+            blocks_delta
+          )
         else
-          balances_raw_filtered
-          |> Enum.map(fn balance ->
-            date = min_block_unix_timestamp
-
-            formatted_date = Timex.from_unix(date)
-            %{balance | block_timestamp: formatted_date}
-          end)
+          add_min_block_timestamp_to_balances(balances_raw_filtered, min_block_unix_timestamp)
         end
 
       balances_with_dates
       |> Enum.sort(fn balance1, balance2 -> balance1.block_number >= balance2.block_number end)
     end
+  end
+
+  defp add_block_timestamp_to_balances(
+         balances_raw_filtered,
+         min_block_number,
+         min_block_unix_timestamp,
+         max_block_unix_timestamp,
+         blocks_delta
+       ) do
+    balances_raw_filtered
+    |> Enum.map(fn balance ->
+      date =
+        trunc(
+          min_block_unix_timestamp +
+            (balance.block_number - min_block_number) * (max_block_unix_timestamp - min_block_unix_timestamp) /
+              blocks_delta
+        )
+
+      add_date_to_balance(balance, date)
+    end)
+  end
+
+  defp add_min_block_timestamp_to_balances(balances_raw_filtered, min_block_unix_timestamp) do
+    balances_raw_filtered
+    |> Enum.map(fn balance ->
+      date = min_block_unix_timestamp
+
+      add_date_to_balance(balance, date)
+    end)
+  end
+
+  defp add_date_to_balance(balance, date) do
+    formatted_date = Timex.from_unix(date)
+    %{balance | block_timestamp: formatted_date}
   end
 
   def get_token_balance(address_hash, token_contract_address_hash, block_number) do

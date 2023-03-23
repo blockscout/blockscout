@@ -84,11 +84,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
         {token_contract_address_hash, token_id, address_hash, block_number}
       end)
       |> Enum.map(fn {_, grouped_address_token_balances} ->
-        if Enum.count(grouped_address_token_balances) > 1 do
-          Enum.max_by(grouped_address_token_balances, fn balance -> Map.get(balance, :value_fetched_at) end)
-        else
-          Enum.at(grouped_address_token_balances, 0)
-        end
+        process_grouped_address_token_balances(grouped_address_token_balances)
       end)
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash, &1.block_number})
 
@@ -110,6 +106,14 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
       end
 
     {:ok, inserted_changes_list}
+  end
+
+  defp process_grouped_address_token_balances(grouped_address_token_balances) do
+    if Enum.count(grouped_address_token_balances) > 1 do
+      Enum.max_by(grouped_address_token_balances, fn balance -> Map.get(balance, :value_fetched_at) end)
+    else
+      Enum.at(grouped_address_token_balances, 0)
+    end
   end
 
   defp default_on_conflict do
