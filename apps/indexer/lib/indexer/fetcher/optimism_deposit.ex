@@ -60,17 +60,18 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     Logger.metadata(fetcher: @fetcher_name)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
-    optimism_portal = Application.get_env(:indexer, :optimism_l1_portal)
-    optimism_rpc_l1 = Application.get_env(:indexer, :optimism_l1_rpc)
+    optimism_env = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism]
+    optimism_portal = optimism_env[:optimism_l1_portal]
+    optimism_l1_rpc = optimism_env[:optimism_l1_rpc]
 
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
          {:optimism_portal_valid, true} <- {:optimism_portal_valid, Helpers.is_address_correct?(optimism_portal)},
-         {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_rpc_l1)},
+         {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          start_block_l1 <- parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
          {last_l1_block_number, last_l1_tx_hash} <- get_last_l1_item(),
-         json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_rpc_l1),
+         json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
          {:ok, last_l1_tx} <- Optimism.get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_tx_hash) && is_nil(last_l1_tx)},
          {:ok, safe_block} <- Optimism.get_block_number_by_tag("safe", json_rpc_named_arguments),
