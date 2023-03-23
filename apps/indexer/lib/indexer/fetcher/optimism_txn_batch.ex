@@ -17,6 +17,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.{Block, OptimismFrameSequence, OptimismTxnBatch}
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helpers
@@ -34,8 +35,6 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
     Supervisor.child_spec(spec, [])
   end
-
-  def fetcher_name, do: @fetcher_name
 
   def start_link(args, gen_server_options \\ []) do
     GenServer.start_link(__MODULE__, args, Keyword.put_new(gen_server_options, :name, __MODULE__))
@@ -66,10 +65,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          {:ok, block_check_interval, last_safe_block} <- Optimism.get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
 
-      reorg_monitor_task =
-        Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismTxnBatch.TaskSupervisor, fn ->
-          Optimism.reorg_monitor(@fetcher_name, block_check_interval, json_rpc_named_arguments)
-        end)
+      Subscriber.to(:optimism_reorg_block, :realtime)
 
       Process.send(self(), :continue, [])
 
@@ -81,7 +77,6 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          start_block: start_block,
          end_block: last_safe_block,
          chunk_size: chunk_size,
-         reorg_monitor_task: reorg_monitor_task,
          incomplete_frame_sequence: empty_incomplete_frame_sequence(),
          json_rpc_named_arguments: json_rpc_named_arguments,
          json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
@@ -209,12 +204,15 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     new_start_block = last_written_block + 1
     {:ok, new_end_block} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
 
-    if new_end_block == last_written_block do
-      # there is no new block, so wait for some time to let the chain issue the new block
-      :timer.sleep(max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0))
-    end
+    delay =
+      if new_end_block == last_written_block do
+        # there is no new block, so wait for some time to let the chain issue the new block
+        max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0)
+      else
+        0
+      end
 
-    Process.send(self(), :continue, [])
+    Process.send_after(self(), :continue, delay)
 
     {:noreply,
      %{
@@ -226,31 +224,15 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   end
 
   @impl GenServer
-  def handle_info({ref, _result}, %{reorg_monitor_task: %Task{ref: ref}} = state) do
-    Process.demonitor(ref, [:flush])
-    {:noreply, %{state | reorg_monitor_task: nil}}
+  def handle_info({:chain_event, :optimism_reorg_block, :realtime, block_number}, state) do
+    Optimism.reorg_block_push(@fetcher_name, block_number)
+    {:noreply, state}
   end
 
-  def handle_info(
-        {:DOWN, ref, :process, pid, reason},
-        %{
-          reorg_monitor_task: %Task{pid: pid, ref: ref},
-          block_check_interval: block_check_interval,
-          json_rpc_named_arguments: json_rpc_named_arguments
-        } = state
-      ) do
-    if reason === :normal do
-      {:noreply, %{state | reorg_monitor_task: nil}}
-    else
-      Logger.error(fn -> "Reorgs monitor task exited due to #{inspect(reason)}. Rerunning..." end)
-
-      task =
-        Task.Supervisor.async_nolink(Indexer.Fetcher.OptimismTxnBatch.TaskSupervisor, fn ->
-          Optimism.reorg_monitor(@fetcher_name, block_check_interval, json_rpc_named_arguments)
-        end)
-
-      {:noreply, %{state | reorg_monitor_task: task}}
-    end
+  @impl GenServer
+  def handle_info({ref, _result}, state) do
+    Process.demonitor(ref, [:flush])
+    {:noreply, state}
   end
 
   defp empty_incomplete_frame_sequence(last_frame_number \\ -1) do
