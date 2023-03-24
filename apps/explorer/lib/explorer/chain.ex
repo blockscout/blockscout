@@ -3276,6 +3276,17 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec nonconsensus_block_by_number(Block.block_number(), [api?]) :: {:ok, Block.t()} | {:error, :not_found}
+  def nonconsensus_block_by_number(number, options) do
+    Block
+    |> where(consensus: false, number: ^number)
+    |> select_repo(options).one()
+    |> case do
+      nil -> {:error, :not_found}
+      block -> {:ok, block}
+    end
+  end
+
   @spec timestamp_to_block_number(DateTime.t(), :before | :after, boolean()) ::
           {:ok, Block.block_number()} | {:error, :not_found}
   def timestamp_to_block_number(given_timestamp, closest, from_api) do
