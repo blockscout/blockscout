@@ -1131,7 +1131,10 @@
 - [#7009](https://github.com/blockscout/blockscout/pull/7009) - Fix updating coin balances with empty value
 - [#7055](https://github.com/blockscout/blockscout/pull/7055) - Set updated_at on token update even if there are no changes
 - [#7080](https://github.com/blockscout/blockscout/pull/7080) - Deduplicate second degree relations before insert
+<<<<<<< HEAD
 - [#7161](https://github.com/blockscout/blockscout/pull/7161) - Treat "" as empty value while parsing env vars
+=======
+>>>>>>> 7695832c6e (Update Changelog)
 - [#7135](https://github.com/blockscout/blockscout/pull/7135) - Block reorg fixes
 
 ### Chore
