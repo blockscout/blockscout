@@ -61,7 +61,7 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/_default_title.html.eex:2
 #, elixir-autogen, elixir-format
 msgid "%{subnetwork} Explorer - BlockScout"
-msgstr ""
+msgstr ""%{subnetwork} Explorer - NexiScan"
 
 #: lib/block_scout_web/views/transaction_view.ex:365
 #, elixir-autogen, elixir-format
@@ -135,7 +135,7 @@ msgstr ""
 #: lib/block_scout_web/templates/api_docs/_metatags.html.eex:2
 #, elixir-autogen, elixir-format
 msgid "API for the %{subnetwork} - BlockScout"
-msgstr ""
+msgstr "API for the %{subnetwork} - NexiScan"
 
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:7
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:13
@@ -466,7 +466,7 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/_metatags.html.eex:4
 #, elixir-autogen, elixir-format
 msgid "BlockScout provides analytics data, API, and Smart Contract tools for the %{subnetwork}"
-msgstr ""
+msgstr "NexiScan provides analytics data, API, and Smart Contract tools for the %{subnetwork}"
 
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:29
 #, elixir-autogen, elixir-format
@@ -501,7 +501,7 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/_footer.html.eex:22
 #, elixir-autogen, elixir-format
 msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks."
-msgstr ""
+msgstr "NexiScan is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Nexilix Networks."
 
 #: lib/block_scout_web/templates/transaction_state/_state_change.html.eex:8
 #, elixir-autogen, elixir-format
@@ -556,7 +556,7 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/_footer.html.eex:41
 #, elixir-autogen, elixir-format
 msgid "Chat (#blockscout)"
-msgstr ""
+msgstr "Chat (#nexiscan)"
 
 #: lib/block_scout_web/views/block_view.ex:65
 #, elixir-autogen, elixir-format
@@ -742,7 +742,7 @@ msgstr ""
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:11
 #, elixir-autogen, elixir-format
 msgid "Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB"
-msgstr ""
+msgstr "Contract is not verified. However, we found a verified contract with the same bytecode in NexiScan DB"
 
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:41
 #, elixir-autogen, elixir-format
@@ -2448,7 +2448,7 @@ msgstr ""
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:44
 #, elixir-autogen, elixir-format
 msgid "The fallback function is executed on a call to the contract if none of the other functions match the given function signature, or if no data was supplied at all and there is no receive Ether function. The fallback function always receives data, but in order to also receive Ether it must be marked payable."
-msgstr ""
+msgstr "The fallback function is executed on a call to the contract if none of the other functions match the given function signature, or if no data was supplied at all and there is no receive Nexi function. The fallback function always receives data, but in order to also receive Nexi it must be marked payable."
 
 #: lib/block_scout_web/templates/block/overview.html.eex:138
 #, elixir-autogen, elixir-format
@@ -2473,7 +2473,7 @@ msgstr ""
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:46
 #, elixir-autogen, elixir-format
 msgid "The receive function is executed on a call to the contract with empty calldata. This is the function that is executed on plain Ether transfers (e.g. via .send() or .transfer()). If no such function exists, but a payable fallback function exists, the fallback function will be called on a plain Ether transfer. If neither a receive Ether nor a payable fallback function is present, the contract cannot receive Ether through regular transactions and throws an exception."
-msgstr ""
+msgstr "The receive function is executed on a call to the contract with empty calldata. This is the function that is executed on plain Nexi transfers (e.g. via .send() or .transfer()). If no such function exists, but a payable fallback function exists, the fallback function will be called on a plain Nexi transfer. If neither a receive Nexi nor a payable fallback function is present, the contract cannot receive Nexi through regular transactions and throws an exception."
 
 #: lib/block_scout_web/templates/transaction/overview.html.eex:134
 #, elixir-autogen, elixir-format
@@ -2601,12 +2601,12 @@ msgstr ""
 #: lib/block_scout_web/templates/api_docs/index.html.eex:6
 #, elixir-autogen, elixir-format
 msgid "This API is provided for developers transitioning their applications from Etherscan to BlockScout. It supports GET and POST requests."
-msgstr ""
+msgstr "This API is provided for developers transitioning their applications from Etherscan to NexiScan. It supports GET and POST requests."
 
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:7
 #, elixir-autogen, elixir-format
 msgid "This API is provided to support some rpc methods in the exact format specified for ethereum nodes, which can be found "
-msgstr ""
+msgstr "This API is provided to support some rpc methods in the exact format specified for Nexilix nodes, which can be found"
 
 #: lib/block_scout_web/views/block_transaction_view.ex:11
 #, elixir-autogen, elixir-format
@@ -2626,7 +2626,7 @@ msgstr ""
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:10
 #, elixir-autogen, elixir-format
 msgid "This is useful to allow sending requests to blockscout without having to change anything about the request."
-msgstr ""
+msgstr "This is useful to allow sending requests to nexiscan without having to change anything about the request."
 
 #: lib/block_scout_web/templates/transaction_state/index.html.eex:17
 #, elixir-autogen, elixir-format
@@ -3297,7 +3297,7 @@ msgstr ""
 #: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:11
 #, elixir-autogen, elixir-format
 msgid "You can request a public category tag which is displayed to all Blockscout users. Public tags may be added to contract or external addresses, and any associated transactions will inherit that tag. Clicking a tag opens a page with related information and helps provide context and data organization. Requests are sent to a moderator for review and approval. This process can take several days."
-msgstr ""
+msgstr "You can request a public category tag which is displayed to all NexiScan users. Public tags may be added to contract or external addresses, and any associated transactions will inherit that tag. Clicking a tag opens a page with related information and helps provide context and data organization. Requests are sent to a moderator for review and approval. This process can take several days."
 
 #: lib/block_scout_web/templates/account/tag_address/index.html.eex:14
 #, elixir-autogen, elixir-format
