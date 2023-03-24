@@ -15,11 +15,6 @@ defmodule Explorer.Market do
     ExchangeRates.lookup(symbol)
   end
 
-  @spec get_exchange_rate(String.t(), String.t()) :: Token.t() | nil
-  def get_exchange_rate(token_contract_address_hash, symbol) do
-    ExchangeRates.lookup_by_address(token_contract_address_hash, symbol)
-  end
-
   @doc """
   Retrieves the history for the recent specified amount of days.
 

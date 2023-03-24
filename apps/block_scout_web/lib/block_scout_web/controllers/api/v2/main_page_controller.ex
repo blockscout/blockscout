@@ -41,11 +41,11 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
 
   def indexing_status(conn, _params) do
     indexed_ratio_blocks = Chain.indexed_ratio_blocks()
-    finished_indexing_blocks = Chain.finished_blocks_indexing?(indexed_ratio_blocks)
+    finished_indexing_blocks = Chain.finished_indexing_from_ratio?(indexed_ratio_blocks)
 
     json(conn, %{
       finished_indexing_blocks: finished_indexing_blocks,
-      finished_indexing: Chain.finished_indexing?(indexed_ratio_blocks, api?: true),
+      finished_indexing: Chain.finished_indexing?(api?: true),
       indexed_blocks_ratio: indexed_ratio_blocks,
       indexed_internal_transactions_ratio: if(finished_indexing_blocks, do: Chain.indexed_ratio_internal_transactions())
     })

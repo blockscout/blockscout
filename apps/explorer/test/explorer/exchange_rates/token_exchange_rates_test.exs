@@ -1,5 +1,4 @@
 defmodule Explorer.TokenExchangeRatesTest do
-  # use ExUnit.Case, async: false
   use Explorer.DataCase
 
   import Mox

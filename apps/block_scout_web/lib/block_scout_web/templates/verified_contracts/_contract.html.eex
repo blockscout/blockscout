@@ -58,7 +58,7 @@
         <%= if @token && @token.decimals && @token.total_supply && @token.fiat_value do %>
             <span data-selector="verified-contract-market-cap-usd" data-usd-value="<%= total_supply_usd(@token) %>"></span>
         <% else %>
-            <span data-selector="verified-contract-market-cap-usd"> gettext "N/A" </span>
+            <span data-selector="verified-contract-market-cap-usd"> <%= gettext "N/A" %> </span>
         <% end %>
     </td>
 </tr>

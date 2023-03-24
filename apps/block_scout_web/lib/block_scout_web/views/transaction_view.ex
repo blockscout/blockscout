@@ -568,7 +568,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def get_max_length do
-    string_value = Application.get_env(:block_scout_web, :max_length_to_show_string_without_trimming)
+    string_value = Application.get_env(:block_scout_web, :contract)[:max_length_to_show_string_without_trimming]
 
     case Integer.parse(string_value) do
       {integer, ""} -> integer
