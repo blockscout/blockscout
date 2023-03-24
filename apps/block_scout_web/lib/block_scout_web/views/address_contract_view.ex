@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.AddressContractView do
   use BlockScoutWeb, :view
 
   alias ABI.FunctionSelector
-  alias Explorer.{Chain, Helpers}
+  alias Explorer.{Chain, Helper}
   alias Explorer.Chain.{Address, Data, InternalTransaction, Transaction}
 
   def render("scripts.html", %{conn: conn}) do
@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.AddressContractView do
 
     {_, result} =
       contract.constructor_arguments
-      |> Helpers.decode_data(input_types)
+      |> Helper.decode_data(input_types)
       |> Enum.zip(constructor_abi["inputs"])
       |> Enum.reduce({0, "#{contract.constructor_arguments}\n\n"}, fn {val, %{"type" => type}}, {count, acc} ->
         formatted_val = val_to_string(val, type, conn)
