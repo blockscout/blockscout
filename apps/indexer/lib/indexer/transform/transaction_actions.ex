@@ -6,14 +6,14 @@ defmodule Indexer.Transform.TransactionActions do
   require Logger
 
   import Ecto.Query, only: [from: 2]
-  import Explorer.Helpers, only: [decode_data: 2]
+  import Explorer.Helper, only: [decode_data: 2]
 
   alias Explorer.Chain.Cache.NetVersion
   alias Explorer.Chain.Cache.{TransactionActionTokensData, TransactionActionUniswapPools}
   alias Explorer.Chain.{Address, Data, Hash, Token, TransactionAction}
   alias Explorer.Repo
   alias Explorer.SmartContract.Reader
-  alias Indexer.Helpers
+  alias Indexer.Helper
 
   @mainnet 1
   @goerli 5
@@ -651,8 +651,8 @@ defmodule Indexer.Transform.TransactionActions do
         end
       end)
       |> Enum.map(fn {pool_address, pool} ->
-        token0 = if Helpers.is_address_correct?(pool.token0), do: String.downcase(pool.token0), else: @burn_address
-        token1 = if Helpers.is_address_correct?(pool.token1), do: String.downcase(pool.token1), else: @burn_address
+        token0 = if Helper.is_address_correct?(pool.token0), do: String.downcase(pool.token0), else: @burn_address
+        token1 = if Helper.is_address_correct?(pool.token1), do: String.downcase(pool.token1), else: @burn_address
         fee = if pool.fee == "", do: 0, else: pool.fee
 
         # we will call getPool(token0, token1, fee) public getter
