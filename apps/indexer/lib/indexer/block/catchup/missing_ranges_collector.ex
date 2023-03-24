@@ -222,12 +222,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
             parse_integer(from_string)
 
           [from_string, to_string] ->
-            with {from, ""} <- Integer.parse(from_string),
-                 {to, ""} <- Integer.parse(to_string) do
-              if from <= to, do: from..to, else: nil
-            else
-              _ -> nil
-            end
+            get_from_to(from_string, to_string)
 
           _ ->
             nil
@@ -244,6 +239,15 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
       num ->
         {:infinite_ranges, List.delete_at(ranges, -1), num - 1}
+    end
+  end
+
+  defp get_from_to(from_string, to_string) do
+    with {from, ""} <- Integer.parse(from_string),
+         {to, ""} <- Integer.parse(to_string) do
+      if from <= to, do: from..to, else: nil
+    else
+      _ -> nil
     end
   end
 
