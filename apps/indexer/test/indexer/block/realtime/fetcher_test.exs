@@ -35,6 +35,9 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       json_rpc_named_arguments: core_json_rpc_named_arguments
     }
 
+    initial_env = Application.get_all_env(:indexer)
+    on_exit(fn -> Application.put_all_env([{:indexer, initial_env}]) end)
+
     TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
     %{block_fetcher: block_fetcher, json_rpc_named_arguments: core_json_rpc_named_arguments}
@@ -1059,6 +1062,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
       Application.put_env(:indexer, :fetch_rewards_way, "manual")
+      Application.put_env(:indexer, InternalTransaction.Supervisor, disabled?: true)
+      Application.put_env(:indexer, UncleBlock.Supervisor, disabled?: true)
 
       {:ok, sequence} = Sequence.start_link(ranges: [], step: 2)
       Sequence.cap(sequence)
@@ -1068,12 +1073,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-
-      InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-
-      UncleBlock.Supervisor.Case.start_supervised!(
-        block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
-      )
 
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 

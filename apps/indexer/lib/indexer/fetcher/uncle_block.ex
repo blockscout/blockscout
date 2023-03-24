@@ -35,8 +35,12 @@ defmodule Indexer.Fetcher.UncleBlock do
   """
   @spec async_fetch_blocks([%{required(:nephew_hash) => Hash.Full.t(), required(:index) => non_neg_integer()}]) :: :ok
   def async_fetch_blocks(relations) when is_list(relations) do
-    entries = Enum.map(relations, &entry/1)
-    BufferedTask.buffer(__MODULE__, entries)
+    if UncleBlock.Supervisor.disabled?() do
+      :ok
+    else
+      entries = Enum.map(relations, &entry/1)
+      BufferedTask.buffer(__MODULE__, entries)
+    end
   end
 
   @doc false
