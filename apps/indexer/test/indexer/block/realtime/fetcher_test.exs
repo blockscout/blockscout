@@ -36,9 +36,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       json_rpc_named_arguments: core_json_rpc_named_arguments
     }
 
-    initial_env = Application.get_all_env(:indexer)
-    on_exit(fn -> Application.put_all_env([{:indexer, initial_env}]) end)
-
     TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     CoinBalanceRealtime.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
