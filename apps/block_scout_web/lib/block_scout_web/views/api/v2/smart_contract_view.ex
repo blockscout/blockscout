@@ -1,12 +1,14 @@
 defmodule BlockScoutWeb.API.V2.SmartContractView do
   use BlockScoutWeb, :view
 
+  import Explorer.Helper, only: [decode_data: 2]
+
   alias ABI.FunctionSelector
   alias BlockScoutWeb.API.V2.{Helper, TransactionView}
   alias BlockScoutWeb.SmartContractView
   alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
   alias Ecto.Changeset
-  alias Explorer.{Chain, Helpers}
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Visualize.Sol2uml
 
@@ -223,7 +225,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
     result =
       constructor_arguments
-      |> Helpers.decode_data(input_types)
+      |> decode_data(input_types)
       |> Enum.zip(constructor_abi["inputs"])
       |> Enum.map(fn {value, %{"type" => type} = input_arg} ->
         [ABIEncodedValueView.value_json(type, value), input_arg]
