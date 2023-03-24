@@ -45,14 +45,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
 
     mime_type =
       if ext == "" do
-        case HTTPoison.head(media_src, [], follow_redirect: true) do
-          {:ok, %HTTPoison.Response{status_code: 200, headers: headers}} ->
-            headers_map = Map.new(headers, fn {key, value} -> {String.downcase(key), value} end)
-            headers_map["content-type"]
-
-          _ ->
-            nil
-        end
+        process_missing_extension(media_src)
       else
         ext_with_dot =
           media_src
@@ -74,6 +67,17 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   end
 
   def media_type(nil), do: nil
+
+  defp process_missing_extension(media_src) do
+    case HTTPoison.head(media_src, [], follow_redirect: true) do
+      {:ok, %HTTPoison.Response{status_code: 200, headers: headers}} ->
+        headers_map = Map.new(headers, fn {key, value} -> {String.downcase(key), value} end)
+        headers_map["content-type"]
+
+      _ ->
+        nil
+    end
+  end
 
   def total_supply_usd(token) do
     tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
