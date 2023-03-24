@@ -1,4 +1,4 @@
-defmodule Explorer.Helpers do
+defmodule Explorer.Helper do
   @moduledoc """
   Auxiliary common functions.
   """
