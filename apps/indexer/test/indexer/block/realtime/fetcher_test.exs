@@ -35,9 +35,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       json_rpc_named_arguments: core_json_rpc_named_arguments
     }
 
-    initial_env = Application.get_all_env(:indexer)
-    on_exit(fn -> Application.put_all_env([{:indexer, initial_env}]) end)
-
     TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
     %{block_fetcher: block_fetcher, json_rpc_named_arguments: core_json_rpc_named_arguments}
@@ -1061,6 +1058,13 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       block_fetcher: block_fetcher,
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      initial_env = Application.get_all_env(:indexer)
+
+      on_exit(fn ->
+        Application.delete_env(:indexer, UncleBlock.Supervisor)
+        Application.put_all_env([{:indexer, initial_env}])
+      end)
+
       Application.put_env(:indexer, :fetch_rewards_way, "manual")
       Application.put_env(:indexer, InternalTransaction.Supervisor, disabled?: true)
       Application.put_env(:indexer, UncleBlock.Supervisor, disabled?: true)
