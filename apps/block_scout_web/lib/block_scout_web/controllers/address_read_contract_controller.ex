@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.AddressReadContractController do
 
   alias BlockScoutWeb.AccessHelpers
   alias BlockScoutWeb.AddressView
+  alias Explorer.Celo.EpochUtil
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
@@ -60,7 +61,8 @@ defmodule BlockScoutWeb.AddressReadContractController do
             need_wallet: need_wallet? || need_wallet_custom_abi?,
             coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
             counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
-            tags: get_address_tags(address_hash, current_user(conn))
+            tags: get_address_tags(address_hash, current_user(conn)),
+            celo_epoch: EpochUtil.get_address_summary(address)
           ]
       )
     else
@@ -79,7 +81,8 @@ defmodule BlockScoutWeb.AddressReadContractController do
                   need_wallet: need_wallet_custom_abi?,
                   coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
                   counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
-                  tags: get_address_tags(address_hash, current_user(conn))
+                  tags: get_address_tags(address_hash, current_user(conn)),
+                  celo_epoch: EpochUtil.get_address_summary(address)
                 ]
             )
           else

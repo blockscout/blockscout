@@ -8,12 +8,8 @@
     exchange_rate: @exchange_rate,
     coin_balance_status: @coin_balance_status,
     counters_path: @counters_path,
-    validator_or_group_sum: @validator_or_group_sum,
-    voting_sum: @voting_sum,
-    locked_gold: @locked_gold,
-    vote_activated_gold: @vote_activated_gold,
-    pending_gold: @pending_gold,
-    tags: @tags
+    tags: @tags,
+    celo_epoch: @celo_epoch
   %>
 
   <section data-page="address-epoch-transactions">

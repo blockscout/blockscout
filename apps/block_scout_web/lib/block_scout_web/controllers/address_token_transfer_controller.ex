@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
+  alias Explorer.Celo.EpochUtil
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
@@ -113,7 +114,8 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         current_path: Controller.current_full_path(conn),
         token: token,
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
-        tags: get_address_tags(address_hash, current_user(conn))
+        tags: get_address_tags(address_hash, current_user(conn)),
+        celo_epoch: EpochUtil.get_address_summary(address)
       )
     else
       {:restricted_access, _} ->
@@ -205,7 +207,8 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         filter: params["filter"],
         current_path: Controller.current_full_path(conn),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
-        tags: get_address_tags(address_hash, current_user(conn))
+        tags: get_address_tags(address_hash, current_user(conn)),
+        celo_epoch: EpochUtil.get_address_summary(address)
       )
     else
       {:restricted_access, _} ->
