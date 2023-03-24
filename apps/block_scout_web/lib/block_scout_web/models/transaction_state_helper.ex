@@ -209,12 +209,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
         else
           json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-          token_id_int =
-            case token_transfer.token_id do
-              %Decimal{} -> Decimal.to_integer(token_transfer.token_id)
-              id_int when is_integer(id_int) -> id_int
-              _ -> token_transfer.token_id
-            end
+          token_id_int = parse_token_id(token_transfer)
 
           TokenBalance.run(
             [
@@ -226,6 +221,14 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
           # after TokenBalance.run balance is fetched and imported, so we can call token_balance again
           token_balance(address_hash, token_transfer, block_number, true)
         end
+    end
+  end
+
+  defp parse_token_id(token_transfer) do
+    case token_transfer.token_id do
+      %Decimal{} -> Decimal.to_integer(token_transfer.token_id)
+      id_int when is_integer(id_int) -> id_int
+      _ -> token_transfer.token_id
     end
   end
 

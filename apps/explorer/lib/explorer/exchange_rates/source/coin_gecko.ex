@@ -151,25 +151,36 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
       symbol_downcase = String.downcase(symbol)
 
       case Source.http_request(url, headers()) do
-        {:ok, data} = resp ->
-          if is_list(data) do
-            symbol_data =
-              Enum.find(data, fn item ->
-                item["symbol"] == symbol_downcase
-              end)
-
-            if symbol_data do
-              {:ok, symbol_data["id"]}
-            else
-              {:error, :not_found}
-            end
-          else
-            resp
-          end
+        {:ok, data} ->
+          get_symbol_data(data, symbol_downcase)
 
         resp ->
           resp
       end
+    end
+  end
+
+  defp get_symbol_data(data, symbol_downcase) do
+    if is_list(data) do
+      symbol_data = find_symbol_data(data, symbol_downcase)
+
+      process_symbol_data(symbol_data)
+    else
+      {:ok, data}
+    end
+  end
+
+  defp find_symbol_data(data, symbol_downcase) do
+    Enum.find(data, fn item ->
+      item["symbol"] == symbol_downcase
+    end)
+  end
+
+  defp process_symbol_data(symbol_data) do
+    if symbol_data do
+      {:ok, symbol_data["id"]}
+    else
+      {:error, :not_found}
     end
   end
 
