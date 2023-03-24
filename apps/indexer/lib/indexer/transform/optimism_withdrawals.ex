@@ -6,7 +6,7 @@ defmodule Indexer.Transform.OptimismWithdrawals do
   require Logger
 
   alias Indexer.Fetcher.OptimismWithdrawal
-  alias Indexer.Helpers
+  alias Indexer.Helper
 
   # 32-byte signature of the event MessagePassed(uint256 indexed nonce, address indexed sender, address indexed target, uint256 value, uint256 gasLimit, bytes data, bytes32 withdrawalHash)
   @message_passed_event "0x02a52367d10742d8032712c1bb8e0144ff1ec5ffda1ed7d70bb05a2744955054"
@@ -19,13 +19,13 @@ defmodule Indexer.Transform.OptimismWithdrawals do
 
     with false <- is_nil(Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:start_block_l2]),
          message_passer = Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:message_passer],
-         true <- Helpers.is_address_correct?(message_passer) do
+         true <- Helper.is_address_correct?(message_passer) do
       message_passer = String.downcase(message_passer)
 
       logs
       |> Enum.filter(fn log ->
         !is_nil(log.first_topic) && String.downcase(log.first_topic) == @message_passed_event &&
-          String.downcase(Helpers.address_hash_to_string(log.address_hash)) == message_passer
+          String.downcase(Helper.address_hash_to_string(log.address_hash)) == message_passer
       end)
       |> Enum.map(fn log ->
         Logger.info("Withdrawal message found, nonce: #{log.second_topic}.")

@@ -11,12 +11,12 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
   import Ecto.Query
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
-  import Explorer.Helpers, only: [decode_data: 2, parse_integer: 1]
+  import Explorer.Helper, only: [decode_data: 2, parse_integer: 1]
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Log, OptimismWithdrawal}
   alias Indexer.Fetcher.Optimism
-  alias Indexer.Helpers
+  alias Indexer.Helper
 
   @fetcher_name :optimism_withdrawals
 
@@ -46,7 +46,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_l2_undefined, false} <- {:start_block_l2_undefined, is_nil(env[:start_block_l2])},
-         {:message_passer_valid, true} <- {:message_passer_valid, Helpers.is_address_correct?(env[:message_passer])},
+         {:message_passer_valid, true} <- {:message_passer_valid, Helper.is_address_correct?(env[:message_passer])},
          start_block_l2 = parse_integer(env[:start_block_l2]),
          false <- is_nil(start_block_l2),
          true <- start_block_l2 > 0,

@@ -11,14 +11,14 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   import Ecto.Query
 
   import EthereumJSONRPC, only: [json_rpc: 2, integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
-  import Explorer.Helpers, only: [decode_data: 2, parse_integer: 1]
+  import Explorer.Helper, only: [decode_data: 2, parse_integer: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.OptimismDeposit
   alias Indexer.Fetcher.Optimism
-  alias Indexer.Helpers
+  alias Indexer.Helper
 
   defstruct [
     :batch_size,
@@ -65,7 +65,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     optimism_l1_rpc = optimism_env[:optimism_l1_rpc]
 
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
-         {:optimism_portal_valid, true} <- {:optimism_portal_valid, Helpers.is_address_correct?(optimism_portal)},
+         {:optimism_portal_valid, true} <- {:optimism_portal_valid, Helper.is_address_correct?(optimism_portal)},
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          start_block_l1 <- parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
