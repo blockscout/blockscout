@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
   import EthereumJSONRPC, only: [fetch_blocks_by_range: 2, json_rpc: 2, quantity_to_integer: 1]
 
-  import Explorer.Helpers, only: [parse_integer: 1]
+  import Explorer.Helper, only: [parse_integer: 1]
 
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.Blocks
@@ -20,7 +20,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.{Block, OptimismFrameSequence, OptimismTxnBatch}
   alias Indexer.Fetcher.Optimism
-  alias Indexer.Helpers
+  alias Indexer.Helper
 
   @fetcher_name :optimism_txn_batches
   @reorg_rewind_limit 10
@@ -47,11 +47,12 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     json_rpc_named_arguments_l2 = args[:json_rpc_named_arguments]
     env = Application.get_all_env(:indexer)[__MODULE__]
 
-    with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
+    with {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.Optimism))},
+         {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
          optimism_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-         {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helpers.is_address_correct?(env[:batch_inbox])},
-         {:batch_submitter_valid, true} <- {:batch_submitter_valid, Helpers.is_address_correct?(env[:batch_submitter])},
+         {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helper.is_address_correct?(env[:batch_inbox])},
+         {:batch_submitter_valid, true} <- {:batch_submitter_valid, Helper.is_address_correct?(env[:batch_submitter])},
          start_block_l1 = parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
@@ -84,6 +85,10 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     else
       {:start_block_l1_undefined, true} ->
         # the process shouldn't start if the start block is not defined
+        :ignore
+
+      {:reorg_monitor_started, false} ->
+        Logger.error("Cannot start this process as reorg monitor in Indexer.Fetcher.Optimism is not started.")
         :ignore
 
       {:rpc_l1_undefined, true} ->

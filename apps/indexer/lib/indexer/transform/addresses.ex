@@ -48,7 +48,7 @@ defmodule Indexer.Transform.Addresses do
       }
   """
 
-  alias Indexer.Helpers
+  alias Indexer.Helper
 
   @entity_to_address_map %{
     address_coin_balances: [
@@ -470,7 +470,7 @@ defmodule Indexer.Transform.Addresses do
   end
 
   defp find_tx_action_addresses(block_number, value, accumulator) when is_binary(value) do
-    if Helpers.is_address_correct?(value) do
+    if Helper.is_address_correct?(value) do
       [%{:fetched_coin_balance_block_number => block_number, :hash => value} | accumulator]
     else
       accumulator

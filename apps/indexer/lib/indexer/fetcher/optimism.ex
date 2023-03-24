@@ -11,11 +11,11 @@ defmodule Indexer.Fetcher.Optimism do
   import EthereumJSONRPC,
     only: [fetch_block_number_by_tag: 2, json_rpc: 2, integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
 
-  import Explorer.Helpers, only: [parse_integer: 1]
+  import Explorer.Helper, only: [parse_integer: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
   alias Explorer.Chain.Events.{Publisher, Subscriber}
-  alias Indexer.{BoundQueue, Helpers}
+  alias Indexer.{BoundQueue, Helper}
 
   @fetcher_name :optimism
   @block_check_interval_range_size 100
@@ -40,7 +40,7 @@ defmodule Indexer.Fetcher.Optimism do
   def init(_args) do
     Logger.metadata(fetcher: @fetcher_name)
 
-    optimism_l1_rpc = Application.get_all_env(:indexer)[__MODULE__][:optimism_l1_rpc]
+    optimism_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc]
 
     json_rpc_named_arguments = json_rpc_named_arguments(optimism_l1_rpc)
 
@@ -247,10 +247,11 @@ defmodule Indexer.Fetcher.Optimism do
         {"Output Oracle", "op_output_roots", "Output Roots"}
       end
 
-    with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
-         optimism_l1_rpc = Application.get_all_env(:indexer)[__MODULE__][:optimism_l1_rpc],
+    with {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.Optimism))},
+         {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
+         optimism_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-         {:contract_is_valid, true} <- {:contract_is_valid, Helpers.is_address_correct?(contract_address)},
+         {:contract_is_valid, true} <- {:contract_is_valid, Helper.is_address_correct?(contract_address)},
          start_block_l1 = parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
@@ -278,6 +279,10 @@ defmodule Indexer.Fetcher.Optimism do
     else
       {:start_block_l1_undefined, true} ->
         # the process shouldn't start if the start block is not defined
+        :ignore
+
+      {:reorg_monitor_started, false} ->
+        Logger.error("Cannot start this process as reorg monitor in Indexer.Fetcher.Optimism is not started.")
         :ignore
 
       {:rpc_l1_undefined, true} ->

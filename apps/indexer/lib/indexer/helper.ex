@@ -1,4 +1,4 @@
-defmodule Indexer.Helpers do
+defmodule Indexer.Helper do
   @moduledoc """
   Auxiliary common functions for indexers.
   """
