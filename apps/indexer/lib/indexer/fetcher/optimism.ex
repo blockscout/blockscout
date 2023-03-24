@@ -16,6 +16,7 @@ defmodule Indexer.Fetcher.Optimism do
   alias EthereumJSONRPC.Block.ByNumber
   alias Explorer.Chain.Events.{Publisher, Subscriber}
   alias Indexer.{BoundQueue, Helper}
+  alias Indexer.Fetcher.{OptimismOutputRoot, OptimismTxnBatch, OptimismWithdrawalEvent}
 
   @fetcher_name :optimism
   @block_check_interval_range_size 100
@@ -40,16 +41,28 @@ defmodule Indexer.Fetcher.Optimism do
   def init(_args) do
     Logger.metadata(fetcher: @fetcher_name)
 
-    optimism_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc]
+    modules_using_reorg_monitor = [OptimismTxnBatch, OptimismOutputRoot, OptimismWithdrawalEvent]
 
-    json_rpc_named_arguments = json_rpc_named_arguments(optimism_l1_rpc)
+    reorg_monitor_not_needed =
+      modules_using_reorg_monitor
+      |> Enum.all?(fn module ->
+        is_nil(Application.get_all_env(:indexer)[module][:start_block_l1])
+      end)
 
-    {:ok, block_check_interval, _} = get_block_check_interval(json_rpc_named_arguments)
+    if reorg_monitor_not_needed do
+      :ignore
+    else
+      optimism_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc]
 
-    Process.send(self(), :reorg_monitor, [])
+      json_rpc_named_arguments = json_rpc_named_arguments(optimism_l1_rpc)
 
-    {:ok,
-     %{block_check_interval: block_check_interval, json_rpc_named_arguments: json_rpc_named_arguments, prev_latest: 0}}
+      {:ok, block_check_interval, _} = get_block_check_interval(json_rpc_named_arguments)
+
+      Process.send(self(), :reorg_monitor, [])
+
+      {:ok,
+       %{block_check_interval: block_check_interval, json_rpc_named_arguments: json_rpc_named_arguments, prev_latest: 0}}
+    end
   end
 
   @impl GenServer
@@ -247,8 +260,8 @@ defmodule Indexer.Fetcher.Optimism do
         {"Output Oracle", "op_output_roots", "Output Roots"}
       end
 
-    with {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.Optimism))},
-         {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
+    with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
+         {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.Optimism))},
          optimism_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          {:contract_is_valid, true} <- {:contract_is_valid, Helper.is_address_correct?(contract_address)},
