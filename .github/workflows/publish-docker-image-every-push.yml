@@ -7,7 +7,7 @@ on:
 env:
   OTP_VERSION: '25.2.1'
   ELIXIR_VERSION: '1.14.3'
-  NEXT_RELEASE_VERSION: 5.1.1
+  RELEASE_VERSION: 5.1.1
 
 jobs:
   push_to_registry:
@@ -55,7 +55,7 @@ jobs:
           push: true
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
           cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.NEXT_RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
+          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
@@ -65,6 +65,7 @@ jobs:
             WOBSERVER_ENABLED=false
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            BLOCKSCOUT_VERSION=v{{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
 
       - name: Build and push Docker image for frontend
         uses: docker/build-push-action@v3
