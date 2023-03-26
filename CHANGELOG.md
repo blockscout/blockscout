@@ -24,6 +24,7 @@
 
 ### Chore
 
+- [#7144](https://github.com/blockscout/blockscout/pull/7144) - Update Blockscout logo
 - [#7136](https://github.com/blockscout/blockscout/pull/7136) - Add release link or commit hash to docker images
 - [#7072](https://github.com/blockscout/blockscout/pull/7072) - Add a separate docker compose for geth with clique consensus
 - [#7056](https://github.com/blockscout/blockscout/pull/7056) - Add path_helper in interact.js
