@@ -100,9 +100,14 @@ defmodule Explorer.Chain.Wei do
   @type gwei :: Decimal.t()
 
   @typedoc """
+  Custom unit configurable with `:explorer, :coin_decimals` application env.
+  """
+  @type custom_unit :: Decimal.t()
+
+  @typedoc """
   The unit to convert `t:wei/0` to.
   """
-  @type unit :: :wei | :gwei | :ether
+  @type unit :: :wei | :gwei | :ether | :custom_unit
 
   @typedoc """
   The smallest fractional unit of Ether.
@@ -116,6 +121,9 @@ defmodule Explorer.Chain.Wei do
 
   @wei_per_ether Decimal.new(1_000_000_000_000_000_000)
   @wei_per_gwei Decimal.new(1_000_000_000)
+
+  @spec wei_per_custom_unit :: Decimal.t()
+  def wei_per_custom_unit, do: Explorer.coin_decimals()
 
   @spec hex_format(Wei.t()) :: String.t()
   def hex_format(%Wei{value: decimal}) do
@@ -204,6 +212,13 @@ defmodule Explorer.Chain.Wei do
       iex> Explorer.Chain.Wei.from(Decimal.new(1), :ether)
       %Explorer.Chain.Wei{value: Decimal.new(1_000_000_000_000_000_000)}
 
+  Convert `t:custom_unit/0` to wei.
+
+      iex> Application.put_env(:explorer, :coin_decimals, Decimal.new(1_000))
+      :ok
+      iex> Explorer.Chain.Wei.from(Decimal.new(1), :custom_unit)
+      %Explorer.Chain.Wei{value: Decimal.new(1_000)}
+
   """
 
   @spec from(ether(), :ether) :: t()
@@ -219,6 +234,11 @@ defmodule Explorer.Chain.Wei do
   @spec from(wei(), :wei) :: t()
   def from(%Decimal{} = wei, :wei) do
     %__MODULE__{value: wei}
+  end
+
+  @spec from(custom_unit(), :custom_unit) :: t()
+  def from(%Decimal{} = unit, :custom_unit) do
+    %__MODULE__{value: Decimal.mult(unit, wei_per_custom_unit())}
   end
 
   @doc """
@@ -245,6 +265,14 @@ defmodule Explorer.Chain.Wei do
       iex> Explorer.Chain.Wei.to(%Explorer.Chain.Wei{value: Decimal.new("1e18")}, :ether)
       Decimal.new(1)
 
+  Convert wei to `t:custom_unit/0`.
+
+      iex> Application.put_env(:explorer, :coin_decimals, Decimal.new(1_000))
+      iex> Explorer.Chain.Wei.to(%Explorer.Chain.Wei{value: Decimal.new(1)}, :custom_unit)
+      Decimal.new("1e-3")
+      iex> Explorer.Chain.Wei.to(%Explorer.Chain.Wei{value: Decimal.new("1e3")}, :custom_unit)
+      Decimal.new(1)
+
   """
 
   @spec to(t(), :ether) :: ether()
@@ -259,6 +287,11 @@ defmodule Explorer.Chain.Wei do
 
   @spec to(t(), :wei) :: wei()
   def to(%__MODULE__{value: wei}, :wei), do: wei
+
+  @spec to(t(), :custom_unit) :: wei()
+  def to(%__MODULE__{value: wei}, :custom_unit) do
+    Decimal.div(wei, wei_per_custom_unit())
+  end
 end
 
 defimpl Inspect, for: Explorer.Chain.Wei do

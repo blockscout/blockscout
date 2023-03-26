@@ -19,4 +19,15 @@ defmodule Explorer do
   def coin_name do
     Application.get_env(:explorer, :coin_name)
   end
+
+  def coin_decimals do
+    Application.get_env(:explorer, :coin_decimals)
+  end
+
+  def denomination do
+    case coin_decimals() do
+      %Decimal{} -> :custom_unit
+      _ -> :ether
+    end
+  end
 end

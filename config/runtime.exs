@@ -229,9 +229,18 @@ healthy_blocks_period =
   |> elem(0)
   |> :timer.minutes()
 
+coin_decimals =
+  with str when is_binary(str) <- System.get_env("COIN_DECIMALS"),
+       {decimals, ""} <- Integer.parse(str) do
+    Decimal.new("1e#{decimals}")
+  else
+    _ -> nil
+  end
+
 config :explorer,
   coin: System.get_env("COIN", nil) || System.get_env("EXCHANGE_RATES_COIN") || "ETH",
   coin_name: System.get_env("COIN_NAME", nil) || System.get_env("EXCHANGE_RATES_COIN") || "ETH",
+  coin_decimals: coin_decimals,
   allowed_evm_versions:
     System.get_env("CONTRACT_VERIFICATION_ALLOWED_EVM_VERSIONS") ||
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,default",

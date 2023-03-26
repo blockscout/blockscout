@@ -499,7 +499,7 @@ defmodule BlockScoutWeb.TransactionView do
   """
   def value(%mod{value: value}, opts \\ []) when is_transaction_type(mod) do
     include_label? = Keyword.get(opts, :include_label, true)
-    format_wei_value(value, :ether, include_unit_label: include_label?)
+    format_wei_value(value, Explorer.denomination(), include_unit_label: include_label?)
   end
 
   def format_wei_value(value) do

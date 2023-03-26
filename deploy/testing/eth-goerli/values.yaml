@@ -59,6 +59,8 @@ blockscout:
       _default: 'false'
     COIN_NAME:
       _default: ETH
+    COIN_DECIMALS:
+      _default:
     LOGO:
       _default: /images/goerli_logo.svg
     TXS_STATS_DAYS_TO_COMPILE_AT_INIT:
