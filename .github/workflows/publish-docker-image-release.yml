@@ -53,8 +53,6 @@ jobs:
           platforms: |
             linux/arm64
             linux/amd64
-          args: |
-            BLOCKSCOUT_VERSION=v{{ env.RELEASE_VERSION }}-beta
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
@@ -64,6 +62,7 @@ jobs:
             WOBSERVER_ENABLED=false
             ADMIN_PANEL_ENABLED=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            BLOCKSCOUT_VERSION=v{{ env.RELEASE_VERSION }}-beta
 
   merge-master-after-release:
     name: Merge 'master' to specific branch after release
