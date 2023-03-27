@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Validator do
 
   use Explorer.Schema
   alias Explorer.Chain.Hash.Address
-  alias Explorer.Repo
+  alias Explorer.{Chain, Repo}
 
   @primary_key false
   schema "validators" do
@@ -43,10 +43,10 @@ defmodule Explorer.Chain.Validator do
     |> unique_constraint(:address_hash)
   end
 
-  def get_validator_by_address_hash(address_hash) do
+  def get_validator_by_address_hash(address_hash, options \\ []) do
     __MODULE__
     |> where([validator], validator.address_hash == ^address_hash)
-    |> Repo.one()
+    |> Chain.select_repo(options).one()
   end
 
   def drop_all_validators do
