@@ -23,8 +23,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "5.1.1",
-      xref: [exclude: [Explorer.CustomContractsHelper, Explorer.AccessHelper]]
+      version: "5.1.1"
     ]
   end
 
