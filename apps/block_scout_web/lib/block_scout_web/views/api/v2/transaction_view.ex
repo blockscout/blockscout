@@ -101,7 +101,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "from" => Helper.address_with_info(conn, token_transfer.from_address, token_transfer.from_address_hash),
       "to" => Helper.address_with_info(conn, token_transfer.to_address, token_transfer.to_address_hash),
       "total" => prepare_token_transfer_total(token_transfer),
-      "token" => TokenView.render("token.json", %{token: Market.add_price(token_transfer.token)}),
+      "token" => TokenView.render("token.json", %{token: token_transfer.token}),
       "type" => Chain.get_token_transfer_type(token_transfer),
       "timestamp" =>
         if(match?(%NotLoaded{}, token_transfer.block),

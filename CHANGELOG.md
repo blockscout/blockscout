@@ -4,13 +4,17 @@
 
 ### Features
 
+- [#6925](https://github.com/blockscout/blockscout/pull/6925) - Rework token price fetching mechanism and sort token balances by fiat value 
 - [#7068](https://github.com/blockscout/blockscout/pull/7068) - Add authenticate endpoint
 - [#6990](https://github.com/blockscout/blockscout/pull/6990) - Improved http requests logging, batch transfers pagination; New API v2 endpoint `/smart-contracts/counters`; And some refactoring
+- [#7089](https://github.com/blockscout/blockscout/pull/7089) - ETHEREUM_JSONRPC_HTTP_TIMEOUT env variable
 
 ### Fixes
 
 - [#7096](https://github.com/blockscout/blockscout/pull/7096) - Hide indexing alert, if indexer disabled
+- [#7102](https://github.com/blockscout/blockscout/pull/7102) - Set infinity timeout timestamp_to_block_number query
 - [#7091](https://github.com/blockscout/blockscout/pull/7091) - Fix custom ABI
+- [#7087](https://github.com/blockscout/blockscout/pull/7087) - Allow URI special symbols in `DATABASE_URL`
 - [#7062](https://github.com/blockscout/blockscout/pull/7062) - Save block count in the DB when calculated in Cache module
 - [#7008](https://github.com/blockscout/blockscout/pull/7008) - Fetch image/video content from IPFS link
 - [#7007](https://github.com/blockscout/blockscout/pull/7007), [#7031](https://github.com/blockscout/blockscout/pull/7031), [#7058](https://github.com/blockscout/blockscout/pull/7058), [#7061](https://github.com/blockscout/blockscout/pull/7061), [#7067](https://github.com/blockscout/blockscout/pull/7067) - Token instance fetcher fixes
@@ -20,6 +24,9 @@
 
 ### Chore
 
+- [#7144](https://github.com/blockscout/blockscout/pull/7144) - Update Blockscout logo
+- [#7136](https://github.com/blockscout/blockscout/pull/7136) - Add release link or commit hash to docker images
+- [#7097](https://github.com/blockscout/blockscout/pull/7097) - Force display token instance page
 - [#7072](https://github.com/blockscout/blockscout/pull/7072) - Add a separate docker compose for geth with clique consensus
 - [#7056](https://github.com/blockscout/blockscout/pull/7056) - Add path_helper in interact.js
 - [#7040](https://github.com/blockscout/blockscout/pull/7040) - Use alias BlockScoutWeb.Cldr.Number

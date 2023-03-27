@@ -80,7 +80,7 @@
     "url": "^0.11.0",
     "util": "^0.12.5",
     "viewerjs": "^1.11.3",
-    "web3": "^1.8.2",
+    "web3": "^1.9.0",
     "web3modal": "^1.9.12",
     "xss": "^1.0.14"
   },
@@ -104,9 +104,9 @@
     "postcss": "^8.4.21",
     "postcss-loader": "^7.1.0",
     "sass": "^1.59.3",
-    "sass-loader": "^13.2.0",
+    "sass-loader": "^13.2.1",
     "style-loader": "^3.3.2",
-    "webpack": "^5.76.2",
+    "webpack": "^5.76.3",
     "webpack-cli": "^5.0.1"
   },
   "jest": {
