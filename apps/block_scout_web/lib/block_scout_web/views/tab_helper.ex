@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.TabHelpers do
+defmodule BlockScoutWeb.TabHelper do
   @moduledoc """
   Helper functions for dealing with tabs, which are very common between pages.
   """
@@ -13,10 +13,10 @@ defmodule BlockScoutWeb.TabHelpers do
 
   ## Examples
 
-  iex> BlockScoutWeb.TabHelpers.tab_status("token", "/page/0xSom3tH1ng/token")
+  iex> BlockScoutWeb.TabHelper.tab_status("token", "/page/0xSom3tH1ng/token")
   "active"
 
-  iex> BlockScoutWeb.TabHelpers.tab_status("token", "/page/0xSom3tH1ng/token_transfer")
+  iex> BlockScoutWeb.TabHelper.tab_status("token", "/page/0xSom3tH1ng/token_transfer")
   nil
   """
   def tab_status(tab_name, request_path, show_token_transfers \\ false) do
@@ -56,10 +56,10 @@ defmodule BlockScoutWeb.TabHelpers do
 
   ## Examples
 
-  iex> BlockScoutWeb.TabHelpers.tab_active?("token", "/page/0xSom3tH1ng/token")
+  iex> BlockScoutWeb.TabHelper.tab_active?("token", "/page/0xSom3tH1ng/token")
   true
 
-  iex> BlockScoutWeb.TabHelpers.tab_active?("token", "/page/0xSom3tH1ng/token_transfer")
+  iex> BlockScoutWeb.TabHelper.tab_active?("token", "/page/0xSom3tH1ng/token_transfer")
   false
   """
   def tab_active?("transactions", "/address/" <> "0x" <> <<_address_hash::binary-size(40)>>), do: true

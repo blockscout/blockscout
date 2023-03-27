@@ -1,6 +1,6 @@
-defmodule BlockScoutWeb.Views.ScriptHelpers do
+defmodule BlockScoutWeb.Views.ScriptHelper do
   @moduledoc """
-  Helpers for rendering view specific script tags.
+  Helper for rendering view specific script tags.
   """
 
   import Phoenix.HTML, only: [sigil_E: 2]

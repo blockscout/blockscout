@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.TokenController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.API.RPC.Helpers
+  alias BlockScoutWeb.API.RPC.Helper
   alias Explorer.{Chain, PagingOptions}
 
   def gettoken(conn, params) do
@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
   end
 
   def gettokenholders(conn, params) do
-    with pagination_options <- Helpers.put_pagination_options(%{}, params),
+    with pagination_options <- Helper.put_pagination_options(%{}, params),
          {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
          {:format, {:ok, address_hash}} <- to_address_hash(contractaddress_param) do
       options_with_defaults =
