@@ -198,24 +198,28 @@ defmodule BlockScoutWeb.TransactionView do
       if existing_entry do
         acc1
         |> Enum.map(fn entry ->
-          if entry.to_address_hash == token_transfer.to_address_hash &&
-               entry.from_address_hash == token_transfer.from_address_hash &&
-               entry.token == token_transfer.token do
-            updated_entry = %{
-              entry
-              | amount: Decimal.add(new_entry.amount, entry.amount)
-            }
-
-            updated_entry
-          else
-            entry
-          end
+          process_entry(entry, new_entry, token_transfer)
         end)
       else
         [new_entry | acc1]
       end
 
     {new_acc1, acc2}
+  end
+
+  def process_entry(entry, new_entry, token_transfer) do
+    if entry.to_address_hash == token_transfer.to_address_hash &&
+         entry.from_address_hash == token_transfer.from_address_hash &&
+         entry.token == token_transfer.token do
+      updated_entry = %{
+        entry
+        | amount: Decimal.add(new_entry.amount, entry.amount)
+      }
+
+      updated_entry
+    else
+      entry
+    end
   end
 
   def token_type_name(type) do
@@ -572,7 +576,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def get_max_length do
-    string_value = Application.get_env(:block_scout_web, :max_length_to_show_string_without_trimming)
+    string_value = Application.get_env(:block_scout_web, :contract)[:max_length_to_show_string_without_trimming]
 
     case Integer.parse(string_value) do
       {integer, ""} -> integer

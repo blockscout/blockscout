@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   alias BlockScoutWeb.{AccessHelpers, CurrencyHelpers, LayoutView}
 
-  import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
+  import BlockScoutWeb.AddressView, only: [from_address_hash: 1, contract_interaction_disabled?: 0]
 
   @tabs ["token-transfers", "token-holders", "read-contract", "inventory"]
 
@@ -62,10 +62,11 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   def smart_contract_with_write_functions?(%Token{
         contract_address: %Address{smart_contract: %SmartContract{}} = address
       }) do
-    Enum.any?(
-      address.smart_contract.abi || [],
-      &Writer.write_function?(&1)
-    )
+    !contract_interaction_disabled?() &&
+      Enum.any?(
+        address.smart_contract.abi || [],
+        &Writer.write_function?(&1)
+      )
   end
 
   def smart_contract_with_write_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
@@ -78,7 +79,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
       token.custom_cap
     else
       tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
-      price = token.usd_value
+      price = token.fiat_value
       Decimal.mult(tokens, price)
     end
   end

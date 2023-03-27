@@ -10,4 +10,12 @@ defmodule ConfigHelper do
           else: &1
         )).()
   end
+
+  def timeout(default_minutes \\ 1) do
+    case Integer.parse(System.get_env("ETHEREUM_JSONRPC_HTTP_TIMEOUT", "#{default_minutes * 60}")) do
+      {seconds, ""} -> seconds
+      _ -> default_minutes * 60
+    end
+    |> :timer.seconds()
+  end
 end

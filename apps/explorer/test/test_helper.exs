@@ -15,7 +15,6 @@ Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Account, :auto)
 
 Mox.defmock(Explorer.ExchangeRates.Source.TestSource, for: Explorer.ExchangeRates.Source)
-Mox.defmock(Explorer.KnownTokens.Source.TestSource, for: Explorer.KnownTokens.Source)
 Mox.defmock(Explorer.Market.History.Source.TestSource, for: Explorer.Market.History.Source)
 Mox.defmock(Explorer.History.TestHistorian, for: Explorer.History.Historian)
 
