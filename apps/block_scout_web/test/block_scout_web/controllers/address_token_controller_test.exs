@@ -133,20 +133,19 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
     test "returns next page of results based on last seen token for erc-1155", %{conn: conn} do
       address = insert(:address)
 
-      tokens =
-        1..51
-        |> Enum.reduce([], fn i, acc ->
-          token = insert(:token, name: "FN2 Token", type: "ERC-1155")
+      1..51
+      |> Enum.reduce([], fn _i, acc ->
+        token = insert(:token, name: "FN2 Token", type: "ERC-1155")
 
-          insert(
-            :address_current_token_balance,
-            token_contract_address_hash: token.contract_address_hash,
-            address: address,
-            value: 3
-          )
+        insert(
+          :address_current_token_balance,
+          token_contract_address_hash: token.contract_address_hash,
+          address: address,
+          value: 3
+        )
 
-          acc ++ [token.name]
-        end)
+        acc ++ [token.name]
+      end)
 
       conn =
         get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)), %{
