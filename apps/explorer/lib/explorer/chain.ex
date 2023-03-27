@@ -2136,6 +2136,8 @@ defmodule Explorer.Chain do
         options,
         preload_to_detect_tt? \\ true
       ) do
+    limit = if(preload_to_detect_tt?, do: 1, else: @token_transfers_per_transaction_preview + 1)
+
     token_transfers =
       TokenTransfer
       |> (&if(is_nil(block_hash),
@@ -2147,10 +2149,12 @@ defmodule Explorer.Chain do
                 token_transfer.transaction_hash == ^tx_hash and token_transfer.block_hash == ^block_hash
               )
           )).()
-      |> limit(^if(preload_to_detect_tt?, do: 1, else: @token_transfers_per_transaction_preview + 1))
+      |> limit(^limit)
       |> order_by([token_transfer], asc: token_transfer.log_index)
       |> join_associations(necessity_by_association)
       |> select_repo(options).all()
+      |> flat_1155_batch_token_transfers()
+      |> Enum.take(limit)
 
     %Transaction{transaction | token_transfers: token_transfers}
   end
