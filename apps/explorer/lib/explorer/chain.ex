@@ -2310,6 +2310,18 @@ defmodule Explorer.Chain do
     Repo.get(Block, block_hash)
   end
 
+  def filter_consensus_block_numbers(block_numbers) do
+    query =
+      from(
+        block in Block,
+        where: block.number in ^block_numbers,
+        where: block.consensus,
+        select: block.number
+      )
+
+    Repo.all(query)
+  end
+
   @doc """
   The number of `t:Explorer.Chain.InternalTransaction.t/0`.
 
