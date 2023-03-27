@@ -6,8 +6,8 @@ defmodule BlockScoutWeb.Tokens.InstanceController do
 
   def show(conn, %{"token_id" => token_address_hash, "id" => token_id}) do
     with {:ok, hash} <- Chain.string_to_address_hash(token_address_hash),
-         :ok <- Chain.check_token_exists(hash),
-         false <- Chain.is_erc_20_token_by_hash?(hash) do
+         {:ok, token} <- Chain.token_from_address_hash(hash),
+         false <- Chain.is_erc_20_token?(token) do
       token_instance_transfer_path =
         conn
         |> token_instance_transfer_path(:index, token_address_hash, token_id)

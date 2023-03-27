@@ -5666,13 +5666,6 @@ defmodule Explorer.Chain do
     is_erc_20_token_type?(token.type)
   end
 
-  @spec is_erc_20_token_by_hash?(Hash.Address.t()) :: bool
-  def is_erc_20_token_by_hash?(hash) do
-    hash
-    |> get_token_type()
-    |> is_erc_20_token_type?()
-  end
-
   defp is_erc_20_token_type?(type) do
     case type do
       "ERC-20" -> true

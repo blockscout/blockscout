@@ -9,8 +9,8 @@ defmodule BlockScoutWeb.Tokens.Instance.MetadataController do
 
     with {:ok, hash} <- Chain.string_to_address_hash(token_address_hash),
          {:ok, token} <- Chain.token_from_address_hash(hash, options),
-         {token_id, ""} <- Integer.parse(token_id_str),
          false <- Chain.is_erc_20_token?(token),
+         {token_id, ""} <- Integer.parse(token_id_str),
          {:ok, token_instance} <-
            Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, hash) do
       if token_instance.metadata do
