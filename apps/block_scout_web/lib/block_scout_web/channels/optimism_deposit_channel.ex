@@ -4,8 +4,6 @@ defmodule BlockScoutWeb.OptimismDepositChannel do
   """
   use BlockScoutWeb, :channel
 
-  alias Phoenix.View
-
   intercept(["deposit"])
 
   def join("optimism_deposits:new_deposit", _params, socket) do

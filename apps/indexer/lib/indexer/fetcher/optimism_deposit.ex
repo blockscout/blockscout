@@ -162,7 +162,6 @@ defmodule Indexer.Fetcher.OptimismDeposit do
          deposits = events_to_deposits(logs, json_rpc_named_arguments),
          {:import, {:ok, _imported}} <-
            {:import, Chain.import(%{optimism_deposits: %{params: deposits}, timeout: :infinity})} do
-
       Publisher.broadcast(%{optimism_deposits: deposits}, :realtime)
 
       Optimism.log_blocks_chunk_handling(

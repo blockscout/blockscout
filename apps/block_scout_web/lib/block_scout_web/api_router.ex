@@ -157,6 +157,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
     scope "/main-page" do
       get("/blocks", V2.MainPageController, :blocks)
+      get("/optimism-deposits", V2.MainPageController, :optimism_deposits)
       get("/transactions", V2.MainPageController, :transactions)
       get("/indexing-status", V2.MainPageController, :indexing_status)
     end
