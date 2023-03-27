@@ -1,13 +1,13 @@
 defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.{CurrencyHelpers, NFTHelpers}
+  alias BlockScoutWeb.{CurrencyHelper, NFTHelper}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, Token}
   alias Explorer.SmartContract.Helper
 
   import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1]
-  import BlockScoutWeb.NFTHelpers, only: [external_url: 1]
+  import BlockScoutWeb.NFTHelper, only: [external_url: 1]
 
   @tabs ["token-transfers", "metadata"]
   @stub_image "/images/controller.svg"
@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def media_src(nil, _), do: @stub_image
 
   def media_src(instance, high_quality_media?) do
-    NFTHelpers.get_media_src(instance.metadata, high_quality_media?) || media_src(nil)
+    NFTHelper.get_media_src(instance.metadata, high_quality_media?) || media_src(nil)
   end
 
   def media_type("data:image/" <> _data) do
@@ -45,14 +45,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
 
     mime_type =
       if ext == "" do
-        case HTTPoison.head(media_src, [], follow_redirect: true) do
-          {:ok, %HTTPoison.Response{status_code: 200, headers: headers}} ->
-            headers_map = Map.new(headers, fn {key, value} -> {String.downcase(key), value} end)
-            headers_map["content-type"]
-
-          _ ->
-            nil
-        end
+        process_missing_extension(media_src)
       else
         ext_with_dot =
           media_src
@@ -75,8 +68,19 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
 
   def media_type(nil), do: nil
 
+  defp process_missing_extension(media_src) do
+    case HTTPoison.head(media_src, [], follow_redirect: true) do
+      {:ok, %HTTPoison.Response{status_code: 200, headers: headers}} ->
+        headers_map = Map.new(headers, fn {key, value} -> {String.downcase(key), value} end)
+        headers_map["content-type"]
+
+      _ ->
+        nil
+    end
+  end
+
   def total_supply_usd(token) do
-    tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
+    tokens = CurrencyHelper.divide_decimals(token.total_supply, token.decimals)
     price = token.fiat_value
     Decimal.mult(tokens, price)
   end

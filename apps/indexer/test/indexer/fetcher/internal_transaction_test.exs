@@ -140,7 +140,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     test "does not buffer blocks with fetched internal transactions", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
-      block = insert(:block)
+      insert(:block)
 
       assert InternalTransaction.init(
                [],

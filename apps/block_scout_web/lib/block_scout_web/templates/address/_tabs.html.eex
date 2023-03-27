@@ -1,26 +1,26 @@
-<% dark_forest_addresses_list_0_4 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses) %>
-<% dark_forest_addresses_list_0_5 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_5) %>
+<% dark_forest_addresses_list_0_4 = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses) %>
+<% dark_forest_addresses_list_0_5 = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses_v_0_5) %>
 <% dark_forest_addresses_list = dark_forest_addresses_list_0_4 ++ dark_forest_addresses_list_0_5 %>
 <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
 <div id="address-tabs" class="card-tabs js-card-tabs">
   <%= link(
         gettext("Transactions"),
         class: "card-tab #{tab_status("transactions", @conn.request_path)}",
-        to: AccessHelpers.get_path(@conn, :address_transaction_path, :index, @address.hash)
+        to: AccessHelper.get_path(@conn, :address_transaction_path, :index, @address.hash)
       ) %>
   <%= if Chain.check_if_token_transfers_at_address(@address.hash) do %>
     <%= link(
         gettext("Token Transfers"),
         class: "card-tab #{tab_status("token-transfers", @conn.request_path)}",
         "data-test": "token_transfers_tab_link",
-        to: AccessHelpers.get_path(@conn, :address_token_transfers_path, :index, @address.hash)
+        to: AccessHelper.get_path(@conn, :address_token_transfers_path, :index, @address.hash)
         ) %>
   <% end %>
   <%= if Chain.check_if_tokens_at_address(@address.hash) do %>
   <%= link(
         gettext("Tokens"),
         class: "card-tab #{tab_status("tokens", @conn.request_path)}",
-        to: AccessHelpers.get_path(@conn, :address_token_path, :index, @address.hash),
+        to: AccessHelper.get_path(@conn, :address_token_path, :index, @address.hash),
         "data-test": "tokens_tab_link"
       ) %>
   <% end %>
@@ -28,19 +28,19 @@
         gettext("Internal Transactions"),
         class: "card-tab #{tab_status("internal-transactions", @conn.request_path)}",
         "data-test": "internal_transactions_tab_link",
-        to: AccessHelpers.get_path(@conn, :address_internal_transaction_path, :index, @address.hash)
+        to: AccessHelper.get_path(@conn, :address_internal_transaction_path, :index, @address.hash)
       ) %>
   <%= link(
         gettext("Coin Balance History"),
         class: "card-tab #{tab_status("coin-balances", @conn.request_path)}",
         "data-test": "coin_balance_tab_link",
-        to: AccessHelpers.get_path(@conn, :address_coin_balance_path, :index, @address.hash)
+        to: AccessHelper.get_path(@conn, :address_coin_balance_path, :index, @address.hash)
       ) %>
   <%= if Chain.check_if_logs_at_address(@address.hash) do %>
     <%= link(
         gettext("Logs"),
         class: "card-tab #{tab_status("logs", @conn.request_path)}",
-        to: AccessHelpers.get_path(@conn, :address_logs_path, :index, @address.hash)
+        to: AccessHelper.get_path(@conn, :address_logs_path, :index, @address.hash)
         ) %>
   <% end %>
   <%= if Chain.check_if_validated_blocks_at_address(@address.hash) do %>
@@ -48,12 +48,12 @@
       gettext("Blocks Validated"),
       class: "card-tab #{tab_status("validations", @conn.request_path)}",
       "data-test": "validations_tab_link",
-      to: AccessHelpers.get_path(@conn, :address_validation_path, :index, @address.hash)
+      to: AccessHelper.get_path(@conn, :address_validation_path, :index, @address.hash)
     ) %>
   <% end %>
   <%= if contract?(@address) do %>
     <%= link(
-        to: AccessHelpers.get_path(@conn, :address_contract_path, :index, @address.hash),
+        to: AccessHelper.get_path(@conn, :address_contract_path, :index, @address.hash),
         class: "card-tab #{tab_status("contracts", @conn.request_path)}") do %>
         <%= gettext("Code") %>
       <%= if smart_contract_verified?(@address) do %>
@@ -70,7 +70,7 @@
   <% end %>
   <%= if has_decompiled_code?(@address) do %>
     <%= link(
-        to: AccessHelpers.get_path(@conn, :address_decompiled_contract_path, :index, @address.hash),
+        to: AccessHelper.get_path(@conn, :address_decompiled_contract_path, :index, @address.hash),
         class: "card-tab #{tab_status("decompiled-contracts", @conn.request_path)}") do %>
         <%= gettext("Decompiled code") %>
         <i class="fa-regular fa-check-circle"></i>
@@ -79,28 +79,28 @@
   <%= if smart_contract_with_read_only_functions?(@address) || has_address_custom_abi_with_read_functions?(@conn, @address.hash) do %>
     <%= link(
         gettext("Read Contract"),
-        to: AccessHelpers.get_path(@conn, :address_read_contract_path, :index, @address.hash),
+        to: AccessHelper.get_path(@conn, :address_read_contract_path, :index, @address.hash),
         class: "card-tab #{tab_status("read-contract", @conn.request_path)}")
         %>
   <% end %>
   <%= if @is_proxy do %>
     <%= link(
         gettext("Read Proxy"),
-        to: AccessHelpers.get_path(@conn, :address_read_proxy_path, :index, @address.hash),
+        to: AccessHelper.get_path(@conn, :address_read_proxy_path, :index, @address.hash),
         class: "card-tab #{tab_status("read-proxy", @conn.request_path)}")
         %>
   <% end %>
   <%= if smart_contract_with_write_functions?(@address) || has_address_custom_abi_with_write_functions?(@conn, @address.hash) do %>
     <%= link(
         gettext("Write Contract"),
-        to: AccessHelpers.get_path(@conn, :address_write_contract_path, :index, @address.hash),
+        to: AccessHelper.get_path(@conn, :address_write_contract_path, :index, @address.hash),
         class: "card-tab #{tab_status("write-contract", @conn.request_path)}")
         %>
   <% end %>
   <%= if smart_contract_with_write_functions?(@address) && @is_proxy do %>
     <%= link(
         gettext("Write Proxy"),
-        to: AccessHelpers.get_path(@conn, :address_write_proxy_path, :index, @address.hash),
+        to: AccessHelper.get_path(@conn, :address_write_proxy_path, :index, @address.hash),
         class: "card-tab #{tab_status("write-proxy", @conn.request_path)}")
         %>
   <% end %>

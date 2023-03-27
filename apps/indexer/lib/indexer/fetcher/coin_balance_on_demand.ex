@@ -252,7 +252,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
           {:error, :empty_database}
         else
           threshold = Application.get_env(:indexer, __MODULE__)[:threshold]
-          block_number - div(:timer.minutes(threshold), average_block_time)
+          block_number - div(threshold, average_block_time)
         end
     end
   end

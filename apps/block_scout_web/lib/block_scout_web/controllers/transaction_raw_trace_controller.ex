@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
   import BlockScoutWeb.Models.GetTransactionTags, only: [get_transaction_with_addresses_tags: 2]
 
-  alias BlockScoutWeb.{AccessHelpers, TransactionController}
+  alias BlockScoutWeb.{AccessHelper, TransactionController}
   alias EthereumJSONRPC
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
@@ -25,8 +25,8 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
                :token_transfers => :optional
              }
            ),
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
       if is_nil(transaction.block_number) do
         render_raw_trace(conn, [], transaction, hash)
       else

@@ -1,6 +1,6 @@
-defmodule BlockScoutWeb.AccessHelpers do
+defmodule BlockScoutWeb.AccessHelper do
   @moduledoc """
-  Helpers to restrict access to some pages filtering by address
+  Helper to restrict access to some pages filtering by address
   """
 
   import Phoenix.Controller
@@ -8,14 +8,14 @@ defmodule BlockScoutWeb.AccessHelpers do
   alias BlockScoutWeb.API.APILogger
   alias BlockScoutWeb.API.RPC.RPCView
   alias BlockScoutWeb.WebRouter.Helpers
-  alias Explorer.AccessHelpers
+  alias Explorer.AccessHelper
   alias Explorer.Account.Api.Key, as: ApiKey
   alias Plug.Conn
 
   alias RemoteIp
 
   def restricted_access?(address_hash, params) do
-    AccessHelpers.restricted_access?(address_hash, params)
+    AccessHelper.restricted_access?(address_hash, params)
   end
 
   def get_path(conn, path, template, address_hash) do

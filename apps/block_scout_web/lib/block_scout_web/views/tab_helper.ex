@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.TabHelpers do
+defmodule BlockScoutWeb.TabHelper do
   @moduledoc """
   Helper functions for dealing with tabs, which are very common between pages.
   """
@@ -13,10 +13,10 @@ defmodule BlockScoutWeb.TabHelpers do
 
   ## Examples
 
-  iex> BlockScoutWeb.TabHelpers.tab_status("token", "/page/0xSom3tH1ng/token")
+  iex> BlockScoutWeb.TabHelper.tab_status("token", "/page/0xSom3tH1ng/token")
   "active"
 
-  iex> BlockScoutWeb.TabHelpers.tab_status("token", "/page/0xSom3tH1ng/token_transfer")
+  iex> BlockScoutWeb.TabHelper.tab_status("token", "/page/0xSom3tH1ng/token_transfer")
   nil
   """
   def tab_status(tab_name, request_path, show_token_transfers \\ false) do
@@ -25,20 +25,24 @@ defmodule BlockScoutWeb.TabHelpers do
     else
       case request_path do
         "/tx/" <> "0x" <> <<_tx_hash::binary-size(64)>> ->
-          cond do
-            tab_name == "token-transfers" && show_token_transfers ->
-              "active"
-
-            tab_name == "internal-transactions" && !show_token_transfers ->
-              "active"
-
-            true ->
-              nil
-          end
+          tab_status_selector(tab_name, show_token_transfers)
 
         _ ->
           nil
       end
+    end
+  end
+
+  defp tab_status_selector(tab_name, show_token_transfers) do
+    cond do
+      tab_name == "token-transfers" && show_token_transfers ->
+        "active"
+
+      tab_name == "internal-transactions" && !show_token_transfers ->
+        "active"
+
+      true ->
+        nil
     end
   end
 
@@ -52,10 +56,10 @@ defmodule BlockScoutWeb.TabHelpers do
 
   ## Examples
 
-  iex> BlockScoutWeb.TabHelpers.tab_active?("token", "/page/0xSom3tH1ng/token")
+  iex> BlockScoutWeb.TabHelper.tab_active?("token", "/page/0xSom3tH1ng/token")
   true
 
-  iex> BlockScoutWeb.TabHelpers.tab_active?("token", "/page/0xSom3tH1ng/token_transfer")
+  iex> BlockScoutWeb.TabHelper.tab_active?("token", "/page/0xSom3tH1ng/token_transfer")
   false
   """
   def tab_active?("transactions", "/address/" <> "0x" <> <<_address_hash::binary-size(40)>>), do: true
