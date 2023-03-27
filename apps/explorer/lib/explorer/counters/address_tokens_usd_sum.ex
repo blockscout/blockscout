@@ -65,7 +65,7 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
   def cache_name, do: @cache_name
 
   defp cache_expired?(address_hash_string) do
-    cache_period = address_tokens_usd_sum_cache_period()
+    cache_period = Application.get_env(:explorer, __MODULE__)[:cache_period]
     updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
 
     cond do
@@ -94,8 +94,4 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
   end
 
   defp enable_consolidation?, do: @enable_consolidation
-
-  defp address_tokens_usd_sum_cache_period do
-    Helper.cache_period("CACHE_ADDRESS_TOKENS_USD_SUM_PERIOD", 1)
-  end
 end

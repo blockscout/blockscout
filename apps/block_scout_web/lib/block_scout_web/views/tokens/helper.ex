@@ -1,9 +1,9 @@
-defmodule BlockScoutWeb.Tokens.Helpers do
+defmodule BlockScoutWeb.Tokens.Helper do
   @moduledoc """
   Helper functions for interacting with `t:BlockScoutWeb.Chain.Token` attributes.
   """
 
-  alias BlockScoutWeb.{AddressView, CurrencyHelpers}
+  alias BlockScoutWeb.{AddressView, CurrencyHelper}
   alias Explorer.Chain.{Address, Token}
 
   @doc """
@@ -29,11 +29,11 @@ defmodule BlockScoutWeb.Tokens.Helpers do
   end
 
   defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: nil}, amount, _amounts, _token_ids) do
-    {:ok, CurrencyHelpers.format_according_to_decimals(amount, Decimal.new(0))}
+    {:ok, CurrencyHelper.format_according_to_decimals(amount, Decimal.new(0))}
   end
 
   defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: decimals}, amount, _amounts, _token_ids) do
-    {:ok, CurrencyHelpers.format_according_to_decimals(amount, decimals)}
+    {:ok, CurrencyHelper.format_according_to_decimals(amount, decimals)}
   end
 
   defp do_token_transfer_amount(%Token{type: "ERC-721"}, _amount, _amounts, _token_ids) do
@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.Tokens.Helpers do
 
   defp do_token_transfer_amount(%Token{type: "ERC-1155", decimals: decimals}, amount, amounts, token_ids) do
     if amount do
-      {:ok, :erc1155_instance, CurrencyHelpers.format_according_to_decimals(amount, decimals)}
+      {:ok, :erc1155_instance, CurrencyHelper.format_according_to_decimals(amount, decimals)}
     else
       {:ok, :erc1155_instance, amounts, token_ids, decimals}
     end

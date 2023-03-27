@@ -81,6 +81,7 @@ defmodule EthereumJSONRPC.RequestCoordinator do
 
       case throttle_request(remaining_wait_time) do
         :ok ->
+          # credo:disable-for-next-line
           trace_request(request, fn ->
             request
             |> transport.json_rpc(transport_options)

@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.TokenChannel do
   """
   use BlockScoutWeb, :channel
 
-  alias BlockScoutWeb.{CurrencyHelpers, TokensView}
+  alias BlockScoutWeb.{CurrencyHelper, TokensView}
   alias BlockScoutWeb.Tokens.TransferView
   alias Explorer.Chain
   alias Explorer.Chain.Hash
@@ -64,8 +64,8 @@ defmodule BlockScoutWeb.TokenChannel do
     push(socket, "total_supply", %{
       total_supply:
         if(TokensView.decimals?(token),
-          do: CurrencyHelpers.format_according_to_decimals(token.total_supply, token.decimals),
-          else: CurrencyHelpers.format_integer_to_currency(token.total_supply)
+          do: CurrencyHelper.format_according_to_decimals(token.total_supply, token.decimals),
+          else: CurrencyHelper.format_integer_to_currency(token.total_supply)
         )
     })
 
