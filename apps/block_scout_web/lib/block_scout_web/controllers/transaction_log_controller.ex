@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.TransactionLogController do
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
   import BlockScoutWeb.Models.GetTransactionTags, only: [get_transaction_with_addresses_tags: 2]
 
-  alias BlockScoutWeb.{AccessHelpers, Controller, TransactionController, TransactionLogView}
+  alias BlockScoutWeb.{AccessHelper, Controller, TransactionController, TransactionLogView}
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
@@ -17,8 +17,8 @@ defmodule BlockScoutWeb.TransactionLogController do
            Chain.hash_to_transaction(transaction_hash,
              necessity_by_association: %{[to_address: :smart_contract] => :optional}
            ),
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
       full_options =
         Keyword.merge(
           [
@@ -31,8 +31,7 @@ defmodule BlockScoutWeb.TransactionLogController do
           paging_options(params)
         )
 
-      from_api = false
-      logs_plus_one = Chain.transaction_to_logs(transaction_hash, from_api, full_options)
+      logs_plus_one = Chain.transaction_to_logs(transaction_hash, full_options)
 
       {logs, next_page} = split_list_by_page(logs_plus_one)
 
@@ -90,8 +89,8 @@ defmodule BlockScoutWeb.TransactionLogController do
                :token_transfers => :optional
              }
            ),
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
       render(
         conn,
         "index.html",

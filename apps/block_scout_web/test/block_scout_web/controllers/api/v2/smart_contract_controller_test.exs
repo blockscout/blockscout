@@ -1547,6 +1547,19 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     end
   end
 
+  describe "/smart-contracts/counters" do
+    test "fetch counters", %{conn: conn} do
+      request = get(conn, "/api/v2/smart-contracts/counters")
+
+      assert %{
+               "smart_contracts" => _,
+               "new_smart_contracts_24h" => _,
+               "verified_smart_contracts" => _,
+               "new_verified_smart_contracts_24h" => _
+             } = json_response(request, 200)
+    end
+  end
+
   defp compare_item(%SmartContract{} = smart_contract, json) do
     assert smart_contract.compiler_version == json["compiler_version"]
 
