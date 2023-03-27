@@ -57,10 +57,7 @@ defmodule Indexer.Block.Fetcher.Receipts do
     logs_with_block_numbers =
       Enum.map(logs, fn %{transaction_hash: transaction_hash, block_number: block_number} = log_params ->
         if is_nil(block_number) do
-          transaction =
-            Enum.find(transaction_params, fn transaction ->
-              transaction[:hash] == transaction_hash
-            end)
+          transaction = find_transaction_by_hash(transaction_params, transaction_hash)
 
           %{log_params | block_number: transaction[:block_number]}
         else
@@ -69,5 +66,11 @@ defmodule Indexer.Block.Fetcher.Receipts do
       end)
 
     %{params | logs: logs_with_block_numbers}
+  end
+
+  defp find_transaction_by_hash(transaction_params, transaction_hash) do
+    Enum.find(transaction_params, fn transaction ->
+      transaction[:hash] == transaction_hash
+    end)
   end
 end

@@ -2,7 +2,7 @@
     class="container"
     data-page="search-results"
     data-chain-id="<%= Application.get_env(:block_scout_web, :chain_id) %>"
-	data-display-token-icons="<%= System.get_env("DISPLAY_TOKEN_ICONS") %>"
+	data-display-token-icons="<%= Application.get_env(:block_scout_web, :display_token_icons) %>"
 >
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="card">

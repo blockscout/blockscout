@@ -489,7 +489,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
 
     test "get token instance by token id", %{conn: conn} do
-      token = insert(:token)
+      token = insert(:token, type: "ERC-721")
 
       for _ <- 0..50 do
         insert(:token_instance, token_id: 0)
@@ -713,7 +713,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
 
     test "receive 0 count", %{conn: conn} do
-      token = insert(:token)
+      token = insert(:token, type: "ERC-721")
 
       insert(:token_instance, token_id: 0, token_contract_address_hash: token.contract_address_hash)
 
@@ -723,7 +723,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
 
     test "get count > 0", %{conn: conn} do
-      token = insert(:token)
+      token = insert(:token, type: "ERC-721")
 
       for _ <- 0..50 do
         insert(:token_instance, token_id: 0)

@@ -114,14 +114,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     files
     |> Enum.reduce(Map.new(), fn {name, content}, acc ->
       if content do
-        file_content =
-          if Helper.json_file?(name) do
-            content
-            |> Jason.decode!()
-            |> Jason.encode!()
-          else
-            content
-          end
+        file_content = get_file_content(name, content)
 
         acc
         |> Map.put(name, file_content)
@@ -138,14 +131,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       if file do
         {:ok, file_content} = File.read(file.path)
 
-        file_content =
-          if Helper.json_file?(file.filename) do
-            file_content
-            |> Jason.decode!()
-            |> Jason.encode!()
-          else
-            file_content
-          end
+        file_content = get_file_content(file.filename, file_content)
 
         acc
         |> Map.put(file.filename, file_content)
@@ -153,6 +139,16 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
         acc
       end
     end)
+  end
+
+  defp get_file_content(name, content) do
+    if Helper.json_file?(name) do
+      content
+      |> Jason.decode!()
+      |> Jason.encode!()
+    else
+      content
+    end
   end
 
   def http_get_request(url, params) do
@@ -323,31 +319,33 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       verification_metadata_sol
       |> Enum.reduce(full_params_initial, fn %{"name" => name, "content" => content, "path" => _path} = param,
                                              full_params_acc ->
-        compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
-
-        if String.downcase(name) == String.downcase(compilation_target_file_name) do
-          %{
-            "params_to_publish" => extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish")),
-            "abi" => Map.get(full_params_acc, "abi"),
-            "secondary_sources" => Map.get(full_params_acc, "secondary_sources"),
-            "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
-            "compilation_target_file_name" => compilation_target_file_name
-          }
-        else
-          secondary_sources = [
-            prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
-          ]
-
-          %{
-            "params_to_publish" => Map.get(full_params_acc, "params_to_publish"),
-            "abi" => Map.get(full_params_acc, "abi"),
-            "secondary_sources" => secondary_sources,
-            "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
-            "compilation_target_file_name" => compilation_target_file_name
-          }
-        end
+        construct_params_from_sourcify(name, full_params_acc, content, param, address_hash_string)
       end)
     end
+  end
+
+  defp construct_params_from_sourcify(name, full_params_acc, content, param, address_hash_string) do
+    compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
+
+    {params_to_publish, secondary_sources} =
+      if String.downcase(name) == String.downcase(compilation_target_file_name) do
+        params_to_publish = extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish"))
+        {params_to_publish, Map.get(full_params_acc, "secondary_sources")}
+      else
+        secondary_sources = [
+          prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
+        ]
+
+        {Map.get(full_params_acc, "params_to_publish"), secondary_sources}
+      end
+
+    %{
+      "params_to_publish" => params_to_publish,
+      "abi" => Map.get(full_params_acc, "abi"),
+      "secondary_sources" => secondary_sources,
+      "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
+      "compilation_target_file_name" => compilation_target_file_name
+    }
   end
 
   defp parse_json_from_sourcify_for_insertion(verification_metadata_json) do

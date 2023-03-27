@@ -1,13 +1,13 @@
 defmodule BlockScoutWeb.CsvExportController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.AccessHelpers
+  alias BlockScoutWeb.AccessHelper
   alias Explorer.Chain
 
   def index(conn, %{"address" => address_hash_string, "type" => type} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          :ok <- Chain.check_address_exists(address_hash),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          true <- supported_export_type(type) do
       render(conn, "index.html", address_hash_string: address_hash_string, type: type)
     else

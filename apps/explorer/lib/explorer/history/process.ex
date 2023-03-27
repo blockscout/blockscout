@@ -10,11 +10,7 @@ defmodule Explorer.History.Process do
 
   @impl GenServer
   def init([:ok, historian]) do
-    init_lag =
-      case Application.get_env(:explorer, historian, [])[:init_lag] do
-        t when is_integer(t) and t >= 0 -> t
-        _ -> 0
-      end
+    init_lag_milliseconds = Application.get_env(:explorer, historian, [])[:init_lag_milliseconds] || 0
 
     days_to_compile =
       case Application.get_env(:explorer, historian, [])[:days_to_compile_at_init] do
@@ -22,7 +18,7 @@ defmodule Explorer.History.Process do
         _ -> 365
       end
 
-    Process.send_after(self(), {:compile_historical_records, days_to_compile}, init_lag)
+    Process.send_after(self(), {:compile_historical_records, days_to_compile}, init_lag_milliseconds)
     {:ok, %{historian: historian}}
   end
 
@@ -77,7 +73,7 @@ defmodule Explorer.History.Process do
     end)
   end
 
-  # Helpers
+  # Helper
   @typep milliseconds :: non_neg_integer()
 
   @spec config_or_default(atom(), term(), module()) :: term()
