@@ -45,7 +45,7 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
-    CurrencyHelpers,
+    CurrencyHelper,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -2693,7 +2693,7 @@ defmodule Explorer.Chain do
   end
 
   def balance_in_fiat(token_balance, %{fiat_value: fiat_value, decimals: decimals}) do
-    tokens = CurrencyHelpers.divide_decimals(token_balance.value, decimals)
+    tokens = CurrencyHelper.divide_decimals(token_balance.value, decimals)
     Decimal.mult(tokens, fiat_value)
   end
 
@@ -2702,7 +2702,7 @@ defmodule Explorer.Chain do
   end
 
   def balance_in_fiat(token_balance) do
-    tokens = CurrencyHelpers.divide_decimals(token_balance.value, token_balance.token.decimals)
+    tokens = CurrencyHelper.divide_decimals(token_balance.value, token_balance.token.decimals)
     price = token_balance.token.fiat_value
     Decimal.mult(tokens, price)
   end

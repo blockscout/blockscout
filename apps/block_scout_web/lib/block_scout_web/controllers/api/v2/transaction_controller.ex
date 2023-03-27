@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       type_filter_options: 1
     ]
 
-  alias BlockScoutWeb.AccessHelpers
+  alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.Models.TransactionStateHelper
   alias Explorer.Chain
   alias Indexer.Fetcher.FirstTraceOnDemand
@@ -72,8 +72,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
               necessity_by_association: Map.put(@transaction_necessity_by_association, :transaction_actions, :optional),
               api?: true
             )},
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params),
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params),
          preloaded <-
            Chain.preload_token_transfers(transaction, @token_transfers_in_tx_necessity_by_association, @api_true, false) do
       conn
@@ -109,8 +109,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
            {:not_found, Chain.hash_to_transaction(transaction_hash, @api_true)},
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
       if is_nil(transaction.block_number) do
         conn
         |> put_status(200)
@@ -138,8 +138,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
            {:not_found, Chain.hash_to_transaction(transaction_hash, @api_true)},
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
       paging_options = paging_options(params)
 
       full_options =
@@ -171,8 +171,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
            {:not_found, Chain.hash_to_transaction(transaction_hash, @api_true)},
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
       full_options =
         @internal_transaction_necessity_by_association
         |> Keyword.merge(paging_options(params))
@@ -200,8 +200,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
            {:not_found, Chain.hash_to_transaction(transaction_hash, @api_true)},
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
       full_options =
         [
           necessity_by_association: %{
@@ -241,8 +241,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
                 Map.merge(@transaction_necessity_by_association, %{[block: [miner: :names]] => :optional}),
               api?: true
             )},
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
-         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
       state_changes = TransactionStateHelper.state_changes(transaction)
 
       conn
