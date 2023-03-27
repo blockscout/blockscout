@@ -82,8 +82,6 @@ defmodule Indexer.Fetcher.Optimism do
       Publisher.broadcast([{:optimism_reorg_block, latest}], :realtime)
     end
 
-    Publisher.broadcast([{:optimism_reorg_block, latest}], :realtime)
-
     Process.send_after(self(), :reorg_monitor, block_check_interval)
 
     {:noreply, %{state | prev_latest: latest}}
