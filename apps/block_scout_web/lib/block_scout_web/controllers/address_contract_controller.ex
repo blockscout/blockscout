@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.AddressContractController do
 
   alias BlockScoutWeb.AccessHelpers
   alias BlockScoutWeb.AddressContractVerificationViaJsonController, as: VerificationController
+  alias Explorer.Celo.EpochUtil
   alias Explorer.{Chain, Market}
   alias Explorer.Etherscan.Contracts
   alias Explorer.ExchangeRates.Token
@@ -43,7 +44,8 @@ defmodule BlockScoutWeb.AddressContractController do
           coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
           exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
           counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-          tags: get_address_tags(address_hash, current_user(conn))
+          tags: get_address_tags(address_hash, current_user(conn)),
+          celo_epoch: EpochUtil.get_address_summary(address)
         )
       else
         {:error, :not_found} ->
@@ -58,7 +60,8 @@ defmodule BlockScoutWeb.AddressContractController do
             coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
             exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
             counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-            tags: get_address_tags(address_hash, current_user(conn))
+            tags: get_address_tags(address_hash, current_user(conn)),
+            celo_epoch: EpochUtil.get_address_summary(address)
           )
       end
     else

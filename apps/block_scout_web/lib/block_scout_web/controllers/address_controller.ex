@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.AddressController do
     Controller
   }
 
+  alias Explorer.Celo.EpochUtil
   alias Explorer.Counters.{AddressTokenTransfersCounter, AddressTransactionsCounter, AddressTransactionsGasUsageCounter}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Wei
@@ -106,7 +107,8 @@ defmodule BlockScoutWeb.AddressController do
         filter: params["filter"],
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
         current_path: Controller.current_full_path(conn),
-        tags: get_address_tags(address_hash, current_user(conn))
+        tags: get_address_tags(address_hash, current_user(conn)),
+        celo_epoch: EpochUtil.get_address_summary(address)
       )
     else
       :error ->
@@ -136,7 +138,8 @@ defmodule BlockScoutWeb.AddressController do
               filter: params["filter"],
               counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
               current_path: Controller.current_full_path(conn),
-              tags: get_address_tags(address_hash, current_user(conn))
+              tags: get_address_tags(address_hash, current_user(conn)),
+              celo_epoch: EpochUtil.get_address_summary(address)
             )
 
           _ ->

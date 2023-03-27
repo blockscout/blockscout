@@ -185,7 +185,9 @@
               <% end %>
             </dd>
           </dl>
-          <%= if assigns[:locked_gold] do %>
+          <!-- Celo Epoch -->
+          <%= if assigns[:celo_epoch] do %>
+          <%= unless is_nil(@celo_epoch.locked_gold) do %>
           <!-- Locked -->
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
@@ -194,11 +196,11 @@
                 <%= gettext("Locked CELO Balance") %>
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9">
-              <%= wei_to_ether_rounded(@locked_gold) %> <%= gettext "CELO" %>
+              <%= wei_to_ether_rounded(@celo_epoch.locked_gold) %> <%= gettext "CELO" %>
             </dd>
           </dl>
           <% end %>
-          <%= if assigns[:vote_activated_gold] do %>
+          <%= unless is_nil(@celo_epoch.vote_activated_gold) do %>
           <!-- Activated -->
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
@@ -207,11 +209,11 @@
               <%= gettext("Voting CELO Balance") %>
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9">
-              <%= wei_to_ether_rounded(@vote_activated_gold) %> <%= gettext "CELO" %>
+              <%= wei_to_ether_rounded(@celo_epoch.vote_activated_gold) %> <%= gettext "CELO" %>
             </dd>
           </dl>
           <% end %>
-          <%= if assigns[:pending_gold] do %>
+          <%= unless is_nil(@celo_epoch.pending_gold) do %>
           <!-- Pending unlocked -->
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
@@ -220,11 +222,11 @@
                 <%= gettext("Pending Unlocked Gold") %>
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9">
-              <%= wei_to_ether_rounded(@pending_gold) %> <%= gettext "CELO" %>
+              <%= wei_to_ether_rounded(@celo_epoch.pending_gold) %> <%= gettext "CELO" %>
             </dd>
           </dl>
           <% end %>
-          <%= if not is_nil(assigns[:voting_sum]) and not is_nil(@address.celo_account) and @address.celo_account.account_type == "normal" do %>
+          <%= if not is_nil(@celo_epoch.voting_sum) and not is_nil(@address.celo_account) and @address.celo_account.account_type == "normal" do %>
           <!-- Voter Rewards -->
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
@@ -233,11 +235,11 @@
                 <%= gettext("Lifetime Voting Rewards") %>
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9">
-              <%= wei_to_ether_rounded(@voting_sum) %> <%= gettext "CELO" %>
+              <%= wei_to_ether_rounded(@celo_epoch.voting_sum) %> <%= gettext "CELO" %>
             </dd>
           </dl>
           <% end %>
-          <%= if not is_nil(assigns[:validator_or_group_sum]) and not is_nil(assigns[:voting_sum]) and not is_nil(@address.celo_account) and (@address.celo_account.account_type == "validator" or @address.celo_account.account_type == "group") do %>
+          <%= if not is_nil(@celo_epoch.voting_sum) and not is_nil(@address.celo_account) and (@address.celo_account.account_type == "validator" or @address.celo_account.account_type == "group") do %>
           <!-- Validator / Group Rewards -->
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
@@ -246,9 +248,10 @@
               <%= gettext("Validator Rewards | Voting Rewards") %>
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9">
-              <%= wei_to_ether_rounded(@validator_or_group_sum) %> <%= gettext "cUSD" %> | <%= wei_to_ether_rounded(@voting_sum) %> <%= gettext "CELO" %>
+              <%= wei_to_ether_rounded(@celo_epoch.validator_or_group_sum) %> <%= gettext "cUSD" %> | <%= wei_to_ether_rounded(@celo_epoch.voting_sum) %> <%= gettext "CELO" %>
             </dd>
           </dl>
+          <% end %>
           <% end %>
           <!-- Tokens -->
           <dl class="row" data-test="outside_of_dropdown">

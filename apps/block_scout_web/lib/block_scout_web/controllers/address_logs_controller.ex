@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.AddressLogsController do
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, AddressLogsView, Controller}
+  alias Explorer.Celo.EpochUtil
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
@@ -69,7 +70,8 @@ defmodule BlockScoutWeb.AddressLogsController do
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-        tags: get_address_tags(address_hash, current_user(conn))
+        tags: get_address_tags(address_hash, current_user(conn)),
+        celo_epoch: EpochUtil.get_address_summary(address)
       )
     else
       _ ->
