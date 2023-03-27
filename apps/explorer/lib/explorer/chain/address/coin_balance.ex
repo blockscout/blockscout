@@ -131,9 +131,8 @@ defmodule Explorer.Chain.Address.CoinBalance do
   corresponds to the maximum balance in that day. Only the last 90 days of data are used.
   """
   def balances_by_day(address_hash, block_timestamp \\ nil) do
-    {days_to_consider, _} =
+    days_to_consider =
       Application.get_env(:block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance)[:coin_balance_history_days]
-      |> Integer.parse()
 
     CoinBalance
     |> join(:inner, [cb], b in Block, on: cb.block_number == b.number)

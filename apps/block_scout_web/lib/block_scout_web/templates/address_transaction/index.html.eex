@@ -21,19 +21,19 @@
               <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
                 <%= link(
                   gettext("All"),
-                  to: AccessHelpers.get_path(@conn, :address_transaction_path, :index, @address.hash),
+                  to: AccessHelper.get_path(@conn, :address_transaction_path, :index, @address.hash),
                   class: "address__link address__link--active dropdown-item",
                   "data-test": "filter_option"
                 ) %>
                 <%= link(
                   gettext("To"),
-                  to: AccessHelpers.get_path(@conn, :address_transaction_path, :index, @address.hash, %{:filter => "to"}),
+                  to: AccessHelper.get_path(@conn, :address_transaction_path, :index, @address.hash, %{:filter => "to"}),
                   class: "address__link address__link--active dropdown-item",
                   "data-test": "filter_option"
                 ) %>
                 <%= link(
                   gettext("From"),
-                  to: AccessHelpers.get_path(@conn, :address_transaction_path, :index, @address.hash, %{:filter => "from"}),
+                  to: AccessHelper.get_path(@conn, :address_transaction_path, :index, @address.hash, %{:filter => "from"}),
                   class: "address__link address__link--active dropdown-item",
                   "data-test": "filter_option"
                 ) %>

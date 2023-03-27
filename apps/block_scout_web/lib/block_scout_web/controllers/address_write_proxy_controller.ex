@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.AddressWriteProxyController do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
-  alias BlockScoutWeb.{AccessHelpers, AddressView}
+  alias BlockScoutWeb.{AccessHelper, AddressView}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.AddressWriteProxyController do
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true),
          false <- is_nil(address.smart_contract),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "index.html",

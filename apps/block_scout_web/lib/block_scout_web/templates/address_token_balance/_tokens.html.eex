@@ -21,7 +21,7 @@
             class: "dropdown-item"
           ) do %>
         <div class="row dropdown-row wh-sp">
-          <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
+          <%= if Application.get_env(:block_scout_web, :display_token_icons) do %>
             <% chain_id_for_token_icon = Application.get_env(:block_scout_web, :chain_id) %>
             <% address_hash = token.contract_address_hash %>
             <%=
@@ -32,7 +32,7 @@
               additional_classes: ["token-wallet-icon"]
             %>
           <% end %>
-          <p class="mb-0 col-md-6 pl-0 pr-0 el-1 flex-grow-2 <%= if System.get_env("DISPLAY_TOKEN_ICONS") !== "true", do: "ml-5px" %>"><%= token_name(token) %>
+          <p class="mb-0 col-md-6 pl-0 pr-0 el-1 flex-grow-2 <%= if !Application.get_env(:block_scout_web, :display_token_icons), do: "ml-5px" %>"><%= token_name(token) %>
           </p>
           <%= if token.fiat_value && token.decimals do %>
             <p class="mb-0 col-md-6 text-right usd-total">
@@ -48,7 +48,7 @@
           <% end %>
         </div>
         <div class="row dropdown-row wh-sp">
-          <p class="mb-0 ml-5px dropdown-amount <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true", do: "ml-20px" %>">
+          <p class="mb-0 ml-5px dropdown-amount <%= if Application.get_env(:block_scout_web, :display_token_icons), do: "ml-20px" %>">
             <%= if token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id) do %>
               1
             <% else %>

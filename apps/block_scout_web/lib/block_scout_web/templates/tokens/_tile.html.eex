@@ -6,7 +6,7 @@
       </span>
   </td>
   <td class="token-icon">
-    <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
+    <%= if Application.get_env(:block_scout_web, :display_token_icons) do %>
       <% chain_id_for_token_icon = Application.get_env(:block_scout_web, :chain_id) %>
       <% foreign_token_contract_address_hash = nil %>
       <% token_hash_for_token_icon = if foreign_token_contract_address_hash, do: foreign_token_contract_address_hash, else: Address.checksum(@token.contract_address_hash) %>

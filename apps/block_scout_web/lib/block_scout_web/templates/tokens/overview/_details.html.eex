@@ -1,4 +1,4 @@
-<% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
+<% circles_addresses_list = CustomContractsHelper.get_custom_addresses_list(:circles_addresses) %>
 <% address_hash_str = "0x" <> Base.encode16(@token.contract_address_hash.bytes, case: :lower) %>
 <% {:ok, created_from_address} = if @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
@@ -27,7 +27,7 @@
                     id="token-icon"
                     data-chain-id="<%= Application.get_env(:block_scout_web, :chain_id) %>"
                     data-address-hash="<%= Address.checksum(@token.contract_address_hash) %>"
-                    data-display-token-icons="<%= System.get_env("DISPLAY_TOKEN_ICONS") %>">
+                    data-display-token-icons="<%= Application.get_env(:block_scout_web, :display_token_icons) %>">
                   </span>
                   <div class="title-with-label"><%= @token.name %></div>
               <% else %>
@@ -54,7 +54,7 @@
             <dd class="col-sm-8 col-md-8 col-lg-9 contract-address">
               <%= link(
                   @token.contract_address_hash,
-                  to: AccessHelpers.get_path(@conn, :address_path, :show, 
+                  to: AccessHelper.get_path(@conn, :address_path, :show, 
                   Address.checksum(@token.contract_address_hash)),
                   "data-test": "token_contract_address"
                   ) 
@@ -108,7 +108,7 @@
               <%= gettext("Holders") %>
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9">
-              <% link = if @conn.request_path |> String.contains?("/token-holders"), do: "", else: AccessHelpers.get_path(@conn, :token_holder_path, :index, @token.contract_address_hash) %>
+              <% link = if @conn.request_path |> String.contains?("/token-holders"), do: "", else: AccessHelper.get_path(@conn, :token_holder_path, :index, @token.contract_address_hash) %>
               <a href="<%= link %>#holders" class="page-link bs-label large btn-no-border-link-to-tems" token-holder-count><%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching holders...") %></a>
             </dd>
           </dl>
@@ -119,7 +119,7 @@
               <%= gettext("Transfers") %>
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9">
-              <% link = if @conn.request_path |> String.contains?("/token-transfers"), do: "", else: AccessHelpers.get_path(@conn, :token_transfer_path, :index, @token.contract_address_hash) %>
+              <% link = if @conn.request_path |> String.contains?("/token-transfers"), do: "", else: AccessHelper.get_path(@conn, :token_transfer_path, :index, @token.contract_address_hash) %>
               <a href="<%= link %>#transfers" class="page-link bs-label large btn-no-border-link-to-tems" token-transfer-count><%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching transfers...") %></a>
             </dd>
           </dl>

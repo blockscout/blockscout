@@ -12,11 +12,11 @@
       <% end %>
     <% end %>
     <span class="d-inline-block tile-type-token-transfer-short-name">
-    <%= @token_transfer |> BlockScoutWeb.AddressView.address_partial_selector(:from, @address, true) |> BlockScoutWeb.RenderHelpers.render_partial() %>
+    <%= @token_transfer |> BlockScoutWeb.AddressView.address_partial_selector(:from, @address, true) |> BlockScoutWeb.RenderHelper.render_partial() %>
     </span>
     &rarr;
     <span class="d-inline-block tile-type-token-transfer-short-name">
-    <%= @token_transfer |> BlockScoutWeb.AddressView.address_partial_selector(:to, @address, true) |> BlockScoutWeb.RenderHelpers.render_partial() %>
+    <%= @token_transfer |> BlockScoutWeb.AddressView.address_partial_selector(:to, @address, true) |> BlockScoutWeb.RenderHelper.render_partial() %>
     </span>
   </span>
   <span class="col-xs-12 col-lg-4 ml-3 ml-sm-0">
