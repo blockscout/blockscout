@@ -90,7 +90,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
               tracer: Tracer
             )
   def run(block_numbers, json_rpc_named_arguments) do
-    unique_numbers = Enum.uniq(block_numbers)
+    unique_numbers =
+      block_numbers
+      |> Enum.uniq()
+      |> Chain.filter_consensus_block_numbers()
 
     filtered_unique_numbers =
       EthereumJSONRPC.block_numbers_in_range(unique_numbers) --
