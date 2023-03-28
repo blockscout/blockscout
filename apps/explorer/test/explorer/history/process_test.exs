@@ -8,19 +8,19 @@ defmodule Explorer.History.ProcessTest do
 
   setup do
     Application.put_env(:explorer, TestHistorian,
-      init_lag: 0,
+      init_lag_milliseconds: 0,
       days_to_compile_at_init: nil
     )
   end
 
   describe "init/1" do
-    test "sends compile_historical_records with no init_lag" do
+    test "sends compile_historical_records with no init_lag_milliseconds" do
       assert {:ok, %{:historian => TestHistorian}} = HistoryProcess.init([:ok, TestHistorian])
       assert_receive {:compile_historical_records, 365}
     end
 
-    test "sends compile_historical_records after some init_lag" do
-      Application.put_env(:explorer, TestHistorian, init_lag: 200)
+    test "sends compile_historical_records after some init_lag_milliseconds" do
+      Application.put_env(:explorer, TestHistorian, init_lag_milliseconds: 200)
       assert {:ok, %{:historian => TestHistorian}} = HistoryProcess.init([:ok, TestHistorian])
       refute_receive {:compile_historical_records, 365}, 150
       assert_receive {:compile_historical_records, 365}

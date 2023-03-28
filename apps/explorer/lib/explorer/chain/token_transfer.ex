@@ -173,7 +173,7 @@ defmodule Explorer.Chain.TokenTransfer do
     |> Chain.select_repo(options).all()
   end
 
-  @spec fetch_token_transfers_from_token_hash_and_token_id(Hash.t(), binary(), [paging_options | api?]) :: []
+  @spec fetch_token_transfers_from_token_hash_and_token_id(Hash.t(), non_neg_integer(), [paging_options | api?]) :: []
   def fetch_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
@@ -205,7 +205,7 @@ defmodule Explorer.Chain.TokenTransfer do
     Repo.one(query, timeout: :infinity)
   end
 
-  @spec count_token_transfers_from_token_hash_and_token_id(Hash.t(), binary(), [api?]) :: non_neg_integer()
+  @spec count_token_transfers_from_token_hash_and_token_id(Hash.t(), non_neg_integer(), [api?]) :: non_neg_integer()
   def count_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id, options) do
     query =
       from(

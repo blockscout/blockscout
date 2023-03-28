@@ -7,6 +7,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Utility.MissingBlockRange
   alias Indexer.Block.Catchup.Helper
 
@@ -209,7 +210,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   end
 
   defp missing_ranges_batch_size do
-    Application.get_env(:indexer, :missing_ranges_batch_size) || @default_missing_ranges_batch_size
+    Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_missing_ranges_batch_size
   end
 
   def parse_block_ranges(block_ranges_string) do
@@ -219,15 +220,10 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
       |> Enum.map(fn string_range ->
         case String.split(string_range, "..") do
           [from_string, "latest"] ->
-            parse_integer(from_string)
+            ExplorerHelper.parse_integer(from_string)
 
           [from_string, to_string] ->
-            with {from, ""} <- Integer.parse(from_string),
-                 {to, ""} <- Integer.parse(to_string) do
-              if from <= to, do: from..to, else: nil
-            else
-              _ -> nil
-            end
+            get_from_to(from_string, to_string)
 
           _ ->
             nil
@@ -247,9 +243,11 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
     end
   end
 
-  defp parse_integer(integer_string) do
-    case Integer.parse(integer_string) do
-      {integer, ""} -> integer
+  defp get_from_to(from_string, to_string) do
+    with {from, ""} <- Integer.parse(from_string),
+         {to, ""} <- Integer.parse(to_string) do
+      if from <= to, do: from..to, else: nil
+    else
       _ -> nil
     end
   end

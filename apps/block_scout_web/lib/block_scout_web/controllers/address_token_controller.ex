@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.AddressTokenController do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
-  alias BlockScoutWeb.{AccessHelpers, AddressTokenView, Controller}
+  alias BlockScoutWeb.{AccessHelper, AddressTokenView, Controller}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
@@ -15,11 +15,10 @@ defmodule BlockScoutWeb.AddressTokenController do
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash, [], false),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       token_balances_plus_one =
         address_hash
         |> Chain.fetch_paginated_last_token_balances(paging_options(params))
-        |> Market.add_price()
 
       {tokens, next_page} = split_list_by_page(token_balances_plus_one)
 
@@ -34,7 +33,6 @@ defmodule BlockScoutWeb.AddressTokenController do
 
       items =
         tokens
-        |> Market.add_price()
         |> Enum.map(fn {token_balance, token} ->
           View.render_to_string(
             AddressTokenView,
@@ -68,7 +66,7 @@ defmodule BlockScoutWeb.AddressTokenController do
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "index.html",
