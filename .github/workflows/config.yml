@@ -16,12 +16,6 @@ env:
   ACCOUNT_AUTH0_LOGOUT_URL: 'https://blockscoutcom.us.auth0.com/v2/logout'
   ACCOUNT_AUTH0_LOGOUT_RETURN_URL: 'https://blockscout.com/auth/logout'
   CACHE_VERSION: 20
-#  WORKLOAD_ID_PROVIDER_PROD: 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos'
-#  WORKLOAD_ID_PROVIDER_DEV: 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout/providers/github-by-repos'
-  #SERVICE_ACCOUNT_PROD:
-  #SERVICE_ACCOUNT_DEV:
-  #TAGS_DEV:
-  #TAGS_PROD:
 
 jobs:
   build-and-cache:
@@ -738,13 +732,8 @@ jobs:
   Build-Blockscout:
     uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.3
     needs: [credo, check_formatted, dialyzer, gettext, sobelow, eslint, jest, test_nethermind_mox_ethereum_jsonrpc, test_nethermind_mox_explorer, test_nethermind_mox_indexer, test_nethermind_mox_block_scout_web, test_event_stream, publish-test-results] 
-    env:
-      WORKLOAD_ID_PROVIDER_PROD: 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos'
-      WORKLOAD_ID_PROVIDER_DEV: 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout/providers/github-by-repos'
     with:
-      workload-id-provider: "${{ github.ref != 'ref/heads/main' && env.WORKLOAD_ID_PROVIDER_DEV ||  env.WORKLOAD_ID_PROVIDER_PROD }}"
-
-#      workload-id-provider: "${{ github.ref != 'ref/heads/main' && 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout/providers/github-by-repos' || 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos' }}"
+      workload-id-provider: "${{ github.ref != 'ref/heads/main' && 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout/providers/github-by-repos' || 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos' }}"
       service-account:   "${{ github.ref != 'ref/heads/main' && 'blockscout-images-dev@devopsre.iam.gserviceaccount.com' || 'blockscout-images@devopsre.iam.gserviceaccount.com' }}"
       artifact-registry: "${{ github.ref != 'ref/heads/main' && format('{0}/blockscout', vars.DEV_IMAGE_REPO) || 'us-west1-docker.pkg.dev/devopsre/blockscout/blockscout' }}"
       tag: "${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }}"
