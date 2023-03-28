@@ -24,6 +24,7 @@
 
 ### Chore
 
+- [#7147](https://github.com/blockscout/blockscout/pull/7147) - Add missing GAS_PRICE_ORACLE_ vars to Makefile
 - [#7144](https://github.com/blockscout/blockscout/pull/7144) - Update Blockscout logo
 - [#7136](https://github.com/blockscout/blockscout/pull/7136) - Add release link or commit hash to docker images
 - [#7097](https://github.com/blockscout/blockscout/pull/7097) - Force display token instance page
