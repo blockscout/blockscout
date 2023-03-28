@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.CurrencyHelpers do
+defmodule BlockScoutWeb.CurrencyHelper do
   @moduledoc """
   Helper functions for interacting with `t:BlockScoutWeb.ExchangeRates.USD.t/0` values.
   """
@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.CurrencyHelpers do
 
   ## Examples
 
-      iex> BlockScoutWeb.CurrencyHelpers.format_integer_to_currency(1000000)
+      iex> BlockScoutWeb.CurrencyHelper.format_integer_to_currency(1000000)
       "1,000,000"
   """
   @spec format_integer_to_currency(non_neg_integer() | nil) :: String.t()

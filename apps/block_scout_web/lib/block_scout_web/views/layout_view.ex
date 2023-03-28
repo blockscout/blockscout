@@ -113,25 +113,34 @@ defmodule BlockScoutWeb.LayoutView do
     BlockScoutWeb.version()
   end
 
+  def release_link(""), do: ""
+  def release_link(nil), do: ""
+
   def release_link(version) do
     release_link_env_var = Application.get_env(:block_scout_web, :release_link)
 
     release_link =
-      cond do
-        version == "" || version == nil ->
-          nil
-
-        release_link_env_var == "" || release_link_env_var == nil ->
-          "https://github.com/blockscout/blockscout/releases/tag/" <> version
-
-        true ->
-          release_link_env_var
+      if release_link_env_var == "" || release_link_env_var == nil do
+        release_link_from_version(version)
+      else
+        release_link_env_var
       end
 
-    if release_link == nil do
-      ""
+    html_escape({:safe, "<a href=\"#{release_link}\" class=\"footer-link\" target=\"_blank\">#{version}</a>"})
+  end
+
+  def release_link_from_version(version) do
+    repo = "https://github.com/blockscout/blockscout"
+
+    if String.contains?(version, "+commit.") do
+      commit_hash =
+        version
+        |> String.split("+commit.")
+        |> List.last()
+
+      repo <> "/commit/" <> commit_hash
     else
-      html_escape({:safe, "<a href=\"#{release_link}\" class=\"footer-link\" target=\"_blank\">#{version}</a>"})
+      repo <> "/releases/tag/" <> version
     end
   end
 

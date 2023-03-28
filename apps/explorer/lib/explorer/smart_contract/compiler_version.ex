@@ -3,6 +3,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
   Adapter for fetching compiler versions from https://solc-bin.ethereum.org/bin/list.json.
   """
 
+  alias Explorer.Helper
   alias Explorer.SmartContract.RustVerifierInterface
 
   @unsupported_solc_versions ~w(0.1.1 0.1.2)
@@ -91,12 +92,12 @@ defmodule Explorer.SmartContract.CompilerVersion do
           |> Enum.sort(fn version1, version2 ->
             versions1 = String.split(version1, ".")
             versions2 = String.split(version2, ".")
-            major1 = versions1 |> Enum.at(0) |> parse_integer()
-            major2 = versions2 |> Enum.at(0) |> parse_integer()
-            minor1 = versions1 |> Enum.at(1) |> parse_integer()
-            minor2 = versions2 |> Enum.at(1) |> parse_integer()
-            patch1 = versions1 |> Enum.at(2) |> String.split("-") |> Enum.at(0) |> parse_integer()
-            patch2 = versions2 |> Enum.at(2) |> String.split("-") |> Enum.at(0) |> parse_integer()
+            major1 = versions1 |> Enum.at(0) |> Helper.parse_integer()
+            major2 = versions2 |> Enum.at(0) |> Helper.parse_integer()
+            minor1 = versions1 |> Enum.at(1) |> Helper.parse_integer()
+            minor2 = versions2 |> Enum.at(1) |> Helper.parse_integer()
+            patch1 = versions1 |> Enum.at(2) |> String.split("-") |> Enum.at(0) |> Helper.parse_integer()
+            patch2 = versions2 |> Enum.at(2) |> String.split("-") |> Enum.at(0) |> Helper.parse_integer()
 
             major1 > major2 || (major1 == major2 && minor1 > minor2) ||
               (major1 == major2 && minor1 == minor2 && patch1 > patch2)
@@ -104,13 +105,6 @@ defmodule Explorer.SmartContract.CompilerVersion do
       end
 
     ["latest" | versions]
-  end
-
-  defp parse_integer(string) do
-    case Integer.parse(string) do
-      {number, ""} -> number
-      _ -> nil
-    end
   end
 
   @spec remove_unsupported_versions([String.t()], :solc | :vyper) :: [String.t()]
@@ -164,46 +158,56 @@ defmodule Explorer.SmartContract.CompilerVersion do
 
   def get_strict_compiler_version(compiler, compiler_version) do
     case compiler do
-      :solc ->
-        if compiler_version == "latest" do
-          compiler_versions = fetch_version_list(:solc)
+      :solc -> get_solc_latest_stable_version(compiler_version)
+      :vyper -> get_vyper_latest_stable_version(compiler_version)
+    end
+  end
 
-          if Enum.count(compiler_versions) > 1 do
-            latest_stable_version =
-              compiler_versions
-              |> Enum.drop(1)
-              |> Enum.reduce_while("", fn version, acc ->
-                if String.contains?(version, "-nightly") do
-                  {:cont, acc}
-                else
-                  {:halt, version}
-                end
-              end)
+  def get_solc_latest_stable_version(compiler_version) do
+    if compiler_version == "latest" do
+      get_solc_latest_stable_version_inner()
+    else
+      compiler_version
+    end
+  end
 
-            latest_stable_version
-          else
-            "latest"
-          end
-        else
-          compiler_version
-        end
+  defp get_solc_latest_stable_version_inner do
+    compiler_versions = fetch_version_list(:solc)
 
-      :vyper ->
-        if compiler_version == "latest" do
-          compiler_versions = fetch_version_list(:vyper)
+    if Enum.count(compiler_versions) > 1 do
+      compiler_versions
+      |> Enum.drop(1)
+      |> Enum.reduce_while("", fn version, acc ->
+        filter_nightly_version(acc, version)
+      end)
+    else
+      "latest"
+    end
+  end
 
-          if Enum.count(compiler_versions) > 1 do
-            latest_stable_version =
-              compiler_versions
-              |> Enum.at(1)
+  defp filter_nightly_version(acc, version) do
+    if String.contains?(version, "-nightly") do
+      {:cont, acc}
+    else
+      {:halt, version}
+    end
+  end
 
-            latest_stable_version
-          else
-            "latest"
-          end
-        else
-          compiler_version
-        end
+  def get_vyper_latest_stable_version(compiler_version) do
+    if compiler_version == "latest" do
+      compiler_versions = fetch_version_list(:vyper)
+
+      if Enum.count(compiler_versions) > 1 do
+        latest_stable_version =
+          compiler_versions
+          |> Enum.at(1)
+
+        latest_stable_version
+      else
+        "latest"
+      end
+    else
+      compiler_version
     end
   end
 end

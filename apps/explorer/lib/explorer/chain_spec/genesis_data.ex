@@ -79,6 +79,7 @@ defmodule Explorer.ChainSpec.GenesisData do
             end
 
           {:error, reason} ->
+            # credo:disable-for-next-line
             Logger.warn(fn -> "Failed to fetch genesis data. #{inspect(reason)}" end)
         end
       end)

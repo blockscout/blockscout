@@ -151,30 +151,42 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
     if Chain.smart_contract_fully_verified?(address_hash_string) do
       {:ok, :already_fully_verified}
     else
-      if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
-        if Chain.smart_contract_verified?(address_hash_string) do
-          case Sourcify.check_by_address(address_hash_string) do
-            {:ok, _verified_status} ->
-              get_metadata_and_publish(address_hash_string, nil)
+      check_and_verify_inner(address_hash_string)
+    end
+  end
 
-            _ ->
-              {:error, :not_verified}
-          end
-        else
-          case Sourcify.check_by_address_any(address_hash_string) do
-            {:ok, "full", metadata} ->
-              process_metadata_and_publish(address_hash_string, metadata, false, false)
-
-            {:ok, "partial", metadata} ->
-              process_metadata_and_publish(address_hash_string, metadata, true, false)
-
-            _ ->
-              {:error, :not_verified}
-          end
-        end
+  defp check_and_verify_inner(address_hash_string) do
+    if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
+      if Chain.smart_contract_verified?(address_hash_string) do
+        check_by_address_in_sourcify_if_contract_verified(address_hash_string)
       else
-        {:error, :sourcify_disabled}
+        check_by_address_in_sourcify_else(address_hash_string)
       end
+    else
+      {:error, :sourcify_disabled}
+    end
+  end
+
+  defp check_by_address_in_sourcify_if_contract_verified(address_hash_string) do
+    case Sourcify.check_by_address(address_hash_string) do
+      {:ok, _verified_status} ->
+        get_metadata_and_publish(address_hash_string, nil)
+
+      _ ->
+        {:error, :not_verified}
+    end
+  end
+
+  defp check_by_address_in_sourcify_else(address_hash_string) do
+    case Sourcify.check_by_address_any(address_hash_string) do
+      {:ok, "full", metadata} ->
+        process_metadata_and_publish(address_hash_string, metadata, false, false)
+
+      {:ok, "partial", metadata} ->
+        process_metadata_and_publish(address_hash_string, metadata, true, false)
+
+      _ ->
+        {:error, :not_verified}
     end
   end
 

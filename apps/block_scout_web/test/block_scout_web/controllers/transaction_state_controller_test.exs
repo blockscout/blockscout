@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
   import Mox
 
   import BlockScoutWeb.WebRouter.Helpers, only: [transaction_state_path: 3]
-  import BlockScoutWeb.WeiHelpers, only: [format_wei_value: 2]
+  import BlockScoutWeb.WeiHelper, only: [format_wei_value: 2]
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
   alias Explorer.Chain.Wei
 
