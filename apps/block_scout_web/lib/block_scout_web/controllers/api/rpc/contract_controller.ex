@@ -3,12 +3,12 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
   require Logger
 
-  alias BlockScoutWeb.API.RPC.{AddressController, Helpers}
+  alias BlockScoutWeb.API.RPC.{AddressController, Helper}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.VerificationStatus
   alias Explorer.Etherscan.Contracts
-  alias Explorer.SmartContract.Helper
+  alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Explorer.SmartContract.Solidity.{Publisher, PublishHelper}
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
@@ -179,11 +179,11 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
       jsons =
         files_array
-        |> Enum.filter(fn file -> Helper.json_file?(file.filename) end)
+        |> Enum.filter(fn file -> SmartContractHelper.json_file?(file.filename) end)
 
       sols =
         files_array
-        |> Enum.filter(fn file -> Helper.sol_file?(file.filename) end)
+        |> Enum.filter(fn file -> SmartContractHelper.sol_file?(file.filename) end)
 
       if length(jsons) > 0 and length(sols) > 0 do
         {:ok, files_array}
@@ -311,7 +311,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   end
 
   def listcontracts(conn, params) do
-    with pagination_options <- Helpers.put_pagination_options(%{}, params),
+    with pagination_options <- Helper.put_pagination_options(%{}, params),
          {:params, {:ok, options}} <- {:params, add_filters(pagination_options, params)} do
       options_with_defaults =
         options

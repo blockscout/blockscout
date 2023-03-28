@@ -1,6 +1,6 @@
-defmodule Explorer.AccessHelpers do
+defmodule Explorer.AccessHelper do
   @moduledoc """
-    Helpers to restrict access to some pages filtering by address
+    Helper to restrict access to some pages filtering by address
   """
 
   def restricted_access?(address_hash, params) do

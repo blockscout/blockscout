@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.ErrorHelpers do
+defmodule BlockScoutWeb.ErrorHelper do
   @moduledoc """
   Conveniences for translating and building error messages.
   """
