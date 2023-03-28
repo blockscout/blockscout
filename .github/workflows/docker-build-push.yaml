@@ -12,64 +12,70 @@ jobs:
     if: github.ref != 'refs/heads/main'
     with:
       workload-id-provider: projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout/providers/github-by-repos
-      service-account:  'blockscout-images-dev@devopsre.iam.gserviceaccount.com'
-      artifact-registry: ${{ vars.DEV_IMAGE_REPO }}/blockscout
-      tag: testing
+#      service-account:  'blockscout-images-dev@devopsre.iam.gserviceaccount.com'
+#      artifact-registry: ${{ vars.DEV_IMAGE_REPO }}/blockscout
+      service-account:   "${{ github.ref != 'ref/heads/main' && blockscout-images-dev@devopsre.iam.gserviceaccount.com || blockscout-images@devopsre.iam.gserviceaccount.com}}"
+      artifact-registry: "${{ github.ref != 'ref/heads/main' && vars.DEV_IMAGE_REPO/blockscout || us-west1-docker.pkg.dev/devopsre/blockscout/blockscout }}"
+      tag: "${{ github.ref != 'ref/heads/main' && testing || latest }}"
       context: .
       file: docker/Dockerfile
       build-args: |
-        "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.event.pull_request.head.sha }}"
+        "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.ref != 'ref/heads/main' && github.event.pull_request.head.sha || github.sha }}"
+
+#      build-args: |
+#        "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.event.pull_request.head.sha }}"
+
       trivy: true
       trivy-timeout: 20m
 
-  Build-Blockscout:
-   uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.3
-   if: github.ref == 'refs/heads/main'
-   with:
-      workload-id-provider: projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos
-
-      service-account:  'blockscout-images@devopsre.iam.gserviceaccount.com'
-      artifact-registry: us-west1-docker.pkg.dev/devopsre/blockscout/blockscout
-      tag: latest
-      context: .
-      file: docker/Dockerfile
-      build-args: |
-        "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.sha }}"
-      trivy: true
-      trivy-timeout: 20m
-
-  Build-Blockscout-api-Dev:
-    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.3
-    if: github.ref != 'refs/heads/main'
-    with:
-      workload-id-provider: projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout/providers/github-by-repos
-      service-account:  'blockscout-images-dev@devopsre.iam.gserviceaccount.com'
-      artifact-registry: ${{ vars.DEV_IMAGE_REPO }}/blockscout-api
-      tag: testing
-      context: .
-      file: docker/Dockerfile
-      build-args: |
-        "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.event.pull_request.head.sha }}"
-        "DISABLE_WRITE_API=true",
-        "DISABLE_INDEXER=true",
-        "DISABLE_WEBAPP=true",
-      trivy: true
-      trivy-timeout: 20m
-
-  Build-Blockscout-api:
-   uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.3
-   if: github.ref == 'refs/heads/main'
-   with:
-      workload-id-provider: projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos
-      service-account:  'blockscout-images@devopsre.iam.gserviceaccount.com'
-      artifact-registry: us-west1-docker.pkg.dev/devopsre/blockscout/blockscout-api
-      tag: latest
-      context: .
-      file: docker/Dockerfile
-      build-args: |
-        "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.sha }}"
-        "DISABLE_WRITE_API=true",
-        "DISABLE_INDEXER=true",
-        "DISABLE_WEBAPP=true",
-      trivy: true
-      trivy-timeout: 20m
+#  Build-Blockscout:
+#   uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.3
+#   if: github.ref == 'refs/heads/main'
+#   with:
+#      workload-id-provider: projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos
+#
+#      service-account:  'blockscout-images@devopsre.iam.gserviceaccount.com'
+#      artifact-registry: us-west1-docker.pkg.dev/devopsre/blockscout/blockscout
+#      tag: latest
+#      context: .
+#      file: docker/Dockerfile
+#      build-args: |
+#        "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.sha }}"
+#      trivy: true
+#      trivy-timeout: 20m
+#
+#  Build-Blockscout-api-Dev:
+#    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.3
+#    if: github.ref != 'refs/heads/main'
+#    with:
+#      workload-id-provider: projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout/providers/github-by-repos
+#      service-account:  'blockscout-images-dev@devopsre.iam.gserviceaccount.com'
+#      artifact-registry: ${{ vars.DEV_IMAGE_REPO }}/blockscout-api
+#      tag: testing
+#      context: .
+#      file: docker/Dockerfile
+#      build-args: |
+#        "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.event.pull_request.head.sha }}"
+#        "DISABLE_WRITE_API=true",
+#        "DISABLE_INDEXER=true",
+#        "DISABLE_WEBAPP=true",
+#      trivy: true
+#      trivy-timeout: 20m
+#
+#  Build-Blockscout-api:
+#   uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.3
+#   if: github.ref == 'refs/heads/main'
+#   with:
+#      workload-id-provider: projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos
+#      service-account:  'blockscout-images@devopsre.iam.gserviceaccount.com'
+#      artifact-registry: us-west1-docker.pkg.dev/devopsre/blockscout/blockscout-api
+#      tag: latest
+#      context: .
+#      file: docker/Dockerfile
+#      build-args: |
+#        "FORCE_MIX_COMPILE_CACHE_MISS=${{ github.sha }}"
+#        "DISABLE_WRITE_API=true",
+#        "DISABLE_INDEXER=true",
+#        "DISABLE_WEBAPP=true",
+#      trivy: true
+#      trivy-timeout: 20m
