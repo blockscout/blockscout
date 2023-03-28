@@ -19,7 +19,7 @@
     "eslint": "eslint js/**"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^6.3.0",
+    "@fortawesome/fontawesome-free": "^6.4.0",
     "@amplitude/analytics-browser": "^1.9.1",
     "@tarekraafat/autocomplete.js": "^10.2.7",
     "@walletconnect/web3-provider": "^1.8.0",
@@ -58,7 +58,7 @@
     "lodash.reduce": "^4.6.0",
     "luxon": "^3.3.0",
     "malihu-custom-scrollbar-plugin": "3.1.5",
-    "mixpanel-browser": "^2.45.0",
+    "mixpanel-browser": "^2.46.0",
     "moment": "^2.29.4",
     "nanomorph": "^5.4.0",
     "numeral": "^2.0.6",
@@ -102,7 +102,7 @@
     "postcss": "^8.4.21",
     "postcss-loader": "^7.1.0",
     "sass": "^1.59.3",
-    "sass-loader": "^13.2.1",
+    "sass-loader": "^13.2.2",
     "style-loader": "^3.3.2",
     "webpack": "^5.76.3",
     "webpack-cli": "^5.0.1"

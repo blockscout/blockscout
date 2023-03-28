@@ -1,11 +1,11 @@
 defmodule BlockScoutWeb.Tokens.OverviewView do
   use BlockScoutWeb, :view
 
-  alias Explorer.{Chain, CustomContractsHelpers}
+  alias Explorer.{Chain, CustomContractsHelper}
   alias Explorer.Chain.{Address, SmartContract, Token}
   alias Explorer.SmartContract.{Helper, Writer}
 
-  alias BlockScoutWeb.{AccessHelpers, CurrencyHelpers, LayoutView}
+  alias BlockScoutWeb.{AccessHelper, CurrencyHelper, LayoutView}
 
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1, contract_interaction_disabled?: 0]
 
@@ -78,7 +78,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
     if Map.has_key?(token, :custom_cap) && token.custom_cap do
       token.custom_cap
     else
-      tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
+      tokens = CurrencyHelper.divide_decimals(token.total_supply, token.decimals)
       price = token.fiat_value
       Decimal.mult(tokens, price)
     end

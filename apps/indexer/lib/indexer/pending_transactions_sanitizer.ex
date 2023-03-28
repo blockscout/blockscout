@@ -78,21 +78,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
              |> request()
              |> json_rpc(json_rpc_named_arguments) do
         if result do
-          block_hash = Map.get(result, "blockHash")
-
-          if block_hash do
-            Logger.debug(
-              "Transaction with hash #{pending_tx_hash_str} already included into the block #{block_hash}. We should invalidate consensus for it in order to re-fetch transactions",
-              fetcher: :pending_transactions_to_refetch
-            )
-
-            fetch_block_and_invalidate(block_hash, pending_tx, result)
-          else
-            Logger.debug(
-              "Transaction with hash #{pending_tx_hash_str} is still pending. Do nothing.",
-              fetcher: :pending_transactions_to_refetch
-            )
-          end
+          fetch_block_and_invalidate_wrapper(pending_tx, pending_tx_hash_str, result)
         else
           Logger.debug(
             "Transaction with hash #{pending_tx_hash_str} doesn't exist in the node anymore. We should remove it from Blockscout DB.",
@@ -107,6 +93,24 @@ defmodule Indexer.PendingTransactionsSanitizer do
     Logger.debug("Pending transactions are sanitized",
       fetcher: :pending_transactions_to_refetch
     )
+  end
+
+  defp fetch_block_and_invalidate_wrapper(pending_tx, pending_tx_hash_str, result) do
+    block_hash = Map.get(result, "blockHash")
+
+    if block_hash do
+      Logger.debug(
+        "Transaction with hash #{pending_tx_hash_str} already included into the block #{block_hash}. We should invalidate consensus for it in order to re-fetch transactions",
+        fetcher: :pending_transactions_to_refetch
+      )
+
+      fetch_block_and_invalidate(block_hash, pending_tx, result)
+    else
+      Logger.debug(
+        "Transaction with hash #{pending_tx_hash_str} is still pending. Do nothing.",
+        fetcher: :pending_transactions_to_refetch
+      )
+    end
   end
 
   defp fetch_pending_transaction_and_delete(transaction) do

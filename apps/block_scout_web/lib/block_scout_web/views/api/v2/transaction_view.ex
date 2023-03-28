@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
-  alias BlockScoutWeb.Tokens.Helpers
+  alias BlockScoutWeb.Tokens.Helper, as: TokensHelper
   alias BlockScoutWeb.TransactionStateView
   alias Ecto.Association.NotLoaded
   alias Explorer.ExchangeRates.Token, as: TokenRate
@@ -123,7 +123,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def prepare_token_transfer_total(token_transfer) do
-    case Helpers.token_transfer_amount_for_api(token_transfer) do
+    case TokensHelper.token_transfer_amount_for_api(token_transfer) do
       {:ok, :erc721_instance} ->
         %{"token_id" => List.first(token_transfer.token_ids)}
 

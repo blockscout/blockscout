@@ -25,6 +25,11 @@
 
 ### Chore
 
+- [#7147](https://github.com/blockscout/blockscout/pull/7147) - Add missing GAS_PRICE_ORACLE_ vars to Makefile
+- [#7144](https://github.com/blockscout/blockscout/pull/7144) - Update Blockscout logo
+- [#7136](https://github.com/blockscout/blockscout/pull/7136) - Add release link or commit hash to docker images
+- [#7097](https://github.com/blockscout/blockscout/pull/7097) - Force display token instance page
+- [#7119](https://github.com/blockscout/blockscout/pull/7119), [#7149](https://github.com/blockscout/blockscout/pull/7149) - Refactor runtime config
 - [#7072](https://github.com/blockscout/blockscout/pull/7072) - Add a separate docker compose for geth with clique consensus
 - [#7056](https://github.com/blockscout/blockscout/pull/7056) - Add path_helper in interact.js
 - [#7040](https://github.com/blockscout/blockscout/pull/7040) - Use alias BlockScoutWeb.Cldr.Number

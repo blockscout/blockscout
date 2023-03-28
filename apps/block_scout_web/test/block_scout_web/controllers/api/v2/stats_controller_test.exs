@@ -8,10 +8,10 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       start_supervised!(AddressesCounter)
       start_supervised!(AverageBlockTime)
 
-      Application.put_env(:explorer, AverageBlockTime, enabled: true)
+      Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 
       on_exit(fn ->
-        Application.put_env(:explorer, AverageBlockTime, enabled: false)
+        Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
       end)
 
       :ok
