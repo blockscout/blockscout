@@ -18,7 +18,7 @@ jobs:
       DOCKER_CHAIN_NAME: base-goerli
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -45,16 +45,11 @@ jobs:
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
-            API_PATH=/
-            NETWORK_PATH=/
             DISABLE_WEBAPP=false
             DISABLE_WRITE_API=false
             CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER=
             WOBSERVER_ENABLED=false
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            DISABLE_BRIDGE_MARKET_CAP_UPDATER=false
-            CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL=
-            SOCKET_ROOT=/
-            COIN_NAME=ETH
-            SUBNETWORK=L2 Goerli
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
