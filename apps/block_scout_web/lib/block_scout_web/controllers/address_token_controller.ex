@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.AddressTokenController do
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, AddressTokenView, Controller}
+  alias Explorer.Celo.EpochUtil
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
@@ -77,7 +78,8 @@ defmodule BlockScoutWeb.AddressTokenController do
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
-        tags: get_address_tags(address_hash, current_user(conn))
+        tags: get_address_tags(address_hash, current_user(conn)),
+        celo_epoch: EpochUtil.get_address_summary(address)
       )
     else
       {:restricted_access, _} ->

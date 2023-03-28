@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.AddressPage do
   def apply_filter(session, direction) do
     session
     |> click(css("[data-test='filter_dropdown']", text: "Filter: All"))
+    |> take_screenshot([{:log, true}])
     |> click(css("[data-test='filter_option']", text: direction))
   end
 
@@ -169,7 +170,11 @@ defmodule BlockScoutWeb.AddressPage do
   def visit_page(session, %Address{hash: address_hash}), do: visit_page(session, address_hash)
 
   def visit_page(session, address_hash) do
-    visit(session, "/address/#{address_hash}")
+    session
+    |> visit("/address/#{address_hash}")
+    # We need to scroll to the element first, if it's not visible it won't be clicked
+    # and the test will fail
+    |> touch_scroll(css("[data-test='address_gas_used']"), 0, 300)
   end
 
   def visit_page(session) do

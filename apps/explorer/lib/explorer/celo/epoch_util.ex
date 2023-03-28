@@ -4,7 +4,7 @@ defmodule Explorer.Celo.EpochUtil do
   """
   alias Explorer.Celo.Util
   alias Explorer.Chain
-  alias Explorer.Chain.CeloElectionRewards
+  alias Explorer.Chain.{CeloAccountEpoch, CeloElectionRewards, Wei}
 
   def epoch_by_block_number(bn) when rem(bn, 17_280) == 0, do: div(bn, blocks_per_epoch())
   def epoch_by_block_number(bn), do: div(bn, blocks_per_epoch()) + 1
@@ -54,4 +54,44 @@ defmodule Explorer.Celo.EpochUtil do
   end
 
   def blocks_per_epoch, do: 17_280
+
+  def get_address_summary(address) do
+    {validator_or_group_sum, voting_sum} = get_sums(address)
+
+    last_account_epoch = CeloAccountEpoch.last_for_address(address.hash)
+    {locked_gold, vote_activated_gold} = last_account_epoch |> calculate_locked_and_vote_activated_gold()
+
+    pending_gold = Chain.fetch_sum_available_celo_unlocked_for_address(address.hash)
+
+    %{
+      validator_or_group_sum: validator_or_group_sum,
+      voting_sum: voting_sum,
+      locked_gold: locked_gold,
+      vote_activated_gold: vote_activated_gold,
+      pending_gold: pending_gold
+    }
+  end
+
+  defp get_sums(%Chain.Address{celo_account: %Ecto.Association.NotLoaded{}, hash: address_hash}) do
+    {nil, CeloElectionRewards.get_rewards_sum_for_account(address_hash)}
+  end
+
+  defp get_sums(%Chain.Address{celo_account: nil, hash: address_hash}) do
+    {nil, CeloElectionRewards.get_rewards_sum_for_account(address_hash)}
+  end
+
+  defp get_sums(address) do
+    case address.celo_account.account_type do
+      "normal" -> {nil, CeloElectionRewards.get_rewards_sum_for_account(address.hash)}
+      type -> CeloElectionRewards.get_rewards_sums_for_account(address.hash, type)
+    end
+  end
+
+  defp calculate_locked_and_vote_activated_gold(nil) do
+    {:ok, zero_wei} = Wei.cast(0)
+    {zero_wei, zero_wei}
+  end
+
+  defp calculate_locked_and_vote_activated_gold(account_epoch),
+    do: {account_epoch.total_locked_gold, Wei.sub(account_epoch.total_locked_gold, account_epoch.nonvoting_locked_gold)}
 end
