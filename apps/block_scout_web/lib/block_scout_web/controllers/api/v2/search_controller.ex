@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.SearchController do
   use Phoenix.Controller
 
-  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1, from_param: 1]
 
   alias Explorer.Chain
 
@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.API.V2.SearchController do
 
     search_results_plus_one =
       paging_options
-      |> Chain.joint_search(offset, query)
+      |> Chain.joint_search(offset, query, api?: true)
 
     {search_results, next_page} = split_list_by_page(search_results_plus_one)
 
@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.API.V2.SearchController do
     result =
       query
       |> String.trim()
-      |> BlockScoutWeb.Chain.from_param()
+      |> from_param()
 
     conn
     |> put_status(200)

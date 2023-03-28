@@ -59,6 +59,8 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
 
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
+  @ipfs_protocol "ipfs://"
+  @ipfs_link "https://ipfs.io/ipfs/"
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
@@ -100,52 +102,64 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     {:ok, %{error: @no_uri_error}}
   end
 
-  def fetch_json(uri, _hex_token_id)
-      when uri in [
-             %{@token_uri => {:error, "(-32015) VM execution error."}},
-             %{@uri => {:error, "(-32015) VM execution error."}},
-             %{@token_uri => {:error, "(-32000) execution reverted"}},
-             %{@uri => {:error, "(-32000) execution reverted"}}
-           ] do
-    {:ok, %{error: @vm_execution_error}}
+  def fetch_json(%{@token_uri => uri}, hex_token_id) do
+    fetch_json_from_uri(uri, hex_token_id)
   end
 
-  def fetch_json(%{@token_uri => {:error, "(-32015) VM execution error." <> _}}, _hex_token_id) do
-    {:ok, %{error: @vm_execution_error}}
+  def fetch_json(%{@uri => uri}, hex_token_id) do
+    fetch_json_from_uri(uri, hex_token_id)
   end
 
-  def fetch_json(%{@uri => {:error, "(-32015) VM execution error." <> _}}, _hex_token_id) do
-    {:ok, %{error: @vm_execution_error}}
+  # CIDv0 IPFS links # https://docs.ipfs.tech/concepts/content-addressing/#version-0-v0
+  def fetch_json("Qm" <> _ = result, hex_token_id) do
+    if String.length(result) == 46 do
+      fetch_json_from_uri({:ok, [@ipfs_link <> result]}, hex_token_id)
+    else
+      Logger.debug(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
+
+      {:error, result}
+    end
   end
 
-  def fetch_json(%{@token_uri => {:error, "(-32000) execution reverted" <> _}}, _hex_token_id) do
-    {:ok, %{error: @vm_execution_error}}
+  def fetch_json(result, hex_token_id) do
+    case URI.parse(result) do
+      %URI{host: nil} ->
+        Logger.debug(["Unknown metadata format #{inspect(result)}."], fetcher: :token_instances)
+
+        {:error, result}
+
+      _ ->
+        fetch_json_from_uri({:ok, [result]}, hex_token_id)
+    end
   end
 
-  def fetch_json(%{@uri => {:error, "(-32000) execution reverted" <> _}}, _hex_token_id) do
-    {:ok, %{error: @vm_execution_error}}
+  defp fetch_json_from_uri({:error, error}, _hex_token_id) do
+    if error =~ "execution reverted" or error =~ @vm_execution_error do
+      {:ok, %{error: @vm_execution_error}}
+    else
+      Logger.debug(["Unknown metadata format error #{inspect(error)}."], fetcher: :token_instances)
+
+      {:error, error}
+    end
   end
 
-  def fetch_json(%{@token_uri => {:ok, ["http://" <> _ = token_uri]}}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, ["'" <> token_uri]}, hex_token_id) do
+    token_uri = token_uri |> String.split("'") |> List.first()
     fetch_metadata_inner(token_uri, hex_token_id)
   end
 
-  def fetch_json(%{@uri => {:ok, ["http://" <> _ = token_uri]}}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, ["http://" <> _ = token_uri]}, hex_token_id) do
     fetch_metadata_inner(token_uri, hex_token_id)
   end
 
-  def fetch_json(%{@token_uri => {:ok, ["https://" <> _ = token_uri]}}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, ["https://" <> _ = token_uri]}, hex_token_id) do
     fetch_metadata_inner(token_uri, hex_token_id)
   end
 
-  def fetch_json(%{@uri => {:ok, ["https://" <> _ = token_uri]}}, hex_token_id) do
-    fetch_metadata_inner(token_uri, hex_token_id)
-  end
-
-  def fetch_json(%{@token_uri => {:ok, ["data:application/json," <> json]}}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, ["data:application/json," <> json]}, hex_token_id) do
     decoded_json = URI.decode(json)
 
-    fetch_json(%{@token_uri => {:ok, [decoded_json]}}, hex_token_id)
+    fetch_json_from_uri({:ok, [decoded_json]}, hex_token_id)
   rescue
     e ->
       Logger.debug(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
@@ -155,23 +169,10 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       {:error, json}
   end
 
-  def fetch_json(%{@uri => {:ok, ["data:application/json," <> json]}}, hex_token_id) do
-    decoded_json = URI.decode(json)
-
-    fetch_json(%{@uri => {:ok, [decoded_json]}}, hex_token_id)
-  rescue
-    e ->
-      Logger.debug(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
-        fetcher: :token_instances
-      )
-
-      {:error, json}
-  end
-
-  def fetch_json(%{@token_uri => {:ok, ["data:application/json;base64," <> base64_encoded_json]}}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, ["data:application/json;base64," <> base64_encoded_json]}, hex_token_id) do
     case Base.decode64(base64_encoded_json) do
       {:ok, base64_decoded} ->
-        fetch_json(%{@token_uri => {:ok, [base64_decoded]}}, hex_token_id)
+        fetch_json_from_uri({:ok, [base64_decoded]}, hex_token_id)
 
       _ ->
         {:error, base64_encoded_json}
@@ -189,41 +190,15 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       {:error, base64_encoded_json}
   end
 
-  def fetch_json(%{@uri => {:ok, ["data:application/json;base64," <> base64_encoded_json]}}, hex_token_id) do
-    case Base.decode64(base64_encoded_json) do
-      {:ok, base64_decoded} ->
-        fetch_json(%{@uri => {:ok, [base64_decoded]}}, hex_token_id)
-
-      _ ->
-        {:error, base64_encoded_json}
-    end
-  rescue
-    e ->
-      Logger.debug(
-        ["Unknown metadata format base64 #{inspect(base64_encoded_json)}", Exception.format(:error, e, __STACKTRACE__)],
-        fetcher: :token_instances
-      )
-
-      {:error, base64_encoded_json}
-  end
-
-  def fetch_json(%{@token_uri => {:ok, ["ipfs://ipfs/" <> right]}}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, ["#{@ipfs_protocol}ipfs/" <> right]}, hex_token_id) do
     fetch_from_ipfs(right, hex_token_id)
   end
 
-  def fetch_json(%{@uri => {:ok, ["ipfs://ipfs/" <> right]}}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, [@ipfs_protocol <> right]}, hex_token_id) do
     fetch_from_ipfs(right, hex_token_id)
   end
 
-  def fetch_json(%{@token_uri => {:ok, ["ipfs://" <> right]}}, hex_token_id) do
-    fetch_from_ipfs(right, hex_token_id)
-  end
-
-  def fetch_json(%{@uri => {:ok, ["ipfs://" <> right]}}, hex_token_id) do
-    fetch_from_ipfs(right, hex_token_id)
-  end
-
-  def fetch_json(%{@token_uri => {:ok, [json]}}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, [json]}, hex_token_id) do
     {:ok, json} = decode_json(json)
 
     check_type(json, hex_token_id)
@@ -236,27 +211,14 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       {:error, json}
   end
 
-  def fetch_json(%{@uri => {:ok, [json]}}, hex_token_id) do
-    {:ok, json} = decode_json(json)
+  defp fetch_json_from_uri(uri, _hex_token_id) do
+    Logger.debug(["Unknown metadata uri format #{inspect(uri)}."], fetcher: :token_instances)
 
-    check_type(json, hex_token_id)
-  rescue
-    e ->
-      Logger.debug(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
-        fetcher: :token_instances
-      )
-
-      {:error, json}
-  end
-
-  def fetch_json(result, _hex_token_id) do
-    Logger.debug(["Unknown metadata format #{inspect(result)}."], fetcher: :token_instances)
-
-    {:error, result}
+    {:error, uri}
   end
 
   defp fetch_from_ipfs(ipfs_uid, hex_token_id) do
-    ipfs_url = "https://ipfs.io/ipfs/" <> ipfs_uid
+    ipfs_url = @ipfs_link <> ipfs_uid
     fetch_metadata_inner(ipfs_url, hex_token_id)
   end
 
@@ -274,22 +236,15 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   end
 
   def fetch_metadata_from_uri(uri, hex_token_id \\ nil) do
-    case HTTPoison.get(uri, [], timeout: 60_000, recv_timeout: 60_000, follow_redirect: true) do
+    case Application.get_env(:explorer, :http_adapter).get(uri, [],
+           timeout: 60_000,
+           recv_timeout: 60_000,
+           follow_redirect: true
+         ) do
       {:ok, %Response{body: body, status_code: 200, headers: headers}} ->
         content_type = get_content_type_from_headers(headers)
 
-        image = is_image?(content_type)
-        video = is_video?(content_type)
-
-        if content_type && (image || video) do
-          json = if image, do: %{"image" => uri}, else: %{"animation_url" => uri}
-
-          check_type(json, nil)
-        else
-          {:ok, json} = decode_json(body)
-
-          check_type(json, hex_token_id)
-        end
+        check_content_type(content_type, uri, hex_token_id, body)
 
       {:ok, %Response{body: body}} ->
         {:error, body}
@@ -305,6 +260,21 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       )
 
       {:error, :request_error}
+  end
+
+  defp check_content_type(content_type, uri, hex_token_id, body) do
+    image = is_image?(content_type)
+    video = is_video?(content_type)
+
+    if content_type && (image || video) do
+      json = if image, do: %{"image" => uri}, else: %{"animation_url" => uri}
+
+      check_type(json, nil)
+    else
+      {:ok, json} = decode_json(body)
+
+      check_type(json, hex_token_id)
+    end
   end
 
   defp get_content_type_from_headers(headers) do

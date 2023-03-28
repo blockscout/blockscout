@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.AddressValidationController do
 
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
-  alias BlockScoutWeb.{AccessHelpers, BlockView, Controller}
+  alias BlockScoutWeb.{AccessHelper, BlockView, Controller}
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
   alias Indexer.Fetcher.CoinBalanceOnDemand
@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.AddressValidationController do
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, _} <- Chain.find_or_insert_address_from_hash(address_hash, [], false),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       full_options =
         Keyword.merge(
           [
@@ -75,7 +75,7 @@ defmodule BlockScoutWeb.AddressValidationController do
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_or_insert_address_from_hash(address_hash),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "index.html",

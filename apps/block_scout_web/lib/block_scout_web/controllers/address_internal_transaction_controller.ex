@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
   import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
-  alias BlockScoutWeb.{AccessHelpers, Controller, InternalTransactionView}
+  alias BlockScoutWeb.{AccessHelper, Controller, InternalTransactionView}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Wei}
   alias Explorer.ExchangeRates.Token
@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <-
            Chain.hash_to_address(address_hash, [necessity_by_association: %{:smart_contract => :optional}], false),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       full_options =
         [
           necessity_by_association: %{
@@ -79,7 +79,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "index.html",

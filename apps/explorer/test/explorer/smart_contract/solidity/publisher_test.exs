@@ -13,7 +13,7 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
 
   describe "publish/2" do
     test "with valid data creates a smart_contract" do
-      contract_code_info = Factory.contract_code_info_modern_compilator()
+      contract_code_info = Factory.contract_code_info_modern_compiler()
 
       contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
 
@@ -76,7 +76,7 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
     end
 
     test "corresponding contract_methods are created for the abi" do
-      contract_code_info = Factory.contract_code_info_modern_compilator()
+      contract_code_info = Factory.contract_code_info_modern_compiler()
 
       contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
 

@@ -779,10 +779,10 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
   end
 
   describe "public tags" do
-    test "create public tags reuqest", %{conn: conn} do
+    test "create public tags request", %{conn: conn} do
       public_tags_request = build(:public_tags_request)
 
-      post_public_tasg_request_response =
+      post_public_tags_request_response =
         conn
         |> post(
           "/api/account/v1/user/public_tags",
@@ -791,21 +791,21 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         |> doc(description: "Submit request to add a public tag")
         |> json_response(200)
 
-      assert post_public_tasg_request_response["full_name"] == public_tags_request["full_name"]
-      assert post_public_tasg_request_response["email"] == public_tags_request["email"]
-      assert post_public_tasg_request_response["tags"] == public_tags_request["tags"]
-      assert post_public_tasg_request_response["website"] == public_tags_request["website"]
-      assert post_public_tasg_request_response["additional_comment"] == public_tags_request["additional_comment"]
-      assert post_public_tasg_request_response["addresses"] == public_tags_request["addresses"]
-      assert post_public_tasg_request_response["company"] == public_tags_request["company"]
-      assert post_public_tasg_request_response["is_owner"] == public_tags_request["is_owner"]
-      assert post_public_tasg_request_response["id"]
+      assert post_public_tags_request_response["full_name"] == public_tags_request["full_name"]
+      assert post_public_tags_request_response["email"] == public_tags_request["email"]
+      assert post_public_tags_request_response["tags"] == public_tags_request["tags"]
+      assert post_public_tags_request_response["website"] == public_tags_request["website"]
+      assert post_public_tags_request_response["additional_comment"] == public_tags_request["additional_comment"]
+      assert post_public_tags_request_response["addresses"] == public_tags_request["addresses"]
+      assert post_public_tags_request_response["company"] == public_tags_request["company"]
+      assert post_public_tags_request_response["is_owner"] == public_tags_request["is_owner"]
+      assert post_public_tags_request_response["id"]
     end
 
     test "get one public tags requests", %{conn: conn} do
       public_tags_request = build(:public_tags_request)
 
-      post_public_tasg_request_response =
+      post_public_tags_request_response =
         conn
         |> post(
           "/api/account/v1/user/public_tags",
@@ -813,21 +813,21 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         )
         |> json_response(200)
 
-      assert post_public_tasg_request_response["full_name"] == public_tags_request["full_name"]
-      assert post_public_tasg_request_response["email"] == public_tags_request["email"]
-      assert post_public_tasg_request_response["tags"] == public_tags_request["tags"]
-      assert post_public_tasg_request_response["website"] == public_tags_request["website"]
-      assert post_public_tasg_request_response["additional_comment"] == public_tags_request["additional_comment"]
-      assert post_public_tasg_request_response["addresses"] == public_tags_request["addresses"]
-      assert post_public_tasg_request_response["company"] == public_tags_request["company"]
-      assert post_public_tasg_request_response["is_owner"] == public_tags_request["is_owner"]
-      assert post_public_tasg_request_response["id"]
+      assert post_public_tags_request_response["full_name"] == public_tags_request["full_name"]
+      assert post_public_tags_request_response["email"] == public_tags_request["email"]
+      assert post_public_tags_request_response["tags"] == public_tags_request["tags"]
+      assert post_public_tags_request_response["website"] == public_tags_request["website"]
+      assert post_public_tags_request_response["additional_comment"] == public_tags_request["additional_comment"]
+      assert post_public_tags_request_response["addresses"] == public_tags_request["addresses"]
+      assert post_public_tags_request_response["company"] == public_tags_request["company"]
+      assert post_public_tags_request_response["is_owner"] == public_tags_request["is_owner"]
+      assert post_public_tags_request_response["id"]
 
       assert conn
              |> get("/api/account/v1/user/public_tags")
              |> json_response(200)
              |> Enum.map(&convert_date/1) ==
-               [post_public_tasg_request_response]
+               [post_public_tags_request_response]
                |> Enum.map(&convert_date/1)
     end
 
@@ -886,7 +886,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
     test "edit public tags request", %{conn: conn} do
       public_tags_request = build(:public_tags_request)
 
-      post_public_tasg_request_response =
+      post_public_tags_request_response =
         conn
         |> post(
           "/api/account/v1/user/public_tags",
@@ -894,49 +894,49 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         )
         |> json_response(200)
 
-      assert post_public_tasg_request_response["full_name"] == public_tags_request["full_name"]
-      assert post_public_tasg_request_response["email"] == public_tags_request["email"]
-      assert post_public_tasg_request_response["tags"] == public_tags_request["tags"]
-      assert post_public_tasg_request_response["website"] == public_tags_request["website"]
-      assert post_public_tasg_request_response["additional_comment"] == public_tags_request["additional_comment"]
-      assert post_public_tasg_request_response["addresses"] == public_tags_request["addresses"]
-      assert post_public_tasg_request_response["company"] == public_tags_request["company"]
-      assert post_public_tasg_request_response["is_owner"] == public_tags_request["is_owner"]
-      assert post_public_tasg_request_response["id"]
+      assert post_public_tags_request_response["full_name"] == public_tags_request["full_name"]
+      assert post_public_tags_request_response["email"] == public_tags_request["email"]
+      assert post_public_tags_request_response["tags"] == public_tags_request["tags"]
+      assert post_public_tags_request_response["website"] == public_tags_request["website"]
+      assert post_public_tags_request_response["additional_comment"] == public_tags_request["additional_comment"]
+      assert post_public_tags_request_response["addresses"] == public_tags_request["addresses"]
+      assert post_public_tags_request_response["company"] == public_tags_request["company"]
+      assert post_public_tags_request_response["is_owner"] == public_tags_request["is_owner"]
+      assert post_public_tags_request_response["id"]
 
       assert conn
              |> get("/api/account/v1/user/public_tags")
              |> json_response(200)
              |> Enum.map(&convert_date/1) ==
-               [post_public_tasg_request_response]
+               [post_public_tags_request_response]
                |> Enum.map(&convert_date/1)
 
       new_public_tags_request = build(:public_tags_request)
 
-      put_public_tasg_request_response =
+      put_public_tags_request_response =
         conn
         |> put(
-          "/api/account/v1/user/public_tags/#{post_public_tasg_request_response["id"]}",
+          "/api/account/v1/user/public_tags/#{post_public_tags_request_response["id"]}",
           new_public_tags_request
         )
         |> doc(description: "Edit request to add a public tag")
         |> json_response(200)
 
-      assert put_public_tasg_request_response["full_name"] == new_public_tags_request["full_name"]
-      assert put_public_tasg_request_response["email"] == new_public_tags_request["email"]
-      assert put_public_tasg_request_response["tags"] == new_public_tags_request["tags"]
-      assert put_public_tasg_request_response["website"] == new_public_tags_request["website"]
-      assert put_public_tasg_request_response["additional_comment"] == new_public_tags_request["additional_comment"]
-      assert put_public_tasg_request_response["addresses"] == new_public_tags_request["addresses"]
-      assert put_public_tasg_request_response["company"] == new_public_tags_request["company"]
-      assert put_public_tasg_request_response["is_owner"] == new_public_tags_request["is_owner"]
-      assert put_public_tasg_request_response["id"] == post_public_tasg_request_response["id"]
+      assert put_public_tags_request_response["full_name"] == new_public_tags_request["full_name"]
+      assert put_public_tags_request_response["email"] == new_public_tags_request["email"]
+      assert put_public_tags_request_response["tags"] == new_public_tags_request["tags"]
+      assert put_public_tags_request_response["website"] == new_public_tags_request["website"]
+      assert put_public_tags_request_response["additional_comment"] == new_public_tags_request["additional_comment"]
+      assert put_public_tags_request_response["addresses"] == new_public_tags_request["addresses"]
+      assert put_public_tags_request_response["company"] == new_public_tags_request["company"]
+      assert put_public_tags_request_response["is_owner"] == new_public_tags_request["is_owner"]
+      assert put_public_tags_request_response["id"] == post_public_tags_request_response["id"]
 
       assert conn
              |> get("/api/account/v1/user/public_tags")
              |> json_response(200)
              |> Enum.map(&convert_date/1) ==
-               [put_public_tasg_request_response]
+               [put_public_tags_request_response]
                |> Enum.map(&convert_date/1)
     end
   end

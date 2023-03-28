@@ -43,7 +43,6 @@ defmodule BlockScoutWeb.Endpoint do
   end
 
   plug(Plug.RequestId)
-  plug(Plug.Logger)
 
   plug(
     Plug.Parsers,

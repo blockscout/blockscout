@@ -1,12 +1,12 @@
 defmodule BlockScoutWeb.API.EthRPC.EthController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.AccessHelpers
+  alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.EthRPC.View, as: EthRPCView
   alias Explorer.EthRPC
 
   def eth_request(%{body_params: %{"_json" => requests}} = conn, _) when is_list(requests) do
-    case AccessHelpers.check_rate_limit(conn) do
+    case AccessHelper.check_rate_limit(conn) do
       :ok ->
         responses = EthRPC.responses(requests)
 
@@ -16,12 +16,12 @@ defmodule BlockScoutWeb.API.EthRPC.EthController do
         |> render("responses.json", %{responses: responses})
 
       :rate_limit_reached ->
-        AccessHelpers.handle_rate_limit_deny(conn)
+        AccessHelper.handle_rate_limit_deny(conn)
     end
   end
 
   def eth_request(%{body_params: %{"_json" => request}} = conn, _) do
-    case AccessHelpers.check_rate_limit(conn) do
+    case AccessHelper.check_rate_limit(conn) do
       :ok ->
         [response] = EthRPC.responses([request])
 
@@ -31,12 +31,12 @@ defmodule BlockScoutWeb.API.EthRPC.EthController do
         |> render("response.json", %{response: response})
 
       :rate_limit_reached ->
-        AccessHelpers.handle_rate_limit_deny(conn)
+        AccessHelper.handle_rate_limit_deny(conn)
     end
   end
 
   def eth_request(conn, request) do
-    case AccessHelpers.check_rate_limit(conn) do
+    case AccessHelper.check_rate_limit(conn) do
       :ok ->
         # In the case that the JSON body is sent up w/o a json content type,
         # Phoenix encodes it as a single key value pair, with the value being
@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.API.EthRPC.EthController do
         |> render("response.json", %{response: response})
 
       :rate_limit_reached ->
-        AccessHelpers.handle_rate_limit_deny(conn)
+        AccessHelper.handle_rate_limit_deny(conn)
     end
   end
 end

@@ -2,6 +2,7 @@ import $ from 'jquery'
 import omit from 'lodash.omit'
 import { loadPage, createAsyncLoadStore } from '../lib/async_listing_load'
 import { connectElements } from '../lib/redux_helpers.js'
+import { formatUsdValue } from '../lib/currency'
 
 export const initialState = {
   isSearch: false
@@ -34,6 +35,15 @@ const elements = {
       }
 
       return $el.show()
+    }
+  },
+  '[data-usd-value]': {
+    render ($el, state) {
+      $el.each((i, el) => {
+        el.innerHTML = formatUsdValue(el.dataset.usdValue)
+      })
+      // @ts-ignore
+      if (!window.loading) $el.show()
     }
   }
 }

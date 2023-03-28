@@ -121,7 +121,7 @@ defmodule Explorer.GraphQLTest do
     end
   end
 
-  describe "transcation_to_internal_transactions_query/1" do
+  describe "transaction_to_internal_transactions_query/1" do
     test "with transaction with one internal transaction" do
       transaction1 = insert(:transaction) |> with_block()
       transaction2 = insert(:transaction) |> with_block()

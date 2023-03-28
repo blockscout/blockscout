@@ -39,7 +39,7 @@ defmodule Explorer.SmartContract.SigProviderInterface do
   def http_get_request(url) do
     case HTTPoison.get(url) do
       {:ok, %Response{body: body, status_code: 200}} ->
-        proccess_sig_provider_response(body)
+        process_sig_provider_response(body)
 
       {:ok, %Response{body: body, status_code: _}} ->
         {:error, body}
@@ -60,19 +60,19 @@ defmodule Explorer.SmartContract.SigProviderInterface do
     end
   end
 
-  def proccess_sig_provider_response(body) when is_binary(body) do
+  def process_sig_provider_response(body) when is_binary(body) do
     case Jason.decode(body) do
       {:ok, decoded} ->
-        proccess_sig_provider_response(decoded)
+        process_sig_provider_response(decoded)
 
       _ ->
         {:error, body}
     end
   end
 
-  def proccess_sig_provider_response(results) when is_list(results), do: {:ok, results}
+  def process_sig_provider_response(results) when is_list(results), do: {:ok, results}
 
-  def proccess_sig_provider_response(other_responses), do: {:error, other_responses}
+  def process_sig_provider_response(other_responses), do: {:error, other_responses}
 
   def tx_input_decode_url, do: "#{base_api_url()}" <> "/function"
 
