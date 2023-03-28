@@ -36,8 +36,6 @@ ARG MIXPANEL_TOKEN
 ARG MIXPANEL_URL
 ARG AMPLITUDE_API_KEY
 ARG AMPLITUDE_URL
-ARG BLOCKSCOUT_VERSION
-ENV BLOCKSCOUT_VERSION=${BLOCKSCOUT_VERSION}
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
@@ -73,6 +71,11 @@ RUN mkdir -p /opt/release \
 ##############################################################
 FROM bitwalker/alpine-elixir-phoenix:1.14
 
+ARG RELEASE_VERSION
+ENV RELEASE_VERSION=${RELEASE_VERSION}
+ARG BLOCKSCOUT_VERSION
+ENV BLOCKSCOUT_VERSION=${BLOCKSCOUT_VERSION}
+
 RUN apk --no-cache --update add jq
 
 WORKDIR /app
@@ -80,3 +83,5 @@ WORKDIR /app
 COPY --from=builder /opt/release/blockscout .
 COPY --from=builder /app/apps/explorer/node_modules ./node_modules
 COPY --from=builder /app/config/config_helper.exs ./config/config_helper.exs
+COPY --from=builder /app/config/config_helper.exs /app/releases/${RELEASE_VERSION}/config_helper.exs
+
