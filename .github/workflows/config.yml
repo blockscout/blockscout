@@ -738,6 +738,9 @@ jobs:
   Build-Blockscout:
     uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.3
     needs: [credo, check_formatted, dialyzer, gettext, sobelow, eslint, jest, test_nethermind_mox_ethereum_jsonrpc, test_nethermind_mox_explorer, test_nethermind_mox_indexer, test_nethermind_mox_block_scout_web, test_event_stream, publish-test-results] 
+    env:
+      WORKLOAD_ID_PROVIDER_PROD: 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos'
+      WORKLOAD_ID_PROVIDER_DEV: 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout/providers/github-by-repos'
     with:
       workload-id-provider: "${{ github.ref != 'ref/heads/main' && env.WORKLOAD_ID_PROVIDER_DEV ||  envWORKLOAD_ID_PROVIDER_PROD }}"
 
