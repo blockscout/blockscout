@@ -61,3 +61,5 @@ jobs:
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             SENTRY_DSN_CLIENT_GNOSIS=${{ secrets.SENTRY_DSN_CLIENT_GNOSIS }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
