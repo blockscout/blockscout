@@ -102,7 +102,9 @@ config :ueberauth, Ueberauth,
   ]
 
 config :hammer,
-  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
+  backend:
+    {Hammer.Backend.Redis,
+     [delete_buckets_timeout: 60_000 * 10, expiry_ms: 60_000 * 60 * 4, redis_url: "redis://127.0.0.1:6379/1"]}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

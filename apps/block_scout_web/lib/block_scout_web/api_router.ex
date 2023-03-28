@@ -104,6 +104,8 @@ defmodule BlockScoutWeb.ApiRouter do
 
     alias BlockScoutWeb.API.V2
 
+    get("/key", V2.APIKeyController, :get_key)
+
     scope "/search" do
       get("/", V2.SearchController, :search)
       get("/check-redirect", V2.SearchController, :check_redirect)

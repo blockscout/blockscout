@@ -89,8 +89,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  def render("state_changes.json", %{state_changes: state_changes, conn: conn}) do
-    Enum.map(state_changes, &prepare_state_change(&1, conn))
+  def render("state_changes.json", %{state_changes: state_changes}) do
+    Enum.map(state_changes, &prepare_state_change(&1))
   end
 
   def prepare_token_transfer(token_transfer, _conn) do
@@ -495,7 +495,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp block_timestamp(%Block{} = block), do: block.timestamp
   defp block_timestamp(_), do: nil
 
-  defp prepare_state_change(%StateChange{} = state_change, conn) do
+  defp prepare_state_change(%StateChange{} = state_change) do
     coin_or_transfer =
       if state_change.coin_or_token_transfers == :coin,
         do: :coin,

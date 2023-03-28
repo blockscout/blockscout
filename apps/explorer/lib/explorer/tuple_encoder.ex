@@ -1,11 +1,14 @@
 defmodule TupleEncoder do
-  alias Jason.Encoder
+  @moduledoc """
+    Implementation of Jason.Encoder for Tuple
+  """
+  alias Jason.{Encode, Encoder}
 
   defimpl Encoder, for: Tuple do
     def encode(value, opts) when is_tuple(value) do
       value
       |> Tuple.to_list()
-      |> Jason.Encode.list(opts)
+      |> Encode.list(opts)
     end
   end
 end
