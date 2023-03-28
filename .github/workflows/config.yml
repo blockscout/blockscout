@@ -731,7 +731,7 @@ jobs:
          
   Build-Blockscout:
     uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.3
-    needs: [credo, check_formatted, dialyzer, gettext, sobelow, eslint, jest, test_nethermind_mox_ethereum_jsonrpc, test_nethermind_mox_explorer, test_nethermind_mox_indexer, test_netermind_mox_block_scout_web, test_event_stream, publish-test-results] 
+    needs: [credo, check_formatted, dialyzer, gettext, sobelow, eslint, jest, test_nethermind_mox_ethereum_jsonrpc, test_nethermind_mox_explorer, test_nethermind_mox_indexer, test_nethermind_mox_block_scout_web, test_event_stream, publish-test-results] 
     with:
       workload-id-provider: "${{ github.ref != 'ref/heads/main' && 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout/providers/github-by-repos' || 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos' }}"
       service-account:   "${{ github.ref != 'ref/heads/main' && 'blockscout-images-dev@devopsre.iam.gserviceaccount.com' || 'blockscout-images@devopsre.iam.gserviceaccount.com' }}"
@@ -747,7 +747,7 @@ jobs:
 
   Build-Blockscout-api:
     uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.3
-    needs: [credo, check_formatted, dialyzer, gettext, sobelow, eslint, jest, test_nethermind_mox_ethereum_jsonrpc, test_nethermind_mox_explorer, test_nethermind_mox_indexer, test_netermind_mox_block_scout_web, test_event_stream, publish-test-results] 
+    needs: [credo, check_formatted, dialyzer, gettext, sobelow, eslint, jest, test_nethermind_mox_ethereum_jsonrpc, test_nethermind_mox_explorer, test_nethermind_mox_indexer, test_nethermind_mox_block_scout_web, test_event_stream, publish-test-results] 
     with:
       workload-id-provider: "${{ github.ref != 'ref/heads/main' && 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout/providers/github-by-repos' || 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos' }}"
       service-account:   "${{ github.ref != 'ref/heads/main' && 'blockscout-images-dev@devopsre.iam.gserviceaccount.com' || 'blockscout-images@devopsre.iam.gserviceaccount.com' }}"
