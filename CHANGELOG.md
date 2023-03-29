@@ -21,6 +21,7 @@
 - [#7009](https://github.com/blockscout/blockscout/pull/7009) - Fix updating coin balances with empty value
 - [#7055](https://github.com/blockscout/blockscout/pull/7055) - Set updated_at on token update even if there are no changes
 - [#7080](https://github.com/blockscout/blockscout/pull/7080) - Deduplicate second degree relations before insert
+- [#7161](https://github.com/blockscout/blockscout/pull/7161) - Treat "" as empty value while parsing env vars
 
 ### Chore
 
@@ -28,7 +29,7 @@
 - [#7144](https://github.com/blockscout/blockscout/pull/7144) - Update Blockscout logo
 - [#7136](https://github.com/blockscout/blockscout/pull/7136) - Add release link or commit hash to docker images
 - [#7097](https://github.com/blockscout/blockscout/pull/7097) - Force display token instance page
-- [#7119](https://github.com/blockscout/blockscout/pull/7119) - Refactor runtime config
+- [#7119](https://github.com/blockscout/blockscout/pull/7119), [#7149](https://github.com/blockscout/blockscout/pull/7149) - Refactor runtime config
 - [#7072](https://github.com/blockscout/blockscout/pull/7072) - Add a separate docker compose for geth with clique consensus
 - [#7056](https://github.com/blockscout/blockscout/pull/7056) - Add path_helper in interact.js
 - [#7040](https://github.com/blockscout/blockscout/pull/7040) - Use alias BlockScoutWeb.Cldr.Number
