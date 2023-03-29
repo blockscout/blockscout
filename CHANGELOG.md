@@ -11,6 +11,7 @@
 
 ### Fixes
 
+- [#7162](https://github.com/blockscout/blockscout/pull/7162) - Hide indexing alert, if internal transactions indexer disabled
 - [#7096](https://github.com/blockscout/blockscout/pull/7096) - Hide indexing alert, if indexer disabled
 - [#7102](https://github.com/blockscout/blockscout/pull/7102) - Set infinity timeout timestamp_to_block_number query
 - [#7091](https://github.com/blockscout/blockscout/pull/7091) - Fix custom ABI
