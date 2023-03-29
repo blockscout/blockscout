@@ -728,15 +728,28 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v1
         with:
           files: artifacts/**/*.xml
-         
+
+  set-docker-vars:
+    runs-on: ubuntu-latest
+#    outputs:
+#      tag: ${{ steps.docker-vars.outputs.tag }}
+#      another_var: ${{ steps.docker-vars.outputs.another_var }}   
+    steps:
+      - name: Print inputs passed to the reusable workflow
+        id: docker-vars
+        run: |
+          echo "TAG=${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }} >> $GITHUB_OUTPUT"
+  
+ 
   Build-Blockscout:
     uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.3
-    needs: [credo, check_formatted, dialyzer, gettext, sobelow, eslint, jest, test_nethermind_mox_ethereum_jsonrpc, test_nethermind_mox_explorer, test_nethermind_mox_indexer, test_nethermind_mox_block_scout_web, test_event_stream, publish-test-results] 
+    needs: [credo, check_formatted, dialyzer, gettext, sobelow, eslint, jest, test_nethermind_mox_ethereum_jsonrpc, test_nethermind_mox_explorer, test_nethermind_mox_indexer, test_nethermind_mox_block_scout_web, test_event_stream, publish-test-results, set-docker-vars] 
     with:
       workload-id-provider: "${{ github.ref != 'ref/heads/main' && 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout/providers/github-by-repos' || 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos' }}"
       service-account:   "${{ github.ref != 'ref/heads/main' && 'blockscout-images-dev@devopsre.iam.gserviceaccount.com' || 'blockscout-images@devopsre.iam.gserviceaccount.com' }}"
       artifact-registry: "${{ github.ref != 'ref/heads/main' && format('{0}/blockscout', vars.DEV_IMAGE_REPO) || 'us-west1-docker.pkg.dev/devopsre/blockscout/blockscout' }}"
-      tag: "${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }}"
+#      tag: "${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }}"
+      tag: ${{ steps.docker-vars.outputs.TAG }}
       context: .
       file: docker/Dockerfile
       build-args: |
@@ -747,12 +760,13 @@ jobs:
 
   Build-Blockscout-api:
     uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.3
-    needs: [credo, check_formatted, dialyzer, gettext, sobelow, eslint, jest, test_nethermind_mox_ethereum_jsonrpc, test_nethermind_mox_explorer, test_nethermind_mox_indexer, test_nethermind_mox_block_scout_web, test_event_stream, publish-test-results] 
+    needs: [credo, check_formatted, dialyzer, gettext, sobelow, eslint, jest, test_nethermind_mox_ethereum_jsonrpc, test_nethermind_mox_explorer, test_nethermind_mox_indexer, test_nethermind_mox_block_scout_web, test_event_stream, publish-test-results, set-docker-vars] 
     with:
       workload-id-provider: "${{ github.ref != 'ref/heads/main' && 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout/providers/github-by-repos' || 'projects/1094498259535/locations/global/workloadIdentityPools/gh-blockscout-main/providers/github-by-repos' }}"
       service-account:   "${{ github.ref != 'ref/heads/main' && 'blockscout-images-dev@devopsre.iam.gserviceaccount.com' || 'blockscout-images@devopsre.iam.gserviceaccount.com' }}"
       artifact-registry: "${{ github.ref != 'ref/heads/main' && format('{0}/blockscout', vars.DEV_IMAGE_REPO) || 'us-west1-docker.pkg.dev/devopsre/blockscout/blockscout' }}"
-      tag: "${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }}"
+#      tag: "${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }}"
+      tag: ${{ steps.docker-vars.outputs.TAG }}
       context: .
       file: docker/Dockerfile
       build-args: |
