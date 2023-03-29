@@ -18,7 +18,7 @@ defmodule ConfigHelper do
 
   @spec timeout(non_neg_integer()) :: non_neg_integer()
   def timeout(default_minutes \\ 1) do
-    case Integer.parse(System.get_env("ETHEREUM_JSONRPC_HTTP_TIMEOUT", "#{default_minutes * 60}")) do
+    case Integer.parse(safe_get_env("ETHEREUM_JSONRPC_HTTP_TIMEOUT", "#{default_minutes * 60}")) do
       {seconds, ""} -> seconds
       _ -> default_minutes * 60
     end
@@ -28,7 +28,7 @@ defmodule ConfigHelper do
   @spec parse_integer_env_var(String.t(), String.t()) :: non_neg_integer()
   def parse_integer_env_var(env_var, default_value) do
     env_var
-    |> System.get_env(to_string(default_value))
+    |> safe_get_env(to_string(default_value))
     |> Integer.parse()
     |> case do
       {integer, _} -> integer
@@ -38,7 +38,7 @@ defmodule ConfigHelper do
 
   @spec parse_time_env_var(String.t(), String.t() | nil) :: non_neg_integer()
   def parse_time_env_var(env_var, default_value) do
-    case env_var |> System.get_env(default_value || "") |> to_string() |> String.downcase() |> Integer.parse() do
+    case env_var |> safe_get_env(default_value) |> String.downcase() |> Integer.parse() do
       {milliseconds, "ms"} -> milliseconds
       {hours, "h"} -> :timer.hours(hours)
       {minutes, "m"} -> :timer.minutes(minutes)
@@ -47,9 +47,19 @@ defmodule ConfigHelper do
     end
   end
 
+  defp safe_get_env(env_var, default_value) do
+    env_var
+    |> System.get_env(default_value)
+    |> case do
+      "" -> default_value
+      value -> value
+    end
+    |> to_string()
+  end
+
   @spec parse_bool_env_var(String.t(), String.t()) :: boolean()
   def parse_bool_env_var(env_var, default_value \\ "false"),
-    do: String.downcase(System.get_env(env_var, default_value)) == "true"
+    do: String.downcase(safe_get_env(env_var, default_value)) == "true"
 
   @spec cache_ttl_check_interval(boolean()) :: non_neg_integer() | false
   def cache_ttl_check_interval(disable_indexer?) do
@@ -66,7 +76,7 @@ defmodule ConfigHelper do
     indexer_memory_limit_default = 1
 
     "INDEXER_MEMORY_LIMIT"
-    |> System.get_env(to_string(indexer_memory_limit_default))
+    |> safe_get_env(to_string(indexer_memory_limit_default))
     |> String.downcase()
     |> Integer.parse()
     |> case do
@@ -92,7 +102,7 @@ defmodule ConfigHelper do
     }
 
     # Compile time environment variable access requires recompilation.
-    configured_transformer = System.get_env("BLOCK_TRANSFORMER") || "base"
+    configured_transformer = safe_get_env("BLOCK_TRANSFORMER", "base")
 
     case Map.get(block_transformers, configured_transformer) do
       nil ->
