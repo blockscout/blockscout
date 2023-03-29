@@ -749,7 +749,7 @@ jobs:
       service-account:   "${{ github.ref != 'ref/heads/main' && 'blockscout-images-dev@devopsre.iam.gserviceaccount.com' || 'blockscout-images@devopsre.iam.gserviceaccount.com' }}"
       artifact-registry: "${{ github.ref != 'ref/heads/main' && format('{0}/blockscout', vars.DEV_IMAGE_REPO) || 'us-west1-docker.pkg.dev/devopsre/blockscout/blockscout' }}"
 #      tag: "${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }}"
-      tag: ${{ needs.docker-vars.outputs.TAG }}
+      tag: ${{ needs.set-docker-vars.outputs.TAG }}
       context: .
       file: docker/Dockerfile
       build-args: |
@@ -766,7 +766,7 @@ jobs:
       service-account:   "${{ github.ref != 'ref/heads/main' && 'blockscout-images-dev@devopsre.iam.gserviceaccount.com' || 'blockscout-images@devopsre.iam.gserviceaccount.com' }}"
       artifact-registry: "${{ github.ref != 'ref/heads/main' && format('{0}/blockscout', vars.DEV_IMAGE_REPO) || 'us-west1-docker.pkg.dev/devopsre/blockscout/blockscout' }}"
 #      tag: "${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }}"
-      tag: ${{ needs.docker-vars.outputs.TAG }}
+      tag: ${{ needs.set-docker-vars.outputs.TAG }}
       context: .
       file: docker/Dockerfile
       build-args: |
