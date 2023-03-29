@@ -80,6 +80,30 @@ defmodule Indexer.Transform.TransactionActions do
     }
   ]
 
+  # 32-byte signature of the event Borrow(address indexed reserve, address user, address indexed onBehalfOf, uint256 amount, uint8 interestRateMode, uint256 borrowRate, uint16 indexed referralCode)
+  @aave_v3_borrow_event "0xb3d084820fb1a9decffb176436bd02558d15fac9b0ddfed8c465bc7359d7dce0"
+
+  # 32-byte signature of the event Supply(address indexed reserve, address user, address indexed onBehalfOf, uint256 amount, uint16 indexed referralCode)
+  @aave_v3_supply_event "0x2b627736bca15cd5381dcf80b0bf11fd197d01a037c52b927a881a10fb73ba61"
+
+  # 32-byte signature of the event Withdraw(address indexed reserve, address indexed user, address indexed to, uint256 amount)
+  @aave_v3_withdraw_event "0x3115d1449a7b732c986cba18244e897a450f61e1bb8d589cd2e69e6c8924f9f7"
+
+  # 32-byte signature of the event Repay(address indexed reserve, address indexed user, address indexed repayer, uint256 amount, bool useATokens)
+  @aave_v3_repay_event "0xa534c8dbe71f871f9f3530e97a74601fea17b426cae02e1c5aee42c96c784051"
+
+  # 32-byte signature of the event FlashLoan(address indexed target, address initiator, address indexed asset, uint256 amount, uint8 interestRateMode, uint256 premium, uint16 indexed referralCode)
+  @aave_v3_flash_loan_event "0xefefaba5e921573100900a3ad9cf29f222d995fb3b6045797eaea7521bd8d6f0"
+
+  # 32-byte signature of the event ReserveUsedAsCollateralEnabled(address indexed reserve, address indexed user)
+  @aave_v3_enable_collateral_event "0x00058a56ea94653cdf4f152d227ace22d4c00ad99e2a43f58cb7d9e3feb295f2"
+
+  # 32-byte signature of the event ReserveUsedAsCollateralDisabled(address indexed reserve, address indexed user)
+  @aave_v3_disable_collateral_event "0x44c58d81365b66dd4b1a7f36c25aa97b8c71c361ee4937adc1a00000227db5dd"
+
+  # 32-byte signature of the event LiquidationCall(address indexed collateralAsset, address indexed debtAsset, address indexed user, uint256 debtToCover, uint256 liquidatedCollateralAmount, address liquidator, bool receiveAToken)
+  @aave_v3_liquidation_call_event "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286"
+
   # 32-byte signature of the event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
   @uniswap_v3_transfer_nft_event "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
@@ -114,7 +138,7 @@ defmodule Indexer.Transform.TransactionActions do
       TransactionActionTokensData.create_cache_table()
 
       # handle uniswap v3
-      tx_actions =
+      actions =
         if Enum.member?([@mainnet, @goerli, @optimism, @polygon], chain_id) and
              (is_nil(protocols_to_rewrite) or Enum.empty?(protocols_to_rewrite) or
                 Enum.member?(protocols_to_rewrite, "uniswap_v3")) do
@@ -126,9 +150,152 @@ defmodule Indexer.Transform.TransactionActions do
           actions
         end
 
-      %{transaction_actions: tx_actions}
+      # handle aave v3
+      aave_v3_pool = Application.get_all_env(:indexer)[Indexer.Fetcher.TransactionAction][:aave_v3_pool]
+
+      actions =
+        if not is_nil(aave_v3_pool) and
+             (is_nil(protocols_to_rewrite) or Enum.empty?(protocols_to_rewrite) or
+                Enum.member?(protocols_to_rewrite, "aave_v3")) do
+          logs
+          |> aave_filter_logs(String.downcase(aave_v3_pool))
+          |> logs_group_by_txs()
+          |> aave(actions, chain_id)
+        else
+          actions
+        end
+
+      %{transaction_actions: actions}
     else
       %{transaction_actions: []}
+    end
+  end
+
+  defp aave_filter_logs(logs, pool_address) do
+    logs
+    |> Enum.filter(fn log ->
+      Enum.member?(
+        [
+          @aave_v3_borrow_event,
+          @aave_v3_supply_event,
+          @aave_v3_withdraw_event,
+          @aave_v3_repay_event,
+          @aave_v3_flash_loan_event,
+          @aave_v3_enable_collateral_event,
+          @aave_v3_disable_collateral_event,
+          @aave_v3_liquidation_call_event
+        ],
+        sanitize_first_topic(log.first_topic)
+      ) && address_hash_to_string(log.address_hash) == pool_address
+    end)
+  end
+
+  defp aave(logs_grouped, actions, chain_id) do
+    # iterate for each transaction
+    Enum.reduce(logs_grouped, actions, fn {_tx_hash, tx_logs}, actions_acc ->
+      # go through actions
+      Enum.reduce(tx_logs, actions_acc, fn log, acc ->
+        acc ++ aave_handle_action(log, chain_id)
+      end)
+    end)
+  end
+
+  defp aave_handle_action(log, chain_id) do
+    case sanitize_first_topic(log.first_topic) do
+      @aave_v3_borrow_event ->
+        # this is Borrow event
+        aave_handle_borrow_event(log, chain_id)
+
+      @aave_v3_supply_event ->
+        # this is Supply event
+        aave_handle_supply_event(log, chain_id)
+
+      @aave_v3_withdraw_event ->
+        # this is Withdraw event
+        aave_handle_withdraw_event(log, chain_id)
+
+      @aave_v3_repay_event ->
+        # this is Repay event
+        aave_handle_repay_event(log, chain_id)
+
+      @aave_v3_flash_loan_event ->
+        # this is FlashLoan event
+        aave_handle_flash_loan_event(log, chain_id)
+
+      _ ->
+        []
+    end
+  end
+
+  defp aave_handle_borrow_event(log, chain_id) do
+    [_user, amount, _interest_rate_mode, _borrow_rate] =
+      decode_data(log.data, [:address, {:uint, 256}, {:uint, 8}, {:uint, 256}])
+
+    reserve = truncate_address_hash(log.second_topic)
+    token_data = get_token_data([reserve])
+
+    aave_handle_event("borrow", amount, log, reserve, token_data, chain_id)
+  end
+
+  defp aave_handle_supply_event(log, chain_id) do
+    [_user, amount] = decode_data(log.data, [:address, {:uint, 256}])
+
+    reserve = truncate_address_hash(log.second_topic)
+    token_data = get_token_data([reserve])
+
+    aave_handle_event("supply", amount, log, reserve, token_data, chain_id)
+  end
+
+  defp aave_handle_withdraw_event(log, chain_id) do
+    [amount] = decode_data(log.data, [{:uint, 256}])
+
+    reserve = truncate_address_hash(log.second_topic)
+    token_data = get_token_data([reserve])
+
+    aave_handle_event("withdraw", amount, log, reserve, token_data, chain_id)
+  end
+
+  defp aave_handle_repay_event(log, chain_id) do
+    [amount, _use_a_tokens] = decode_data(log.data, [{:uint, 256}, :bool])
+
+    reserve = truncate_address_hash(log.second_topic)
+    token_data = get_token_data([reserve])
+
+    aave_handle_event("repay", amount, log, reserve, token_data, chain_id)
+  end
+
+  defp aave_handle_flash_loan_event(log, chain_id) do
+    [_initiator, amount, _interest_rate_mode, _premium] =
+      decode_data(log.data, [:address, {:uint, 256}, {:uint, 8}, {:uint, 256}])
+
+    asset = truncate_address_hash(log.third_topic)
+    token_data = get_token_data([asset])
+
+    aave_handle_event("flash_loan", amount, log, asset, token_data, chain_id)
+  end
+
+  defp aave_handle_event(type, amount, log, address, token_data, chain_id) do
+    if token_data === false do
+      []
+    else
+      decimals = token_data[address].decimals
+      amount = fractional(Decimal.new(amount), Decimal.new(decimals))
+      symbol = clarify_token_symbol(token_data[address].symbol, chain_id)
+
+      [
+        %{
+          hash: log.transaction_hash,
+          protocol: "aave_v3",
+          data: %{
+            amount: amount,
+            symbol: symbol,
+            address: Address.checksum(address),
+            block_number: log.block_number
+          },
+          type: type,
+          log_index: log.index
+        }
+      ]
     end
   end
 
@@ -148,23 +315,10 @@ defmodule Indexer.Transform.TransactionActions do
     end)
   end
 
-  defp uniswap_clarify_token_symbol(symbol, chain_id) do
-    if symbol == "WETH" && Enum.member?([@mainnet, @goerli, @optimism], chain_id) do
-      "Ether"
-    else
-      symbol
-    end
-  end
-
   defp uniswap_filter_logs(logs) do
     logs
     |> Enum.filter(fn log ->
-      first_topic =
-        if is_nil(log.first_topic) do
-          ""
-        else
-          String.downcase(log.first_topic)
-        end
+      first_topic = sanitize_first_topic(log.first_topic)
 
       Enum.member?(
         [
@@ -176,16 +330,16 @@ defmodule Indexer.Transform.TransactionActions do
         first_topic
       ) ||
         (first_topic == @uniswap_v3_transfer_nft_event &&
-           String.downcase(address_hash_to_string(log.address_hash)) == String.downcase(@uniswap_v3_positions_nft))
+           address_hash_to_string(log.address_hash) == String.downcase(@uniswap_v3_positions_nft))
     end)
   end
 
   defp uniswap_handle_action(log, legitimate, chain_id) do
-    first_topic = String.downcase(log.first_topic)
+    first_topic = sanitize_first_topic(log.first_topic)
 
     with false <- first_topic == @uniswap_v3_transfer_nft_event,
          # check UniswapV3Pool contract is legitimate
-         pool_address <- String.downcase(address_hash_to_string(log.address_hash)),
+         pool_address <- address_hash_to_string(log.address_hash),
          false <- is_nil(legitimate[pool_address]),
          false <- Enum.empty?(legitimate[pool_address]),
          # this is legitimate uniswap pool, so handle this event
@@ -223,9 +377,7 @@ defmodule Indexer.Transform.TransactionActions do
     local_acc =
       tx_logs
       |> Enum.reduce(%{}, fn log, acc ->
-        first_topic = String.downcase(log.first_topic)
-
-        if first_topic == @uniswap_v3_transfer_nft_event do
+        if sanitize_first_topic(log.first_topic) == @uniswap_v3_transfer_nft_event do
           # This is Transfer event for NFT
           from = truncate_address_hash(log.second_topic)
 
@@ -317,10 +469,10 @@ defmodule Indexer.Transform.TransactionActions do
   defp uniswap_handle_event(type, amount0, amount1, log, token_address, token_data, chain_id) do
     address0 = Enum.at(token_address, 0)
     decimals0 = token_data[address0].decimals
-    symbol0 = uniswap_clarify_token_symbol(token_data[address0].symbol, chain_id)
+    symbol0 = clarify_token_symbol(token_data[address0].symbol, chain_id)
     address1 = Enum.at(token_address, 1)
     decimals1 = token_data[address1].decimals
-    symbol1 = uniswap_clarify_token_symbol(token_data[address1].symbol, chain_id)
+    symbol1 = clarify_token_symbol(token_data[address1].symbol, chain_id)
 
     amount0 = fractional(Decimal.new(amount0), Decimal.new(decimals0))
     amount1 = fractional(Decimal.new(amount1), Decimal.new(decimals1))
@@ -363,10 +515,10 @@ defmodule Indexer.Transform.TransactionActions do
       |> Enum.reduce(%{}, fn {_tx_hash, tx_logs}, addresses_acc ->
         tx_logs
         |> Enum.filter(fn log ->
-          String.downcase(log.first_topic) != @uniswap_v3_transfer_nft_event
+          sanitize_first_topic(log.first_topic) != @uniswap_v3_transfer_nft_event
         end)
         |> Enum.reduce(addresses_acc, fn log, acc ->
-          pool_address = String.downcase(address_hash_to_string(log.address_hash))
+          pool_address = address_hash_to_string(log.address_hash)
           Map.put(acc, pool_address, true)
         end)
       end)
@@ -515,6 +667,14 @@ defmodule Indexer.Transform.TransactionActions do
   defp atomized_key("1698ee82"), do: :getPool
   defp atomized_key("95d89b41"), do: :symbol
   defp atomized_key("313ce567"), do: :decimals
+
+  defp clarify_token_symbol(symbol, chain_id) do
+    if symbol == "WETH" && Enum.member?([@mainnet, @goerli, @optimism], chain_id) do
+      "Ether"
+    else
+      symbol
+    end
+  end
 
   defp clear_actions(logs_grouped, protocols_to_clear) do
     logs_grouped
@@ -724,11 +884,14 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp address_hash_to_string(hash) do
-    if is_binary(hash) do
-      hash
-    else
-      Hash.to_string(hash)
-    end
+    address_string =
+      if is_binary(hash) do
+        hash
+      else
+        Hash.to_string(hash)
+      end
+
+    String.downcase(address_string)
   end
 
   defp logs_group_by_txs(logs) do
@@ -760,6 +923,10 @@ defmodule Indexer.Transform.TransactionActions do
         read_contracts_with_retries(requests, abi, retries_left)
       end
     end
+  end
+
+  defp sanitize_first_topic(first_topic) do
+    if is_nil(first_topic), do: "", else: String.downcase(first_topic)
   end
 
   defp truncate_address_hash(nil), do: @burn_address
