@@ -13,10 +13,11 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
-  alias BlockScoutWeb.SmartContractsApiV2Router
+  alias BlockScoutWeb.{APIKeyV2Router, SmartContractsApiV2Router}
   alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2, RateLimit}
 
   forward("/v2/smart-contracts", SmartContractsApiV2Router)
+  forward("/v2/key", APIKeyV2Router)
 
   pipeline :api do
     plug(BlockScoutWeb.Plug.Logger, application: :api)
@@ -103,8 +104,6 @@ defmodule BlockScoutWeb.ApiRouter do
     pipe_through(:api_v2)
 
     alias BlockScoutWeb.API.V2
-
-    get("/key", V2.APIKeyController, :get_key)
 
     scope "/search" do
       get("/", V2.SearchController, :search)
