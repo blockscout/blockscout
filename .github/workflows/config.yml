@@ -740,12 +740,11 @@ jobs:
         run: |
           echo "tag=${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }} >> $GITHUB_OUTPUT"
   
-   set-docker-vars2:
+  set-docker-vars2:
     runs-on: ubuntu-latest
     needs: [set-docker-vars]
     steps:
       - name: Print inputs passed to the reusable workflow
-        id: set-docker-vars2
         run: |
           echo "VAR IS ${{ needs.set-docker-vars.outputs }}"
  
