@@ -4,6 +4,7 @@ defmodule EthereumJSONRPC.Block do
   and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbynumber).
   """
 
+  @quai_attrs ~w(baseFeePerGas difficulty extRollupRoot extTransactionsRoot gasLimit gasUsed logsBloom manifestHash miner number parentHash receiptsRoot sha3Uncles stateRoot transactionsRoot)a
   import EthereumJSONRPC, only: [quantity_to_integer: 1, timestamp_to_datetime: 1]
 
   alias EthereumJSONRPC.{Transactions, Uncles}
@@ -11,7 +12,8 @@ defmodule EthereumJSONRPC.Block do
   def map_keys(object) do
     # Use Enum.reduce to iterate over the key-value pairs in the object
     Enum.reduce(object, %{}, fn {key, value}, acc ->
-      if is_list(value) and length(value) == 3 do # TODO: this logic doesn't work if a list field has a length of 3 that usually doesn't. Think transactions or etx. This needs to be refactored
+       # If the key is a member of the list of keys to be updated, update the key
+      if is_list(value) and Enum.member?(@quai_attrs, String.to_atom(key)) do
         # Replace the value with the chain appropriate element in the list
         acc = Map.put(acc, key, Enum.at(value, String.to_integer(System.get_env("CHAIN_INDEX"))))
         Map.put(acc, key <> "Full", value)
@@ -22,6 +24,33 @@ defmodule EthereumJSONRPC.Block do
     end)
   end
 
+  def is_dom_coincident(block, node_ctx) do
+    if node_ctx > 0 do
+      dom_ctx = node_ctx - 1
+
+      dom_difficulty = block |> Map.get("difficultyFull") |> Enum.at(dom_ctx)
+      sub_difficulty = block |> Map.get("hash") |> quantity_to_integer()
+
+      dom_target = Kernel./(:math.pow(2, 256), dom_difficulty)
+
+      if sub_difficulty <= dom_target do
+        true
+      else
+        false
+      end
+    else
+      false
+    end
+  end
+
+  def is_coincident(block) do
+    node_ctx = String.to_integer(System.get_env("CHAIN_INDEX"))
+    case node_ctx do
+      2 -> {is_dom_coincident(block, node_ctx-1), is_dom_coincident(block, node_ctx)}
+      1 -> {is_dom_coincident(block, node_ctx), false}
+      0 -> {false, false}
+    end
+  end
 
   @type elixir :: %{String.t() => non_neg_integer | DateTime.t() | String.t() | nil}
   @type params :: %{
@@ -247,6 +276,7 @@ defmodule EthereumJSONRPC.Block do
           "transactionsRootFull" => transactions_root_full
         } = elixir
       ) do
+    coincidence = is_coincident(elixir)
     %{
       difficulty: difficulty,
       extra_data: extra_data,
@@ -272,6 +302,7 @@ defmodule EthereumJSONRPC.Block do
       difficulty_full: difficulty_full,
       ext_rollup_root_full: ext_rollup_root_full,
       ext_transactions: ext_transactions,
+#      ext_transactions: manifest_hash_full, # TODO: remove this line
       sub_manifest: sub_manifest,
       location: location,
       ext_transactions_root_full: ext_transactions_root_full,
@@ -285,7 +316,9 @@ defmodule EthereumJSONRPC.Block do
       receipts_root_full: receipts_root_full,
       sha3_uncles_full: sha3_uncles_full,
       state_root_full: state_root_full,
-      transactions_root_full: transactions_root_full
+      transactions_root_full: transactions_root_full,
+      is_prime_coincident: coincidence |> elem(0),
+      is_region_coincident: coincidence |> elem(1),
     }
   end
 
@@ -310,6 +343,7 @@ defmodule EthereumJSONRPC.Block do
           "baseFeePerGas" => base_fee_per_gas
         } = elixir
       ) do
+    IO.inspect(elixir)
     IO.puts("2")
     %{
       difficulty: difficulty,
@@ -621,8 +655,7 @@ defmodule EthereumJSONRPC.Block do
 
   """
   def to_elixir(block) when is_map(block) do
-    return = Enum.into(block, %{}, &entry_to_elixir/1)
-    return
+    Enum.into(block, %{}, &entry_to_elixir/1)
   end
 
   defp entry_to_elixir({key, quantity})

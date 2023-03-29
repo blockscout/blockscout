@@ -21,6 +21,8 @@ defmodule Explorer.Repo.Migrations.Quaigrate do
       add :sub_manifest, {:array, :bytea}
       add :ext_transactions, {:array, :bytea}
       add :location, :string
+      add :is_prime_coincident, :boolean
+      add :is_region_coincident, :boolean
     end
   end
 end

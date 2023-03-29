@@ -41,6 +41,22 @@ defmodule Explorer.Chain.Cache.Block do
     end
   end
 
+  @spec last_coincident(String) :: non_neg_integer()
+  def last_coincident(context) do
+    result = %Postgrex.Result{} = Repo.query!("SELECT *
+FROM blocks
+WHERE (is_" <> context <> "_coincident = true)
+ORDER BY number DESC
+LIMIT 1;
+")
+    result = result |> Map.get(:rows)
+    if result |> Kernel.length() == 0 do
+      nil
+    else
+      result |> List.first() |> Enum.at(7)
+    end
+  end
+
   defp handle_fallback(:count) do
     # This will get the task PID if one exists and launch a new task if not
     # See next `handle_fallback` definition

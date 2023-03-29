@@ -102,6 +102,7 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources "/block", BlockController, only: [:show], param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
+      resources("/external-transactions", BlockTransactionController, only: [:index], as: :external_transaction)
     end
 
     resources("/blocks", BlockController, as: :blocks, only: [:index])

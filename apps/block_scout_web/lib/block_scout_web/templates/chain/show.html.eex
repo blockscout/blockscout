@@ -141,6 +141,26 @@
               <%= BlockScoutWeb.Cldr.Number.to_string!(@address_count, format: "#,###") %>
             </span>
           </div>
+            <%= if @last_prime_coincident != nil do %>
+            <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-5">
+            <span class="dashboard-banner-network-stats-label">
+              <%= gettext "Last Prime Coincident" %>
+            </span>
+                <span class="dashboard-banner-network-stats-value" data-selector="last-coincident">
+              <%= BlockScoutWeb.Cldr.Number.to_string!(@last_prime_coincident, format: "#,###") %>
+            </span>
+            </div>
+            <% end %>
+            <%= if @last_region_coincident != nil do %>
+            <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-6">
+            <span class="dashboard-banner-network-stats-label">
+              <%= gettext "Last Region Coincident" %>
+            </span>
+                <span class="dashboard-banner-network-stats-value" data-selector="last-coincident">
+              <%= BlockScoutWeb.Cldr.Number.to_string!(@last_region_coincident, format: "#,###") %>
+            </span>
+            </div>
+            <% end %>
         </div>
       </div>
     </div>

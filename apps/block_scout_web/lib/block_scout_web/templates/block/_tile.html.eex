@@ -26,7 +26,11 @@
       <div>
         <!-- transactions -->
         <span class="mr-2">
-          <%= ngettext("%{count} transaction", "%{count} transactions", Enum.count(@block.transactions)) %>
+          <%= ngettext("%{count} Txn", "%{count} Txn", Enum.count(@block.transactions)) %>
+        </span>
+        <!-- external transactions -->
+        <span class="mr-2">
+          <%= ngettext("%{count} Etxn", "%{count} Etxn", Enum.count(@block.ext_transactions)) %>
         </span>
         <%= if @block.size do %>
            <!-- size -->
@@ -36,16 +40,38 @@
         <span data-from-now="<%= @block.timestamp %>"></span>
       </div>
       <%= if System.get_env("HIDE_BLOCK_MINER") !== "true" do %>
-        <div class="text-nowrap text-truncate mt-3 mt-md-0">
-          <!-- validator -->
-          <%= gettext "Miner" %>
-          <%= render BlockScoutWeb.AddressView,
+      <div class="text-nowrap text-truncate mt-3 mt-md-0">
+        <!-- validator -->
+        <%= gettext "Miner" %>
+        <%= render BlockScoutWeb.AddressView,
             "_link.html",
             address: @block.miner,
             contract: false,
             use_custom_tooltip: false %>
-        </div>
+      </div>
       <% end %>
+      <%= if @block.is_prime_coincident do %>
+      <div class="text-nowrap text-truncate mt-3 mt-md-0">
+        <!-- validator -->
+        <%= gettext "Prime" %>
+        <%= link(
+            class: "tile-label",
+            to: block_path(BlockScoutWeb.Endpoint, :show, @block.hash),
+            "data-selector": "block-number"
+          ) do to_string(@block.hash) end %>
+      </div>
+      <% end %>
+        <%= if @block.is_region_coincident do %>
+        <div class="text-nowrap text-truncate mt-3 mt-md-0">
+          <!-- validator -->
+          <%= gettext "Region" %>
+          <%= link(
+            class: "tile-label",
+            to: block_path(BlockScoutWeb.Endpoint, :show, @block.hash),
+            "data-selector": "block-number"
+          ) do to_string(@block.hash) end %>
+        </div>
+        <% end %>
       <%= if show_reward?(@block.rewards) do %>
         <div class="text-nowrap text-truncate mt-3 mt-md-0">
           <!-- validator reward -->

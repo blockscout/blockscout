@@ -21,6 +21,8 @@ defmodule BlockScoutWeb.ChainController do
     total_gas_usage = GasUsage.total()
     block_count = BlockCache.estimated_count()
     address_count = Chain.address_estimated_count()
+    last_prime_coincident = BlockCache.last_coincident("prime")
+    last_region_coincident = BlockCache.last_coincident("region")
 
     market_cap_calculation =
       case Application.get_env(:explorer, :supply) do
@@ -57,6 +59,8 @@ defmodule BlockScoutWeb.ChainController do
       transactions_path: recent_transactions_path(conn, :index),
       transaction_stats: transaction_stats,
       block_count: block_count,
+      last_prime_coincident: last_prime_coincident,
+      last_region_coincident: last_region_coincident,
       gas_price: Application.get_env(:block_scout_web, :gas_price)
     )
   end

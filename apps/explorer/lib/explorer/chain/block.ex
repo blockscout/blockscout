@@ -14,7 +14,7 @@ defmodule Explorer.Chain.Block do
 
   @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
-  @quai_attrs ~w(base_fee_per_gas_full difficulty_full ext_rollup_root_full ext_transactions_root_full gas_limit_full gas_used_full logs_bloom_full manifest_hash_full miner_full number_full parent_hash_full receipts_root_full sha3_uncles_full state_root_full transactions_root_full ext_transactions sub_manifest location)a
+  @quai_attrs ~w(base_fee_per_gas_full difficulty_full ext_rollup_root_full ext_transactions_root_full gas_limit_full gas_used_full logs_bloom_full manifest_hash_full miner_full number_full parent_hash_full receipts_root_full sha3_uncles_full state_root_full transactions_root_full ext_transactions sub_manifest location is_prime_coincident is_region_coincident)a
 
   @typedoc """
   How much work is required to find a hash with some number of leading 0s.  It is measured in hashes for PoW
@@ -87,7 +87,9 @@ defmodule Explorer.Chain.Block do
           state_root_full: [Hash.Full.t()],
           transactions_root_full: [Hash.Full.t()],
 #          location: [:integer],
-          location: :string
+          location: :string,
+          is_prime_coincident: boolean(),
+          is_region_coincident: boolean()
         }
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -123,6 +125,8 @@ defmodule Explorer.Chain.Block do
     field(:state_root_full, {:array, Hash.Full})
     field(:transactions_root_full, {:array, Hash.Full})
     field(:location, :string)
+    field(:is_prime_coincident, :boolean)
+    field(:is_region_coincident, :boolean)
     timestamps()
 
     belongs_to(:miner, Address, foreign_key: :miner_hash, references: :hash, type: Hash.Address)

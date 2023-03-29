@@ -63,6 +63,15 @@
               <% end %>
             </dd>
           </dl>
+          <!-- Location -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+              text: gettext("Location at which block was produced.") %>
+              <%= gettext("Location") %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10"><%= @block.location %></dd>
+          </dl>
           <!-- Timestamp -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
@@ -85,6 +94,23 @@
                   <%= gettext "%{count} Transaction", count: @block_transaction_count %>
                 <% else %>
                   <%= gettext "%{count} Transactions", count: @block_transaction_count %>
+                <% end %>
+              </a>
+            </dd>
+          </dl>
+          <!-- # of Transactions -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+              text: gettext("The number of transactions in the block.") %>
+              <%= gettext("External Transactions") %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10">
+              <a href="#txs" class="page-link bs-label large btn-no-border-link-to-tems">
+                <%= if @block_transaction_count == 1 do %>
+                <%= gettext "%{count} External Transaction", count: Enum.count(@block.ext_transactions) %>
+                <% else %>
+                <%= gettext "%{count} External Transactions", count: Enum.count(@block.ext_transactions) %>
                 <% end %>
               </a>
             </dd>
@@ -262,10 +288,38 @@
                   <% end %></dd>
               </dl>
             <% end %>
+          <!-- Manifest Hash -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Manifest Hash when block was produced.") %>
+              <%= gettext("Manifest Hash") %>
+            </dt>
+            <%= for {item, index} <- Enum.with_index(@block.manifest_hash_full) do %>
+            <%= if index > 0 do %>
+            <dt class="col-sm-3 col-lg-2 text-muted"></dt>
+            <% end %>
+            <dd class="col-sm-9 col-lg-10"><%= to_string(item) %></dd>
+            <% end %>
+          </dl>
+          <!-- Ext Rollup Root Hash -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+              text: gettext("Ext Rollup Root Hash when block was produced.") %>
+              <%= gettext("Ext Rollup Root Hash") %>
+            </dt>
+            <%= for {item, index} <- Enum.with_index(@block.ext_rollup_root_full) do %>
+            <%= if index > 0 do %>
+            <dt class="col-sm-3 col-lg-2 text-muted"></dt>
+            <% end %>
+            <dd class="col-sm-9 col-lg-10"><%= to_string(item) %></dd>
+            <% end %>
+          </dl>
           <% end %>
         </div>
       </div>
     </div>
 </section>
 
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %> 
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>

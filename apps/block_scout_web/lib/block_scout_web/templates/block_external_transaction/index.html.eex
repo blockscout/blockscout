@@ -1,5 +1,5 @@
 <section class="container">
-<%= render BlockScoutWeb.BlockView, "overview.html", assigns %>
+    <%= render BlockScoutWeb.BlockView, "overview.html", assigns %>
 
   <section>
     <div class="card mb-3">
@@ -14,8 +14,8 @@
         <%=
           link(
             gettext("External Transactions"),
-            class: "card-tab #{tab_status("external-transactions", @conn.request_path)}",
-            to: block_external_transaction_path(@conn, :index, @conn.params["block_hash_or_number"])
+            class: "card-tab #{tab_status("external_transactions", @conn.request_path)}",
+            to: block_transaction_path(@conn, :index, @conn.params["block_hash_or_number"])
             )
         %>
       </div>
@@ -50,8 +50,8 @@
         <%=
           link(
             gettext("External Transactions"),
-            class: "card-tab #{tab_status("external-transactions", @conn.request_path)}",
-            to: block_external_transaction_path(@conn, :index, @conn.params["block_hash_or_number"])
+            class: "card-tab #{tab_status("transactions", @conn.request_path)}",
+            to: block_transaction_path(@conn, :index, @conn.params["block_hash_or_number"])
             )
         %>
       </div>
