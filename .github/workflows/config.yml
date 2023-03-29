@@ -731,14 +731,13 @@ jobs:
 
   set-docker-vars:
     runs-on: ubuntu-latest
-#    outputs:
-#      tag: ${{ steps.docker-vars.outputs.tag }}
-#      another_var: ${{ steps.docker-vars.outputs.another_var }}   
+    outputs:
+      tag: ${{ steps.docker-vars.outputs.tag }}
     steps:
       - name: Print inputs passed to the reusable workflow
         id: docker-vars
         run: |
-          echo "TAG=${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }} >> $GITHUB_OUTPUT"
+          echo "tag=${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }} >> $GITHUB_OUTPUT"
   
  
   Build-Blockscout:
@@ -749,7 +748,7 @@ jobs:
       service-account:   "${{ github.ref != 'ref/heads/main' && 'blockscout-images-dev@devopsre.iam.gserviceaccount.com' || 'blockscout-images@devopsre.iam.gserviceaccount.com' }}"
       artifact-registry: "${{ github.ref != 'ref/heads/main' && format('{0}/blockscout', vars.DEV_IMAGE_REPO) || 'us-west1-docker.pkg.dev/devopsre/blockscout/blockscout' }}"
 #      tag: "${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }}"
-      tag: ${{ needs.set-docker-vars.outputs.TAG }}
+      tag: ${{ needs.set-docker-vars.outputs.tag }}
       context: .
       file: docker/Dockerfile
       build-args: |
@@ -766,7 +765,7 @@ jobs:
       service-account:   "${{ github.ref != 'ref/heads/main' && 'blockscout-images-dev@devopsre.iam.gserviceaccount.com' || 'blockscout-images@devopsre.iam.gserviceaccount.com' }}"
       artifact-registry: "${{ github.ref != 'ref/heads/main' && format('{0}/blockscout', vars.DEV_IMAGE_REPO) || 'us-west1-docker.pkg.dev/devopsre/blockscout/blockscout' }}"
 #      tag: "${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }}"
-      tag: ${{ needs.set-docker-vars.outputs.TAG }}
+      tag: ${{ needs.set-docker-vars.outputs.tag }}
       context: .
       file: docker/Dockerfile
       build-args: |
