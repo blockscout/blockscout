@@ -738,6 +738,7 @@ jobs:
       - name: Print inputs passed to the reusable workflow
         id: set-docker-vars
         run: |
+          echo "tag=${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }}"
           echo "tag=${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }} >> $GITHUB_OUTPUT"
   
   set-docker-vars2:
