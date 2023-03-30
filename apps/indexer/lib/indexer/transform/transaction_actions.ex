@@ -137,37 +137,40 @@ defmodule Indexer.Transform.TransactionActions do
       # create tokens cache if not exists
       TransactionActionTokensData.create_cache_table()
 
-      # handle uniswap v3
-      actions =
-        if Enum.member?([@mainnet, @goerli, @optimism, @polygon], chain_id) and
-             (is_nil(protocols_to_rewrite) or Enum.empty?(protocols_to_rewrite) or
-                Enum.member?(protocols_to_rewrite, "uniswap_v3")) do
-          logs
-          |> uniswap_filter_logs()
-          |> logs_group_by_txs()
-          |> uniswap(actions, chain_id)
-        else
-          actions
-        end
-
-      # handle aave v3
-      aave_v3_pool = Application.get_all_env(:indexer)[Indexer.Fetcher.TransactionAction][:aave_v3_pool]
-
-      actions =
-        if not is_nil(aave_v3_pool) and
-             (is_nil(protocols_to_rewrite) or Enum.empty?(protocols_to_rewrite) or
-                Enum.member?(protocols_to_rewrite, "aave_v3")) do
-          logs
-          |> aave_filter_logs(String.downcase(aave_v3_pool))
-          |> logs_group_by_txs()
-          |> aave(actions, chain_id)
-        else
-          actions
-        end
+      actions = parse_aave_v3(logs, actions, protocols_to_rewrite, chain_id)
+      actions = parse_uniswap_v3(logs, actions, protocols_to_rewrite, chain_id)
 
       %{transaction_actions: actions}
     else
       %{transaction_actions: []}
+    end
+  end
+
+  defp parse_aave_v3(logs, actions, protocols_to_rewrite, chain_id) do
+    aave_v3_pool = Application.get_all_env(:indexer)[Indexer.Fetcher.TransactionAction][:aave_v3_pool]
+
+    if not is_nil(aave_v3_pool) and
+         (is_nil(protocols_to_rewrite) or Enum.empty?(protocols_to_rewrite) or
+            Enum.member?(protocols_to_rewrite, "aave_v3")) do
+      logs
+      |> aave_filter_logs(String.downcase(aave_v3_pool))
+      |> logs_group_by_txs()
+      |> aave(actions, chain_id)
+    else
+      actions
+    end
+  end
+
+  defp parse_uniswap_v3(logs, actions, protocols_to_rewrite, chain_id) do
+    if Enum.member?([@mainnet, @goerli, @optimism, @polygon], chain_id) and
+         (is_nil(protocols_to_rewrite) or Enum.empty?(protocols_to_rewrite) or
+            Enum.member?(protocols_to_rewrite, "uniswap_v3")) do
+      logs
+      |> uniswap_filter_logs()
+      |> logs_group_by_txs()
+      |> uniswap(actions, chain_id)
+    else
+      actions
     end
   end
 
@@ -200,6 +203,7 @@ defmodule Indexer.Transform.TransactionActions do
     end)
   end
 
+  # credo:disable-for-next-line /Complexity/
   defp aave_handle_action(log, chain_id) do
     case sanitize_first_topic(log.first_topic) do
       @aave_v3_borrow_event ->
@@ -222,6 +226,18 @@ defmodule Indexer.Transform.TransactionActions do
         # this is FlashLoan event
         aave_handle_flash_loan_event(log, chain_id)
 
+      @aave_v3_enable_collateral_event ->
+        # this is ReserveUsedAsCollateralEnabled event
+        aave_handle_event("enable_collateral", log, log.second_topic, chain_id)
+
+      @aave_v3_disable_collateral_event ->
+        # this is ReserveUsedAsCollateralDisabled event
+        aave_handle_event("disable_collateral", log, log.second_topic, chain_id)
+
+      @aave_v3_liquidation_call_event ->
+        # this is LiquidationCall event
+        aave_handle_liquidation_call_event(log, chain_id)
+
       _ ->
         []
     end
@@ -231,71 +247,118 @@ defmodule Indexer.Transform.TransactionActions do
     [_user, amount, _interest_rate_mode, _borrow_rate] =
       decode_data(log.data, [:address, {:uint, 256}, {:uint, 8}, {:uint, 256}])
 
-    reserve = truncate_address_hash(log.second_topic)
-    token_data = get_token_data([reserve])
-
-    aave_handle_event("borrow", amount, log, reserve, token_data, chain_id)
+    aave_handle_event("borrow", amount, log, log.second_topic, chain_id)
   end
 
   defp aave_handle_supply_event(log, chain_id) do
     [_user, amount] = decode_data(log.data, [:address, {:uint, 256}])
 
-    reserve = truncate_address_hash(log.second_topic)
-    token_data = get_token_data([reserve])
-
-    aave_handle_event("supply", amount, log, reserve, token_data, chain_id)
+    aave_handle_event("supply", amount, log, log.second_topic, chain_id)
   end
 
   defp aave_handle_withdraw_event(log, chain_id) do
     [amount] = decode_data(log.data, [{:uint, 256}])
 
-    reserve = truncate_address_hash(log.second_topic)
-    token_data = get_token_data([reserve])
-
-    aave_handle_event("withdraw", amount, log, reserve, token_data, chain_id)
+    aave_handle_event("withdraw", amount, log, log.second_topic, chain_id)
   end
 
   defp aave_handle_repay_event(log, chain_id) do
     [amount, _use_a_tokens] = decode_data(log.data, [{:uint, 256}, :bool])
 
-    reserve = truncate_address_hash(log.second_topic)
-    token_data = get_token_data([reserve])
-
-    aave_handle_event("repay", amount, log, reserve, token_data, chain_id)
+    aave_handle_event("repay", amount, log, log.second_topic, chain_id)
   end
 
   defp aave_handle_flash_loan_event(log, chain_id) do
     [_initiator, amount, _interest_rate_mode, _premium] =
       decode_data(log.data, [:address, {:uint, 256}, {:uint, 8}, {:uint, 256}])
 
-    asset = truncate_address_hash(log.third_topic)
-    token_data = get_token_data([asset])
-
-    aave_handle_event("flash_loan", amount, log, asset, token_data, chain_id)
+    aave_handle_event("flash_loan", amount, log, log.third_topic, chain_id)
   end
 
-  defp aave_handle_event(type, amount, log, address, token_data, chain_id) do
-    if token_data === false do
-      []
-    else
-      decimals = token_data[address].decimals
-      amount = fractional(Decimal.new(amount), Decimal.new(decimals))
-      symbol = clarify_token_symbol(token_data[address].symbol, chain_id)
+  defp aave_handle_liquidation_call_event(log, chain_id) do
+    [debt_amount, collateral_amount, _liquidator, _receive_a_token] =
+      decode_data(log.data, [{:uint, 256}, {:uint, 256}, :address, :bool])
 
-      [
-        %{
-          hash: log.transaction_hash,
-          protocol: "aave_v3",
-          data: %{
-            amount: amount,
-            symbol: symbol,
-            address: Address.checksum(address),
-            block_number: log.block_number
-          },
-          type: type,
-          log_index: log.index
-        }
-      ]
+    debt_address = truncate_address_hash(log.third_topic)
+    collateral_address = truncate_address_hash(log.second_topic)
+
+    case get_token_data([debt_address, collateral_address]) do
+      false ->
+        []
+
+      token_data ->
+        debt_decimals = token_data[debt_address].decimals
+        collateral_decimals = token_data[collateral_address].decimals
+
+        [
+          %{
+            hash: log.transaction_hash,
+            protocol: "aave_v3",
+            data: %{
+              debt_amount: fractional(Decimal.new(debt_amount), Decimal.new(debt_decimals)),
+              debt_symbol: clarify_token_symbol(token_data[debt_address].symbol, chain_id),
+              debt_address: Address.checksum(debt_address),
+              collateral_amount: fractional(Decimal.new(collateral_amount), Decimal.new(collateral_decimals)),
+              collateral_symbol: clarify_token_symbol(token_data[collateral_address].symbol, chain_id),
+              collateral_address: Address.checksum(collateral_address),
+              block_number: log.block_number
+            },
+            type: "liquidation_call",
+            log_index: log.index
+          }
+        ]
+    end
+  end
+
+  defp aave_handle_event(type, amount, log, address_topic, chain_id)
+       when type in ["borrow", "supply", "withdraw", "repay", "flash_loan"] do
+    address = truncate_address_hash(address_topic)
+
+    case get_token_data([address]) do
+      false ->
+        []
+
+      token_data ->
+        decimals = token_data[address].decimals
+
+        [
+          %{
+            hash: log.transaction_hash,
+            protocol: "aave_v3",
+            data: %{
+              amount: fractional(Decimal.new(amount), Decimal.new(decimals)),
+              symbol: clarify_token_symbol(token_data[address].symbol, chain_id),
+              address: Address.checksum(address),
+              block_number: log.block_number
+            },
+            type: type,
+            log_index: log.index
+          }
+        ]
+    end
+  end
+
+  defp aave_handle_event(type, log, address_topic, chain_id) when type in ["enable_collateral", "disable_collateral"] do
+    address = truncate_address_hash(address_topic)
+
+    case get_token_data([address]) do
+      false ->
+        []
+
+      token_data ->
+        [
+          %{
+            hash: log.transaction_hash,
+            protocol: "aave_v3",
+            data: %{
+              symbol: clarify_token_symbol(token_data[address].symbol, chain_id),
+              address: Address.checksum(address),
+              block_number: log.block_number
+            },
+            type: type,
+            log_index: log.index
+          }
+        ]
     end
   end
 
