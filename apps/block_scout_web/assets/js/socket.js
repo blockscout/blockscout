@@ -1,11 +1,8 @@
 import { Socket } from 'phoenix'
 import { locale } from './locale'
+import { commonPath } from './lib/path_helper'
 
-// @ts-ignore
-let websocketRootUrl = process.env.SOCKET_ROOT
-if (!websocketRootUrl) {
-  websocketRootUrl = ''
-}
+let websocketRootUrl = commonPath
 if (websocketRootUrl.endsWith('/')) {
   websocketRootUrl = websocketRootUrl.slice(0, -1)
 }

@@ -4,16 +4,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
-  alias BlockScoutWeb.Tokens.Helpers
+  alias BlockScoutWeb.Tokens.Helper, as: TokensHelper
+  alias BlockScoutWeb.TransactionStateView
   alias Ecto.Association.NotLoaded
   alias Explorer.ExchangeRates.Token, as: TokenRate
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Transaction.StateChange
   alias Explorer.Counters.AverageBlockTime
   alias Timex.Duration
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+
+  @api_true [api?: true]
 
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
@@ -85,15 +89,19 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
+  def render("state_changes.json", %{state_changes: state_changes, conn: conn}) do
+    Enum.map(state_changes, &prepare_state_change(&1, conn))
+  end
+
   def prepare_token_transfer(token_transfer, conn) do
-    decoded_input = token_transfer.transaction |> Transaction.decoded_input_data() |> format_decoded_input()
+    decoded_input = token_transfer.transaction |> Transaction.decoded_input_data(@api_true) |> format_decoded_input()
 
     %{
       "tx_hash" => token_transfer.transaction_hash,
       "from" => Helper.address_with_info(conn, token_transfer.from_address, token_transfer.from_address_hash),
       "to" => Helper.address_with_info(conn, token_transfer.to_address, token_transfer.to_address_hash),
       "total" => prepare_token_transfer_total(token_transfer),
-      "token" => TokenView.render("token.json", %{token: Market.add_price(token_transfer.token)}),
+      "token" => TokenView.render("token.json", %{token: token_transfer.token}),
       "type" => Chain.get_token_transfer_type(token_transfer),
       "timestamp" =>
         if(match?(%NotLoaded{}, token_transfer.block),
@@ -115,7 +123,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def prepare_token_transfer_total(token_transfer) do
-    case Helpers.token_transfer_amount_for_api(token_transfer) do
+    case TokensHelper.token_transfer_amount_for_api(token_transfer) do
       {:ok, :erc721_instance} ->
         %{"token_id" => List.first(token_transfer.token_ids)}
 
@@ -188,7 +196,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp smart_contract_info(_), do: nil
 
   defp decode_log(log, %Transaction{} = tx) do
-    case log |> Log.decode(tx) |> format_decoded_log_input() do
+    case log |> Log.decode(tx, @api_true) |> format_decoded_log_input() do
       {:ok, method_id, text, mapping} ->
         render(__MODULE__, "decoded_log_input.json", method_id: method_id, text: text, mapping: mapping)
 
@@ -222,7 +230,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     revert_reason = revert_reason(status, transaction)
 
-    decoded_input = transaction |> Transaction.decoded_input_data() |> format_decoded_input()
+    decoded_input = transaction |> Transaction.decoded_input_data(@api_true) |> format_decoded_input()
     decoded_input_data = decoded_input(decoded_input)
 
     %{
@@ -236,7 +244,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "created_contract" =>
         Helper.address_with_info(conn, transaction.created_contract_address, transaction.created_contract_address_hash),
       "confirmations" =>
-        transaction.block |> Chain.confirmations(block_height: Chain.block_height()) |> format_confirmations(),
+        transaction.block |> Chain.confirmations(block_height: Chain.block_height(@api_true)) |> format_confirmations(),
       "confirmation_duration" => processing_time_duration(transaction),
       "value" => transaction.value,
       "fee" => transaction |> Chain.fee(:wei) |> format_fee(),
@@ -309,7 +317,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp revert_reason(status, transaction) do
     if is_binary(status) && status |> String.downcase() |> String.contains?("reverted") do
-      case TransactionView.transaction_revert_reason(transaction) do
+      case TransactionView.transaction_revert_reason(transaction, @api_true) do
         {:error, _contract_not_verified, candidates} when candidates != [] ->
           {:ok, method_id, text, mapping} = Enum.at(candidates, 0)
           render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: true)
@@ -486,4 +494,53 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp block_timestamp(%Transaction{block: %Block{} = block}), do: block.timestamp
   defp block_timestamp(%Block{} = block), do: block.timestamp
   defp block_timestamp(_), do: nil
+
+  defp prepare_state_change(%StateChange{} = state_change, conn) do
+    coin_or_transfer =
+      if state_change.coin_or_token_transfers == :coin,
+        do: :coin,
+        else: elem(List.first(state_change.coin_or_token_transfers), 1)
+
+    type = if coin_or_transfer == :coin, do: "coin", else: "token"
+
+    %{
+      "address" =>
+        Helper.address_with_info(conn, state_change.address, state_change.address && state_change.address.hash),
+      "is_miner" => state_change.miner?,
+      "type" => type,
+      "token" => if(type == "token", do: TokenView.render("token.json", %{token: coin_or_transfer.token}))
+    }
+    |> append_balances(state_change.balance_before, state_change.balance_after)
+    |> append_balance_change(state_change, coin_or_transfer)
+  end
+
+  defp append_balances(map, balance_before, balance_after) do
+    balances =
+      if TransactionStateView.not_negative?(balance_before) and TransactionStateView.not_negative?(balance_after) do
+        %{
+          "balance_before" => balance_before,
+          "balance_after" => balance_after
+        }
+      else
+        %{
+          "balance_before" => nil,
+          "balance_after" => nil
+        }
+      end
+
+    Map.merge(map, balances)
+  end
+
+  defp append_balance_change(map, state_change, coin_or_transfer) do
+    change =
+      if is_list(state_change.coin_or_token_transfers) and coin_or_transfer.token.type != "ERC-20" do
+        for {direction, token_transfer} <- state_change.coin_or_token_transfers do
+          %{"total" => prepare_token_transfer_total(token_transfer), "direction" => direction}
+        end
+      else
+        state_change.balance_diff
+      end
+
+    Map.merge(map, %{"change" => change})
+  end
 end

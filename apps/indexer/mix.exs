@@ -14,7 +14,7 @@ defmodule Indexer.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "5.0.0"
+      version: "5.1.2"
     ]
   end
 
@@ -42,7 +42,7 @@ defmodule Indexer.MixProject do
       # JSONRPC access to Nethermind for `Explorer.Indexer`
       {:ethereum_jsonrpc, in_umbrella: true},
       # RLP encoding
-      {:ex_rlp, "~> 0.5.2"},
+      {:ex_rlp, "~> 0.6.0"},
       # Importing to database
       {:explorer, in_umbrella: true},
       # libsecp2561k1 crypto functions

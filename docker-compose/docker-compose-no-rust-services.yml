@@ -2,24 +2,14 @@ version: '3.8'
 
 services:
   redis_db:
-    image: 'redis:alpine'
-    ports:
-      - 6379:6379
-    container_name: redis_db
-    command: redis-server
-    volumes:
-      - ./redis-data:/data
+    extends:
+      file: ./services/docker-compose-redis.yml
+      service: redis_db
 
   db:
-    image: postgres:14
-    restart: always
-    container_name: 'postgres'
-    environment:
-        POSTGRES_PASSWORD: ''
-        POSTGRES_USER: 'postgres'
-        POSTGRES_HOST_AUTH_METHOD: 'trust'
-    ports:
-      - 7432:5432
+    extends:
+      file: ./services/docker-compose-db.yml
+      service: db
 
   blockscout:
     platform: linux/x86_64
@@ -33,16 +23,14 @@ services:
       args:
         CACHE_EXCHANGE_RATES_PERIOD: ""
         DISABLE_READ_API: "false"
-        API_PATH: "/"
-        NETWORK_PATH: "/"
         DISABLE_WEBAPP: "false"
         DISABLE_WRITE_API: "false"
         CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER: ""
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
-        SOCKET_ROOT: "/"
         WOBSERVER_ENABLED: "false"
         ADMIN_PANEL_ENABLED: ""
     restart: always
+    stop_grace_period: 5m
     container_name: 'blockscout'
     links:
       - db:database

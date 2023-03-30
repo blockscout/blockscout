@@ -8,6 +8,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   then Verified.
   """
 
+  import Explorer.SmartContract.Helper, only: [cast_libraries: 1, prepare_bytecode_for_microservice: 3]
+
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
   alias Explorer.SmartContract.RustVerifierInterface
@@ -45,19 +47,19 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           init
 
         _ ->
-          ""
+          nil
       end
 
-    params
-    |> Map.put("creation_bytecode", creation_tx_input)
-    |> Map.put("deployed_bytecode", deployed_bytecode)
-    |> Map.put("sources", %{
+    %{}
+    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
+    |> Map.put("sourceFiles", %{
       "#{params["name"]}.#{smart_contract_source_file_extension(parse_boolean(params["is_yul"]))}" =>
         params["contract_source_code"]
     })
-    |> Map.put("contract_libraries", params["external_libraries"])
-    |> Map.put("optimization_runs", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
-    |> Map.put("evm_version", Map.get(params, "evm_version", "default"))
+    |> Map.put("libraries", params["external_libraries"])
+    |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
+    |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
+    |> Map.put("compilerVersion", params["compiler_version"])
     |> RustVerifierInterface.verify_multi_part()
   end
 
@@ -132,12 +134,11 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           init
 
         _ ->
-          ""
+          nil
       end
 
-    params
-    |> Map.put("creation_bytecode", creation_tx_input)
-    |> Map.put("deployed_bytecode", deployed_bytecode)
+    %{"compilerVersion" => params["compiler_version"]}
+    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
     |> Map.put("input", json_input)
     |> RustVerifierInterface.verify_standard_json_input()
   end
@@ -155,15 +156,16 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           init
 
         _ ->
-          ""
+          nil
       end
 
-    params
-    |> Map.put("creation_bytecode", creation_tx_input)
-    |> Map.put("deployed_bytecode", deployed_bytecode)
-    |> Map.put("sources", files)
-    |> Map.put("contract_libraries", params["external_libraries"])
-    |> Map.put("optimization_runs", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
+    %{}
+    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
+    |> Map.put("sourceFiles", files)
+    |> Map.put("libraries", params["external_libraries"])
+    |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
+    |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
+    |> Map.put("compilerVersion", params["compiler_version"])
     |> RustVerifierInterface.verify_multi_part()
   end
 
@@ -211,6 +213,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
                     |> Map.put("name", contract_name)
                     |> Map.put("secondary_sources", secondary_sources)
                     |> Map.put("compiler_settings", map_json_input["settings"])
+                    |> Map.put("external_libraries", cast_libraries(map_json_input["settings"]["libraries"] || %{}))
 
                   {:halt, {:ok, verified_data, additional_params}}
 
@@ -423,19 +426,19 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   end
 
   defp check_users_constructor_args_validity(bc_bytecode, local_bytecode, bc_splitter, local_splitter, user_arguments) do
-    clear_bc_bytecode = bc_bytecode |> replace_last_occurence(user_arguments) |> replace_last_occurence(bc_splitter)
-    clear_local_bytecode = replace_last_occurence(local_bytecode, local_splitter)
+    clear_bc_bytecode = bc_bytecode |> replace_last_occurrence(user_arguments) |> replace_last_occurrence(bc_splitter)
+    clear_local_bytecode = replace_last_occurrence(local_bytecode, local_splitter)
     clear_bc_bytecode == clear_local_bytecode
   end
 
-  defp replace_last_occurence(where, what) when is_binary(where) and is_binary(what) do
+  defp replace_last_occurrence(where, what) when is_binary(where) and is_binary(what) do
     where
     |> String.reverse()
     |> String.replace(String.reverse(what), "", global: false)
     |> String.reverse()
   end
 
-  defp replace_last_occurence(_, _), do: nil
+  defp replace_last_occurrence(_, _), do: nil
 
   defp parse_constructor_and_return_check_function(abi) do
     constructor_abi = Enum.find(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
@@ -510,7 +513,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
     bytecode_without_meta =
       bytecode
-      |> replace_last_occurence(meta <> meta_length)
+      |> replace_last_occurrence(meta <> meta_length)
 
     %{
       "metadata_hash_with_length" => meta <> meta_length,

@@ -5,7 +5,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
   alias BlockScoutWeb.AddressContractView
   alias BlockScoutWeb.Models.UserFromAuth
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, SmartContract}
+
+  setup :set_mox_from_context
 
   describe "/smart-contracts/{address_hash}" do
     test "get 404 on non existing SC", %{conn: conn} do
@@ -107,7 +109,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "abi" => target_contract.abi
       }
 
-      blockchain_get_code_mock()
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
 
@@ -197,7 +198,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "abi" => target_contract.abi
       }
 
-      blockchain_get_code_mock()
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
 
@@ -290,7 +290,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "abi" => target_contract.abi
       }
 
-      blockchain_get_code_mock()
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       response = json_response(request, 200)
 
@@ -505,8 +504,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         }
       ]
 
-      blockchain_get_code_mock()
-
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
@@ -571,8 +568,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         }
       ]
 
-      blockchain_get_code_mock()
-
       target_contract = insert(:smart_contract, abi: abi)
 
       request =
@@ -614,8 +609,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
         }
       ]
-
-      blockchain_get_code_mock()
 
       expect(
         EthereumJSONRPC.Mox,
@@ -671,8 +664,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         }
       ]
 
-      blockchain_get_code_mock()
-
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
@@ -725,8 +716,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
         }
       ]
-
-      blockchain_get_code_mock()
 
       expect(
         EthereumJSONRPC.Mox,
@@ -1070,7 +1059,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       ]
 
       target_contract = insert(:smart_contract, abi: abi)
-      blockchain_get_code_mock()
 
       expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
                                                   id: 0,
@@ -1183,8 +1171,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       target_contract = insert(:smart_contract, abi: abi)
 
-      blockchain_get_code_mock()
-
       expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
                                                   id: 0,
                                                   method: "eth_getStorageAt",
@@ -1270,8 +1256,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       target_contract = insert(:smart_contract, abi: abi)
 
-      blockchain_get_code_mock()
-
       expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
                                                   id: 0,
                                                   method: "eth_getStorageAt",
@@ -1341,8 +1325,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       target_contract = insert(:smart_contract, abi: abi)
 
-      blockchain_get_code_mock()
-
       expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
                                                   id: 0,
                                                   method: "eth_getStorageAt",
@@ -1410,8 +1392,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       ]
 
       target_contract = insert(:smart_contract, abi: abi)
-
-      blockchain_get_code_mock()
 
       expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
                                                   id: 0,
@@ -1504,7 +1484,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       ]
 
       target_contract = insert(:smart_contract, abi: abi)
-      blockchain_get_code_mock()
 
       expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
                                                   id: 0,
@@ -1536,22 +1515,72 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     end
   end
 
-  defp blockchain_get_code_mock do
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn [%{id: id, method: "eth_getCode", params: [_, _]}], _options ->
-        {:ok,
-         [
-           %{
-             id: id,
-             jsonrpc: "2.0",
-             result:
-               "0x6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-           }
-         ]}
-      end
-    )
+  describe "/smart-contracts" do
+    test "get [] on empty db", %{conn: conn} do
+      request = get(conn, "/api/v2/smart-contracts")
+
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
+    test "get correct smart contract", %{conn: conn} do
+      smart_contract = insert(:smart_contract)
+      request = get(conn, "/api/v2/smart-contracts")
+
+      assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+      compare_item(smart_contract, sc)
+    end
+
+    test "check pagination", %{conn: conn} do
+      smart_contracts =
+        for _ <- 0..50 do
+          insert(:smart_contract)
+        end
+
+      request = get(conn, "/api/v2/smart-contracts")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/smart-contracts", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, smart_contracts)
+    end
+  end
+
+  describe "/smart-contracts/counters" do
+    test "fetch counters", %{conn: conn} do
+      request = get(conn, "/api/v2/smart-contracts/counters")
+
+      assert %{
+               "smart_contracts" => _,
+               "new_smart_contracts_24h" => _,
+               "verified_smart_contracts" => _,
+               "new_verified_smart_contracts_24h" => _
+             } = json_response(request, 200)
+    end
+  end
+
+  defp compare_item(%SmartContract{} = smart_contract, json) do
+    assert smart_contract.compiler_version == json["compiler_version"]
+
+    assert if(smart_contract.is_vyper_contract, do: nil, else: smart_contract.optimization) ==
+             json["optimization_enabled"]
+
+    assert json["language"] == if(smart_contract.is_vyper_contract, do: "vyper", else: "solidity")
+    assert json["verified_at"]
+    assert !is_nil(smart_contract.constructor_arguments) == json["has_constructor_args"]
+    assert Address.checksum(smart_contract.address_hash) == json["address"]["hash"]
+  end
+
+  defp check_paginated_response(first_page_resp, second_page_resp, list) do
+    assert Enum.count(first_page_resp["items"]) == 50
+    assert first_page_resp["next_page_params"] != nil
+    compare_item(Enum.at(list, 50), Enum.at(first_page_resp["items"], 0))
+    compare_item(Enum.at(list, 1), Enum.at(first_page_resp["items"], 49))
+
+    assert Enum.count(second_page_resp["items"]) == 1
+    assert second_page_resp["next_page_params"] == nil
+    compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
   end
 
   defp blockchain_eth_call_mock do

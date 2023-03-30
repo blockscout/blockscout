@@ -94,8 +94,6 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     http_post_request_rust_microservice(verify_url_rust_microservice(), body)
   end
 
-  defp add_chosen_contract(params, nil), do: params
-
   defp add_chosen_contract(params, index) when is_binary(index) do
     case Integer.parse(index) do
       {integer, ""} ->
@@ -116,14 +114,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     files
     |> Enum.reduce(Map.new(), fn {name, content}, acc ->
       if content do
-        file_content =
-          if Helper.json_file?(name) do
-            content
-            |> Jason.decode!()
-            |> Jason.encode!()
-          else
-            content
-          end
+        file_content = get_file_content(name, content)
 
         acc
         |> Map.put(name, file_content)
@@ -140,14 +131,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       if file do
         {:ok, file_content} = File.read(file.path)
 
-        file_content =
-          if Helper.json_file?(file.filename) do
-            file_content
-            |> Jason.decode!()
-            |> Jason.encode!()
-          else
-            file_content
-          end
+        file_content = get_file_content(file.filename, file_content)
 
         acc
         |> Map.put(file.filename, file_content)
@@ -155,6 +139,16 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
         acc
       end
     end)
+  end
+
+  defp get_file_content(name, content) do
+    if Helper.json_file?(name) do
+      content
+      |> Jason.decode!()
+      |> Jason.encode!()
+    else
+      content
+    end
   end
 
   def http_get_request(url, params) do
@@ -214,6 +208,9 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       url =~ "/verify" ->
         parse_verify_http_response(body)
 
+      url =~ "/sourcify/sources:verify" ->
+        parse_verify_http_response(body)
+
       url =~ "/files/any" ->
         parse_get_metadata_any_http_response(body)
 
@@ -234,10 +231,10 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
         {:ok, body_json}
 
       # Success status code from Rust microservice
-      %{"status" => "0"} ->
+      %{"status" => "SUCCESS"} ->
         {:ok, body_json}
 
-      %{"status" => "1", "message" => message} ->
+      %{"status" => "FAILURE", "message" => message} ->
         {:error, message}
 
       %{"result" => [%{"status" => unknown_status}]} ->
@@ -322,31 +319,33 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       verification_metadata_sol
       |> Enum.reduce(full_params_initial, fn %{"name" => name, "content" => content, "path" => _path} = param,
                                              full_params_acc ->
-        compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
-
-        if String.downcase(name) == String.downcase(compilation_target_file_name) do
-          %{
-            "params_to_publish" => extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish")),
-            "abi" => Map.get(full_params_acc, "abi"),
-            "secondary_sources" => Map.get(full_params_acc, "secondary_sources"),
-            "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
-            "compilation_target_file_name" => compilation_target_file_name
-          }
-        else
-          secondary_sources = [
-            prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
-          ]
-
-          %{
-            "params_to_publish" => Map.get(full_params_acc, "params_to_publish"),
-            "abi" => Map.get(full_params_acc, "abi"),
-            "secondary_sources" => secondary_sources,
-            "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
-            "compilation_target_file_name" => compilation_target_file_name
-          }
-        end
+        construct_params_from_sourcify(name, full_params_acc, content, param, address_hash_string)
       end)
     end
+  end
+
+  defp construct_params_from_sourcify(name, full_params_acc, content, param, address_hash_string) do
+    compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
+
+    {params_to_publish, secondary_sources} =
+      if String.downcase(name) == String.downcase(compilation_target_file_name) do
+        params_to_publish = extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish"))
+        {params_to_publish, Map.get(full_params_acc, "secondary_sources")}
+      else
+        secondary_sources = [
+          prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
+        ]
+
+        {Map.get(full_params_acc, "params_to_publish"), secondary_sources}
+      end
+
+    %{
+      "params_to_publish" => params_to_publish,
+      "abi" => Map.get(full_params_acc, "abi"),
+      "secondary_sources" => secondary_sources,
+      "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
+      "compilation_target_file_name" => compilation_target_file_name
+    }
   end
 
   defp parse_json_from_sourcify_for_insertion(verification_metadata_json) do
@@ -423,7 +422,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp verify_url_rust_microservice do
-    "#{RustVerifierInterface.base_api_url()}" <> "/sourcify/verify"
+    "#{RustVerifierInterface.base_api_url()}" <> "/verifier/sourcify/sources:verify"
   end
 
   defp check_by_address_url do

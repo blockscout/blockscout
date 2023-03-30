@@ -3,9 +3,11 @@ defmodule EthereumJSONRPC.Geth do
   Ethereum JSONRPC methods that are only supported by [Geth](https://github.com/ethereum/go-ethereum/wiki/geth).
   """
 
+  require Logger
+
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
-  alias EthereumJSONRPC.{FetchedBalance, FetchedCode, PendingTransaction}
+  alias EthereumJSONRPC.{FetchedBalance, FetchedCode, PendingTransaction, Utility.CommonHelper}
   alias EthereumJSONRPC.Geth.{Calls, Tracer}
 
   @behaviour EthereumJSONRPC.Variant
@@ -25,15 +27,32 @@ defmodule EthereumJSONRPC.Geth do
   def fetch_internal_transactions(transactions_params, json_rpc_named_arguments) when is_list(transactions_params) do
     id_to_params = id_to_params(transactions_params)
 
+    json_rpc_named_arguments_corrected_timeout = correct_timeouts(json_rpc_named_arguments)
+
     with {:ok, responses} <-
            id_to_params
            |> debug_trace_transaction_requests()
-           |> json_rpc(json_rpc_named_arguments) do
+           |> json_rpc(json_rpc_named_arguments_corrected_timeout) do
       debug_trace_transaction_responses_to_internal_transactions_params(
         responses,
         id_to_params,
         json_rpc_named_arguments
       )
+    end
+  end
+
+  defp correct_timeouts(json_rpc_named_arguments) do
+    debug_trace_transaction_timeout =
+      Application.get_env(:ethereum_jsonrpc, __MODULE__)[:debug_trace_transaction_timeout]
+
+    case CommonHelper.parse_duration(debug_trace_transaction_timeout) do
+      {:error, :invalid_format} ->
+        json_rpc_named_arguments
+
+      parsed_timeout ->
+        json_rpc_named_arguments
+        |> put_in([:transport_options, :http_options, :timeout], parsed_timeout)
+        |> put_in([:transport_options, :http_options, :recv_timeout], parsed_timeout)
     end
   end
 
@@ -238,7 +257,8 @@ defmodule EthereumJSONRPC.Geth do
          acc,
          trace_address,
          inner?
-       ) do
+       )
+       when type in ~w(CALL CALLCODE DELEGATECALL STATICCALL CREATE CREATE2 SELFDESTRUCT REWARD) do
     new_trace_address = [index | trace_address]
 
     formatted_call =
@@ -273,6 +293,11 @@ defmodule EthereumJSONRPC.Geth do
       [formatted_call | acc],
       if(inner?, do: new_trace_address, else: [])
     )
+  end
+
+  defp parse_call_tracer_calls({call, _}, acc, _trace_address, _inner?) do
+    Logger.warning("Call from a callTracer with an unknown type: #{inspect(call)}")
+    acc
   end
 
   defp parse_call_tracer_calls(calls, acc, trace_address, _inner) when is_list(calls) do

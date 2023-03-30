@@ -19,7 +19,9 @@ defmodule BlockScoutWeb.SmartContractController do
 
     is_custom_abi = parse_boolean(params["is_custom_abi"])
 
-    with true <- ajax?(conn),
+    with {:contract_interaction_disabled, false} <-
+           {:contract_interaction_disabled, write_contract_api_disabled?(action)},
+         true <- ajax?(conn),
          {:custom_abi, false} <- {:custom_abi, is_custom_abi},
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
@@ -38,13 +40,13 @@ defmodule BlockScoutWeb.SmartContractController do
           if contract_type == "proxy" do
             Writer.write_functions_proxy(implementation_address_hash_string)
           else
-            Writer.write_functions(address_hash)
+            Writer.write_functions(address.smart_contract)
           end
         else
           if contract_type == "proxy" do
-            Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string)
+            Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string, nil)
           else
-            Reader.read_only_functions(address_hash, params["from"])
+            Reader.read_only_functions(address.smart_contract, address_hash, params["from"])
           end
         end
 
@@ -53,7 +55,7 @@ defmodule BlockScoutWeb.SmartContractController do
           if contract_type == "proxy" do
             Reader.read_functions_required_wallet_proxy(implementation_address_hash_string)
           else
-            Reader.read_functions_required_wallet(address_hash)
+            Reader.read_functions_required_wallet(address.smart_contract)
           end
         else
           []
@@ -90,6 +92,9 @@ defmodule BlockScoutWeb.SmartContractController do
 
       :error ->
         unprocessable_entity(conn)
+
+      {:contract_interaction_disabled, true} ->
+        not_found(conn)
 
       {:error, :not_found} ->
         not_found(conn)
@@ -162,7 +167,7 @@ defmodule BlockScoutWeb.SmartContractController do
 
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(params["id"]),
-         {:ok, _address} <- Chain.find_contract_address(address_hash, address_options, true) do
+         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
       contract_type = if params["type"] == "proxy", do: :proxy, else: :regular
 
       args =
@@ -190,7 +195,8 @@ defmodule BlockScoutWeb.SmartContractController do
             address_hash,
             %{method_id: params["method_id"], args: args},
             contract_type,
-            params["from"]
+            params["from"],
+            address.smart_contract && address.smart_contract.abi
           )
         end
 
@@ -250,4 +256,6 @@ defmodule BlockScoutWeb.SmartContractController do
   defp is_integer?(integer) when is_integer(integer), do: true
 
   defp is_integer?(_), do: false
+
+  defp write_contract_api_disabled?(action), do: AddressView.contract_interaction_disabled?() && action == "write"
 end

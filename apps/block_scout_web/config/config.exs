@@ -5,24 +5,6 @@
 # is restricted to this project.
 import Config
 
-network_path =
-  "NETWORK_PATH"
-  |> System.get_env("/")
-  |> (&(if String.ends_with?(&1, "/") do
-          String.trim_trailing(&1, "/")
-        else
-          &1
-        end)).()
-
-api_path =
-  "API_PATH"
-  |> System.get_env("/")
-  |> (&(if String.ends_with?(&1, "/") do
-          String.trim_trailing(&1, "/")
-        else
-          &1
-        end)).()
-
 # General application configuration
 config :block_scout_web,
   namespace: BlockScoutWeb,
@@ -35,15 +17,6 @@ config :block_scout_web,
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
 config :block_scout_web, BlockScoutWeb.Counters.InternalTransactionsIndexedCounter, enabled: true
-
-# Configures the endpoint
-config :block_scout_web, BlockScoutWeb.Endpoint,
-  url: [
-    path: network_path,
-    api_path: api_path
-  ],
-  render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
-  pubsub_server: BlockScoutWeb.PubSub
 
 config :block_scout_web, BlockScoutWeb.Tracer,
   service: :block_scout_web,
@@ -74,6 +47,22 @@ config :logger, :block_scout_web,
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :block_scout_web]
+
+config :logger, :api,
+  # keep synced with `config/config.exs`
+  format: "$dateT$time $metadata[$level] $message\n",
+  metadata:
+    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
+       block_number step count error_count shrunk import_id transaction_id)a,
+  metadata_filter: [application: :api]
+
+config :logger, :api_v2,
+  # keep synced with `config/config.exs`
+  format: "$dateT$time $metadata[$level] $message\n",
+  metadata:
+    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
+       block_number step count error_count shrunk import_id transaction_id)a,
+  metadata_filter: [application: :api_v2]
 
 config :prometheus, BlockScoutWeb.Prometheus.Instrumenter,
   # override default for Phoenix 1.4 compatibility

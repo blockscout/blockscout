@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Log do
   require Logger
 
   alias ABI.{Event, FunctionSelector}
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Transaction}
   alias Explorer.SmartContract.SigProviderInterface
 
@@ -121,16 +121,18 @@ defmodule Explorer.Chain.Log do
   Decode transaction log data.
   """
 
-  def decode(log, transaction) do
-    address_options = [
-      necessity_by_association: %{
-        :smart_contract => :optional
-      }
-    ]
+  def decode(log, transaction, options \\ []) do
+    address_options =
+      [
+        necessity_by_association: %{
+          :smart_contract => :optional
+        }
+      ]
+      |> Keyword.merge(options)
 
     case Chain.find_contract_address(log.address_hash, address_options, true) do
       {:ok, %{smart_contract: smart_contract}} ->
-        full_abi = Chain.combine_proxy_implementation_abi(smart_contract)
+        full_abi = Chain.combine_proxy_implementation_abi(smart_contract, options)
 
         with {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction),
              identifier <- Base.encode16(selector.method_id, case: :lower),
@@ -138,7 +140,7 @@ defmodule Explorer.Chain.Log do
           {:ok, identifier, text, mapping}
         else
           {:error, :could_not_decode} ->
-            case find_candidates(log, transaction) do
+            case find_candidates(log, transaction, options) do
               {:error, :contract_not_verified, []} ->
                 decode_event_via_sig_provider(log, transaction)
 
@@ -154,17 +156,17 @@ defmodule Explorer.Chain.Log do
         end
 
       _ ->
-        find_candidates(log, transaction)
+        find_candidates(log, transaction, options)
     end
   end
 
-  defp find_candidates(log, transaction) do
+  defp find_candidates(log, transaction, options) do
     case log.first_topic do
       "0x" <> hex_part ->
         case Integer.parse(hex_part, 16) do
           {number, ""} ->
             <<method_id::binary-size(4), _rest::binary>> = :binary.encode_unsigned(number)
-            find_candidates_query(method_id, log, transaction)
+            find_candidates_query(method_id, log, transaction, options)
 
           _ ->
             {:error, :could_not_decode}
@@ -175,7 +177,7 @@ defmodule Explorer.Chain.Log do
     end
   end
 
-  defp find_candidates_query(method_id, log, transaction) do
+  defp find_candidates_query(method_id, log, transaction, options) do
     candidates_query =
       from(
         contract_method in ContractMethod,
@@ -185,7 +187,7 @@ defmodule Explorer.Chain.Log do
 
     candidates =
       candidates_query
-      |> Repo.all()
+      |> Chain.select_repo(options).all()
       |> Enum.flat_map(fn contract_method ->
         case find_and_decode([contract_method.abi], log, transaction) do
           {:ok, selector, mapping} ->

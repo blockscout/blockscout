@@ -5,10 +5,11 @@ defmodule Explorer.Chain.Block.Reward do
 
   use Explorer.Schema
 
-  alias Explorer.Chain
+  alias Explorer.Application.Constants
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Block.Reward.AddressType
-  alias Explorer.Chain.{Address, Block, Hash, Wei}
-  alias Explorer.{PagingOptions, Repo}
+  alias Explorer.Chain.{Address, Block, Hash, Validator, Wei}
+  alias Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand
   alias Explorer.SmartContract.Reader
 
   @required_attrs ~w(address_hash address_type block_hash reward)a
@@ -92,10 +93,15 @@ defmodule Explorer.Chain.Block.Reward do
   Returns a list of tuples representing rewards by the EmissionFunds on POA chains.
   The tuples have the format {EmissionFunds, Validator}
   """
-  def fetch_emission_rewards_tuples(address_hash, paging_options, %{
-        min_block_number: min_block_number,
-        max_block_number: max_block_number
-      }) do
+  def fetch_emission_rewards_tuples(
+        address_hash,
+        paging_options,
+        %{
+          min_block_number: min_block_number,
+          max_block_number: max_block_number
+        },
+        options
+      ) do
     address_rewards =
       __MODULE__
       |> join_associations()
@@ -104,7 +110,7 @@ defmodule Explorer.Chain.Block.Reward do
       |> order_by([_, block], desc: block.number)
       |> where([reward], reward.address_hash == ^address_hash)
       |> address_rewards_blocks_ranges_clause(min_block_number, max_block_number, paging_options)
-      |> Repo.all()
+      |> Chain.select_repo(options).all()
 
     case List.first(address_rewards) do
       nil ->
@@ -128,7 +134,7 @@ defmodule Explorer.Chain.Block.Reward do
           |> order_by([_, block], desc: block.number)
           |> where([reward], reward.address_type == ^other_type)
           |> where([reward], reward.block_hash in ^block_hashes)
-          |> Repo.all()
+          |> Chain.select_repo(options).all()
 
         if other_type == :emission_funds do
           Enum.zip(other_rewards, address_rewards)
@@ -152,6 +158,39 @@ defmodule Explorer.Chain.Block.Reward do
     end
   end
 
+  def get_validator_payout_key_by_mining_from_db(mining_key, options \\ []) do
+    contract_address_from_db = Constants.get_keys_manager_contract_address(options)
+
+    contract_address_from_env =
+      Application.get_env(:explorer, Explorer.Chain.Block.Reward, %{})[:keys_manager_contract_address]
+
+    cond do
+      is_nil(contract_address_from_env) ->
+        %{is_validator: nil, payout_key: mining_key}
+
+      is_nil(contract_address_from_db) ->
+        FetchValidatorInfoOnDemand.trigger_fetch(mining_key)
+        %{is_validator: nil, payout_key: mining_key}
+
+      contract_address_from_db.value |> String.downcase() == contract_address_from_env |> String.downcase() ->
+        FetchValidatorInfoOnDemand.trigger_fetch(mining_key)
+        validator = Validator.get_validator_by_address_hash(mining_key, options)
+        is_validator = validator && validator.is_validator
+
+        with {:is_validator, true} <- {:is_validator, is_validator},
+             false <- is_nil(validator.payout_key_hash) do
+          %{is_validator: is_validator, payout_key: validator.payout_key_hash}
+        else
+          _ ->
+            %{is_validator: is_validator, payout_key: mining_key}
+        end
+
+      true ->
+        FetchValidatorInfoOnDemand.trigger_fetch(mining_key)
+        %{is_validator: nil, payout_key: mining_key}
+    end
+  end
+
   def get_validator_payout_key_by_mining(mining_key) do
     is_validator = is_validator(mining_key)
 
@@ -160,28 +199,7 @@ defmodule Explorer.Chain.Block.Reward do
         Application.get_env(:explorer, Explorer.Chain.Block.Reward, %{})[:keys_manager_contract_address]
 
       if keys_manager_contract_address do
-        payout_key =
-          if keys_manager_contract_address do
-            # 7cded930=keccak256(getPayoutByMining(address))
-            get_payout_by_mining_params = %{"7cded930" => [mining_key.bytes]}
-
-            payout_key_hash =
-              call_contract(keys_manager_contract_address, @get_payout_by_mining_abi, get_payout_by_mining_params)
-
-            if payout_key_hash == @empty_address do
-              mining_key
-            else
-              case Chain.string_to_address_hash(payout_key_hash) do
-                {:ok, payout_key} ->
-                  payout_key
-
-                _ ->
-                  mining_key
-              end
-            end
-          else
-            mining_key
-          end
+        payout_key = get_payout_key(keys_manager_contract_address, mining_key)
 
         %{is_validator: is_validator, payout_key: payout_key}
       else
@@ -189,6 +207,34 @@ defmodule Explorer.Chain.Block.Reward do
       end
     else
       %{is_validator: is_validator, payout_key: mining_key}
+    end
+  end
+
+  defp get_payout_key(keys_manager_contract_address, mining_key) do
+    if keys_manager_contract_address do
+      # 7cded930=keccak256(getPayoutByMining(address))
+      get_payout_by_mining_params = %{"7cded930" => [mining_key.bytes]}
+
+      payout_key_hash =
+        call_contract(keys_manager_contract_address, @get_payout_by_mining_abi, get_payout_by_mining_params)
+
+      if payout_key_hash == @empty_address do
+        mining_key
+      else
+        choose_key(payout_key_hash, mining_key)
+      end
+    else
+      mining_key
+    end
+  end
+
+  defp choose_key(payout_key_hash, mining_key) do
+    case Chain.string_to_address_hash(payout_key_hash) do
+      {:ok, payout_key} ->
+        payout_key
+
+      _ ->
+        mining_key
     end
   end
 

@@ -18,6 +18,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
       assert is_list(response["vyper_compiler_versions"])
       assert is_list(response["verification_options"])
       assert is_list(response["vyper_evm_versions"])
+      assert response["is_rust_verifier_microservice_enabled"] == false
     end
   end
 
@@ -182,7 +183,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
 
       _contract = insert(:address, hash: address, contract_code: "0x01")
 
-      topic = "addresses:#{address}"
+      topic = "addresses:#{String.downcase(address)}"
 
       {:ok, _reply, _socket} =
         UserSocketV2

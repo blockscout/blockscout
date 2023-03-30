@@ -4,12 +4,13 @@ defmodule BlockScoutWeb.TokenChannel do
   """
   use BlockScoutWeb, :channel
 
+  alias BlockScoutWeb.{CurrencyHelper, TokensView}
   alias BlockScoutWeb.Tokens.TransferView
   alias Explorer.Chain
   alias Explorer.Chain.Hash
   alias Phoenix.View
 
-  intercept(["token_transfer"])
+  intercept(["token_transfer", "token_total_supply"])
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
   @burn_address_hash burn_address_hash
@@ -44,6 +45,28 @@ defmodule BlockScoutWeb.TokenChannel do
     push(socket, "token_transfer", %{
       token_transfer_hash: Hash.to_string(token_transfer.transaction_hash),
       token_transfer_html: rendered_token_transfer
+    })
+
+    {:noreply, socket}
+  end
+
+  def handle_out(
+        "token_total_supply",
+        %{token: %Explorer.Chain.Token{total_supply: total_supply}},
+        %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
+      ) do
+    push(socket, "total_supply", %{total_supply: to_string(total_supply)})
+
+    {:noreply, socket}
+  end
+
+  def handle_out("token_total_supply", %{token: token}, socket) do
+    push(socket, "total_supply", %{
+      total_supply:
+        if(TokensView.decimals?(token),
+          do: CurrencyHelper.format_according_to_decimals(token.total_supply, token.decimals),
+          else: CurrencyHelper.format_integer_to_currency(token.total_supply)
+        )
     })
 
     {:noreply, socket}

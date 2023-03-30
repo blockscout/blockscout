@@ -5,6 +5,7 @@ defmodule Indexer.Application do
 
   use Application
 
+  alias Indexer.Fetcher.{CoinBalanceOnDemand, FirstTraceOnDemand, TokenTotalSupplyOnDemand}
   alias Indexer.Memory
   alias Indexer.Prometheus.PendingBlockOperationsCollector
   alias Prometheus.Registry
@@ -21,8 +22,13 @@ defmodule Indexer.Application do
 
     memory_monitor_name = Memory.Monitor
 
+    json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
+
     base_children = [
-      {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]}
+      {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
+      {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
+      {TokenTotalSupplyOnDemand.Supervisor, []},
+      {FirstTraceOnDemand.Supervisor, [json_rpc_named_arguments]}
     ]
 
     children =
