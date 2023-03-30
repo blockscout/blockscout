@@ -522,7 +522,7 @@ defmodule Indexer.Transform.TransactionActions do
 
       true ->
         Logger.error(
-          "Invalid Swap event in tx #{log.transaction_hash}. Log index: #{log.index}. amount0 = #{amount0}, amount1 = #{amount1}"
+          "TransactionActions: Invalid Swap event in tx #{log.transaction_hash}. Log index: #{log.index}. amount0 = #{amount0}, amount1 = #{amount1}"
         )
 
         {amount0, symbol0, address0, amount1, symbol1, address1, true}
@@ -664,7 +664,7 @@ defmodule Indexer.Transform.TransactionActions do
 
     if !Enum.empty?(error_messages) or Enum.count(requests_get_pool) != Enum.count(responses_get_pool) do
       Logger.error(
-        "Cannot read Uniswap V3 Factory contract getPool public getter. Error messages: #{Enum.join(error_messages, ", ")}. Requests: #{inspect(requests_get_pool)}"
+        "TransactionActions: Cannot read Uniswap V3 Factory contract getPool public getter. Error messages: #{Enum.join(error_messages, ", ")}. Requests: #{inspect(requests_get_pool)}"
       )
 
       false
@@ -696,7 +696,7 @@ defmodule Indexer.Transform.TransactionActions do
       incorrect_pools = uniswap_get_incorrect_pools(requests, responses)
 
       Logger.warning(
-        "Cannot read Uniswap V3 Pool contract public getters for some pools: token0(), token1(), fee(). Error messages: #{Enum.join(error_messages, ", ")}. Incorrect pools: #{Enum.join(incorrect_pools, ", ")} - they will be marked as not legitimate."
+        "TransactionActions: Cannot read Uniswap V3 Pool contract public getters for some pools: token0(), token1(), fee(). Error messages: #{Enum.join(error_messages, ", ")}. Incorrect pools: #{Enum.join(incorrect_pools, ", ")} - they will be marked as not legitimate."
       )
     end
 
@@ -935,7 +935,7 @@ defmodule Indexer.Transform.TransactionActions do
 
     if !Enum.empty?(error_messages) or Enum.count(requests) != Enum.count(responses) do
       Logger.warning(
-        "Cannot read symbol and decimals of an ERC-20 token contract. Error messages: #{Enum.join(error_messages, ", ")}. Addresses: #{Enum.join(token_addresses, ", ")}"
+        "TransactionActions: Cannot read symbol and decimals of an ERC-20 token contract. Error messages: #{Enum.join(error_messages, ", ")}. Addresses: #{Enum.join(token_addresses, ", ")}"
       )
     end
 
