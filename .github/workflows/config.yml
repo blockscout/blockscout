@@ -739,7 +739,7 @@ jobs:
         id: set-docker-vars
         run: |
           echo "tag=${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }}"
-          echo "tag=${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }} >> $GITHUB_OUTPUT"
+          echo "tag=${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }}" >> $GITHUB_OUTPUT
   
   set-docker-vars2:
     runs-on: ubuntu-latest
