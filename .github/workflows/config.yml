@@ -746,7 +746,7 @@ jobs:
     steps:
       - name: Print inputs passed to the reusable workflow
         run: |
-          echo "VAR IS ${{ needs.set-docker-vars.outputs }}"
+          echo "VAR IS ${{ needs.set-docker-vars.outputs.tag }}"
  
   Build-Blockscout:
     uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.3
