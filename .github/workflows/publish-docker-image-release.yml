@@ -62,8 +62,8 @@ jobs:
             WOBSERVER_ENABLED=false
             ADMIN_PANEL_ENABLED=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            BLOCKSCOUT_VERSION=v{{ env.RELEASE_VERSION }}-beta
-            RELEASE_VERSION={{ env.RELEASE_VERSION }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
   merge-master-after-release:
     name: Merge 'master' to specific branch after release
