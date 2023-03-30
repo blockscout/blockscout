@@ -63,6 +63,7 @@ defmodule BlockScoutWeb.AccessHelper do
     end
   end
 
+  # credo:disable-for-next-line /Complexity/
   defp check_rate_limit_inner(conn, rate_limit_config) do
     global_api_rate_limit = rate_limit_config[:global_limit]
     api_rate_limit_by_key = rate_limit_config[:api_rate_limit_by_key]
@@ -76,6 +77,8 @@ defmodule BlockScoutWeb.AccessHelper do
     plan = get_plan(conn.query_params)
     token = get_ui_v2_token(conn, conn.query_params, ip_string)
 
+    user_agent = get_user_agent(conn)
+
     cond do
       check_api_key(conn) && get_api_key(conn) == static_api_key ->
         rate_limit_by_param(static_api_key, api_rate_limit_by_key)
@@ -88,10 +91,10 @@ defmodule BlockScoutWeb.AccessHelper do
       Enum.member?(api_rate_limit_whitelisted_ips(), ip_string) ->
         rate_limit(ip_string, api_rate_limit_by_ip)
 
-      !is_nil(token) ->
+      !is_nil(token) && !is_nil(user_agent) ->
         rate_limit_by_param(token, api_v2_ui_limit)
 
-      is_api_v2_request?(conn) ->
+      is_api_v2_request?(conn) && !is_nil(user_agent) ->
         rate_limit_by_ip_default(ip_string, default_api_rate_limit_by_ip)
 
       true ->
@@ -189,4 +192,17 @@ defmodule BlockScoutWeb.AccessHelper do
   end
 
   defp get_ui_v2_token(_conn, _params, _ip_string), do: nil
+
+  defp get_user_agent(conn) do
+    case Conn.get_req_header(conn, "user-agent") do
+      [] ->
+        nil
+
+      [agent] ->
+        agent
+
+      _ ->
+        nil
+    end
+  end
 end
