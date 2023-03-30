@@ -760,7 +760,7 @@ jobs:
 #      tag: "${{ github.ref != 'ref/heads/main' && 'testing' || 'latest' }}"
       workload-id-provider: ${{  needs.set-docker-vars.outputs.workload-id-provider }}
       service-account: ${{ needs.set-docker-vars.outputs.service-account }}
-      artifact-registry: ${{ needs.set-docker-vars.outputs.artifact-registry }}
+      artifact-registry: "${{ needs.set-docker-vars.outputs.artifact-registry }}/blockscout"
       tag: ${{ needs.set-docker-vars.outputs.tag }}
       context: .
       file: docker/Dockerfile
