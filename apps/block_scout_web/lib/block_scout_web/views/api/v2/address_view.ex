@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.API.V2.AddressView do
   use BlockScoutWeb, :view
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+
   alias BlockScoutWeb.AddressView
   alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
   alias BlockScoutWeb.API.V2.Helper
@@ -45,8 +47,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         total_supply: total_supply
       }) do
     %{
-      # here we need only public tags for address, so we pass empty map in order to skip user's tags fetching
-      items: Enum.map(addresses, &prepare_address(&1, %{})),
+      items: Enum.map(addresses, &prepare_address/1),
       next_page_params: next_page_params,
       exchange_rate: exchange_rate.usd_value,
       total_supply: total_supply && to_string(total_supply)
@@ -105,7 +106,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "has_validated_blocks" => Chain.check_if_validated_blocks_at_address(address.hash, @api_true),
       "has_logs" => Chain.check_if_logs_at_address(address.hash, @api_true),
       "has_tokens" => Chain.check_if_tokens_at_address(address.hash, @api_true),
-      "has_token_transfers" => Chain.check_if_token_transfers_at_address(address.hash, @api_true)
+      "has_token_transfers" => Chain.check_if_token_transfers_at_address(address.hash, @api_true),
+      "watchlist_address_id" => Chain.select_watchlist_address_id(get_watchlist_id(conn), address.hash)
     })
   end
 
@@ -132,5 +134,15 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "date" => coin_balance_by_day.date,
       "value" => coin_balance_by_day.value
     }
+  end
+
+  def get_watchlist_id(conn) do
+    case current_user(conn) do
+      %{watchlist_id: wl_id} ->
+        wl_id
+
+      _ ->
+        nil
+    end
   end
 end
