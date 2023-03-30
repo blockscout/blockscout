@@ -2246,7 +2246,8 @@ defmodule Explorer.Chain do
 
   @spec indexed_ratio_internal_transactions() :: Decimal.t()
   def indexed_ratio_internal_transactions do
-    if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
+    if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] &&
+         not Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] do
       %{max: max} = BlockNumber.get_all()
       count = Repo.aggregate(PendingBlockOperation, :count, timeout: :infinity)
 

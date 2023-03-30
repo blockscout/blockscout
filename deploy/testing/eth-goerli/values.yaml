@@ -38,7 +38,7 @@ blockscout:
 
   environment:
     BLOCKSCOUT_VERSION:
-      _default: v5.1.1-beta
+      _default: v5.1.2-beta
     ETHEREUM_JSONRPC_VARIANT:
       _default: geth
     HEART_BEAT_TIMEOUT:
@@ -203,7 +203,7 @@ frontend:
     NEXT_PUBLIC_API_BASE_PATH:
       _default: /
     NEXT_PUBLIC_BLOCKSCOUT_VERSION:
-      _default: v5.1.1-beta
+      _default: v5.1.2-beta
     NEXT_PUBLIC_FOOTER_GITHUB_LINK:
       _default: https://github.com/blockscout/blockscout
     NEXT_PUBLIC_FOOTER_TWITTER_LINK:
