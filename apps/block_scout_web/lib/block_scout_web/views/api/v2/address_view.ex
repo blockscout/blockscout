@@ -45,7 +45,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         total_supply: total_supply
       }) do
     %{
-      items: Enum.map(addresses, &prepare_address/1),
+      # here we need only public tags for address, so we pass empty map in order to skip user's tags fetching
+      items: Enum.map(addresses, &prepare_address(&1, %{})),
       next_page_params: next_page_params,
       exchange_rate: exchange_rate.usd_value,
       total_supply: total_supply && to_string(total_supply)

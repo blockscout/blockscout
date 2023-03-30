@@ -154,6 +154,7 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash/instances", V2.TokenController, :instances)
       get("/:address_hash/instances/:token_id", V2.TokenController, :instance)
       get("/:address_hash/instances/:token_id/transfers", V2.TokenController, :transfers_by_instance)
+      get("/:address_hash/instances/:token_id/holders", V2.TokenController, :holders_by_instance)
       get("/:address_hash/instances/:token_id/transfers-count", V2.TokenController, :transfers_count_by_instance)
     end
 

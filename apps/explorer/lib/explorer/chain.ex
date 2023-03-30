@@ -5467,7 +5467,7 @@ defmodule Explorer.Chain do
   def fetch_token_holders_from_token_hash_and_token_id(contract_address_hash, token_id, options \\ []) do
     contract_address_hash
     |> CurrentTokenBalance.token_holders_1155_by_token_id(token_id, options)
-    |> Repo.all()
+    |> select_repo(options).all()
   end
 
   def token_id_1155_is_unique?(contract_address_hash, token_id, options \\ [])

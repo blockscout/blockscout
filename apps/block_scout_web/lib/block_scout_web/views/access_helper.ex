@@ -15,6 +15,8 @@ defmodule BlockScoutWeb.AccessHelper do
 
   alias RemoteIp
 
+  require Logger
+
   def restricted_access?(address_hash, params) do
     AccessHelper.restricted_access?(address_hash, params)
   end
@@ -136,6 +138,10 @@ defmodule BlockScoutWeb.AccessHelper do
 
       {:deny, _limit} ->
         :rate_limit_reached
+
+      {:error, error} ->
+        Logger.error(fn -> ["Rate limit check error: ", inspect(error)] end)
+        :ok
     end
   end
 
