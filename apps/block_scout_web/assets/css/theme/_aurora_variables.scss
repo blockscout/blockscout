@@ -4,6 +4,12 @@ $dashboard-banner-network-plain-container-background-color: #A044FF;
   height: 48px;
 }
 
+.navbar-brand {
+  .navbar-logo {
+    max-height: none;
+  }
+}
+
 .dashboard-banner-network-stats-item::before {
   background-color: #5DEB5A !important;
 }
