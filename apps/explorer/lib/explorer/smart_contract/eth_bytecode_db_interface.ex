@@ -1,4 +1,4 @@
-defmodule Explorer.SmartContract.RustVerifierInterface do
+defmodule Explorer.SmartContract.EthBytecodeDBInterface do
   @moduledoc """
     Adapter for contracts verification with https://github.com/blockscout/blockscout-rs/blob/main/smart-contract-verifier
   """
@@ -45,10 +45,14 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
     http_post_request(vyper_multiple_files_verification_url(), body)
   end
 
+  def search_contract(%{"bytecode" => _, "bytecodeType" => _} = body) do
+    http_post_request(bytecode_search_sources_url(), body)
+  end
+
   def http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HTTPoison.post(url, Jason.encode!(normalize_creation_bytecode(body)), headers, recv_timeout: @post_timeout) do
+    case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
       {:ok, %Response{body: body, status_code: _}} ->
         process_verifier_response(body)
 
@@ -118,13 +122,17 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
     {:error, error}
   end
 
+  def process_verifier_response(%{"sources" => [src | _]}) do
+    {:ok, src}
+  end
+
+  def process_verifier_response(%{"sources" => []}) do
+    {:ok, nil}
+  end
+
   def process_verifier_response(%{"compilerVersions" => versions}), do: {:ok, versions}
 
   def process_verifier_response(other), do: {:error, other}
-
-  def normalize_creation_bytecode(%{"creation_bytecode" => ""} = map), do: Map.replace(map, "creation_bytecode", nil)
-
-  def normalize_creation_bytecode(map), do: map
 
   def multiple_files_verification_url, do: "#{base_api_url()}" <> "/verifier/solidity/sources:verify-multi-part"
 
@@ -135,6 +143,8 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
   def versions_list_url, do: "#{base_api_url()}" <> "/verifier/solidity/versions"
 
   def vyper_versions_list_url, do: "#{base_api_url()}" <> "/verifier/vyper/versions"
+
+  def bytecode_search_sources_url, do: "#{base_api_url()}" <> "/bytecodes/sources:search"
 
   def base_api_url, do: "#{base_url()}" <> "/api/v2"
 

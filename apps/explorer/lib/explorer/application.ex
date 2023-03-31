@@ -111,7 +111,8 @@ defmodule Explorer.Application do
       configure(MinMissingBlockNumber),
       configure(TokenTransferTokenIdMigration.Supervisor),
       configure(Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand),
-      configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand)
+      configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand),
+      configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
     ]
     |> List.flatten()
   end

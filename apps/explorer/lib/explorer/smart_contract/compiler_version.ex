@@ -4,7 +4,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
   """
 
   alias Explorer.Helper
-  alias Explorer.SmartContract.RustVerifierInterface
+  alias Explorer.SmartContract.EthBytecodeDBInterface
 
   @unsupported_solc_versions ~w(0.1.1 0.1.2)
   @unsupported_vyper_versions ~w(v0.2.9 v0.2.10)
@@ -31,8 +31,8 @@ defmodule Explorer.SmartContract.CompilerVersion do
   end
 
   defp fetch_solc_versions do
-    if RustVerifierInterface.enabled?() do
-      RustVerifierInterface.get_versions_list()
+    if EthBytecodeDBInterface.enabled?() do
+      EthBytecodeDBInterface.get_versions_list()
     else
       headers = [{"Content-Type", "application/json"}]
 
@@ -50,8 +50,8 @@ defmodule Explorer.SmartContract.CompilerVersion do
   end
 
   defp fetch_vyper_versions do
-    if RustVerifierInterface.enabled?() do
-      RustVerifierInterface.vyper_get_versions_list()
+    if EthBytecodeDBInterface.enabled?() do
+      EthBytecodeDBInterface.vyper_get_versions_list()
     else
       headers = [{"Content-Type", "application/json"}]
 

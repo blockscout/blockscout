@@ -47,3 +47,4 @@ config :explorer, Explorer.ExchangeRates.Source.TransactionAndLog,
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: false
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: false
+config :explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, enabled: false
