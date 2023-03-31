@@ -30,6 +30,9 @@ config :block_scout_web,
   namespace: BlockScoutWeb,
   ecto_repos: [Explorer.Repo.Local, Explorer.Repo.Account]
 
+# Urls for header _topnav menu bars
+import_config "navigation.exs"
+
 config :block_scout_web,
   admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
 
