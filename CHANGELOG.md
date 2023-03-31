@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#7186](https://github.com/blockscout/blockscout/pull/7186) - Fix build from Dockerfile
+
 ### Chore
 
 ## 5.1.2-beta
