@@ -199,28 +199,7 @@ defmodule Explorer.Chain.Block.Reward do
         Application.get_env(:explorer, Explorer.Chain.Block.Reward, %{})[:keys_manager_contract_address]
 
       if keys_manager_contract_address do
-        payout_key =
-          if keys_manager_contract_address do
-            # 7cded930=keccak256(getPayoutByMining(address))
-            get_payout_by_mining_params = %{"7cded930" => [mining_key.bytes]}
-
-            payout_key_hash =
-              call_contract(keys_manager_contract_address, @get_payout_by_mining_abi, get_payout_by_mining_params)
-
-            if payout_key_hash == @empty_address do
-              mining_key
-            else
-              case Chain.string_to_address_hash(payout_key_hash) do
-                {:ok, payout_key} ->
-                  payout_key
-
-                _ ->
-                  mining_key
-              end
-            end
-          else
-            mining_key
-          end
+        payout_key = get_payout_key(keys_manager_contract_address, mining_key)
 
         %{is_validator: is_validator, payout_key: payout_key}
       else
@@ -228,6 +207,34 @@ defmodule Explorer.Chain.Block.Reward do
       end
     else
       %{is_validator: is_validator, payout_key: mining_key}
+    end
+  end
+
+  defp get_payout_key(keys_manager_contract_address, mining_key) do
+    if keys_manager_contract_address do
+      # 7cded930=keccak256(getPayoutByMining(address))
+      get_payout_by_mining_params = %{"7cded930" => [mining_key.bytes]}
+
+      payout_key_hash =
+        call_contract(keys_manager_contract_address, @get_payout_by_mining_abi, get_payout_by_mining_params)
+
+      if payout_key_hash == @empty_address do
+        mining_key
+      else
+        choose_key(payout_key_hash, mining_key)
+      end
+    else
+      mining_key
+    end
+  end
+
+  defp choose_key(payout_key_hash, mining_key) do
+    case Chain.string_to_address_hash(payout_key_hash) do
+      {:ok, payout_key} ->
+        payout_key
+
+      _ ->
+        mining_key
     end
   end
 

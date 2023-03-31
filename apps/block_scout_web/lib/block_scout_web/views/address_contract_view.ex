@@ -46,12 +46,7 @@ defmodule BlockScoutWeb.AddressContractView do
   defp val_to_string(val, type, conn) do
     cond do
       type =~ "[]" ->
-        if is_list(val) or is_tuple(val) do
-          "[" <>
-            Enum.map_join(val, ", ", fn el -> val_to_string(el, String.replace_suffix(type, "[]", ""), conn) end) <> "]"
-        else
-          to_string(val)
-        end
+        val_to_string_if_array(val, type, conn)
 
       type =~ "address" ->
         address_hash = "0x" <> Base.encode16(val, case: :lower)
@@ -65,6 +60,15 @@ defmodule BlockScoutWeb.AddressContractView do
 
       true ->
         to_string(val)
+    end
+  end
+
+  defp val_to_string_if_array(val, type, conn) do
+    if is_list(val) or is_tuple(val) do
+      "[" <>
+        Enum.map_join(val, ", ", fn el -> val_to_string(el, String.replace_suffix(type, "[]", ""), conn) end) <> "]"
+    else
+      to_string(val)
     end
   end
 

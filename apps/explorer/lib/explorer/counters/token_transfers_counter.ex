@@ -52,7 +52,7 @@ defmodule Explorer.Counters.TokenTransfersCounter do
   def cache_name, do: @cache_name
 
   defp cache_expired?(address_hash) do
-    cache_period = token_transfers_counter_cache_period()
+    cache_period = Application.get_env(:explorer, __MODULE__)[:cache_period]
     address_hash_string = to_string(address_hash)
     updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
 
@@ -83,8 +83,4 @@ defmodule Explorer.Counters.TokenTransfersCounter do
   end
 
   defp enable_consolidation?, do: @enable_consolidation
-
-  defp token_transfers_counter_cache_period do
-    Helper.cache_period("CACHE_TOKEN_TRANSFERS_COUNTER_PERIOD", 1)
-  end
 end

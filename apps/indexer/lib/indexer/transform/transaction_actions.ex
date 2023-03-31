@@ -228,6 +228,7 @@ defmodule Indexer.Transform.TransactionActions do
           # This is Transfer event for NFT
           from = truncate_address_hash(log.second_topic)
 
+          # credo:disable-for-next-line
           if from == @burn_address do
             to = truncate_address_hash(log.third_topic)
             [token_id] = decode_data(log.fourth_topic, [{:uint, 256}])
@@ -417,11 +418,7 @@ defmodule Indexer.Transform.TransactionActions do
       |> Enum.zip(responses_tokens_and_fees)
       |> Enum.reduce(%{}, fn {request, {status, response} = _resp}, acc ->
         if status == :ok do
-          response =
-            case response do
-              [item] -> item
-              items -> items
-            end
+          response = parse_response(response)
 
           acc = Map.put_new(acc, request.contract_address, %{token0: "", token1: "", fee: ""})
           item = Map.put(acc[request.contract_address], atomized_key(request.method_id), response)
@@ -617,21 +614,9 @@ defmodule Indexer.Transform.TransactionActions do
       |> Enum.reduce(token_data_from_cache, fn {symbol, decimals, contract_address_hash}, token_data_acc ->
         contract_address_hash = String.downcase(Hash.to_string(contract_address_hash))
 
-        symbol =
-          if is_nil(symbol) or symbol == "" do
-            # if db field is empty, take it from the cache
-            token_data_acc[contract_address_hash].symbol
-          else
-            symbol
-          end
+        symbol = parse_symbol(symbol, contract_address_hash, token_data_acc)
 
-        decimals =
-          if is_nil(decimals) do
-            # if db field is empty, take it from the cache
-            token_data_acc[contract_address_hash].decimals
-          else
-            decimals
-          end
+        decimals = parse_decimals(decimals, contract_address_hash, token_data_acc)
 
         new_data = %{symbol: symbol, decimals: decimals}
 
@@ -639,6 +624,24 @@ defmodule Indexer.Transform.TransactionActions do
 
         Map.put(token_data_acc, contract_address_hash, new_data)
       end)
+    end
+  end
+
+  defp parse_symbol(symbol, contract_address_hash, token_data_acc) do
+    if is_nil(symbol) or symbol == "" do
+      # if db field is empty, take it from the cache
+      token_data_acc[contract_address_hash].symbol
+    else
+      symbol
+    end
+  end
+
+  defp parse_decimals(decimals, contract_address_hash, token_data_acc) do
+    if is_nil(decimals) do
+      # if db field is empty, take it from the cache
+      token_data_acc[contract_address_hash].decimals
+    else
+      decimals
     end
   end
 
@@ -660,20 +663,11 @@ defmodule Indexer.Transform.TransactionActions do
     |> Enum.zip(responses)
     |> Enum.reduce(token_data, fn {request, {status, response} = _resp}, token_data_acc ->
       if status == :ok do
-        response =
-          case response do
-            [item] -> item
-            items -> items
-          end
+        response = parse_response(response)
 
         data = token_data_acc[request.contract_address]
 
-        new_data =
-          if atomized_key(request.method_id) == :symbol do
-            %{data | symbol: response}
-          else
-            %{data | decimals: response}
-          end
+        new_data = get_new_data(data, request, response)
 
         put_token_data_to_cache(request.contract_address, new_data)
 
@@ -682,6 +676,21 @@ defmodule Indexer.Transform.TransactionActions do
         token_data_acc
       end
     end)
+  end
+
+  defp parse_response(response) do
+    case response do
+      [item] -> item
+      items -> items
+    end
+  end
+
+  defp get_new_data(data, request, response) do
+    if atomized_key(request.method_id) == :symbol do
+      %{data | symbol: response}
+    else
+      %{data | decimals: response}
+    end
   end
 
   defp get_token_data_request_symbol_decimals(token_addresses) do

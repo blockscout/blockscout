@@ -132,13 +132,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           :on_demand
         )
       else
-        case Sourcify.check_by_address(address_hash_string) do
-          {:ok, _verified_status} ->
-            PublishHelper.get_metadata_and_publish(address_hash_string, conn)
-
-          _ ->
-            PublishHelper.verify_and_publish(address_hash_string, files_array, conn, false)
-        end
+        check_in_sourcify(address_hash_string, files_array, conn)
       end
     else
       EventsPublisher.broadcast(
@@ -158,5 +152,15 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     Que.add(SolidityPublisherWorker, {"", %{}, %{}, conn})
 
     send_resp(conn, 204, "")
+  end
+
+  defp check_in_sourcify(address_hash_string, files_array, conn) do
+    case Sourcify.check_by_address(address_hash_string) do
+      {:ok, _verified_status} ->
+        PublishHelper.get_metadata_and_publish(address_hash_string, conn)
+
+      _ ->
+        PublishHelper.verify_and_publish(address_hash_string, files_array, conn, false)
+    end
   end
 end

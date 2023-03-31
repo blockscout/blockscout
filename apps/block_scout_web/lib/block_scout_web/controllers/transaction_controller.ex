@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.TransactionController do
   import BlockScoutWeb.Models.GetTransactionTags, only: [get_transaction_with_addresses_tags: 2]
 
   alias BlockScoutWeb.{
-    AccessHelpers,
+    AccessHelper,
     Controller,
     TransactionInternalTransactionController,
     TransactionTokenTransferController,
@@ -156,8 +156,8 @@ defmodule BlockScoutWeb.TransactionController do
                  transaction_hash,
                  necessity_by_association: @necessity_by_association
                ),
-             {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
-             {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
           render(
             conn,
             "show_token_transfers.html",
@@ -194,8 +194,8 @@ defmodule BlockScoutWeb.TransactionController do
                  transaction_hash,
                  necessity_by_association: @necessity_by_association
                ),
-             {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
-             {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
           render(
             conn,
             "show_internal_transactions.html",

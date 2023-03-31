@@ -1,6 +1,6 @@
-defmodule Explorer.CustomContractsHelpers do
+defmodule Explorer.CustomContractsHelper do
   @moduledoc """
-  Helpers to enable custom contracts themes
+  Helper to enable custom contracts themes
   """
 
   def get_custom_addresses_list(env_var) do
