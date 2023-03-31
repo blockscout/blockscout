@@ -102,7 +102,7 @@ defmodule BlockScoutWeb.AccessHelper do
     end
   end
 
-  defp check_api_key(conn), do: conn.query_params && Map.has_key?(conn.query_params, "apikey")
+  defp check_api_key(conn), do: Map.has_key?(conn.query_params, "apikey")
 
   defp get_api_key(conn), do: Map.get(conn.query_params, "apikey")
 
@@ -195,9 +195,6 @@ defmodule BlockScoutWeb.AccessHelper do
 
   defp get_user_agent(conn) do
     case Conn.get_req_header(conn, "user-agent") do
-      [] ->
-        nil
-
       [agent] ->
         agent
 
