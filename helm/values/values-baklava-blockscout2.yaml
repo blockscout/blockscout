@@ -1,0 +1,98 @@
+---
+blockscout:
+  indexer:
+    db:
+      connectionName: celo-testnet-production:us-west1:baklava2
+      proxy:
+        resources:
+          requests:
+            memory: 40M
+            cpu: 25m
+    poolSize: 200
+    resources:
+      requests:
+        memory: 400M
+        cpu: 0.4
+      limits:
+        memory: 1G
+        cpu: 1
+    metrics:
+      enabled: true
+  api:
+    autoscaling:
+      maxReplicas: 3
+      minReplicas: 2
+      target:
+        cpu: 80
+    db:
+      connectionName: celo-testnet-production:us-west1:baklava2-replica
+      proxy:
+        resources:
+          requests:
+            memory: 12M
+            cpu: 4m
+    poolSize: 10
+    resources:
+      requests:
+        memory: 300M
+        cpu: 40m
+      limits:
+        memory: 500M
+        cpu: 200m
+  web:
+    envHostname: explorer.celo.org
+    suffix:
+      enabled: true
+      path: "baklava"
+    autoscaling:
+      maxReplicas: 3
+      minReplicas: 2
+      target:
+        cpu: 70
+    db:
+      connectionName: celo-testnet-production:us-west1:baklava2-replica
+      proxy:
+        resources:
+          requests:
+            memory: 20M
+            cpu: 14m
+    poolSize: 20
+    resources:
+      requests:
+        memory: 350M
+        cpu: 0.4
+      limits:
+        memory: 1G
+        cpu: 1
+  metadataCrawler:
+    enabled: true
+    schedule: "*/30 * * * *"  # every 30 minutes
+    discordClusterName: Baklava
+  shared:
+    image:
+      tag: 40c6ac9493b0985e7889a084e367ad55ad4dbdc5
+    secrets:
+      segmentKey: gcp:secretmanager:projects/365081401101/secrets/baklava-blockscout-segmentKey
+      dbUser: gcp:secretmanager:projects/365081401101/secrets/baklava-blockscout2-dbUser
+      dbPassword: gcp:secretmanager:projects/365081401101/secrets/baklava-blockscout2-dbPassword
+      grafanaCloud: gcp:secretmanager:projects/365081401101/secrets/baklava-blockscout-grafanaCloud
+      recaptcha_projectId: gcp:secretmanager:projects/365081401101/secrets/baklava-blockscout-recaptchaProjectId
+      recaptcha_siteKey: gcp:secretmanager:projects/365081401101/secrets/baklava-blockscout-recaptchaSiteKey
+      recaptcha_apiKey: gcp:secretmanager:projects/365081401101/secrets/baklava-blockscout-recaptchaApiKey
+      recaptcha_secretKey: gcp:secretmanager:projects/365081401101/secrets/baklava-blockscout-recaptchaSecretKey
+      erlang_cookie: gcp:secretmanager:projects/365081401101/secrets/baklava-blockscout2-erlangCookie
+      campaignBannerApiUrl: gcp:secretmanager:projects/365081401101/secrets/baklava-blockscout-campaignBannerApiUrl
+
+network:
+  name: Baklava
+  networkID: 62320
+  nodes:
+    fullNodes:
+      jsonrpcPublicHttp: https://baklava-forno.celo-testnet.org
+
+infrastructure:
+  metrics:
+    enabled: true
+  gcp:
+    serviceAccount: baklava-blockscout2@celo-testnet-production.iam.gserviceaccount.com
+    project: celo-testnet-production

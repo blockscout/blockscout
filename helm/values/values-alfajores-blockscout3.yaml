@@ -1,0 +1,159 @@
+---
+blockscout:
+  indexer:
+    db:
+      connectionName: celo-testnet-production:us-west1:alfajores3
+      proxy:
+        resources:
+          requests:
+            memory: 30M
+            cpu: 100m
+          limits:
+            memory: 100Mi
+            cpu: 200m
+    poolSize: 200
+    resources:
+      requests:
+        memory: 400M
+        cpu: 2
+      limits:
+        memory: 700M
+        cpu: 3
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: node.kubernetes.io/instance-type
+                  operator: In
+                  values:
+                    - n2-highcpu-8
+  api:
+    autoscaling:
+      maxReplicas: 3
+      minReplicas: 2
+      target:
+        cpu: 70
+    db:
+      connectionName: celo-testnet-production:us-west1:alfajores3-replica
+      proxy:
+        resources:
+          requests:
+            memory: 10M
+            cpu: 25m
+    poolSize: 25
+    resources:
+      requests:
+        memory: 300M
+        cpu: 0.5
+      limits:
+        memory: 800M
+        cpu: 1.2
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: node.kubernetes.io/instance-type
+                  operator: In
+                  values:
+                    - n2-highmem-2
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 99
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: release
+                    operator: In
+                    values:
+                      - alfajores-blockscout3
+                  - key: component
+                    operator: In
+                    values:
+                      - blockscout-api
+              topologyKey: kubernetes.io/hostname
+  web:
+    envHostname: explorer.celo.org
+    suffix:
+      enabled: true
+      path: "alfajores"
+    autoscaling:
+      maxReplicas: 3
+      minReplicas: 2
+      target:
+        cpu: 85
+    db:
+      connectionName: celo-testnet-production:us-west1:alfajores3-replica
+      proxy:
+        resources:
+          requests:
+            memory: 10M
+            cpu: 10m
+    poolSize: 20
+    resources:
+      requests:
+        memory: 600M
+        cpu: 150m
+      limits:
+        memory: 1400M
+        cpu: 0.5
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: node.kubernetes.io/instance-type
+                  operator: In
+                  values:
+                    - n2-highmem-2
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 99
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: release
+                    operator: In
+                    values:
+                      - alfajores-blockscout3
+                  - key: component
+                    operator: In
+                    values:
+                      - blockscout-web
+              topologyKey: kubernetes.io/hostname
+  metadataCrawler:
+    enabled: true
+    schedule: "*/30 * * * *"  # every 30 minutes
+  shared:
+    image:
+      tag: 40c6ac9493b0985e7889a084e367ad55ad4dbdc5
+    secrets:
+      segmentKey: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout-segmentKey
+      dbUser: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout3-dbUser
+      dbPassword: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout3-dbPassword
+      grafanaCloud: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout-grafanaCloud
+      recaptcha_projectId: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout-recaptchaProjectId
+      recaptcha_siteKey: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout-recaptchaSiteKey
+      recaptcha_apiKey: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout-recaptchaApiKey
+      recaptcha_secretKey: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout-recaptchaSecretKey
+      erlang_cookie: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout3-erlangCookie
+      campaignBannerApiUrl: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout-campaignBannerApiUrl
+
+network:
+  name: Alfajores
+  networkID: 44787
+  nodes:
+    fullNodes:
+      jsonrpcPublicHttp: https://alfajores-forno.celo-testnet.org
+
+infrastructure:
+  metrics:
+    enabled: true
+  gcp:
+    serviceAccount: alfajores-blockscout3@celo-testnet-production.iam.gserviceaccount.com
+    project: celo-testnet-production
+
