@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   require Ecto.Query
 
-  import Ecto.Query, only: [from: 2, subquery: 1]
+  import Ecto.Query, only: [from: 2, where: 3, subquery: 1]
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Address, Block, Import, PendingBlockOperation, Transaction}
@@ -369,7 +369,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       }) do
     acquire_query =
       from(
-        block in where_invalid_neighbour(changes_list),
+        block in where_invalid_neighbor(changes_list),
         or_where: block.number in ^consensus_block_numbers,
         # we also need to acquire blocks that will be upserted here, for ordering
         or_where: block.hash in ^hashes,
@@ -711,26 +711,29 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end)
   end
 
-  defp where_invalid_neighbour(blocks_changes) when is_list(blocks_changes) do
+  defp where_invalid_neighbor(blocks_changes) when is_list(blocks_changes) do
     initial = from(b in Block, where: false)
 
-    Enum.reduce(blocks_changes, initial, fn %{
-                                              consensus: consensus,
-                                              hash: hash,
-                                              parent_hash: parent_hash,
-                                              number: number
-                                            },
-                                            acc ->
-      if consensus do
-        from(
-          block in acc,
-          or_where: block.number == ^(number - 1) and block.hash != ^parent_hash,
-          or_where: block.number == ^(number + 1) and block.parent_hash != ^hash
-        )
-      else
-        acc
-      end
-    end)
+    invalid_neighbors_query =
+      Enum.reduce(blocks_changes, initial, fn %{
+                                                consensus: consensus,
+                                                hash: hash,
+                                                parent_hash: parent_hash,
+                                                number: number
+                                              },
+                                              acc ->
+        if consensus do
+          from(
+            block in acc,
+            or_where: block.number == ^(number - 1) and block.hash != ^parent_hash,
+            or_where: block.number == ^(number + 1) and block.parent_hash != ^hash
+          )
+        else
+          acc
+        end
+      end)
+
+    where(invalid_neighbors_query, [b], b.consensus)
   end
 
   defp filter_by_min_height(blocks, filter_func) do

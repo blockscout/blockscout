@@ -25,12 +25,13 @@ defmodule Indexer.Block.Catchup.Fetcher do
   alias Explorer.Chain
   alias Explorer.Utility.MissingBlockRange
   alias Indexer.{Block, Tracer}
-  alias Indexer.Block.Catchup.Sequence
+  alias Indexer.Block.Catchup.{Sequence, TaskSupervisor}
   alias Indexer.Memory.Shrinkable
   alias Indexer.Prometheus
 
   @behaviour Block.Fetcher
 
+  @shutdown_after :timer.minutes(5)
   @sequence_name :block_catchup_sequencer
 
   defstruct block_fetcher: nil,
@@ -151,12 +152,13 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   defp stream_fetch_and_import(state, sequence)
        when is_pid(sequence) do
-    sequence
-    |> Sequence.build_stream()
-    |> Task.async_stream(
-      &fetch_and_import_range_from_sequence(state, &1, sequence),
+    ranges = Sequence.build_stream(sequence)
+
+    TaskSupervisor
+    |> Task.Supervisor.async_stream(ranges, &fetch_and_import_range_from_sequence(state, &1, sequence),
       max_concurrency: blocks_concurrency(),
-      timeout: :infinity
+      timeout: :infinity,
+      shutdown: @shutdown_after
     )
     |> Stream.run()
   end
@@ -173,6 +175,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
          sequence
        ) do
     Logger.metadata(fetcher: :block_catchup, first_block_number: first, last_block_number: last)
+    Process.flag(:trap_exit, true)
 
     {fetch_duration, result} = :timer.tc(fn -> fetch_and_import_range(block_fetcher, range) end)
 
@@ -311,17 +314,21 @@ defmodule Indexer.Block.Catchup.Fetcher do
   def push_front(block_numbers) do
     if Process.whereis(@sequence_name) do
       Enum.reduce_while(block_numbers, :ok, fn block_number, :ok ->
-        if is_integer(block_number) do
-          case Sequence.push_front(@sequence_name, block_number..block_number) do
-            :ok -> {:cont, :ok}
-            {:error, _} = error -> {:halt, error}
-          end
-        else
-          Logger.warn(fn -> ["Received a non-integer block number: ", inspect(block_number)] end)
-        end
+        sequence_push_front(block_number)
       end)
     else
       {:error, :queue_unavailable}
+    end
+  end
+
+  defp sequence_push_front(block_number) do
+    if is_integer(block_number) do
+      case Sequence.push_front(@sequence_name, block_number..block_number) do
+        :ok -> {:cont, :ok}
+        {:error, _} = error -> {:halt, error}
+      end
+    else
+      Logger.warn(fn -> ["Received a non-integer block number: ", inspect(block_number)] end)
     end
   end
 end

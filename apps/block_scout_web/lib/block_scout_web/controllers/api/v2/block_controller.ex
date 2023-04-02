@@ -22,18 +22,21 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     }
   ]
 
+  @api_true [api?: true]
+
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   def block(conn, %{"block_hash_or_number" => block_hash_or_number}) do
     with {:ok, block} <-
            BlockTransactionController.param_block_hash_or_number_to_block(block_hash_or_number,
              necessity_by_association: %{
-               [miner: :names] => :required,
+               [miner: :names] => :optional,
                :uncles => :optional,
                :nephews => :optional,
                :rewards => :optional,
                :transactions => :optional
-             }
+             },
+             api?: true
            ) do
       conn
       |> put_status(200)
@@ -47,6 +50,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     blocks_plus_one =
       full_options
       |> Keyword.merge(paging_options(params))
+      |> Keyword.merge(@api_true)
       |> Chain.list_blocks()
 
     {blocks, next_page} = split_list_by_page(blocks_plus_one)
@@ -61,10 +65,9 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   def transactions(conn, %{"block_hash_or_number" => block_hash_or_number} = params) do
     with {:ok, block} <- BlockTransactionController.param_block_hash_or_number_to_block(block_hash_or_number, []) do
       full_options =
-        Keyword.merge(
-          @transaction_necessity_by_association,
-          put_key_value_to_paging_options(paging_options(params), :is_index_in_asc_order, true)
-        )
+        @transaction_necessity_by_association
+        |> Keyword.merge(put_key_value_to_paging_options(paging_options(params), :is_index_in_asc_order, true))
+        |> Keyword.merge(@api_true)
 
       transactions_plus_one = Chain.block_to_transactions(block.hash, full_options, false)
 

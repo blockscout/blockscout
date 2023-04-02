@@ -90,8 +90,14 @@ defmodule Indexer.Fetcher.InternalTransaction do
               tracer: Tracer
             )
   def run(block_numbers, json_rpc_named_arguments) do
-    unique_numbers = Enum.uniq(block_numbers)
-    filtered_unique_numbers = EthereumJSONRPC.block_numbers_in_range(unique_numbers)
+    unique_numbers =
+      block_numbers
+      |> Enum.uniq()
+      |> Chain.filter_consensus_block_numbers()
+
+    filtered_unique_numbers =
+      EthereumJSONRPC.block_numbers_in_range(unique_numbers) --
+        [EthereumJSONRPC.first_block_to_fetch(:trace_first_block)]
 
     filtered_unique_numbers_count = Enum.count(filtered_unique_numbers)
     Logger.metadata(count: filtered_unique_numbers_count)
@@ -124,6 +130,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
           error_count: filtered_unique_numbers_count
         )
 
+        handle_not_found_transaction(reason)
+
         # re-queue the de-duped entries
         {:retry, filtered_unique_numbers}
 
@@ -134,6 +142,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
           end,
           error_count: filtered_unique_numbers_count
         )
+
+        handle_not_found_transaction(reason)
 
         # re-queue the de-duped entries
         {:retry, filtered_unique_numbers}
@@ -231,7 +241,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     case imports do
       {:ok, imported} ->
-        Accounts.drop(imported[:addreses])
+        Accounts.drop(imported[:addresses])
         Blocks.drop_nonconsensus(imported[:remove_consensus_of_missing_transactions_blocks])
 
         async_import_coin_balances(imported, %{
@@ -298,6 +308,26 @@ defmodule Indexer.Fetcher.InternalTransaction do
       ]
     end)
   end
+
+  defp handle_not_found_transaction(errors) when is_list(errors) do
+    Enum.each(errors, &handle_not_found_transaction/1)
+  end
+
+  defp handle_not_found_transaction(error) do
+    case error do
+      %{data: data, message: "historical backend error" <> _} -> invalidate_block_from_error(data)
+      %{data: data, message: "genesis is not traceable"} -> invalidate_block_from_error(data)
+      _ -> :ok
+    end
+  end
+
+  defp invalidate_block_from_error(%{"blockNumber" => block_number}),
+    do: BlocksRunner.invalidate_consensus_blocks([block_number])
+
+  defp invalidate_block_from_error(%{block_number: block_number}),
+    do: BlocksRunner.invalidate_consensus_blocks([block_number])
+
+  defp invalidate_block_from_error(_error_data), do: :ok
 
   defp defaults do
     [

@@ -18,10 +18,12 @@ defmodule BlockScoutWeb.Router do
     plug(:fetch_flash)
     plug(:protect_from_forgery)
     plug(BlockScoutWeb.CSPHeader)
+    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
   end
 
   pipeline :api do
     plug(:accepts, ["json"])
+    plug(BlockScoutWeb.Plug.Logger, application: :api)
   end
 
   forward("/api", ApiRouter)
@@ -59,22 +61,10 @@ defmodule BlockScoutWeb.Router do
     get("/eth-rpc-api-docs", APIDocsController, :eth_rpc)
   end
 
-  url_params = Application.compile_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
-  api_path = url_params[:api_path]
-  path = url_params[:path]
+  scope "/verify_smart_contract" do
+    pipe_through(:api)
 
-  if path != api_path do
-    scope to_string(api_path) <> "/verify_smart_contract" do
-      pipe_through(:api)
-
-      post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
-    end
-  else
-    scope "/verify_smart_contract" do
-      pipe_through(:api)
-
-      post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
-    end
+    post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
   end
 
   if Application.compile_env(:block_scout_web, WebRouter)[:enabled] do

@@ -77,8 +77,9 @@ const readWriteFunction = (element) => {
       const contractAbi = getContractABI($form)
       const inputs = getMethodInputs(contractAbi, functionName)
       const $methodId = $form.find('input[name=method_id]')
+      let args
       try {
-        var args = prepareMethodArgs($functionInputs, inputs)
+        args = prepareMethodArgs($functionInputs, inputs)
       } catch (exception) {
         $errorContainer.show()
         $errorContainer.text(exception)
@@ -100,19 +101,19 @@ const readWriteFunction = (element) => {
 const container = $('[data-smart-contract-functions]')
 
 if (container.length) {
-  getWalletAndLoadFunctions()
+  getWalletAndLoadFunctions(false, container)
 }
 
 const customABIContainer = $('[data-smart-contract-functions-custom]')
 
 if (customABIContainer.length) {
-  getWalletAndLoadFunctions()
+  getWalletAndLoadFunctions(true, customABIContainer)
 }
 
-function getWalletAndLoadFunctions () {
+function getWalletAndLoadFunctions (isCustomABI, container) {
   getCurrentAccountPromise(window.web3 && window.web3.currentProvider).then((currentAccount) => {
-    loadFunctions(container, false, currentAccount)
+    loadFunctions(container, isCustomABI, currentAccount)
   }, () => {
-    loadFunctions(container, false, null)
+    loadFunctions(container, isCustomABI, null)
   })
 }

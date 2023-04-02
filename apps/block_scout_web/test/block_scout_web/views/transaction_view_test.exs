@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
       assert pending.inserted_at == TransactionView.block_timestamp(pending)
     end
 
-    test "returns timestamp for block for collacted transaction" do
+    test "returns timestamp for block for collated transaction" do
       block = insert(:block)
 
       transaction =

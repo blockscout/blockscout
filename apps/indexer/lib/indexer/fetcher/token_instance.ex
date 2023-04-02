@@ -14,12 +14,8 @@ defmodule Indexer.Fetcher.TokenInstance do
 
   @behaviour BufferedTask
 
-  @defaults [
-    flush_interval: 300,
-    max_batch_size: 1,
-    max_concurrency: 10,
-    task_supervisor: Indexer.Fetcher.TokenInstance.TaskSupervisor
-  ]
+  @default_max_batch_size 1
+  @default_max_concurrency 10
 
   @doc false
   def child_spec([init_options, gen_server_options]) do
@@ -32,7 +28,7 @@ defmodule Indexer.Fetcher.TokenInstance do
     end
 
     merged_init_opts =
-      @defaults
+      defaults()
       |> Keyword.merge(mergeable_init_options)
       |> Keyword.put(:state, state)
 
@@ -119,5 +115,15 @@ defmodule Indexer.Fetcher.TokenInstance do
 
   def async_fetch(data, _disabled?) do
     BufferedTask.buffer(__MODULE__, data)
+  end
+
+  defp defaults do
+    [
+      flush_interval: :timer.seconds(3),
+      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
+      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
+      poll: true,
+      task_supervisor: Indexer.Fetcher.TokenInstance.TaskSupervisor
+    ]
   end
 end

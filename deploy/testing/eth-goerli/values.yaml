@@ -1,0 +1,438 @@
+global:
+  env: testnet
+
+blockscout:
+  enabled: true
+  image:
+    _default: &image blockscout/blockscout:latest
+
+  ingress:
+    enabled: true
+    tls:
+      enabled: true
+      createSecret: true
+  # init container
+  init:
+    enabled: true
+    image:
+      _default: *image
+
+  resources:
+    limits:
+      memory:
+        _default: "8Gi"
+      cpu:
+        _default: "3"
+    requests:
+      memory:
+        _default: "8Gi"
+      cpu:
+        _default: "3"
+
+  # node label
+  nodeSelector:
+    enabled: true
+    labels:
+      _default:
+        app: blockscout
+
+  environment:
+    BLOCKSCOUT_VERSION:
+      _default: v5.1.2-beta
+    ETHEREUM_JSONRPC_VARIANT:
+      _default: geth
+    HEART_BEAT_TIMEOUT:
+      _default: 30
+    PORT:
+      _default: 4000
+    SUBNETWORK:
+      _default: Goerli
+    HEALTHY_BLOCKS_PERIOD:
+      _default: 60
+    NETWORK:
+      _default: (Ethereum)
+    NETWORK_ICON:
+      _default: _network_icon.html
+    COIN:
+      _default: ETH
+    ECTO_USE_SSL:
+      _default: 'false'
+    COIN_NAME:
+      _default: ETH
+    LOGO:
+      _default: /images/goerli_logo.svg
+    TXS_STATS_DAYS_TO_COMPILE_AT_INIT:
+      _default: 10
+    COIN_BALANCE_HISTORY_DAYS:
+      _default: 90
+    POOL_SIZE:
+      _default: 300
+    POOL_SIZE_API:
+      _default: 10
+    ACCOUNT_POOL_SIZE:
+      _default: 10
+    DISPLAY_TOKEN_ICONS:
+      _default: 'true'
+    FETCH_REWARDS_WAY:
+      _default: manual
+    SHOW_TESTNET_LABEL:
+      _default: 'true'
+    CHAIN_ID:
+      _default: 5
+    ENABLE_RUST_VERIFICATION_SERVICE:
+      _default: 'true'
+    VISUALIZE_SOL2UML_ENABLED:
+      _default: 'true'
+    SIG_PROVIDER_ENABLED:
+      _default: 'true'
+    INDEXER_MEMORY_LIMIT:
+      _default: 7
+    ACCOUNT_ENABLED:
+      _default: 'true'
+    API_V2_ENABLED:
+      _default: 'true'
+    APPS_MENU:
+      _default: 'true'
+    APPS:
+      _default: '[{"title": "Marketplace", "url": "/apps", "embedded?": true}]'
+    ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT:
+      _default: '20s'
+    ETHEREUM_JSONRPC_HTTP_TIMEOUT:
+      _default: 60
+    INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE:
+      _default: 15
+    INDEXER_DISABLE_EMPTY_BLOCKS_SANITIZER:
+      _default: 'true'
+    INDEXER_RECEIPTS_BATCH_SIZE:
+      _default: 50
+    INDEXER_COIN_BALANCES_BATCH_SIZE:
+      _default: 50
+    INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER:
+      _default: 'true'
+    INDEXER_TX_ACTIONS_ENABLE:
+      _default: 'true'
+    DISABLE_EXCHANGE_RATES:
+      _default: 'true'
+    ENABLE_SOURCIFY_INTEGRATION:
+      _default: 'true'
+
+frontend:
+  app: blockscout
+  enabled: true
+  image:
+    _default: ghcr.io/blockscout/frontend:main
+  replicas:
+    app: 2
+  ingress:
+    enabled: true
+    # enable https
+    tls:
+      enabled: true
+      createSecret: false
+    path:
+      exact:
+        - "/"
+      prefix:
+        - "/apps"
+        - "/_next"
+        - "/node-api"
+        - "/static"
+        - "/auth/profile"
+        - "/account"
+        - "/txs"
+        - "/tx"
+        - "/blocks"
+        - "/block"
+        - "/stats"
+        - "/address"
+        - "/search-results"
+        - "/token"
+        - "/tokens"
+        - "/accounts"
+        - "/visualize"
+        - "/api-docs"
+        - "/csv-export"
+
+  resources:
+    limits:
+      memory:
+        _default: "7Gi"
+      cpu:
+        _default: "4"
+    requests:
+      memory:
+        _default: "7Gi"
+      cpu:
+        _default: "4"
+  # node label
+  nodeSelector:
+    enabled: true
+    labels:
+      _default:
+        app: blockscout-prod
+  environment:
+    # ui config
+    NEXT_PUBLIC_NETWORK_EXPLORERS:
+      _default: "[{'title':'Etherscan','baseUrl':'https://goerli.etherscan.io/','paths':{'tx':'/tx','address':'/address'}}]"
+    # network config
+    NEXT_PUBLIC_NETWORK_NAME:
+      _default: Ethereum
+    NEXT_PUBLIC_NETWORK_SHORT_NAME:
+      _default: Goerli
+    NEXT_PUBLIC_NETWORK_ASSETS_PATHNAME:
+      _default: ethereum
+    NEXT_PUBLIC_NETWORK_TYPE:
+      _default: goerli
+    NEXT_PUBLIC_NETWORK_ID:
+      _default: 5
+    NEXT_PUBLIC_NETWORK_CURRENCY_NAME:
+      _default: Ether
+    NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL:
+      _default: ETH
+    NEXT_PUBLIC_NETWORK_CURRENCY_DECIMALS:
+      _default: 18
+    NEXT_PUBLIC_NETWORK_TOKEN_ADDRESS:
+      _default: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
+    NEXT_PUBLIC_IS_ACCOUNT_SUPPORTED:
+      _default: true
+    NEXT_PUBLIC_NETWORK_VERIFICATION_TYPE:
+      _default: validation
+    NEXT_PUBLIC_MARKETPLACE_SUBMIT_FORM:
+      _default: https://airtable.com/shrqUAcjgGJ4jU88C
+    # api config
+    NEXT_PUBLIC_API_BASE_PATH:
+      _default: /
+    NEXT_PUBLIC_BLOCKSCOUT_VERSION:
+      _default: v5.1.2-beta
+    NEXT_PUBLIC_FOOTER_GITHUB_LINK:
+      _default: https://github.com/blockscout/blockscout
+    NEXT_PUBLIC_FOOTER_TWITTER_LINK:
+      _default: https://www.twitter.com/blockscoutcom
+    NEXT_PUBLIC_APP_ENV:
+      _default: staging
+    NEXT_PUBLIC_APP_INSTANCE:
+      _default: unknown
+    NEXT_PUBLIC_HOMEPAGE_CHARTS:
+      _default: "['daily_txs']"
+    NEXT_PUBLIC_NETWORK_RPC_URL:
+      _default: https://rpc.ankr.com/eth_goerli
+    NEXT_PUBLIC_IS_TESTNET:
+      _default: 'true'
+    NEXT_PUBLIC_API_SPEC_URL:
+      _default: https://raw.githubusercontent.com/blockscout/blockscout-api-v2-swagger/main/swagger.yaml
+# enable stats deploy
+stats:
+  enabled: true
+  image:
+    _default: ghcr.io/blockscout/stats:main
+
+  # enable ingress
+  ingress:
+    enabled: true
+    # enable https
+    tls:
+      enabled: true
+      createSecret: true
+
+  resources:
+    limits:
+      memory:
+        _default: "0.1Gi"
+      cpu:
+        _default: "0.1"
+    requests:
+      memory:
+        _default: "0.1Gi"
+      cpu:
+        _default: "0.1"
+
+  # node label
+  nodeSelector:
+    enabled: true
+    labels:
+      _default:
+        app: blockscout
+
+  # enable Horizontal Pod Autoscaler
+  hpa:
+    enabled: true
+
+  environment:
+    RUST_LOG:
+      _default: info
+    STATS__RUN_MIGRATIONS:
+      _default: 'true'
+    STATS__TRACING__FORMAT:
+      _default: json
+    STATS__METRICS__ENABLED:
+      _default: 'true'
+
+postgres:
+  enabled: true
+  image: postgres:14.7
+  port: 5432
+
+  command: '["docker-entrypoint.sh", "-c"]'
+  args: '["max_connections=500"]'
+
+  files:
+    enabled: true
+    mountPath: /docker-entrypoint-initdb.d
+
+  persistence: true
+
+  resources:
+    limits:
+      memory:
+        _default: "2Gi"
+      cpu:
+        _default: "2"
+    requests:
+      memory:
+        _default: "2Gi"
+      cpu:
+        _default: "2"
+
+# enable Smart-contract-verifier deploy
+scVerifier:
+  enabled: true
+  image:
+    _default: ghcr.io/blockscout/smart-contract-verifier:main
+  # enable ingress
+  ingress:
+    enabled: true
+    # enable https
+    tls:
+      enabled: true
+  resources:
+    limits:
+      memory:
+        _default: "0.5Gi"
+      cpu:
+        _default: "0.25"
+    requests:
+      memory:
+        _default: "0.5Gi"
+      cpu:
+        _default: "0.25"
+  # probes
+  livenessProbe:
+    enabled: true
+    # path: /health
+  readinessProbe:
+    enabled: true
+    # path: /health
+  # enable Horizontal Pod Autoscaler
+  hpa:
+    enabled: true
+  environment:
+    SMART_CONTRACT_VERIFIER__SERVER__HTTP__ADDR:
+      _default: 0.0.0.0:8050
+    SMART_CONTRACT_VERIFIER__SERVER__GRPC__ADDR:
+      _default: 0.0.0.0:8051
+    # SMART_CONTRACT_VERIFIER__SOLIDITY__ENABLED:
+    #   _default: 'true'
+    SMART_CONTRACT_VERIFIER__SOLIDITY__COMPILERS_DIR:
+      _default: /tmp/solidity-compilers
+    SMART_CONTRACT_VERIFIER__SOLIDITY__REFRESH_VERSIONS_SCHEDULE:
+      _default: 0 0 * * * * *
+    # It depends on the OS you are running the service on
+    # SMART_CONTRACT_VERIFIER__SOLIDITY__FETCHER__LIST__LIST_URL:
+    #   _default: https://solc-bin.ethereum.org/linux-amd64/list.json
+    #SMART_CONTRACT_VERIFIER__SOLIDITY__FETCHER__LIST__LIST_URL=https://solc-bin.ethereum.org/macosx-amd64/list.json
+    #SMART_CONTRACT_VERIFIER__SOLIDITY__FETCHER__LIST__LIST_URL=https://solc-bin.ethereum.org/windows-amd64/list.json
+    SMART_CONTRACT_VERIFIER__SOLIDITY__FETCHER__S3__REGION:
+      _default: ""
+    SMART_CONTRACT_VERIFIER__SOLIDITY__FETCHER__S3__ENDPOINT:
+      _default: https://storage.googleapis.com
+    SMART_CONTRACT_VERIFIER__SOURCIFY__ENABLED:
+      _default: 'true'
+    SMART_CONTRACT_VERIFIER__SOURCIFY__API_URL:
+      _default: https://sourcify.dev/server/
+    SMART_CONTRACT_VERIFIER__SOURCIFY__VERIFICATION_ATTEMPTS:
+      _default: 3
+    SMART_CONTRACT_VERIFIER__SOURCIFY__REQUEST_TIMEOUT:
+      _default: 10
+    SMART_CONTRACT_VERIFIER__METRICS__ENABLED:
+      _default: 'true'
+    SMART_CONTRACT_VERIFIER__METRICS__ADDR:
+      _default: 0.0.0.0:6060
+    SMART_CONTRACT_VERIFIER__METRICS__ROUTE:
+      _default: /metrics
+    SMART_CONTRACT_VERIFIER__JAEGER__ENABLED:
+      _default: 'false'
+
+# enable visualizer deploy
+visualizer:
+  enabled: true
+  image:
+    _default: ghcr.io/blockscout/visualizer:main
+
+  # enable ingress
+  ingress:
+    enabled: true
+    host:
+      _default: visualizer.test.aws-k8s.blockscout.com
+    # enable https
+    tls:
+      enabled: true
+      createSecret: false
+
+  resources:
+    limits:
+      memory:
+        _default: "0.05Gi"
+      cpu:
+        _default: "0.05"
+    requests:
+      memory:
+        _default: "0.05Gi"
+      cpu:
+        _default: "0.05"
+
+  # node label
+  nodeSelector:
+    enabled: true
+    labels:
+      _default:
+        app: blockscout
+
+  environment:
+    VISUALIZER__SERVER__HTTP__ENABLED:
+      _default: 'true'
+    VISUALIZER__SERVER__HTTP__ADDR:
+      _default: 0.0.0.0:8050
+    VISUALIZER__SERVER__GRPC__ENABLED:
+      _default: 'false'
+
+# enable sig-provider deploy
+sigProvider:
+  enabled: true
+  image:
+    _default: ghcr.io/blockscout/sig-provider:main
+
+  # enable ingress
+  ingress:
+    enabled: true
+    # enable https
+    tls:
+      enabled: true
+      createSecret: false
+
+  # enable Horizontal Pod Autoscaler
+  hpa:
+    enabled: false
+
+  # probes
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: false
+
+  environment:
+    SIG_PROVIDER__METRICS__ENABLED:
+      _default: 'true'
+    SIG_PROVIDER__SERVER__HTTP__ADDR:
+      _default: 0.0.0.0:8043
+    SIG_PROVIDER__SERVER__GRPC__ENABLED:
+      _default: 'false'

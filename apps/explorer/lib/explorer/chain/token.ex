@@ -32,11 +32,13 @@ defmodule Explorer.Chain.Token do
   * `total_supply` - The total supply of the token
   * `decimals` - Number of decimal places the token can be subdivided to
   * `type` - Type of token
-  * `calatoged` - Flag for if token information has been cataloged
+  * `cataloged` - Flag for if token information has been cataloged
   * `contract_address` - The `t:Address.t/0` of the token's contract
   * `contract_address_hash` - Address hash foreign key
   * `holder_count` - the number of `t:Explorer.Chain.Address.t/0` (except the burn address) that have a
     `t:Explorer.Chain.CurrentTokenBalance.t/0` `value > 0`.  Can be `nil` when data not migrated.
+  * `fiat_value` - The price of a token in a configured currency (USD by default).
+  * `circulating_market_cap` - The circulating market cap of a token in a configured currency (USD by default).
   """
   @type t :: %Token{
           name: String.t(),
@@ -48,7 +50,10 @@ defmodule Explorer.Chain.Token do
           contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
           contract_address_hash: Hash.Address.t(),
           holder_count: non_neg_integer() | nil,
-          skip_metadata: boolean()
+          skip_metadata: boolean(),
+          total_supply_updated_at_block: non_neg_integer() | nil,
+          fiat_value: Decimal.t() | nil,
+          circulating_market_cap: Decimal.t() | nil
         }
 
   @derive {Poison.Encoder,
@@ -77,6 +82,9 @@ defmodule Explorer.Chain.Token do
     field(:cataloged, :boolean)
     field(:holder_count, :integer)
     field(:skip_metadata, :boolean)
+    field(:total_supply_updated_at_block, :integer)
+    field(:fiat_value, :decimal)
+    field(:circulating_market_cap, :decimal)
 
     belongs_to(
       :contract_address,
@@ -91,7 +99,7 @@ defmodule Explorer.Chain.Token do
   end
 
   @required_attrs ~w(contract_address_hash type)a
-  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata)a
+  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block updated_at fiat_value circulating_market_cap)a
 
   @doc false
   def changeset(%Token{} = token, params \\ %{}) do
@@ -139,6 +147,27 @@ defmodule Explorer.Chain.Token do
       token in __MODULE__,
       select: token.contract_address_hash,
       where: token.cataloged == true and token.updated_at <= ^some_time_ago_date
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch a `batch_size` number of the tokens,
+  possibly starting from `last_updated_address_hash` ordered by `contract_address_hash`.
+  """
+  def tokens_to_update_fiat_value(nil, batch_size) do
+    from(
+      token in __MODULE__,
+      order_by: token.contract_address_hash,
+      limit: ^batch_size
+    )
+  end
+
+  def tokens_to_update_fiat_value(last_updated_address_hash, batch_size) do
+    from(
+      token in __MODULE__,
+      order_by: token.contract_address_hash,
+      where: token.contract_address_hash > ^last_updated_address_hash,
+      limit: ^batch_size
     )
   end
 end

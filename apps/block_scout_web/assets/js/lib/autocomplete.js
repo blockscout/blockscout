@@ -5,6 +5,7 @@ import { getTextAdData, fetchTextAdData } from './ad'
 import { DateTime } from 'luxon'
 import { appendTokenIcon } from './token_icon'
 import { escapeHtml } from './utils'
+import { commonPath } from './path_helper'
 import xss from 'xss'
 
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
@@ -18,7 +19,7 @@ const dataSrc = async (query, id) => {
 
     // Fetch External Data Source
     const source = await fetch(
-      `/token-autocomplete?q=${query}`
+      `${commonPath}/token-autocomplete?q=${query}`
     )
     const data = await source.json()
     // Post Loading placeholder text
@@ -40,7 +41,10 @@ const resultsListElement = (list, data) => {
   if (data.results.length > 0) {
     info.innerHTML += `Displaying <strong>${data.results.length}</strong> results`
   } else if (data.query !== '###') {
-    info.innerHTML += `Found <strong>${data.matches.length}</strong> matching results for <strong>"${data.query}"</strong>`
+    info.innerHTML += `Found <strong>${data.matches.length}</strong> matching results for `
+    const strong = document.createElement('strong')
+    strong.appendChild(document.createTextNode(data.query))
+    info.appendChild(strong)
   }
 
   list.prepend(info)
@@ -143,13 +147,13 @@ const selection = (event) => {
   const selectionValue = event.detail.selection.value
 
   if (selectionValue.type === 'contract' || selectionValue.type === 'address' || selectionValue.type === 'label') {
-    window.location.href = `/address/${selectionValue.address_hash}`
+    window.location.href = `${commonPath}/address/${selectionValue.address_hash}`
   } else if (selectionValue.type === 'token') {
-    window.location.href = `/tokens/${selectionValue.address_hash}`
+    window.location.href = `${commonPath}/tokens/${selectionValue.address_hash}`
   } else if (selectionValue.type === 'transaction') {
-    window.location.href = `/tx/${selectionValue.tx_hash}`
+    window.location.href = `${commonPath}/tx/${selectionValue.tx_hash}`
   } else if (selectionValue.type === 'block') {
-    window.location.href = `/blocks/${selectionValue.block_hash}`
+    window.location.href = `${commonPath}/blocks/${selectionValue.block_hash}`
   }
 }
 

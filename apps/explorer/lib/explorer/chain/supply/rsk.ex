@@ -108,9 +108,9 @@ defmodule Explorer.Chain.Supply.RSK do
       %{block_quantity: integer_to_quantity(max_number), hash_data: "0x0000000000000000000000000000000001000006"}
     ]
 
-    json_rpc_named_argumens = Application.get_env(:explorer, :json_rpc_named_arguments)
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    case EthereumJSONRPC.fetch_balances(params, json_rpc_named_argumens) do
+    case EthereumJSONRPC.fetch_balances(params, json_rpc_named_arguments) do
       {:ok,
        %FetchedBalances{
          errors: [],

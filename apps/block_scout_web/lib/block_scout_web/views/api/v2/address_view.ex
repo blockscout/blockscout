@@ -8,6 +8,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.ExchangeRates.Token
 
+  @api_true [api?: true]
+
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
   end
@@ -59,11 +61,11 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
   def prepare_address(address, conn \\ nil) do
     base_info = Helper.address_with_info(conn, address, address.hash)
-    is_proxy = AddressView.smart_contract_is_proxy?(address)
+    is_proxy = AddressView.smart_contract_is_proxy?(address, @api_true)
 
     {implementation_address, implementation_name} =
       with true <- is_proxy,
-           {address, name} <- SmartContract.get_implementation_address_hash(address.smart_contract),
+           {address, name} <- SmartContract.get_implementation_address_hash(address.smart_contract, @api_true),
            false <- is_nil(address),
            {:ok, address_hash} <- Chain.string_to_address_hash(address),
            checksummed_address <- Address.checksum(address_hash) do
@@ -78,7 +80,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
     creator_hash = AddressView.from_address_hash(address)
     creation_tx = creator_hash && AddressView.transaction_hash(address)
-    token = address.token && TokenView.render("token.json", %{token: Market.add_price(address.token)})
+    token = address.token && TokenView.render("token.json", %{token: address.token})
 
     write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
     read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
@@ -94,15 +96,15 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "block_number_balance_updated_at" => address.fetched_coin_balance_block_number,
       "has_custom_methods_read" => read_custom_abi?,
       "has_custom_methods_write" => write_custom_abi?,
-      "has_methods_read" => AddressView.smart_contract_with_read_only_functions?(address) || read_custom_abi?,
-      "has_methods_write" => AddressView.smart_contract_with_write_functions?(address) || write_custom_abi?,
+      "has_methods_read" => AddressView.smart_contract_with_read_only_functions?(address),
+      "has_methods_write" => AddressView.smart_contract_with_write_functions?(address),
       "has_methods_read_proxy" => is_proxy,
       "has_methods_write_proxy" => AddressView.smart_contract_with_write_functions?(address) && is_proxy,
       "has_decompiled_code" => AddressView.has_decompiled_code?(address),
-      "has_validated_blocks" => Chain.check_if_validated_blocks_at_address(address.hash),
-      "has_logs" => Chain.check_if_logs_at_address(address.hash),
-      "has_tokens" => Chain.check_if_tokens_at_address(address.hash),
-      "has_token_transfers" => Chain.check_if_token_transfers_at_address(address.hash)
+      "has_validated_blocks" => Chain.check_if_validated_blocks_at_address(address.hash, @api_true),
+      "has_logs" => Chain.check_if_logs_at_address(address.hash, @api_true),
+      "has_tokens" => Chain.check_if_tokens_at_address(address.hash, @api_true),
+      "has_token_transfers" => Chain.check_if_token_transfers_at_address(address.hash, @api_true)
     })
   end
 

@@ -112,7 +112,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       token_contract_address_hashes_and_ids =
         changes_list
         |> Enum.map(fn change ->
-          token_id = get_tokend_id(change)
+          token_id = get_token_id(change)
 
           {change.token_contract_address_hash, token_id}
         end)
@@ -161,7 +161,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     end)
   end
 
-  defp get_tokend_id(change) do
+  defp get_token_id(change) do
     if Map.has_key?(change, :token_id), do: change.token_id, else: nil
   end
 
