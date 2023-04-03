@@ -80,8 +80,12 @@ defmodule Explorer.Chain do
     Accounts,
     BlockNumber,
     Blocks,
+    ContractsCounter,
+    NewContractsCounter,
+    NewVerifiedContractsCounter,
     Transactions,
-    Uncles
+    Uncles,
+    VerifiedContractsCounter
   }
 
   alias Explorer.Chain.Celo.ContractEventTracking
@@ -89,7 +93,12 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
-  alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter, ContractsCounter}
+
+  alias Explorer.Counters.{
+    AddressesCounter,
+    AddressesWithBalanceCounter
+  }
+
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.SmartContract.{Helper, Reader}
@@ -7289,7 +7298,7 @@ defmodule Explorer.Chain do
   defp filter_contracts(basic_query, _), do: basic_query
 
   def count_verified_contracts do
-    Repo.aggregate(SmartContract, :count)
+    Repo.aggregate(SmartContract, :count, timeout: :infinity)
   end
 
   def count_new_verified_contracts do
@@ -7300,7 +7309,7 @@ defmodule Explorer.Chain do
       )
 
     query
-    |> Repo.aggregate(:count)
+    |> Repo.aggregate(:count, timeout: :infinity)
   end
 
   def count_contracts do
@@ -7311,7 +7320,7 @@ defmodule Explorer.Chain do
       )
 
     query
-    |> Repo.aggregate(:count)
+    |> Repo.aggregate(:count, timeout: :infinity)
   end
 
   def count_new_contracts do
@@ -7324,22 +7333,22 @@ defmodule Explorer.Chain do
       )
 
     query
-    |> Repo.aggregate(:count)
+    |> Repo.aggregate(:count, timeout: :infinity)
   end
 
   def count_verified_contracts_from_cache do
-    ContractsCounter.fetch("verified")
+    VerifiedContractsCounter.fetch()
   end
 
   def count_new_verified_contracts_from_cache do
-    ContractsCounter.fetch("new_verified")
+    NewVerifiedContractsCounter.fetch()
   end
 
   def count_contracts_from_cache do
-    ContractsCounter.fetch("all")
+    ContractsCounter.fetch()
   end
 
   def count_new_contracts_from_cache do
-    ContractsCounter.fetch("new")
+    NewContractsCounter.fetch()
   end
 end
