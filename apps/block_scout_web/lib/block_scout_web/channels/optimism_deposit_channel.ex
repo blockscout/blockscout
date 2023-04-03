@@ -4,18 +4,18 @@ defmodule BlockScoutWeb.OptimismDepositChannel do
   """
   use BlockScoutWeb, :channel
 
-  intercept(["deposit"])
+  intercept(["deposits"])
 
-  def join("optimism_deposits:new_deposit", _params, socket) do
+  def join("optimism_deposits:new_deposits", _params, socket) do
     {:ok, %{}, socket}
   end
 
   def handle_out(
-        "deposit",
-        %{deposit: _deposit},
+        "deposits",
+        %{deposits: deposits},
         %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
       ) do
-    push(socket, "deposit", %{deposit: 1})
+    push(socket, "deposits", %{deposits: Enum.count(deposits)})
 
     {:noreply, socket}
   end

@@ -226,9 +226,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :optimism_deposits, :realtime, deposits}) do
-    Enum.each(deposits, fn deposit ->
-      broadcast_optimism_deposit(deposit, "optimism_deposits:new_deposit", "deposit")
-    end)
+    broadcast_optimism_deposits(deposits, "optimism_deposits:new_deposits", "deposits")
   end
 
   def handle_event(_), do: nil
@@ -405,8 +403,8 @@ defmodule BlockScoutWeb.Notifier do
     end
   end
 
-  defp broadcast_optimism_deposit(deposit, deposit_channel, event) do
-    Endpoint.broadcast(deposit_channel, event, %{deposit: deposit})
+  defp broadcast_optimism_deposits(deposits, deposit_channel, event) do
+    Endpoint.broadcast(deposit_channel, event, %{deposits: deposits})
   end
 
   defp broadcast_token_transfer(token_transfer) do
