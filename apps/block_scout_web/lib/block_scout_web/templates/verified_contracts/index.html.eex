@@ -1,15 +1,15 @@
 <%= render "_stats.html", assigns %>
 <section class="container" data-page="verified-contracts-list">
   <div class="card">
-    <div id="verified-contratc-list" class="card-body" data-async-load data-async-listing="<%= @current_path %>" data-no-self-calls>
+    <div id="verified-contracts-list" class="card-body" data-async-load data-async-listing="<%= @current_path %>" data-no-self-calls>
       <h1 class="card-title list-title-description d-inline-block"><%= gettext "Verified Contracts" %></h1>
 
       <div class="float-right">
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: @page_number, show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
       </div>
 
-      <div class="dropdown u-push-sm d-inline-block mb-2">
-        <button data-test="filter_dropdown" class="btn-dropdown-line dropdown-toggle" type="button"
+      <div class="dropdown u-push-sm d-inline-block mb-2 mr-5 ml-md-3">
+        <button data-test="filter_dropdown" class="btn-dropdown-line large no-rm dropdown-toggle" type="button"
           id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           <%= gettext "Filter by compiler:" %> <%= format_current_filter(@filter) %>
         </button>
@@ -18,13 +18,13 @@
           <%= link(
             gettext("All"),
             to: Helpers.verified_contracts_path(@conn, :index),
-            class: "address__link address__link--active dropdown-item",
+            class: "address__link address__link--active dropdown-item border-bottom",
             "data-test": "filter_option"
           ) %>
           <%= link(
             gettext("Solidity"),
             to: Helpers.verified_contracts_path(@conn, :index, filter: "solidity"),
-            class: "address__link address__link--active dropdown-item",
+            class: "address__link address__link--active dropdown-item border-bottom",
             "data-test": "filter_option"
           ) %>
           <%= link(

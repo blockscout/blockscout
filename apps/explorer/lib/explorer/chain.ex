@@ -4672,7 +4672,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp join_association(query, association, necessity) when do
+  defp join_association(query, association, necessity) do
     case necessity do
       :optional ->
         preload(query, ^association)

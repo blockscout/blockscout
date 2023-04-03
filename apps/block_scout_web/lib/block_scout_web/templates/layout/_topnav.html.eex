@@ -30,35 +30,20 @@
               <%= gettext("Blockchain") %>
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarBlockchainDropdown">
+              <div class="nav-submenu">
+                <span>
+                  <%= gettext("Blocks") %>
+                </span>
+              </div>
               <%= link to: blocks_path(@conn, :index), class: "dropdown-item #{tab_status("blocks", @conn.request_path)}" do %>
                 <%= gettext("All Blocks") %>
               <% end %>
               <%= link to: epochs_path(@conn, :epochs), class: "dropdown-item #{tab_status("epochs", @conn.request_path)}" do %>
                 <%= gettext("Epoch Blocks") %>
               <% end %>
-              <%= link(
-                    gettext("Validated Txs"),
-                    class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
-                    to: transaction_path(@conn, :index)
-                  ) %>
-              <div class="px-3 py-2">
-                <span class="mr-1">
-                  <%= gettext("Blocks") %>
-                </span>
-                <span class="nav-link-icon">
-                  <%= render BlockScoutWeb.IconsView, "_block_icon.html" %>
-                </span>
-              </div>
-              <%= link(
-                    gettext("Blocks"),
-                    to: blocks_path(@conn, :index),
-                    class: "dropdown-item #{tab_status("blocks", @conn.request_path)}")%>
-              <div class="px-3 py-2">
-                <span class="mr-1">
+              <div class="nav-submenu">
+                <span>
                   <%= gettext("Transactions") %>
-                </span>
-                <span class="nav-link-icon">
-                  <%= render BlockScoutWeb.IconsView, "_transaction_icon.html" %>
                 </span>
               </div>
               <% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)%>

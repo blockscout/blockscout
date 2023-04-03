@@ -369,13 +369,12 @@ defmodule BlockScoutWeb.Chain do
     %{"block_number" => block_number}
   end
 
-<<<<<<< HEAD
   defp paging_params(%{reward_type: reward_type}) do
     %{"reward_type" => reward_type}
-=======
+  end
+
   defp paging_params(%SmartContract{} = smart_contract) do
     %{"smart_contract_id" => smart_contract.id}
->>>>>>> d932786d5623e4cb03a0f833ccd3e4dc988981fd
   end
 
   defp paging_params(%{

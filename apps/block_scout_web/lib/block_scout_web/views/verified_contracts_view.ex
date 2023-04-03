@@ -4,7 +4,6 @@ defmodule BlockScoutWeb.VerifiedContractsView do
   alias Explorer.Celo.CoreContracts
   alias Explorer.Chain.{Address, SmartContract, Wei}
 
-  import BlockScoutWeb.GenericPaginationHelpers
   import BlockScoutWeb.AddressView, only: [balance: 1]
   alias BlockScoutWeb.WebRouter.Helpers
 
