@@ -1,79 +1,75 @@
 defmodule BlockScoutWeb.VerifiedContractsController do
   use BlockScoutWeb, :controller
 
-  import Ecto.Query
+  import BlockScoutWeb.Chain,
+    only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1, fetch_page_number: 1]
 
-  alias BlockScoutWeb.VerifiedContractsView
-  alias Explorer.Chain.{SmartContract, SmartContractTransactionCount}
-  alias Explorer.GenericPagingOptions, as: PagingOptions
+  alias BlockScoutWeb.{Controller, VerifiedContractsView}
+  alias Explorer.{Chain, Market}
+  alias Explorer.ExchangeRates.Token
+  alias Phoenix.View
 
-  @default_page_size 50
+  @necessity_by_association %{[address: :token] => :optional}
+
+  def index(conn, %{"type" => "JSON"} = params) do
+    full_options =
+      [necessity_by_association: @necessity_by_association]
+      |> Keyword.merge(paging_options(params))
+      |> Keyword.merge(current_filter(params))
+      |> Keyword.merge(search_query(params))
+
+    verified_contracts_plus_one = Chain.verified_contracts(full_options)
+    {verified_contracts, next_page} = split_list_by_page(verified_contracts_plus_one)
+
+    items =
+      for contract <- verified_contracts do
+        token =
+          if contract.address.token,
+            do: Market.get_exchange_rate(contract.address.token.symbol),
+            else: Token.null()
+
+        View.render_to_string(VerifiedContractsView, "_contract.html",
+          contract: contract,
+          token: token
+        )
+      end
+
+    next_page_path =
+      case next_page_params(next_page, verified_contracts, params) do
+        nil -> nil
+        next_page_params -> verified_contracts_path(conn, :index, Map.delete(next_page_params, "type"))
+      end
+
+    json(conn, %{items: items, next_page_path: next_page_path})
+  end
 
   def index(conn, params) do
-    filter = Map.get(params, "filter")
-    contract_count = get_verified_contract_count(filter)
-
-    paging_options =
-      PagingOptions.extract_paging_options_from_params(
-        params,
-        contract_count,
-        ["date", "txns", "name"],
-        "desc",
-        @default_page_size
-      )
-
-    contracts = get_verified_contracts(paging_options, filter, contract_count)
-
-    render(conn, VerifiedContractsView, "index.html",
-      conn: conn,
-      params: Map.merge(params, paging_options),
-      contracts: contracts,
-      contract_count: contract_count
+    render(conn, "index.html",
+      current_path: Controller.current_full_path(conn),
+      filter: params["filter"],
+      page_number: params |> fetch_page_number() |> Integer.to_string(),
+      contracts_count: Chain.count_contracts_from_cache(),
+      verified_contracts_count: Chain.count_verified_contracts_from_cache(),
+      new_contracts_count: Chain.count_new_contracts_from_cache(),
+      new_verified_contracts_count: Chain.count_new_verified_contracts_from_cache()
     )
   end
 
-  defp get_verified_contracts(paging_options, filter, contract_count) when contract_count > 0 do
-    SmartContract
-    |> preload(:address)
-    |> join(:left, [c], tc in SmartContractTransactionCount,
-      on: c.address_hash == tc.address_hash,
-      as: :transaction_count
-    )
-    |> select([c, tc], [c, tc])
-    |> handle_filter(filter)
-    |> handle_paging_options(paging_options)
-    |> Explorer.Repo.all()
+  defp current_filter(%{"filter" => "solidity"}) do
+    [filter: :solidity]
   end
 
-  defp get_verified_contracts(_, _, _), do: []
-
-  defp get_verified_contract_count(filter) do
-    SmartContract
-    |> handle_filter(filter)
-    |> Explorer.Repo.aggregate(:count, :id)
+  defp current_filter(%{"filter" => "vyper"}) do
+    [filter: :vyper]
   end
 
-  defp handle_paging_options(query, paging_options) do
-    offset = (paging_options.page_number - 1) * paging_options.page_size
+  defp current_filter(_), do: []
 
-    query
-    |> handle_order_clause(paging_options.order_dir, paging_options.order_field)
-    |> limit(^paging_options.page_size)
-    |> offset(^offset)
+  defp search_query(%{"search" => ""}), do: []
+
+  defp search_query(%{"search" => search_string}) do
+    [search: search_string]
   end
 
-  defp handle_order_clause(query, "desc", "name"), do: query |> order_by(desc: :name)
-  defp handle_order_clause(query, "asc", "name"), do: query |> order_by(asc: :name)
-
-  defp handle_order_clause(query, "desc", "date"), do: query |> order_by(desc: :inserted_at)
-  defp handle_order_clause(query, "asc", "date"), do: query |> order_by(asc: :inserted_at)
-
-  defp handle_order_clause(query, "desc", "txns"),
-    do: query |> order_by([c, ct], desc_nulls_last: ct.transaction_count)
-
-  defp handle_order_clause(query, "asc", "txns"),
-    do: query |> order_by([c, ct], asc_nulls_first: ct.transaction_count)
-
-  defp handle_filter(query, nil), do: query
-  defp handle_filter(query, filter), do: query |> where([c], ilike(c.name, ^"%#{filter}%"))
+  defp search_query(_), do: []
 end

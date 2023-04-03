@@ -1,125 +1,100 @@
-<%
-	path_fun = fn conn, params -> verified_contracts_path(conn, :index, params) end
-	pagination_current_page = current_page(@params)
-	pagination_next_page_path = next_page_path(@conn, @params, @contract_count, path_fun)
-	pagination_prev_page_path = prev_page_path(@conn, @params, path_fun)
-	pagination_first_page_path = first_page_path(@conn, @params, path_fun)
-	pagination_last_page_path = last_page_path(@conn, @params, @contract_count, path_fun)
-%>
-<section
-		class="container tooltip-with-link-container"
-		data-page="verified_contracts"
-		data-chain-id="<%= System.get_env("CHAIN_ID") %>"
-		data-display-token-icons="<%= System.get_env("DISPLAY_TOKEN_ICONS") %>"
->
-	<div class="card">
-		<div class="card-body" data-async-load data-async-listing="<#= @current_path %>">
-			<h1 class="card-title list-title-description"><%= gettext "Verified Contracts" %></h1>
+<%= render "_stats.html", assigns %>
+<section class="container" data-page="verified-contracts-list">
+  <div class="card">
+    <div id="verified-contratc-list" class="card-body" data-async-load data-async-listing="<%= @current_path %>" data-no-self-calls>
+      <h1 class="card-title list-title-description d-inline-block"><%= gettext "Verified Contracts" %></h1>
 
-			<div class="list-top-pagination-container-wrapper verified_contracts-list-search-input-outer-container d-flex" style="float: right;">
-				<%= if @contract_count > 0 do %>
-				<%= render BlockScoutWeb.CommonComponentsView,
-					"_pagination_container.html",
-					position: "top",
-					show_pagination_limit: true,
-					data_next_page_button: true,
-					data_prev_page_button: true,
-					cur_page_number: pagination_current_page,
-					next_page_path: pagination_next_page_path,
-					prev_page_path: pagination_prev_page_path,
-					first_page_path: pagination_first_page_path,
-					last_page_path: pagination_last_page_path
-				%>
-				<% end %>
-		</div>
+      <div class="float-right">
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: @page_number, show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+      </div>
 
-			<div class="addresses-table-container">
-				<div class="stakes-table-container">
-					<table class="verified-contracts-table">
-						<thead>
-						<tr>
-							<th class="stakes-table-th verified-contracts-table-th verified-contracts-table-cell-with-link">
-								<div class="stakes-table-th-content"><%= gettext("Address") %></div>
-							</th>
-							<th class="stakes-table-th verified-contracts-table-th verified-contracts-table-cell-with-link">
-								<div class="stakes-table-th-content">
-									<%= render BlockScoutWeb.CommonComponentsView,
-										"_pagination_sort_link.html",
-										link_order_field: "name",
-										link_path: sort_path(@conn, @params, "name", "asc", path_fun),
-										link_title: gettext("Contract Name"),
-										current_order_dir: @params.order_dir,
-										current_order_field: @params.order_field
-									%>
-								</div>
-							</th>
-							<th class="stakes-table-th verified-contracts-table-th">
-								<div class="stakes-table-th-content"><%= gettext("Compiler") %></div>
-							</th>
-							<th class="stakes-table-th verified-contracts-table-th">
-								<div class="stakes-table-th-content"><%= gettext("Balance") %></div>
-							</th>
-							<th class="stakes-table-th verified-contracts-table-th">
-								<div class="stakes-table-th-content">
-									<%= render BlockScoutWeb.CommonComponentsView,
-										"_pagination_sort_link.html",
-										link_order_field: "txns",
-										link_path: sort_path(@conn, @params, "txns", "desc", path_fun),
-										link_title: gettext("Txns (past 90 days)"),
-										current_order_dir: @params.order_dir,
-										current_order_field: @params.order_field
-									%>
-								</div>
-							</th>
-							<th class="stakes-table-th verified-contracts-table-th">
-								<div class="stakes-table-th-content"><%= gettext("Verified") %></div>
-							</th>
-							<th class="stakes-table-th verified-contracts-table-th">
-								<div class="stakes-table-th-content">
-									<%= render BlockScoutWeb.CommonComponentsView,
-										"_pagination_sort_link.html",
-										link_order_field: "date",
-										link_path: sort_path(@conn, @params, "date", "asc", path_fun),
-										link_title: gettext("Date Verified"),
-										current_order_dir: @params.order_dir,
-										current_order_field: @params.order_field
-									%>
-								</div>
-							</th>
-							<th class="stakes-table-th verified-contracts-table-th">
-								<div class="stakes-table-th-content">License</div>
-							</th>
-						</tr>
-						</thead>
-						<tbody data-items data-selector="top-verified_contracts-list">
-							<%= if @contract_count == 0 do %>
-							<tr>
-								<td class="stakes-td" colspan="8"><%= gettext("No verified contracts found") %></th>
-							</tr>
-							<% else %>
-								<%= for contract <- @contracts do %>
-								<%= render BlockScoutWeb.VerifiedContractsView, "_tile.html", contract: contract %>
+      <div class="dropdown u-push-sm d-inline-block mb-2">
+        <button data-test="filter_dropdown" class="btn-dropdown-line dropdown-toggle" type="button"
+          id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <%= gettext "Filter by compiler:" %> <%= format_current_filter(@filter) %>
+        </button>
 
-								<% end %>
-							<% end %>
-						</tbody>
-					</table>
-				</div>
-			</div>
-			<%= if @contract_count > 0 do %>
-			<%= render BlockScoutWeb.CommonComponentsView,
-				"_pagination_container.html",
-				position: "bottom",
-				show_pagination_limit: true,
-				data_next_page_button: true,
-				data_prev_page_button: true,
-				cur_page_number: pagination_current_page,
-				next_page_path: pagination_next_page_path,
-				prev_page_path: pagination_prev_page_path,
-				first_page_path: pagination_first_page_path,
-				last_page_path: pagination_last_page_path
-			%>
-			<% end %>
-		</div>
-	</div>
+        <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
+          <%= link(
+            gettext("All"),
+            to: Helpers.verified_contracts_path(@conn, :index),
+            class: "address__link address__link--active dropdown-item",
+            "data-test": "filter_option"
+          ) %>
+          <%= link(
+            gettext("Solidity"),
+            to: Helpers.verified_contracts_path(@conn, :index, filter: "solidity"),
+            class: "address__link address__link--active dropdown-item",
+            "data-test": "filter_option"
+          ) %>
+          <%= link(
+            gettext("Vyper"),
+            to: Helpers.verified_contracts_path(@conn, :index, filter: "vyper"),
+            class: "address__link address__link--active dropdown-item",
+            "data-test": "filter_option"
+          ) %>
+        </div>
+      </div>
+      
+      <div class="search-input-container mb-3">
+        <input data-search-field="" class="form-control search-input" type="text" name="search" value="<%= @conn.params["search"] %>" placeholder="<%= gettext "Contract name or address" %>" id="search-text-input">
+      </div>
+
+      <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+        <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+      </button>
+
+      <div class="addresses-table-container">
+        <div class="stakes-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Address" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Balance" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Txns" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Compiler" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Version" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Optimization" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Constructor args" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Verified" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Market cap" %></div>
+                </th>
+              </tr>
+            </thead>
+            <tbody data-items data-selector="verified-contracts">
+              <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 9 %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div data-empty-response-message style="display: none;">
+        <br>
+        <div class="tile tile-muted text-center">
+          <span data-selector="empty-verified-contracts-list">
+            <%= gettext "There are no verified contracts." %>
+          </span>
+        </div>
+      </div>
+
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: @page_number, show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+    </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verified-contracts.js") %>"></script>
 </section>

@@ -5,6 +5,8 @@ defmodule BlockScoutWeb.VerifiedContractsView do
   alias Explorer.Chain.{Address, SmartContract, Wei}
 
   import BlockScoutWeb.GenericPaginationHelpers
+  import BlockScoutWeb.AddressView, only: [balance: 1]
+  alias BlockScoutWeb.WebRouter.Helpers
 
   def detect_license(contract) do
     cond do
@@ -32,5 +34,13 @@ defmodule BlockScoutWeb.VerifiedContractsView do
 
   def contract_balance(_contract) do
     0
+  end
+
+  def format_current_filter(filter) do
+    case filter do
+      "solidity" -> gettext("Solidity")
+      "vyper" -> gettext("Vyper")
+      _ -> gettext("All")
+    end
   end
 end

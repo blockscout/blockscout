@@ -88,6 +88,7 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.TokenTransfersCounter),
       configure(Explorer.Counters.BlockBurnedFeeCounter),
       configure(Explorer.Counters.BlockPriorityFeeCounter),
+      configure(Explorer.Counters.ContractsCounter),
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Celo.AbiHandler),
       configure(Explorer.Celo.CoreContracts),

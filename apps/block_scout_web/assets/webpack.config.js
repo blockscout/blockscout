@@ -50,6 +50,7 @@ const appJs =
       'address-validations': './js/pages/address/validations.js',
       'address-signed': './js/pages/address/signed.js',
       'validated-transactions': './js/pages/transactions.js',
+      'verified-contracts': './js/pages/verified_contracts.js',
       'pending-transactions': './js/pages/pending_transactions.js',
       'transaction': './js/pages/transaction.js',
       'verification-form': './js/pages/verification_form.js',

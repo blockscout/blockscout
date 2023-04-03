@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
-  alias BlockScoutWeb.Plug.CheckAccountAPI
+  alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2}
 
   pipeline :api do
     plug(:accepts, ["json"])
@@ -25,9 +25,15 @@ defmodule BlockScoutWeb.ApiRouter do
     plug(CheckAccountAPI)
   end
 
+  pipeline :api_v2 do
+    plug(CheckApiV2)
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+  end
+
   alias BlockScoutWeb.Account.Api.V1.{TagsController, UserController}
 
-  scope "/account/v1" do
+  scope "/account/v1", as: :account_v1 do
     pipe_through(:api)
     pipe_through(:account_api)
 
@@ -84,13 +90,69 @@ defmodule BlockScoutWeb.ApiRouter do
   end
 
   @rpc_module_map Application.compile_env(:block_scout_web, :rpc_module_map)
+
+  scope "/v2", as: :api_v2 do
+    pipe_through(:api)
+    pipe_through(:api_v2)
+
+    alias BlockScoutWeb.API.V2
+
+    get("/search", V2.SearchController, :search)
+
+    scope "/config" do
+      get("/json-rpc-url", V2.ConfigController, :json_rpc_url)
+    end
+
+    scope "/transactions" do
+      get("/", V2.TransactionController, :transactions)
+      get("/:transaction_hash", V2.TransactionController, :transaction)
+      get("/:transaction_hash/token-transfers", V2.TransactionController, :token_transfers)
+      get("/:transaction_hash/internal-transactions", V2.TransactionController, :internal_transactions)
+      get("/:transaction_hash/logs", V2.TransactionController, :logs)
+      get("/:transaction_hash/raw-trace", V2.TransactionController, :raw_trace)
+    end
+
+    scope "/blocks" do
+      get("/", V2.BlockController, :blocks)
+      get("/:block_hash_or_number", V2.BlockController, :block)
+      get("/:block_hash_or_number/transactions", V2.BlockController, :transactions)
+    end
+
+    scope "/addresses" do
+      get("/:address_hash", V2.AddressController, :address)
+      get("/:address_hash/token-balances", V2.AddressController, :token_balances)
+      get("/:address_hash/transactions", V2.AddressController, :transactions)
+      get("/:address_hash/token-transfers", V2.AddressController, :token_transfers)
+      get("/:address_hash/internal-transactions", V2.AddressController, :internal_transactions)
+      get("/:address_hash/logs", V2.AddressController, :logs)
+      get("/:address_hash/blocks-validated", V2.AddressController, :blocks_validated)
+      get("/:address_hash/coin-balance-history", V2.AddressController, :coin_balance_history)
+      get("/:address_hash/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
+    end
+
+    scope "/main-page" do
+      get("/blocks", V2.MainPageController, :blocks)
+      get("/transactions", V2.MainPageController, :transactions)
+    end
+
+    scope "/stats" do
+      get("/", V2.StatsController, :stats)
+
+      scope "/charts" do
+        get("/transactions", V2.StatsController, :transactions_chart)
+        get("/market", V2.StatsController, :market_chart)
+      end
+    end
+  end
+
   scope "/v1", as: :api_v1 do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC.RPCTranslator, V1}
     alias BlockScoutWeb.API.V1.HealthController
-    alias BlockScoutWeb.SearchController
+    alias BlockScoutWeb.API.V2.SearchController
 
-    get("/search", SearchController, :api_search_result)
+    # leave the same endpoint in v1 in order to keep backward compatibility
+    get("/search", SearchController, :search)
     get("/health", HealthController, :health)
     get("/health/liveness", HealthController, :alive?)
     get("/gas-price-oracle", V1.GasPriceOracleController, :gas_price_oracle)

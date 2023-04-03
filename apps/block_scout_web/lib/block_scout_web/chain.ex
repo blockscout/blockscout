@@ -24,6 +24,7 @@ defmodule BlockScoutWeb.Chain do
     Block,
     InternalTransaction,
     Log,
+    SmartContract,
     Token,
     TokenTransfer,
     Transaction,
@@ -226,6 +227,10 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {reward_type}}]
   end
 
+  def paging_options(%{"smart_contract_id" => id}) do
+    [paging_options: %{@default_paging_options | key: {id}}]
+  end
+
   def paging_options(_params), do: [paging_options: @default_paging_options]
 
   def put_key_value_to_paging_options([paging_options: paging_options], key, value) do
@@ -240,6 +245,11 @@ defmodule BlockScoutWeb.Chain do
       _ ->
         1
     end
+  end
+
+  def fetch_page_number(%{"items_count" => item_count_str}) do
+    {items_count, _} = Integer.parse(item_count_str)
+    div(items_count, @page_size) + 1
   end
 
   def fetch_page_number(_), do: 1
@@ -359,8 +369,13 @@ defmodule BlockScoutWeb.Chain do
     %{"block_number" => block_number}
   end
 
+<<<<<<< HEAD
   defp paging_params(%{reward_type: reward_type}) do
     %{"reward_type" => reward_type}
+=======
+  defp paging_params(%SmartContract{} = smart_contract) do
+    %{"smart_contract_id" => smart_contract.id}
+>>>>>>> d932786d5623e4cb03a0f833ccd3e4dc988981fd
   end
 
   defp paging_params(%{

@@ -60,6 +60,11 @@ config :explorer, Explorer.Counters.AddressTokenUsdSum,
   enabled: true,
   enable_consolidation: true
 
+config :explorer, Explorer.Counters.ContractsCounter,
+  enabled: true,
+  enable_consolidation: true,
+  update_interval_in_seconds: 30 * 60
+
 config :explorer, Explorer.Chain.Cache.TokenExchangeRate,
   enabled: true,
   enable_consolidation: true

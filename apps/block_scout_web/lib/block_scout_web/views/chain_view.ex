@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.ChainView do
 
   require Decimal
   import Number.Currency, only: [number_to_currency: 2]
+  import BlockScoutWeb.API.V2.Helper, only: [market_cap: 2]
 
   alias BlockScoutWeb.LayoutView
   alias Explorer.Chain.Cache.GasPriceOracle
