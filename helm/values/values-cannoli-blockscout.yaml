@@ -1,0 +1,106 @@
+---
+blockscout:
+  indexer:
+    db:
+      connectionName: cannoli-380909:us-west1:cannoli
+      proxy:
+        resources:
+          requests:
+            memory: 10M
+            cpu: 10m
+          limits:
+            memory: 100Mi
+            cpu: 200m
+    poolSize: 50
+    resources:
+      requests:
+        memory: 200M
+        cpu: 1
+      limits:
+        memory: 400M
+        cpu: 2
+    affinity: {}
+  api:
+    hostname: blockscout.api.cannoli.celo-testnet.org
+    autoscaling:
+      maxReplicas: 2
+      minReplicas: 1
+      target:
+        cpu: 70
+    db:
+      connectionName: cannoli-380909:us-west1:cannoli-replica
+      proxy:
+        resources:
+          requests:
+            memory: 10M
+            cpu: 10m
+    poolSize: 5
+    resources:
+      requests:
+        memory: 100M
+        cpu: 0.2
+      limits:
+        memory: 400M
+        cpu: 0.5
+    affinity: {}
+  web:
+    hostname: blockscout.cannoli.celo-testnet.org
+    suffix:
+      enabled: true
+      path: "cannoli"
+    extraEnvironments:
+      target:
+        - sourceHost: explorer.celo.org
+    autoscaling:
+      maxReplicas: 2
+      minReplicas: 1
+      target:
+        cpu: 85
+    db:
+      connectionName: cannoli-380909:us-west1:cannoli-replica
+      proxy:
+        resources:
+          requests:
+            memory: 10M
+            cpu: 10m
+    poolSize: 10
+    resources:
+      requests:
+        memory: 100M
+        cpu: 50m
+      limits:
+        memory: 300M
+        cpu: 0.25
+    affinity: {}
+  metadataCrawler:
+    enabled: false
+  shared:
+    image:
+      repository: gcr.io/celo-testnet/blockscout
+      tag: c6ca0da21bd238948d13ec2fabf4428a9dbbc7b6
+    secrets:
+      # segmentKey: gcp:secretmanager:projects/411900421062/secrets/cannoli-blockscout-segmentKey
+      dbUser: blockscout
+      dbPassword: gcp:secretmanager:projects/411900421062/secrets/cannoli-blockscout-cloudsql-blockscout
+      # grafanaCloud: gcp:secretmanager:projects/411900421062/secrets/cannoli-blockscout-grafanaCloud
+      # recaptcha_projectId: gcp:secretmanager:projects/411900421062/secrets/cannoli-blockscout-recaptchaProjectId
+      # recaptcha_siteKey: gcp:secretmanager:projects/411900421062/secrets/cannoli-blockscout-recaptchaSiteKey
+      # recaptcha_apiKey: gcp:secretmanager:projects/411900421062/secrets/cannoli-blockscout-recaptchaApiKey
+      # recaptcha_secretKey: gcp:secretmanager:projects/411900421062/secrets/cannoli-blockscout-recaptchaSecretKey
+      erlang_cookie: gcp:secretmanager:projects/411900421062/secrets/cannoli-blockscout-erlangCookie
+      # campaignBannerApiUrl: gcp:secretmanager:projects/411900421062/secrets/cannoli-blockscout-campaignBannerApiUrl
+network:
+  name: Celo
+  networkID: 17323
+  nodes:
+    archiveNodes:
+      jsonrpcHttpUrl: http://tx-nodes-private:8545
+      jsonrpcWsUrl: ws://tx-nodes-private:8545
+    fullNodes:
+      jsonrpcPublicHttp: https://forno.cannoli.celo-testnet.org
+
+infrastructure:
+  metrics:
+    enabled: true
+  gcp:
+    projectId: cannoli-380909

@@ -1,0 +1,18 @@
+---
+releases:
+  - name: baklava-blockscout2
+    chart: oci://us-west1-docker.pkg.dev/devopsre/clabs-public-oci/blockscout
+    version: ~1
+    createNamespace: false
+    namespace: baklava
+    missingFileHandler: Error
+    values:
+      - ../values/values-baklava-blockscout2.yaml
+      - changeCause: {{ env "CHANGE_CAUSE" }}
+{{ $imageTag := env "BLOCKSCOUT_IMAGE_TAG" | default "" }}
+{{ if ne $imageTag "" }}
+      - blockscout:
+          shared:
+            image:
+              tag: {{ $imageTag }}
+{{ end }}

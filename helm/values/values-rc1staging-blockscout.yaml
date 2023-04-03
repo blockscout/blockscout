@@ -1,0 +1,102 @@
+---
+blockscout:
+  eventStream:
+    replicas: 1
+    beanstalkdHost: "rc1staging-governance-notifications-beanstalkd.event-notifications.svc.cluster.local"
+
+  indexer:
+    db:
+      connectionName: celo-testnet-production:us-west1:rc1staging
+      proxy:
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: 500m
+    poolSize: 200
+    resources:
+      requests:
+        memory: 12Gi
+        cpu: 5
+    enableEventStream: true
+    beanstalkdPort: "11300"
+  api:
+    autoscaling:
+      maxReplicas: 2
+      minReplicas: 1
+      target:
+        cpu: 70
+    db:
+      connectionName: celo-testnet-production:us-west1:rc1staging-replica
+      proxy:
+        resources:
+          requests:
+            memory: 500Mi
+            cpu: 300m
+    poolSize: 30
+    resources:
+      requests:
+        memory: 500Mi
+        cpu: 500m
+  web:
+    host: rc1staging-blockscout.celo-testnet.org
+    suffix:
+      enabled: true
+      path: "rc1staging"
+    autoscaling:
+      maxReplicas: 1
+      minReplicas: 1
+      target:
+        cpu: 70
+    db:
+      connectionName: celo-testnet-production:us-west1:rc1staging-replica
+      proxy:
+        resources:
+          requests:
+            memory: 500Mi
+            cpu: 300m
+    poolSize: 30
+    resources:
+      requests:
+        memory: 250M
+        cpu: 500m
+    stats:
+      enabled: true
+      reportUrl: '{"overview": "https://datastudio.google.com/embed/reporting/dbe0c03a-47a7-4b51-8236-0b9023c22017/page/hDehC?hl=en", "addresses":"https://datastudio.google.com/embed/reporting/7336873f-23dc-4ce3-b556-eaeae323f480/page/hDehC?hl=en", "cStables":"https://datastudio.google.com/embed/reporting/7e6f4ff4-6e47-461f-a1b7-d0c1457f7807/page/hDehC?hl=en", "transactions":"https://datastudio.google.com/embed/reporting/4ec9cd78-9013-4ab1-8cf1-923997b32919/page/hDehC?hl=en", "reserve": "https://datastudio.google.com/embed/reporting/33907f50-c872-47db-984f-ea4fa200bc0f/page/hDehC?hl=en", "epoch": "https://datastudio.google.com/embed/reporting/221a435f-c4b3-4de6-9047-e472e336d88f/page/VEuZC"}'
+      makerdojo: '{"attestations": "https://makerdojo.io/public/dashboards/DjNVIYqQiyxIEcTx3Io4IwQg7U56lqQPyrSYdnXl?embed=clabs","uniswap":"https://makerdojo.io/public/dashboards/1qUlHeb7W9jnPVuXv6yeRatEYxSXPDsFQUODR1bp?embed=clabs","moola":"https://makerdojo.io/public/dashboards/tWnDs1CsMQyaSLHFHj0MUoNz20WbxjGv72fCTxgq?embed=clabs"}'
+    basicAuth:
+      enabled: false
+  metadataCrawler:
+    enabled: true
+  shared:
+    image:
+      repository: gcr.io/celo-testnet/blockscout
+      tag: f9025063d83005326caccc008e888256c21671ff
+    epochRewards:
+      enabled: true
+    secrets:
+      segmentKey: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-segmentKey
+      dbUser: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-dbUser
+      dbPassword: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-dbPassword
+      grafanaCloud: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-grafanaCloud
+      recaptcha_projectId: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-recaptchaProjectId
+      recaptcha_siteKey: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-recaptchaSiteKey
+      recaptcha_apiKey: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-recaptchaApiKey
+      recaptcha_secretKey: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-recaptchaSecretKey
+      erlang_cookie: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-erlangCookie
+      campaignBannerApiUrl: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-campaignBannerApiUrl
+
+network:
+  name: Celo
+  networkID: 42220
+  nodes:
+    archiveNodes:
+      jsonrpcHttpUrl: http://rc1staging-archivenodes-rpc:8545
+      jsonrpcWsUrl: ws://rc1staging-archivenodes-rpc:8545
+    fullNodes:
+      jsonrpcPublicHttp: https://forno.celo.org
+
+infrastructure:
+  metrics:
+    enabled: true
+  gcp:
+    projectId: celo-testnet-production

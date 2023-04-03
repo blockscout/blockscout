@@ -1,0 +1,97 @@
+---
+name: 'ZZDeploy a helm chart. Generic workflow'
+
+on:
+  workflow_call:
+    inputs:
+      helmfile:
+        description: 'The helmfile to use for the deployment. It must be a local YAML file.'
+        required: true
+        type: string
+      action:
+        description: 'The helmfile action to use for the deployment.'
+        required: true
+        type: string
+        default: 'diff'
+      image-commit:
+        description: 'The image commit to use for the deployment.'
+        required: false
+        type: string
+      change-cause:
+        description: 'The change cause to use for the deployment.'
+        required: false
+        type: string
+      cluster-name:
+        required: true
+        type: string
+      project:
+        required: true
+        type: string
+      cluster-location:
+        required: true
+        type: string
+      service-account:
+        description: 'The service account name to use for the deployment. Project must be authorized to use this service account with Workload Identity Pool.'
+        required: true
+        type: string
+
+env:
+  KUBE_CONFIG_PATH: /home/runner/.kube/config
+  USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
+
+jobs:
+  helmfile:
+    name: Helm Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Export Environment Variables
+        uses: cardinalby/export-env-action@v2
+        with:
+          envFile: ./.github/workflows/.env
+
+      - id: 'auth-gcp-no-main'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ inputs.service-account }}
+        if: github.ref != 'refs/heads/main'
+
+      - id: 'auth-gcp-main'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER_MASTER }}
+          service_account: ${{ inputs.service-account }}
+        if: github.ref == 'refs/heads/main'
+
+      - name: 'Set up Cloud SDK'
+        if: ${{ inputs.run-gke-credentials }}
+        uses: 'google-github-actions/setup-gcloud@v1'
+        with:
+          install_components: 'core,gke-gcloud-auth-plugin,kubectl'
+          project_id: ${{ inputs.project }}
+
+      - name: 'Get GKE credentials'
+        uses: google-github-actions/get-gke-credentials@v1
+        with:
+          cluster_name: ${{ inputs.cluster-name }}
+          location: ${{ inputs.cluster-location }}
+
+      - name: Setup helmfile
+        uses: mamezou-tech/setup-helmfile@v1.2.0
+
+      - name: Run helmfile
+        run: helmfile --color --file ${{ inputs.helmfile }} ${{ inputs.action }} --context 10
+        env:
+          CHANGE_CAUSE: ${{ inputs.change-cause }}
+          BLOCKSCOUT_IMAGE_TAG: ${{ inputs.image-commit }}
