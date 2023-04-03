@@ -19,6 +19,10 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   # seconds
   @fetch_interval 600
 
+  def trigger_fetch(nil, _) do
+    :ignore
+  end
+
   def trigger_fetch(_address, %SmartContract{}) do
     :ignore
   end
@@ -30,12 +34,13 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   defp fetch_sources(address) do
     creation_tx_input = contract_creation_input(address.hash)
 
-    case %{}
-         |> prepare_bytecode_for_microservice(creation_tx_input, Data.to_string(address.contract_code))
-         |> EthBytecodeDBInterface.search_contract() do
-      {:ok, %{"sourceType" => type} = source} ->
-        process_contract_source(type, source, address.hash)
-
+    with {:ok, %{"sourceType" => type} = source} <-
+           %{}
+           |> prepare_bytecode_for_microservice(creation_tx_input, Data.to_string(address.contract_code))
+           |> EthBytecodeDBInterface.search_contract(),
+         {:ok, _} <- process_contract_source(type, source, address.hash) do
+      Publisher.broadcast(%{smart_contract_was_verified: [address.hash]}, :on_demand)
+    else
       _ ->
         false
     end
