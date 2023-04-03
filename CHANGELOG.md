@@ -10,6 +10,8 @@
 
 ### Chore
 
+- [#7201](https://github.com/blockscout/blockscout/pull/7201) - Remove rust, cargo from dependencies since the latest version of ex_keccak is using precompiled rust
+
 ## 5.1.2-beta
 
 ### Features
