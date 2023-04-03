@@ -4,18 +4,23 @@ import Config
 config :explorer, Explorer.Repo,
   prepare: :unnamed,
   timeout: :timer.seconds(600),
+  queue_target: :timer.seconds(5),
+  queue_interval: :timer.seconds(20),
   migration_lock: nil
 
 # Configures API the database
 config :explorer, Explorer.Repo.Replica1,
   prepare: :unnamed,
   timeout: :timer.seconds(600),
-  queue_target: 2000
+  queue_target: :timer.seconds(5),
+  queue_interval: :timer.seconds(20)
 
 # Configures Account database
 config :explorer, Explorer.Repo.Account,
   prepare: :unnamed,
-  timeout: :timer.seconds(60)
+  timeout: :timer.seconds(60),
+  queue_target: :timer.seconds(5),
+  queue_interval: :timer.seconds(20)
 
 config :explorer, Explorer.Tracer, env: "production", disabled?: true
 
