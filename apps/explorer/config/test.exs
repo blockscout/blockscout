@@ -16,7 +16,7 @@ config :explorer, Explorer.Repo.Local,
   queue_target: 1000,
   priv: "priv/repo",
   # deactivate ecto logs for test output
-  log: false
+  log: false,
   migration_lock: nil
 
 config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets, fetch_btc_value: true
