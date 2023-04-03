@@ -225,6 +225,12 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", "changed_bytecode", %{})
   end
 
+  def handle_event({:chain_event, :optimism_deposits, :realtime, deposits}) do
+    Enum.each(deposits, fn deposit ->
+      broadcast_optimism_deposit(deposit, "optimism_deposits:new_deposit", "deposit")
+    end)
+  end
+
   def handle_event(_), do: nil
 
   def fetch_compiler_version(compiler) do
@@ -397,6 +403,10 @@ defmodule BlockScoutWeb.Notifier do
         transaction: transaction
       })
     end
+  end
+
+  defp broadcast_optimism_deposit(deposit, deposit_channel, event) do
+    Endpoint.broadcast(deposit_channel, event, %{deposit: deposit})
   end
 
   defp broadcast_token_transfer(token_transfer) do
