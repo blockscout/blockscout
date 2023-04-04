@@ -84,7 +84,7 @@
     "@babel/core": "^7.19.6",
     "@babel/preset-env": "^7.19.4",
     "autoprefixer": "^10.4.13",
-    "babel-loader": "^9.0.1",
+    "babel-loader": "^9.1.0",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^5.2.7",
     "css-minimizer-webpack-plugin": "^4.2.2",
