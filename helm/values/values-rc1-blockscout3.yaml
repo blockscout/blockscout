@@ -64,7 +64,7 @@ blockscout:
     discordClusterName: Mainnet
   shared:
     image:
-      tag: 3e62c18a5ff5d1bbddce046b86791cd1745795e8
+      tag: 6dd0c330fd4916e6ff52d2ee494a71a16a63d15a
     secrets:
       segmentKey: gcp:secretmanager:projects/365081401101/secrets/rc1-blockscout-segmentKey
       discordWebhookUrl: gcp:secretmanager:projects/365081401101/secrets/rc1-blockscout-discordWebhookUrl
