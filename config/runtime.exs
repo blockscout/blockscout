@@ -93,7 +93,7 @@ config :block_scout_web, :api_rate_limit,
   time_interval_limit_by_ip: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_IP_TIME_INTERVAL", "5m"),
   static_api_key: System.get_env("API_RATE_LIMIT_STATIC_API_KEY"),
   whitelisted_ips: System.get_env("API_RATE_LIMIT_WHITELISTED_IPS"),
-  is_blockscout_behind_proxy: ConfigHelper.parse_bool_env_var("IS_BLOCKSCOUT_BEHIND_PROXY"),
+  is_blockscout_behind_proxy: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_IS_BLOCKSCOUT_BEHIND_PROXY"),
   api_v2_ui_limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_WITH_TOKEN", 5)
 
 # Configures History
