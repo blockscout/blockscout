@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- [#7210](https://github.com/blockscout/blockscout/pull/7210) - Fix Makefile docker image build
 - [#7186](https://github.com/blockscout/blockscout/pull/7186) - Fix build from Dockerfile
 
 ### Chore
