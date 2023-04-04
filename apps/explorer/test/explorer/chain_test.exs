@@ -1642,7 +1642,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "indexed_ratio/0" do
+  describe "indexed_ratio_blocks/0" do
     setup do
       on_exit(fn ->
         Application.put_env(:indexer, :first_block, "")
@@ -1654,11 +1654,11 @@ defmodule Explorer.ChainTest do
         insert(:block, number: index)
       end
 
-      assert Decimal.compare(Chain.indexed_ratio(), Decimal.from_float(0.5)) == :eq
+      assert Decimal.compare(Chain.indexed_ratio_blocks(), Decimal.from_float(0.5)) == :eq
     end
 
     test "returns 0 if no blocks" do
-      assert Decimal.new(0) == Chain.indexed_ratio()
+      assert Decimal.new(0) == Chain.indexed_ratio_blocks()
     end
 
     test "returns 1.0 if fully indexed blocks" do
@@ -1667,7 +1667,7 @@ defmodule Explorer.ChainTest do
         Process.sleep(200)
       end
 
-      assert Decimal.compare(Chain.indexed_ratio(), 1) == :eq
+      assert Decimal.compare(Chain.indexed_ratio_blocks(), 1) == :eq
     end
 
     test "returns 1.0 if fully indexed blocks starting from given FIRST_BLOCK" do
@@ -1678,7 +1678,49 @@ defmodule Explorer.ChainTest do
         Process.sleep(200)
       end
 
-      assert Decimal.compare(Chain.indexed_ratio(), 1) == :eq
+      assert Decimal.compare(Chain.indexed_ratio_blocks(), 1) == :eq
+    end
+  end
+
+  describe "indexed_ratio_internal_transactions/0" do
+    setup do
+      on_exit(fn ->
+        Application.put_env(:indexer, :trace_first_block, "")
+      end)
+    end
+
+    test "returns indexed ratio" do
+      for index <- 0..9 do
+        block = insert(:block, number: index)
+
+        if index === 0 || index === 5 || index === 7 do
+          insert(:pending_block_operation, block: block, fetch_internal_transactions: true)
+        end
+      end
+
+      assert Decimal.compare(Chain.indexed_ratio_internal_transactions(), Decimal.from_float(0.7)) == :eq
+    end
+
+    test "returns 0 if no blocks" do
+      assert Decimal.new(0) == Chain.indexed_ratio_internal_transactions()
+    end
+
+    test "returns 1.0 if no pending block operations" do
+      for index <- 0..9 do
+        insert(:block, number: index)
+      end
+
+      assert Decimal.compare(Chain.indexed_ratio_internal_transactions(), 1) == :eq
+    end
+
+    test "returns 1.0 if fully indexed blocks with internal transactions starting from given TRACE_FIRST_BLOCK" do
+      Application.put_env(:indexer, :trace_first_block, "5")
+
+      for index <- 5..9 do
+        insert(:block, number: index)
+      end
+
+      assert Decimal.compare(Chain.indexed_ratio_internal_transactions(), 1) == :eq
     end
   end
 

@@ -1281,13 +1281,17 @@ defmodule Explorer.Chain do
     end
   end
 
+  def finished_blocks_indexing?(indexed_ratio_blocks) do
+    Decimal.compare(indexed_ratio_blocks, 1) !== :lt
+  end
+
   @doc """
   Checks if indexing of blocks and internal transactions finished aka full indexing
   """
   @spec finished_indexing?(Decimal.t()) :: boolean()
-  def finished_indexing?(indexed_ratio) do
-    case Decimal.compare(indexed_ratio, 1) do
-      :lt -> false
+  def finished_indexing?(indexed_ratio_blocks) do
+    case finished_blocks_indexing?(indexed_ratio_blocks) do
+      false -> false
       _ -> Chain.finished_internal_transactions_indexing?()
     end
   end
@@ -2237,17 +2241,17 @@ defmodule Explorer.Chain do
       ...>   insert(:block, number: index)
       ...>   Process.sleep(200)
       ...> end
-      iex> Explorer.Chain.indexed_ratio()
+      iex> Explorer.Chain.indexed_ratio_blocks()
       Decimal.new(1, 50, -2)
 
   If there are no blocks, the percentage is 0.
 
-      iex> Explorer.Chain.indexed_ratio()
+      iex> Explorer.Chain.indexed_ratio_blocks()
       Decimal.new(0)
 
   """
-  @spec indexed_ratio() :: Decimal.t()
-  def indexed_ratio do
+  @spec indexed_ratio_blocks() :: Decimal.t()
+  def indexed_ratio_blocks do
     %{min: min, max: max} = BlockNumber.get_all()
 
     min_blockchain_block_number =
@@ -2262,6 +2266,31 @@ defmodule Explorer.Chain do
 
       _ ->
         result = Decimal.div(max - min + 1, max - min_blockchain_block_number + 1)
+
+        result
+        |> Decimal.round(2, :down)
+        |> Decimal.min(Decimal.new(1))
+    end
+  end
+
+  @spec indexed_ratio_internal_transactions() :: Decimal.t()
+  def indexed_ratio_internal_transactions do
+    %{max: max} = BlockNumber.get_all()
+    count = Repo.aggregate(PendingBlockOperation, :count, timeout: :infinity)
+
+    min_blockchain_trace_block_number =
+      case Integer.parse(Application.get_env(:indexer, :trace_first_block)) do
+        {block_number, _} -> block_number
+        _ -> 0
+      end
+
+    case max do
+      0 ->
+        Decimal.new(0)
+
+      _ ->
+        full_blocks_range = max - min_blockchain_trace_block_number + 1
+        result = Decimal.div(full_blocks_range - count, full_blocks_range)
 
         result
         |> Decimal.round(2, :down)

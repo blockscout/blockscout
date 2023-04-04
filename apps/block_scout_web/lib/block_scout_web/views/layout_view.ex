@@ -256,11 +256,12 @@ defmodule BlockScoutWeb.LayoutView do
     end
   end
 
-  def external_apps_list do
-    if Application.get_env(:block_scout_web, :external_apps) do
+  def apps_list do
+    apps = Application.get_env(:block_scout_web, :apps)
+
+    if apps do
       try do
-        :block_scout_web
-        |> Application.get_env(:external_apps)
+        apps
         |> Parser.parse!(%{keys: :atoms!})
       rescue
         _ ->

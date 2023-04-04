@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.Application do
   alias BlockScoutWeb.API.APILogger
   alias BlockScoutWeb.{CampaignBannerCache, LoggerBackend}
   alias BlockScoutWeb.Celo.MetricsCron
-  alias BlockScoutWeb.Counters.BlocksIndexedCounter
+  alias BlockScoutWeb.Counters.{BlocksIndexedCounter, InternalTransactionsIndexedCounter}
   alias BlockScoutWeb.{Endpoint, RealtimeEventHandler}
 
   alias EthereumJSONRPC.Celo.Instrumentation, as: EthRPC
@@ -45,7 +45,8 @@ defmodule BlockScoutWeb.Application do
          metrics: [EthRPC.metrics(), Database.metrics(), FlyPostgres.metrics(), Api.metrics()]},
         {RealtimeEventHandler, name: RealtimeEventHandler},
         {BlocksIndexedCounter, name: BlocksIndexedCounter},
-        {CampaignBannerCache, name: CampaignBannerCache}
+        {CampaignBannerCache, name: CampaignBannerCache},
+        {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter}
       ]
       |> cluster_process(Application.get_env(:block_scout_web, :environment))
       |> metrics_processes()
