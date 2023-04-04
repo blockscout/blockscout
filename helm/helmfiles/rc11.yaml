@@ -1,13 +1,13 @@
 ---
 releases:
-  - name: cannoli-blockscout
+  - name: rc1-blockscout1
     chart: oci://us-west1-docker.pkg.dev/devopsre/clabs-public-oci/blockscout
     version: ~1
-    createNamespace: true
-    namespace: cannoli
+    createNamespace: false
+    namespace: rc1
     missingFileHandler: Error
     values:
-      - ../values/values-cannoli-blockscout.yaml
+      - ../values/values-rc1-blockscout1.yaml
       - changeCause: {{ env "CHANGE_CAUSE" }}
 {{ $imageTag := trim (env "BLOCKSCOUT_IMAGE_TAG") | default "" }}
 {{ if ne $imageTag "" }}

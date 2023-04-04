@@ -58,21 +58,21 @@ jobs:
         with:
           envFile: ./.github/workflows/.env
 
-      - id: 'auth-gcp-no-main'
+      - id: 'auth-gcp-no-master'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v1'
         with:
           workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ inputs.service-account }}
-        if: github.ref != 'refs/heads/main'
+        if: github.ref != 'refs/heads/master'
 
-      - id: 'auth-gcp-main'
+      - id: 'auth-gcp-master'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v1'
         with:
           workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER_MASTER }}
           service_account: ${{ inputs.service-account }}
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master'
 
       - name: 'Set up Cloud SDK'
         if: ${{ inputs.run-gke-credentials }}
