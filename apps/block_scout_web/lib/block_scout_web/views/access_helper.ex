@@ -146,11 +146,12 @@ defmodule BlockScoutWeb.AccessHelper do
   end
 
   defp whitelisted_ips(api_rate_limit_object) do
-    with {:ok, whitelisted_ips_string} <-
-           api_rate_limit_object && api_rate_limit_object |> Keyword.fetch(:whitelisted_ips) do
-      if whitelisted_ips_string, do: String.split(whitelisted_ips_string, ","), else: []
-    else
-      _ -> []
+    case api_rate_limit_object && api_rate_limit_object |> Keyword.fetch(:whitelisted_ips) do
+      {:ok, whitelisted_ips_string} ->
+        if whitelisted_ips_string, do: String.split(whitelisted_ips_string, ","), else: []
+
+      _ ->
+        []
     end
   end
 
