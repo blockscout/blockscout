@@ -71,7 +71,7 @@ blockscout:
     discordClusterName: Baklava
   shared:
     image:
-      tag: 40c6ac9493b0985e7889a084e367ad55ad4dbdc5
+      tag: 6dd0c330fd4916e6ff52d2ee494a71a16a63d15a
     secrets:
       segmentKey: gcp:secretmanager:projects/365081401101/secrets/baklava-blockscout-segmentKey
       dbUser: gcp:secretmanager:projects/365081401101/secrets/baklava-blockscout3-dbUser

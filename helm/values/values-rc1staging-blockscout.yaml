@@ -70,7 +70,7 @@ blockscout:
   shared:
     image:
       repository: gcr.io/celo-testnet/blockscout
-      tag: f9025063d83005326caccc008e888256c21671ff
+      tag: 6dd0c330fd4916e6ff52d2ee494a71a16a63d15a
     epochRewards:
       enabled: true
     secrets:

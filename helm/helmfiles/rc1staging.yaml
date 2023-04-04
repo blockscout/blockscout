@@ -9,7 +9,7 @@ releases:
     values:
       - ../values/values-rc1staging-blockscout.yaml
       - changeCause: {{ env "CHANGE_CAUSE" }}
-{{ $imageTag := env "BLOCKSCOUT_IMAGE_TAG" | default "" }}
+{{ $imageTag := trim (env "BLOCKSCOUT_IMAGE_TAG") | default "" }}
 {{ if ne $imageTag "" }}
       - blockscout:
           shared:

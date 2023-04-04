@@ -34,7 +34,7 @@ blockscout:
         memory: 500Mi
         cpu: 1500m
   web:
-    host: explorer.celo.org
+    envHostname: explorer.celo.org
     suffix:
       enabled: true
       path: "mainnet"
@@ -63,6 +63,8 @@ blockscout:
     enabled: true
     discordClusterName: Mainnet
   shared:
+    image:
+      tag: 6dd0c330fd4916e6ff52d2ee494a71a16a63d15a
     secrets:
       segmentKey: gcp:secretmanager:projects/365081401101/secrets/rc1-blockscout-segmentKey
       discordWebhookUrl: gcp:secretmanager:projects/365081401101/secrets/rc1-blockscout-discordWebhookUrl
@@ -90,4 +92,5 @@ infrastructure:
   metrics:
     enabled: true
   gcp:
-    projectId: celo-testnet-production
+    serviceAccount: rc1-blockscout1@celo-testnet-production.iam.gserviceaccount.com
+    project: celo-testnet-production
