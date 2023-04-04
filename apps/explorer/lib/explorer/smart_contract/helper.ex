@@ -82,8 +82,8 @@ defmodule Explorer.SmartContract.Helper do
     |> Enum.uniq_by(&Map.get(&1, "topic"))
   end
 
-  defp get_implementation_contract(%SmartContract{address_hash: address_hash, abi: abi}) do
-    implementation_address = Chain.get_implementation_address_hash(address_hash, abi)
+  defp get_implementation_contract(%SmartContract{address_hash: address_hash, abi: abi} = sc) do
+    implementation_address = SmartContract.get_implementation_address_hash(sc)
     {:ok, contract} = get_verified_contract(implementation_address)
     contract
   end

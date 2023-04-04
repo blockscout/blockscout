@@ -6496,22 +6496,6 @@ defmodule Explorer.Chain do
     []
   end
 
-  def proxy_contract?(_address_hash, abi) when abi in [nil, false, []], do: false
-
-  def proxy_contract?(address_hash, abi) when not is_nil(abi) do
-    implementation_method_abi =
-      abi
-      |> Enum.find(fn method ->
-        Map.get(method, "name") == "implementation" ||
-          master_copy_pattern?(method)
-      end)
-
-    if implementation_method_abi ||
-         get_implementation_address_hash_eip_1967(address_hash) !== "0x0000000000000000000000000000000000000000",
-       do: true,
-       else: false
-  end
-
   def gnosis_safe_contract?(abi) when not is_nil(abi) do
     implementation_method_abi =
       abi
@@ -6949,10 +6933,6 @@ defmodule Explorer.Chain do
       )
 
     Repo.all(query, timeout: :infinity)
-  end
-
-  def recent_transactions(options, [:pending | _], method_id_filter, type_filter_options) do
-    recent_pending_transactions(options, false, method_id_filter, type_filter_options)
   end
 
   def recent_transactions(options, [:pending | _]) do
