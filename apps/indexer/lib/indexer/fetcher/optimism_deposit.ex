@@ -16,6 +16,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.OptimismDeposit
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
@@ -161,6 +162,8 @@ defmodule Indexer.Fetcher.OptimismDeposit do
          deposits = events_to_deposits(logs, json_rpc_named_arguments),
          {:import, {:ok, _imported}} <-
            {:import, Chain.import(%{optimism_deposits: %{params: deposits}, timeout: :infinity})} do
+      Publisher.broadcast(%{optimism_deposits: deposits}, :realtime)
+
       Optimism.log_blocks_chunk_handling(
         from_block,
         to_block,
@@ -355,6 +358,8 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     unless Enum.empty?(logs_to_parse) do
       deposits = events_to_deposits(logs_to_parse, json_rpc_named_arguments)
       {:ok, _imported} = Chain.import(%{optimism_deposits: %{params: deposits}, timeout: :infinity})
+
+      Publisher.broadcast(%{optimism_deposits: deposits}, :realtime)
 
       Optimism.log_blocks_chunk_handling(
         min_block,

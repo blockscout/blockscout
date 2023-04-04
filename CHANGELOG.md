@@ -10,6 +10,8 @@
 - [#7532](https://github.com/blockscout/blockscout/pull/7532) - Handle empty id in json rpc responses
 - [#7544](https://github.com/blockscout/blockscout/pull/7544) - Add ERC-1155 signatures to uncataloged_token_transfer_block_numbers
 - [#7363](https://github.com/blockscout/blockscout/pull/7363) - CSV export filters
+- [#6980](https://github.com/blockscout/blockscout/pull/6980) - Add Optimism BedRock support (Txn Batches, Output Roots, Deposits, Withdrawals)
+- [#7200](https://github.com/blockscout/blockscout/pull/7200) - Add Optimism BedRock Deposits to the main page in API
 
 ### Fixes
 
@@ -221,7 +223,6 @@
 - [#7068](https://github.com/blockscout/blockscout/pull/7068) - Add authenticate endpoint
 - [#6990](https://github.com/blockscout/blockscout/pull/6990) - Improved http requests logging, batch transfers pagination; New API v2 endpoint `/smart-contracts/counters`; And some refactoring
 - [#7089](https://github.com/blockscout/blockscout/pull/7089) - ETHEREUM_JSONRPC_HTTP_TIMEOUT env variable
-- [#6980](https://github.com/blockscout/blockscout/pull/6980) - Add Optimism BedRock support (Txn Batches, Output Roots, Deposits, Withdrawals)
 
 ### Fixes
 
