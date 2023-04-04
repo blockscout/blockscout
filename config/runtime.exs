@@ -504,6 +504,17 @@ if File.exists?("#{Path.absname(__DIR__)}/runtime/#{config_env()}.exs") do
   Code.require_file("#{config_env()}.exs", "#{Path.absname(__DIR__)}/runtime")
 end
 
+{internal_transaction_fetcher_batch_size, _} =
+  Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", "8"))
+
+{internal_transaction_fetcher_concurrency, _} =
+  Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY", "8"))
+
+config :indexer, Indexer.Fetcher.InternalTransaction,
+  batch_size: internal_transaction_fetcher_batch_size,
+  concurrency: internal_transaction_fetcher_concurrency
+
+
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
   if File.exists?(config) do
     Code.require_file("#{config_env()}.exs", Path.dirname(config))

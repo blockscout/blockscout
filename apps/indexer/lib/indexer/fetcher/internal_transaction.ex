@@ -67,7 +67,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end
 
     merged_init_opts =
-      @defaults
+      defaults()
       |> Keyword.merge(mergeable_init_options)
       |> Keyword.put(:state, state)
 
@@ -365,5 +365,16 @@ defmodule Indexer.Fetcher.InternalTransaction do
         internal_transaction_param
       end
     end)
+  end
+
+  defp defaults do
+    [
+      flush_interval: :timer.seconds(3),
+      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @max_concurrency,
+      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @max_batch_size,
+      poll: true,
+      task_supervisor: Indexer.Fetcher.InternalTransaction.TaskSupervisor,
+      metadata: [fetcher: :internal_transaction]
+    ]
   end
 end
