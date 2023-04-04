@@ -24,6 +24,7 @@ on:
         type: choice
         options:
           - diff
+          - apply
       use-branch-commit:
         description: 'Select to use the commit of the branch as the container image tag'
         required: true
@@ -77,7 +78,7 @@ jobs:
             echo "service-account=deploy-helm-celo-prod${SERVICE_ACCOUNT_SUFFIX}@celo-testnet-production.iam.gserviceaccount.com" >> "$GITHUB_OUTPUT"
           fi
           if [ -z "${{ github.event.inputs.change-cause }}" ]; then
-            echo "change-cause=\"Deployment triggered by ${{ github.triggering_actor }} on ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}\"" >> "$GITHUB_OUTPUT"
+            echo "change-cause=\"Deployment ${{ github.sha }} triggered by ${{ github.triggering_actor }} on ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}\"" >> "$GITHUB_OUTPUT"
           else
             echo "change-cause=\"${{ github.event.inputs.change-cause }}\"" >> "$GITHUB_OUTPUT"
           fi
