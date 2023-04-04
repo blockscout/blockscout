@@ -225,6 +225,10 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", "changed_bytecode", %{})
   end
 
+  def handle_event({:chain_event, :optimism_deposits, :realtime, deposits}) do
+    broadcast_optimism_deposits(deposits, "optimism_deposits:new_deposits", "deposits")
+  end
+
   def handle_event({:chain_event, :smart_contract_was_verified, :on_demand, [address_hash]}) do
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", "smart_contract_was_verified", %{})
   end
@@ -401,6 +405,10 @@ defmodule BlockScoutWeb.Notifier do
         transaction: transaction
       })
     end
+  end
+
+  defp broadcast_optimism_deposits(deposits, deposit_channel, event) do
+    Endpoint.broadcast(deposit_channel, event, %{deposits: deposits})
   end
 
   defp broadcast_token_transfer(token_transfer) do
