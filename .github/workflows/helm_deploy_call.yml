@@ -1,5 +1,5 @@
 ---
-name: 'ZZDeploy a helm chart. Generic workflow'
+name: 'Deploy a helm chart. Generic workflow'
 
 on:
   workflow_call:
@@ -41,7 +41,7 @@ env:
 
 jobs:
   helmfile:
-    name: Helm Deploy
+    name: Auth, Setup + Run helmfile ${{ inputs.action }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write

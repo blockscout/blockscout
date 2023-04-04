@@ -1,6 +1,6 @@
 ---
 name: 'Deploy Helm Chart'
-run-name: '`helmfile ${{ github.event.inputs.action }}` on ${{ github.event.inputs.deployment }} - @${{ github.actor }}'
+run-name: 'helmfile ${{ github.event.inputs.action }} on ${{ github.event.inputs.deployment }} - @${{ github.actor }}'
 
 on:
   workflow_dispatch:
