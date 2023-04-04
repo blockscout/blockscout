@@ -55,6 +55,7 @@ defmodule Explorer.History.Process do
   end
 
   defp schedule_next_compilation do
+    Logger.info("tx/per day chart: schedule_next_compilation")
     delay = config_or_default(:history_fetch_interval, :timer.minutes(60))
     Process.send_after(self(), {:compile_historical_records, 2}, delay)
   end
