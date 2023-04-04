@@ -54,7 +54,6 @@ defmodule Indexer.Fetcher.TokenInstance do
   @impl BufferedTask
   def run([%{contract_address_hash: hash, token_id: token_id}], _json_rpc_named_arguments) do
     fetch_instance(hash, token_id)
-    update_current_token_balances(hash, token_id)
 
     :ok
   end
@@ -97,58 +96,6 @@ defmodule Indexer.Fetcher.TokenInstance do
 
         :ok
     end
-  end
-
-  defp update_current_token_balances(token_contract_address_hash, token_id) do
-    token_id
-    |> instance_owner_request(token_contract_address_hash)
-    |> List.wrap()
-    |> InstanceOwnerReader.get_owner_of()
-    |> Enum.map(&current_token_balances_import_params/1)
-    |> all_import_params()
-    |> Chain.import()
-  end
-
-  defp instance_owner_request(token_id, token_contract_address_hash) do
-    %{
-      token_contract_address_hash: to_string(token_contract_address_hash),
-      token_id: Decimal.to_integer(token_id)
-    }
-  end
-
-  defp current_token_balances_import_params(%{token_contract_address_hash: hash, token_id: token_id, owner: owner}) do
-    %{
-      value: Decimal.new(1),
-      block_number: BlockNumber.get_max(),
-      value_fetched_at: DateTime.utc_now(),
-      token_id: token_id,
-      token_type: Repo.get_by(Token, contract_address_hash: hash).type,
-      address_hash: owner,
-      token_contract_address_hash: hash
-    }
-  end
-
-  defp all_import_params(balances_import_params) do
-    addresses_import_params =
-      balances_import_params
-      |> Enum.reduce([], fn %{address_hash: address_hash}, acc ->
-        case Repo.get_by(Address, hash: address_hash) do
-          nil -> [%{hash: address_hash} | acc]
-          _address -> acc
-        end
-      end)
-      |> case do
-        [] -> %{}
-        params -> %{addresses: %{params: params}}
-      end
-
-    current_token_balances_import_params = %{
-      address_current_token_balances: %{
-        params: balances_import_params
-      }
-    }
-
-    Map.merge(current_token_balances_import_params, addresses_import_params)
   end
 
   @doc """

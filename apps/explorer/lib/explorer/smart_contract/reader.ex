@@ -565,15 +565,12 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   defp get_abi(contract_address_hash, type) do
-    abi =
-      contract_address_hash
-      |> Chain.address_hash_to_smart_contract()
-      |> Map.get(:abi)
+    contract = Chain.address_hash_to_smart_contract(contract_address_hash)
 
     if type == :proxy do
-      Chain.get_implementation_abi_from_proxy(contract_address_hash, abi)
+      Chain.get_implementation_abi_from_proxy(contract)
     else
-      abi
+      contract.abi
     end
   end
 

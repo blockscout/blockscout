@@ -52,8 +52,9 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           |> Map.put("contract_source_code", contract_source_code)
           |> Map.put("external_libraries", contract_libraries)
           |> Map.put("name", contract_name)
+          |> cast_compiler_settings(false)
 
-        publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
+        publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
 
       {:ok, %{abi: abi, constructor_arguments: constructor_arguments}} ->
         params_with_constructor_arguments =
@@ -90,7 +91,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
          "optimization_runs" => _,
          "sources" => _
        } = result_params} ->
-        proccess_rust_verifier_response(result_params, address_hash)
+        proccess_rust_verifier_response(result_params, address_hash, true)
 
       {:ok, %{abi: abi, constructor_arguments: constructor_arguments}, additional_params} ->
         params_with_constructor_arguments =
@@ -155,7 +156,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           "optimization_runs" => _,
           "sources" => sources
         } = result_params,
-        address_hash
+        address_hash,
+        is_standard_json? \\ false
       ) do
     secondary_sources =
       for {file, source} <- sources,
@@ -171,8 +173,21 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("name", contract_name)
       |> Map.put("file_path", file_name)
       |> Map.put("secondary_sources", secondary_sources)
+      |> cast_compiler_settings(is_standard_json?)
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
+  end
+
+  def cast_compiler_settings(params, false), do: Map.put(params, "compiler_settings", nil)
+
+  def cast_compiler_settings(params, true) do
+    case Jason.decode(params["compiler_settings"]) do
+      {:ok, map} ->
+        Map.put(params, "compiler_settings", map)
+
+      _ ->
+        Map.put(params, "compiler_settings", nil)
+    end
   end
 
   def publish_smart_contract(address_hash, params, abi) do
@@ -232,12 +247,20 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
   defp attributes(address_hash, params, abi \\ %{}) do
     constructor_arguments = params["constructor_arguments"]
+    compiler_settings = params["compiler_settings"]
 
     clean_constructor_arguments =
       if constructor_arguments != nil && constructor_arguments != "" do
         constructor_arguments
       else
         nil
+      end
+
+    clean_compiler_settings =
+      if compiler_settings in ["", nil, %{}] do
+        nil
+      else
+        compiler_settings
       end
 
     prepared_external_libraries = prepare_external_libraies(params["external_libraries"])
@@ -261,7 +284,9 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       verified_via_sourcify: params["verified_via_sourcify"],
       partially_verified: params["partially_verified"],
       is_vyper_contract: false,
-      autodetect_constructor_args: params["autodetect_constructor_args"]
+      autodetect_constructor_args: params["autodetect_constructor_args"],
+      is_yul: params["is_yul"] || false,
+      compiler_settings: clean_compiler_settings
     }
   end
 

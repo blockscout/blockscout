@@ -25,7 +25,7 @@ defmodule Explorer.Chain.TokenTransfer do
   use Explorer.Schema
 
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2, limit: 2, where: 3]
+  import Ecto.Query, only: [from: 2, limit: 2, where: 3, join: 5, order_by: 3, preload: 3]
 
   alias Explorer.Chain.{Address, Block, Hash, TokenTransfer, Transaction}
   alias Explorer.Chain.Token.Instance
@@ -247,6 +247,16 @@ defmodule Explorer.Chain.TokenTransfer do
     )
   end
 
+  def handle_paging_options(query, nil), do: query
+
+  def handle_paging_options(query, %PagingOptions{key: nil, page_size: nil}), do: query
+
+  def handle_paging_options(query, paging_options) do
+    query
+    |> page_token_transfer(paging_options)
+    |> limit(^paging_options.page_size)
+  end
+
   @doc """
   Fetches the transaction hashes from token transfers according
   to the address hash.
@@ -310,4 +320,36 @@ defmodule Explorer.Chain.TokenTransfer do
       tt.block_number < ^block_number
     )
   end
+
+  def token_transfers_by_address_hash(direction, address_hash, token_types) do
+    TokenTransfer
+    |> filter_by_direction(direction, address_hash)
+    |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+    |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+    |> preload([token: token], [{:token, token}])
+    |> filter_by_type(token_types)
+  end
+
+  def filter_by_direction(query, :to, address_hash) do
+    query
+    |> where([tt], tt.to_address_hash == ^address_hash)
+  end
+
+  def filter_by_direction(query, :from, address_hash) do
+    query
+    |> where([tt], tt.from_address_hash == ^address_hash)
+  end
+
+  def filter_by_direction(query, _, address_hash) do
+    query
+    |> where([tt], tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
+  end
+
+  def filter_by_type(query, []), do: query
+
+  def filter_by_type(query, token_types) when is_list(token_types) do
+    where(query, [token: token], token.type in ^token_types)
+  end
+
+  def filter_by_type(query, _), do: query
 end

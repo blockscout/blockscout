@@ -20,6 +20,7 @@ defmodule Explorer.Application do
     MinMissingBlockNumber,
     NetVersion,
     Transactions,
+    TransactionsApiV2,
     Uncles
   }
 
@@ -55,6 +56,7 @@ defmodule Explorer.Application do
       con_cache_child_spec(MarketHistoryCache.cache_name()),
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
       Transactions,
+      TransactionsApiV2,
       Accounts,
       Uncles,
       Supervisor.child_spec({Phoenix.PubSub, name: :chain_pubsub}, id: :chain_pubsub),

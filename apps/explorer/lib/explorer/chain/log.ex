@@ -131,8 +131,8 @@ defmodule Explorer.Chain.Log do
     ]
 
     case Chain.find_contract_address(log.address_hash, address_options, true) do
-      {:ok, %{smart_contract: %{abi: abi}}} ->
-        full_abi = Chain.combine_proxy_implementation_abi(log.address_hash, abi)
+      {:ok, %{smart_contract: smart_contract}} ->
+        full_abi = Chain.combine_proxy_implementation_abi(smart_contract)
 
         with {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction),
              identifier <- Base.encode16(selector.method_id, case: :lower),

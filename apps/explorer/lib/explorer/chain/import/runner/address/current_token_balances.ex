@@ -220,51 +220,15 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
-    %{
-      changes_list_no_token_id: changes_list_no_token_id,
-      changes_list_with_token_id: changes_list_with_token_id
-    } =
+    ordered_changes_list =
       changes_list
-      |> Enum.reduce(%{changes_list_no_token_id: [], changes_list_with_token_id: []}, fn change, acc ->
-        updated_change =
-          if Map.has_key?(change, :token_id) and Map.get(change, :token_type) == "ERC-1155" do
-            change
-          else
-            Map.put(change, :token_id, nil)
-          end
-
-        if updated_change.token_id do
-          changes_list_with_token_id = [updated_change | acc.changes_list_with_token_id]
-
-          %{
-            changes_list_no_token_id: acc.changes_list_no_token_id,
-            changes_list_with_token_id: changes_list_with_token_id
-          }
+      |> Enum.map(fn change ->
+        if Map.has_key?(change, :token_id) and Map.get(change, :token_type) == "ERC-1155" do
+          change
         else
-          changes_list_no_token_id = [updated_change | acc.changes_list_no_token_id]
-
-          %{
-            changes_list_no_token_id: changes_list_no_token_id,
-            changes_list_with_token_id: acc.changes_list_with_token_id
-          }
+          Map.put(change, :token_id, nil)
         end
       end)
-
-    ordered_changes_list_no_token_id =
-      changes_list_no_token_id
-      |> Enum.group_by(fn %{
-                            address_hash: address_hash,
-                            token_contract_address_hash: token_contract_address_hash
-                          } ->
-        {address_hash, token_contract_address_hash}
-      end)
-      |> Enum.map(fn {_, grouped_address_token_balances} ->
-        Enum.max_by(grouped_address_token_balances, fn %{block_number: block_number} -> block_number end)
-      end)
-      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash})
-
-    ordered_changes_list_with_token_id =
-      changes_list_with_token_id
       |> Enum.group_by(fn %{
                             address_hash: address_hash,
                             token_contract_address_hash: token_contract_address_hash,
@@ -273,16 +237,18 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         {address_hash, token_contract_address_hash, token_id}
       end)
       |> Enum.map(fn {_, grouped_address_token_balances} ->
-        Enum.max_by(grouped_address_token_balances, fn %{block_number: block_number} -> block_number end)
+        Enum.max_by(grouped_address_token_balances, fn balance ->
+          {Map.get(balance, :block_number), Map.get(balance, :value_fetched_at)}
+        end)
       end)
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
 
-    {:ok, inserted_changes_list_no_token_id} =
-      if Enum.count(ordered_changes_list_no_token_id) > 0 do
+    {:ok, inserted_changes_list} =
+      if Enum.count(ordered_changes_list) > 0 do
         Import.insert_changes_list(
           repo,
-          ordered_changes_list_no_token_id,
-          conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash) WHERE token_id IS NULL>},
+          ordered_changes_list,
+          conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>},
           on_conflict: on_conflict,
           for: CurrentTokenBalance,
           returning: true,
@@ -293,24 +259,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         {:ok, []}
       end
 
-    {:ok, inserted_changes_list_with_token_id} =
-      if Enum.count(ordered_changes_list_with_token_id) > 0 do
-        Import.insert_changes_list(
-          repo,
-          ordered_changes_list_with_token_id,
-          conflict_target:
-            {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, token_id) WHERE token_id IS NOT NULL>},
-          on_conflict: on_conflict,
-          for: CurrentTokenBalance,
-          returning: true,
-          timeout: timeout,
-          timestamps: timestamps
-        )
-      else
-        {:ok, []}
-      end
-
-    inserted_changes_list_no_token_id ++ inserted_changes_list_with_token_id
+    inserted_changes_list
   end
 
   defp default_on_conflict do
@@ -329,9 +278,10 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       ],
       where:
         fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
-          (fragment("EXCLUDED.value IS NOT NULL") and
-             is_nil(current_token_balance.value_fetched_at) and
-             fragment("? = EXCLUDED.block_number", current_token_balance.block_number))
+          (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
+             fragment("EXCLUDED.value IS NOT NULL") and
+             (is_nil(current_token_balance.value_fetched_at) or
+                fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at)))
     )
   end
 

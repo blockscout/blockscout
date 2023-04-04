@@ -52,6 +52,7 @@ services:
       -  ./envs/common-blockscout.env
     environment:
         ENABLE_RUST_VERIFICATION_SERVICE: 'false'
+        VISUALIZE_SOL2UML_ENABLED: 'false'
     ports:
       - 4000:4000
     volumes:

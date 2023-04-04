@@ -59,6 +59,7 @@ const appJs =
       'admin-tasks': './js/pages/admin/tasks.js',
       'token-contract': './js/pages/token_contract.js',
       'smart-contract-helpers': './js/lib/smart_contract/index.js',
+      'sol2uml': './js/pages/sol2uml.js',
       'token-transfers-toggle': './js/lib/token_transfers_toggle.js',
       'epoch-tile': './js/lib/epoch_tile.js',
       'campaign-banner': './js/lib/campaign_banner.js',
@@ -87,6 +88,10 @@ const appJs =
     },
     module: {
       rules: [
+        {
+          test: /\.css$/,
+          use: ["style-loader", "css-loader"],
+        },
         {
           test: /\.js$/,
           exclude: /node_modules/,

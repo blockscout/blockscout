@@ -639,6 +639,7 @@ jobs:
           ADMIN_PANEL_ENABLED: "true"
           ACCOUNT_ENABLED: "true"
           ACCOUNT_REDIS_URL: "redis://localhost:6379"
+          API_V2_ENABLED: "true"
       - name: Upload Unit Test Results
         if: always()
         uses: actions/upload-artifact@v2

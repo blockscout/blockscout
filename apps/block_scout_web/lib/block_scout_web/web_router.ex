@@ -529,6 +529,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/makerdojo", MakerdojoController, :index)
 
+    get("/visualize/sol2uml", VisualizeSol2umlController, :index)
+
     get("/*path", PageNotFoundController, :index)
   end
 end

@@ -33,8 +33,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
               [from_address: :names] => :optional,
               [to_address: :names] => :optional,
               from_address: :required,
-              to_address: :required,
-              token: :required
+              to_address: :required
             }
           ],
           paging_options(params)

@@ -31,6 +31,11 @@ lib/block_scout_web/templates/address_contract/index.html.eex:170
 lib/block_scout_web/templates/address_contract/index.html.eex:207
 lib/explorer/third_party_integrations/sourcify.ex:159
 lib/explorer/third_party_integrations/sourcify.ex:162
+lib/explorer/smart_contract/solidity/verifier.ex:317
+lib/block_scout_web/templates/address_contract/index.html.eex:158
+lib/block_scout_web/templates/address_contract/index.html.eex:195
+lib/explorer/third_party_integrations/sourcify.ex:120
+lib/explorer/third_party_integrations/sourcify.ex:123
 lib/block_scout_web/views/transaction_view.ex:137
 lib/block_scout_web/views/transaction_view.ex:152
 lib/block_scout_web/views/transaction_view.ex:197
