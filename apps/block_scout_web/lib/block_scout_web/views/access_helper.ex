@@ -65,12 +65,14 @@ defmodule BlockScoutWeb.AccessHelper do
 
   # credo:disable-for-next-line /Complexity/
   defp check_rate_limit_inner(conn, rate_limit_config) do
-    global_api_rate_limit = rate_limit_config[:global_limit]
-    api_rate_limit_by_key = rate_limit_config[:api_rate_limit_by_key]
-    api_rate_limit_by_ip = rate_limit_config[:limit_by_ip]
+    global_limit = rate_limit_config[:global_limit]
+    limit_by_key = rate_limit_config[:limit_by_key]
+    limit_by_whitelisted_ip = rate_limit_config[:limit_by_whitelisted_ip]
+    time_interval_limit = rate_limit_config[:time_interval_limit]
     static_api_key = rate_limit_config[:static_api_key]
-    default_api_rate_limit_by_ip = rate_limit_config[:default_limit_by_ip]
+    limit_by_ip = rate_limit_config[:limit_by_ip]
     api_v2_ui_limit = rate_limit_config[:api_v2_ui_limit]
+    time_interval_by_ip = rate_limit_config[:time_interval_limit_by_ip]
 
     ip_string = conn_to_ip_string(conn)
 
@@ -81,24 +83,24 @@ defmodule BlockScoutWeb.AccessHelper do
 
     cond do
       check_api_key(conn) && get_api_key(conn) == static_api_key ->
-        rate_limit_by_param(static_api_key, api_rate_limit_by_key)
+        rate_limit(static_api_key, limit_by_key, time_interval_limit)
 
       check_api_key(conn) && !is_nil(plan) ->
         conn
         |> get_api_key()
-        |> rate_limit_by_param(plan.max_req_per_second)
+        |> rate_limit(plan.max_req_per_second, time_interval_limit)
 
-      Enum.member?(api_rate_limit_whitelisted_ips(), ip_string) ->
-        rate_limit(ip_string, api_rate_limit_by_ip)
+      Enum.member?(whitelisted_ips(rate_limit_config), ip_string) ->
+        rate_limit(ip_string, limit_by_whitelisted_ip, time_interval_limit)
 
       !is_nil(token) && !is_nil(user_agent) ->
-        rate_limit_by_param(token, api_v2_ui_limit)
+        rate_limit(token, api_v2_ui_limit, time_interval_limit)
 
       is_api_v2_request?(conn) && !is_nil(user_agent) ->
-        rate_limit_by_ip_default(ip_string, default_api_rate_limit_by_ip)
+        rate_limit(ip_string, limit_by_ip, time_interval_by_ip)
 
       true ->
-        global_rate_limit(global_api_rate_limit)
+        rate_limit("api", global_limit, time_interval_limit)
     end
   end
 
@@ -118,20 +120,8 @@ defmodule BlockScoutWeb.AccessHelper do
     end
   end
 
-  defp rate_limit_by_param(key, value) do
-    rate_limit("api-#{key}", value)
-  end
-
-  defp global_rate_limit(global_api_rate_limit) do
-    rate_limit("api", global_api_rate_limit)
-  end
-
-  defp rate_limit(key, limit) do
-    rate_limit_inner(key, 1_000, limit)
-  end
-
-  defp rate_limit_by_ip_default(ip_string, limit) do
-    rate_limit_inner(ip_string, 5 * 60_000, limit)
+  defp rate_limit(key, limit, time_interval) do
+    rate_limit_inner(key, time_interval, limit)
   end
 
   defp rate_limit_inner(key, time_interval, limit) do
@@ -155,14 +145,9 @@ defmodule BlockScoutWeb.AccessHelper do
     conn_with_params.query_params["key"]
   end
 
-  defp api_rate_limit_whitelisted_ips do
-    with api_rate_limit_object <-
-           :block_scout_web
-           |> Application.get_env(:api_rate_limit),
-         {:ok, whitelisted_ips_string} <-
-           api_rate_limit_object &&
-             api_rate_limit_object
-             |> Keyword.fetch(:whitelisted_ips) do
+  defp whitelisted_ips(api_rate_limit_object) do
+    with {:ok, whitelisted_ips_string} <-
+           api_rate_limit_object && api_rate_limit_object |> Keyword.fetch(:whitelisted_ips) do
       if whitelisted_ips_string, do: String.split(whitelisted_ips_string, ","), else: []
     else
       _ -> []
