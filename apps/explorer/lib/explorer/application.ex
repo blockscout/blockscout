@@ -5,7 +5,7 @@ defmodule Explorer.Application do
 
   use Application
 
-  alias Explorer.Admin
+  alias Explorer.{Admin, TokenTransferTokenIdMigration}
 
   alias Explorer.Celo.Events.ContractEventStream
 
@@ -100,7 +100,8 @@ defmodule Explorer.Application do
       configure(Explorer.Validator.MetadataProcessor),
       configure(Explorer.Tags.AddressTag.Cataloger),
       configure(MinMissingBlockNumber),
-      configure(ContractEventStream)
+      configure(ContractEventStream),
+      configure(TokenTransferTokenIdMigration.Supervisor)
     ]
     |> List.flatten()
   end

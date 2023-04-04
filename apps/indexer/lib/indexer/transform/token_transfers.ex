@@ -221,7 +221,7 @@ defmodule Indexer.Transform.TokenTransfers do
       to_address_hash: truncate_address_hash(log.third_topic),
       token_contract_address_hash: log.address_hash,
       transaction_hash: log.transaction_hash,
-      token_id: nil,
+      token_ids: nil,
       token_type: "ERC-20"
     }
 
@@ -245,7 +245,7 @@ defmodule Indexer.Transform.TokenTransfers do
       from_address_hash: truncate_address_hash(log.second_topic),
       to_address_hash: truncate_address_hash(log.third_topic),
       token_contract_address_hash: log.address_hash,
-      token_id: token_id || 0,
+      token_ids: [token_id || 0],
       transaction_hash: log.transaction_hash,
       token_type: "ERC-721"
     }
@@ -277,7 +277,7 @@ defmodule Indexer.Transform.TokenTransfers do
       from_address_hash: encode_address_hash(from_address_hash),
       to_address_hash: encode_address_hash(to_address_hash),
       token_contract_address_hash: log.address_hash,
-      token_id: token_id,
+      token_ids: [token_id],
       transaction_hash: log.transaction_hash,
       token_type: "ERC-721"
     }
@@ -334,7 +334,6 @@ defmodule Indexer.Transform.TokenTransfers do
       transaction_hash: log.transaction_hash,
       token_type: "ERC-1155",
       token_ids: token_ids,
-      token_id: nil,
       amounts: values
     }
 
@@ -359,7 +358,7 @@ defmodule Indexer.Transform.TokenTransfers do
       token_contract_address_hash: log.address_hash,
       transaction_hash: log.transaction_hash,
       token_type: "ERC-1155",
-      token_id: token_id
+      token_ids: [token_id]
     }
 
     token = %{

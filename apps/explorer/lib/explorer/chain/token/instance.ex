@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Token.Instance do
 
   alias Explorer.Chain.{Hash, Token, Token, Token.Instance, TokenTransfer}
   alias Explorer.Chain.Token.Instance
+  alias Explorer.PagingOptions
 
   alias Explorer.Repo
 
@@ -29,6 +30,7 @@ defmodule Explorer.Chain.Token.Instance do
     field(:token_id, :decimal, primary_key: true)
     field(:metadata, :map)
     field(:error, :string)
+    field(:owner, Hash.Address, virtual: true)
 
     belongs_to(
       :token,
@@ -94,4 +96,38 @@ defmodule Explorer.Chain.Token.Instance do
       row -> row.count
     end
   end
+
+  @doc """
+  Inventory tab query.
+  A token ERC-721 is considered unique because it corresponds to the possession
+  of a specific asset.
+
+  To find out its current owner, it is necessary to look at the token last
+  transfer.
+  """
+
+  def address_to_unique_token_instances(contract_address_hash) do
+    from(
+      i in Instance,
+      left_join: tt in TokenTransfer,
+      on:
+        tt.token_contract_address_hash == i.token_contract_address_hash and
+          fragment("? @> ARRAY[?::decimal]", tt.token_ids, i.token_id),
+      join: to_address in assoc(tt, :to_address),
+      where: i.token_contract_address_hash == ^contract_address_hash,
+      order_by: [desc: tt.block_number],
+      distinct: [desc: i.token_id],
+      select: %{i | owner: to_address}
+    )
+  end
+
+  def page_token_instance(query, %PagingOptions{key: {token_id}, asc_order: true}) do
+    where(query, [i], i.token_id > ^token_id)
+  end
+
+  def page_token_instance(query, %PagingOptions{key: {token_id}}) do
+    where(query, [i], i.token_id < ^token_id)
+  end
+
+  def page_token_instance(query, _), do: query
 end
