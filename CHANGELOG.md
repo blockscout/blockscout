@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#7200](https://github.com/blockscout/blockscout/pull/7200) - Add Optimism BedRock Deposits to the main page in API
+
 ### Fixes
 
 ### Chore
