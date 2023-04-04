@@ -1,6 +1,6 @@
 ---
 name: 'Deploy Helm Chart'
-run-name: 'Helm ${{ github.event.inputs.action }} on ${{ github.event.inputs.deployment }} triggered by @${{ github.actor }}'
+run-name: '`helmfile ${{ github.event.inputs.action }}` on ${{ github.event.inputs.deployment }} - @${{ github.actor }}'
 
 on:
   workflow_dispatch:
@@ -88,9 +88,10 @@ jobs:
             echo "image-commit=" >> "$GITHUB_OUTPUT"
           fi
 
-  helm-deploy:
+  helmfile-run:
     uses: ./.github/workflows/helm_deploy_call.yml
     needs: set-config
+    name: "helmfile ${{ github.event.inputs.action }}"
     with:
       helmfile: helm/helmfiles/${{ github.event.inputs.deployment }}.yaml
       action: ${{ github.event.inputs.action }}
