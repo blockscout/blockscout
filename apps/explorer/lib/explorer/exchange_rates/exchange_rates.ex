@@ -9,7 +9,6 @@ defmodule Explorer.ExchangeRates do
 
   require Logger
 
-  alias Explorer.Chain.Cache.TokenExchangeRate
   alias Explorer.Chain.Events.Publisher
   alias Explorer.ExchangeRates.{Source, Token}
 
@@ -99,23 +98,6 @@ defmodule Explorer.ExchangeRates do
       case :ets.lookup(table_name(), symbol) do
         [tuple | _] when is_tuple(tuple) -> Token.from_tuple(tuple)
         _ -> nil
-      end
-    end
-  end
-
-  @doc """
-  Returns a specific rate from the tracked tickers by token address hash
-  """
-  @spec lookup_by_address(String.t(), String.t()) :: Token.t() | nil
-  def lookup_by_address(token_address_hash, symbol) do
-    if store() == :ets && enabled?() do
-      case :ets.lookup(table_name(), symbol) do
-        [tuple | _] when is_tuple(tuple) ->
-          Token.from_tuple(tuple)
-
-        _ ->
-          token_excange_rate = TokenExchangeRate.fetch_token_exchange_rate_by_address(token_address_hash)
-          %{usd_value: token_excange_rate}
       end
     end
   end

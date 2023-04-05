@@ -1057,4 +1057,214 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       Application.put_env(:indexer, :fetch_rewards_way, nil)
     end
   end
+
+  describe "start_fetch_and_import" do
+    @tag :no_geth
+    test "reorg", %{
+      block_fetcher: block_fetcher,
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      initial_env = Application.get_all_env(:indexer)
+
+      on_exit(fn ->
+        Application.delete_env(:indexer, UncleBlock.Supervisor)
+        Application.put_all_env([{:indexer, initial_env}])
+      end)
+
+      Application.put_env(:indexer, :fetch_rewards_way, "manual")
+      Application.put_env(:indexer, InternalTransaction.Supervisor, disabled?: true)
+      Application.put_env(:indexer, UncleBlock.Supervisor, disabled?: true)
+
+      {:ok, sequence} = Sequence.start_link(ranges: [], step: 2)
+      Sequence.cap(sequence)
+
+      start_supervised!({Task.Supervisor, name: Realtime.TaskSupervisor})
+
+      Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      ReplacedTransaction.Supervisor.Case.start_supervised!()
+
+      block_1_data = %{
+        "author" => "0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2",
+        "difficulty" => "0xfffffffffffffffffffffffffffffffe",
+        "extraData" => "0xd583010b088650617269747986312e32372e32826c69",
+        "gasLimit" => "0x7a1200",
+        "gasUsed" => "0x2886e",
+        "hash" => "0xa4ec735cabe1510b5ae081b30f17222580b4588dbec52830529753a688b046cc",
+        "logsBloom" =>
+          "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "miner" => "0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2",
+        "number" => "0x3c365f",
+        "parentHash" => "0x57f6d66e07488defccd5216c4d2968dd6afd3bd32415e284de3b02af6535e8dc",
+        "receiptsRoot" => "0x111be72e682cea9c93e02f1ef503fb64aa821b2ef510fd9177c49b37d0af98b5",
+        "sealFields" => [
+          "0x841246c63f",
+          "0xb841ba3d11db672fd7893d1b7906275fa7c4c7f4fbcc8fa29eab0331480332361516545ef10a36d800ad2be2b449dde8d5703125156a9cf8a035f5a8623463e051b700"
+        ],
+        "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        "signature" =>
+          "ba3d11db672fd7893d1b7906275fa7c4c7f4fbcc8fa29eab0331480332361516545ef10a36d800ad2be2b449dde8d5703125156a9cf8a035f5a8623463e051b700",
+        "size" => "0x33e",
+        "stateRoot" => "0x7f73f5fb9f891213b671356126c31e9795d038844392c7aa8800ed4f52307209",
+        "step" => "306628159",
+        "timestamp" => "0x5b61df3b",
+        "totalDifficulty" => "0x3c365effffffffffffffffffffffffed7f0362",
+        "transactions" => [],
+        "transactionsRoot" => "0xd7c39a93eafe0bdcbd1324c13dcd674bed8c9fa8adbf8f95bf6a59788985da6f",
+        "uncles" => ["0xa4ec735cabe1510b5ae081b30f17222580b4588dbec52830529753a688b046cd"]
+      }
+
+      block_2_data = %{
+        "author" => "0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3",
+        "difficulty" => "0xfffffffffffffffffffffffffffffffe",
+        "extraData" => "0xd583010a068650617269747986312e32362e32826c69",
+        "gasLimit" => "0x7a1200",
+        "gasUsed" => "0x0",
+        "hash" => "0xfb483e511d316fa4072694da3f7abc94b06286406af45061e5e681395bdc6815",
+        "logsBloom" =>
+          "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "miner" => "0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3",
+        "number" => "0x3c3660",
+        "parentHash" => "0xa4ec735cabe1510b5ae081b30f17222580b4588dbec52830529753a688b046cc",
+        "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+        "sealFields" => [
+          "0x841246c640",
+          "0xb84114db3fd7526b7ea3635f5c85c30dd8a645453aa2f8afe5fd33fe0ec663c9c7b653b0fb5d8dc7d0b809674fa9dca9887d1636a586bf62191da22255eb068bf20800"
+        ],
+        "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        "signature" =>
+          "14db3fd7526b7ea3635f5c85c30dd8a645453aa2f8afe5fd33fe0ec663c9c7b653b0fb5d8dc7d0b809674fa9dca9887d1636a586bf62191da22255eb068bf20800",
+        "size" => "0x243",
+        "stateRoot" => "0x3174c461989e9f99e08fa9b4ffb8bce8d9a281c8fc9f80694bb9d3acd4f15559",
+        "step" => "306628160",
+        "timestamp" => "0x5b61df40",
+        "totalDifficulty" => "0x3c365fffffffffffffffffffffffffed7f0360",
+        "transactions" => [],
+        "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+        "uncles" => []
+      }
+
+      reorg_block_1_data =
+        Map.put(block_1_data, "hash", "0xa4ec735cabe1510b5ae081b30f17222580b4588dbec52830529753a688b046cd")
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, 6, fn
+          [
+            %{
+              id: 0,
+              jsonrpc: "2.0",
+              method: "eth_getBlockByNumber",
+              params: ["0x3C365F", true]
+            }
+          ],
+          _ ->
+            {:ok,
+             [
+               %{
+                 id: 0,
+                 jsonrpc: "2.0",
+                 result: block_1_data
+               }
+             ]}
+
+          [
+            %{
+              id: 0,
+              jsonrpc: "2.0",
+              method: "eth_getBlockByNumber",
+              params: ["0x3C3660", true]
+            }
+          ],
+          _ ->
+            {:ok,
+             [
+               %{
+                 id: 0,
+                 jsonrpc: "2.0",
+                 result: block_2_data
+               }
+             ]}
+
+          [
+            %{
+              id: 0,
+              jsonrpc: "2.0",
+              method: "eth_getBalance",
+              params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
+            }
+          ],
+          _ ->
+            {:ok, [%{id: 0, jsonrpc: "2.0", result: "0x53474fa377a46000"}]}
+
+          [
+            %{
+              id: 0,
+              jsonrpc: "2.0",
+              method: "eth_getBalance",
+              params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
+            }
+          ],
+          _ ->
+            {:ok, [%{id: 0, jsonrpc: "2.0", result: "0x53507afe51f28000"}]}
+        end)
+        |> expect(:json_rpc, 3, fn
+          [
+            %{
+              id: 0,
+              jsonrpc: "2.0",
+              method: "eth_getBlockByNumber",
+              params: ["0x3C365F", true]
+            }
+          ],
+          _ ->
+            {:ok,
+             [
+               %{
+                 id: 0,
+                 jsonrpc: "2.0",
+                 result: reorg_block_1_data
+               }
+             ]}
+
+          [
+            %{
+              id: 0,
+              jsonrpc: "2.0",
+              method: "eth_getBalance",
+              params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
+            }
+          ],
+          _ ->
+            {:ok, [%{id: 0, jsonrpc: "2.0", result: "0x53474fa377a46000"}]}
+        end)
+      end
+
+      Realtime.Fetcher.start_fetch_and_import(3_946_080, block_fetcher, 3_946_078)
+      Process.sleep(1000)
+
+      result_blocks = Explorer.Repo.all(Chain.Block)
+      assert [%{consensus: true}, %{consensus: true}] = result_blocks
+
+      block_1 = Enum.find(result_blocks, fn block -> block.number == 3_946_079 end)
+      block_2 = Enum.find(result_blocks, fn block -> block.number == 3_946_080 end)
+      assert to_string(block_1.hash) == block_1_data["hash"]
+      assert to_string(block_2.hash) == block_2_data["hash"]
+
+      Realtime.Fetcher.start_fetch_and_import(3_946_079, block_fetcher, 3_946_080)
+      Process.sleep(6000)
+
+      result_blocks = Explorer.Repo.all(Chain.Block)
+      assert Enum.count(result_blocks) == 3
+
+      block_1_old = Enum.find(result_blocks, fn block -> to_string(block.hash) == block_1_data["hash"] end)
+      block_2_old = Enum.find(result_blocks, fn block -> to_string(block.hash) == block_2_data["hash"] end)
+      block_1_new = Enum.find(result_blocks, fn block -> to_string(block.hash) == reorg_block_1_data["hash"] end)
+      assert %{consensus: false} = block_1_old
+      assert %{consensus: false} = block_2_old
+      assert %{consensus: true} = block_1_new
+    end
+  end
 end

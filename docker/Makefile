@@ -7,7 +7,9 @@ BS_CONTAINER_NAME := blockscout-mainnet
 PG_CONTAINER_IMAGE := postgres:14
 PG_CONTAINER_NAME := db
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
-TAG := $(RELEASE_VERSION)-prerelease-$(shell git log -1 --pretty=format:"%h")
+RELEASE_VERSION ?= '5.1.2'
+PORT ?= '4000'
+TAG := $(RELEASE_VERSION)-commit-$(shell git log -1 --pretty=format:"%h")
 STABLE_TAG := $(RELEASE_VERSION)
 
 ifeq ($(SYSTEM), Linux)
@@ -660,7 +662,7 @@ ifdef HAS_BLOCKSCOUT_IMAGE
 	@echo "==> Image exist. Using $(BS_CONTAINER_IMAGE)"
 else
 	@echo "==> No image found, trying to build one..."
-	@docker build -f ./Dockerfile -t $(BS_CONTAINER_IMAGE) ../
+	@docker build -f ./Dockerfile --build-arg RELEASE_VERSION=$(RELEASE_VERSION) -t $(BS_CONTAINER_IMAGE) ../
 endif
 
 migrate_only:

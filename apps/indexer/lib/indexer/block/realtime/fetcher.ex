@@ -41,8 +41,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @minimum_safe_polling_period :timer.seconds(1)
 
-  @blocks_concurrency 100
-
   @shutdown_after :timer.minutes(1)
 
   @enforce_keys ~w(block_fetcher)a
@@ -50,8 +48,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defstruct block_fetcher: nil,
             subscription: nil,
             previous_number: nil,
-            timer: nil,
-            blocks_concurrency: @blocks_concurrency
+            timer: nil
 
   @type t :: %__MODULE__{
           block_fetcher: %Block.Fetcher{
@@ -63,8 +60,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
           },
           subscription: Subscription.t(),
           previous_number: pos_integer() | nil,
-          timer: reference(),
-          blocks_concurrency: pos_integer()
+          timer: reference()
         }
 
   def start_link([arguments, gen_server_options]) do
@@ -92,8 +88,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
           block_fetcher: %Block.Fetcher{} = block_fetcher,
           subscription: %Subscription{} = subscription,
           previous_number: previous_number,
-          timer: timer,
-          blocks_concurrency: blocks_concurrency
+          timer: timer
         } = state
       )
       when is_binary(quantity) do
@@ -107,7 +102,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
     # Subscriptions don't support getting all the blocks and transactions data,
     # so we need to go back and get the full block
-    start_fetch_and_import(number, block_fetcher, blocks_concurrency, previous_number)
+    start_fetch_and_import(number, block_fetcher, previous_number)
 
     Process.cancel_timer(timer)
     new_timer = schedule_polling()
@@ -125,15 +120,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
         :poll_latest_block_number,
         %__MODULE__{
           block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher,
-          previous_number: previous_number,
-          blocks_concurrency: blocks_concurrency
+          previous_number: previous_number
         } = state
       ) do
     new_previous_number =
       case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
         {:ok, number} when is_nil(previous_number) or number != previous_number ->
           Logger.info("Block manual at #{:os.system_time(:second)} find_by_this: #{inspect(number)}")
-          start_fetch_and_import(number, block_fetcher, blocks_concurrency, previous_number)
+          start_fetch_and_import(number, block_fetcher, previous_number)
 
           number
 
@@ -247,19 +241,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
     {:ok, []}
   end
 
-  defp start_fetch_and_import(number, block_fetcher, blocks_concurrency, previous_number) do
+  def start_fetch_and_import(number, block_fetcher, previous_number) do
     start_at = determine_start_at(number, previous_number)
     is_reorg = reorg?(number, previous_number)
 
-    TaskSupervisor
-    |> Task.Supervisor.async_stream(
-      start_at..number,
-      &fetch_and_import_block(&1, block_fetcher, is_reorg),
-      max_concurrency: blocks_concurrency,
-      timeout: :infinity,
-      shutdown: @shutdown_after
-    )
-    |> Stream.run()
+    for block_number_to_fetch <- start_at..number do
+      args = [block_number_to_fetch, block_fetcher, is_reorg]
+      Task.Supervisor.start_child(TaskSupervisor, __MODULE__, :fetch_and_import_block, args, shutdown: @shutdown_after)
+    end
   end
 
   defp determine_start_at(number, nil), do: number
