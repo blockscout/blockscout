@@ -13,17 +13,17 @@ defmodule BlockScoutWeb.Router do
   end
 
   pipeline :browser do
+    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_flash)
     plug(:protect_from_forgery)
     plug(BlockScoutWeb.CSPHeader)
-    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
   end
 
   pipeline :api do
-    plug(:accepts, ["json"])
     plug(BlockScoutWeb.Plug.Logger, application: :api)
+    plug(:accepts, ["json"])
   end
 
   forward("/api", ApiRouter)

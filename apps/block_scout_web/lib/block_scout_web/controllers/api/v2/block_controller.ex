@@ -2,12 +2,17 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
-    only: [next_page_params: 3, paging_options: 1, put_key_value_to_paging_options: 3, split_list_by_page: 1]
+    only: [
+      next_page_params: 3,
+      paging_options: 1,
+      put_key_value_to_paging_options: 3,
+      split_list_by_page: 1,
+      parse_block_hash_or_number_param: 1
+    ]
 
   import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1, select_block_type: 1]
 
   alias BlockScoutWeb.API.V2.TransactionView
-  alias BlockScoutWeb.BlockTransactionController
   alias Explorer.Chain
 
   @transaction_necessity_by_association [
@@ -24,23 +29,39 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   @api_true [api?: true]
 
+  @block_params [
+    necessity_by_association: %{
+      [miner: :names] => :optional,
+      :uncles => :optional,
+      :nephews => :optional,
+      :rewards => :optional,
+      :transactions => :optional
+    },
+    api?: true
+  ]
+
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   def block(conn, %{"block_hash_or_number" => block_hash_or_number}) do
-    with {:ok, block} <-
-           BlockTransactionController.param_block_hash_or_number_to_block(block_hash_or_number,
-             necessity_by_association: %{
-               [miner: :names] => :optional,
-               :uncles => :optional,
-               :nephews => :optional,
-               :rewards => :optional,
-               :transactions => :optional
-             },
-             api?: true
-           ) do
+    with {:ok, type, value} <- parse_block_hash_or_number_param(block_hash_or_number),
+         {:ok, block} <- fetch_block(type, value, @block_params) do
       conn
       |> put_status(200)
       |> render(:block, %{block: block})
+    end
+  end
+
+  defp fetch_block(:hash, hash, params) do
+    Chain.hash_to_block(hash, params)
+  end
+
+  defp fetch_block(:number, number, params) do
+    case Chain.number_to_block(number, params) do
+      {:ok, _block} = ok_response ->
+        ok_response
+
+      _ ->
+        {:lost_consensus, Chain.nonconsensus_block_by_number(number, @api_true)}
     end
   end
 
@@ -63,7 +84,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   end
 
   def transactions(conn, %{"block_hash_or_number" => block_hash_or_number} = params) do
-    with {:ok, block} <- BlockTransactionController.param_block_hash_or_number_to_block(block_hash_or_number, []) do
+    with {:ok, type, value} <- parse_block_hash_or_number_param(block_hash_or_number),
+         {:ok, block} <- fetch_block(type, value, @api_true) do
       full_options =
         @transaction_necessity_by_association
         |> Keyword.merge(put_key_value_to_paging_options(paging_options(params), :is_index_in_asc_order, true))

@@ -14,8 +14,6 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
   alias Explorer.SmartContract.RustVerifierInterface
   import Explorer.SmartContract.Helper, only: [prepare_bytecode_for_microservice: 3]
 
-  def evaluate_authenticity(_, %{"name" => ""}), do: {:error, :name}
-
   def evaluate_authenticity(_, %{"contract_source_code" => ""}),
     do: {:error, :contract_source_code}
 
