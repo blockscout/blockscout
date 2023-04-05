@@ -6,7 +6,13 @@
 
 ### Fixes
 
+- [#7210](https://github.com/blockscout/blockscout/pull/7210) - Fix Makefile docker image build
+- [#7203](https://github.com/blockscout/blockscout/pull/7203) - Fix write contract functionality for multidimensional arrays case
+- [#7186](https://github.com/blockscout/blockscout/pull/7186) - Fix build from Dockerfile
+
 ### Chore
+
+- [#7201](https://github.com/blockscout/blockscout/pull/7201) - Remove rust, cargo from dependencies since the latest version of ex_keccak is using precompiled rust
 
 ## 5.1.2-beta
 
