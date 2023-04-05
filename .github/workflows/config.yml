@@ -382,8 +382,6 @@ jobs:
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
-      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
 
       - name: Mix Deps Cache
         uses: actions/cache@v2
@@ -438,8 +436,6 @@ jobs:
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
-      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
 
       - name: Mix Deps Cache
         uses: actions/cache@v2
@@ -505,8 +501,6 @@ jobs:
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
-      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
 
       - name: Mix Deps Cache
         uses: actions/cache@v2
@@ -571,8 +565,6 @@ jobs:
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
-      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
 
       - name: Mix Deps Cache
         uses: actions/cache@v2
