@@ -93,7 +93,7 @@ defmodule BlockScoutWeb.AccessHelper do
       Enum.member?(whitelisted_ips(rate_limit_config), ip_string) ->
         rate_limit(ip_string, limit_by_whitelisted_ip, time_interval_limit)
 
-      !is_nil(token) && !is_nil(user_agent) ->
+      is_api_v2_request?(conn) && !is_nil(token) && !is_nil(user_agent) ->
         rate_limit(token, api_v2_ui_limit, time_interval_limit)
 
       is_api_v2_request?(conn) && !is_nil(user_agent) ->
