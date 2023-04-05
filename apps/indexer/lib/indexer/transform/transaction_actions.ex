@@ -9,6 +9,7 @@ defmodule Indexer.Transform.TransactionActions do
 
   alias ABI.TypeDecoder
   alias Explorer.Chain.Cache.NetVersion
+  alias Explorer.Chain.Cache.{TransactionActionTokensData, TransactionActionUniswapPools}
   alias Explorer.Chain.{Address, Data, Hash, Token, TransactionAction}
   alias Explorer.Repo
   alias Explorer.SmartContract.Reader
@@ -19,7 +20,6 @@ defmodule Indexer.Transform.TransactionActions do
   @polygon 137
   # @gnosis 100
 
-  @default_max_token_cache_size 100_000
   @burn_address "0x0000000000000000000000000000000000000000"
   @uniswap_v3_positions_nft "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
   @uniswap_v3_factory "0x1F98431c8aD98523631AE4a59f267346ea31F984"
@@ -98,23 +98,26 @@ defmodule Indexer.Transform.TransactionActions do
   @doc """
   Returns a list of transaction actions given a list of logs.
   """
-  def parse(logs, protocols_to_rewrite \\ []) do
+  def parse(logs, protocols_to_rewrite \\ nil) do
     if Application.get_env(:indexer, Indexer.Fetcher.TransactionAction.Supervisor)[:enabled] do
       actions = []
 
       chain_id = NetVersion.get_version()
 
-      logs
-      |> logs_group_by_txs()
-      |> clear_actions(protocols_to_rewrite)
+      if not is_nil(protocols_to_rewrite) do
+        logs
+        |> logs_group_by_txs()
+        |> clear_actions(protocols_to_rewrite)
+      end
 
       # create tokens cache if not exists
-      init_token_data_cache()
+      TransactionActionTokensData.create_cache_table()
 
       # handle uniswap v3
       tx_actions =
         if Enum.member?([@mainnet, @goerli, @optimism, @polygon], chain_id) and
-             (Enum.empty?(protocols_to_rewrite) or Enum.member?(protocols_to_rewrite, "uniswap_v3")) do
+             (is_nil(protocols_to_rewrite) or Enum.empty?(protocols_to_rewrite) or
+                Enum.member?(protocols_to_rewrite, "uniswap_v3")) do
           logs
           |> uniswap_filter_logs()
           |> logs_group_by_txs()
@@ -353,7 +356,7 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp uniswap_legitimate_pools(logs_grouped) do
-    init_uniswap_pools_cache()
+    TransactionActionUniswapPools.create_cache_table()
 
     {pools_to_request, pools_cached} =
       logs_grouped
@@ -368,7 +371,7 @@ defmodule Indexer.Transform.TransactionActions do
         end)
       end)
       |> Enum.reduce({[], %{}}, fn {pool_address, _}, {to_request, cached} ->
-        value_from_cache = get_uniswap_pool_from_cache(pool_address)
+        value_from_cache = TransactionActionUniswapPools.fetch_from_cache(pool_address)
 
         if is_nil(value_from_cache) do
           {[pool_address | to_request], cached}
@@ -385,7 +388,7 @@ defmodule Indexer.Transform.TransactionActions do
         |> Enum.zip(responses_get_pool)
         |> Enum.reduce(%{}, fn {request, {_status, response} = _resp}, acc ->
           value = uniswap_pool_is_legitimate(request, response)
-          put_uniswap_pool_to_cache(request.pool_address, value)
+          TransactionActionUniswapPools.put_to_cache(request.pool_address, value)
           Map.put(acc, request.pool_address, value)
         end)
         |> Map.merge(pools_cached)
@@ -491,7 +494,7 @@ defmodule Indexer.Transform.TransactionActions do
     |> Enum.reduce([], fn {{status, _}, i}, acc ->
       if status == :error do
         pool_address = Enum.at(requests, i)[:contract_address]
-        put_uniswap_pool_to_cache(pool_address, [])
+        TransactionActionUniswapPools.put_to_cache(pool_address, [])
         [pool_address | acc]
       else
         acc
@@ -550,19 +553,6 @@ defmodule Indexer.Transform.TransactionActions do
     |> Decimal.to_string(:normal)
   end
 
-  defp get_max_token_cache_size do
-    case Application.get_env(:indexer, __MODULE__)[:max_token_cache_size] do
-      nil ->
-        @default_max_token_cache_size
-
-      "" ->
-        @default_max_token_cache_size
-
-      max_cache_size ->
-        if is_binary(max_cache_size), do: String.to_integer(max_cache_size), else: max_cache_size
-    end
-  end
-
   defp get_token_data(token_addresses) do
     # first, we're trying to read token data from the cache.
     # if the cache is empty, we read that from DB.
@@ -588,12 +578,7 @@ defmodule Indexer.Transform.TransactionActions do
       Map.put(
         acc,
         address,
-        with info when info != :undefined <- :ets.info(:tx_actions_tokens_data_cache),
-             [{_, value}] <- :ets.lookup(:tx_actions_tokens_data_cache, address) do
-          value
-        else
-          _ -> %{symbol: nil, decimals: nil}
-        end
+        TransactionActionTokensData.fetch_from_cache(address)
       )
     end)
   end
@@ -634,7 +619,7 @@ defmodule Indexer.Transform.TransactionActions do
 
         new_data = %{symbol: symbol, decimals: decimals}
 
-        put_token_data_to_cache(contract_address_hash, new_data)
+        TransactionActionTokensData.put_to_cache(contract_address_hash, new_data)
 
         Map.put(token_data_acc, contract_address_hash, new_data)
       end)
@@ -683,7 +668,7 @@ defmodule Indexer.Transform.TransactionActions do
 
         new_data = get_new_data(data, request, response)
 
-        put_token_data_to_cache(request.contract_address, new_data)
+        TransactionActionTokensData.put_to_cache(request.contract_address, new_data)
 
         Map.put(token_data_acc, request.contract_address, new_data)
       else
@@ -734,35 +719,6 @@ defmodule Indexer.Transform.TransactionActions do
     {requests, responses}
   end
 
-  defp get_uniswap_pool_from_cache(pool_address) do
-    with info when info != :undefined <- :ets.info(:tx_actions_uniswap_pools_cache),
-         [{_, value}] <- :ets.lookup(:tx_actions_uniswap_pools_cache, pool_address) do
-      value
-    else
-      _ -> nil
-    end
-  end
-
-  defp init_cache(table) do
-    if :ets.whereis(table) == :undefined do
-      :ets.new(table, [
-        :set,
-        :named_table,
-        :public,
-        read_concurrency: true,
-        write_concurrency: true
-      ])
-    end
-  end
-
-  defp init_token_data_cache do
-    init_cache(:tx_actions_tokens_data_cache)
-  end
-
-  defp init_uniswap_pools_cache do
-    init_cache(:tx_actions_uniswap_pools_cache)
-  end
-
   defp is_address_correct?(address) do
     String.match?(address, ~r/^0x[[:xdigit:]]{40}$/i)
   end
@@ -778,27 +734,6 @@ defmodule Indexer.Transform.TransactionActions do
   defp logs_group_by_txs(logs) do
     logs
     |> Enum.group_by(& &1.transaction_hash)
-  end
-
-  defp put_token_data_to_cache(address, data) do
-    if not :ets.member(:tx_actions_tokens_data_cache, address) do
-      # we need to add a new item to the cache, but don't exceed the limit
-      cache_size = :ets.info(:tx_actions_tokens_data_cache, :size)
-
-      how_many_to_remove = cache_size - get_max_token_cache_size() + 1
-
-      range = Range.new(1, how_many_to_remove, 1)
-
-      for _step <- range do
-        :ets.delete(:tx_actions_tokens_data_cache, :ets.first(:tx_actions_tokens_data_cache))
-      end
-    end
-
-    :ets.insert(:tx_actions_tokens_data_cache, {address, data})
-  end
-
-  defp put_uniswap_pool_to_cache(address, value) do
-    :ets.insert(:tx_actions_uniswap_pools_cache, {address, value})
   end
 
   defp read_contracts_with_retries(requests, abi, retries_left) when retries_left > 0 do
