@@ -275,6 +275,9 @@ postgres:
   command: '["docker-entrypoint.sh", "-c"]'
   args: '["max_connections=500"]'
 
+  customShm:
+    enabled: false
+
   files:
     enabled: true
     mountPath: /docker-entrypoint-initdb.d

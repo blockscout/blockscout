@@ -36,7 +36,7 @@ export function prepareMethodArgs ($functionInputs, inputs) {
       if (sanitizedInputValue === '' || sanitizedInputValue === '[]') {
         return [[]]
       } else {
-        if (isArrayOfTuple(inputType)) {
+        if (isArrayOfTuple(inputType) || isMultidimensionalArray(inputType)) {
           const sanitizedInputValueElements = JSON.parse(sanitizedInputValue).map((elementValue, index) => {
             return sanitizeMultipleInputValues(elementValue, inputType, inputComponents)
           })
@@ -240,6 +240,10 @@ function convertToBool (value, type) {
   } else {
     return value
   }
+}
+
+function isMultidimensionalArray (inputType) {
+  return isArrayInputType(inputType) && inputType.includes('][')
 }
 
 function isArrayInputType (inputType) {
