@@ -14,6 +14,7 @@ defmodule Indexer.Fetcher.TransactionAction do
     ]
 
   alias Explorer.{Chain, Repo}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Log, TransactionAction}
   alias Indexer.Transform.{Addresses, TransactionActions}
 
@@ -188,42 +189,44 @@ defmodule Indexer.Fetcher.TransactionAction do
   defp init_fetching(opts, first_block, last_block) do
     Logger.metadata(fetcher: :transaction_action)
 
-    first_block = parse_integer(first_block)
-    last_block = parse_integer(last_block)
+    first_block = ExplorerHelper.parse_integer(first_block)
+    last_block = ExplorerHelper.parse_integer(last_block)
 
-    cond do
-      is_nil(first_block) or is_nil(last_block) or first_block <= 0 or last_block <= 0 or first_block > last_block ->
-        {:stop, "Correct block range must be provided to #{__MODULE__}."}
+    if is_nil(first_block) or is_nil(last_block) or first_block <= 0 or last_block <= 0 or first_block > last_block do
+      {:stop, "Correct block range must be provided to #{__MODULE__}."}
+    else
+      max_block_number = Chain.fetch_max_block_number()
 
-      last_block > (max_block_number = Chain.fetch_max_block_number()) ->
-        {:stop,
-         "The last block number (#{last_block}) provided to #{__MODULE__} is incorrect as it exceeds max block number available in DB (#{max_block_number})."}
+      if last_block > max_block_number do
+        Logger.warning(
+          "Note, that the last block number (#{last_block}) provided to #{__MODULE__} exceeds max block number available in DB (#{max_block_number})."
+        )
+      end
 
-      true ->
-        supported_protocols =
-          TransactionAction.supported_protocols()
-          |> Enum.map(&Atom.to_string(&1))
+      supported_protocols =
+        TransactionAction.supported_protocols()
+        |> Enum.map(&Atom.to_string(&1))
 
-        protocols =
-          opts
-          |> Keyword.get(:reindex_protocols, "")
-          |> String.trim()
-          |> String.split(",")
-          |> Enum.map(&String.trim(&1))
-          |> Enum.filter(&Enum.member?(supported_protocols, &1))
+      protocols =
+        opts
+        |> Keyword.get(:reindex_protocols, "")
+        |> String.trim()
+        |> String.split(",")
+        |> Enum.map(&String.trim(&1))
+        |> Enum.filter(&Enum.member?(supported_protocols, &1))
 
-        next_block = get_next_block(first_block, last_block, protocols)
+      next_block = get_next_block(first_block, last_block, protocols)
 
-        state =
-          %__MODULE__{
-            first_block: first_block,
-            next_block: next_block,
-            last_block: last_block,
-            protocols: protocols
-          }
-          |> run_fetch()
+      state =
+        %__MODULE__{
+          first_block: first_block,
+          next_block: next_block,
+          last_block: last_block,
+          protocols: protocols
+        }
+        |> run_fetch()
 
-        {:ok, state}
+      {:ok, state}
     end
   end
 
@@ -273,12 +276,5 @@ defmodule Indexer.Fetcher.TransactionAction do
     |> Decimal.to_integer()
   rescue
     _e in Ecto.NoResultsError -> 0
-  end
-
-  defp parse_integer(integer_string) do
-    case Integer.parse(integer_string) do
-      {integer, ""} -> integer
-      _ -> nil
-    end
   end
 end

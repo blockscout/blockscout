@@ -4,49 +4,49 @@
   <%= link(
         gettext("Token Transfers"),
         class: "card-tab #{tab_status("token-transfers", @conn.request_path)}",
-        to: AccessHelpers.get_path(@conn, :token_path, :show, @token.contract_address_hash)
+        to: AccessHelper.get_path(@conn, :token_path, :show, @token.contract_address_hash)
       )
     %>
   <%= link(
         gettext("Token Holders"),
         class: "card-tab #{tab_status("token-holders", @conn.request_path)}",
         "data-test": "token_holders_tab",
-        to: AccessHelpers.get_path(@conn, :token_holder_path, :index, address_hash)
+        to: AccessHelper.get_path(@conn, :token_holder_path, :index, address_hash)
       )
     %>
   <%= if display_inventory?(@token) do %>
     <%= link(
           gettext("Inventory"),
           class: "card-tab #{tab_status("inventory", @conn.request_path)}",
-          to: AccessHelpers.get_path(@conn, :token_inventory_path, :index, address_hash)
+          to: AccessHelper.get_path(@conn, :token_inventory_path, :index, address_hash)
         )
     %>
   <% end %>
   <%= if smart_contract_with_read_only_functions?(@token) do %>
     <%= link(
         gettext("Read Contract"),
-        to: AccessHelpers.get_path(@conn, :token_read_contract_path, :index, address_hash),
+        to: AccessHelper.get_path(@conn, :token_read_contract_path, :index, address_hash),
         class: "card-tab #{tab_status("read-contract", @conn.request_path)}")
       %>
   <% end %>
   <%= if smart_contract_with_write_functions?(@token) do %>
     <%= link(
         gettext("Write Contract"),
-        to: AccessHelpers.get_path(@conn, :token_write_contract_path, :index, address_hash),
+        to: AccessHelper.get_path(@conn, :token_write_contract_path, :index, address_hash),
         class: "card-tab #{tab_status("write-contract", @conn.request_path)}")
         %>
   <% end %>
   <%= if is_proxy do %>
     <%= link(
         gettext("Read Proxy"),
-        to: AccessHelpers.get_path(@conn, :token_read_proxy_path, :index, address_hash),
+        to: AccessHelper.get_path(@conn, :token_read_proxy_path, :index, address_hash),
         class: "card-tab #{tab_status("read-proxy", @conn.request_path)}")
         %>
   <% end %>
   <%= if smart_contract_with_write_functions?(@token) && is_proxy  do %>
     <%= link(
         gettext("Write Proxy"),
-        to: AccessHelpers.get_path(@conn, :token_write_proxy_path, :index, address_hash),
+        to: AccessHelper.get_path(@conn, :token_write_proxy_path, :index, address_hash),
         class: "card-tab #{tab_status("write-proxy", @conn.request_path)}")
         %>
   <% end %>

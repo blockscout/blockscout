@@ -314,17 +314,21 @@ defmodule Indexer.Block.Catchup.Fetcher do
   def push_front(block_numbers) do
     if Process.whereis(@sequence_name) do
       Enum.reduce_while(block_numbers, :ok, fn block_number, :ok ->
-        if is_integer(block_number) do
-          case Sequence.push_front(@sequence_name, block_number..block_number) do
-            :ok -> {:cont, :ok}
-            {:error, _} = error -> {:halt, error}
-          end
-        else
-          Logger.warn(fn -> ["Received a non-integer block number: ", inspect(block_number)] end)
-        end
+        sequence_push_front(block_number)
       end)
     else
       {:error, :queue_unavailable}
+    end
+  end
+
+  defp sequence_push_front(block_number) do
+    if is_integer(block_number) do
+      case Sequence.push_front(@sequence_name, block_number..block_number) do
+        :ok -> {:cont, :ok}
+        {:error, _} = error -> {:halt, error}
+      end
+    else
+      Logger.warn(fn -> ["Received a non-integer block number: ", inspect(block_number)] end)
     end
   end
 end

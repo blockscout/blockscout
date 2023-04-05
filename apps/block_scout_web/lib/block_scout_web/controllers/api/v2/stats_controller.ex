@@ -12,6 +12,8 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   alias Explorer.ExchangeRates.Token
   alias Timex.Duration
 
+  @api_true [api?: true]
+
   def stats(conn, _params) do
     market_cap_type =
       case Application.get_env(:explorer, :supply) do
@@ -41,7 +43,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       conn,
       %{
         "total_blocks" => BlockCache.estimated_count() |> to_string(),
-        "total_addresses" => Chain.address_estimated_count() |> to_string(),
+        "total_addresses" => @api_true |> Chain.address_estimated_count() |> to_string(),
         "total_transactions" => TransactionCache.estimated_count() |> to_string(),
         "average_block_time" => AverageBlockTime.average_block_time() |> Duration.to_milliseconds(),
         "coin_price" => exchange_rate.usd_value,
@@ -75,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     latest = Date.add(today, -1)
     earliest = Date.add(latest, -1 * history_size)
 
-    date_range = TransactionStats.by_date_range(earliest, latest)
+    date_range = TransactionStats.by_date_range(earliest, latest, @api_true)
 
     transaction_history_data =
       date_range

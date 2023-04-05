@@ -17,26 +17,6 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
   alias Explorer.Repo
 
-  @num_of_blocks (case Integer.parse(System.get_env("GAS_PRICE_ORACLE_NUM_OF_BLOCKS", "200")) do
-                    {integer, ""} -> integer
-                    _ -> 200
-                  end)
-
-  @safelow (case Integer.parse(System.get_env("GAS_PRICE_ORACLE_SAFELOW_PERCENTILE", "35")) do
-              {integer, ""} -> integer
-              _ -> 35
-            end)
-
-  @average (case Integer.parse(System.get_env("GAS_PRICE_ORACLE_AVERAGE_PERCENTILE", "60")) do
-              {integer, ""} -> integer
-              _ -> 60
-            end)
-
-  @fast (case Integer.parse(System.get_env("GAS_PRICE_ORACLE_FAST_PERCENTILE", "90")) do
-           {integer, ""} -> integer
-           _ -> 90
-         end)
-
   use Explorer.Chain.MapCache,
     name: :gas_price,
     key: :gas_prices,
@@ -46,7 +26,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
     callback: &async_task_on_deletion(&1)
 
   def get_average_gas_price(num_of_blocks, safelow_percentile, average_percentile, fast_percentile) do
-    lates_gas_price_query =
+    latest_gas_price_query =
       from(
         block in Block,
         left_join: transaction in assoc(block, :transactions),
@@ -60,7 +40,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       )
 
     latest_gas_prices =
-      lates_gas_price_query
+      latest_gas_price_query
       |> Repo.all(timeout: :infinity)
 
     latest_ordered_gas_prices =
@@ -83,6 +63,14 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       {:error, error}
   end
 
+  defp num_of_blocks, do: Application.get_env(:explorer, __MODULE__)[:num_of_blocks]
+
+  defp safelow, do: Application.get_env(:explorer, __MODULE__)[:safelow_percentile]
+
+  defp average, do: Application.get_env(:explorer, __MODULE__)[:average_percentile]
+
+  defp fast, do: Application.get_env(:explorer, __MODULE__)[:fast_percentile]
+
   defp handle_fallback(:gas_prices) do
     # This will get the task PID if one exists and launch a new task if not
     # See next `handle_fallback` definition
@@ -97,13 +85,13 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
     {:ok, task} =
       Task.start(fn ->
         try do
-          result = get_average_gas_price(@num_of_blocks, @safelow, @average, @fast)
+          result = get_average_gas_price(num_of_blocks(), safelow(), average(), fast())
 
           set_all(result)
         rescue
           e ->
             Logger.debug([
-              "Coudn't update gas used gas_prices",
+              "Couldn't update gas used gas_prices",
               Exception.format(:error, e, __STACKTRACE__)
             ])
         end

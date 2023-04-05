@@ -18,7 +18,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.1.0
+      RELEASE_VERSION: 5.1.2
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -62,6 +62,8 @@ jobs:
             WOBSERVER_ENABLED=false
             ADMIN_PANEL_ENABLED=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
   merge-master-after-release:
     name: Merge 'master' to specific branch after release
@@ -69,16 +71,22 @@ jobs:
     env:
       BRANCHES: |
         production-core-stg
-        production-eth-stg
+        production-sokol-stg
+        vb-eth-tests
+        production-eth-goerli-stg
+        production-withdrawals-stg
         production-harmony-mainnet-shard-0-stg
         production-lukso-stg
         production-optimism-goerli-stg
-        production-optimism-bedrock-goerli-stg
         production-optimism-mainnet-stg
-        production-optimism-stg
-        production-rsk-stg
-        production-sokol-stg
+        production-optimism-bedrock-goerli-stg
+        production-optimism-opcraft-stg
         production-xdai-stg
+        production-gc-chiado-stg
+        production-polygon-supernets-stg
+        production-base-goerli-stg
+        production-rsk-stg
+        production-neon-stg
     steps:
     - uses: actions/checkout@v2
     - name: Set Git config

@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.WebRouter do
   alias BlockScoutWeb.Plug.CheckAccountWeb
 
   pipeline :browser do
+    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_flash)
@@ -17,6 +18,7 @@ defmodule BlockScoutWeb.WebRouter do
   end
 
   pipeline :account do
+    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_flash)

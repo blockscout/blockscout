@@ -18,8 +18,11 @@ defmodule Explorer.Chain.Cache.Block do
 
   require Logger
 
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block
-  alias Explorer.Repo
+  alias Explorer.Chain.Cache.Helper
+
+  @cache_key "block_count"
 
   @doc """
   Estimated count of `t:Explorer.Chain.Block.t/0`.
@@ -28,14 +31,23 @@ defmodule Explorer.Chain.Cache.Block do
   """
   @spec estimated_count() :: non_neg_integer()
   def estimated_count do
-    cached_value = __MODULE__.get_count()
+    cached_value_from_ets = __MODULE__.get_count()
 
-    if is_nil(cached_value) do
-      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
+    if is_nil(cached_value_from_ets) do
+      cached_value_from_db =
+        @cache_key
+        |> Chain.get_last_fetched_counter()
+        |> Decimal.to_integer()
 
-      trunc(count * 0.90)
+      if cached_value_from_db === 0 do
+        count = Helper.estimated_count_from("blocks")
+
+        trunc(count * 0.90)
+      else
+        cached_value_from_db
+      end
     else
-      cached_value
+      cached_value_from_ets
     end
   end
 
@@ -55,11 +67,18 @@ defmodule Explorer.Chain.Cache.Block do
         try do
           result = fetch_count_consensus_block()
 
+          params = %{
+            counter_type: @cache_key,
+            value: result
+          }
+
+          Chain.upsert_last_fetched_counter(params)
+
           set_count(result)
         rescue
           e ->
             Logger.debug([
-              "Coudn't update block count: ",
+              "Couldn't update block count: ",
               Exception.format(:error, e, __STACKTRACE__)
             ])
         end

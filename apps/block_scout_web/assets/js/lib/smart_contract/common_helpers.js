@@ -36,9 +36,9 @@ export function prepareMethodArgs ($functionInputs, inputs) {
       if (sanitizedInputValue === '' || sanitizedInputValue === '[]') {
         return [[]]
       } else {
-        if (isArrayOfTuple(inputType)) {
+        if (isArrayOfTuple(inputType) || isMultidimensionalArray(inputType)) {
           const sanitizedInputValueElements = JSON.parse(sanitizedInputValue).map((elementValue, index) => {
-            return sanitizeMutipleInputValues(elementValue, inputType, inputComponents)
+            return sanitizeMultipleInputValues(elementValue, inputType, inputComponents)
           })
           return [sanitizedInputValueElements]
         } else {
@@ -46,7 +46,7 @@ export function prepareMethodArgs ($functionInputs, inputs) {
             sanitizedInputValue = sanitizedInputValue.substring(1, sanitizedInputValue.length - 1)
           }
           const inputValueElements = sanitizedInputValue.split(',')
-          const sanitizedInputValueElements = sanitizeMutipleInputValues(inputValueElements, inputType, inputComponents)
+          const sanitizedInputValueElements = sanitizeMultipleInputValues(inputValueElements, inputType, inputComponents)
           return [sanitizedInputValueElements]
         }
       }
@@ -54,7 +54,7 @@ export function prepareMethodArgs ($functionInputs, inputs) {
   })
 }
 
-function sanitizeMutipleInputValues (inputValueElements, inputType, inputComponents) {
+function sanitizeMultipleInputValues (inputValueElements, inputType, inputComponents) {
   return inputValueElements.map((elementValue, index) => {
     let elementInputType
     if (inputType.includes('tuple')) {
@@ -240,6 +240,10 @@ function convertToBool (value, type) {
   } else {
     return value
   }
+}
+
+function isMultidimensionalArray (inputType) {
+  return isArrayInputType(inputType) && inputType.includes('][')
 }
 
 function isArrayInputType (inputType) {

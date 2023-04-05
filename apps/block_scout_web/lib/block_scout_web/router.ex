@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.Router do
   end
 
   pipeline :browser do
+    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_flash)
@@ -21,6 +22,7 @@ defmodule BlockScoutWeb.Router do
   end
 
   pipeline :api do
+    plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
   end
 
