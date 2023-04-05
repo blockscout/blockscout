@@ -168,7 +168,7 @@ defmodule BlockScoutWeb.AccessHelper do
   end
 
   defp get_ui_v2_token(conn, %{"token" => token}, ip_string) do
-    case is_api_v2_request?(conn) && Crypto.decrypt(conn.secret_key_base, "", token) do
+    case is_api_v2_request?(conn) && Crypto.verify(conn.secret_key_base, conn.secret_key_base, token) do
       {:ok, %{ip: ^ip_string}} ->
         token
 

@@ -14,7 +14,12 @@ defmodule BlockScoutWeb.API.V2.APIKeyController do
          {:recaptcha, false} <- {:recaptcha, is_nil(recaptcha_response)},
          {:recaptcha, true} <- {:recaptcha, helper.recaptcha_passed?(recaptcha_response)} do
       conn
-      |> json(key: Crypto.encrypt(conn.secret_key_base, "", %{ip: AccessHelper.conn_to_ip_string(conn)}, max_age: ttl))
+      |> json(%{
+        key:
+          Crypto.sign(conn.secret_key_base, conn.secret_key_base, %{ip: AccessHelper.conn_to_ip_string(conn)},
+            max_age: ttl
+          )
+      })
     end
   end
 end
