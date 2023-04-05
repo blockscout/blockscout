@@ -5,7 +5,6 @@ defmodule Explorer.Chain.Cache.TransactionActionTokensData do
   use GenServer
 
   @cache_name :tx_actions_tokens_data_cache
-  @default_max_cache_size 100_000
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
@@ -57,15 +56,6 @@ defmodule Explorer.Chain.Cache.TransactionActionTokensData do
   end
 
   defp get_max_token_cache_size do
-    case Application.get_env(:explorer, __MODULE__)[:max_cache_size] do
-      nil ->
-        @default_max_cache_size
-
-      "" ->
-        @default_max_cache_size
-
-      max_cache_size ->
-        if is_binary(max_cache_size), do: String.to_integer(max_cache_size), else: max_cache_size
-    end
+    Application.get_env(:explorer, __MODULE__)[:max_cache_size]
   end
 end
