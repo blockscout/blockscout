@@ -13,6 +13,7 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   alias Explorer.Chain.Wei
   alias Explorer.ChainSpec.GenesisData
   alias Explorer.ChainSpec.POA.Importer, as: PoaEmissionImporter
+  alias Explorer.Helper, as: ExplorerHelper
 
   import Ecto.Query
 
@@ -181,8 +182,6 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   end
 
   defp parse_number(string_number) do
-    {number, ""} = Integer.parse(string_number, 10)
-
-    number
+    ExplorerHelper.parse_integer(string_number)
   end
 end

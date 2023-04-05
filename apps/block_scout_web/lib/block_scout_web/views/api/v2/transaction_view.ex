@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
-  alias BlockScoutWeb.Tokens.Helpers
+  alias BlockScoutWeb.Tokens.Helper, as: TokensHelper
   alias BlockScoutWeb.TransactionStateView
   alias Ecto.Association.NotLoaded
   alias Explorer.ExchangeRates.Token, as: TokenRate
@@ -101,7 +101,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "from" => Helper.address_with_info(conn, token_transfer.from_address, token_transfer.from_address_hash),
       "to" => Helper.address_with_info(conn, token_transfer.to_address, token_transfer.to_address_hash),
       "total" => prepare_token_transfer_total(token_transfer),
-      "token" => TokenView.render("token.json", %{token: Market.add_price(token_transfer.token)}),
+      "token" => TokenView.render("token.json", %{token: token_transfer.token}),
       "type" => Chain.get_token_transfer_type(token_transfer),
       "timestamp" =>
         if(match?(%NotLoaded{}, token_transfer.block),
@@ -123,7 +123,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def prepare_token_transfer_total(token_transfer) do
-    case Helpers.token_transfer_amount_for_api(token_transfer) do
+    case TokensHelper.token_transfer_amount_for_api(token_transfer) do
       {:ok, :erc721_instance} ->
         %{"token_id" => List.first(token_transfer.token_ids)}
 

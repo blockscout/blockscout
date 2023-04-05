@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.RenderHelpers do
+defmodule BlockScoutWeb.RenderHelper do
   @moduledoc """
   Helper functions to render partials from view modules
   """

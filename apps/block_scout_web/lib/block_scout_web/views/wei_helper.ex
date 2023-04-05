@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.WeiHelpers do
+defmodule BlockScoutWeb.WeiHelper do
   @moduledoc """
   Helper functions for interacting with `t:Explorer.Chain.Wei.t/0` values.
   """

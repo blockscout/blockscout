@@ -29,6 +29,7 @@ services:
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
         WOBSERVER_ENABLED: "false"
         ADMIN_PANEL_ENABLED: ""
+        RELEASE_VERSION: 5.1.2
     restart: always
     stop_grace_period: 5m
     container_name: 'blockscout'

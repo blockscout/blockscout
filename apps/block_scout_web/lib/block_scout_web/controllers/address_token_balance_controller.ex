@@ -1,8 +1,8 @@
 defmodule BlockScoutWeb.AddressTokenBalanceController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.AccessHelpers
-  alias Explorer.{Chain, Market}
+  alias BlockScoutWeb.AccessHelper
+  alias Explorer.Chain
   alias Explorer.Chain.Address
   alias Indexer.Fetcher.TokenBalanceOnDemand
 
@@ -17,18 +17,14 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
         TokenBalanceOnDemand.trigger_fetch(address_hash, token_balances)
       end)
 
-      token_balances_with_price =
-        token_balances
-        |> Market.add_price()
-
-      case AccessHelpers.restricted_access?(address_hash_string, params) do
+      case AccessHelper.restricted_access?(address_hash_string, params) do
         {:ok, false} ->
           conn
           |> put_status(200)
           |> put_layout(false)
           |> render("_token_balances.html",
             address_hash: Address.checksum(address_hash),
-            token_balances: token_balances_with_price,
+            token_balances: token_balances,
             conn: conn
           )
 

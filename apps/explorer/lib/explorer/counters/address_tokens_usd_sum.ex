@@ -7,7 +7,7 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
   alias Explorer.Chain
   alias Explorer.Counters.Helper
 
-  @cache_name :address_tokens_usd_value
+  @cache_name :address_tokens_fiat_value
   @last_update_key "last_update"
 
   config = Application.compile_env(:explorer, Explorer.Counters.AddressTokenUsdSum)
@@ -50,12 +50,12 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
     fetch_from_cache("hash_#{address_hash_string}")
   end
 
-  @spec address_tokens_usd_sum([{Address.CurrentTokenBalance, Explorer.Chain.Token}]) :: Decimal.t()
-  defp address_tokens_usd_sum(token_balances) do
+  @spec address_tokens_fiat_sum([{Address.CurrentTokenBalance, Explorer.Chain.Token}]) :: Decimal.t()
+  defp address_tokens_fiat_sum(token_balances) do
     token_balances
     |> Enum.reduce(Decimal.new(0), fn {token_balance, token}, acc ->
-      if token_balance.value && token.usd_value do
-        Decimal.add(acc, Chain.balance_in_usd(token_balance, token))
+      if token_balance.value && token.fiat_value && token.decimals do
+        Decimal.add(acc, Chain.balance_in_fiat(token_balance, token))
       else
         acc
       end
@@ -65,7 +65,7 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
   def cache_name, do: @cache_name
 
   defp cache_expired?(address_hash_string) do
-    cache_period = address_tokens_usd_sum_cache_period()
+    cache_period = Application.get_env(:explorer, __MODULE__)[:cache_period]
     updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
 
     cond do
@@ -77,7 +77,7 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
 
   defp update_cache(address_hash_string, token_balances) do
     put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
-    new_data = address_tokens_usd_sum(token_balances)
+    new_data = address_tokens_fiat_sum(token_balances)
     put_into_cache("hash_#{address_hash_string}", new_data)
   end
 
@@ -94,8 +94,4 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
   end
 
   defp enable_consolidation?, do: @enable_consolidation
-
-  defp address_tokens_usd_sum_cache_period do
-    Helper.cache_period("CACHE_ADDRESS_TOKENS_USD_SUM_PERIOD", 1)
-  end
 end
