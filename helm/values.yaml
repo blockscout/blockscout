@@ -1,7 +1,7 @@
 quaiBlockscout:
   image:
     name: quainetwork/quai-blockscout
-    version: v0.1.0-pre.1
+    version: v0.1.0-pre.3
   env: quai-dev
   chain: garden
   shards:
