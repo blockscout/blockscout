@@ -69,7 +69,20 @@ defmodule Explorer.History.Process do
   defp compile_historical_records(day_count, historian, failed_attempts \\ 0) do
     Task.Supervisor.async_nolink(Explorer.HistoryTaskSupervisor, fn ->
       Process.sleep(delay(failed_attempts))
-      {day_count, failed_attempts, historian.compile_records(day_count)}
+
+      try do
+        {day_count, failed_attempts, historian.compile_records(day_count)}
+      rescue
+        exception ->
+          Logger.error(fn ->
+            [
+              "Error on compile_historical_records (day_count=#{day_count}, failed_attempts=#{failed_attempts}):",
+              Exception.format(:error, exception)
+            ]
+          end)
+
+          {day_count, failed_attempts, :error}
+      end
     end)
   end
 
