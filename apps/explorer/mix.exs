@@ -116,7 +116,8 @@ defmodule Explorer.Mixfile do
       {:tesla, "~> 1.6.0"},
       {:cbor, "~> 1.0"},
       {:cloak_ecto, "~> 1.2.0"},
-      {:redix, "~> 1.1"}
+      {:redix, "~> 1.1"},
+      {:hammer_backend_redis, "~> 6.1"}
     ]
   end
 
