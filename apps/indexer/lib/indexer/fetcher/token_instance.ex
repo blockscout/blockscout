@@ -9,9 +9,8 @@ defmodule Indexer.Fetcher.TokenInstance do
   require Logger
 
   alias Explorer.Celo.Telemetry
-  alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Cache.BlockNumber, Token}
-  alias Explorer.Token.{InstanceMetadataRetriever, InstanceOwnerReader}
+  alias Explorer.Chain
+  alias Explorer.Token.InstanceMetadataRetriever
   alias Indexer.BufferedTask
 
   use BufferedTask

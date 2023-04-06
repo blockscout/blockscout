@@ -22,18 +22,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   use BufferedTask
 
-  @max_batch_size 8
-  @max_concurrency 8
-  @defaults [
-    flush_interval: :timer.seconds(3),
-    poll_interval: :timer.seconds(3),
-    max_concurrency: @max_concurrency,
-    max_batch_size: @max_batch_size,
-    dedup_entries: true,
-    poll: true,
-    task_supervisor: Indexer.Fetcher.InternalTransaction.TaskSupervisor,
-    metadata: [fetcher: :internal_transaction]
-  ]
 
   @doc """
   Asynchronously fetches internal transactions.
@@ -41,9 +29,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
   Internal transactions are an expensive upstream operation. The number of
   results to fetch is configured by `@max_batch_size` and represents the number
   of transaction hashes to request internal transactions in a single JSONRPC
-  request. Defaults to `#{@max_batch_size}`.
+  request.
   The `@max_concurrency` attribute configures the  number of concurrent requests
-  of `@max_batch_size` to allow against the JSONRPC. Defaults to `#{@max_concurrency}`.
+  of `@max_batch_size` to allow against the JSONRPC.
   *Note*: The internal transactions for individual transactions cannot be paginated,
   so the total number of internal transactions that could be produced is unknown.
   """
@@ -370,9 +358,11 @@ defmodule Indexer.Fetcher.InternalTransaction do
   defp defaults do
     [
       flush_interval: :timer.seconds(3),
-      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @max_concurrency,
-      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @max_batch_size,
+      poll_interval: :timer.seconds(3),
+      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency],
+      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size],
       poll: true,
+      dedup_entries: true,
       task_supervisor: Indexer.Fetcher.InternalTransaction.TaskSupervisor,
       metadata: [fetcher: :internal_transaction]
     ]
