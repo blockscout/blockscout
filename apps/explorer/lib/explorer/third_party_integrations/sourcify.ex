@@ -4,7 +4,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   """
   use Tesla
 
-  alias Explorer.SmartContract.{RustVerifierInterface, Helper}
+  alias Explorer.SmartContract.{Helper, RustVerifierInterface}
   alias HTTPoison.{Error, Response}
   alias Tesla.Multipart
 
