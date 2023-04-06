@@ -33,7 +33,7 @@
                     <%= label :verify_via, :false, gettext("Via Sourcify: Sources and metadata JSON file"), class: "radio-text" %>
                   </div>
                 <% end %>
-                <%= if EthBytecodeDBInterface.enabled?() do %>
+                <%= if RustVerifierInterface.enabled?() do %>
                   <div class="radio-big">
                     <%= radio_button f, :verify_via, false, class: "form-check-input verify-via-multi-part-files" %>
                     <div class="radio-icon"></div>

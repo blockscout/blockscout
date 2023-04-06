@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.SmartContract.Vyper.PublisherWorker, as: VyperPublisherWorker
-  alias Explorer.SmartContract.{CompilerVersion, EthBytecodeDBInterface, Solidity.CodeCompiler}
+  alias Explorer.SmartContract.{CompilerVersion, RustVerifierInterface, Solidity.CodeCompiler}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -26,8 +26,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
             do: ["sourcify" | &1],
             else: &1
           )).()
-      |> (&if(EthBytecodeDBInterface.enabled?(), do: ["multi-part" | &1], else: &1)).()
-      |> (&if(EthBytecodeDBInterface.enabled?(), do: ["vyper-multi-part" | &1], else: &1)).()
+      |> (&if(RustVerifierInterface.enabled?(), do: ["multi-part" | &1], else: &1)).()
+      |> (&if(RustVerifierInterface.enabled?(), do: ["vyper-multi-part" | &1], else: &1)).()
 
     conn
     |> json(%{
@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
       vyper_compiler_versions: vyper_compiler_versions,
       verification_options: verification_options,
       vyper_evm_versions: ["byzantium", "constantinople", "petersburg", "istanbul"],
-      is_rust_verifier_microservice_enabled: EthBytecodeDBInterface.enabled?()
+      is_rust_verifier_microservice_enabled: RustVerifierInterface.enabled?()
     })
   end
 
@@ -133,7 +133,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         conn,
         %{"address_hash" => address_hash_string, "compiler_version" => compiler_version, "files" => files} = params
       ) do
-    with {:not_found, true} <- {:not_found, EthBytecodeDBInterface.enabled?()},
+    with {:not_found, true} <- {:not_found, RustVerifierInterface.enabled?()},
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:already_verified, false} <-
@@ -197,7 +197,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         conn,
         %{"address_hash" => address_hash_string, "compiler_version" => compiler_version, "files" => files} = params
       ) do
-    with {:not_found, true} <- {:not_found, EthBytecodeDBInterface.enabled?()},
+    with {:not_found, true} <- {:not_found, RustVerifierInterface.enabled?()},
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:already_verified, false} <-

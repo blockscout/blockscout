@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.AddressContractVerificationView do
   use BlockScoutWeb, :view
 
-  alias Explorer.SmartContract.EthBytecodeDBInterface
+  alias Explorer.SmartContract.RustVerifierInterface
 end

@@ -303,9 +303,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       eth_bytecode_response = File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_response.json")
 
-      old_env = Application.get_env(:explorer, Explorer.SmartContract.EthBytecodeDBInterface)
+      old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterface)
 
-      Application.put_env(:explorer, Explorer.SmartContract.EthBytecodeDBInterface,
+      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterface,
         service_url: "http://localhost:#{bypass.port}",
         enabled: true
       )
@@ -352,7 +352,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert %{"is_verified" => true} = json_response(request, 200)
 
-      Application.put_env(:explorer, Explorer.SmartContract.EthBytecodeDBInterface, old_env)
+      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterface, old_env)
     end
   end
 

@@ -3,5 +3,5 @@ defmodule BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView do
 
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
-  alias Explorer.SmartContract.EthBytecodeDBInterface
+  alias Explorer.SmartContract.RustVerifierInterface
 end

@@ -11,7 +11,7 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
 
   alias Explorer.Chain
   alias Explorer.SmartContract.Vyper.CodeCompiler
-  alias Explorer.SmartContract.EthBytecodeDBInterface
+  alias Explorer.SmartContract.RustVerifierInterface
   import Explorer.SmartContract.Helper, only: [prepare_bytecode_for_microservice: 3, contract_creation_input: 1]
 
   def evaluate_authenticity(_, %{"contract_source_code" => ""}),
@@ -19,7 +19,7 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
 
   def evaluate_authenticity(address_hash, params) do
     try do
-      evaluate_authenticity_inner(EthBytecodeDBInterface.enabled?(), address_hash, params)
+      evaluate_authenticity_inner(RustVerifierInterface.enabled?(), address_hash, params)
     rescue
       exception ->
         Logger.error(fn ->
@@ -33,7 +33,7 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
 
   def evaluate_authenticity(address_hash, params, files) do
     try do
-      if EthBytecodeDBInterface.enabled?() do
+      if RustVerifierInterface.enabled?() do
         deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
 
         creation_tx_input = contract_creation_input(address_hash)
@@ -108,6 +108,6 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
     |> Map.put("evmVersion", evm_version || "istanbul")
     |> Map.put("sourceFiles", files)
     |> Map.put("compilerVersion", params["compiler_version"])
-    |> EthBytecodeDBInterface.vyper_verify_multipart()
+    |> RustVerifierInterface.vyper_verify_multipart()
   end
 end

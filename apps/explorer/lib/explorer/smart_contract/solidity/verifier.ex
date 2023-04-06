@@ -13,7 +13,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
-  alias Explorer.SmartContract.EthBytecodeDBInterface
+  alias Explorer.SmartContract.RustVerifierInterface
   alias Explorer.SmartContract.Solidity.CodeCompiler
 
   require Logger
@@ -25,7 +25,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   def evaluate_authenticity(address_hash, params) do
     try do
-      evaluate_authenticity_inner(EthBytecodeDBInterface.enabled?(), address_hash, params)
+      evaluate_authenticity_inner(RustVerifierInterface.enabled?(), address_hash, params)
     rescue
       exception ->
         Logger.error(fn ->
@@ -52,7 +52,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
     |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
     |> Map.put("compilerVersion", params["compiler_version"])
-    |> EthBytecodeDBInterface.verify_multi_part()
+    |> RustVerifierInterface.verify_multi_part()
   end
 
   defp evaluate_authenticity_inner(false, address_hash, params) do
@@ -105,7 +105,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   def evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
     try do
       evaluate_authenticity_via_standard_json_input_inner(
-        EthBytecodeDBInterface.enabled?(),
+        RustVerifierInterface.enabled?(),
         address_hash,
         params,
         json_input
@@ -129,7 +129,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     %{"compilerVersion" => params["compiler_version"]}
     |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
     |> Map.put("input", json_input)
-    |> EthBytecodeDBInterface.verify_standard_json_input()
+    |> RustVerifierInterface.verify_standard_json_input()
   end
 
   def evaluate_authenticity_via_standard_json_input_inner(false, address_hash, params, json_input) do
@@ -148,7 +148,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
     |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
     |> Map.put("compilerVersion", params["compiler_version"])
-    |> EthBytecodeDBInterface.verify_multi_part()
+    |> RustVerifierInterface.verify_multi_part()
   end
 
   defp verify(address_hash, params, json_input) do

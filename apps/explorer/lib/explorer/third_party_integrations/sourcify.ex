@@ -4,7 +4,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   """
   use Tesla
 
-  alias Explorer.SmartContract.{EthBytecodeDBInterface, Helper}
+  alias Explorer.SmartContract.{RustVerifierInterface, Helper}
   alias HTTPoison.{Error, Response}
   alias Tesla.Multipart
 
@@ -29,7 +29,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   def verify(address_hash_string, files, chosen_contract) do
-    if EthBytecodeDBInterface.enabled?() do
+    if RustVerifierInterface.enabled?() do
       verify_via_rust_microservice(address_hash_string, files, chosen_contract)
     else
       verify_via_sourcify_server(address_hash_string, files)
@@ -422,7 +422,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp verify_url_rust_microservice do
-    "#{EthBytecodeDBInterface.base_api_url()}" <> "/verifier/sourcify/sources:verify"
+    "#{RustVerifierInterface.base_api_url()}" <> "/verifier/sourcify/sources:verify"
   end
 
   defp check_by_address_url do

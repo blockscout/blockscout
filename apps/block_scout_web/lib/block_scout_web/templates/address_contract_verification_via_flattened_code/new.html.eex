@@ -15,7 +15,7 @@
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", f: f %>
 
-        <%= if EthBytecodeDBInterface.enabled?() do %>
+        <%= if RustVerifierInterface.enabled?() do %>
           <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_yul_contracts_switcher.html", f: f %>
         <% end %>
 

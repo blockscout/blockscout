@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Data, SmartContract}
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.SmartContract.EthBytecodeDBInterface
+  alias Explorer.SmartContract.RustVerifierInterface
   alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
 
@@ -37,7 +37,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
     with {:ok, %{"sourceType" => type} = source} <-
            %{}
            |> prepare_bytecode_for_microservice(creation_tx_input, Data.to_string(address.contract_code))
-           |> EthBytecodeDBInterface.search_contract(),
+           |> RustVerifierInterface.search_contract(),
          {:ok, _} <- process_contract_source(type, source, address.hash) do
       Publisher.broadcast(%{smart_contract_was_verified: [address.hash]}, :on_demand)
     else
