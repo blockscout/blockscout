@@ -13,9 +13,7 @@ defmodule Explorer.Chain.Cache.Transaction do
 
   require Logger
 
-  alias Explorer.Chain.Cache.Helper
-  alias Explorer.Chain.Transaction
-  alias Explorer.Repo
+  alias Explorer.Chain.Celo.TransactionStats, as: CeloTxStats
 
   @doc """
   Estimated count of `t:Explorer.Chain.Transaction.t/0`.
@@ -27,7 +25,9 @@ defmodule Explorer.Chain.Cache.Transaction do
     cached_value = __MODULE__.get_count()
 
     if is_nil(cached_value) do
-      count = Helper.estimated_count_from("transactions")
+      # use Celo tx count instead of upstream
+      # count = Helper.estimated_count_from("transactions")
+      count = CeloTxStats.transaction_count()
 
       max(count, 0)
     else
@@ -49,8 +49,9 @@ defmodule Explorer.Chain.Cache.Transaction do
     {:ok, task} =
       Task.start(fn ->
         try do
-          result = Repo.aggregate(Transaction, :count, :hash, timeout: :infinity)
-
+          # use Celo tx count instead of upstream
+          # result = Repo.aggregate(Transaction, :count, :hash, timeout: :infinity)
+          result = CeloTxStats.transaction_count()
           set_count(result)
         rescue
           e ->

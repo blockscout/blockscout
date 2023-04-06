@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Token.Instance do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, Token, Token, Token.Instance, TokenTransfer}
+  alias Explorer.Chain.{Address, Hash, Token, Token.Instance, TokenTransfer}
   alias Explorer.Chain.Token.Instance
   alias Explorer.PagingOptions
 

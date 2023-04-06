@@ -4763,7 +4763,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp join_association(query, association, necessity) do
+  defp join_association(query, association, necessity) when is_atom(association) do
     case necessity do
       :optional ->
         preload(query, ^association)
@@ -4773,16 +4773,14 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp join_association(query, [{arg1, arg2, arg3}], :optional) do
-    preload(query, [{^arg1, [{^arg2, ^arg3}]}])
-  end
+  defp join_association(query, association, necessity) do
+    case necessity do
+      :optional ->
+        preload(query, ^association)
 
-  defp join_association(query, [{arg1, arg2, arg3, arg4}], :optional) do
-    preload(query, [{^arg1, [{^arg2, [{^arg3, ^arg4}]}]}])
-  end
-
-  defp join_association(query, [{arg1, arg2, arg3, arg4, arg5}], :optional) do
-    preload(query, [{^arg1, [{^arg2, [{^arg3, [{^arg4, ^arg5}]}]}]}])
+      :required ->
+        from(q in query, inner_join: a in assoc(q, ^association), preload: [{^association, a}])
+    end
   end
 
   defp join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
@@ -7234,4 +7232,7 @@ defmodule Explorer.Chain do
     end)
     |> List.to_tuple()
   end
+
+  # Use celo Repo - override upstream replica
+  def select_repo(_options), do: Repo
 end
