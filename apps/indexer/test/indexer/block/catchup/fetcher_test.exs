@@ -176,7 +176,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       refute block_hash == new_block_hash
 
       EthereumJSONRPC.Mox
-      |> expect(:json_rpc, 15, fn
+      |> expect(:json_rpc, 16, fn
         %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
           {:ok, %{"number" => latest_block_quantity}}
 
@@ -333,7 +333,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       refute block_hash == new_block_hash
 
       EthereumJSONRPC.Mox
-      |> expect(:json_rpc, 15, fn
+      |> expect(:json_rpc, 16, fn
         %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
           {:ok, %{"number" => latest_block_quantity}}
 
@@ -488,7 +488,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       refute block_hash == new_block_hash
 
       EthereumJSONRPC.Mox
-      |> expect(:json_rpc, 15, fn
+      |> expect(:json_rpc, 16, fn
         %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
           {:ok, %{"number" => latest_block_quantity}}
 
