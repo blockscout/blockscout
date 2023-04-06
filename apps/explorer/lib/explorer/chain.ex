@@ -4773,6 +4773,18 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp join_association(query, [{arg1, arg2, arg3}], :optional) do
+    preload(query, [{^arg1, [{^arg2, ^arg3}]}])
+  end
+
+  defp join_association(query, [{arg1, arg2, arg3, arg4}], :optional) do
+    preload(query, [{^arg1, [{^arg2, [{^arg3, ^arg4}]}]}])
+  end
+
+  defp join_association(query, [{arg1, arg2, arg3, arg4, arg5}], :optional) do
+    preload(query, [{^arg1, [{^arg2, [{^arg3, [{^arg4, ^arg5}]}]}]}])
+  end
+
   defp join_association(query, association, necessity) do
     case necessity do
       :optional ->
