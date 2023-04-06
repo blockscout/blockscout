@@ -61,7 +61,7 @@ defmodule Explorer.SmartContract.Helper do
 
   @doc "Return all events on contract, return also implementation events if contract is a proxy."
   def get_all_events(%SmartContract{address_hash: address, abi: abi} = contract) do
-    proxy = contract.proxy_contract?(address, abi)
+    proxy = contract |> SmartContract.proxy_contract?()
 
     events =
       if proxy do
