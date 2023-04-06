@@ -15,7 +15,6 @@ defmodule BlockScoutWeb.AddressController do
   }
 
   alias Explorer.Celo.EpochUtil
-  alias Explorer.Counters.{AddressTokenTransfersCounter, AddressTransactionsCounter, AddressTransactionsGasUsageCounter}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Wei
   alias Explorer.ExchangeRates.Token
