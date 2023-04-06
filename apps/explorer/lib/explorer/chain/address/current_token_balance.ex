@@ -168,6 +168,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       select: {ctb, t},
       order_by: [desc: ctb.value, asc: t.type, asc: t.name]
     )
+    |> preload(:token)
   end
 
   @doc """
