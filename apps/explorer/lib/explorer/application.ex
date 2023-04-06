@@ -19,6 +19,7 @@ defmodule Explorer.Application do
     GasPriceOracle,
     MinMissingBlockNumber,
     NetVersion,
+    Transaction,
     Transactions,
     TransactionsApiV2,
     Uncles
@@ -46,6 +47,7 @@ defmodule Explorer.Application do
       Explorer.SmartContract.VyperDownloader,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
+      Transaction,
       AddressSum,
       AddressSumMinusBurnt,
       Block,

@@ -4,12 +4,12 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Cache.Block, as: BlockCache
-  alias Explorer.Chain.Cache.{GasPriceOracle, GasUsage}
-  alias Explorer.Chain.Cache.Transaction, as: TransactionCache
+  alias Explorer.Chain.Cache.GasPriceOracle
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
+  alias Explorer.Chain.Celo.TransactionStats, as: CeloStats
   alias Timex.Duration
 
   def stats(conn, _params) do
@@ -42,10 +42,10 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       %{
         "total_blocks" => BlockCache.estimated_count() |> to_string(),
         "total_addresses" => Chain.address_estimated_count() |> to_string(),
-        "total_transactions" => TransactionCache.estimated_count() |> to_string(),
+        "total_transactions" => CeloStats.transaction_count() |> to_string(),
         "average_block_time" => AverageBlockTime.average_block_time() |> Duration.to_milliseconds(),
         "coin_price" => exchange_rate.usd_value,
-        "total_gas_used" => GasUsage.total() |> to_string(),
+        "total_gas_used" => CeloStats.total_gas() |> to_string(),
         "transactions_today" => Enum.at(transaction_stats, 0).number_of_transactions |> to_string(),
         "gas_used_today" => Enum.at(transaction_stats, 0).gas_used,
         "gas_prices" => gas_prices,
