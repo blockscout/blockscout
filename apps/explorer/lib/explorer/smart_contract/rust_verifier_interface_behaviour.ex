@@ -20,9 +20,10 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
               "evmVersion" => _,
               "optimizationRuns" => _,
               "libraries" => _
-            } = body
+            } = body,
+            address_hash
           ) do
-        http_post_request(multiple_files_verification_url(), body)
+        http_post_request(multiple_files_verification_url(), append_metadata(body, address_hash))
       end
 
       def verify_standard_json_input(
@@ -31,9 +32,10 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
               "bytecodeType" => _,
               "compilerVersion" => _,
               "input" => _
-            } = body
+            } = body,
+            address_hash
           ) do
-        http_post_request(standard_json_input_verification_url(), body)
+        http_post_request(standard_json_input_verification_url(), append_metadata(body, address_hash))
       end
 
       def vyper_verify_multipart(
@@ -42,9 +44,10 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
               "bytecodeType" => _,
               "compilerVersion" => _,
               "sourceFiles" => _
-            } = body
+            } = body,
+            address_hash
           ) do
-        http_post_request(vyper_multiple_files_verification_url(), body)
+        http_post_request(vyper_multiple_files_verification_url(), append_metadata(body, address_hash))
       end
 
       def http_post_request(url, body) do
@@ -142,6 +145,14 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       end
 
       def enabled?, do: Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)[:enabled]
+
+      defp append_metadata(body, address_hash) when is_map(body) do
+        body
+        |> Map.put("metadata", %{
+          "chainId" => Application.get_env(:block_scout_web, :chain_id),
+          "contractAddress" => to_string(address_hash)
+        })
+      end
     end
   end
 end

@@ -52,7 +52,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
     |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
     |> Map.put("compilerVersion", params["compiler_version"])
-    |> RustVerifierInterface.verify_multi_part()
+    |> RustVerifierInterface.verify_multi_part(address_hash)
   end
 
   defp evaluate_authenticity_inner(false, address_hash, params) do
@@ -129,7 +129,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     %{"compilerVersion" => params["compiler_version"]}
     |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
     |> Map.put("input", json_input)
-    |> RustVerifierInterface.verify_standard_json_input()
+    |> RustVerifierInterface.verify_standard_json_input(address_hash)
   end
 
   def evaluate_authenticity_via_standard_json_input_inner(false, address_hash, params, json_input) do
@@ -148,7 +148,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
     |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
     |> Map.put("compilerVersion", params["compiler_version"])
-    |> RustVerifierInterface.verify_multi_part()
+    |> RustVerifierInterface.verify_multi_part(address_hash)
   end
 
   defp verify(address_hash, params, json_input) do
