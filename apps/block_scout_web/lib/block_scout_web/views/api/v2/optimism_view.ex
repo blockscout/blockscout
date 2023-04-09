@@ -149,41 +149,41 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     count
   end
 
-  defp withdrawal_status(w) do
-    if is_nil(w.l1_transaction_hash) do
-      l1_timestamp =
-        Repo.replica().one(
-          from(
-            we in OptimismWithdrawalEvent,
-            select: we.l1_timestamp,
-            where: we.withdrawal_hash == ^w.hash and we.l1_event_type == :WithdrawalProven
-          )
+  defp withdrawal_status(w) when is_nil(w.l1_transaction_hash) do
+    l1_timestamp =
+      Repo.replica().one(
+        from(
+          we in OptimismWithdrawalEvent,
+          select: we.l1_timestamp,
+          where: we.withdrawal_hash == ^w.hash and we.l1_event_type == :WithdrawalProven
         )
+      )
 
-      if is_nil(l1_timestamp) do
-        last_root_timestamp =
-          Repo.replica().one(
-            from(root in OptimismOutputRoot,
-              select: root.l1_timestamp,
-              order_by: [desc: root.l2_output_index],
-              limit: 1
-            )
-          ) || 0
+    if is_nil(l1_timestamp) do
+      last_root_timestamp =
+        Repo.replica().one(
+          from(root in OptimismOutputRoot,
+            select: root.l1_timestamp,
+            order_by: [desc: root.l2_output_index],
+            limit: 1
+          )
+        ) || 0
 
-        if w.l2_timestamp > last_root_timestamp do
-          {"Waiting for state root", nil}
-        else
-          {"Ready to prove", nil}
-        end
+      if w.l2_timestamp > last_root_timestamp do
+        {"Waiting for state root", nil}
       else
-        if DateTime.compare(l1_timestamp, DateTime.add(DateTime.utc_now(), -@challenge_period, :second)) == :lt do
-          {"Ready for relay", nil}
-        else
-          {"In challenge period", DateTime.add(l1_timestamp, @challenge_period, :second)}
-        end
+        {"Ready to prove", nil}
       end
     else
-      {"Relayed", nil}
+      if DateTime.compare(l1_timestamp, DateTime.add(DateTime.utc_now(), -@challenge_period, :second)) == :lt do
+        {"Ready for relay", nil}
+      else
+        {"In challenge period", DateTime.add(l1_timestamp, @challenge_period, :second)}
+      end
     end
+  end
+
+  defp withdrawal_status(_w) do
+    {"Relayed", nil}
   end
 end

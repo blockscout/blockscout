@@ -492,6 +492,14 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     %{number: frame_number, data: frame_data, is_last: is_last}
   end
 
+  defp log_deleted_rows_count(reorg_block, count) do
+    if count > 0 do
+      Logger.warning(
+        "As L1 reorg was detected, all rows with l2_block_number >= #{reorg_block} were removed from the op_transaction_batches table. Number of removed rows: #{count}."
+      )
+    end
+  end
+
   defp next_frame_sequence_id(last_known_sequence) when is_nil(last_known_sequence) do
     last_known_id =
       Repo.one(
@@ -560,21 +568,14 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
       return =
         batches
-        |> Enum.reduce([], fn batch, acc ->
-          case Map.fetch(numbers_by_hashes, batch.parent_hash) do
-            {:ok, number} ->
-              batch =
-                batch
-                |> Map.put(:l2_block_number, number + 1)
-                |> Map.delete(:parent_hash)
+        |> Stream.filter(&Map.has_key?(numbers_by_hashes, &1.parent_hash))
+        |> Enum.map(fn batch ->
+          number = Map.get(numbers_by_hashes, batch.parent_hash)
 
-              [batch | acc]
-
-            _ ->
-              acc
-          end
+          batch
+          |> Map.put(:l2_block_number, number + 1)
+          |> Map.delete(:parent_hash)
         end)
-        |> Enum.reverse()
 
       if after_reorg do
         # once we find the nearest full frame sequence after reorg, we first need to remove irrelevant items from op_transaction_batches table
@@ -595,11 +596,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
         Repo.delete_all(from(fs in OptimismFrameSequence, where: fs.id in ^frame_sequence_ids))
 
-        if deleted_count > 0 do
-          Logger.warning(
-            "As L1 reorg was detected, all rows with l2_block_number >= #{first_batch_l2_block_number} were removed from the op_transaction_batches table. Number of removed rows: #{deleted_count}."
-          )
-        end
+        log_deleted_rows_count(first_batch_l2_block_number, deleted_count)
       end
 
       return
@@ -646,40 +643,38 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
                                                                                                         sequence_acc ->
         prev_block_number = block_number - i
 
-        case fetch_blocks_by_range(prev_block_number..prev_block_number, json_rpc_named_arguments) do
-          {:ok, %Blocks{transactions_params: transactions, errors: []}} ->
-            seq =
-              transactions
-              |> txs_filter_sort(batch_submitter, batch_inbox, :desc)
-              |> Enum.reduce_while(sequence_acc, fn t, acc ->
-                frame = input_to_frame(t.input)
-
-                if frame.number == acc.last_frame_number - 1 do
-                  {if(frame.number == 0, do: :halt, else: :cont),
-                   %{
-                     bytes: frame.data <> acc.bytes,
-                     last_frame_number: frame.number,
-                     l1_transaction_hashes: [t.hash | acc.l1_transaction_hashes]
-                   }}
-                else
-                  {:halt, :error}
-                end
-              end)
-
-            with true <- seq != :error,
-                 false <- seq.last_frame_number == 0,
-                 true <- i < @reorg_rewind_limit do
-              {:cont, seq}
-            else
-              true -> {:halt, %{seq | last_frame_number: frame_number - 1}}
-              false -> {:halt, empty_incomplete_frame_sequence()}
-            end
-
-          _ ->
-            {:halt, empty_incomplete_frame_sequence()}
+        with {:ok, %Blocks{transactions_params: transactions, errors: []}} <-
+               fetch_blocks_by_range(prev_block_number..prev_block_number, json_rpc_named_arguments),
+             seq = txs_to_sequence(transactions, batch_submitter, batch_inbox, sequence_acc),
+             true <- seq != :error,
+             {false, seq} <- {seq.last_frame_number == 0, seq},
+             true <- i < @reorg_rewind_limit do
+          {:cont, seq}
+        else
+          {true, seq} -> {:halt, %{seq | last_frame_number: frame_number - 1}}
+          _ -> {:halt, empty_incomplete_frame_sequence()}
         end
       end)
     end
+  end
+
+  defp txs_to_sequence(transactions, batch_submitter, batch_inbox, sequence_acc) do
+    transactions
+    |> txs_filter_sort(batch_submitter, batch_inbox, :desc)
+    |> Enum.reduce_while(sequence_acc, fn t, acc ->
+      frame = input_to_frame(t.input)
+
+      if frame.number == acc.last_frame_number - 1 do
+        {if(frame.number == 0, do: :halt, else: :cont),
+         %{
+           bytes: frame.data <> acc.bytes,
+           last_frame_number: frame.number,
+           l1_transaction_hashes: [t.hash | acc.l1_transaction_hashes]
+         }}
+      else
+        {:halt, :error}
+      end
+    end)
   end
 
   defp txs_filter_sort(transactions_params, batch_submitter, batch_inbox, direction \\ :asc) do

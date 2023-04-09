@@ -111,11 +111,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
           {deleted_count, _} =
             Repo.delete_all(from(we in OptimismWithdrawalEvent, where: we.l1_block_number >= ^reorg_block))
 
-          if deleted_count > 0 do
-            Logger.warning(
-              "As L1 reorg was detected, all rows with l1_block_number >= #{reorg_block} were removed from the op_withdrawal_events table. Number of removed rows: #{deleted_count}."
-            )
-          end
+          log_deleted_rows_count(reorg_block, deleted_count)
 
           {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
         else
@@ -149,6 +145,14 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
+  end
+
+  defp log_deleted_rows_count(reorg_block, count) do
+    if count > 0 do
+      Logger.warning(
+        "As L1 reorg was detected, all rows with l1_block_number >= #{reorg_block} were removed from the op_withdrawal_events table. Number of removed rows: #{count}."
+      )
+    end
   end
 
   defp prepare_events(events, json_rpc_named_arguments) do

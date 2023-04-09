@@ -104,11 +104,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         if !is_nil(reorg_block) && reorg_block > 0 do
           {deleted_count, _} = Repo.delete_all(from(r in OptimismOutputRoot, where: r.l1_block_number >= ^reorg_block))
 
-          if deleted_count > 0 do
-            Logger.warning(
-              "As L1 reorg was detected, all rows with l1_block_number >= #{reorg_block} were removed from the op_output_roots table. Number of removed rows: #{deleted_count}."
-            )
-          end
+          log_deleted_rows_count(reorg_block, deleted_count)
 
           {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
         else
@@ -158,6 +154,14 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         output_root: Enum.at(event["topics"], 1)
       }
     end)
+  end
+
+  defp log_deleted_rows_count(reorg_block, count) do
+    if count > 0 do
+      Logger.warning(
+        "As L1 reorg was detected, all rows with l1_block_number >= #{reorg_block} were removed from the op_output_roots table. Number of removed rows: #{count}."
+      )
+    end
   end
 
   def get_last_l1_item do
