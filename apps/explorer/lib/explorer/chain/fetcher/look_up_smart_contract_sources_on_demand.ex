@@ -16,9 +16,6 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
 
   @cache_name :smart_contracts_sources_fetching
 
-  # seconds
-  @fetch_interval 600
-
   def trigger_fetch(nil, _) do
     :ignore
   end
@@ -85,10 +82,13 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   end
 
   defp check_interval(address_string) do
+    fetch_interval =
+      Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)[:fetch_interval]
+
     case :ets.lookup(@cache_name, address_string) do
       [{_, datetime}] ->
         datetime
-        |> DateTime.add(@fetch_interval, :second)
+        |> DateTime.add(fetch_interval, :millisecond)
         |> DateTime.compare(DateTime.utc_now()) != :gt
 
       _ ->
