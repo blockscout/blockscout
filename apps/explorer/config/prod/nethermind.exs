@@ -13,6 +13,7 @@ config :explorer,
     transport_options: [
       http: EthereumJSONRPC.HTTP.HTTPoison,
       url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL"),
+      fallback_url: System.get_env("ETHEREUM_JSONRPC_FALLBACK_HTTP_URL"),
       method_to_url: [
         eth_call: System.get_env("ETHEREUM_JSONRPC_TRACE_URL"),
         eth_getBalance: System.get_env("ETHEREUM_JSONRPC_TRACE_URL"),

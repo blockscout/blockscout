@@ -20,6 +20,7 @@ config :indexer,
     transport_options: [
       http: EthereumJSONRPC.HTTP.HTTPoison,
       url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || "http://localhost:8545",
+      fallback_url: System.get_env("ETHEREUM_JSONRPC_FALLBACK_HTTP_URL") || "http://localhost:8545",
       method_to_url: [
         eth_getBalance: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "http://localhost:8545",
         trace_block: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "http://localhost:8545",

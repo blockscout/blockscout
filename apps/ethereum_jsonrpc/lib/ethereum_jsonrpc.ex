@@ -36,6 +36,7 @@ defmodule EthereumJSONRPC do
     RequestCoordinator,
     Subscription,
     Transport,
+    Utility.EndpointAvailabilityObserver,
     Variant
   }
 
@@ -379,16 +380,32 @@ defmodule EthereumJSONRPC do
     * Handled response
     * `{:error, reason}` if POST fails
   """
-  @spec json_rpc(Transport.request(), json_rpc_named_arguments) ::
+  @spec json_rpc(Transport.request(), json_rpc_named_arguments, bool) ::
           {:ok, Transport.result()} | {:error, reason :: term()}
-  @spec json_rpc(Transport.batch_request(), json_rpc_named_arguments) ::
+  @spec json_rpc(Transport.batch_request(), json_rpc_named_arguments, bool) ::
           {:ok, Transport.batch_response()} | {:error, reason :: term()}
-  def json_rpc(request, named_arguments) when (is_map(request) or is_list(request)) and is_list(named_arguments) do
+  def json_rpc(request, named_arguments, use_fallback? \\ true)
+      when (is_map(request) or is_list(request)) and is_list(named_arguments) do
     transport = Keyword.fetch!(named_arguments, :transport)
     transport_options = Keyword.fetch!(named_arguments, :transport_options)
     throttle_timeout = Keyword.get(named_arguments, :throttle_timeout, @default_throttle_timeout)
 
-    RequestCoordinator.perform(request, transport, transport_options, throttle_timeout)
+    url =
+      case EndpointAvailabilityObserver.check_endpoint(transport_options[:url]) do
+        :ok -> transport_options[:url]
+        :unavailable -> transport_options[:fallback_url] || transport_options[:url]
+      end
+
+    corrected_transport_options = if use_fallback?, do: Keyword.put(transport_options, :url, url), else: transport_options
+
+    case RequestCoordinator.perform(request, transport, corrected_transport_options, throttle_timeout) do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, reason} ->
+        EndpointAvailabilityObserver.inc_error_count(corrected_transport_options[:url], named_arguments)
+        {:error, reason}
+    end
   end
 
   @doc """
