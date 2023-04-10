@@ -5,7 +5,7 @@
 ### Features
 
 - [#7185](https://github.com/blockscout/blockscout/pull/7185) - Aave v3 transaction actions indexer
-- [#7148](https://github.com/blockscout/blockscout/pull/7148) - API v2 improvements: API rate limiting, `/tokens/{address_hash}/instances/{token_id}/holders` and other changes
+- [#7148](https://github.com/blockscout/blockscout/pull/7148), [#7244](https://github.com/blockscout/blockscout/pull/7244) - API v2 improvements: API rate limiting, `/tokens/{address_hash}/instances/{token_id}/holders` and other changes
 
 ### Fixes
 
