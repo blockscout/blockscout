@@ -299,8 +299,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     end
 
     test "automatically verify contract via Eth Bytecode Interface", %{conn: conn} do
-      bypass = Bypass.open()
+      {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
 
+      bypass = Bypass.open()
       eth_bytecode_response = File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_response.json")
 
       old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
@@ -354,9 +355,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
       Bypass.down(bypass)
+      GenServer.stop(pid)
     end
 
     test "check fetch interval for LookUpSmartContractSourcesOnDemand", %{conn: conn} do
+      {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
+
       bypass = Bypass.open()
       address = insert(:contract_address)
 
@@ -402,6 +406,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_interval_env)
       Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
       Bypass.down(bypass)
+      GenServer.stop(pid)
     end
   end
 
