@@ -206,7 +206,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       hash = to_string(block.hash)
 
       request_1 = get(conn, "/api/v2/blocks/#{block.number}")
-      assert %{"message" => "Block lost consensus", "hash" => ^hash} = json_response(request_1, 200)
+      assert %{"message" => "Block lost consensus", "hash" => ^hash} = json_response(request_1, 404)
     end
 
     test "get the same blocks by hash and number", %{conn: conn} do
