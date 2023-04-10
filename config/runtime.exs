@@ -318,9 +318,11 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   chain_id: System.get_env("CHAIN_ID"),
   repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://repo.sourcify.dev/contracts"
 
-config :explorer, Explorer.SmartContract.RustVerifierInterface,
+config :explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
   service_url: System.get_env("RUST_VERIFICATION_SERVICE_URL"),
-  enabled: ConfigHelper.parse_bool_env_var("ENABLE_RUST_VERIFICATION_SERVICE")
+  enabled: ConfigHelper.parse_bool_env_var("ENABLE_RUST_VERIFICATION_SERVICE"),
+  # or "eth_bytecode_db"
+  type: System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")
 
 config :explorer, Explorer.Visualize.Sol2uml,
   service_url: System.get_env("VISUALIZE_SOL2UML_SERVICE_URL"),
@@ -361,6 +363,10 @@ config :explorer, :datadog, port: ConfigHelper.parse_integer_env_var("DATADOG_PO
 
 config :explorer, Explorer.Chain.Cache.TransactionActionTokensData,
   max_cache_size: ConfigHelper.parse_integer_env_var("INDEXER_TX_ACTIONS_MAX_TOKEN_CACHE_SIZE", 100_000)
+
+config :explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand,
+  fetch_interval:
+    ConfigHelper.parse_time_env_var("MICROSERVICE_MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS", "10m")
 
 ###############
 ### Indexer ###
