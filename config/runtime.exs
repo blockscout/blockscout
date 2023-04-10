@@ -266,9 +266,6 @@ config :explorer, Explorer.Chain.Transaction.History.Historian,
   init_lag_milliseconds: ConfigHelper.parse_time_env_var("TXS_HISTORIAN_INIT_LAG", "0"),
   days_to_compile_at_init: ConfigHelper.parse_integer_env_var("TXS_STATS_DAYS_TO_COMPILE_AT_INIT", 40)
 
-config :explorer, Explorer.History.Process,
-  history_fetch_interval: ConfigHelper.parse_time_env_var("HISTORY_FETCH_INTERVAL", "1h")
-
 if System.get_env("METADATA_CONTRACT") && System.get_env("VALIDATORS_CONTRACT") do
   config :explorer, Explorer.Validator.MetadataRetriever,
     metadata_contract_address: System.get_env("METADATA_CONTRACT"),
