@@ -321,8 +321,8 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
 config :explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
   service_url: System.get_env("RUST_VERIFICATION_SERVICE_URL"),
   enabled: ConfigHelper.parse_bool_env_var("ENABLE_RUST_VERIFICATION_SERVICE"),
-  # or "sc_verifier"
-  type: System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "eth_bytecode_db")
+  # or "eth_bytecode_db"
+  type: System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")
 
 config :explorer, Explorer.Visualize.Sol2uml,
   service_url: System.get_env("VISUALIZE_SOL2UML_SERVICE_URL"),
