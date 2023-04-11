@@ -84,7 +84,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   end
 
   def gas_target(block) do
-    elasticity_multiplier = 2
+    elasticity_multiplier = Application.get_env(:explorer, :elasticity_multiplier)
     ratio = Decimal.div(block.gas_used, Decimal.div(block.gas_limit, elasticity_multiplier))
     ratio |> Decimal.sub(1) |> Decimal.mult(100) |> Decimal.to_float()
   end
