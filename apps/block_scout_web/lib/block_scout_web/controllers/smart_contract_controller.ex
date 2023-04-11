@@ -19,7 +19,9 @@ defmodule BlockScoutWeb.SmartContractController do
 
     is_custom_abi = parse_boolean(params["is_custom_abi"])
 
-    with true <- ajax?(conn),
+    with {:contract_interaction_disabled, false} <-
+           {:contract_interaction_disabled, write_contract_api_disabled?(action)},
+         true <- ajax?(conn),
          {:custom_abi, false} <- {:custom_abi, is_custom_abi},
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
@@ -90,6 +92,9 @@ defmodule BlockScoutWeb.SmartContractController do
 
       :error ->
         unprocessable_entity(conn)
+
+      {:contract_interaction_disabled, true} ->
+        not_found(conn)
 
       {:error, :not_found} ->
         not_found(conn)
@@ -251,4 +256,6 @@ defmodule BlockScoutWeb.SmartContractController do
   defp is_integer?(integer) when is_integer(integer), do: true
 
   defp is_integer?(_), do: false
+
+  defp write_contract_api_disabled?(action), do: AddressView.contract_interaction_disabled?() && action == "write"
 end

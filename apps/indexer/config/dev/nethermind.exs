@@ -5,6 +5,7 @@ import Config
 |> Code.eval_file()
 
 hackney_opts = ConfigHelper.hackney_options()
+timeout = ConfigHelper.timeout(10)
 
 config :indexer,
   block_interval: :timer.seconds(5),
@@ -23,7 +24,7 @@ config :indexer,
         trace_block: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "http://localhost:8545",
         trace_replayBlockTransactions: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "http://localhost:8545"
       ],
-      http_options: [recv_timeout: :timer.minutes(10), timeout: :timer.minutes(10), hackney: hackney_opts]
+      http_options: [recv_timeout: timeout, timeout: timeout, hackney: hackney_opts]
     ],
     variant: EthereumJSONRPC.Nethermind
   ],

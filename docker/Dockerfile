@@ -7,9 +7,7 @@ RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tool
 ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc \
     GLIBC_VERSION=2.30-r0 \
     PORT=4000 \
-    MIX_ENV="prod" \
-    PATH="$HOME/.cargo/bin:${PATH}" \
-    RUSTFLAGS="-C target-feature=-crt-static"
+    MIX_ENV="prod"
 
 RUN set -ex && \
     apk --update add libstdc++ curl ca-certificates && \
@@ -18,9 +16,6 @@ RUN set -ex && \
     apk add --allow-untrusted /tmp/*.apk && \
     rm -v /tmp/*.apk && \
     /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib
-
-# Get Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 ARG CACHE_EXCHANGE_RATES_PERIOD
 ARG DISABLE_READ_API
@@ -70,6 +65,11 @@ RUN mkdir -p /opt/release \
 ##############################################################
 FROM bitwalker/alpine-elixir-phoenix:1.14
 
+ARG RELEASE_VERSION
+ENV RELEASE_VERSION=${RELEASE_VERSION}
+ARG BLOCKSCOUT_VERSION
+ENV BLOCKSCOUT_VERSION=${BLOCKSCOUT_VERSION}
+
 RUN apk --no-cache --update add jq
 
 WORKDIR /app
@@ -77,3 +77,5 @@ WORKDIR /app
 COPY --from=builder /opt/release/blockscout .
 COPY --from=builder /app/apps/explorer/node_modules ./node_modules
 COPY --from=builder /app/config/config_helper.exs ./config/config_helper.exs
+COPY --from=builder /app/config/config_helper.exs /app/releases/${RELEASE_VERSION}/config_helper.exs
+
