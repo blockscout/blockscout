@@ -28,7 +28,7 @@
   <%= link(
         gettext("Withdrawals"),
         class: "card-tab #{tab_status("withdrawals", @conn.request_path)}",
-        to: AccessHelpers.get_path(@conn, :address_withdrawal_path, :index, @address.hash),
+        to: AccessHelper.get_path(@conn, :address_withdrawal_path, :index, @address.hash),
         "data-test": "withdrawals_tab_link"
       ) %>
   <% end %>

@@ -97,31 +97,7 @@ defmodule Indexer.Fetcher.Withdrawal do
           timeout: :infinity,
           zip_input_on_exit: true
         )
-        |> Enum.reduce([], fn
-          {:ok, {{:ok, %Blocks{withdrawals_params: withdrawals_params}}, block_numbers}}, acc ->
-            addresses = Addresses.extract_addresses(%{withdrawals: withdrawals_params})
-
-            case Chain.import(%{addresses: %{params: addresses}, withdrawals: %{params: withdrawals_params}}) do
-              {:ok, _} ->
-                acc
-
-              {:error, reason} ->
-                Logger.error(inspect(reason) <> ". Retrying.")
-                [block_numbers | acc] |> List.flatten()
-
-              {:error, step, failed_value, _changes_so_far} ->
-                Logger.error("failed to insert: " <> inspect(failed_value) <> ". Retrying.", step: step)
-                [block_numbers | acc] |> List.flatten()
-            end
-
-          {:ok, {{:error, reason}, block_numbers}}, acc ->
-            Logger.error("failed to fetch: " <> inspect(reason) <> ". Retrying.")
-            [block_numbers | acc] |> List.flatten()
-
-          {:exit, {block_numbers, reason}}, acc ->
-            Logger.error("failed to fetch: " <> inspect(reason) <> ". Retrying.")
-            [block_numbers | acc] |> List.flatten()
-        end)
+        |> Enum.reduce([], &fetch_reducer/2)
 
       Process.send_after(self(), :fetch_withdrawals, interval)
 
@@ -147,8 +123,35 @@ defmodule Indexer.Fetcher.Withdrawal do
     end
   end
 
+  defp fetch_reducer({:ok, {{:ok, %Blocks{withdrawals_params: withdrawals_params}}, block_numbers}}, acc) do
+    addresses = Addresses.extract_addresses(%{withdrawals: withdrawals_params})
+
+    case Chain.import(%{addresses: %{params: addresses}, withdrawals: %{params: withdrawals_params}}) do
+      {:ok, _} ->
+        acc
+
+      {:error, reason} ->
+        Logger.error(inspect(reason) <> ". Retrying.")
+        [block_numbers | acc] |> List.flatten()
+
+      {:error, step, failed_value, _changes_so_far} ->
+        Logger.error("failed to insert: " <> inspect(failed_value) <> ". Retrying.", step: step)
+        [block_numbers | acc] |> List.flatten()
+    end
+  end
+
+  defp fetch_reducer({:ok, {{:error, reason}, block_numbers}}, acc) do
+    Logger.error("failed to fetch: " <> inspect(reason) <> ". Retrying.")
+    [block_numbers | acc] |> List.flatten()
+  end
+
+  defp fetch_reducer({:exit, {block_numbers, reason}}, acc) do
+    Logger.error("failed to fetch: " <> inspect(reason) <> ". Retrying.")
+    [block_numbers | acc] |> List.flatten()
+  end
+
   defp missing_block_numbers(from) do
-    blocks = from |> Withdrawal.blocks_without_withdrowals_query() |> Repo.all()
+    blocks = from |> Withdrawal.blocks_without_withdrawals_query() |> Repo.all()
     Logger.debug("missing_block_numbers #{length(blocks)}")
     blocks
   end

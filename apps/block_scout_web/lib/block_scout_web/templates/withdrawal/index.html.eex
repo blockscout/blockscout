@@ -1,0 +1,56 @@
+<section class="container" data-page="verified-contracts-list">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
+  <div class="card">
+    <div id="withdrawals-list" class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+      <h1 class="card-title list-title-description d-inline-block"><%= gettext "Withdrawals" %></h1>
+
+      <div class="float-right">
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: @page_number, show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+      </div>
+
+      <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+        <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+      </button>
+
+      <div class="addresses-table-container">
+          <div class="stakes-table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "Index" %></div>
+                  </th>
+                  <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "Validator index" %></div>
+                  </th>
+                  <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "Block" %></div>
+                  </th>
+                  <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "To" %></div>
+                  </th>
+                  <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "Amount" %></div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody data-items data-selector="address-withdrawals">
+                <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 5 %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      <div data-empty-response-message style="display: none;">
+        <br>
+        <div class="tile tile-muted text-center">
+          <span data-selector="empty-verified-contracts-list">
+            <%= gettext "There are no withdrawals." %>
+          </span>
+        </div>
+      </div>
+
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: @page_number, show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+    </div>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/async-listing-load.js") %>"></script>
+</section>

@@ -127,6 +127,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources("/verified-contracts", VerifiedContractsController, only: [:index])
 
+    resources("/withdrawals", WithdrawalController, only: [:index])
+
     get("/txs", TransactionController, :index)
 
     resources "/tx", TransactionController, only: [:show] do

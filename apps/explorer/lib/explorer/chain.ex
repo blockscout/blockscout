@@ -628,7 +628,7 @@ defmodule Explorer.Chain do
     |> Withdrawal.address_hash_to_withdrawals_query()
     |> join_associations(necessity_by_association)
     |> handle_withdrawals_paging_options(paging_options)
-    |> Repo.all()
+    |> select_repo(options).all()
   end
 
   @doc """
@@ -1018,7 +1018,7 @@ defmodule Explorer.Chain do
     |> Withdrawal.block_hash_to_withdrawals_query()
     |> join_associations(necessity_by_association)
     |> handle_withdrawals_paging_options(paging_options)
-    |> Repo.all()
+    |> select_repo(options).all()
   end
 
   @doc """
@@ -6804,4 +6804,14 @@ defmodule Explorer.Chain do
   end
 
   def select_watchlist_address_id(_watchlist_id, _address_hash), do: nil
+
+  def list_withdrawals(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    Withdrawal.list_withdrawals()
+    |> join_associations(necessity_by_association)
+    |> handle_withdrawals_paging_options(paging_options)
+    |> select_repo(options).all()
+  end
 end

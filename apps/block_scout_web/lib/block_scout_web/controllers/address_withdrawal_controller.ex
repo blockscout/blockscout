@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.AddressWithdrawalController do
 
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
-  alias BlockScoutWeb.{AccessHelpers, AddressWithdrawalView, Controller}
+  alias BlockScoutWeb.{AccessHelper, AddressWithdrawalView, Controller}
   alias Explorer.{Chain, Market}
 
   alias Explorer.Chain.Wei
@@ -25,10 +25,8 @@ defmodule BlockScoutWeb.AddressWithdrawalController do
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash, address_options, false),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
-      options =
-        [necessity_by_association: %{:block => :optional}]
-        |> Keyword.merge(paging_options(params))
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
+      options = paging_options(params)
 
       withdrawals_plus_one = Chain.address_hash_to_withdrawals(address_hash, options)
       {withdrawals, next_page} = split_list_by_page(withdrawals_plus_one)
@@ -74,7 +72,7 @@ defmodule BlockScoutWeb.AddressWithdrawalController do
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "index.html",

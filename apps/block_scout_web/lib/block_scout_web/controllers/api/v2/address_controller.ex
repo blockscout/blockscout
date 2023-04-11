@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     only: [delete_parameters_from_next_page_params: 1, token_transfers_types_options: 1]
 
   alias BlockScoutWeb.AccessHelper
-  alias BlockScoutWeb.API.V2.{BlockView, TransactionView}
+  alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
   alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
@@ -367,6 +367,22 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> render(:tokens, %{tokens: tokens, next_page_params: next_page_params})
+    end
+  end
+
+  def withdrawals(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         {:not_found, {:ok, _address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true, false)} do
+      withdrawals_plus_one = address_hash |> Chain.address_hash_to_withdrawals(paging_options(params))
+      {withdrawals, next_page} = split_list_by_page(withdrawals_plus_one)
+
+      next_page_params = next_page |> next_page_params(withdrawals, params) |> delete_parameters_from_next_page_params()
+
+      conn
+      |> put_status(200)
+      |> put_view(WithdrawalView)
+      |> render(:withdrawals, %{withdrawals: withdrawals, next_page_params: next_page_params})
     end
   end
 

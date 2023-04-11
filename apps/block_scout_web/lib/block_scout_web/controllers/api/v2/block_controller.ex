@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1, select_block_type: 1]
 
-  alias BlockScoutWeb.API.V2.TransactionView
+  alias BlockScoutWeb.API.V2.{TransactionView, WithdrawalView}
   alias Explorer.Chain
 
   @transaction_necessity_by_association [
@@ -104,6 +104,25 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:transactions, %{transactions: transactions, next_page_params: next_page_params})
+    end
+  end
+
+  def withdrawals(conn, %{"block_hash_or_number" => block_hash_or_number} = params) do
+    with {:ok, type, value} <- parse_block_hash_or_number_param(block_hash_or_number),
+         {:ok, block} <- fetch_block(type, value, @api_true) do
+      full_options =
+        [necessity_by_association: %{address: :optional}]
+        |> Keyword.merge(paging_options(params))
+
+      withdrawals_plus_one = Chain.block_to_withdrawals(block.hash, full_options)
+      {withdrawals, next_page} = split_list_by_page(withdrawals_plus_one)
+
+      next_page_params = next_page |> next_page_params(withdrawals, params) |> delete_parameters_from_next_page_params()
+
+      conn
+      |> put_status(200)
+      |> put_view(WithdrawalView)
+      |> render(:withdrawals, %{withdrawals: withdrawals, next_page_params: next_page_params})
     end
   end
 end

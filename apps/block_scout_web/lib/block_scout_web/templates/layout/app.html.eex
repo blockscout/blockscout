@@ -139,7 +139,8 @@
       @view_module != Elixir.BlockScoutWeb.SearchView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView &&
-      @view_module != Elixir.BlockScoutWeb.StakesView
+      @view_module != Elixir.BlockScoutWeb.StakesView &&
+      @view_module != Elixir.BlockScoutWeb.WithdrawalView
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>

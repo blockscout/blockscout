@@ -139,7 +139,7 @@ defmodule BlockScoutWeb.BlockTransactionController do
     end
   end
 
-  defp param_block_hash_or_number_to_block(param, options) do
+  def param_block_hash_or_number_to_block(param, options) do
     case parse_block_hash_or_number_param(param) do
       {:ok, :number, number} ->
         number_to_block(number, options)
