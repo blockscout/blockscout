@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.Account.Api.V1.TagsController do
              {:watchlist, %{watchlists: [watchlist | _]}} <-
                {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
              {:address_hash, {:ok, address_hash}} <- {:address_hash, Address.cast(address_hash)} do
-          GetAddressTags.get_address_tags(address_hash, %{id: identity.id, watchlist_id: watchlist.id})
+          GetAddressTags.get_address_tags(address_hash, %{id: identity.id, watchlist_id: watchlist.id}, api?: true)
         else
           _ ->
             %{personal_tags: [], watchlist_names: []}
@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.Account.Api.V1.TagsController do
     public_tags =
       case Address.cast(address_hash) do
         {:ok, address_hash} ->
-          GetAddressTags.get_public_tags(address_hash)
+          GetAddressTags.get_public_tags(address_hash, api?: true)
 
         _ ->
           %{common_tags: []}
@@ -73,10 +73,14 @@ defmodule BlockScoutWeb.Account.Api.V1.TagsController do
       end
 
     public_tags_from =
-      if is_nil(transaction), do: [], else: GetAddressTags.get_public_tags(transaction.from_address_hash).common_tags
+      if is_nil(transaction),
+        do: [],
+        else: GetAddressTags.get_public_tags(transaction.from_address_hash, api?: true).common_tags
 
     public_tags_to =
-      if is_nil(transaction), do: [], else: GetAddressTags.get_public_tags(transaction.to_address_hash).common_tags
+      if is_nil(transaction),
+        do: [],
+        else: GetAddressTags.get_public_tags(transaction.to_address_hash, api?: true).common_tags
 
     public_tags = %{common_tags: public_tags_from ++ public_tags_to}
 

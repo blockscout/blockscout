@@ -34,6 +34,8 @@ defmodule Explorer.Chain do
 
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
 
+  alias Explorer.Account.WatchlistAddress
+
   alias Explorer.Counters.{LastFetchedCounter, TokenHoldersCounter, TokenTransfersCounter}
 
   alias Explorer.Chain
@@ -78,7 +80,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Helper, as: CacheHelper
-  alias Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand
+  alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
 
@@ -713,6 +715,7 @@ defmodule Explorer.Chain do
       from(
         log in subquery(base_query),
         inner_join: transaction in Transaction,
+        on: transaction.hash == log.transaction_hash,
         preload: [:transaction, transaction: [to_address: :smart_contract]],
         where:
           log.block_hash == transaction.block_hash and
@@ -1543,7 +1546,14 @@ defmodule Explorer.Chain do
     case Chain.string_to_address_hash(term) do
       {:ok, address_hash} ->
         from(address in Address,
-          left_join: address_name in Address.Name,
+          left_join:
+            address_name in subquery(
+              from(name in Address.Name,
+                where: name.address_hash == ^address_hash,
+                order_by: [desc: name.primary],
+                limit: 1
+              )
+            ),
           on: address.hash == address_name.address_hash,
           where: address.hash == ^address_hash,
           select: %{
@@ -1941,8 +1951,11 @@ defmodule Explorer.Chain do
         %{smart_contract: smart_contract} ->
           if smart_contract do
             CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
+            LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, smart_contract)
             address_result
           else
+            LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
+
             address_verified_twin_contract =
               get_minimal_proxy_template(hash, options) ||
                 get_address_verified_twin_contract(hash, options).verified_contract
@@ -1951,6 +1964,7 @@ defmodule Explorer.Chain do
           end
 
         _ ->
+          LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
           address_result
       end
 
@@ -2129,6 +2143,8 @@ defmodule Explorer.Chain do
         options,
         preload_to_detect_tt? \\ true
       ) do
+    limit = if(preload_to_detect_tt?, do: 1, else: @token_transfers_per_transaction_preview + 1)
+
     token_transfers =
       TokenTransfer
       |> (&if(is_nil(block_hash),
@@ -2140,10 +2156,12 @@ defmodule Explorer.Chain do
                 token_transfer.transaction_hash == ^tx_hash and token_transfer.block_hash == ^block_hash
               )
           )).()
-      |> limit(^if(preload_to_detect_tt?, do: 1, else: @token_transfers_per_transaction_preview + 1))
+      |> limit(^limit)
       |> order_by([token_transfer], asc: token_transfer.log_index)
       |> join_associations(necessity_by_association)
       |> select_repo(options).all()
+      |> flat_1155_batch_token_transfers()
+      |> Enum.take(limit)
 
     %Transaction{transaction | token_transfers: token_transfers}
   end
@@ -2642,7 +2660,7 @@ defmodule Explorer.Chain do
       from(
         b in Block,
         join: addr in Address,
-        where: b.miner_hash == addr.hash,
+        on: b.miner_hash == addr.hash,
         select: {b.miner_hash, count(b.miner_hash)},
         group_by: b.miner_hash
       )
@@ -3262,6 +3280,17 @@ defmodule Explorer.Chain do
     Block
     |> where(consensus: true, number: ^number)
     |> join_associations(necessity_by_association)
+    |> select_repo(options).one()
+    |> case do
+      nil -> {:error, :not_found}
+      block -> {:ok, block}
+    end
+  end
+
+  @spec nonconsensus_block_by_number(Block.block_number(), [api?]) :: {:ok, Block.t()} | {:error, :not_found}
+  def nonconsensus_block_by_number(number, options) do
+    Block
+    |> where(consensus: false, number: ^number)
     |> select_repo(options).one()
     |> case do
       nil -> {:error, :not_found}
@@ -4404,6 +4433,13 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec address_hash_to_smart_contract(Hash.Address.t()) :: SmartContract.t() | nil
+  def address_hash_to_one_smart_contract(hash) do
+    SmartContract
+    |> where([sc], sc.address_hash == ^hash)
+    |> Repo.one()
+  end
+
   @spec address_hash_to_smart_contract_without_twin(Hash.Address.t(), [api?]) :: SmartContract.t() | nil
   def address_hash_to_smart_contract_without_twin(address_hash, options) do
     query =
@@ -5445,7 +5481,7 @@ defmodule Explorer.Chain do
   def fetch_token_holders_from_token_hash_and_token_id(contract_address_hash, token_id, options \\ []) do
     contract_address_hash
     |> CurrentTokenBalance.token_holders_1155_by_token_id(token_id, options)
-    |> Repo.all()
+    |> select_repo(options).all()
   end
 
   def token_id_1155_is_unique?(contract_address_hash, token_id, options \\ [])
@@ -5646,12 +5682,16 @@ defmodule Explorer.Chain do
       from(decompiled_contract in DecompiledSmartContract,
         where: decompiled_contract.address_hash == ^hash,
         limit: 1,
-        select: %{has_decompiled_code?: not is_nil(decompiled_contract.address_hash)}
+        select: %{
+          address_hash: decompiled_contract.address_hash,
+          has_decompiled_code?: not is_nil(decompiled_contract.address_hash)
+        }
       )
 
     from(
       address in query,
       left_join: decompiled_code in subquery(has_decompiled_code_query),
+      on: address.hash == decompiled_code.address_hash,
       select_merge: %{has_decompiled_code?: decompiled_code.has_decompiled_code?}
     )
   end
@@ -6701,4 +6741,14 @@ defmodule Explorer.Chain do
       Repo
     end
   end
+
+  def select_watchlist_address_id(watchlist_id, address_hash)
+      when not is_nil(watchlist_id) and not is_nil(address_hash) do
+    WatchlistAddress
+    |> where([wa], wa.watchlist_id == ^watchlist_id and wa.address_hash_hash == ^address_hash)
+    |> select([wa], wa.id)
+    |> Repo.account_repo().one()
+  end
+
+  def select_watchlist_address_id(_watchlist_id, _address_hash), do: nil
 end

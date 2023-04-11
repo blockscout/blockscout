@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ConnCase
 
+  alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.{Chain, Repo}
 
   alias Explorer.Chain.{
@@ -14,7 +15,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     Transaction
   }
 
+  alias Explorer.Account.WatchlistAddress
   alias Explorer.Chain.Address.CurrentTokenBalance
+
+  import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
   describe "/addresses/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -60,7 +64,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "has_validated_blocks" => false,
         "has_logs" => false,
         "has_tokens" => false,
-        "has_token_transfers" => false
+        "has_token_transfers" => false,
+        "watchlist_address_id" => nil
       }
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
@@ -68,6 +73,36 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{String.downcase(to_string(address.hash))}")
       assert ^correct_response = json_response(request, 200)
+    end
+
+    test "get watchlist id", %{conn: conn} do
+      auth = build(:auth)
+      address = insert(:address)
+      {:ok, user} = UserFromAuth.find_or_create(auth)
+
+      conn = Plug.Test.init_test_session(conn, current_user: user)
+
+      watchlist_address =
+        Repo.account_repo().insert!(%WatchlistAddress{
+          name: "wallet",
+          watchlist_id: user.watchlist_id,
+          address_hash: address.hash,
+          address_hash_hash: hash_to_lower_case_string(address.hash),
+          watch_coin_input: true,
+          watch_coin_output: true,
+          watch_erc_20_input: true,
+          watch_erc_20_output: true,
+          watch_erc_721_input: true,
+          watch_erc_721_output: true,
+          watch_erc_1155_input: true,
+          watch_erc_1155_output: true,
+          notify_email: true
+        })
+
+      request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
+      assert response = json_response(request, 200)
+
+      assert response["watchlist_address_id"] == watchlist_address.id
     end
   end
 

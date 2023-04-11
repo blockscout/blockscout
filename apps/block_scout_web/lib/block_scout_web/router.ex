@@ -4,26 +4,22 @@ defmodule BlockScoutWeb.Router do
   alias BlockScoutWeb.Plug.GraphQL
   alias BlockScoutWeb.{ApiRouter, WebRouter}
 
-  if Application.compile_env(:block_scout_web, ApiRouter)[:wobserver_enabled] do
-    forward("/wobserver", Wobserver.Web.Router)
-  end
-
   if Application.compile_env(:block_scout_web, :admin_panel_enabled) do
     forward("/admin", BlockScoutWeb.AdminRouter)
   end
 
   pipeline :browser do
+    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_flash)
     plug(:protect_from_forgery)
     plug(BlockScoutWeb.CSPHeader)
-    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
   end
 
   pipeline :api do
-    plug(:accepts, ["json"])
     plug(BlockScoutWeb.Plug.Logger, application: :api)
+    plug(:accepts, ["json"])
   end
 
   forward("/api", ApiRouter)
