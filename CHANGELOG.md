@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- [#7219](https://github.com/blockscout/blockscout/pull/7219) - Output L1 fields in API v2 for transaction page and fix transaction fee calculation
+
 ### Chore
 
 ## 5.1.2-beta

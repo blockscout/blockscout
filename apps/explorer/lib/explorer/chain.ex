@@ -1270,22 +1270,27 @@ defmodule Explorer.Chain do
 
   """
   @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t()}
-  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
-    fee =
-      gas_price
-      |> Wei.to(unit)
-      |> Decimal.mult(gas)
-
-    {:maximum, fee}
+  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil} = tx, unit) do
+    {:maximum, fee(tx, gas_price, gas, unit)}
   end
 
-  def fee(%Transaction{gas_price: gas_price, gas_used: gas_used}, unit) do
-    fee =
-      gas_price
-      |> Wei.to(unit)
-      |> Decimal.mult(gas_used)
+  def fee(%Transaction{gas_price: gas_price, gas_used: gas_used} = tx, unit) do
+    {:actual, fee(tx, gas_price, gas_used, unit)}
+  end
 
-    {:actual, fee}
+  defp fee(tx, gas_price, gas, unit) do
+    l1_fee =
+      case Map.get(tx, :l1_fee) do
+        nil -> Wei.from(Decimal.new(0), :wei)
+        value -> value
+      end
+
+    gas_price
+    |> Wei.to(unit)
+    |> Decimal.mult(gas)
+    |> Wei.from(unit)
+    |> Wei.sum(l1_fee)
+    |> Wei.to(unit)
   end
 
   @doc """

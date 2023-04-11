@@ -233,7 +233,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     decoded_input = transaction |> Transaction.decoded_input_data(@api_true) |> format_decoded_input()
     decoded_input_data = decoded_input(decoded_input)
 
-    %{
+    result = %{
       "hash" => transaction.hash,
       "result" => status,
       "status" => transaction.status,
@@ -270,6 +270,19 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "tx_types" => tx_types(transaction),
       "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(conn))
     }
+
+    result
+    |> add_optional_transaction_field(transaction, :l1_fee)
+    |> add_optional_transaction_field(transaction, :l1_fee_scalar)
+    |> add_optional_transaction_field(transaction, :l1_gas_price)
+    |> add_optional_transaction_field(transaction, :l1_gas_used)
+  end
+
+  defp add_optional_transaction_field(result, transaction, field) do
+    case Map.get(transaction, field) do
+      nil -> result
+      value -> Map.put(result, Atom.to_string(field), value)
+    end
   end
 
   def token_transfers(_, _conn, false), do: nil
