@@ -12,6 +12,7 @@ env:
   K8S_PORT: ${{ secrets.K8S_PORT }}
   USERNAME: ${{ secrets.USERNAME }}
   BASTION_SSH_KEY: ${{secrets.BASTION_SSH_KEY}}
+  RELEASE_VERSION: 5.1.3
 
 jobs:
   push_to_registry:
@@ -65,10 +66,16 @@ jobs:
             DISABLE_READ_API=false
             DISABLE_WEBAPP=false
             DISABLE_WRITE_API=false
-            CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER=
-            WOBSERVER_ENABLED=false
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             ADMIN_PANEL_ENABLED=false
+            DECODE_NOT_A_CONTRACT_CALLS=false
+            MIXPANEL_URL=
+            MIXPANEL_TOKEN=
+            AMPLITUDE_URL=
+            AMPLITUDE_API_KEY=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
   deploy_and_tests:
     needs: push_to_registry

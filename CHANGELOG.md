@@ -4,13 +4,72 @@
 
 ### Features
 
-- [#6925](https://github.com/blockscout/blockscout/pull/6925) - Rework token price fetching mechanism and sort token balances by fiat value 
+### Fixes
+
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+</details>
+
+## 5.1.3-beta
+
+### Features
+
+- [#7253](https://github.com/blockscout/blockscout/pull/7253) - Add `EIP_1559_ELASTICITY_MULTIPLIER` env variable
+- [#7187](https://github.com/blockscout/blockscout/pull/7187) - Integrate [Eth Bytecode DB](https://github.com/blockscout/blockscout-rs/tree/main/eth-bytecode-db/eth-bytecode-db)
+- [#7185](https://github.com/blockscout/blockscout/pull/7185) - Aave v3 transaction actions indexer
+- [#7148](https://github.com/blockscout/blockscout/pull/7148), [#7244](https://github.com/blockscout/blockscout/pull/7244) - API v2 improvements: API rate limiting, `/tokens/{address_hash}/instances/{token_id}/holders` and other changes
+
+### Fixes
+
+- [#7242](https://github.com/blockscout/blockscout/pull/7242) - Fix daily txs chart
+- [#7210](https://github.com/blockscout/blockscout/pull/7210) - Fix Makefile docker image build
+- [#7203](https://github.com/blockscout/blockscout/pull/7203) - Fix write contract functionality for multidimensional arrays case
+- [#7186](https://github.com/blockscout/blockscout/pull/7186) - Fix build from Dockerfile
+- [#7255](https://github.com/blockscout/blockscout/pull/7255) - Fix MissingRangesCollector max block number fetching
+
+### Chore
+
+- [#7254](https://github.com/blockscout/blockscout/pull/7254) - Rename env vars related for the integration with microservices
+- [#7107](https://github.com/blockscout/blockscout/pull/7107) - Tx actions: remove excess delete_all calls and remake a cache
+- [#7201](https://github.com/blockscout/blockscout/pull/7201) - Remove rust, cargo from dependencies since the latest version of ex_keccak is using precompiled rust
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+- [#7183](https://github.com/blockscout/blockscout/pull/7183) - Bump sobelow from 0.11.1 to 0.12.1
+- [#7188](https://github.com/blockscout/blockscout/pull/7188) - Bump @babel/preset-env from 7.20.2 to 7.21.4 in /apps/block_scout_web/assets
+- [#7190](https://github.com/blockscout/blockscout/pull/7190) - Bump @amplitude/analytics-browser from 1.9.1 to 1.9.2 in /apps/block_scout_web/assets
+- [#7189](https://github.com/blockscout/blockscout/pull/7189) - Bump @babel/core from 7.21.3 to 7.21.4 in /apps/block_scout_web/assets
+- [#7206](https://github.com/blockscout/blockscout/pull/7206) - Bump tesla from 1.5.1 to 1.6.0
+- [#7207](https://github.com/blockscout/blockscout/pull/7207) - Bump sobelow from 0.12.1 to 0.12.2
+- [#7205](https://github.com/blockscout/blockscout/pull/7205) - Bump @amplitude/analytics-browser from 1.9.2 to 1.9.3 in /apps/block_scout_web/assets
+- [#7204](https://github.com/blockscout/blockscout/pull/7204) - Bump postcss-loader from 7.1.0 to 7.2.1 in /apps/block_scout_web/assets
+- [#7214](https://github.com/blockscout/blockscout/pull/7214) - Bump core-js from 3.29.1 to 3.30.0 in /apps/block_scout_web/assets
+- [#7215](https://github.com/blockscout/blockscout/pull/7215) - Bump postcss-loader from 7.2.1 to 7.2.4 in /apps/block_scout_web/assets
+- [#7220](https://github.com/blockscout/blockscout/pull/7220) - Bump wallaby from 0.30.2 to 0.30.3
+- [#7236](https://github.com/blockscout/blockscout/pull/7236) - Bump sass from 1.60.0 to 1.61.0 in /apps/block_scout_web/assets
+- [#7235](https://github.com/blockscout/blockscout/pull/7235) - Bump @amplitude/analytics-browser from 1.9.3 to 1.9.4 in /apps/block_scout_web/assets
+- [#7224](https://github.com/blockscout/blockscout/pull/7224) - Bump webpack from 5.77.0 to 5.78.0 in /apps/block_scout_web/assets
+- [#7245](https://github.com/blockscout/blockscout/pull/7245) - Bump eslint from 8.37.0 to 8.38.0 in /apps/block_scout_web/assets
+- [#7250](https://github.com/blockscout/blockscout/pull/7250) - Bump dialyxir from 1.2.0 to 1.3.0
+
+</details>
+
+## 5.1.2-beta
+
+### Features
+
+- [#6925](https://github.com/blockscout/blockscout/pull/6925) - Rework token price fetching mechanism and sort token balances by fiat value
 - [#7068](https://github.com/blockscout/blockscout/pull/7068) - Add authenticate endpoint
 - [#6990](https://github.com/blockscout/blockscout/pull/6990) - Improved http requests logging, batch transfers pagination; New API v2 endpoint `/smart-contracts/counters`; And some refactoring
 - [#7089](https://github.com/blockscout/blockscout/pull/7089) - ETHEREUM_JSONRPC_HTTP_TIMEOUT env variable
 
 ### Fixes
 
+- [#7162](https://github.com/blockscout/blockscout/pull/7162) - Hide indexing alert, if internal transactions indexer disabled
 - [#7096](https://github.com/blockscout/blockscout/pull/7096) - Hide indexing alert, if indexer disabled
 - [#7102](https://github.com/blockscout/blockscout/pull/7102) - Set infinity timeout timestamp_to_block_number query
 - [#7091](https://github.com/blockscout/blockscout/pull/7091) - Fix custom ABI
@@ -22,6 +81,7 @@
 - [#7055](https://github.com/blockscout/blockscout/pull/7055) - Set updated_at on token update even if there are no changes
 - [#7080](https://github.com/blockscout/blockscout/pull/7080) - Deduplicate second degree relations before insert
 - [#7161](https://github.com/blockscout/blockscout/pull/7161) - Treat "" as empty value while parsing env vars
+- [#7135](https://github.com/blockscout/blockscout/pull/7135) - Block reorg fixes
 
 ### Chore
 
@@ -43,6 +103,60 @@
 
 <details>
   <summary>Dependencies version bumps</summary>
+
+- [6997](https://github.com/blockscout/blockscout/pull/6997) - Bump sweetalert2 from 11.7.2 to 11.7.3 in /apps/block_scout_web/assets
+- [6999](https://github.com/blockscout/blockscout/pull/6999) - Bump @amplitude/analytics-browser from 1.8.0 to 1.9.0 in /apps/block_scout_web/assets
+- [7000](https://github.com/blockscout/blockscout/pull/7000) - Bump eslint from 8.34.0 to 8.35.0 in /apps/block_scout_web/assets
+- [7001](https://github.com/blockscout/blockscout/pull/7001) - Bump core-js from 3.28.0 to 3.29.0 in /apps/block_scout_web/assets
+- [7002](https://github.com/blockscout/blockscout/pull/7002) - Bump floki from 0.34.1 to 0.34.2
+- [7004](https://github.com/blockscout/blockscout/pull/7004) - Bump ex_cldr from 2.34.1 to 2.34.2
+- [7011](https://github.com/blockscout/blockscout/pull/7011) - Bump ex_doc from 0.29.1 to 0.29.2
+- [7026](https://github.com/blockscout/blockscout/pull/7026) - Bump @amplitude/analytics-browser from 1.9.0 to 1.9.1 in /apps/block_scout_web/assets
+- [7029](https://github.com/blockscout/blockscout/pull/7029) - Bump jest from 29.4.3 to 29.5.0 in /apps/block_scout_web/assets
+- [7028](https://github.com/blockscout/blockscout/pull/7028) - Bump luxon from 3.2.1 to 3.3.0 in /apps/block_scout_web/assets
+- [7027](https://github.com/blockscout/blockscout/pull/7027) - Bump jest-environment-jsdom from 29.4.3 to 29.5.0 in /apps/block_scout_web/assets
+- [7030](https://github.com/blockscout/blockscout/pull/7030) - Bump viewerjs from 1.11.2 to 1.11.3 in /apps/block_scout_web/assets
+- [7042](https://github.com/blockscout/blockscout/pull/7042) - Bump ex_cldr_numbers from 2.29.0 to 2.30.0
+- [7048](https://github.com/blockscout/blockscout/pull/7048) - Bump webpack from 5.75.0 to 5.76.0 in /apps/block_scout_web/assets
+- [7049](https://github.com/blockscout/blockscout/pull/7049) - Bump jquery from 3.6.3 to 3.6.4 in /apps/block_scout_web/assets
+- [7050](https://github.com/blockscout/blockscout/pull/7050) - Bump mini-css-extract-plugin from 2.7.2 to 2.7.3 in /apps/block_scout_web/assets
+- [7063](https://github.com/blockscout/blockscout/pull/7063) - Bump autoprefixer from 10.4.13 to 10.4.14 in /apps/block_scout_web/assets
+- [7064](https://github.com/blockscout/blockscout/pull/7064) - Bump ueberauth from 0.10.3 to 0.10.5
+- [7074](https://github.com/blockscout/blockscout/pull/7074) - Bump core-js from 3.29.0 to 3.29.1 in /apps/block_scout_web/assets
+- [7078](https://github.com/blockscout/blockscout/pull/7078) - Bump ex_cldr from 2.35.1 to 2.36.0
+- [7075](https://github.com/blockscout/blockscout/pull/7075) - Bump webpack from 5.76.0 to 5.76.1 in /apps/block_scout_web/assets
+- [7077](https://github.com/blockscout/blockscout/pull/7077) - Bump wallaby from 0.30.1 to 0.30.2
+- [7073](https://github.com/blockscout/blockscout/pull/7073) - Bump sass from 1.58.3 to 1.59.2 in /apps/block_scout_web/assets
+- [7076](https://github.com/blockscout/blockscout/pull/7076) - Bump eslint from 8.35.0 to 8.36.0 in /apps/block_scout_web/assets
+- [7082](https://github.com/blockscout/blockscout/pull/7082) - Bump @babel/core from 7.21.0 to 7.21.3 in /apps/block_scout_web/assets
+- [7083](https://github.com/blockscout/blockscout/pull/7083) - Bump style-loader from 3.3.1 to 3.3.2 in /apps/block_scout_web/assets
+- [7086](https://github.com/blockscout/blockscout/pull/7086) - Bump sass from 1.59.2 to 1.59.3 in /apps/block_scout_web/assets
+- [7092](https://github.com/blockscout/blockscout/pull/7092) - Bump mini-css-extract-plugin from 2.7.3 to 2.7.4 in /apps/block_scout_web/assets
+- [7094](https://github.com/blockscout/blockscout/pull/7094) - Bump webpack from 5.76.1 to 5.76.2 in /apps/block_scout_web/assets
+- [7095](https://github.com/blockscout/blockscout/pull/7095) - Bump plug_cowboy from 2.6.0 to 2.6.1
+- [7093](https://github.com/blockscout/blockscout/pull/7093) - Bump postcss-loader from 7.0.2 to 7.1.0 in /apps/block_scout_web/assets
+- [7100](https://github.com/blockscout/blockscout/pull/7100) - Bump mini-css-extract-plugin from 2.7.4 to 2.7.5 in /apps/block_scout_web/assets
+- [7101](https://github.com/blockscout/blockscout/pull/7101) - Bump ex_doc from 0.29.2 to 0.29.3
+- [7113](https://github.com/blockscout/blockscout/pull/7113) - Bump sass-loader from 13.2.0 to 13.2.1 in /apps/block_scout_web/assets
+- [7114](https://github.com/blockscout/blockscout/pull/7114) - Bump web3 from 1.8.2 to 1.9.0 in /apps/block_scout_web/assets
+- [7117](https://github.com/blockscout/blockscout/pull/7117) - Bump flow from 1.2.3 to 1.2.4
+- [7127](https://github.com/blockscout/blockscout/pull/7127) - Bump webpack from 5.76.2 to 5.76.3 in /apps/block_scout_web/assets
+- [7128](https://github.com/blockscout/blockscout/pull/7128) - Bump ecto from 3.9.4 to 3.9.5
+- [7129](https://github.com/blockscout/blockscout/pull/7129) - Bump ex_abi from 0.5.16 to 0.6.0
+- [7118](https://github.com/blockscout/blockscout/pull/7118) - Bump credo from 1.6.7 to 1.7.0
+- [7151](https://github.com/blockscout/blockscout/pull/7151) - Bump mixpanel-browser from 2.45.0 to 2.46.0 in /apps/block_scout_web/assets
+- [7156](https://github.com/blockscout/blockscout/pull/7156) - Bump cldr_utils from 2.21.0 to 2.22.0
+- [7155](https://github.com/blockscout/blockscout/pull/7155) - Bump timex from 3.7.9 to 3.7.11
+- [7154](https://github.com/blockscout/blockscout/pull/7154) - Bump sass-loader from 13.2.1 to 13.2.2 in /apps/block_scout_web/assets
+- [7152](https://github.com/blockscout/blockscout/pull/7152) - Bump @fortawesome/fontawesome-free from 6.3.0 to 6.4.0 in /apps/block_scout_web/assets
+- [7153](https://github.com/blockscout/blockscout/pull/7153) - Bump sass from 1.59.3 to 1.60.0 in /apps/block_scout_web/assets
+- [7159](https://github.com/blockscout/blockscout/pull/7159) - Bump ex_cldr_numbers from 2.30.0 to 2.30.1
+- [7158](https://github.com/blockscout/blockscout/pull/7158) - Bump css-minimizer-webpack-plugin from 4.2.2 to 5.0.0 in /apps/block_scout_web/assets
+- [7165](https://github.com/blockscout/blockscout/pull/7165) - Bump ex_doc from 0.29.3 to 0.29.4
+- [7164](https://github.com/blockscout/blockscout/pull/7164) - Bump photoswipe from 5.3.6 to 5.3.7 in /apps/block_scout_web/assets
+- [7167](https://github.com/blockscout/blockscout/pull/7167) - Bump webpack from 5.76.3 to 5.77.0 in /apps/block_scout_web/assets
+- [7166](https://github.com/blockscout/blockscout/pull/7166) - Bump eslint from 8.36.0 to 8.37.0 in /apps/block_scout_web/assets
+
 </details>
 
 ## 5.1.1-beta

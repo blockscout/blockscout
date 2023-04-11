@@ -225,6 +225,10 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", "changed_bytecode", %{})
   end
 
+  def handle_event({:chain_event, :smart_contract_was_verified, :on_demand, [address_hash]}) do
+    Endpoint.broadcast("addresses:#{to_string(address_hash)}", "smart_contract_was_verified", %{})
+  end
+
   def handle_event(_), do: nil
 
   def fetch_compiler_version(compiler) do

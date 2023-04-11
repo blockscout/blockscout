@@ -38,7 +38,7 @@ blockscout:
 
   environment:
     BLOCKSCOUT_VERSION:
-      _default: v5.1.1-beta
+      _default: v5.1.3-beta
     ETHEREUM_JSONRPC_VARIANT:
       _default: geth
     HEART_BEAT_TIMEOUT:
@@ -79,11 +79,11 @@ blockscout:
       _default: 'true'
     CHAIN_ID:
       _default: 5
-    ENABLE_RUST_VERIFICATION_SERVICE:
+    MICROSERVICE_SC_VERIFIER_ENABLED:
       _default: 'true'
-    VISUALIZE_SOL2UML_ENABLED:
+    MICROSERVICE_VISUALIZE_SOL2UML_ENABLED:
       _default: 'true'
-    SIG_PROVIDER_ENABLED:
+    MICROSERVICE_SIG_PROVIDER_ENABLED:
       _default: 'true'
     INDEXER_MEMORY_LIMIT:
       _default: 7
@@ -113,7 +113,7 @@ blockscout:
       _default: 'true'
     DISABLE_EXCHANGE_RATES:
       _default: 'true'
-    ENABLE_SOURCIFY_INTEGRATION:
+    SOURCIFY_INTEGRATION_ENABLED:
       _default: 'true'
 
 frontend:
@@ -203,7 +203,7 @@ frontend:
     NEXT_PUBLIC_API_BASE_PATH:
       _default: /
     NEXT_PUBLIC_BLOCKSCOUT_VERSION:
-      _default: v5.1.1-beta
+      _default: v5.1.3-beta
     NEXT_PUBLIC_FOOTER_GITHUB_LINK:
       _default: https://github.com/blockscout/blockscout
     NEXT_PUBLIC_FOOTER_TWITTER_LINK:
@@ -274,6 +274,9 @@ postgres:
 
   command: '["docker-entrypoint.sh", "-c"]'
   args: '["max_connections=500"]'
+
+  customShm:
+    enabled: false
 
   files:
     enabled: true
