@@ -76,15 +76,9 @@ config :prometheus, BlockScoutWeb.Prometheus.Instrumenter,
 
 config :spandex_phoenix, tracer: BlockScoutWeb.Tracer
 
-config :wobserver,
-  # return only the local node
-  discovery: :none,
-  mode: :plug
-
 config :block_scout_web, BlockScoutWeb.ApiRouter,
   writing_enabled: System.get_env("DISABLE_WRITE_API") != "true",
-  reading_enabled: System.get_env("DISABLE_READ_API") != "true",
-  wobserver_enabled: System.get_env("WOBSERVER_ENABLED") == "true"
+  reading_enabled: System.get_env("DISABLE_READ_API") != "true"
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
 
