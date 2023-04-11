@@ -106,7 +106,7 @@ else
        [
          delete_buckets_timeout: 60_000 * 10,
          expiry_ms: 60_000 * 60 * 4,
-         redis_url: System.get_env("API_RATE_LIMIT_HAMMER_REDIS_URL")
+         redis_url: redis_url
        ]}
 end
 

@@ -622,4 +622,4 @@ jobs:
           ACCOUNT_ENABLED: "true"
           ACCOUNT_REDIS_URL: "redis://localhost:6379"
           API_V2_ENABLED: "true"
-          ENABLE_SOURCIFY_INTEGRATION: "true"
+          SOURCIFY_INTEGRATION_ENABLED: "true"

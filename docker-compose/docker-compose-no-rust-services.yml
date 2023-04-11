@@ -25,7 +25,7 @@ services:
         DISABLE_READ_API: "false"
         DISABLE_WEBAPP: "false"
         DISABLE_WRITE_API: "false"
-        CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER: ""
+        CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED: ""
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
         ADMIN_PANEL_ENABLED: ""
         RELEASE_VERSION: 5.1.2
@@ -40,8 +40,9 @@ services:
     env_file:
       -  ./envs/common-blockscout.env
     environment:
-        ENABLE_RUST_VERIFICATION_SERVICE: 'false'
-        VISUALIZE_SOL2UML_ENABLED: 'false'
+        MICROSERVICE_SC_VERIFIER_ENABLED: 'false'
+        MICROSERVICE_VISUALIZE_SOL2UML_ENABLED: 'false'
+        MICROSERVICE_SIG_PROVIDER_ENABLED: 'false'
     ports:
       - 4000:4000
     volumes:
