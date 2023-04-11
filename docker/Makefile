@@ -7,7 +7,7 @@ BS_CONTAINER_NAME := blockscout
 PG_CONTAINER_IMAGE := postgres:14
 PG_CONTAINER_NAME := db
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
-RELEASE_VERSION ?= '5.1.2'
+RELEASE_VERSION ?= '5.1.3'
 PORT ?= '4000'
 TAG := $(RELEASE_VERSION)-commit-$(shell git log -1 --pretty=format:"%h")
 STABLE_TAG := $(RELEASE_VERSION)
