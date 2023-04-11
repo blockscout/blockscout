@@ -76,15 +76,9 @@ config :prometheus, BlockScoutWeb.Prometheus.Instrumenter,
 
 config :spandex_phoenix, tracer: BlockScoutWeb.Tracer
 
-config :wobserver,
-  # return only the local node
-  discovery: :none,
-  mode: :plug
-
 config :block_scout_web, BlockScoutWeb.ApiRouter,
   writing_enabled: System.get_env("DISABLE_WRITE_API") != "true",
-  reading_enabled: System.get_env("DISABLE_READ_API") != "true",
-  wobserver_enabled: System.get_env("WOBSERVER_ENABLED") == "true"
+  reading_enabled: System.get_env("DISABLE_READ_API") != "true"
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
 
@@ -101,8 +95,20 @@ config :ueberauth, Ueberauth,
     }
   ]
 
-config :hammer,
-  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
+redis_url = System.get_env("API_RATE_LIMIT_HAMMER_REDIS_URL")
+
+if is_nil(redis_url) or redis_url == "" do
+  config :hammer, backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
+else
+  config :hammer,
+    backend:
+      {Hammer.Backend.Redis,
+       [
+         delete_buckets_timeout: 60_000 * 10,
+         expiry_ms: 60_000 * 60 * 4,
+         redis_url: redis_url
+       ]}
+end
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
