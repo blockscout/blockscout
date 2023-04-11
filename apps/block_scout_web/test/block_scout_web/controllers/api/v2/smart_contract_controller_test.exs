@@ -388,19 +388,26 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
+      :timer.sleep(10)
+
       Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources:search", fn conn ->
         Conn.resp(conn, 200, "{\"sources\": []}")
       end)
 
       _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+      :timer.sleep(10)
+
+      Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources:search", fn conn ->
+        Conn.resp(conn, 200, "{\"sources\": []}")
+      end)
+
+      _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+      :timer.sleep(10)
 
       Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, fetch_interval: 10000)
 
-      Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources:search", fn conn ->
-        Conn.resp(conn, 200, "{\"sources\": []}")
-      end)
-
-      _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
       Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_interval_env)
