@@ -38,7 +38,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
       from_api = false
 
       with {:ok, min_block} <- Chain.timestamp_to_block_number(earliest, :after, from_api),
-            _ <- Logger.info("tx/per day chart: min block fetched"),
+           _ <- Logger.info("tx/per day chart: min block fetched"),
            {:ok, max_block} <- Chain.timestamp_to_block_number(latest, :after, from_api),
            _ <- Logger.info("tx/per day chart: max block fetched") do
         record =
@@ -55,6 +55,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
       else
         returned ->
           Logger.info(inspect(returned))
+
           Logger.info(
             "tx/per day chart: timestamp cannot be converted to min/max blocks, trying to find min/max blocks through a fallback option}"
           )

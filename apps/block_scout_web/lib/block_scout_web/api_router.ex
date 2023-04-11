@@ -13,30 +13,30 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
-  alias BlockScoutWeb.API.RPC.RPCTranslator
-  alias BlockScoutWeb.SmartContractsApiV2Router
-  alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2}
+  alias BlockScoutWeb.{APIKeyV2Router, SmartContractsApiV2Router}
+  alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2, RateLimit}
 
   forward("/v2/smart-contracts", SmartContractsApiV2Router)
+  forward("/v2/key", APIKeyV2Router)
 
   pipeline :api do
-    plug(:accepts, ["json"])
     plug(BlockScoutWeb.Plug.Logger, application: :api)
+    plug(:accepts, ["json"])
   end
 
   pipeline :account_api do
-    plug(CORSPlug, origin: RPCTranslator.api_cors_origins())
     plug(:fetch_session)
     plug(:protect_from_forgery)
     plug(CheckAccountAPI)
   end
 
   pipeline :api_v2 do
+    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
-    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
+    plug(RateLimit)
   end
 
   alias BlockScoutWeb.Account.Api.V1.{AuthenticateController, TagsController, UserController}
@@ -154,6 +154,7 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash/instances", V2.TokenController, :instances)
       get("/:address_hash/instances/:token_id", V2.TokenController, :instance)
       get("/:address_hash/instances/:token_id/transfers", V2.TokenController, :transfers_by_instance)
+      get("/:address_hash/instances/:token_id/holders", V2.TokenController, :holders_by_instance)
       get("/:address_hash/instances/:token_id/transfers-count", V2.TokenController, :transfers_count_by_instance)
     end
 

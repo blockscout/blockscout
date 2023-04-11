@@ -4,13 +4,14 @@ defmodule BlockScoutWeb.SmartContractsApiV2Router do
     Router for /api/v2/smart-contracts. This route has separate router in order to ignore sobelow's warning about missing CSRF protection
   """
   use BlockScoutWeb, :router
-  alias BlockScoutWeb.Plug.CheckApiV2
+  alias BlockScoutWeb.Plug.{CheckApiV2, RateLimit}
 
   pipeline :api_v2_no_forgery_protect do
+    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
     plug(CheckApiV2)
+    plug(RateLimit)
     plug(:fetch_session)
-    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
   end
 
   scope "/", as: :api_v2 do
