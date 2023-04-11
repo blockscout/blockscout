@@ -352,7 +352,7 @@ defmodule Explorer.Chain.SmartContract do
       ])
       |> (&if(json_verification,
             do: &1,
-            else: validate_required(&1, [:name, :compiler_version, :optimization, :address_hash, :contract_code_md5])
+            else: validate_required(&1, [:compiler_version, :optimization, :address_hash, :contract_code_md5])
           )).()
 
     field_to_put_message = if json_verification, do: :files, else: select_error_field(error)

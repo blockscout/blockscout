@@ -14,6 +14,7 @@
 
 # Generated on crash by the VM
 erl_crash.dump
+dump.rdb
 
 # Generated on crash by NPM
 npm-debug.log
@@ -42,6 +43,7 @@ screenshots/
 
 # osx
 .DS_Store
+dump.rdb
 
 # mix phx.gen.cert self-signed certs for dev
 /apps/block_scout_web/priv/cert
