@@ -6,13 +6,57 @@
 
 ### Fixes
 
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+</details>
+
+## 5.1.3-beta
+
+### Features
+
+- [#7253](https://github.com/blockscout/blockscout/pull/7253) - Add `EIP_1559_ELASTICITY_MULTIPLIER` env variable
+- [#7187](https://github.com/blockscout/blockscout/pull/7187) - Integrate [Eth Bytecode DB](https://github.com/blockscout/blockscout-rs/tree/main/eth-bytecode-db/eth-bytecode-db)
+- [#7185](https://github.com/blockscout/blockscout/pull/7185) - Aave v3 transaction actions indexer
+- [#7148](https://github.com/blockscout/blockscout/pull/7148), [#7244](https://github.com/blockscout/blockscout/pull/7244) - API v2 improvements: API rate limiting, `/tokens/{address_hash}/instances/{token_id}/holders` and other changes
+
+### Fixes
+
+- [#7242](https://github.com/blockscout/blockscout/pull/7242) - Fix daily txs chart
 - [#7210](https://github.com/blockscout/blockscout/pull/7210) - Fix Makefile docker image build
 - [#7203](https://github.com/blockscout/blockscout/pull/7203) - Fix write contract functionality for multidimensional arrays case
 - [#7186](https://github.com/blockscout/blockscout/pull/7186) - Fix build from Dockerfile
+- [#7255](https://github.com/blockscout/blockscout/pull/7255) - Fix MissingRangesCollector max block number fetching
 
 ### Chore
 
+- [#7254](https://github.com/blockscout/blockscout/pull/7254) - Rename env vars related for the integration with microservices
+- [#7107](https://github.com/blockscout/blockscout/pull/7107) - Tx actions: remove excess delete_all calls and remake a cache
 - [#7201](https://github.com/blockscout/blockscout/pull/7201) - Remove rust, cargo from dependencies since the latest version of ex_keccak is using precompiled rust
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+- [#7183](https://github.com/blockscout/blockscout/pull/7183) - Bump sobelow from 0.11.1 to 0.12.1
+- [#7188](https://github.com/blockscout/blockscout/pull/7188) - Bump @babel/preset-env from 7.20.2 to 7.21.4 in /apps/block_scout_web/assets
+- [#7190](https://github.com/blockscout/blockscout/pull/7190) - Bump @amplitude/analytics-browser from 1.9.1 to 1.9.2 in /apps/block_scout_web/assets
+- [#7189](https://github.com/blockscout/blockscout/pull/7189) - Bump @babel/core from 7.21.3 to 7.21.4 in /apps/block_scout_web/assets
+- [#7206](https://github.com/blockscout/blockscout/pull/7206) - Bump tesla from 1.5.1 to 1.6.0
+- [#7207](https://github.com/blockscout/blockscout/pull/7207) - Bump sobelow from 0.12.1 to 0.12.2
+- [#7205](https://github.com/blockscout/blockscout/pull/7205) - Bump @amplitude/analytics-browser from 1.9.2 to 1.9.3 in /apps/block_scout_web/assets
+- [#7204](https://github.com/blockscout/blockscout/pull/7204) - Bump postcss-loader from 7.1.0 to 7.2.1 in /apps/block_scout_web/assets
+- [#7214](https://github.com/blockscout/blockscout/pull/7214) - Bump core-js from 3.29.1 to 3.30.0 in /apps/block_scout_web/assets
+- [#7215](https://github.com/blockscout/blockscout/pull/7215) - Bump postcss-loader from 7.2.1 to 7.2.4 in /apps/block_scout_web/assets
+- [#7220](https://github.com/blockscout/blockscout/pull/7220) - Bump wallaby from 0.30.2 to 0.30.3
+- [#7236](https://github.com/blockscout/blockscout/pull/7236) - Bump sass from 1.60.0 to 1.61.0 in /apps/block_scout_web/assets
+- [#7235](https://github.com/blockscout/blockscout/pull/7235) - Bump @amplitude/analytics-browser from 1.9.3 to 1.9.4 in /apps/block_scout_web/assets
+- [#7224](https://github.com/blockscout/blockscout/pull/7224) - Bump webpack from 5.77.0 to 5.78.0 in /apps/block_scout_web/assets
+- [#7245](https://github.com/blockscout/blockscout/pull/7245) - Bump eslint from 8.37.0 to 8.38.0 in /apps/block_scout_web/assets
+- [#7250](https://github.com/blockscout/blockscout/pull/7250) - Bump dialyxir from 1.2.0 to 1.3.0
+
+</details>
 
 ## 5.1.2-beta
 

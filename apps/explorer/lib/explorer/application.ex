@@ -90,6 +90,8 @@ defmodule Explorer.Application do
       configure(Explorer.Chain.Cache.NewContractsCounter),
       configure(Explorer.Chain.Cache.VerifiedContractsCounter),
       configure(Explorer.Chain.Cache.NewVerifiedContractsCounter),
+      configure(Explorer.Chain.Cache.TransactionActionTokensData),
+      configure(Explorer.Chain.Cache.TransactionActionUniswapPools),
       configure(Explorer.Chain.Transaction.History.Historian),
       configure(Explorer.Chain.Events.Listener),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
@@ -109,7 +111,8 @@ defmodule Explorer.Application do
       configure(MinMissingBlockNumber),
       configure(TokenTransferTokenIdMigration.Supervisor),
       configure(Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand),
-      configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand)
+      configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand),
+      sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
     ]
     |> List.flatten()
   end
@@ -120,6 +123,16 @@ defmodule Explorer.Application do
 
   defp configure(process) do
     if should_start?(process) do
+      process
+    else
+      []
+    end
+  end
+
+  defp sc_microservice_configure(process) do
+    config = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, [])
+
+    if config[:enabled] && config[:type] == "eth_bytecode_db" do
       process
     else
       []
