@@ -81,7 +81,7 @@ defmodule Explorer.Mixfile do
       # Data factory for testing
       {:ex_machina, "~> 2.3", only: [:test]},
       {:exvcr, "~> 0.10", only: :test},
-      {:httpoison, "~> 1.6"},
+      {:httpoison, "~> 2.0"},
       {:jason, "~> 1.3"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       # Log errors and application output to separate files

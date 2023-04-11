@@ -59,7 +59,6 @@ jobs:
             DISABLE_WEBAPP=false
             DISABLE_WRITE_API=false
             CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER=
-            WOBSERVER_ENABLED=false
             ADMIN_PANEL_ENABLED=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta

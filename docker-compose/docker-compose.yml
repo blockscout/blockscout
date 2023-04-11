@@ -28,7 +28,6 @@ services:
         DISABLE_WRITE_API: "false"
         CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER: ""
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
-        WOBSERVER_ENABLED: "false"
         ADMIN_PANEL_ENABLED: ""
         RELEASE_VERSION: 5.1.2
     restart: always
