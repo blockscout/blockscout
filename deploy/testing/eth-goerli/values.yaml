@@ -79,11 +79,11 @@ blockscout:
       _default: 'true'
     CHAIN_ID:
       _default: 5
-    ENABLE_RUST_VERIFICATION_SERVICE:
+    MICROSERVICE_SC_VERIFIER_ENABLED:
       _default: 'true'
-    VISUALIZE_SOL2UML_ENABLED:
+    MICROSERVICE_VISUALIZE_SOL2UML_ENABLED:
       _default: 'true'
-    SIG_PROVIDER_ENABLED:
+    MICROSERVICE_SIG_PROVIDER_ENABLED:
       _default: 'true'
     INDEXER_MEMORY_LIMIT:
       _default: 7
@@ -113,7 +113,7 @@ blockscout:
       _default: 'true'
     DISABLE_EXCHANGE_RATES:
       _default: 'true'
-    ENABLE_SOURCIFY_INTEGRATION:
+    SOURCIFY_INTEGRATION_ENABLED:
       _default: 'true'
 
 frontend:
