@@ -117,7 +117,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     else
       Logger.debug(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
 
-      {:error, result}
+      {:error, :wrong_ipfs_link}
     end
   end
 
@@ -166,7 +166,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
         fetcher: :token_instances
       )
 
-      {:error, json}
+      {:error, "invalid data:application/json"}
   end
 
   defp fetch_json_from_uri({:ok, ["data:application/json;base64," <> base64_encoded_json]}, hex_token_id) do
@@ -208,13 +208,13 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
         fetcher: :token_instances
       )
 
-      {:error, json}
+      {:error, :invalid_json}
   end
 
   defp fetch_json_from_uri(uri, _hex_token_id) do
     Logger.debug(["Unknown metadata uri format #{inspect(uri)}."], fetcher: :token_instances)
 
-    {:error, uri}
+    {:error, :unknown_metadata_uri_format}
   end
 
   defp fetch_from_ipfs(ipfs_uid, hex_token_id) do
@@ -246,8 +246,8 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
 
         check_content_type(content_type, uri, hex_token_id, body)
 
-      {:ok, %Response{body: body}} ->
-        {:error, body}
+      {:ok, %Response{body: body, status_code: code}} ->
+        {:error, code, body}
 
       {:error, %Error{reason: reason}} ->
         {:error, reason}

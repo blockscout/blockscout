@@ -435,7 +435,13 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
 config :indexer, Indexer.Block.Realtime.Supervisor,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_REALTIME_INDEXER")
 
-config :indexer, Indexer.Fetcher.TokenInstance.Supervisor,
+config :indexer, Indexer.Fetcher.Realtime.TokenInstance.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_INSTANCE_FETCHER")
+
+config :indexer, Indexer.Fetcher.Catchup.TokenInstance.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_INSTANCE_FETCHER")
+
+config :indexer, Indexer.Fetcher.Sanitize.TokenInstance.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_INSTANCE_FETCHER")
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
@@ -452,7 +458,15 @@ config :indexer, Indexer.Fetcher.BlockReward,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_BLOCK_REWARD_BATCH_SIZE", 10),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_BLOCK_REWARD_CONCURRENCY", 4)
 
-config :indexer, Indexer.Fetcher.TokenInstance,
+config :indexer, Indexer.Fetcher.Catchup.TokenInstance,
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_BATCH_SIZE", 1),
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_CONCURRENCY", 10)
+
+config :indexer, Indexer.Fetcher.Realtime.TokenInstance,
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_BATCH_SIZE", 1),
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_CONCURRENCY", 10)
+
+config :indexer, Indexer.Fetcher.Sanitize.TokenInstance,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_BATCH_SIZE", 1),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_CONCURRENCY", 10)
 

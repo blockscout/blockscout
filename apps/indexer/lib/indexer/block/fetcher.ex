@@ -25,7 +25,7 @@ defmodule Indexer.Block.Fetcher do
     ReplacedTransaction,
     Token,
     TokenBalance,
-    TokenInstance,
+    Realtime,
     UncleBlock
   }
 
@@ -253,7 +253,7 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_token_instances(%{token_transfers: token_transfers}) do
-    TokenInstance.async_fetch(token_transfers)
+    Realtime.TokenInstance.async_fetch(token_transfers)
   end
 
   def async_import_token_instances(_), do: :ok
