@@ -91,18 +91,33 @@ defmodule Explorer.Chain.Transaction.History.Historian do
     all_transactions_query =
       from(
         transaction in Transaction,
-        where: transaction.block_number >= ^min_block and transaction.block_number <= ^max_block,
-        where: transaction.block_consensus == true,
+        where: transaction.block_number >= ^min_block and transaction.block_number <= ^max_block
+      )
+
+    all_blocks_query =
+      from(
+        block in Block,
+        where: block.consensus == true,
+        where: block.number >= ^min_block and block.number <= ^max_block,
+        select: block.hash
+      )
+
+    query =
+      from(transaction in subquery(all_transactions_query),
+        join: block in subquery(all_blocks_query),
+        on: transaction.block_hash == block.hash,
         select: transaction
       )
 
-    num_transactions = Repo.aggregate(all_transactions_query, :count, :hash, timeout: :infinity)
+    num_transactions = Repo.aggregate(query, :count, :hash, timeout: :infinity)
     Logger.info("tx/per day chart: num of transactions #{num_transactions}")
-    gas_used = Repo.aggregate(all_transactions_query, :sum, :gas_used, timeout: :infinity)
+    gas_used = Repo.aggregate(query, :sum, :gas_used, timeout: :infinity)
     Logger.info("tx/per day chart: total gas used #{gas_used}")
 
     total_fee_query =
       from(transaction in subquery(all_transactions_query),
+        join: block in subquery(all_blocks_query),
+        on: transaction.block_hash == block.hash,
         select: fragment("SUM(? * ?)", transaction.gas_price, transaction.gas_used)
       )
 
