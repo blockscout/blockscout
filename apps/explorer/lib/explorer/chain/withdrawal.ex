@@ -74,12 +74,13 @@ defmodule Explorer.Chain.Withdrawal do
       left_join: block in assoc(withdrawal, :block),
       order_by: [desc: :index],
       where: withdrawal.address_hash == ^address_hash,
-      where: block.consensus
+      where: block.consensus,
+      preload: [block: block]
     )
   end
 
-  @spec blocks_without_withdrowals_query(non_neg_integer()) :: Ecto.Query.t()
-  def blocks_without_withdrowals_query(from_block) do
+  @spec blocks_without_withdrawals_query(non_neg_integer()) :: Ecto.Query.t()
+  def blocks_without_withdrawals_query(from_block) do
     from(withdrawal in __MODULE__,
       right_join: block in assoc(withdrawal, :block),
       select: block.number,
@@ -87,6 +88,14 @@ defmodule Explorer.Chain.Withdrawal do
       where: block.number >= ^from_block,
       where: block.consensus == ^true,
       where: is_nil(withdrawal.index)
+    )
+  end
+
+  @spec list_withdrawals :: Ecto.Query.t()
+  def list_withdrawals do
+    from(withdrawal in __MODULE__,
+      select: withdrawal,
+      order_by: [desc: :index]
     )
   end
 end

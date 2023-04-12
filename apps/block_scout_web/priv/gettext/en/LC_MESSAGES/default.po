@@ -152,7 +152,7 @@ msgstr ""
 msgid "API keys"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:100
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:103
 #, elixir-autogen, elixir-format
 msgid "APIs"
 msgstr ""
@@ -285,7 +285,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:26
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:28
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:22
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:82
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:85
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:20
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:11
 #: lib/block_scout_web/views/address_token_transfer_view.ex:11
@@ -325,7 +325,7 @@ msgstr ""
 msgid "Anything not in this list is not supported. Click on the method to be taken to the documentation for that method, and check the notes section for any potential differences."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:128
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:131
 #, elixir-autogen, elixir-format
 msgid "Apps"
 msgstr ""
@@ -408,6 +408,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_withdrawal/index.html.eex:35
 #: lib/block_scout_web/templates/block/overview.html.eex:29
 #: lib/block_scout_web/templates/transaction/overview.html.eex:158
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:27
 #, elixir-autogen, elixir-format
 msgid "Block"
 msgstr ""
@@ -1234,7 +1235,7 @@ msgstr ""
 msgid "Error: Could not determine contract creator."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:114
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:117
 #, elixir-autogen, elixir-format
 msgid "Eth RPC"
 msgstr ""
@@ -1401,7 +1402,7 @@ msgstr ""
 msgid "Go to"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:104
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:107
 #, elixir-autogen, elixir-format
 msgid "GraphQL"
 msgstr ""
@@ -2080,7 +2081,7 @@ msgstr ""
 msgid "Query"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:109
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:112
 #, elixir-autogen, elixir-format
 msgid "RPC"
 msgstr ""
@@ -2333,6 +2334,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction_state/index.html.eex:8
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:14
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:45
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:12
 #, elixir-autogen, elixir-format
 msgid "Something went wrong, click to reload."
 msgstr ""
@@ -2357,7 +2359,7 @@ msgstr ""
 msgid "Sources and Metadata JSON"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:130
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:133
 #, elixir-autogen, elixir-format
 msgid "Stakes"
 msgstr ""
@@ -2652,6 +2654,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:28
 #: lib/block_scout_web/templates/block_withdrawal/index.html.eex:29
 #: lib/block_scout_web/templates/transaction/overview.html.eex:244
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:30
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:9
 #: lib/block_scout_web/views/address_token_transfer_view.ex:9
 #: lib/block_scout_web/views/address_transaction_view.ex:9
@@ -2759,7 +2762,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:175
 #: lib/block_scout_web/templates/address_token/overview.html.eex:58
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:13
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:78
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:81
 #: lib/block_scout_web/templates/tokens/index.html.eex:10
 #: lib/block_scout_web/views/address_view.ex:373
 #, elixir-autogen, elixir-format
@@ -3100,6 +3103,7 @@ msgid "Verified contracts"
 msgstr ""
 
 #: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:2
+#: lib/block_scout_web/templates/withdrawal/_metatags.html.eex:2
 #, elixir-autogen, elixir-format
 msgid "Verified contracts - %{subnetwork} Explorer"
 msgstr ""
@@ -3202,6 +3206,7 @@ msgid "View the transactions, token transfers, and uncles for block number %{blo
 msgstr ""
 
 #: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:8
+#: lib/block_scout_web/templates/withdrawal/_metatags.html.eex:8
 #, elixir-autogen, elixir-format
 msgid "View the verified contracts on %{subnetwork}"
 msgstr ""
@@ -3439,19 +3444,21 @@ msgstr ""
 msgid "truffle flattener"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_withdrawal/index.html.eex:38
+#: lib/block_scout_web/templates/address_withdrawal/index.html.eex:41
 #: lib/block_scout_web/templates/block_withdrawal/index.html.eex:32
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:36
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Amount"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_withdrawal/index.html.eex:29
 #: lib/block_scout_web/templates/block_withdrawal/index.html.eex:23
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:21
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Index"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_withdrawal/index.html.eex:51
+#: lib/block_scout_web/templates/address_withdrawal/index.html.eex:54
 #, elixir-autogen, elixir-format, fuzzy
 msgid "There are no withdrawals for this address."
 msgstr ""
@@ -3463,6 +3470,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/address_withdrawal/index.html.eex:32
 #: lib/block_scout_web/templates/block_withdrawal/index.html.eex:26
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:24
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Validator index"
 msgstr ""
@@ -3470,6 +3478,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:29
 #: lib/block_scout_web/templates/address_withdrawal/index.html.eex:13
 #: lib/block_scout_web/templates/block/_tabs.html.eex:13
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:71
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:5
 #, elixir-autogen, elixir-format
 msgid "Withdrawals"
 msgstr ""
@@ -3578,6 +3588,7 @@ msgid "Select Yes if you want to verify Yul contract."
 msgstr ""
 
 #: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:7
+#: lib/block_scout_web/templates/withdrawal/_metatags.html.eex:7
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Verified contracts, %{subnetwork}, %{coin}"
 msgstr ""
@@ -3595,4 +3606,15 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/index.html.eex:43
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Total Supply"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_withdrawal/index.html.eex:38
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:33
+#, elixir-autogen, elixir-format
+msgid "Age"
+msgstr ""
+
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:51
+#, elixir-autogen, elixir-format, fuzzy
+msgid "There are no withdrawals."
 msgstr ""

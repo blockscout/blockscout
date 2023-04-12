@@ -14,6 +14,15 @@
         block: @withdrawal.block
     %>
   </td>
+  <!-- To -->
+  <td class="stakes-td">
+    <%= render BlockScoutWeb.AddressView,
+        "_link.html",
+        address: @withdrawal.address,
+        contract: BlockScoutWeb.AddressView.contract?(@withdrawal.address),
+        use_custom_tooltip: false
+    %>
+  </td>
   <!-- Age -->
   <td class="stakes-td">
     <span data-from-now="<%= @withdrawal.block.timestamp %>"></span>
