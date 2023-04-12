@@ -118,6 +118,32 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response = json_response(request, 200)
       compare_item(tx, response)
     end
+
+    test "batch 1155 flattened", %{conn: conn} do
+      token = insert(:token, type: "ERC-1155")
+
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      tt =
+        insert(:token_transfer,
+          transaction: tx,
+          block: tx.block,
+          block_number: tx.block_number,
+          token_contract_address: token.contract_address,
+          token_ids: Enum.map(0..50, fn x -> x end),
+          amounts: Enum.map(0..50, fn x -> x end)
+        )
+
+      request = get(conn, "/api/v2/transactions/" <> to_string(tx.hash))
+
+      assert response = json_response(request, 200)
+      compare_item(tx, response)
+
+      assert Enum.count(response["token_transfers"]) == 10
+    end
   end
 
   describe "/transactions/{tx_hash}/internal-transactions" do

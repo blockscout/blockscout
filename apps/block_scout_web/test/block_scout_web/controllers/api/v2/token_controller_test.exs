@@ -697,6 +697,66 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
   end
 
+  describe "/tokens/{address_hash}/instances/{token_id}/holders" do
+    test "get 404 on non existing address", %{conn: conn} do
+      token = build(:token)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/12/holders")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/tokens/0x/instances/12/holders")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get 422 on invalid id", %{conn: conn} do
+      token = insert(:token, type: "ERC-1155")
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/123ab/holders")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get token transfers by instance", %{conn: conn} do
+      token = insert(:token, type: "ERC-1155")
+
+      id = :rand.uniform(1_000_000)
+      insert(:token_instance, token_id: id - 1, token_contract_address_hash: token.contract_address_hash)
+
+      insert(
+        :address_current_token_balance,
+        token_contract_address_hash: token.contract_address_hash,
+        value: 1000,
+        token_id: id - 1
+      )
+
+      insert(:token_instance, token_id: id, token_contract_address_hash: token.contract_address_hash)
+
+      token_balances =
+        for i <- 0..50 do
+          insert(
+            :address_current_token_balance_with_token_id,
+            token_contract_address_hash: token.contract_address_hash,
+            value: i + 1000,
+            token_id: id
+          )
+        end
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{id}/holders")
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{id}/holders", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_balances)
+    end
+  end
+
   describe "/tokens/{address_hash}/instances/{token_id}/transfers-count" do
     test "get 404 on non existing address", %{conn: conn} do
       token = build(:token)
@@ -781,7 +841,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
   def compare_item(%CurrentTokenBalance{} = ctb, json) do
     assert Address.checksum(ctb.address_hash) == json["address"]["hash"]
-    assert ctb.token_id == json["token_id"]
+    assert (ctb.token_id && to_string(ctb.token_id)) == json["token_id"]
     assert to_string(ctb.value) == json["value"]
     compare_item(Repo.preload(ctb, [{:token, :contract_address}]).token, json["token"])
   end

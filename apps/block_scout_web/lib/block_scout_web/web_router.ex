@@ -8,16 +8,17 @@ defmodule BlockScoutWeb.WebRouter do
   alias BlockScoutWeb.Plug.CheckAccountWeb
 
   pipeline :browser do
+    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_flash)
     plug(:protect_from_forgery)
     plug(BlockScoutWeb.CSPHeader)
     plug(BlockScoutWeb.ChecksumAddress)
-    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
   end
 
   pipeline :account do
+    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_flash)
@@ -25,7 +26,6 @@ defmodule BlockScoutWeb.WebRouter do
     plug(:protect_from_forgery)
     plug(BlockScoutWeb.CSPHeader)
     plug(BlockScoutWeb.ChecksumAddress)
-    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
   end
 
   if Mix.env() == :dev do

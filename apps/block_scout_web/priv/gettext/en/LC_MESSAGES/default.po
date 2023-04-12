@@ -3474,7 +3474,7 @@ msgstr ""
 msgid "Withdrawals"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/_actions.html.eex:23
+#: lib/block_scout_web/templates/transaction/_actions.html.eex:101
 #, elixir-autogen, elixir-format
 msgid "%{qty} of <span class=\"text-muted\">Token ID [%{link_to_id}]</span>"
 msgstr ""
@@ -3522,7 +3522,7 @@ msgstr ""
 msgid "Internal server error"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/_actions.html.eex:14
+#: lib/block_scout_web/templates/transaction/_actions.html.eex:92
 #, elixir-autogen, elixir-format
 msgid "Mint of %{address} <span class=\"text-muted\">To</span> %{to}"
 msgstr ""
