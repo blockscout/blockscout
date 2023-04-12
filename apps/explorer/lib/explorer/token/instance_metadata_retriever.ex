@@ -236,22 +236,15 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   end
 
   def fetch_metadata_from_uri(uri, hex_token_id \\ nil) do
-    case HTTPoison.get(uri, [], timeout: 60_000, recv_timeout: 60_000, follow_redirect: true) do
+    case Application.get_env(:explorer, :http_adapter).get(uri, [],
+           timeout: 60_000,
+           recv_timeout: 60_000,
+           follow_redirect: true
+         ) do
       {:ok, %Response{body: body, status_code: 200, headers: headers}} ->
         content_type = get_content_type_from_headers(headers)
 
-        image = is_image?(content_type)
-        video = is_video?(content_type)
-
-        if content_type && (image || video) do
-          json = if image, do: %{"image" => uri}, else: %{"animation_url" => uri}
-
-          check_type(json, nil)
-        else
-          {:ok, json} = decode_json(body)
-
-          check_type(json, hex_token_id)
-        end
+        check_content_type(content_type, uri, hex_token_id, body)
 
       {:ok, %Response{body: body}} ->
         {:error, body}
@@ -267,6 +260,21 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       )
 
       {:error, :request_error}
+  end
+
+  defp check_content_type(content_type, uri, hex_token_id, body) do
+    image = is_image?(content_type)
+    video = is_video?(content_type)
+
+    if content_type && (image || video) do
+      json = if image, do: %{"image" => uri}, else: %{"animation_url" => uri}
+
+      check_type(json, nil)
+    else
+      {:ok, json} = decode_json(body)
+
+      check_type(json, hex_token_id)
+    end
   end
 
   defp get_content_type_from_headers(headers) do

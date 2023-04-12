@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.AddressContractController do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
-  alias BlockScoutWeb.AccessHelpers
+  alias BlockScoutWeb.AccessHelper
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Explorer.SmartContract.Solidity.PublishHelper
@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.AddressContractController do
     ]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          _ <- PublishHelper.check_and_verify(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
       render(

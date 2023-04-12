@@ -23,13 +23,6 @@ defmodule Explorer.Counters.Helper do
     end
   end
 
-  def cache_period_default_in_minutes(env_var, default_minutes) do
-    case Integer.parse(System.get_env(env_var, "")) do
-      {secs, ""} -> :timer.seconds(secs)
-      _ -> :timer.minutes(default_minutes)
-    end
-  end
-
   def fetch_from_cache(key, cache_name) do
     case :ets.lookup(cache_name, key) do
       [{_, value}] ->

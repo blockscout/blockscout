@@ -157,12 +157,6 @@
                   <a class="dropdown-item" href="https://duneanalytics.com/maxaleks/xDai-Usage">
                       <%= gettext("Gnosis Chain Usage stats") %>
                   </a>
-                  <%= if Application.get_env(:block_scout_web, :gas_tracker)[:enabled_in_menu] == true do %>
-                    <a class="dropdown-item" href="/gas-tracker-consumers-3hrs">
-                      <%= gettext("Gas Tracker") %>
-                      <span class="bs-label secondary right from-dropdown">New</span>
-                    </a>
-                  <% end %>
                   <hr class="menu-hr" />
                   <%= for %{url: url, title: title} = app <- apps_list() do %>
                     <%= if Map.has_key?(app, :embedded?) && app.embedded? do %>

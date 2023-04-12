@@ -3,12 +3,9 @@ defmodule Explorer.Market do
   Context for data related to the cryptocurrency market.
   """
 
-  alias Explorer.Chain.Address.CurrentTokenBalance
-  alias Explorer.Chain.{BridgedToken, Hash}
-  alias Explorer.Chain.Supply.TokenBridge
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market.{MarketHistory, MarketHistoryCache}
-  alias Explorer.{ExchangeRates, KnownTokens, Repo}
+  alias Explorer.{ExchangeRates, Repo}
 
   @doc """
   Get most recent exchange rate for the given symbol.
@@ -16,17 +13,6 @@ defmodule Explorer.Market do
   @spec get_exchange_rate(String.t()) :: Token.t() | nil
   def get_exchange_rate(symbol) do
     ExchangeRates.lookup(symbol)
-  end
-
-  @doc """
-  Get the address of the token with the given symbol.
-  """
-  @spec get_known_address(String.t()) :: Hash.Address.t() | nil
-  def get_known_address(symbol) do
-    case KnownTokens.lookup(symbol) do
-      {:ok, address} -> address
-      nil -> nil
-    end
   end
 
   @doc """
@@ -51,74 +37,4 @@ defmodule Explorer.Market do
 
     Repo.insert_all(MarketHistory, records_without_zeroes, on_conflict: :nothing, conflict_target: [:date])
   end
-
-  def add_price(%{symbol: symbol} = token) do
-    known_address = get_known_address(symbol)
-
-    matches_known_address = known_address && known_address == token.contract_address_hash
-
-    usd_value =
-      cond do
-        matches_known_address ->
-          fetch_token_usd_value(matches_known_address, symbol)
-
-        bridged_token = mainnet_bridged_token?(token) ->
-          TokenBridge.get_current_price_for_bridged_token(
-            token.contract_address_hash,
-            bridged_token.foreign_token_contract_address_hash
-          )
-
-        true ->
-          nil
-      end
-
-    Map.put(token, :usd_value, usd_value)
-  end
-
-  def add_price(%CurrentTokenBalance{token: token} = token_balance) do
-    token_with_price = add_price(token)
-
-    Map.put(token_balance, :token, token_with_price)
-  end
-
-  def add_price(tokens) when is_list(tokens) do
-    Enum.map(tokens, fn item ->
-      case item do
-        {token_balance, bridged_token, token} ->
-          {token_balance, bridged_token, add_price(token)}
-
-        token_balance ->
-          add_price(token_balance)
-      end
-    end)
-  end
-
-  defp mainnet_bridged_token?(token) do
-    bridged_prop = Map.get(token, :bridged) || nil
-
-    if bridged_prop do
-      bridged_token = Repo.get_by(BridgedToken, home_token_contract_address_hash: token.contract_address_hash)
-
-      if bridged_token do
-        if bridged_token.foreign_chain_id do
-          if Decimal.compare(bridged_token.foreign_chain_id, Decimal.new(1)) == :eq, do: bridged_token, else: false
-        else
-          false
-        end
-      else
-        false
-      end
-    else
-      false
-    end
-  end
-
-  defp fetch_token_usd_value(true, symbol) do
-    case get_exchange_rate(symbol) do
-      %{usd_value: usd_value} -> usd_value
-      nil -> nil
-    end
-  end
-
-  defp fetch_token_usd_value(_matches_known_address, _symbol), do: nil
 end

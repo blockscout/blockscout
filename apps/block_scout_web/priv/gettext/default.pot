@@ -254,6 +254,7 @@ msgstr ""
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:12
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_address.html.eex:4
+#: lib/block_scout_web/templates/tokens/index.html.eex:34
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20
 #: lib/block_scout_web/templates/transaction_state/index.html.eex:29
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:54
@@ -301,7 +302,7 @@ msgstr ""
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:11
 #: lib/block_scout_web/views/address_token_transfer_view.ex:11
 #: lib/block_scout_web/views/address_transaction_view.ex:11
-#: lib/block_scout_web/views/verified_contracts_view.ex:11
+#: lib/block_scout_web/views/verified_contracts_view.ex:12
 #, elixir-autogen, elixir-format
 msgid "All"
 msgstr ""
@@ -796,12 +797,12 @@ msgstr ""
 msgid "Contract Address Pending"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:473
+#: lib/block_scout_web/views/transaction_view.ex:477
 #, elixir-autogen, elixir-format
 msgid "Contract Call"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:470
+#: lib/block_scout_web/views/transaction_view.ex:474
 #, elixir-autogen, elixir-format
 msgid "Contract Creation"
 msgstr ""
@@ -1184,12 +1185,12 @@ msgstr ""
 msgid "EIP-1167"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:216
+#: lib/block_scout_web/views/transaction_view.ex:220
 #, elixir-autogen, elixir-format
 msgid "ERC-1155 "
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:214
+#: lib/block_scout_web/views/transaction_view.ex:218
 #, elixir-autogen, elixir-format
 msgid "ERC-20 "
 msgstr ""
@@ -1290,12 +1291,12 @@ msgstr ""
 msgid "Error trying to fetch balances."
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:369
+#: lib/block_scout_web/views/transaction_view.ex:373
 #, elixir-autogen, elixir-format
 msgid "Error: %{reason}"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:367
+#: lib/block_scout_web/views/transaction_view.ex:371
 #, elixir-autogen, elixir-format
 msgid "Error: (Awaiting internal transactions for reason)"
 msgstr ""
@@ -1500,7 +1501,7 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:22
 #: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:38
 #: lib/block_scout_web/views/block_view.ex:22
-#: lib/block_scout_web/views/wei_helpers.ex:77
+#: lib/block_scout_web/views/wei_helper.ex:77
 #, elixir-autogen, elixir-format
 msgid "Gwei"
 msgstr ""
@@ -1756,7 +1757,7 @@ msgstr ""
 msgid "Max Priority Fee per Gas"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:321
+#: lib/block_scout_web/views/transaction_view.ex:325
 #, elixir-autogen, elixir-format
 msgid "Max of"
 msgstr ""
@@ -1851,7 +1852,7 @@ msgstr ""
 #: lib/block_scout_web/templates/stakes/_rows.html.eex:34
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:186
 #: lib/block_scout_web/templates/verified_contracts/_contract.html.eex:21
-#: lib/block_scout_web/templates/verified_contracts/_contract.html.eex:58
+#: lib/block_scout_web/templates/verified_contracts/_contract.html.eex:61
 #, elixir-autogen, elixir-format
 msgid "N/A"
 msgstr ""
@@ -2875,13 +2876,13 @@ msgid "Token"
 msgstr ""
 
 #: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:3
-#: lib/block_scout_web/views/transaction_view.ex:464
+#: lib/block_scout_web/views/transaction_view.ex:468
 #, elixir-autogen, elixir-format
 msgid "Token Burning"
 msgstr ""
 
 #: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:7
-#: lib/block_scout_web/views/transaction_view.ex:465
+#: lib/block_scout_web/views/transaction_view.ex:469
 #, elixir-autogen, elixir-format
 msgid "Token Creation"
 msgstr ""
@@ -2909,7 +2910,7 @@ msgid "Token ID"
 msgstr ""
 
 #: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:5
-#: lib/block_scout_web/views/transaction_view.ex:463
+#: lib/block_scout_web/views/transaction_view.ex:467
 #, elixir-autogen, elixir-format
 msgid "Token Minting"
 msgstr ""
@@ -3043,7 +3044,7 @@ msgstr ""
 #: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:11
 #: lib/block_scout_web/templates/account/tag_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:19
-#: lib/block_scout_web/views/transaction_view.ex:476
+#: lib/block_scout_web/views/transaction_view.ex:480
 #, elixir-autogen, elixir-format
 msgid "Transaction"
 msgstr ""
@@ -3175,7 +3176,7 @@ msgstr ""
 msgid "Uncles"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:357
+#: lib/block_scout_web/views/transaction_view.ex:361
 #, elixir-autogen, elixir-format
 msgid "Unconfirmed"
 msgstr ""
@@ -3414,7 +3415,7 @@ msgstr ""
 msgid "We found the following pools you can claim reward from:"
 msgstr ""
 
-#: lib/block_scout_web/views/wei_helpers.ex:76
+#: lib/block_scout_web/views/wei_helper.ex:76
 #, elixir-autogen, elixir-format
 msgid "Wei"
 msgstr ""
@@ -4370,4 +4371,24 @@ msgstr ""
 #: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:7
 #, elixir-autogen, elixir-format
 msgid "Verified contracts, %{subnetwork}, %{coin}"
+msgstr ""
+
+#: lib/block_scout_web/templates/tokens/index.html.eex:38
+#, elixir-autogen, elixir-format
+msgid "Circulating Market Cap"
+msgstr ""
+
+#: lib/block_scout_web/templates/tokens/index.html.eex:48
+#, elixir-autogen, elixir-format
+msgid "Holders Count"
+msgstr ""
+
+#: lib/block_scout_web/templates/tokens/index.html.eex:43
+#, elixir-autogen, elixir-format
+msgid "Total Supply"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:29
+#, elixir-autogen, elixir-format
+msgid "There is no decompiled contracts for this address."
 msgstr ""

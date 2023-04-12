@@ -1,3 +1,81 @@
+<%= if @action.protocol == :aave_v3 do %>
+  <%= if Enum.member?([:borrow, :supply, :withdraw, :repay, :flash_loan], @action.type) do %>
+    <div class="<%= if @isLast, do: "lastItem", else: "" %>">
+      <span class="actions-item">
+        <% amount = formatted_action_amount(@action.data, "amount") %>
+        <% symbol = Map.get(@action.data, "symbol") %>
+        <% address = Map.get(@action.data, "address") %>
+
+        <i class="fa fa-caret-right"></i>
+
+        <% symbol = if symbol != "Ether", do: link(symbol, to: token_path(BlockScoutWeb.Endpoint, :show, address), "data-test": "token_link"), else: raw(symbol) %>
+
+        <%= if @action.type == :borrow do %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_aave.html", action: "Borrow", amount: amount, symbol: symbol, tail: "From Aave Protocol V3" %>
+        <% end %>
+        <%= if @action.type == :supply do %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_aave.html", action: "Supply", amount: amount, symbol: symbol, tail: "To Aave Protocol V3" %>
+        <% end %>
+        <%= if @action.type == :withdraw do %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_aave.html", action: "Withdraw", amount: amount, symbol: symbol, tail: "From Aave Protocol V3" %>
+        <% end %>
+        <%= if @action.type == :repay do %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_aave.html", action: "Repay", amount: amount, symbol: symbol, tail: "To Aave Protocol V3" %>
+        <% end %>
+        <%= if @action.type == :flash_loan do %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_aave.html", action: "Flash Loan", amount: amount, symbol: symbol, tail: "From Aave Protocol V3" %>
+        <% end %>
+      </span>
+      <br />
+    </div>
+  <% end %>
+  <%= if Enum.member?([:enable_collateral, :disable_collateral], @action.type) do %>
+    <div class="<%= if @isLast, do: "lastItem", else: "" %>">
+      <span class="actions-item">
+        <% symbol = Map.get(@action.data, "symbol") %>
+        <% address = Map.get(@action.data, "address") %>
+
+        <i class="fa fa-caret-right"></i>
+
+        <% symbol = if symbol != "Ether", do: link(symbol, to: token_path(BlockScoutWeb.Endpoint, :show, address), "data-test": "token_link"), else: raw(symbol) %>
+
+        <%= if @action.type == :enable_collateral do %>
+          <span class="text-muted">Enable</span>
+        <% else %>
+          <span class="text-muted">Disable</span>
+        <% end %>
+
+        <%= symbol %> <span class="text-muted">as Collateral on Aave Protocol V3</span>
+      </span>
+      <br />
+    </div>
+  <% end %>
+  <%= if @action.type == :liquidation_call do %>
+    <div class="<%= if @isLast, do: "lastItem", else: "" %>">
+      <% debt_amount = formatted_action_amount(@action.data, "debt_amount") %>
+      <% debt_symbol = Map.get(@action.data, "debt_symbol") %>
+      <% debt_address = Map.get(@action.data, "debt_address") %>
+      <% debt_symbol = if debt_symbol != "Ether", do: link(debt_symbol, to: token_path(BlockScoutWeb.Endpoint, :show, debt_address), "data-test": "token_link"), else: raw(debt_symbol) %>
+
+      <span class="actions-item">
+        <i class="fa fa-caret-right"></i>
+        <%= render BlockScoutWeb.TransactionView, "_actions_aave.html", action: "Liquidator Repay", amount: debt_amount, symbol: debt_symbol, tail: "To Aave Protocol V3" %>
+      </span>
+      <br />
+
+      <% collateral_amount = formatted_action_amount(@action.data, "collateral_amount") %>
+      <% collateral_symbol = Map.get(@action.data, "collateral_symbol") %>
+      <% collateral_address = Map.get(@action.data, "collateral_address") %>
+      <% collateral_symbol = if collateral_symbol != "Ether", do: link(collateral_symbol, to: token_path(BlockScoutWeb.Endpoint, :show, collateral_address), "data-test": "token_link"), else: raw(collateral_symbol) %>
+
+      <span class="actions-item">
+        <i class="fa fa-caret-right"></i>
+        <%= render BlockScoutWeb.TransactionView, "_actions_aave.html", action: "Liquidation", amount: collateral_amount, symbol: collateral_symbol, tail: "On Aave Protocol V3" %>
+      </span>
+      <br />
+    </div>
+  <% end %>
+<% end %>
 <%= if @action.protocol == :uniswap_v3 do %>
   <%= if @action.type == :mint_nft do %>
     <div class="<%= if @isLast, do: "lastItem", else: "" %>">

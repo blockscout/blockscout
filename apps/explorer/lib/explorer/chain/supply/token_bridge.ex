@@ -16,7 +16,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
   alias Explorer.Chain.Cache.TokenExchangeRate, as: TokenExchangeRateCache
   alias Explorer.Counters.Bridge
   alias Explorer.ExchangeRates.Source
-  alias Explorer.{CustomContractsHelpers, Repo}
+  alias Explorer.{CustomContractsHelper, Repo}
   alias Explorer.SmartContract.Reader
 
   @token_bridge_contract_address "0x7301CFA0e1756B71869E93d4e4Dca5c7d0eb0AA6"
@@ -271,7 +271,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
   defp calc_omni_bridge_market_cap(bridged_mainnet_tokens_with_supply) do
     # Logger.warn("Show: calc_omni_bridge_market_cap")
 
-    test_token_addresses = CustomContractsHelpers.get_custom_addresses_list(:test_tokens_addresses)
+    test_token_addresses = CustomContractsHelper.get_custom_addresses_list(:test_tokens_addresses)
 
     config = Application.get_env(:explorer, Explorer.Counters.Bridge)
     disable_lp_tokens_in_market_cap = Keyword.get(config, :disable_lp_tokens_in_market_cap)

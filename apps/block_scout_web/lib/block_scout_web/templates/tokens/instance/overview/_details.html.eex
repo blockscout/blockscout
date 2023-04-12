@@ -42,7 +42,7 @@
             <div class="d-flex flex-row justify-content-start text-muted">
               <%= if external_url(@token_instance.instance) do %>
                 <span class="mr-4">
-                  <a data-test="external_url" href=<%=NFTHelpers.external_url(@token_instance.instance) %> target="_blank">
+                  <a data-test="external_url" href=<%=NFTHelper.external_url(@token_instance.instance) %> target="_blank">
                   View In App <span class="external-token-icon"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span>
                   </a>
                 </span>

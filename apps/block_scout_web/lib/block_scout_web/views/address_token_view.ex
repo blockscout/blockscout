@@ -2,11 +2,11 @@ defmodule BlockScoutWeb.AddressTokenView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.{AddressView, ChainView}
-  alias Explorer.{Chain, CustomContractsHelpers}
-  alias Explorer.Chain.{Address, CurrencyHelpers, Wei}
+  alias Explorer.{Chain, CustomContractsHelper}
+  alias Explorer.Chain.{Address, CurrencyHelper, Wei}
 
   def circles_total_balance(address_hash) do
-    circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses)
+    circles_addresses_list = CustomContractsHelper.get_custom_addresses_list(:circles_addresses)
 
     token_balances =
       address_hash

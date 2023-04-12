@@ -225,6 +225,10 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", "changed_bytecode", %{})
   end
 
+  def handle_event({:chain_event, :smart_contract_was_verified, :on_demand, [address_hash]}) do
+    Endpoint.broadcast("addresses:#{to_string(address_hash)}", "smart_contract_was_verified", %{})
+  end
+
   def handle_event(_), do: nil
 
   def fetch_compiler_version(compiler) do
@@ -264,22 +268,14 @@ defmodule BlockScoutWeb.Notifier do
     do: Map.has_key?(params, "verification_type") && Map.get(params, "verification_type") == type
 
   @doc """
-  Broadcast the percentage of blocks indexed so far.
+  Broadcast the percentage of blocks or pending block operations indexed so far.
   """
-  def broadcast_blocks_indexed_ratio(ratio, finished?) do
-    Endpoint.broadcast("blocks:indexing", "index_status", %{
+  @spec broadcast_indexed_ratio(String.t(), Decimal.t()) ::
+          :ok | {:error, term()}
+  def broadcast_indexed_ratio(msg, ratio) do
+    Endpoint.broadcast(msg, "index_status", %{
       ratio: Decimal.to_string(ratio),
-      finished: finished?
-    })
-  end
-
-  @doc """
-  Broadcast the percentage of pending block operations indexed so far.
-  """
-  def broadcast_internal_transactions_indexed_ratio(ratio, finished?) do
-    Endpoint.broadcast("blocks:indexing_internal_transactions", "index_status", %{
-      ratio: Decimal.to_string(ratio),
-      finished: finished?
+      finished: Chain.finished_indexing_from_ratio?(ratio)
     })
   end
 

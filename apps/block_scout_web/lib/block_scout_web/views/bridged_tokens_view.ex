@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.BridgedTokensView do
 
   alias BlockScoutWeb.ChainView
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, BridgedToken, CurrencyHelpers, Token}
+  alias Explorer.Chain.{Address, BridgedToken, CurrencyHelper, Token}
 
   @owl_token_amb "0x0905Ab807F8FD040255F0cF8fa14756c1D824931"
   @owl_token_omni "0x750eCf8c11867Ce5Dbc556592c5bb1E0C6d16538"
@@ -64,7 +64,7 @@ defmodule BlockScoutWeb.BridgedTokensView do
       bridged_token.custom_cap
     else
       if bridged_token.exchange_rate && token.total_supply do
-        Decimal.mult(bridged_token.exchange_rate, CurrencyHelpers.divide_decimals(token.total_supply, token.decimals))
+        Decimal.mult(bridged_token.exchange_rate, CurrencyHelper.divide_decimals(token.total_supply, token.decimals))
       else
         Decimal.new(0)
       end

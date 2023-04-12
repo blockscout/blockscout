@@ -10,11 +10,7 @@ defmodule Explorer.History.Process do
 
   @impl GenServer
   def init([:ok, historian]) do
-    init_lag =
-      case Application.get_env(:explorer, historian, [])[:init_lag] do
-        t when is_integer(t) and t >= 0 -> t
-        _ -> 0
-      end
+    init_lag_milliseconds = Application.get_env(:explorer, historian, [])[:init_lag_milliseconds] || 0
 
     days_to_compile =
       case Application.get_env(:explorer, historian, [])[:days_to_compile_at_init] do
@@ -22,7 +18,7 @@ defmodule Explorer.History.Process do
         _ -> 365
       end
 
-    Process.send_after(self(), {:compile_historical_records, days_to_compile}, init_lag)
+    Process.send_after(self(), {:compile_historical_records, days_to_compile}, init_lag_milliseconds)
     {:ok, %{historian: historian}}
   end
 
@@ -59,8 +55,7 @@ defmodule Explorer.History.Process do
   end
 
   defp schedule_next_compilation do
-    delay = config_or_default(:history_fetch_interval, :timer.minutes(60))
-    Process.send_after(self(), {:compile_historical_records, 2}, delay)
+    Process.send_after(self(), {:compile_historical_records, 2}, calculate_delay_until_next_midnight())
   end
 
   @spec failed_compilation(non_neg_integer(), module(), non_neg_integer()) :: any()
@@ -73,11 +68,24 @@ defmodule Explorer.History.Process do
   defp compile_historical_records(day_count, historian, failed_attempts \\ 0) do
     Task.Supervisor.async_nolink(Explorer.HistoryTaskSupervisor, fn ->
       Process.sleep(delay(failed_attempts))
-      {day_count, failed_attempts, historian.compile_records(day_count)}
+
+      try do
+        {day_count, failed_attempts, historian.compile_records(day_count)}
+      rescue
+        exception ->
+          Logger.error(fn ->
+            [
+              "Error on compile_historical_records (day_count=#{day_count}, failed_attempts=#{failed_attempts}):",
+              Exception.format(:error, exception)
+            ]
+          end)
+
+          {day_count, failed_attempts, :error}
+      end
     end)
   end
 
-  # Helpers
+  # Helper
   @typep milliseconds :: non_neg_integer()
 
   @spec config_or_default(atom(), term(), module()) :: term()
@@ -98,5 +106,15 @@ defmodule Explorer.History.Process do
     # Simulates 2^n
     multiplier = Enum.reduce(2..failed_attempts, 1, fn _, acc -> 2 * acc end)
     multiplier * base_backoff()
+  end
+
+  defp calculate_delay_until_next_midnight do
+    now = DateTime.utc_now()
+    # was added for testing possibility
+    time_to_fetch_at = config_or_default(:time_to_fetch_at, Time.new!(0, 0, 0, 0))
+    days_to_add = config_or_default(:days_to_add, 1)
+    tomorrow = DateTime.new!(Date.add(Date.utc_today(), days_to_add), time_to_fetch_at, now.time_zone)
+
+    DateTime.diff(tomorrow, now, :millisecond)
   end
 end

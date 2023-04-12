@@ -6,12 +6,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias BlockScoutWeb.SmartContractView
   alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
   alias Ecto.Changeset
-  alias Explorer.{Chain, Market}
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
-  alias Explorer.ExchangeRates.Token
   alias Explorer.Visualize.Sol2uml
 
   require Logger
+
+  @api_true [api?: true]
 
   def render("smart_contracts.json", %{smart_contracts: smart_contracts, next_page_params: next_page_params}) do
     %{"items" => Enum.map(smart_contracts, &prepare_smart_contract_for_list/1), "next_page_params" => next_page_params}
@@ -42,7 +43,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       {:error, %{code: code, message: message, data: data}} ->
         revert_reason = Chain.format_revert_reason_message(data)
 
-        case SmartContractView.decode_revert_reason(contract_address_hash, revert_reason) do
+        case SmartContractView.decode_revert_reason(contract_address_hash, revert_reason, @api_true) do
           {:ok, method_id, text, mapping} ->
             %{
               result:
@@ -127,14 +128,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   # credo:disable-for-next-line
   def prepare_smart_contract(%Address{smart_contract: %SmartContract{}} = address) do
-    minimal_proxy_template = Chain.get_minimal_proxy_template(address.hash)
-
-    metadata_for_verification =
-      minimal_proxy_template || Chain.get_address_verified_twin_contract(address.hash).verified_contract
-
+    minimal_proxy_template = Chain.get_minimal_proxy_template(address.hash, @api_true)
+    twin = Chain.get_address_verified_twin_contract(address.hash, @api_true)
+    metadata_for_verification = minimal_proxy_template || twin.verified_contract
     smart_contract_verified = AddressView.smart_contract_verified?(address)
-    additional_sources_from_twin = Chain.get_address_verified_twin_contract(address.hash).additional_sources
-    fully_verified = Chain.smart_contract_fully_verified?(address.hash)
+    additional_sources_from_twin = twin.additional_sources
+    fully_verified = Chain.smart_contract_fully_verified?(address.hash, @api_true)
 
     additional_sources =
       if smart_contract_verified, do: address.smart_contract_additional_sources, else: additional_sources_from_twin
@@ -217,7 +216,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     }
   end
 
-  def format_constructor_arguments(abi, constructor_arguments) do
+  def format_constructor_arguments(abi, constructor_arguments)
+      when not is_nil(abi) and not is_nil(constructor_arguments) do
     constructor_abi = Enum.find(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
 
     input_types = Enum.map(constructor_abi["inputs"], &FunctionSelector.parse_specification_type/1)
@@ -243,11 +243,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       nil
   end
 
+  def format_constructor_arguments(_abi, _constructor_arguments), do: nil
+
   defp prepare_smart_contract_for_list(%SmartContract{} = smart_contract) do
-    token =
-      if smart_contract.address.token,
-        do: Market.get_exchange_rate(smart_contract.address.token.symbol),
-        else: Token.null()
+    token = smart_contract.address.token
 
     %{
       "address" => Helper.address_with_info(nil, smart_contract.address, smart_contract.address.hash),
@@ -256,7 +255,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "tx_count" => smart_contract.address.transactions_count,
       "language" => smart_contract_language(smart_contract),
       "verified_at" => smart_contract.inserted_at,
-      "market_cap" => token && token.market_cap_usd,
+      "market_cap" => token && token.circulating_market_cap,
       "has_constructor_args" => !is_nil(smart_contract.constructor_arguments),
       "coin_balance" =>
         if(smart_contract.address.fetched_coin_balance, do: smart_contract.address.fetched_coin_balance.value)

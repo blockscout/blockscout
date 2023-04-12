@@ -1,19 +1,19 @@
 defmodule BlockScoutWeb.TransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.{AccessHelpers, AddressView, BlockView, TabHelpers}
+  alias BlockScoutWeb.{AccessHelper, AddressView, BlockView, TabHelper}
   alias BlockScoutWeb.Account.AuthController
-  alias Explorer.Cldr.Number
-  alias Explorer.{Chain, CustomContractsHelpers, Repo}
+  alias Explorer.{Chain, CustomContractsHelper, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
+  alias Explorer.CldrHelper.Number
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Timex.Duration
 
   import BlockScoutWeb.Gettext
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1, short_token_id: 2, tag_name_to_label: 1]
-  import BlockScoutWeb.Tokens.Helpers
+  import BlockScoutWeb.Tokens.Helper
 
   @tabs ["token-transfers", "internal-transactions", "logs", "raw-trace", "state"]
 
@@ -189,24 +189,28 @@ defmodule BlockScoutWeb.TransactionView do
       if existing_entry do
         acc1
         |> Enum.map(fn entry ->
-          if entry.to_address_hash == token_transfer.to_address_hash &&
-               entry.from_address_hash == token_transfer.from_address_hash &&
-               entry.token == token_transfer.token do
-            updated_entry = %{
-              entry
-              | amount: Decimal.add(new_entry.amount, entry.amount)
-            }
-
-            updated_entry
-          else
-            entry
-          end
+          process_entry(entry, new_entry, token_transfer)
         end)
       else
         [new_entry | acc1]
       end
 
     {new_acc1, acc2}
+  end
+
+  def process_entry(entry, new_entry, token_transfer) do
+    if entry.to_address_hash == token_transfer.to_address_hash &&
+         entry.from_address_hash == token_transfer.from_address_hash &&
+         entry.token == token_transfer.token do
+      updated_entry = %{
+        entry
+        | amount: Decimal.add(new_entry.amount, entry.amount)
+      }
+
+      updated_entry
+    else
+      entry
+    end
   end
 
   def token_type_name(type) do
@@ -340,8 +344,8 @@ defmodule BlockScoutWeb.TransactionView do
     Chain.transaction_to_status(transaction)
   end
 
-  def transaction_revert_reason(transaction) do
-    transaction |> Chain.transaction_to_revert_reason() |> decoded_revert_reason(transaction)
+  def transaction_revert_reason(transaction, options \\ []) do
+    transaction |> Chain.transaction_to_revert_reason() |> decoded_revert_reason(transaction, options)
   end
 
   def get_pure_transaction_revert_reason(nil), do: nil
@@ -385,11 +389,11 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def decoded_input_data(transaction) do
-    Transaction.decoded_input_data(transaction)
+    Transaction.decoded_input_data(transaction, [])
   end
 
-  def decoded_revert_reason(revert_reason, transaction) do
-    Transaction.decoded_revert_reason(transaction, revert_reason)
+  def decoded_revert_reason(revert_reason, transaction, options) do
+    Transaction.decoded_revert_reason(transaction, revert_reason, options)
   end
 
   @doc """
@@ -520,7 +524,7 @@ defmodule BlockScoutWeb.TransactionView do
   """
   def current_tab_name(request_path) do
     @tabs
-    |> Enum.filter(&TabHelpers.tab_active?(&1, request_path))
+    |> Enum.filter(&TabHelper.tab_active?(&1, request_path))
     |> tab_name()
   end
 
@@ -572,7 +576,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   defp show_tenderly_link? do
-    System.get_env("SHOW_TENDERLY_LINK") == "true"
+    Application.get_env(:block_scout_web, :show_tenderly_link)
   end
 
   defp tenderly_chain_path do
@@ -580,7 +584,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def get_max_length do
-    string_value = Application.get_env(:block_scout_web, :max_length_to_show_string_without_trimming)
+    string_value = Application.get_env(:block_scout_web, :contract)[:max_length_to_show_string_without_trimming]
 
     case Integer.parse(string_value) do
       {integer, ""} -> integer

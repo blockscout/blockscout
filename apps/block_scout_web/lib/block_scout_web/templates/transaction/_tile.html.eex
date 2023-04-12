@@ -38,7 +38,7 @@
         <%= render BlockScoutWeb.AddressView, "_labels.html", tags: tx_tags %>
       </div>
       <span>
-        <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, assigns[:current_address]) |> BlockScoutWeb.RenderHelpers.render_partial() %>
+        <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, assigns[:current_address]) |> BlockScoutWeb.RenderHelper.render_partial() %>
         &rarr;
         <%= if Chain.moon_token?(@transaction.to_address_hash) do %>
           <img src="/images/icons/moon.png" height="18px"  width="18px" class="reddit-token" />
@@ -46,7 +46,7 @@
         <%= if Chain.bricks_token?(@transaction.to_address_hash) do %>
           <img src="/images/icons/bricks.png" height="18px"  width="18px" class="reddit-token" />
         <% end %>
-        <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:to, assigns[:current_address]) |> BlockScoutWeb.RenderHelpers.render_partial() %>
+        <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:to, assigns[:current_address]) |> BlockScoutWeb.RenderHelper.render_partial() %>
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <span class="tile-title">
@@ -82,7 +82,7 @@
     <!-- Block info -->
     <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-center text-md-right mt-3 mt-md-0 tile-bottom">
       <span class="mr-2 mr-md-0 order-1">
-        <%= @transaction |> block_number() |> BlockScoutWeb.RenderHelpers.render_partial() %>
+        <%= @transaction |> block_number() |> BlockScoutWeb.RenderHelper.render_partial() %>
       </span>
       <span class="mr-2 mr-md-0 order-2" in-tile data-from-now="<%= block_timestamp(@transaction) %>"></span>
       <%= if from_or_to_address?(@transaction, assigns[:current_address]) do %>

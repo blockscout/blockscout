@@ -1,13 +1,13 @@
 defmodule BlockScoutWeb.Tokens.OverviewView do
   use BlockScoutWeb, :view
 
-  alias Explorer.{Chain, CustomContractsHelpers}
-  alias Explorer.Chain.{Address, CurrencyHelpers, SmartContract, Token}
+  alias Explorer.{Chain, CustomContractsHelper}
+  alias Explorer.Chain.{Address, SmartContract, Token}
   alias Explorer.SmartContract.{Helper, Writer}
 
-  alias BlockScoutWeb.{AccessHelpers, LayoutView}
+  alias BlockScoutWeb.{AccessHelper, CurrencyHelper, LayoutView}
 
-  import BlockScoutWeb.AddressView, only: [from_address_hash: 1, is_test?: 1]
+  import BlockScoutWeb.AddressView, only: [from_address_hash: 1, contract_interaction_disabled?: 0, is_test?: 1]
 
   @tabs ["token-transfers", "token-holders", "read-contract", "inventory"]
   @etherscan_token_link "https://etherscan.io/token/"
@@ -74,10 +74,11 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   def smart_contract_with_write_functions?(%Token{
         contract_address: %Address{smart_contract: %SmartContract{}} = address
       }) do
-    Enum.any?(
-      address.smart_contract.abi || [],
-      &Writer.write_function?(&1)
-    )
+    !contract_interaction_disabled?() &&
+      Enum.any?(
+        address.smart_contract.abi || [],
+        &Writer.write_function?(&1)
+      )
   end
 
   def smart_contract_with_write_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
@@ -89,8 +90,8 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
     if Map.has_key?(token, :custom_cap) && token.custom_cap do
       token.custom_cap
     else
-      tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
-      price = token.usd_value
+      tokens = CurrencyHelper.divide_decimals(token.total_supply, token.decimals)
+      price = token.fiat_value
       Decimal.mult(tokens, price)
     end
   end

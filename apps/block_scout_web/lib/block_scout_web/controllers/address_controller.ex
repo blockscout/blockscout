@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.AddressController do
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{
-    AccessHelpers,
+    AccessHelper,
     AddressTransactionController,
     AddressView,
     Controller
@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.AddressController do
   def show(conn, %{"id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "_show_address_transactions.html",
