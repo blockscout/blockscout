@@ -26,11 +26,10 @@ services:
         DISABLE_READ_API: "false"
         DISABLE_WEBAPP: "false"
         DISABLE_WRITE_API: "false"
-        CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER: ""
+        CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED: ""
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
-        WOBSERVER_ENABLED: "false"
         ADMIN_PANEL_ENABLED: ""
-        RELEASE_VERSION: 5.1.2
+        RELEASE_VERSION: 5.1.3
     restart: always
     stop_grace_period: 5m
     container_name: 'blockscout'
