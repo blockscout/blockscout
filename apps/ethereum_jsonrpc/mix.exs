@@ -23,7 +23,7 @@ defmodule EthereumJsonrpc.MixProject do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "5.1.2"
+      version: "5.1.3"
     ]
   end
 
@@ -63,7 +63,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Static Type Checking
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       # JSONRPC HTTP Post calls
-      {:httpoison, "~> 1.6"},
+      {:httpoison, "~> 2.0"},
       # Decode/Encode JSON for JSONRPC
       {:jason, "~> 1.3"},
       # Log errors and application output to separate files

@@ -91,8 +91,21 @@ defmodule Explorer.Chain.Transaction.History.Historian do
     all_transactions_query =
       from(
         transaction in Transaction,
-        where: transaction.block_number >= ^min_block and transaction.block_number <= ^max_block,
-        where: transaction.block_consensus == true,
+        where: transaction.block_number >= ^min_block and transaction.block_number <= ^max_block
+      )
+
+    all_blocks_query =
+      from(
+        block in Block,
+        where: block.consensus == true,
+        where: block.number >= ^min_block and block.number <= ^max_block,
+        select: block.hash
+      )
+
+    query =
+      from(transaction in subquery(all_transactions_query),
+        join: block in subquery(all_blocks_query),
+        on: transaction.block_hash == block.hash,
         select: transaction
       )
 
@@ -103,6 +116,8 @@ defmodule Explorer.Chain.Transaction.History.Historian do
 
     total_fee_query =
       from(transaction in subquery(all_transactions_query),
+        join: block in subquery(all_blocks_query),
+        on: transaction.block_hash == block.hash,
         select: fragment("SUM(? * ?)", transaction.gas_price, transaction.gas_used)
       )
 

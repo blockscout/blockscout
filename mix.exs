@@ -7,7 +7,7 @@ defmodule BlockScout.Mixfile do
     [
       # app: :block_scout,
       # aliases: aliases(config_env()),
-      version: "5.1.2",
+      version: "5.1.3",
       apps_path: "apps",
       deps: deps(),
       dialyzer: dialyzer(),
@@ -92,7 +92,7 @@ defmodule BlockScout.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
-      {:ex_twilio, "~> 0.9.0"},
+      {:httpoison, "~> 2.1"},
       {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.3", override: true},
       {:tesla, "~> 1.6.0"},

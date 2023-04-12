@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.AddressRewardController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
+  alias BlockScoutWeb.{AccessHelper, Controller, TransactionView}
   alias Explorer.{Chain, Market}
 
   alias Explorer.ExchangeRates.Token
@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.AddressRewardController do
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash, address_options, false),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       options = paging_options(params)
 
       results_plus_one = Chain.address_to_rewards(address_hash, options)
@@ -70,7 +70,7 @@ defmodule BlockScoutWeb.AddressRewardController do
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "index.html",
