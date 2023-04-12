@@ -2589,7 +2589,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:29
 #, elixir-autogen, elixir-format
-msgid "There is no decompilded contracts for this address."
+msgid "There is no decompiled contracts for this address."
 msgstr ""
 
 #: lib/block_scout_web/templates/address_coin_balance/index.html.eex:21
