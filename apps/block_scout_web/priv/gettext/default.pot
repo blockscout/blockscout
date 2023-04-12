@@ -3103,6 +3103,7 @@ msgid "Verified contracts"
 msgstr ""
 
 #: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:2
+#: lib/block_scout_web/templates/withdrawal/_metatags.html.eex:2
 #, elixir-autogen, elixir-format
 msgid "Verified contracts - %{subnetwork} Explorer"
 msgstr ""
@@ -3205,6 +3206,7 @@ msgid "View the transactions, token transfers, and uncles for block number %{blo
 msgstr ""
 
 #: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:8
+#: lib/block_scout_web/templates/withdrawal/_metatags.html.eex:8
 #, elixir-autogen, elixir-format
 msgid "View the verified contracts on %{subnetwork}"
 msgstr ""
@@ -3510,9 +3512,9 @@ msgstr ""
 msgid "Your request contained an error, perhaps a mistyped tx/block/address hash. Try again, and check the developer tools console for more info."
 msgstr ""
 
-#: lib/block_scout_web/templates/address_withdrawal/index.html.eex:38
+#: lib/block_scout_web/templates/address_withdrawal/index.html.eex:41
 #: lib/block_scout_web/templates/block_withdrawal/index.html.eex:32
-#: lib/block_scout_web/templates/withdrawal/index.html.eex:33
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:36
 #, elixir-autogen, elixir-format
 msgid "Amount"
 msgstr ""
@@ -3524,7 +3526,7 @@ msgstr ""
 msgid "Index"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_withdrawal/index.html.eex:51
+#: lib/block_scout_web/templates/address_withdrawal/index.html.eex:54
 #, elixir-autogen, elixir-format
 msgid "There are no withdrawals for this address."
 msgstr ""
@@ -3556,6 +3558,7 @@ msgid "Select Yes if you want to verify Yul contract."
 msgstr ""
 
 #: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:7
+#: lib/block_scout_web/templates/withdrawal/_metatags.html.eex:7
 #, elixir-autogen, elixir-format
 msgid "Verified contracts, %{subnetwork}, %{coin}"
 msgstr ""
@@ -3600,7 +3603,7 @@ msgstr ""
 msgid "Scroll to see more"
 msgstr ""
 
-#: lib/block_scout_web/templates/withdrawal/index.html.eex:48
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:51
 #, elixir-autogen, elixir-format
 msgid "There are no withdrawals."
 msgstr ""
@@ -3608,4 +3611,10 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:202
 #, elixir-autogen, elixir-format
 msgid "Transaction Action"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_withdrawal/index.html.eex:38
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:33
+#, elixir-autogen, elixir-format
+msgid "Age"
 msgstr ""

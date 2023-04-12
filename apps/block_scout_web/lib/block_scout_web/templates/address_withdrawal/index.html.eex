@@ -35,6 +35,9 @@
                     <div class="stakes-table-th-content"><%= gettext "Block" %></div>
                   </th>
                   <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "Age" %></div>
+                  </th>
+                  <th class="stakes-table-th">
                     <div class="stakes-table-th-content"><%= gettext "Amount" %></div>
                   </th>
                 </tr>

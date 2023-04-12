@@ -23,6 +23,10 @@
         use_custom_tooltip: false
     %>
   </td>
+  <!-- Age -->
+  <td class="stakes-td">
+    <span data-from-now="<%= @withdrawal.block.timestamp %>"></span>
+  </td>
   <!-- Amount -->
   <td class="stakes-td">
     <span><%= format_wei_value(@withdrawal.amount, :ether) %></span>

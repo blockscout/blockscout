@@ -30,12 +30,15 @@
                     <div class="stakes-table-th-content"><%= gettext "To" %></div>
                   </th>
                   <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "Age" %></div>
+                  </th>
+                  <th class="stakes-table-th">
                     <div class="stakes-table-th-content"><%= gettext "Amount" %></div>
                   </th>
                 </tr>
               </thead>
               <tbody data-items data-selector="address-withdrawals">
-                <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 5 %>
+                <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 6 %>
               </tbody>
             </table>
           </div>
