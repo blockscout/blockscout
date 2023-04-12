@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#7246](https://github.com/blockscout/blockscout/pull/7246) - Fallback JSON RPC option
+
 ### Fixes
 
 ### Chore

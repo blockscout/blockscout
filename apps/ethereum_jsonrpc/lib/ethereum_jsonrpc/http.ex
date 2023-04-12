@@ -3,7 +3,7 @@ defmodule EthereumJSONRPC.HTTP do
   JSONRPC over HTTP
   """
 
-  alias EthereumJSONRPC.{DecodeError, Transport}
+  alias EthereumJSONRPC.{DecodeError, Transport, Utility.EndpointAvailabilityObserver}
 
   require Logger
 
@@ -27,8 +27,14 @@ defmodule EthereumJSONRPC.HTTP do
     http_options = Keyword.fetch!(options, :http_options)
 
     with {:ok, %{body: body, status_code: code}} <- http.json_rpc(url, json, http_options),
-         {:ok, json} <- decode_json(request: [url: url, body: json], response: [status_code: code, body: body]) do
-      handle_response(json, code)
+         {:ok, json} <- decode_json(request: [url: url, body: json], response: [status_code: code, body: body]),
+         {:ok, response} <- handle_response(json, code) do
+      {:ok, response}
+    else
+      error ->
+        named_arguments = [transport: __MODULE__, transport_options: Keyword.delete(options, :method_to_url)]
+        EndpointAvailabilityObserver.inc_error_count(url, named_arguments)
+        error
     end
   end
 
@@ -177,9 +183,12 @@ defmodule EthereumJSONRPC.HTTP do
     with {:ok, method_to_url} <- Keyword.fetch(options, :method_to_url),
          {:ok, method_atom} <- to_existing_atom(method),
          {:ok, url} <- Keyword.fetch(method_to_url, method_atom) do
-      url
+      EndpointAvailabilityObserver.maybe_replace_url(url, options[:fallback_trace_url])
     else
-      _ -> Keyword.fetch!(options, :url)
+      _ ->
+        options
+        |> Keyword.fetch!(:url)
+        |> EndpointAvailabilityObserver.maybe_replace_url(options[:fallback_url])
     end
   end
 

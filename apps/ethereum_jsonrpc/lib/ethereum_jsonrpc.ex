@@ -380,33 +380,33 @@ defmodule EthereumJSONRPC do
     * Handled response
     * `{:error, reason}` if POST fails
   """
-  @spec json_rpc(Transport.request(), json_rpc_named_arguments, bool) ::
+  @spec json_rpc(Transport.request(), json_rpc_named_arguments) ::
           {:ok, Transport.result()} | {:error, reason :: term()}
-  @spec json_rpc(Transport.batch_request(), json_rpc_named_arguments, bool) ::
+  @spec json_rpc(Transport.batch_request(), json_rpc_named_arguments) ::
           {:ok, Transport.batch_response()} | {:error, reason :: term()}
-  def json_rpc(request, named_arguments, use_fallback? \\ true)
-      when (is_map(request) or is_list(request)) and is_list(named_arguments) do
+  def json_rpc(request, named_arguments) when (is_map(request) or is_list(request)) and is_list(named_arguments) do
     transport = Keyword.fetch!(named_arguments, :transport)
     transport_options = Keyword.fetch!(named_arguments, :transport_options)
     throttle_timeout = Keyword.get(named_arguments, :throttle_timeout, @default_throttle_timeout)
 
-    url =
-      case EndpointAvailabilityObserver.check_endpoint(transport_options[:url]) do
-        :ok -> transport_options[:url]
-        :unavailable -> transport_options[:fallback_url] || transport_options[:url]
-      end
-
-    corrected_transport_options = if use_fallback?, do: Keyword.put(transport_options, :url, url), else: transport_options
+    url = maybe_replace_url(transport_options[:url], transport_options[:fallback_url], transport)
+    corrected_transport_options = Keyword.replace(transport_options, :url, url)
 
     case RequestCoordinator.perform(request, transport, corrected_transport_options, throttle_timeout) do
       {:ok, result} ->
         {:ok, result}
 
       {:error, reason} ->
-        EndpointAvailabilityObserver.inc_error_count(corrected_transport_options[:url], named_arguments)
+        maybe_inc_error_count(corrected_transport_options[:url], named_arguments, transport)
         {:error, reason}
     end
   end
+
+  defp maybe_replace_url(url, _replace_url, EthereumJSONRPC.HTTP), do: url
+  defp maybe_replace_url(url, replace_url, _), do: EndpointAvailabilityObserver.maybe_replace_url(url, replace_url)
+
+  defp maybe_inc_error_count(_url, _arguments, EthereumJSONRPC.HTTP), do: :ok
+  defp maybe_inc_error_count(url, arguments, _), do: EndpointAvailabilityObserver.inc_error_count(url, arguments)
 
   @doc """
   Converts `t:quantity/0` to `t:non_neg_integer/0`.

@@ -46,9 +46,11 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
   end
 
   defp fetch_latest_block_number(json_rpc_named_arguments) do
+    {_, arguments_without_fallback} = pop_in(json_rpc_named_arguments, [:transport_options, :fallback_url])
+
     %{id: 0, method: "eth_blockNumber", params: []}
     |> EthereumJSONRPC.request()
-    |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments, false)
+    |> EthereumJSONRPC.json_rpc(arguments_without_fallback)
   end
 
   defp schedule_next_check do

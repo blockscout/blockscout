@@ -29,6 +29,13 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
     GenServer.call(__MODULE__, {:check_endpoint, url})
   end
 
+  def maybe_replace_url(url, replace_url) do
+    case check_endpoint(url) do
+      :ok -> url
+      :unavailable -> replace_url || url
+    end
+  end
+
   def enable_endpoint(url) do
     GenServer.cast(__MODULE__, {:enable_endpoint, url})
   end
