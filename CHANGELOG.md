@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#7246](https://github.com/blockscout/blockscout/pull/7246) - Fallback JSON RPC option
+
 ### Fixes
 
 - [#7270](https://github.com/blockscout/blockscout/pull/7270) - Fix default `TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL`
