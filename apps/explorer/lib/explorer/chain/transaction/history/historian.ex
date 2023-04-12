@@ -109,9 +109,9 @@ defmodule Explorer.Chain.Transaction.History.Historian do
         select: transaction
       )
 
-    num_transactions = Repo.aggregate(all_transactions_query, :count, :hash, timeout: :infinity)
+    num_transactions = Repo.aggregate(query, :count, :hash, timeout: :infinity)
     Logger.info("tx/per day chart: num of transactions #{num_transactions}")
-    gas_used = Repo.aggregate(all_transactions_query, :sum, :gas_used, timeout: :infinity)
+    gas_used = Repo.aggregate(query, :sum, :gas_used, timeout: :infinity)
     Logger.info("tx/per day chart: total gas used #{gas_used}")
 
     total_fee_query =
