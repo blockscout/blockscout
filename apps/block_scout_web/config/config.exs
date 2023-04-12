@@ -82,10 +82,6 @@ config :block_scout_web, BlockScoutWeb.ApiRouter,
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
 
-config :ex_twilio,
-  account_sid: {:system, "TWILIO_ACCOUNT_SID"},
-  auth_token: {:system, "TWILIO_AUTH_TOKEN"}
-
 config :block_scout_web, BlockScoutWeb.CSPHeader,
   mixpanel_url: System.get_env("MIXPANEL_URL", "https://api-js.mixpanel.com"),
   amplitude_url: System.get_env("AMPLITUDE_URL", "https://api2.amplitude.com/2/httpapi")

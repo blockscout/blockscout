@@ -46,8 +46,7 @@ defmodule BlockScoutWeb.Mixfile do
     do: [
       :ueberauth_auth0,
       :logger,
-      :runtime_tools,
-      :ex_twilio
+      :runtime_tools
     ]
 
   # Specifies your project dependencies.
