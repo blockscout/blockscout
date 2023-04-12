@@ -81,6 +81,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:lost_consensus, {:ok, block}}) do
     conn
+    |> put_status(:not_found)
     |> json(%{message: "Block lost consensus", hash: to_string(block.hash)})
   end
 

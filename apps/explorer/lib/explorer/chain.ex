@@ -80,7 +80,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Helper, as: CacheHelper
-  alias Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand
+  alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
 
@@ -715,6 +715,7 @@ defmodule Explorer.Chain do
       from(
         log in subquery(base_query),
         inner_join: transaction in Transaction,
+        on: transaction.hash == log.transaction_hash,
         preload: [:transaction, transaction: [to_address: :smart_contract]],
         where:
           log.block_hash == transaction.block_hash and
@@ -1950,8 +1951,11 @@ defmodule Explorer.Chain do
         %{smart_contract: smart_contract} ->
           if smart_contract do
             CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
+            LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, smart_contract)
             address_result
           else
+            LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
+
             address_verified_twin_contract =
               get_minimal_proxy_template(hash, options) ||
                 get_address_verified_twin_contract(hash, options).verified_contract
@@ -1960,6 +1964,7 @@ defmodule Explorer.Chain do
           end
 
         _ ->
+          LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
           address_result
       end
 
@@ -2655,7 +2660,7 @@ defmodule Explorer.Chain do
       from(
         b in Block,
         join: addr in Address,
-        where: b.miner_hash == addr.hash,
+        on: b.miner_hash == addr.hash,
         select: {b.miner_hash, count(b.miner_hash)},
         group_by: b.miner_hash
       )
@@ -4428,6 +4433,13 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec address_hash_to_smart_contract(Hash.Address.t()) :: SmartContract.t() | nil
+  def address_hash_to_one_smart_contract(hash) do
+    SmartContract
+    |> where([sc], sc.address_hash == ^hash)
+    |> Repo.one()
+  end
+
   @spec address_hash_to_smart_contract_without_twin(Hash.Address.t(), [api?]) :: SmartContract.t() | nil
   def address_hash_to_smart_contract_without_twin(address_hash, options) do
     query =
@@ -5670,12 +5682,16 @@ defmodule Explorer.Chain do
       from(decompiled_contract in DecompiledSmartContract,
         where: decompiled_contract.address_hash == ^hash,
         limit: 1,
-        select: %{has_decompiled_code?: not is_nil(decompiled_contract.address_hash)}
+        select: %{
+          address_hash: decompiled_contract.address_hash,
+          has_decompiled_code?: not is_nil(decompiled_contract.address_hash)
+        }
       )
 
     from(
       address in query,
       left_join: decompiled_code in subquery(has_decompiled_code_query),
+      on: address.hash == decompiled_code.address_hash,
       select_merge: %{has_decompiled_code?: decompiled_code.has_decompiled_code?}
     )
   end

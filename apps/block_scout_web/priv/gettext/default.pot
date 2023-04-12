@@ -2587,11 +2587,6 @@ msgstr ""
 msgid "There is no coin history for this address."
 msgstr ""
 
-#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:29
-#, elixir-autogen, elixir-format
-msgid "There is no decompilded contracts for this address."
-msgstr ""
-
 #: lib/block_scout_web/templates/address_coin_balance/index.html.eex:21
 #: lib/block_scout_web/templates/chain/show.html.eex:9
 #, elixir-autogen, elixir-format
@@ -3503,7 +3498,7 @@ msgstr ""
 msgid "Your request contained an error, perhaps a mistyped tx/block/address hash. Try again, and check the developer tools console for more info."
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/_actions.html.eex:23
+#: lib/block_scout_web/templates/transaction/_actions.html.eex:101
 #, elixir-autogen, elixir-format
 msgid "%{qty} of <span class=\"text-muted\">Token ID [%{link_to_id}]</span>"
 msgstr ""
@@ -3513,7 +3508,7 @@ msgstr ""
 msgid "Highlighted events of the transaction."
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/_actions.html.eex:14
+#: lib/block_scout_web/templates/transaction/_actions.html.eex:92
 #, elixir-autogen, elixir-format
 msgid "Mint of %{address} <span class=\"text-muted\">To</span> %{to}"
 msgstr ""
@@ -3556,4 +3551,9 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/index.html.eex:43
 #, elixir-autogen, elixir-format
 msgid "Total Supply"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:29
+#, elixir-autogen, elixir-format
+msgid "There is no decompiled contracts for this address."
 msgstr ""
