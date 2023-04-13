@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.CurrencyHelper do
   Helper functions for interacting with `t:BlockScoutWeb.ExchangeRates.USD.t/0` values.
   """
 
-  alias BlockScoutWeb.CldrHelper.Number
+  alias Explorer.CldrHelper.Number
 
   @doc """
   Formats the given integer value to a currency format.
