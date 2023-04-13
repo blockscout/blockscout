@@ -154,7 +154,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   end
 
   def fiat_value_query do
-    dynamic([ctb, t], ctb.value * t.fiat_value / fragment("10 ^ ?", t.decimals))
+    dynamic([ctb, ..., t], ctb.value * t.fiat_value / fragment("10 ^ ?", t.decimals))
   end
 
   @doc """
