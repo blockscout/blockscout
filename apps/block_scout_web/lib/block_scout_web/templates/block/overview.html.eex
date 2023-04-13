@@ -57,7 +57,7 @@
             </dt>
             <dd class="col-sm-9 col-lg-10" data-test="block_detail_number">
               <%= if block_type(@block) == "Block" do %>
-                <%= @block.number %> <%= if @block.number < [9,3,1] |> Enum.at(System.get_env("CHAIN_INDEX") |> String.to_integer()), do: " - " <> gettext("Genesis Block")%>
+                <%= @block.number %> <%= if @block.number <= [9,3,1] |> Enum.at(System.get_env("CHAIN_INDEX") |> String.to_integer()), do: " - " <> gettext("Genesis Block")%>
               <% else %>
                 <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block.number)) %>
               <% end %>
@@ -187,14 +187,14 @@
             <dd class="col-sm-9 col-lg-10"><%= @block.difficulty |> Decimal.to_integer() |> BlockScoutWeb.Cldr.Number.to_string! %></dd>
           </dl>
           <%= if block_type(@block) == "Block" do %>
-            <!-- Total Difficulty -->
+            <!-- Total Entropy-->
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Total difficulty of the chain until this block.") %>
-                <%= gettext("Total Difficulty") %>
+                text: gettext("Total entropy reduced by the chain until this block.") %>
+                <%= gettext("Total Entropy") %>
               </dt>
-              <dd class="col-sm-9 col-lg-10"><%= @block.total_difficulty |> Decimal.to_integer() |> BlockScoutWeb.Cldr.Number.to_string! %></dd>
+              <dd class="col-sm-9 col-lg-10"><%= @block.total_entropy |> Decimal.to_integer() |> BlockScoutWeb.Cldr.Number.to_string! %></dd>
             </dl>
             <!-- Gas Used -->
             <dl class="row">
