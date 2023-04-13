@@ -260,7 +260,7 @@ config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
 config :explorer, Explorer.ExchangeRates.TokenExchangeRates,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_EXCHANGE_RATE", "true"),
   interval: ConfigHelper.parse_time_env_var("TOKEN_EXCHANGE_RATE_INTERVAL", "5s"),
-  refetch_interval: ConfigHelper.parse_time_env_var("TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL", nil),
+  refetch_interval: ConfigHelper.parse_time_env_var("TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL", "1h"),
   max_batch_size: ConfigHelper.parse_integer_env_var("TOKEN_EXCHANGE_RATE_MAX_BATCH_SIZE", 150)
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: !disable_indexer?
