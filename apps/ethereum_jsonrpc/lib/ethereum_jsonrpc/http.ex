@@ -80,6 +80,8 @@ defmodule EthereumJSONRPC.HTTP do
         rechunk_json_rpc(chunks, options, :timeout, decoded_response_bodies)
 
       {:error, _} = error ->
+        named_arguments = [transport: __MODULE__, transport_options: Keyword.delete(options, :method_to_url)]
+        EndpointAvailabilityObserver.inc_error_count(url, named_arguments)
         error
     end
   end
