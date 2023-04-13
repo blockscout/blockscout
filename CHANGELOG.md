@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#7270](https://github.com/blockscout/blockscout/pull/7270) - Fix default `TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL`
+
 ### Chore
 
 <details>
@@ -24,7 +26,6 @@
 
 ### Fixes
 
-- [#7270](https://github.com/blockscout/blockscout/pull/7270) - Fix default `TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL`
 - [#7242](https://github.com/blockscout/blockscout/pull/7242) - Fix daily txs chart
 - [#7210](https://github.com/blockscout/blockscout/pull/7210) - Fix Makefile docker image build
 - [#7203](https://github.com/blockscout/blockscout/pull/7203) - Fix write contract functionality for multidimensional arrays case
