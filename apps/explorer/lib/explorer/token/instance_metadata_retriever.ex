@@ -110,17 +110,6 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     fetch_json_from_uri(uri, hex_token_id)
   end
 
-  # CIDv0 IPFS links # https://docs.ipfs.tech/concepts/content-addressing/#version-0-v0
-  def fetch_json("Qm" <> _ = result, hex_token_id) do
-    if String.length(result) == 46 do
-      fetch_json_from_uri({:ok, [@ipfs_link <> result]}, hex_token_id)
-    else
-      Logger.debug(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
-
-      {:error, :wrong_ipfs_link}
-    end
-  end
-
   def fetch_json(result, hex_token_id) do
     case URI.parse(result) do
       %URI{host: nil} ->
@@ -130,6 +119,17 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
 
       _ ->
         fetch_json_from_uri({:ok, [result]}, hex_token_id)
+    end
+  end
+
+  # CIDv0 IPFS links # https://docs.ipfs.tech/concepts/content-addressing/#version-0-v0
+  defp fetch_json_from_uri({:ok, ["Qm" <> _ = result]}, hex_token_id) do
+    if String.length(result) == 46 do
+      fetch_json_from_uri({:ok, [@ipfs_link <> result]}, hex_token_id)
+    else
+      Logger.debug(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
+
+      {:error, result}
     end
   end
 
