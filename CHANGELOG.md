@@ -10,6 +10,7 @@
 
 - [#7270](https://github.com/blockscout/blockscout/pull/7270) - Fix default `TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL`
 - [#7276](https://github.com/blockscout/blockscout/pull/7276) - Convert 99+% of int txs indexing into 100% in order to hide top indexing banner
+- [#7282](https://github.com/blockscout/blockscout/pull/7282) - Add not found transaction error case
 
 ### Chore
 
