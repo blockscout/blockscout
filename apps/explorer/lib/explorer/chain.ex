@@ -4243,7 +4243,7 @@ defmodule Explorer.Chain do
         where: address_name.address_hash == ^address_hash,
         # Enforce Name ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :address_hash, asc: :name],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     repo.update_all(
@@ -5236,7 +5236,7 @@ defmodule Explorer.Chain do
       )
       # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
       |> order_by(asc: :hash)
-      |> lock("FOR UPDATE")
+      |> lock("FOR NO KEY UPDATE")
 
     hashes = Enum.map(transactions, & &1.hash)
 
@@ -5281,7 +5281,7 @@ defmodule Explorer.Chain do
         end)
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         |> order_by(asc: :hash)
-        |> lock("FOR UPDATE")
+        |> lock("FOR NO KEY UPDATE")
 
       Repo.update_all(
         from(t in Transaction, join: s in subquery(query), on: t.hash == s.hash),

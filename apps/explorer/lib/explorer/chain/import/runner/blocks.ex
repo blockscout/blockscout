@@ -12,7 +12,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
-  alias Explorer.Chain.Import.Runner.Tokens
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
@@ -149,14 +148,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :derive_transaction_forks
       )
     end)
-    |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
-      Instrumenter.block_import_stage_runner(
-        fn -> acquire_contract_address_tokens(repo, consensus_block_numbers) end,
-        :address_referencing,
-        :blocks,
-        :acquire_contract_address_tokens
-      )
-    end)
     |> Multi.run(:delete_address_token_balances, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> delete_address_token_balances(repo, consensus_block_numbers, insert_options) end,
@@ -185,38 +176,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :derive_address_current_token_balances
       )
     end)
-    |> Multi.run(:blocks_update_token_holder_counts, fn repo,
-                                                        %{
-                                                          delete_address_current_token_balances: deleted,
-                                                          derive_address_current_token_balances: inserted
-                                                        } ->
-      Instrumenter.block_import_stage_runner(
-        fn ->
-          deltas = CurrentTokenBalances.token_holder_count_deltas(%{deleted: deleted, inserted: inserted})
-          Tokens.update_holder_counts_with_deltas(repo, deltas, insert_options)
-        end,
-        :address_referencing,
-        :blocks,
-        :blocks_update_token_holder_counts
-      )
-    end)
   end
 
   @impl Runner
   def timeout, do: @timeout
-
-  defp acquire_contract_address_tokens(repo, consensus_block_numbers) do
-    query =
-      from(ctb in Address.CurrentTokenBalance,
-        where: ctb.block_number in ^consensus_block_numbers,
-        select: {ctb.token_contract_address_hash, ctb.token_id},
-        distinct: [ctb.token_contract_address_hash, ctb.token_id]
-      )
-
-    contract_address_hashes_and_token_ids = repo.all(query)
-
-    Tokens.acquire_contract_address_tokens(repo, contract_address_hashes_and_token_ids)
-  end
 
   defp fork_transactions(%{
          repo: repo,
@@ -230,7 +193,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         select: transaction,
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     update_query =
@@ -376,15 +339,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         select: block.hash,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: block.hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     {_, removed_consensus_block_hashes} =
       repo.update_all(
         from(
           block in Block,
-          join: s in subquery(acquire_query),
-          on: block.hash == s.hash,
+          where: block.hash in subquery(acquire_query),
           # we don't want to remove consensus from blocks that will be upserted
           where: block.hash not in ^hashes,
           select: {block.number, block.hash}
@@ -677,7 +639,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         where: bsdr.uncle_hash in ^uncle_hashes,
         # Enforce SeconDegreeRelation ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :nephew_hash, asc: :uncle_hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     update_query =

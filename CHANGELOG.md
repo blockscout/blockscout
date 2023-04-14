@@ -245,6 +245,7 @@
 - [#7276](https://github.com/blockscout/blockscout/pull/7276) - Convert 99+% of int txs indexing into 100% in order to hide top indexing banner
 - [#7282](https://github.com/blockscout/blockscout/pull/7282) - Add not found transaction error case
 - [#7305](https://github.com/blockscout/blockscout/pull/7305) - Reset MissingRangesCollector min_fetched_block_number
+- [#6778](https://github.com/blockscout/blockscout/pull/6778) - Fix deadlocks in block import stages
 
 ### Chore
 

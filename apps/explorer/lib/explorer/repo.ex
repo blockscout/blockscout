@@ -29,7 +29,7 @@ defmodule Explorer.Repo do
     {:ok, Keyword.put(opts, :url, db_url)}
   end
 
-  def logged_transaction(fun_or_multi, opts \\ []) do
+  def logged_transaction(fun_or_multi, opts \\ [], retries_left \\ 1) do
     transaction_id = :erlang.unique_integer([:positive])
 
     Explorer.Logger.metadata(
@@ -43,6 +43,16 @@ defmodule Explorer.Repo do
       end,
       transaction_id: transaction_id
     )
+  rescue
+    error in Postgrex.Error ->
+      case {error, retries_left} do
+        {%{postgres: %{code: :deadlock_detected}}, retries} when retries > 0 ->
+          Logger.warn("Deadlock caught, retrying transaction")
+          logged_transaction(fun_or_multi, opts, retries_left - 1)
+
+        _ ->
+          reraise error, __STACKTRACE__
+      end
   end
 
   @doc """

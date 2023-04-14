@@ -135,7 +135,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         fn -> insert(repo, changes_list, insert_options) end,
         :block_following,
         :current_token_balances,
-        :acquire_contract_address_tokens
+        :address_current_token_balances
       )
     end)
     |> Multi.run(:address_current_token_balances_update_token_holder_counts, fn repo,
@@ -156,7 +156,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         end,
         :block_following,
         :current_token_balances,
-        :acquire_contract_address_tokens
+        :address_current_token_balances_update_token_holder_counts
       )
     end)
   end
