@@ -1,11 +1,14 @@
 defmodule Indexer.Fetcher.TokenInstance do
-  require Logger
-
+  @moduledoc """
+    Common functions for Indexer.Fetcher.TokenInstance fetchers
+  """
   alias Explorer.Chain
   alias Explorer.Token.InstanceMetadataRetriever
 
-  def fetch_instance(token_contract_address_hash, token_id) do
-    case InstanceMetadataRetriever.fetch_metadata(to_string(token_contract_address_hash), Decimal.to_integer(token_id)) do
+  def fetch_instance(token_contract_address_hash, token_id, is_retry?) do
+    token_id = prepare_token_id(token_id)
+
+    case InstanceMetadataRetriever.fetch_metadata(to_string(token_contract_address_hash), token_id) do
       {:ok, %{metadata: metadata}} ->
         params = %{
           token_id: token_id,
@@ -17,37 +20,22 @@ defmodule Indexer.Fetcher.TokenInstance do
         {:ok, _result} = Chain.upsert_token_instance(params)
 
       {:ok, %{error: error}} ->
-        upsert_token_instance_with_error(token_id, token_contract_address_hash, error)
+        upsert_token_instance_with_error(token_id, token_contract_address_hash, error, is_retry?)
 
-      {:error, code, body} ->
-        # Logger.debug(
-        #   [
-        #     "failed to fetch token instance metadata for #{inspect({to_string(token_contract_address_hash), Decimal.to_integer(token_id)})}: ",
-        #     "http code: #{code}",
-        #     inspect(result)
-        #   ],
-        #   fetcher: :token_instances
-        # )
-        upsert_token_instance_with_error(token_id, token_contract_address_hash, "request error: #{code}")
+      {:error_code, code} ->
+        upsert_token_instance_with_error(token_id, token_contract_address_hash, "request error: #{code}", is_retry?)
 
       {:error, reason} ->
-        nil
-
-        # result ->
-
-        #   Logger.debug(
-        #     [
-        #       "failed to fetch token instance metadata for #{inspect({to_string(token_contract_address_hash), Decimal.to_integer(token_id)})}: ",
-        #       inspect(result)
-        #     ],
-        #     fetcher: :token_instances
-        #   )
-
-        #   :ok
+        upsert_token_instance_with_error(token_id, token_contract_address_hash, reason, is_retry?)
     end
   end
 
-  defp upsert_token_instance_with_error(token_id, token_contract_address_hash, error) do
+  defp prepare_token_id(%Decimal{} = token_id), do: Decimal.to_integer(token_id)
+  defp prepare_token_id(token_id), do: token_id
+
+  defp upsert_token_instance_with_error(_token_id, _token_contract_address_hash, _error, true), do: :ignore
+
+  defp upsert_token_instance_with_error(token_id, token_contract_address_hash, error, _is_retry?) do
     params = %{
       token_id: token_id,
       token_contract_address_hash: token_contract_address_hash,

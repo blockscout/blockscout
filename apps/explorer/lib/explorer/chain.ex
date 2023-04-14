@@ -5007,7 +5007,11 @@ defmodule Explorer.Chain do
   def stream_token_instances_with_error(initial, reducer) when is_function(reducer, 2) do
     Instance
     |> where([instance], not is_nil(instance.error))
-    |> select([instance], %{contract_address_hash: instance.token_contract_address_hash, token_id: instance.token_id})
+    |> select([instance], %{
+      contract_address_hash: instance.token_contract_address_hash,
+      token_id: instance.token_id,
+      updated_at: instance.updated_at
+    })
     |> Repo.stream_reduce(initial, reducer)
   end
 
@@ -5310,13 +5314,19 @@ defmodule Explorer.Chain do
   @spec erc721_or_erc1155_token_instance_from_token_id_and_token_address(non_neg_integer(), Hash.Address.t(), [api?]) ::
           {:ok, Instance.t()} | {:error, :not_found}
   def erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, token_contract_address, options \\ []) do
-    query =
-      from(i in Instance, where: i.token_contract_address_hash == ^token_contract_address and i.token_id == ^token_id)
+    query = Instance.token_instance_query(token_id, token_contract_address)
 
     case select_repo(options).one(query) do
       nil -> {:error, :not_found}
       token_instance -> {:ok, token_instance}
     end
+  end
+
+  @spec token_instance_exists?(non_neg_integer, Hash.Address.t(), [api?]) :: boolean
+  def token_instance_exists?(token_id, token_contract_address, options \\ []) do
+    query = Instance.token_instance_query(token_id, token_contract_address)
+
+    select_repo(options).exists?(query)
   end
 
   defp fetch_coin_balances(address_hash, paging_options) do
