@@ -458,15 +458,15 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   defp tx_types(
-         %Transaction{created_contract_address_hash: created_contract_address_hash} = tx,
+         %Transaction{to_address_hash: to_address_hash} = tx,
          types,
          :contract_creation
        ) do
     types =
-      if is_nil(created_contract_address_hash) do
-        types
-      else
+      if is_nil(to_address_hash) do
         [:contract_creation | types]
+      else
+        types
       end
 
     tx_types(tx, types, :contract_call)
