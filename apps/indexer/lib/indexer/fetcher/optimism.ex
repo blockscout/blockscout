@@ -103,68 +103,39 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
-  def get_block_number_by_tag(tag, json_rpc_named_arguments, retries_left \\ 3) do
-    case fetch_block_number_by_tag(tag, json_rpc_named_arguments) do
-      {:ok, block_number} ->
-        {:ok, block_number}
-
-      {:error, message} ->
-        retries_left = retries_left - 1
-
-        error_message = "Cannot fetch #{tag} block number. Error: #{inspect(message)}"
-
-        if retries_left <= 0 do
-          Logger.error(error_message)
-          {:error, message}
-        else
-          Logger.error("#{error_message} Retrying...")
-          :timer.sleep(3000)
-          get_block_number_by_tag(tag, json_rpc_named_arguments, retries_left)
-        end
-    end
+  def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ 3) do
+    error_message = &"Cannot fetch #{tag} block number. Error: #{inspect(&1)}"
+    repeated_call(&fetch_block_number_by_tag/2, [tag, json_rpc_named_arguments], error_message, retries)
   end
 
-  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries_left \\ 3) do
+  defp get_block_timestamp_by_number_inner(number, json_rpc_named_arguments) do
     result =
       %{id: 0, number: number}
       |> ByNumber.request(false)
       |> json_rpc(json_rpc_named_arguments)
 
-    return =
-      with {:ok, block} <- result,
-           false <- is_nil(block),
-           timestamp <- Map.get(block, "timestamp"),
-           false <- is_nil(timestamp) do
-        {:ok, quantity_to_integer(timestamp)}
-      else
-        {:error, message} ->
-          {:error, message}
-
-        true ->
-          {:error, "RPC returned nil."}
-      end
-
-    case return do
-      {:ok, timestamp} ->
-        {:ok, timestamp}
-
+    with {:ok, block} <- result,
+         false <- is_nil(block),
+         timestamp <- Map.get(block, "timestamp"),
+         false <- is_nil(timestamp) do
+      {:ok, quantity_to_integer(timestamp)}
+    else
       {:error, message} ->
-        retries_left = retries_left - 1
+        {:error, message}
 
-        error_message = "Cannot fetch block ##{number} or its timestamp. Error: #{inspect(message)}"
-
-        if retries_left <= 0 do
-          Logger.error(error_message)
-          {:error, message}
-        else
-          Logger.error("#{error_message} Retrying...")
-          :timer.sleep(3000)
-          get_block_timestamp_by_number(number, json_rpc_named_arguments, retries_left)
-        end
+      true ->
+        {:error, "RPC returned nil."}
     end
   end
 
-  def get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments, retries_left) do
+  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ 3) do
+    func = &get_block_timestamp_by_number_inner/2
+    args = [number, json_rpc_named_arguments]
+    error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"
+    repeated_call(func, args, error_message, retries)
+  end
+
+  def get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments, retries) do
     processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
     processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
 
@@ -182,31 +153,16 @@ defmodule Indexer.Fetcher.Optimism do
         ]
       })
 
-    case json_rpc(req, json_rpc_named_arguments) do
-      {:ok, results} ->
-        {:ok, results}
+    error_message = &"Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(&1)}"
 
-      {:error, message} ->
-        retries_left = retries_left - 1
-
-        error_message = "Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(message)}"
-
-        if retries_left <= 0 do
-          Logger.error(error_message)
-          {:error, message}
-        else
-          Logger.error("#{error_message} Retrying...")
-          :timer.sleep(3000)
-          get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments, retries_left)
-        end
-    end
+    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
   def get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
 
   def get_transaction_by_hash(hash, _json_rpc_named_arguments, _retries_left) when is_nil(hash), do: {:ok, nil}
 
-  def get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left) do
+  def get_transaction_by_hash(hash, json_rpc_named_arguments, retries) do
     req =
       request(%{
         id: 0,
@@ -214,20 +170,9 @@ defmodule Indexer.Fetcher.Optimism do
         params: [hash]
       })
 
-    case json_rpc(req, json_rpc_named_arguments) do
-      {:ok, tx} ->
-        {:ok, tx}
+    error_message = &"eth_getTransactionByHash failed. Error: #{inspect(&1)}"
 
-      {:error, message} ->
-        retries_left = retries_left - 1
-
-        if retries_left <= 0 do
-          {:error, message}
-        else
-          :timer.sleep(3000)
-          get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left)
-        end
-    end
+    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
   def get_logs_range_size do
@@ -364,6 +309,29 @@ defmodule Indexer.Fetcher.Optimism do
     else
       Logger.info("#{type} handling #{layer} block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
     end
+  end
+
+  defp repeated_call(func, args, error_message, retries_left) do
+    case apply(func, args) do
+      {:ok, _} = res ->
+        res
+
+      {:error, message} = err ->
+        retries_left = retries_left - 1
+
+        if retries_left <= 0 do
+          Logger.error(error_message.(message))
+          err
+        else
+          Logger.error("#{error_message.(message)} Retrying...")
+          :timer.sleep(3000)
+          repeated_call(func, args, error_message, retries_left)
+        end
+    end
+  end
+
+  def repeated_request(req, error_message, json_rpc_named_arguments, retries) do
+    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
   def reorg_block_pop(fetcher_name) do
