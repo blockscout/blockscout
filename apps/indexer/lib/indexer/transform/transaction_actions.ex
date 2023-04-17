@@ -10,7 +10,7 @@ defmodule Indexer.Transform.TransactionActions do
 
   alias Explorer.Chain.Cache.NetVersion
   alias Explorer.Chain.Cache.{TransactionActionTokensData, TransactionActionUniswapPools}
-  alias Explorer.Chain.{Address, Data, Hash, Token, TransactionAction}
+  alias Explorer.Chain.{Address, Hash, Token, TransactionAction}
   alias Explorer.Repo
   alias Explorer.SmartContract.Reader
   alias Indexer.Helper
@@ -194,7 +194,7 @@ defmodule Indexer.Transform.TransactionActions do
           @aave_v3_liquidation_call_event
         ],
         sanitize_first_topic(log.first_topic)
-      ) && address_hash_to_string(log.address_hash) == pool_address
+      ) && String.downcase(Helper.address_hash_to_string(log.address_hash)) == pool_address
     end)
   end
 
@@ -398,7 +398,7 @@ defmodule Indexer.Transform.TransactionActions do
         first_topic
       ) ||
         (first_topic == @uniswap_v3_transfer_nft_event &&
-           address_hash_to_string(log.address_hash) == uniswap_v3_positions_nft)
+           String.downcase(Helper.address_hash_to_string(log.address_hash)) == uniswap_v3_positions_nft)
     end)
   end
 
@@ -407,7 +407,7 @@ defmodule Indexer.Transform.TransactionActions do
 
     with false <- first_topic == @uniswap_v3_transfer_nft_event,
          # check UniswapV3Pool contract is legitimate
-         pool_address <- address_hash_to_string(log.address_hash),
+         pool_address <- String.downcase(Helper.address_hash_to_string(log.address_hash)),
          false <- is_nil(legitimate[pool_address]),
          false <- Enum.empty?(legitimate[pool_address]),
          # this is legitimate uniswap pool, so handle this event
@@ -586,7 +586,7 @@ defmodule Indexer.Transform.TransactionActions do
           sanitize_first_topic(log.first_topic) != @uniswap_v3_transfer_nft_event
         end)
         |> Enum.reduce(addresses_acc, fn log, acc ->
-          pool_address = address_hash_to_string(log.address_hash)
+          pool_address = String.downcase(Helper.address_hash_to_string(log.address_hash))
           Map.put(acc, pool_address, true)
         end)
       end)
@@ -931,17 +931,6 @@ defmodule Indexer.Transform.TransactionActions do
     end
 
     {requests, responses}
-  end
-
-  defp address_hash_to_string(hash) do
-    address_string =
-      if is_binary(hash) do
-        hash
-      else
-        Hash.to_string(hash)
-      end
-
-    String.downcase(address_string)
   end
 
   defp logs_group_by_txs(logs) do
