@@ -1,27 +1,24 @@
-defmodule Explorer.Chain.AddressInternalTransactionCsvExporter do
+defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporter do
   @moduledoc """
   Exports internal transactions to a csv file.
   """
 
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, InternalTransaction, Wei}
-  alias NimbleCSV.RFC4180
+  alias Explorer.Chain.CSVExport.Helper
 
-  @page_size 1000
-
-  @paging_options %PagingOptions{page_size: @page_size + 1}
+  @paging_options %PagingOptions{page_size: Helper.page_size() + 1}
 
   @spec export(Address.t(), String.t(), String.t()) :: Enumerable.t()
   def export(address, from_period, to_period) do
-    from_block = Chain.convert_date_to_min_block(from_period)
-    to_block = Chain.convert_date_to_max_block(to_period)
+    {from_block, to_block} = Helper.block_from_period(from_period, to_period)
 
     res =
       address.hash
       |> fetch_all_internal_transactions(from_block, to_block, @paging_options)
       |> Enum.sort_by(&{&1.block_number, &1.index, &1.transaction_index}, :desc)
       |> to_csv_format()
-      |> dump_to_stream()
+      |> Helper.dump_to_stream()
 
     res
   end
@@ -37,7 +34,7 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporter do
 
     new_acc = internal_transactions ++ acc
 
-    case Enum.split(internal_transactions, @page_size) do
+    case Enum.split(internal_transactions, Helper.page_size()) do
       {_internal_transactions,
        [%InternalTransaction{block_number: block_number, transaction_index: transaction_index, index: index}]} ->
         new_paging_options = %{@paging_options | key: {block_number, transaction_index, index}}
@@ -46,14 +43,6 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporter do
       {_, []} ->
         new_acc
     end
-  end
-
-  defp dump_to_stream(internal_transactions) do
-    res =
-      internal_transactions
-      |> RFC4180.dump_to_stream()
-
-    res
   end
 
   defp to_csv_format(internal_transactions) do

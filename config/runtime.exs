@@ -44,8 +44,6 @@ config :block_scout_web,
   test_tokens_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN"),
   gts_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_GTGS_TOKEN"),
   chainlink_oracles: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CHAINLINK_ORACLES"),
-  re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY"),
-  re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY"),
   new_tags: System.get_env("NEW_TAGS"),
   chain_id: System.get_env("CHAIN_ID"),
   json_rpc: System.get_env("JSON_RPC"),
@@ -56,6 +54,12 @@ config :block_scout_web,
   hide_block_miner: ConfigHelper.parse_bool_env_var("HIDE_BLOCK_MINER"),
   show_tenderly_link: ConfigHelper.parse_bool_env_var("SHOW_TENDERLY_LINK"),
   alert_to_addresses: System.get_env("ALERT_TO_ADDRESSES")
+
+config :block_scout_web, :recaptcha,
+  v2_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY"),
+  v2_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY"),
+  v3_client_key: System.get_env("RE_CAPTCHA_V3_CLIENT_KEY"),
+  v3_secret_key: System.get_env("RE_CAPTCHA_V3_SECRET_KEY")
 
 network_path =
   "NETWORK_PATH"
@@ -290,7 +294,7 @@ config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
 config :explorer, Explorer.ExchangeRates.TokenExchangeRates,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_EXCHANGE_RATE", "true"),
   interval: ConfigHelper.parse_time_env_var("TOKEN_EXCHANGE_RATE_INTERVAL", "5s"),
-  refetch_interval: ConfigHelper.parse_time_env_var("TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL", nil),
+  refetch_interval: ConfigHelper.parse_time_env_var("TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL", "1h"),
   max_batch_size: ConfigHelper.parse_integer_env_var("TOKEN_EXCHANGE_RATE_MAX_BATCH_SIZE", 150)
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: !disable_indexer?

@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.AddressTransactionCsvExporter do
+defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
   @moduledoc """
   Exports transactions to a csv file.
   """
@@ -11,8 +11,8 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
   alias Explorer.{Chain, Market, PagingOptions, Repo}
   alias Explorer.Market.MarketHistory
   alias Explorer.Chain.{Address, Transaction, Wei}
+  alias Explorer.Chain.CSVExport.Helper
   alias Explorer.ExchangeRates.Token
-  alias NimbleCSV.RFC4180
 
   @necessity_by_association [
     necessity_by_association: %{
@@ -27,20 +27,17 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
     }
   ]
 
-  @page_size 1000
-
-  @paging_options %PagingOptions{page_size: @page_size + 1}
+  @paging_options %PagingOptions{page_size: Helper.page_size() + 1}
 
   @spec export(Address.t(), String.t(), String.t()) :: Enumerable.t()
   def export(address, from_period, to_period) do
-    from_block = Chain.convert_date_to_min_block(from_period)
-    to_block = Chain.convert_date_to_max_block(to_period)
+    {from_block, to_block} = Helper.block_from_period(from_period, to_period)
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
 
     address.hash
     |> fetch_all_transactions(from_block, to_block, @paging_options)
     |> to_csv_format(address, exchange_rate)
-    |> dump_to_stream()
+    |> Helper.dump_to_stream()
   end
 
   def fetch_all_transactions(address_hash, from_block, to_block, paging_options, acc \\ []) do
@@ -53,7 +50,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
     transactions = Chain.address_to_transactions_without_rewards(address_hash, options)
     new_acc = transactions ++ acc
 
-    case Enum.split(transactions, @page_size) do
+    case Enum.split(transactions, Helper.page_size()) do
       {_transactions, [%Transaction{block_number: block_number, index: index}]} ->
         new_paging_options = %{@paging_options | key: {block_number, index}}
         fetch_all_transactions(address_hash, from_block, to_block, new_paging_options, new_acc)
@@ -61,11 +58,6 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
       {_, []} ->
         new_acc
     end
-  end
-
-  defp dump_to_stream(transactions) do
-    transactions
-    |> RFC4180.dump_to_stream()
   end
 
   defp to_csv_format(transactions, address, exchange_rate) do

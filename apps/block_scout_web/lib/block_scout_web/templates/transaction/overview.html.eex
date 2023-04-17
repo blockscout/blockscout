@@ -121,10 +121,13 @@
               <% confirmations = confirmations(@transaction, block_height: @block_height) %>
               <span class="mr-4">
                 <span data-transaction-status="<%= formatted_status %>">
-                  <%= if status == :pending do %>
-                    <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["large"] %></span>
-                  <% else %>
-                    <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["success", "large"] %></span>
+                  <%= cond do %>
+                    <% status == :pending -> %>
+                      <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["large"] %></span>
+                    <% @transaction.error == "dropped/replaced" -> %>
+                      <%= render BlockScoutWeb.FormView, "_tag.html", text: @transaction.error, additional_classes: ["large"] %></span>
+                    <% true -> %>
+                      <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["success", "large"] %></span>
                   <% end %>
                 
                 <%= if confirmations > 0 do %>

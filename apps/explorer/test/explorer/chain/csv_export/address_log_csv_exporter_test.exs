@@ -1,7 +1,7 @@
 defmodule Explorer.Chain.AddressLogCsvExporterTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.AddressLogCsvExporter
+  alias Explorer.Chain.CSVExport.AddressLogCsvExporter
 
   describe "export/3" do
     test "exports address logs to csv" do

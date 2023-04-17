@@ -1,7 +1,8 @@
-defmodule Explorer.Chain.AddressInternalTransactionCsvExporterTest do
+defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.{AddressInternalTransactionCsvExporter, Wei}
+  alias Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporter
+  alias Explorer.Chain.Wei
 
   describe "export/3" do
     test "exports address internal transactions to csv" do
