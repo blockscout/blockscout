@@ -75,10 +75,12 @@ defmodule BlockScoutWeb.Account.Api.V1.FallbackController do
   end
 
   def call(conn, {:auth, _}) do
+    current_user = get_session(conn, :current_user)
+
     conn
-    |> put_status(:unauthorized)
+    |> put_status(if(current_user, do: :forbidden, else: :unauthorized))
     |> put_view(UserView)
-    |> render(:message, %{message: if(get_session(conn, :current_user), do: "Unverified email", else: "Unauthorized")})
+    |> render(:message, %{message: if(current_user, do: "Unverified email", else: "Unauthorized")})
   end
 
   def call(conn, {:api_key, _}) do
