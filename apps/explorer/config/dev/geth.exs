@@ -14,6 +14,10 @@ config :explorer,
       http: EthereumJSONRPC.HTTP.HTTPoison,
       url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || "http://localhost:8545",
       fallback_url: System.get_env("ETHEREUM_JSONRPC_FALLBACK_HTTP_URL"),
+      fallback_trace_url: System.get_env("ETHEREUM_JSONRPC_FALLBACK_TRACE_URL"),
+      method_to_url: [
+        debug_traceTransaction: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "http://localhost:8545"
+      ],
       http_options: [recv_timeout: timeout, timeout: timeout, hackney: hackney_opts]
     ],
     variant: EthereumJSONRPC.Geth
