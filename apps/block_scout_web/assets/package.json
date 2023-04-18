@@ -8,8 +8,8 @@
   "author": "Blockscout",
   "license": "GPL-3.0",
   "engines": {
-    "node": "18.x",
-    "npm": "8.x"
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   },
   "scripts": {
     "deploy": "webpack --mode production",
@@ -99,7 +99,7 @@
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^29.5.0",
     "mini-css-extract-plugin": "^2.7.5",
-    "postcss": "^8.4.21",
+    "postcss": "^8.4.22",
     "postcss-loader": "^7.2.4",
     "sass": "^1.62.0",
     "sass-loader": "^13.2.2",

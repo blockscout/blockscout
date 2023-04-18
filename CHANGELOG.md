@@ -8,12 +8,16 @@
 
 ### Fixes
 
+- [#7290](https://github.com/blockscout/blockscout/pull/7290) - Allow nil gas price for pending tx (Erigon node case)
 - [#7283](https://github.com/blockscout/blockscout/pull/7283) - Fix status for dropped/replaced tx
 - [#7270](https://github.com/blockscout/blockscout/pull/7270) - Fix default `TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL`
 - [#7276](https://github.com/blockscout/blockscout/pull/7276) - Convert 99+% of int txs indexing into 100% in order to hide top indexing banner
 - [#7282](https://github.com/blockscout/blockscout/pull/7282) - Add not found transaction error case
 
 ### Chore
+
+- [#7297](https://github.com/blockscout/blockscout/pull/7297) - Use tracing JSONRPC URL in case of debug_traceTransaction method
+- [#7292](https://github.com/blockscout/blockscout/pull/7292) - Allow Node 16+ version
 
 <details>
   <summary>Dependencies version bumps</summary>
