@@ -418,3 +418,12 @@ function loadBlocks (store) {
 function bindBlockErrorMessage (store) {
   $('[data-selector="chain-block-list"] [data-selector="error-message"]').on('click', _event => loadBlocks(store))
 }
+
+$('a.ajax').on('click', (event) => {
+  event.preventDefault()
+
+  $.get($(event.currentTarget).attr('href'), () => {})
+
+  event.currentTarget.classList.add('disabled')
+}
+)

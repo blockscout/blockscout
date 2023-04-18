@@ -5,6 +5,11 @@
   display: none;
 }
 
+a.disabled {
+  pointer-events: none;
+  opacity: 0.65;
+}
+
 /* This file is for your main application css. */
 
 // Bootstrap Core CSS

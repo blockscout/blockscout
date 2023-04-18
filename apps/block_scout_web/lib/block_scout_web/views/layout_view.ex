@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.LayoutView do
   use BlockScoutWeb, :view
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+
   alias Explorer.Chain
   alias Plug.Conn
   alias Poison.Parser

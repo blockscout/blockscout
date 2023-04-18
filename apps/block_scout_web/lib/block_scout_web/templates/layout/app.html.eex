@@ -91,11 +91,14 @@
           </div>
         <% end %>
       <% end %>
-      <%= render BlockScoutWeb.LayoutView, "_topnav.html", current_user: Conn.get_session(@conn, :current_user), conn: @conn %>
-
-      <main class="js-ad-dependant-pt pt-5">
+      <%= render BlockScoutWeb.LayoutView, "_topnav.html", current_user: current_user(@conn), conn: @conn %>
+      <%= if get_flash(@conn, :info) == :email_unverified do %>
+        <p class="alert alert-warning" role="alert" style="margin-bottom: 0"><%= gettext("Before continue to use My Account, you should verify your email address.") %> <a href="/api/account/v1/email/resend" class="ajax"><%= gettext "Send verification email" %></a> <%= gettext "to" %> <%= Plug.Conn.get_session(@conn, :current_user)[:email] %></p>
+      <% else %>
         <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
-        <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+      <% end %>
+      <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+      <main class="js-ad-dependant-pt pt-5">
         <%= @inner_content %>
       </main>
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>

@@ -94,4 +94,11 @@ defmodule BlockScoutWeb.Account.Api.V1.FallbackController do
     |> put_view(UserView)
     |> render(:message, %{message: "API key not configured on the server"})
   end
+
+  def call(conn, {:email_verified, _}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(UserView)
+    |> render(:message, %{message: "Your email address already verified"})
+  end
 end
