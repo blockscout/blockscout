@@ -751,7 +751,7 @@ jobs:
 
 
   Build-Blockscout:
-    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@1.8
+    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.8
     needs: [set-docker-vars]
     with:
       workload-id-provider: ${{  needs.set-docker-vars.outputs.workload-id-provider }}
@@ -767,7 +767,7 @@ jobs:
 
 
   Build-Blockscout-api:
-    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@1.8
+    uses: celo-org/reusable-workflows/.github/workflows/container-cicd.yaml@v1.8
     needs: [set-docker-vars]
     with:
       workload-id-provider: ${{  needs.set-docker-vars.outputs.workload-id-provider }}
