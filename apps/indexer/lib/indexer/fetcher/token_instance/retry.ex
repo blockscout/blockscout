@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.Sanitize.TokenInstance do
+defmodule Indexer.Fetcher.TokenInstance.Retry do
   @moduledoc """
   Fetches information about a token instance.
   """
@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.Sanitize.TokenInstance do
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
-  import Indexer.Fetcher.TokenInstance
+  import Indexer.Fetcher.TokenInstance.Helper
 
   alias Explorer.Chain
   alias Indexer.BufferedTask
@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.Sanitize.TokenInstance do
 
   @default_max_batch_size 1
   @default_max_concurrency 10
+
   @doc false
   def child_spec([init_options, gen_server_options]) do
     {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
@@ -36,7 +37,7 @@ defmodule Indexer.Fetcher.Sanitize.TokenInstance do
   @impl BufferedTask
   def init(initial_acc, reducer, _) do
     {:ok, acc} =
-      Chain.stream_unfetched_token_instances(initial_acc, fn data, acc ->
+      Chain.stream_token_instances_with_error(initial_acc, fn data, acc ->
         reducer.(data, acc)
       end)
 
@@ -44,9 +45,13 @@ defmodule Indexer.Fetcher.Sanitize.TokenInstance do
   end
 
   @impl BufferedTask
-  def run([%{contract_address_hash: hash, token_id: token_id}], _json_rpc_named_arguments) do
-    if not Chain.token_instance_exists?(token_id, hash) do
-      fetch_instance(hash, token_id, false)
+  def run([%{contract_address_hash: hash, token_id: token_id, updated_at: updated_at}], _json_rpc_named_arguments) do
+    refetch_interval = Application.get_env(:indexer, __MODULE__)[:refetch_interval]
+
+    if updated_at
+       |> DateTime.add(refetch_interval, :millisecond)
+       |> DateTime.compare(DateTime.utc_now()) != :gt do
+      fetch_instance(hash, token_id, true)
     end
 
     :ok
@@ -54,10 +59,10 @@ defmodule Indexer.Fetcher.Sanitize.TokenInstance do
 
   defp defaults do
     [
-      flush_interval: :infinity,
+      flush_interval: :timer.minutes(10),
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
       max_batch_size: @default_max_batch_size,
-      poll: false,
+      poll: true,
       task_supervisor: __MODULE__.TaskSupervisor
     ]
   end

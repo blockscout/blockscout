@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.Realtime.TokenInstance do
+defmodule Indexer.Fetcher.TokenInstance.Sanitize do
   @moduledoc """
   Fetches information about a token instance.
   """
@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.Realtime.TokenInstance do
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
-  import Indexer.Fetcher.TokenInstance
+  import Indexer.Fetcher.TokenInstance.Helper
 
   alias Explorer.Chain
   alias Indexer.BufferedTask
@@ -15,7 +15,6 @@ defmodule Indexer.Fetcher.Realtime.TokenInstance do
 
   @default_max_batch_size 1
   @default_max_concurrency 10
-
   @doc false
   def child_spec([init_options, gen_server_options]) do
     {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
@@ -35,8 +34,13 @@ defmodule Indexer.Fetcher.Realtime.TokenInstance do
   end
 
   @impl BufferedTask
-  def init(_, _, _) do
-    {0, []}
+  def init(initial_acc, reducer, _) do
+    {:ok, acc} =
+      Chain.stream_unfetched_token_instances(initial_acc, fn data, acc ->
+        reducer.(data, acc)
+      end)
+
+    acc
   end
 
   @impl BufferedTask
@@ -48,40 +52,9 @@ defmodule Indexer.Fetcher.Realtime.TokenInstance do
     :ok
   end
 
-  @doc """
-  Fetches token instance data asynchronously.
-  """
-  def async_fetch(data) do
-    async_fetch(data, __MODULE__.Supervisor.disabled?())
-  end
-
-  def async_fetch(_data, true), do: :ok
-
-  def async_fetch(token_transfers, _disabled?) when is_list(token_transfers) do
-    data =
-      token_transfers
-      |> Enum.reject(fn token_transfer -> is_nil(token_transfer.token_ids) end)
-      |> Enum.map(fn token_transfer ->
-        Enum.map(token_transfer.token_ids, fn token_id ->
-          %{
-            contract_address_hash: token_transfer.token_contract_address_hash,
-            token_id: token_id
-          }
-        end)
-      end)
-      |> List.flatten()
-      |> Enum.uniq()
-
-    BufferedTask.buffer(__MODULE__, data)
-  end
-
-  def async_fetch(data, _disabled?) do
-    BufferedTask.buffer(__MODULE__, data)
-  end
-
   defp defaults do
     [
-      flush_interval: 100,
+      flush_interval: :infinity,
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
       max_batch_size: @default_max_batch_size,
       poll: false,

@@ -22,12 +22,12 @@ defmodule Indexer.Supervisor do
     InternalTransaction,
     PendingBlockOperationsSanitizer,
     PendingTransaction,
-    Realtime,
     ReplacedTransaction,
-    Retry,
-    Sanitize,
     Token,
     TokenBalance,
+    TokenInstance.Realtime,
+    TokenInstance.Retry,
+    TokenInstance.Sanitize,
     TokenUpdater,
     TransactionAction,
     UncleBlock
@@ -109,15 +109,15 @@ defmodule Indexer.Supervisor do
         {CoinBalance.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-        {Retry.TokenInstance.Supervisor,
+        {Retry.Supervisor,
          [
            [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
          ]},
-        {Realtime.TokenInstance.Supervisor,
+        {Realtime.Supervisor,
          [
            [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
          ]},
-        {Sanitize.TokenInstance.Supervisor,
+        {Sanitize.Supervisor,
          [
            [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
          ]},

@@ -65,7 +65,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
 
-  @max_error_length 100
+  @max_error_length 255
 
   @ignored_hosts ["localhost", "127.0.0.1", "0.0.0.0", "", nil]
 
