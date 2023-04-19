@@ -70,6 +70,10 @@ config :explorer, Explorer.Chain.Cache.NewVerifiedContractsCounter,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
 
+config :explorer, Explorer.Chain.Cache.TransactionActionTokensData, enabled: true
+
+config :explorer, Explorer.Chain.Cache.TransactionActionUniswapPools, enabled: true
+
 config :explorer, Explorer.ExchangeRates,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_EXCHANGE_RATES_PERIOD", "10m")
 
@@ -106,7 +110,7 @@ config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled:
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: true
 
 config :explorer, Explorer.Chain.Cache.GasUsage,
-  enabled: ConfigHelper.parse_bool_env_var("CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER")
+  enabled: ConfigHelper.parse_bool_env_var("CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED")
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 

@@ -38,7 +38,7 @@ defmodule BlockScoutWeb.LayoutView do
   end
 
   def logo_footer do
-    Keyword.get(application_config(), :logo_footer) || Keyword.get(application_config(), :logo)
+    Keyword.get(application_config(), :footer)[:logo] || Keyword.get(application_config(), :logo)
   end
 
   def logo_text do
@@ -206,18 +206,22 @@ defmodule BlockScoutWeb.LayoutView do
     |> Enum.filter(&Map.get(&1, :other?))
   end
 
+  @spec other_explorers() :: map()
   def other_explorers do
-    if Application.get_env(:block_scout_web, :link_to_other_explorers) do
-      decode_other_explorers_json(Application.get_env(:block_scout_web, :other_explorers, []))
+    if Application.get_env(:block_scout_web, :footer)[:link_to_other_explorers] do
+      decode_other_explorers_json(Application.get_env(:block_scout_web, :footer)[:other_explorers])
     else
-      []
+      %{}
     end
   end
+
+  @spec decode_other_explorers_json(nil | String.t()) :: map()
+  defp decode_other_explorers_json(nil), do: %{}
 
   defp decode_other_explorers_json(data) do
     Jason.decode!(~s(#{data}))
   rescue
-    _ -> []
+    _ -> %{}
   end
 
   def webapp_url(conn) do

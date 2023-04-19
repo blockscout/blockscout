@@ -89,17 +89,17 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  def render("state_changes.json", %{state_changes: state_changes, conn: conn}) do
-    Enum.map(state_changes, &prepare_state_change(&1, conn))
+  def render("state_changes.json", %{state_changes: state_changes}) do
+    Enum.map(state_changes, &prepare_state_change(&1))
   end
 
-  def prepare_token_transfer(token_transfer, conn) do
+  def prepare_token_transfer(token_transfer, _conn) do
     decoded_input = token_transfer.transaction |> Transaction.decoded_input_data(@api_true) |> format_decoded_input()
 
     %{
       "tx_hash" => token_transfer.transaction_hash,
-      "from" => Helper.address_with_info(conn, token_transfer.from_address, token_transfer.from_address_hash),
-      "to" => Helper.address_with_info(conn, token_transfer.to_address, token_transfer.to_address_hash),
+      "from" => Helper.address_with_info(nil, token_transfer.from_address, token_transfer.from_address_hash),
+      "to" => Helper.address_with_info(nil, token_transfer.to_address, token_transfer.to_address_hash),
       "total" => prepare_token_transfer_total(token_transfer),
       "token" => TokenView.render("token.json", %{token: token_transfer.token}),
       "type" => Chain.get_token_transfer_type(token_transfer),
@@ -143,22 +143,18 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  def prepare_internal_transaction(internal_transaction, conn) do
+  def prepare_internal_transaction(internal_transaction, _conn) do
     %{
       "error" => internal_transaction.error,
       "success" => is_nil(internal_transaction.error),
       "type" => internal_transaction.call_type,
       "transaction_hash" => internal_transaction.transaction_hash,
       "from" =>
-        Helper.address_with_info(
-          conn,
-          internal_transaction.from_address,
-          internal_transaction.from_address_hash
-        ),
-      "to" => Helper.address_with_info(conn, internal_transaction.to_address, internal_transaction.to_address_hash),
+        Helper.address_with_info(nil, internal_transaction.from_address, internal_transaction.from_address_hash),
+      "to" => Helper.address_with_info(nil, internal_transaction.to_address, internal_transaction.to_address_hash),
       "created_contract" =>
         Helper.address_with_info(
-          conn,
+          nil,
           internal_transaction.created_contract_address,
           internal_transaction.created_contract_address_hash
         ),
@@ -207,12 +203,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp decode_log(log, transaction_hash), do: decode_log(log, %Transaction{hash: transaction_hash})
 
-  defp prepare_transaction({%Reward{} = emission_reward, %Reward{} = validator_reward}, conn, _single_tx?) do
+  defp prepare_transaction({%Reward{} = emission_reward, %Reward{} = validator_reward}, conn, single_tx?) do
     %{
       "emission_reward" => emission_reward.reward,
       "block_hash" => validator_reward.block_hash,
-      "from" => Helper.address_with_info(conn, emission_reward.address, emission_reward.address_hash),
-      "to" => Helper.address_with_info(conn, validator_reward.address, validator_reward.address_hash),
+      "from" => Helper.address_with_info(single_tx? && conn, emission_reward.address, emission_reward.address_hash),
+      "to" => Helper.address_with_info(single_tx? && conn, validator_reward.address, validator_reward.address_hash),
       "types" => [:reward]
     }
   end
@@ -239,10 +235,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "status" => transaction.status,
       "block" => transaction.block_number,
       "timestamp" => block_timestamp(transaction.block),
-      "from" => Helper.address_with_info(conn, transaction.from_address, transaction.from_address_hash),
-      "to" => Helper.address_with_info(conn, transaction.to_address, transaction.to_address_hash),
+      "from" => Helper.address_with_info(single_tx? && conn, transaction.from_address, transaction.from_address_hash),
+      "to" => Helper.address_with_info(single_tx? && conn, transaction.to_address, transaction.to_address_hash),
       "created_contract" =>
-        Helper.address_with_info(conn, transaction.created_contract_address, transaction.created_contract_address_hash),
+        Helper.address_with_info(
+          single_tx? && conn,
+          transaction.created_contract_address,
+          transaction.created_contract_address_hash
+        ),
       "confirmations" =>
         transaction.block |> Chain.confirmations(block_height: Chain.block_height(@api_true)) |> format_confirmations(),
       "confirmation_duration" => processing_time_duration(transaction),
@@ -458,15 +458,15 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   defp tx_types(
-         %Transaction{created_contract_address_hash: created_contract_address_hash} = tx,
+         %Transaction{to_address_hash: to_address_hash} = tx,
          types,
          :contract_creation
        ) do
     types =
-      if is_nil(created_contract_address_hash) do
-        types
-      else
+      if is_nil(to_address_hash) do
         [:contract_creation | types]
+      else
+        types
       end
 
     tx_types(tx, types, :contract_call)
@@ -495,7 +495,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp block_timestamp(%Block{} = block), do: block.timestamp
   defp block_timestamp(_), do: nil
 
-  defp prepare_state_change(%StateChange{} = state_change, conn) do
+  defp prepare_state_change(%StateChange{} = state_change) do
     coin_or_transfer =
       if state_change.coin_or_token_transfers == :coin,
         do: :coin,
@@ -505,7 +505,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     %{
       "address" =>
-        Helper.address_with_info(conn, state_change.address, state_change.address && state_change.address.hash),
+        Helper.address_with_info(nil, state_change.address, state_change.address && state_change.address.hash),
       "is_miner" => state_change.miner?,
       "type" => type,
       "token" => if(type == "token", do: TokenView.render("token.json", %{token: coin_or_transfer.token}))
