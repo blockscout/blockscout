@@ -3,8 +3,10 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     Common functions for Indexer.Fetcher.TokenInstance fetchers
   """
   alias Explorer.Chain
+  alias Explorer.Chain.{Hash, Token.Instance}
   alias Explorer.Token.InstanceMetadataRetriever
 
+  @spec fetch_instance(Hash.Address.t(), Decimal.t() | non_neg_integer(), boolean()) :: {:ok, Instance.t()} | :ignore
   def fetch_instance(token_contract_address_hash, token_id, is_retry?) do
     token_id = prepare_token_id(token_id)
 

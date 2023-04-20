@@ -13,6 +13,9 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Block.Catchup, as: BlockCatchup
   alias Indexer.Block.Realtime, as: BlockRealtime
+  alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
+  alias Indexer.Fetcher.TokenInstance.Retry, as: TokenInstanceRetry
+  alias Indexer.Fetcher.TokenInstance.Sanitize, as: TokenInstanceSanitize
 
   alias Indexer.Fetcher.{
     BlockReward,
@@ -25,9 +28,6 @@ defmodule Indexer.Supervisor do
     ReplacedTransaction,
     Token,
     TokenBalance,
-    TokenInstance.Realtime,
-    TokenInstance.Retry,
-    TokenInstance.Sanitize,
     TokenUpdater,
     TransactionAction,
     UncleBlock
@@ -109,15 +109,15 @@ defmodule Indexer.Supervisor do
         {CoinBalance.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-        {Retry.Supervisor,
+        {TokenInstanceRetry.Supervisor,
          [
            [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
          ]},
-        {Realtime.Supervisor,
+        {TokenInstanceRealtime.Supervisor,
          [
            [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
          ]},
-        {Sanitize.Supervisor,
+        {TokenInstanceSanitize.Supervisor,
          [
            [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
          ]},
