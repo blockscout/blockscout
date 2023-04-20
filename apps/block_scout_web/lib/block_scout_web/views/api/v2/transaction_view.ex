@@ -23,6 +23,18 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     ApiView.render("message.json", assigns)
   end
 
+  def render("transactions_watchlist.json", %{
+        transactions: transactions,
+        next_page_params: next_page_params,
+        conn: conn,
+        watchlist_names: watchlist_names
+      }) do
+    %{
+      "items" => Enum.map(transactions, &prepare_transaction(&1, conn, false, watchlist_names)),
+      "next_page_params" => next_page_params
+    }
+  end
+
   def render("transactions.json", %{transactions: transactions, next_page_params: next_page_params, conn: conn}) do
     %{"items" => Enum.map(transactions, &prepare_transaction(&1, conn, false)), "next_page_params" => next_page_params}
   end
@@ -94,7 +106,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def prepare_token_transfer(token_transfer, _conn) do
-    decoded_input = token_transfer.transaction |> Transaction.decoded_input_data(@api_true) |> format_decoded_input()
+    decoded_input =
+      token_transfer.transaction |> Transaction.decoded_input_data(true, @api_true) |> format_decoded_input()
 
     %{
       "tx_hash" => token_transfer.transaction_hash,
@@ -213,7 +226,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  defp prepare_transaction(%Transaction{} = transaction, conn, single_tx?) do
+  defp prepare_transaction(%Transaction{} = transaction, conn, single_tx?, watchlist_names \\ nil) do
     base_fee_per_gas = transaction.block && transaction.block.base_fee_per_gas
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
@@ -226,7 +239,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     revert_reason = revert_reason(status, transaction)
 
-    decoded_input = transaction |> Transaction.decoded_input_data(@api_true) |> format_decoded_input()
+    decoded_input = transaction |> Transaction.decoded_input_data(!single_tx?, @api_true) |> format_decoded_input()
     decoded_input_data = decoded_input(decoded_input)
 
     %{
@@ -235,13 +248,26 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "status" => transaction.status,
       "block" => transaction.block_number,
       "timestamp" => block_timestamp(transaction.block),
-      "from" => Helper.address_with_info(single_tx? && conn, transaction.from_address, transaction.from_address_hash),
-      "to" => Helper.address_with_info(single_tx? && conn, transaction.to_address, transaction.to_address_hash),
+      "from" =>
+        Helper.address_with_info(
+          single_tx? && conn,
+          transaction.from_address,
+          transaction.from_address_hash,
+          watchlist_names
+        ),
+      "to" =>
+        Helper.address_with_info(
+          single_tx? && conn,
+          transaction.to_address,
+          transaction.to_address_hash,
+          watchlist_names
+        ),
       "created_contract" =>
         Helper.address_with_info(
           single_tx? && conn,
           transaction.created_contract_address,
-          transaction.created_contract_address_hash
+          transaction.created_contract_address_hash,
+          watchlist_names
         ),
       "confirmations" =>
         transaction.block |> Chain.confirmations(block_height: Chain.block_height(@api_true)) |> format_confirmations(),
@@ -268,7 +294,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "exchange_rate" => (Market.get_exchange_rate(Explorer.coin()) || TokenRate.null()).usd_value,
       "method" => method_name(transaction, decoded_input),
       "tx_types" => tx_types(transaction),
-      "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(conn))
+      "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_tx? && conn)),
+      "has_error_in_internal_txs" => transaction.has_error_in_internal_txs
     }
   end
 
@@ -422,7 +449,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
          _,
          skip_sc_check?
        ) do
-    if Helper.is_smart_contract(to_address) || skip_sc_check? do
+    if skip_sc_check? || Helper.is_smart_contract(to_address) do
       "0x" <> Base.encode16(method_id, case: :lower)
     else
       nil
