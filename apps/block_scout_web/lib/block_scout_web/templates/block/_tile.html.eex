@@ -54,22 +54,39 @@
       <div class="text-nowrap text-truncate mt-3 mt-md-0">
         <!-- validator -->
         <%= gettext "Prime" %>
-        <%= link(
-            class: "tile-label",
-            to: block_path(BlockScoutWeb.Endpoint, :show, @block.hash),
-            "data-selector": "block-number"
-          ) do to_string(@block.hash) end %>
+        <%
+            subnetwork = System.get_env("SUBNETWORK") |> String.downcase
+            host = System.get_env("BLOCKSCOUT_HOST") |> String.replace(subnetwork, "prime")
+            protocol = (fn host -> if String.contains?(host, "localhost"), do: "http://", else: "https://" end).(host)
+            url = protocol <> host <> block_path(BlockScoutWeb.Endpoint, :show, @block.hash)
+          %>
+        <a href="<%= url %>"
+           class="tile-label"
+           data-selector="block-number"
+           target="_blank"
+           rel="noopener noreferrer">
+          <%= to_string(@block.hash) %>
+        </a>
       </div>
       <% end %>
         <%= if @block.is_region_coincident do %>
         <div class="text-nowrap text-truncate mt-3 mt-md-0">
           <!-- validator -->
           <%= gettext "Region" %>
-          <%= link(
-            class: "tile-label",
-            to: block_path(BlockScoutWeb.Endpoint, :show, @block.hash),
-            "data-selector": "block-number"
-          ) do to_string(@block.hash) end %>
+          <%
+            subnetwork = System.get_env("SUBNETWORK") |> String.downcase
+            subnetwork_without_digits = subnetwork |> String.replace(~r/\d/, "")
+            host = System.get_env("BLOCKSCOUT_HOST") |> String.replace(subnetwork, subnetwork_without_digits)
+            protocol = (fn host -> if String.contains?(host, "localhost"), do: "http://", else: "https://" end).(host)
+            url = protocol <> host <> block_path(BlockScoutWeb.Endpoint, :show, @block.hash)
+          %>
+          <a href="<%= url %>"
+             class="tile-label"
+             data-selector="block-number"
+             target="_blank"
+             rel="noopener noreferrer">
+            <%= to_string(@block.hash) %>
+          </a>
         </div>
         <% end %>
       <%= if show_reward?(@block.rewards) do %>
