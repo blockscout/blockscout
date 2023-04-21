@@ -11,6 +11,7 @@ defmodule Indexer.Fetcher.Withdrawal do
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Withdrawal
+  alias Explorer.Helper
   alias Indexer.Transform.Addresses
 
   @interval :timer.seconds(10)
@@ -45,7 +46,7 @@ defmodule Indexer.Fetcher.Withdrawal do
     Logger.metadata(fetcher: :withdrawal)
     first_block = Application.get_env(:indexer, __MODULE__)[:first_block]
 
-    if first_block |> parse_integer() |> is_integer() do
+    if first_block |> Helper.parse_integer() |> is_integer() do
       # withdrawals from all other blocks will be imported by realtime and catchup indexers
       json_rpc_named_arguments = opts[:json_rpc_named_arguments]
 
@@ -55,7 +56,7 @@ defmodule Indexer.Fetcher.Withdrawal do
       end
 
       state = %__MODULE__{
-        blocks_to_fetch: first_block |> parse_integer() |> missing_block_numbers(),
+        blocks_to_fetch: first_block |> Helper.parse_integer() |> missing_block_numbers(),
         interval: opts[:interval] || @interval,
         json_rpc_named_arguments: json_rpc_named_arguments,
         max_batch_size: opts[:max_batch_size] || @batch_size,
@@ -154,14 +155,5 @@ defmodule Indexer.Fetcher.Withdrawal do
     blocks = from |> Withdrawal.blocks_without_withdrawals_query() |> Repo.all()
     Logger.debug("missing_block_numbers #{length(blocks)}")
     blocks
-  end
-
-  defp parse_integer(nil), do: nil
-
-  defp parse_integer(integer_string) do
-    case Integer.parse(integer_string) do
-      {integer, ""} -> integer
-      _ -> nil
-    end
   end
 end

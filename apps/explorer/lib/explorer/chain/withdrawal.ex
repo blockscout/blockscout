@@ -60,19 +60,31 @@ defmodule Explorer.Chain.Withdrawal do
 
   @spec block_hash_to_withdrawals_query(Hash.Full.t()) :: Ecto.Query.t()
   def block_hash_to_withdrawals_query(block_hash) do
+    block_hash
+    |> block_hash_to_withdrawals_unordered_query()
+    |> order_by(desc: :index)
+  end
+
+  @spec block_hash_to_withdrawals_unordered_query(Hash.Full.t()) :: Ecto.Query.t()
+  def block_hash_to_withdrawals_unordered_query(block_hash) do
     from(withdrawal in __MODULE__,
       select: withdrawal,
-      order_by: [desc: :index],
       where: withdrawal.block_hash == ^block_hash
     )
   end
 
   @spec address_hash_to_withdrawals_query(Hash.Address.t()) :: Ecto.Query.t()
   def address_hash_to_withdrawals_query(address_hash) do
+    address_hash
+    |> address_hash_to_withdrawals_unordered_query()
+    |> order_by(desc: :index)
+  end
+
+  @spec address_hash_to_withdrawals_unordered_query(Hash.Address.t()) :: Ecto.Query.t()
+  def address_hash_to_withdrawals_unordered_query(address_hash) do
     from(withdrawal in __MODULE__,
       select: withdrawal,
       left_join: block in assoc(withdrawal, :block),
-      order_by: [desc: :index],
       where: withdrawal.address_hash == ^address_hash,
       where: block.consensus,
       preload: [block: block]

@@ -374,7 +374,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, _address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true, false)} do
-      withdrawals_plus_one = address_hash |> Chain.address_hash_to_withdrawals(paging_options(params))
+      options = @api_true |> Keyword.merge(paging_options(params))
+      withdrawals_plus_one = address_hash |> Chain.address_hash_to_withdrawals(options)
       {withdrawals, next_page} = split_list_by_page(withdrawals_plus_one)
 
       next_page_params = next_page |> next_page_params(withdrawals, params) |> delete_parameters_from_next_page_params()

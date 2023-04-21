@@ -111,7 +111,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     with {:ok, type, value} <- parse_block_hash_or_number_param(block_hash_or_number),
          {:ok, block} <- fetch_block(type, value, @api_true) do
       full_options =
-        [necessity_by_association: %{address: :optional}]
+        [necessity_by_association: %{address: :optional}, api?: true]
         |> Keyword.merge(paging_options(params))
 
       withdrawals_plus_one = Chain.block_to_withdrawals(block.hash, full_options)

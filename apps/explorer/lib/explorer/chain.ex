@@ -1098,10 +1098,10 @@ defmodule Explorer.Chain do
   end
 
   @spec check_if_withdrawals_in_block(Hash.Full.t()) :: boolean()
-  def check_if_withdrawals_in_block(block_hash) do
+  def check_if_withdrawals_in_block(block_hash, options \\ []) do
     block_hash
-    |> Withdrawal.block_hash_to_withdrawals_query()
-    |> Repo.exists?()
+    |> Withdrawal.block_hash_to_withdrawals_unordered_query()
+    |> select_repo(options).exists?()
   end
 
   @spec address_to_incoming_transaction_count(Hash.Address.t()) :: non_neg_integer()
@@ -2704,10 +2704,10 @@ defmodule Explorer.Chain do
   end
 
   @spec check_if_withdrawals_at_address(Hash.Address.t()) :: boolean()
-  def check_if_withdrawals_at_address(address_hash) do
+  def check_if_withdrawals_at_address(address_hash, options \\ []) do
     address_hash
-    |> Withdrawal.address_hash_to_withdrawals_query()
-    |> Repo.exists?()
+    |> Withdrawal.address_hash_to_withdrawals_unordered_query()
+    |> select_repo(options).exists?()
   end
 
   @doc """

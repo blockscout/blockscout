@@ -6,6 +6,7 @@
 
 - [#6694](https://github.com/blockscout/blockscout/pull/6694) - Add withdrawals support (EIP-4895)
 - [#7246](https://github.com/blockscout/blockscout/pull/7246) - Fallback JSON RPC option
+- [#6694](https://github.com/blockscout/blockscout/pull/6694) - Add withdrawals support (EIP-4895)
 
 ### Fixes
 

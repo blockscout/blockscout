@@ -3098,7 +3098,6 @@ msgid "Verified contracts"
 msgstr ""
 
 #: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:2
-#: lib/block_scout_web/templates/withdrawal/_metatags.html.eex:2
 #, elixir-autogen, elixir-format
 msgid "Verified contracts - %{subnetwork} Explorer"
 msgstr ""
@@ -3201,7 +3200,6 @@ msgid "View the transactions, token transfers, and uncles for block number %{blo
 msgstr ""
 
 #: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:8
-#: lib/block_scout_web/templates/withdrawal/_metatags.html.eex:8
 #, elixir-autogen, elixir-format
 msgid "View the verified contracts on %{subnetwork}"
 msgstr ""
@@ -3567,11 +3565,6 @@ msgstr ""
 msgid "This page is no longer explorable! If you are lost, use the search bar to find what you are looking for."
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/overview.html.eex:205
-#, elixir-autogen, elixir-format
-msgid "Transaction Action"
-msgstr ""
-
 #: lib/block_scout_web/templates/error422/index.html.eex:8
 #, elixir-autogen, elixir-format
 msgid "Your request contained an error, perhaps a mistyped tx/block/address hash. Try again, and check the developer tools console for more info."
@@ -3583,7 +3576,6 @@ msgid "Select Yes if you want to verify Yul contract."
 msgstr ""
 
 #: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:7
-#: lib/block_scout_web/templates/withdrawal/_metatags.html.eex:7
 #, elixir-autogen, elixir-format
 msgid "Verified contracts, %{subnetwork}, %{coin}"
 msgstr ""
@@ -3617,4 +3609,24 @@ msgstr ""
 #: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:29
 #, elixir-autogen, elixir-format
 msgid "There is no decompiled contracts for this address."
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction/overview.html.eex:205
+#, elixir-autogen, elixir-format
+msgid "Transaction Action"
+msgstr ""
+
+#: lib/block_scout_web/templates/withdrawal/_metatags.html.eex:2
+#, elixir-autogen, elixir-format
+msgid "Beacon chain withdrawals - %{subnetwork} Explorer"
+msgstr ""
+
+#: lib/block_scout_web/templates/withdrawal/_metatags.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Beacon chain, Withdrawals, %{subnetwork}, %{coin}"
+msgstr ""
+
+#: lib/block_scout_web/templates/withdrawal/_metatags.html.eex:8
+#, elixir-autogen, elixir-format
+msgid "View the beacon chain withdrawals on %{subnetwork}"
 msgstr ""

@@ -8,8 +8,6 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
 
   alias Explorer.Chain
 
-  action_fallback(BlockScoutWeb.API.V2.FallbackController)
-
   def withdrawals_list(conn, params) do
     full_options =
       [necessity_by_association: %{address: :optional, block: :optional}, api?: true]
