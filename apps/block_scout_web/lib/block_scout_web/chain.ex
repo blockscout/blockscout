@@ -538,4 +538,25 @@ defmodule BlockScoutWeb.Chain do
       end
     end)
   end
+
+  def parse_block_hash_or_number_param("0x" <> _ = param) do
+    case string_to_block_hash(param) do
+      {:ok, hash} ->
+        {:ok, :hash, hash}
+
+      :error ->
+        {:error, {:invalid, :hash}}
+    end
+  end
+
+  def parse_block_hash_or_number_param(number_string)
+      when is_binary(number_string) do
+    case param_to_block_number(number_string) do
+      {:ok, number} ->
+        {:ok, :number, number}
+
+      {:error, :invalid} ->
+        {:error, {:invalid, :number}}
+    end
+  end
 end

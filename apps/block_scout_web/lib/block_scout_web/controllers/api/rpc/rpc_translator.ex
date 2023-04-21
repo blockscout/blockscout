@@ -75,18 +75,6 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
     |> halt()
   end
 
-  def api_cors_origins do
-    cors_origins = System.get_env("API_CORS_ORIGINS")
-
-    if cors_origins do
-      cors_origins
-      |> String.split(",")
-      |> Enum.map(fn origin -> String.trim(origin) end)
-    else
-      "*"
-    end
-  end
-
   @doc false
   @spec translate_module(map(), String.t()) :: {:ok, {module(), list(atom())}} | {:error, :no_action}
   defp translate_module(translations, module) do
