@@ -62,17 +62,20 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   end
 
   def prepare_token_instance(instance, token) do
+    is_unique =
+      not (token.type == "ERC-1155") or
+        Chain.token_id_1155_is_unique?(token.contract_address_hash, instance.token_id, @api_true)
+
     %{
       "id" => instance.token_id,
       "metadata" => instance.metadata,
-      "owner" => instance.owner && Helper.address_with_info(nil, instance.owner, instance.owner.hash),
+      "owner" =>
+        if(is_unique, do: instance.owner && Helper.address_with_info(nil, instance.owner, instance.owner.hash)),
       "token" => render("token.json", %{token: token}),
       "external_app_url" => NFTHelper.external_url(instance),
       "animation_url" => instance.metadata && NFTHelper.retrieve_image(instance.metadata["animation_url"], nil),
       "image_url" => instance.metadata && NFTHelper.get_media_src(instance.metadata, false),
-      "is_unique" =>
-        not (token.type == "ERC-1155") or
-          Chain.token_id_1155_is_unique?(token.contract_address_hash, instance.token_id, @api_true)
+      "is_unique" => is_unique
     }
   end
 end
