@@ -13,6 +13,8 @@ config :explorer,
     transport_options: [
       http: EthereumJSONRPC.HTTP.HTTPoison,
       url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || "http://localhost:8545",
+      fallback_url: System.get_env("ETHEREUM_JSONRPC_FALLBACK_HTTP_URL"),
+      fallback_trace_url: System.get_env("ETHEREUM_JSONRPC_FALLBACK_TRACE_URL"),
       method_to_url: [
         eth_call: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "http://localhost:8545",
         eth_getBalance: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "http://localhost:8545",
