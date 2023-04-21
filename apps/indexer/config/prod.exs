@@ -1,6 +1,6 @@
 import Config
 
-config :indexer, Indexer.Tracer, env: "production", disabled?: true
+config :indexer, Indexer.Tracer, env: "production", disabled?: false
 
 config :logger, :indexer,
   level: :info,
