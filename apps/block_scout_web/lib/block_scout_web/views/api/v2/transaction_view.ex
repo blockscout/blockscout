@@ -99,12 +99,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("logs.json", %{logs: logs, next_page_params: next_page_params, tx_hash: tx_hash}) do
-    %{"items" => Enum.map(logs, fn log -> prepare_log(log, tx_hash) end), "next_page_params" => next_page_params}
+    %{"items" => Enum.map(logs, fn log -> prepare_log(log, tx_hash, false) end), "next_page_params" => next_page_params}
   end
 
   def render("logs.json", %{logs: logs, next_page_params: next_page_params}) do
     %{
-      "items" => Enum.map(logs, fn log -> prepare_log(log, log.transaction) end),
+      "items" => Enum.map(logs, fn log -> prepare_log(log, log.transaction, true) end),
       "next_page_params" => next_page_params
     }
   end
@@ -187,8 +187,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  def prepare_log(log, transaction_or_hash) do
-    decoded = decode_log(log, transaction_or_hash)
+  def prepare_log(log, transaction_or_hash, skip_sig_provider?) do
+    decoded = decode_log(log, transaction_or_hash, skip_sig_provider?)
 
     %{
       "tx_hash" => get_tx_hash(transaction_or_hash),
@@ -212,8 +212,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp smart_contract_info(%Transaction{} = tx), do: Helper.address_with_info(tx.to_address, tx.to_address_hash)
   defp smart_contract_info(_), do: nil
 
-  defp decode_log(log, %Transaction{} = tx) do
-    case log |> Log.decode(tx, @api_true) |> format_decoded_log_input() do
+  defp decode_log(log, %Transaction{} = tx, skip_sig_provider?) do
+    case log |> Log.decode(tx, @api_true, skip_sig_provider?) |> format_decoded_log_input() do
       {:ok, method_id, text, mapping} ->
         render(__MODULE__, "decoded_log_input.json", method_id: method_id, text: text, mapping: mapping)
 
@@ -222,7 +222,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  defp decode_log(log, transaction_hash), do: decode_log(log, %Transaction{hash: transaction_hash})
+  defp decode_log(log, transaction_hash, skip_sig_provider?),
+    do: decode_log(log, %Transaction{hash: transaction_hash}, skip_sig_provider?)
 
   defp prepare_transaction({%Reward{} = emission_reward, %Reward{} = validator_reward}, conn, single_tx?) do
     %{
