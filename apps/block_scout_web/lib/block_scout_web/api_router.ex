@@ -162,6 +162,7 @@ defmodule BlockScoutWeb.ApiRouter do
     scope "/main-page" do
       get("/blocks", V2.MainPageController, :blocks)
       get("/transactions", V2.MainPageController, :transactions)
+      get("/transactions/watchlist", V2.MainPageController, :watchlist_transactions)
       get("/indexing-status", V2.MainPageController, :indexing_status)
     end
 

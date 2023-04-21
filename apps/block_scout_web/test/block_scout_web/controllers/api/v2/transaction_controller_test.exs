@@ -103,7 +103,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert %{"message" => "Unauthorized"} = json_response(request, 401)
     end
 
-    test "txs with next_page_params", %{conn: conn} do
+    test "empty list", %{conn: conn} do
       51
       |> insert_list(:transaction)
       |> with_block()

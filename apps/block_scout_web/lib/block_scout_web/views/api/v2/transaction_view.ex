@@ -35,6 +35,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
+  def render("transactions_watchlist.json", %{
+        transactions: transactions,
+        conn: conn,
+        watchlist_names: watchlist_names
+      }) do
+    Enum.map(transactions, &prepare_transaction(&1, conn, false, watchlist_names))
+  end
+
   def render("transactions.json", %{transactions: transactions, next_page_params: next_page_params, conn: conn}) do
     %{"items" => Enum.map(transactions, &prepare_transaction(&1, conn, false)), "next_page_params" => next_page_params}
   end
