@@ -402,7 +402,17 @@ config :indexer, Indexer.Fetcher.TransactionAction,
   reindex_first_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_FIRST_BLOCK"),
   reindex_last_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_LAST_BLOCK"),
   reindex_protocols: System.get_env("INDEXER_TX_ACTIONS_REINDEX_PROTOCOLS", ""),
-  aave_v3_pool: System.get_env("INDEXER_TX_ACTIONS_AAVE_V3_POOL_CONTRACT")
+  aave_v3_pool: System.get_env("INDEXER_TX_ACTIONS_AAVE_V3_POOL_CONTRACT"),
+  uniswap_v3_factory:
+    ConfigHelper.safe_get_env(
+      "INDEXER_TX_ACTIONS_UNISWAP_V3_FACTORY_CONTRACT",
+      "0x1F98431c8aD98523631AE4a59f267346ea31F984"
+    ),
+  uniswap_v3_nft_position_manager:
+    ConfigHelper.safe_get_env(
+      "INDEXER_TX_ACTIONS_UNISWAP_V3_NFT_POSITION_MANAGER_CONTRACT",
+      "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
+    )
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?:
