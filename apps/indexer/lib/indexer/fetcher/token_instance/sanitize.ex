@@ -46,7 +46,7 @@ defmodule Indexer.Fetcher.TokenInstance.Sanitize do
   @impl BufferedTask
   def run([%{contract_address_hash: hash, token_id: token_id}], _json_rpc_named_arguments) do
     if not Chain.token_instance_exists?(token_id, hash) do
-      fetch_instance(hash, token_id, false)
+      fetch_instance(hash, token_id)
     end
 
     :ok

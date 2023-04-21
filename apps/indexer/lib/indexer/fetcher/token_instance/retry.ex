@@ -51,7 +51,7 @@ defmodule Indexer.Fetcher.TokenInstance.Retry do
     if updated_at
        |> DateTime.add(refetch_interval, :millisecond)
        |> DateTime.compare(DateTime.utc_now()) != :gt do
-      fetch_instance(hash, token_id, true)
+      fetch_instance(hash, token_id)
     end
 
     :ok
