@@ -322,6 +322,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     case error do
       %{data: data, message: "historical backend error" <> _} -> invalidate_block_from_error(data)
       %{data: data, message: "genesis is not traceable"} -> invalidate_block_from_error(data)
+      %{data: data, message: "transaction not found"} -> invalidate_block_from_error(data)
       _ -> :ok
     end
   end

@@ -4,9 +4,23 @@
 
 ### Features
 
+- [#7246](https://github.com/blockscout/blockscout/pull/7246) - Fallback JSON RPC option
+
 ### Fixes
 
+- [#7290](https://github.com/blockscout/blockscout/pull/7290) - Allow nil gas price for pending tx (Erigon node case)
+- [#7288](https://github.com/blockscout/blockscout/pull/7288) - API v2 improvements: Fix tx type for pending contract creation; Remove owner for not unique ERC-1155 token instances
+- [#7283](https://github.com/blockscout/blockscout/pull/7283) - Fix status for dropped/replaced tx
+- [#7270](https://github.com/blockscout/blockscout/pull/7270) - Fix default `TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL`
+- [#7276](https://github.com/blockscout/blockscout/pull/7276) - Convert 99+% of int txs indexing into 100% in order to hide top indexing banner
+- [#7282](https://github.com/blockscout/blockscout/pull/7282) - Add not found transaction error case
+- [#7305](https://github.com/blockscout/blockscout/pull/7305) - Reset MissingRangesCollector min_fetched_block_number
+
 ### Chore
+
+- [#7310](https://github.com/blockscout/blockscout/pull/7310) - Reducing resource consumption on bs-indexer-eth-goerli environment
+- [#7297](https://github.com/blockscout/blockscout/pull/7297) - Use tracing JSONRPC URL in case of debug_traceTransaction method
+- [#7292](https://github.com/blockscout/blockscout/pull/7292) - Allow Node 16+ version
 
 <details>
   <summary>Dependencies version bumps</summary>
