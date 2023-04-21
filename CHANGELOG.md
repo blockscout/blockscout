@@ -18,6 +18,7 @@
 
 ### Chore
 
+- [#7310](https://github.com/blockscout/blockscout/pull/7310) - Reducing resource consumption on bs-indexer-eth-goerli environment
 - [#7297](https://github.com/blockscout/blockscout/pull/7297) - Use tracing JSONRPC URL in case of debug_traceTransaction method
 - [#7292](https://github.com/blockscout/blockscout/pull/7292) - Allow Node 16+ version
 
