@@ -1,24 +1,22 @@
-defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
+defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
   @moduledoc """
   Exports token transfers to a csv file.
   """
 
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, TokenTransfer}
-  alias NimbleCSV.RFC4180
+  alias Explorer.Chain.CSVExport.Helper
 
-  @page_size 150
-  @paging_options %PagingOptions{page_size: @page_size + 1, asc_order: true}
+  @paging_options %PagingOptions{page_size: Helper.page_size() + 1, asc_order: true}
 
   @spec export(Address.t(), String.t(), String.t()) :: Enumerable.t()
   def export(address, from_period, to_period) do
-    from_block = Chain.convert_date_to_min_block(from_period)
-    to_block = Chain.convert_date_to_max_block(to_period)
+    {from_block, to_block} = Helper.block_from_period(from_period, to_period)
 
     address.hash
     |> fetch_all_token_transfers(from_block, to_block, @paging_options)
     |> to_csv_format(address)
-    |> dump_to_stream()
+    |> Helper.dump_to_stream()
   end
 
   def fetch_all_token_transfers(address_hash, from_block, to_block, paging_options, acc \\ []) do
@@ -32,7 +30,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
 
     new_acc = acc ++ token_transfers
 
-    case Enum.split(token_transfers, @page_size) do
+    case Enum.split(token_transfers, Helper.page_size()) do
       {_token_transfers, [%TokenTransfer{block_number: block_number, log_index: log_index}]} ->
         new_paging_options = %{@paging_options | key: {block_number, log_index}}
         fetch_all_token_transfers(address_hash, from_block, to_block, new_paging_options, new_acc)
@@ -40,11 +38,6 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
       {_, []} ->
         new_acc
     end
-  end
-
-  defp dump_to_stream(transactions) do
-    transactions
-    |> RFC4180.dump_to_stream()
   end
 
   defp to_csv_format(token_transfers, address) do
