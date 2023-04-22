@@ -17,18 +17,10 @@ defmodule Indexer.Fetcher.TokenInstance.Sanitize do
   @default_max_concurrency 10
   @doc false
   def child_spec([init_options, gen_server_options]) do
-    {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
-
-    unless state do
-      raise ArgumentError,
-            ":json_rpc_named_arguments must be provided to `#{__MODULE__}.child_spec " <>
-              "to allow for json_rpc calls when running."
-    end
-
     merged_init_opts =
       defaults()
-      |> Keyword.merge(mergeable_init_options)
-      |> Keyword.put(:state, state)
+      |> Keyword.merge(init_options)
+      |> Keyword.merge(state: [])
 
     Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_opts}, gen_server_options]}, id: __MODULE__)
   end

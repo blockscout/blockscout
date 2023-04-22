@@ -109,18 +109,9 @@ defmodule Indexer.Supervisor do
         {CoinBalance.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-        {TokenInstanceRetry.Supervisor,
-         [
-           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
-         ]},
-        {TokenInstanceRealtime.Supervisor,
-         [
-           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
-         ]},
-        {TokenInstanceSanitize.Supervisor,
-         [
-           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
-         ]},
+        {TokenInstanceRealtime.Supervisor, [[memory_monitor: memory_monitor]]},
+        {TokenInstanceRetry.Supervisor, [[memory_monitor: memory_monitor]]},
+        {TokenInstanceSanitize.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(TransactionAction.Supervisor, [[memory_monitor: memory_monitor]]),
         {ContractCode.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
