@@ -435,8 +435,14 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
 config :indexer, Indexer.Block.Realtime.Supervisor,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_REALTIME_INDEXER")
 
-config :indexer, Indexer.Fetcher.TokenInstance.Supervisor,
-  disabled?: ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_INSTANCE_FETCHER")
+config :indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_REALTIME_FETCHER")
+
+config :indexer, Indexer.Fetcher.TokenInstance.Retry.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_RETRY_FETCHER")
+
+config :indexer, Indexer.Fetcher.TokenInstance.Sanitize.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_SANITIZE_FETCHER")
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE", 100)
@@ -452,9 +458,15 @@ config :indexer, Indexer.Fetcher.BlockReward,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_BLOCK_REWARD_BATCH_SIZE", 10),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_BLOCK_REWARD_CONCURRENCY", 4)
 
-config :indexer, Indexer.Fetcher.TokenInstance,
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_BATCH_SIZE", 1),
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_CONCURRENCY", 10)
+config :indexer, Indexer.Fetcher.TokenInstance.Retry,
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_RETRY_CONCURRENCY", 10),
+  refetch_interval: ConfigHelper.parse_time_env_var("INDEXER_TOKEN_INSTANCE_RETRY_REFETCH_INTERVAL", "24h")
+
+config :indexer, Indexer.Fetcher.TokenInstance.Realtime,
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_REALTIME_CONCURRENCY", 10)
+
+config :indexer, Indexer.Fetcher.TokenInstance.Sanitize,
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_SANITIZE_CONCURRENCY", 10)
 
 config :indexer, Indexer.Fetcher.InternalTransaction,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", 10),
