@@ -1,7 +1,7 @@
 defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.AddressTokenTransferCsvExporter
+  alias Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter
 
   describe "export/3" do
     test "exports token transfers to csv" do

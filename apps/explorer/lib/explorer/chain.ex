@@ -2229,33 +2229,24 @@ defmodule Explorer.Chain do
   @spec indexed_ratio_blocks() :: Decimal.t()
   def indexed_ratio_blocks do
     if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
-      %{min: min, max: max} = BlockNumber.get_all()
+      %{min: min_saved_block_number, max: max_saved_block_number} = BlockNumber.get_all()
 
-      min_blockchain_block_number =
-        case Integer.parse(Application.get_env(:indexer, :first_block)) do
-          {block_number, _} -> block_number
-          _ -> 0
-        end
+      min_blockchain_block_number = min_block_number_from_config(:first_block)
 
-      case {min, max} do
+      case {min_saved_block_number, max_saved_block_number} do
         {0, 0} ->
           Decimal.new(0)
 
         _ ->
-          result =
-            BlockCache.estimated_count()
-            |> Decimal.div(max - min_blockchain_block_number + 1)
-            |> (&if(
-                  (Decimal.compare(&1, Decimal.from_float(0.99)) == :gt ||
-                     Decimal.compare(&1, Decimal.from_float(0.99)) == :eq) &&
-                    min <= min_blockchain_block_number,
-                  do: Decimal.new(1),
-                  else: &1
-                )).()
-
-          result
-          |> Decimal.round(2, :down)
-          |> Decimal.min(Decimal.new(1))
+          BlockCache.estimated_count()
+          |> Decimal.div(max_saved_block_number - min_blockchain_block_number + 1)
+          |> (&if(
+                greater_or_equal_0_99(&1) &&
+                  min_saved_block_number <= min_blockchain_block_number,
+                do: Decimal.new(1),
+                else: &1
+              )).()
+          |> format_indexed_ratio()
       end
     else
       Decimal.new(1)
@@ -2266,30 +2257,52 @@ defmodule Explorer.Chain do
   def indexed_ratio_internal_transactions do
     if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] &&
          not Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] do
-      %{max: max} = BlockNumber.get_all()
-      count = Repo.aggregate(PendingBlockOperation, :count, timeout: :infinity)
+      %{max: max_saved_block_number} = BlockNumber.get_all()
+      pbo_count = Repo.aggregate(PendingBlockOperation, :count, timeout: :infinity)
 
-      min_blockchain_trace_block_number =
-        case Integer.parse(Application.get_env(:indexer, :trace_first_block)) do
-          {block_number, _} -> block_number
-          _ -> 0
-        end
+      min_blockchain_trace_block_number = min_block_number_from_config(:trace_first_block)
 
-      case max do
+      case max_saved_block_number do
         0 ->
           Decimal.new(0)
 
         _ ->
-          full_blocks_range = max - min_blockchain_trace_block_number + 1
-          result = Decimal.div(full_blocks_range - count, full_blocks_range)
+          full_blocks_range = max_saved_block_number - min_blockchain_trace_block_number + 1
+          processed_int_txs_for_blocks_count = full_blocks_range - pbo_count
 
-          result
-          |> Decimal.round(2, :down)
-          |> Decimal.min(Decimal.new(1))
+          processed_int_txs_for_blocks_count
+          |> Decimal.div(full_blocks_range)
+          |> (&if(
+                greater_or_equal_0_99(&1),
+                do: Decimal.new(1),
+                else: &1
+              )).()
+          |> format_indexed_ratio()
       end
     else
       Decimal.new(1)
     end
+  end
+
+  @spec greater_or_equal_0_99(Decimal.t()) :: boolean()
+  defp greater_or_equal_0_99(value) do
+    Decimal.compare(value, Decimal.from_float(0.99)) == :gt ||
+      Decimal.compare(value, Decimal.from_float(0.99)) == :eq
+  end
+
+  @spec min_block_number_from_config(atom()) :: integer()
+  defp min_block_number_from_config(block_type) do
+    case Integer.parse(Application.get_env(:indexer, block_type)) do
+      {block_number, _} -> block_number
+      _ -> 0
+    end
+  end
+
+  @spec format_indexed_ratio(Decimal.t()) :: Decimal.t()
+  defp format_indexed_ratio(raw_ratio) do
+    raw_ratio
+    |> Decimal.round(2, :down)
+    |> Decimal.min(Decimal.new(1))
   end
 
   @spec fetch_min_block_number() :: non_neg_integer
@@ -4986,6 +4999,22 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(distinct_query, initial, reducer)
   end
 
+  @spec stream_token_instances_with_error(
+          initial :: accumulator,
+          reducer :: (entry :: map(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_token_instances_with_error(initial, reducer) when is_function(reducer, 2) do
+    Instance
+    |> where([instance], not is_nil(instance.error))
+    |> select([instance], %{
+      contract_address_hash: instance.token_contract_address_hash,
+      token_id: instance.token_id,
+      updated_at: instance.updated_at
+    })
+    |> Repo.stream_reduce(initial, reducer)
+  end
+
   @doc """
   Streams a list of token contract addresses that have been cataloged.
   """
@@ -5285,13 +5314,19 @@ defmodule Explorer.Chain do
   @spec erc721_or_erc1155_token_instance_from_token_id_and_token_address(non_neg_integer(), Hash.Address.t(), [api?]) ::
           {:ok, Instance.t()} | {:error, :not_found}
   def erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, token_contract_address, options \\ []) do
-    query =
-      from(i in Instance, where: i.token_contract_address_hash == ^token_contract_address and i.token_id == ^token_id)
+    query = Instance.token_instance_query(token_id, token_contract_address)
 
     case select_repo(options).one(query) do
       nil -> {:error, :not_found}
       token_instance -> {:ok, token_instance}
     end
+  end
+
+  @spec token_instance_exists?(non_neg_integer, Hash.Address.t(), [api?]) :: boolean
+  def token_instance_exists?(token_id, token_contract_address, options \\ []) do
+    query = Instance.token_instance_query(token_id, token_contract_address)
+
+    select_repo(options).exists?(query)
   end
 
   defp fetch_coin_balances(address_hash, paging_options) do
