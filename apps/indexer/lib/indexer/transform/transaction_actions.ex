@@ -18,11 +18,10 @@ defmodule Indexer.Transform.TransactionActions do
   @goerli 5
   @optimism 10
   @polygon 137
+  @base_goerli 84531
   # @gnosis 100
 
   @burn_address "0x0000000000000000000000000000000000000000"
-  @uniswap_v3_positions_nft "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
-  @uniswap_v3_factory "0x1F98431c8aD98523631AE4a59f267346ea31F984"
   @uniswap_v3_factory_abi [
     %{
       "inputs" => [
@@ -162,13 +161,18 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp parse_uniswap_v3(logs, actions, protocols_to_rewrite, chain_id) do
-    if Enum.member?([@mainnet, @goerli, @optimism, @polygon], chain_id) and
+    if Enum.member?([@mainnet, @goerli, @optimism, @polygon, @base_goerli], chain_id) and
          (is_nil(protocols_to_rewrite) or Enum.empty?(protocols_to_rewrite) or
             Enum.member?(protocols_to_rewrite, "uniswap_v3")) do
+      uniswap_v3_positions_nft =
+        String.downcase(
+          Application.get_all_env(:indexer)[Indexer.Fetcher.TransactionAction][:uniswap_v3_nft_position_manager]
+        )
+
       logs
-      |> uniswap_filter_logs()
+      |> uniswap_filter_logs(uniswap_v3_positions_nft)
       |> logs_group_by_txs()
-      |> uniswap(actions, chain_id)
+      |> uniswap(actions, chain_id, uniswap_v3_positions_nft)
     else
       actions
     end
@@ -362,14 +366,14 @@ defmodule Indexer.Transform.TransactionActions do
     end
   end
 
-  defp uniswap(logs_grouped, actions, chain_id) do
+  defp uniswap(logs_grouped, actions, chain_id, uniswap_v3_positions_nft) do
     # create a list of UniswapV3Pool legitimate contracts
     legitimate = uniswap_legitimate_pools(logs_grouped)
 
     # iterate for each transaction
     Enum.reduce(logs_grouped, actions, fn {tx_hash, tx_logs}, actions_acc ->
       # trying to find `mint_nft` actions
-      actions_acc = uniswap_handle_mint_nft_actions(tx_hash, tx_logs, actions_acc)
+      actions_acc = uniswap_handle_mint_nft_actions(tx_hash, tx_logs, actions_acc, uniswap_v3_positions_nft)
 
       # go through other actions
       Enum.reduce(tx_logs, actions_acc, fn log, acc ->
@@ -378,7 +382,7 @@ defmodule Indexer.Transform.TransactionActions do
     end)
   end
 
-  defp uniswap_filter_logs(logs) do
+  defp uniswap_filter_logs(logs, uniswap_v3_positions_nft) do
     logs
     |> Enum.filter(fn log ->
       first_topic = sanitize_first_topic(log.first_topic)
@@ -393,7 +397,7 @@ defmodule Indexer.Transform.TransactionActions do
         first_topic
       ) ||
         (first_topic == @uniswap_v3_transfer_nft_event &&
-           address_hash_to_string(log.address_hash) == String.downcase(@uniswap_v3_positions_nft))
+           address_hash_to_string(log.address_hash) == uniswap_v3_positions_nft)
     end)
   end
 
@@ -434,7 +438,7 @@ defmodule Indexer.Transform.TransactionActions do
     end
   end
 
-  defp uniswap_handle_mint_nft_actions(tx_hash, tx_logs, actions_acc) do
+  defp uniswap_handle_mint_nft_actions(tx_hash, tx_logs, actions_acc, uniswap_v3_positions_nft) do
     first_log = Enum.at(tx_logs, 0)
 
     local_acc =
@@ -468,7 +472,7 @@ defmodule Indexer.Transform.TransactionActions do
           data: %{
             name: "Uniswap V3: Positions NFT",
             symbol: "UNI-V3-POS",
-            address: @uniswap_v3_positions_nft,
+            address: uniswap_v3_positions_nft,
             to: Address.checksum(to),
             ids: ids,
             block_number: first_log.block_number
@@ -629,6 +633,8 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp uniswap_request_get_pools({requests_tokens_and_fees, responses_tokens_and_fees}) do
+    uniswap_v3_factory = Application.get_all_env(:indexer)[Indexer.Fetcher.TransactionAction][:uniswap_v3_factory]
+
     requests_get_pool =
       requests_tokens_and_fees
       |> Enum.zip(responses_tokens_and_fees)
@@ -651,7 +657,7 @@ defmodule Indexer.Transform.TransactionActions do
         # we will call getPool(token0, token1, fee) public getter
         %{
           pool_address: pool_address,
-          contract_address: @uniswap_v3_factory,
+          contract_address: uniswap_v3_factory,
           method_id: "1698ee82",
           args: [token0, token1, fee]
         }

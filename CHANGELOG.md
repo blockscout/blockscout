@@ -20,6 +20,7 @@
 
 ### Chore
 
+- [#7312](https://github.com/blockscout/blockscout/pull/7312) - Add configs for Uniswap v3 transaction actions to index them on Base Goerli
 - [#7310](https://github.com/blockscout/blockscout/pull/7310) - Reducing resource consumption on bs-indexer-eth-goerli environment
 - [#7297](https://github.com/blockscout/blockscout/pull/7297) - Use tracing JSONRPC URL in case of debug_traceTransaction method
 - [#7292](https://github.com/blockscout/blockscout/pull/7292) - Allow Node 16+ version
