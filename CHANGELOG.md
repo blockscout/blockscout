@@ -6,6 +6,7 @@
 
 - [#7286](https://github.com/blockscout/blockscout/pull/7286) - Split token instance fetcher
 - [#7246](https://github.com/blockscout/blockscout/pull/7246) - Fallback JSON RPC option
+- [#7329](https://github.com/blockscout/blockscout/pull/7329) - Delete pending block operations for empty blocks
 
 ### Fixes
 
