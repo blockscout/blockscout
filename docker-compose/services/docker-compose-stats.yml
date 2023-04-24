@@ -30,3 +30,5 @@ services:
       - STATS__RUN_MIGRATIONS=true
     ports:
       - 8153:8050
+    volumes:
+      - ./stats-db-data:/var/lib/postgresql/data/

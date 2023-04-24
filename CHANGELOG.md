@@ -21,6 +21,7 @@
 
 ### Chore
 
+- [#7332](https://github.com/blockscout/blockscout/pull/7332) - Add volume for Postgres Docker containers DB
 - [#7328](https://github.com/blockscout/blockscout/pull/7328) - Update Docker image tag latest with release only
 - [#7312](https://github.com/blockscout/blockscout/pull/7312) - Add configs for Uniswap v3 transaction actions to index them on Base Goerli
 - [#7310](https://github.com/blockscout/blockscout/pull/7310) - Reducing resource consumption on bs-indexer-eth-goerli environment
