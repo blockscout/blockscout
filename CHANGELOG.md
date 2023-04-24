@@ -9,6 +9,7 @@
 
 ### Fixes
 
+- [#7317](https://github.com/blockscout/blockscout/pull/7317) - Fix tokensupply API v1 endpoint: handle nil total_supply
 - [#7290](https://github.com/blockscout/blockscout/pull/7290) - Allow nil gas price for pending tx (Erigon node case)
 - [#7288](https://github.com/blockscout/blockscout/pull/7288) - API v2 improvements: Fix tx type for pending contract creation; Remove owner for not unique ERC-1155 token instances
 - [#7283](https://github.com/blockscout/blockscout/pull/7283) - Fix status for dropped/replaced tx
