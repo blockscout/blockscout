@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.LayoutView do
   alias Poison.Parser
 
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
+  import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1]
 
   @default_other_networks [
     %{
@@ -298,7 +299,7 @@ defmodule BlockScoutWeb.LayoutView do
 
   def sign_out_link do
     client_id = Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_id]
-    return_to = Application.get_env(:ueberauth, Ueberauth)[:logout_return_to_url]
+    return_to = blockscout_url(true) <> "/auth/logout"
     logout_url = Application.get_env(:ueberauth, Ueberauth)[:logout_url]
 
     if client_id && return_to && logout_url do

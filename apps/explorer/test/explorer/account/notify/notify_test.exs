@@ -32,8 +32,7 @@ defmodule Explorer.Account.Notify.NotifyTest do
           [callback_url: "callback.url"]
         }
       ],
-      logout_url: "logout.url",
-      logout_return_to_url: "return.url"
+      logout_url: "logout.url"
     )
   end
 
