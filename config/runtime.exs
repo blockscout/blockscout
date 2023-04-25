@@ -134,9 +134,7 @@ config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
   client_secret: System.get_env("ACCOUNT_AUTH0_CLIENT_SECRET")
 
 # Configures Ueberauth local settings
-config :ueberauth, Ueberauth,
-  logout_url: System.get_env("ACCOUNT_AUTH0_LOGOUT_URL"),
-  logout_return_to_url: System.get_env("ACCOUNT_AUTH0_LOGOUT_RETURN_URL")
+config :ueberauth, Ueberauth, logout_url: "https://#{System.get_env("ACCOUNT_AUTH0_DOMAIN")}/v2/logout"
 
 ########################
 ### Ethereum JSONRPC ###
