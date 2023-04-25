@@ -25,9 +25,9 @@ blockscout:
         _default: "3"
     requests:
       memory:
-        _default: "8Gi"
+        _default: "6Gi"
       cpu:
-        _default: "3"
+        _default: "2"
 
   # node label
   nodeSelector:
@@ -156,14 +156,14 @@ frontend:
   resources:
     limits:
       memory:
-        _default: "7Gi"
+        _default: "2Gi"
       cpu:
-        _default: "4"
+        _default: "2"
     requests:
       memory:
-        _default: "7Gi"
+        _default: "512Mi"
       cpu:
-        _default: "4"
+        _default: "250m"
   # node label
   nodeSelector:
     enabled: true
@@ -237,14 +237,14 @@ stats:
   resources:
     limits:
       memory:
-        _default: "0.1Gi"
+        _default: 128Mi
       cpu:
-        _default: "0.1"
+        _default: 100m
     requests:
       memory:
-        _default: "0.1Gi"
+        _default: 128Mi
       cpu:
-        _default: "0.1"
+        _default: 100m
 
   # node label
   nodeSelector:
@@ -283,6 +283,7 @@ postgres:
     mountPath: /docker-entrypoint-initdb.d
 
   persistence: true
+  storage: 500Gi
 
   resources:
     limits:
@@ -310,14 +311,14 @@ scVerifier:
   resources:
     limits:
       memory:
-        _default: "0.5Gi"
+        _default: 512Mi
       cpu:
-        _default: "0.25"
+        _default: 250m
     requests:
       memory:
-        _default: "0.5Gi"
+        _default: 512Mi
       cpu:
-        _default: "0.25"
+        _default: 250m
   # probes
   livenessProbe:
     enabled: true
@@ -384,14 +385,14 @@ visualizer:
   resources:
     limits:
       memory:
-        _default: "0.05Gi"
+        _default: 64Mi
       cpu:
-        _default: "0.05"
+        _default: 50m
     requests:
       memory:
-        _default: "0.05Gi"
+        _default: 64Mi
       cpu:
-        _default: "0.05"
+        _default: 50m
 
   # node label
   nodeSelector:

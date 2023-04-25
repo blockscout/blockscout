@@ -140,7 +140,15 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
       MissingBlockRange.save_batch(batch)
       {:noreply, %{state | min_fetched_block_number: new_min_number}}
     else
-      {:noreply, state}
+      Process.send_after(self(), :update_past, @past_check_interval * 100)
+      {:noreply, %{state | min_fetched_block_number: reset_min_fetched_block_number(state.max_fetched_block_number)}}
+    end
+  end
+
+  defp reset_min_fetched_block_number(max_fetched_block_number) do
+    case MissingBlockRange.fetch_min_max() do
+      %{min: nil} -> max_fetched_block_number
+      %{min: min} -> min
     end
   end
 
