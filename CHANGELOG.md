@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#7313](https://github.com/blockscout/blockscout/pull/7313) - API v2 new endpoints: watchlist transactions
 - [#7286](https://github.com/blockscout/blockscout/pull/7286) - Split token instance fetcher
 - [#7246](https://github.com/blockscout/blockscout/pull/7246) - Fallback JSON RPC option
 - [#7329](https://github.com/blockscout/blockscout/pull/7329) - Delete pending block operations for empty blocks
