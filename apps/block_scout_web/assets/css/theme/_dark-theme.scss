@@ -4,6 +4,7 @@ $dark-light-bg: #282945; // pills bg shade
 $dark-light: #313355; // tile light top share
 $labels-dark: #8a8dba; // header nav, labels
 $dark-stakes-banned-background: #3e314c;
+$dashboard-banner-network-stats-item-before-background-color-dark-mode: $dark-secondary !default;
 
 // Switcher
 .dark-mode-changer {
@@ -112,7 +113,7 @@ $dark-stakes-banned-background: #3e314c;
 		color: $labels-dark;
 	}
 	.dashboard-banner-network-stats-item::before {
-		background-color: $dark-secondary;
+		background-color: $dashboard-banner-network-stats-item-before-background-color-dark-mode !important;
 	}
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-item {
 		&.price-per-day {
