@@ -110,6 +110,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         |> Map.replace("outputs", function["abi_outputs"])
         |> Map.drop(["abi_outputs"])
 
+      nil ->
+        function
+
       _ ->
         result =
           function

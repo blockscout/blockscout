@@ -65,6 +65,10 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
 
+  @max_error_length 255
+
+  @ignored_hosts ["localhost", "127.0.0.1", "0.0.0.0", "", nil]
+
   def fetch_metadata(unquote(@cryptokitties_address_hash), token_id) do
     %{@token_uri => {:ok, ["https://api.cryptokitties.co/kitties/{id}"]}}
     |> fetch_json(to_string(token_id))
@@ -110,36 +114,25 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     fetch_json_from_uri(uri, hex_token_id)
   end
 
-  # CIDv0 IPFS links # https://docs.ipfs.tech/concepts/content-addressing/#version-0-v0
-  def fetch_json("Qm" <> _ = result, hex_token_id) do
-    if String.length(result) == 46 do
-      fetch_json_from_uri({:ok, [@ipfs_link <> result]}, hex_token_id)
-    else
-      Logger.debug(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
-
-      {:error, result}
-    end
-  end
-
-  def fetch_json(result, hex_token_id) do
-    case URI.parse(result) do
-      %URI{host: nil} ->
-        Logger.debug(["Unknown metadata format #{inspect(result)}."], fetcher: :token_instances)
-
-        {:error, result}
-
-      _ ->
-        fetch_json_from_uri({:ok, [result]}, hex_token_id)
-    end
-  end
-
   defp fetch_json_from_uri({:error, error}, _hex_token_id) do
     if error =~ "execution reverted" or error =~ @vm_execution_error do
       {:ok, %{error: @vm_execution_error}}
     else
       Logger.debug(["Unknown metadata format error #{inspect(error)}."], fetcher: :token_instances)
 
-      {:error, error}
+      # truncate error since it will be stored in DB
+      {:error, truncate_error(error)}
+    end
+  end
+
+  # CIDv0 IPFS links # https://docs.ipfs.tech/concepts/content-addressing/#version-0-v0
+  defp fetch_json_from_uri({:ok, ["Qm" <> _ = result]}, hex_token_id) do
+    if String.length(result) == 46 do
+      fetch_json_from_uri({:ok, [@ipfs_link <> result]}, hex_token_id)
+    else
+      Logger.debug(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
+
+      {:error, truncate_error(result)}
     end
   end
 
@@ -166,7 +159,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
         fetcher: :token_instances
       )
 
-      {:error, json}
+      {:error, "invalid data:application/json"}
   end
 
   defp fetch_json_from_uri({:ok, ["data:application/json;base64," <> base64_encoded_json]}, hex_token_id) do
@@ -175,7 +168,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
         fetch_json_from_uri({:ok, [base64_decoded]}, hex_token_id)
 
       _ ->
-        {:error, base64_encoded_json}
+        {:error, "invalid data:application/json;base64"}
     end
   rescue
     e ->
@@ -187,7 +180,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
         fetcher: :token_instances
       )
 
-      {:error, base64_encoded_json}
+      {:error, "invalid data:application/json;base64"}
   end
 
   defp fetch_json_from_uri({:ok, ["#{@ipfs_protocol}ipfs/" <> right]}, hex_token_id) do
@@ -208,13 +201,13 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
         fetcher: :token_instances
       )
 
-      {:error, json}
+      {:error, "invalid json"}
   end
 
   defp fetch_json_from_uri(uri, _hex_token_id) do
     Logger.debug(["Unknown metadata uri format #{inspect(uri)}."], fetcher: :token_instances)
 
-    {:error, uri}
+    {:error, "unknown metadata uri format"}
   end
 
   defp fetch_from_ipfs(ipfs_uid, hex_token_id) do
@@ -232,10 +225,20 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
         fetcher: :token_instances
       )
 
-      {:error, :request_error}
+      {:error, "preparation error"}
   end
 
   def fetch_metadata_from_uri(uri, hex_token_id \\ nil) do
+    case Mix.env() != :test && URI.parse(uri) do
+      %URI{host: host} when host in @ignored_hosts ->
+        {:error, "ignored host #{host}"}
+
+      _ ->
+        fetch_metadata_from_uri_inner(uri, hex_token_id)
+    end
+  end
+
+  def fetch_metadata_from_uri_inner(uri, hex_token_id) do
     case Application.get_env(:explorer, :http_adapter).get(uri, [],
            timeout: 60_000,
            recv_timeout: 60_000,
@@ -246,11 +249,21 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
 
         check_content_type(content_type, uri, hex_token_id, body)
 
-      {:ok, %Response{body: body}} ->
-        {:error, body}
+      {:ok, %Response{body: body, status_code: code}} ->
+        Logger.debug(
+          ["Request to token uri: #{inspect(uri)} failed with code #{code}. Body:", inspect(body)],
+          fetcher: :token_instances
+        )
+
+        {:error_code, code}
 
       {:error, %Error{reason: reason}} ->
-        {:error, reason}
+        Logger.debug(
+          ["Request to token uri failed: #{inspect(uri)}.", inspect(reason)],
+          fetcher: :token_instances
+        )
+
+        {:error, reason |> inspect(reason) |> truncate_error()}
     end
   rescue
     e ->
@@ -259,7 +272,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
         fetcher: :token_instances
       )
 
-      {:error, :request_error}
+      {:error, "request error"}
   end
 
   defp check_content_type(content_type, uri, hex_token_id, body) do
@@ -325,7 +338,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   end
 
   defp check_type(_, _) do
-    {:error, :wrong_metadata_type}
+    {:error, "wrong metadata type"}
   end
 
   defp substitute_token_id_to_token_uri(token_uri, empty_token_id) when empty_token_id in [nil, ""], do: token_uri
@@ -333,4 +346,6 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   defp substitute_token_id_to_token_uri(token_uri, hex_token_id) do
     String.replace(token_uri, @erc1155_token_id_placeholder, hex_token_id)
   end
+
+  defp truncate_error(error), do: String.slice(error, 0, @max_error_length)
 end
