@@ -572,7 +572,7 @@ defmodule EthereumJSONRPC.Block do
   end
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice baseFeePerGas number size cumulativeDifficulty totalDifficulty paidFees) and
+       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice baseFeePerGas number cumulativeDifficulty totalDifficulty paidFees) and
               not is_nil(quantity) do
     {key, quantity_to_integer(quantity)}
   end
@@ -586,12 +586,22 @@ defmodule EthereumJSONRPC.Block do
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
   defp entry_to_elixir({key, _} = entry)
-       when key in ~w(author extraData hash logsBloom miner mixHash nonce parentHash receiptsRoot sealFields sha3Uncles
+       when key in ~w(author extraData hash logsBloom miner mixHash parentHash receiptsRoot sealFields sha3Uncles
                      signature stateRoot step transactionsRoot uncles),
        do: entry
 
   defp entry_to_elixir({"timestamp" = key, timestamp}) do
     {key, timestamp_to_datetime(timestamp)}
+  end
+
+  defp entry_to_elixir({"nonce" = key, nonce}) do
+    # TODO (HARSH) find better alternative soln
+    if nonce == "0x0", do: {key,  1}, else: {key, quantity_to_integer(nonce)}
+  end
+
+  defp entry_to_elixir({"size" = key, size}) do
+    # TODO (HARSH) find better alternative soln
+    if size == "", do: {key,  0}, else: {key, quantity_to_integer(size)}
   end
 
   defp entry_to_elixir({"transactions" = key, transactions}) do

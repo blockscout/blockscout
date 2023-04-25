@@ -496,7 +496,7 @@ defmodule EthereumJSONRPC do
         nil
 
       quantity ->
-        Timex.from_unix(quantity)
+        Timex.from_unix(quantity, :millisecond)
     end
   end
 
