@@ -446,24 +446,24 @@ defmodule Explorer.Chain do
     |> Enum.take(paging_options.page_size)
   end
 
-  def address_to_mined_transactions_without_rewards(address_hash, options) do
+  def address_hashes_to_mined_transactions_without_rewards(address_hashes, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    address_hash
-    |> address_to_mined_transactions_tasks(options)
+    address_hashes
+    |> address_hashes_to_mined_transactions_tasks(options)
     |> wait_for_address_transactions()
     |> Enum.sort_by(&{&1.block_number, &1.index}, &>=/2)
     |> Enum.dedup_by(& &1.hash)
     |> Enum.take(paging_options.page_size)
   end
 
-  defp address_to_transactions_tasks_query(options) do
+  defp address_to_transactions_tasks_query(options, only_mined? \\ false) do
     from_block = from_block(options)
     to_block = to_block(options)
 
     options
     |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions(from_block, to_block, true)
+    |> fetch_transactions(from_block, to_block, !only_mined?)
   end
 
   defp transactions_block_numbers_at_address(address_hash, options) do
@@ -492,16 +492,16 @@ defmodule Explorer.Chain do
     |> Enum.map(fn query -> Task.async(fn -> select_repo(options).all(query) end) end)
   end
 
-  defp address_to_mined_transactions_tasks(address_hash, options) do
+  defp address_hashes_to_mined_transactions_tasks(address_hashes, options) do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     options
-    |> address_to_transactions_tasks_query()
+    |> address_to_transactions_tasks_query(true)
     |> Transaction.not_pending_transactions()
     |> join_associations(necessity_by_association)
-    |> Transaction.matching_address_queries_list(direction, address_hash)
-    |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
+    |> Transaction.matching_address_queries_list(direction, address_hashes)
+    |> Enum.map(fn query -> Task.async(fn -> select_repo(options).all(query) end) end)
   end
 
   def address_to_transactions_tasks_range_of_blocks(address_hash, options) do
@@ -4516,9 +4516,9 @@ defmodule Explorer.Chain do
     if Repo.one(query), do: true, else: false
   end
 
-  defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil, is_address? \\ false) do
+  defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil, with_pending? \\ false) do
     Transaction
-    |> order_for_transactions(is_address?)
+    |> order_for_transactions(with_pending?)
     |> where_block_number_in_period(from_block, to_block)
     |> handle_paging_options(paging_options)
   end
@@ -4999,6 +4999,22 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(distinct_query, initial, reducer)
   end
 
+  @spec stream_token_instances_with_error(
+          initial :: accumulator,
+          reducer :: (entry :: map(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_token_instances_with_error(initial, reducer) when is_function(reducer, 2) do
+    Instance
+    |> where([instance], not is_nil(instance.error))
+    |> select([instance], %{
+      contract_address_hash: instance.token_contract_address_hash,
+      token_id: instance.token_id,
+      updated_at: instance.updated_at
+    })
+    |> Repo.stream_reduce(initial, reducer)
+  end
+
   @doc """
   Streams a list of token contract addresses that have been cataloged.
   """
@@ -5298,13 +5314,19 @@ defmodule Explorer.Chain do
   @spec erc721_or_erc1155_token_instance_from_token_id_and_token_address(non_neg_integer(), Hash.Address.t(), [api?]) ::
           {:ok, Instance.t()} | {:error, :not_found}
   def erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, token_contract_address, options \\ []) do
-    query =
-      from(i in Instance, where: i.token_contract_address_hash == ^token_contract_address and i.token_id == ^token_id)
+    query = Instance.token_instance_query(token_id, token_contract_address)
 
     case select_repo(options).one(query) do
       nil -> {:error, :not_found}
       token_instance -> {:ok, token_instance}
     end
+  end
+
+  @spec token_instance_exists?(non_neg_integer, Hash.Address.t(), [api?]) :: boolean
+  def token_instance_exists?(token_id, token_contract_address, options \\ []) do
+    query = Instance.token_instance_query(token_id, token_contract_address)
+
+    select_repo(options).exists?(query)
   end
 
   defp fetch_coin_balances(address_hash, paging_options) do
@@ -6775,4 +6797,16 @@ defmodule Explorer.Chain do
   end
 
   def select_watchlist_address_id(_watchlist_id, _address_hash), do: nil
+
+  def fetch_watchlist_transactions(watchlist_id, options) do
+    watchlist_addresses =
+      watchlist_id
+      |> WatchlistAddress.watchlist_addresses_by_watchlist_id_query()
+      |> Repo.account_repo().all()
+
+    address_hashes = Enum.map(watchlist_addresses, fn wa -> wa.address_hash end)
+    watchlist_names = Enum.reduce(watchlist_addresses, %{}, fn wa, acc -> Map.put(acc, wa.address_hash, wa.name) end)
+
+    {watchlist_names, address_hashes_to_mined_transactions_without_rewards(address_hashes, options)}
+  end
 end
