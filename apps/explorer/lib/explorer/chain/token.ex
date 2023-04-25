@@ -44,7 +44,7 @@ defmodule Explorer.Chain.Token do
   @type t :: %Token{
           name: String.t(),
           symbol: String.t(),
-          total_supply: Decimal.t(),
+          total_supply: Decimal.t() | nil,
           decimals: non_neg_integer(),
           type: String.t(),
           cataloged: boolean(),

@@ -12,7 +12,6 @@ services:
       service: db
 
   blockscout:
-    platform: linux/x86_64
     depends_on:
       - db
       - redis_db

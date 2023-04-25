@@ -47,7 +47,7 @@ defmodule ConfigHelper do
     end
   end
 
-  defp safe_get_env(env_var, default_value) do
+  def safe_get_env(env_var, default_value) do
     env_var
     |> System.get_env(default_value)
     |> case do
