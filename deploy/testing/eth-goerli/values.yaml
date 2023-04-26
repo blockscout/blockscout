@@ -181,8 +181,6 @@ frontend:
       _default: Goerli
     NEXT_PUBLIC_NETWORK_ASSETS_PATHNAME:
       _default: ethereum
-    NEXT_PUBLIC_NETWORK_TYPE:
-      _default: goerli
     NEXT_PUBLIC_NETWORK_ID:
       _default: 5
     NEXT_PUBLIC_NETWORK_CURRENCY_NAME:
