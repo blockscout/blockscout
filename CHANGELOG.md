@@ -10,6 +10,7 @@
 
 ### Chore
 
+- [#7349](https://github.com/blockscout/blockscout/pull/7349) - Proxy pattern with getImplementation()
 - [#7360](https://github.com/blockscout/blockscout/pull/7360) - Manage visibility of indexing progress alert
 
 ## 5.1.4-beta
