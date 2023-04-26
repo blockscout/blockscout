@@ -553,7 +553,7 @@ msgstr ""
 msgid "Change"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:41
+#: lib/block_scout_web/templates/layout/_footer.html.eex:43
 #, elixir-autogen, elixir-format
 msgid "Chat (#blockscout)"
 msgstr ""
@@ -774,7 +774,7 @@ msgstr ""
 msgid "Contracts that self destruct in their constructors have no contract code published and cannot be verified."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:40
+#: lib/block_scout_web/templates/layout/_footer.html.eex:42
 #, elixir-autogen, elixir-format
 msgid "Contribute"
 msgstr ""
@@ -1329,7 +1329,7 @@ msgstr ""
 msgid "Forked Blocks (Reorgs)"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:43
+#: lib/block_scout_web/templates/layout/_footer.html.eex:45
 #, elixir-autogen, elixir-format
 msgid "Forum"
 msgstr ""
@@ -1628,7 +1628,7 @@ msgstr ""
 msgid "Logs"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:52
+#: lib/block_scout_web/templates/layout/_footer.html.eex:54
 #, elixir-autogen, elixir-format
 msgid "Main Networks"
 msgstr ""
@@ -1915,7 +1915,7 @@ msgstr ""
 msgid "Optimization runs"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:76
+#: lib/block_scout_web/templates/layout/_footer.html.eex:78
 #, elixir-autogen, elixir-format
 msgid "Other Explorers"
 msgstr ""
@@ -2386,7 +2386,7 @@ msgstr ""
 msgid "Submission date"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:39
+#: lib/block_scout_web/templates/layout/_footer.html.eex:41
 #, elixir-autogen, elixir-format
 msgid "Submit an Issue"
 msgstr ""
@@ -2403,12 +2403,12 @@ msgstr ""
 msgid "TX Fee"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:30
+#: lib/block_scout_web/templates/layout/_footer.html.eex:31
 #, elixir-autogen, elixir-format
 msgid "Telegram"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:65
+#: lib/block_scout_web/templates/layout/_footer.html.eex:67
 #, elixir-autogen, elixir-format
 msgid "Test Networks"
 msgstr ""
@@ -3120,7 +3120,7 @@ msgstr ""
 msgid "Verify the contract "
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:91
+#: lib/block_scout_web/templates/layout/_footer.html.eex:93
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:66
 #, elixir-autogen, elixir-format
 msgid "Version"
