@@ -21,10 +21,24 @@
       </div>
 
       <div id="recaptcha" class=mb-3></div>
-      <button id="export-csv-button" class="button button-primary" disabled style="padding: 10px 25px;" data-link=<%= address_transaction_path(@conn, type_download_path(@type), %{"address_id" => address_checksum(@address_hash_string), "from_period" => default_period_start(), "to_period" => default_period_end()}) %>><%= gettext("Download") %></button>
+      <button
+        <%= if Application.get_env(:block_scout_web, :recaptcha)[:v2_client_key], do: "disabled", else: "" %>
+        id="export-csv-button"
+        class="button button-primary"
+        style="padding: 10px 25px;"
+        data-link=<%= address_transaction_path(@conn, type_download_path(@type)) %>
+        data-address-hash=<%= address_checksum(@address_hash_string) %>
+        data-type=<%= @type %>
+      ><%= gettext("Download") %></button>
       </a>
     </div>
   </div>
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/csv-download.js") %>"></script>
-  <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" defer></script>
+  <%= cond do %>
+    <% Application.get_env(:block_scout_web, :recaptcha)[:v2_client_key] -> %>
+      <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" defer></script>
+    <% Application.get_env(:block_scout_web, :recaptcha)[:v3_client_key] -> %>
+      <script src="https://www.google.com/recaptcha/api.js?render=<%= Application.get_env(:block_scout_web, :recaptcha)[:v3_client_key] %>" defer></script>
+    <% true -> %>
+  <% end %>
 </section>

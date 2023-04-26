@@ -10,103 +10,141 @@ const DATE_FORMAT = 'YYYY-MM-DD'
 const $button = $('#export-csv-button')
 
 // eslint-disable-next-line
-const _instance1 = new Pikaday({
-  field: $('.js-datepicker-from')[0],
-  onSelect: (date) => onSelect(date, 'from_period'),
-  defaultDate: moment().add(-1, 'months').toDate(),
-  setDefaultDate: true,
-  maxDate: new Date(),
-  format: DATE_FORMAT
-})
-
+const _instance1 = generateDatePicker('.js-datepicker-from', moment().add(-1, 'months').toDate())
 // eslint-disable-next-line
-const _instance2 = new Pikaday({
-  field: $('.js-datepicker-to')[0],
-  onSelect: (date) => onSelect(date, 'to_period'),
-  defaultDate: new Date(),
-  setDefaultDate: true,
-  maxDate: new Date(),
-  format: DATE_FORMAT
-})
+const _instance2 = generateDatePicker('.js-datepicker-to', new Date())
+
+function generateDatePicker (classSelector, defaultDate) {
+  return new Pikaday({
+    field: $(classSelector)[0],
+    defaultDate,
+    setDefaultDate: true,
+    maxDate: new Date(),
+    format: DATE_FORMAT
+  })
+}
 
 $button.on('click', () => {
   // @ts-ignore
   // eslint-disable-next-line
+  const reCaptchaV2ClientKey = document.getElementById('js-re-captcha-client-key').value
+  // @ts-ignore
+  // eslint-disable-next-line
+  const reCaptchaV3ClientKey = document.getElementById('js-re-captcha-v3-client-key').value
+  const addressHash = $button.data('address-hash')
+  const from = $('.js-datepicker-from').val()
+  const to = $('.js-datepicker-to').val()
+  if (reCaptchaV3ClientKey) {
+    disableBtnWithSpinner()
+    // @ts-ignore
+    // eslint-disable-next-line
+    grecaptcha.ready(function () {
+      // @ts-ignore
+      // eslint-disable-next-line
+      grecaptcha.execute(reCaptchaV3ClientKey, { action: 'login' })
+        .then(function (token) {
+          const url = `${$button.data('link')}?address_id=${addressHash}&from_period=${from}&to_period=${to}&recaptcha_response=${token}`
+
+          download(url)
+        })
+    })
+  } else if (reCaptchaV2ClientKey) {
+  // @ts-ignore
+  // eslint-disable-next-line
   const recaptchaResponse = grecaptcha.getResponse()
-  if (recaptchaResponse) {
-    $button.addClass('spinner')
-    $button.prop('disabled', true)
-    const downloadUrl = `${$button.data('link')}&recaptcha_response=${recaptchaResponse}`
+    if (recaptchaResponse) {
+      disableBtnWithSpinner()
+      const url = `${$button.data('link')}?address_id=${addressHash}&from_period=${from}&to_period=${to}&recaptcha_response=${recaptchaResponse}`
 
-    $('body').append($('<iframe id="csv-iframe" style="display: none;"></iframe>'))
-    $('#csv-iframe').attr('src', downloadUrl)
-
-    const interval = setInterval(handleCSVDownloaded, 1000)
-    setTimeout(resetDownload, 60000)
-
-    function handleCSVDownloaded () {
-      if (Cookies.get('csv-downloaded') === 'true') {
-        resetDownload()
-      }
+      download(url, true, true)
     }
+  } else {
+    alertWhenRecaptchaNotConfigured()
+  }
 
-    function resetDownload () {
-      $button.removeClass('spinner')
+  function download (url, resetRecaptcha, disable) {
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8'
+      }
+    })
+      .then(response => {
+        if (response.status === 200) {
+          return response.blob()
+        }
+      })
+      .then(response => {
+        if (response) {
+          const blob = new Blob([response], { type: 'application/csv' })
+          const downloadUrl = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = downloadUrl
+          a.download = `${$button.data('type')}_for_${addressHash}_from_${from}_to_${to}.csv`
+          document.body.appendChild(a)
+          a.click()
+
+          resetBtn(resetRecaptcha, disable)
+        } else {
+          alertWhenRequestFailed()
+          resetBtn(resetRecaptcha, disable)
+        }
+      })
+  }
+
+  function resetBtn (resetRecaptcha, disable) {
+    $button.removeClass('spinner')
+    if (!disable) {
       $button.prop('disabled', false)
-      clearInterval(interval)
-      Cookies.remove('csv-downloaded')
+    }
+    Cookies.remove('csv-downloaded')
+    if (resetRecaptcha) {
       // @ts-ignore
       // eslint-disable-next-line
       grecaptcha.reset()
     }
   }
+
+  function disableBtnWithSpinner () {
+    $button.addClass('spinner')
+    disableBtn()
+  }
+
+  function disableBtn () {
+    $button.prop('disabled', true)
+  }
 })
-
-function onSelect (date, paramToReplace) {
-  const formattedDate = moment(date).format(DATE_FORMAT)
-
-  if (date) {
-    const csvExportPath = $button.data('link')
-
-    const updatedCsvExportUrl = replaceUrlParam(csvExportPath, paramToReplace, formattedDate)
-    $button.data('link', updatedCsvExportUrl)
-  }
-}
-
-function replaceUrlParam (url, paramName, paramValue) {
-  if (paramValue == null) {
-    paramValue = ''
-  }
-  const pattern = new RegExp('\\b(' + paramName + '=).*?(&|#|$)')
-  if (url.search(pattern) >= 0) {
-    return url.replace(pattern, '$1' + paramValue + '$2')
-  }
-  url = url.replace(/[?#]$/, '')
-  return url + (url.indexOf('?') > 0 ? '&' : '?') + paramName + '=' + paramValue
-}
 
 const onloadCallback = function () {
   // @ts-ignore
   // eslint-disable-next-line
   const reCaptchaClientKey = document.getElementById('re-captcha-client-key').value
-  if (reCaptchaClientKey) {
-    // @ts-ignore
-    // eslint-disable-next-line
-    grecaptcha.render('recaptcha', {
-      sitekey: reCaptchaClientKey,
-      theme: getThemeMode(),
-      callback: function () {
-        // @ts-ignore
-        document.getElementById('export-csv-button').disabled = false
-      }
-    })
-  } else {
-    Swal.fire({
-      title: 'Warning',
-      html: 'CSV download will not work since reCAPTCHA is not configured. Please advise server maintainer to configure RE_CAPTCHA_CLIENT_KEY and RE_CAPTCHA_SECRET_KEY environment variables.',
-      icon: 'warning'
-    })
-  }
+  // @ts-ignore
+  // eslint-disable-next-line
+  grecaptcha.render('recaptcha', {
+    sitekey: reCaptchaClientKey,
+    theme: getThemeMode(),
+    callback: function () {
+      // @ts-ignore
+      document.getElementById('export-csv-button').disabled = false
+    }
+  })
+}
+
+function alertWhenRecaptchaNotConfigured () {
+  Swal.fire({
+    title: 'Warning',
+    html: 'CSV download is disabled since reCAPTCHA is not configured on server side. Please advise server maintainer to configure RE_CAPTCHA_CLIENT_KEY and RE_CAPTCHA_SECRET_KEY environment variables in case of reCAPTCHAv2 or RE_CAPTCHA_V3_CLIENT_KEY and RE_CAPTCHA_V3_SECRET_KEY environment variables in case of reCAPTCHAv3.',
+    icon: 'warning'
+  })
+}
+
+function alertWhenRequestFailed () {
+  Swal.fire({
+    title: 'Warning',
+    html: 'Request failed, please try again later or decrease time range for exporting data.',
+    icon: 'warning'
+  })
 }
 
 // @ts-ignore
