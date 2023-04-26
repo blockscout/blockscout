@@ -20,9 +20,9 @@ env:
 jobs:
   build-and-cache:
     name: Build and Cache deps
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
@@ -35,7 +35,7 @@ jobs:
         run: echo "${OTP_VERSION}" > OTP_VERSION.lock
 
       - name: Restore Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: deps-cache
         with:
           path: |
@@ -56,7 +56,7 @@ jobs:
           make
 
       - name: Restore Explorer NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: explorer-npm-cache
         with:
           path: apps/explorer/node_modules
@@ -70,7 +70,7 @@ jobs:
         working-directory: apps/explorer
 
       - name: Restore Blockscout Web NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: blockscoutweb-npm-cache
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -84,7 +84,7 @@ jobs:
         working-directory: apps/block_scout_web/assets
 
       - name: Restore EventStream NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: eventstream-npm-cache
         with:
           path: apps/event_stream/assets/node_modules
@@ -99,17 +99,17 @@ jobs:
 
   credo:
     name: Credo
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     needs: build-and-cache
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Restore Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: deps-cache
         with:
           path: |
@@ -123,17 +123,17 @@ jobs:
 
   check_formatted:
     name: Code formatting checks
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     needs: build-and-cache
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Restore Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: deps-cache
         with:
           path: |
@@ -146,17 +146,17 @@ jobs:
       - run: mix format --check-formatted
   dialyzer:
     name: Dialyzer static analysis
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     needs: build-and-cache
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Restore Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: deps-cache
         with:
           path: |
@@ -167,7 +167,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
       - name: Restore Dialyzer Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: dialyzer-cache
         with:
           path: priv/plts
@@ -186,17 +186,17 @@ jobs:
 
   gettext:
     name: Missing translation keys check
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     needs: build-and-cache
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Restore Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: deps-cache
         with:
           path: |
@@ -212,17 +212,17 @@ jobs:
         working-directory: "apps/block_scout_web"
   sobelow:
     name: Sobelow security analysis
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     needs: build-and-cache
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: deps-cache
         with:
           path: |
@@ -240,17 +240,17 @@ jobs:
         working-directory: "apps/block_scout_web"
   eslint:
     name: ESLint
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     needs: build-and-cache
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: deps-cache
         with:
           path: |
@@ -261,7 +261,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
       - name: Restore Explorer NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: explorer-npm-cache
         with:
           path: apps/explorer/node_modules
@@ -270,7 +270,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-
 
       - name: Restore Blockscout Web NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: blockscoutweb-npm-cache
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -294,17 +294,17 @@ jobs:
 
   jest:
     name: JS Tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     needs: build-and-cache
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: deps-cache
         with:
           path: |
@@ -315,7 +315,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
       - name: Restore Blockscout Web NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: blockscoutweb-npm-cache
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -339,7 +339,7 @@ jobs:
 
   test_nethermind_mox_ethereum_jsonrpc:
     name: EthereumJSONRPC Tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     needs: build-and-cache
     services:
       postgres:
@@ -361,7 +361,7 @@ jobs:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
@@ -370,7 +370,7 @@ jobs:
       - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: deps-cache
         with:
           path: |
@@ -381,6 +381,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
       - run: ./bin/install_chrome_headless.sh
+      - run: echo 'export PATH=/usr/local/bin:$PATH' >> $GITHUB_ENV
       - name: mix test --exclude no_nethermind
         run: |
           cd apps/ethereum_jsonrpc
@@ -402,7 +403,7 @@ jobs:
           path: _build/test/junit/ethereum_jsonrpc/*.xml
   test_nethermind_mox_explorer:
     name: Explorer Tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     needs: build-and-cache
     services:
       postgres:
@@ -424,7 +425,7 @@ jobs:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
@@ -433,7 +434,7 @@ jobs:
       - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: deps-cache
         with:
           path: |
@@ -444,7 +445,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
       - name: Restore Explorer NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: explorer-npm-cache
         with:
           path: apps/explorer/node_modules
@@ -453,6 +454,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm
 
       - run: ./bin/install_chrome_headless.sh
+      - run: echo 'export PATH=/usr/local/bin:$PATH' >> $GITHUB_ENV
       - name: mix test --exclude no_nethermind --exclude smart_contract_compiler
         run: |
           cd apps/explorer
@@ -478,7 +480,7 @@ jobs:
           path: _build/test/junit/explorer/*.xml
   test_nethermind_mox_indexer:
     name: Indexer Tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     needs: build-and-cache
     services:
       postgres:
@@ -500,7 +502,7 @@ jobs:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
@@ -509,7 +511,7 @@ jobs:
       - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: deps-cache
         with:
           path: |
@@ -546,7 +548,7 @@ jobs:
 
   test_nethermind_mox_block_scout_web:
     name: Blockscout Web Tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     needs: build-and-cache
     services:
       redis_db:
@@ -573,7 +575,7 @@ jobs:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
@@ -582,7 +584,7 @@ jobs:
       - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: deps-cache
         with:
           path: |
@@ -594,7 +596,7 @@ jobs:
 
 
       - name: Restore Explorer NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: explorer-npm-cache
         with:
           path: apps/explorer/node_modules
@@ -603,7 +605,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-
 
       - name: Restore Blockscout Web NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: blockscoutweb-npm-cache
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -616,6 +618,7 @@ jobs:
         working-directory: "apps/block_scout_web/assets"
 
       - run: ./bin/install_chrome_headless.sh
+      - run: echo 'export PATH=/usr/local/bin:$PATH' >> $GITHUB_ENV
 
       - name: mix test --exclude no_nethermind
         run: |
@@ -655,10 +658,10 @@ jobs:
 
   test_event_stream:
     name: Event Stream Tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     needs: build-and-cache
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
@@ -667,7 +670,7 @@ jobs:
       - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: deps-cache
         with:
           path: |
@@ -679,7 +682,7 @@ jobs:
 
 
       - name: Restore Event Stream NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: eventstream-npm-cache
         with:
           path: apps/event_stream/assets/node_modules
@@ -688,8 +691,6 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-eventstream-npm-
 
       - name: Build assets
-        env:
-          NODE_OPTIONS: --openssl-legacy-provider
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/event_stream/assets"
 
@@ -709,7 +710,7 @@ jobs:
 
   publish-test-results:
     name: "Publish Unit Tests Results"
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     needs:
       - test_nethermind_mox_ethereum_jsonrpc
       - test_nethermind_mox_explorer
@@ -730,7 +731,7 @@ jobs:
           files: artifacts/**/*.xml
 
   set-docker-vars:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, blockscout]
     needs: [credo, check_formatted, dialyzer, gettext, sobelow, eslint, jest, test_nethermind_mox_ethereum_jsonrpc, test_nethermind_mox_explorer, test_nethermind_mox_indexer, test_nethermind_mox_block_scout_web, test_event_stream] 
     outputs:
       workload-id-provider:  ${{ steps.set-docker-vars.outputs.workload-id-provider }}
