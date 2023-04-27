@@ -466,8 +466,12 @@ defmodule Indexer.BufferedTask do
   end
 
   defp schedule_next_buffer_flush(state) do
-    timer = Process.send_after(self(), :flush, state.flush_interval)
-    %{state | flush_timer: timer}
+    if state.flush_interval == :infinity do
+      state
+    else
+      timer = Process.send_after(self(), :flush, state.flush_interval)
+      %{state | flush_timer: timer}
+    end
   end
 
   defp shrinkable(options) do

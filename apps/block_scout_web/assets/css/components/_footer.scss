@@ -64,7 +64,7 @@ $footer-logo-width: auto !default;
 .footer-link {
   color: $footer-link-color;
 
-  &:hover {
+  &:hover, &:focus {
     color: $footer-link-color;
     text-decoration: underline;
   }

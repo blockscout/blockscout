@@ -484,7 +484,7 @@ defmodule Explorer.Chain.Transaction do
   end
 
   # Because there is no contract association, we know the contract was not verified
-  def decoded_input_data(tx, extract_names? \\ false, options)
+  def decoded_input_data(tx, skip_sig_provider? \\ false, options)
 
   def decoded_input_data(%__MODULE__{to_address: nil}, _, _), do: {:error, :no_to_address}
   def decoded_input_data(%NotLoaded{}, _, _), do: {:error, :not_loaded}
@@ -502,7 +502,7 @@ defmodule Explorer.Chain.Transaction do
           input: input,
           hash: hash
         },
-        extract_names?,
+        skip_sig_provider?,
         options
       ) do
     decoded_input_data(
@@ -511,7 +511,7 @@ defmodule Explorer.Chain.Transaction do
         input: input,
         hash: hash
       },
-      extract_names?,
+      skip_sig_provider?,
       options
     )
   end
@@ -522,7 +522,7 @@ defmodule Explorer.Chain.Transaction do
           input: input,
           hash: hash
         },
-        extract_names?,
+        skip_sig_provider?,
         options
       ) do
     decoded_input_data(
@@ -531,7 +531,7 @@ defmodule Explorer.Chain.Transaction do
         input: input,
         hash: hash
       },
-      extract_names?,
+      skip_sig_provider?,
       options
     )
   end
@@ -542,7 +542,7 @@ defmodule Explorer.Chain.Transaction do
           input: %{bytes: <<method_id::binary-size(4), _::binary>> = data} = input,
           hash: hash
         },
-        extract_names?,
+        skip_sig_provider?,
         options
       ) do
     candidates_query =
@@ -563,7 +563,7 @@ defmodule Explorer.Chain.Transaction do
       end)
 
     {:error, :contract_not_verified,
-     if(candidates == [], do: decode_function_call_via_sig_provider(input, hash, extract_names?), else: candidates)}
+     if(candidates == [], do: decode_function_call_via_sig_provider(input, hash, skip_sig_provider?), else: candidates)}
   end
 
   def decoded_input_data(%__MODULE__{to_address: %{smart_contract: nil}}, _, _) do
@@ -576,7 +576,7 @@ defmodule Explorer.Chain.Transaction do
           to_address: %{smart_contract: smart_contract},
           hash: hash
         },
-        extract_names?,
+        skip_sig_provider?,
         options
       ) do
     case do_decoded_input_data(data, smart_contract, hash, options) do
@@ -588,11 +588,11 @@ defmodule Explorer.Chain.Transaction do
                  input: input,
                  hash: hash
                },
-               extract_names?,
+               skip_sig_provider?,
                options
              ) do
           {:error, :contract_not_verified, []} ->
-            decode_function_call_via_sig_provider_wrapper(input, hash, extract_names?)
+            decode_function_call_via_sig_provider_wrapper(input, hash, skip_sig_provider?)
 
           {:error, :contract_not_verified, candidates} ->
             {:error, :contract_verified, candidates}
@@ -606,8 +606,8 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  defp decode_function_call_via_sig_provider_wrapper(input, hash, extract_names?) do
-    case decode_function_call_via_sig_provider(input, hash, extract_names?) do
+  defp decode_function_call_via_sig_provider_wrapper(input, hash, skip_sig_provider?) do
+    case decode_function_call_via_sig_provider(input, hash, skip_sig_provider?) do
       [] ->
         {:error, :could_not_decode}
 
@@ -626,9 +626,9 @@ defmodule Explorer.Chain.Transaction do
          do: {:ok, identifier, text, mapping}
   end
 
-  defp decode_function_call_via_sig_provider(%{bytes: data} = input, hash, extract_names?) do
+  defp decode_function_call_via_sig_provider(%{bytes: data} = input, hash, skip_sig_provider?) do
     with true <- SigProviderInterface.enabled?(),
-         false <- extract_names?,
+         false <- skip_sig_provider?,
          {:ok, result} <- SigProviderInterface.decode_function_call(input),
          true <- is_list(result),
          false <- Enum.empty?(result),
@@ -736,6 +736,25 @@ defmodule Explorer.Chain.Transaction do
   Produces a list of queries starting from the given one and adding filters for
   transactions that are linked to the given address_hash through a direction.
   """
+  def matching_address_queries_list(query, :from, address_hashes) when is_list(address_hashes) do
+    [where(query, [t], t.from_address_hash in ^address_hashes)]
+  end
+
+  def matching_address_queries_list(query, :to, address_hashes) when is_list(address_hashes) do
+    [
+      where(query, [t], t.to_address_hash in ^address_hashes),
+      where(query, [t], t.created_contract_address_hash in ^address_hashes)
+    ]
+  end
+
+  def matching_address_queries_list(query, _direction, address_hashes) when is_list(address_hashes) do
+    [
+      where(query, [t], t.from_address_hash in ^address_hashes),
+      where(query, [t], t.to_address_hash in ^address_hashes),
+      where(query, [t], t.created_contract_address_hash in ^address_hashes)
+    ]
+  end
+
   def matching_address_queries_list(query, :from, address_hash) do
     [where(query, [t], t.from_address_hash == ^address_hash)]
   end

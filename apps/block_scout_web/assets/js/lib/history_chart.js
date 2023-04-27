@@ -12,6 +12,14 @@ import sassVariables from '../../css/export-vars-to-js.module.scss'
 Chart.defaults.font.family = 'Nunito, "Helvetica Neue", Arial, sans-serif,"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
 Chart.register(LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip)
 
+// @ts-ignore
+const coinName = document.getElementById('js-coin-name').value
+const chainId = document.getElementById('js-chain-id').value
+const priceDataKey = `priceData${coinName}`
+const txHistoryDataKey = `txHistoryData${coinName}${chainId}`
+const marketCapDataKey = `marketCapData${coinName}${chainId}`
+const isChartLoadedKey = `isChartLoaded${coinName}${chainId}`
+
 const grid = {
   display: false,
   drawBorder: false,
@@ -212,16 +220,16 @@ function setDataToLocalStorage (key, data) {
 
 function getPriceData (marketHistoryData) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('priceDataSokol')
+    return getDataFromLocalStorage(priceDataKey)
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
-  setDataToLocalStorage('priceDataSokol', data)
+  setDataToLocalStorage(priceDataKey, data)
   return data
 }
 
 function getTxHistoryData (transactionHistory) {
   if (transactionHistory.length === 0) {
-    return getDataFromLocalStorage('txHistoryDataSokol')
+    return getDataFromLocalStorage(txHistoryDataKey)
   }
   const data = transactionHistory.map(dataPoint => ({ x: dataPoint.date, y: dataPoint.number_of_transactions }))
 
@@ -231,30 +239,13 @@ function getTxHistoryData (transactionHistory) {
   const curDay = prevDay.plus({ days: 1 }).toISODate()
   data.unshift({ x: curDay, y: null })
 
-  setDataToLocalStorage('txHistoryDataSokol', data)
-  return data
-}
-
-function getGasUsageHistoryData (gasUsageHistory) {
-  if (gasUsageHistory.length === 0) {
-    return getDataFromLocalStorage('gasUsageHistoryDataSokol')
-  }
-  const data = gasUsageHistory.map(dataPoint => ({ x: dataPoint.date, y: dataPoint.gas_used }))
-
-  // it should be empty value for tx history the current day
-  const prevDayStr = data[0].x
-  const prevDay = moment(prevDayStr)
-  let curDay = prevDay.add(1, 'days')
-  curDay = curDay.format('YYYY-MM-DD')
-  data.unshift({ x: curDay, y: null })
-
-  setDataToLocalStorage('gasUsageHistoryDataSokol', data)
+  setDataToLocalStorage(txHistoryDataKey, data)
   return data
 }
 
 function getMarketCapData (marketHistoryData, availableSupply) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('marketCapDataSokol')
+    return getDataFromLocalStorage(marketCapDataKey)
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => {
     const supply = (availableSupply !== null && typeof availableSupply === 'object')
@@ -262,7 +253,7 @@ function getMarketCapData (marketHistoryData, availableSupply) {
       : availableSupply
     return { x: date, y: closingPrice * supply }
   })
-  setDataToLocalStorage('marketCapDataSokol', data)
+  setDataToLocalStorage(marketCapDataKey, data)
   return data
 }
 
@@ -350,7 +341,6 @@ class MarketHistoryChart {
     // @ts-ignore
     config.data.datasets = [this.price, this.marketCap, this.numTransactions]
 
-    const isChartLoadedKey = 'isChartLoadedSokol'
     const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
     if (isChartLoaded) {
       config.options.animation = false
