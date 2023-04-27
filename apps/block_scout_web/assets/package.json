@@ -101,10 +101,10 @@
     "mini-css-extract-plugin": "^2.7.5",
     "postcss": "^8.4.23",
     "postcss-loader": "^7.2.4",
-    "sass": "^1.62.0",
+    "sass": "^1.62.1",
     "sass-loader": "^13.2.2",
     "style-loader": "^3.3.2",
-    "webpack": "^5.80.0",
+    "webpack": "^5.81.0",
     "webpack-cli": "^5.0.2"
   },
   "jest": {
