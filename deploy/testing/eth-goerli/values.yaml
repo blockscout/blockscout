@@ -25,9 +25,9 @@ blockscout:
         _default: "3"
     requests:
       memory:
-        _default: "8Gi"
+        _default: "6Gi"
       cpu:
-        _default: "3"
+        _default: "2"
 
   # node label
   nodeSelector:
@@ -38,7 +38,7 @@ blockscout:
 
   environment:
     BLOCKSCOUT_VERSION:
-      _default: v5.1.3-beta
+      _default: v5.1.4-beta
     ETHEREUM_JSONRPC_VARIANT:
       _default: geth
     HEART_BEAT_TIMEOUT:
@@ -156,14 +156,14 @@ frontend:
   resources:
     limits:
       memory:
-        _default: "7Gi"
+        _default: "2Gi"
       cpu:
-        _default: "4"
+        _default: "2"
     requests:
       memory:
-        _default: "7Gi"
+        _default: "512Mi"
       cpu:
-        _default: "4"
+        _default: "250m"
   # node label
   nodeSelector:
     enabled: true
@@ -181,8 +181,6 @@ frontend:
       _default: Goerli
     NEXT_PUBLIC_NETWORK_ASSETS_PATHNAME:
       _default: ethereum
-    NEXT_PUBLIC_NETWORK_TYPE:
-      _default: goerli
     NEXT_PUBLIC_NETWORK_ID:
       _default: 5
     NEXT_PUBLIC_NETWORK_CURRENCY_NAME:
@@ -203,7 +201,7 @@ frontend:
     NEXT_PUBLIC_API_BASE_PATH:
       _default: /
     NEXT_PUBLIC_BLOCKSCOUT_VERSION:
-      _default: v5.1.3-beta
+      _default: v5.1.4-beta
     NEXT_PUBLIC_FOOTER_GITHUB_LINK:
       _default: https://github.com/blockscout/blockscout
     NEXT_PUBLIC_FOOTER_TWITTER_LINK:
@@ -237,14 +235,14 @@ stats:
   resources:
     limits:
       memory:
-        _default: "0.1Gi"
+        _default: 128Mi
       cpu:
-        _default: "0.1"
+        _default: 100m
     requests:
       memory:
-        _default: "0.1Gi"
+        _default: 128Mi
       cpu:
-        _default: "0.1"
+        _default: 100m
 
   # node label
   nodeSelector:
@@ -283,6 +281,7 @@ postgres:
     mountPath: /docker-entrypoint-initdb.d
 
   persistence: true
+  storage: 500Gi
 
   resources:
     limits:
@@ -310,14 +309,14 @@ scVerifier:
   resources:
     limits:
       memory:
-        _default: "0.5Gi"
+        _default: 512Mi
       cpu:
-        _default: "0.25"
+        _default: 250m
     requests:
       memory:
-        _default: "0.5Gi"
+        _default: 512Mi
       cpu:
-        _default: "0.25"
+        _default: 250m
   # probes
   livenessProbe:
     enabled: true
@@ -384,14 +383,14 @@ visualizer:
   resources:
     limits:
       memory:
-        _default: "0.05Gi"
+        _default: 64Mi
       cpu:
-        _default: "0.05"
+        _default: 50m
     requests:
       memory:
-        _default: "0.05Gi"
+        _default: 64Mi
       cpu:
-        _default: "0.05"
+        _default: 50m
 
   # node label
   nodeSelector:

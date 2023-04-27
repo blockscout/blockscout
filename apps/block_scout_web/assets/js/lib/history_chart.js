@@ -12,6 +12,14 @@ import sassVariables from '../../css/export-vars-to-js.module.scss'
 Chart.defaults.font.family = 'Nunito, "Helvetica Neue", Arial, sans-serif,"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
 Chart.register(LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip)
 
+// @ts-ignore
+const coinName = document.getElementById('js-coin-name').value
+const chainId = document.getElementById('js-chain-id').value
+const priceDataKey = `priceData${coinName}`
+const txHistoryDataKey = `txHistoryData${coinName}${chainId}`
+const marketCapDataKey = `marketCapData${coinName}${chainId}`
+const isChartLoadedKey = `isChartLoaded${coinName}${chainId}`
+
 const grid = {
   display: false,
   drawBorder: false,
@@ -157,16 +165,16 @@ function setDataToLocalStorage (key, data) {
 
 function getPriceData (marketHistoryData) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('priceDataLUKSO')
+    return getDataFromLocalStorage(priceDataKey)
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
-  setDataToLocalStorage('priceDataLUKSO', data)
+  setDataToLocalStorage(priceDataKey, data)
   return data
 }
 
 function getTxHistoryData (transactionHistory) {
   if (transactionHistory.length === 0) {
-    return getDataFromLocalStorage('txHistoryData')
+    return getDataFromLocalStorage(txHistoryDataKey)
   }
   const data = transactionHistory.map(dataPoint => ({ x: dataPoint.date, y: dataPoint.number_of_transactions }))
 
@@ -176,13 +184,13 @@ function getTxHistoryData (transactionHistory) {
   const curDay = prevDay.plus({ days: 1 }).toISODate()
   data.unshift({ x: curDay, y: null })
 
-  setDataToLocalStorage('txHistoryData', data)
+  setDataToLocalStorage(txHistoryDataKey, data)
   return data
 }
 
 function getMarketCapData (marketHistoryData, availableSupply) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('marketCapDataLUKSO')
+    return getDataFromLocalStorage(marketCapDataKey)
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => {
     const supply = (availableSupply !== null && typeof availableSupply === 'object')
@@ -190,7 +198,7 @@ function getMarketCapData (marketHistoryData, availableSupply) {
       : availableSupply
     return { x: date, y: closingPrice * supply }
   })
-  setDataToLocalStorage('marketCapDataLUKSO', data)
+  setDataToLocalStorage(marketCapDataKey, data)
   return data
 }
 
@@ -278,7 +286,6 @@ class MarketHistoryChart {
     // @ts-ignore
     config.data.datasets = [this.price, this.marketCap, this.numTransactions]
 
-    const isChartLoadedKey = 'isChartLoadedLUKSO'
     const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
     if (isChartLoaded) {
       config.options.animation = false

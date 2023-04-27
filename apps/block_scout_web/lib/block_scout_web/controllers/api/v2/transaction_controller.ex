@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.API.V2.TransactionController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+
   import BlockScoutWeb.Chain,
     only: [next_page_params: 3, token_transfers_next_page_params: 3, paging_options: 1, split_list_by_page: 1]
 
@@ -248,6 +250,32 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:state_changes, %{state_changes: state_changes})
+    end
+  end
+
+  def watchlist_transactions(conn, params) do
+    with {:auth, %{watchlist_id: watchlist_id}} <- {:auth, current_user(conn)} do
+      full_options =
+        [
+          necessity_by_association: @transaction_necessity_by_association
+        ]
+        |> Keyword.merge(paging_options(params, [:validated]))
+        |> Keyword.merge(@api_true)
+
+      {watchlist_names, transactions_plus_one} = Chain.fetch_watchlist_transactions(watchlist_id, full_options)
+
+      {transactions, next_page} = split_list_by_page(transactions_plus_one)
+
+      next_page_params =
+        next_page |> next_page_params(transactions, params) |> delete_parameters_from_next_page_params()
+
+      conn
+      |> put_status(200)
+      |> render(:transactions_watchlist, %{
+        transactions: transactions,
+        next_page_params: next_page_params,
+        watchlist_names: watchlist_names
+      })
     end
   end
 end

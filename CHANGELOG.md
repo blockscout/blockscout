@@ -8,8 +8,59 @@
 
 ### Chore
 
+## 5.1.4-beta
+
+### Features
+
+- [#7273](https://github.com/blockscout/blockscout/pull/7273) - Support reCAPTCHA v3 in CSV export page
+- [#7345](https://github.com/blockscout/blockscout/pull/7345) - Manage telegram link and its visibility in the footer
+- [#7313](https://github.com/blockscout/blockscout/pull/7313) - API v2 new endpoints: watchlist transactions
+- [#7286](https://github.com/blockscout/blockscout/pull/7286) - Split token instance fetcher
+- [#7246](https://github.com/blockscout/blockscout/pull/7246) - Fallback JSON RPC option
+- [#7329](https://github.com/blockscout/blockscout/pull/7329) - Delete pending block operations for empty blocks
+
+### Fixes
+
+- [#7317](https://github.com/blockscout/blockscout/pull/7317) - Fix tokensupply API v1 endpoint: handle nil total_supply
+- [#7290](https://github.com/blockscout/blockscout/pull/7290) - Allow nil gas price for pending tx (Erigon node case)
+- [#7288](https://github.com/blockscout/blockscout/pull/7288) - API v2 improvements: Fix tx type for pending contract creation; Remove owner for not unique ERC-1155 token instances
+- [#7283](https://github.com/blockscout/blockscout/pull/7283) - Fix status for dropped/replaced tx
+- [#7270](https://github.com/blockscout/blockscout/pull/7270) - Fix default `TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL`
+- [#7276](https://github.com/blockscout/blockscout/pull/7276) - Convert 99+% of int txs indexing into 100% in order to hide top indexing banner
+- [#7282](https://github.com/blockscout/blockscout/pull/7282) - Add not found transaction error case
+- [#7305](https://github.com/blockscout/blockscout/pull/7305) - Reset MissingRangesCollector min_fetched_block_number
+
+### Chore
+
+- [#7343](https://github.com/blockscout/blockscout/pull/7343) - Management flexibility of charts dashboard on the main page
+- [#7337](https://github.com/blockscout/blockscout/pull/7337) - Account: derive Auth0 logout urls from existing envs
+- [#7332](https://github.com/blockscout/blockscout/pull/7332) - Add volume for Postgres Docker containers DB
+- [#7328](https://github.com/blockscout/blockscout/pull/7328) - Update Docker image tag latest with release only
+- [#7312](https://github.com/blockscout/blockscout/pull/7312) - Add configs for Uniswap v3 transaction actions to index them on Base Goerli
+- [#7310](https://github.com/blockscout/blockscout/pull/7310) - Reducing resource consumption on bs-indexer-eth-goerli environment
+- [#7297](https://github.com/blockscout/blockscout/pull/7297) - Use tracing JSONRPC URL in case of debug_traceTransaction method
+- [#7292](https://github.com/blockscout/blockscout/pull/7292) - Allow Node 16+ version
+
 <details>
   <summary>Dependencies version bumps</summary>
+
+- [#7257](https://github.com/blockscout/blockscout/pull/7257) - Bump ecto_sql from 3.10.0 to 3.10.1
+- [#7265](https://github.com/blockscout/blockscout/pull/7265) - Bump ecto from 3.10.0 to 3.10.1
+- [#7263](https://github.com/blockscout/blockscout/pull/7263) - Bump sass from 1.61.0 to 1.62.0 in /apps/block_scout_web/assets
+- [#7264](https://github.com/blockscout/blockscout/pull/7264) - Bump webpack from 5.78.0 to 5.79.0 in /apps/block_scout_web/assets
+- [#7274](https://github.com/blockscout/blockscout/pull/7274) - Bump postgrex from 0.17.0 to 0.17.1
+- [#7277](https://github.com/blockscout/blockscout/pull/7277) - Bump core-js from 3.30.0 to 3.30.1 in /apps/block_scout_web/assets
+- [#7295](https://github.com/blockscout/blockscout/pull/7295) - Bump postcss from 8.4.21 to 8.4.22 in /apps/block_scout_web/assets
+- [#7303](https://github.com/blockscout/blockscout/pull/7303) - Bump redix from 1.2.1 to 1.2.2
+- [#7302](https://github.com/blockscout/blockscout/pull/7302) - Bump webpack from 5.79.0 to 5.80.0 in /apps/block_scout_web/assets
+- [#7307](https://github.com/blockscout/blockscout/pull/7307) - Bump postcss from 8.4.22 to 8.4.23 in /apps/block_scout_web/assets
+- [#7321](https://github.com/blockscout/blockscout/pull/7321) - Bump webpack-cli from 5.0.1 to 5.0.2 in /apps/block_scout_web/assets
+- [#7320](https://github.com/blockscout/blockscout/pull/7320) - Bump js-cookie from 3.0.1 to 3.0.4 in /apps/block_scout_web/assets
+- [#7333](https://github.com/blockscout/blockscout/pull/7333) - Bump js-cookie from 3.0.4 to 3.0.5 in /apps/block_scout_web/assets
+- [#7334](https://github.com/blockscout/blockscout/pull/7334) - Bump eslint from 8.38.0 to 8.39.0 in /apps/block_scout_web/assets
+- [#7344](https://github.com/blockscout/blockscout/pull/7344) - Bump @amplitude/analytics-browser from 1.9.4 to 1.10.0 in /apps/block_scout_web/assets
+- [#7347](https://github.com/blockscout/blockscout/pull/7347) - Bump webpack from 5.80.0 to 5.81.0 in /apps/block_scout_web/assets
+- [#7348](https://github.com/blockscout/blockscout/pull/7348) - Bump sass from 1.62.0 to 1.62.1 in /apps/block_scout_web/assets
 
 </details>
 
@@ -69,6 +120,7 @@
 
 ### Fixes
 
+- [#7243](https://github.com/blockscout/blockscout/pull/7243) - Fix Elixir tracer to work with polygon edge
 - [#7162](https://github.com/blockscout/blockscout/pull/7162) - Hide indexing alert, if internal transactions indexer disabled
 - [#7096](https://github.com/blockscout/blockscout/pull/7096) - Hide indexing alert, if indexer disabled
 - [#7102](https://github.com/blockscout/blockscout/pull/7102) - Set infinity timeout timestamp_to_block_number query
