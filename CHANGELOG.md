@@ -12,6 +12,7 @@
 
 ### Features
 
+- [#7273](https://github.com/blockscout/blockscout/pull/7273) - Support reCAPTCHA v3 in CSV export page
 - [#7345](https://github.com/blockscout/blockscout/pull/7345) - Manage telegram link and its visibility in the footer
 - [#7313](https://github.com/blockscout/blockscout/pull/7313) - API v2 new endpoints: watchlist transactions
 - [#7286](https://github.com/blockscout/blockscout/pull/7286) - Split token instance fetcher
