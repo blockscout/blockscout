@@ -14,7 +14,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.1.3
+      RELEASE_VERSION: 5.1.4
       DOCKER_CHAIN_NAME: base-goerli
     steps:
       - name: Check out the repo
