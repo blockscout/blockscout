@@ -96,4 +96,11 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> put_view(ApiView)
     |> render(:message, %{message: "Invalid reCAPTCHA response"})
   end
+
+  def call(conn, {:auth, _}) do
+    conn
+    |> put_status(:unauthorized)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Unauthorized"})
+  end
 end

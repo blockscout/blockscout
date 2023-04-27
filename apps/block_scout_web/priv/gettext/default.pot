@@ -81,7 +81,7 @@ msgstr ""
 msgid ") may be added for each contract. Click the Add Library button to add an additional one."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:116
+#: lib/block_scout_web/templates/layout/app.html.eex:117
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
@@ -355,7 +355,7 @@ msgstr ""
 msgid "Average"
 msgstr ""
 
-#: lib/block_scout_web/templates/chain/show.html.eex:100
+#: lib/block_scout_web/templates/chain/show.html.eex:101
 #, elixir-autogen, elixir-format
 msgid "Average block time"
 msgstr ""
@@ -501,7 +501,7 @@ msgstr ""
 msgid "Blockchain"
 msgstr ""
 
-#: lib/block_scout_web/templates/chain/show.html.eex:142
+#: lib/block_scout_web/templates/chain/show.html.eex:143
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:34
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:38
 #, elixir-autogen, elixir-format
@@ -581,7 +581,7 @@ msgstr ""
 msgid "Change"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:41
+#: lib/block_scout_web/templates/layout/_footer.html.eex:43
 #, elixir-autogen, elixir-format
 msgid "Chat (#blockscout)"
 msgstr ""
@@ -802,7 +802,7 @@ msgstr ""
 msgid "Contracts that self destruct in their constructors have no contract code published and cannot be verified."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:40
+#: lib/block_scout_web/templates/layout/_footer.html.eex:42
 #, elixir-autogen, elixir-format
 msgid "Contribute"
 msgstr ""
@@ -999,7 +999,7 @@ msgstr ""
 msgid "Custom ABI from account"
 msgstr ""
 
-#: lib/block_scout_web/templates/chain/show.html.eex:69
+#: lib/block_scout_web/templates/chain/show.html.eex:70
 #, elixir-autogen, elixir-format
 msgid "Daily Transactions"
 msgstr ""
@@ -1352,7 +1352,7 @@ msgstr ""
 msgid "Forked Blocks (Reorgs)"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:43
+#: lib/block_scout_web/templates/layout/_footer.html.eex:45
 #, elixir-autogen, elixir-format
 msgid "Forum"
 msgstr ""
@@ -1656,12 +1656,12 @@ msgstr ""
 msgid "Logs"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:52
+#: lib/block_scout_web/templates/layout/_footer.html.eex:54
 #, elixir-autogen, elixir-format
 msgid "Main Networks"
 msgstr ""
 
-#: lib/block_scout_web/templates/chain/show.html.eex:52
+#: lib/block_scout_web/templates/chain/show.html.eex:53
 #: lib/block_scout_web/templates/layout/app.html.eex:50
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:85
 #: lib/block_scout_web/views/address_view.ex:145
@@ -1751,7 +1751,7 @@ msgid "More internal transactions have come in"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:46
-#: lib/block_scout_web/templates/chain/show.html.eex:205
+#: lib/block_scout_web/templates/chain/show.html.eex:206
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:13
 #: lib/block_scout_web/templates/transaction/index.html.eex:19
 #, elixir-autogen, elixir-format
@@ -1943,7 +1943,7 @@ msgstr ""
 msgid "Optimization runs"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:76
+#: lib/block_scout_web/templates/layout/_footer.html.eex:78
 #, elixir-autogen, elixir-format
 msgid "Other Explorers"
 msgstr ""
@@ -2035,7 +2035,7 @@ msgstr ""
 msgid "Press / and focus will be moved to the search field"
 msgstr ""
 
-#: lib/block_scout_web/templates/chain/show.html.eex:41
+#: lib/block_scout_web/templates/chain/show.html.eex:42
 #: lib/block_scout_web/templates/layout/app.html.eex:51
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:96
 #, elixir-autogen, elixir-format
@@ -2355,7 +2355,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:50
 #: lib/block_scout_web/templates/address_validation/index.html.eex:20
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:22
-#: lib/block_scout_web/templates/chain/show.html.eex:146
+#: lib/block_scout_web/templates/chain/show.html.eex:147
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:18
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:24
 #: lib/block_scout_web/templates/tokens/instance/holder/index.html.eex:23
@@ -2372,7 +2372,7 @@ msgstr ""
 msgid "Something went wrong, click to reload."
 msgstr ""
 
-#: lib/block_scout_web/templates/chain/show.html.eex:211
+#: lib/block_scout_web/templates/chain/show.html.eex:212
 #, elixir-autogen, elixir-format
 msgid "Something went wrong, click to retry."
 msgstr ""
@@ -2429,7 +2429,7 @@ msgstr ""
 msgid "Submission date"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:39
+#: lib/block_scout_web/templates/layout/_footer.html.eex:41
 #, elixir-autogen, elixir-format
 msgid "Submit an Issue"
 msgstr ""
@@ -2446,12 +2446,12 @@ msgstr ""
 msgid "TX Fee"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:30
+#: lib/block_scout_web/templates/layout/_footer.html.eex:31
 #, elixir-autogen, elixir-format
 msgid "Telegram"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:65
+#: lib/block_scout_web/templates/layout/_footer.html.eex:67
 #, elixir-autogen, elixir-format
 msgid "Test Networks"
 msgstr ""
@@ -2857,7 +2857,7 @@ msgstr ""
 msgid "Total Supply * Price"
 msgstr ""
 
-#: lib/block_scout_web/templates/chain/show.html.eex:119
+#: lib/block_scout_web/templates/chain/show.html.eex:120
 #, elixir-autogen, elixir-format
 msgid "Total blocks"
 msgstr ""
@@ -2882,7 +2882,7 @@ msgstr ""
 msgid "Total transaction fee."
 msgstr ""
 
-#: lib/block_scout_web/templates/chain/show.html.eex:109
+#: lib/block_scout_web/templates/chain/show.html.eex:110
 #, elixir-autogen, elixir-format
 msgid "Total transactions"
 msgstr ""
@@ -2953,7 +2953,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:13
 #: lib/block_scout_web/templates/block/overview.html.eex:80
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:10
-#: lib/block_scout_web/templates/chain/show.html.eex:202
+#: lib/block_scout_web/templates/chain/show.html.eex:203
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:49
 #: lib/block_scout_web/views/address_view.ex:375
 #, elixir-autogen, elixir-format
@@ -3155,7 +3155,7 @@ msgstr ""
 msgid "Verify the contract "
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:91
+#: lib/block_scout_web/templates/layout/_footer.html.eex:93
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:66
 #, elixir-autogen, elixir-format
 msgid "Version"
@@ -3181,12 +3181,12 @@ msgstr ""
 msgid "Via multi-part files"
 msgstr ""
 
-#: lib/block_scout_web/templates/chain/show.html.eex:141
+#: lib/block_scout_web/templates/chain/show.html.eex:142
 #, elixir-autogen, elixir-format
 msgid "View All Blocks"
 msgstr ""
 
-#: lib/block_scout_web/templates/chain/show.html.eex:201
+#: lib/block_scout_web/templates/chain/show.html.eex:202
 #, elixir-autogen, elixir-format
 msgid "View All Transactions"
 msgstr ""
@@ -3259,7 +3259,7 @@ msgstr ""
 msgid "Waiting for transaction's confirmation..."
 msgstr ""
 
-#: lib/block_scout_web/templates/chain/show.html.eex:127
+#: lib/block_scout_web/templates/chain/show.html.eex:128
 #, elixir-autogen, elixir-format
 msgid "Wallet addresses"
 msgstr ""

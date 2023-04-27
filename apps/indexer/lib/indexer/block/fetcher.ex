@@ -16,6 +16,7 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
+  alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
 
   alias Indexer.Fetcher.{
     BlockReward,
@@ -25,7 +26,6 @@ defmodule Indexer.Block.Fetcher do
     ReplacedTransaction,
     Token,
     TokenBalance,
-    TokenInstance,
     UncleBlock
   }
 
@@ -269,7 +269,7 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_token_instances(%{token_transfers: token_transfers}) do
-    TokenInstance.async_fetch(token_transfers)
+    TokenInstanceRealtime.async_fetch(token_transfers)
   end
 
   def async_import_token_instances(_), do: :ok
