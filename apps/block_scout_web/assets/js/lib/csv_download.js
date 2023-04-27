@@ -27,10 +27,10 @@ function generateDatePicker (classSelector, defaultDate) {
 $button.on('click', () => {
   // @ts-ignore
   // eslint-disable-next-line
-  const reCaptchaV2ClientKey = document.getElementById('re-captcha-client-key').value
+  const reCaptchaV2ClientKey = document.getElementById('js-re-captcha-client-key').value
   // @ts-ignore
   // eslint-disable-next-line
-  const reCaptchaV3ClientKey = document.getElementById('re-captcha-v3-client-key').value
+  const reCaptchaV3ClientKey = document.getElementById('js-re-captcha-v3-client-key').value
   const addressHash = $button.data('address-hash')
   const from = $('.js-datepicker-from').val()
   const to = $('.js-datepicker-to').val()
