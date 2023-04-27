@@ -99,9 +99,11 @@ config :block_scout_web, BlockScoutWeb.Chain,
 config :block_scout_web, :footer,
   logo: System.get_env("FOOTER_LOGO"),
   chat_link: System.get_env("FOOTER_CHAT_LINK", "https://discord.gg/blockscout"),
-  forum_link: System.get_env("FOOTER_FORUM_LINK", "https://forum.poa.network/c/blockscout"),
   github_link: System.get_env("FOOTER_GITHUB_LINK", "https://github.com/blockscout/blockscout"),
   forum_link_enabled: ConfigHelper.parse_bool_env_var("FOOTER_FORUM_LINK_ENABLED"),
+  forum_link: System.get_env("FOOTER_FORUM_LINK", "https://forum.poa.network/c/blockscout"),
+  telegram_link_enabled: ConfigHelper.parse_bool_env_var("FOOTER_TELEGRAM_LINK_ENABLED"),
+  telegram_link: System.get_env("FOOTER_TELEGRAM_LINK"),
   link_to_other_explorers: ConfigHelper.parse_bool_env_var("FOOTER_LINK_TO_OTHER_EXPLORERS"),
   other_explorers: System.get_env("FOOTER_OTHER_EXPLORERS", "")
 
@@ -135,6 +137,9 @@ price_chart_config =
     %{}
   end
 
+price_chart_legend_enabled? =
+  ConfigHelper.parse_bool_env_var("SHOW_PRICE_CHART") || ConfigHelper.parse_bool_env_var("SHOW_PRICE_CHART_LEGEND")
+
 tx_chart_config =
   if ConfigHelper.parse_bool_env_var("SHOW_TXS_CHART", "true") do
     %{transactions: [:transactions_per_day]}
@@ -142,8 +147,9 @@ tx_chart_config =
     %{}
   end
 
-config :block_scout_web,
-  chart_config: Map.merge(price_chart_config, tx_chart_config)
+config :block_scout_web, :chart,
+  chart_config: Map.merge(price_chart_config, tx_chart_config),
+  price_chart_legend_enabled?: price_chart_legend_enabled?
 
 config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
   coin_balance_history_days: ConfigHelper.parse_integer_env_var("COIN_BALANCE_HISTORY_DAYS", 10)

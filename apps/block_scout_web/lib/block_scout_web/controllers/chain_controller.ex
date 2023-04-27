@@ -43,7 +43,7 @@ defmodule BlockScoutWeb.ChainController do
       transaction: transaction_history_chart_path(conn, :show)
     }
 
-    chart_config = Application.get_env(:block_scout_web, :chart_config, %{})
+    chart_config = Application.get_env(:block_scout_web, :chart)[:chart_config]
 
     render(
       conn,

@@ -27,15 +27,16 @@
          document.documentElement.style.setProperty("--numChartData", numChartData);
         </script>
         <div class="dashboard-banner-chart-legend">
-          <%= if Map.has_key?(@chart_config, :market) do %>
+          <% price_chart_legend_enabled? = Application.get_env(:block_scout_web, :chart)[:price_chart_legend_enabled?] %>
+          <%= if Map.has_key?(@chart_config, :market) || price_chart_legend_enabled? do %>
 
             <%# THE FOLLOWING LINE PREVENTS COPY/PASTE ERRORS %>
             <%# Explicity put @chart_config.market in a variable %>
             <%# This is done so that when people add a new chart source, x, %>
             <%# They wont just access @chart_config.x w/o first checking if x exists%>
-            <% market_chart_config = @chart_config.market%>
+            <% market_chart_config = Map.has_key?(@chart_config, :market) && @chart_config.market%>
 
-            <%= if Enum.member?(market_chart_config, :price) do %>
+            <%= if price_chart_legend_enabled? || Enum.member?(market_chart_config, :price) do %>
               <div class="dashboard-banner-chart-legend-item price-per-day">
                   <span class="dashboard-banner-chart-legend-label">
                   <%= Explorer.coin_name() %> <%= gettext "Price" %>
@@ -63,7 +64,7 @@
                   </div>
               </div>
             <% end %>
-            <%= if Enum.member?(@chart_config.market, :market_cap) do %>
+            <%= if price_chart_legend_enabled? || Enum.member?(@chart_config.market, :market_cap) do %>
             <div class="dashboard-banner-chart-legend-item market-cap-per-day">
                 <span class="dashboard-banner-chart-legend-label">
                 <%= gettext "Total Value Locked" %>

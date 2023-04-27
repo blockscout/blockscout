@@ -30,9 +30,11 @@
           <a href="https://www.twitter.com/blockscoutcom/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
             <div class="footer-social-icon-container fontawesome-icon twitter"></div>
           </a>
-          <a href="https://t.me/poa_network" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
-            <div class="footer-social-icon-container fontawesome-icon telegram"></div>
-          </a>
+          <%= if Application.get_env(:block_scout_web, :footer)[:telegram_link_enabled] && Application.get_env(:block_scout_web, :footer)[:telegram_link] do %>
+            <a href="<%= Application.get_env(:block_scout_web, :footer)[:telegram_link] %>" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
+              <div class="footer-social-icon-container fontawesome-icon telegram"></div>
+            </a>
+          <% end %>
           <a href="https://duneanalytics.com/maxaleks/xdai-staking" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Staking") %>'>
             <div class="footer-social-icon-container fontawesome-icon bar-chart"></div>
           </a>
@@ -46,7 +48,7 @@
           <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:github_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
           <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:chat_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Chat (#blockscout)") %></a></li>
           <li><a href="https://github.com/blockscout/blockscout/discussions" rel="noreferrer" class="footer-link"><%= gettext("Discussions") %></a></li>
-          <%= if Application.get_env(:block_scout_web, :footer)[:forum_link_enabled] do %>
+          <%= if Application.get_env(:block_scout_web, :footer)[:forum_link_enabled] && Application.get_env(:block_scout_web, :footer)[:forum_link] do %>
             <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:forum_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Forum") %></a></li>
           <% end %>
           <li><a href="https://duneanalytics.com/maxaleks/xdai-staking" rel="noreferrer" class="footer-link"><%= gettext("Staking stats") %></a></li>
