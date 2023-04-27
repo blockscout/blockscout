@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Cache.Helper do
   def estimated_count_from(table_name, options \\ []) do
     %Postgrex.Result{rows: [[count]]} =
       Chain.select_repo(options).query!(
-        "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname = '#{table_name}';"
+        "SELECT (CASE WHEN c.reltuples < 0 THEN NULL WHEN c.relpages = 0 THEN float8 '0' ELSE c.reltuples / c.relpages END * (pg_catalog.pg_relation_size(c.oid) / pg_catalog.current_setting('block_size')::int))::bigint FROM pg_catalog.pg_class c WHERE c.oid = '#{table_name}'::regclass"
       )
 
     count

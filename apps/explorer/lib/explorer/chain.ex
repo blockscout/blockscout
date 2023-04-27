@@ -54,6 +54,11 @@ defmodule Explorer.Chain do
     Import,
     InternalTransaction,
     Log,
+    OptimismDeposit,
+    OptimismOutputRoot,
+    OptimismTxnBatch,
+    OptimismWithdrawal,
+    OptimismWithdrawalEvent,
     PendingBlockOperation,
     SmartContract,
     SmartContractAdditionalSource,
@@ -196,7 +201,7 @@ defmodule Explorer.Chain do
     if is_nil(cached_value) || cached_value == 0 do
       count = CacheHelper.estimated_count_from("addresses", options)
 
-      max(count, 0)
+      if is_nil(count), do: 0, else: count
     else
       cached_value
     end
@@ -1268,22 +1273,27 @@ defmodule Explorer.Chain do
 
   """
   @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t()}
-  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
-    fee =
-      gas_price
-      |> Wei.to(unit)
-      |> Decimal.mult(gas)
-
-    {:maximum, fee}
+  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil} = tx, unit) do
+    {:maximum, fee(tx, gas_price, gas, unit)}
   end
 
-  def fee(%Transaction{gas_price: gas_price, gas_used: gas_used}, unit) do
-    fee =
-      gas_price
-      |> Wei.to(unit)
-      |> Decimal.mult(gas_used)
+  def fee(%Transaction{gas_price: gas_price, gas_used: gas_used} = tx, unit) do
+    {:actual, fee(tx, gas_price, gas_used, unit)}
+  end
 
-    {:actual, fee}
+  defp fee(tx, gas_price, gas, unit) do
+    l1_fee =
+      case Map.get(tx, :l1_fee) do
+        nil -> Wei.from(Decimal.new(0), :wei)
+        value -> value
+      end
+
+    gas_price
+    |> Wei.to(unit)
+    |> Decimal.mult(gas)
+    |> Wei.from(unit)
+    |> Wei.sum(l1_fee)
+    |> Wei.to(unit)
   end
 
   @doc """
@@ -2518,6 +2528,112 @@ defmodule Explorer.Chain do
 
     base_query
     |> page_addresses(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
+  end
+
+  @doc """
+  Lists `t:Explorer.Chain.OptimismTxnBatch.t/0`'s' in descending order based on l2_block_number.
+
+  """
+  @spec list_txn_batches :: [OptimismTxnBatch.t()]
+  def list_txn_batches(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(tb in OptimismTxnBatch,
+        order_by: [desc: tb.l2_block_number]
+      )
+
+    base_query
+    |> join_association(:frame_sequence, :required)
+    |> page_txn_batches(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
+  end
+
+  def get_table_rows_total_count(module, options) do
+    table_name = module.__schema__(:source)
+
+    count = CacheHelper.estimated_count_from(table_name, options)
+
+    if is_nil(count) do
+      select_repo(options).aggregate(module, :count, timeout: :infinity)
+    else
+      count
+    end
+  end
+
+  @doc """
+  Lists `t:Explorer.Chain.OptimismOutputRoot.t/0`'s' in descending order based on output root index.
+
+  """
+  @spec list_output_roots :: [OptimismOutputRoot.t()]
+  def list_output_roots(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(r in OptimismOutputRoot,
+        order_by: [desc: r.l2_output_index],
+        select: r
+      )
+
+    base_query
+    |> page_output_roots(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
+  end
+
+  @doc """
+  Lists `t:Explorer.Chain.OptimismDeposit.t/0`'s' in descending order based on l1_block_number and l2_transaction_hash.
+
+  """
+  @spec list_optimism_deposits :: [OptimismDeposit.t()]
+  def list_optimism_deposits(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(d in OptimismDeposit,
+        order_by: [desc: d.l1_block_number, desc: d.l2_transaction_hash]
+      )
+
+    base_query
+    |> join_association(:l2_transaction, :required)
+    |> page_deposits(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
+  end
+
+  @doc """
+  Lists `t:Explorer.Chain.OptimismWithdrawal.t/0`'s' in descending order based on message nonce.
+
+  """
+  @spec list_optimism_withdrawals :: [OptimismWithdrawal.t()]
+  def list_optimism_withdrawals(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(w in OptimismWithdrawal,
+        order_by: [desc: w.msg_nonce],
+        left_join: l2_tx in Transaction,
+        on: w.l2_transaction_hash == l2_tx.hash,
+        left_join: l2_block in Block,
+        on: w.l2_block_number == l2_block.number,
+        left_join: we in OptimismWithdrawalEvent,
+        on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
+        select: %{
+          msg_nonce: w.msg_nonce,
+          hash: w.hash,
+          l2_block_number: w.l2_block_number,
+          l2_timestamp: l2_block.timestamp,
+          l2_transaction_hash: w.l2_transaction_hash,
+          l1_transaction_hash: we.l1_transaction_hash,
+          from: l2_tx.from_address_hash
+        }
+      )
+
+    base_query
+    |> page_optimism_withdrawals(paging_options)
     |> limit(^paging_options.page_size)
     |> select_repo(options).all()
   end
@@ -4668,6 +4784,33 @@ defmodule Explorer.Chain do
         (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
           address.fetched_coin_balance < ^coin_balance
     )
+  end
+
+  defp page_deposits(query, %PagingOptions{key: nil}), do: query
+
+  defp page_deposits(query, %PagingOptions{key: {block_number, l2_tx_hash}}) do
+    from(d in query,
+      where: d.l1_block_number < ^block_number,
+      or_where: d.l1_block_number == ^block_number and d.l2_transaction_hash < ^l2_tx_hash
+    )
+  end
+
+  defp page_txn_batches(query, %PagingOptions{key: nil}), do: query
+
+  defp page_txn_batches(query, %PagingOptions{key: {block_number}}) do
+    from(tb in query, where: tb.l2_block_number < ^block_number)
+  end
+
+  defp page_output_roots(query, %PagingOptions{key: nil}), do: query
+
+  defp page_output_roots(query, %PagingOptions{key: {index}}) do
+    from(r in query, where: r.l2_output_index < ^index)
+  end
+
+  defp page_optimism_withdrawals(query, %PagingOptions{key: nil}), do: query
+
+  defp page_optimism_withdrawals(query, %PagingOptions{key: {nonce}}) do
+    from(w in query, where: w.msg_nonce < ^nonce)
   end
 
   defp page_tokens(query, %PagingOptions{key: nil}), do: query

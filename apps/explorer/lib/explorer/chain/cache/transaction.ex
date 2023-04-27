@@ -29,7 +29,7 @@ defmodule Explorer.Chain.Cache.Transaction do
     if is_nil(cached_value) do
       count = Helper.estimated_count_from("transactions")
 
-      max(count, 0)
+      if is_nil(count), do: 0, else: count
     else
       cached_value
     end
