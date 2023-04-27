@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.4.0",
-    "@amplitude/analytics-browser": "^1.9.4",
+    "@amplitude/analytics-browser": "^1.10.0",
     "@tarekraafat/autocomplete.js": "^10.2.7",
     "@walletconnect/web3-provider": "^1.8.0",
     "assert": "^2.0.0",
@@ -37,7 +37,7 @@
     "https-browserify": "^1.0.0",
     "humps": "^2.0.1",
     "jquery": "^3.6.4",
-    "js-cookie": "^3.0.1",
+    "js-cookie": "^3.0.5",
     "lodash.debounce": "^4.0.8",
     "lodash.differenceby": "^4.8.0",
     "lodash.find": "^4.6.0",
@@ -90,7 +90,7 @@
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^5.2.7",
     "css-minimizer-webpack-plugin": "^5.0.0",
-    "eslint": "^8.38.0",
+    "eslint": "^8.39.0",
     "eslint-config-standard": "^17.0.0",
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-node": "^11.1.0",
@@ -101,11 +101,11 @@
     "mini-css-extract-plugin": "^2.7.5",
     "postcss": "^8.4.23",
     "postcss-loader": "^7.2.4",
-    "sass": "^1.62.0",
+    "sass": "^1.62.1",
     "sass-loader": "^13.2.2",
     "style-loader": "^3.3.2",
-    "webpack": "^5.80.0",
-    "webpack-cli": "^5.0.1"
+    "webpack": "^5.81.0",
+    "webpack-cli": "^5.0.2"
   },
   "jest": {
     "moduleNameMapper": {

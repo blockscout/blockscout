@@ -10,11 +10,13 @@ defmodule BlockScoutWeb.API.V2.Helper do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 3]
 
-  def address_with_info(_, _, nil) do
+  def address_with_info(conn, address, address_hash, watchlist_names_cached \\ nil)
+
+  def address_with_info(_, _, nil, _) do
     nil
   end
 
-  def address_with_info(conn, address, address_hash) do
+  def address_with_info(conn, address, address_hash, nil) do
     %{
       common_tags: public_tags,
       personal_tags: private_tags,
@@ -25,6 +27,16 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "private_tags" => private_tags,
       "watchlist_names" => watchlist_names,
       "public_tags" => public_tags
+    })
+  end
+
+  def address_with_info(_conn, address, address_hash, watchlist_names_cached) do
+    watchlist_name = watchlist_names_cached[address_hash]
+
+    Map.merge(address_with_info(address, address_hash), %{
+      "private_tags" => [],
+      "watchlist_names" => if(watchlist_name, do: [watchlist_name], else: []),
+      "public_tags" => []
     })
   end
 

@@ -6,7 +6,8 @@ defmodule EthereumJSONRPC.Geth.Tracer do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
 
-  def replay(%{"structLogs" => logs} = result, receipt, tx) when is_list(logs) do
+  def replay(%{"structLogs" => logs, "gas" => top_call_gas, "returnValue" => return_value} = result, receipt, tx)
+      when is_list(logs) do
     %{"contractAddress" => contract_address} = receipt
     %{"from" => from, "to" => to, "value" => value, "input" => input} = tx
 
@@ -25,7 +26,7 @@ defmodule EthereumJSONRPC.Geth.Tracer do
           "type" => "create",
           "init" => input,
           "createdContractAddressHash" => contract_address,
-          "createdContractCode" => "0x"
+          "createdContractCode" => "0x" <> return_value
         }
       end
       |> Map.merge(%{
@@ -40,12 +41,13 @@ defmodule EthereumJSONRPC.Geth.Tracer do
       depth: 1,
       stack: [top],
       trace_address: [0],
-      calls: [[]]
+      calls: [[]],
+      descended: false
     }
 
     logs
     |> Enum.reduce(ctx, &step/2)
-    |> finalize()
+    |> finalize(top_call_gas)
   end
 
   defp step(%{"error" => _}, %{stack: [%{"error" => _} | _]} = ctx), do: ctx
@@ -76,6 +78,18 @@ defmodule EthereumJSONRPC.Geth.Tracer do
         trace_address: [trace_index + 1 | trace_address],
         calls: [[subsubcalls, call | subcalls] | calls]
     }
+  end
+
+  defp step(
+         %{"gas" => log_gas} = log,
+         %{
+           stack: [%{"gas" => call_gas} = call | stack],
+           descended: true
+         } = ctx
+       ) do
+    gas = max(call_gas, log_gas)
+    call = %{call | "gas" => gas}
+    step(log, %{ctx | stack: [call | stack], descended: false})
   end
 
   defp step(
@@ -122,13 +136,28 @@ defmodule EthereumJSONRPC.Geth.Tracer do
   defp op(%{"op" => "REVERT"}, ctx), do: revert_op(ctx)
   defp op(_, ctx), do: ctx
 
-  defp process_return(%{"stack" => log_stack}, %{"type" => "create"} = call) do
+  defp process_return(
+         %{"stack" => log_stack, "memory" => log_memory},
+         %{"type" => create, "outputOffset" => out_off, "outputLength" => out_len} = call
+       )
+       when create in ~w(create create2) do
     [ret | _] = Enum.reverse(log_stack)
 
-    case quantity_to_integer(ret) do
-      0 -> Map.put(call, "error", call["error"] || "internal failure")
-      _ -> %{call | "createdContractAddressHash" => "0x" <> String.slice(ret, 24, 40)}
+    ret
+    |> quantity_to_integer()
+    |> case do
+      0 ->
+        Map.put(call, "error", call["error"] || "internal failure")
+
+      _ ->
+        output =
+          log_memory
+          |> IO.iodata_to_binary()
+          |> String.slice(out_off, out_len)
+
+        %{call | "createdContractCode" => "0x" <> output, "createdContractAddressHash" => ret}
     end
+    |> Map.drop(["outputOffset", "outputLength"])
   end
 
   defp process_return(
@@ -159,12 +188,12 @@ defmodule EthereumJSONRPC.Geth.Tracer do
          %{depth: stack_depth, stack: stack, trace_address: trace_address, calls: calls} = ctx,
          type \\ "create"
        ) do
-    [value, input_offset, input_length | _] = Enum.reverse(log_stack)
+    [value, input_offset, input_length, output_offset, output_length | _] = Enum.reverse(log_stack)
 
     init =
       log_memory
       |> IO.iodata_to_binary()
-      |> String.slice(quantity_to_integer("0x" <> input_offset) * 2, quantity_to_integer("0x" <> input_length) * 2)
+      |> String.slice(quantity_to_integer(input_offset) * 2, quantity_to_integer(input_length) * 2)
 
     call = %{
       "type" => type,
@@ -173,7 +202,9 @@ defmodule EthereumJSONRPC.Geth.Tracer do
       "init" => "0x" <> init,
       "gas" => 0,
       "gasUsed" => 0,
-      "value" => "0x" <> value,
+      "value" => value,
+      "outputOffset" => quantity_to_integer(output_offset) * 2,
+      "outputLength" => quantity_to_integer(output_length) * 2,
       "createdContractAddressHash" => nil,
       "createdContractCode" => "0x"
     }
@@ -183,7 +214,8 @@ defmodule EthereumJSONRPC.Geth.Tracer do
       | depth: stack_depth + 1,
         stack: [call | stack],
         trace_address: [0 | trace_address],
-        calls: [[] | calls]
+        calls: [[] | calls],
+        descended: true
     }
   end
 
@@ -199,7 +231,7 @@ defmodule EthereumJSONRPC.Geth.Tracer do
       call = %{
         "type" => "selfdestruct",
         "from" => nil,
-        "to" => "0x" <> String.slice(to, 24, 40),
+        "to" => to,
         "traceAddress" => Enum.reverse([trace_index | trace_address]),
         "gas" => log_gas,
         "gasUsed" => log_gas_cost,
@@ -232,24 +264,24 @@ defmodule EthereumJSONRPC.Geth.Tracer do
 
         _ ->
           [value | rest] = log_stack
-          {"0x" <> value, rest}
+          {value, rest}
       end
 
     input =
       log_memory
       |> IO.iodata_to_binary()
-      |> String.slice(quantity_to_integer("0x" <> input_offset) * 2, quantity_to_integer("0x" <> input_length) * 2)
+      |> String.slice(quantity_to_integer(input_offset) * 2, quantity_to_integer(input_length) * 2)
 
     call = %{
       "type" => "call",
       "callType" => call_type,
       "from" => nil,
-      "to" => "0x" <> String.slice(to, 24, 40),
+      "to" => to,
       "traceAddress" => Enum.reverse(trace_address),
       "input" => "0x" <> input,
       "output" => "0x",
-      "outputOffset" => quantity_to_integer("0x" <> output_offset) * 2,
-      "outputLength" => quantity_to_integer("0x" <> output_length) * 2,
+      "outputOffset" => quantity_to_integer(output_offset) * 2,
+      "outputLength" => quantity_to_integer(output_length) * 2,
       "gas" => 0,
       "gasUsed" => 0,
       "value" => value
@@ -260,7 +292,8 @@ defmodule EthereumJSONRPC.Geth.Tracer do
       | depth: stack_depth + 1,
         stack: [call, parent | stack],
         trace_address: [0 | trace_address],
-        calls: [[] | calls]
+        calls: [[] | calls],
+        descended: true
     }
   end
 
@@ -268,17 +301,17 @@ defmodule EthereumJSONRPC.Geth.Tracer do
     %{ctx | stack: [Map.put(last, "error", "execution reverted") | stack]}
   end
 
-  defp finalize(%{stack: [top], calls: [calls]}) do
+  defp finalize(%{stack: [top], calls: [calls]}, top_call_gas) do
     calls =
       Enum.map(calls, fn
         subcalls when is_list(subcalls) -> subcalls
         subcall when is_map(subcall) -> %{subcall | "from" => top["createdContractAddressHash"] || top["to"]}
       end)
 
-    [top | Enum.reverse(calls)]
+    [%{top | "gasUsed" => top_call_gas} | Enum.reverse(calls)]
     |> List.flatten()
     |> Enum.map(fn %{"gas" => gas, "gasUsed" => gas_used} = call ->
-      %{call | "gas" => integer_to_quantity(gas), "gasUsed" => integer_to_quantity(gas_used)}
+      %{call | "gas" => integer_to_quantity(gas), "gasUsed" => gas_used |> max(0) |> integer_to_quantity()}
     end)
   end
 end
