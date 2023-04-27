@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#7355](https://github.com/blockscout/blockscout/pull/7355) - Add endpoint for token info import
+
 ### Fixes
 
 ### Chore
