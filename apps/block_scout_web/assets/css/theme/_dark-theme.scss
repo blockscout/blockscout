@@ -46,7 +46,7 @@ $data-empty-response-message-dark-mode: #fff !default;
 $tooltip-background-color-dark-mode: $dark-primary !default;
 $tooltip-inversed-background-color-dark-mode: $btn-line-color !default;
 
-$dashboard-stats-left-border-color-dark-mode: $dark-secondary !default;
+$dashboard-banner-network-stats-item-before-background-color-dark-mode: $dark-secondary !default;
 $dashboard-banner-chart-legend-label-color-dark-mode: $labels-dark !default;
 $dashboard-banner-network-plain-container-background-color-dark-mode: $dark-light-bg !default;
 $dashboard-line-color-price-dark-mode: $dark-primary !default;
@@ -56,6 +56,7 @@ $footer-background-color-dark-mode: $dark-light-bg !default;
 $footer-text-color-dark-mode: $labels-dark !default;
 $footer-link-color-dark-mode: $labels-dark !default;
 $footer-item-disc-color-dark-mode: $dark-secondary !default;
+$header-links-background-color-dark-mode: $dark-light !default;
 
 // Switcher
 .dark-mode-changer {
@@ -114,6 +115,7 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 		}
 		.nav-submenu {
 			color: $labels-dark;
+			background-color: $header-links-background-color-dark-mode;
 		}
 	}
 	.navbar-brand .navbar-logo {
@@ -177,7 +179,7 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 		color: $dashboard-banner-chart-legend-label-color-dark-mode !important;
 	}
 	.dashboard-banner-network-stats-item::before {
-		background-color: $dashboard-stats-left-border-color-dark-mode !important;
+		background-color: $dashboard-banner-network-stats-item-before-background-color-dark-mode !important;
 	}
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-item {
 		&.price-per-day {
