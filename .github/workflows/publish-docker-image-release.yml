@@ -55,9 +55,9 @@ jobs:
             linux/amd64
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
-            DISABLE_READ_API=false
+            API_V1_READ_METHODS_DISABLED=false
             DISABLE_WEBAPP=false
-            DISABLE_WRITE_API=false
+            API_V1_WRITE_METHODS_DISABLED=false
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
