@@ -62,6 +62,7 @@ config :explorer, Explorer.Repo.Replica1,
 config :explorer, Explorer.Repo.Account,
   database: "explorer_test_account",
   hostname: "localhost",
+  username: "postgres",
   pool: Ecto.Adapters.SQL.Sandbox,
   # Default of `5_000` was too low for `BlockFetcher` test
   ownership_timeout: :timer.minutes(1),

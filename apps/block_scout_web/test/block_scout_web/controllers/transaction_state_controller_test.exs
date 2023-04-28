@@ -8,7 +8,17 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
   alias Explorer.Chain.Wei
 
+  alias Explorer.Celo.CacheHelper
+
   describe "GET index/3" do
+    setup do
+      CacheHelper.set_test_addresses(%{
+        "Governance" => "0xD533Ca259b330c7A88f74E000a3FaEa2d63B7972"
+      })
+
+      :ok
+    end
+
     test "loads existing transaction", %{conn: conn} do
       transaction = insert(:transaction)
       conn = get(conn, transaction_state_path(conn, :index, transaction.hash))
