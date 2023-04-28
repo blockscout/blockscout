@@ -10,6 +10,20 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: "Invalid parameter(s)"})
   end
 
+  def call(conn, {:format_address, _}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Invalid address hash"})
+  end
+
+  def call(conn, {:format_url, _}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Invalid URL"})
+  end
+
   def call(conn, {:not_found, _, :empty_items_with_next_page_params}) do
     conn
     |> json(%{"items" => [], "next_page_params" => nil})

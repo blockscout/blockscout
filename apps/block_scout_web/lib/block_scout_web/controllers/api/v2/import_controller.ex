@@ -14,8 +14,10 @@ defmodule BlockScoutWeb.API.V2.ImportController do
     with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
            {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
          {:api_key, ^api_key} <- {:api_key, params["api_key"]},
-         {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(token_address_hash_string)},
-         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
+         {:format_address, {:ok, address_hash}} <-
+           {:format_address, Chain.string_to_address_hash(token_address_hash_string)},
+         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
+         {:format_url, true} <- {:format_url, valid_url?(icon_url)} do
       case token |> Token.changeset(%{icon_url: icon_url}) |> Repo.update() do
         {:ok, _} ->
           conn
@@ -31,5 +33,10 @@ defmodule BlockScoutWeb.API.V2.ImportController do
           |> render(:message, %{message: "Error"})
       end
     end
+  end
+
+  defp valid_url?(url) when is_binary(url) do
+    uri = URI.parse(url)
+    uri.scheme != nil && uri.host =~ "."
   end
 end
