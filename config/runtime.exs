@@ -31,7 +31,8 @@ config :block_scout_web,
   permanent_light_mode_enabled: ConfigHelper.parse_bool_env_var("PERMANENT_LIGHT_MODE_ENABLED"),
   display_token_icons: ConfigHelper.parse_bool_env_var("DISPLAY_TOKEN_ICONS"),
   hide_block_miner: ConfigHelper.parse_bool_env_var("HIDE_BLOCK_MINER"),
-  show_tenderly_link: ConfigHelper.parse_bool_env_var("SHOW_TENDERLY_LINK")
+  show_tenderly_link: ConfigHelper.parse_bool_env_var("SHOW_TENDERLY_LINK"),
+  sensitive_endpoints_api_key: System.get_env("API_SENSITIVE_ENDPOINTS_KEY")
 
 config :block_scout_web, :recaptcha,
   v2_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY"),
@@ -129,9 +130,6 @@ config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
   coin_balance_history_days: ConfigHelper.parse_integer_env_var("COIN_BALANCE_HISTORY_DAYS", 10)
 
 config :block_scout_web, BlockScoutWeb.API.V2, enabled: ConfigHelper.parse_bool_env_var("API_V2_ENABLED")
-
-config :block_scout_web, :account,
-  authenticate_endpoint_api_key: System.get_env("ACCOUNT_AUTHENTICATE_ENDPOINT_API_KEY")
 
 # Configures Ueberauth's Auth0 auth provider
 config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
@@ -379,6 +377,9 @@ config :explorer, Explorer.Chain.Cache.TransactionActionTokensData,
 config :explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand,
   fetch_interval:
     ConfigHelper.parse_time_env_var("MICROSERVICE_MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS", "10m")
+
+config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber,
+  enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
 
 ###############
 ### Indexer ###
