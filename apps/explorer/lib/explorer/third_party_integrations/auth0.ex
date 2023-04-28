@@ -36,7 +36,8 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   end
 
   defp cache_token(token, ttl) do
-    Redix.command(:redix, ["SET", @redis_key, token, "EX", ttl])
+    chain_id = Application.get_env(:block_scout_web, :chain_id)
+    Redix.command(:redix, ["SET", "#{chain_id}_#{@redis_key}", token, "EX", ttl])
     token
   end
 end
