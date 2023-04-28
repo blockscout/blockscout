@@ -184,6 +184,7 @@ defmodule BlockScoutWeb.ApiRouter do
   # For backward compatibility. Should be removed
   scope "/" do
     pipe_through(:api)
+    # credo:disable-for-next-line
     alias BlockScoutWeb.API.EthRPC
 
     if Application.compile_env(:block_scout_web, [__MODULE__, :reading_enabled]) do

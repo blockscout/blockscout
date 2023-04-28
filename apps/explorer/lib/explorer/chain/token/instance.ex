@@ -7,9 +7,7 @@ defmodule Explorer.Chain.Token.Instance do
 
   alias Explorer.Chain.{Address, Hash, Token, Token.Instance, TokenTransfer}
   alias Explorer.Chain.Token.Instance
-  alias Explorer.PagingOptions
-
-  alias Explorer.Repo
+  alias Explorer.{PagingOptions, Repo}
 
   @typedoc """
   * `token_id` - ID of the token

@@ -6518,8 +6518,6 @@ defmodule Explorer.Chain do
 
   def gnosis_safe_contract?(abi) when is_nil(abi), do: false
 
-
-
   defp singleton_pattern?(method) do
     method
     |> contructor_accepts_named_input("_singleton")

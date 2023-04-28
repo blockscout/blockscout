@@ -22,7 +22,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   use BufferedTask
 
-
   @doc """
   Asynchronously fetches internal transactions.
   ## Limiting Upstream Load

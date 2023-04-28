@@ -5,11 +5,11 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.GasPriceOracle
+  alias Explorer.Chain.Celo.TransactionStats, as: CeloStats
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
-  alias Explorer.Chain.Celo.TransactionStats, as: CeloStats
   alias Timex.Duration
 
   def stats(conn, _params) do

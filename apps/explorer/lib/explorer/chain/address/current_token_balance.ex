@@ -159,16 +159,18 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   Builds an `t:Ecto.Query.t/0` to fetch the current token balances of the given address.
   """
   def last_token_balances(address_hash) do
-    from(
-      ctb in __MODULE__,
-      where: ctb.address_hash == ^address_hash,
-      where: ctb.value > 0,
-      left_join: t in Token,
-      on: ctb.token_contract_address_hash == t.contract_address_hash,
-      select: {ctb, t},
-      order_by: [desc: ctb.value, asc: t.type, asc: t.name]
-    )
-    |> preload(:token)
+    query =
+      from(
+        ctb in __MODULE__,
+        where: ctb.address_hash == ^address_hash,
+        where: ctb.value > 0,
+        left_join: t in Token,
+        on: ctb.token_contract_address_hash == t.contract_address_hash,
+        select: {ctb, t},
+        order_by: [desc: ctb.value, asc: t.type, asc: t.name]
+      )
+
+    preload(query, :token)
   end
 
   @doc """
