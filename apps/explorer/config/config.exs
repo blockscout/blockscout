@@ -116,9 +116,6 @@ config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :ti
 
 config :explorer, Explorer.Tags.AddressTag.Cataloger, enabled: true
 
-config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber,
-  enabled: !ConfigHelper.parse_bool_env_var("API_V1_WRITE_METHODS_DISABLED")
-
 config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime_usec]
 
 config :explorer, Explorer.Tracer,

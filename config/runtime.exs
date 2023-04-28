@@ -378,6 +378,9 @@ config :explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand,
   fetch_interval:
     ConfigHelper.parse_time_env_var("MICROSERVICE_MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS", "10m")
 
+config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber,
+  enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
+
 ###############
 ### Indexer ###
 ###############
