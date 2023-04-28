@@ -58,7 +58,7 @@
     "lodash.reduce": "^4.6.0",
     "luxon": "^3.3.0",
     "malihu-custom-scrollbar-plugin": "3.1.5",
-    "mixpanel-browser": "^2.46.0",
+    "mixpanel-browser": "^2.47.0",
     "moment": "^2.29.4",
     "nanomorph": "^5.4.0",
     "numeral": "^2.0.6",
