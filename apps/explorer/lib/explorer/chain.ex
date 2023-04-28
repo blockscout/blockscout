@@ -260,7 +260,7 @@ defmodule Explorer.Chain do
 
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    if direction == nil do
+    if direction == nil || direction == "" do
       query_to_address_hash_wrapped =
         InternalTransaction
         |> InternalTransaction.where_nonpending_block()
@@ -749,6 +749,8 @@ defmodule Explorer.Chain do
   end
 
   defp filter_topic(base_query, nil), do: base_query
+
+  defp filter_topic(base_query, ""), do: base_query
 
   defp filter_topic(base_query, topic) do
     from(log in base_query,
