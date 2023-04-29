@@ -4,6 +4,11 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   """
   @redis_key "auth0"
 
+  @doc """
+    Function responsible for retrieving machine to machine JWT for interacting with Auth0 Management API.
+    Firstly it tries to access cached token and if there is no cached one, token will be requested from Auth0
+  """
+  @spec get_m2m_jwt() :: nil | String.t()
   def get_m2m_jwt, do: get_m2m_jwt_inner(Redix.command(:redix, ["GET", @redis_key]))
 
   def get_m2m_jwt_inner({:ok, token}) when not is_nil(token), do: token

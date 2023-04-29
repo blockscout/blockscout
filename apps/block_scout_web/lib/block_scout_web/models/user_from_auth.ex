@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
 
   def find_or_create(%Auth{} = auth) do
     case find_identity(auth) do
-      [] ->
+      nil ->
         case create_identity(auth) do
           %Identity{} = identity ->
             {:ok, session_info(auth, identity)}
@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
             {:error, changeset}
         end
 
-      [%{} = identity | _] ->
+      %{} = identity ->
         update_identity(identity, update_identity_map(auth))
         {:ok, session_info(auth, identity)}
     end
@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
   end
 
   def find_identity(auth_or_uid) do
-    Repo.account_repo().all(query_identity(auth_or_uid))
+    Repo.account_repo().one(query_identity(auth_or_uid))
   end
 
   def query_identity(%Auth{} = auth) do
@@ -79,6 +79,8 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
       id: identity.id,
       uid: auth.uid,
       email: email_from_auth(auth),
+      nickname: nickname_from_auth(auth),
+      avatar: avatar_from_auth(auth),
       email_verified: false
     }
   end

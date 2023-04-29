@@ -122,6 +122,11 @@ msgstr ""
 msgid "A block producer who successfully included the block onto the blockchain."
 msgstr ""
 
+#: lib/block_scout_web/templates/layout/app.html.eex:97
+#, elixir-autogen, elixir-format
+msgid "A confirmation email was sent to"
+msgstr ""
+
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_first.html.eex:4
 #, elixir-autogen, elixir-format
 msgid "A library name called in the .sol file. Multiple libraries (up to "
@@ -172,7 +177,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/account/api_key/index.html.eex:7
 #: lib/block_scout_web/templates/account/common/_nav.html.eex:16
-#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:17
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:18
 #, elixir-autogen, elixir-format
 msgid "API keys"
 msgstr ""
@@ -277,7 +282,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/account/common/_nav.html.eex:10
 #: lib/block_scout_web/templates/account/tag_address/index.html.eex:7
-#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:15
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:16
 #, elixir-autogen, elixir-format
 msgid "Address Tags"
 msgstr ""
@@ -458,11 +463,6 @@ msgstr ""
 #: lib/block_scout_web/templates/withdrawal/_metatags.html.eex:7
 #, elixir-autogen, elixir-format
 msgid "Beacon chain, Withdrawals, %{subnetwork}, %{coin}"
-msgstr ""
-
-#: lib/block_scout_web/templates/layout/app.html.eex:96
-#, elixir-autogen, elixir-format
-msgid "Before continue to use My Account, you should verify your email address."
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/overview.html.eex:472
@@ -1033,7 +1033,7 @@ msgstr ""
 #: lib/block_scout_web/templates/account/common/_nav.html.eex:19
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:8
 #: lib/block_scout_web/templates/account/custom_abi/index.html.eex:7
-#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:18
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:19
 #, elixir-autogen, elixir-format
 msgid "Custom ABI"
 msgstr ""
@@ -2082,6 +2082,12 @@ msgstr ""
 msgid "Play"
 msgstr ""
 
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:22
+#: lib/block_scout_web/templates/layout/app.html.eex:97
+#, elixir-autogen, elixir-format
+msgid "Please confirm your email address to use the My Account feature."
+msgstr ""
+
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:68
 #, elixir-autogen, elixir-format
 msgid "Please select notification methods:"
@@ -2146,12 +2152,12 @@ msgid "Priority Fees"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/common/_nav.html.eex:4
-#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:13
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:14
 #, elixir-autogen, elixir-format
 msgid "Profile"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:19
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:20
 #, elixir-autogen, elixir-format
 msgid "Public Tags"
 msgstr ""
@@ -2257,6 +2263,11 @@ msgstr ""
 msgid "Request to edit a public tag/label"
 msgstr ""
 
+#: lib/block_scout_web/templates/layout/app.html.eex:97
+#, elixir-autogen, elixir-format
+msgid "Resend verification email"
+msgstr ""
+
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:112
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:38
 #: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:104
@@ -2355,11 +2366,6 @@ msgstr ""
 msgid "Send request"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:96
-#, elixir-autogen, elixir-format
-msgid "Send verification email"
-msgstr ""
-
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:163
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:124
 #, elixir-autogen, elixir-format
@@ -2396,12 +2402,12 @@ msgstr ""
 msgid "Shows total assets held in the address"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:29
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:33
 #, elixir-autogen, elixir-format
 msgid "Sign in"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:20
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:24
 #, elixir-autogen, elixir-format
 msgid "Sign out"
 msgstr ""
@@ -3070,7 +3076,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/account/common/_nav.html.eex:13
 #: lib/block_scout_web/templates/account/tag_transaction/index.html.eex:7
-#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:16
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:17
 #, elixir-autogen, elixir-format
 msgid "Transaction Tags"
 msgstr ""
@@ -3438,7 +3444,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/account/common/_nav.html.eex:7
 #: lib/block_scout_web/templates/account/watchlist/show.html.eex:7
-#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:14
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:15
 #, elixir-autogen, elixir-format
 msgid "Watch list"
 msgstr ""
@@ -3612,6 +3618,11 @@ msgstr ""
 msgid "of"
 msgstr ""
 
+#: lib/block_scout_web/templates/layout/app.html.eex:97
+#, elixir-autogen, elixir-format
+msgid "on sign up. Didn’t receive?"
+msgstr ""
+
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:16
 #, elixir-autogen, elixir-format
 msgid "page"
@@ -3634,11 +3645,6 @@ msgstr ""
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:70
 #, elixir-autogen, elixir-format
 msgid "string"
-msgstr ""
-
-#: lib/block_scout_web/templates/layout/app.html.eex:96
-#, elixir-autogen, elixir-format
-msgid "to"
 msgstr ""
 
 #: lib/block_scout_web/views/address_contract_view.ex:23

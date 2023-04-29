@@ -38,7 +38,6 @@ defmodule BlockScoutWeb.Account.AuthController do
       {:ok, %{email_verified: false} = user} ->
         conn
         |> put_session(:current_user, user)
-        |> put_flash(:info, :email_unverified)
         |> redirect(to: root())
 
       {:ok, user} ->

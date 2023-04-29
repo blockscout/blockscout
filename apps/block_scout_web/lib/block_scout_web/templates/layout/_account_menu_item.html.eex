@@ -10,6 +10,7 @@
       <div class="header dropdown-item">
         <%= gettext("Signed in as ") <> @current_user[:nickname] %>
       </div>
+      <%= if @current_user[:email_verified] do %>
         <a href="<%= auth_path(@conn, :profile) %>" class= "profile-button dropdown-item"><%= gettext "Profile" %></a>
         <a href="<%= watchlist_path(@conn, :show) %>" class= "watchlist-button dropdown-item"><%= gettext "Watch list" %></a>
         <a href="<%= tag_address_path(@conn, :index) %>" class= "address-tags-button dropdown-item"><%= gettext "Address Tags" %></a>
@@ -17,6 +18,9 @@
         <a href="<%= api_key_path(@conn, :index) %>" class= "api-keys-button dropdown-item"><%= gettext "API keys" %></a>
         <a href="<%= custom_abi_path(@conn, :index) %>" class= "custom-abi-button dropdown-item"><%= gettext "Custom ABI" %></a>
         <a href="<%= public_tags_request_path(@conn, :index) %>" class= "public-tags-button dropdown-item"><%= gettext "Public Tags" %></a>
+      <% else %>
+        <p class="alert alert-warning" role="alert" style="margin-bottom: 0"><%= gettext("Please confirm your email address to use the My Account feature.") %></p>
+      <% end %>
       <a href="<%= BlockScoutWeb.LayoutView.sign_out_link %>" class= "sign-out-button dropdown-item"><%= gettext "Sign out" %></a>
     </div>
     </li>

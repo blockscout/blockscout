@@ -103,4 +103,11 @@ defmodule BlockScoutWeb.Account.Api.V1.FallbackController do
     |> put_view(UserView)
     |> render(:message, %{message: "Your email address already verified"})
   end
+
+  def call(conn, {:interval, remain}) do
+    conn
+    |> put_status(:too_many_requests)
+    |> put_view(UserView)
+    |> render(:message, %{message: "Email resend is available in #{remain} seconds."})
+  end
 end

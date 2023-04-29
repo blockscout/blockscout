@@ -91,9 +91,10 @@
           </div>
         <% end %>
       <% end %>
-      <%= render BlockScoutWeb.LayoutView, "_topnav.html", current_user: current_user(@conn), conn: @conn %>
-      <%= if get_flash(@conn, :info) == :email_unverified do %>
-        <p class="alert alert-warning" role="alert" style="margin-bottom: 0"><%= gettext("Before continue to use My Account, you should verify your email address.") %> <a href="/api/account/v1/email/resend" class="ajax"><%= gettext "Send verification email" %></a> <%= gettext "to" %> <%= Plug.Conn.get_session(@conn, :current_user)[:email] %></p>
+      <% session = Plug.Conn.get_session(@conn, :current_user) %>
+      <%= render BlockScoutWeb.LayoutView, "_topnav.html", current_user: session, conn: @conn %>
+      <%= if session && !session[:email_verified] do %>
+        <p class="alert alert-warning" role="alert" style="margin-bottom: 0"><%= gettext("Please confirm your email address to use the My Account feature.") %> <%= gettext("A confirmation email was sent to") %> <a href="mailto:<%= session[:email] %>"><%=session[:email] %></a> <%= gettext "on sign up. Didn’t receive?" %> <a href="/api/account/v1/email/resend" class="ajax"><%= gettext "Resend verification email" %></a>.</p>
       <% else %>
         <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
       <% end %>

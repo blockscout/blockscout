@@ -12,6 +12,7 @@ import { createStore, connectElements } from '../lib/redux_helpers.js'
 import { batchChannel, showLoader } from '../lib/utils'
 import listMorph from '../lib/list_morph'
 import '../app'
+import { openErrorModal, openSuccessModal, openWarningModal } from '../lib/modals'
 
 const BATCH_THRESHOLD = 6
 const BLOCKS_PER_PAGE = 4
@@ -421,9 +422,23 @@ function bindBlockErrorMessage (store) {
 
 $('a.ajax').on('click', (event) => {
   event.preventDefault()
-
-  $.get($(event.currentTarget).attr('href'), () => {})
-
   event.currentTarget.classList.add('disabled')
+
+  $.get($(event.currentTarget).attr('href'), () => {
+    openSuccessModal('Success', 'Email successfully resent', () => { window.location.reload() })
+  }).fail((error) => {
+    if (error.responseJSON && error.responseJSON.message) {
+      if (error.status === 429) {
+        openWarningModal('Warning', error.responseJSON.message)
+      } else {
+        openErrorModal('Error', error.responseJSON.message, false)
+      }
+    } else {
+      openErrorModal('Error', 'Email resend failed', false)
+    }
+  })
+    .always(() => {
+      event.currentTarget.classList.remove('disabled')
+    })
 }
 )
