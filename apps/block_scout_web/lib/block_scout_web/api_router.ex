@@ -39,7 +39,15 @@ defmodule BlockScoutWeb.ApiRouter do
     plug(RateLimit)
   end
 
+  pipeline :api_v2_no_session do
+    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
+    plug(:accepts, ["json"])
+    plug(CheckApiV2)
+    plug(RateLimit)
+  end
+
   alias BlockScoutWeb.Account.Api.V1.{AuthenticateController, TagsController, UserController}
+  alias BlockScoutWeb.API.V2
 
   scope "/account/v1", as: :account_v1 do
     pipe_through(:api)
@@ -100,10 +108,14 @@ defmodule BlockScoutWeb.ApiRouter do
     end
   end
 
+  scope "/v2/import" do
+    pipe_through(:api_v2_no_session)
+
+    post("/token-info", V2.ImportController, :import_token_info)
+  end
+
   scope "/v2", as: :api_v2 do
     pipe_through(:api_v2)
-
-    alias BlockScoutWeb.API.V2
 
     scope "/search" do
       get("/", V2.SearchController, :search)
@@ -116,6 +128,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
     scope "/transactions" do
       get("/", V2.TransactionController, :transactions)
+      get("/watchlist", V2.TransactionController, :watchlist_transactions)
       get("/:transaction_hash", V2.TransactionController, :transaction)
       get("/:transaction_hash/token-transfers", V2.TransactionController, :token_transfers)
       get("/:transaction_hash/internal-transactions", V2.TransactionController, :internal_transactions)
@@ -161,6 +174,7 @@ defmodule BlockScoutWeb.ApiRouter do
     scope "/main-page" do
       get("/blocks", V2.MainPageController, :blocks)
       get("/transactions", V2.MainPageController, :transactions)
+      get("/transactions/watchlist", V2.MainPageController, :watchlist_transactions)
       get("/indexing-status", V2.MainPageController, :indexing_status)
     end
 
