@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- [#7377](https://github.com/blockscout/blockscout/pull/7377) - API v2 improvements
+
 ### Chore
 
 - [#7349](https://github.com/blockscout/blockscout/pull/7349) - Proxy pattern with getImplementation()
