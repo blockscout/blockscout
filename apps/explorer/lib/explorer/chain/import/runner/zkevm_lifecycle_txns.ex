@@ -71,7 +71,7 @@ defmodule Explorer.Chain.Import.Runner.ZkevmLifecycleTxns do
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
-        conflict_target: :id,
+        conflict_target: :hash,
         on_conflict: on_conflict
       )
 
@@ -83,8 +83,8 @@ defmodule Explorer.Chain.Import.Runner.ZkevmLifecycleTxns do
       tx in ZkevmLifecycleTxn,
       update: [
         set: [
-          # don't update `id` as it is a primary key and used for the conflict target
-          hash: fragment("EXCLUDED.hash"),
+          # don't update `id` as it is a primary key 
+          # don't update `hash` as it is a unique index and used for the conflict target
           is_verify: fragment("EXCLUDED.is_verify"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", tx.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", tx.updated_at)
@@ -92,8 +92,7 @@ defmodule Explorer.Chain.Import.Runner.ZkevmLifecycleTxns do
       ],
       where:
         fragment(
-          "(EXCLUDED.hash, EXCLUDED.is_verify) IS DISTINCT FROM (?, ?)",
-          tx.hash,
+          "(EXCLUDED.is_verify) IS DISTINCT FROM (?)",
           tx.is_verify
         )
     )

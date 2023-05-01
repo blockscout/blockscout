@@ -9,6 +9,8 @@ defmodule Explorer.Repo.Migrations.CreateZkevmTables do
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
+    create(unique_index(:zkevm_lifecycle_l1_transactions, :hash))
+
     create table(:zkevm_transaction_batches, primary_key: false) do
       add(:number, :integer, null: false, primary_key: true)
       add(:timestamp, :"timestamp without time zone", null: false)

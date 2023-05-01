@@ -21,16 +21,22 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
   @impl Stage
   def runners do
-    if System.get_env("CHAIN_TYPE") == "polygon_edge" do
-      @default_runners ++
-        [
-          Runner.PolygonEdge.Deposits,
-          Runner.PolygonEdge.DepositExecutes,
-          Runner.PolygonEdge.Withdrawals,
-          Runner.PolygonEdge.WithdrawalExits
-        ]
-    else
-      @default_runners
+    case System.get_env("CHAIN_TYPE") do
+      "polygon_edge" ->
+        @default_runners ++
+          [
+            Runner.PolygonEdge.Deposits,
+            Runner.PolygonEdge.DepositExecutes,
+            Runner.PolygonEdge.Withdrawals,
+            Runner.PolygonEdge.WithdrawalExits
+          ]
+      "polygon_zkevm" ->
+        @default_runners ++
+          [
+            Runner.ZkevmLifecycleTxns,
+            Runner.ZkevmTxnBatches
+          ]
+      _ -> @default_runners
     end
   end
 
