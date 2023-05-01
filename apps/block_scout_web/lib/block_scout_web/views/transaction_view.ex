@@ -403,9 +403,19 @@ defmodule BlockScoutWeb.TransactionView do
     format_wei_value(gas_price, unit)
   end
 
+  def l1_gas_price(%Transaction{l1_gas_price: gas_price}, unit) when unit in ~w(wei gwei ether)a do
+    format_wei_value(gas_price, unit)
+  end
+
   def gas_used(%Transaction{gas_used: nil}), do: gettext("Pending")
 
   def gas_used(%Transaction{gas_used: gas_used}) do
+    Number.to_string!(gas_used)
+  end
+
+  def l1_gas_used(%Transaction{l1_gas_used: nil}), do: gettext("Pending")
+
+  def l1_gas_used(%Transaction{l1_gas_used: gas_used}) do
     Number.to_string!(gas_used)
   end
 

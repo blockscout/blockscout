@@ -33,7 +33,7 @@
           <span class="mr-2"> <%= Cldr.Unit.new!(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
         <% end %>
         <!-- age -->
-        <span data-from-now="<%= @block.timestamp %>"></span>
+        <span data-test="data-from-now" data-from-now="<%= @block.timestamp %>"></span>
       </div>
       <%= if !Application.get_env(:block_scout_web, :hide_block_miner) do %>
         <div class="text-nowrap text-truncate mt-3 mt-md-0">

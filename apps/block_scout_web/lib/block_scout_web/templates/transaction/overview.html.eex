@@ -195,6 +195,26 @@
               </dd>
             </dl>
           <% end %>
+          <%= if @transaction.l1_block_number do %>
+            <!-- L1 Block -->
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("Block number containing the transaction on L1.") %>
+                <%= gettext "L1 Block" %></dt>
+              <dd class="col-sm-9 col-lg-10" data-selector="block-number">
+                <%= if block do %>
+                  <%= link(
+                        @transaction.l1_block_number,
+                        class: "transaction__link",
+                        to: "https://eth-goerli.blockscout.com/block/#{@transaction.l1_block_number}"
+                      ) %>
+                <% else %>
+                  <%= formatted_result(status) %>
+                <% end %>
+              </dd>
+            </dl>
+          <% end %>
           <!-- Transaction Action -->
           <% %{transaction_actions: transaction_actions} = transaction_actions(@transaction) %>
           <%= if not Enum.empty?(transaction_actions) do %>
@@ -371,12 +391,12 @@
               <% end %>
             </dd>
           </dl>
-          <!-- Gas Price -->
+          <!-- L2 Gas Price -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Price per unit of gas specified by the sender. Higher gas prices can prioritize transaction inclusion during times of high usage.") %>
-              <%= gettext "Gas Price" %>
+                text: gettext("Price per unit of gas specified by the sender on L2. Higher gas prices can prioritize transaction inclusion during times of high usage.") %>
+              <%= gettext "L2 Gas Price" %>
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= gas_price(@transaction, :gwei) %> </dd>
           </dl>
@@ -395,8 +415,8 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Maximum gas amount approved for the transaction.") %>
-              <%= gettext "Gas Limit" %>
+                text: gettext("Maximum gas amount approved for the transaction on L2.") %>
+              <%= gettext "L2 Gas Limit" %>
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= format_gas_limit(@transaction.gas) %> </dd>
           </dl>
@@ -444,16 +464,49 @@
               </dd>
             </dl>
           <% end %>
-          <!-- Gas Used by Transaction -->
+          <!-- L2 Gas Used by Transaction -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted transaction-gas-used">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Actual gas amount used by the transaction.") %>
-              <%= gettext "Gas Used by Transaction" %>
+                text: gettext("Actual gas amount used by the transaction on L2.") %>
+              <%= gettext "L2 Gas Used by Transaction" %>
             </dt>
             <% gas_used_perc = gas_used_perc(@transaction) %>
             <dd class="col-sm-9 col-lg-10"> <%= gas_used(@transaction) %> <%= if gas_used_perc, do: "| #{gas_used_perc}%" %></dd>
           </dl>
+          <%= if @transaction.l1_gas_used do %>
+            <!-- L1 Gas Used by Transaction -->
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted transaction-gas-used">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("L1 Gas Used by Transaction") %>
+                <%= gettext "L1 Gas Used by Transaction" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"> <%= l1_gas_used(@transaction) %></dd>
+            </dl>
+          <% end %>
+          <%= if @transaction.l1_gas_used do %>
+            <!-- L1 Gas Price -->
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("L1 Gas Price") %>
+                <%= gettext "L1 Gas Price" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"> <%= l1_gas_price(@transaction, :gwei) %> </dd>
+            </dl>
+          <% end %>
+          <%= if @transaction.l1_fee_scalar do %>
+            <!-- L1 Fee Scalar -->
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("L1 Fee Scalar") %>
+                <%= gettext "L1 Fee Scalar" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"> <%= @transaction.l1_fee_scalar %> </dd>
+            </dl>
+          <% end %>
           <!-- Nonce, Index in Block -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
