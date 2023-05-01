@@ -6,6 +6,7 @@
 
 - [#7355](https://github.com/blockscout/blockscout/pull/7355) - Add endpoint for token info import
 - [#7393](https://github.com/blockscout/blockscout/pull/7393) - Realtime fetcher max gap
+- [#7378](https://github.com/blockscout/blockscout/pull/7378) - Fetch internal transactions by transactions as well
 
 ### Fixes
 - [#7391](https://github.com/blockscout/blockscout/pull/7391) - Fix: cannot read properties of null (reading 'value')

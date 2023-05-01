@@ -7,8 +7,8 @@ defmodule Indexer.Fetcher.PendingBlockOperationsSanitizer do
 
   import Ecto.Query
 
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.PendingBlockOperation
-  alias Explorer.Repo
   alias Indexer.Fetcher.InternalTransaction
 
   @interval :timer.seconds(1)
@@ -60,7 +60,9 @@ defmodule Indexer.Fetcher.PendingBlockOperationsSanitizer do
       |> update([pbo, po, b], set: [block_number: b.number])
       |> Repo.update_all([], timeout: @timeout)
 
-    InternalTransaction.async_fetch(block_numbers)
+    transactions = Enum.map(block_numbers, &Chain.get_transactions_of_block_number/1)
+
+    InternalTransaction.async_fetch(block_numbers, transactions)
 
     block_numbers
   end
