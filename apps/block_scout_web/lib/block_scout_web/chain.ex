@@ -25,8 +25,6 @@ defmodule BlockScoutWeb.Chain do
     Block,
     InternalTransaction,
     Log,
-    OptimismDeposit,
-    OptimismOutputRoot,
     SmartContract,
     Token,
     Token.Instance,
@@ -255,20 +253,6 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {index}}]
   end
 
-  def paging_options(%{"nonce" => nonce_string}) when is_binary(nonce_string) do
-    case Integer.parse(nonce_string) do
-      {nonce, ""} ->
-        [paging_options: %{@default_paging_options | key: {nonce}}]
-
-      _ ->
-        [paging_options: @default_paging_options]
-    end
-  end
-
-  def paging_options(%{"nonce" => nonce}) when is_integer(nonce) do
-    [paging_options: %{@default_paging_options | key: {nonce}}]
-  end
-
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string}) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
          {:ok, hash} <- string_to_transaction_hash(hash_string) do
@@ -302,16 +286,6 @@ defmodule BlockScoutWeb.Chain do
 
   def paging_options(%{"smart_contract_id" => id}) do
     [paging_options: %{@default_paging_options | key: {id}}]
-  end
-
-  def paging_options(%{"l1_block_number" => block_number, "tx_hash" => tx_hash}) do
-    with {block_number, ""} <- Integer.parse(block_number),
-         {:ok, tx_hash} <- string_to_transaction_hash(tx_hash) do
-      [paging_options: %{@default_paging_options | key: {block_number, tx_hash}}]
-    else
-      _ ->
-        [paging_options: @default_paging_options]
-    end
   end
 
   def paging_options(_params), do: [paging_options: @default_paging_options]
@@ -461,22 +435,6 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%SmartContract{} = smart_contract) do
     %{"smart_contract_id" => smart_contract.id}
-  end
-
-  defp paging_params(%OptimismDeposit{l1_block_number: l1_block_number, l2_transaction_hash: l2_tx_hash}) do
-    %{"l1_block_number" => l1_block_number, "tx_hash" => l2_tx_hash}
-  end
-
-  defp paging_params(%OptimismOutputRoot{l2_output_index: index}) do
-    %{"index" => index}
-  end
-
-  defp paging_params(%{msg_nonce: nonce}) do
-    %{"nonce" => nonce}
-  end
-
-  defp paging_params(%{l2_block_number: block_number}) do
-    %{"block_number" => block_number}
   end
 
   # clause for search results pagination

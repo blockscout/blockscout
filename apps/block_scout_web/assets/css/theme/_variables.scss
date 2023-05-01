@@ -1,5 +1,5 @@
 @import "base_variables";
-// @import "neutral_variables";
+@import "neutral_variables";
 // @import "xusdt_variables";
 // @import "dai_variables";
 // @import "ethereum_classic_variables";
@@ -21,7 +21,6 @@
 // @import "tomochain_variables";
 // @import "rsk_variables";
 // @import "ethercore_variables";
-@import "optimism_variables";
 
 // responsive breakpoints
 $breakpoint-xs: 320px;

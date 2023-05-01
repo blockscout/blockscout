@@ -40,19 +40,15 @@ defmodule Explorer.Chain.Cache.Block do
         |> Decimal.to_integer()
 
       if cached_value_from_db === 0 do
-        estimated_count_from_blocks()
+        count = Helper.estimated_count_from("blocks")
+
+        trunc(count * 0.90)
       else
         cached_value_from_db
       end
     else
       cached_value_from_ets
     end
-  end
-
-  defp estimated_count_from_blocks do
-    count = Helper.estimated_count_from("blocks")
-
-    if is_nil(count), do: 0, else: trunc(count * 0.90)
   end
 
   defp handle_fallback(:count) do

@@ -5,7 +5,8 @@ defmodule Indexer.Transform.TokenTransfers do
 
   require Logger
 
-  alias Explorer.{Chain, Helper, Repo}
+  alias ABI.TypeDecoder
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Token, TokenTransfer}
   alias Explorer.Token.MetadataRetriever
 
@@ -133,7 +134,7 @@ defmodule Indexer.Transform.TokenTransfers do
   # ERC-20 token transfer
   defp parse_params(%{second_topic: second_topic, third_topic: third_topic, fourth_topic: nil} = log)
        when not is_nil(second_topic) and not is_nil(third_topic) do
-    [amount] = Helper.decode_data(log.data, [{:uint, 256}])
+    [amount] = decode_data(log.data, [{:uint, 256}])
 
     token_transfer = %{
       amount: Decimal.new(amount || 0),
@@ -159,7 +160,7 @@ defmodule Indexer.Transform.TokenTransfers do
   # ERC-721 token transfer with topics as addresses
   defp parse_params(%{second_topic: second_topic, third_topic: third_topic, fourth_topic: fourth_topic} = log)
        when not is_nil(second_topic) and not is_nil(third_topic) and not is_nil(fourth_topic) do
-    [token_id] = Helper.decode_data(fourth_topic, [{:uint, 256}])
+    [token_id] = decode_data(fourth_topic, [{:uint, 256}])
 
     token_transfer = %{
       block_number: log.block_number,
@@ -191,7 +192,7 @@ defmodule Indexer.Transform.TokenTransfers do
          } = log
        )
        when not is_nil(data) do
-    [from_address_hash, to_address_hash, token_id] = Helper.decode_data(data, [:address, :address, {:uint, 256}])
+    [from_address_hash, to_address_hash, token_id] = decode_data(data, [:address, :address, {:uint, 256}])
 
     token_transfer = %{
       block_number: log.block_number,
@@ -245,7 +246,7 @@ defmodule Indexer.Transform.TokenTransfers do
           data: data
         } = log
       ) do
-    [token_ids, values] = Helper.decode_data(data, [{:array, {:uint, 256}}, {:array, {:uint, 256}}])
+    [token_ids, values] = decode_data(data, [{:array, {:uint, 256}}, {:array, {:uint, 256}}])
 
     token_transfer = %{
       block_number: log.block_number,
@@ -269,7 +270,7 @@ defmodule Indexer.Transform.TokenTransfers do
   end
 
   def parse_erc1155_params(%{third_topic: third_topic, fourth_topic: fourth_topic, data: data} = log) do
-    [token_id, value] = Helper.decode_data(data, [{:uint, 256}, {:uint, 256}])
+    [token_id, value] = decode_data(data, [{:uint, 256}, {:uint, 256}])
 
     token_transfer = %{
       amount: value,
@@ -300,5 +301,15 @@ defmodule Indexer.Transform.TokenTransfers do
 
   defp encode_address_hash(binary) do
     "0x" <> Base.encode16(binary, case: :lower)
+  end
+
+  defp decode_data("0x", types) do
+    for _ <- types, do: nil
+  end
+
+  defp decode_data("0x" <> encoded_data, types) do
+    encoded_data
+    |> Base.decode16!(case: :mixed)
+    |> TypeDecoder.decode_raw(types)
   end
 end

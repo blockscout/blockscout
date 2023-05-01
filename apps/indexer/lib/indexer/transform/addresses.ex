@@ -48,8 +48,6 @@ defmodule Indexer.Transform.Addresses do
       }
   """
 
-  alias Indexer.Helper
-
   @entity_to_address_map %{
     address_coin_balances: [
       [
@@ -470,7 +468,7 @@ defmodule Indexer.Transform.Addresses do
   end
 
   defp find_tx_action_addresses(block_number, value, accumulator) when is_binary(value) do
-    if Helper.is_address_correct?(value) do
+    if is_address?(value) do
       [%{:fetched_coin_balance_block_number => block_number, :hash => value} | accumulator]
     else
       accumulator
@@ -563,4 +561,8 @@ defmodule Indexer.Transform.Addresses do
   defp max_nil_last(first_integer, second_integer)
        when is_integer(first_integer) and is_integer(second_integer),
        do: max(first_integer, second_integer)
+
+  defp is_address?(value) when is_binary(value) do
+    String.match?(value, ~r/^0x[[:xdigit:]]{40}$/i)
+  end
 end

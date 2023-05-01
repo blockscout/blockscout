@@ -7,7 +7,8 @@ RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tool
 ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc \
     GLIBC_VERSION=2.30-r0 \
     PORT=4000 \
-    MIX_ENV="prod"
+    MIX_ENV="prod" \
+    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
 
 RUN set -ex && \
     apk --update add libstdc++ curl ca-certificates && \
@@ -37,7 +38,7 @@ ADD apps/explorer/mix.exs ./apps/explorer/
 ADD apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
 ADD apps/indexer/mix.exs ./apps/indexer/
 
-RUN HEX_HTTP_TIMEOUT=3600 mix do deps.get, local.rebar --force, deps.compile
+RUN mix do deps.get, local.rebar --force, deps.compile
 
 ADD . .
 

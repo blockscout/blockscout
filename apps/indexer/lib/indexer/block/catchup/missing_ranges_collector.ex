@@ -5,8 +5,6 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
   use GenServer
 
-  import Explorer.Helper, only: [parse_integer: 1]
-
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Helper, as: ExplorerHelper

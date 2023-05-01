@@ -4,11 +4,9 @@
 
 ### Features
 
-- [#7200](https://github.com/blockscout/blockscout/pull/7200) - Add Optimism BedRock Deposits to the main page in API
+- [#7355](https://github.com/blockscout/blockscout/pull/7355) - Add endpoint for token info import
 
 ### Fixes
-
-- [#7219](https://github.com/blockscout/blockscout/pull/7219) - Output L1 fields in API v2 for transaction page and fix transaction fee calculation
 
 ### Chore
 
@@ -123,7 +121,6 @@
 - [#7068](https://github.com/blockscout/blockscout/pull/7068) - Add authenticate endpoint
 - [#6990](https://github.com/blockscout/blockscout/pull/6990) - Improved http requests logging, batch transfers pagination; New API v2 endpoint `/smart-contracts/counters`; And some refactoring
 - [#7089](https://github.com/blockscout/blockscout/pull/7089) - ETHEREUM_JSONRPC_HTTP_TIMEOUT env variable
-- [#6980](https://github.com/blockscout/blockscout/pull/6980) - Add Optimism BedRock support (Txn Batches, Output Roots, Deposits, Withdrawals)
 
 ### Fixes
 
@@ -139,7 +136,6 @@
 - [#7009](https://github.com/blockscout/blockscout/pull/7009) - Fix updating coin balances with empty value
 - [#7055](https://github.com/blockscout/blockscout/pull/7055) - Set updated_at on token update even if there are no changes
 - [#7080](https://github.com/blockscout/blockscout/pull/7080) - Deduplicate second degree relations before insert
-- [#7135](https://github.com/blockscout/blockscout/pull/7135) - Block reorg fixes
 - [#7161](https://github.com/blockscout/blockscout/pull/7161) - Treat "" as empty value while parsing env vars
 - [#7135](https://github.com/blockscout/blockscout/pull/7135) - Block reorg fixes
 
@@ -403,7 +399,6 @@
 
 ### Fixes
 
-- [#6699](https://github.com/blockscout/blockscout/pull/6699) - L1 tx fields fix for Goerli Optimism BedRock update
 - [#6676](https://github.com/blockscout/blockscout/pull/6676) - Fix `/smart-contracts` bugs in API v2
 - [#6603](https://github.com/blockscout/blockscout/pull/6603) - Add to MM button explorer URL fix
 - [#6512](https://github.com/blockscout/blockscout/pull/6512) - Allow gasUsed in failed internal txs; Leave error field for staticcall
