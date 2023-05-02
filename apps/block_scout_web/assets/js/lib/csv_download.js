@@ -118,7 +118,7 @@ $button.on('click', () => {
 const onloadCallback = function () {
   // @ts-ignore
   // eslint-disable-next-line
-  const reCaptchaClientKey = document.getElementById('re-captcha-client-key').value
+  const reCaptchaClientKey = document.getElementById('js-re-captcha-client-key').value
   // @ts-ignore
   // eslint-disable-next-line
   grecaptcha.render('recaptcha', {
