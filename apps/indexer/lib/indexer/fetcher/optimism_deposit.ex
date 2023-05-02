@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
 
   import Ecto.Query
 
-  import EthereumJSONRPC, only: [json_rpc: 2, integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
   import Explorer.Helper, only: [decode_data: 2, parse_integer: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
@@ -484,7 +484,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     request = Blocks.requests(id_to_params, &ByNumber.request(&1, false))
     error_message = &"Cannot fetch timestamps for blocks #{numbers}. Error: #{inspect(&1)}"
 
-    case repeated_request(request, error_message, json_rpc_named_arguments, retries) do
+    case Optimism.repeated_request(request, error_message, json_rpc_named_arguments, retries) do
       {:ok, response} ->
         %Blocks{blocks_params: blocks_params} = Blocks.from_responses(response, id_to_params)
 
@@ -517,7 +517,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
 
     error_message = &"Cannot create new log filter. Error: #{inspect(&1)}"
 
-    repeated_request(req, error_message, json_rpc_named_arguments, retries)
+    Optimism.repeated_request(req, error_message, json_rpc_named_arguments, retries)
   end
 
   defp get_filter_changes(filter_id, json_rpc_named_arguments, retries \\ 3) do
@@ -530,7 +530,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
 
     error_message = &"Cannot fetch filter changes. Error: #{inspect(&1)}"
 
-    case repeated_request(req, error_message, json_rpc_named_arguments, retries) do
+    case Optimism.repeated_request(req, error_message, json_rpc_named_arguments, retries) do
       {:error, %{code: _, message: "filter not found"}} -> {:error, :filter_not_found}
       response -> response
     end
@@ -546,31 +546,12 @@ defmodule Indexer.Fetcher.OptimismDeposit do
 
     error_message = &"Cannot uninstall filter. Error: #{inspect(&1)}"
 
-    repeated_request(req, error_message, json_rpc_named_arguments, retries)
+    Optimism.repeated_request(req, error_message, json_rpc_named_arguments, retries)
   end
 
   defp get_last_l1_item do
     OptimismDeposit.last_deposit_l1_block_number_query()
     |> Repo.one()
     |> Kernel.||({0, nil})
-  end
-
-  defp repeated_request(req, error_message, json_rpc_named_arguments, retries_left) do
-    case json_rpc(req, json_rpc_named_arguments) do
-      {:ok, _results} = res ->
-        res
-
-      {:error, error} = err ->
-        retries_left = retries_left - 1
-
-        if retries_left <= 0 do
-          Logger.error(error_message.(error))
-          err
-        else
-          Logger.error("#{error_message.(error)} Retrying...")
-          :timer.sleep(3000)
-          repeated_request(req, error_message, json_rpc_named_arguments, retries_left)
-        end
-    end
   end
 end

@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
 
   import Ecto.Query
 
-  import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
@@ -198,7 +198,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
     |> Kernel.||({0, nil})
   end
 
-  defp get_blocks_by_events(events, json_rpc_named_arguments, retries_left) do
+  defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
     request =
       events
       |> Enum.reduce(%{}, fn event, acc ->
@@ -209,24 +209,11 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
       |> Enum.into(%{}, fn {params, id} -> {id, params} end)
       |> Blocks.requests(&ByNumber.request(&1, false, false))
 
-    case json_rpc(request, json_rpc_named_arguments) do
-      {:ok, responses} ->
-        Enum.map(responses, fn %{result: result} -> result end)
+    error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
 
-      {:error, message} ->
-        retries_left = retries_left - 1
-
-        error_message =
-          "Cannot fetch blocks with batch request. Error: #{inspect(message)}. Request: #{inspect(request)}"
-
-        if retries_left <= 0 do
-          Logger.error(error_message)
-          []
-        else
-          Logger.error("#{error_message} Retrying...")
-          :timer.sleep(3000)
-          get_blocks_by_events(events, json_rpc_named_arguments, retries_left)
-        end
+    case Optimism.repeated_request(request, error_message, json_rpc_named_arguments, retries) do
+      {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
+      {:error, _} -> []
     end
   end
 end
