@@ -430,9 +430,12 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           {:cont, {:ok, batches ++ batches_parsed, [seq | sequences], empty_incomplete_frame_sequence()}}
         else
           {:frame_number_valid, false} ->
-            {:halt,
-             {:error,
-              "Invalid frame sequence. Last frame number: #{last_frame_number}. Next frame number: #{frame.number}. Tx hash: #{t.hash}."}}
+            if last_frame_number == 0 && frame.number == 0 do
+              # the new frame rewrites the previous one
+              {:cont, {:ok, batches, sequences, empty_incomplete_frame_sequence()}}
+            else
+              {:halt, {:error, "Invalid frame sequence. Last frame number: #{last_frame_number}. Next frame number: #{frame.number}. Tx hash: #{t.hash}."}}
+            end
 
           false ->
             {:halt,
