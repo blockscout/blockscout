@@ -622,16 +622,10 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       if Enum.empty?(sequences) do
         []
       else
-        first_sequence_id = List.last(sequences).id
-
         sequences
         |> Enum.reverse()
         |> Enum.filter(fn seq ->
           Enum.any?(unique_batches, fn batch -> batch.frame_sequence_id == seq.id end)
-        end)
-        |> Enum.with_index(first_sequence_id)
-        |> Enum.map(fn {seq, id} ->
-          %{seq | id: id}
         end)
       end
 
