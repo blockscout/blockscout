@@ -5,6 +5,7 @@
 ### Features
 
 - [#7355](https://github.com/blockscout/blockscout/pull/7355) - Add endpoint for token info import
+- [#7393](https://github.com/blockscout/blockscout/pull/7393) - Realtime fetcher max gap
 
 ### Fixes
 - [#7391](https://github.com/blockscout/blockscout/pull/7391) - Fix: cannot read properties of null (reading 'value')
