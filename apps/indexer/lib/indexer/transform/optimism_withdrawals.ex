@@ -15,29 +15,35 @@ defmodule Indexer.Transform.OptimismWithdrawals do
   Returns a list of withdrawals given a list of logs.
   """
   def parse(logs) do
+    prev_metadata = Logger.metadata()
     Logger.metadata(fetcher: :optimism_withdrawals_realtime)
 
-    with false <- is_nil(Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:start_block_l2]),
-         message_passer = Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:message_passer],
-         true <- Helper.is_address_correct?(message_passer) do
-      message_passer = String.downcase(message_passer)
+    items =
+      with false <- is_nil(Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:start_block_l2]),
+           message_passer = Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:message_passer],
+           true <- Helper.is_address_correct?(message_passer) do
+        message_passer = String.downcase(message_passer)
 
-      logs
-      |> Enum.filter(fn log ->
-        !is_nil(log.first_topic) && String.downcase(log.first_topic) == @message_passed_event &&
-          String.downcase(Helper.address_hash_to_string(log.address_hash)) == message_passer
-      end)
-      |> Enum.map(fn log ->
-        Logger.info("Withdrawal message found, nonce: #{log.second_topic}.")
-        OptimismWithdrawal.event_to_withdrawal(log.second_topic, log.data, log.transaction_hash, log.block_number)
-      end)
-    else
-      true ->
-        []
+        logs
+        |> Enum.filter(fn log ->
+          !is_nil(log.first_topic) && String.downcase(log.first_topic) == @message_passed_event &&
+            String.downcase(Helper.address_hash_to_string(log.address_hash)) == message_passer
+        end)
+        |> Enum.map(fn log ->
+          Logger.info("Withdrawal message found, nonce: #{log.second_topic}.")
+          OptimismWithdrawal.event_to_withdrawal(log.second_topic, log.data, log.transaction_hash, log.block_number)
+        end)
+      else
+        true ->
+          []
 
-      false ->
-        Logger.error("L2ToL1MessagePasser contract address is incorrect. Cannot use #{__MODULE__} for parsing logs.")
-        []
-    end
+        false ->
+          Logger.error("L2ToL1MessagePasser contract address is incorrect. Cannot use #{__MODULE__} for parsing logs.")
+          []
+      end
+
+    Logger.reset_metadata(prev_metadata)
+
+    items
   end
 end
