@@ -417,6 +417,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
                parse_frame_sequence(
                  frame_sequence,
                  frame_sequence_id,
+                 l1_timestamp,
                  json_rpc_named_arguments_l2,
                  after_reorg
                ),
@@ -525,6 +526,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   defp parse_frame_sequence(
          bytes,
          id,
+         l1_timestamp,
          json_rpc_named_arguments_l2,
          after_reorg
        ) do
@@ -539,7 +541,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           batch = %{
             parent_hash: Enum.at(batch, 0),
             epoch_number: :binary.decode_unsigned(Enum.at(batch, 1)),
-            frame_sequence_id: id
+            frame_sequence_id: id,
+            l1_timestamp: l1_timestamp
           }
 
           if byte_size(new_remainder) > 0 do
@@ -611,7 +614,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           (b1.l2_block_number == b2.l2_block_number and b1.l1_timestamp < b2.l1_timestamp)
       end)
       |> Enum.reduce(%{}, fn b, acc ->
-        Map.put(acc, b.l2_block_number, b)
+        Map.put(acc, b.l2_block_number, Map.delete(b, :l1_timestamp))
       end)
       |> Map.values()
 
