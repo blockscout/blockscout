@@ -191,6 +191,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
     scope "/withdrawals" do
       get("/", V2.WithdrawalController, :withdrawals_list)
+      get("/counters", V2.WithdrawalController, :withdrawals_counters)
     end
   end
 

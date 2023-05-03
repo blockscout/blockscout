@@ -76,7 +76,8 @@ defmodule Explorer.Chain do
     NewVerifiedContractsCounter,
     Transactions,
     Uncles,
-    VerifiedContractsCounter
+    VerifiedContractsCounter,
+    WithdrawalsSum
   }
 
   alias Explorer.Chain.Cache.Block, as: BlockCache
@@ -6850,8 +6851,8 @@ defmodule Explorer.Chain do
     watchlist_names = Enum.reduce(watchlist_addresses, %{}, fn wa, acc -> Map.put(acc, wa.address_hash, wa.name) end)
 
     {watchlist_names, address_hashes_to_mined_transactions_without_rewards(address_hashes, options)}
-    end
-    
+  end
+
   def list_withdrawals(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
@@ -6860,5 +6861,24 @@ defmodule Explorer.Chain do
     |> join_associations(necessity_by_association)
     |> handle_withdrawals_paging_options(paging_options)
     |> select_repo(options).all()
+  end
+
+  def sum_withdrawals do
+    Repo.aggregate(Withdrawal, :max, :index, timeout: :infinity)
+  end
+
+  def upsert_count_withdrawals(index) do
+    upsert_last_fetched_counter(%{
+      counter_type: "withdrawals_count",
+      value: index
+    })
+  end
+
+  def sum_withdrawals_from_cache(options \\ []) do
+    WithdrawalsSum.fetch(options)
+  end
+
+  def count_withdrawals_from_cache(options \\ []) do
+    "withdrawals_count" |> get_last_fetched_counter(options) |> Decimal.add(1)
   end
 end

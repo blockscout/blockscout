@@ -38,6 +38,17 @@ defmodule BlockScoutWeb.API.V2.WithdrawalControllerTest do
     end
   end
 
+  describe "/withdrawals/counters" do
+    test "fetch counters", %{conn: conn} do
+      request = get(conn, "/api/v2/withdrawals/counters")
+
+      assert %{
+               "withdrawal_count" => _,
+               "withdrawal_sum" => _
+             } = json_response(request, 200)
+    end
+  end
+
   defp compare_item(%Withdrawal{} = withdrawal, json) do
     assert withdrawal.index == json["index"]
   end

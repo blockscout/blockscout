@@ -199,6 +199,7 @@ defmodule Indexer.Block.Fetcher do
       update_transactions_cache(inserted[:transactions])
       update_addresses_cache(inserted[:addresses])
       update_uncles_cache(inserted[:block_second_degree_relations])
+      update_withdrawals_cache(inserted[:withdrawals])
       result
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
@@ -226,6 +227,15 @@ defmodule Indexer.Block.Fetcher do
 
   defp update_uncles_cache(updated_relations) do
     Uncles.update_from_second_degree_relations(updated_relations)
+  end
+
+  defp update_withdrawals_cache([_ | _] = withdrawals) do
+    %{index: index} = List.last(withdrawals)
+    Chain.upsert_count_withdrawals(index)
+  end
+
+  defp update_withdrawals_cache(_) do
+    :ok
   end
 
   def import(
