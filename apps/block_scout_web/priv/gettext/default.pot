@@ -152,7 +152,7 @@ msgstr ""
 msgid "API keys"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:103
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:106
 #, elixir-autogen, elixir-format
 msgid "APIs"
 msgstr ""
@@ -285,7 +285,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:26
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:28
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:22
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:85
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:88
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:20
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:11
 #: lib/block_scout_web/views/address_token_transfer_view.ex:11
@@ -325,7 +325,7 @@ msgstr ""
 msgid "Anything not in this list is not supported. Click on the method to be taken to the documentation for that method, and check the notes section for any potential differences."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:131
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:134
 #, elixir-autogen, elixir-format
 msgid "Apps"
 msgstr ""
@@ -1235,7 +1235,7 @@ msgstr ""
 msgid "Error: Could not determine contract creator."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:117
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:120
 #, elixir-autogen, elixir-format
 msgid "Eth RPC"
 msgstr ""
@@ -1402,7 +1402,7 @@ msgstr ""
 msgid "Go to"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:107
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:110
 #, elixir-autogen, elixir-format
 msgid "GraphQL"
 msgstr ""
@@ -1966,7 +1966,7 @@ msgstr ""
 msgid "Parent Hash"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:62
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:63
 #: lib/block_scout_web/views/transaction_view.ex:368
 #: lib/block_scout_web/views/transaction_view.ex:406
 #, elixir-autogen, elixir-format
@@ -2081,7 +2081,7 @@ msgstr ""
 msgid "Query"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:112
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:115
 #, elixir-autogen, elixir-format
 msgid "RPC"
 msgstr ""
@@ -2359,7 +2359,7 @@ msgstr ""
 msgid "Sources and Metadata JSON"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:133
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:136
 #, elixir-autogen, elixir-format
 msgid "Stakes"
 msgstr ""
@@ -2757,7 +2757,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:175
 #: lib/block_scout_web/templates/address_token/overview.html.eex:58
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:13
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:81
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:84
 #: lib/block_scout_web/templates/tokens/index.html.eex:10
 #: lib/block_scout_web/views/address_view.ex:373
 #, elixir-autogen, elixir-format
@@ -3039,7 +3039,7 @@ msgstr ""
 msgid "User-defined tips sent to validator for transaction priority/inclusion."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:55
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:56
 #, elixir-autogen, elixir-format
 msgid "Validated"
 msgstr ""
@@ -3092,7 +3092,7 @@ msgstr ""
 msgid "Verified at"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:68
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:69
 #, elixir-autogen, elixir-format
 msgid "Verified contracts"
 msgstr ""
@@ -3630,7 +3630,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:29
 #: lib/block_scout_web/templates/address_withdrawal/index.html.eex:13
 #: lib/block_scout_web/templates/block/_tabs.html.eex:13
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:71
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:73
 #: lib/block_scout_web/templates/withdrawal/index.html.eex:5
 #, elixir-autogen, elixir-format
 msgid "Withdrawals"
