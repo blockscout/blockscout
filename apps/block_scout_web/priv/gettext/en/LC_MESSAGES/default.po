@@ -465,7 +465,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/chain/_metatags.html.eex:4
 #, elixir-autogen, elixir-format
-msgid "BlockScout provides analytics data, API, and Smart Contract tools for the %{subnetwork}"
+msgid "BlockScout provides analytics data, API, and Smart Contract tools for %{subnetwork}"
 msgstr ""
 
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:29
