@@ -2841,6 +2841,19 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(query, initial, reducer)
   end
 
+  def stream_transactions_with_unfetched_internal_transactions(initial, reducer) when is_function(reducer, 2) do
+    query =
+      from(
+        po in PendingBlockOperation,
+        where: not is_nil(po.block_number),
+        inner_join: t in Transaction,
+        on: po.block_number == t.block_number,
+        select: %{block_number: t.block_number, hash: t.hash, index: t.index}
+      )
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
   def remove_nonconsensus_blocks_from_pending_ops(block_hashes) do
     query =
       from(

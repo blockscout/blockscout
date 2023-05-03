@@ -82,23 +82,19 @@ defmodule Indexer.Fetcher.InternalTransaction do
   @impl BufferedTask
   def init(initial, reducer, json_rpc_named_arguments) do
     {:ok, final} =
-      Chain.stream_blocks_with_unfetched_internal_transactions(initial, fn block_number, acc ->
-        reducer.(block_number, acc)
-      end)
+      case queue_data_type(json_rpc_named_arguments) do
+        :block_number ->
+          Chain.stream_blocks_with_unfetched_internal_transactions(initial, fn block_number, acc ->
+            reducer.(block_number, acc)
+          end)
 
-    case queue_data_type(json_rpc_named_arguments) do
-      :block_number ->
-        final
+        :transaction_params ->
+          Chain.stream_transactions_with_unfetched_internal_transactions(initial, fn transaction_params, acc ->
+            reducer.(transaction_params, acc)
+          end)
+      end
 
-      :transaction_params ->
-        final
-        |> Enum.map(fn number ->
-          number
-          |> Chain.get_transactions_of_block_number()
-          |> Enum.map(&Map.take(&1, [:block_number, :hash, :index]))
-        end)
-        |> List.flatten()
-    end
+    final
   end
 
   defp params(%{block_number: block_number, hash: hash, index: index}) when is_integer(block_number) do
