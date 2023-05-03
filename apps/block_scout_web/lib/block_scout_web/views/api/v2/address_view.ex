@@ -121,7 +121,6 @@ defmodule BlockScoutWeb.API.V2.AddressView do
           do:
             fetch_and_render_token_instance(
               token_balance.token_id,
-              token.contract_address_hash,
               token,
               token_balance.address_hash
             )
@@ -156,11 +155,11 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     end
   end
 
-  def fetch_and_render_token_instance(token_id, token_contract_address_hash, token, address_hash) do
+  def fetch_and_render_token_instance(token_id, token, address_hash) do
     token_instance =
       case Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(
              token_id,
-             token_contract_address_hash,
+             token.contract_address_hash,
              @api_true
            ) do
         # `%{hash: address_hash}` will match with `address_with_info(_, address_hash)` clause in `BlockScoutWeb.API.V2.Helper`
