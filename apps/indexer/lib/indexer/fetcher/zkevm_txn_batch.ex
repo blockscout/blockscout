@@ -37,9 +37,9 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
   def init(args) do
     Logger.metadata(fetcher: :zkevm_txn_batches)
 
-    #Logger.configure(truncate: :infinity)
+    # Logger.configure(truncate: :infinity)
 
-    #enabled = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkevmTxnBatch][:enabled]
+    # enabled = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkevmTxnBatch][:enabled]
 
     Process.send(self(), :continue, [])
 
@@ -73,6 +73,12 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
       Process.send_after(self(), :continue, :timer.minutes(@recheck_latest_batch_interval))
       {:noreply, state}
     end
+  end
+
+  @impl GenServer
+  def handle_info({ref, _result}, state) do
+    Process.demonitor(ref, [:flush])
+    {:noreply, state}
   end
 
   defp get_last_verified_batch_number do
@@ -123,20 +129,34 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
       batch_start
       |> Range.new(batch_end, 1)
       |> Enum.map(fn batch_number ->
-        EthereumJSONRPC.request(%{id: batch_number, method: "zkevm_getBatchByNumber", params: [integer_to_quantity(batch_number), false]})
+        EthereumJSONRPC.request(%{
+          id: batch_number,
+          method: "zkevm_getBatchByNumber",
+          params: [integer_to_quantity(batch_number), false]
+        })
       end)
 
-    error_message = &"Cannot call zkevm_getBatchByNumber for the batch range #{batch_start}..#{batch_end}. Error: #{inspect(&1)}"
+    error_message =
+      &"Cannot call zkevm_getBatchByNumber for the batch range #{batch_start}..#{batch_end}. Error: #{inspect(&1)}"
 
     {:ok, responses} = repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, 3)
 
-    #Logger.warn("Hashes for the batch range #{batch_start}..#{batch_end}:")
+    # Logger.warn("Hashes for the batch range #{batch_start}..#{batch_end}:")
 
     {sequence_hashes, verify_hashes} =
       responses
       |> Enum.reduce({[], []}, fn res, {sequences, verifies} = _acc ->
-        "0x" <> send_sequences_tx_hash = Map.get(res.result, "sendSequencesTxHash")
-        "0x" <> verify_batch_tx_hash = Map.get(res.result, "verifyBatchTxHash")
+        send_sequences_tx_hash =
+          case Map.get(res.result, "sendSequencesTxHash") do
+            "0x" <> send_sequences_tx_hash -> send_sequences_tx_hash
+            nil -> "0000000000000000000000000000000000000000000000000000000000000000"
+          end
+
+        verify_batch_tx_hash =
+          case Map.get(res.result, "verifyBatchTxHash") do
+            "0x" <> verify_batch_tx_hash -> verify_batch_tx_hash
+            nil -> "0000000000000000000000000000000000000000000000000000000000000000"
+          end
 
         sequences =
           if send_sequences_tx_hash != "0000000000000000000000000000000000000000000000000000000000000000" do
@@ -171,9 +191,10 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
         Map.put(acc, hash.bytes, id)
       end)
 
-    {batches_to_import, l1_txs_to_import, _, _} =
+    {batches_to_import, l2_txs_to_import, l1_txs_to_import, _, _} =
       responses
-      |> Enum.reduce({[], [], get_next_id(), hash_to_id}, fn res, {batches, l1_txs, next_id, hash_to_id} = _acc ->
+      |> Enum.reduce({[], [], [], get_next_id(), hash_to_id}, fn res,
+                                                                 {batches, l2_txs, l1_txs, next_id, hash_to_id} = _acc ->
         number = quantity_to_integer(Map.get(res.result, "number"))
         {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(res.result, "timestamp")))
         l2_transaction_hashes = Map.get(res.result, "transactions")
@@ -181,17 +202,27 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
         acc_input_hash = Map.get(res.result, "accInputHash")
         state_root = Map.get(res.result, "stateRoot")
 
-        "0x" <> send_sequences_tx_hash = Map.get(res.result, "sendSequencesTxHash")
-        "0x" <> verify_batch_tx_hash = Map.get(res.result, "verifyBatchTxHash")
+        send_sequences_tx_hash =
+          case Map.get(res.result, "sendSequencesTxHash") do
+            "0x" <> send_sequences_tx_hash -> send_sequences_tx_hash
+            nil -> "0000000000000000000000000000000000000000000000000000000000000000"
+          end
+
+        verify_batch_tx_hash =
+          case Map.get(res.result, "verifyBatchTxHash") do
+            "0x" <> verify_batch_tx_hash -> verify_batch_tx_hash
+            nil -> "0000000000000000000000000000000000000000000000000000000000000000"
+          end
 
         {sequence_id, l1_txs, next_id, hash_to_id} =
           if send_sequences_tx_hash != "0000000000000000000000000000000000000000000000000000000000000000" do
             sequence_tx_hash = Base.decode16!(send_sequences_tx_hash, case: :mixed)
-            
+
             id = Map.get(hash_to_id, sequence_tx_hash)
 
             if is_nil(id) do
-              {next_id, l1_txs ++ [%{id: next_id, hash: sequence_tx_hash, is_verify: false}], next_id + 1, Map.put(hash_to_id, sequence_tx_hash, next_id)}
+              {next_id, l1_txs ++ [%{id: next_id, hash: sequence_tx_hash, is_verify: false}], next_id + 1,
+               Map.put(hash_to_id, sequence_tx_hash, next_id)}
             else
               {id, l1_txs, next_id, hash_to_id}
             end
@@ -202,11 +233,12 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
         {verify_id, l1_txs, next_id, hash_to_id} =
           if verify_batch_tx_hash != "0000000000000000000000000000000000000000000000000000000000000000" do
             verify_tx_hash = Base.decode16!(verify_batch_tx_hash, case: :mixed)
-            
+
             id = Map.get(hash_to_id, verify_tx_hash)
 
             if is_nil(id) do
-              {next_id, l1_txs ++ [%{id: next_id, hash: verify_tx_hash, is_verify: true}], next_id + 1, Map.put(hash_to_id, verify_tx_hash, next_id)}
+              {next_id, l1_txs ++ [%{id: next_id, hash: verify_tx_hash, is_verify: true}], next_id + 1,
+               Map.put(hash_to_id, verify_tx_hash, next_id)}
             else
               {id, l1_txs, next_id, hash_to_id}
             end
@@ -217,7 +249,6 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
         batch = %{
           number: number,
           timestamp: timestamp,
-          l2_transaction_hashes: l2_transaction_hashes || [],
           global_exit_root: global_exit_root,
           acc_input_hash: acc_input_hash,
           state_root: state_root,
@@ -225,13 +256,24 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
           verify_id: verify_id
         }
 
-        {batches ++ [batch], l1_txs, next_id, hash_to_id}
+        l2_txs_append =
+          l2_transaction_hashes
+          |> Kernel.||([])
+          |> Enum.map(fn l2_tx_hash ->
+            %{
+              batch_number: number,
+              hash: l2_tx_hash
+            }
+          end)
+
+        {batches ++ [batch], l2_txs ++ l2_txs_append, l1_txs, next_id, hash_to_id}
       end)
 
     {:ok, _} =
       Chain.import(%{
         zkevm_lifecycle_txns: %{params: l1_txs_to_import},
         zkevm_txn_batches: %{params: batches_to_import},
+        zkevm_batch_txns: %{params: l2_txs_to_import},
         timeout: :infinity
       })
   end

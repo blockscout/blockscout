@@ -34,7 +34,8 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
         @default_runners ++
           [
             Runner.ZkevmLifecycleTxns,
-            Runner.ZkevmTxnBatches
+            Runner.ZkevmTxnBatches,
+            Runner.ZkevmBatchTxns
           ]
       _ -> @default_runners
     end
