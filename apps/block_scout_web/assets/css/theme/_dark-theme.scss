@@ -50,7 +50,7 @@ $header-links-background-color-dark-mode: $dark-light !default;
 			background-color: $header-links-background-color-dark-mode;
 		}
 	}
-	.navbar-brand .navbar-logo {
+	.navbar-brand {
 		filter: brightness(0) invert(1);
 	}
 	.navbar.navbar-primary .navbar-nav .nav-link {

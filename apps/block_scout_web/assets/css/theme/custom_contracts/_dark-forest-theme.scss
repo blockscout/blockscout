@@ -20,7 +20,7 @@ $dark-primary-alternate: $dark-primary;
 	.navbar.navbar-primary {
 		background-color: $dark-light-bg !important;
 	}
-	.navbar-brand .navbar-logo {
+	.navbar-brand {
 		filter: brightness(0) invert(1);
 	}
 	.navbar.navbar-primary .navbar-nav .nav-link {
