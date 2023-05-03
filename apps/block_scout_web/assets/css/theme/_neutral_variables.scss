@@ -5,12 +5,12 @@ $tertiary: #46B1DD;
 $additional-font: #fff;
 
 // Logo Size
-$navbar-logo-height: 22px;
+$navbar-logo-height: 33px;
 
 // footer
-$footer-background-color: #3c226a;
+$footer-background-color: #0F214F;
 $footer-title-color: #fff;
-$footer-text-color: #bda6e7;
+$footer-text-color: #46B1DD;
 $footer-item-disc-color: $secondary;
 // .footer-logo { filter: brightness(0) invert(1); }
 
@@ -28,7 +28,7 @@ $dashboard-banner-gradient-start: $primary; // gradient begin
 
 $dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
 
-$dashboard-banner-network-plain-container-background-color: #4b45ae; // stats bg
+$dashboard-banner-network-plain-container-background-color: #42659c; // stats bg
 
 
 // navigation
