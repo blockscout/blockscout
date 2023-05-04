@@ -1,0 +1,8 @@
+<title>
+  <%= gettext(
+        "Beacon chain withdrawals - %{subnetwork} Explorer",
+        subnetwork: BlockScoutWeb.LayoutView.subnetwork_title()
+    ) %>
+</title>
+<meta name="keywords" content="<%= gettext "Beacon chain, Withdrawals, %{subnetwork}, %{coin}", subnetwork: BlockScoutWeb.LayoutView.subnetwork_title(), coin: Explorer.coin() %>">
+<meta name="description" content="<%= gettext "View the beacon chain withdrawals on %{subnetwork}", subnetwork: BlockScoutWeb.LayoutView.subnetwork_title() %>">
