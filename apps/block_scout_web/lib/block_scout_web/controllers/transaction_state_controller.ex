@@ -49,6 +49,7 @@ defmodule BlockScoutWeb.TransactionStateController do
             balance_before: state_change.balance_before,
             balance_after: state_change.balance_after,
             balance_diff: state_change.balance_diff,
+            token_id: state_change.token_id,
             conn: conn,
             miner: state_change.miner?
           )

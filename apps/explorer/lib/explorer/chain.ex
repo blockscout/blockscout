@@ -5530,8 +5530,8 @@ defmodule Explorer.Chain do
     %{balance | block_timestamp: formatted_date}
   end
 
-  def get_token_balance(address_hash, token_contract_address_hash, block_number) do
-    query = TokenBalance.fetch_token_balance(address_hash, token_contract_address_hash, block_number)
+  def get_token_balance(address_hash, token_contract_address_hash, block_number, token_id \\ nil) do
+    query = TokenBalance.fetch_token_balance(address_hash, token_contract_address_hash, block_number, token_id)
 
     Repo.one(query)
   end

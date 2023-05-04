@@ -52,7 +52,8 @@ defmodule Indexer.Fetcher do
           end
 
           def disabled? do
-            Application.get_env(:indexer, __MODULE__, [])[:disabled?] == true
+            Application.get_env(:indexer, Indexer.Supervisor, [])[:enabled] == false or
+              Application.get_env(:indexer, __MODULE__, [])[:disabled?] == true
           end
 
           @impl Supervisor
