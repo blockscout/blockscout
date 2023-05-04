@@ -554,6 +554,7 @@ ifdef INDEXER_REALTIME_FETCHER_MAX_GAP
 endif
 ifdef INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE
     BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE=$(INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE)'
+endif
 ifdef INDEXER_DISABLE_WITHDRAWALS_FETCHER
     BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_DISABLE_WITHDRAWALS_FETCHER=$(INDEXER_DISABLE_WITHDRAWALS_FETCHER)'
 endif
@@ -718,8 +719,8 @@ migrate_only:
 migrate: build postgres
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 
-PG_EXIST := $(shell docker ps -a --no-trunc --filter name=^/${PG_CONTAINER_NAME}$ | grep ${PG_CONTAINER_NAME})
-PG_STARTED := $(shell docker ps --no-trunc --filter name=^/${PG_CONTAINER_NAME}$ | grep ${PG_CONTAINER_NAME})
+PG_EXIST := $(shell docker ps -a --no-trunc --filter name=^/${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
+PG_STARTED := $(shell docker ps --no-trunc --filter name=^/${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
 
 postgres:
 ifdef DATABASE_URL
@@ -756,7 +757,7 @@ start: build postgres
 					-p 4000:4000 \
 					$(BS_CONTAINER_IMAGE) /bin/sh -c "./bin/blockscout start"
 
-BS_STARTED := $(shell docker ps --no-trunc --filter name=^/${BS_CONTAINER_NAME}$)
+BS_STARTED := $(shell docker ps --no-trunc --filter name=^/${BS_CONTAINER_NAME})
 stop:
 ifdef BS_STARTED
 	@echo "==> Stopping BlockScout container."
