@@ -1,13 +1,14 @@
-name: Publish Docker image on every push to master branch
+name: Build and Push Docker Image
 
 on:
   push:
     branches:
-      - master
+      - xfers
+  pull_request:
+
 env:
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
-  NEXT_RELEASE_VERSION: 5.0.0
 
 jobs:
   push_to_registry:
@@ -36,26 +37,39 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: blockscout/blockscout
+          images: ${{ secrets.DOCKER_USERNAME }}/blockscout
 
-      - name: Add SHORT_SHA env property with commit short sha
-        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+      - name: Add Pull Request SHORT_SHA
+        if: github.event_name == 'pull_request'
+        run: echo "SHORT_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-7`" >> $GITHUB_ENV
 
-      - name: Add outputs
+      - name: Add Push SHORT_SHA
+        if: github.event_name == 'push'
+        run: echo "SHORT_SHA=`echo ${{ github.sha }} | cut -c1-7`" >> $GITHUB_ENV
+
+      - name: Set Sha Tag
+        id: set-sha-tags
+        shell: bash
         run: |
-          echo "::set-output name=release-version::${{ env.NEXT_RELEASE_VERSION }}"
-          echo "::set-output name=short-sha::${{ env.SHORT_SHA }}"
-        id: output-step
+          echo "TAGS=${{ secrets.DOCKER_USERNAME }}/blockscout:${{ env.SHORT_SHA }}" >> $GITHUB_ENV
+
+      - name: Set Latest Tag
+        id: set-latest-tags
+        if: github.ref == 'refs/heads/xfers'
+        shell: bash
+        run: |
+          echo "TAGS=${{ env.TAGS }},${{ secrets.DOCKER_USERNAME }}/blockscout:latest" >> $GITHUB_ENV
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
           context: .
-          file: ./docker/Dockerfile
+          file: ./Dockerfile
+          pull: true
           push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.NEXT_RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/blockscout:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/blockscout:buildcache,mode=max
+          tags: ${{ env.TAGS }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
@@ -70,11 +84,7 @@ jobs:
             DISABLE_BRIDGE_MARKET_CAP_UPDATER=false
             CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL=
             SOCKET_ROOT=
-  tests:
-    needs: push_to_registry
-    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_k8s.yaml@master
-    with:
-      blockscout_image: blockscout/blockscout:${{ needs.push_to_registry.outputs.release-version }}-prerelease-${{ needs.push_to_registry.outputs.short-sha }}
-      environment: 'test'
-      verification_image: 'ghcr.io/blockscout/verification:latest'
-    secrets: inherit
+            CHAIN_ID=
+            JSON_RPC=
+            COIN_NAME=
+            SUBNETWORK=
