@@ -10,6 +10,8 @@
 ### Fixes
 - [#7391](https://github.com/blockscout/blockscout/pull/7391) - Fix: cannot read properties of null (reading 'value')
 
+- [#7377](https://github.com/blockscout/blockscout/pull/7377) - API v2 improvements
+
 ### Chore
 
 - [#7349](https://github.com/blockscout/blockscout/pull/7349) - Proxy pattern with getImplementation()

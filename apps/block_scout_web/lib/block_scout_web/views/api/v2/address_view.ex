@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   end
 
   def render("tokens.json", %{tokens: tokens, next_page_params: next_page_params}) do
-    %{"items" => Enum.map(tokens, &prepare_token_balance/1), "next_page_params" => next_page_params}
+    %{"items" => Enum.map(tokens, &prepare_token_balance(&1, true)), "next_page_params" => next_page_params}
   end
 
   def render("addresses.json", %{
@@ -111,11 +111,20 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     })
   end
 
-  def prepare_token_balance({token_balance, token}) do
+  def prepare_token_balance({token_balance, token}, fetch_token_instance? \\ false) do
     %{
       "value" => token_balance.value,
       "token" => TokenView.render("token.json", %{token: token}),
-      "token_id" => token_balance.token_id
+      "token_id" => token_balance.token_id,
+      "token_instance" =>
+        if(fetch_token_instance? && token_balance.token_id,
+          do:
+            fetch_and_render_token_instance(
+              token_balance.token_id,
+              token,
+              token_balance.address_hash
+            )
+        )
     }
   end
 
@@ -144,5 +153,20 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       _ ->
         nil
     end
+  end
+
+  def fetch_and_render_token_instance(token_id, token, address_hash) do
+    token_instance =
+      case Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(
+             token_id,
+             token.contract_address_hash,
+             @api_true
+           ) do
+        # `%{hash: address_hash}` will match with `address_with_info(_, address_hash)` clause in `BlockScoutWeb.API.V2.Helper`
+        {:ok, token_instance} -> %{token_instance | owner: %{hash: address_hash}}
+        {:error, :not_found} -> %{token_id: token_id, metadata: nil, owner: %{hash: address_hash}}
+      end
+
+    TokenView.render("token_instance.json", %{token_instance: token_instance, token: token})
   end
 end
