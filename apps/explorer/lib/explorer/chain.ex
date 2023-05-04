@@ -2841,6 +2841,32 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(query, initial, reducer)
   end
 
+  @doc """
+  Returns a stream of all transactions with unfetched internal transactions, using
+  the `pending_block_operation` table.
+
+      iex> unfetched_block = insert(:block)
+      iex> insert(:pending_block_operation, block: unfetched_block, block_number: unfetched_block.number)
+      iex> unfetched_transaction = insert(:transaction) |> with_block(unfetched_block)
+      iex> {:ok, transaction_params_set} = Explorer.Chain.stream_transactions_with_unfetched_internal_transactions(
+      ...>   MapSet.new(),
+      ...>   fn transaction_params, acc ->
+      ...>     MapSet.put(acc, transaction_params)
+      ...>   end
+      ...> )
+      iex> %{
+      ...>   block_number: unfetched_transaction.block_number,
+      ...>   hash: unfetched_transaction.hash,
+      ...>   index: unfetched_transaction.index
+      ...> } in transaction_params_set
+      true
+
+  """
+  @spec stream_transactions_with_unfetched_internal_transactions(
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
   def stream_transactions_with_unfetched_internal_transactions(initial, reducer) when is_function(reducer, 2) do
     query =
       from(
