@@ -1,13 +1,14 @@
-name: Publish Docker image on every push to master branch
+name: Build and Push Docker Image
 
 on:
   push:
     branches:
-      - master
+      - xfers
+  pull_request:
+
 env:
-  OTP_VERSION: '25.2.1'
-  ELIXIR_VERSION: '1.14.3'
-  RELEASE_VERSION: 5.1.4
+  OTP_VERSION: '24.3.4.1'
+  ELIXIR_VERSION: '1.13.4'
 
 jobs:
   push_to_registry:
@@ -36,68 +37,54 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: blockscout/blockscout
+          images: ${{ secrets.DOCKER_USERNAME }}/blockscout
 
-      - name: Add SHORT_SHA env property with commit short sha
-        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+      - name: Add Pull Request SHORT_SHA
+        if: github.event_name == 'pull_request'
+        run: echo "SHORT_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-7`" >> $GITHUB_ENV
 
-      - name: Add outputs
+      - name: Add Push SHORT_SHA
+        if: github.event_name == 'push'
+        run: echo "SHORT_SHA=`echo ${{ github.sha }} | cut -c1-7`" >> $GITHUB_ENV
+
+      - name: Set Sha Tag
+        id: set-sha-tags
+        shell: bash
         run: |
-          echo "::set-output name=release-version::${{ env.NEXT_RELEASE_VERSION }}"
-          echo "::set-output name=short-sha::${{ env.SHORT_SHA }}"
-        id: output-step
+          echo "TAGS=${{ secrets.DOCKER_USERNAME }}/blockscout:${{ env.SHORT_SHA }}" >> $GITHUB_ENV
+
+      - name: Set Latest Tag
+        id: set-latest-tags
+        if: github.ref == 'refs/heads/xfers'
+        shell: bash
+        run: |
+          echo "TAGS=${{ env.TAGS }},${{ secrets.DOCKER_USERNAME }}/blockscout:latest" >> $GITHUB_ENV
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
           context: .
-          file: ./docker/Dockerfile
+          file: ./Dockerfile
+          pull: true
           push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:master, blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/blockscout:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/blockscout:buildcache,mode=max
+          tags: ${{ env.TAGS }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
+            DISABLE_READ_API=false
+            API_PATH=
+            NETWORK_PATH=
             DISABLE_WEBAPP=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
-            DECODE_NOT_A_CONTRACT_CALLS=false
-            MIXPANEL_URL=
-            MIXPANEL_TOKEN=
-            AMPLITUDE_URL=
-            AMPLITUDE_API_KEY=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-
-      - name: Build and push Docker image for frontend
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          tags: blockscout/blockscout:frontend-main
-          build-args: |
-            CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
-            DISABLE_WEBAPP=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            DISABLE_WRITE_API=false
+            CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER=
+            WOBSERVER_ENABLED=false
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            SESSION_COOKIE_DOMAIN=${{ secrets.FRONTEND_MAIN }}
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-  tests:
-    needs: push_to_registry
-    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_new.yaml@master
-    with:
-      blockscoutImage: blockscout/blockscout:${{ needs.push_to_registry.outputs.release-version }}-prerelease-${{ needs.push_to_registry.outputs.short-sha }}
-      blockscoutIngressHost: e2e-blockscout-$GITHUB_SHA_SHORT
-      frontendIngressHost: e2e-blockscout-$GITHUB_SHA_SHORT
-      gethIngressHost: e2e-geth-$GITHUB_SHA_SHORT
-      scVerifierIngressHost: e2e-sc-verifier-$GITHUB_SHA_SHORT
-    secrets: inherit
+            DISABLE_BRIDGE_MARKET_CAP_UPDATER=false
+            CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL=
+            SOCKET_ROOT=
+            CHAIN_ID=
+            JSON_RPC=
+            COIN_NAME=
+            SUBNETWORK=
