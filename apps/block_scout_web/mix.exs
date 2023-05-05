@@ -131,7 +131,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:ex_json_schema, "~> 0.9.1"},
       {:ueberauth, "~> 0.7"},
       {:ueberauth_auth0, "~> 2.0"},
-      {:bureaucrat, "~> 0.2.9", only: :test}
+      {:bureaucrat, "~> 0.2.9", only: :test},
+      {:scout_apm, "~> 0.4.1"}
     ]
   end
 

@@ -49,7 +49,8 @@ defmodule Explorer.Mixfile do
       :logger,
       :mix,
       :runtime_tools,
-      :tesla
+      :tesla,
+      :scout_apm
     ]
 
   # Specifies your project dependencies.

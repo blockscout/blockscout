@@ -13,6 +13,13 @@ end
 
 config :phoenix, :json_library, Jason
 
+config :scout_apm,
+  dev_trace: true
+
+config :phoenix, :template_engines,
+  eex: ScoutApm.Instruments.EExEngine,
+  exs: ScoutApm.Instruments.ExsEngine
+
 config :logger,
   backends: [
     # all applications and all levels

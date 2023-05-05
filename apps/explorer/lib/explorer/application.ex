@@ -77,6 +77,10 @@ defmodule Explorer.Application do
 
     opts = [strategy: :one_for_one, name: Explorer.Supervisor, max_restarts: 1_000]
 
+    :ok = ScoutApm.Instruments.EctoTelemetry.attach(Explorer.Repo)
+    :ok = ScoutApm.Instruments.EctoTelemetry.attach(Explorer.Repo.Replica1)
+    :ok = ScoutApm.Instruments.EctoTelemetry.attach(Explorer.Repo.Account)
+
     Supervisor.start_link(children, opts)
   end
 

@@ -21,6 +21,7 @@ defmodule BlockScoutWeb do
   def controller do
     quote do
       use Phoenix.Controller, namespace: BlockScoutWeb
+      use ScoutApm.Instrumentation
 
       import BlockScoutWeb.Controller
       import BlockScoutWeb.Router.Helpers
