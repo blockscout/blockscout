@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#7416](https://github.com/blockscout/blockscout/pull/7416) - Add option to disable reCAPTCHA
 - [#6694](https://github.com/blockscout/blockscout/pull/6694) - Add withdrawals support (EIP-4895)
 - [#7355](https://github.com/blockscout/blockscout/pull/7355) - Add endpoint for token info import
 - [#7393](https://github.com/blockscout/blockscout/pull/7393) - Realtime fetcher max gap
