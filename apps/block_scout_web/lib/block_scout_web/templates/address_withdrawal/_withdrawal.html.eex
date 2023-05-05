@@ -1,0 +1,25 @@
+<tr data-identifier-hash="<%= @withdrawal.index %>">
+  <!-- Index -->
+  <td class="stakes-td">
+    <span><%= @withdrawal.index %></span>
+  </td>
+  <!-- Validator Index -->
+  <td class="stakes-td">
+    <span><%= @withdrawal.validator_index %></span>
+  </td>
+  <!-- Block -->
+  <td class="stakes-td">
+    <%= render BlockScoutWeb.BlockView,
+        "_number_link.html",
+        block: @withdrawal.block
+    %>
+  </td>
+  <!-- Age -->
+  <td class="stakes-td">
+    <span data-from-now="<%= @withdrawal.block.timestamp %>"></span>
+  </td>
+  <!-- Amount -->
+  <td class="stakes-td">
+    <span><%= format_wei_value(@withdrawal.amount, :ether) %></span>
+  </td>
+</tr>

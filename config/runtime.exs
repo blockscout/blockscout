@@ -463,6 +463,9 @@ config :indexer, Indexer.Fetcher.TokenInstance.Sanitize.Supervisor,
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE", 100)
 
+config :indexer, Indexer.Block.Realtime.Fetcher,
+  max_gap: ConfigHelper.parse_integer_env_var("INDEXER_REALTIME_FETCHER_MAX_GAP", 1000)
+
 config :indexer, Indexer.Block.Catchup.MissingRangesCollector,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_CATCHUP_MISSING_RANGES_BATCH_SIZE", 100_000)
 
@@ -491,6 +494,11 @@ config :indexer, Indexer.Fetcher.InternalTransaction,
 config :indexer, Indexer.Fetcher.CoinBalance,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_BATCH_SIZE", 500),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_CONCURRENCY", 4)
+
+config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
+  disabled?: System.get_env("INDEXER_DISABLE_WITHDRAWALS_FETCHER", "true") == "true"
+
+config :indexer, Indexer.Fetcher.Withdrawal, first_block: System.get_env("WITHDRAWALS_FIRST_BLOCK")
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 

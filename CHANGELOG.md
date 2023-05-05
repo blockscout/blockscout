@@ -4,12 +4,19 @@
 
 ### Features
 
+- [#6694](https://github.com/blockscout/blockscout/pull/6694) - Add withdrawals support (EIP-4895)
 - [#7355](https://github.com/blockscout/blockscout/pull/7355) - Add endpoint for token info import
+- [#7393](https://github.com/blockscout/blockscout/pull/7393) - Realtime fetcher max gap
 
 ### Fixes
+- [#7391](https://github.com/blockscout/blockscout/pull/7391) - Fix: cannot read properties of null (reading 'value')
+
+- [#7377](https://github.com/blockscout/blockscout/pull/7377) - API v2 improvements
 
 ### Chore
 
+- [#7417](https://github.com/blockscout/blockscout/pull/7417) - Docker compose for frontend
+- [#7349](https://github.com/blockscout/blockscout/pull/7349) - Proxy pattern with getImplementation()
 - [#7360](https://github.com/blockscout/blockscout/pull/7360) - Manage visibility of indexing progress alert
 
 ## 5.1.4-beta

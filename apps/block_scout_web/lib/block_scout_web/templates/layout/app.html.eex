@@ -103,6 +103,7 @@
       @view_module != Elixir.BlockScoutWeb.ChainView &&
       @view_module != Elixir.BlockScoutWeb.BlockView &&
       @view_module != Elixir.BlockScoutWeb.BlockTransactionView &&
+      @view_module != Elixir.BlockScoutWeb.BlockWithdrawalView &&
       @view_module != Elixir.BlockScoutWeb.AddressView &&
       @view_module != Elixir.BlockScoutWeb.TokensView &&
       @view_module != Elixir.BlockScoutWeb.TransactionView &&
@@ -115,6 +116,7 @@
       @view_module != Elixir.BlockScoutWeb.AddressTransactionView &&
       @view_module != Elixir.BlockScoutWeb.AddressTokenTransferView &&
       @view_module != Elixir.BlockScoutWeb.AddressTokenView &&
+      @view_module != Elixir.BlockScoutWeb.AddressWithdrawalView &&
       @view_module != Elixir.BlockScoutWeb.AddressInternalTransactionView &&
       @view_module != Elixir.BlockScoutWeb.AddressCoinBalanceView &&
       @view_module != Elixir.BlockScoutWeb.AddressLogsView &&
@@ -142,7 +144,8 @@
       @view_module != Elixir.BlockScoutWeb.SearchView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView &&
-      @view_module != Elixir.BlockScoutWeb.StakesView
+      @view_module != Elixir.BlockScoutWeb.StakesView &&
+      @view_module != Elixir.BlockScoutWeb.WithdrawalView
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>
