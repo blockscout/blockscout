@@ -211,7 +211,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
       {:error, :not_found} ->
         not_found(conn)
 
-      {:recaptcha, false} ->
+      false ->
         not_found(conn)
     end
   end
