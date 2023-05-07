@@ -256,69 +256,18 @@ defmodule BlockScoutWeb.AddressTransactionController do
   defp items_csv(conn, _, _), do: not_found(conn)
 
   def token_transfers_csv(conn, params) do
-    items_csv(
-      conn,
-      %{
-        "address_id" => params["address_id"],
-        "from_period" => params["from_period"],
-        "to_period" => params["to_period"],
-        "recaptcha_response" => params["recaptcha_response"]
-      },
-      AddressTokenTransferCsvExporter
-    )
-  end
-  
-  def transactions_csv(conn, %{
-        "address_id" => address_hash_string,
-        "from_period" => from_period,
-        "to_period" => to_period,
-        "recaptcha_response" => recaptcha_response
-      }) do
-    items_csv(
-      conn,
-      %{
-        "address_id" => address_hash_string,
-        "from_period" => from_period,
-        "to_period" => to_period,
-        "recaptcha_response" => recaptcha_response
-      },
-      AddressTransactionCsvExporter
-    )
+    items_csv(conn, params, AddressTokenTransferCsvExporter)
   end
 
-  def internal_transactions_csv(conn, %{
-        "address_id" => address_hash_string,
-        "from_period" => from_period,
-        "to_period" => to_period,
-        "recaptcha_response" => recaptcha_response
-      }) do
-    items_csv(
-      conn,
-      %{
-        "address_id" => address_hash_string,
-        "from_period" => from_period,
-        "to_period" => to_period,
-        "recaptcha_response" => recaptcha_response
-      },
-      AddressInternalTransactionCsvExporter
-    )
+  def transactions_csv(conn, params) do
+    items_csv(conn, params, AddressTransactionCsvExporter)
   end
 
-  def logs_csv(conn, %{
-        "address_id" => address_hash_string,
-        "from_period" => from_period,
-        "to_period" => to_period,
-        "recaptcha_response" => recaptcha_response
-      }) do
-    items_csv(
-      conn,
-      %{
-        "address_id" => address_hash_string,
-        "from_period" => from_period,
-        "to_period" => to_period,
-        "recaptcha_response" => recaptcha_response
-      },
-      AddressLogCsvExporter
-    )
+  def internal_transactions_csv(conn, params) do
+    items_csv(conn, params, AddressInternalTransactionCsvExporter)
+  end
+
+  def logs_csv(conn, params) do
+    items_csv(conn, params, AddressLogCsvExporter)
   end
 end
