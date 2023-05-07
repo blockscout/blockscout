@@ -94,6 +94,8 @@ defmodule Explorer.Chain.Address.TokenBalance do
   @doc """
   Builds an `Ecto.Query` to fetch the token balance of the given token contract hash of the given address in the given block.
   """
+  def fetch_token_balance(address_hash, token_contract_address_hash, block_number, token_id \\ nil)
+
   def fetch_token_balance(address_hash, token_contract_address_hash, block_number, nil) do
     from(
       tb in TokenBalance,

@@ -3,10 +3,21 @@ defmodule Explorer.Chain.Transaction.StateChange do
     Helper functions and struct for storing state changes
   """
 
+  alias Explorer.Chain
+  alias Explorer.Chain.{Hash, TokenTransfer, Wei}
+  alias Explorer.Chain.Transaction.StateChange
+
   defstruct [:coin_or_token_transfers, :address, :token_id, :balance_before, :balance_after, :balance_diff, :miner?]
 
-  alias Explorer.Chain.Transaction.StateChange
-  alias Explorer.{Chain, Chain.Wei}
+  @type t :: %__MODULE__{
+          coin_or_token_transfers: :coin | [TokenTransfer.t()],
+          address: Hash.Address.t(),
+          token_id: nil | non_neg_integer(),
+          balance_before: Wei.t() | Decimal.t(),
+          balance_after: Wei.t() | Decimal.t(),
+          balance_diff: Wei.t() | Decimal.t(),
+          miner?: boolean()
+        }
 
   def coin_balances_before(tx, block_txs, from_before, to_before, miner_before) do
     block = tx.block
@@ -101,8 +112,14 @@ defmodule Explorer.Chain.Transaction.StateChange do
   end
 
   # point of this function is to include all transfers for frontend if option :include_transfer is passed
-  defp do_update_balance(old_val, type, transfer, include_transfers) do
-    # HANDLE %{ID, VAL} INSTEAD OF OLD VAL
+  defp do_update_balance(old_val, type, transfer, :include_transfers) do
+    old_val_with_transfer =
+      Map.update(old_val, :transfers, [{type, transfer}], fn transfers -> [{type, transfer} | transfers] end)
+
+    do_update_balance(old_val_with_transfer, type, transfer, :no)
+  end
+
+  defp do_update_balance(old_val, type, transfer, _) do
     token_ids = if transfer.token.type == "ERC-1155", do: transfer.token_ids || [transfer.token_id], else: [nil]
     transfer_amounts = transfer.amounts || [transfer.amount || 1]
 
@@ -112,16 +129,9 @@ defmodule Explorer.Chain.Transaction.StateChange do
         :to -> &Decimal.add/2
       end
 
-    old_val_with_transfer =
-      if include_transfers == :include_transfers do
-        Map.update(old_val, :transfers, [{type, transfer}], fn transfers -> [{type, transfer} | transfers] end)
-      else
-        old_val
-      end
-
     token_ids
     |> Stream.zip(transfer_amounts)
-    |> Enum.reduce(old_val_with_transfer, fn {id, amount}, ids_to_balances ->
+    |> Enum.reduce(old_val, fn {id, amount}, ids_to_balances ->
       case ids_to_balances do
         %{^id => val} -> %{ids_to_balances | id => sub_or_add.(val, amount)}
         _ -> ids_to_balances
@@ -227,8 +237,6 @@ defmodule Explorer.Chain.Transaction.StateChange do
         balance_diff: diff,
         miner?: miner?
       }
-    else
-      nil
     end
   end
 

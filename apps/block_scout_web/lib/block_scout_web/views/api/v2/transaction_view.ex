@@ -109,8 +109,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  def render("state_changes.json", %{state_changes: state_changes}) do
-    Enum.map(state_changes, &prepare_state_change(&1))
+  def render("state_changes.json", %{state_changes: state_changes, next_page_params: next_page_params}) do
+    %{
+      "items" => Enum.map(state_changes, &prepare_state_change(&1)),
+      "next_page_params" => next_page_params
+    }
   end
 
   def prepare_token_transfer(token_transfer, _conn) do

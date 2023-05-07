@@ -987,9 +987,10 @@ defmodule Explorer.Chain do
       `:key` (a tuple of the lowest/oldest `{index}`) and. Results will be the transactions older than
       the `index` that are passed.
   """
-  @spec block_to_transactions(Hash.Full.t(), [paging_options | necessity_by_association_option], true | false) :: [
-          Transaction.t()
-        ]
+  @spec block_to_transactions(Hash.Full.t(), [paging_options | necessity_by_association_option | api?()], true | false) ::
+          [
+            Transaction.t()
+          ]
   def block_to_transactions(block_hash, options \\ [], old_ui? \\ true) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -3841,7 +3842,7 @@ defmodule Explorer.Chain do
       the `index` that are passed.
 
   """
-  @spec transaction_to_token_transfers(Hash.Full.t(), [paging_options | necessity_by_association_option]) :: [
+  @spec transaction_to_token_transfers(Hash.Full.t(), [paging_options | necessity_by_association_option | api?()]) :: [
           TokenTransfer.t()
         ]
   def transaction_to_token_transfers(transaction_hash, options \\ []) when is_list(options) do
@@ -5530,16 +5531,16 @@ defmodule Explorer.Chain do
     %{balance | block_timestamp: formatted_date}
   end
 
-  def get_token_balance(address_hash, token_contract_address_hash, block_number, token_id \\ nil) do
+  def get_token_balance(address_hash, token_contract_address_hash, block_number, token_id \\ nil, options \\ []) do
     query = TokenBalance.fetch_token_balance(address_hash, token_contract_address_hash, block_number, token_id)
 
-    Repo.one(query)
+    select_repo(options).one(query)
   end
 
-  def get_coin_balance(address_hash, block_number) do
+  def get_coin_balance(address_hash, block_number, options \\ []) do
     query = CoinBalance.fetch_coin_balance(address_hash, block_number)
 
-    Repo.one(query)
+    select_repo(options).one(query)
   end
 
   @spec address_to_balances_by_day(Hash.Address.t(), [api?]) :: [balance_by_day]

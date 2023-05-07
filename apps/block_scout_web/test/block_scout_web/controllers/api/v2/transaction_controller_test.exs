@@ -924,7 +924,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
 
       assert response = json_response(request, 200)
-      assert Enum.count(response) == 3
+      assert Enum.count(response["items"]) == 3
     end
   end
 
