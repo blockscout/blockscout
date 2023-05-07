@@ -267,23 +267,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
       AddressTokenTransferCsvExporter
     )
   end
-
-  def transactions_csv(conn, %{
-        "address_id" => address_hash_string,
-        "from_period" => from_period,
-        "to_period" => to_period
-      }) do
-    items_csv(
-      conn,
-      %{
-        "address_id" => address_hash_string,
-        "from_period" => from_period,
-        "to_period" => to_period
-      },
-      AddressTransactionCsvExporter
-    )
-  end
-
+  
   def transactions_csv(conn, %{
         "address_id" => address_hash_string,
         "from_period" => from_period,
