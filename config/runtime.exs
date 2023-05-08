@@ -613,6 +613,9 @@ config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit,
   start_block_l1: System.get_env("INDEXER_POLYGON_EDGE_L1_WITHDRAWALS_START_BLOCK"),
   exit_helper: System.get_env("INDEXER_POLYGON_EDGE_L1_EXIT_HELPER_CONTRACT")
 
+config :indexer, Indexer.Fetcher.ZkevmTxnBatch.Supervisor,
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_ZKEVM_BATCHES_ENABLED")
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do

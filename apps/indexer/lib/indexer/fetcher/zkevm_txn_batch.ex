@@ -38,9 +38,6 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
     Logger.metadata(fetcher: :zkevm_txn_batches)
     # Logger.configure(truncate: :infinity)
 
-    # todo
-    # enabled = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkevmTxnBatch][:enabled]
-
     Process.send(self(), :continue, [])
 
     {:ok,
@@ -62,10 +59,12 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
           prev_verified_batch_number: prev_verified_batch_number
         } = state
       ) do
-    {latest_batch_number, virtual_batch_number, verified_batch_number} = fetch_latest_batch_numbers(json_rpc_named_arguments)
+    {latest_batch_number, virtual_batch_number, verified_batch_number} =
+      fetch_latest_batch_numbers(json_rpc_named_arguments)
 
-    {new_state, handle_duration} = 
-      if latest_batch_number > prev_latest_batch_number or virtual_batch_number > prev_virtual_batch_number or verified_batch_number > prev_verified_batch_number do
+    {new_state, handle_duration} =
+      if latest_batch_number > prev_latest_batch_number or virtual_batch_number > prev_virtual_batch_number or
+           verified_batch_number > prev_verified_batch_number do
         start_batch_number = get_last_verified_batch_number() + 1
         end_batch_number = latest_batch_number
 
@@ -78,24 +77,32 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
 
         log_message =
           if virtual_batch_number > prev_virtual_batch_number do
-            log_message <> "Found a new virtual batch number #{virtual_batch_number}. Previous virtual batch number is #{prev_virtual_batch_number}. "
+            log_message <>
+              "Found a new virtual batch number #{virtual_batch_number}. Previous virtual batch number is #{prev_virtual_batch_number}. "
           else
             log_message
           end
 
         log_message =
           if verified_batch_number > prev_verified_batch_number do
-            log_message <> "Found a new verified batch number #{verified_batch_number}. Previous verified batch number is #{prev_verified_batch_number}. "
+            log_message <>
+              "Found a new verified batch number #{verified_batch_number}. Previous verified batch number is #{prev_verified_batch_number}. "
           else
             log_message
           end
 
         Logger.info(log_message <> "Handling the batch range #{start_batch_number}..#{end_batch_number}.")
 
-        {handle_duration, _} = :timer.tc(fn -> handle_batch_range(start_batch_number, end_batch_number, json_rpc_named_arguments) end)
+        {handle_duration, _} =
+          :timer.tc(fn -> handle_batch_range(start_batch_number, end_batch_number, json_rpc_named_arguments) end)
 
         {
-          %{state | prev_latest_batch_number: latest_batch_number, prev_virtual_batch_number: virtual_batch_number, prev_verified_batch_number: verified_batch_number},
+          %{
+            state
+            | prev_latest_batch_number: latest_batch_number,
+              prev_virtual_batch_number: virtual_batch_number,
+              prev_verified_batch_number: verified_batch_number
+          },
           div(handle_duration, 1000)
         }
       else
@@ -319,9 +326,14 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
 
     {:ok, responses} = repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, 3)
 
-    latest_batch_number = Enum.find_value(responses, fn resp -> if resp.id == 0, do: quantity_to_integer(resp.result) end)
-    virtual_batch_number = Enum.find_value(responses, fn resp -> if resp.id == 1, do: quantity_to_integer(resp.result) end)
-    verified_batch_number = Enum.find_value(responses, fn resp -> if resp.id == 2, do: quantity_to_integer(resp.result) end)
+    latest_batch_number =
+      Enum.find_value(responses, fn resp -> if resp.id == 0, do: quantity_to_integer(resp.result) end)
+
+    virtual_batch_number =
+      Enum.find_value(responses, fn resp -> if resp.id == 1, do: quantity_to_integer(resp.result) end)
+
+    verified_batch_number =
+      Enum.find_value(responses, fn resp -> if resp.id == 2, do: quantity_to_integer(resp.result) end)
 
     {latest_batch_number, virtual_batch_number, verified_batch_number}
   end
