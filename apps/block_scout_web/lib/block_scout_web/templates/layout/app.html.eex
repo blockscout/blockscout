@@ -66,6 +66,7 @@
       <input id="js-coin-name" class="d-none" value="<%= Application.get_env(:explorer, :coin_name) %>" />
       <input id="js-re-captcha-client-key" class="d-none" value="<%= Application.get_env(:block_scout_web, :recaptcha)[:v2_client_key] %>" />
       <input id="js-re-captcha-v3-client-key" class="d-none" value="<%= Application.get_env(:block_scout_web, :recaptcha)[:v3_client_key] %>" />
+      <input id="js-re-captcha-disabled" class="d-none" value="<%= Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] %>" />
       <input id="js-network-path" class="d-none" value="<%= Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path] %>" />
       <!-- -->
       <% show_maintenance_alert = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:show_maintenance_alert] %>
