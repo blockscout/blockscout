@@ -265,7 +265,10 @@ jobs:
       - name: Run cspell
         uses: streetsidesoftware/cspell-action@v2
         with:
-          files: "**/*.ex* **/*.eex **/*.js"
+          files: |
+            **/*.ex*
+            **/*.eex
+            **/*.js"
 
   eslint:
     name: ESLint
