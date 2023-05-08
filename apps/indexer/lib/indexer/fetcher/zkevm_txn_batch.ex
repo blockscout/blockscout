@@ -16,7 +16,7 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
   alias Explorer.Chain.{ZkevmLifecycleTxn, ZkevmTxnBatch}
 
   @batch_range_size 20
-  @recheck_latest_batch_interval 1
+  @recheck_latest_batch_interval 60
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -36,9 +36,9 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
   @impl GenServer
   def init(args) do
     Logger.metadata(fetcher: :zkevm_txn_batches)
-
     # Logger.configure(truncate: :infinity)
 
+    # todo
     # enabled = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkevmTxnBatch][:enabled]
 
     Process.send(self(), :continue, [])
@@ -46,7 +46,9 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
     {:ok,
      %{
        json_rpc_named_arguments: args[:json_rpc_named_arguments],
-       prev_latest_batch_number: 0
+       prev_latest_batch_number: 0,
+       prev_virtual_batch_number: 0,
+       prev_verified_batch_number: 0
      }}
   end
 
@@ -55,24 +57,54 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
         :continue,
         %{
           json_rpc_named_arguments: json_rpc_named_arguments,
-          prev_latest_batch_number: prev_latest_batch_number
+          prev_latest_batch_number: prev_latest_batch_number,
+          prev_virtual_batch_number: prev_virtual_batch_number,
+          prev_verified_batch_number: prev_verified_batch_number
         } = state
       ) do
-    latest_batch_number = fetch_latest_batch_number(json_rpc_named_arguments)
+    {latest_batch_number, virtual_batch_number, verified_batch_number} = fetch_latest_batch_numbers(json_rpc_named_arguments)
 
-    if latest_batch_number > prev_latest_batch_number do
-      start_batch_number = get_last_verified_batch_number() + 1
-      end_batch_number = latest_batch_number
+    {new_state, handle_duration} = 
+      if latest_batch_number > prev_latest_batch_number or virtual_batch_number > prev_virtual_batch_number or verified_batch_number > prev_verified_batch_number do
+        start_batch_number = get_last_verified_batch_number() + 1
+        end_batch_number = latest_batch_number
 
-      handle_batch_range(start_batch_number, end_batch_number, json_rpc_named_arguments)
+        log_message =
+          if latest_batch_number > prev_latest_batch_number do
+            "Found a new latest batch number #{latest_batch_number}. Previous batch number is #{prev_latest_batch_number}. "
+          else
+            ""
+          end
 
-      Process.send_after(self(), :continue, :timer.minutes(@recheck_latest_batch_interval))
+        log_message =
+          if virtual_batch_number > prev_virtual_batch_number do
+            log_message <> "Found a new virtual batch number #{virtual_batch_number}. Previous virtual batch number is #{prev_virtual_batch_number}. "
+          else
+            log_message
+          end
 
-      {:noreply, %{state | prev_latest_batch_number: latest_batch_number}}
-    else
-      Process.send_after(self(), :continue, :timer.minutes(@recheck_latest_batch_interval))
-      {:noreply, state}
-    end
+        log_message =
+          if verified_batch_number > prev_verified_batch_number do
+            log_message <> "Found a new verified batch number #{verified_batch_number}. Previous verified batch number is #{prev_verified_batch_number}. "
+          else
+            log_message
+          end
+
+        Logger.info(log_message <> "Handling the batch range #{start_batch_number}..#{end_batch_number}.")
+
+        {handle_duration, _} = :timer.tc(fn -> handle_batch_range(start_batch_number, end_batch_number, json_rpc_named_arguments) end)
+
+        {
+          %{state | prev_latest_batch_number: latest_batch_number, prev_virtual_batch_number: virtual_batch_number, prev_verified_batch_number: verified_batch_number},
+          div(handle_duration, 1000)
+        }
+      else
+        {state, 0}
+      end
+
+    Process.send_after(self(), :continue, :timer.seconds(@recheck_latest_batch_interval) - handle_duration)
+
+    {:noreply, new_state}
   end
 
   @impl GenServer
@@ -140,8 +172,6 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
       &"Cannot call zkevm_getBatchByNumber for the batch range #{batch_start}..#{batch_end}. Error: #{inspect(&1)}"
 
     {:ok, responses} = repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, 3)
-
-    # Logger.warn("Hashes for the batch range #{batch_start}..#{batch_end}:")
 
     {sequence_hashes, verify_hashes} =
       responses
@@ -278,14 +308,22 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
       })
   end
 
-  defp fetch_latest_batch_number(json_rpc_named_arguments) do
-    req = EthereumJSONRPC.request(%{id: 0, method: "zkevm_batchNumber", params: []})
+  defp fetch_latest_batch_numbers(json_rpc_named_arguments) do
+    requests = [
+      EthereumJSONRPC.request(%{id: 0, method: "zkevm_batchNumber", params: []}),
+      EthereumJSONRPC.request(%{id: 1, method: "zkevm_virtualBatchNumber", params: []}),
+      EthereumJSONRPC.request(%{id: 2, method: "zkevm_verifiedBatchNumber", params: []})
+    ]
 
     error_message = &"Cannot call zkevm_batchNumber. Error: #{inspect(&1)}"
 
-    {:ok, latest_batch_number} = repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, 3)
+    {:ok, responses} = repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, 3)
 
-    quantity_to_integer(latest_batch_number)
+    latest_batch_number = Enum.find_value(responses, fn resp -> if resp.id == 0, do: quantity_to_integer(resp.result) end)
+    virtual_batch_number = Enum.find_value(responses, fn resp -> if resp.id == 1, do: quantity_to_integer(resp.result) end)
+    verified_batch_number = Enum.find_value(responses, fn resp -> if resp.id == 2, do: quantity_to_integer(resp.result) end)
+
+    {latest_batch_number, virtual_batch_number, verified_batch_number}
   end
 
   defp repeated_call(func, args, error_message, retries_left) do
