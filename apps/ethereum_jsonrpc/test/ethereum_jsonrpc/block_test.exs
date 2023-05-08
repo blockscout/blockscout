@@ -6,7 +6,7 @@ defmodule EthereumJSONRPC.BlockTest do
   alias EthereumJSONRPC.Block
 
   describe "elixir_to_params/1" do
-    test "sets totalDifficuly to nil if it's empty" do
+    test "sets totalDifficulty to nil if it's empty" do
       result =
         Block.elixir_to_params(%{
           "difficulty" => 17_561_410_778,

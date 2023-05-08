@@ -61,7 +61,7 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
     create(
       constraint(
         :transactions,
-        :collated_cumalative_gas_used,
+        :collated_cumulative_gas_used,
         check: "block_hash IS NULL OR cumulative_gas_used IS NOT NULL"
       )
     )
@@ -160,7 +160,7 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
     create(
       constraint(
         :transactions,
-        :pending_cumalative_gas_used,
+        :pending_cumulative_gas_used,
         check: "block_hash IS NOT NULL OR cumulative_gas_used IS NULL"
       )
     )

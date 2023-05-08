@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.CreareWithdrawals do
+defmodule Explorer.Repo.Migrations.CreateWithdrawals do
   use Ecto.Migration
 
   def change do
