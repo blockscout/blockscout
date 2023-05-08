@@ -14,7 +14,8 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     do: [
       Runner.Transactions,
       Runner.Tokens,
-      Runner.TransactionActions
+      Runner.TransactionActions,
+      Runner.Withdrawals
     ]
 
   @transactions_chunk_size 50

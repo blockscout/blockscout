@@ -1,0 +1,1 @@
+<%= render BlockScoutWeb.BlockView, "_metatags.html", conn: @conn, block: @block %>

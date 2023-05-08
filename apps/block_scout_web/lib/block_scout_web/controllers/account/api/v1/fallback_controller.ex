@@ -87,4 +87,11 @@ defmodule BlockScoutWeb.Account.Api.V1.FallbackController do
     |> put_view(UserView)
     |> render(:message, %{message: "Wrong API key"})
   end
+
+  def call(conn, {:sensitive_endpoints_api_key, _}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(UserView)
+    |> render(:message, %{message: "API key not configured on the server"})
+  end
 end

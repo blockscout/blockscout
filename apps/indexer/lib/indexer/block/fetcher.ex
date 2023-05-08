@@ -130,6 +130,7 @@ defmodule Indexer.Block.Fetcher do
            %Blocks{
              blocks_params: blocks_params,
              transactions_params: transactions_params_without_receipts,
+             withdrawals_params: withdrawals_params,
              block_second_degree_relations_params: block_second_degree_relations_params,
              errors: blocks_errors
            }}} <- {:blocks, fetched_blocks},
@@ -161,7 +162,8 @@ defmodule Indexer.Block.Fetcher do
              mint_transfers: mint_transfers,
              token_transfers: token_transfers,
              transactions: transactions_with_receipts,
-             transaction_actions: transaction_actions
+             transaction_actions: transaction_actions,
+             withdrawals: withdrawals_params
            }),
          Logger.info("### BEFORE coin_balances_params_set CHANGESET ###"),
          coin_balances_params_set =
@@ -169,7 +171,8 @@ defmodule Indexer.Block.Fetcher do
              beneficiary_params: MapSet.to_list(beneficiary_params_set),
              blocks_params: blocks,
              logs_params: logs,
-             transactions_params: transactions_with_receipts
+             transactions_params: transactions_with_receipts,
+             withdrawals: withdrawals_params
            }
            |> AddressCoinBalances.params_set(),
          Logger.info("### BEFORE coin_balances_params_daily_set CHANGESET ###"),
@@ -201,7 +204,8 @@ defmodule Indexer.Block.Fetcher do
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts},
-               transaction_actions: %{params: transaction_actions}
+               transaction_actions: %{params: transaction_actions},
+               withdrawals: %{params: withdrawals_params}
              }
            ) do
       Logger.info(["### fetch_and_import_range FINALIZED ", inspect(range), " ###"])
@@ -211,6 +215,7 @@ defmodule Indexer.Block.Fetcher do
       update_transactions_cache(inserted[:transactions])
       update_addresses_cache(inserted[:addresses])
       update_uncles_cache(inserted[:block_second_degree_relations])
+      update_withdrawals_cache(inserted[:withdrawals])
       result
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
@@ -238,6 +243,15 @@ defmodule Indexer.Block.Fetcher do
 
   defp update_uncles_cache(updated_relations) do
     Uncles.update_from_second_degree_relations(updated_relations)
+  end
+
+  defp update_withdrawals_cache([_ | _] = withdrawals) do
+    %{index: index} = List.last(withdrawals)
+    Chain.upsert_count_withdrawals(index)
+  end
+
+  defp update_withdrawals_cache(_) do
+    :ok
   end
 
   def import(
