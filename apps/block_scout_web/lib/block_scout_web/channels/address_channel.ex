@@ -267,18 +267,23 @@ defmodule BlockScoutWeb.AddressChannel do
   end
 
   def handle_transaction(
-        %{address: _address, transaction: transaction},
+        %{transactions: transactions},
         %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket,
         event
-      ) do
-    transaction_json = TransactionViewAPI.render("transaction.json", %{transaction: transaction, conn: nil})
+      )
+      when is_list(transactions) do
+    transaction_json = TransactionViewAPI.render("transactions.json", %{transactions: transactions, conn: nil})
 
-    push(socket, event, %{transaction: transaction_json})
+    push(socket, event, %{transactions: transaction_json})
 
     {:noreply, socket}
   end
 
-  def handle_transaction(%{address: address, transaction: transaction}, socket, event) do
+  def handle_transaction(
+        %{address: address, transaction: transaction},
+        %Phoenix.Socket{handler: BlockScoutWeb.UserSocket} = socket,
+        event
+      ) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
     rendered =
@@ -298,6 +303,10 @@ defmodule BlockScoutWeb.AddressChannel do
       transaction_html: rendered
     })
 
+    {:noreply, socket}
+  end
+
+  def handle_transaction(_, socket, _event) do
     {:noreply, socket}
   end
 

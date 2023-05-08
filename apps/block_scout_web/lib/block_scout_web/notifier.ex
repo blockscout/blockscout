@@ -192,6 +192,7 @@ defmodule BlockScoutWeb.Notifier do
         [to_address: :names] => :optional
       }
     )
+    |> broadcast_transactions_websocket_v2()
     |> Enum.map(fn tx ->
       # Disable parsing of token transfers from websocket for transaction tab because we display token transfers at a separate tab
       Map.put(tx, :token_transfers, [])
@@ -372,6 +373,53 @@ defmodule BlockScoutWeb.Notifier do
         address: internal_transaction.to_address,
         internal_transaction: internal_transaction
       })
+    end
+  end
+
+  defp broadcast_transactions_websocket_v2(transactions) do
+    pending_transactions =
+      Enum.filter(transactions, fn
+        %Transaction{block_number: nil} -> true
+        _ -> false
+      end)
+
+    validated_transactions =
+      Enum.filter(transactions, fn
+        %Transaction{block_number: nil} -> false
+        _ -> true
+      end)
+
+    broadcast_transactions_websocket_v2_inner(
+      pending_transactions,
+      "transactions:new_pending_transaction",
+      "pending_transaction"
+    )
+
+    broadcast_transactions_websocket_v2_inner(validated_transactions, "transactions:new_transaction", "transaction")
+
+    transactions
+  end
+
+  defp broadcast_transactions_websocket_v2_inner(transactions, default_channel, event) do
+    if Enum.count(transactions) > 0 do
+      Endpoint.broadcast(default_channel, event, %{
+        transactions: transactions
+      })
+    end
+
+    transactions_grouped_by_from =
+      transactions
+      |> Enum.group_by(fn transaction -> transaction.from_address_hash end)
+
+    transactions_grouped_by_to =
+      transactions
+      |> Enum.group_by(fn transaction -> transaction.to_address_hash end)
+
+    grouped_transactions =
+      Map.merge(transactions_grouped_by_to, transactions_grouped_by_from, fn _k, v1, v2 -> Enum.uniq(v1 ++ v2) end)
+
+    for {address_hash, transactions} <- grouped_transactions do
+      Endpoint.broadcast("addresses:#{address_hash}", event, %{transactions: transactions})
     end
   end
 
