@@ -11,7 +11,6 @@ if (index <= 1) {
 
 $('.add-form-field').on('click', (event) => {
   event.preventDefault()
-  console.log(event)
   const $container = $('#' + event.currentTarget.dataset.container)
   // @ts-ignore
   const index = parseInt($container[0].dataset.index)

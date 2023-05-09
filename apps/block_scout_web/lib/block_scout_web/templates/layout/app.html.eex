@@ -96,6 +96,7 @@
       <input id="js-coin-name" class="d-none" value="<%= Application.get_env(:explorer, :coin_name) %>" />
       <input id="js-re-captcha-client-key" class="d-none" value="<%= Application.get_env(:block_scout_web, :recaptcha)[:v2_client_key] %>" />
       <input id="js-re-captcha-v3-client-key" class="d-none" value="<%= Application.get_env(:block_scout_web, :recaptcha)[:v3_client_key] %>" />
+      <input id="js-re-captcha-disabled" class="d-none" value="<%= Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] %>" />
       <input id="js-network-path" class="d-none" value="<%= Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path] %>" />
       <!-- -->
       <% show_maintenance_alert = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:show_maintenance_alert] %>
@@ -120,11 +121,15 @@
           </div>
         <% end %>
       <% end %>
-      <%= render BlockScoutWeb.LayoutView, "_topnav.html", current_user: Conn.get_session(@conn, :current_user), conn: @conn %>
-
-      <main class="js-ad-dependant-pt pt-5">
+      <% session = Explorer.Account.enabled?() && Plug.Conn.get_session(@conn, :current_user) %>
+      <%= render BlockScoutWeb.LayoutView, "_topnav.html", current_user: session, conn: @conn %>
+      <%= if session && !session[:email_verified] do %>
+        <p class="alert alert-warning" role="alert" style="margin-bottom: 0"><%= gettext("Please confirm your email address to use the My Account feature.") %> <%= gettext("A confirmation email was sent to") %> <a href="mailto:<%= session[:email] %>"><%=session[:email] %></a> <%= gettext "on sign up. Didn’t receive?" %> <a href="/api/account/v1/email/resend" class="ajax"><%= gettext "Resend verification email" %></a>.</p>
+      <% else %>
         <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
-        <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+      <% end %>
+      <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+      <main class="js-ad-dependant-pt pt-5">
         <%= @inner_content %>
       </main>
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
