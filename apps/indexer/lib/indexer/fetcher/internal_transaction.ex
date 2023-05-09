@@ -12,8 +12,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
 
+  alias EthereumJSONRPC.{Besu, Erigon, Nethermind}
   alias Explorer.Chain
-  alias Explorer.Chain.Block
+  alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Cache.{Accounts, Blocks}
   alias Explorer.Chain.Import.Runner.Blocks, as: BlocksRunner
   alias Indexer.{BufferedTask, Tracer}
@@ -41,12 +42,22 @@ defmodule Indexer.Fetcher.InternalTransaction do
   *Note*: The internal transactions for individual transactions cannot be paginated,
   so the total number of internal transactions that could be produced is unknown.
   """
-  @spec async_fetch([Block.block_number()]) :: :ok
-  def async_fetch(block_numbers, timeout \\ 5000) when is_list(block_numbers) do
+  @spec async_fetch([Block.block_number()], [Transaction.t()]) :: :ok
+  def async_fetch(block_numbers, transactions, timeout \\ 5000) when is_list(block_numbers) do
     if InternalTransactionSupervisor.disabled?() do
       :ok
     else
-      BufferedTask.buffer(__MODULE__, block_numbers, timeout)
+      data = data_for_buffer(block_numbers, transactions)
+      BufferedTask.buffer(__MODULE__, data, timeout)
+    end
+  end
+
+  defp data_for_buffer(block_numbers, transactions) do
+    json_rpc_named_arguments = Application.get_env(:indexer, :json_rpc_named_arguments)
+
+    case queue_data_type(json_rpc_named_arguments) do
+      :block_number -> block_numbers
+      :transaction_params -> Enum.map(transactions, &Map.take(&1, [:block_number, :hash, :index]))
     end
   end
 
@@ -69,11 +80,19 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   @impl BufferedTask
-  def init(initial, reducer, _json_rpc_named_arguments) do
+  def init(initial, reducer, json_rpc_named_arguments) do
     {:ok, final} =
-      Chain.stream_blocks_with_unfetched_internal_transactions(initial, fn block_number, acc ->
-        reducer.(block_number, acc)
-      end)
+      case queue_data_type(json_rpc_named_arguments) do
+        :block_number ->
+          Chain.stream_blocks_with_unfetched_internal_transactions(initial, fn block_number, acc ->
+            reducer.(block_number, acc)
+          end)
+
+        :transaction_params ->
+          Chain.stream_transactions_with_unfetched_internal_transactions(initial, fn transaction_params, acc ->
+            reducer.(transaction_params, acc)
+          end)
+      end
 
     final
   end
@@ -89,64 +108,39 @@ defmodule Indexer.Fetcher.InternalTransaction do
               service: :indexer,
               tracer: Tracer
             )
-  def run(block_numbers, json_rpc_named_arguments) do
-    unique_numbers =
-      block_numbers
-      |> Enum.uniq()
-      |> Chain.filter_consensus_block_numbers()
+  def run(block_numbers_or_transactions, json_rpc_named_arguments) do
+    data_type = queue_data_type(json_rpc_named_arguments)
+    filtered_data = filter_block_numbers(block_numbers_or_transactions, data_type)
 
-    filtered_unique_numbers =
-      EthereumJSONRPC.block_numbers_in_range(unique_numbers) --
-        [EthereumJSONRPC.first_block_to_fetch(:trace_first_block)]
-
-    filtered_unique_numbers_count = Enum.count(filtered_unique_numbers)
-    Logger.metadata(count: filtered_unique_numbers_count)
-
-    Logger.debug("fetching internal transactions for blocks")
-
-    json_rpc_named_arguments
-    |> Keyword.fetch!(:variant)
-    |> case do
-      variant when variant in [EthereumJSONRPC.Nethermind, EthereumJSONRPC.Erigon, EthereumJSONRPC.Besu] ->
-        EthereumJSONRPC.fetch_block_internal_transactions(filtered_unique_numbers, json_rpc_named_arguments)
-
-      _ ->
-        try do
-          fetch_block_internal_transactions_by_transactions(filtered_unique_numbers, json_rpc_named_arguments)
-        rescue
-          error ->
-            {:error, error, __STACKTRACE__}
-        end
-    end
-    |> case do
+    case fetch_internal_transactions(filtered_data, json_rpc_named_arguments, data_type) do
       {:ok, internal_transactions_params} ->
-        safe_import_internal_transaction(internal_transactions_params, filtered_unique_numbers)
+        safe_import_internal_transaction(internal_transactions_params, filtered_data, data_type)
 
       {:error, reason} ->
         Logger.error(
           fn ->
-            ["failed to fetch internal transactions for blocks: ", Exception.format(:error, reason)]
+            ["failed to fetch internal transactions for #{data_type}: ", Exception.format(:error, reason)]
           end,
-          error_count: filtered_unique_numbers_count
+          error_count: Enum.count(filtered_data)
         )
 
         handle_not_found_transaction(reason)
 
         # re-queue the de-duped entries
-        {:retry, filtered_unique_numbers}
+        {:retry, filtered_data}
 
       {:error, reason, stacktrace} ->
         Logger.error(
           fn ->
-            ["failed to fetch internal transactions for blocks: ", Exception.format(:error, reason, stacktrace)]
+            ["failed to fetch internal transactions for #{data_type}: ", Exception.format(:error, reason, stacktrace)]
           end,
-          error_count: filtered_unique_numbers_count
+          error_count: Enum.count(filtered_data)
         )
 
         handle_not_found_transaction(reason)
 
         # re-queue the de-duped entries
-        {:retry, filtered_unique_numbers}
+        {:retry, filtered_data}
 
       :ignore ->
         :ok
@@ -174,43 +168,90 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end
   end
 
-  defp fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments) do
-    Enum.reduce(unique_numbers, {:ok, []}, fn
-      block_number, {:ok, acc_list} ->
-        block_number
-        |> Chain.get_transactions_of_block_number()
-        |> Enum.map(&params(&1))
-        |> case do
-          [] ->
-            {:ok, []}
+  defp fetch_internal_transactions(block_numbers_or_transactions, json_rpc_named_arguments, data_type) do
+    case data_type do
+      :block_number ->
+        Logger.metadata(count: Enum.count(block_numbers_or_transactions))
+        Logger.debug("fetching internal transactions by blocks")
 
-          transactions ->
-            try do
-              EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
-            catch
-              :exit, error ->
-                {:error, error, __STACKTRACE__}
-            end
-        end
-        |> case do
-          {:ok, internal_transactions} -> {:ok, internal_transactions ++ acc_list}
-          error_or_ignore -> error_or_ignore
-        end
+        block_numbers_or_transactions
+        |> check_and_filter_block_numbers()
+        |> EthereumJSONRPC.fetch_block_internal_transactions(json_rpc_named_arguments)
 
-      _, error_or_ignore ->
-        error_or_ignore
+      :transaction_params ->
+        Logger.metadata(count: Enum.count(block_numbers_or_transactions))
+        Logger.debug("fetching internal transactions by transactions")
+
+        try do
+          block_numbers_or_transactions
+          |> check_and_filter_transactions()
+          |> fetch_internal_transactions_by_transactions(json_rpc_named_arguments)
+        rescue
+          error ->
+            {:error, error, __STACKTRACE__}
+        end
+    end
+  end
+
+  defp filter_block_numbers(block_numbers, :block_number) do
+    unique_numbers =
+      block_numbers
+      |> Enum.uniq()
+      |> Chain.filter_consensus_block_numbers()
+
+    EthereumJSONRPC.block_numbers_in_range(unique_numbers) -- [EthereumJSONRPC.first_block_to_fetch(:trace_first_block)]
+  end
+
+  defp filter_block_numbers(transactions_params, :transaction_params), do: transactions_params
+
+  defp check_and_filter_block_numbers(block_numbers) do
+    Enum.reduce(block_numbers, [], fn number, acc ->
+      if is_integer(number) do
+        [number | acc]
+      else
+        Logger.error("InternalTransaction fetcher expected block number but got #{number}")
+        acc
+      end
     end)
   end
 
-  defp safe_import_internal_transaction(internal_transactions_params, block_numbers) do
-    import_internal_transaction(internal_transactions_params, block_numbers)
+  defp check_and_filter_transactions(transactions) do
+    Enum.reduce(transactions, [], fn transaction, acc ->
+      case transaction do
+        %{block_number: block_number, hash: _hash, index: _index} when is_integer(block_number) ->
+          [transaction | acc]
+
+        _ ->
+          Logger.error("InternalTransaction fetcher expected transaction but got #{transaction}")
+          acc
+      end
+    end)
+  end
+
+  defp fetch_internal_transactions_by_transactions(transactions, json_rpc_named_arguments) do
+    case Enum.map(transactions, &params/1) do
+      [] ->
+        {:ok, []}
+
+      transactions ->
+        try do
+          EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
+        catch
+          :exit, error ->
+            {:error, error, __STACKTRACE__}
+        end
+    end
+  end
+
+  defp safe_import_internal_transaction(internal_transactions_params, block_numbers, data_type) do
+    import_internal_transaction(internal_transactions_params, block_numbers, data_type)
   rescue
     Postgrex.Error ->
-      handle_foreign_key_violation(internal_transactions_params, block_numbers)
+      handle_foreign_key_violation(internal_transactions_params, block_numbers, data_type)
       {:retry, block_numbers}
   end
 
-  defp import_internal_transaction(internal_transactions_params, unique_numbers) do
+  defp import_internal_transaction(internal_transactions_params, transactions_params_or_unique_numbers, data_type) do
     internal_transactions_params_without_failed_creations = remove_failed_creations(internal_transactions_params)
 
     addresses_params =
@@ -224,10 +265,16 @@ defmodule Indexer.Fetcher.InternalTransaction do
       end)
 
     empty_block_numbers =
-      unique_numbers
-      |> MapSet.new()
-      |> MapSet.difference(MapSet.new(internal_transactions_params_without_failed_creations, & &1.block_number))
-      |> Enum.map(&%{block_number: &1})
+      case data_type do
+        :block_number ->
+          transactions_params_or_unique_numbers
+          |> MapSet.new()
+          |> MapSet.difference(MapSet.new(internal_transactions_params_without_failed_creations, & &1.block_number))
+          |> Enum.map(&%{block_number: &1})
+
+        :transaction_params ->
+          []
+      end
 
     internal_transactions_and_empty_block_numbers =
       internal_transactions_params_without_failed_creations ++ empty_block_numbers
@@ -252,16 +299,16 @@ defmodule Indexer.Fetcher.InternalTransaction do
         Logger.error(
           fn ->
             [
-              "failed to import internal transactions for blocks: ",
+              "failed to import internal transactions for #{data_type}: ",
               inspect(reason)
             ]
           end,
           step: step,
-          error_count: Enum.count(unique_numbers)
+          error_count: Enum.count(transactions_params_or_unique_numbers)
         )
 
         # re-queue the de-duped entries
-        {:retry, unique_numbers}
+        {:retry, transactions_params_or_unique_numbers}
     end
   end
 
@@ -293,7 +340,18 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end)
   end
 
-  defp handle_foreign_key_violation(internal_transactions_params, block_numbers) do
+  defp handle_foreign_key_violation(internal_transactions_params, block_numbers_or_transactions, data_type) do
+    block_numbers =
+      case data_type do
+        :block_number ->
+          block_numbers_or_transactions
+
+        :transaction_params ->
+          block_numbers_or_transactions
+          |> Enum.map(& &1.block_number)
+          |> Enum.uniq()
+      end
+
     BlocksRunner.invalidate_consensus_blocks(block_numbers)
 
     transaction_hashes =
@@ -329,6 +387,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
     do: BlocksRunner.invalidate_consensus_blocks([block_number])
 
   defp invalidate_block_from_error(_error_data), do: :ok
+
+  defp queue_data_type(json_rpc_named_arguments) do
+    case Keyword.fetch!(json_rpc_named_arguments, :variant) do
+      variant when variant in [Nethermind, Erigon, Besu] -> :block_number
+      _ -> :transaction_params
+    end
+  end
 
   defp defaults do
     [
