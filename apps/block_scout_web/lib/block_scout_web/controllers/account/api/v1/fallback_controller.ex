@@ -75,10 +75,12 @@ defmodule BlockScoutWeb.Account.Api.V1.FallbackController do
   end
 
   def call(conn, {:auth, _}) do
+    current_user = get_session(conn, :current_user)
+
     conn
-    |> put_status(:unauthorized)
+    |> put_status(if(current_user, do: :forbidden, else: :unauthorized))
     |> put_view(UserView)
-    |> render(:message, %{message: "Unauthorized"})
+    |> render(:message, %{message: if(current_user, do: "Unverified email", else: "Unauthorized")})
   end
 
   def call(conn, {:api_key, _}) do
@@ -93,5 +95,19 @@ defmodule BlockScoutWeb.Account.Api.V1.FallbackController do
     |> put_status(:forbidden)
     |> put_view(UserView)
     |> render(:message, %{message: "API key not configured on the server"})
+  end
+
+  def call(conn, {:email_verified, _}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(UserView)
+    |> render(:message, %{message: "Your email address already verified"})
+  end
+
+  def call(conn, {:interval, remain}) do
+    conn
+    |> put_status(:too_many_requests)
+    |> put_view(UserView)
+    |> render(:message, %{message: "Email resend is available in #{remain} seconds."})
   end
 end

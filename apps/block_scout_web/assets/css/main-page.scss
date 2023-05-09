@@ -5,6 +5,11 @@
   display: none;
 }
 
+a.disabled {
+  pointer-events: none;
+  opacity: 0.65;
+}
+
 /* This file is for your main application css. */
 
 // Bootstrap Core CSS
@@ -14,6 +19,7 @@
 
 @import "theme/variables";
 
+@import "~bootstrap/scss/close";
 @import "~bootstrap/scss/root";
 @import "~bootstrap/scss/reboot";
 @import "~bootstrap/scss/grid";

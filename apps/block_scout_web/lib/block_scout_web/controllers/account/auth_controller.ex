@@ -35,6 +35,11 @@ defmodule BlockScoutWeb.Account.AuthController do
 
   def callback(%{assigns: %{ueberauth_auth: auth}} = conn, params) do
     case UserFromAuth.find_or_create(auth) do
+      {:ok, %{email_verified: false} = user} ->
+        conn
+        |> put_session(:current_user, user)
+        |> redirect(to: root())
+
       {:ok, user} ->
         CSRFProtection.get_csrf_token()
 
@@ -60,13 +65,18 @@ defmodule BlockScoutWeb.Account.AuthController do
 
   def current_user(%{private: %{plug_session: %{"current_user" => _}}} = conn) do
     if Account.enabled?() do
-      get_session(conn, :current_user)
+      conn
+      |> get_session(:current_user)
+      |> check_email_verification()
     else
       nil
     end
   end
 
   def current_user(_), do: nil
+
+  defp check_email_verification(%{email_verified: true} = session), do: session
+  defp check_email_verification(_), do: nil
 
   defp root do
     ConfigHelper.network_path()
