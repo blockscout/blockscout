@@ -108,7 +108,7 @@ defmodule BlockScoutWeb.Account.Api.V1.FallbackController do
     conn
     |> put_status(:too_many_requests)
     |> put_view(UserView)
-    |> render(:message, %{message: "Email resend is available in #{remain} seconds."})
+    |> json(%{message: "Email resend is available in #{remain} seconds.", seconds_before_next_resend: remain})
   end
 
   defp unauthorized_error(%{email_verified: false, email: email}) do
