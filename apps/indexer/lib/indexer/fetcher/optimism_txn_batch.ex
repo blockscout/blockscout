@@ -259,16 +259,27 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         Map.put(acc, hash.bytes, number)
       end)
 
-    {:ok, responses} =
+    requests =
       hashes
       |> Enum.filter(fn hash -> is_nil(Map.get(number_by_hash, hash)) end)
       |> Enum.with_index()
       |> Enum.map(fn {hash, id} ->
         ByHash.request(%{hash: "0x" <> Base.encode16(hash, case: :lower), id: id}, false)
       end)
-      |> json_rpc(json_rpc_named_arguments_l2)
 
-    responses
+    chunk_size = 50
+    chunks_number = ceil(Enum.count(requests) / chunk_size)
+    chunk_range = Range.new(0, chunks_number - 1, 1)
+
+    chunk_range
+    |> Enum.reduce([], fn current_chunk, acc ->
+      {:ok, resp} =
+        requests
+        |> Enum.slice(chunk_size * current_chunk, chunk_size)
+        |> json_rpc(json_rpc_named_arguments_l2)
+
+      acc ++ resp
+    end)
     |> Enum.map(fn %{result: result} -> result end)
     |> Enum.reduce(number_by_hash, fn block, acc ->
       if is_nil(block) do
@@ -430,12 +441,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           {:cont, {:ok, batches ++ batches_parsed, [seq | sequences], empty_incomplete_frame_sequence()}}
         else
           {:frame_number_valid, false} ->
-            if last_frame_number == 0 && frame.number == 0 do
-              # the new frame rewrites the previous one
-              {:cont, {:ok, batches, sequences, empty_incomplete_frame_sequence()}}
-            else
-              {:halt, {:error, "Invalid frame sequence. Last frame number: #{last_frame_number}. Next frame number: #{frame.number}. Tx hash: #{t.hash}."}}
-            end
+            handle_invalid_frame_number(last_frame_number, frame, t, batches, sequences)
 
           false ->
             {:halt,
@@ -449,6 +455,17 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         end
       end
     end)
+  end
+
+  defp handle_invalid_frame_number(last_frame_number, frame, tx, batches, sequences) do
+    if last_frame_number == 0 && frame.number == 0 do
+      # the new frame rewrites the previous one
+      {:cont, {:ok, batches, sequences, empty_incomplete_frame_sequence()}}
+    else
+      {:halt,
+       {:error,
+        "Invalid frame sequence. Last frame number: #{last_frame_number}. Next frame number: #{frame.number}. Tx hash: #{tx.hash}."}}
+    end
   end
 
   defp input_to_frame("0x" <> input) do
@@ -465,35 +482,46 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     # frame_data         = bytes
     # is_last            = bool (uint8)
 
-    # the first byte must be zero (so called Derivation Version)
     derivation_version_length = 1
-    [0] = :binary.bin_to_list(binary_part(input_binary, 0, derivation_version_length))
-
-    # channel id is a random value (we don't use it)
     channel_id_length = 16
+    frame_number_size = 2
+    frame_data_length_size = 4
+    is_last_size = 1
+
+    # the first byte must be zero (so called Derivation Version)
+    [0] = :binary.bin_to_list(binary_part(input_binary, 0, derivation_version_length))
 
     # frame number consists of 2 bytes
     frame_number_offset = derivation_version_length + channel_id_length
-    frame_number_size = 2
     frame_number = :binary.decode_unsigned(binary_part(input_binary, frame_number_offset, frame_number_size))
 
     # frame data length consists of 4 bytes
     frame_data_length_offset = frame_number_offset + frame_number_size
-    frame_data_length_size = 4
 
     frame_data_length =
       :binary.decode_unsigned(binary_part(input_binary, frame_data_length_offset, frame_data_length_size))
 
-    # frame data is a byte array of frame_data_length size
-    frame_data_offset = frame_data_length_offset + frame_data_length_size
-    frame_data = binary_part(input_binary, frame_data_offset, frame_data_length)
+    input_length_must_be =
+      derivation_version_length + channel_id_length + frame_number_size + frame_data_length_size + frame_data_length +
+        is_last_size
 
-    # is_last is 1-byte item
-    is_last_offset = frame_data_offset + frame_data_length
-    is_last_size = 1
-    is_last = :binary.decode_unsigned(binary_part(input_binary, is_last_offset, is_last_size)) > 0
+    input_length_current = byte_size(input_binary)
 
-    %{number: frame_number, data: frame_data, is_last: is_last}
+    if input_length_current == input_length_must_be do
+      # frame data is a byte array of frame_data_length size
+      frame_data_offset = frame_data_length_offset + frame_data_length_size
+      frame_data = binary_part(input_binary, frame_data_offset, frame_data_length)
+
+      # is_last is 1-byte item
+      is_last_offset = frame_data_offset + frame_data_length
+      is_last = :binary.decode_unsigned(binary_part(input_binary, is_last_offset, is_last_size)) > 0
+
+      %{number: frame_number, data: frame_data, is_last: is_last}
+    else
+      # workaround to remove a leading extra byte
+      # for example, the case for Base Goerli batch L1 transaction: https://goerli.etherscan.io/tx/0xa43fa9da683a6157a114e3175a625b5aed85d8c573aae226768c58a924a17be0
+      input_to_frame("0x" <> Base.encode16(binary_part(input_binary, 1, input_length_current - 1)))
+    end
   end
 
   defp log_deleted_rows_count(reorg_block, count) do
