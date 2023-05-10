@@ -6,6 +6,8 @@ defmodule Explorer.Chain.AddressTest do
   alias Explorer.Chain.Address
   alias Explorer.Repo
 
+  # nfjvklsjfvnsd
+
   describe "changeset/2" do
     test "with valid attributes" do
       params = params_for(:address)
