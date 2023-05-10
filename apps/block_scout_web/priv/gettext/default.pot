@@ -1865,8 +1865,6 @@ msgid "Net Worth"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:5
-#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:5
-#: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:9
 #, elixir-autogen, elixir-format
 msgid "New Smart Contract Verification"
 msgstr ""
@@ -3655,4 +3653,14 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/app.html.eex:127
 #, elixir-autogen, elixir-format
 msgid "Please confirm your email address to use the My Account feature."
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:9
+#, elixir-autogen, elixir-format
+msgid "New Smart Contract Verification via Standard input JSON"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:5
+#, elixir-autogen, elixir-format
+msgid "New Smart Contract Verification via metadata JSON"
 msgstr ""

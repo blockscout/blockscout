@@ -158,7 +158,6 @@
       @view_module != Elixir.BlockScoutWeb.AddressValidationView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationVyperView &&
       @view_module != Elixir.BlockScoutWeb.AddressReadContractView &&
@@ -177,8 +176,6 @@
       @view_module != Elixir.BlockScoutWeb.APIDocsView &&
       @view_module != Elixir.BlockScoutWeb.Admin.DashboardView &&
       @view_module != Elixir.BlockScoutWeb.SearchView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView &&
       @view_module != Elixir.BlockScoutWeb.StakesView &&
       @view_module != Elixir.BlockScoutWeb.WithdrawalView
     ) do %>
@@ -199,10 +196,11 @@
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/custom-scrollbar.js") %>"></script>
     <% end %>
     <script defer src="<%= static_path(@conn, "/js/autocomplete.js") %>"></script>
-    <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationView, Elixir.BlockScoutWeb.AddressContractVerificationVyperView, Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView, Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
+    <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationView, Elixir.BlockScoutWeb.AddressContractVerificationVyperView, Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView] do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
     <% end %>
     <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
+      <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/dropzone.js") %>"></script>
     <% end %>
     <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app_extra.js") %>"></script>
