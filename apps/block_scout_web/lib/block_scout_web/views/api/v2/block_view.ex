@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   alias Explorer.Chain.Block
   alias Explorer.Counters.BlockPriorityFeeCounter
 
+  @api_true [api?: true]
+
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
   end
@@ -58,7 +60,9 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "gas_used_percentage" => gas_used_percentage(block),
       "burnt_fees_percentage" => burnt_fees_percentage(burned_fee, tx_fees),
       "type" => block |> BlockView.block_type() |> String.downcase(),
-      "tx_fees" => tx_fees
+      "tx_fees" => tx_fees,
+      "has_beacon_chain_withdrawals" =>
+        if(single_block?, do: Chain.check_if_withdrawals_in_block(block.hash, @api_true), else: nil)
     }
   end
 

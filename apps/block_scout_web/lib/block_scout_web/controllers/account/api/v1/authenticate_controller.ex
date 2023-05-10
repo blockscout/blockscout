@@ -17,11 +17,11 @@ defmodule BlockScoutWeb.Account.Api.V1.AuthenticateController do
   end
 
   defp authenticate(conn, params) do
-    api_key = Application.get_env(:block_scout_web, :account)[:authenticate_endpoint_api_key]
-
-    with {:auth, %{id: uid} = current_user} <- {:auth, current_user(conn)},
-         {:identity, [%Identity{}]} <- {:identity, UserFromAuth.find_identity(uid)},
-         {:api_key, ^api_key} <- {:api_key, params["api_key"]} do
+    with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
+           {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
+         {:api_key, ^api_key} <- {:api_key, params["api_key"]},
+         {:auth, %{id: uid} = current_user} <- {:auth, current_user(conn)},
+         {:identity, %Identity{}} <- {:identity, UserFromAuth.find_identity(uid)} do
       conn
       |> put_status(200)
       |> json(current_user)

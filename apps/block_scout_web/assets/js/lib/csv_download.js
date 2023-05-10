@@ -31,10 +31,17 @@ $button.on('click', () => {
   // @ts-ignore
   // eslint-disable-next-line
   const reCaptchaV3ClientKey = document.getElementById('js-re-captcha-v3-client-key').value
+  // @ts-ignore
+  // eslint-disable-next-line
+  const reCaptchaDisabled = document.getElementById('js-re-captcha-disabled').value
   const addressHash = $button.data('address-hash')
   const from = $('.js-datepicker-from').val()
   const to = $('.js-datepicker-to').val()
-  if (reCaptchaV3ClientKey) {
+  if (reCaptchaDisabled) {
+    const url = `${$button.data('link')}?address_id=${addressHash}&from_period=${from}&to_period=${to}`
+
+    download(url)
+  } else if (reCaptchaV3ClientKey) {
     disableBtnWithSpinner()
     // @ts-ignore
     // eslint-disable-next-line
@@ -118,7 +125,7 @@ $button.on('click', () => {
 const onloadCallback = function () {
   // @ts-ignore
   // eslint-disable-next-line
-  const reCaptchaClientKey = document.getElementById('re-captcha-client-key').value
+  const reCaptchaClientKey = document.getElementById('js-re-captcha-client-key').value
   // @ts-ignore
   // eslint-disable-next-line
   grecaptcha.render('recaptcha', {
