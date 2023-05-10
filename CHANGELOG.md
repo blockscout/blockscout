@@ -20,6 +20,7 @@
 
 ### Chore
 
+- [#7450](https://github.com/blockscout/blockscout/pull/7450) - Resolve unresponsive navbar in verification form page
 - [#7449](https://github.com/blockscout/blockscout/pull/7449) - Actualize docker-compose readme and use latest tags instead main
 - [#7417](https://github.com/blockscout/blockscout/pull/7417) - Docker compose for frontend
 - [#7349](https://github.com/blockscout/blockscout/pull/7349) - Proxy pattern with getImplementation()
