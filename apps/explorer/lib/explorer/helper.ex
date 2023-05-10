@@ -26,6 +26,8 @@ defmodule Explorer.Helper do
     |> TypeDecoder.decode_raw(types)
   end
 
+  def parse_integer(nil), do: nil
+
   def parse_integer(integer_string) when is_binary(integer_string) do
     case Integer.parse(integer_string) do
       {integer, ""} -> integer

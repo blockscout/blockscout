@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.ApiRouter do
     plug(RateLimit)
   end
 
-  alias BlockScoutWeb.Account.Api.V1.{AuthenticateController, TagsController, UserController}
+  alias BlockScoutWeb.Account.Api.V1.{AuthenticateController, EmailController, TagsController, UserController}
   alias BlockScoutWeb.API.V2
 
   scope "/account/v1", as: :account_v1 do
@@ -57,6 +57,10 @@ defmodule BlockScoutWeb.ApiRouter do
     post("/authenticate", AuthenticateController, :authenticate_post)
 
     get("/get_csrf", UserController, :get_csrf)
+
+    scope "/email" do
+      get("/resend", EmailController, :resend_email)
+    end
 
     scope "/user" do
       get("/info", UserController, :info)
@@ -141,6 +145,7 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/", V2.BlockController, :blocks)
       get("/:block_hash_or_number", V2.BlockController, :block)
       get("/:block_hash_or_number/transactions", V2.BlockController, :transactions)
+      get("/:block_hash_or_number/withdrawals", V2.BlockController, :withdrawals)
     end
 
     scope "/addresses" do
@@ -156,6 +161,7 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash/blocks-validated", V2.AddressController, :blocks_validated)
       get("/:address_hash/coin-balance-history", V2.AddressController, :coin_balance_history)
       get("/:address_hash/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
+      get("/:address_hash/withdrawals", V2.AddressController, :withdrawals)
     end
 
     scope "/tokens" do
@@ -186,6 +192,11 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/transactions", V2.StatsController, :transactions_chart)
         get("/market", V2.StatsController, :market_chart)
       end
+    end
+
+    scope "/withdrawals" do
+      get("/", V2.WithdrawalController, :withdrawals_list)
+      get("/counters", V2.WithdrawalController, :withdrawals_counters)
     end
 
     scope "/optimism" do

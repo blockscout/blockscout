@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.Account.Api.V1.AuthenticateController do
            {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
          {:api_key, ^api_key} <- {:api_key, params["api_key"]},
          {:auth, %{id: uid} = current_user} <- {:auth, current_user(conn)},
-         {:identity, [%Identity{}]} <- {:identity, UserFromAuth.find_identity(uid)} do
+         {:identity, %Identity{}} <- {:identity, UserFromAuth.find_identity(uid)} do
       conn
       |> put_status(200)
       |> json(current_user)

@@ -4,17 +4,27 @@
 
 ### Features
 
+- [#7439](https://github.com/blockscout/blockscout/pull/7439) - Define batch size for token balance fetcher via runtime env var
+- [#7298](https://github.com/blockscout/blockscout/pull/7298) - Add changes to support force email verification
+- [#7416](https://github.com/blockscout/blockscout/pull/7416) - Add option to disable reCAPTCHA
+- [#6694](https://github.com/blockscout/blockscout/pull/6694) - Add withdrawals support (EIP-4895)
 - [#7355](https://github.com/blockscout/blockscout/pull/7355) - Add endpoint for token info import
 - [#7200](https://github.com/blockscout/blockscout/pull/7200) - Add Optimism BedRock Deposits to the main page in API
 - [#7393](https://github.com/blockscout/blockscout/pull/7393) - Realtime fetcher max gap
+- [#7436](https://github.com/blockscout/blockscout/pull/7436) - TokenBalanceOnDemand ERC-1155 support
 
 ### Fixes
+
 - [#7391](https://github.com/blockscout/blockscout/pull/7391) - Fix: cannot read properties of null (reading 'value')
 
 - [#7219](https://github.com/blockscout/blockscout/pull/7219) - Output L1 fields in API v2 for transaction page and fix transaction fee calculation
+- [#7377](https://github.com/blockscout/blockscout/pull/7377) - API v2 improvements
 
 ### Chore
 
+- [#7450](https://github.com/blockscout/blockscout/pull/7450) - Resolve unresponsive navbar in verification form page
+- [#7449](https://github.com/blockscout/blockscout/pull/7449) - Actualize docker-compose readme and use latest tags instead main
+- [#7417](https://github.com/blockscout/blockscout/pull/7417) - Docker compose for frontend
 - [#7349](https://github.com/blockscout/blockscout/pull/7349) - Proxy pattern with getImplementation()
 - [#7360](https://github.com/blockscout/blockscout/pull/7360) - Manage visibility of indexing progress alert
 

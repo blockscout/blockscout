@@ -38,7 +38,8 @@ config :block_scout_web, :recaptcha,
   v2_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY"),
   v2_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY"),
   v3_client_key: System.get_env("RE_CAPTCHA_V3_CLIENT_KEY"),
-  v3_secret_key: System.get_env("RE_CAPTCHA_V3_SECRET_KEY")
+  v3_secret_key: System.get_env("RE_CAPTCHA_V3_SECRET_KEY"),
+  is_disabled: ConfigHelper.parse_bool_env_var("RE_CAPTCHA_DISABLED")
 
 network_path =
   "NETWORK_PATH"
@@ -355,7 +356,8 @@ config :explorer, Explorer.Account,
   sendgrid: [
     sender: System.get_env("ACCOUNT_SENDGRID_SENDER"),
     template: System.get_env("ACCOUNT_SENDGRID_TEMPLATE")
-  ]
+  ],
+  resend_interval: ConfigHelper.parse_time_env_var("ACCOUNT_VERIFICATION_EMAIL_RESEND_INTERVAL", "5m")
 
 config :explorer, :token_id_migration,
   first_block: ConfigHelper.parse_integer_env_var("TOKEN_ID_MIGRATION_FIRST_BLOCK", 0),
@@ -424,6 +426,9 @@ config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?:
     System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu" ||
       ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER")
+
+config :indexer, Indexer.Fetcher.TokenBalance,
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_BATCH_SIZE", 100)
 
 config :indexer, Indexer.Fetcher.TokenBalanceOnDemand,
   threshold: ConfigHelper.parse_time_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD", "1h"),
@@ -494,6 +499,11 @@ config :indexer, Indexer.Fetcher.InternalTransaction,
 config :indexer, Indexer.Fetcher.CoinBalance,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_BATCH_SIZE", 500),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_CONCURRENCY", 4)
+
+config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
+  disabled?: System.get_env("INDEXER_DISABLE_WITHDRAWALS_FETCHER", "true") == "true"
+
+config :indexer, Indexer.Fetcher.Withdrawal, first_block: System.get_env("WITHDRAWALS_FIRST_BLOCK")
 
 config :indexer, Indexer.Fetcher.Optimism,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
