@@ -24,12 +24,7 @@ defmodule Indexer.Fetcher.TokenBalance do
 
   @behaviour BufferedTask
 
-  @defaults [
-    flush_interval: 300,
-    max_batch_size: 100,
-    max_concurrency: 10,
-    task_supervisor: Indexer.Fetcher.TokenBalance.TaskSupervisor
-  ]
+  @default_max_batch_size 100
 
   @max_retries 3
 
@@ -50,7 +45,7 @@ defmodule Indexer.Fetcher.TokenBalance do
     end
 
     merged_init_opts =
-      @defaults
+      defaults()
       |> Keyword.merge(mergeable_init_options)
       |> Keyword.put(:state, state)
 
@@ -216,5 +211,14 @@ defmodule Indexer.Fetcher.TokenBalance do
       token_type: token_type,
       token_id: token_id
     }
+  end
+
+  defp defaults do
+    [
+      flush_interval: 300,
+      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
+      max_concurrency: 10,
+      task_supervisor: Indexer.Fetcher.TokenBalance.TaskSupervisor
+    ]
   end
 end

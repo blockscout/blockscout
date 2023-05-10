@@ -2,6 +2,9 @@ defmodule Explorer.Helper do
   @moduledoc """
   Common explorer helper
   """
+
+  def parse_integer(nil), do: nil
+
   def parse_integer(string) do
     case Integer.parse(string) do
       {number, ""} -> number
