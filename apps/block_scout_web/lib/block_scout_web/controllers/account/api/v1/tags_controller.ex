@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.Account.Api.V1.TagsController do
       else
         uid = current_user(conn).id
 
-        with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+        with {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)},
              {:watchlist, %{watchlists: [watchlist | _]}} <-
                {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
              {:address_hash, {:ok, address_hash}} <- {:address_hash, Address.cast(address_hash)} do
@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.Account.Api.V1.TagsController do
       else
         uid = current_user(conn).id
 
-        with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+        with {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)},
              {:watchlist, %{watchlists: [watchlist | _]}} <-
                {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
              false <- is_nil(transaction) do
