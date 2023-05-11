@@ -311,18 +311,24 @@ defmodule BlockScoutWeb.AddressChannel do
   end
 
   def handle_token_transfer(
-        %{address: _address, token_transfer: token_transfer},
+        %{token_transfers: token_transfers},
         %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket,
         event
-      ) do
-    token_transfer_json = TransactionViewAPI.render("token_transfer.json", %{token_transfer: token_transfer, conn: nil})
+      )
+      when is_list(token_transfers) do
+    token_transfer_json =
+      TransactionViewAPI.render("token_transfers.json", %{token_transfers: token_transfers, conn: nil})
 
-    push(socket, event, %{token_transfer: token_transfer_json})
+    push(socket, event, %{token_transfers: token_transfer_json})
 
     {:noreply, socket}
   end
 
-  def handle_token_transfer(%{address: address, token_transfer: token_transfer}, socket, event) do
+  def handle_token_transfer(
+        %{address: address, token_transfer: token_transfer},
+        %Phoenix.Socket{handler: BlockScoutWeb.UserSocket} = socket,
+        event
+      ) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
     transaction =
@@ -353,6 +359,10 @@ defmodule BlockScoutWeb.AddressChannel do
       token_transfer_html: rendered
     })
 
+    {:noreply, socket}
+  end
+
+  def handle_token_transfer(_, socket, _event) do
     {:noreply, socket}
   end
 
