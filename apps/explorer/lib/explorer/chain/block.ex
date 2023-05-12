@@ -124,8 +124,8 @@ defmodule Explorer.Chain.Block do
   def blocks_without_reward_query do
     consensus_blocks_query =
       from(
-        b in __MODULE__,
-        where: b.consensus == true
+        block in __MODULE__,
+        where: block.consensus == true
       )
 
     validator_rewards =
