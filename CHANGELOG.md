@@ -14,6 +14,7 @@
 
 ### Fixes
 
+- [#7466](https://github.com/blockscout/blockscout/pull/7466) - API v2: check base_fee_per_gas property exists before requesting its value for pending tx
 - [#7391](https://github.com/blockscout/blockscout/pull/7391) - Fix: cannot read properties of null (reading 'value')
 - [#7377](https://github.com/blockscout/blockscout/pull/7377), [#7454](https://github.com/blockscout/blockscout/pull/7454) - API v2 improvements
 
