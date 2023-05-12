@@ -236,7 +236,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   defp prepare_transaction(%Transaction{} = transaction, conn, single_tx?, watchlist_names \\ nil) do
-    base_fee_per_gas = transaction.block && transaction.block.base_fee_per_gas
+    base_fee_per_gas =
+      transaction.block && Map.has_key?(transaction.block, :base_fee_per_gas) && transaction.block.base_fee_per_gas
+
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
 
