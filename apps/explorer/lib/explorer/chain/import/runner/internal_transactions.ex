@@ -281,11 +281,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
     query =
       from(
-        b in Block,
-        where: b.number in ^block_numbers and b.consensus,
-        select: b.hash,
+        block in Block,
+        where: block.number in ^block_numbers and block.consensus,
+        select: block.hash,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
-        order_by: [asc: b.hash],
+        order_by: [asc: block.hash],
         lock: "FOR UPDATE"
       )
 
@@ -671,10 +671,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     if Enum.count(invalid_block_numbers) > 0 do
       update_query =
         from(
-          b in Block,
-          where: b.number in ^invalid_block_numbers and b.consensus,
-          where: b.number > ^minimal_block,
-          select: b.hash,
+          block in Block,
+          where: block.number in ^invalid_block_numbers and block.consensus,
+          where: block.number > ^minimal_block,
+          select: block.hash,
           # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
           update: [set: [consensus: false]]
         )
