@@ -37,12 +37,36 @@ defmodule Explorer.Utility.MissingBlockRange do
     |> save_batch()
   end
 
+  def delete_range(from..to) do
+    min_number = min(from, to)
+    max_number = max(from, to)
+
+    lower_range = get_range_by_block_number(min_number)
+    higher_range = get_range_by_block_number(max_number)
+
+    case {lower_range, higher_range} do
+      {%__MODULE__{} = same_range, %__MODULE__{} = same_range} ->
+        Repo.delete(same_range)
+        insert_if_needed(%{from_number: same_range.from_number, to_number: max_number + 1})
+        insert_if_needed(%{from_number: min_number - 1, to_number: same_range.to_number})
+
+      {%__MODULE__{} = range, nil} ->
+        update_from_number_or_delete_range(range, min_number - 1)
+
+      {nil, %__MODULE__{} = range} ->
+        update_to_number_or_delete_range(range, max_number + 1)
+
+      {%__MODULE__{} = range_1, %__MODULE__{} = range_2} ->
+        update_from_number_or_delete_range(range_1, min_number - 1)
+        update_to_number_or_delete_range(range_2, max_number + 1)
+
+      _ ->
+        :ok
+    end
+  end
+
   def clear_batch(batch) do
-    Enum.map(batch, fn from..to ->
-      __MODULE__
-      |> Repo.get_by(from_number: from, to_number: to)
-      |> Repo.delete()
-    end)
+    Enum.map(batch, &delete_range/1)
   end
 
   def save_batch([]), do: {0, nil}
@@ -54,6 +78,33 @@ defmodule Explorer.Utility.MissingBlockRange do
       |> Enum.map(fn from..to -> %{from_number: from, to_number: to} end)
 
     Repo.insert_all(__MODULE__, records, on_conflict: :nothing, conflict_target: [:from_number, :to_number])
+  end
+
+  defp insert_range(params) do
+    params
+    |> changeset()
+    |> Repo.insert()
+  end
+
+  defp update_range(range, params) do
+    range
+    |> changeset(params)
+    |> Repo.update()
+  end
+
+  defp insert_if_needed(%{from_number: from, to_number: to} = params) when from >= to, do: insert_range(params)
+  defp insert_if_needed(_params), do: :ok
+
+  defp update_from_number_or_delete_range(%{to_number: to} = range, from) when from < to, do: Repo.delete(range)
+  defp update_from_number_or_delete_range(range, from), do: update_range(range, %{from_number: from})
+
+  defp update_to_number_or_delete_range(%{from_number: from} = range, to) when to > from, do: Repo.delete(range)
+  defp update_to_number_or_delete_range(range, to), do: update_range(range, %{to_number: to})
+
+  defp get_range_by_block_number(number) do
+    number
+    |> include_bound_query()
+    |> Repo.one()
   end
 
   def min_max_block_query do
