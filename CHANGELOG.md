@@ -15,11 +15,11 @@
 ### Fixes
 
 - [#7391](https://github.com/blockscout/blockscout/pull/7391) - Fix: cannot read properties of null (reading 'value')
-
-- [#7377](https://github.com/blockscout/blockscout/pull/7377) - API v2 improvements
+- [#7377](https://github.com/blockscout/blockscout/pull/7377), [#7454](https://github.com/blockscout/blockscout/pull/7454) - API v2 improvements
 
 ### Chore
 
+- [#7435](https://github.com/blockscout/blockscout/pull/7435) - Add `.exs` and `.eex` checking in cspell
 - [#7450](https://github.com/blockscout/blockscout/pull/7450) - Resolve unresponsive navbar in verification form page
 - [#7449](https://github.com/blockscout/blockscout/pull/7449) - Actualize docker-compose readme and use latest tags instead main
 - [#7417](https://github.com/blockscout/blockscout/pull/7417) - Docker compose for frontend
