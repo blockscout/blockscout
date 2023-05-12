@@ -19,6 +19,7 @@
 
 ### Chore
 
+- [#7468](https://github.com/blockscout/blockscout/pull/7468) - Refactoring queries with blocks
 - [#7435](https://github.com/blockscout/blockscout/pull/7435) - Add `.exs` and `.eex` checking in cspell
 - [#7450](https://github.com/blockscout/blockscout/pull/7450) - Resolve unresponsive navbar in verification form page
 - [#7449](https://github.com/blockscout/blockscout/pull/7449) - Actualize docker-compose readme and use latest tags instead main

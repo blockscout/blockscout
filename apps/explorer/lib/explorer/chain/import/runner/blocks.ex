@@ -733,7 +733,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         end
       end)
 
-    where(invalid_neighbors_query, [b], b.consensus)
+    where(invalid_neighbors_query, [block], block.consensus)
   end
 
   defp filter_by_min_height(blocks, filter_func) do

@@ -1354,9 +1354,9 @@ defmodule Explorer.Chain do
 
           query =
             from(
-              b in Block,
-              join: pending_ops in assoc(b, :pending_operations),
-              where: b.consensus and b.number == ^min_block_number
+              block in Block,
+              join: pending_ops in assoc(block, :pending_operations),
+              where: block.consensus and block.number == ^min_block_number
             )
 
           !select_repo(options).exists?(query)
@@ -2385,7 +2385,7 @@ defmodule Explorer.Chain do
       from(
         block in Block,
         where: block.number in ^block_numbers,
-        where: block.consensus,
+        where: block.consensus == true,
         select: block.number
       )
 
