@@ -6,7 +6,7 @@
   <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost") %>
 
   <div class="new-smart-contract-form">
-      <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification" %></h1>
+      <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification via Standard input JSON" %></h1>
       <%= form_for changeset,
                 address_contract_verification_path(@conn, :create),
                 [id: "standard-json-dropzone-form"],
@@ -61,3 +61,4 @@
       <% end %>
     </div>
 </section>
+<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>

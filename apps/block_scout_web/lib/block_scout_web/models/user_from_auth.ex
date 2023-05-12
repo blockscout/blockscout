@@ -11,29 +11,21 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
 
   import Ecto.Query, only: [from: 2]
 
-  def find_or_create(%Auth{} = auth, api_call? \\ false) do
+  def find_or_create(%Auth{} = auth) do
     case find_identity(auth) do
-      [] ->
+      nil ->
         case create_identity(auth) do
           %Identity{} = identity ->
-            {:ok, return_value(identity, auth, api_call?)}
+            {:ok, session_info(auth, identity)}
 
           {:error, changeset} ->
             {:error, changeset}
         end
 
-      [%{} = identity | _] ->
+      %{} = identity ->
         update_identity(identity, update_identity_map(auth))
-        {:ok, return_value(identity, auth, api_call?)}
+        {:ok, session_info(auth, identity)}
     end
-  end
-
-  defp return_value(identity, _auth, true) do
-    identity
-  end
-
-  defp return_value(identity, auth, false) do
-    basic_info(auth, identity)
   end
 
   defp create_identity(auth) do
@@ -68,7 +60,7 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
   end
 
   def find_identity(auth_or_uid) do
-    Repo.account_repo().all(query_identity(auth_or_uid))
+    Repo.account_repo().one(query_identity(auth_or_uid))
   end
 
   def query_identity(%Auth{} = auth) do
@@ -79,7 +71,21 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
     from(i in Identity, where: i.id == ^id)
   end
 
-  defp basic_info(auth, identity) do
+  defp session_info(
+         %Auth{extra: %Ueberauth.Auth.Extra{raw_info: %{user: %{"email_verified" => false}}}} = auth,
+         identity
+       ) do
+    %{
+      id: identity.id,
+      uid: auth.uid,
+      email: email_from_auth(auth),
+      nickname: nickname_from_auth(auth),
+      avatar: avatar_from_auth(auth),
+      email_verified: false
+    }
+  end
+
+  defp session_info(auth, identity) do
     %{watchlists: [watchlist | _]} = Repo.account_repo().preload(identity, :watchlists)
 
     %{
@@ -89,7 +95,8 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
       name: name_from_auth(auth),
       nickname: nickname_from_auth(auth),
       avatar: avatar_from_auth(auth),
-      watchlist_id: watchlist.id
+      watchlist_id: watchlist.id,
+      email_verified: true
     }
   end
 

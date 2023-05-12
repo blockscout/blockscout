@@ -66,6 +66,7 @@
       <input id="js-coin-name" class="d-none" value="<%= Application.get_env(:explorer, :coin_name) %>" />
       <input id="js-re-captcha-client-key" class="d-none" value="<%= Application.get_env(:block_scout_web, :recaptcha)[:v2_client_key] %>" />
       <input id="js-re-captcha-v3-client-key" class="d-none" value="<%= Application.get_env(:block_scout_web, :recaptcha)[:v3_client_key] %>" />
+      <input id="js-re-captcha-disabled" class="d-none" value="<%= Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] %>" />
       <input id="js-network-path" class="d-none" value="<%= Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path] %>" />
       <!-- -->
       <% show_maintenance_alert = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:show_maintenance_alert] %>
@@ -90,11 +91,15 @@
           </div>
         <% end %>
       <% end %>
-      <%= render BlockScoutWeb.LayoutView, "_topnav.html", current_user: Conn.get_session(@conn, :current_user), conn: @conn %>
-
-      <main class="js-ad-dependant-pt pt-5">
+      <% session = Explorer.Account.enabled?() && Plug.Conn.get_session(@conn, :current_user) %>
+      <%= render BlockScoutWeb.LayoutView, "_topnav.html", current_user: session, conn: @conn %>
+      <%= if session && !session[:email_verified] do %>
+        <p class="alert alert-warning" role="alert" style="margin-bottom: 0"><%= gettext("Please confirm your email address to use the My Account feature.") %> <%= gettext("A confirmation email was sent to") %> <a href="mailto:<%= session[:email] %>"><%=session[:email] %></a> <%= gettext "on sign up. Didn’t receive?" %> <a href="/api/account/v1/email/resend" class="ajax"><%= gettext "Resend verification email" %></a>.</p>
+      <% else %>
         <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
-        <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+      <% end %>
+      <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+      <main class="js-ad-dependant-pt pt-5">
         <%= @inner_content %>
       </main>
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
@@ -123,7 +128,6 @@
       @view_module != Elixir.BlockScoutWeb.AddressValidationView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationVyperView &&
       @view_module != Elixir.BlockScoutWeb.AddressReadContractView &&
@@ -142,8 +146,6 @@
       @view_module != Elixir.BlockScoutWeb.APIDocsView &&
       @view_module != Elixir.BlockScoutWeb.Admin.DashboardView &&
       @view_module != Elixir.BlockScoutWeb.SearchView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView &&
       @view_module != Elixir.BlockScoutWeb.StakesView &&
       @view_module != Elixir.BlockScoutWeb.WithdrawalView
     ) do %>
@@ -164,10 +166,11 @@
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/custom-scrollbar.js") %>"></script>
     <% end %>
     <script defer src="<%= static_path(@conn, "/js/autocomplete.js") %>"></script>
-    <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationView, Elixir.BlockScoutWeb.AddressContractVerificationVyperView, Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView, Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
+    <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationView, Elixir.BlockScoutWeb.AddressContractVerificationVyperView, Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView] do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
     <% end %>
     <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
+      <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/dropzone.js") %>"></script>
     <% end %>
     <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app_extra.js") %>"></script>
