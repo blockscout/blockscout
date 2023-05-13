@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.AddressContractView do
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Data, InternalTransaction, Transaction}
+  alias Explorer.SmartContract.Helper
 
   def render("scripts.html", %{conn: conn}) do
     render_scripts(conn, "address_contract/code_highlighting.js")
@@ -33,7 +34,7 @@ defmodule BlockScoutWeb.AddressContractView do
       |> decode_data(input_types)
       |> Enum.zip(constructor_abi["inputs"])
       |> Enum.reduce({0, "#{contract.constructor_arguments}\n\n"}, fn {val, %{"type" => type}}, {count, acc} ->
-        formatted_val = val_to_string(val, type, conn)
+        formatted_val = Helper.sanitize_input(val_to_string(val, type, conn))
 
         {count + 1, "#{acc}Arg [#{count}] (<b>#{type}</b>) : #{formatted_val}\n"}
       end)
