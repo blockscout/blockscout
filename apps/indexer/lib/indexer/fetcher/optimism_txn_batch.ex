@@ -458,13 +458,21 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   end
 
   defp handle_invalid_frame_number(last_frame_number, frame, tx, batches, sequences) do
-    if last_frame_number == 0 && frame.number == 0 do
-      # the new frame rewrites the previous one
-      {:cont, {:ok, batches, sequences, empty_incomplete_frame_sequence()}}
-    else
-      {:halt,
-       {:error,
-        "Invalid frame sequence. Last frame number: #{last_frame_number}. Next frame number: #{frame.number}. Tx hash: #{tx.hash}."}}
+    cond do
+      last_frame_number == 0 && frame.number == 0 ->
+        # the new frame rewrites the previous one
+        {:cont,
+         {:ok, batches, sequences,
+          %{bytes: frame.data, last_frame_number: frame.number, l1_transaction_hashes: [tx.hash]}}}
+
+      last_frame_number < 0 && frame.number > 0 ->
+        # ignore duplicated frame with the number greater than 0
+        {:cont, {:ok, batches, sequences, empty_incomplete_frame_sequence()}}
+
+      true ->
+        {:halt,
+         {:error,
+          "Invalid frame sequence. Last frame number: #{last_frame_number}. Next frame number: #{frame.number}. Tx hash: #{tx.hash}."}}
     end
   end
 
