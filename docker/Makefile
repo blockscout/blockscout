@@ -719,8 +719,8 @@ migrate_only:
 migrate: build postgres
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 
-PG_EXIST := $(shell docker ps -a --no-trunc --filter name=^/${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
-PG_STARTED := $(shell docker ps --no-trunc --filter name=^/${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
+PG_EXIST := $(shell docker ps -a --no-trunc --filter name="^/${PG_CONTAINER_NAME}$" | grep ${PG_CONTAINER_NAME})
+PG_STARTED := $(shell docker ps --no-trunc --filter name="^/${PG_CONTAINER_NAME}$" | grep ${PG_CONTAINER_NAME})
 
 postgres:
 ifdef DATABASE_URL
