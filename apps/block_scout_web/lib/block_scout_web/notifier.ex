@@ -5,6 +5,8 @@ defmodule BlockScoutWeb.Notifier do
 
   alias Absinthe.Subscription
 
+  alias BlockScoutWeb.API.V2, as: API_V2
+
   alias BlockScoutWeb.{
     AddressContractVerificationViaFlattenedCodeView,
     AddressContractVerificationViaJsonView,
@@ -143,6 +145,7 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("transactions:#{transaction_hash}", "raw_trace", %{raw_trace_origin: transaction_hash})
   end
 
+  # internal txs broadcast disabled on the indexer level, therefore it out of scope of the refactoring within https://github.com/blockscout/blockscout/pull/7474
   def handle_event({:chain_event, :internal_transactions, :realtime, internal_transactions}) do
     internal_transactions
     |> Stream.map(
@@ -156,7 +159,7 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :token_transfers, :realtime, all_token_transfers}) do
     all_token_transfers_full =
       all_token_transfers
-      |> Stream.map(
+      |> Enum.map(
         &(&1
           |> Repo.preload([:from_address, :to_address, :token, transaction: :block]))
       )
@@ -178,15 +181,12 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :transactions, :realtime, transactions}) do
+    preloads = [:block, created_contract_address: :names, from_address: :names, to_address: :names]
+
     transactions
-    |> Enum.map(& &1.hash)
-    |> Chain.hashes_to_transactions(
-      necessity_by_association: %{
-        :block => :optional,
-        [created_contract_address: :names] => :optional,
-        [from_address: :names] => :optional,
-        [to_address: :names] => :optional
-      }
+    |> Enum.map(
+      &(&1
+        |> Repo.preload(if API_V2.enabled?(), do: [:token_transfers | preloads], else: preloads))
     )
     |> broadcast_transactions_websocket_v2()
     |> Enum.map(fn tx ->
@@ -477,20 +477,7 @@ defmodule BlockScoutWeb.Notifier do
     grouped = Map.merge(grouped_by_to, grouped_by_from, fn _k, v1, v2 -> Enum.uniq(v1 ++ v2) end)
 
     for {address_hash, elements} <- grouped do
-      if "0xbb36c792b9b45aaf8b848a1392b0d6559202729e" == "#{address_hash}" do
-        debug("addresses:#{address_hash}", event)
-        debug(%{map_key => elements}, "12312312313")
-      end
-
       Endpoint.broadcast("addresses:#{address_hash}", event, %{map_key => elements})
     end
-  end
-
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
   end
 end

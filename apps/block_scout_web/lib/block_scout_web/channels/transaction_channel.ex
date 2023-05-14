@@ -76,7 +76,7 @@ defmodule BlockScoutWeb.TransactionChannel do
         %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
       )
       when is_list(transactions) do
-    push(socket, "transaction", %{transactions: Enum.count(transactions)})
+    push(socket, "transaction", %{transaction: Enum.count(transactions)})
 
     {:noreply, socket}
   end
