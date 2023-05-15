@@ -11,15 +11,17 @@
 - [#7355](https://github.com/blockscout/blockscout/pull/7355) - Add endpoint for token info import
 - [#7393](https://github.com/blockscout/blockscout/pull/7393) - Realtime fetcher max gap
 - [#7436](https://github.com/blockscout/blockscout/pull/7436) - TokenBalanceOnDemand ERC-1155 support
+- [#7469](https://github.com/blockscout/blockscout/pull/7469) - Clear missing block ranges after every success import
 
 ### Fixes
 
-- [#7466](https://github.com/blockscout/blockscout/pull/7466) - API v2: check base_fee_per_gas property exists before requesting its value for pending tx
+- [#7472](https://github.com/blockscout/blockscout/pull/7472) - Fix RE_CAPTCHA_DISABLED variable parsing
 - [#7391](https://github.com/blockscout/blockscout/pull/7391) - Fix: cannot read properties of null (reading 'value')
 - [#7377](https://github.com/blockscout/blockscout/pull/7377), [#7454](https://github.com/blockscout/blockscout/pull/7454) - API v2 improvements
 
 ### Chore
 
+- [#7468](https://github.com/blockscout/blockscout/pull/7468) - Refactoring queries with blocks
 - [#7435](https://github.com/blockscout/blockscout/pull/7435) - Add `.exs` and `.eex` checking in cspell
 - [#7450](https://github.com/blockscout/blockscout/pull/7450) - Resolve unresponsive navbar in verification form page
 - [#7449](https://github.com/blockscout/blockscout/pull/7449) - Actualize docker-compose readme and use latest tags instead main
