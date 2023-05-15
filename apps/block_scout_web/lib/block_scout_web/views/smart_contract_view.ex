@@ -105,7 +105,7 @@ defmodule BlockScoutWeb.SmartContractView do
   def values_with_type(value, string, names, index, _components) when string in ["string", :string],
     do: render_type_value("string", Helper.sanitize_input(value), fetch_name(names, index))
 
-  def values_with_type(value, bytes, names, index, _components) when bytes in ["bytes", :bytes],
+  def values_with_type(value, bytes, names, index, _components) when bytes in [:bytes],
     do: render_type_value("bytes", Helper.sanitize_input(value), fetch_name(names, index))
 
   def values_with_type(value, bool, names, index, _components) when bool in ["bool", :bool],
