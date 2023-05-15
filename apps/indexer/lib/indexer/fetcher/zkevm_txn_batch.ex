@@ -17,6 +17,7 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
 
   @batch_range_size 20
   @recheck_latest_batch_interval 60
+  @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -207,27 +208,18 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
     {sequence_hashes, verify_hashes} =
       responses
       |> Enum.reduce({[], []}, fn res, {sequences, verifies} = _acc ->
-        send_sequences_tx_hash =
-          case Map.get(res.result, "sendSequencesTxHash") do
-            "0x" <> send_sequences_tx_hash -> send_sequences_tx_hash
-            nil -> "0000000000000000000000000000000000000000000000000000000000000000"
-          end
-
-        verify_batch_tx_hash =
-          case Map.get(res.result, "verifyBatchTxHash") do
-            "0x" <> verify_batch_tx_hash -> verify_batch_tx_hash
-            nil -> "0000000000000000000000000000000000000000000000000000000000000000"
-          end
+        send_sequences_tx_hash = get_tx_hash(res.result, "sendSequencesTxHash")
+        verify_batch_tx_hash = get_tx_hash(res.result, "verifyBatchTxHash")
 
         sequences =
-          if send_sequences_tx_hash != "0000000000000000000000000000000000000000000000000000000000000000" do
+          if send_sequences_tx_hash != @zero_hash do
             [Base.decode16!(send_sequences_tx_hash, case: :mixed) | sequences]
           else
             sequences
           end
 
         verifies =
-          if verify_batch_tx_hash != "0000000000000000000000000000000000000000000000000000000000000000" do
+          if verify_batch_tx_hash != @zero_hash do
             [Base.decode16!(verify_batch_tx_hash, case: :mixed) | verifies]
           else
             verifies
@@ -263,49 +255,15 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
         acc_input_hash = Map.get(res.result, "accInputHash")
         state_root = Map.get(res.result, "stateRoot")
 
-        send_sequences_tx_hash =
-          case Map.get(res.result, "sendSequencesTxHash") do
-            "0x" <> send_sequences_tx_hash -> send_sequences_tx_hash
-            nil -> "0000000000000000000000000000000000000000000000000000000000000000"
-          end
-
-        verify_batch_tx_hash =
-          case Map.get(res.result, "verifyBatchTxHash") do
-            "0x" <> verify_batch_tx_hash -> verify_batch_tx_hash
-            nil -> "0000000000000000000000000000000000000000000000000000000000000000"
-          end
-
         {sequence_id, l1_txs, next_id, hash_to_id} =
-          if send_sequences_tx_hash != "0000000000000000000000000000000000000000000000000000000000000000" do
-            sequence_tx_hash = Base.decode16!(send_sequences_tx_hash, case: :mixed)
-
-            id = Map.get(hash_to_id, sequence_tx_hash)
-
-            if is_nil(id) do
-              {next_id, l1_txs ++ [%{id: next_id, hash: sequence_tx_hash, is_verify: false}], next_id + 1,
-               Map.put(hash_to_id, sequence_tx_hash, next_id)}
-            else
-              {id, l1_txs, next_id, hash_to_id}
-            end
-          else
-            {nil, l1_txs, next_id, hash_to_id}
-          end
+          res.result
+          |> get_tx_hash("sendSequencesTxHash")
+          |> handle_tx_hash(hash_to_id, next_id, l1_txs, false)
 
         {verify_id, l1_txs, next_id, hash_to_id} =
-          if verify_batch_tx_hash != "0000000000000000000000000000000000000000000000000000000000000000" do
-            verify_tx_hash = Base.decode16!(verify_batch_tx_hash, case: :mixed)
-
-            id = Map.get(hash_to_id, verify_tx_hash)
-
-            if is_nil(id) do
-              {next_id, l1_txs ++ [%{id: next_id, hash: verify_tx_hash, is_verify: true}], next_id + 1,
-               Map.put(hash_to_id, verify_tx_hash, next_id)}
-            else
-              {id, l1_txs, next_id, hash_to_id}
-            end
-          else
-            {nil, l1_txs, next_id, hash_to_id}
-          end
+          res.result
+          |> get_tx_hash("verifyBatchTxHash")
+          |> handle_tx_hash(hash_to_id, next_id, l1_txs, true)
 
         batch = %{
           number: number,
@@ -360,6 +318,30 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
       Enum.find_value(responses, fn resp -> if resp.id == 2, do: quantity_to_integer(resp.result) end)
 
     {latest_batch_number, virtual_batch_number, verified_batch_number}
+  end
+
+  defp get_tx_hash(result, type) do
+    case Map.get(result, type) do
+      "0x" <> tx_hash -> tx_hash
+      nil -> "0000000000000000000000000000000000000000000000000000000000000000"
+    end
+  end
+
+  defp handle_tx_hash(encoded_tx_hash, hash_to_id, next_id, l1_txs, is_verify) do
+    if encoded_tx_hash != @zero_hash do
+      tx_hash = Base.decode16!(encoded_tx_hash, case: :mixed)
+
+      id = Map.get(hash_to_id, tx_hash)
+
+      if is_nil(id) do
+        {next_id, l1_txs ++ [%{id: next_id, hash: tx_hash, is_verify: is_verify}], next_id + 1,
+         Map.put(hash_to_id, tx_hash, next_id)}
+      else
+        {id, l1_txs, next_id, hash_to_id}
+      end
+    else
+      {nil, l1_txs, next_id, hash_to_id}
+    end
   end
 
   defp repeated_call(func, args, error_message, retries_left) do
