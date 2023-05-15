@@ -10,7 +10,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
   alias Explorer.Repo
   alias Indexer.BoundInterval
   alias Indexer.Block.Catchup
-  alias Indexer.Block.Catchup.MissingRangesCollector
+  alias Indexer.Block.Catchup.{MissingRangesCollector, MissingRangesManipulator}
 
   alias Indexer.Fetcher.{
     CoinBalance,
@@ -425,6 +425,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       insert(:block, number: 1)
 
       MissingRangesCollector.start_link([])
+      MissingRangesManipulator.start_link([])
       start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -517,6 +518,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
       Application.put_env(:indexer, :block_ranges, "0..0")
       MissingRangesCollector.start_link([])
+      MissingRangesManipulator.start_link([])
       start_supervised({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -576,6 +578,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
   defp supervisor(%{json_rpc_named_arguments: json_rpc_named_arguments}) do
     start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
+    start_supervised!({MissingRangesManipulator, []})
 
     pid =
       start_supervised!(
