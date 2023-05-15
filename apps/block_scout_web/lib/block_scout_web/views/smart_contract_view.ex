@@ -285,4 +285,15 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def not_last_element?(length, index), do: length > 1 and index < length - 1
+
+  def cut_rpc_url(error) do
+    transport_options = Application.get_env(:explorer, :json_rpc_named_arguments)[:transport_options]
+
+    error
+    |> String.replace(transport_options[:url], "rpc_url")
+    |> (&if(transport_options[:fallback_url],
+          do: String.replace(&1, transport_options[:fallback_url], "rpc_url"),
+          else: &1
+        )).()
+  end
 end
