@@ -13,9 +13,11 @@
 - [#7393](https://github.com/blockscout/blockscout/pull/7393) - Realtime fetcher max gap
 - [#7436](https://github.com/blockscout/blockscout/pull/7436) - TokenBalanceOnDemand ERC-1155 support
 - [#7200](https://github.com/blockscout/blockscout/pull/7200) - Add Optimism BedRock Deposits to the main page in API
+- [#7469](https://github.com/blockscout/blockscout/pull/7469) - Clear missing block ranges after every success import
 
 ### Fixes
 
+- [#7472](https://github.com/blockscout/blockscout/pull/7472) - Fix RE_CAPTCHA_DISABLED variable parsing
 - [#7391](https://github.com/blockscout/blockscout/pull/7391) - Fix: cannot read properties of null (reading 'value')
 
 - [#7219](https://github.com/blockscout/blockscout/pull/7219) - Output L1 fields in API v2 for transaction page and fix transaction fee calculation
@@ -23,6 +25,8 @@
 
 ### Chore
 
+- [#7468](https://github.com/blockscout/blockscout/pull/7468) - Refactoring queries with blocks
+- [#7435](https://github.com/blockscout/blockscout/pull/7435) - Add `.exs` and `.eex` checking in cspell
 - [#7450](https://github.com/blockscout/blockscout/pull/7450) - Resolve unresponsive navbar in verification form page
 - [#7449](https://github.com/blockscout/blockscout/pull/7449) - Actualize docker-compose readme and use latest tags instead main
 - [#7417](https://github.com/blockscout/blockscout/pull/7417) - Docker compose for frontend
