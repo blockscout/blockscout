@@ -109,7 +109,7 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
         {state, 0}
       end
 
-    Process.send_after(self(), :continue, :timer.seconds(@recheck_latest_batch_interval) - handle_duration)
+    Process.send_after(self(), :continue, max(:timer.seconds(@recheck_latest_batch_interval) - handle_duration, 0))
 
     {:noreply, new_state}
   end
@@ -159,8 +159,32 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
       chunk_start = start_batch_number + @batch_range_size * current_chunk
       chunk_end = min(chunk_start + @batch_range_size - 1, end_batch_number)
 
+      log_batches_chunk_handling(chunk_start, chunk_end, start_batch_number, end_batch_number)
+
       fetch_and_save_batches(chunk_start, chunk_end, json_rpc_named_arguments)
     end)
+  end
+
+  defp log_batches_chunk_handling(chunk_start, chunk_end, start_block, end_block) do
+    target_range =
+      if chunk_start != start_block or chunk_end != end_block do
+        percentage =
+          (chunk_end - start_block + 1)
+          |> Decimal.div(end_block - start_block + 1)
+          |> Decimal.mult(100)
+          |> Decimal.round(2)
+          |> Decimal.to_string()
+
+        " Target range: #{start_block}..#{end_block}. Progress: #{percentage}%"
+      else
+        ""
+      end
+
+    if chunk_start == chunk_end do
+      Logger.info("Handling batch ##{chunk_start}.#{target_range}")
+    else
+      Logger.info("Handling batch range #{chunk_start}..#{chunk_end}.#{target_range}")
+    end
   end
 
   defp fetch_and_save_batches(batch_start, batch_end, json_rpc_named_arguments) do
