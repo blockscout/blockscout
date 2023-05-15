@@ -186,6 +186,7 @@ defmodule BlockScoutWeb.Notifier do
     |> Enum.map(& &1.hash)
     |> Chain.hashes_to_transactions(
       necessity_by_association: %{
+        :block => :optional,
         [created_contract_address: :names] => :optional,
         [from_address: :names] => :optional,
         [to_address: :names] => :optional

@@ -175,10 +175,6 @@ const search = (value) => {
 
   analytics.trackEvent(eventName, eventProperties)
 
-  const pathObj = document.getElementById('network-path')
-  // @ts-ignore
-  const path = (pathObj && pathObj.value) || ''
-
   if (value) {
     window.location.href = `${commonPath}/search?q=${value}`
   }

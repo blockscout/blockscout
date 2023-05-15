@@ -74,10 +74,6 @@ const legend = {
   display: false
 }
 
-function formatValue (val) {
-  return `${numeral(val).format('0,0')}`
-}
-
 const config = {
   type: 'line',
   responsive: true,

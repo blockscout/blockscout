@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   require Ecto.Query
   require Logger
 
-  import Ecto.Query, only: [from: 2, where: 3, subquery: 1]
+  import Ecto.Query, only: [from: 2, where: 3]
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Block, Import, PendingBlockOperation, Transaction}
