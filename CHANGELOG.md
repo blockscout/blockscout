@@ -17,6 +17,7 @@
 
 ### Fixes
 
+- [#7490](https://github.com/blockscout/blockscout/pull/7490) - Fix pending txs is not a map
 - [#7472](https://github.com/blockscout/blockscout/pull/7472) - Fix RE_CAPTCHA_DISABLED variable parsing
 - [#7391](https://github.com/blockscout/blockscout/pull/7391) - Fix: cannot read properties of null (reading 'value')
 - [#7377](https://github.com/blockscout/blockscout/pull/7377), [#7454](https://github.com/blockscout/blockscout/pull/7454) - API v2 improvements
