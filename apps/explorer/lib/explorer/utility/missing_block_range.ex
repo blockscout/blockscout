@@ -57,6 +57,7 @@ defmodule Explorer.Utility.MissingBlockRange do
         update_to_number_or_delete_range(range, max_number + 1)
 
       {%__MODULE__{} = range_1, %__MODULE__{} = range_2} ->
+        delete_ranges_between(range_2.to_number, range_1.from_number)
         update_from_number_or_delete_range(range_1, min_number - 1)
         update_to_number_or_delete_range(range_2, max_number + 1)
 
@@ -107,6 +108,41 @@ defmodule Explorer.Utility.MissingBlockRange do
     |> Repo.one()
   end
 
+  defp delete_ranges_between(from, to) do
+    from
+    |> from_number_below_query()
+    |> to_number_above_query(to)
+    |> Repo.delete_all()
+  end
+
+  def sanitize_missing_block_ranges do
+    __MODULE__
+    |> where([r], r.from_number < r.to_number)
+    |> update([r], set: [from_number: r.to_number, to_number: r.from_number])
+    |> Repo.update_all([])
+
+    __MODULE__
+    |> join(:inner, [r], r1 in __MODULE__,
+      on:
+        ((r1.from_number <= r.from_number and r1.from_number >= r.to_number) or
+           (r1.to_number <= r.from_number and r1.to_number >= r.to_number)) and r1.id != r.id
+    )
+    |> select([r, r1], [r, r1])
+    |> Repo.all()
+    |> Enum.map(&Enum.sort/1)
+    |> Enum.uniq()
+    |> Enum.map(fn [range_1, range_2] ->
+      Repo.delete(range_2)
+
+      range_1
+      |> changeset(%{
+        from_number: max(range_1.from_number, range_2.from_number),
+        to_number: min(range_1.to_number, range_2.to_number)
+      })
+      |> Repo.update()
+    end)
+  end
+
   def min_max_block_query do
     from(r in __MODULE__, select: %{min: min(r.to_number), max: max(r.from_number)})
   end
@@ -115,12 +151,12 @@ defmodule Explorer.Utility.MissingBlockRange do
     from(r in __MODULE__, order_by: [desc: r.from_number], limit: ^size)
   end
 
-  def from_number_below_query(lower_bound) do
-    from(r in __MODULE__, where: r.from_number < ^lower_bound)
+  def from_number_below_query(query \\ __MODULE__, lower_bound) do
+    from(r in query, where: r.from_number < ^lower_bound)
   end
 
-  def to_number_above_query(upper_bound) do
-    from(r in __MODULE__, where: r.to_number > ^upper_bound)
+  def to_number_above_query(query \\ __MODULE__, upper_bound) do
+    from(r in query, where: r.to_number > ^upper_bound)
   end
 
   def include_bound_query(bound) do
