@@ -285,7 +285,7 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
             }
           end)
 
-        {batches ++ [batch], l2_txs ++ l2_txs_append, l1_txs, next_id, hash_to_id}
+        {[batch | batches], l2_txs ++ l2_txs_append, l1_txs, next_id, hash_to_id}
       end)
 
     {:ok, _} =
@@ -323,7 +323,7 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
   defp get_tx_hash(result, type) do
     case Map.get(result, type) do
       "0x" <> tx_hash -> tx_hash
-      nil -> "0000000000000000000000000000000000000000000000000000000000000000"
+      nil -> @zero_hash
     end
   end
 
@@ -334,7 +334,7 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
       id = Map.get(hash_to_id, tx_hash)
 
       if is_nil(id) do
-        {next_id, l1_txs ++ [%{id: next_id, hash: tx_hash, is_verify: is_verify}], next_id + 1,
+        {next_id, [%{id: next_id, hash: tx_hash, is_verify: is_verify} | l1_txs], next_id + 1,
          Map.put(hash_to_id, tx_hash, next_id)}
       else
         {id, l1_txs, next_id, hash_to_id}
