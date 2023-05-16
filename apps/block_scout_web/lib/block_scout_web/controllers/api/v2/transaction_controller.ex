@@ -63,12 +63,19 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   @api_true [api?: true]
 
   def transaction(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
+    necessity_by_association =
+      @transaction_necessity_by_association
+      |> Map.put(:transaction_actions, :optional)
+      |> Map.put(:zkevm_batch, :optional)
+      |> Map.put(:zkevm_sequence_txn, :optional)
+      |> Map.put(:zkevm_verify_txn, :optional)
+
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
            {:not_found,
             Chain.hash_to_transaction(
               transaction_hash,
-              necessity_by_association: Map.put(@transaction_necessity_by_association, :transaction_actions, :optional),
+              necessity_by_association: necessity_by_association,
               api?: true
             )},
          {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),

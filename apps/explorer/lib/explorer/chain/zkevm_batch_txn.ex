@@ -17,7 +17,7 @@ defmodule Explorer.Chain.ZkevmBatchTxn do
   @primary_key false
   schema "zkevm_batch_l2_transactions" do
     belongs_to(:batch, ZkevmTxnBatch, foreign_key: :batch_number, references: :number, type: :integer)
-    belongs_to(:l2_transaction, Transaction, foreign_key: :hash, references: :hash, type: Hash.Full)
+    belongs_to(:l2_transaction, Transaction, foreign_key: :hash, primary_key: true, references: :hash, type: Hash.Full)
 
     timestamps()
   end

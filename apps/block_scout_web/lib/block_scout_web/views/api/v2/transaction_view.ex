@@ -408,12 +408,26 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "has_error_in_internal_txs" => transaction.has_error_in_internal_txs
     }
 
-    if Application.get_env(:explorer, :chain_type) == "polygon_edge" && single_tx? do
-      result
-      |> Map.put("polygon_edge_deposit", polygon_edge_deposit(transaction.hash, conn))
-      |> Map.put("polygon_edge_withdrawal", polygon_edge_withdrawal(transaction.hash, conn))
-    else
-      result
+    case single_tx? && Application.get_env(:explorer, :chain_type) do
+      "polygon_edge" ->
+        result
+        |> Map.put("polygon_edge_deposit", polygon_edge_deposit(transaction.hash, conn))
+        |> Map.put("polygon_edge_withdrawal", polygon_edge_withdrawal(transaction.hash, conn))
+
+      "polygon_zkevm" ->
+        result
+        |> add_optional_transaction_field(transaction, "zkevm_batch_number", :zkevm_batch, :number)
+        |> add_optional_transaction_field(transaction, "zkevm_sequence_hash", :zkevm_sequence_txn, :hash)
+        |> add_optional_transaction_field(transaction, "zkevm_verify_hash", :zkevm_verify_txn, :hash)
+
+      _ -> result
+    end
+  end
+
+  defp add_optional_transaction_field(result, transaction, field_name, assoc_name, assoc_field) do
+    case Map.get(transaction, assoc_name) do
+      nil -> result
+      item -> Map.put(result, field_name, Map.get(item, assoc_field))
     end
   end
 

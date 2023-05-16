@@ -27,7 +27,8 @@ defmodule Explorer.Chain.Transaction do
     TokenTransfer,
     Transaction,
     TransactionAction,
-    Wei
+    Wei,
+    ZkevmBatchTxn
   }
 
   alias Explorer.Chain.Transaction.{Fork, Status}
@@ -274,6 +275,11 @@ defmodule Explorer.Chain.Transaction do
     )
 
     has_many(:uncles, through: [:forks, :uncle])
+
+    has_one(:zkevm_batch_txn, ZkevmBatchTxn, foreign_key: :hash)
+    has_one(:zkevm_batch, through: [:zkevm_batch_txn, :batch])
+    has_one(:zkevm_sequence_txn, through: [:zkevm_batch, :sequence_transaction])
+    has_one(:zkevm_verify_txn, through: [:zkevm_batch, :verify_transaction])
 
     belongs_to(
       :created_contract_address,
