@@ -8,7 +8,7 @@ hackney_opts = ConfigHelper.hackney_options()
 timeout = ConfigHelper.timeout(10)
 
 config :indexer,
-  block_interval: :timer.seconds(5),
+  block_interval: ConfigHelper.parse_time_env_var("INDEXER_CATCHUP_BLOCK_INTERVAL", "5s"),
   blocks_concurrency: 1,
   receipts_concurrency: 1,
   json_rpc_named_arguments: [
