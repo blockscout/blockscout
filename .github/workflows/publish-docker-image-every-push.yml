@@ -58,9 +58,9 @@ jobs:
           tags: blockscout/blockscout:master, blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
-            DISABLE_READ_API=false
+            API_V1_READ_METHODS_DISABLED=false
             DISABLE_WEBAPP=false
-            DISABLE_WRITE_API=false
+            API_V1_WRITE_METHODS_DISABLED=false
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
@@ -82,9 +82,9 @@ jobs:
           tags: blockscout/blockscout:frontend-main
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
-            DISABLE_READ_API=false
+            API_V1_READ_METHODS_DISABLED=false
             DISABLE_WEBAPP=false
-            DISABLE_WRITE_API=false
+            API_V1_WRITE_METHODS_DISABLED=false
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=

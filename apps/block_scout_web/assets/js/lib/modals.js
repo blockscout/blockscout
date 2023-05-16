@@ -25,7 +25,7 @@ export function currentModal () {
   return $currentModal
 }
 
-export function openModal ($modal, unclosable) {
+export function openModal ($modal, unclosable, onHideCallback = null) {
   // Hide all tooltips before showing a modal,
   // since they are sticking on top of modal
   $('.tooltip').tooltip('hide')
@@ -53,6 +53,9 @@ export function openModal ($modal, unclosable) {
     if (unclosable) {
       modalLocked = true
     }
+  }
+  if (onHideCallback) {
+    $($currentModal).on('hidden.bs.modal', onHideCallback)
   }
 }
 
@@ -116,11 +119,11 @@ export function openWarningModal (title, text) {
   openModal($modal)
 }
 
-export function openSuccessModal (title, text) {
+export function openSuccessModal (title, text, callback = null) {
   const $modal = $('#successStatusModal')
   $modal.find('.modal-status-title').text(title)
   $modal.find('.modal-status-text').html(text)
-  openModal($modal)
+  openModal($modal, false, callback)
 }
 
 export function openQuestionModal (title, text, acceptCallback = null, exceptCallback = null, acceptText = 'Yes', exceptText = 'No') {
