@@ -23,8 +23,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   alias Ecto.Changeset
   alias Explorer.Chain
+  alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
-  alias Indexer.Block.Catchup.{MissingRangesManipulator, Sequence, TaskSupervisor}
+  alias Indexer.Block.Catchup.{Sequence, TaskSupervisor}
   alias Indexer.Memory.Shrinkable
   alias Indexer.Prometheus
 
