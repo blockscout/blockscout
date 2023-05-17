@@ -100,8 +100,6 @@ defmodule Explorer.Utility.MissingBlockRange do
     Enum.map(batch, &delete_range/1)
   end
 
-  def save_batch([]), do: {0, nil}
-
   def save_batch(batch) do
     batch
     |> List.wrap()
@@ -148,26 +146,37 @@ defmodule Explorer.Utility.MissingBlockRange do
     |> update([r], set: [from_number: r.to_number, to_number: r.from_number])
     |> Repo.update_all([])
 
-    __MODULE__
-    |> join(:inner, [r], r1 in __MODULE__,
-      on:
-        ((r1.from_number <= r.from_number and r1.from_number >= r.to_number) or
-           (r1.to_number <= r.from_number and r1.to_number >= r.to_number)) and r1.id != r.id
-    )
-    |> select([r, r1], [r, r1])
-    |> Repo.all()
-    |> Enum.map(&Enum.sort/1)
-    |> Enum.uniq()
-    |> Enum.map(fn [range_1, range_2] ->
-      Repo.delete(range_2)
+    {last_range, merged_ranges} = delete_and_merge_ranges()
 
-      range_1
-      |> changeset(%{
-        from_number: max(range_1.from_number, range_2.from_number),
-        to_number: min(range_1.to_number, range_2.to_number)
-      })
-      |> Repo.update()
+    save_batch((last_range && [last_range | merged_ranges]) || [])
+  end
+
+  defp delete_and_merge_ranges do
+    delete_intersecting_ranges()
+    |> Enum.sort_by(& &1.from_number, &>=/2)
+    |> Enum.reduce({nil, []}, fn %{from_number: from, to_number: to}, {last_range, result} ->
+      cond do
+        is_nil(last_range) -> {from..to, result}
+        Range.disjoint?(from..to, last_range) -> {from..to, [last_range | result]}
+        true -> {Range.new(max(from, last_range.first), min(to, last_range.last)), result}
+      end
     end)
+  end
+
+  defp delete_intersecting_ranges do
+    {_, intersecting_ranges} =
+      __MODULE__
+      |> join(:inner, [r], r1 in __MODULE__,
+        on:
+          ((r1.from_number <= r.from_number and r1.from_number >= r.to_number) or
+             (r1.to_number <= r.from_number and r1.to_number >= r.to_number) or
+             (r.from_number <= r1.from_number and r.from_number >= r1.to_number) or
+             (r.to_number <= r1.from_number and r.to_number >= r1.to_number)) and r1.id != r.id
+      )
+      |> select([r, r1], r)
+      |> Repo.delete_all()
+
+    intersecting_ranges
   end
 
   def min_max_block_query do
