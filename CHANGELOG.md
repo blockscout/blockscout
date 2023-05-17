@@ -24,6 +24,7 @@
 
 ### Chore
 
+- [#7496](https://github.com/blockscout/blockscout/pull/7496) - API v2: Pass backend version to the frontend
 - [#7468](https://github.com/blockscout/blockscout/pull/7468) - Refactoring queries with blocks
 - [#7435](https://github.com/blockscout/blockscout/pull/7435) - Add `.exs` and `.eex` checking in cspell
 - [#7450](https://github.com/blockscout/blockscout/pull/7450) - Resolve unresponsive navbar in verification form page

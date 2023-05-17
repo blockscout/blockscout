@@ -128,6 +128,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
     scope "/config" do
       get("/json-rpc-url", V2.ConfigController, :json_rpc_url)
+      get("/backend-version", V2.ConfigController, :backend_version)
     end
 
     scope "/transactions" do
