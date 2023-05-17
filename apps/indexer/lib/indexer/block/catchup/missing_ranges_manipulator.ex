@@ -16,12 +16,9 @@ defmodule Indexer.Block.Catchup.MissingRangesManipulator do
     GenServer.call(__MODULE__, :get_latest_batch)
   end
 
-  def delete_range(range) do
-    GenServer.cast(__MODULE__, {:delete_range, range})
-  end
-
+  @timeout_by_range 2000
   def clear_batch(batch) do
-    GenServer.cast(__MODULE__, {:clear_batch, batch})
+    GenServer.call(__MODULE__, {:clear_batch, batch}, @timeout_by_range * Enum.count(batch))
   end
 
   @impl true
@@ -42,9 +39,7 @@ defmodule Indexer.Block.Catchup.MissingRangesManipulator do
     {:noreply, state}
   end
 
-  def handle_cast({:clear_batch, batch}, state) do
-    MissingBlockRange.clear_batch(batch)
-
-    {:noreply, state}
+  def handle_call({:clear_batch, batch}, _from, state) do
+    {:reply, MissingBlockRange.clear_batch(batch), state}
   end
 end

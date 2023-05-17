@@ -12,7 +12,7 @@
 - [#7393](https://github.com/blockscout/blockscout/pull/7393) - Realtime fetcher max gap
 - [#7436](https://github.com/blockscout/blockscout/pull/7436) - TokenBalanceOnDemand ERC-1155 support
 - [#7200](https://github.com/blockscout/blockscout/pull/7200) - Add Optimism BedRock Deposits to the main page in API
-- [#7469](https://github.com/blockscout/blockscout/pull/7469), [#7485](https://github.com/blockscout/blockscout/pull/7485) - Clear missing block ranges after every success import
+- [#7469](https://github.com/blockscout/blockscout/pull/7469), [#7485](https://github.com/blockscout/blockscout/pull/7485), [#7493](https://github.com/blockscout/blockscout/pull/7493) - Clear missing block ranges after every success import
 - [#7489](https://github.com/blockscout/blockscout/pull/7489) - INDEXER_CATCHUP_BLOCK_INTERVAL env var
 
 ### Fixes
