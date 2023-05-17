@@ -209,6 +209,10 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/", V2.WithdrawalController, :withdrawals_list)
       get("/counters", V2.WithdrawalController, :withdrawals_counters)
     end
+
+    scope "/zkevm" do
+      get("/batches/:batch_number", V2.ZkevmController, :batch)
+    end
   end
 
   scope "/v1", as: :api_v1 do

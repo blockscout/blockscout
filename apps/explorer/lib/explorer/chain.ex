@@ -64,7 +64,8 @@ defmodule Explorer.Chain do
     TokenTransfer,
     Transaction,
     Wei,
-    Withdrawal
+    Withdrawal,
+    ZkevmTxnBatch
   }
 
   alias Explorer.Chain.Block.{EmissionReward, Reward}
@@ -6389,6 +6390,18 @@ defmodule Explorer.Chain do
           )
       }
     )
+
+  def zkevm_batch(number, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    ZkevmTxnBatch
+    |> where(number: ^number)
+    |> join_associations(necessity_by_association)
+    |> select_repo(options).one()
+    |> case do
+      nil -> {:error, :not_found}
+      batch -> {:ok, batch}
+    end
   end
 
   @spec verified_contracts_top(non_neg_integer()) :: [Hash.Address.t()]
