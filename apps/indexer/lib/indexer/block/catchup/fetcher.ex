@@ -75,8 +75,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
         shrunk = Shrinkable.shrunk?(sequence)
 
-        MissingRangesManipulator.clear_batch(missing_ranges)
-
         %{
           first_block_number: first,
           last_block_number: last,
@@ -275,7 +273,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
     success_numbers
     |> numbers_to_ranges()
-    |> Enum.map(&MissingRangesManipulator.delete_range/1)
+    |> MissingRangesManipulator.clear_batch()
   end
 
   defp block_errors_to_block_number_ranges(block_errors) when is_list(block_errors) do
