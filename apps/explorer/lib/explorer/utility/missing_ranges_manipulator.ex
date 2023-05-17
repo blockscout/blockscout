@@ -30,7 +30,6 @@ defmodule Explorer.Utility.MissingRangesManipulator do
 
   @impl true
   def init(_) do
-    MissingBlockRange.sanitize_missing_block_ranges()
     {:ok, %{}}
   end
 
