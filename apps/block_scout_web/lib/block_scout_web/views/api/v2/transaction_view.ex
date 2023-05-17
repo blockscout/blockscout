@@ -415,10 +415,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         |> Map.put("polygon_edge_withdrawal", polygon_edge_withdrawal(transaction.hash, conn))
 
       "polygon_zkevm" ->
-        result
-        |> add_optional_transaction_field(transaction, "zkevm_batch_number", :zkevm_batch, :number)
-        |> add_optional_transaction_field(transaction, "zkevm_sequence_hash", :zkevm_sequence_txn, :hash)
-        |> add_optional_transaction_field(transaction, "zkevm_verify_hash", :zkevm_verify_txn, :hash)
+        extended_result =
+          result
+          |> add_optional_transaction_field(transaction, "zkevm_batch_number", :zkevm_batch, :number)
+          |> add_optional_transaction_field(transaction, "zkevm_sequence_hash", :zkevm_sequence_txn, :hash)
+          |> add_optional_transaction_field(transaction, "zkevm_verify_hash", :zkevm_verify_txn, :hash)
+
+        Map.put(extended_result, "zkevm_status", zkevm_status(extended_result))
 
       _ -> result
     end
@@ -428,6 +431,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     case Map.get(transaction, assoc_name) do
       nil -> result
       item -> Map.put(result, field_name, Map.get(item, assoc_field))
+    end
+  end
+
+  defp zkevm_status(result_map) do
+    if is_nil(Map.get(result_map, "zkevm_sequence_hash")) do
+      "Confirmed by Sequencer"
+    else
+      "L1 Confirmed"
     end
   end
 
