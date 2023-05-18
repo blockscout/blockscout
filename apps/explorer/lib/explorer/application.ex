@@ -70,7 +70,8 @@ defmodule Explorer.Application do
       TransactionsApiV2,
       Accounts,
       Uncles,
-      {Redix, redix_opts()}
+      {Redix, redix_opts()},
+      {Explorer.Utility.MissingRangesManipulator, []}
     ]
 
     children = base_children ++ configurable_children()

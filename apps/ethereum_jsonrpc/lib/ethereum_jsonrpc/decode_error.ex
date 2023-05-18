@@ -61,7 +61,7 @@ defmodule EthereumJSONRPC.DecodeError do
 
       request:
 
-        url: #{if hide_url, do: "hidden", else: request_url}
+        url: #{if hide_url, do: "rpc_url", else: request_url}
 
         body: #{truncated_request_body}
 

@@ -1354,9 +1354,9 @@ defmodule Explorer.Chain do
 
           query =
             from(
-              b in Block,
-              join: pending_ops in assoc(b, :pending_operations),
-              where: b.consensus and b.number == ^min_block_number
+              block in Block,
+              join: pending_ops in assoc(block, :pending_operations),
+              where: block.consensus and block.number == ^min_block_number
             )
 
           !select_repo(options).exists?(query)
@@ -2385,7 +2385,7 @@ defmodule Explorer.Chain do
       from(
         block in Block,
         where: block.number in ^block_numbers,
-        where: block.consensus,
+        where: block.consensus == true,
         select: block.number
       )
 
@@ -6848,7 +6848,11 @@ defmodule Explorer.Chain do
       |> Repo.account_repo().all()
 
     address_hashes = Enum.map(watchlist_addresses, fn wa -> wa.address_hash end)
-    watchlist_names = Enum.reduce(watchlist_addresses, %{}, fn wa, acc -> Map.put(acc, wa.address_hash, wa.name) end)
+
+    watchlist_names =
+      Enum.reduce(watchlist_addresses, %{}, fn wa, acc ->
+        Map.put(acc, wa.address_hash, %{label: wa.name, display_name: wa.name})
+      end)
 
     {watchlist_names, address_hashes_to_mined_transactions_without_rewards(address_hashes, options)}
   end
