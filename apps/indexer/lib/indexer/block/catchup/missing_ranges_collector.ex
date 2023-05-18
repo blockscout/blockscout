@@ -8,7 +8,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Helper, as: ExplorerHelper
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.{MissingBlockRange, MissingRangesManipulator}
   alias Indexer.Block.Catchup.Helper
 
   @default_missing_ranges_batch_size 100_000
@@ -40,6 +40,8 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   end
 
   defp default_init do
+    MissingBlockRange.sanitize_missing_block_ranges()
+
     {min_number, max_number} = get_initial_min_max()
 
     clear_to_bounds(min_number, max_number)
@@ -56,7 +58,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
     ranges
     |> Enum.reverse()
     |> Enum.flat_map(fn f..l -> Chain.missing_block_number_ranges(l..f) end)
-    |> MissingBlockRange.save_batch()
+    |> MissingRangesManipulator.save_batch()
 
     if not is_nil(max_fetched_block_number) do
       Process.send_after(self(), :update_future, @future_check_interval)
@@ -113,7 +115,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
       %{min: nil, max: nil} ->
         max_number = last_block()
         {min_number, first_batch} = fetch_missing_ranges_batch(max_number, false)
-        MissingBlockRange.save_batch(first_batch)
+        MissingRangesManipulator.save_batch(first_batch)
         {min_number, max_number}
 
       %{min: min, max: max} ->
@@ -125,7 +127,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   def handle_info(:update_future, %{max_fetched_block_number: max_number} = state) do
     if continue_future_updating?(max_number) do
       {new_max_number, batch} = fetch_missing_ranges_batch(max_number, true)
-      MissingBlockRange.save_batch(batch)
+      MissingRangesManipulator.save_batch(batch)
       Process.send_after(self(), :update_future, @future_check_interval)
       {:noreply, %{state | max_fetched_block_number: new_max_number}}
     else
@@ -137,7 +139,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
     if min_number > first_block() do
       {new_min_number, batch} = fetch_missing_ranges_batch(min_number, false)
       Process.send_after(self(), :update_past, @past_check_interval)
-      MissingBlockRange.save_batch(batch)
+      MissingRangesManipulator.save_batch(batch)
       {:noreply, %{state | min_fetched_block_number: new_min_number}}
     else
       Process.send_after(self(), :update_past, @past_check_interval * 100)

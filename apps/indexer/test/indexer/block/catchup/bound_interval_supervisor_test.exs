@@ -8,6 +8,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
   alias Explorer.Chain.Block
   alias Explorer.Repo
+  alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.BoundInterval
   alias Indexer.Block.Catchup
   alias Indexer.Block.Catchup.MissingRangesCollector
