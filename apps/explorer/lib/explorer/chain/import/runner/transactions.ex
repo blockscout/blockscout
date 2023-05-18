@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   alias Explorer.Chain.{Block, Hash, Import, Transaction}
   alias Explorer.Chain.Import.Runner.TokenTransfers
   alias Explorer.Prometheus.Instrumenter
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.MissingRangesManipulator
 
   @behaviour Import.Runner
 
@@ -226,7 +226,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
             timeout: timeout
           )
 
-        MissingBlockRange.add_ranges_by_block_numbers(result)
+        MissingRangesManipulator.add_ranges_by_block_numbers(result)
 
         {:ok, result}
       rescue

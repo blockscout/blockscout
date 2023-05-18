@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Import.Runner.Tokens
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.MissingRangesManipulator
 
   @behaviour Runner
 
@@ -395,7 +395,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     removed_consensus_block_hashes
     |> Enum.map(fn {number, _hash} -> number end)
-    |> MissingBlockRange.add_ranges_by_block_numbers()
+    |> MissingRangesManipulator.add_ranges_by_block_numbers()
 
     {:ok, removed_consensus_block_hashes}
   rescue
