@@ -4,6 +4,19 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+</details>
+
+## 5.1.5-beta
+
+### Features
+
 - [#7439](https://github.com/blockscout/blockscout/pull/7439) - Define batch size for token balance fetcher via runtime env var
 - [#7298](https://github.com/blockscout/blockscout/pull/7298) - Add changes to support force email verification
 - [#7416](https://github.com/blockscout/blockscout/pull/7416) - Add option to disable reCAPTCHA
@@ -32,6 +45,44 @@
 - [#7417](https://github.com/blockscout/blockscout/pull/7417) - Docker compose for frontend
 - [#7349](https://github.com/blockscout/blockscout/pull/7349) - Proxy pattern with getImplementation()
 - [#7360](https://github.com/blockscout/blockscout/pull/7360) - Manage visibility of indexing progress alert
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+- [#7351](https://github.com/blockscout/blockscout/pull/7351) - Bump decimal from 2.0.0 to 2.1.1
+- [#7356](https://github.com/blockscout/blockscout/pull/7356) - Bump @amplitude/analytics-browser from 1.10.0 to 1.10.1 in /apps/block_scout_web/assets
+- [#7366](https://github.com/blockscout/blockscout/pull/7366) - Bump mixpanel-browser from 2.46.0 to 2.47.0 in /apps/block_scout_web/assets
+- [#7365](https://github.com/blockscout/blockscout/pull/7365) - Bump @amplitude/analytics-browser from 1.10.1 to 1.10.2 in /apps/block_scout_web/assets
+- [#7368](https://github.com/blockscout/blockscout/pull/7368) - Bump cowboy from 2.9.0 to 2.10.0
+- [#7370](https://github.com/blockscout/blockscout/pull/7370) - Bump ex_cldr_units from 3.15.0 to 3.16.0
+- [#7364](https://github.com/blockscout/blockscout/pull/7364) - Bump chart.js from 4.2.1 to 4.3.0 in /apps/block_scout_web/assets
+- [#7382](https://github.com/blockscout/blockscout/pull/7382) - Bump @babel/preset-env from 7.21.4 to 7.21.5 in /apps/block_scout_web/assets
+- [#7381](https://github.com/blockscout/blockscout/pull/7381) - Bump highlight.js from 11.7.0 to 11.8.0 in /apps/block_scout_web/assets
+- [#7379](https://github.com/blockscout/blockscout/pull/7379) - Bump @babel/core from 7.21.4 to 7.21.5 in /apps/block_scout_web/assets
+- [#7380](https://github.com/blockscout/blockscout/pull/7380) - Bump postcss-loader from 7.2.4 to 7.3.0 in /apps/block_scout_web/assets
+- [#7395](https://github.com/blockscout/blockscout/pull/7395) - Bump @babel/core from 7.21.5 to 7.21.8 in /apps/block_scout_web/assets
+- [#7402](https://github.com/blockscout/blockscout/pull/7402) - Bump webpack from 5.81.0 to 5.82.0 in /apps/block_scout_web/assets
+- [#7411](https://github.com/blockscout/blockscout/pull/7411) - Bump cldr_utils from 2.22.0 to 2.23.1
+- [#7409](https://github.com/blockscout/blockscout/pull/7409) - Bump @amplitude/analytics-browser from 1.10.2 to 1.10.3 in /apps/block_scout_web/assets
+- [#7410](https://github.com/blockscout/blockscout/pull/7410) - Bump sweetalert2 from 11.7.3 to 11.7.5 in /apps/block_scout_web/assets
+- [#7434](https://github.com/blockscout/blockscout/pull/7434) - Bump ex_cldr from 2.37.0 to 2.37.1
+- [#7433](https://github.com/blockscout/blockscout/pull/7433) - Bump eslint from 8.39.0 to 8.40.0 in /apps/block_scout_web/assets
+- [#7432](https://github.com/blockscout/blockscout/pull/7432) - Bump tesla from 1.6.0 to 1.6.1
+- [#7431](https://github.com/blockscout/blockscout/pull/7431) - Bump webpack-cli from 5.0.2 to 5.1.0 in /apps/block_scout_web/assets
+- [#7430](https://github.com/blockscout/blockscout/pull/7430) - Bump core-js from 3.30.1 to 3.30.2 in /apps/block_scout_web/assets
+- [#7443](https://github.com/blockscout/blockscout/pull/7443) - Bump webpack-cli from 5.1.0 to 5.1.1 in /apps/block_scout_web/assets
+- [#7457](https://github.com/blockscout/blockscout/pull/7457) - Bump web3 from 1.9.0 to 1.10.0 in /apps/block_scout_web/assets
+- [#7456](https://github.com/blockscout/blockscout/pull/7456) - Bump webpack from 5.82.0 to 5.82.1 in /apps/block_scout_web/assets
+- [#7458](https://github.com/blockscout/blockscout/pull/7458) - Bump phoenix_ecto from 4.4.0 to 4.4.1
+- [#7455](https://github.com/blockscout/blockscout/pull/7455) - Bump solc from 0.8.19 to 0.8.20 in /apps/explorer
+- [#7460](https://github.com/blockscout/blockscout/pull/7460) - Bump jquery from 3.6.4 to 3.7.0 in /apps/block_scout_web/assets
+- [#7488](https://github.com/blockscout/blockscout/pull/7488) - Bump exvcr from 0.13.5 to 0.14.1
+- [#7486](https://github.com/blockscout/blockscout/pull/7486) - Bump redix from 1.2.2 to 1.2.3
+- [#7487](https://github.com/blockscout/blockscout/pull/7487) - Bump tesla from 1.6.1 to 1.7.0
+- [#7494](https://github.com/blockscout/blockscout/pull/7494) - Bump webpack from 5.82.1 to 5.83.0 in /apps/block_scout_web/assets
+- [#7495](https://github.com/blockscout/blockscout/pull/7495) - Bump ex_cldr_numbers from 2.31.0 to 2.31.1
+
+</details>
 
 ## 5.1.4-beta
 
