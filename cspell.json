@@ -515,7 +515,10 @@
         "ziczr",
         "zindex",
         "zipcode",
-        "zkbob"
+        "zkbob",
+        "erts",
+        "Asfpp",
+        "Nerg"
     ],
     "enableFiletypes": [
         "dotenv",
