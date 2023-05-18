@@ -110,7 +110,7 @@ defmodule Explorer.Chain do
     [to_address: :smart_contract] => :optional,
     [from_address: :names] => :optional,
     [to_address: :names] => :optional,
-    token: :required
+    token: :optional
   }
 
   @method_name_to_id_map %{
@@ -2186,7 +2186,7 @@ defmodule Explorer.Chain do
           )).()
       |> limit(^limit)
       |> order_by([token_transfer], asc: token_transfer.log_index)
-      |> join_associations(necessity_by_association)
+      |> (&if(preload_to_detect_tt?, do: &1, else: join_associations(&1, necessity_by_association))).()
       |> select_repo(options).all()
       |> flat_1155_batch_token_transfers()
       |> Enum.take(limit)

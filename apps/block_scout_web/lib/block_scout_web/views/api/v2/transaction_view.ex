@@ -44,15 +44,22 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("transactions.json", %{transactions: transactions, next_page_params: next_page_params, conn: conn}) do
-    %{"items" => Enum.map(transactions, &prepare_transaction(&1, conn, false)), "next_page_params" => next_page_params}
+    block_height = Chain.block_height(@api_true)
+
+    %{
+      "items" => Enum.map(transactions, &prepare_transaction(&1, conn, false, block_height)),
+      "next_page_params" => next_page_params
+    }
   end
 
   def render("transactions.json", %{transactions: transactions, conn: conn}) do
-    Enum.map(transactions, &prepare_transaction(&1, conn, false))
+    block_height = Chain.block_height(@api_true)
+    Enum.map(transactions, &prepare_transaction(&1, conn, false, block_height))
   end
 
   def render("transaction.json", %{transaction: transaction, conn: conn}) do
-    prepare_transaction(transaction, conn, true)
+    block_height = Chain.block_height(@api_true)
+    prepare_transaction(transaction, conn, true, block_height)
   end
 
   def render("raw_trace.json", %{internal_transactions: internal_transactions}) do
@@ -122,8 +129,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     %{
       "tx_hash" => token_transfer.transaction_hash,
-      "from" => Helper.address_with_info(nil, token_transfer.from_address, token_transfer.from_address_hash),
-      "to" => Helper.address_with_info(nil, token_transfer.to_address, token_transfer.to_address_hash),
+      "from" => Helper.address_with_info(nil, token_transfer.from_address, token_transfer.from_address_hash, false),
+      "to" => Helper.address_with_info(nil, token_transfer.to_address, token_transfer.to_address_hash, false),
       "total" => prepare_token_transfer_total(token_transfer),
       "token" => TokenView.render("token.json", %{token: token_transfer.token}),
       "type" => Chain.get_token_transfer_type(token_transfer),
@@ -172,13 +179,15 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "type" => internal_transaction.call_type || internal_transaction.type,
       "transaction_hash" => internal_transaction.transaction_hash,
       "from" =>
-        Helper.address_with_info(nil, internal_transaction.from_address, internal_transaction.from_address_hash),
-      "to" => Helper.address_with_info(nil, internal_transaction.to_address, internal_transaction.to_address_hash),
+        Helper.address_with_info(nil, internal_transaction.from_address, internal_transaction.from_address_hash, false),
+      "to" =>
+        Helper.address_with_info(nil, internal_transaction.to_address, internal_transaction.to_address_hash, false),
       "created_contract" =>
         Helper.address_with_info(
           nil,
           internal_transaction.created_contract_address,
-          internal_transaction.created_contract_address_hash
+          internal_transaction.created_contract_address_hash,
+          false
         ),
       "value" => internal_transaction.value,
       "block" => internal_transaction.block_number,
@@ -193,7 +202,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     %{
       "tx_hash" => get_tx_hash(transaction_or_hash),
-      "address" => Helper.address_with_info(log.address, log.address_hash),
+      "address" => Helper.address_with_info(nil, log.address, log.address_hash, false),
       "topics" => [
         log.first_topic,
         log.second_topic,
@@ -210,7 +219,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp get_tx_hash(%Transaction{} = tx), do: to_string(tx.hash)
   defp get_tx_hash(hash), do: to_string(hash)
 
-  defp smart_contract_info(%Transaction{} = tx), do: Helper.address_with_info(tx.to_address, tx.to_address_hash)
+  defp smart_contract_info(%Transaction{} = tx),
+    do: Helper.address_with_info(nil, tx.to_address, tx.to_address_hash, false)
+
   defp smart_contract_info(_), do: nil
 
   defp decode_log(log, %Transaction{} = tx, skip_sig_provider?) do
@@ -226,17 +237,32 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp decode_log(log, transaction_hash, skip_sig_provider?),
     do: decode_log(log, %Transaction{hash: transaction_hash}, skip_sig_provider?)
 
-  defp prepare_transaction({%Reward{} = emission_reward, %Reward{} = validator_reward}, conn, single_tx?) do
+  defp prepare_transaction(tx, conn, single_tx?, block_height, watchlist_names \\ nil)
+
+  defp prepare_transaction(
+         {%Reward{} = emission_reward, %Reward{} = validator_reward},
+         conn,
+         single_tx?,
+         _block_height,
+         _watchlist_names
+       ) do
     %{
       "emission_reward" => emission_reward.reward,
       "block_hash" => validator_reward.block_hash,
-      "from" => Helper.address_with_info(single_tx? && conn, emission_reward.address, emission_reward.address_hash),
-      "to" => Helper.address_with_info(single_tx? && conn, validator_reward.address, validator_reward.address_hash),
+      "from" =>
+        Helper.address_with_info(single_tx? && conn, emission_reward.address, emission_reward.address_hash, single_tx?),
+      "to" =>
+        Helper.address_with_info(
+          single_tx? && conn,
+          validator_reward.address,
+          validator_reward.address_hash,
+          single_tx?
+        ),
       "types" => [:reward]
     }
   end
 
-  defp prepare_transaction(%Transaction{} = transaction, conn, single_tx?, watchlist_names \\ nil) do
+  defp prepare_transaction(%Transaction{} = transaction, conn, single_tx?, block_height, watchlist_names) do
     base_fee_per_gas = transaction.block && transaction.block.base_fee_per_gas
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
@@ -263,6 +289,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           single_tx? && conn,
           transaction.from_address,
           transaction.from_address_hash,
+          single_tx?,
           watchlist_names
         ),
       "to" =>
@@ -270,6 +297,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           single_tx? && conn,
           transaction.to_address,
           transaction.to_address_hash,
+          single_tx?,
           watchlist_names
         ),
       "created_contract" =>
@@ -277,10 +305,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           single_tx? && conn,
           transaction.created_contract_address,
           transaction.created_contract_address_hash,
+          single_tx?,
           watchlist_names
         ),
-      "confirmations" =>
-        transaction.block |> Chain.confirmations(block_height: Chain.block_height(@api_true)) |> format_confirmations(),
+      "confirmations" => transaction.block |> Chain.confirmations(block_height: block_height) |> format_confirmations(),
       "confirmation_duration" => processing_time_duration(transaction),
       "value" => transaction.value,
       "fee" => transaction |> Chain.fee(:wei) |> format_fee(),
@@ -542,7 +570,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     %{
       "address" =>
-        Helper.address_with_info(nil, state_change.address, state_change.address && state_change.address.hash),
+        Helper.address_with_info(nil, state_change.address, state_change.address && state_change.address.hash, false),
       "is_miner" => state_change.miner?,
       "type" => type,
       "token" => if(type == "token", do: TokenView.render("token.json", %{token: coin_or_transfer.token})),

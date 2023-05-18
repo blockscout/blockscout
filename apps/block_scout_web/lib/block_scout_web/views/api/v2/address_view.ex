@@ -56,13 +56,13 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
   def prepare_address({address, nonce}) do
     nil
-    |> Helper.address_with_info(address, address.hash)
+    |> Helper.address_with_info(address, address.hash, true)
     |> Map.put(:tx_count, to_string(nonce))
     |> Map.put(:coin_balance, if(address.fetched_coin_balance, do: address.fetched_coin_balance.value))
   end
 
   def prepare_address(address, conn \\ nil) do
-    base_info = Helper.address_with_info(conn, address, address.hash)
+    base_info = Helper.address_with_info(conn, address, address.hash, true)
     is_proxy = AddressView.smart_contract_is_proxy?(address, @api_true)
 
     {implementation_address, implementation_name} =
