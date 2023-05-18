@@ -16,14 +16,15 @@ defmodule BlockScoutWeb.CSPHeader do
     trustwallet_url = "https://raw.githubusercontent.com/trustwallet/assets/"
     walletconnect_urls = "wss://*.bridge.walletconnect.org https://registry.walletconnect.org/data/wallets.json"
     json_rpc_url = Application.get_env(:block_scout_web, :json_rpc)
+    google_tag_urls = "https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.googletagmanager.com"
 
     Controller.put_secure_browser_headers(conn, %{
       "content-security-policy" => "\
-        connect-src 'self' #{json_rpc_url} #{config[:mixpanel_url]} #{config[:amplitude_url]} #{websocket_endpoints(conn)} #{czilladx_url} #{trustwallet_url} #{walletconnect_urls};\
+connect-src 'self' #{json_rpc_url} #{config[:mixpanel_url]} #{config[:amplitude_url]} #{websocket_endpoints(conn)} #{czilladx_url} #{trustwallet_url} #{walletconnect_urls} #{google_tag_urls};\
         default-src 'self';\
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' #{coinzillatag_url} #{google_url} https://www.gstatic.com;\
+script-src 'self' 'unsafe-inline' 'unsafe-eval' #{coinzillatag_url} #{google_url} #{google_tag_urls} https://www.gstatic.com;\
         style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com;\
-        img-src 'self' * data:;\
+        img-src 'self' * data: #{google_tag_urls};\
         media-src 'self' * data:;\
         font-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.gstatic.com data:;\
         frame-src 'self' 'unsafe-inline' 'unsafe-eval' #{czilladx_url} #{google_url};\

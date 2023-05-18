@@ -141,6 +141,11 @@ config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
 # Configures Ueberauth local settings
 config :ueberauth, Ueberauth, logout_url: "https://#{System.get_env("ACCOUNT_AUTH0_DOMAIN")}/v2/logout"
 
+# Configures Google Analytics
+config :block_scout_web,
+google_analytics_enabled: System.get_env("GOOGLE_ANALYTICS_ENABLED", "false") == "true",
+google_analytics_tracking_id: System.get_env("GOOGLE_ANALYTICS_TRACKING_ID")
+
 ########################
 ### Ethereum JSONRPC ###
 ########################
