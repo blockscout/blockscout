@@ -8,9 +8,10 @@ defmodule Indexer.Block.Catchup.FetcherTest do
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Hash
+  alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.Block
   alias Indexer.Block.Catchup.Fetcher
-  alias Indexer.Block.Catchup.{MissingRangesCollector, MissingRangesManipulator}
+  alias Indexer.Block.Catchup.MissingRangesCollector
   alias Indexer.Fetcher.{BlockReward, CoinBalance, InternalTransaction, Token, TokenBalance, UncleBlock}
 
   @moduletag capture_log: true

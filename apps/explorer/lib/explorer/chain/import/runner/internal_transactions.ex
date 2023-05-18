@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Explorer.Chain.Import.Runner
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.MissingRangesManipulator
 
   import Ecto.Query, only: [from: 2]
 
@@ -682,7 +682,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       try do
         {_num, result} = repo.update_all(update_query, [])
 
-        MissingBlockRange.add_ranges_by_block_numbers(invalid_block_numbers)
+        MissingRangesManipulator.add_ranges_by_block_numbers(invalid_block_numbers)
 
         Logger.debug(fn ->
           [

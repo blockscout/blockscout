@@ -12,7 +12,7 @@ env:
   K8S_PORT: ${{ secrets.K8S_PORT }}
   USERNAME: ${{ secrets.USERNAME }}
   BASTION_SSH_KEY: ${{secrets.BASTION_SSH_KEY}}
-  RELEASE_VERSION: 5.1.4
+  RELEASE_VERSION: 5.1.5
 
 jobs:
   push_to_registry:
