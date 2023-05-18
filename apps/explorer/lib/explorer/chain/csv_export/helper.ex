@@ -12,7 +12,7 @@ defmodule Explorer.Chain.CSVExport.Helper do
     ]
 
   @page_size 150
-  @default_paging_options %PagingOptions{page_size: 50}
+  @default_paging_options %PagingOptions{page_size: @page_size}
 
   def dump_to_stream(items) do
     res =

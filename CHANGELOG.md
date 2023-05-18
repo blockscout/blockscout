@@ -8,6 +8,7 @@
 
 - [#7532](https://github.com/blockscout/blockscout/pull/7532) - Handle empty id in json rpc responses
 - [#7544](https://github.com/blockscout/blockscout/pull/7544) - Add ERC-1155 signatures to uncataloged_token_transfer_block_numbers
+- [#7363](https://github.com/blockscout/blockscout/pull/7363) - CSV export filters
 
 ### Fixes
 
@@ -41,7 +42,6 @@
 - [#7422](https://github.com/blockscout/blockscout/pull/7422) - Refactor state changes
 - [#7416](https://github.com/blockscout/blockscout/pull/7416) - Add option to disable reCAPTCHA
 - [#6694](https://github.com/blockscout/blockscout/pull/6694) - Add withdrawals support (EIP-4895)
-- [#7363](https://github.com/blockscout/blockscout/pull/7363) - CSV export filters
 - [#7355](https://github.com/blockscout/blockscout/pull/7355) - Add endpoint for token info import
 - [#7393](https://github.com/blockscout/blockscout/pull/7393) - Realtime fetcher max gap
 - [#7436](https://github.com/blockscout/blockscout/pull/7436) - TokenBalanceOnDemand ERC-1155 support
