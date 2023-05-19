@@ -1,0 +1,25 @@
+FROM nginx:latest
+
+ARG NGINX_DOMAIN
+ARG API_HOST
+ARG API_PORT
+
+# Install Certbot and dependencies
+RUN apt-get update && apt-get install -y certbot python3-certbot-nginx
+
+# Copy Nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.template
+RUN envsubst '$$NGINX_DOMAIN $$API_HOST $$API_PORT' < /etc/nginx/conf.d/default.template > /etc/nginx/conf.d/default.conf && \
+    rm -rf /etc/nginx/conf.d/default.template
+
+# Expose ports
+EXPOSE 80
+EXPOSE 443
+
+# Obtain SSL/TLS certificate using Certbot
+# RUN certbot --nginx --non-interactive --agree-tos --domains ${NGINX_DOMAIN} --email noreply@test.com
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]
+
+# certbot --nginx -m noreply@yield.app -n --agree-tos -d h1explorer.yldint.com

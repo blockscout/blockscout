@@ -37,6 +37,43 @@ See the [project documentation](https://docs.blockscout.com/) for instructions:
 - [ENV variables](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
 - [Configuration options](https://docs.blockscout.com/for-developers/configuration-options)
 
+---
+
+## Local Setup
+
+To set up the project locally, follow these steps:
+
+1. Clone the repository:
+
+```sh
+git clone git@github.com:haven1network/haven1-block-explorer-v2.git
+cd haven1-block-explorer-v2
+```
+
+2. Navigate to the Docker Compose directory:
+
+```sh
+cd docker-compose
+```
+
+3. Start the containers using Docker Compose:
+
+```sh
+docker compose up -d
+```
+
+4. Generate SSL certificates:
+
+```sh
+docker exec -it webserver sh -c "certbot --nginx -m {{email}} -n --agree-tos -d {{domain}}"
+```
+
+Replace `{{email}}` with your email address for Let's Encrypt notifications, and `{{domain}}` with the domain name for which you want to generate the SSL certificate. Note that the `domain` value should match the `NGINX_DOMAIN` build argument specified for the `webserver` service in `docker-compose/docker-compose.yml` file.
+
+This command will execute Certbot within the `webserver` container and generate the SSL certificate using the Nginx server block configuration provided in the Docker Compose file.
+
+---
+
 ## Acknowledgements
 
 We would like to thank the [EthPrize foundation](http://ethprize.io/) for their funding support.

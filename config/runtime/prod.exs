@@ -7,6 +7,8 @@ alias Explorer.Repo.ConfigHelper, as: ExplorerConfigHelper
 ### BlockScout Web ###
 ######################
 
+config :block_scout_web, BlockScoutWeb.API.V2, enabled: true
+
 config :block_scout_web, BlockScoutWeb.Endpoint,
   secret_key_base: System.get_env("SECRET_KEY_BASE"),
   check_origin: System.get_env("CHECK_ORIGIN", "false") == "true" || false,
