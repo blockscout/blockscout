@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#7516](https://github.com/blockscout/blockscout/pull/7516) - Fix shrinking logo in Safari
+
 ### Chore
 
 <details>
