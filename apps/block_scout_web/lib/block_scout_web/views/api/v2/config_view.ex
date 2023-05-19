@@ -4,4 +4,10 @@ defmodule BlockScoutWeb.API.V2.ConfigView do
       "json_rpc_url" => url
     }
   end
+
+  def render("backend_version.json", %{version: version}) do
+    %{
+      "backend_version" => version
+    }
+  end
 end

@@ -110,6 +110,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         |> Map.replace("outputs", function["abi_outputs"])
         |> Map.drop(["abi_outputs"])
 
+      nil ->
+        function
+
       _ ->
         result =
           function
@@ -216,7 +219,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     }
   end
 
-  def format_constructor_arguments(abi, constructor_arguments) do
+  def format_constructor_arguments(abi, constructor_arguments)
+      when not is_nil(abi) and not is_nil(constructor_arguments) do
     constructor_abi = Enum.find(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
 
     input_types = Enum.map(constructor_abi["inputs"], &FunctionSelector.parse_specification_type/1)
@@ -241,6 +245,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
       nil
   end
+
+  def format_constructor_arguments(_abi, _constructor_arguments), do: nil
 
   defp prepare_smart_contract_for_list(%SmartContract{} = smart_contract) do
     token = smart_contract.address.token

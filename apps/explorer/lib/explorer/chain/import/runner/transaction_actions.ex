@@ -5,6 +5,8 @@ defmodule Explorer.Chain.Import.Runner.TransactionActions do
 
   require Ecto.Query
 
+  import Ecto.Query, only: [from: 2]
+
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Import, TransactionAction}
   alias Explorer.Prometheus.Instrumenter
@@ -55,7 +57,9 @@ defmodule Explorer.Chain.Import.Runner.TransactionActions do
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
           {:ok, [TransactionAction.t()]}
           | {:error, [Changeset.t()]}
-  def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = _options) when is_list(changes_list) do
+  def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+
     # Enforce TransactionAction ShareLocks order (see docs: sharelock.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.hash, &1.log_index})
 
@@ -63,13 +67,38 @@ defmodule Explorer.Chain.Import.Runner.TransactionActions do
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
+        conflict_target: [:hash, :log_index],
+        on_conflict: on_conflict,
         for: TransactionAction,
         returning: true,
         timeout: timeout,
-        timestamps: timestamps,
-        on_conflict: :nothing
+        timestamps: timestamps
       )
 
     {:ok, inserted}
+  end
+
+  defp default_on_conflict do
+    from(
+      action in TransactionAction,
+      update: [
+        set: [
+          # Don't update `hash` as it is part of the composite primary key and used for the conflict target
+          # Don't update `log_index` as it is part of the composite primary key and used for the conflict target
+          protocol: fragment("EXCLUDED.protocol"),
+          data: fragment("EXCLUDED.data"),
+          type: fragment("EXCLUDED.type"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", action.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", action.updated_at)
+        ]
+      ],
+      where:
+        fragment(
+          "(EXCLUDED.protocol, EXCLUDED.data, EXCLUDED.type) IS DISTINCT FROM (?, ? ,?)",
+          action.protocol,
+          action.data,
+          action.type
+        )
+    )
   end
 end

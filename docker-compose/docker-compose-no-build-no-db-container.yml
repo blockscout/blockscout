@@ -7,7 +7,6 @@ services:
       service: redis_db
 
   blockscout:
-    platform: linux/x86_64
     depends_on:
       - smart-contract-verifier
       - redis_db

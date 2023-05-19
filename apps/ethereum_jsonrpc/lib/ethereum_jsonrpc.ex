@@ -36,6 +36,7 @@ defmodule EthereumJSONRPC do
     RequestCoordinator,
     Subscription,
     Transport,
+    Utility.EndpointAvailabilityObserver,
     Variant
   }
 
@@ -261,6 +262,17 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Fetches blocks by block number list.
+  """
+  @spec fetch_blocks_by_numbers([block_number()], json_rpc_named_arguments) ::
+          {:ok, Blocks.t()} | {:error, reason :: term}
+  def fetch_blocks_by_numbers(block_numbers, json_rpc_named_arguments) do
+    block_numbers
+    |> Enum.map(fn number -> %{number: number} end)
+    |> fetch_blocks_by_params(&Block.ByNumber.request/1, json_rpc_named_arguments)
+  end
+
+  @doc """
   Fetches uncle blocks by nephew hashes and indices.
   """
   @spec fetch_uncle_blocks([nephew_index()], json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}
@@ -388,8 +400,24 @@ defmodule EthereumJSONRPC do
     transport_options = Keyword.fetch!(named_arguments, :transport_options)
     throttle_timeout = Keyword.get(named_arguments, :throttle_timeout, @default_throttle_timeout)
 
-    RequestCoordinator.perform(request, transport, transport_options, throttle_timeout)
+    url = maybe_replace_url(transport_options[:url], transport_options[:fallback_url], transport)
+    corrected_transport_options = Keyword.replace(transport_options, :url, url)
+
+    case RequestCoordinator.perform(request, transport, corrected_transport_options, throttle_timeout) do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, reason} ->
+        maybe_inc_error_count(corrected_transport_options[:url], named_arguments, transport)
+        {:error, reason}
+    end
   end
+
+  defp maybe_replace_url(url, _replace_url, EthereumJSONRPC.HTTP), do: url
+  defp maybe_replace_url(url, replace_url, _), do: EndpointAvailabilityObserver.maybe_replace_url(url, replace_url)
+
+  defp maybe_inc_error_count(_url, _arguments, EthereumJSONRPC.HTTP), do: :ok
+  defp maybe_inc_error_count(url, arguments, _), do: EndpointAvailabilityObserver.inc_error_count(url, arguments)
 
   @doc """
   Converts `t:quantity/0` to `t:non_neg_integer/0`.

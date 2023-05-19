@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ConnCase
 
+  alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.{Chain, Repo}
 
   alias Explorer.Chain.{
@@ -11,10 +12,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     Log,
     Token,
     TokenTransfer,
-    Transaction
+    Transaction,
+    Withdrawal
   }
 
+  alias Explorer.Account.WatchlistAddress
   alias Explorer.Chain.Address.CurrentTokenBalance
+
+  import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
   describe "/addresses/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -60,7 +65,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "has_validated_blocks" => false,
         "has_logs" => false,
         "has_tokens" => false,
-        "has_token_transfers" => false
+        "has_token_transfers" => false,
+        "watchlist_address_id" => nil,
+        "has_beacon_chain_withdrawals" => false
       }
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
@@ -68,6 +75,36 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{String.downcase(to_string(address.hash))}")
       assert ^correct_response = json_response(request, 200)
+    end
+
+    test "get watchlist id", %{conn: conn} do
+      auth = build(:auth)
+      address = insert(:address)
+      {:ok, user} = UserFromAuth.find_or_create(auth)
+
+      conn = Plug.Test.init_test_session(conn, current_user: user)
+
+      watchlist_address =
+        Repo.account_repo().insert!(%WatchlistAddress{
+          name: "wallet",
+          watchlist_id: user.watchlist_id,
+          address_hash: address.hash,
+          address_hash_hash: hash_to_lower_case_string(address.hash),
+          watch_coin_input: true,
+          watch_coin_output: true,
+          watch_erc_20_input: true,
+          watch_erc_20_output: true,
+          watch_erc_721_input: true,
+          watch_erc_721_output: true,
+          watch_erc_1155_input: true,
+          watch_erc_1155_output: true,
+          notify_email: true
+        })
+
+      request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
+      assert response = json_response(request, 200)
+
+      assert response["watchlist_address_id"] == watchlist_address.id
     end
   end
 
@@ -1555,6 +1592,35 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
   end
 
+  describe "/addresses/{address_hash}/withdrawals" do
+    test "get empty list on non existing address", %{conn: conn} do
+      address = build(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/withdrawals")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/addresses/0x/withdrawals")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get withdrawals", %{conn: conn} do
+      address = insert(:address, withdrawals: insert_list(51, :withdrawal))
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/withdrawals")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/withdrawals", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, address.withdrawals)
+    end
+  end
+
   describe "/addresses" do
     test "get empty list", %{conn: conn} do
       request = get(conn, "/api/v2/addresses")
@@ -1662,6 +1728,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert to_string(log.data) == json["data"]
     assert Address.checksum(log.address_hash) == json["address"]["hash"]
     assert to_string(log.transaction_hash) == json["tx_hash"]
+  end
+
+  defp compare_item(%Withdrawal{} = withdrawal, json) do
+    assert withdrawal.index == json["index"]
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, list) do

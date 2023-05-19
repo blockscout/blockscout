@@ -10,6 +10,20 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: "Invalid parameter(s)"})
   end
 
+  def call(conn, {:format_address, _}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Invalid address hash"})
+  end
+
+  def call(conn, {:format_url, _}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Invalid URL"})
+  end
+
   def call(conn, {:not_found, _, :empty_items_with_next_page_params}) do
     conn
     |> json(%{"items" => [], "next_page_params" => nil})
@@ -77,5 +91,44 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     conn
     |> put_view(ApiView)
     |> render(:message, %{message: "Libraries are not valid JSON map"})
+  end
+
+  def call(conn, {:lost_consensus, {:ok, block}}) do
+    conn
+    |> put_status(:not_found)
+    |> json(%{message: "Block lost consensus", hash: to_string(block.hash)})
+  end
+
+  def call(conn, {:lost_consensus, {:error, :not_found}}) do
+    conn
+    |> call({:not_found, nil})
+  end
+
+  def call(conn, {:recaptcha, _}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Invalid reCAPTCHA response"})
+  end
+
+  def call(conn, {:auth, _}) do
+    conn
+    |> put_status(:unauthorized)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Unauthorized"})
+  end
+
+  def call(conn, {:sensitive_endpoints_api_key, _}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "API key not configured on the server"})
+  end
+
+  def call(conn, {:api_key, _}) do
+    conn
+    |> put_status(:unauthorized)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Wrong API key"})
   end
 end

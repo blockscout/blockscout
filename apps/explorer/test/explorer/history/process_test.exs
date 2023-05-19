@@ -61,7 +61,10 @@ defmodule Explorer.History.ProcessTest do
     # ...but long enough to detect. 16ms should be detectable on the slowest dev machines
     history_fetch_interval = 16
 
-    Application.put_env(:explorer, HistoryProcess, history_fetch_interval: history_fetch_interval)
+    now = DateTime.to_time(DateTime.utc_now())
+    time_to_fetch_at = now |> Time.add(history_fetch_interval, :millisecond)
+    days_to_add = if Time.compare(time_to_fetch_at, now) == :gt, do: 0, else: 1
+    Application.put_env(:explorer, HistoryProcess, time_to_fetch_at: time_to_fetch_at, days_to_add: days_to_add)
 
     assert {:noreply, state} == HistoryProcess.handle_info({nil, {1, 0, {:ok, [record]}}}, state)
 

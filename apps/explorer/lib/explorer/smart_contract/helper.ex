@@ -121,4 +121,14 @@ defmodule Explorer.SmartContract.Helper do
     |> Map.values()
     |> Enum.reduce(%{}, fn map, acc -> Map.merge(acc, map) end)
   end
+
+  def contract_creation_input(address_hash) do
+    case Chain.smart_contract_creation_tx_bytecode(address_hash) do
+      %{init: init, created_contract_code: _created_contract_code} ->
+        init
+
+      _ ->
+        nil
+    end
+  end
 end

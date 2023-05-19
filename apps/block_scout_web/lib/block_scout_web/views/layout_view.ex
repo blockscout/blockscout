@@ -5,6 +5,8 @@ defmodule BlockScoutWeb.LayoutView do
   alias Plug.Conn
   alias Poison.Parser
 
+  import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1]
+
   @default_other_networks [
     %{
       title: "POA",
@@ -38,7 +40,7 @@ defmodule BlockScoutWeb.LayoutView do
   end
 
   def logo_footer do
-    Keyword.get(application_config(), :logo_footer) || Keyword.get(application_config(), :logo)
+    Keyword.get(application_config(), :footer)[:logo] || Keyword.get(application_config(), :logo)
   end
 
   def logo_text do
@@ -202,18 +204,22 @@ defmodule BlockScoutWeb.LayoutView do
     |> Enum.filter(&Map.get(&1, :other?))
   end
 
+  @spec other_explorers() :: map()
   def other_explorers do
-    if Application.get_env(:block_scout_web, :link_to_other_explorers) do
-      decode_other_explorers_json(Application.get_env(:block_scout_web, :other_explorers, []))
+    if Application.get_env(:block_scout_web, :footer)[:link_to_other_explorers] do
+      decode_other_explorers_json(Application.get_env(:block_scout_web, :footer)[:other_explorers])
     else
-      []
+      %{}
     end
   end
+
+  @spec decode_other_explorers_json(nil | String.t()) :: map()
+  defp decode_other_explorers_json(nil), do: %{}
 
   defp decode_other_explorers_json(data) do
     Jason.decode!(~s(#{data}))
   rescue
-    _ -> []
+    _ -> %{}
   end
 
   def webapp_url(conn) do
@@ -271,7 +277,7 @@ defmodule BlockScoutWeb.LayoutView do
 
   def sign_out_link do
     client_id = Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_id]
-    return_to = Application.get_env(:ueberauth, Ueberauth)[:logout_return_to_url]
+    return_to = blockscout_url(true) <> "/auth/logout"
     logout_url = Application.get_env(:ueberauth, Ueberauth)[:logout_url]
 
     if client_id && return_to && logout_url do

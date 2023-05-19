@@ -8,7 +8,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   then Verified.
   """
 
-  import Explorer.SmartContract.Helper, only: [cast_libraries: 1, prepare_bytecode_for_microservice: 3]
+  import Explorer.SmartContract.Helper,
+    only: [cast_libraries: 1, prepare_bytecode_for_microservice: 3, contract_creation_input: 1]
 
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
@@ -18,8 +19,6 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   require Logger
 
   @bytecode_hash_options ["default", "none", "bzzr1"]
-
-  def evaluate_authenticity(_, %{"name" => ""}), do: {:error, :name}
 
   def evaluate_authenticity(_, %{"contract_source_code" => ""}),
     do: {:error, :contract_source_code}
@@ -41,14 +40,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   defp evaluate_authenticity_inner(true, address_hash, params) do
     deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
 
-    creation_tx_input =
-      case Chain.smart_contract_creation_tx_bytecode(address_hash) do
-        %{init: init, created_contract_code: _created_contract_code} ->
-          init
-
-        _ ->
-          nil
-      end
+    creation_tx_input = contract_creation_input(address_hash)
 
     %{}
     |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
@@ -60,31 +52,35 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
     |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
     |> Map.put("compilerVersion", params["compiler_version"])
-    |> RustVerifierInterface.verify_multi_part()
+    |> RustVerifierInterface.verify_multi_part(address_hash)
   end
 
   defp evaluate_authenticity_inner(false, address_hash, params) do
-    latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
-    evm_version = Map.get(params, "evm_version", latest_evm_version)
+    if is_nil(params["name"]) or params["name"] == "" do
+      {:error, :name}
+    else
+      latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
+      evm_version = Map.get(params, "evm_version", latest_evm_version)
 
-    all_versions = [evm_version | previous_evm_versions(evm_version)]
+      all_versions = [evm_version | previous_evm_versions(evm_version)]
 
-    all_versions_extra = all_versions ++ [evm_version]
+      all_versions_extra = all_versions ++ [evm_version]
 
-    Enum.reduce_while(all_versions_extra, false, fn version, acc ->
-      case acc do
-        {:ok, _} = result ->
-          {:cont, result}
+      Enum.reduce_while(all_versions_extra, false, fn version, acc ->
+        case acc do
+          {:ok, _} = result ->
+            {:cont, result}
 
-        {:error, error}
-        when error in [:name, :no_creation_data, :deployed_bytecode, :compiler_version, :constructor_arguments] ->
-          {:halt, acc}
+          {:error, error}
+          when error in [:name, :no_creation_data, :deployed_bytecode, :compiler_version, :constructor_arguments] ->
+            {:halt, acc}
 
-        _ ->
-          cur_params = Map.put(params, "evm_version", version)
-          {:cont, verify(address_hash, cur_params)}
-      end
-    end)
+          _ ->
+            cur_params = Map.put(params, "evm_version", version)
+            {:cont, verify(address_hash, cur_params)}
+        end
+      end)
+    end
   end
 
   defp smart_contract_source_file_extension(true), do: "yul"
@@ -128,19 +124,12 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   def evaluate_authenticity_via_standard_json_input_inner(true, address_hash, params, json_input) do
     deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
 
-    creation_tx_input =
-      case Chain.smart_contract_creation_tx_bytecode(address_hash) do
-        %{init: init, created_contract_code: _created_contract_code} ->
-          init
-
-        _ ->
-          nil
-      end
+    creation_tx_input = contract_creation_input(address_hash)
 
     %{"compilerVersion" => params["compiler_version"]}
     |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
     |> Map.put("input", json_input)
-    |> RustVerifierInterface.verify_standard_json_input()
+    |> RustVerifierInterface.verify_standard_json_input(address_hash)
   end
 
   def evaluate_authenticity_via_standard_json_input_inner(false, address_hash, params, json_input) do
@@ -150,14 +139,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   def evaluate_authenticity_via_multi_part_files(address_hash, params, files) do
     deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
 
-    creation_tx_input =
-      case Chain.smart_contract_creation_tx_bytecode(address_hash) do
-        %{init: init, created_contract_code: _created_contract_code} ->
-          init
-
-        _ ->
-          nil
-      end
+    creation_tx_input = contract_creation_input(address_hash)
 
     %{}
     |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
@@ -166,7 +148,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
     |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
     |> Map.put("compilerVersion", params["compiler_version"])
-    |> RustVerifierInterface.verify_multi_part()
+    |> RustVerifierInterface.verify_multi_part(address_hash)
   end
 
   defp verify(address_hash, params, json_input) do

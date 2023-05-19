@@ -507,7 +507,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                   "name" => "asda",
                   "salePrice" => 34
                 }
-              }} == InstanceMetadataRetriever.fetch_json(data)
+              }} == InstanceMetadataRetriever.fetch_json(%{"0e89341c" => {:ok, [data]}})
 
       Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
@@ -552,7 +552,8 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
       assert {:ok,
               %{
                 metadata: Jason.decode!(json)
-              }} == InstanceMetadataRetriever.fetch_json("http://localhost:#{bypass.port}#{path}")
+              }} ==
+               InstanceMetadataRetriever.fetch_json(%{"0e89341c" => {:ok, ["http://localhost:#{bypass.port}#{path}"]}})
     end
   end
 end
