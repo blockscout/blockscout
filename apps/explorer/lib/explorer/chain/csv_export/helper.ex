@@ -82,8 +82,25 @@ defmodule Explorer.Chain.CSVExport.Helper do
     end
   end
 
+  @spec supported_address_filter_values() :: [String.t()]
+  def supported_address_filter_values do
+    ["to", "from"]
+  end
+
   @spec is_valid_filter?(String.t(), String.t(), String.t()) :: boolean()
   def is_valid_filter?(filter_type, filter_value, item_type) do
+    is_valid_filter_type(filter_type, filter_value, item_type) && is_valid_filter_value(filter_type, filter_value)
+  end
+
+  defp is_valid_filter_type(filter_type, filter_value, item_type) do
     filter_type in supported_filters(item_type) && filter_value && filter_value !== ""
+  end
+
+  defp is_valid_filter_value(filter_type, filter_value) do
+    if filter_type === "address" do
+      filter_value in supported_address_filter_values()
+    else
+      true
+    end
   end
 end
