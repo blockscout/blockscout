@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:  
+  proxy:
+    image: nginx
+    volumes:
+      - type: bind
+        source: ../proxy/nginx.conf
+        target: /etc/nginx/conf.d/default.conf
+        read_only: true
+    ports:
+      - 80:80

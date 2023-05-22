@@ -49,16 +49,22 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
   defp fetch_and_update(block_number, address_hash, stale_current_token_balances) do
     current_token_balances_update_params =
       stale_current_token_balances
-      |> Enum.map(fn {stale_current_token_balance, token} ->
+      |> Enum.map(fn {%{token_id: token_id} = stale_current_token_balance, token} ->
         stale_current_token_balances_to_fetch = [
           %{
             token_contract_address_hash: "0x" <> Base.encode16(token.contract_address_hash.bytes),
             address_hash: "0x" <> Base.encode16(address_hash.bytes),
-            block_number: block_number
+            block_number: block_number,
+            token_id: token_id && Decimal.to_integer(token_id)
           }
         ]
 
-        balance_response = BalanceReader.get_balances_of(stale_current_token_balances_to_fetch)
+        balance_response =
+          case stale_current_token_balance.token_type do
+            "ERC-1155" -> BalanceReader.get_balances_of_erc_1155(stale_current_token_balances_to_fetch)
+            _ -> BalanceReader.get_balances_of(stale_current_token_balances_to_fetch)
+          end
+
         updated_balance = balance_response[:ok]
 
         if updated_balance do
@@ -66,6 +72,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
           |> Map.put(:address_hash, stale_current_token_balance.address_hash)
           |> Map.put(:token_contract_address_hash, token.contract_address_hash)
           |> Map.put(:token_type, token.type)
+          |> Map.put(:token_id, token_id)
           |> Map.put(:block_number, block_number)
           |> Map.put(:value, Decimal.new(updated_balance))
           |> Map.put(:value_fetched_at, DateTime.utc_now())
@@ -106,7 +113,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
           {:error, :empty_database}
         else
           threshold = Application.get_env(:indexer, __MODULE__)[:threshold]
-          block_number - div(:timer.minutes(threshold), average_block_time)
+          block_number - div(threshold, average_block_time)
         end
     end
   end

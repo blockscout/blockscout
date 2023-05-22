@@ -175,10 +175,10 @@ defmodule Explorer.Chain.Address.CoinBalance do
 
     from(
       cb in subquery(coin_balance_query),
-      inner_join: b in Block,
-      on: cb.block_number == b.number,
-      where: b.consensus,
-      select: %{timestamp: b.timestamp, value: cb.value}
+      inner_join: block in Block,
+      on: cb.block_number == block.number,
+      where: block.consensus,
+      select: %{timestamp: block.timestamp, value: cb.value}
     )
   end
 
