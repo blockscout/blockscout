@@ -647,11 +647,12 @@ defmodule Explorer.Chain.ImportTest do
 
       assert {:ok, _} = Import.all(options)
 
-      assert [block_hash] = Explorer.Repo.all(PendingBlockOperation.block_hashes(:fetch_internal_transactions))
+      {:ok, block_hash_casted} = Explorer.Chain.Hash.Full.cast(block_hash)
+      assert [^block_hash_casted] = Explorer.Repo.all(PendingBlockOperation.block_hashes())
 
       assert {:ok, _} = Import.all(internal_txs_options)
 
-      assert [] == Explorer.Repo.all(PendingBlockOperation.block_hashes(:fetch_internal_transactions))
+      assert [] == Explorer.Repo.all(PendingBlockOperation.block_hashes())
     end
 
     test "blocks with simple coin transfers updates PendingBlockOperation status" do
@@ -736,11 +737,12 @@ defmodule Explorer.Chain.ImportTest do
 
       assert {:ok, _} = Import.all(options)
 
-      assert [block_hash] = Explorer.Repo.all(PendingBlockOperation.block_hashes(:fetch_internal_transactions))
+      {:ok, block_hash_casted} = Explorer.Chain.Hash.Full.cast(block_hash)
+      assert [^block_hash_casted] = Explorer.Repo.all(PendingBlockOperation.block_hashes())
 
       assert {:ok, _} = Import.all(internal_txs_options)
 
-      assert [] == Explorer.Repo.all(PendingBlockOperation.block_hashes(:fetch_internal_transactions))
+      assert [] == Explorer.Repo.all(PendingBlockOperation.block_hashes())
     end
 
     test "when the transaction has no to_address and an internal transaction with type create it populates the denormalized created_contract_address_hash" do

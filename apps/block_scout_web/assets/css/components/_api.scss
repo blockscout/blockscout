@@ -1,3 +1,5 @@
+@use 'sass:math';
+
 $api-text-monospace-color: $secondary !default;
 $api-text-monospace-background: rgba($api-text-monospace-color, 0.1) !default;
 $api-anchors-list-background-color: #f6f7f9 !default;
@@ -187,7 +189,7 @@ $api-doc-list-item-view-more-color: $api-doc-list-item-title-color !default;
 .api-doc-parameters-list {
   border-bottom: 1px solid $base-border-color;
   margin-bottom: $card-vertical-padding;
-  padding-bottom: $card-vertical-padding / 2;
+  padding-bottom: math.div($card-vertical-padding, 2);
 }
 
 .api-doc-parameters-list-title {

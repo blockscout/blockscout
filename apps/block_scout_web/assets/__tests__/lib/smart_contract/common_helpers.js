@@ -159,6 +159,7 @@ test('prepare contract args | type: bool', () => {
         }
     ]
 
+    // cspell:ignore fals
     document.getElementById('first').value = ' fals e '
     const expectedValue = [false]
     const $functionInputs = $('[data-function-form]').find('input[name=function_input]')

@@ -1,0 +1,72 @@
+<section class="container">
+  <div class="row">
+    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn, active_item: :public_tags %>
+    <div class="col-sm-10">
+      <div class="card">
+        <div class="card-body">
+          <h1 class="card-title list-title-description header-account"><%=if @method == :update, do: gettext("Request to edit a public tag/label"), else: gettext("Request a public tag/label") %></h1>
+          <div class="col-sm-10 card-body-account">
+            <% path = if @method == :update, do: public_tags_request_path(@conn, @method, @public_tags_request.data.id), else: public_tags_request_path(@conn, @method) %>
+            <%= form_for @public_tags_request, path, fn f -> %>
+              <div>
+                <div class="line-input">
+                  <div class="form-group">
+                    <%= label f, :full_name, gettext("Your name*"), class: "control-label", style: "font-size: 14px" %>
+                    <%= text_input f, :full_name, class: "form-control", placeholder: gettext("Your name"), maxlength: 255 %>
+                    <%= error_tag f, :full_name, class: "text-danger form-error" %>
+                    <%= error_tag f, :identity_id, class: "text-danger form-error" %>
+                  </div>
+                  <div class="form-group">
+                    <%= label f, :company, gettext("Company name"), class: "control-label", style: "font-size: 14px" %>
+                    <%= text_input f, :company, class: "form-control", placeholder: "Company name", maxlength: 255 %>
+                    <%= error_tag f, :company, class: "text-danger form-error" %>
+                  </div>
+                </div>
+                <div class="line-input">
+                  <div class="form-group">
+                    <%= label f, :email, gettext("E-mail*"), class: "control-label", style: "font-size: 14px" %>
+                    <%= email_input f, :email, class: "form-control", placeholder: "E-mail", maxlength: 42 %>
+                    <%= error_tag f, :email, class: "text-danger form-error" %>
+                  </div>
+                  <div class="form-group">
+                    <%= label f, :website, gettext("Company website"), class: "control-label", style: "font-size: 14px" %>
+                    <%= text_input f, :website, class: "form-control", placeholder: "Company website", maxlength: 255 %>
+                    <%= error_tag f, :website, class: "text-danger form-error" %>
+                  </div>
+                </div>
+              </div>
+              <div class="mb-3">
+                <div>
+                  <%= radio_button(f, :is_owner, true) %>
+                  <%= label f, :is_owner_true, "I want to add tags for my project" %>
+                </div>
+                <div>
+                  <%= radio_button(f, :is_owner, false) %>
+                  <%= label f, :is_owner_false, "I want to report an incorrect public tag" %>
+                </div>
+                <%= error_tag f, :is_owner, class: "text-danger form-error" %>
+              </div>
+              <div class="form-group mr-4-rem">
+                <%= label f, :tags, gettext("Public tags* (2 tags maximum, please use \";\" as a divider)"), class: "control-label", style: "font-size: 14px" %>
+                <%= text_input f, :tags, class: "form-control", placeholder: "Public tags", maxlength: 71 %>
+                <%= error_tag f, :tags, class: "text-danger form-error" %>
+              </div>
+              <%= render "address_field.html", f: f %>
+              <div class="form-group mr-4-rem">
+                <%= label f, :additional_comment, gettext("Description*"), class: "control-label", style: "font-size: 14px" %>
+                <%= textarea f, :additional_comment, class: "form-control", placeholder: "Specify the reason for adding tags and color preference(s).", maxlength: 255 %>
+                <%= error_tag f, :additional_comment, class: "text-danger form-error" %>
+              </div>
+              <br>
+              <div class="form-group float-left form-input">
+                <a class="btn btn-line" href="<%= public_tags_request_path(@conn, :index) %>"><%= gettext "Cancel"%></a>
+                <%= submit gettext("Send request"), class: "send-public-tag-request-button button button-primary button-sm ml-3" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/public-tags-request-form.js") %>"></script>
+</section>

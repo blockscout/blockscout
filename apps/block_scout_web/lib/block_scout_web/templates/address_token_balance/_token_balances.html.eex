@@ -19,13 +19,13 @@
     <%= if @conn.request_path |> String.contains?("/tokens") do %>
       <a href="#tokens" style="text-decoration: none;">
         <span class="btn-wallet-icon">
-          <i class="fas fa-wallet " style="line-height: 31px;"></i>
+          <i class="fa-solid fa-wallet " style="line-height: 31px;"></i>
         </span>
       </a>
     <% else %>
-      <a href="<%= AccessHelpers.get_path(@conn, :address_token_path, :index, @address_hash) %>#tokens" style="text-decoration: none;">
+      <a href="<%= AccessHelper.get_path(@conn, :address_token_path, :index, @address_hash) %>#tokens" style="text-decoration: none;">
         <span class="btn-wallet-icon">
-          <i class="fas fa-wallet" style="line-height: 31px;"></i>
+          <i class="fa-solid fa-wallet" style="line-height: 31px;"></i>
         </span>
       </a>
     <% end %>
@@ -47,7 +47,7 @@
               placeholder: gettext("Search tokens")
             ) %>
       </div>
-      <%= if Enum.any?(@token_balances, fn {token_balance, _, _} -> token_balance.token.type == "ERC-721" end) do %>
+      <%= if Enum.any?(@token_balances, fn {_token_balance, token} -> token.type == "ERC-721" end) do %>
         <%= render(
               "_tokens.html",
               conn: @conn,
@@ -56,7 +56,7 @@
             ) %>
       <% end %>
 
-      <%= if Enum.any?(@token_balances, fn {token_balance, _, _} -> token_balance.token.type == "ERC-1155" end) do %>
+      <%= if Enum.any?(@token_balances, fn {_token_balance, token} -> token.type == "ERC-1155" end) do %>
         <%= render(
               "_tokens.html",
               conn: @conn,
@@ -65,7 +65,7 @@
             ) %>
       <% end %>
 
-      <%= if Enum.any?(@token_balances, fn {token_balance, _, _} -> token_balance.token.type == "ERC-20" end) do %>
+      <%= if Enum.any?(@token_balances, fn {_token_balance, token} -> token.type == "ERC-20" end) do %>
         <%= render(
               "_tokens.html",
               conn: @conn,

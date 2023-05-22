@@ -8,12 +8,12 @@ defmodule BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController do
 
   def new(conn, %{"address_id" => address_hash_string}) do
     if Chain.smart_contract_fully_verified?(address_hash_string) do
-      address_path =
+      address_contract_path =
         conn
-        |> address_path(:show, address_hash_string)
+        |> address_contract_path(:index, address_hash_string)
         |> Controller.full_path()
 
-      redirect(conn, to: address_path)
+      redirect(conn, to: address_contract_path)
     else
       changeset =
         SmartContract.changeset(
@@ -46,15 +46,8 @@ defmodule BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController do
           "external_libraries" => external_libraries
         }
       ) do
-    Que.add(PublisherWorker, {smart_contract["address_hash"], smart_contract, external_libraries, conn})
+    Que.add(PublisherWorker, {"flattened", smart_contract, external_libraries, conn})
 
     send_resp(conn, 204, "")
-  end
-
-  def parse_optimization_runs(%{"runs" => runs}) do
-    case Integer.parse(runs) do
-      {integer, ""} -> integer
-      _ -> 200
-    end
   end
 end

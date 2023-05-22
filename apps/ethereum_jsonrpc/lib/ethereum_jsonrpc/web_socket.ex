@@ -103,7 +103,7 @@ defmodule EthereumJSONRPC.WebSocket do
   end
 
   @impl Transport
-  @spec unsubscribe(%Subscription{transport: __MODULE__, transport_options: t()}) :: :ok | {:error, reason :: term()}
+  @spec unsubscribe(Subscription.t()) :: :ok | {:error, reason :: term()}
   def unsubscribe(
         %Subscription{
           transport: __MODULE__,

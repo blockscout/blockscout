@@ -1,0 +1,41 @@
+<section class="container">
+  <div class="row"> 
+    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn, active_item: :address_tags %>
+    <div class="col-md">
+      <div class="card">
+        <div class="card-body" >
+          <h1 class="card-title list-title-description header-account"><%= gettext "Address Tags" %></h1>
+          <br>
+          <div class="col-sm">
+            <div class="mb-3 row o-flow-x">
+              <%= if @address_tags == [] do %>
+              <div style="min-width: 100%;">
+                <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
+                  <%= gettext "You don't have address tags yet" %>
+                </div>
+              </div>
+                <h2></h2>
+              <% else %>
+                <table class="table mb-3 table-watchlist">
+                  <thead style="font-size: 14px; color: #6c757d" >
+                    <tr>
+                      <th scope="col"><%= gettext "Name" %></th>
+                      <th scope="col"><%= gettext "Address" %></th>
+                      <th scope="col"><%= gettext "Action" %></th>
+                    </tr>
+                  </thead>
+                  <tbody style="font-size: 15px; color: #6c757d" >
+                    <%= Enum.map(@address_tags, fn at ->
+                      render("row.html", address_tag: at, conn: @conn)
+                      end) %>
+                  </tbody>
+                </table>
+              <% end %>
+            </div>
+          </div>
+          <%= if Enum.count(@address_tags) < TagAddress.get_max_tags_count() do %>
+            <a class="add-address-tag-button button button-primary button-sm" href="<%= tag_address_path(@conn, :new) %>"><%= gettext "Add address tag" %></a>
+          <% end %>
+        </div>
+      </div>
+</section>

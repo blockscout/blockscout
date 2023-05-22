@@ -1,0 +1,43 @@
+<div class="dashboard-banner-chart-legend-item gas-price-oracle">
+    <span class="dashboard-banner-chart-legend-label">
+    <%= gettext "Gas tracker" %>
+    </span>
+    <div class="dashboard-banner-chart-legend-value-container">
+        <% gas_prices_from_oracle = gas_prices() %>
+        <%= if gas_prices_from_oracle do %>
+        <span class="dashboard-banner-chart-legend-value inline">
+            <div>
+            <div class="d-flex flex-row" style="height: 20px; line-height: 20px;">
+                <div class="flex-column"><%= "#{gas_prices_from_oracle["average"]}" <> " " %><%= gettext "Gwei" %></div>
+                <span
+                data-toggle="tooltip"
+                data-placement="top"
+                data-html="true"
+                data-template="<div class='tooltip tooltip-inversed-color tooltip-gas-tracker' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
+                title="
+                <div class='custom-tooltip header'><%= gettext "Gas tracker" %></div>
+                <div>
+                    <div class='custom-tooltip description left d-flex'><span><%= gettext "Slow" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["slow"] %> <%= gettext "Gwei" %></span></div>
+                    <div class='custom-tooltip description left d-flex'><span><%= gettext "Average" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["average"] %> <%= gettext "Gwei" %></span></div>
+                    <div class='custom-tooltip description left d-flex'><span><%= gettext "Fast" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["fast"] %> <%= gettext "Gwei" %></span></div>
+                </div>
+                "
+                >
+                <span style="display: inline-block; height: 20px; width: 12px;" class="fontawesome-icon info-circle ml-1"></span>
+                </span>
+            </div>
+            </div>
+        </span>
+        <% else %>
+        <%= if @gas_price do %>
+            <span class="dashboard-banner-chart-legend-value inline ml-2">
+            <span class="gas-price-icon">
+                <%= render BlockScoutWeb.IconsView, "_gas_price_icon.html" %>
+            </span>
+            <%= @gas_price <> " " %>
+            <%= gettext "Gwei" %>
+            </span>
+        <% end %>
+        <% end %>
+    </div>
+</div>

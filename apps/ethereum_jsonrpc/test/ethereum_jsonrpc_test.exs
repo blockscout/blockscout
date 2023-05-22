@@ -18,7 +18,7 @@ defmodule EthereumJSONRPCTest do
       expected_fetched_balance =
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
           EthereumJSONRPC.Geth -> 0
-          EthereumJSONRPC.Parity -> 1
+          EthereumJSONRPC.Nethermind -> 1
           variant -> raise ArgumentError, "Unsupported variant (#{variant}})"
         end
 
@@ -56,7 +56,7 @@ defmodule EthereumJSONRPCTest do
           EthereumJSONRPC.Geth ->
             "invalid argument 0: json: cannot unmarshal hex string of odd length into Go value of type common.Address"
 
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             "Invalid params: invalid length 1, expected a 0x-prefixed hex string with length of 40."
 
           _ ->
@@ -174,7 +174,7 @@ defmodule EthereumJSONRPCTest do
   end
 
   describe "fetch_codes/2" do
-    @tag :no_parity
+    @tag :no_nethermind
     test "returns both codes and errors", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
@@ -235,7 +235,7 @@ defmodule EthereumJSONRPCTest do
 
   describe "fetch_beneficiaries/2" do
     @tag :no_geth
-    test "fetches benefeciaries from variant API", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+    test "fetches beneficiaries from variant API", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
           {:ok, []}
@@ -251,7 +251,7 @@ defmodule EthereumJSONRPCTest do
     test "can fetch blocks", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       %{block_hash: block_hash, transaction_hash: transaction_hash} =
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             %{
               block_hash: "0x29c850324e357f3c0c836d79860c5af55f7b651e5d7ee253c1af1b14908af49c",
               transaction_hash: "0xa2e81bb56b55ba3dab2daf76501b50dfaad240cccb905dbf89d65c7a84a4a48e"
@@ -604,13 +604,13 @@ defmodule EthereumJSONRPCTest do
       # Can't be faked reliably on real chain
       moxed_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
 
-      unknown_error = {:error, %{"code" => 500, "message" => "Unknown error"}}
+      unknown_error = %{"code" => 500, "message" => "Unknown error"}
 
       expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-        unknown_error
+        {:error, unknown_error}
       end)
 
-      assert {:error, unknown_error} =
+      assert {:error, ^unknown_error} =
                EthereumJSONRPC.fetch_block_number_by_tag("latest", moxed_json_rpc_named_arguments)
     end
   end
@@ -668,7 +668,7 @@ defmodule EthereumJSONRPCTest do
     test "with valid transaction hash", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       hash =
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             "0xa2e81bb56b55ba3dab2daf76501b50dfaad240cccb905dbf89d65c7a84a4a48e"
 
           EthereumJSONRPC.Geth ->
@@ -890,7 +890,7 @@ defmodule EthereumJSONRPCTest do
     test "fetches net version", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       expected_version =
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-          EthereumJSONRPC.Parity -> 77
+          EthereumJSONRPC.Nethermind -> 77
           _variant -> 1
         end
 
@@ -910,6 +910,68 @@ defmodule EthereumJSONRPCTest do
     after
       0 ->
         :ok
+    end
+  end
+end
+
+defmodule EthereumJSONRPCSyncTest do
+  use EthereumJSONRPC.Case, async: false
+
+  import EthereumJSONRPC.Case
+  import Mox
+
+  alias EthereumJSONRPC.FetchedBalances
+  setup :verify_on_exit!
+
+  @moduletag :capture_log
+
+  describe "fetch_balances/1" do
+    setup do
+      initial_env = Application.get_all_env(:indexer)
+      on_exit(fn -> Application.put_all_env([{:indexer, initial_env}]) end)
+    end
+
+    test "ignores all request with block_quantity != latest when env ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES is true",
+         %{
+           json_rpc_named_arguments: json_rpc_named_arguments
+         } do
+      hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+      expected_fetched_balance = 1
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
+                                                     %{
+                                                       id: 0,
+                                                       jsonrpc: "2.0",
+                                                       method: "eth_getBalance",
+                                                       params: [^hash, "latest"]
+                                                     }
+                                                   ],
+                                                   _options ->
+        {:ok, [%{id: 0, result: EthereumJSONRPC.integer_to_quantity(expected_fetched_balance)}]}
+      end)
+
+      Application.put_env(:ethereum_jsonrpc, :disable_archive_balances?, "true")
+
+      assert EthereumJSONRPC.fetch_balances(
+               [
+                 %{block_quantity: "0x1", hash_data: hash},
+                 %{block_quantity: "0x2", hash_data: hash},
+                 %{block_quantity: "0x3", hash_data: hash},
+                 %{block_quantity: "0x4", hash_data: hash},
+                 %{block_quantity: "latest", hash_data: hash}
+               ],
+               json_rpc_named_arguments
+             ) ==
+               {:ok,
+                %FetchedBalances{
+                  params_list: [
+                    %{
+                      address_hash: hash,
+                      block_number: :error,
+                      value: expected_fetched_balance
+                    }
+                  ]
+                }}
     end
   end
 end

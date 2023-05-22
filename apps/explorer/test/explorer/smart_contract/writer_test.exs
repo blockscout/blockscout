@@ -230,14 +230,14 @@ defmodule Explorer.SmartContract.WriterTest do
   setup :verify_on_exit!
 
   describe "write_functions/1" do
-    test "fetches the smart contract write functions" do
+    test "fetches the smart contract write functions with provided smart_contract" do
       smart_contract =
         insert(
           :smart_contract,
           abi: @abi
         )
 
-      response = Writer.write_functions(smart_contract.address_hash)
+      response = Writer.write_functions(smart_contract)
 
       assert [
                %{
@@ -283,14 +283,16 @@ defmodule Explorer.SmartContract.WriterTest do
     test "fetches the smart contract proxy write functions" do
       _proxy_smart_contract =
         insert(:smart_contract,
-          abi: @abi
+          abi: @abi,
+          contract_code_md5: "123"
         )
 
       implementation_contract_address = insert(:contract_address)
 
       insert(:smart_contract,
         address_hash: implementation_contract_address.hash,
-        abi: @implementation_abi
+        abi: @implementation_abi,
+        contract_code_md5: "123"
       )
 
       implementation_contract_address_hash_string =

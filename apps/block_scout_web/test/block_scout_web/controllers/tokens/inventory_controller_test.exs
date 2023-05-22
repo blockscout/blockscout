@@ -55,7 +55,7 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
             transaction: transaction,
             token_contract_address: token.contract_address,
             token: token,
-            token_id: i + 1000
+            token_ids: [i + 1000]
           )
 
           insert(
@@ -94,7 +94,7 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
           transaction: transaction,
           token_contract_address: token.contract_address,
           token: token,
-          token_id: i + 1000
+          token_ids: [i + 1000]
         )
 
         insert(

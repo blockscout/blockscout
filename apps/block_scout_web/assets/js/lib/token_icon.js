@@ -17,18 +17,13 @@ function getTokenIconUrl (chainID, addressHash) {
   if (chainName) {
     return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chainName}/assets/${addressHash}/logo.png`
   } else {
-    return null
+    return '/images/icons/token_icon_default.svg'
   }
 }
 
-function appendTokenIcon ($tokenIconContainer, chainID, addressHash, foreignChainID, foreignAddressHash, displayTokenIcons, size) {
+function appendTokenIcon ($tokenIconContainer, chainID, addressHash, displayTokenIcons, size) {
   const iconSize = size || 20
-  let tokenIconURL = null
-  if (foreignChainID) {
-    tokenIconURL = getTokenIconUrl(foreignChainID.toString(), foreignAddressHash)
-  } else if (chainID) {
-    tokenIconURL = getTokenIconUrl(chainID.toString(), addressHash)
-  }
+  const tokenIconURL = getTokenIconUrl(chainID.toString(), addressHash)
   if (displayTokenIcons) {
     checkLink(tokenIconURL)
       .then(checkTokenIconLink => {
@@ -36,6 +31,7 @@ function appendTokenIcon ($tokenIconContainer, chainID, addressHash, foreignChai
           if ($tokenIconContainer) {
             const img = new Image(iconSize, iconSize)
             img.src = tokenIconURL
+            img.className = 'mr-1'
             $tokenIconContainer.append(img)
           }
         }

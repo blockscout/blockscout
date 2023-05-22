@@ -4,8 +4,10 @@ defmodule BlockScoutWeb.BlockChannel do
   """
   use BlockScoutWeb, :channel
 
+  alias BlockScoutWeb.API.V2.BlockView, as: BlockViewAPI
   alias BlockScoutWeb.{BlockView, ChainView}
   alias Phoenix.View
+  alias Timex.Duration
 
   intercept(["new_block"])
 
@@ -15,6 +17,21 @@ defmodule BlockScoutWeb.BlockChannel do
 
   def join("blocks:" <> _miner_address, _params, socket) do
     {:ok, %{}, socket}
+  end
+
+  def handle_out(
+        "new_block",
+        %{block: block, average_block_time: average_block_time},
+        %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
+      ) do
+    rendered_block = BlockViewAPI.render("block.json", %{block: block, socket: nil})
+
+    push(socket, "new_block", %{
+      average_block_time: to_string(Duration.to_milliseconds(average_block_time)),
+      block: rendered_block
+    })
+
+    {:noreply, socket}
   end
 
   def handle_out("new_block", %{block: block, average_block_time: average_block_time}, socket) do

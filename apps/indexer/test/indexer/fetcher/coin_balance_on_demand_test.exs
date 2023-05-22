@@ -26,10 +26,10 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
     start_supervised!(AverageBlockTime)
     start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
 
-    Application.put_env(:explorer, AverageBlockTime, enabled: true)
+    Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 
     on_exit(fn ->
-      Application.put_env(:explorer, AverageBlockTime, enabled: false)
+      Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
     end)
 
     %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}
@@ -58,7 +58,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
     end
 
     test "treats all addresses as current if the average block time is disabled", %{stale_address: address} do
-      Application.put_env(:explorer, AverageBlockTime, enabled: false)
+      Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
 
       assert CoinBalanceOnDemand.trigger_fetch(address) == :current
     end

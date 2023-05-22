@@ -108,7 +108,7 @@ defmodule BlockScoutWeb.API.V1.DecompiledControllerTest do
   end
 
   describe "when user is not authorized" do
-    test "returns forbedden", %{conn: conn} do
+    test "returns forbidden", %{conn: conn} do
       request = post(conn, api_v1_decompiled_smart_contract_path(conn, :create))
 
       assert request.status == 403

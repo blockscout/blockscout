@@ -340,6 +340,58 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       assert MetadataRetriever.get_functions_of(token.contract_address_hash) == expected
     end
 
+    test "shortens strings larger than 255 characters with unicode graphemes" do
+      long_token_name_shortened =
+        "文章の論旨や要点を短くまとめて表現する要約文。学生の頃、レポート作成などで書いた経験があるものの、それ以降はまったく書いていないという人は多いことでしょう。  しかし、文章"
+
+      token = insert(:token, contract_address: build(:contract_address))
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        1,
+        fn requests, _opts ->
+          {:ok,
+           Enum.map(requests, fn
+             %{id: id, method: "eth_call", params: [%{data: "0x313ce567", to: _}, "latest"]} ->
+               %{
+                 id: id,
+                 result: "0x0000000000000000000000000000000000000000000000000000000000000012"
+               }
+
+             %{id: id, method: "eth_call", params: [%{data: "0x06fdde03", to: _}, "latest"]} ->
+               %{
+                 id: id,
+                 result:
+                   "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000128e69687e7aba0e381aee8ab96e697a8e38284e8a681e782b9e38292e79fade3818fe381bee381a8e38281e381a6e8a1a8e78fbee38199e3828be8a681e7b484e69687e38082e5ada6e7949fe381aee9a083e38081e383ace3839de383bce38388e4bd9ce68890e381aae381a9e381a7e69bb8e38184e3819fe7b58ce9a893e3818ce38182e3828be38282e381aee381aee38081e3819de3828ce4bba5e9998de381afe381bee381a3e3819fe3818fe69bb8e38184e381a6e38184e381aae38184e381a8e38184e38186e4babae381afe5a49ae38184e38193e381a8e381a7e38197e38287e38186e380822020e38197e3818be38197e38081e69687e7aba0e4bd9ce68890e3818ce88ba6e6898be381aae4babae38284e38081e69687e7aba0e3818ce3828fe3818b000000000000000000000000000000000000000000000000"
+               }
+
+             %{id: id, method: "eth_call", params: [%{data: "0x95d89b41", to: _}, "latest"]} ->
+               %{
+                 id: id,
+                 result:
+                   "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003424e540000000000000000000000000000000000000000000000000000000000"
+               }
+
+             %{id: id, method: "eth_call", params: [%{data: "0x18160ddd", to: _}, "latest"]} ->
+               %{
+                 id: id,
+                 result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+               }
+           end)}
+        end
+      )
+
+      expected = %{
+        name: long_token_name_shortened,
+        decimals: 18,
+        total_supply: 1_000_000_000_000_000_000,
+        symbol: "BNT"
+      }
+
+      assert MetadataRetriever.get_functions_of(token.contract_address_hash) == expected
+    end
+
     test "retries when some function gave error" do
       token = insert(:token, contract_address: build(:contract_address))
 

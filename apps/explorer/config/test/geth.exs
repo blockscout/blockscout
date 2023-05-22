@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :explorer,
   json_rpc_named_arguments: [

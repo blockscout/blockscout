@@ -133,7 +133,7 @@ defmodule BlockScoutWeb.ViewingChainTest do
       transaction =
         :transaction
         |> insert(to_address: contract_token_address)
-        |> with_block(block)
+        |> with_block(block, status: :ok)
 
       insert_list(
         3,

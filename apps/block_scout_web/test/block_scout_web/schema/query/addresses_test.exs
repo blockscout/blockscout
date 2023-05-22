@@ -62,7 +62,7 @@ defmodule BlockScoutWeb.Schema.Query.AddressesTest do
 
     test "smart_contract returns all expected fields", %{conn: conn} do
       address = insert(:address, fetched_coin_balance: 100)
-      smart_contract = insert(:smart_contract, address_hash: address.hash)
+      smart_contract = insert(:smart_contract, address_hash: address.hash, contract_code_md5: "123")
 
       query = """
       query ($hashes: [AddressHash!]!) {

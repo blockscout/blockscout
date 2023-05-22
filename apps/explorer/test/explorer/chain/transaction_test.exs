@@ -1,6 +1,8 @@
 defmodule Explorer.Chain.TransactionTest do
   use Explorer.DataCase
 
+  import Mox
+
   alias Ecto.Changeset
   alias Explorer.Chain.Transaction
 
@@ -242,10 +244,10 @@ defmodule Explorer.Chain.TransactionTest do
   end
 
   describe "decoded_input_data/1" do
-    test "that a tranasction that is not a contract call returns a commensurate error" do
+    test "that a transaction that is not a contract call returns a commensurate error" do
       transaction = insert(:transaction)
 
-      assert Transaction.decoded_input_data(transaction) == {:error, :not_a_contract_call}
+      assert Transaction.decoded_input_data(transaction, []) == {:error, :not_a_contract_call}
     end
 
     test "that a contract call transaction that has no verified contract returns a commensurate error" do
@@ -254,7 +256,7 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert(to_address: insert(:contract_address))
         |> Repo.preload(to_address: :smart_contract)
 
-      assert Transaction.decoded_input_data(transaction) == {:error, :contract_not_verified, []}
+      assert Transaction.decoded_input_data(transaction, []) == {:error, :contract_not_verified, []}
     end
 
     test "that a contract call transaction that has a verified contract returns the decoded input data" do
@@ -263,7 +265,10 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert()
         |> Repo.preload(to_address: :smart_contract)
 
-      assert Transaction.decoded_input_data(transaction) == {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]}
+      get_eip1967_implementation()
+
+      assert Transaction.decoded_input_data(transaction, []) ==
+               {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]}
     end
 
     test "that a contract call will look up a match in contract_methods table" do
@@ -271,7 +276,7 @@ defmodule Explorer.Chain.TransactionTest do
       |> insert()
       |> Repo.preload(to_address: :smart_contract)
 
-      contract = insert(:smart_contract) |> Repo.preload(:address)
+      contract = insert(:smart_contract, contract_code_md5: "123") |> Repo.preload(:address)
 
       input_data =
         "set(uint)"
@@ -283,7 +288,10 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert(to_address: contract.address, input: "0x" <> input_data)
         |> Repo.preload(to_address: :smart_contract)
 
-      assert Transaction.decoded_input_data(transaction) == {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}
+      get_eip1967_implementation()
+
+      assert Transaction.decoded_input_data(transaction, []) ==
+               {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}
     end
   end
 
@@ -299,5 +307,45 @@ defmodule Explorer.Chain.TransactionTest do
              }
              |> Poison.encode!()
     end
+  end
+
+  def get_eip1967_implementation do
+    EthereumJSONRPC.Mox
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
   end
 end

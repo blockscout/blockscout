@@ -80,6 +80,7 @@ defmodule Explorer.Etherscan do
     created_contract_address_hash
     input
     type
+    call_type
     gas
     gas_used
     error
@@ -150,8 +151,8 @@ defmodule Explorer.Etherscan do
 
     consensus_blocks =
       from(
-        b in Block,
-        where: b.consensus == true
+        block in Block,
+        where: block.consensus == true
       )
 
     if direction == nil do
@@ -201,6 +202,14 @@ defmodule Explorer.Etherscan do
       query_to_address_hash_wrapped
       |> union(^query_from_address_hash_wrapped)
       |> union(^query_created_contract_address_hash_wrapped)
+      |> Chain.wrapped_union_subquery()
+      |> order_by(
+        [q],
+        [
+          {^options.order_by_direction, q.block_number},
+          desc: q.index
+        ]
+      )
       |> Repo.replica().all()
     else
       query =
@@ -318,14 +327,14 @@ defmodule Explorer.Etherscan do
         inner_join: t in assoc(ctb, :token),
         where: ctb.address_hash == ^address_hash,
         where: ctb.value > 0,
-        distinct: :token_contract_address_hash,
         select: %{
           balance: ctb.value,
           contract_address_hash: ctb.token_contract_address_hash,
           name: t.name,
           decimals: t.decimals,
           symbol: t.symbol,
-          type: t.type
+          type: t.type,
+          id: ctb.token_id
         }
       )
 
@@ -430,6 +439,7 @@ defmodule Explorer.Etherscan do
     from_address_hash
     to_address_hash
     amount
+    amounts
   )a
 
   defp list_token_transfers(address_hash, contract_address_hash, block_height, options) do
@@ -444,7 +454,7 @@ defmodule Explorer.Etherscan do
         offset: ^offset(options),
         select:
           merge(map(tt, ^@token_transfer_fields), %{
-            token_id: tt.token_id,
+            token_ids: tt.token_ids,
             token_name: tkn.name,
             token_symbol: tkn.symbol,
             token_decimals: tkn.decimals,
@@ -470,6 +480,7 @@ defmodule Explorer.Etherscan do
           from_address_hash: tt.from_address_hash,
           to_address_hash: tt.to_address_hash,
           amount: tt.amount,
+          amounts: tt.amounts,
           transaction_nonce: t.nonce,
           transaction_index: t.index,
           transaction_gas: t.gas,
@@ -481,7 +492,7 @@ defmodule Explorer.Etherscan do
           block_number: b.number,
           block_timestamp: b.timestamp,
           confirmations: fragment("? - ?", ^block_height, t.block_number),
-          token_id: tt.token_id,
+          token_ids: tt.token_ids,
           token_name: tt.token_name,
           token_symbol: tt.token_symbol,
           token_decimals: tt.token_decimals,

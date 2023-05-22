@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
   rolling_window_opts: [
@@ -8,10 +8,6 @@ config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
   ],
   wait_per_timeout: :timer.seconds(20),
   max_jitter: :timer.seconds(2)
-
-config :ethereum_jsonrpc,
-  rpc_transport: if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http", do: :http, else: :ipc),
-  ipc_path: System.get_env("IPC_PATH")
 
 # Add this configuration to add global RPC request throttling.
 # throttle_rate_limit: 250,
@@ -36,4 +32,4 @@ config :logger, :ethereum_jsonrpc,
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{Mix.env()}.exs"
+import_config "#{config_env()}.exs"

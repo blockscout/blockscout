@@ -4,10 +4,11 @@
     "_details.html",
     token: @token,
     counters_path: @counters_path,
+    tags: @tags,
     conn: @conn
   ) %>
 
-  <section data-page="token-transfer-list">
+  <section data-page="token-transfer-list" id="transfers">
     <div class="card">
       <%= render OverviewView, "_tabs.html", assigns %>
       <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">

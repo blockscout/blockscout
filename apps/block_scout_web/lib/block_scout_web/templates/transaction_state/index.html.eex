@@ -1,0 +1,51 @@
+<section class="container">
+  <%= render BlockScoutWeb.TransactionView, "overview.html", assigns %>
+  <div class="card">
+    <%= render BlockScoutWeb.TransactionView, "_tabs.html", assigns %>
+    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+      <h2 class="card-title list-title-description"><%= gettext "State changes" %></h2>
+      <div data-error-message class="alert alert-danger col-12 text-left" style="display: none; padding: 0.75rem 0rem; cursor: pointer;">
+        <span href="#" class="alert alert-danger"><%= gettext("Something went wrong, click to reload.") %></span>
+      </div>
+      <%= cond do %>
+        <% Chain.transaction_to_status(@transaction) == :pending -> %>
+        <div class="tile tile-muted text-center">
+          <span><%= gettext "The changes from this transaction have not yet happened since the transaction is still pending." %></span>
+        </div>
+        <% not has_state_changes?(@transaction) -> %>
+        <div class="tile tile-muted text-center">
+          <span><%= gettext "This transaction hasn't changed state." %></span>
+        </div>
+        <% true ->  %>
+        <div class="addresses-table-container">
+          <div class="stakes-table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th class="stakes-table-th">
+                    <div class="stakes-table-th-content">&nbsp;</div>
+                  </th>
+                  <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "Address" %></div>
+                  </th>
+                  <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "Balance before" %></div>
+                  </th>
+                  <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "Balance after" %></div>
+                  </th>
+                  <th class="stakes-table-th">
+                    <div class="stakes-table-th-content"><%= gettext "Change" %></div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody data-items>
+                <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 5 %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>

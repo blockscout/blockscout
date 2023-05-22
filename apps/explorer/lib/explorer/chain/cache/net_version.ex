@@ -16,7 +16,7 @@ defmodule Explorer.Chain.Cache.NetVersion do
 
       {:error, reason} ->
         Logger.debug([
-          "Coudn't fetch net_version, reason: #{inspect(reason)}"
+          "Couldn't fetch net_version, reason: #{inspect(reason)}"
         ])
 
         {:return, nil}

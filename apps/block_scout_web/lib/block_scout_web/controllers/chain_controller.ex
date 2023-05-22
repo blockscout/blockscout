@@ -3,20 +3,23 @@ defmodule BlockScoutWeb.ChainController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1]
 
+  alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.{ChainView, Controller}
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Transaction}
-  alias Explorer.Chain.Supply.{RSK, TokenBridge}
-  alias Explorer.Chain.Transaction.History.TransactionStats
+  alias Explorer.Chain.Cache.Block, as: BlockCache
+  alias Explorer.Chain.Cache.GasUsage
+  alias Explorer.Chain.Cache.Transaction, as: TransactionCache
+  alias Explorer.Chain.Supply.RSK
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market
   alias Phoenix.View
 
   def show(conn, _params) do
-    transaction_estimated_count = Chain.transaction_estimated_count()
-    total_gas_usage = Chain.total_gas_usage()
-    block_count = Chain.block_estimated_count()
+    transaction_estimated_count = TransactionCache.estimated_count()
+    total_gas_usage = GasUsage.total()
+    block_count = BlockCache.estimated_count()
     address_count = Chain.address_estimated_count()
 
     market_cap_calculation =
@@ -24,23 +27,20 @@ defmodule BlockScoutWeb.ChainController do
         RSK ->
           RSK
 
-        TokenBridge ->
-          TokenBridge
-
         _ ->
           :standard
       end
 
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
 
-    transaction_stats = get_transaction_stats()
+    transaction_stats = Helper.get_transaction_stats()
 
     chart_data_paths = %{
       market: market_history_chart_path(conn, :show),
       transaction: transaction_history_chart_path(conn, :show)
     }
 
-    chart_config = Application.get_env(:block_scout_web, :chart_config, %{})
+    chart_config = Application.get_env(:block_scout_web, :chart)[:chart_config]
 
     render(
       conn,
@@ -59,25 +59,6 @@ defmodule BlockScoutWeb.ChainController do
       block_count: block_count,
       gas_price: Application.get_env(:block_scout_web, :gas_price)
     )
-  end
-
-  def get_transaction_stats do
-    stats_scale = date_range(1)
-    transaction_stats = TransactionStats.by_date_range(stats_scale.earliest, stats_scale.latest)
-
-    # Need datapoint for legend if none currently available.
-    if Enum.empty?(transaction_stats) do
-      [%{number_of_transactions: 0, gas_used: 0}]
-    else
-      transaction_stats
-    end
-  end
-
-  def date_range(num_days) do
-    today = Date.utc_today()
-    latest = Date.add(today, -1)
-    x_days_back = Date.add(latest, -1 * (num_days - 1))
-    %{earliest: x_days_back, latest: latest}
   end
 
   def search(conn, %{"q" => ""}) do
@@ -110,7 +91,7 @@ defmodule BlockScoutWeb.ChainController do
 
     results =
       paging_options
-      |> search_by(offset, term)
+      |> Chain.joint_search(offset, term)
 
     encoded_results =
       results
@@ -142,10 +123,6 @@ defmodule BlockScoutWeb.ChainController do
 
   def token_autocomplete(conn, _) do
     json(conn, "{}")
-  end
-
-  def search_by(paging_options, offset, term) do
-    Chain.joint_search(paging_options, offset, term)
   end
 
   def chain_blocks(conn, _params) do

@@ -1,12 +1,10 @@
 defmodule BlockScoutWeb.API.V1.HealthController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.API.APILogger
   alias Explorer.Chain
+  alias Timex.Duration
 
   def health(conn, _) do
-    APILogger.log(conn)
-
     with {:ok, number, timestamp} <- Chain.last_db_block_status(),
          {:ok, cache_number, cache_timestamp} <- Chain.last_cache_block_status() do
       send_resp(conn, :ok, result(number, timestamp, cache_number, cache_timestamp))
@@ -39,12 +37,20 @@ defmodule BlockScoutWeb.API.V1.HealthController do
   end
 
   def error({:error, number, timestamp}) do
+    healthy_blocks_period = Application.get_env(:explorer, :healthy_blocks_period)
+
+    healthy_blocks_period_formatted =
+      healthy_blocks_period
+      |> Duration.from_milliseconds()
+      |> Duration.to_minutes()
+      |> trunc()
+
     %{
       "healthy" => false,
       "error_code" => 5001,
       "error_title" => "blocks fetching is stuck",
       "error_description" =>
-        "There are no new blocks in the DB for the last 5 mins. Check the healthiness of Ethereum archive node or the Blockscout DB instance",
+        "There are no new blocks in the DB for the last #{healthy_blocks_period_formatted} mins. Check the healthiness of Ethereum archive node or the Blockscout DB instance",
       "data" => %{
         "latest_block_number" => to_string(number),
         "latest_block_inserted_at" => to_string(timestamp)

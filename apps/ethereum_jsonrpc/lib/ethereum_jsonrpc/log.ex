@@ -13,7 +13,7 @@ defmodule EthereumJSONRPC.Log do
    * `"blockHash"` - `t:EthereumJSONRPC.hash/0` of the block this transaction is in.
    * `"blockNumber"` - `t:EthereumJSONRPC.quantity/0` for the block number this transaction is in.
    * `"data"` - Data containing non-indexed log parameter
-   * `"logIndex"` - `t:EthereumJSONRPC.quantity/0` of the event index positon in the block.
+   * `"logIndex"` - `t:EthereumJSONRPC.quantity/0` of the event index position in the block.
    * `"topics"` - `t:list/0` of at most 4 32-byte topics.  Topic 1-3 contains indexed parameters of the log.
    * `"transactionHash"` - `t:EthereumJSONRPC.hash/0` of the transaction
    * `"transactionIndex"` - `t:EthereumJSONRPC.quantity/0` for the index of the transaction in the block.
@@ -137,7 +137,7 @@ defmodule EthereumJSONRPC.Log do
         "type" => "mined"
       }
 
-  Geth and Parity >= 1.11.4 includes a `"removed"` key
+  Geth includes a `"removed"` key
 
       iex> EthereumJSONRPC.Log.to_elixir(
       ...>   %{
@@ -173,8 +173,9 @@ defmodule EthereumJSONRPC.Log do
     Enum.into(log, %{}, &entry_to_elixir/1)
   end
 
-  defp entry_to_elixir({key, _} = entry) when key in ~w(polarity address blockHash data removed topics transactionHash type),
-    do: entry
+  defp entry_to_elixir({key, _} = entry)
+       when key in ~w(polarity address blockHash data removed topics transactionHash type timestamp),
+       do: entry
 
   defp entry_to_elixir({key, quantity}) when key in ~w(blockNumber logIndex transactionIndex transactionLogIndex) do
     if is_nil(quantity) do

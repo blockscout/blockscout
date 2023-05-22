@@ -36,7 +36,7 @@ defmodule Indexer.Transform.MintTransfersTest do
     end
   end
 
-  test "returns an empty list when the first topic isn't the brigde hash" do
+  test "returns an empty list when the first topic isn't the bridge hash" do
     logs = [
       %{
         address_hash: "0x867305d19606aadba405ce534e303d0e225f9556",

@@ -187,7 +187,7 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   def set_skip_metadata(token_to_update) do
-    Chain.update_token(%{token_to_update | updated_at: DateTime.utc_now()}, %{skip_metadata: true})
+    Chain.update_token(token_to_update, %{skip_metadata: true})
   end
 
   def get_total_supply_of(contract_address_hash) when is_binary(contract_address_hash) do
@@ -342,7 +342,10 @@ defmodule Explorer.Token.MetadataRetriever do
 
   defp handle_large_string(nil), do: nil
   defp handle_large_string(string), do: handle_large_string(string, byte_size(string))
-  defp handle_large_string(string, size) when size > 255, do: binary_part(string, 0, 255)
+
+  defp handle_large_string(string, size) when size > 255,
+    do: string |> binary_part(0, 255) |> String.chunk(:valid) |> List.first()
+
   defp handle_large_string(string, _size), do: string
 
   defp remove_null_bytes(string) do

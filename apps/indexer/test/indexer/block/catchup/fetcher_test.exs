@@ -10,6 +10,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
   alias Explorer.Chain.Hash
   alias Indexer.Block
   alias Indexer.Block.Catchup.Fetcher
+  alias Indexer.Block.Catchup.{MissingRangesCollector, MissingRangesManipulator}
   alias Indexer.Fetcher.{BlockReward, CoinBalance, InternalTransaction, Token, TokenBalance, UncleBlock}
 
   @moduletag capture_log: true
@@ -27,17 +28,28 @@ defmodule Indexer.Block.Catchup.FetcherTest do
         transport: EthereumJSONRPC.Mox,
         transport_options: [],
         # Which one does not matter, so pick one
-        variant: EthereumJSONRPC.Parity
+        variant: EthereumJSONRPC.Nethermind
       ]
     }
   end
 
   describe "import/1" do
+    setup do
+      configuration = Application.get_env(:indexer, :last_block)
+      Application.put_env(:indexer, :last_block, "0")
+
+      on_exit(fn ->
+        Application.put_env(:indexer, :last_block, configuration)
+      end)
+    end
+
     test "fetches uncles asynchronously", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      MissingRangesCollector.start_link([])
+      MissingRangesManipulator.start_link([])
 
       parent = self()
 
@@ -123,13 +135,23 @@ defmodule Indexer.Block.Catchup.FetcherTest do
   end
 
   describe "task/1" do
+    setup do
+      initial_env = Application.get_env(:indexer, :block_ranges)
+      on_exit(fn -> Application.put_env(:indexer, :block_ranges, initial_env) end)
+    end
+
     test "ignores fetched beneficiaries with different hash for same number", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      Application.put_env(:indexer, Indexer.Block.Catchup.Fetcher, batch_size: 1, concurrency: 10)
+      Application.put_env(:indexer, :block_ranges, "0..1")
+      start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      MissingRangesCollector.start_link([])
+      MissingRangesManipulator.start_link([])
 
       latest_block_number = 2
       latest_block_quantity = integer_to_quantity(latest_block_number)
@@ -264,14 +286,13 @@ defmodule Indexer.Block.Catchup.FetcherTest do
 
       assert %{first_block_number: ^block_number, last_block_number: 0, missing_block_count: 2, shrunk: false} =
                Fetcher.task(%Fetcher{
-                 blocks_batch_size: 1,
                  block_fetcher: %Block.Fetcher{
                    callback_module: Fetcher,
                    json_rpc_named_arguments: json_rpc_named_arguments
                  }
                })
 
-      Process.sleep(1000)
+      Process.sleep(3000)
 
       assert count(Chain.Block) == 1
       assert count(Reward) == 0
@@ -280,10 +301,15 @@ defmodule Indexer.Block.Catchup.FetcherTest do
     test "async fetches beneficiaries when individual responses error out", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      Application.put_env(:indexer, Indexer.Block.Catchup.Fetcher, batch_size: 1, concurrency: 10)
+      Application.put_env(:indexer, :block_ranges, "0..1")
+      start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      MissingRangesCollector.start_link([])
+      MissingRangesManipulator.start_link([])
 
       latest_block_number = 2
       latest_block_quantity = integer_to_quantity(latest_block_number)
@@ -413,28 +439,32 @@ defmodule Indexer.Block.Catchup.FetcherTest do
 
       assert %{first_block_number: ^block_number, last_block_number: 0, missing_block_count: 2, shrunk: false} =
                Fetcher.task(%Fetcher{
-                 blocks_batch_size: 1,
                  block_fetcher: %Block.Fetcher{
                    callback_module: Fetcher,
                    json_rpc_named_arguments: json_rpc_named_arguments
                  }
                })
 
-      Process.sleep(1000)
+      Process.sleep(3000)
 
       assert count(Chain.Block) == 1
       assert count(Reward) == 0
 
-      assert_receive {:block_numbers, [block_number]}, 5_000
+      assert_receive {:block_numbers, [^block_number]}, 5_000
     end
 
     test "async fetches beneficiaries when entire call errors out", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      Application.put_env(:indexer, Indexer.Block.Catchup.Fetcher, batch_size: 1, concurrency: 10)
+      Application.put_env(:indexer, :block_ranges, "0..1")
+      start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      MissingRangesCollector.start_link([])
+      MissingRangesManipulator.start_link([])
 
       latest_block_number = 2
       latest_block_quantity = integer_to_quantity(latest_block_number)
@@ -516,7 +546,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                jsonrpc: "2.0",
                result: %{
                  "hash" => to_string(block_hash_0),
-                 "number" => block_quantity,
+                 "number" => "0x0",
                  "difficulty" => "0x0",
                  "gasLimit" => "0x0",
                  "gasUsed" => "0x0",
@@ -557,18 +587,17 @@ defmodule Indexer.Block.Catchup.FetcherTest do
 
       assert %{first_block_number: ^block_number, last_block_number: 0, missing_block_count: 2, shrunk: false} =
                Fetcher.task(%Fetcher{
-                 blocks_batch_size: 1,
                  block_fetcher: %Block.Fetcher{
                    callback_module: Fetcher,
                    json_rpc_named_arguments: json_rpc_named_arguments
                  }
                })
 
-      Process.sleep(1000)
+      Process.sleep(3000)
       assert count(Chain.Block) == 1
       assert count(Reward) == 0
 
-      assert_receive {:block_numbers, [block_number]}, 5_000
+      assert_receive {:block_numbers, [^block_number]}, 5_000
     end
   end
 

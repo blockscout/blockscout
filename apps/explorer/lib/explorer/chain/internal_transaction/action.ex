@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.InternalTransaction.Action do
   @moduledoc """
-  The action that was performed in a `t:EthereumJSONRPC.Parity.Trace.t/0`
+  The action that was performed in a `t:EthereumJSONRPC.Nethermind.Trace.t/0`
   """
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]

@@ -9,12 +9,14 @@ const weiToEtherConverter = (element, event) => {
   const $conversionTextEth = $element.find('[data-conversion-text-eth]')
   const $conversionUnit = $element.find('[data-conversion-unit]')
   const originalValueStr = $conversionUnit.data('original-value')
+  // @ts-ignore
   const unitVal = new BigNumber(numeral(originalValueStr).value())
   const weiVal = unitVal.dividedBy(weiUnit)
 
   if (event.target.checked) {
     $conversionTextWei.removeClass('d-inline-block').addClass('d-none')
     $conversionTextEth.removeClass('d-none').addClass('d-inline-block')
+    // @ts-ignore
     $conversionUnit.html(weiVal.toFixed() > 0 ? String(weiVal.toFixed()) : numeral(weiVal).format('0[.000000000000000000]'))
   } else {
     $conversionTextWei.removeClass('d-none').addClass('d-inline-block')

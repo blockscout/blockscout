@@ -1,6 +1,6 @@
 import $ from 'jquery'
 import { Chart, Filler, LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip } from 'chart.js'
-import 'chartjs-adapter-moment'
+import 'chartjs-adapter-luxon'
 import humps from 'humps'
 
 Chart.defaults.font.family = 'Nunito, "Helvetica Neue", Arial, sans-serif,"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
@@ -25,7 +25,10 @@ export function createCoinBalanceHistoryChart (el) {
       let stepSize = 3
 
       if (data.length > 1) {
-        const diff = Math.abs(new Date(data[data.length - 1].date) - new Date(data[data.length - 2].date))
+        const date1 = new Date(data[data.length - 1].date)
+        const date2 = new Date(data[data.length - 2].date)
+        // @ts-ignore
+        const diff = Math.abs(date1 - date2)
         const periodInDays = diff / (1000 * 60 * 60 * 24)
 
         stepSize = periodInDays
@@ -36,12 +39,14 @@ export function createCoinBalanceHistoryChart (el) {
           datasets: [{
             label: 'coin balance',
             data: coinBalanceHistoryData,
+            // @ts-ignore
             lineTension: 0,
             cubicInterpolationMode: 'monotone',
             fill: true
           }]
         },
         plugins: {
+          // @ts-ignore
           legend: {
             display: false
           }
@@ -53,20 +58,25 @@ export function createCoinBalanceHistoryChart (el) {
         options: {
           scales: {
             x: {
+              // @ts-ignore
               type: 'time',
               time: {
                 unit: 'day',
-                tooltipFormat: 'YYYY-MM-DD',
-                stepSize: stepSize
+                tooltipFormat: 'DD',
+                // @ts-ignore
+                stepSize
               }
             },
             y: {
+              // @ts-ignore
               type: 'linear',
               ticks: {
+                // @ts-ignore
                 beginAtZero: true
               },
               title: {
                 display: true,
+                // @ts-ignore
                 labelString: window.localized.Ether
               }
             }

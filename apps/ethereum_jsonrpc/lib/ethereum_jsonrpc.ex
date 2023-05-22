@@ -4,7 +4,7 @@ defmodule EthereumJSONRPC do
 
   ## Configuration
 
-  Configuration for parity URLs can be provided with the following mix config:
+  Configuration for Nethermind URLs can be provided with the following mix config:
 
       config :ethereum_jsonrpc,
         url: "http://localhost:8545",
@@ -36,6 +36,7 @@ defmodule EthereumJSONRPC do
     RequestCoordinator,
     Subscription,
     Transport,
+    Utility.EndpointAvailabilityObserver,
     Variant
   }
 
@@ -83,7 +84,7 @@ defmodule EthereumJSONRPC do
    * `:transport` - the `t:EthereumJSONRPC.Transport.t/0` callback module
    * `:transport_options` - options passed to `c:EthereumJSONRPC.Transport.json_rpc/2`
    * `:variant` - the `t:EthereumJSONRPC.Variant.t/0` callback module
-   * `:throttle_timout` - the maximum amount of time in milliseconds to throttle
+   * `:throttle_timeout` - the maximum amount of time in milliseconds to throttle
      before automatically returning a timeout. Defaults to #{@default_throttle_timeout} milliseconds.
   """
   @type json_rpc_named_arguments :: [
@@ -184,7 +185,18 @@ defmodule EthereumJSONRPC do
         ) :: {:ok, FetchedBalances.t()} | {:error, reason :: term}
   def fetch_balances(params_list, json_rpc_named_arguments)
       when is_list(params_list) and is_list(json_rpc_named_arguments) do
-    id_to_params = id_to_params(params_list)
+    filtered_params =
+      if Application.get_env(:ethereum_jsonrpc, :disable_archive_balances?) do
+        params_list
+        |> Enum.filter(fn
+          %{block_quantity: "latest"} -> true
+          _ -> false
+        end)
+      else
+        params_list
+      end
+
+    id_to_params = id_to_params(filtered_params)
 
     with {:ok, responses} <-
            id_to_params
@@ -219,13 +231,7 @@ defmodule EthereumJSONRPC do
   @spec fetch_beneficiaries([block_number], json_rpc_named_arguments) ::
           {:ok, FetchedBeneficiaries.t()} | {:error, reason :: term} | :ignore
   def fetch_beneficiaries(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
-    min_block = trace_first_block_to_fetch()
-
-    filtered_block_numbers =
-      block_numbers
-      |> Enum.filter(fn block_number ->
-        block_number >= min_block
-      end)
+    filtered_block_numbers = block_numbers_in_range(block_numbers)
 
     Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_beneficiaries(
       filtered_block_numbers,
@@ -251,6 +257,17 @@ defmodule EthereumJSONRPC do
   @spec fetch_blocks_by_range(Range.t(), json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}
   def fetch_blocks_by_range(_first.._last = range, json_rpc_named_arguments) do
     range
+    |> Enum.map(fn number -> %{number: number} end)
+    |> fetch_blocks_by_params(&Block.ByNumber.request/1, json_rpc_named_arguments)
+  end
+
+  @doc """
+  Fetches blocks by block number list.
+  """
+  @spec fetch_blocks_by_numbers([block_number()], json_rpc_named_arguments) ::
+          {:ok, Blocks.t()} | {:error, reason :: term}
+  def fetch_blocks_by_numbers(block_numbers, json_rpc_named_arguments) do
+    block_numbers
     |> Enum.map(fn number -> %{number: number} end)
     |> fetch_blocks_by_params(&Block.ByNumber.request/1, json_rpc_named_arguments)
   end
@@ -310,18 +327,21 @@ defmodule EthereumJSONRPC do
   Fetches internal transactions for entire blocks from variant API.
   """
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
-    min_block = trace_first_block_to_fetch()
-
-    filtered_block_numbers =
-      block_numbers
-      |> Enum.filter(fn block_number ->
-        block_number >= min_block
-      end)
+    filtered_block_numbers = block_numbers_in_range(block_numbers)
 
     Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_block_internal_transactions(
       filtered_block_numbers,
       json_rpc_named_arguments
     )
+  end
+
+  def block_numbers_in_range(block_numbers) do
+    min_block = first_block_to_fetch(:trace_first_block)
+
+    block_numbers
+    |> Enum.filter(fn block_number ->
+      block_number >= min_block
+    end)
   end
 
   @doc """
@@ -380,8 +400,24 @@ defmodule EthereumJSONRPC do
     transport_options = Keyword.fetch!(named_arguments, :transport_options)
     throttle_timeout = Keyword.get(named_arguments, :throttle_timeout, @default_throttle_timeout)
 
-    RequestCoordinator.perform(request, transport, transport_options, throttle_timeout)
+    url = maybe_replace_url(transport_options[:url], transport_options[:fallback_url], transport)
+    corrected_transport_options = Keyword.replace(transport_options, :url, url)
+
+    case RequestCoordinator.perform(request, transport, corrected_transport_options, throttle_timeout) do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, reason} ->
+        maybe_inc_error_count(corrected_transport_options[:url], named_arguments, transport)
+        {:error, reason}
+    end
   end
+
+  defp maybe_replace_url(url, _replace_url, EthereumJSONRPC.HTTP), do: url
+  defp maybe_replace_url(url, replace_url, _), do: EndpointAvailabilityObserver.maybe_replace_url(url, replace_url)
+
+  defp maybe_inc_error_count(_url, _arguments, EthereumJSONRPC.HTTP), do: :ok
+  defp maybe_inc_error_count(url, arguments, _), do: EndpointAvailabilityObserver.inc_error_count(url, arguments)
 
   @doc """
   Converts `t:quantity/0` to `t:non_neg_integer/0`.
@@ -456,7 +492,6 @@ defmodule EthereumJSONRPC do
   end
 
   # We can only depend on implementations supporting 64-bit integers:
-  # * Parity only supports u64 (https://github.com/paritytech/jsonrpc-core/blob/f2c61edb817e344d92ab3baf872fa77d1602430a/src/id.rs#L13)
   # * Ganache only supports u32 (https://github.com/trufflesuite/ganache-core/issues/190)
   def unique_request_id do
     <<unique_request_id::big-integer-size(4)-unit(8)>> = :crypto.strong_rand_bytes(4)
@@ -486,10 +521,6 @@ defmodule EthereumJSONRPC do
            |> json_rpc(json_rpc_named_arguments) do
       {:ok, Blocks.from_responses(responses, id_to_params)}
     end
-  end
-
-  defp trace_first_block_to_fetch do
-    first_block_to_fetch(:trace_first_block)
   end
 
   def first_block_to_fetch(config) do

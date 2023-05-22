@@ -1,0 +1,7 @@
+<%= for library_index <- 2..Application.get_env(:block_scout_web, :contract)[:verification_max_libraries] do %>
+  <div class="contract-library-form-group js-contract-library-form-group">
+    <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_name.html", index: library_index %>
+
+    <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_address.html", index: library_index %>
+  </div>
+<% end %>

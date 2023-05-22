@@ -6,18 +6,12 @@ defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
 
   alias Ecto.Changeset
   alias Explorer.{Chain, Repo}
+  alias Explorer.Counters.Helper
 
   @cache_name :address_transactions_gas_usage_counter
   @last_update_key "last_update"
 
-  @ets_opts [
-    :set,
-    :named_table,
-    :public,
-    read_concurrency: true
-  ]
-
-  config = Application.get_env(:explorer, __MODULE__)
+  config = Application.compile_env(:explorer, __MODULE__)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()
@@ -59,33 +53,27 @@ defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
   def cache_name, do: @cache_name
 
   defp cache_expired?(address) do
-    cache_period = address_transactions_gas_usage_counter_cache_period()
+    cache_period = Application.get_env(:explorer, __MODULE__)[:cache_period]
     address_hash_string = to_string(address.hash)
     updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
 
     cond do
       is_nil(updated_at) -> true
-      current_time() - updated_at > cache_period -> true
+      Helper.current_time() - updated_at > cache_period -> true
       true -> false
     end
   end
 
   defp update_cache(address) do
     address_hash_string = to_string(address.hash)
-    put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", current_time())
+    put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
     new_data = Chain.address_to_gas_usage_count(address)
     put_into_cache("hash_#{address_hash_string}", new_data)
     put_into_db(address, new_data)
   end
 
   defp fetch_from_cache(key) do
-    case :ets.lookup(@cache_name, key) do
-      [{_, value}] ->
-        value
-
-      [] ->
-        0
-    end
+    Helper.fetch_from_cache(key, @cache_name)
   end
 
   defp put_into_cache(key, value) do
@@ -100,24 +88,9 @@ defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
     |> Repo.update()
   end
 
-  defp current_time do
-    utc_now = DateTime.utc_now()
-
-    DateTime.to_unix(utc_now, :millisecond)
+  defp create_cache_table do
+    Helper.create_cache_table(@cache_name)
   end
 
-  def create_cache_table do
-    if :ets.whereis(@cache_name) == :undefined do
-      :ets.new(@cache_name, @ets_opts)
-    end
-  end
-
-  def enable_consolidation?, do: @enable_consolidation
-
-  defp address_transactions_gas_usage_counter_cache_period do
-    case Integer.parse(System.get_env("ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_CACHE_PERIOD", "")) do
-      {secs, ""} -> :timer.seconds(secs)
-      _ -> :timer.hours(1)
-    end
-  end
+  defp enable_consolidation?, do: @enable_consolidation
 end

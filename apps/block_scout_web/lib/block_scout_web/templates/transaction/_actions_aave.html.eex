@@ -1,0 +1,1 @@
+<span class="text-muted"><%= @action %></span> <%= @amount %> <%= @symbol %> <span class="text-muted"><%= @tail %></span>

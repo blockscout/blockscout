@@ -11,12 +11,15 @@ defmodule BlockScoutWeb.RecentTransactionsController do
   def index(conn, _params) do
     if ajax?(conn) do
       recent_transactions =
-        Chain.recent_collated_transactions(
+        Chain.recent_collated_transactions(true,
           necessity_by_association: %{
             :block => :required,
             [created_contract_address: :names] => :optional,
             [from_address: :names] => :optional,
-            [to_address: :names] => :optional
+            [to_address: :names] => :optional,
+            [created_contract_address: :smart_contract] => :optional,
+            [from_address: :smart_contract] => :optional,
+            [to_address: :smart_contract] => :optional
           },
           paging_options: %PagingOptions{page_size: 5}
         )

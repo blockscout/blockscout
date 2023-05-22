@@ -214,25 +214,22 @@
 }
 
 @mixin square-icon-button-inline($color, $dimensions) {
-  align-items: center;
   border: 1px solid $color;
   border-radius: 2px;
   cursor: pointer;
   display: inline;
   height: $dimensions;
-  justify-content: center;
   transition: $transition-cont;
   width: $dimensions;
-
-  svg {
-    display: block;
-    height: 100%;
-    width: 100%;
-  }
 
   path {
     fill: $color;
     transition: $transition-cont;
+  }
+
+  svg {
+    vertical-align: text-bottom;   
+    margin-bottom: -1.1px;
   }
 
   &:hover {

@@ -2,16 +2,57 @@
 
   <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
 
-  <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path %>
+  <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path, tags: @tags %>
 
   <div class="card">
     <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
-    <!-- loaded via AJAX -->
-    <div class="card-body" data-smart-contract-functions data-hash="<%= to_string(@address.hash) %>" data-type="<%= @type %>" data-action="<%= @action %>" data-url="<%= smart_contract_path(@conn, :index) %>">
-      <div>
-        <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Loading...") %>
+    <%= if @need_wallet do %>
+      <div class="card-misc-container">
+        <%= render BlockScoutWeb.SmartContractView, "_connect_container.html" %>
       </div>
-    </div>
+    <% end %>
+    <%= if @non_custom_abi && assigns[:custom_abi] do %>
+      <ul class="card-misc-container nav nav-pills" id="functions-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <a class="nav-link active" id="verified-tab" data-toggle="pill" href="#verified" role="tab" aria-controls="pills-verified" aria-selected="true"><%= gettext "Verified" %></a>
+        </li>
+        <li class="nav-item" role="presentation">
+          <a class="nav-link" id="custom-tab" data-toggle="pill" href="#custom" role="tab" aria-controls="pills-custom" aria-selected="false"><%= gettext "Custom" %></a>
+        </li>
+      </ul>
+    <% else %>
+      <%= if assigns[:custom_abi] do %>
+        <h2 class="card-misc-container"><%= gettext "Custom ABI from account" %></h2>
+      <% end %>
+    <% end %>
+    <%=
+      for status <- ["error", "warning", "success", "question"] do
+        render BlockScoutWeb.CommonComponentsView, "_modal_status.html", status: status
+      end
+    %>
+    <%= render BlockScoutWeb.SmartContractView, "_pending_contract_write.html" %>
+    <%= if @non_custom_abi && assigns[:custom_abi] do %>
+      <div class="tab-content" id="pills-tabContent">
+    <% end %>
+    <%= if @non_custom_abi do %>
+      <!-- loaded via AJAX -->
+      <div class="card-body tab-pane fade show active" id="verified" role="tabpanel" aria-labelledby="verified-tab" data-smart-contract-functions data-hash="<%= to_string(@address.hash) %>" data-type="<%= @type %>" data-action="<%= @action %>" data-url="<%= smart_contract_path(@conn, :index) %>">
+        <div>
+          <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Loading...") %>
+        </div>
+      </div>
+    <% end %>
+    <%= if assigns[:custom_abi] do %>
+      <!-- loaded via AJAX -->
+      <div class="card-body tab-pane <%= if @non_custom_abi && assigns[:custom_abi], do: "fade" %>" id="custom" role="tabpanel" aria-labelledby="custom-tab" data-smart-contract-functions-custom data-hash="<%= to_string(@address.hash) %>" data-type="<%= @type %>" data-action="<%= @action %>" data-url="<%= smart_contract_path(@conn, :index) %>">
+        <div>
+          <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Loading...") %>
+        </div>
+      </div>
+    <% end %>
+    <%= if @non_custom_abi && assigns[:custom_abi] do %>
+      </div>
+    <% end %>
   </div>
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/smart-contract-helpers.js") %>"></script>
 </section>

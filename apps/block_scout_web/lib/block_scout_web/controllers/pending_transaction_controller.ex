@@ -17,7 +17,9 @@ defmodule BlockScoutWeb.PendingTransactionController do
           necessity_by_association: %{
             [from_address: :names] => :optional,
             [to_address: :names] => :optional,
-            [created_contract_address: :names] => :optional
+            [created_contract_address: :names] => :optional,
+            [from_address: :smart_contract] => :optional,
+            [to_address: :smart_contract] => :optional
           }
         ],
         paging_options(params)
@@ -61,7 +63,7 @@ defmodule BlockScoutWeb.PendingTransactionController do
   end
 
   defp get_pending_transactions_and_next_page(options) do
-    transactions_plus_one = Chain.recent_pending_transactions(options)
+    transactions_plus_one = Chain.recent_pending_transactions(options, true)
     split_list_by_page(transactions_plus_one)
   end
 end

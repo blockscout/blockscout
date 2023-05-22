@@ -1,0 +1,17 @@
+{
+  "sources": [
+      {
+          "fileName": "Test.sol",
+          "contractName": "Test",
+          "compilerVersion": "v0.8.17+commit.8df45f5f",
+          "compilerSettings": "{\"libraries\":{\"Test.sol\":{}},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":199},\"outputSelection\":{\"*\":{\"\":[\"ast\"],\"*\":[\"abi\",\"evm.bytecode\",\"evm.deployedBytecode\",\"evm.methodIdentifiers\"]}}}",
+          "sourceType": "SOLIDITY",
+          "sourceFiles": {
+              "Test.sol": "// SPDX-License-Identifier: MIT\r\n\r\npragma solidity 0.8.17;\r\n\r\ncontract Test {\r\n    enum E {\r\n        V1, V2, V3, V4\r\n    }\r\n    struct A {\r\n        E a;\r\n        uint256[] b;\r\n        B[] c;\r\n    }\r\n\r\n    struct B {\r\n        uint256 d;\r\n        uint256 e;\r\n    }\r\n\r\n    function get(uint256 x) external pure returns (A memory) {\r\n        uint256[] memory b = new uint256[](3);\r\n        b[0] = 1;\r\n        b[1] = 2;\r\n        b[2] = 3;\r\n        B[] memory c = new B[](3);\r\n        c[0] = B(1, 2);\r\n        c[1] = B(3, 4);\r\n        c[2] = B(5, 6);\r\n        return A(E.V3, b, c);\r\n    }\r\n}"
+          },
+          "abi": "[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"x\",\"type\":\"uint256\"}],\"name\":\"get\",\"outputs\":[{\"components\":[{\"type\":\"uint8\"},{\"type\":\"uint256[]\"},{\"components\":[{\"type\":\"uint256\"},{\"type\":\"uint256\"}],\"type\":\"tuple[]\"}],\"internalType\":\"struct Test.A\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}]",
+          "constructorArguments": null,
+          "matchType": "PARTIAL"
+      }
+  ]
+}

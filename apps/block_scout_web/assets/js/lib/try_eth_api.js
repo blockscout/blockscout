@@ -26,8 +26,8 @@ function wrapJsonRpc (method, params) {
   return {
     id: 0,
     jsonrpc: '2.0',
-    method: method,
-    params: params
+    method,
+    params
   }
 }
 
@@ -40,6 +40,7 @@ function parseInput (input) {
       return value
     case 'json':
       try {
+        // @ts-ignore
         return JSON.parse(value)
       } catch (e) {
         return {}

@@ -1,5 +1,6 @@
 import $ from 'jquery'
 import '../app'
+import { escapeHtml } from './utils'
 
 // This file adds event handlers responsible for the 'Try it out' UI in the
 // Etherscan-compatible API documentation page.
@@ -49,23 +50,11 @@ function handleSuccess (query, xhr, clickedButton) {
   curl.innerHTML = composeCurlCommand(url)
   requestUrl.innerHTML = url
   code.innerHTML = xhr.status
-  body.innerHTML = JSON.stringify(xhr.responseJSON, undefined, 2)
+  body.innerHTML = escapeHtml(JSON.stringify(xhr.responseJSON, undefined, 2))
   $(`[data-selector="${module}-${action}-try-api-ui-result"]`).show()
   $(`[data-selector="${module}-${action}-btn-try-api-clear"]`).show()
   clickedButton.html(clickedButton.data('original-text'))
   clickedButton.prop('disabled', false)
-}
-
-function escapeHtml (text) {
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  }
-
-  return text.replace(/[&<>"']/g, function (m) { return map[m] })
 }
 
 // Show 'Try it out' UI for a module/action.
@@ -104,6 +93,7 @@ $('button[data-selector*="btn-try-api-clear"]').click(event => {
 
 // Remove invalid class from required fields if not empty
 $('input[data-selector*="try-api-ui"][data-required="true"]').on('keyup', (event) => {
+  // @ts-ignore
   if (event.target.value !== '') {
     event.target.classList.remove('is-invalid')
   } else {

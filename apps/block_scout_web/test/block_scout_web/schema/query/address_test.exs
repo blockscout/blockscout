@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
 
     test "smart_contract returns all expected fields", %{conn: conn} do
       address = insert(:address, fetched_coin_balance: 100)
-      smart_contract = insert(:smart_contract, address_hash: address.hash)
+      smart_contract = insert(:smart_contract, address_hash: address.hash, contract_code_md5: "123")
 
       query = """
       query ($hash: AddressHash!) {
@@ -326,6 +326,68 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
       assert Enum.all?(transactions, &(&1["node"]["block_number"] == third_block.number))
     end
 
+    test "transactions are ordered by ascending block and index", %{conn: conn} do
+      first_block = insert(:block)
+      second_block = insert(:block)
+      third_block = insert(:block)
+
+      address = insert(:address)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(second_block)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(third_block)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(first_block)
+
+      query = """
+      query ($hash: AddressHash!, $first: Int!) {
+        address(hash: $hash) {
+          transactions(first: $first, order: ASC) {
+            edges {
+              node {
+                hash
+                block_number
+                index
+              }
+            }
+          }
+        }
+      }
+      """
+
+      variables = %{
+        "hash" => to_string(address.hash),
+        "first" => 3
+      }
+
+      conn = post(conn, "/graphql", query: query, variables: variables)
+
+      %{
+        "data" => %{
+          "address" => %{
+            "transactions" => %{
+              "edges" => transactions
+            }
+          }
+        }
+      } = json_response(conn, 200)
+
+      block_number_and_index_order =
+        Enum.map(transactions, fn transaction ->
+          {transaction["node"]["block_number"], transaction["node"]["index"]}
+        end)
+
+      assert block_number_and_index_order == Enum.sort(block_number_and_index_order, &(&1 < &2))
+      assert length(transactions) == 3
+      assert Enum.all?(transactions, &(&1["node"]["block_number"] == first_block.number))
+    end
+
     test "complexity correlates to 'first' or 'last' arguments", %{conn: conn} do
       address = build(:address)
 
@@ -357,7 +419,7 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
     end
 
     test "with 'last' and 'count' arguments", %{conn: conn} do
-      # "`last: N` must always be acompanied by either a `before:` argument to
+      # "`last: N` must always be accompanied by either a `before:` argument to
       # the query, or an explicit `count:` option to the `from_query` call.
       # Otherwise it is impossible to derive the required offset."
       # https://hexdocs.pm/absinthe_relay/Absinthe.Relay.Connection.html#from_query/4

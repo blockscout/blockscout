@@ -1,5 +1,7 @@
-defmodule BlockScoutWeb.Tokens.ReadContractControllerTest do
+defmodule BlockScoutWeb.Tokens.ContractControllerTest do
   use BlockScoutWeb.ConnCase, async: false
+
+  import Mox
 
   describe "GET index/3" do
     test "with invalid address hash", %{conn: conn} do
@@ -34,7 +36,7 @@ defmodule BlockScoutWeb.Tokens.ReadContractControllerTest do
     test "successfully renders the page when the token is a verified smart contract", %{conn: conn} do
       token_contract_address = insert(:contract_address)
 
-      insert(:smart_contract, address_hash: token_contract_address.hash)
+      insert(:smart_contract, address_hash: token_contract_address.hash, contract_code_md5: "123")
 
       token = insert(:token, contract_address: token_contract_address)
 
@@ -51,10 +53,52 @@ defmodule BlockScoutWeb.Tokens.ReadContractControllerTest do
         token: token
       )
 
+      get_eip1967_implementation()
+
       conn = get(conn, token_read_contract_path(BlockScoutWeb.Endpoint, :index, token.contract_address_hash))
 
       assert html_response(conn, 200)
       assert token.contract_address_hash == conn.assigns.token.contract_address_hash
     end
+  end
+
+  def get_eip1967_implementation do
+    EthereumJSONRPC.Mox
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
   end
 end

@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Import, TokenTransfer}
+  alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
 
@@ -41,7 +42,12 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
       |> Map.put(:timestamps, timestamps)
 
     Multi.run(multi, :token_transfers, fn repo, _ ->
-      insert(repo, changes_list, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn -> insert(repo, changes_list, insert_options) end,
+        :block_referencing,
+        :token_transfers,
+        :token_transfers
+      )
     end)
   end
 
@@ -57,7 +63,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
     # Enforce TokenTransfer ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.log_index})
 
-    {:ok, _} =
+    {:ok, inserted} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
@@ -68,6 +74,8 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
         timeout: timeout,
         timestamps: timestamps
       )
+
+    {:ok, inserted}
   end
 
   defp default_on_conflict do
@@ -81,19 +89,19 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
           from_address_hash: fragment("EXCLUDED.from_address_hash"),
           to_address_hash: fragment("EXCLUDED.to_address_hash"),
           token_contract_address_hash: fragment("EXCLUDED.token_contract_address_hash"),
-          token_id: fragment("EXCLUDED.token_id"),
+          token_ids: fragment("EXCLUDED.token_ids"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token_transfer.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_transfer.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.amount, EXCLUDED.from_address_hash, EXCLUDED.to_address_hash, EXCLUDED.token_contract_address_hash, EXCLUDED.token_id) IS DISTINCT FROM (?, ? ,? , ?, ?)",
+          "(EXCLUDED.amount, EXCLUDED.from_address_hash, EXCLUDED.to_address_hash, EXCLUDED.token_contract_address_hash, EXCLUDED.token_ids) IS DISTINCT FROM (?, ? ,? , ?, ?)",
           token_transfer.amount,
           token_transfer.from_address_hash,
           token_transfer.to_address_hash,
           token_transfer.token_contract_address_hash,
-          token_transfer.token_id
+          token_transfer.token_ids
         )
     )
   end

@@ -118,7 +118,7 @@ defmodule Explorer.SmartContract.ReaderTest do
   end
 
   describe "read_only_functions/1" do
-    test "fetches the smart contract read only functions with the blockchain value" do
+    test "fetches the smart contract read only functions with the blockchain value with provided smart_contract" do
       smart_contract =
         insert(
           :smart_contract,
@@ -146,7 +146,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       blockchain_get_function_mock()
 
-      response = Reader.read_only_functions(smart_contract.address_hash)
+      response = Reader.read_only_functions(smart_contract, smart_contract.address_hash, nil)
 
       assert [
                %{
@@ -162,7 +162,7 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "constant" => true,
                  "inputs" => [%{"name" => "x", "type" => "uint256"}],
                  "name" => "with_arguments",
-                 "outputs" => [%{"name" => "", "type" => "bool", "value" => ""}],
+                 "outputs" => [%{"name" => "", "type" => "bool"}],
                  "payable" => _,
                  "stateMutability" => _,
                  "type" => _
@@ -190,7 +190,8 @@ defmodule Explorer.SmartContract.ReaderTest do
               "inputs" => [],
               "constant" => true
             }
-          ]
+          ],
+          contract_code_md5: "123"
         )
 
       implementation_contract_address = insert(:contract_address)
@@ -216,7 +217,8 @@ defmodule Explorer.SmartContract.ReaderTest do
             "stateMutability" => "view",
             "type" => "function"
           }
-        ]
+        ],
+        contract_code_md5: "123"
       )
 
       implementation_contract_address_hash_string =
@@ -227,7 +229,8 @@ defmodule Explorer.SmartContract.ReaderTest do
       response =
         Reader.read_only_functions_proxy(
           proxy_smart_contract.address_hash,
-          "0x" <> implementation_contract_address_hash_string
+          "0x" <> implementation_contract_address_hash_string,
+          nil
         )
 
       assert [
@@ -244,7 +247,7 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "constant" => true,
                  "inputs" => [%{"name" => "x", "type" => "uint256"}],
                  "name" => "with_arguments",
-                 "outputs" => [%{"name" => "", "type" => "bool", "value" => ""}],
+                 "outputs" => [%{"name" => "", "type" => "bool"}],
                  "payable" => _,
                  "stateMutability" => _,
                  "type" => _
@@ -255,21 +258,9 @@ defmodule Explorer.SmartContract.ReaderTest do
 
   describe "query_function/3" do
     test "given the arguments, fetches the function value from the blockchain" do
-      smart_contract = insert(:smart_contract)
+      smart_contract = insert(:smart_contract, contract_code_md5: "123")
 
       blockchain_get_function_mock()
-
-      assert [
-               %{
-                 "type" => "uint256",
-                 "value" => 0
-               }
-             ] = Reader.query_function(smart_contract.address_hash, %{method_id: "6d4ce63c", args: []}, :regular, false)
-    end
-
-    test "nil arguments is treated as []" do
-      smart_contract = insert(:smart_contract)
-
       blockchain_get_function_mock()
 
       assert [
@@ -278,18 +269,73 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "value" => 0
                }
              ] =
-               Reader.query_function(smart_contract.address_hash, %{method_id: "6d4ce63c", args: nil}, :regular, false)
+               Reader.query_function(
+                 smart_contract.address_hash,
+                 %{method_id: "6d4ce63c", args: []},
+                 :regular,
+                 nil,
+                 false
+               )
+
+      assert [
+               %{
+                 "type" => "uint256",
+                 "value" => 0
+               }
+             ] =
+               Reader.query_function_with_custom_abi(
+                 smart_contract.address_hash,
+                 %{method_id: "6d4ce63c", args: []},
+                 nil,
+                 false,
+                 smart_contract.abi
+               )
+    end
+
+    test "nil arguments is treated as []" do
+      smart_contract = insert(:smart_contract, contract_code_md5: "123")
+
+      blockchain_get_function_mock()
+      blockchain_get_function_mock()
+
+      assert [
+               %{
+                 "type" => "uint256",
+                 "value" => 0
+               }
+             ] =
+               Reader.query_function(
+                 smart_contract.address_hash,
+                 %{method_id: "6d4ce63c", args: nil},
+                 :regular,
+                 nil,
+                 false
+               )
+
+      assert [
+               %{
+                 "type" => "uint256",
+                 "value" => 0
+               }
+             ] =
+               Reader.query_function_with_custom_abi(
+                 smart_contract.address_hash,
+                 %{method_id: "6d4ce63c", args: []},
+                 nil,
+                 false,
+                 smart_contract.abi
+               )
     end
   end
 
   describe "normalize_args/1" do
     test "converts argument when is a number" do
-      assert ["0x00"] = Reader.normalize_args(["0"])
+      assert [0] = Reader.normalize_args(["0"])
 
       assert ["0x798465571ae21a184a272f044f991ad1d5f87a3f"] =
                Reader.normalize_args(["0x798465571ae21a184a272f044f991ad1d5f87a3f"])
 
-      assert ["0x7b"] = Reader.normalize_args(["123"])
+      assert [123] = Reader.normalize_args(["123"])
     end
 
     test "converts argument when is a boolean" do
@@ -380,7 +426,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       abi = [method]
       method_with_id = Map.put(method, "method_id", "0cbf0601")
-      assert [method_with_id] = Reader.get_abi_with_method_id(abi)
+      assert [^method_with_id] = Reader.get_abi_with_method_id(abi)
     end
 
     test "do not crash in some corner cases" do
@@ -397,7 +443,7 @@ defmodule Explorer.SmartContract.ReaderTest do
         }
       ]
 
-      assert abi = Reader.get_abi_with_method_id(abi)
+      assert ^abi = Reader.get_abi_with_method_id(abi)
     end
   end
 

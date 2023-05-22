@@ -1,5 +1,6 @@
 <% block = @transaction.block %>
 <% from_address_hash = @transaction.from_address_hash %>
+<% from_address = @transaction.from_address %>
 <% to_address_hash = @transaction.to_address_hash %>
 <% created_address_hash = @transaction.created_contract_address_hash %>
 <% type = if @transaction.type == 2, do: "2 (EIP-1559)", else: @transaction.type %>
@@ -8,7 +9,7 @@
 <% max_fee_per_gas = @transaction.max_fee_per_gas %>
 <% burned_fee = 
   if !is_nil(max_fee_per_gas) and !is_nil(@transaction.gas_used) and !is_nil(base_fee_per_gas) do
-    if Decimal.cmp(max_fee_per_gas.value, 0) == :eq do
+    if Decimal.compare(max_fee_per_gas.value, 0) == :eq do
       %Wei{value: Decimal.new(0)}
     else
       Wei.mult(base_fee_per_gas, @transaction.gas_used)
@@ -21,7 +22,7 @@
 <% priority_fee = if is_nil(priority_fee_per_gas), do: nil, else: Wei.mult(priority_fee_per_gas, @transaction.gas_used) %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
 <% status = transaction_status(@transaction) %>
-<% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
+<% circles_addresses_list = CustomContractsHelper.get_custom_addresses_list(:circles_addresses) %>
 <% address_hash_str = if to_address_hash, do: "0x" <> Base.encode16(to_address_hash.bytes, case: :lower), else: nil %>
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
@@ -47,6 +48,11 @@
           <h1 class="card-title">
             <div style="display: inline-block; vertical-align: bottom; line-height: 25px;">
               <%= gettext "Transaction Details" %>
+              <% personal_tx_tag = if assigns[:tx_tags], do: @tx_tags.personal_tx_tag, else: nil %>
+              <%= if personal_tx_tag && personal_tx_tag.name !== :error do %>
+                <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tx_tag.name, additional_classes: [tag_name_to_label(personal_tx_tag.name), "ml-1"] %>
+              <% end %>
+              <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @tx_tags %>
             </div>
           </h1>
           <%= if status == :pending do %>
@@ -108,10 +114,13 @@
               <% confirmations = confirmations(@transaction, block_height: @block_height) %>
               <span class="mr-4">
                 <span data-transaction-status="<%= formatted_status %>">
-                  <%= if status == :pending do %>
-                    <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["large"] %></span>
-                  <% else %>
-                    <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["success", "large"] %></span>
+                  <%= cond do %>
+                    <% status == :pending -> %>
+                      <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["large"] %></span>
+                    <% @transaction.error == "dropped/replaced" -> %>
+                      <%= render BlockScoutWeb.FormView, "_tag.html", text: @transaction.error, additional_classes: ["large"] %></span>
+                    <% true -> %>
+                      <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["success", "large"] %></span>
                   <% end %>
                 
                 <%= if confirmations > 0 do %>
@@ -121,7 +130,7 @@
             </dd>
           </dl>
           <!-- Revert reason -->
-          <%= if status == {:error, "Reverted"} do %>
+          <%= if status == {:error, "Reverted"} || status == {:error, "execution reverted"} do %>
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -171,7 +180,7 @@
                 <%= gettext "Timestamp" %>
               </dt>
               <dd class="col-sm-9 col-lg-10" data-selector="block-timestamp">
-                <i class="far fa-clock"></i>
+                <i class="fa-regular fa-clock"></i>
                 <span>
                   <span data-from-now="<%= block.timestamp %>"></span>
                 </span>
@@ -186,6 +195,29 @@
               </dd>
             </dl>
           <% end %>
+          <!-- Transaction Action -->
+          <% %{transaction_actions: transaction_actions} = transaction_actions(@transaction) %>
+          <%= if not Enum.empty?(transaction_actions) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("Highlighted events of the transaction.") %>
+                <%= gettext "Transaction Action" %>
+                <p id="actions-list-scroll-note"><%= gettext "Scroll to see more" %></p>
+              </dt>
+              <dd class="col-sm-9 col-lg-10 actions-list-mobile-container">
+                <div class="mCustomScrollbar" style="max-height:100px;width:90%">
+                  <% transaction_actions_indexed = Enum.with_index(transaction_actions) %>
+                  <% transaction_actions_length = Enum.count(transaction_actions) %>
+                  <%= for {action, i} <- transaction_actions_indexed do %>
+                    <% action_assigns = Map.put(assigns, :action, action) %>
+                    <% action_assigns = Map.put(action_assigns, :isLast, (i == transaction_actions_length - 1)) %>
+                    <%= render BlockScoutWeb.TransactionView, "_actions.html", action_assigns %>
+                  <% end %>
+                </div>
+              </dd>
+            </dl>
+          <% end %>
           <!-- From -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
@@ -193,13 +225,11 @@
                 text: gettext("Address (external or contract) sending the transaction.") %>
               <%= gettext "From" %></dt>
             <dd class="col-sm-9 col-lg-10">
-              <%= link(
-                from_address_hash,
-                to: address_path(@conn, :show, from_address_hash)
-              ) %>
+              <%= render BlockScoutWeb.AddressView, "_link.html", address: from_address, contract: BlockScoutWeb.AddressView.contract?(from_address), use_custom_tooltip: false, trimmed: false %>
+              <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @from_tags %>
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                 additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                clipboard_text: from_address_hash,
+                clipboard_text: Address.checksum(from_address_hash),
                 aria_label: gettext("Copy From Address"),
                 title: gettext("Copy From Address") %>
             </dd>
@@ -221,24 +251,20 @@
               <%= cond do %>
                 <% created_address_hash -> %>
                   [<%= gettext("Contract") %>&nbsp;
-                  <%= link(
-                    recipient_address_hash,
-                    to: address_path(@conn, :show, recipient_address_hash)
-                  ) %> 
+                  <%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: BlockScoutWeb.AddressView.contract?(to_address), use_custom_tooltip: false, trimmed: false %>
+                  <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @to_tags %>
                   &nbsp;<%= gettext("created") %>]
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                    clipboard_text: recipient_address_hash,
+                    clipboard_text: Address.checksum(recipient_address_hash),
                     aria_label: gettext("Copy To Address"),
                     title: gettext("Copy To Address") %>
                 <% recipient_address_hash -> %>
-                  <%= link(
-                    recipient_address_hash,
-                    to: address_path(@conn, :show, recipient_address_hash)
-                  ) %>
+                  <%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: BlockScoutWeb.AddressView.contract?(to_address), use_custom_tooltip: false, trimmed: false %>
+                  <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @to_tags %>
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                    clipboard_text: recipient_address_hash,
+                    clipboard_text: Address.checksum(recipient_address_hash),
                     aria_label: gettext("Copy To Address"),
                     title: gettext("Copy To Address") %>
                 <% true -> %>
@@ -408,10 +434,10 @@
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("Amount of") <> " " <> gettext("Ether") <> " " <> gettext("burned for this transaction. Equals Block Base Fee per Gas * Gas Used.") %>
+                  text: gettext("Amount of") <> " " <> Explorer.coin_name() <> " " <> gettext("burned for this transaction. Equals Block Base Fee per Gas * Gas Used.") %>
                 <%= gettext "Transaction Burnt Fee" %>
               </dt>
-              <dd class="col-sm-9 col-lg-10"><i class="fas fa-fire i-tooltip-2"></i> <%= format_wei_value(burned_fee, :ether) %>
+              <dd class="col-sm-9 col-lg-10"><i class="fa-solid fa-fire i-tooltip-2"></i> <%= format_wei_value(burned_fee, :ether) %>
                 <%= unless empty_exchange_rate?(@exchange_rate) do %>
                   (<span data-wei-value=<%= burned_fee_decimal %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)
                 <% end %>
