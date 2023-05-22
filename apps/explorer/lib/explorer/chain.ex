@@ -6871,7 +6871,7 @@ defmodule Explorer.Chain do
   end
 
   def sum_withdrawals do
-    Repo.aggregate(Withdrawal, :max, :index, timeout: :infinity)
+    Repo.aggregate(Withdrawal, :sum, :amount, timeout: :infinity)
   end
 
   def upsert_count_withdrawals(index) do
