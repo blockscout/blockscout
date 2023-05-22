@@ -130,7 +130,7 @@ defmodule Explorer.Chain.Log do
       ]
       |> Keyword.merge(options)
 
-    case Chain.find_contract_address(log.address_hash, address_options, true) do
+    case Chain.find_contract_address(log.address_hash, address_options, false) do
       {:ok, %{smart_contract: smart_contract}} ->
         full_abi = Chain.combine_proxy_implementation_abi(smart_contract, options)
 

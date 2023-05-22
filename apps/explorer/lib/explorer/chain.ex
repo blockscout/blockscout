@@ -641,41 +641,21 @@ defmodule Explorer.Chain do
     from_block = from_block(options)
     to_block = to_block(options)
 
-    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
-
     base =
       from(log in Log,
-        inner_join: transaction in Transaction,
-        on: transaction.hash == log.transaction_hash,
         order_by: [desc: log.block_number, desc: log.index],
-        where: transaction.block_number < ^block_number,
-        or_where: transaction.block_number == ^block_number and transaction.index > ^transaction_index,
-        or_where:
-          transaction.block_number == ^block_number and transaction.index == ^transaction_index and
-            log.index > ^log_index,
         where: log.address_hash == ^address_hash,
         limit: ^paging_options.page_size,
-        select: log
+        select: log,
+        preload: [transaction: [to_address: :smart_contract]],
+        inner_join: block in Block,
+        on: block.hash == log.block_hash,
+        where: block.consensus
       )
 
-    base_query =
-      base
-      |> filter_topic(Keyword.get(options, :topic))
-
-    wrapped_query =
-      from(
-        log in subquery(base_query),
-        inner_join: transaction in Transaction,
-        on: transaction.hash == log.transaction_hash,
-        preload: [:transaction, transaction: [to_address: :smart_contract]],
-        where:
-          log.block_hash == transaction.block_hash and
-            log.block_number == transaction.block_number and
-            log.transaction_hash == transaction.hash,
-        select: log
-      )
-
-    wrapped_query
+    base
+    |> page_logs(paging_options)
+    |> filter_topic(Keyword.get(options, :topic))
     |> where_block_number_in_period(from_block, to_block)
     |> select_repo(options).all()
     |> Enum.take(paging_options.page_size)
@@ -4846,6 +4826,14 @@ defmodule Explorer.Chain do
 
   defp page_logs(query, %PagingOptions{key: {index}}) do
     where(query, [log], log.index > ^index)
+  end
+
+  defp page_logs(query, %PagingOptions{key: {block_number, log_index}}) do
+    where(
+      query,
+      [log],
+      log.block_number < ^block_number or (log.block_number == ^block_number and log.index < ^log_index)
+    )
   end
 
   defp page_pending_transaction(query, %PagingOptions{key: nil}), do: query

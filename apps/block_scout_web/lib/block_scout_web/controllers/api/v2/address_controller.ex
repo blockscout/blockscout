@@ -251,7 +251,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       formatted_topic = if String.starts_with?(prepared_topic, "0x"), do: prepared_topic, else: "0x" <> prepared_topic
 
-      options = Keyword.merge([topic: formatted_topic], @api_true)
+      options = params |> paging_options() |> Keyword.merge(topic: formatted_topic) |> Keyword.merge(@api_true)
 
       results_plus_one = Chain.address_to_logs(address_hash, options)
 
