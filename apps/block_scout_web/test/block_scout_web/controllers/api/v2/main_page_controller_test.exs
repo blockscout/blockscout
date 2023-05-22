@@ -158,9 +158,25 @@ defmodule BlockScoutWeb.API.V2.MainPageControllerTest do
     assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
 
     assert json["to"]["watchlist_names"] ==
-             if(wl_names[transaction.to_address_hash], do: [wl_names[transaction.to_address_hash]], else: [])
+             if(wl_names[transaction.to_address_hash],
+               do: [
+                 %{
+                   "display_name" => wl_names[transaction.to_address_hash],
+                   "label" => wl_names[transaction.to_address_hash]
+                 }
+               ],
+               else: []
+             )
 
     assert json["from"]["watchlist_names"] ==
-             if(wl_names[transaction.from_address_hash], do: [wl_names[transaction.from_address_hash]], else: [])
+             if(wl_names[transaction.from_address_hash],
+               do: [
+                 %{
+                   "display_name" => wl_names[transaction.from_address_hash],
+                   "label" => wl_names[transaction.from_address_hash]
+                 }
+               ],
+               else: []
+             )
   end
 end

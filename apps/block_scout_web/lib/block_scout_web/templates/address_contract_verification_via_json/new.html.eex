@@ -6,7 +6,7 @@
   </div>
 
   <div class="new-smart-contract-form">
-      <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification" %></h1>
+      <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification via metadata JSON" %></h1>
       <%= form_for @changeset,
         address_contract_verification_path(@conn, :create),
         [id: "metadata-json-dropzone-form"],
@@ -51,3 +51,4 @@
       <% end %>
     </div>
 </section>
+<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>

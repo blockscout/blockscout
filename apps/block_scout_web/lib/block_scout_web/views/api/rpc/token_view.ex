@@ -2,8 +2,7 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.RPC.RPCView
-  alias BlockScoutWeb.BridgedTokensView
-  alias Explorer.Chain.CurrencyHelper
+  alias BlockScoutWeb.{BridgedTokensView, CurrencyHelper}
 
   def render("gettoken.json", %{token: token}) do
     RPCView.render("show.json", data: prepare_token(token))

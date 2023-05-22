@@ -38,7 +38,7 @@ config :block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController,
 
 config :ex_cldr,
   default_locale: "en",
-  default_backend: Explorer.Cldr
+  default_backend: BlockScoutWeb.Cldr
 
 config :logger, :block_scout_web,
   # keep synced with `config/config.exs`
@@ -77,8 +77,8 @@ config :prometheus, BlockScoutWeb.Prometheus.Instrumenter,
 config :spandex_phoenix, tracer: BlockScoutWeb.Tracer
 
 config :block_scout_web, BlockScoutWeb.ApiRouter,
-  writing_enabled: System.get_env("DISABLE_WRITE_API") != "true",
-  reading_enabled: System.get_env("DISABLE_READ_API") != "true"
+  writing_enabled: System.get_env("API_V1_WRITE_METHODS_DISABLED") != "true",
+  reading_enabled: System.get_env("API_V1_READ_METHODS_DISABLED") != "true"
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
 

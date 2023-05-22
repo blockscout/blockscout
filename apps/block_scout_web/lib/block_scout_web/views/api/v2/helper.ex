@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
     nil
   end
 
-  def address_with_info(nil, address_hash) do
+  def address_with_info(_, address_hash) do
     %{
       "hash" => Address.checksum(address_hash),
       "is_contract" => false,

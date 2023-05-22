@@ -3,10 +3,10 @@ defmodule BlockScoutWeb.TransactionView do
 
   alias BlockScoutWeb.{AccessHelper, AddressView, BlockView, TabHelper}
   alias BlockScoutWeb.Account.AuthController
+  alias BlockScoutWeb.Cldr.Number
   alias Explorer.{Chain, CustomContractsHelper, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
-  alias Explorer.CldrHelper.Number
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Timex.Duration

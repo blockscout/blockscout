@@ -22,6 +22,7 @@ config :explorer, Explorer.Chain.Cache.ContractsCounter, enabled: false, enable_
 config :explorer, Explorer.Chain.Cache.NewContractsCounter, enabled: false, enable_consolidation: false
 config :explorer, Explorer.Chain.Cache.VerifiedContractsCounter, enabled: false, enable_consolidation: false
 config :explorer, Explorer.Chain.Cache.NewVerifiedContractsCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.WithdrawalsSum, enabled: false, enable_consolidation: false
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
 

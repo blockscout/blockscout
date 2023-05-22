@@ -972,7 +972,7 @@ defmodule Explorer.ChainTest do
   end
 
   describe "block_to_gas_used_by_1559_txs/1" do
-    test "sum of gas_usd from all transactions including glegacy" do
+    test "sum of gas_usd from all transactions including legacy" do
       block = insert(:block, base_fee_per_gas: 4)
 
       insert(:transaction,

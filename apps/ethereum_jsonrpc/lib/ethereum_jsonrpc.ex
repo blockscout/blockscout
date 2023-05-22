@@ -262,6 +262,17 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Fetches blocks by block number list.
+  """
+  @spec fetch_blocks_by_numbers([block_number()], json_rpc_named_arguments) ::
+          {:ok, Blocks.t()} | {:error, reason :: term}
+  def fetch_blocks_by_numbers(block_numbers, json_rpc_named_arguments) do
+    block_numbers
+    |> Enum.map(fn number -> %{number: number} end)
+    |> fetch_blocks_by_params(&Block.ByNumber.request/1, json_rpc_named_arguments)
+  end
+
+  @doc """
   Fetches uncle blocks by nephew hashes and indices.
   """
   @spec fetch_uncle_blocks([nephew_index()], json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}

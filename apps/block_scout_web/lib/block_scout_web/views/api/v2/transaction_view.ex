@@ -168,7 +168,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{
       "error" => internal_transaction.error,
       "success" => is_nil(internal_transaction.error),
-      "type" => internal_transaction.call_type,
+      "type" => internal_transaction.call_type || internal_transaction.type,
       "transaction_hash" => internal_transaction.transaction_hash,
       "from" =>
         Helper.address_with_info(nil, internal_transaction.from_address, internal_transaction.from_address_hash),

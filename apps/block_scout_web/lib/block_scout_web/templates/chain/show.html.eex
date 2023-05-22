@@ -31,9 +31,9 @@
           <%= if Map.has_key?(@chart_config, :market) || price_chart_legend_enabled? do %>
 
             <%# THE FOLLOWING LINE PREVENTS COPY/PASTE ERRORS %>
-            <%# Explicity put @chart_config.market in a variable %>
+            <%# Explicitly put @chart_config.market in a variable %>
             <%# This is done so that when people add a new chart source, x, %>
-            <%# They wont just access @chart_config.x w/o first checking if x exists%>
+            <%# They wont just access @chart_config.x w/o first checking if x exists %>
             <% market_chart_config = Map.has_key?(@chart_config, :market) && @chart_config.market%>
 
             <%= if price_chart_legend_enabled? || Enum.member?(market_chart_config, :price) do %>
@@ -110,7 +110,7 @@
                     <%= gettext "Daily Transactions" %>
                 </span>
                 <span class="dashboard-banner-chart-legend-value d-flex" data-selector="tx_per_day">
-                    <% num_of_transactions = Explorer.Cldr.Number.to_string!(Enum.at(@transaction_stats, 0).number_of_transactions, format: "#,###") %>
+                    <% num_of_transactions = BlockScoutWeb.Cldr.Number.to_string!(Enum.at(@transaction_stats, 0).number_of_transactions, format: "#,###") %>
                     <%= num_of_transactions %>
                     <!-- <% gas_used = Enum.at(@transaction_stats, 0).gas_used %>
                     <%= if gas_used && gas_used > 0 do %>
@@ -119,7 +119,7 @@
                         data-placement="top"
                         data-html="true"
                         data-template="<div class='tooltip tooltip-inversed-color tooltip-gas-usage' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
-                        title="<div class='custom-tooltip header'>Gas used</div><div class='custom-tooltip description'><b><%= Explorer.Cldr.Number.to_string!(gas_used, format: "#,###") %><b></div>">
+                        title="<div class='custom-tooltip header'>Gas used</div><div class='custom-tooltip description'><b><%= BlockScoutWeb.Cldr.Number.to_string!(gas_used, format: "#,###") %><b></div>">
                         <span class="fontawesome-icon info-circle ml-1"></span>
                       </span>
                     <% end %> -->
@@ -151,7 +151,7 @@
             </span>
             <div class="d-flex">
               <span class="dashboard-banner-network-stats-value" data-selector="transaction-count">
-                <%= Explorer.Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
+                <%= BlockScoutWeb.Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
               </span>
             </div>
           </div>
@@ -160,7 +160,7 @@
               <%= gettext "Total blocks" %>
             </span>
             <span class="dashboard-banner-network-stats-value" data-selector="block-count">
-              <%= Explorer.Cldr.Number.to_string!(@block_count, format: "#,###") %>
+              <%= BlockScoutWeb.Cldr.Number.to_string!(@block_count, format: "#,###") %>
             </span>
           </div>
           <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-4">
@@ -168,7 +168,7 @@
               <%= gettext "Wallet addresses" %>
             </span>
             <span class="dashboard-banner-network-stats-value" data-selector="address-count">
-              <%= Explorer.Cldr.Number.to_string!(@address_count, format: "#,###") %>
+              <%= BlockScoutWeb.Cldr.Number.to_string!(@address_count, format: "#,###") %>
             </span>
           </div>
         </div>
