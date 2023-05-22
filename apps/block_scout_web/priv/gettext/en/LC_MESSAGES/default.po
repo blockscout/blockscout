@@ -1872,7 +1872,7 @@ msgstr ""
 msgid "custom RPC"
 msgstr ""
 
-#: lib/block_scout_web/views/address_contract_view.ex:24
+#: lib/block_scout_web/views/address_contract_view.ex:25
 #, elixir-autogen, elixir-format
 msgid "false"
 msgstr ""
@@ -1908,7 +1908,7 @@ msgstr ""
 msgid "string"
 msgstr ""
 
-#: lib/block_scout_web/views/address_contract_view.ex:23
+#: lib/block_scout_web/views/address_contract_view.ex:24
 #, elixir-autogen, elixir-format
 msgid "true"
 msgstr ""

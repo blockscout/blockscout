@@ -86,7 +86,7 @@ defmodule Explorer.Chain.Withdrawal do
       select: withdrawal,
       left_join: block in assoc(withdrawal, :block),
       where: withdrawal.address_hash == ^address_hash,
-      where: block.consensus,
+      where: block.consensus == true,
       preload: [block: block]
     )
   end

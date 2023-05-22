@@ -5,6 +5,8 @@ defmodule BlockScoutWeb.Notifier do
 
   alias Absinthe.Subscription
 
+  alias BlockScoutWeb.API.V2, as: API_V2
+
   alias BlockScoutWeb.{
     AddressContractVerificationViaFlattenedCodeView,
     AddressContractVerificationViaJsonView,
@@ -15,7 +17,7 @@ defmodule BlockScoutWeb.Notifier do
   }
 
   alias Explorer.{Chain, Market, Repo}
-  alias Explorer.Chain.{Address, InternalTransaction, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, InternalTransaction, Transaction}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.{AverageBlockTime, Helper}
@@ -143,6 +145,7 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("transactions:#{transaction_hash}", "raw_trace", %{raw_trace_origin: transaction_hash})
   end
 
+  # internal txs broadcast disabled on the indexer level, therefore it out of scope of the refactoring within https://github.com/blockscout/blockscout/pull/7474
   def handle_event({:chain_event, :internal_transactions, :realtime, internal_transactions}) do
     internal_transactions
     |> Stream.map(
@@ -154,7 +157,16 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :token_transfers, :realtime, all_token_transfers}) do
-    transfers_by_token = Enum.group_by(all_token_transfers, fn tt -> to_string(tt.token_contract_address_hash) end)
+    all_token_transfers_full =
+      all_token_transfers
+      |> Enum.map(
+        &(&1
+          |> Repo.preload([:from_address, :to_address, :token, transaction: :block]))
+      )
+
+    transfers_by_token = Enum.group_by(all_token_transfers_full, fn tt -> to_string(tt.token_contract_address_hash) end)
+
+    broadcast_token_transfers_websocket_v2(all_token_transfers_full, transfers_by_token)
 
     for {token_contract_address_hash, token_transfers} <- transfers_by_token do
       Subscription.publish(
@@ -163,35 +175,20 @@ defmodule BlockScoutWeb.Notifier do
         token_transfers: token_contract_address_hash
       )
 
-      token_transfers_full =
-        token_transfers
-        |> Stream.map(
-          &(TokenTransfer
-            |> Repo.get_by(
-              block_hash: &1.block_hash,
-              transaction_hash: &1.transaction_hash,
-              token_contract_address_hash: &1.token_contract_address_hash,
-              log_index: &1.log_index
-            )
-            |> Repo.preload([:from_address, :to_address, :token, transaction: :block]))
-        )
-
-      token_transfers_full
+      token_transfers
       |> Enum.each(&broadcast_token_transfer/1)
     end
   end
 
   def handle_event({:chain_event, :transactions, :realtime, transactions}) do
+    preloads = [:block, created_contract_address: :names, from_address: :names, to_address: :names]
+
     transactions
-    |> Enum.map(& &1.hash)
-    |> Chain.hashes_to_transactions(
-      necessity_by_association: %{
-        :block => :optional,
-        [created_contract_address: :names] => :optional,
-        [from_address: :names] => :optional,
-        [to_address: :names] => :optional
-      }
+    |> Enum.map(
+      &(&1
+        |> Repo.preload(if API_V2.enabled?(), do: [:token_transfers | preloads], else: preloads))
     )
+    |> broadcast_transactions_websocket_v2()
     |> Enum.map(fn tx ->
       # Disable parsing of token transfers from websocket for transaction tab because we display token transfers at a separate tab
       Map.put(tx, :token_transfers, [])
@@ -375,6 +372,40 @@ defmodule BlockScoutWeb.Notifier do
     end
   end
 
+  defp broadcast_transactions_websocket_v2(transactions) do
+    pending_transactions =
+      Enum.filter(transactions, fn
+        %Transaction{block_number: nil} -> true
+        _ -> false
+      end)
+
+    validated_transactions =
+      Enum.filter(transactions, fn
+        %Transaction{block_number: nil} -> false
+        _ -> true
+      end)
+
+    broadcast_transactions_websocket_v2_inner(
+      pending_transactions,
+      "transactions:new_pending_transaction",
+      "pending_transaction"
+    )
+
+    broadcast_transactions_websocket_v2_inner(validated_transactions, "transactions:new_transaction", "transaction")
+
+    transactions
+  end
+
+  defp broadcast_transactions_websocket_v2_inner(transactions, default_channel, event) do
+    if Enum.count(transactions) > 0 do
+      Endpoint.broadcast(default_channel, event, %{
+        transactions: transactions
+      })
+    end
+
+    group_by_address_hashes_and_broadcast(transactions, event, :transactions)
+  end
+
   defp broadcast_transaction(%Transaction{block_number: nil} = pending) do
     broadcast_transaction(pending, "transactions:new_pending_transaction", "pending_transaction")
   end
@@ -403,6 +434,14 @@ defmodule BlockScoutWeb.Notifier do
     end
   end
 
+  defp broadcast_token_transfers_websocket_v2(tokens_transfers, transfers_by_token) do
+    for {token_contract_address_hash, token_transfers} <- transfers_by_token do
+      Endpoint.broadcast("tokens:#{token_contract_address_hash}", "token_transfer", %{token_transfers: token_transfers})
+    end
+
+    group_by_address_hashes_and_broadcast(tokens_transfers, "token_transfer", :token_transfers)
+  end
+
   defp broadcast_token_transfer(token_transfer) do
     broadcast_token_transfer(token_transfer, "token_transfer")
   end
@@ -423,6 +462,22 @@ defmodule BlockScoutWeb.Notifier do
         address: token_transfer.to_address,
         token_transfer: token_transfer
       })
+    end
+  end
+
+  defp group_by_address_hashes_and_broadcast(elements, event, map_key) do
+    grouped_by_from =
+      elements
+      |> Enum.group_by(fn el -> el.from_address_hash end)
+
+    grouped_by_to =
+      elements
+      |> Enum.group_by(fn el -> el.to_address_hash end)
+
+    grouped = Map.merge(grouped_by_to, grouped_by_from, fn _k, v1, v2 -> Enum.uniq(v1 ++ v2) end)
+
+    for {address_hash, elements} <- grouped do
+      Endpoint.broadcast("addresses:#{address_hash}", event, %{map_key => elements})
     end
   end
 end
