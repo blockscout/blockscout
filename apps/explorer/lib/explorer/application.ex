@@ -70,7 +70,8 @@ defmodule Explorer.Application do
       TransactionsApiV2,
       Accounts,
       Uncles,
-      {Redix, redix_opts()}
+      {Redix, redix_opts()},
+      {Explorer.Utility.MissingRangesManipulator, []}
     ]
 
     children = base_children ++ configurable_children()
@@ -92,6 +93,7 @@ defmodule Explorer.Application do
       configure(Explorer.Chain.Cache.NewVerifiedContractsCounter),
       configure(Explorer.Chain.Cache.TransactionActionTokensData),
       configure(Explorer.Chain.Cache.TransactionActionUniswapPools),
+      configure(Explorer.Chain.Cache.WithdrawalsSum),
       configure(Explorer.Chain.Transaction.History.Historian),
       configure(Explorer.Chain.Events.Listener),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
