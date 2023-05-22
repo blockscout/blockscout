@@ -152,7 +152,7 @@
           </div>
         <% error?(function["outputs"]) -> %>
           <% {:error, text_error} = function["outputs"] %>
-          <div class="alert alert-danger py-2 word-break-all" style="margin-bottom: 0;"><%= text_error %></div>
+          <div class="alert alert-danger py-2 word-break-all" style="margin-bottom: 0;"><%= cut_rpc_url(text_error) %></div>
         <% true -> %>
           <% nil %>
       <% end %>
