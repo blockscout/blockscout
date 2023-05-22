@@ -4,6 +4,7 @@ defmodule Explorer.Chain.CSVExport.Helper do
   """
 
   alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain.Hash.Full, as: Hash
   alias NimbleCSV.RFC4180
 
   import Ecto.Query,
@@ -97,10 +98,18 @@ defmodule Explorer.Chain.CSVExport.Helper do
   end
 
   defp is_valid_filter_value(filter_type, filter_value) do
-    if filter_type === "address" do
-      filter_value in supported_address_filter_values()
-    else
-      true
+    case filter_type do
+      "address" ->
+        filter_value in supported_address_filter_values()
+
+      "topic" ->
+        case Hash.cast(filter_value) do
+          {:ok, _} -> true
+          _ -> false
+        end
+
+      _ ->
+        true
     end
   end
 end
