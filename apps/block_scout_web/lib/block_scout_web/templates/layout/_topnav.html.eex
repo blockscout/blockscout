@@ -49,8 +49,9 @@
                   <%= gettext("Transactions") %>
                 </span>
               </div>
-              <% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)%>
+              <% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments) %>
               <% variant = Keyword.fetch!(json_rpc_named_arguments, :variant) %>
+              <% show_withdrawals? = not Application.get_env(:indexer, Indexer.Fetcher.Withdrawal.Supervisor)[:disabled?] %>
               <%= link(
                     gettext("Validated"),
                     to: transaction_path(@conn, :index),
@@ -67,7 +68,12 @@
               <% end %>
               <%= link(gettext("Verified contracts"),
                     to: verified_contracts_path(@conn, :index),
+                    class: "dropdown-item border-bottom #{tab_status("reorgs", @conn.request_path)}")%>
+              <%= if show_withdrawals? do %>
+                <%= link(gettext("Withdrawals"),
+                    to: withdrawal_path(@conn, :index),
                     class: "dropdown-item #{tab_status("reorgs", @conn.request_path)}")%>
+              <% end %>
             </div>
           </li>
           <li class="nav-item dropdown">

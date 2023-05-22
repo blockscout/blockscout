@@ -52,7 +52,8 @@ defmodule EthereumJSONRPC.BlockTest do
                timestamp: Timex.parse!("2015-07-30T15:32:07Z", "{ISO:Extended:Z}"),
                total_difficulty: nil,
                transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-               uncles: []
+               uncles: [],
+               withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
              }
     end
   end
@@ -60,6 +61,16 @@ defmodule EthereumJSONRPC.BlockTest do
   describe "elixir_to_transactions/1" do
     test "converts to empty list if there is not transaction key" do
       assert Block.elixir_to_transactions(%{}) == []
+    end
+  end
+
+  describe "elixir_to_withdrawals/1" do
+    test "converts to empty list if there is no withdrawals key" do
+      assert Block.elixir_to_withdrawals(%{}) == []
+    end
+
+    test "converts to empty list if withdrawals is nil" do
+      assert Block.elixir_to_withdrawals(%{withdrawals: nil}) == []
     end
   end
 end
