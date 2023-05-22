@@ -3,6 +3,7 @@
 ## Current
 
 ### Features
+- [#7513](https://github.com/blockscout/blockscout/pull/7513) - Add Polygon Edge support
 
 ### Fixes
 
