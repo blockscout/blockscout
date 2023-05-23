@@ -211,6 +211,8 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/zkevm" do
+      get("/batches", V2.ZkevmController, :batches)
+      get("/batches/count", V2.ZkevmController, :batches_count)
       get("/batches/:batch_number", V2.ZkevmController, :batch)
     end
   end

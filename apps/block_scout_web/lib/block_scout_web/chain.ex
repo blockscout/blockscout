@@ -34,7 +34,8 @@ defmodule BlockScoutWeb.Chain do
     Transaction,
     Transaction.StateChange,
     Wei,
-    Withdrawal
+    Withdrawal,
+    ZkevmTxnBatch
   }
 
   alias Explorer.PagingOptions
@@ -302,8 +303,22 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {index}}]
   end
 
+  def paging_options(%{"number" => number_string}) when is_binary(number_string) do
+    case Integer.parse(number_string) do
+      {number, ""} ->
+        [paging_options: %{@default_paging_options | key: {number}}]
+
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{"number" => number}) when is_integer(number) do
+    [paging_options: %{@default_paging_options | key: {number}}]
+  end
+
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string})
-      when is_binary(inserted_at_string) and is_binary(hash_string) do
+    when is_binary(inserted_at_string) and is_binary(hash_string) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
          {:ok, hash} <- string_to_transaction_hash(hash_string) do
       [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_tx: true}]
@@ -518,6 +533,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%Withdrawal{index: index}) do
     %{"index" => index}
+  end
+
+  defp paging_params(%ZkevmTxnBatch{number: number}) do
+    %{"number" => number}
   end
 
   # clause for search results pagination
