@@ -316,10 +316,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   def coin_balance_history(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, {:ok, _address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true, false)} do
+         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true, false)} do
       full_options = params |> paging_options() |> Keyword.merge(@api_true)
 
-      results_plus_one = Chain.address_to_coin_balances(address_hash, full_options)
+      results_plus_one = Chain.address_to_coin_balances(address, full_options)
 
       {coin_balances, next_page} = split_list_by_page(results_plus_one)
 

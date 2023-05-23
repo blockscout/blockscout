@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.ReplaceLogsIndex do
+defmodule Explorer.Repo.Migrations.AddLogsIndex do
   use Ecto.Migration
   @disable_ddl_transaction true
   @disable_migration_lock true
