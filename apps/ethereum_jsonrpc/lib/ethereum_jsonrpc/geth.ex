@@ -145,6 +145,7 @@ defmodule EthereumJSONRPC.Geth do
        )
        when is_list(responses) and is_map(id_to_params) do
     responses
+    |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.map(&debug_trace_transaction_response_to_internal_transactions_params(&1, id_to_params))
     |> reduce_internal_transactions_params()
   end
