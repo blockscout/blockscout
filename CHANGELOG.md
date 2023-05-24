@@ -12,6 +12,8 @@
 
 ### Chore
 
+- [#7543](https://github.com/blockscout/blockscout/pull/7543) - Allow hyphen in DB username
+
 <details>
   <summary>Dependencies version bumps</summary>
 
