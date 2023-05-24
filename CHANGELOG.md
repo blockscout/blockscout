@@ -8,7 +8,8 @@
 
 ### Fixes
 
-- [#7545](https://github.com/blockscout/blockscout/pull/7545) - Check if cached exchange rate is empty before replacing DB value in stats API
+- [](https://github.com/blockscout/blockscout/pull/7546) - API v2: fix today coin price (use in-memory or cached in DB value)
+- [#7545](https://github.com/blockscout/blockscout/pull/7545) - API v2: Check if cached exchange rate is empty before replacing DB value in stats API
 - [#7516](https://github.com/blockscout/blockscout/pull/7516) - Fix shrinking logo in Safari
 
 ### Chore
