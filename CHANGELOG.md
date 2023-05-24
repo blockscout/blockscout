@@ -4,9 +4,15 @@
 
 ### Features
 
+- [#7532](https://github.com/blockscout/blockscout/pull/7532) - Handle empty id in json rpc responses
+
 ### Fixes
 
+- [#7516](https://github.com/blockscout/blockscout/pull/7516) - Fix shrinking logo in Safari
+
 ### Chore
+
+- [#7543](https://github.com/blockscout/blockscout/pull/7543) - Allow hyphen in DB username
 
 <details>
   <summary>Dependencies version bumps</summary>

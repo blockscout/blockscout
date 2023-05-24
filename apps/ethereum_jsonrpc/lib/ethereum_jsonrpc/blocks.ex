@@ -34,6 +34,7 @@ defmodule EthereumJSONRPC.Blocks do
   def from_responses(responses, id_to_params) when is_list(responses) and is_map(id_to_params) do
     %{errors: errors, blocks: blocks} =
       responses
+      |> EthereumJSONRPC.sanitize_responses(id_to_params)
       |> Enum.map(&Block.from_response(&1, id_to_params))
       |> Enum.reduce(%{errors: [], blocks: []}, fn
         {:ok, block}, %{blocks: blocks} = acc ->
