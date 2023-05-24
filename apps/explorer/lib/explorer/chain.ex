@@ -5093,7 +5093,10 @@ defmodule Explorer.Chain do
     query =
       from(l in Log,
         as: :log,
-        where: l.first_topic == unquote(TokenTransfer.constant()),
+        where:
+          l.first_topic == unquote(TokenTransfer.constant()) or
+            l.first_topic == unquote(TokenTransfer.erc1155_single_transfer_signature()) or
+            l.first_topic == unquote(TokenTransfer.erc1155_batch_transfer_signature()),
         where:
           not exists(
             from(tf in TokenTransfer,
