@@ -36,6 +36,18 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
     |> render(:zkevm_batch, %{batch: batch})
   end
 
+  def batch_latest_number(conn, _params) do
+    number =
+      case Chain.zkevm_batch(:latest, api?: true) do
+        {:ok, batch} -> batch.number
+        {:error, :not_found} -> 0
+      end
+
+    conn
+    |> put_status(200)
+    |> render(:zkevm_batch_latest_number, %{number: number})
+  end
+
   def batches(conn, params) do
     {batches, next_page} =
       params

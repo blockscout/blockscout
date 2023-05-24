@@ -48,6 +48,10 @@ defmodule BlockScoutWeb.API.V2.ZkevmView do
     count
   end
 
+  def render("zkevm_batch_latest_number.json", %{number: number}) do
+    number
+  end
+
   defp batch_status(batch) do
     sequence_id = Map.get(batch, :sequence_id)
     verify_id = Map.get(batch, :verify_id)
