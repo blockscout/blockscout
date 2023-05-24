@@ -62,4 +62,17 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
     |> put_status(200)
     |> render(:zkevm_batches_count, %{count: count})
   end
+
+  def batches_confirmed(conn, _params) do
+    batches =
+      []
+      |> Keyword.put(:necessity_by_association, @batches_necessity_by_association)
+      |> Keyword.put(:api?, true)
+      |> Keyword.put(:confirmed?, true)
+      |> Chain.zkevm_batches()
+
+    conn
+    |> put_status(200)
+    |> render(:zkevm_batches, %{batches: batches})
+  end
 end

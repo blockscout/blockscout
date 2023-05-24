@@ -6424,7 +6424,6 @@ defmodule Explorer.Chain do
   end
 
   def zkevm_batches(options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     base_query =
@@ -6432,11 +6431,22 @@ defmodule Explorer.Chain do
         order_by: [desc: tb.number]
       )
 
-    base_query
-    |> join_associations(necessity_by_association)
-    |> page_zkevm_batches(paging_options)
-    |> limit(^paging_options.page_size)
-    |> select_repo(options).all()
+    query =
+      if Keyword.get(options, :confirmed?, false) do
+        base_query
+        |> join_associations(necessity_by_association)
+        |> where([tb], not is_nil(tb.sequence_id) and tb.sequence_id > 0)
+        |> limit(10)
+      else
+        paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+        base_query
+        |> join_associations(necessity_by_association)
+        |> page_zkevm_batches(paging_options)
+        |> limit(^paging_options.page_size)
+      end
+
+    select_repo(options).all(query)
   end
 
   defp page_zkevm_batches(query, %PagingOptions{key: nil}), do: query

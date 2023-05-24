@@ -185,6 +185,7 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/transactions", V2.MainPageController, :transactions)
       get("/transactions/watchlist", V2.MainPageController, :watchlist_transactions)
       get("/indexing-status", V2.MainPageController, :indexing_status)
+      get("/zkevm-confirmed-batches", V2.ZkevmController, :batches_confirmed)
     end
 
     scope "/stats" do

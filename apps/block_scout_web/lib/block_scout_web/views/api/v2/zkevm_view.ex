@@ -34,40 +34,14 @@ defmodule BlockScoutWeb.API.V2.ZkevmView do
         batches: batches,
         next_page_params: next_page_params
       }) do
-    items =
-      batches
-      |> Enum.map(fn batch ->
-        Task.async(fn ->
-          tx_count =
-            Repo.replica().aggregate(
-              from(
-                t in ZkevmBatchTxn,
-                where: t.batch_number == ^batch.number
-              ),
-              :count,
-              timeout: :infinity
-            )
-
-          sequence_tx_hash =
-            if not is_nil(batch.sequence_transaction) do
-              batch.sequence_transaction.hash
-            end
-
-          %{
-            "number" => batch.number,
-            "timestamp" => batch.timestamp,
-            "tx_count" => tx_count,
-            "sequence_tx_hash" => sequence_tx_hash
-          }
-        end)
-      end)
-      |> Task.yield_many(:infinity)
-      |> Enum.map(fn {_task, {:ok, item}} -> item end)
-
     %{
-      items: items,
+      items: render_zkevm_batches(batches),
       next_page_params: next_page_params
     }
+  end
+
+  def render("zkevm_batches.json", %{batches: batches}) do
+    %{items: render_zkevm_batches(batches)}
   end
 
   def render("zkevm_batches_count.json", %{count: count}) do
@@ -83,5 +57,36 @@ defmodule BlockScoutWeb.API.V2.ZkevmView do
       !is_nil(sequence_id) && is_nil(verify_id) -> "L1 Sequence Confirmed"
       !is_nil(verify_id) -> "Finalized"
     end
+  end
+
+  defp render_zkevm_batches(batches) do
+    batches
+    |> Enum.map(fn batch ->
+      Task.async(fn ->
+        tx_count =
+          Repo.replica().aggregate(
+            from(
+              t in ZkevmBatchTxn,
+              where: t.batch_number == ^batch.number
+            ),
+            :count,
+            timeout: :infinity
+          )
+
+        sequence_tx_hash =
+          if not is_nil(batch.sequence_transaction) do
+            batch.sequence_transaction.hash
+          end
+
+        %{
+          "number" => batch.number,
+          "timestamp" => batch.timestamp,
+          "tx_count" => tx_count,
+          "sequence_tx_hash" => sequence_tx_hash
+        }
+      end)
+    end)
+    |> Task.yield_many(:infinity)
+    |> Enum.map(fn {_task, {:ok, item}} -> item end)
   end
 end
