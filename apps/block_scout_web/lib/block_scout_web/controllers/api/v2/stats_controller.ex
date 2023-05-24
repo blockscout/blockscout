@@ -99,7 +99,13 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       recent_market_history
       |> case do
         [today | the_rest] ->
-          [%{today | closing_price: exchange_rate.usd_value} | the_rest]
+          [
+            %{
+              today
+              | closing_price: if(exchange_rate.usd_value, do: exchange_rate.usd_value, else: today.closing_price)
+            }
+            | the_rest
+          ]
 
         data ->
           data
