@@ -5,12 +5,17 @@
 ### Features
 
 - [#7532](https://github.com/blockscout/blockscout/pull/7532) - Handle empty id in json rpc responses
+- [#7544](https://github.com/blockscout/blockscout/pull/7544) - Add ERC-1155 signatures to uncataloged_token_transfer_block_numbers
 
 ### Fixes
 
+- [](https://github.com/blockscout/blockscout/pull/7546) - API v2: fix today coin price (use in-memory or cached in DB value)
+- [#7545](https://github.com/blockscout/blockscout/pull/7545) - API v2: Check if cached exchange rate is empty before replacing DB value in stats API
 - [#7516](https://github.com/blockscout/blockscout/pull/7516) - Fix shrinking logo in Safari
 
 ### Chore
+
+- [#7543](https://github.com/blockscout/blockscout/pull/7543) - Allow hyphen in DB username
 
 <details>
   <summary>Dependencies version bumps</summary>
