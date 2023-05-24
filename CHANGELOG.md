@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- [#7545](https://github.com/blockscout/blockscout/pull/7545) - Check if cached exchange rate is empty before replacing DB value in stats API
 - [#7516](https://github.com/blockscout/blockscout/pull/7516) - Fix shrinking logo in Safari
 
 ### Chore
