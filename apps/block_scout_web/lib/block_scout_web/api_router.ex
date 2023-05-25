@@ -135,6 +135,7 @@ defmodule BlockScoutWeb.ApiRouter do
     scope "/transactions" do
       get("/", V2.TransactionController, :transactions)
       get("/watchlist", V2.TransactionController, :watchlist_transactions)
+      get("/zkevm-batch/:batch_number", V2.TransactionController, :zkevm_batch)
       get("/:transaction_hash_param", V2.TransactionController, :transaction)
       get("/:transaction_hash_param/token-transfers", V2.TransactionController, :token_transfers)
       get("/:transaction_hash_param/internal-transactions", V2.TransactionController, :internal_transactions)

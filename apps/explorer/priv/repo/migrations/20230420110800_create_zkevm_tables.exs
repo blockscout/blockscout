@@ -48,5 +48,7 @@ defmodule Explorer.Repo.Migrations.CreateZkevmTables do
       add(:hash, :bytea, null: false, primary_key: true)
       timestamps(null: false, type: :utc_datetime_usec)
     end
+
+    create(index(:zkevm_batch_l2_transactions, :batch_number))
   end
 end

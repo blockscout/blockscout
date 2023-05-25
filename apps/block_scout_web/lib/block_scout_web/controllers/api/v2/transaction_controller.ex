@@ -111,6 +111,18 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     |> render(:transactions, %{transactions: transactions, next_page_params: next_page_params})
   end
 
+  def zkevm_batch(conn, %{"batch_number" => batch_number} = _params) do
+    transactions =
+      batch_number
+      |> Chain.zkevm_batch_transactions(api?: true)
+      |> Enum.map(fn tx -> tx.hash end)
+      |> Chain.hashes_to_transactions(api?: true, necessity_by_association: @transaction_necessity_by_association)
+
+    conn
+    |> put_status(200)
+    |> render(:transactions, %{transactions: transactions})
+  end
+
   def raw_trace(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-

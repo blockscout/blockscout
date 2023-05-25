@@ -430,6 +430,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp add_optional_transaction_field(result, transaction, field_name, assoc_name, assoc_field) do
     case Map.get(transaction, assoc_name) do
       nil -> result
+      %Ecto.Association.NotLoaded{} -> result
       item -> Map.put(result, field_name, Map.get(item, assoc_field))
     end
   end
