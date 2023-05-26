@@ -13,7 +13,7 @@
                 <%= render BlockScoutWeb.TransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: List.first(@transfer.token_ids) %>
             <% end %>
         <% else %>
-            <%= value %>
+            <%= "#{value} " %>
             <%= " " %><%= render BlockScoutWeb.TransactionView, "_link_to_token_symbol.html", transfer: @transfer %>
         <% end %>
     <% {:ok, :erc1155_instance, values, token_ids, _decimals} -> %>
@@ -25,6 +25,6 @@
             </div>
         <% end %>
     <% {:ok, value} -> %>
-        <%= value %>
+        <%= "#{value}" %>
         <%= " " %><%= render BlockScoutWeb.TransactionView, "_link_to_token_symbol.html", transfer: @transfer %>
 <% end %>
