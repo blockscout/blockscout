@@ -4,8 +4,8 @@
 
 ### Features
 
+- [#7565](https://github.com/blockscout/blockscout/pull/7565) - Add Polygon Edge genesis file support
 - [#7513](https://github.com/blockscout/blockscout/pull/7513) - Add Polygon Edge support
-
 - [#7532](https://github.com/blockscout/blockscout/pull/7532) - Handle empty id in json rpc responses
 - [#7544](https://github.com/blockscout/blockscout/pull/7544) - Add ERC-1155 signatures to uncataloged_token_transfer_block_numbers
 
