@@ -461,7 +461,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           "outputs" => [],
           "name" => "disableWhitelist",
           "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
-        }
+        },
+        %{"type" => "fallback"}
       ]
 
       target_contract = insert(:smart_contract, abi: abi)
@@ -495,6 +496,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                "inputs" => [%{"type" => "address", "name" => "_address", "internalType" => "address"}],
                "method_id" => "c683630d"
              } in response
+
+      refute %{"type" => "fallback"} in response
     end
 
     test "get array of addresses within read-methods", %{conn: conn} do
