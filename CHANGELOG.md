@@ -3,6 +3,7 @@
 ## Current
 
 ### Features
+
 - [#7513](https://github.com/blockscout/blockscout/pull/7513) - Add Polygon Edge support
 
 - [#7532](https://github.com/blockscout/blockscout/pull/7532) - Handle empty id in json rpc responses
@@ -10,6 +11,7 @@
 
 ### Fixes
 
+- [#7564](https://github.com/blockscout/blockscout/pull/7564) - Return contract type in address view
 - [#7562](https://github.com/blockscout/blockscout/pull/7562) - Remove fallback from Read methods
 - [#7537](https://github.com/blockscout/blockscout/pull/7537), [#7553](https://github.com/blockscout/blockscout/pull/7553) - Withdrawals fixes and improvements
 - [#7546](https://github.com/blockscout/blockscout/pull/7546) - API v2: fix today coin price (use in-memory or cached in DB value)
