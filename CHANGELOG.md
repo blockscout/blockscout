@@ -11,6 +11,7 @@
 
 ### Fixes
 
+- [#7566](https://github.com/blockscout/blockscout/pull/7566) - Account: check composed email beofre sending
 - [#7564](https://github.com/blockscout/blockscout/pull/7564) - Return contract type in address view
 - [#7562](https://github.com/blockscout/blockscout/pull/7562) - Remove fallback from Read methods
 - [#7537](https://github.com/blockscout/blockscout/pull/7537), [#7553](https://github.com/blockscout/blockscout/pull/7553) - Withdrawals fixes and improvements
