@@ -5108,7 +5108,10 @@ defmodule Explorer.Chain do
     query =
       from(l in Log,
         as: :log,
-        where: l.first_topic == unquote(TokenTransfer.constant()),
+        where:
+          l.first_topic == unquote(TokenTransfer.constant()) or
+            l.first_topic == unquote(TokenTransfer.erc1155_single_transfer_signature()) or
+            l.first_topic == unquote(TokenTransfer.erc1155_batch_transfer_signature()),
         where:
           not exists(
             from(tf in TokenTransfer,
@@ -6883,7 +6886,7 @@ defmodule Explorer.Chain do
   end
 
   def sum_withdrawals do
-    Repo.aggregate(Withdrawal, :max, :index, timeout: :infinity)
+    Repo.aggregate(Withdrawal, :sum, :amount, timeout: :infinity)
   end
 
   def upsert_count_withdrawals(index) do
