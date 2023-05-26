@@ -79,6 +79,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          end_block: last_safe_block,
          chunk_size: chunk_size,
          incomplete_frame_sequence: empty_incomplete_frame_sequence(),
+         last_channel_id: <<>>,
          json_rpc_named_arguments: json_rpc_named_arguments,
          json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
        }}
@@ -142,6 +143,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           end_block: end_block,
           chunk_size: chunk_size,
           incomplete_frame_sequence: incomplete_frame_sequence,
+          last_channel_id: last_channel_id,
           json_rpc_named_arguments: json_rpc_named_arguments,
           json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
         } = state
@@ -151,24 +153,26 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     chunks_number = ceil((end_block - start_block + 1) / chunk_size)
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
 
-    {last_written_block, new_incomplete_frame_sequence} =
+    {last_written_block, new_incomplete_frame_sequence, new_last_channel_id} =
       chunk_range
-      |> Enum.reduce_while({start_block - 1, incomplete_frame_sequence}, fn current_chunk,
-                                                                            {_, incomplete_frame_sequence_acc} ->
+      |> Enum.reduce_while({start_block - 1, incomplete_frame_sequence, last_channel_id}, fn current_chunk,
+                                                                                             {_,
+                                                                                              incomplete_frame_sequence_acc,
+                                                                                              last_channel_id} ->
         chunk_start = start_block + chunk_size * current_chunk
         chunk_end = min(chunk_start + chunk_size - 1, end_block)
 
-        new_incomplete_frame_sequence =
+        {new_incomplete_frame_sequence, new_last_channel_id} =
           if chunk_end >= chunk_start do
             Optimism.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
 
-            {:ok, batches, sequences, new_incomplete_frame_sequence} =
+            {:ok, batches, sequences, new_incomplete_frame_sequence, new_last_channel_id} =
               get_txn_batches(
-                chunk_start,
-                chunk_end,
+                Range.new(chunk_start, chunk_end),
                 batch_inbox,
                 batch_submitter,
                 incomplete_frame_sequence_acc,
+                last_channel_id,
                 json_rpc_named_arguments,
                 json_rpc_named_arguments_l2,
                 100_000_000
@@ -192,17 +196,17 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
               "L1"
             )
 
-            new_incomplete_frame_sequence
+            {new_incomplete_frame_sequence, new_last_channel_id}
           else
-            incomplete_frame_sequence_acc
+            {incomplete_frame_sequence_acc, last_channel_id}
           end
 
         reorg_block = Optimism.reorg_block_pop(@fetcher_name)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
-          {:halt, {if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end), nil}}
+          {:halt, {if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end), nil, new_last_channel_id}}
         else
-          {:cont, {chunk_end, new_incomplete_frame_sequence}}
+          {:cont, {chunk_end, new_incomplete_frame_sequence, new_last_channel_id}}
         end
       end)
 
@@ -224,7 +228,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
        state
        | start_block: new_start_block,
          end_block: new_end_block,
-         incomplete_frame_sequence: new_incomplete_frame_sequence
+         incomplete_frame_sequence: new_incomplete_frame_sequence,
+         last_channel_id: new_last_channel_id
      }}
   end
 
@@ -328,26 +333,28 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   end
 
   defp get_txn_batches(
-         from_block,
-         to_block,
+         block_range,
          batch_inbox,
          batch_submitter,
          incomplete_frame_sequence,
+         last_channel_id,
          json_rpc_named_arguments,
          json_rpc_named_arguments_l2,
          retries_left
        ) do
-    case fetch_blocks_by_range(from_block..to_block, json_rpc_named_arguments) do
+    case fetch_blocks_by_range(block_range, json_rpc_named_arguments) do
       {:ok, %Blocks{transactions_params: transactions_params, blocks_params: blocks_params, errors: []}} ->
+        from_block.._ = block_range
+        transactions_filtered = txs_filter_sort(transactions_params, batch_submitter, batch_inbox)
         get_txn_batches_inner(
-          transactions_params,
+          transactions_filtered,
           blocks_params,
           from_block,
           batch_inbox,
           batch_submitter,
           incomplete_frame_sequence,
-          json_rpc_named_arguments,
-          json_rpc_named_arguments_l2
+          last_channel_id,
+          {json_rpc_named_arguments, json_rpc_named_arguments_l2}
         )
 
       {_, message_or_errors} ->
@@ -359,7 +366,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
         retries_left = retries_left - 1
 
-        error_message = "Cannot fetch blocks #{from_block}..#{to_block}. Error(s): #{inspect(message)}"
+        error_message = "Cannot fetch blocks #{inspect(block_range)}. Error(s): #{inspect(message)}"
 
         if retries_left <= 0 do
           Logger.error(error_message)
@@ -369,11 +376,11 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           :timer.sleep(3000)
 
           get_txn_batches(
-            from_block,
-            to_block,
+            block_range,
             batch_inbox,
             batch_submitter,
             incomplete_frame_sequence,
+            last_channel_id,
             json_rpc_named_arguments,
             json_rpc_named_arguments_l2,
             retries_left
@@ -383,20 +390,20 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   end
 
   defp get_txn_batches_inner(
-         transactions_params,
+         transactions_filtered,
          blocks_params,
          from_block,
          batch_inbox,
          batch_submitter,
          incomplete_frame_sequence,
-         json_rpc_named_arguments,
-         json_rpc_named_arguments_l2
+         last_channel_id,
+         {json_rpc_named_arguments, json_rpc_named_arguments_l2}
        ) do
-    transactions_params
-    |> txs_filter_sort(batch_submitter, batch_inbox)
-    |> Enum.reduce_while({:ok, [], [], incomplete_frame_sequence}, fn t,
-                                                                      {_, batches, sequences,
-                                                                       incomplete_frame_sequence_acc} ->
+    transactions_filtered
+    |> Enum.reduce_while({:ok, [], [], incomplete_frame_sequence, last_channel_id}, fn t,
+                                                                                       {_, batches, sequences,
+                                                                                        incomplete_frame_sequence_acc,
+                                                                                        last_channel_id} ->
       after_reorg = is_nil(incomplete_frame_sequence_acc)
 
       frame = input_to_frame(t.input)
@@ -412,14 +419,15 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
       if Enum.empty?(batches) and byte_size(incomplete_frame_sequence_acc.bytes) == 0 and frame.number > 0 do
         # if this is the first launch and the head of tx sequence, skip all transactions until frame.number is 0
-        {:cont, {:ok, [], [], empty_incomplete_frame_sequence()}}
+        {:cont, {:ok, [], [], empty_incomplete_frame_sequence(), last_channel_id}}
       else
         frame_sequence = incomplete_frame_sequence_acc.bytes <> frame.data
         # credo:disable-for-next-line
         l1_transaction_hashes = incomplete_frame_sequence_acc.l1_transaction_hashes ++ [t.hash]
         last_frame_number = incomplete_frame_sequence_acc.last_frame_number
 
-        with {:frame_number_valid, true} <- {:frame_number_valid, frame.number == last_frame_number + 1},
+        with {:new_channel_id, true} <- {:new_channel_id, frame.channel_id != last_channel_id},
+             {:frame_number_valid, true} <- {:frame_number_valid, frame.number == last_frame_number + 1},
              {:frame_is_last, true} <- {:frame_is_last, frame.is_last},
              l1_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params),
              frame_sequence_last = List.first(sequences),
@@ -438,10 +446,15 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
                l1_timestamp: l1_timestamp
              },
              true <- batches_parsed != :error do
-          {:cont, {:ok, batches ++ batches_parsed, [seq | sequences], empty_incomplete_frame_sequence()}}
+          {:cont,
+           {:ok, batches ++ batches_parsed, [seq | sequences], empty_incomplete_frame_sequence(), frame.channel_id}}
         else
+          {:new_channel_id, false} ->
+            # ignore duplicated transaction with the same channel_id
+            {:cont, {:ok, batches, sequences, empty_incomplete_frame_sequence(), last_channel_id}}
+
           {:frame_number_valid, false} ->
-            handle_invalid_frame_number(last_frame_number, frame, t, batches, sequences)
+            handle_invalid_frame_number(last_frame_number, frame, t, batches, sequences, last_channel_id)
 
           false ->
             {:halt,
@@ -451,23 +464,25 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           {:frame_is_last, false} ->
             {:cont,
              {:ok, batches, sequences,
-              %{bytes: frame_sequence, last_frame_number: frame.number, l1_transaction_hashes: l1_transaction_hashes}}}
+              %{bytes: frame_sequence, last_frame_number: frame.number, l1_transaction_hashes: l1_transaction_hashes},
+              last_channel_id}}
         end
       end
     end)
   end
 
-  defp handle_invalid_frame_number(last_frame_number, frame, tx, batches, sequences) do
+  defp handle_invalid_frame_number(last_frame_number, frame, tx, batches, sequences, last_channel_id) do
     cond do
-      last_frame_number == 0 && frame.number == 0 ->
-        # the new frame rewrites the previous one
+      # last_frame_number == 0 && frame.number == 0 ->
+      frame.number == 0 ->
+        # the new frame rewrites the previous frame sequence
         {:cont,
          {:ok, batches, sequences,
-          %{bytes: frame.data, last_frame_number: frame.number, l1_transaction_hashes: [tx.hash]}}}
+          %{bytes: frame.data, last_frame_number: frame.number, l1_transaction_hashes: [tx.hash]}, last_channel_id}}
 
       last_frame_number < 0 && frame.number > 0 ->
         # ignore duplicated frame with the number greater than 0
-        {:cont, {:ok, batches, sequences, empty_incomplete_frame_sequence()}}
+        {:cont, {:ok, batches, sequences, empty_incomplete_frame_sequence(), last_channel_id}}
 
       true ->
         {:halt,
@@ -499,6 +514,9 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     # the first byte must be zero (so called Derivation Version)
     [0] = :binary.bin_to_list(binary_part(input_binary, 0, derivation_version_length))
 
+    # channel id has 16 bytes
+    channel_id = binary_part(input_binary, derivation_version_length, channel_id_length)
+
     # frame number consists of 2 bytes
     frame_number_offset = derivation_version_length + channel_id_length
     frame_number = :binary.decode_unsigned(binary_part(input_binary, frame_number_offset, frame_number_size))
@@ -524,7 +542,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       is_last_offset = frame_data_offset + frame_data_length
       is_last = :binary.decode_unsigned(binary_part(input_binary, is_last_offset, is_last_size)) > 0
 
-      %{number: frame_number, data: frame_data, is_last: is_last}
+      %{number: frame_number, data: frame_data, is_last: is_last, channel_id: channel_id}
     else
       # workaround to remove a leading extra byte
       # for example, the case for Base Goerli batch L1 transaction: https://goerli.etherscan.io/tx/0xa43fa9da683a6157a114e3175a625b5aed85d8c573aae226768c58a924a17be0
