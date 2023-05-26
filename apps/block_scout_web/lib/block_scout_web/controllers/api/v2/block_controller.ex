@@ -35,7 +35,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       :uncles => :optional,
       :nephews => :optional,
       :rewards => :optional,
-      :transactions => :optional
+      :transactions => :optional,
+      :withdrawals => :optional
     },
     api?: true
   ]
