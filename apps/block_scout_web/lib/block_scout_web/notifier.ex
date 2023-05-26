@@ -230,10 +230,6 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", "smart_contract_was_verified", %{})
   end
 
-  def handle_event({:chain_event, :optimism_deposits, :realtime, deposits}) do
-    broadcast_optimism_deposits(deposits, "optimism_deposits:new_deposits", "deposits")
-  end
-
   def handle_event(_), do: nil
 
   def fetch_compiler_version(compiler) do

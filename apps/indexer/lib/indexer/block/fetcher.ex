@@ -562,6 +562,7 @@ defmodule Indexer.Block.Fetcher do
            hash: hash
          } = address_params
        ) do
-    {{hash, fetched_coin_balance_block_number}, Map.delete(address_params, :fetched_coin_balance_block_number)}
+    {{String.downcase(hash), fetched_coin_balance_block_number},
+     Map.delete(address_params, :fetched_coin_balance_block_number)}
   end
 end
