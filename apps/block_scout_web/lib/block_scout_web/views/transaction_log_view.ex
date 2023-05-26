@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.TransactionLogView do
   import BlockScoutWeb.AddressView, only: [implementation_name: 1, primary_name: 1]
 
   def decode(log, transaction) do
-    Log.decode(log, transaction)
+    {result, _contracts_acc, _events_acc} = Log.decode(log, transaction, [], false)
+    result
   end
 end

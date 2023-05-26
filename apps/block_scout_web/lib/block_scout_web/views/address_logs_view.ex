@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.AddressLogsView do
   alias Explorer.Chain.{Address, Log}
 
   def decode(log, transaction) do
-    Log.decode(log, transaction)
+    {result, _contracts_acc, _events_acc} = Log.decode(log, transaction, [], true)
+    result
   end
 end

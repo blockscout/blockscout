@@ -106,12 +106,23 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("logs.json", %{logs: logs, next_page_params: next_page_params, tx_hash: tx_hash}) do
-    %{"items" => Enum.map(logs, fn log -> prepare_log(log, tx_hash, false) end), "next_page_params" => next_page_params}
+    {decoded_logs, _, _} = decode_logs(logs, tx_hash, false)
+
+    %{
+      "items" =>
+        logs |> Enum.zip(decoded_logs) |> Enum.map(fn {log, decoded_log} -> prepare_log(log, tx_hash, decoded_log) end),
+      "next_page_params" => next_page_params
+    }
   end
 
   def render("logs.json", %{logs: logs, next_page_params: next_page_params}) do
+    {decoded_logs, _, _} = decode_logs(logs, nil, false)
+
     %{
-      "items" => Enum.map(logs, fn log -> prepare_log(log, log.transaction, true) end),
+      "items" =>
+        logs
+        |> Enum.zip(decoded_logs)
+        |> Enum.map(fn {log, decoded_log} -> prepare_log(log, log.transaction, decoded_log) end),
       "next_page_params" => next_page_params
     }
   end
@@ -122,6 +133,27 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "next_page_params" => next_page_params
     }
   end
+
+  def decode_logs(logs, %Transaction{} = tx, skip_sig_provider?) do
+    Enum.reduce(logs, {[], %{}, %{}}, fn log, {results, contracts_acc, events_acc} ->
+      {result, contracts_acc, events_acc} =
+        Log.decode(log, tx, @api_true, skip_sig_provider?, contracts_acc, events_acc)
+
+      {results ++ [format_decoded_log_input(result)], contracts_acc, events_acc}
+    end)
+  end
+
+  def decode_logs(logs, nil, skip_sig_provider?) do
+    Enum.reduce(logs, {[], %{}, %{}}, fn log, {results, contracts_acc, events_acc} ->
+      {result, contracts_acc, events_acc} =
+        log |> Log.decode(log.transaction, @api_true, skip_sig_provider?, contracts_acc, events_acc)
+
+      {results ++ [format_decoded_log_input(result)], contracts_acc, events_acc}
+    end)
+  end
+
+  def decode_logs(logs, transaction_hash, skip_sig_provider?),
+    do: decode_logs(logs, %Transaction{hash: transaction_hash}, skip_sig_provider?)
 
   def prepare_token_transfer(token_transfer, _conn) do
     decoded_input =
@@ -197,8 +229,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  def prepare_log(log, transaction_or_hash, skip_sig_provider?) do
-    decoded = decode_log(log, transaction_or_hash, skip_sig_provider?)
+  def prepare_log(log, transaction_or_hash, decoded_log) do
+    decoded = process_decoded_log(decoded_log)
 
     %{
       "tx_hash" => get_tx_hash(transaction_or_hash),
@@ -224,8 +256,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp smart_contract_info(_), do: nil
 
-  defp decode_log(log, %Transaction{} = tx, skip_sig_provider?) do
-    case log |> Log.decode(tx, @api_true, skip_sig_provider?) |> format_decoded_log_input() do
+  # defp decode_logs(logs) when is_list(logs) do
+
+  # end
+
+  defp process_decoded_log(decoded_log) do
+    case decoded_log do
       {:ok, method_id, text, mapping} ->
         render(__MODULE__, "decoded_log_input.json", method_id: method_id, text: text, mapping: mapping)
 
@@ -233,9 +269,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         nil
     end
   end
-
-  defp decode_log(log, transaction_hash, skip_sig_provider?),
-    do: decode_log(log, %Transaction{hash: transaction_hash}, skip_sig_provider?)
 
   defp prepare_transaction(tx, conn, single_tx?, block_height, watchlist_names \\ nil)
 
