@@ -5206,10 +5206,19 @@ defmodule Explorer.Chain do
 
       %Token{} = token ->
         {:ok, token}
-
-      [%Token{} = token, nil] ->
-        {:ok, token}
     end
+  end
+
+  @spec token_from_address_hash_exists?(Hash.Address.t(), [api?]) :: boolean()
+  def token_from_address_hash_exists?(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash, options) do
+    query =
+      from(
+        t in Token,
+        where: t.contract_address_hash == ^hash,
+        select: t
+      )
+
+    select_repo(options).exists?(query)
   end
 
   @spec fetch_token_transfers_from_token_hash(Hash.t(), [paging_options]) :: []
