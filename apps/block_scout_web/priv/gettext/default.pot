@@ -3687,3 +3687,8 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Validator index"
 msgstr ""
+
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:11
+#, elixir-autogen, elixir-format
+msgid "%{withdrawals_count} withdrawals processed and %{withdrawals_sum} withdrawn."
+msgstr ""
