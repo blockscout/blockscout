@@ -10,7 +10,7 @@
 
 ### Fixes
 
-- [#7537](https://github.com/blockscout/blockscout/pull/7537) - Withdrawals fixes and improvements
+- [#7537](https://github.com/blockscout/blockscout/pull/7537), [#7553](https://github.com/blockscout/blockscout/pull/7553) - Withdrawals fixes and improvements
 - [#7546](https://github.com/blockscout/blockscout/pull/7546) - API v2: fix today coin price (use in-memory or cached in DB value)
 - [#7545](https://github.com/blockscout/blockscout/pull/7545) - API v2: Check if cached exchange rate is empty before replacing DB value in stats API
 - [#7516](https://github.com/blockscout/blockscout/pull/7516) - Fix shrinking logo in Safari
