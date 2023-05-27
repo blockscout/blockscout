@@ -5387,13 +5387,8 @@ defmodule Explorer.Chain do
   end
 
   defp fetch_coin_balances(address, paging_options) do
-    if contract?(address) do
-      address.hash
-      |> CoinBalance.fetch_coin_balances(paging_options)
-    else
-      address.hash
-      |> CoinBalance.fetch_coin_balances_with_txs(paging_options)
-    end
+    address.hash
+    |> CoinBalance.fetch_coin_balances(paging_options)
   end
 
   @spec fetch_last_token_balance(Hash.Address.t(), Hash.Address.t()) :: Decimal.t()
@@ -5425,6 +5420,7 @@ defmodule Explorer.Chain do
       |> fetch_coin_balances(paging_options)
       |> page_coin_balances(paging_options)
       |> select_repo(options).all()
+      |> preload_transactions(options)
 
     if Enum.empty?(balances_raw) do
       balances_raw
@@ -5472,6 +5468,41 @@ defmodule Explorer.Chain do
       balances_with_dates
       |> Enum.sort(fn balance1, balance2 -> balance1.block_number >= balance2.block_number end)
     end
+  end
+
+  # Here we fetch from DB one tx per one coin balance. It's much more faster than LEFT OUTER JOIN which was before.
+  defp preload_transactions(balances, options) do
+    tasks =
+      Enum.map(balances, fn balance ->
+        Task.async(fn ->
+          Transaction
+          |> where(
+            [tx],
+            tx.block_number == ^balance.block_number and tx.value > ^0 and
+              (tx.to_address_hash == ^balance.address_hash or tx.from_address_hash == ^balance.address_hash)
+          )
+          |> select([tx], tx.hash)
+          |> limit(1)
+          |> select_repo(options).one()
+        end)
+      end)
+
+    tasks
+    |> Task.yield_many(120_000)
+    |> Enum.zip(balances)
+    |> Enum.map(fn {{task, res}, balance} ->
+      case res do
+        {:ok, hash} ->
+          if hash, do: %CoinBalance{balance | transaction_hash: hash}, else: balance
+
+        {:exit, _reason} ->
+          balance
+
+        nil ->
+          Task.shutdown(task, :brutal_kill)
+          balance
+      end
+    end)
   end
 
   defp add_block_timestamp_to_balances(
