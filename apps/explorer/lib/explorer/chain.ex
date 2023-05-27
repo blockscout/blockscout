@@ -1508,7 +1508,7 @@ defmodule Explorer.Chain do
 
   defp search_token_query(term) do
     from(token in Token,
-      where: fragment("to_tsvector(symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
+      where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
       select: %{
         address_hash: token.contract_address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
@@ -1528,7 +1528,7 @@ defmodule Explorer.Chain do
     from(smart_contract in SmartContract,
       left_join: address in Address,
       on: smart_contract.address_hash == address.hash,
-      where: fragment("to_tsvector(name ) @@ to_tsquery(?)", ^term),
+      where: fragment("to_tsvector('english', name) @@ to_tsquery(?)", ^term),
       select: %{
         address_hash: smart_contract.address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
@@ -1712,55 +1712,6 @@ defmodule Explorer.Chain do
       |> Map.put(:address_hash, Address.checksum(result.address_hash))
     else
       result
-    end
-  end
-
-  @spec search_token(String.t()) :: [Token.t()]
-  def search_token(string) do
-    case prepare_search_term(string) do
-      {:some, term} ->
-        query =
-          from(token in Token,
-            where: fragment("to_tsvector(symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
-            select: %{
-              link: token.contract_address_hash,
-              symbol: token.symbol,
-              name: token.name,
-              holder_count: token.holder_count,
-              type: "token"
-            },
-            order_by: [desc: token.holder_count]
-          )
-
-        Repo.all(query)
-
-      _ ->
-        []
-    end
-  end
-
-  @spec search_contract(String.t()) :: [SmartContract.t()]
-  def search_contract(string) do
-    case prepare_search_term(string) do
-      {:some, term} ->
-        query =
-          from(smart_contract in SmartContract,
-            left_join: address in Address,
-            on: smart_contract.address_hash == address.hash,
-            where: fragment("to_tsvector(name ) @@ to_tsquery(?)", ^term),
-            select: %{
-              link: smart_contract.address_hash,
-              name: smart_contract.name,
-              inserted_at: address.inserted_at,
-              type: "contract"
-            },
-            order_by: [desc: smart_contract.inserted_at]
-          )
-
-        Repo.all(query)
-
-      _ ->
-        []
     end
   end
 
@@ -2555,7 +2506,7 @@ defmodule Explorer.Chain do
         case prepare_search_term(filter) do
           {:some, filter_term} ->
             base_query_with_paging
-            |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter_term))
+            |> where(fragment("to_tsvector('english', symbol || ' ' || name) @@ to_tsquery(?)", ^filter_term))
 
           _ ->
             base_query_with_paging

@@ -4979,41 +4979,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "search_token/1" do
-    test "finds by part of the name" do
-      token = insert(:token, name: "magic token", symbol: "MAGIC")
-
-      [result] = Chain.search_token("magic")
-
-      assert result.link == token.contract_address_hash
-    end
-
-    test "finds multiple results in different columns" do
-      insert(:token, name: "magic token", symbol: "TOKEN")
-      insert(:token, name: "token", symbol: "MAGIC")
-
-      result = Chain.search_token("magic")
-
-      assert Enum.count(result) == 2
-    end
-
-    test "do not returns wrong tokens" do
-      insert(:token, name: "token", symbol: "TOKEN")
-
-      result = Chain.search_token("magic")
-
-      assert Enum.empty?(result)
-    end
-
-    test "finds record by the term in the second word" do
-      insert(:token, name: "token magic", symbol: "TOKEN")
-
-      result = Chain.search_token("magic")
-
-      assert Enum.count(result) == 1
-    end
-  end
-
   describe "transaction_has_token_transfers?/1" do
     test "returns true if transaction has token transfers" do
       transaction = insert(:transaction)
