@@ -360,6 +360,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> Keyword.merge(@api_true)
         )
 
+      Task.start_link(fn ->
+        TokenBalanceOnDemand.trigger_fetch(address_hash, results_plus_one)
+      end)
+
       {tokens, next_page} = split_list_by_page(results_plus_one)
 
       next_page_params = next_page |> next_page_params(tokens, params) |> delete_parameters_from_next_page_params()
