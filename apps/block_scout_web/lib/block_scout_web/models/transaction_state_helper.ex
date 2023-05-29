@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Block, Transaction, Wei}
   alias Explorer.Chain.Cache.StateChanges
-  alias Indexer.Fetcher.{CoinBalance, TokenBalance}
+  alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
   @burn_address_hash burn_address_hash
@@ -100,7 +100,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
         val
 
       _ ->
-        CoinBalance.async_fetch_balances([%{address_hash: address_hash, block_number: block_number}])
+        CoinBalanceOnDemand.trigger_historic_fetch(address_hash, block_number)
         %Wei{value: Decimal.new(0)}
     end
   end
@@ -128,15 +128,13 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
         val
 
       _ ->
-        TokenBalance.async_fetch([
-          %{
-            token_contract_address_hash: token.contract_address_hash,
-            address_hash: address_hash,
-            block_number: block_number,
-            token_type: token.type,
-            token_id: token_id
-          }
-        ])
+        TokenBalanceOnDemand.trigger_historic_fetch(
+          address_hash,
+          token.contract_address_hash,
+          token.type,
+          token_id,
+          block_number
+        )
 
         Decimal.new(0)
     end

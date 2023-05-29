@@ -8,8 +8,30 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
   alias Explorer.Chain.Wei
   alias Indexer.Fetcher.CoinBalance
+  alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
+  alias Indexer.Fetcher.CoinBalanceOnDemand
 
   setup :set_mox_global
+
+  setup :verify_on_exit!
+
+  setup do
+    mocked_json_rpc_named_arguments = [
+      transport: EthereumJSONRPC.Mox,
+      transport_options: []
+    ]
+
+    start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+    start_supervised!(AverageBlockTime)
+    start_supervised!(AddressesCounter)
+    start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
+
+    Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
+    end)
+  end
 
   describe "GET index/3" do
     test "loads existing transaction", %{conn: conn} do
