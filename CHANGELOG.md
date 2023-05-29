@@ -21,6 +21,7 @@
 
 ### Chore
 
+- [#7576](https://github.com/blockscout/blockscout/pull/7576) - Check left blocks in pending block operations in order to decide, if we need to display indexing int tx banner at the top
 - [#7543](https://github.com/blockscout/blockscout/pull/7543) - Allow hyphen in DB username
 
 <details>
