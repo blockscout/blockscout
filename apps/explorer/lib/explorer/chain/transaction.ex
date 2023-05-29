@@ -564,7 +564,7 @@ defmodule Explorer.Chain.Transaction do
       methods
       |> Enum.flat_map(fn candidate ->
         case do_decoded_input_data(data, %SmartContract{abi: [candidate.abi], address_hash: nil}, hash, options, %{}) do
-          {{:ok, _, _, _}, _} = decoded -> [decoded]
+          {{:ok, _, _, _} = decoded, _} -> [decoded]
           _ -> []
         end
       end)
@@ -676,7 +676,7 @@ defmodule Explorer.Chain.Transaction do
   end
 
   defp check_full_abi_cache(%{address_hash: address_hash} = smart_contract, full_abi_acc, options) do
-    if Map.has_key?(full_abi_acc, address_hash) do
+    if !is_nil(address_hash) && Map.has_key?(full_abi_acc, address_hash) do
       {full_abi_acc[address_hash], full_abi_acc}
     else
       full_abi = Chain.combine_proxy_implementation_abi(smart_contract, options)

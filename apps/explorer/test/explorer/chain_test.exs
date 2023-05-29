@@ -299,7 +299,7 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block()
 
-      log1 = insert(:log, transaction: transaction, index: 1, address: address, block_number: transaction.block_number)
+      _log1 = insert(:log, transaction: transaction, index: 1, address: address, block_number: transaction.block_number)
 
       2..51
       |> Enum.map(fn index ->
@@ -317,7 +317,7 @@ defmodule Explorer.ChainTest do
 
       [_log] = Chain.address_to_logs(address_hash, paging_options: paging_options1)
 
-      paging_options2 = %PagingOptions{page_size: 60, key: {transaction.block_number, transaction.index, log1.index}}
+      paging_options2 = %PagingOptions{page_size: 60, key: {transaction.block_number, 51}}
 
       assert Enum.count(Chain.address_to_logs(address_hash, paging_options: paging_options2)) == 50
     end
@@ -942,7 +942,7 @@ defmodule Explorer.ChainTest do
 
       assert second_page_hashes ==
                block.hash
-               |> Chain.block_to_transactions(paging_options: %PagingOptions{key: {index}, page_size: 50})
+               |> Chain.block_to_transactions(paging_options: %PagingOptions{key: {block.number, index}, page_size: 50})
                |> Enum.map(& &1.hash)
     end
 

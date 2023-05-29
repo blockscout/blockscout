@@ -160,7 +160,7 @@ defmodule Explorer.Chain.Log do
       ]
       |> Keyword.merge(options)
 
-    if Map.has_key?(acc, address_hash) do
+    if !is_nil(address_hash) && Map.has_key?(acc, address_hash) do
       {acc[address_hash], acc}
     else
       case Chain.find_contract_address(address_hash, address_options, false) do
@@ -180,20 +180,14 @@ defmodule Explorer.Chain.Log do
         case Integer.parse(hex_part, 16) do
           {number, ""} ->
             <<method_id::binary-size(4), _rest::binary>> = :binary.encode_unsigned(number)
-
-            if Map.has_key?(events_acc, method_id) do
-              {events_acc[method_id], events_acc}
-            else
-              result = find_candidates_query(method_id, log, transaction, options)
-              {result, Map.put(events_acc, method_id, result)}
-            end
+            check_events_cache(events_acc, method_id, log, transaction, options)
 
           _ ->
-            {:error, :could_not_decode}
+            {{:error, :could_not_decode}, events_acc}
         end
 
       _ ->
-        {:error, :could_not_decode}
+        {{:error, :could_not_decode}, events_acc}
     end
   end
 
@@ -224,6 +218,15 @@ defmodule Explorer.Chain.Log do
 
     {:error, :contract_not_verified,
      if(candidates == [], do: decode_event_via_sig_provider(log, transaction, true), else: candidates)}
+  end
+
+  defp check_events_cache(events_acc, method_id, log, transaction, options) do
+    if Map.has_key?(events_acc, method_id) do
+      {events_acc[method_id], events_acc}
+    else
+      result = find_candidates_query(method_id, log, transaction, options)
+      {result, Map.put(events_acc, method_id, result)}
+    end
   end
 
   defp find_and_decode(abi, log, transaction) do

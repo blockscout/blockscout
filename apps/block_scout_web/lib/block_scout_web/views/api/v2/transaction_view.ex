@@ -103,15 +103,28 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("token_transfers.json", %{token_transfers: token_transfers, next_page_params: next_page_params, conn: conn}) do
-    %{"items" => Enum.map(token_transfers, &prepare_token_transfer(&1, conn)), "next_page_params" => next_page_params}
+    {decoded_transactions, _, _} = decode_transactions(Enum.map(token_transfers, fn tt -> tt.transaction end), true)
+
+    %{
+      "items" =>
+        token_transfers
+        |> Enum.zip(decoded_transactions)
+        |> Enum.map(fn {tt, decoded_input} -> prepare_token_transfer(tt, conn, decoded_input) end),
+      "next_page_params" => next_page_params
+    }
   end
 
   def render("token_transfers.json", %{token_transfers: token_transfers, conn: conn}) do
-    Enum.map(token_transfers, &prepare_token_transfer(&1, conn))
+    {decoded_transactions, _, _} = decode_transactions(Enum.map(token_transfers, fn tt -> tt.transaction end), true)
+
+    token_transfers
+    |> Enum.zip(decoded_transactions)
+    |> Enum.map(fn {tt, decoded_input} -> prepare_token_transfer(tt, conn, decoded_input) end)
   end
 
   def render("token_transfer.json", %{token_transfer: token_transfer, conn: conn}) do
-    prepare_token_transfer(token_transfer, conn)
+    {[decoded_transaction], _, _} = decode_transactions([token_transfer.transaction], true)
+    prepare_token_transfer(token_transfer, conn, decoded_transaction)
   end
 
   def render("transaction_actions.json", %{actions: actions}) do
@@ -163,7 +176,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       {result, contracts_acc, events_acc} =
         Log.decode(log, tx, @api_true, skip_sig_provider?, contracts_acc, events_acc)
 
-      {results ++ [format_decoded_log_input(result)], contracts_acc, events_acc}
+      {Enum.reverse([format_decoded_log_input(result) | Enum.reverse(results)]), contracts_acc, events_acc}
     end)
   end
 
@@ -172,7 +185,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       {result, contracts_acc, events_acc} =
         Log.decode(log, log.transaction, @api_true, skip_sig_provider?, contracts_acc, events_acc)
 
-      {results ++ [format_decoded_log_input(result)], contracts_acc, events_acc}
+      {Enum.reverse([format_decoded_log_input(result) | Enum.reverse(results)]), contracts_acc, events_acc}
     end)
   end
 
@@ -184,14 +197,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       {result, abi_acc, methods_acc} =
         Transaction.decoded_input_data(transaction, skip_sig_provider?, @api_true, abi_acc, methods_acc)
 
-      {results ++ [format_decoded_input(result)], abi_acc, methods_acc}
+      {Enum.reverse([format_decoded_input(result) | Enum.reverse(results)]), abi_acc, methods_acc}
     end)
   end
 
-  def prepare_token_transfer(token_transfer, _conn) do
-    decoded_input =
-      token_transfer.transaction |> Transaction.decoded_input_data(true, @api_true) |> format_decoded_input()
-
+  def prepare_token_transfer(token_transfer, _conn, decoded_input) do
     %{
       "tx_hash" => token_transfer.transaction_hash,
       "from" => Helper.address_with_info(nil, token_transfer.from_address, token_transfer.from_address_hash, false),

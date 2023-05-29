@@ -3785,7 +3785,7 @@ defmodule Explorer.Chain do
     query =
       log_with_transactions
       |> where([_, transaction], transaction.hash == ^transaction_hash)
-      |> page_logs(paging_options)
+      |> page_transaction_logs(paging_options)
       |> limit(^paging_options.page_size)
       |> order_by([log], asc: log.index)
       |> join_associations(necessity_by_association)
@@ -4835,6 +4835,16 @@ defmodule Explorer.Chain do
     )
   end
 
+  defp page_transaction_logs(query, %PagingOptions{key: nil}), do: query
+
+  defp page_transaction_logs(query, %PagingOptions{key: {index}}) do
+    where(query, [log], log.index > ^index)
+  end
+
+  defp page_transaction_logs(query, %PagingOptions{key: {_block_number, index}}) do
+    where(query, [log], log.index > ^index)
+  end
+
   defp page_pending_transaction(query, %PagingOptions{key: nil}), do: query
 
   defp page_pending_transaction(query, %PagingOptions{key: {inserted_at, hash}}) do
@@ -5551,7 +5561,7 @@ defmodule Explorer.Chain do
     |> Enum.map(fn {{task, res}, balance} ->
       case res do
         {:ok, hash} ->
-          if hash, do: %CoinBalance{balance | transaction_hash: hash}, else: balance
+          put_tx_hash(hash, balance)
 
         {:exit, _reason} ->
           balance
@@ -5562,6 +5572,9 @@ defmodule Explorer.Chain do
       end
     end)
   end
+
+  defp put_tx_hash(hash, coin_balance),
+    do: if(hash, do: %CoinBalance{coin_balance | transaction_hash: hash}, else: coin_balance)
 
   defp add_block_timestamp_to_balances(
          balances_raw_filtered,
