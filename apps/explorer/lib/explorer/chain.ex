@@ -410,7 +410,7 @@ defmodule Explorer.Chain do
     rewards_task =
       Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range, options) end)
 
-    [rewards_task | address_to_transactions_tasks(address_hash, options)]
+    [rewards_task | address_to_transactions_tasks(address_hash, options, true)]
     |> wait_for_address_transactions()
     |> Enum.sort_by(fn item ->
       case item do
@@ -439,11 +439,11 @@ defmodule Explorer.Chain do
     {block_number, index}
   end
 
-  def address_to_transactions_without_rewards(address_hash, options) do
+  def address_to_transactions_without_rewards(address_hash, options, old_ui? \\ true) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     address_hash
-    |> address_to_transactions_tasks(options)
+    |> address_to_transactions_tasks(options, old_ui?)
     |> wait_for_address_transactions()
     |> Enum.sort_by(&{&1.block_number, &1.index}, &>=/2)
     |> Enum.dedup_by(& &1.hash)
@@ -480,7 +480,7 @@ defmodule Explorer.Chain do
     |> Transaction.matching_address_queries_list(direction, address_hash)
   end
 
-  defp address_to_transactions_tasks(address_hash, options) do
+  defp address_to_transactions_tasks(address_hash, options, old_ui?) do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -492,6 +492,19 @@ defmodule Explorer.Chain do
     |> Transaction.not_dropped_or_replaced_transactions()
     |> where_block_number_in_period(from_block, to_block)
     |> join_associations(necessity_by_association)
+    |> (&if(old_ui?,
+          do: &1,
+          else:
+            from(tx in &1,
+              select_merge: %{
+                has_token_transfers:
+                  fragment(
+                    "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
+                    tx.hash
+                  )
+              }
+            )
+        )).()
     |> Transaction.matching_address_queries_list(direction, address_hash)
     |> Enum.map(fn query -> Task.async(fn -> select_repo(options).all(query) end) end)
   end
@@ -915,6 +928,19 @@ defmodule Explorer.Chain do
     |> join(:inner, [transaction], block in assoc(transaction, :block))
     |> where([_, block], block.hash == ^block_hash)
     |> join_associations(necessity_by_association)
+    |> (&if(old_ui?,
+          do: &1,
+          else:
+            from(tx in &1,
+              select_merge: %{
+                has_token_transfers:
+                  fragment(
+                    "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
+                    tx.hash
+                  )
+              }
+            )
+        )).()
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> select_repo(options).all()
     |> (&if(old_ui?,
@@ -2102,27 +2128,31 @@ defmodule Explorer.Chain do
         options,
         preload_to_detect_tt? \\ true
       ) do
-    limit = if(preload_to_detect_tt?, do: 1, else: @token_transfers_per_transaction_preview + 1)
+    if preload_to_detect_tt? do
+      transaction
+    else
+      limit = if(preload_to_detect_tt?, do: 1, else: @token_transfers_per_transaction_preview + 1)
 
-    token_transfers =
-      TokenTransfer
-      |> (&if(is_nil(block_hash),
-            do: where(&1, [token_transfer], token_transfer.transaction_hash == ^tx_hash),
-            else:
-              where(
-                &1,
-                [token_transfer],
-                token_transfer.transaction_hash == ^tx_hash and token_transfer.block_hash == ^block_hash
-              )
-          )).()
-      |> limit(^limit)
-      |> order_by([token_transfer], asc: token_transfer.log_index)
-      |> (&if(preload_to_detect_tt?, do: &1, else: join_associations(&1, necessity_by_association))).()
-      |> select_repo(options).all()
-      |> flat_1155_batch_token_transfers()
-      |> Enum.take(limit)
+      token_transfers =
+        TokenTransfer
+        |> (&if(is_nil(block_hash),
+              do: where(&1, [token_transfer], token_transfer.transaction_hash == ^tx_hash),
+              else:
+                where(
+                  &1,
+                  [token_transfer],
+                  token_transfer.transaction_hash == ^tx_hash and token_transfer.block_hash == ^block_hash
+                )
+            )).()
+        |> limit(^limit)
+        |> order_by([token_transfer], asc: token_transfer.log_index)
+        |> (&if(preload_to_detect_tt?, do: &1, else: join_associations(&1, necessity_by_association))).()
+        |> select_repo(options).all()
+        |> flat_1155_batch_token_transfers()
+        |> Enum.take(limit)
 
-    %Transaction{transaction | token_transfers: token_transfers}
+      %Transaction{transaction | token_transfers: token_transfers}
+    end
   end
 
   def get_token_transfers_per_transaction_preview_count, do: @token_transfers_per_transaction_preview
@@ -3494,6 +3524,19 @@ defmodule Explorer.Chain do
     |> apply_filter_by_method_id_to_transactions(method_id_filter)
     |> apply_filter_by_tx_type_to_transactions(type_filter)
     |> join_associations(necessity_by_association)
+    |> (&if(old_ui?,
+          do: &1,
+          else:
+            from(tx in &1,
+              select_merge: %{
+                has_token_transfers:
+                  fragment(
+                    "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
+                    tx.hash
+                  )
+              }
+            )
+        )).()
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> select_repo(options).all()
     |> (&if(old_ui?,
@@ -3547,11 +3590,6 @@ defmodule Explorer.Chain do
     |> join_associations(necessity_by_association)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> select_repo(options).all()
-    |> (&if(old_ui?,
-          do: &1,
-          else:
-            Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_necessity_by_association, options) end)
-        )).()
   end
 
   def pending_transactions_query(query) do
@@ -4534,8 +4572,8 @@ defmodule Explorer.Chain do
 
   defp fetch_transactions_in_ascending_order_by_index(paging_options) do
     Transaction
-    |> order_by([transaction], desc: transaction.block_number, asc: transaction.index)
-    |> handle_paging_options(paging_options)
+    |> order_by([transaction], asc: transaction.index)
+    |> handle_block_paging_options(paging_options)
   end
 
   defp for_parent_transaction(query, %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash) do
@@ -4544,6 +4582,16 @@ defmodule Explorer.Chain do
       inner_join: transaction in assoc(child, :transaction),
       where: transaction.hash == ^hash
     )
+  end
+
+  defp handle_block_paging_options(query, nil), do: query
+
+  defp handle_block_paging_options(query, %PagingOptions{key: nil, page_size: nil}), do: query
+
+  defp handle_block_paging_options(query, paging_options) do
+    query
+    |> page_block_transactions(paging_options)
+    |> limit(^paging_options.page_size)
   end
 
   defp handle_paging_options(query, nil), do: query
@@ -4824,6 +4872,16 @@ defmodule Explorer.Chain do
   end
 
   defp page_transaction(query, %PagingOptions{key: {index}}) do
+    where(query, [transaction], transaction.index < ^index)
+  end
+
+  defp page_block_transactions(query, %PagingOptions{key: nil}), do: query
+
+  defp page_block_transactions(query, %PagingOptions{key: {_block_number, index}, is_index_in_asc_order: true}) do
+    where(query, [transaction], transaction.index > ^index)
+  end
+
+  defp page_block_transactions(query, %PagingOptions{key: {_block_number, index}}) do
     where(query, [transaction], transaction.index < ^index)
   end
 
@@ -6596,7 +6654,7 @@ defmodule Explorer.Chain do
   end
 
   def filter_token_creation_dynamic(dynamic) do
-    dynamic([tx, created_token: created_token], ^dynamic or (is_nil(tx.to_address_hash) and not is_nil(created_token)))
+    dynamic([tx, created_token: created_token], ^dynamic or not is_nil(created_token))
   end
 
   @spec verified_contracts([

@@ -115,7 +115,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      results_plus_one = Chain.address_to_transactions_with_rewards(address_hash, options)
+      results_plus_one = Chain.address_to_transactions_without_rewards(address_hash, options, false)
       {transactions, next_page} = split_list_by_page(results_plus_one)
 
       next_page_params =
