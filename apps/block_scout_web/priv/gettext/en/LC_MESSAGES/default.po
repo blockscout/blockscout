@@ -2642,11 +2642,6 @@ msgstr ""
 msgid "The total gas amount used in the block and its percentage of gas filled in the block."
 msgstr ""
 
-#: lib/block_scout_web/templates/withdrawal/index.html.eex:11
-#, elixir-autogen, elixir-format
-msgid "There are %{withdrawals_count} withdrawals total that withdrawn %{withdrawals_sum}"
-msgstr ""
-
 #: lib/block_scout_web/templates/address_validation/index.html.eex:16
 #, elixir-autogen, elixir-format
 msgid "There are no blocks validated by this address."
@@ -3663,4 +3658,9 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:5
 #, elixir-autogen, elixir-format, fuzzy
 msgid "New Smart Contract Verification via metadata JSON"
+msgstr ""
+
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:11
+#, elixir-autogen, elixir-format, fuzzy
+msgid "%{withdrawals_count} withdrawals processed and %{withdrawals_sum} withdrawn."
 msgstr ""

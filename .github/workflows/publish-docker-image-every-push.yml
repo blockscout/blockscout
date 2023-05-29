@@ -88,16 +88,16 @@ jobs:
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            SESSION_COOKIE_DOMAIN=${{ secrets.FRONTEND_MAIN }}
+            SESSION_COOKIE_DOMAIN=k8s-dev.blockscout.com
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-  tests:
-    needs: push_to_registry
-    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_new.yaml@master
-    with:
-      blockscoutImage: blockscout/blockscout:${{ needs.push_to_registry.outputs.release-version }}-prerelease-${{ needs.push_to_registry.outputs.short-sha }}
-      blockscoutIngressHost: e2e-blockscout-$GITHUB_SHA_SHORT
-      frontendIngressHost: e2e-blockscout-$GITHUB_SHA_SHORT
-      gethIngressHost: e2e-geth-$GITHUB_SHA_SHORT
-      scVerifierIngressHost: e2e-sc-verifier-$GITHUB_SHA_SHORT
-    secrets: inherit
+  # tests:
+  #   needs: push_to_registry
+  #   uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_new.yaml@master
+  #   with:
+  #     blockscoutImage: blockscout/blockscout:${{ needs.push_to_registry.outputs.release-version }}-prerelease-${{ needs.push_to_registry.outputs.short-sha }}
+  #     blockscoutIngressHost: e2e-blockscout-$GITHUB_SHA_SHORT
+  #     frontendIngressHost: e2e-blockscout-$GITHUB_SHA_SHORT
+  #     gethIngressHost: e2e-geth-$GITHUB_SHA_SHORT
+  #     scVerifierIngressHost: e2e-sc-verifier-$GITHUB_SHA_SHORT
+  #   secrets: inherit

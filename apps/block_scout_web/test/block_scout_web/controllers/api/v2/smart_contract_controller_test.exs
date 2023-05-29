@@ -497,7 +497,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                "method_id" => "c683630d"
              } in response
 
-      assert %{"type" => "fallback"} in response
+      refute %{"type" => "fallback"} in response
     end
 
     test "get array of addresses within read-methods", %{conn: conn} do

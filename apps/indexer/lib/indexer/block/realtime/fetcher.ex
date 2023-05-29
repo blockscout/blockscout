@@ -485,7 +485,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
             block_number
 
           _ ->
-            Map.fetch!(address_hash_to_block_number, address_hash)
+            Map.fetch!(address_hash_to_block_number, String.downcase(address_hash))
         end
 
       %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
