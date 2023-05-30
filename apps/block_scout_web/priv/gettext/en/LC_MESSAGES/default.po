@@ -142,7 +142,7 @@ msgstr ""
 msgid "API keys"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:129
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:124
 #, elixir-autogen, elixir-format
 msgid "APIs"
 msgstr ""
@@ -1201,7 +1201,7 @@ msgstr ""
 msgid "Error: Could not determine contract creator."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:143
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:138
 #, elixir-autogen, elixir-format
 msgid "Eth RPC"
 msgstr ""
@@ -1365,7 +1365,7 @@ msgstr ""
 msgid "Go to"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:133
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:128
 #, elixir-autogen, elixir-format
 msgid "GraphQL"
 msgstr ""
@@ -2030,7 +2030,7 @@ msgstr ""
 msgid "Query"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:138
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:133
 #, elixir-autogen, elixir-format
 msgid "RPC"
 msgstr ""
@@ -2994,7 +2994,6 @@ msgstr ""
 msgid "Verified"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:89
 #: lib/block_scout_web/templates/verified_contracts/_stats.html.eex:18
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:5
 #, elixir-autogen, elixir-format
@@ -3444,7 +3443,7 @@ msgstr ""
 msgid "Community Fund"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:177
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:172
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Connect"
 msgstr ""
@@ -3522,12 +3521,12 @@ msgstr ""
 msgid "Fees sent to Community Fund"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:218
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:213
 #, elixir-autogen, elixir-format
 msgid "Finance Tools"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:226
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:221
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Gas Tracker"
 msgstr ""
@@ -3562,12 +3561,12 @@ msgstr ""
 msgid "It could still be in the TX Pool of a different node, waiting to be broadcasted."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:183
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:178
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Learn"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:191
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:186
 #, elixir-autogen, elixir-format
 msgid "Learn, Borrow, Earn"
 msgstr ""
@@ -3582,7 +3581,7 @@ msgstr ""
 msgid "Locked CELO Balance"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:116
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:111
 #, elixir-autogen, elixir-format
 msgid "MakerDojo"
 msgstr ""
@@ -3602,7 +3601,7 @@ msgstr ""
 msgid "Moola"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:156
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:151
 #, elixir-autogen, elixir-format
 msgid "More"
 msgstr ""
@@ -3612,7 +3611,7 @@ msgstr ""
 msgid "More epoch transactions have come in"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:198
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:193
 #, elixir-autogen, elixir-format
 msgid "NFT"
 msgstr ""
@@ -3652,7 +3651,7 @@ msgstr ""
 msgid "Reserve bolster"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:205
 #, elixir-autogen, elixir-format
 msgid "Resources"
 msgstr ""
@@ -3697,17 +3696,17 @@ msgstr ""
 msgid "Source code matches deployed contracts except the metadata hash"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:204
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:199
 #, elixir-autogen, elixir-format
 msgid "Spend"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:107
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:102
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Stats"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:162
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:157
 #, elixir-autogen, elixir-format
 msgid "Swap"
 msgstr ""
@@ -3831,7 +3830,7 @@ msgstr ""
 msgid "Verifed contracts, %{subnetwork}, %{coin}"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:94
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:89
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Verify Contract"
 msgstr ""
@@ -3877,12 +3876,12 @@ msgstr ""
 msgid "Voting rewards accumulated over time."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:169
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:164
 #, elixir-autogen, elixir-format
 msgid "Wallet"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:111
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:106
 #, elixir-autogen, elixir-format
 msgid "cLabs"
 msgstr ""
