@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
-  alias Explorer.ExchangeRates.Token
   alias Timex.Duration
 
   @api_true [api?: true]
@@ -24,7 +23,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
           :standard
       end
 
-    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate = Market.get_coin_exchange_rate()
 
     transaction_stats = Helper.get_transaction_stats()
 
@@ -46,7 +45,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         "total_addresses" => @api_true |> Chain.address_estimated_count() |> to_string(),
         "total_transactions" => TransactionCache.estimated_count() |> to_string(),
         "average_block_time" => AverageBlockTime.average_block_time() |> Duration.to_milliseconds(),
-        "coin_price" => exchange_rate.usd_value || Market.get_native_coin_exchange_rate_from_db(),
+        "coin_price" => exchange_rate.usd_value,
         "total_gas_used" => GasUsage.total() |> to_string(),
         "transactions_today" => Enum.at(transaction_stats, 0).number_of_transactions |> to_string(),
         "gas_used_today" => Enum.at(transaction_stats, 0).gas_used,
@@ -91,7 +90,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   end
 
   def market_chart(conn, _params) do
-    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate = Market.get_coin_exchange_rate()
 
     recent_market_history = Market.fetch_recent_history()
 
@@ -102,7 +101,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
           [
             %{
               today
-              | closing_price: if(exchange_rate.usd_value, do: exchange_rate.usd_value, else: today.closing_price)
+              | closing_price: exchange_rate.usd_value
             }
             | the_rest
           ]

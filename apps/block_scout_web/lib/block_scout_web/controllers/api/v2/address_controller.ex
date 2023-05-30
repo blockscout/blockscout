@@ -15,7 +15,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
-  alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
   alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
 
@@ -397,7 +396,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
     next_page_params = next_page_params(next_page, addresses, params)
 
-    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate = Market.get_coin_exchange_rate()
     total_supply = Chain.total_supply()
 
     conn

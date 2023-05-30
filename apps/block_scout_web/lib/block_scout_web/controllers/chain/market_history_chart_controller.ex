@@ -2,11 +2,10 @@ defmodule BlockScoutWeb.Chain.MarketHistoryChartController do
   use BlockScoutWeb, :controller
 
   alias Explorer.{Chain, Market}
-  alias Explorer.ExchangeRates.Token
 
   def show(conn, _params) do
     if ajax?(conn) do
-      exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+      exchange_rate = Market.get_coin_exchange_rate()
 
       recent_market_history = Market.fetch_recent_history()
 
