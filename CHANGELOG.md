@@ -391,6 +391,7 @@
 - [#7585](https://github.com/blockscout/blockscout/pull/7585) - Store and display native coin market cap from the DB
 - [#7513](https://github.com/blockscout/blockscout/pull/7513) - Add Polygon Edge support
 - [#7532](https://github.com/blockscout/blockscout/pull/7532) - Handle empty id in json rpc responses
+- [#7584](https://github.com/blockscout/blockscout/pull/7584) - Add Polygon zkEVM batches fetcher
 - [#7544](https://github.com/blockscout/blockscout/pull/7544) - Add ERC-1155 signatures to uncataloged_token_transfer_block_numbers
 - [#7363](https://github.com/blockscout/blockscout/pull/7363) - CSV export filters
 - [#7697](https://github.com/blockscout/blockscout/pull/7697) - Limit fetchers init tasks
