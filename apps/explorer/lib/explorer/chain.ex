@@ -82,6 +82,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Helper, as: CacheHelper
+  alias Explorer.Chain.Cache.PendingBlockOperation, as: PendingBlockOperationCache
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
@@ -1344,27 +1345,46 @@ defmodule Explorer.Chain do
       if variant == EthereumJSONRPC.Ganache || variant == EthereumJSONRPC.Arbitrum do
         true
       else
-        with {:transactions_exist, true} <- {:transactions_exist, select_repo(options).exists?(Transaction)},
-             min_block_number when not is_nil(min_block_number) <-
-               select_repo(options).aggregate(Transaction, :min, :block_number) do
-          min_block_number =
-            min_block_number
-            |> Decimal.max(EthereumJSONRPC.first_block_to_fetch(:trace_first_block))
-            |> Decimal.to_integer()
-
-          query =
-            from(
-              block in Block,
-              join: pending_ops in assoc(block, :pending_operations),
-              where: block.consensus and block.number == ^min_block_number
-            )
-
-          !select_repo(options).exists?(query)
-        else
-          {:transactions_exist, false} -> true
-          nil -> false
-        end
+        check_left_blocks_to_index_internal_transactions(options)
       end
+    end
+  end
+
+  defp check_left_blocks_to_index_internal_transactions(options) do
+    with {:transactions_exist, true} <- {:transactions_exist, select_repo(options).exists?(Transaction)},
+         min_block_number when not is_nil(min_block_number) <-
+           select_repo(options).aggregate(Transaction, :min, :block_number) do
+      min_block_number =
+        min_block_number
+        |> Decimal.max(EthereumJSONRPC.first_block_to_fetch(:trace_first_block))
+        |> Decimal.to_integer()
+
+      query =
+        from(
+          block in Block,
+          join: pending_ops in assoc(block, :pending_operations),
+          where: block.consensus and block.number == ^min_block_number
+        )
+
+      if select_repo(options).exists?(query) do
+        false
+      else
+        check_indexing_internal_transactions_threshold()
+      end
+    else
+      {:transactions_exist, false} -> true
+      nil -> false
+    end
+  end
+
+  defp check_indexing_internal_transactions_threshold do
+    pbo_count = PendingBlockOperationCache.estimated_count()
+
+    if pbo_count <
+         Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction)[:indexing_finished_threshold] do
+      true
+    else
+      false
     end
   end
 
@@ -2297,7 +2317,7 @@ defmodule Explorer.Chain do
     if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] &&
          not Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] do
       %{max: max_saved_block_number} = BlockNumber.get_all()
-      pbo_count = Repo.aggregate(PendingBlockOperation, :count, timeout: :infinity)
+      pbo_count = PendingBlockOperationCache.estimated_count()
 
       min_blockchain_trace_block_number = min_block_number_from_config(:trace_first_block)
 
@@ -5093,7 +5113,10 @@ defmodule Explorer.Chain do
     query =
       from(l in Log,
         as: :log,
-        where: l.first_topic == unquote(TokenTransfer.constant()),
+        where:
+          l.first_topic == unquote(TokenTransfer.constant()) or
+            l.first_topic == unquote(TokenTransfer.erc1155_single_transfer_signature()) or
+            l.first_topic == unquote(TokenTransfer.erc1155_batch_transfer_signature()),
         where:
           not exists(
             from(tf in TokenTransfer,
@@ -6868,7 +6891,7 @@ defmodule Explorer.Chain do
   end
 
   def sum_withdrawals do
-    Repo.aggregate(Withdrawal, :max, :index, timeout: :infinity)
+    Repo.aggregate(Withdrawal, :sum, :amount, timeout: :infinity)
   end
 
   def upsert_count_withdrawals(index) do
