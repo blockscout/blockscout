@@ -136,6 +136,8 @@ defmodule Indexer.Fetcher.TransactionAction do
           Map.put(action, :data, Map.delete(action.data, :block_number))
         end)
 
+      Logger.warn("tx_actions = #{inspect(tx_actions)}")
+
       {:ok, _} =
         Chain.import(%{
           addresses: %{params: addresses, on_conflict: :nothing},
