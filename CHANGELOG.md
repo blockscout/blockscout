@@ -18,9 +18,11 @@
 - [#7546](https://github.com/blockscout/blockscout/pull/7546) - API v2: fix today coin price (use in-memory or cached in DB value)
 - [#7545](https://github.com/blockscout/blockscout/pull/7545) - API v2: Check if cached exchange rate is empty before replacing DB value in stats API
 - [#7516](https://github.com/blockscout/blockscout/pull/7516) - Fix shrinking logo in Safari
+- [#7590](https://github.com/blockscout/blockscout/pull/7590) - Drop genesis block in internal transactions fetcher
 
 ### Chore
 
+- [#7594](https://github.com/blockscout/blockscout/pull/7594) - Stats service support in docker-compose config with new frontend
 - [#7576](https://github.com/blockscout/blockscout/pull/7576) - Check left blocks in pending block operations in order to decide, if we need to display indexing int tx banner at the top
 - [#7543](https://github.com/blockscout/blockscout/pull/7543) - Allow hyphen in DB username
 
