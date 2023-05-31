@@ -89,6 +89,8 @@ defmodule Explorer.ChainSpec.Geth.Importer do
     number
   end
 
+  defp parse_number(""), do: 0
+
   defp parse_number(string_number) do
     {number, ""} = Integer.parse(string_number, 10)
 
