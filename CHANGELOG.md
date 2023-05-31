@@ -38,6 +38,7 @@
 
 - [#7439](https://github.com/blockscout/blockscout/pull/7439) - Define batch size for token balance fetcher via runtime env var
 - [#7298](https://github.com/blockscout/blockscout/pull/7298) - Add changes to support force email verification
+- [#7422](https://github.com/blockscout/blockscout/pull/7422) - Refactor state changes
 - [#7416](https://github.com/blockscout/blockscout/pull/7416) - Add option to disable reCAPTCHA
 - [#6694](https://github.com/blockscout/blockscout/pull/6694) - Add withdrawals support (EIP-4895)
 - [#7355](https://github.com/blockscout/blockscout/pull/7355) - Add endpoint for token info import
