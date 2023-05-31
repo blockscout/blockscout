@@ -204,10 +204,15 @@ defmodule Indexer.Block.Fetcher do
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts},
-               transaction_actions: %{params: transaction_actions},
                withdrawals: %{params: withdrawals_params}
              }
-           ) do
+           ),
+         {:ok, inserted_tx_actions} <-
+           Chain.import(%{
+             transaction_actions: %{params: transaction_actions},
+             timeout: :infinity
+           }) do
+      inserted = Map.merge(inserted, inserted_tx_actions)
       Logger.info(["### fetch_and_import_range FINALIZED ", inspect(range), " ###"])
       Prometheus.Instrumenter.block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
