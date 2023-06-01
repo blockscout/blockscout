@@ -16,6 +16,8 @@ defmodule BlockScoutWeb.Chain do
       token_contract_address_from_token_name: 1
     ]
 
+  import Explorer.Helper, only: [parse_integer: 1]
+
   alias Explorer.Chain.Block.Reward
 
   alias Explorer.Chain.{
@@ -23,6 +25,7 @@ defmodule BlockScoutWeb.Chain do
     Address.CoinBalance,
     Address.CurrentTokenBalance,
     Block,
+    Hash,
     InternalTransaction,
     Log,
     SmartContract,
@@ -141,16 +144,30 @@ defmodule BlockScoutWeb.Chain do
     ]
   end
 
-  def paging_options(%{"market_cap" => market_cap, "holder_count" => holder_count, "name" => token_name}) do
+  def paging_options(%{
+        "market_cap" => market_cap,
+        "holder_count" => holder_count_str,
+        "name" => name,
+        "contract_address_hash" => contract_address_hash_str,
+        "is_name_null" => is_name_null
+      }) do
     market_cap_decimal =
       case Decimal.parse(market_cap) do
         {decimal, ""} -> Decimal.round(decimal, 16)
         _ -> nil
       end
 
-    case Integer.parse(holder_count) do
-      {holder_count, ""} ->
-        [paging_options: %{@default_paging_options | key: {market_cap_decimal, holder_count, token_name}}]
+    holder_count = parse_integer(holder_count_str)
+    token_name = if is_name_null == "true", do: nil, else: name
+
+    case Hash.Address.cast(contract_address_hash_str) do
+      {:ok, contract_address_hash} ->
+        [
+          paging_options: %{
+            @default_paging_options
+            | key: {market_cap_decimal, holder_count, token_name, contract_address_hash}
+          }
+        ]
 
       _ ->
         [paging_options: @default_paging_options]
@@ -377,18 +394,22 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%Token{
+         contract_address_hash: contract_address_hash,
          circulating_market_cap: circulating_market_cap,
          holder_count: holder_count,
          name: token_name
        }) do
-    %{"market_cap" => circulating_market_cap, "holder_count" => holder_count, "name" => token_name}
+    %{
+      "market_cap" => circulating_market_cap,
+      "holder_count" => holder_count,
+      "contract_address_hash" => contract_address_hash,
+      "name" => token_name,
+      "is_name_null" => is_nil(token_name)
+    }
   end
 
-  defp paging_params([
-         %Token{circulating_market_cap: circulating_market_cap, holder_count: holder_count, name: token_name},
-         _
-       ]) do
-    %{"market_cap" => circulating_market_cap, "holder_count" => holder_count, "name" => token_name}
+  defp paging_params([%Token{} = token, _]) do
+    paging_params(token)
   end
 
   defp paging_params({%Reward{block: %{number: number}}, _}) do
