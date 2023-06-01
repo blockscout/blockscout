@@ -15,7 +15,7 @@ defmodule Indexer.Fetcher.TransactionAction do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Helper, as: ExplorerHelper
-  alias Explorer.Chain.{Log, TransactionAction}
+  alias Explorer.Chain.{Block, Log, TransactionAction}
   alias Indexer.Transform.{Addresses, TransactionActions}
 
   @stage_first_block "tx_action_first_block"
@@ -87,8 +87,10 @@ defmodule Indexer.Fetcher.TransactionAction do
     if reason === :normal do
       {:noreply, %__MODULE__{state | task: nil}}
     else
+      logger_metadata = Logger.metadata()
       Logger.metadata(fetcher: :transaction_action)
       Logger.error(fn -> "Transaction action fetcher task exited due to #{inspect(reason)}. Rerunning..." end)
+      Logger.reset_metadata(logger_metadata)
       {:noreply, run_fetch(%__MODULE__{state | next_block: get_stage_block(@stage_next_block)})}
     end
   end
@@ -108,6 +110,7 @@ defmodule Indexer.Fetcher.TransactionAction do
            pid: pid
          } = _state
        ) do
+    logger_metadata = Logger.metadata()
     Logger.metadata(fetcher: :transaction_action)
 
     block_range = Range.new(next_block, first_block, -1)
@@ -117,6 +120,8 @@ defmodule Indexer.Fetcher.TransactionAction do
       query =
         from(
           log in Log,
+          inner_join: b in Block,
+          on: b.hash == log.block_hash and b.consensus == true,
           where: log.block_number == ^block_number,
           select: log
         )
@@ -135,8 +140,6 @@ defmodule Indexer.Fetcher.TransactionAction do
         Enum.map(transaction_actions, fn action ->
           Map.put(action, :data, Map.delete(action.data, :block_number))
         end)
-
-      Logger.warn("tx_actions = #{inspect(tx_actions)}")
 
       {:ok, _} =
         Chain.import(%{
@@ -185,51 +188,59 @@ defmodule Indexer.Fetcher.TransactionAction do
 
     Process.send(pid, :stop_server, [])
 
+    Logger.reset_metadata(logger_metadata)
+
     :ok
   end
 
   defp init_fetching(opts, first_block, last_block) do
+    logger_metadata = Logger.metadata()
     Logger.metadata(fetcher: :transaction_action)
 
     first_block = ExplorerHelper.parse_integer(first_block)
     last_block = ExplorerHelper.parse_integer(last_block)
 
-    if is_nil(first_block) or is_nil(last_block) or first_block <= 0 or last_block <= 0 or first_block > last_block do
-      {:stop, "Correct block range must be provided to #{__MODULE__}."}
-    else
-      max_block_number = Chain.fetch_max_block_number()
+    return =
+      if is_nil(first_block) or is_nil(last_block) or first_block <= 0 or last_block <= 0 or first_block > last_block do
+        {:stop, "Correct block range must be provided to #{__MODULE__}."}
+      else
+        max_block_number = Chain.fetch_max_block_number()
 
-      if last_block > max_block_number do
-        Logger.warning(
-          "Note, that the last block number (#{last_block}) provided to #{__MODULE__} exceeds max block number available in DB (#{max_block_number})."
-        )
+        if last_block > max_block_number do
+          Logger.warning(
+            "Note, that the last block number (#{last_block}) provided to #{__MODULE__} exceeds max block number available in DB (#{max_block_number})."
+          )
+        end
+
+        supported_protocols =
+          TransactionAction.supported_protocols()
+          |> Enum.map(&Atom.to_string(&1))
+
+        protocols =
+          opts
+          |> Keyword.get(:reindex_protocols, "")
+          |> String.trim()
+          |> String.split(",")
+          |> Enum.map(&String.trim(&1))
+          |> Enum.filter(&Enum.member?(supported_protocols, &1))
+
+        next_block = get_next_block(first_block, last_block, protocols)
+
+        state =
+          %__MODULE__{
+            first_block: first_block,
+            next_block: next_block,
+            last_block: last_block,
+            protocols: protocols
+          }
+          |> run_fetch()
+
+        {:ok, state}
       end
 
-      supported_protocols =
-        TransactionAction.supported_protocols()
-        |> Enum.map(&Atom.to_string(&1))
+    Logger.reset_metadata(logger_metadata)
 
-      protocols =
-        opts
-        |> Keyword.get(:reindex_protocols, "")
-        |> String.trim()
-        |> String.split(",")
-        |> Enum.map(&String.trim(&1))
-        |> Enum.filter(&Enum.member?(supported_protocols, &1))
-
-      next_block = get_next_block(first_block, last_block, protocols)
-
-      state =
-        %__MODULE__{
-          first_block: first_block,
-          next_block: next_block,
-          last_block: last_block,
-          protocols: protocols
-        }
-        |> run_fetch()
-
-      {:ok, state}
-    end
+    return
   end
 
   defp get_next_block(first_block, last_block, protocols) do
