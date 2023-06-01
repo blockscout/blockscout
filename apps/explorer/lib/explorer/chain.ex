@@ -260,7 +260,7 @@ defmodule Explorer.Chain do
 
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    if direction == nil do
+    if direction == nil || direction == "" do
       query_to_address_hash_wrapped =
         InternalTransaction
         |> InternalTransaction.where_nonpending_block()
@@ -633,74 +633,6 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
-  @doc """
-  address_hash_to_token_transfers_including_contract/2 function returns token transfers on address (to/from/contract).
-  It is used by CSV export of token transfers button.
-  """
-  @spec address_hash_to_token_transfers_including_contract(Hash.Address.t(), Keyword.t()) :: [TokenTransfer.t()]
-  def address_hash_to_token_transfers_including_contract(address_hash, options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    from_block = Keyword.get(options, :from_block)
-    to_block = Keyword.get(options, :to_block)
-
-    query =
-      from_block
-      |> query_address_hash_to_token_transfers_including_contract(to_block, address_hash)
-      |> order_by([token_transfer], asc: token_transfer.block_number, asc: token_transfer.log_index)
-
-    query
-    |> handle_token_transfer_paging_options(paging_options)
-    |> preload(transaction: :block)
-    |> preload(:token)
-    |> Repo.all()
-  end
-
-  defp query_address_hash_to_token_transfers_including_contract(nil, to_block, address_hash)
-       when not is_nil(to_block) do
-    from(
-      token_transfer in TokenTransfer,
-      where:
-        (token_transfer.to_address_hash == ^address_hash or
-           token_transfer.from_address_hash == ^address_hash or
-           token_transfer.token_contract_address_hash == ^address_hash) and
-          token_transfer.block_number <= ^to_block
-    )
-  end
-
-  defp query_address_hash_to_token_transfers_including_contract(from_block, nil, address_hash)
-       when not is_nil(from_block) do
-    from(
-      token_transfer in TokenTransfer,
-      where:
-        (token_transfer.to_address_hash == ^address_hash or
-           token_transfer.from_address_hash == ^address_hash or
-           token_transfer.token_contract_address_hash == ^address_hash) and
-          token_transfer.block_number >= ^from_block
-    )
-  end
-
-  defp query_address_hash_to_token_transfers_including_contract(from_block, to_block, address_hash)
-       when not is_nil(from_block) and not is_nil(to_block) do
-    from(
-      token_transfer in TokenTransfer,
-      where:
-        (token_transfer.to_address_hash == ^address_hash or
-           token_transfer.from_address_hash == ^address_hash or
-           token_transfer.token_contract_address_hash == ^address_hash) and
-          (token_transfer.block_number >= ^from_block and token_transfer.block_number <= ^to_block)
-    )
-  end
-
-  defp query_address_hash_to_token_transfers_including_contract(_, _, address_hash) do
-    from(
-      token_transfer in TokenTransfer,
-      where:
-        token_transfer.to_address_hash == ^address_hash or
-          token_transfer.from_address_hash == ^address_hash or
-          token_transfer.token_contract_address_hash == ^address_hash
-    )
-  end
-
   @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
   def address_to_logs(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
@@ -749,6 +681,8 @@ defmodule Explorer.Chain do
   end
 
   defp filter_topic(base_query, nil), do: base_query
+
+  defp filter_topic(base_query, ""), do: base_query
 
   defp filter_topic(base_query, topic) do
     from(log in base_query,
@@ -4634,14 +4568,6 @@ defmodule Explorer.Chain do
   defp handle_verified_contracts_paging_options(query, paging_options) do
     query
     |> page_verified_contracts(paging_options)
-    |> limit(^paging_options.page_size)
-  end
-
-  defp handle_token_transfer_paging_options(query, nil), do: query
-
-  defp handle_token_transfer_paging_options(query, paging_options) do
-    query
-    |> TokenTransfer.page_token_transfer(paging_options)
     |> limit(^paging_options.page_size)
   end
 
