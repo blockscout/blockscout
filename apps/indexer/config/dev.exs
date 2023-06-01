@@ -40,3 +40,8 @@ config :logger, :withdrawal,
   level: :debug,
   path: Path.absname("logs/dev/indexer/withdrawal.log"),
   metadata_filter: [fetcher: :withdrawal]
+
+config :logger, :missing_contract_creations,
+  level: :debug,
+  path: Path.absname("logs/dev/indexer/missing_contract_creations.log"),
+  metadata_filter: [fetcher: :contract_code_sanitizer]

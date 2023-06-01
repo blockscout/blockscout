@@ -36,6 +36,7 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,
+    ContractCodeSanitizer,
     UncatalogedTokenTransfers,
     UnclesWithoutIndex
   }
@@ -134,6 +135,7 @@ defmodule Indexer.Supervisor do
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {PendingOpsCleaner, [[], []]},
         {PendingBlockOperationsSanitizer, [[]]},
+        {ContractCodeSanitizer, [[]]},
 
         # Block fetchers
         configure(BlockRealtime.Supervisor, [

@@ -48,3 +48,9 @@ config :logger, :withdrawal,
   path: Path.absname("logs/prod/indexer/withdrawal.log"),
   metadata_filter: [fetcher: :withdrawal],
   rotate: %{max_bytes: 52_428_800, keep: 19}
+
+config :logger, :missing_contract_creations,
+  level: :info,
+  path: Path.absname("logs/prod/indexer/missing_contract_creations.log"),
+  metadata_filter: [fetcher: :contract_code_sanitizer],
+  rotate: %{max_bytes: 52_428_800, keep: 19}
