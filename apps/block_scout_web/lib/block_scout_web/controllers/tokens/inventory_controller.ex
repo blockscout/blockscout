@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
   alias BlockScoutWeb.AccessHelpers
   alias BlockScoutWeb.Tokens.{HolderController, InventoryView}
   alias Explorer.Chain
-  alias Explorer.Chain.TokenTransfer
+  alias Explorer.Chain.Token.Instance
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, default_paging_options: 0]
@@ -13,16 +13,16 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token} <- Chain.token_from_address_hash(address_hash),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
-      unique_tokens =
+      unique_token_instances =
         Chain.address_to_unique_tokens(
           token.contract_address_hash,
           unique_tokens_paging_options(params)
         )
 
-      {unique_tokens_paginated, next_page} = split_list_by_page(unique_tokens)
+      {unique_token_instances_paginated, next_page} = split_list_by_page(unique_token_instances)
 
       next_page_path =
-        case unique_tokens_next_page(next_page, unique_tokens_paginated, params) do
+        case unique_tokens_next_page(next_page, unique_token_instances_paginated, params) do
           nil ->
             nil
 
@@ -36,12 +36,12 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
         end
 
       items =
-        unique_tokens_paginated
-        |> Enum.map(fn token_transfer ->
+        unique_token_instances_paginated
+        |> Enum.map(fn instance ->
           View.render_to_string(
             InventoryView,
             "_token.html",
-            token_transfer: token_transfer,
+            instance: instance,
             token: token,
             conn: conn
           )
@@ -81,7 +81,7 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
     Map.merge(params, paging_params(List.last(list)))
   end
 
-  defp paging_params(%TokenTransfer{token_id: token_id}) do
+  defp paging_params(%Instance{token_id: token_id}) do
     %{"unique_token" => Decimal.to_integer(token_id)}
   end
 end

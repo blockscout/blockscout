@@ -109,7 +109,7 @@ defmodule EthereumJSONRPC.RequestCoordinator do
 
   defp trace_request(_, fun), do: fun.()
 
-  defp handle_transport_response({:error, {:bad_gateway, _}} = error) do
+  defp handle_transport_response({:error, {error_type, _}} = error) when error_type in [:bad_gateway, :bad_response] do
     RollingWindow.inc(table(), @error_key)
     inc_throttle_table()
     error

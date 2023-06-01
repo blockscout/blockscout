@@ -141,24 +141,23 @@
           <% end %>
           <!-- Implementation -->
           <%= if @is_proxy do %>
-            <% {implementation_address, name} = Chain.get_implementation_address_hash(@address.hash, @address.smart_contract.abi) || "0x0000000000000000000000000000000000000000" %>
-            <%= if implementation_address do %>
-              <dl class="row">
-                <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
-                  <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("Implementation address of the proxy contract.") %>
-                  <%= gettext("Implementation") %>
-                </dt>
-                <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_contract_implementation">
-                  <%= link(
-                    (if name, do: name <> " | " <> implementation_address, else: implementation_address),
-                    to: address_path(@conn, :show, implementation_address),
-                    class: "contract-address"
-                  ) 
-                  %>
-                </dd>
-              </dl>
-            <% end %>
+            <% {implementation_address_, name} = SmartContract.get_implementation_address_hash(@address.smart_contract) %>
+            <% implementation_address = implementation_address_ || "0x0000000000000000000000000000000000000000" %>
+            <dl class="row">
+              <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Implementation address of the proxy contract.") %>
+                <%= gettext("Implementation") %>
+              </dt>
+              <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_contract_implementation">
+                <%= link(
+                  (if name, do: name <> " | " <> implementation_address, else: implementation_address),
+                  to: address_path(@conn, :show, implementation_address),
+                  class: "contract-address"
+                ) 
+                %>
+              </dd>
+            </dl>
           <% end %>
           <!-- Balance -->
           <dl class="row">

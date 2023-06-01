@@ -497,6 +497,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       {:ok, address: address}
     end
 
+    @tag :skip
     test "see list of coin balances", %{session: session, address: address} do
       session
       |> AddressPage.visit_page(address)

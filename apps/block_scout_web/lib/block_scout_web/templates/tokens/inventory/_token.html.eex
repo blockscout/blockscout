@@ -1,5 +1,5 @@
 <% is_1155 = @token.type == "ERC-1155"%>
-<% is_unique = Chain.token_id_1155_is_unique?(@token.contract_address_hash, @token_transfer.token_id) or not is_1155%>
+<% is_unique = Chain.token_id_1155_is_unique?(@token.contract_address_hash, @instance.token_id) or not is_1155%>
 <!-- use "tile-type-unique-token-image" to token with images -->
 <div class="tile tile-type-unique-token fade-in">
   <div class="row">
@@ -17,7 +17,7 @@
         <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
           <span class="mr-1"><%= gettext "Token ID" %>:</span>
           <span class="tile-title">
-            <%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show, "#{@token.contract_address_hash}", "#{@token_transfer.token_id}")) %>
+            <%= link(@instance.token_id, to: token_instance_path(@conn, :show, "#{@token.contract_address_hash}", "#{@instance.token_id}")) %>
           </span>
         </span>
         <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
@@ -25,7 +25,7 @@
           <span class="tile-title">
             <%= render BlockScoutWeb.AddressView,
               "_link.html",
-              address: @token_transfer.to_address,
+              address: @instance.owner,
               contract: false,
               use_custom_tooltip: false %>
           </span>
@@ -36,7 +36,7 @@
         <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
           <span class="mr-1"><%= gettext "Token ID" %>:</span>
           <span class="tile-title">
-            <%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show, "#{@token.contract_address_hash}", "#{@token_transfer.token_id}")) %>
+            <%= link(@instance.token_id, to: token_instance_path(@conn, :show, "#{@token.contract_address_hash}", "#{@instance.token_id}")) %>
           </span>
         </span>
       </div>
@@ -45,12 +45,12 @@
     <div class="pl-5 col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center">
       <!-- substitute the span with <img class="tile-image" /> to token with images -->
       <div class="inventory-erc721-media" >
-        <%= if media_type(media_src(@token_transfer.instance)) == "video" do %>
+        <%= if media_type(media_src(@instance)) == "video" do %>
           <video style="overflow: auto;">
-            <source src=<%= media_src(@token_transfer.instance) %> type="video/mp4">
+            <source src=<%= media_src(@instance) %> type="video/mp4">
           </video>
         <% else %>
-          <img src=<%=media_src(@token_transfer.instance)%> />
+          <img src=<%=media_src(@instance)%> />
         <% end %>
       </div>
     </div>

@@ -12,6 +12,7 @@ $header-textfield-magnifier-color: $header-links-color !default;
 $header-link-horizontal-padding: 0.71rem;
 $navbar-logo-height: auto !default;
 $navbar-logo-width: 100% !default;
+$dropdown-menu-item-color: #000 !default;
 
 .navbar.navbar-primary {
   background-color: $header-background-color;
@@ -23,6 +24,11 @@ $navbar-logo-width: 100% !default;
   }
 
   .navbar-nav {
+
+    .nav-submenu {
+      padding: 10px 20px;
+      color: $dropdown-menu-item-color;
+    }
     
     .nav-link {
       outline: none;

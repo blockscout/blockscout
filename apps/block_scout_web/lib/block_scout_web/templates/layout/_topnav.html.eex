@@ -25,28 +25,39 @@
           <li class="nav-item dropdown">
             <a class="nav-link topnav-nav-link dropdown-toggle" href="#" id="navbarBlocksDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_block_icon.html" %>
+                <%= render BlockScoutWeb.IconsView, "_blockchain_icon.html" %>
               </span>
               <%= gettext("Blockchain") %>
             </a>
-            <div class="dropdown-menu" aria-labelledby="navbarBlocksDropdown">
+            <div class="dropdown-menu" aria-labelledby="navbarBlockchainDropdown">
+              <div class="nav-submenu">
+                <span>
+                  <%= gettext("Blocks") %>
+                </span>
+              </div>
               <%= link to: blocks_path(@conn, :index), class: "dropdown-item #{tab_status("blocks", @conn.request_path)}" do %>
                 <%= gettext("All Blocks") %>
               <% end %>
               <%= link to: epochs_path(@conn, :epochs), class: "dropdown-item #{tab_status("epochs", @conn.request_path)}" do %>
                 <%= gettext("Epoch Blocks") %>
               <% end %>
-              <%= link(
-                    gettext("Validated Txs"),
-                    class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
-                    to: transaction_path(@conn, :index)
-                  ) %>
+              <div class="nav-submenu">
+                <span>
+                  <%= gettext("Transactions") %>
+                </span>
+              </div>
               <% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)%>
               <% variant = Keyword.fetch!(json_rpc_named_arguments, :variant) %>
+              <%= link(
+                    gettext("Validated"),
+                    to: transaction_path(@conn, :index),
+                    class: "#{if variant == EthereumJSONRPC.Besu, do: "border-bottom", else: ""} dropdown-item #{tab_status("txs", @conn.request_path)}"
+                  ) %>
+
               <%= if variant !== EthereumJSONRPC.Besu do %>
                 <%= link(
-                      gettext("Pending Txs"),
-                      class: "dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",
+                      gettext("Pending"),
+                      class: "border-bottom dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",
                       "data-test": "pending_transactions_link",
                       to: pending_transaction_path(@conn, :index)
                     ) %>
@@ -56,6 +67,9 @@
                     class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
                     to: address_path(@conn, :index)
                   ) %>
+              <%= link(gettext("Verified contracts"),
+                    to: verified_contracts_path(@conn, :index),
+                    class: "dropdown-item #{tab_status("verified-contracts", @conn.request_path)}")%>
             </div>
           </li>
           <li class="nav-item dropdown">
@@ -71,11 +85,6 @@
                     class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
                     to: tokens_path(@conn, :index)
                   ) %>
-            <%= link(
-                  gettext("Verified Contracts"),
-                  class: "dropdown-item #{tab_status("verified-contracts", @conn.request_path)}",
-                  to: verified_contracts_path(@conn, :index)
-              ) %>
             <%= link(
                   gettext("Verify Contract"),
                   class: "dropdown-item #{tab_status("verify-new-contract", @conn.request_path)}",

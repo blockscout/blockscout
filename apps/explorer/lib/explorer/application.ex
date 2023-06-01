@@ -5,7 +5,7 @@ defmodule Explorer.Application do
 
   use Application
 
-  alias Explorer.Admin
+  alias Explorer.{Admin, TokenTransferTokenIdMigration}
 
   alias Explorer.Celo.Events.ContractEventStream
 
@@ -19,7 +19,9 @@ defmodule Explorer.Application do
     GasPriceOracle,
     MinMissingBlockNumber,
     NetVersion,
+    Transaction,
     Transactions,
+    TransactionsApiV2,
     Uncles
   }
 
@@ -45,6 +47,7 @@ defmodule Explorer.Application do
       Explorer.SmartContract.VyperDownloader,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
+      Transaction,
       AddressSum,
       AddressSumMinusBurnt,
       Block,
@@ -55,6 +58,7 @@ defmodule Explorer.Application do
       con_cache_child_spec(MarketHistoryCache.cache_name()),
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
       Transactions,
+      TransactionsApiV2,
       Accounts,
       Uncles,
       Supervisor.child_spec({Phoenix.PubSub, name: :chain_pubsub}, id: :chain_pubsub),
@@ -76,6 +80,10 @@ defmodule Explorer.Application do
       configure(Explorer.KnownTokens),
       configure(Explorer.Market.History.Cataloger),
       configure(Explorer.Chain.Cache.TokenExchangeRate),
+      configure(Explorer.Chain.Cache.ContractsCounter),
+      configure(Explorer.Chain.Cache.NewContractsCounter),
+      configure(Explorer.Chain.Cache.VerifiedContractsCounter),
+      configure(Explorer.Chain.Cache.NewVerifiedContractsCounter),
       configure(Explorer.Chain.Transaction.History.Historian),
       configure(Explorer.Chain.Events.Listener),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
@@ -96,7 +104,8 @@ defmodule Explorer.Application do
       configure(Explorer.Validator.MetadataProcessor),
       configure(Explorer.Tags.AddressTag.Cataloger),
       configure(MinMissingBlockNumber),
-      configure(ContractEventStream)
+      configure(ContractEventStream),
+      configure(TokenTransferTokenIdMigration.Supervisor)
     ]
     |> List.flatten()
   end

@@ -17,6 +17,16 @@ defmodule BlockScoutWeb.RewardChannel do
     end
   end
 
+  def handle_out(
+        "new_reward",
+        %{emission_funds: _emission_funds, validator: _validator},
+        %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
+      ) do
+    push(socket, "new_reward", %{reward: 1})
+
+    {:noreply, socket}
+  end
+
   def handle_out("new_reward", %{emission_funds: emission_funds, validator: validator}, socket) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 

@@ -122,6 +122,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources("/recent-transactions", RecentTransactionsController, only: [:index])
 
+    resources("/verified-contracts", VerifiedContractsController, only: [:index])
+
     get("/txs", TransactionController, :index)
 
     resources "/tx", TransactionController, only: [:show] do
@@ -144,6 +146,11 @@ defmodule BlockScoutWeb.WebRouter do
       resources("/token-transfers", TransactionTokenTransferController,
         only: [:index],
         as: :token_transfer
+      )
+
+      resources("/state", TransactionStateController,
+        only: [:index],
+        as: :state
       )
     end
 
@@ -498,6 +505,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/search-results", SearchController, :search_results)
 
+    get("/search-verified-contracts", VerifiedContractsController, :search_verified_contracts)
+
     get("/csv-export", CsvExportController, :index)
 
     get("/transactions-csv", AddressTransactionController, :transactions_csv)
@@ -520,7 +529,7 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/makerdojo", MakerdojoController, :index)
 
-    get("/verified-contracts", VerifiedContractsController, :index)
+    get("/visualize/sol2uml", VisualizeSol2umlController, :index)
 
     get("/*path", PageNotFoundController, :index)
   end

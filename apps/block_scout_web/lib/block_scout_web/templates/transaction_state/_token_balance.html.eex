@@ -1,0 +1,1 @@
+<%= format_according_to_decimals(@balance, @transfer.token.decimals) %><%= " " %><%= render BlockScoutWeb.TransactionView, "_link_to_token_symbol.html", transfer: @transfer %>

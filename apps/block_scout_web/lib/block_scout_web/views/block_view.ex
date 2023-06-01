@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.BlockView do
 
   alias BlockScoutWeb.AccessHelpers
 
+  alias Ecto.Association.NotLoaded
   alias Explorer.Celo.{EpochUtil, Util}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, Wei}
@@ -27,6 +28,7 @@ defmodule BlockScoutWeb.BlockView do
   end
 
   def block_type(%Block{consensus: false, nephews: []}), do: "Fetching"
+  def block_type(%Block{consensus: false, nephews: %NotLoaded{}}), do: "Reorg"
   def block_type(%Block{consensus: false}), do: "Uncle"
 
   def block_type(%Block{number: number}) when rem(number, 17280) == 0,

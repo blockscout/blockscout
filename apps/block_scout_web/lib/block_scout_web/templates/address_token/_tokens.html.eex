@@ -17,7 +17,7 @@
     <%= link(
           to: address_token_transfers_path(@conn, :index, to_string(@address.hash), to_string(@token.contract_address_hash)),
           class: "tile-title-lg",
-          "data-test": "token_transfers_#{@token_balance.token.contract_address_hash}"
+          "data-test": "token_transfers_#{@token.contract_address_hash}"
       ) do %>
       <%= token_name(@token) %>
     <% end %>
@@ -41,14 +41,14 @@
   </td>
   <td class="stakes-td">
     <p class="mb-0 col-md-6 text-right text-muted">
-      <% token_price = if @token_balance.token.usd_value, do: @token_balance.token.usd_value, else: nil %>
-      <span data-selector="token-price" data-token-usd-value="<%= @token_balance.token.usd_value %>"><%= ChainView.format_currency_value(token_price, "@") %></span>
+      <% token_price = if @token.usd_value, do: @token.usd_value, else: nil %>
+      <span data-selector="token-price" data-token-usd-value="<%= @token.usd_value %>"><%= ChainView.format_currency_value(token_price, "@") %></span>
     </p>
   </td>
   <td class="stakes-td">
-    <%= if @token_balance.token.usd_value do %>
+    <%= if @token.usd_value do %>
       <p class="mb-0 col-md-6 text-right">
-        <span data-selector="token-balance-usd" data-usd-value="<%= Chain.balance_in_usd(@token_balance) %>"><%= ChainView.format_usd_value(Chain.balance_in_usd(@token_balance)) %></span>
+        <span data-selector="token-balance-usd" data-usd-value="<%= Chain.balance_in_usd(@token_balance, @token) %>"><%= ChainView.format_usd_value(Chain.balance_in_usd(@token_balance, @token)) %></span>
       </p>
     <% end %>
   </td>

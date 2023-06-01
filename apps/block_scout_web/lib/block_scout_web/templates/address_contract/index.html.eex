@@ -5,6 +5,7 @@
 <% additional_sources_from_twin = Chain.get_address_verified_twin_contract(@address.hash).additional_sources %>
 <% fully_verified = Chain.smart_contract_fully_verified?(@address.hash)%>
 <% additional_sources = if smart_contract_verified, do: @address.smart_contract_additional_sources, else: additional_sources_from_twin %>
+<% visualize_sol2uml_enabled = Explorer.Visualize.Sol2uml.enabled?() %>
 <section class="container">
   <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
 
@@ -32,7 +33,7 @@
               <div style="display: inline-block;">
                 <%= render BlockScoutWeb.CommonComponentsView, "_info.html" %>
                 <span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
-                  metadata_for_verification.address_hash, 
+                  metadata_for_verification.address_hash,
                   to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)) %>.<br/> <%= gettext("All metadata displayed below is from that contract. In order to verify current contract, click") %> <i><%= gettext("Verify & Publish") %></i> <%= gettext("button") %></span>
               </div>
               <%= link(gettext("Verify & Publish"), to: path, class: "button button-primary button-sm float-right ml-3", "data-test": "verify_and_publish") %>
@@ -119,9 +120,22 @@
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
             <h3><%= target_contract.file_path || gettext "Contract source code" %></h3>
-            <button type="button" class="btn-line" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= target_contract.contract_source_code %>" aria-label="Copy Contract Source Code">
-              <%= gettext "Copy Source Code" %>
-            </button>
+            <div class="buttons">
+              <%= if visualize_sol2uml_enabled && !target_contract.is_vyper_contract && !is_nil(target_contract.abi) do %>
+                <span data-original-title="Visualize contract code using Sol2Uml JS library" data-placement="top" data-toggle="tooltip">
+                  <a class="button button-primary button-sm" href="<%= visualize_sol2uml_path(@conn, :index, address: @address) %>">
+                      <div class="d-flex align-items-center">
+                        <i class="fa-solid fa-diagram-project mr-1"></i>
+                        <span class="mr-1">Sol2uml</span>
+                        <div class="badge badge-info">new</div>
+                      </div>
+                  </a>
+                </span>
+                <% end %>
+                <button type="button" class="btn-line ml-3 float-right" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= target_contract.contract_source_code %>" aria-label="Copy Contract Source Code">
+                  <%= gettext "Copy Source Code" %>
+                </button>
+            </div>
           </div>
           <pre class="tile-muted tile-code mb-4" id="code_viewer_main" data-additional-sources-length=<%= Enum.count(additional_sources) %>><%= target_contract.contract_source_code %><pre>
         </section>
@@ -138,18 +152,35 @@
           </section>
         <% end)%>
 
-        <section>
-          <div class="d-flex justify-content-between align-items-baseline">
-            <h3><%= gettext "Contract ABI" %></h3>
-            <button type="button" class="btn-line" id="button" data-clipboard-text="<%= format_smart_contract_abi(target_contract.abi) %>" aria-label="Copy Contract ABI">
-              <%= gettext "Copy ABI" %>
-            </button>
-          </div>
-          <div class="tile tile-muted mb-4">
-            <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= format_smart_contract_abi(target_contract.abi) %></code>
-            </pre>
-          </div>
-        </section>
+        <%= if !is_nil(target_contract.compiler_settings) do %>
+          <section>
+            <div class="d-flex justify-content-between align-items-baseline">
+              <h3><%= gettext "Compiler Settings" %></h3>
+              <button type="button" class="btn-line" id="button" data-clipboard-text="<%= format_smart_contract_abi(target_contract.compiler_settings) %>" aria-label="Copy Compiler Settings">
+                <%= gettext "Copy Compiler Settings" %>
+              </button>
+            </div>
+            <div class="tile tile-muted mb-4">
+              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= format_smart_contract_abi(target_contract.compiler_settings) %></code>
+              </pre>
+            </div>
+          </section>
+        <% end %>
+
+        <%= if !is_nil(target_contract.abi) do %>
+          <section>
+            <div class="d-flex justify-content-between align-items-baseline">
+              <h3><%= gettext "Contract ABI" %></h3>
+              <button type="button" class="btn-line" id="button" data-clipboard-text="<%= format_smart_contract_abi(target_contract.abi) %>" aria-label="Copy Contract ABI">
+                <%= gettext "Copy ABI" %>
+              </button>
+            </div>
+            <div class="tile tile-muted mb-4">
+              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= format_smart_contract_abi(target_contract.abi) %></code>
+              </pre>
+            </div>
+          </section>
+        <% end %>
 
       <% end %>
       <section>

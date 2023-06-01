@@ -4,8 +4,7 @@ defmodule BlockScoutWeb.Schema.Query.TokenTransfersTest do
   describe "token_transfers field" do
     test "with valid argument, returns all expected fields", %{conn: conn} do
       transaction = insert(:transaction)
-      block = insert(:block)
-      token_transfer = insert(:token_transfer, transaction: transaction, block: block)
+      token_transfer = insert(:token_transfer, transaction: transaction, token_ids: [5], amounts: [10])
       address_hash = to_string(token_transfer.token_contract_address_hash)
 
       query = """
@@ -14,9 +13,11 @@ defmodule BlockScoutWeb.Schema.Query.TokenTransfersTest do
           edges {
             node {
               amount
+              amounts
               block_number
               log_index
               token_id
+              token_ids
               from_address_hash
               to_address_hash
               token_contract_address_hash
@@ -41,9 +42,11 @@ defmodule BlockScoutWeb.Schema.Query.TokenTransfersTest do
                      %{
                        "node" => %{
                          "amount" => to_string(token_transfer.amount),
+                         "amounts" => Enum.map(token_transfer.amounts, &to_string/1),
                          "block_number" => token_transfer.block_number,
                          "log_index" => token_transfer.log_index,
                          "token_id" => token_transfer.token_id,
+                         "token_ids" => Enum.map(token_transfer.token_ids, &to_string/1),
                          "from_address_hash" => to_string(token_transfer.from_address_hash),
                          "to_address_hash" => to_string(token_transfer.to_address_hash),
                          "token_contract_address_hash" => to_string(token_transfer.token_contract_address_hash),

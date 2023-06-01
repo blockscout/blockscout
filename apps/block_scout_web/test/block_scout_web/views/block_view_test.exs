@@ -34,8 +34,9 @@ defmodule BlockScoutWeb.BlockViewTest do
     test "returns Uncle" do
       uncle = insert(:block, consensus: false)
       insert(:block_second_degree_relation, uncle_hash: uncle.hash)
+      preloaded = Repo.preload(uncle, :nephews)
 
-      assert BlockView.block_type(uncle) == "Uncle"
+      assert BlockView.block_type(preloaded) == "Uncle"
     end
   end
 

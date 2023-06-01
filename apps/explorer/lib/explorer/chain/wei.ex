@@ -283,7 +283,8 @@ defimpl Inspect, for: Explorer.Chain.Wei do
 end
 
 defimpl Jason.Encoder, for: Explorer.Chain.Wei do
-  def encode(wei, _) do
-    Decimal.to_string(wei.value)
+  def encode(wei, opts) do
+    # changed since it's needed to return wei value (which is big number) as string
+    Jason.Encode.struct(wei.value, opts)
   end
 end

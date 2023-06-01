@@ -1,0 +1,33 @@
+<section class="container">
+  <div class="card">
+    <div class="card-body d-flex justify-content-around row text-center">
+        <div class="d-flex flex-column col-md col-sm">
+          <h2 class="card-title list-title-description "><%= gettext "Contracts" %></h2>
+          <div class="d-flex justify-content-around">
+            <div class="d-flex flex-column">
+              <h1><%= BlockScoutWeb.Cldr.Number.to_string!(@contracts_count, format: "#,###") %></h1>
+              <span class="text-muted"><%= gettext ("Total") %></span>
+            </div>
+            <div class="d-flex flex-column">
+              <h1 class="text-success"><%= if 0 |> Decimal.new() |> Decimal.lt?(@new_contracts_count), do: "+" %><%= BlockScoutWeb.Cldr.Number.to_string!(@new_contracts_count, format: "#,###") %></h1>
+              <span class="text-muted"><%= gettext ("Last 24h") %></span>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex flex-column col-md col-sm mt-sm-0 mt-4">
+          <h2 class="card-title list-title-description "><%= gettext "Verified Contracts" %></h2>
+          <div class="d-flex justify-content-around">
+            <div class="d-flex flex-column">
+              <h1><%= BlockScoutWeb.Cldr.Number.to_string!(@verified_contracts_count, format: "#,###") %></h1>
+              <span class="text-muted"><%= gettext ("Total") %></span>
+            </div>
+            <div class="d-flex flex-column">
+              <h1 class="text-success"><%= if 0 |> Decimal.new() |> Decimal.lt?(@new_verified_contracts_count), do: "+" %><%= BlockScoutWeb.Cldr.Number.to_string!(@new_verified_contracts_count, format: "#,###") %></h1>
+              <span class="text-muted"><%= gettext ("Last 24h") %></span>
+            </div>
+          </div>
+        </div>
+
+    </div>
+  </div>
+</section>

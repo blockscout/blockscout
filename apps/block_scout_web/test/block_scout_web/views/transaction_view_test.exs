@@ -285,9 +285,9 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
       token = insert(:token)
 
-      token_transfer1 = insert(:token_transfer, transaction: transaction, token: token, token_id: 1, amount: nil)
-      token_transfer2 = insert(:token_transfer, transaction: transaction, token: token, token_id: 2, amount: nil)
-      token_transfer3 = insert(:token_transfer, transaction: transaction, token: token, token_id: 3, amount: nil)
+      token_transfer1 = insert(:token_transfer, transaction: transaction, token: token, token_ids: [1], amount: nil)
+      token_transfer2 = insert(:token_transfer, transaction: transaction, token: token, token_ids: [2], amount: nil)
+      token_transfer3 = insert(:token_transfer, transaction: transaction, token: token, token_ids: [3], amount: nil)
 
       result = TransactionView.aggregate_token_transfers([token_transfer1, token_transfer2, token_transfer3])
 

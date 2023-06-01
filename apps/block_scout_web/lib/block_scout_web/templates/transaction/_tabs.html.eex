@@ -25,4 +25,10 @@
       class: "card-tab #{tab_status("raw-trace", @conn.request_path)}",
       to: AccessHelpers.get_path(@conn, :transaction_raw_trace_path, :index, @transaction)
       ) %>
+  <%= link(
+        gettext("State changes"),
+        class: "card-tab #{tab_status("state", @conn.request_path)}",
+        to: AccessHelpers.get_path(@conn, :transaction_state_path, :index, @transaction)
+      ) 
+    %>
 </div>

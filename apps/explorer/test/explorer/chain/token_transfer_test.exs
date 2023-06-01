@@ -4,6 +4,7 @@ defmodule Explorer.Chain.TokenTransferTest do
   import Explorer.Factory
 
   alias Explorer.{PagingOptions, Repo}
+  alias Explorer.Chain
   alias Explorer.Chain.TokenTransfer
 
   doctest Explorer.Chain.TokenTransfer
@@ -149,58 +150,6 @@ defmodule Explorer.Chain.TokenTransferTest do
         |> Enum.map(&{&1.transaction_hash, &1.log_index})
 
       assert token_transfers_primary_keys_paginated == [{token_transfer.transaction_hash, token_transfer.log_index}]
-    end
-  end
-
-  describe "address_to_unique_tokens/2" do
-    test "returns list of unique tokens for a token contract" do
-      token_contract_address = insert(:contract_address)
-      token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(insert(:block, number: 1))
-
-      insert(
-        :token_instance,
-        token_id: 42,
-        token_contract_address_hash: token_contract_address.hash
-      )
-
-      insert(
-        :token_transfer,
-        to_address: build(:address),
-        transaction: transaction,
-        block: transaction.block,
-        token_contract_address: token_contract_address,
-        token: token,
-        token_id: 42
-      )
-
-      another_transaction =
-        :transaction
-        |> insert()
-        |> with_block(insert(:block, number: 3))
-
-      last_owner =
-        insert(
-          :token_transfer,
-          to_address: build(:address),
-          transaction: another_transaction,
-          block: another_transaction.block,
-          token_contract_address: token_contract_address,
-          token: token,
-          token_id: 42
-        )
-
-      results =
-        token_contract_address.hash
-        |> TokenTransfer.address_to_unique_tokens()
-        |> Repo.all()
-
-      assert Enum.map(results, & &1.token_id) == [last_owner.token_id]
-      assert Enum.map(results, & &1.to_address_hash) == [last_owner.to_address_hash]
     end
   end
 

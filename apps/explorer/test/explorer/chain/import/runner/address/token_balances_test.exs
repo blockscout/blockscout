@@ -41,6 +41,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalancesTest do
                     address_hash: ^address_hash,
                     block_number: ^block_number,
                     token_contract_address_hash: ^token_contract_address_hash,
+                    token_id: nil,
                     value: ^value,
                     value_fetched_at: ^value_fetched_at
                   }
@@ -83,6 +84,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalancesTest do
                     address_hash: address_hash,
                     block_number: ^block_number,
                     token_contract_address_hash: ^token_contract_address_hash,
+                    token_id: nil,
                     value: nil,
                     value_fetched_at: ^value_fetched_at
                   }
@@ -151,6 +153,70 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalancesTest do
     }
 
     run_changes(new_changes, options)
+  end
+
+  test "set value_fetched_at to null for existing record if incoming data has this field empty" do
+    address = insert(:address)
+    token = insert(:token)
+
+    options = %{
+      timeout: :infinity,
+      timestamps: %{inserted_at: DateTime.utc_now(), updated_at: DateTime.utc_now()}
+    }
+
+    block_number = 1
+
+    value = Decimal.new(100)
+    value_fetched_at = DateTime.utc_now()
+
+    token_contract_address_hash = token.contract_address_hash
+    address_hash = address.hash
+
+    first_changes = %{
+      address_hash: address_hash,
+      block_number: block_number,
+      token_contract_address_hash: token_contract_address_hash,
+      token_id: 11,
+      token_type: "ERC-721",
+      value: value,
+      value_fetched_at: value_fetched_at
+    }
+
+    assert {:ok,
+            %{
+              address_token_balances: [
+                %TokenBalance{
+                  address_hash: address_hash,
+                  block_number: ^block_number,
+                  token_contract_address_hash: ^token_contract_address_hash,
+                  token_id: nil,
+                  value: ^value,
+                  value_fetched_at: ^value_fetched_at
+                }
+              ]
+            }} = run_changes(first_changes, options)
+
+    second_changes = %{
+      address_hash: address_hash,
+      block_number: block_number,
+      token_contract_address_hash: token_contract_address_hash,
+      token_id: 12,
+      token_type: "ERC-721"
+    }
+
+    assert {:ok,
+            %{
+              address_token_balances: [
+                %TokenBalance{
+                  address_hash: address_hash,
+                  block_number: ^block_number,
+                  token_contract_address_hash: ^token_contract_address_hash,
+                  token_id: nil,
+                  value: ^value,
+                  value_fetched_at: nil
+                }
+              ]
+            }} = run_changes(second_changes, options)
   end
 
   defp run_changes(changes, options) when is_map(changes) do

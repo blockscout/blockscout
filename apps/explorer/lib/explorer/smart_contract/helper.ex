@@ -60,8 +60,8 @@ defmodule Explorer.SmartContract.Helper do
   end
 
   @doc "Return all events on contract, return also implementation events if contract is a proxy."
-  def get_all_events(%SmartContract{address_hash: address, abi: abi} = contract) do
-    proxy = Chain.proxy_contract?(address, abi)
+  def get_all_events(%SmartContract{} = contract) do
+    proxy = contract |> SmartContract.proxy_contract?()
 
     events =
       if proxy do
@@ -82,8 +82,8 @@ defmodule Explorer.SmartContract.Helper do
     |> Enum.uniq_by(&Map.get(&1, "topic"))
   end
 
-  defp get_implementation_contract(%SmartContract{address_hash: address_hash, abi: abi}) do
-    implementation_address = Chain.get_implementation_address_hash(address_hash, abi)
+  defp get_implementation_contract(%SmartContract{} = sc) do
+    implementation_address = SmartContract.get_implementation_address_hash(sc)
     {:ok, contract} = get_verified_contract(implementation_address)
     contract
   end
