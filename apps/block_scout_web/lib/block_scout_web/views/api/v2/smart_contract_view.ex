@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
   alias Ecto.Changeset
   alias Explorer.Chain
+  alias Explorer.Chain.Hash.Address, as: HashAddress
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Visualize.Sol2uml
 
@@ -98,7 +99,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         %{result: %{error: error}, is_error: true}
 
       _ ->
-        %{result: %{output: outputs, names: names}, is_error: false}
+        %{result: %{output: Enum.map(outputs, &render_json/1), names: names}, is_error: false}
     end
   end
 
@@ -118,13 +119,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
           function
           |> Map.drop(["abi_outputs"])
 
-        outputs = Enum.map(result["outputs"], &prepare_output/1)
+        outputs = result["outputs"] |> Enum.map(&prepare_output/1)
         Map.replace(result, "outputs", outputs)
     end
   end
 
-  defp prepare_output(%{"type" => type, "value" => value} = output) do
-    Map.replace(output, "value", ABIEncodedValueView.value_json(type, value))
+  defp prepare_output(%{"value" => value, "type" => type} = output) do
+    Map.replace(output, "value", render_json(value, type))
   end
 
   defp prepare_output(output), do: output
@@ -276,5 +277,78 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       true ->
         "solidity"
     end
+  end
+
+  def render_json(%{"type" => type, "value" => value}) do
+    %{"type" => type, "value" => render_json(value, type)}
+  end
+
+  def render_json(value, type) when type in [:address, "address", "address payable"] do
+    case HashAddress.cast(value) do
+      {:ok, address} ->
+        to_string(address)
+
+      _ ->
+        ""
+    end
+  end
+
+  def render_json(value, type) when type in [:string, "string"] do
+    case HashAddress.cast(value) do
+      {:ok, address} ->
+        to_string(address)
+
+      _ ->
+        ""
+    end
+  end
+
+  def render_json(value, type) when is_tuple(value) do
+    types_string =
+      type
+      |> String.slice(6..-2)
+
+    types =
+      if String.trim(types_string) == "" do
+        []
+      else
+        types_string
+        |> String.split(",")
+      end
+
+    {tuple_types, _} =
+      types
+      |> Enum.reduce({[], nil}, fn val, acc ->
+        {arr, to_merge} = acc
+
+        if to_merge do
+          SmartContractView.compose_array_if_to_merge(arr, val, to_merge)
+        else
+          SmartContractView.compose_array_else(arr, val, to_merge)
+        end
+      end)
+
+    values_list =
+      value
+      |> Tuple.to_list()
+
+    values_types_list = Enum.zip(tuple_types, values_list)
+
+    values_types_list
+    |> Enum.map(fn {type, value} ->
+      render_json(value, type)
+    end)
+  end
+
+  def render_json(value, type) when is_list(value) do
+    value |> Enum.map(&render_json(&1, type))
+  end
+
+  def render_json(value, _type) when is_binary(value) do
+    SmartContractView.binary_to_utf_string(value)
+  end
+
+  def render_json(value, _type) do
+    value
   end
 end

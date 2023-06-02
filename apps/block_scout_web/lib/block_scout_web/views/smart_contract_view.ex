@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "address") ->
         values =
           value
-          |> Enum.map_join(", ", &binary_to_utf_string(&1))
+          |> Enum.map_join(", ", &cast_address(&1))
 
         render_array_type_value(type, values, fetch_name(names, index))
 
@@ -116,6 +116,16 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def values_with_type(value, :error, _components),
     do: render_type_value("error", Helper.sanitize_input(value), "error")
+
+  defp cast_address(value) do
+    case HashAddress.cast(value) do
+      {:ok, address} ->
+        to_string(address)
+
+      _ ->
+        "(decoding error)"
+    end
+  end
 
   defp fetch_name(nil, _index), do: nil
 
@@ -174,7 +184,7 @@ defmodule BlockScoutWeb.SmartContractView do
     end)
   end
 
-  defp compose_array_if_to_merge(arr, val, to_merge) do
+  def compose_array_if_to_merge(arr, val, to_merge) do
     if count_string_symbols(val)["]"] > count_string_symbols(val)["["] do
       updated_arr = update_last_list_item(arr, val)
       {updated_arr, !to_merge}
@@ -184,7 +194,7 @@ defmodule BlockScoutWeb.SmartContractView do
     end
   end
 
-  defp compose_array_else(arr, val, to_merge) do
+  def compose_array_else(arr, val, to_merge) do
     if count_string_symbols(val)["["] > count_string_symbols(val)["]"] do
       # credo:disable-for-next-line
       {arr ++ [val], !to_merge}
@@ -214,7 +224,7 @@ defmodule BlockScoutWeb.SmartContractView do
     end)
   end
 
-  defp binary_to_utf_string(item) do
+  def binary_to_utf_string(item) do
     case Integer.parse(to_string(item)) do
       {item_integer, ""} ->
         to_string(item_integer)
@@ -229,11 +239,7 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   defp add_0x(item) do
-    if String.starts_with?(item, "0x") do
-      item
-    else
-      "0x" <> Base.encode16(item, case: :lower)
-    end
+    "0x" <> Base.encode16(item, case: :lower)
   end
 
   defp render_type_value(type, value, type) do
@@ -250,7 +256,7 @@ defmodule BlockScoutWeb.SmartContractView do
     render_type_value(type, value_to_display, name)
   end
 
-  defp supplement_type_with_components(type, components) do
+  def supplement_type_with_components(type, components) do
     if type == "tuple" && components do
       types =
         components
