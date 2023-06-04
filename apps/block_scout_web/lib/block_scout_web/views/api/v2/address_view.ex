@@ -43,13 +43,13 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   def render("addresses.json", %{
         addresses: addresses,
         next_page_params: next_page_params,
-        exchange_rate: exchange_rate,
+        exchange_rate_usd: exchange_rate_usd,
         total_supply: total_supply
       }) do
     %{
       items: Enum.map(addresses, &prepare_address/1),
       next_page_params: next_page_params,
-      exchange_rate: exchange_rate.usd_value,
+      exchange_rate: exchange_rate_usd,
       total_supply: total_supply && to_string(total_supply)
     }
   end
@@ -78,7 +78,10 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       end
 
     balance = address.fetched_coin_balance && address.fetched_coin_balance.value
-    exchange_rate = (Market.get_exchange_rate(Explorer.coin()) || Token.null()).usd_value
+
+    exchange_rate =
+      (Market.get_exchange_rate(Explorer.coin()) || Token.null()).usd_value ||
+        Market.get_native_coin_exchange_rate_from_db()
 
     creator_hash = AddressView.from_address_hash(address)
     creation_tx = creator_hash && AddressView.transaction_hash(address)

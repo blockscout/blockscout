@@ -397,7 +397,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
     next_page_params = next_page_params(next_page, addresses, params)
 
-    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate =
+      (Market.get_exchange_rate(Explorer.coin()) || Token.null()).usd_value ||
+        Market.get_native_coin_exchange_rate_from_db()
+
     total_supply = Chain.total_supply()
 
     conn
@@ -405,7 +408,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     |> render(:addresses, %{
       addresses: addresses,
       next_page_params: next_page_params,
-      exchange_rate: exchange_rate,
+      exchange_rate_usd: exchange_rate,
       total_supply: total_supply
     })
   end
