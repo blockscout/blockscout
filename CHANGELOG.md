@@ -12,11 +12,11 @@
 
 ### Fixes
 
-- [#7566](https://github.com/blockscout/blockscout/pull/7566) - Account: check composed email beofre sending
+- [#7566](https://github.com/blockscout/blockscout/pull/7566) - Account: check composed email before sending
 - [#7564](https://github.com/blockscout/blockscout/pull/7564) - Return contract type in address view
 - [#7562](https://github.com/blockscout/blockscout/pull/7562) - Remove fallback from Read methods
 - [#7537](https://github.com/blockscout/blockscout/pull/7537), [#7553](https://github.com/blockscout/blockscout/pull/7553) - Withdrawals fixes and improvements
-- [#7546](https://github.com/blockscout/blockscout/pull/7546) - API v2: fix today coin price (use in-memory or cached in DB value)
+- [#7546](https://github.com/blockscout/blockscout/pull/7546), [#7624](https://github.com/blockscout/blockscout/pull/7624) - API v2: fix today coin price (use in-memory or cached in DB value)
 - [#7545](https://github.com/blockscout/blockscout/pull/7545) - API v2: Check if cached exchange rate is empty before replacing DB value in stats API
 - [#7516](https://github.com/blockscout/blockscout/pull/7516) - Fix shrinking logo in Safari
 - [#7590](https://github.com/blockscout/blockscout/pull/7590) - Drop genesis block in internal transactions fetcher
