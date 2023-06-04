@@ -78,7 +78,7 @@ defmodule Explorer.Chain.Address.TokenBalanceTest do
     end
   end
 
-  describe "fetch_token_balance/3" do
+  describe "fetch_token_balance/4" do
     test "returns the token balance for the given address" do
       token_balance = insert(:token_balance)
 
