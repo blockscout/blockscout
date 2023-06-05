@@ -12,6 +12,7 @@
 
 ### Fixes
 
+- [#7636](https://github.com/blockscout/blockscout/pull/7636) - Remove receive from read methods
 - [#7635](https://github.com/blockscout/blockscout/pull/7635) - Fix single 1155 transfer displaying
 - [#7629](https://github.com/blockscout/blockscout/pull/7629) - Fix NFT fetcher
 - [#7614](https://github.com/blockscout/blockscout/pull/7614) - API and smart-contracts fixes and improvements
