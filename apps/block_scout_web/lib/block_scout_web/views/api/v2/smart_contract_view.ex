@@ -7,7 +7,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
   alias Ecto.Changeset
   alias Explorer.Chain
-  alias Explorer.Chain.Hash.Address, as: HashAddress
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Visualize.Sol2uml
 
@@ -124,7 +123,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     end
   end
 
-  defp prepare_output(%{"value" => value, "type" => type} = output) do
+  defp prepare_output(%{"type" => type, "value" => value} = output) do
     Map.replace(output, "value", render_json(value, type))
   end
 
@@ -284,57 +283,16 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   end
 
   def render_json(value, type) when type in [:address, "address", "address payable"] do
-    case HashAddress.cast(value) do
-      {:ok, address} ->
-        to_string(address)
-
-      _ ->
-        ""
-    end
+    SmartContractView.cast_address(value)
   end
 
   def render_json(value, type) when type in [:string, "string"] do
-    case HashAddress.cast(value) do
-      {:ok, address} ->
-        to_string(address)
-
-      _ ->
-        ""
-    end
+    to_string(value)
   end
 
   def render_json(value, type) when is_tuple(value) do
-    types_string =
-      type
-      |> String.slice(6..-2)
-
-    types =
-      if String.trim(types_string) == "" do
-        []
-      else
-        types_string
-        |> String.split(",")
-      end
-
-    {tuple_types, _} =
-      types
-      |> Enum.reduce({[], nil}, fn val, acc ->
-        {arr, to_merge} = acc
-
-        if to_merge do
-          SmartContractView.compose_array_if_to_merge(arr, val, to_merge)
-        else
-          SmartContractView.compose_array_else(arr, val, to_merge)
-        end
-      end)
-
-    values_list =
-      value
-      |> Tuple.to_list()
-
-    values_types_list = Enum.zip(tuple_types, values_list)
-
-    values_types_list
+    value
+    |> SmartContractView.zip_tuple_values_with_types(type)
     |> Enum.map(fn {type, value} ->
       render_json(value, type)
     end)

@@ -6,6 +6,8 @@ defmodule BlockScoutWeb.SmartContractView do
   alias Explorer.Chain.Hash.Address, as: HashAddress
   alias Explorer.SmartContract.Helper
 
+  require Logger
+
   def queryable?(inputs) when not is_nil(inputs), do: Enum.any?(inputs)
 
   def queryable?(inputs) when is_nil(inputs), do: false
@@ -117,12 +119,13 @@ defmodule BlockScoutWeb.SmartContractView do
   def values_with_type(value, :error, _components),
     do: render_type_value("error", Helper.sanitize_input(value), "error")
 
-  defp cast_address(value) do
+  def cast_address(value) do
     case HashAddress.cast(value) do
       {:ok, address} ->
         to_string(address)
 
       _ ->
+        Logger.warn(fn -> ["Error decoding address value: #{inspect(value)}"] end)
         "(decoding error)"
     end
   end
@@ -147,6 +150,15 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   defp tuple_to_array(value, type, names) do
+    value
+    |> zip_tuple_values_with_types(type)
+    |> Enum.with_index()
+    |> Enum.map(fn {{type, value}, index} ->
+      values_with_type(value, type, fetch_name(names, index), 0)
+    end)
+  end
+
+  def zip_tuple_values_with_types(value, type) do
     types_string =
       type
       |> String.slice(6..-2)
@@ -175,13 +187,7 @@ defmodule BlockScoutWeb.SmartContractView do
       value
       |> Tuple.to_list()
 
-    values_types_list = Enum.zip(tuple_types, values_list)
-
-    values_types_list
-    |> Enum.with_index()
-    |> Enum.map(fn {{type, value}, index} ->
-      values_with_type(value, type, fetch_name(names, index), 0)
-    end)
+    Enum.zip(tuple_types, values_list)
   end
 
   def compose_array_if_to_merge(arr, val, to_merge) do
