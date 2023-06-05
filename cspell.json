@@ -518,7 +518,8 @@
         "zkbob",
         "erts",
         "Asfpp",
-        "Nerg"
+        "Nerg",
+        "Sepolia"
     ],
     "enableFiletypes": [
         "dotenv",
