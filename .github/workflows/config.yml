@@ -4,9 +4,22 @@ on:
   push:
     branches:
       - master
+      - va-bedrock-optimism
+      - production-optimism-stg
+      - production-eth-stg-experimental
+      - production-base-goerli-stg
+      - production-xdai-stg
+      - production-gc-chiado-stg
+      - production-polygon-supernets-stg
+      - production-core-stg
+      - production-sokol-stg
+      - production-rsk-stg
+      - production-lukso-stg
+      - staging-l2
   pull_request:
     branches:
       - master
+      - va-bedrock-optimism
 
 env:
   MIX_ENV: test
