@@ -12,6 +12,7 @@
 
 ### Fixes
 
+- [#7635](https://github.com/blockscout/blockscout/pull/7635) - Fix single 1155 transfer displaying
 - [#7611](https://github.com/blockscout/blockscout/pull/7611) - Fix tokens pagination
 - [#7566](https://github.com/blockscout/blockscout/pull/7566) - Account: check composed email beofre sending
 - [#7564](https://github.com/blockscout/blockscout/pull/7564) - Return contract type in address view
