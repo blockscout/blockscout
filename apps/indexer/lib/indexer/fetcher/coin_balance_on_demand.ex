@@ -15,7 +15,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
 
   alias EthereumJSONRPC.FetchedBalances
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Hash}
   alias Explorer.Chain.Address.{CoinBalance, CoinBalanceDaily}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Counters.AverageBlockTime
@@ -48,6 +48,11 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
       stale_balance_window ->
         do_trigger_fetch(address, latest_block_number, stale_balance_window)
     end
+  end
+
+  @spec trigger_historic_fetch(Hash.Address.t(), non_neg_integer()) :: balance_status
+  def trigger_historic_fetch(address_hash, block_number) do
+    do_trigger_historic_fetch(address_hash, block_number)
   end
 
   ## Callbacks
@@ -132,6 +137,12 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
       )
 
     do_trigger_balance_fetch_query(address, latest_block_number, stale_balance_window, latest, latest_by_day)
+  end
+
+  defp do_trigger_historic_fetch(address_hash, block_number) do
+    GenServer.cast(__MODULE__, {:fetch_and_import, block_number, %{hash: address_hash}})
+
+    {:stale, 0}
   end
 
   defp do_trigger_balance_fetch_query(
