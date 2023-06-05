@@ -6,8 +6,9 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, OptimismOutputRoot, OptimismWithdrawalEvent, Transaction}
+  alias Explorer.Chain.Cache.OptimismFinalizationPeriod
 
-  @challenge_period 604_800
+  @default_challenge_period 604_800
 
   def render("optimism_txn_batches.json", %{
         batches: batches,
@@ -175,10 +176,16 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         {"Ready to prove", nil}
       end
     else
-      if DateTime.compare(l1_timestamp, DateTime.add(DateTime.utc_now(), -@challenge_period, :second)) == :lt do
+      challenge_period =
+        case OptimismFinalizationPeriod.get_period() do
+          nil -> @default_challenge_period
+          period -> period
+        end
+
+      if DateTime.compare(l1_timestamp, DateTime.add(DateTime.utc_now(), -challenge_period, :second)) == :lt do
         {"Ready for relay", nil}
       else
-        {"In challenge period", DateTime.add(l1_timestamp, @challenge_period, :second)}
+        {"In challenge period", DateTime.add(l1_timestamp, challenge_period, :second)}
       end
     end
   end
