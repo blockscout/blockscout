@@ -117,11 +117,7 @@ defmodule EthereumJSONRPC.Receipt do
           created_contract_address_hash: String.t() | nil,
           status: status(),
           transaction_hash: String.t(),
-          transaction_index: non_neg_integer(),
-          l1_fee: non_neg_integer(),
-          l1_fee_scalar: Decimal.t() | nil,
-          l1_gas_price: non_neg_integer(),
-          l1_gas_used: non_neg_integer()
+          transaction_index: non_neg_integer()
         }
   def elixir_to_params(
         %{
