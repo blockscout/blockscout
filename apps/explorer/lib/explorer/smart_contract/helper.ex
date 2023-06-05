@@ -24,7 +24,8 @@ defmodule Explorer.SmartContract.Helper do
   @spec read_with_wallet_method?(%{}) :: true | false
   def read_with_wallet_method?(function),
     do:
-      !error?(function) && !event?(function) && !constructor?(function) && !fallback?(function) && nonpayable?(function) &&
+      !error?(function) && !event?(function) && !constructor?(function) && !fallback?(function) &&
+        nonpayable?(function) &&
         !empty_outputs?(function)
 
   def empty_inputs?(function), do: function["inputs"] == []

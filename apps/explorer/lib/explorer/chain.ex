@@ -1512,7 +1512,8 @@ defmodule Explorer.Chain do
         symbol: token.symbol,
         holder_count: token.holder_count,
         inserted_at: token.inserted_at,
-        block_number: 0
+        block_number: 0,
+        icon_url: token.icon_url
       }
     )
   end
@@ -1531,7 +1532,8 @@ defmodule Explorer.Chain do
         symbol: ^nil,
         holder_count: ^nil,
         inserted_at: address.inserted_at,
-        block_number: 0
+        block_number: 0,
+        icon_url: nil
       }
     )
   end
@@ -1559,7 +1561,8 @@ defmodule Explorer.Chain do
             symbol: ^nil,
             holder_count: ^nil,
             inserted_at: address.inserted_at,
-            block_number: 0
+            block_number: 0,
+            icon_url: nil
           }
         )
 
@@ -1582,7 +1585,8 @@ defmodule Explorer.Chain do
             symbol: ^nil,
             holder_count: ^nil,
             inserted_at: transaction.inserted_at,
-            block_number: 0
+            block_number: 0,
+            icon_url: nil
           }
         )
 
@@ -1605,7 +1609,8 @@ defmodule Explorer.Chain do
             symbol: ^nil,
             holder_count: ^nil,
             inserted_at: block.inserted_at,
-            block_number: block.number
+            block_number: block.number,
+            icon_url: nil
           }
         )
 
@@ -1623,7 +1628,8 @@ defmodule Explorer.Chain do
                 symbol: ^nil,
                 holder_count: ^nil,
                 inserted_at: block.inserted_at,
-                block_number: block.number
+                block_number: block.number,
+                icon_url: nil
               }
             )
 

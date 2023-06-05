@@ -98,7 +98,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         %{result: %{error: error}, is_error: true}
 
       _ ->
-        %{result: %{output: outputs, names: names}, is_error: false}
+        %{result: %{output: Enum.map(outputs, &render_json/1), names: names}, is_error: false}
     end
   end
 
@@ -118,13 +118,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
           function
           |> Map.drop(["abi_outputs"])
 
-        outputs = Enum.map(result["outputs"], &prepare_output/1)
+        outputs = result["outputs"] |> Enum.map(&prepare_output/1)
         Map.replace(result, "outputs", outputs)
     end
   end
 
   defp prepare_output(%{"type" => type, "value" => value} = output) do
-    Map.replace(output, "value", ABIEncodedValueView.value_json(type, value))
+    Map.replace(output, "value", render_json(value, type))
   end
 
   defp prepare_output(output), do: output
@@ -276,5 +276,37 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       true ->
         "solidity"
     end
+  end
+
+  def render_json(%{"type" => type, "value" => value}) do
+    %{"type" => type, "value" => render_json(value, type)}
+  end
+
+  def render_json(value, type) when type in [:address, "address", "address payable"] do
+    SmartContractView.cast_address(value)
+  end
+
+  def render_json(value, type) when type in [:string, "string"] do
+    to_string(value)
+  end
+
+  def render_json(value, type) when is_tuple(value) do
+    value
+    |> SmartContractView.zip_tuple_values_with_types(type)
+    |> Enum.map(fn {type, value} ->
+      render_json(value, type)
+    end)
+  end
+
+  def render_json(value, type) when is_list(value) do
+    value |> Enum.map(&render_json(&1, type))
+  end
+
+  def render_json(value, _type) when is_binary(value) do
+    SmartContractView.binary_to_utf_string(value)
+  end
+
+  def render_json(value, _type) do
+    value
   end
 end
