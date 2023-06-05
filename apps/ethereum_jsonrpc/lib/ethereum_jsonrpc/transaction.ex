@@ -135,7 +135,6 @@ defmodule EthereumJSONRPC.Transaction do
       ...>     "blockNumber" => 46147,
       ...>     "from" => "0xa1e4380a3b1f749673e270229993ee55f35663b4",
       ...>     "gas" => 21000,
-      ...>     "gasPrice" => 50000000000000,
       ...>     "hash" => "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
       ...>     "input" => "0x",
       ...>     "nonce" => 0,
@@ -153,7 +152,6 @@ defmodule EthereumJSONRPC.Transaction do
         block_number: 46147,
         from_address_hash: "0xa1e4380a3b1f749673e270229993ee55f35663b4",
         gas: 21000,
-        gas_price: 50000000000000,
         hash: "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
         index: 0,
         input: "0x",
@@ -164,7 +162,8 @@ defmodule EthereumJSONRPC.Transaction do
         type: 2,
         v: 28,
         value: 31337,
-        transaction_index: 0
+        transaction_index: 0,
+        gas_price: 0
       }
 
       iex> EthereumJSONRPC.Transaction.elixir_to_params(
