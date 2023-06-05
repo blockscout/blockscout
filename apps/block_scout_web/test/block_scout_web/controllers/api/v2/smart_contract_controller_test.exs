@@ -463,6 +463,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
         },
         %{"type" => "fallback"},
+        %{"type" => "receive"},
         %{
           "type" => "function",
           "stateMutability" => "view",
@@ -626,6 +627,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
              } in response
 
       refute %{"type" => "fallback"} in response
+      refute %{"type" => "receive"} in response
     end
 
     test "get array of addresses within read-methods", %{conn: conn} do
