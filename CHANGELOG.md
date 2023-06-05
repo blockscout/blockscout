@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#7628](https://github.com/blockscout/blockscout/pull/7628) - Support partially verified property from verifier MS; Add property to track contracts automatically verified via eth-bytecode-db
 - [#7603](https://github.com/blockscout/blockscout/pull/7603) - Add Polygon Edge and optimism genesis files support
 - [#7513](https://github.com/blockscout/blockscout/pull/7513) - Add Polygon Edge support
 - [#7532](https://github.com/blockscout/blockscout/pull/7532) - Handle empty id in json rpc responses
