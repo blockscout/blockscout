@@ -196,7 +196,8 @@ defmodule BlockScoutWeb.SmartContractController do
             %{method_id: params["method_id"], args: args},
             contract_type,
             params["from"],
-            address.smart_contract && address.smart_contract.abi
+            address.smart_contract && address.smart_contract.abi,
+            true
           )
         end
 

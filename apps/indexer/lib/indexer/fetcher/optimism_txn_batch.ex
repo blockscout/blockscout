@@ -346,6 +346,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       {:ok, %Blocks{transactions_params: transactions_params, blocks_params: blocks_params, errors: []}} ->
         from_block.._ = block_range
         transactions_filtered = txs_filter_sort(transactions_params, batch_submitter, batch_inbox)
+
         get_txn_batches_inner(
           transactions_filtered,
           blocks_params,

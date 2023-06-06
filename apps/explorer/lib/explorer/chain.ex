@@ -265,7 +265,7 @@ defmodule Explorer.Chain do
 
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    if direction == nil do
+    if direction == nil || direction == "" do
       query_to_address_hash_wrapped =
         InternalTransaction
         |> InternalTransaction.where_nonpending_block()
@@ -638,74 +638,6 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
-  @doc """
-  address_hash_to_token_transfers_including_contract/2 function returns token transfers on address (to/from/contract).
-  It is used by CSV export of token transfers button.
-  """
-  @spec address_hash_to_token_transfers_including_contract(Hash.Address.t(), Keyword.t()) :: [TokenTransfer.t()]
-  def address_hash_to_token_transfers_including_contract(address_hash, options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    from_block = Keyword.get(options, :from_block)
-    to_block = Keyword.get(options, :to_block)
-
-    query =
-      from_block
-      |> query_address_hash_to_token_transfers_including_contract(to_block, address_hash)
-      |> order_by([token_transfer], asc: token_transfer.block_number, asc: token_transfer.log_index)
-
-    query
-    |> handle_token_transfer_paging_options(paging_options)
-    |> preload(transaction: :block)
-    |> preload(:token)
-    |> Repo.all()
-  end
-
-  defp query_address_hash_to_token_transfers_including_contract(nil, to_block, address_hash)
-       when not is_nil(to_block) do
-    from(
-      token_transfer in TokenTransfer,
-      where:
-        (token_transfer.to_address_hash == ^address_hash or
-           token_transfer.from_address_hash == ^address_hash or
-           token_transfer.token_contract_address_hash == ^address_hash) and
-          token_transfer.block_number <= ^to_block
-    )
-  end
-
-  defp query_address_hash_to_token_transfers_including_contract(from_block, nil, address_hash)
-       when not is_nil(from_block) do
-    from(
-      token_transfer in TokenTransfer,
-      where:
-        (token_transfer.to_address_hash == ^address_hash or
-           token_transfer.from_address_hash == ^address_hash or
-           token_transfer.token_contract_address_hash == ^address_hash) and
-          token_transfer.block_number >= ^from_block
-    )
-  end
-
-  defp query_address_hash_to_token_transfers_including_contract(from_block, to_block, address_hash)
-       when not is_nil(from_block) and not is_nil(to_block) do
-    from(
-      token_transfer in TokenTransfer,
-      where:
-        (token_transfer.to_address_hash == ^address_hash or
-           token_transfer.from_address_hash == ^address_hash or
-           token_transfer.token_contract_address_hash == ^address_hash) and
-          (token_transfer.block_number >= ^from_block and token_transfer.block_number <= ^to_block)
-    )
-  end
-
-  defp query_address_hash_to_token_transfers_including_contract(_, _, address_hash) do
-    from(
-      token_transfer in TokenTransfer,
-      where:
-        token_transfer.to_address_hash == ^address_hash or
-          token_transfer.from_address_hash == ^address_hash or
-          token_transfer.token_contract_address_hash == ^address_hash
-    )
-  end
-
   @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
   def address_to_logs(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
@@ -754,6 +686,8 @@ defmodule Explorer.Chain do
   end
 
   defp filter_topic(base_query, nil), do: base_query
+
+  defp filter_topic(base_query, ""), do: base_query
 
   defp filter_topic(base_query, topic) do
     from(log in base_query,
@@ -992,9 +926,10 @@ defmodule Explorer.Chain do
       `:key` (a tuple of the lowest/oldest `{index}`) and. Results will be the transactions older than
       the `index` that are passed.
   """
-  @spec block_to_transactions(Hash.Full.t(), [paging_options | necessity_by_association_option], true | false) :: [
-          Transaction.t()
-        ]
+  @spec block_to_transactions(Hash.Full.t(), [paging_options | necessity_by_association_option | api?()], true | false) ::
+          [
+            Transaction.t()
+          ]
   def block_to_transactions(block_hash, options \\ [], old_ui? \\ true) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -1587,7 +1522,8 @@ defmodule Explorer.Chain do
         symbol: token.symbol,
         holder_count: token.holder_count,
         inserted_at: token.inserted_at,
-        block_number: 0
+        block_number: 0,
+        icon_url: token.icon_url
       }
     )
   end
@@ -1606,7 +1542,8 @@ defmodule Explorer.Chain do
         symbol: ^nil,
         holder_count: ^nil,
         inserted_at: address.inserted_at,
-        block_number: 0
+        block_number: 0,
+        icon_url: nil
       }
     )
   end
@@ -1634,7 +1571,8 @@ defmodule Explorer.Chain do
             symbol: ^nil,
             holder_count: ^nil,
             inserted_at: address.inserted_at,
-            block_number: 0
+            block_number: 0,
+            icon_url: nil
           }
         )
 
@@ -1657,7 +1595,8 @@ defmodule Explorer.Chain do
             symbol: ^nil,
             holder_count: ^nil,
             inserted_at: transaction.inserted_at,
-            block_number: 0
+            block_number: 0,
+            icon_url: nil
           }
         )
 
@@ -1680,7 +1619,8 @@ defmodule Explorer.Chain do
             symbol: ^nil,
             holder_count: ^nil,
             inserted_at: block.inserted_at,
-            block_number: block.number
+            block_number: block.number,
+            icon_url: nil
           }
         )
 
@@ -1698,7 +1638,8 @@ defmodule Explorer.Chain do
                 symbol: ^nil,
                 holder_count: ^nil,
                 inserted_at: block.inserted_at,
-                block_number: block.number
+                block_number: block.number,
+                icon_url: nil
               }
             )
 
@@ -2737,7 +2678,12 @@ defmodule Explorer.Chain do
 
   defp base_token_query(empty_type) when empty_type in [nil, []] do
     from(t in Token,
-      order_by: [desc_nulls_last: t.circulating_market_cap, desc_nulls_last: t.holder_count, asc: t.name],
+      order_by: [
+        desc_nulls_last: t.circulating_market_cap,
+        desc_nulls_last: t.holder_count,
+        asc: t.name,
+        asc: t.contract_address_hash
+      ],
       preload: [:contract_address]
     )
   end
@@ -2745,7 +2691,12 @@ defmodule Explorer.Chain do
   defp base_token_query(token_types) when is_list(token_types) do
     from(t in Token,
       where: t.type in ^token_types,
-      order_by: [desc_nulls_last: t.circulating_market_cap, desc_nulls_last: t.holder_count, asc: t.name],
+      order_by: [
+        desc_nulls_last: t.circulating_market_cap,
+        desc_nulls_last: t.holder_count,
+        asc: t.name,
+        asc: t.contract_address_hash
+      ],
       preload: [:contract_address]
     )
   end
@@ -3957,7 +3908,7 @@ defmodule Explorer.Chain do
       the `index` that are passed.
 
   """
-  @spec transaction_to_token_transfers(Hash.Full.t(), [paging_options | necessity_by_association_option]) :: [
+  @spec transaction_to_token_transfers(Hash.Full.t(), [paging_options | necessity_by_association_option | api?()]) :: [
           TokenTransfer.t()
         ]
   def transaction_to_token_transfers(transaction_hash, options \\ []) when is_list(options) do
@@ -4752,14 +4703,6 @@ defmodule Explorer.Chain do
     |> limit(^paging_options.page_size)
   end
 
-  defp handle_token_transfer_paging_options(query, nil), do: query
-
-  defp handle_token_transfer_paging_options(query, paging_options) do
-    query
-    |> TokenTransfer.page_token_transfer(paging_options)
-    |> limit(^paging_options.page_size)
-  end
-
   defp handle_withdrawals_paging_options(query, nil), do: query
 
   defp handle_withdrawals_paging_options(query, paging_options) do
@@ -4889,23 +4832,57 @@ defmodule Explorer.Chain do
 
   defp page_tokens(query, %PagingOptions{key: nil}), do: query
 
-  defp page_tokens(query, %PagingOptions{key: {nil, holder_count, name}}) do
+  defp page_tokens(query, %PagingOptions{key: {circulating_market_cap, holder_count, name, contract_address_hash}}) do
     from(token in query,
-      where:
-        is_nil(token.circulating_market_cap) and
-          (token.holder_count < ^holder_count or (token.holder_count == ^holder_count and token.name > ^name))
+      where: ^page_tokens_circulating_market_cap(circulating_market_cap, holder_count, name, contract_address_hash)
     )
   end
 
-  defp page_tokens(query, %PagingOptions{key: {circulating_market_cap, holder_count, name}}) do
-    from(token in query,
-      where:
-        is_nil(token.circulating_market_cap) or
-          (token.circulating_market_cap < ^circulating_market_cap or
-             (token.circulating_market_cap == ^circulating_market_cap and token.holder_count < ^holder_count) or
-             (token.circulating_market_cap == ^circulating_market_cap and token.holder_count == ^holder_count and
-                token.name > ^name))
+  defp page_tokens_circulating_market_cap(nil, holder_count, name, contract_address_hash) do
+    dynamic(
+      [t],
+      is_nil(t.circulating_market_cap) and ^page_tokens_holder_count(holder_count, name, contract_address_hash)
     )
+  end
+
+  defp page_tokens_circulating_market_cap(circulating_market_cap, holder_count, name, contract_address_hash) do
+    dynamic(
+      [t],
+      is_nil(t.circulating_market_cap) or t.circulating_market_cap < ^circulating_market_cap or
+        (t.circulating_market_cap == ^circulating_market_cap and
+           ^page_tokens_holder_count(holder_count, name, contract_address_hash))
+    )
+  end
+
+  defp page_tokens_holder_count(nil, name, contract_address_hash) do
+    dynamic(
+      [t],
+      is_nil(t.holder_count) and ^page_tokens_name(name, contract_address_hash)
+    )
+  end
+
+  defp page_tokens_holder_count(holder_count, name, contract_address_hash) do
+    dynamic(
+      [t],
+      is_nil(t.holder_count) or t.holder_count < ^holder_count or
+        (t.holder_count == ^holder_count and ^page_tokens_name(name, contract_address_hash))
+    )
+  end
+
+  defp page_tokens_name(nil, contract_address_hash) do
+    dynamic([t], is_nil(t.name) and ^page_tokens_contract_address_hash(contract_address_hash))
+  end
+
+  defp page_tokens_name(name, contract_address_hash) do
+    dynamic(
+      [t],
+      is_nil(t.name) or
+        (t.name > ^name or (t.name == ^name and ^page_tokens_contract_address_hash(contract_address_hash)))
+    )
+  end
+
+  defp page_tokens_contract_address_hash(contract_address_hash) do
+    dynamic([t], t.contract_address_hash > ^contract_address_hash)
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
@@ -5673,16 +5650,16 @@ defmodule Explorer.Chain do
     %{balance | block_timestamp: formatted_date}
   end
 
-  def get_token_balance(address_hash, token_contract_address_hash, block_number) do
-    query = TokenBalance.fetch_token_balance(address_hash, token_contract_address_hash, block_number)
+  def get_token_balance(address_hash, token_contract_address_hash, block_number, token_id \\ nil, options \\ []) do
+    query = TokenBalance.fetch_token_balance(address_hash, token_contract_address_hash, block_number, token_id)
 
-    Repo.one(query)
+    select_repo(options).one(query)
   end
 
-  def get_coin_balance(address_hash, block_number) do
+  def get_coin_balance(address_hash, block_number, options \\ []) do
     query = CoinBalance.fetch_coin_balance(address_hash, block_number)
 
-    Repo.one(query)
+    select_repo(options).one(query)
   end
 
   @spec address_to_balances_by_day(Hash.Address.t(), [api?]) :: [balance_by_day]

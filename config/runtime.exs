@@ -170,9 +170,12 @@ exchange_rates_coin = System.get_env("EXCHANGE_RATES_COIN")
 config :explorer,
   coin: System.get_env("COIN") || exchange_rates_coin || "ETH",
   coin_name: System.get_env("COIN_NAME") || exchange_rates_coin || "ETH",
-  allowed_evm_versions:
-    System.get_env("CONTRACT_VERIFICATION_ALLOWED_EVM_VERSIONS") ||
-      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,paris,default",
+  allowed_solidity_evm_versions:
+    System.get_env("CONTRACT_VERIFICATION_ALLOWED_SOLIDITY_EVM_VERSIONS") ||
+      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,paris,shanghai,default",
+  allowed_vyper_evm_versions:
+    System.get_env("CONTRACT_VERIFICATION_ALLOWED_VYPER_EVM_VERSIONS") ||
+      "byzantium,constantinople,petersburg,istanbul,berlin,paris,shanghai,default",
   include_uncles_in_average_block_time: ConfigHelper.parse_bool_env_var("UNCLES_IN_AVERAGE_BLOCK_TIME"),
   healthy_blocks_period: ConfigHelper.parse_time_env_var("HEALTHY_BLOCKS_PERIOD", "5m"),
   realtime_events_sender:
