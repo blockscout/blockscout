@@ -26,14 +26,6 @@ const grid = {
   drawOnChartArea: false
 }
 
-function getTxChartColor () {
-  if ((isDarkMode())) {
-    return sassVariables.dashboardLineColorTransactionsDarkTheme
-  } else {
-    return sassVariables.dashboardLineColorTransactions
-  }
-}
-
 function getPriceChartColor () {
   if ((isDarkMode())) {
     return sassVariables.dashboardLineColorPriceDarkTheme
@@ -261,8 +253,8 @@ class MarketHistoryChart {
       pointRadius: 0,
       backgroundColor: function (context) {
         const chart = context.chart
-        const {ctx, chartArea} = chart
-      
+        const { ctx, chartArea } = chart
+
         if (!chartArea) {
           return
         }
@@ -270,13 +262,13 @@ class MarketHistoryChart {
       },
       borderColor: function (context) {
         const chart = context.chart
-        const {ctx, chartArea} = chart
-      
+        const { ctx, chartArea } = chart
+
         if (!chartArea) {
           return
         }
         return getGradient(ctx, chartArea)
-      },
+      }
       // lineTension: 0
     }
 
@@ -365,10 +357,8 @@ export function createMarketHistoryChart (el) {
   return chart
 }
 
-function getGradient(ctx, chartArea) {
-  const chartWidth = chartArea.right - chartArea.left
-  const chartHeight = chartArea.bottom - chartArea.top
-  var gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top)
+function getGradient (ctx, chartArea) {
+  const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top)
   gradient.addColorStop(0, '#E93434')
   gradient.addColorStop(1, '#861BF5')
 
