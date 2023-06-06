@@ -232,9 +232,66 @@ defmodule Explorer.GraphQL do
     )
   end
 
-  def token_txtransfers_query_for_address(address_hash) do
-    token_txtransfers_query()
-    |> where([t], t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash)
+  def token_txtransfers_query_for_address(address_hash, first) do
+    tt_limit = first * 2
+
+    tokens =
+      from(
+        tt in TokenTransfer,
+        where: not is_nil(tt.transaction_hash),
+        where: tt.to_address_hash == ^address_hash,
+        or_where: tt.from_address_hash == ^address_hash,
+        select: %{
+          transaction_hash: tt.transaction_hash,
+          block_number: tt.block_number,
+          to_address_hash: tt.to_address_hash,
+          from_address_hash: tt.from_address_hash
+        },
+        distinct: [desc: tt.block_number, desc: tt.transaction_hash],
+        order_by: [
+          desc: tt.block_number,
+          desc: tt.transaction_hash,
+          desc: tt.from_address_hash,
+          desc: tt.to_address_hash
+        ],
+        limit: ^tt_limit,
+        offset: 0
+      )
+
+    from(
+      tt in subquery(tokens),
+      as: :token_transfer,
+      inner_join: tx in Transaction,
+      as: :transaction,
+      on: tx.hash == tt.transaction_hash,
+      inner_join: b in Block,
+      on: tx.block_hash == b.hash,
+      left_join: token in Token,
+      on: tx.gas_currency_hash == token.contract_address_hash,
+      select: %{
+        transaction_hash: tt.transaction_hash,
+        to_address_hash: tt.to_address_hash,
+        from_address_hash: tt.from_address_hash,
+        gas_used: tx.gas_used,
+        gas_price: tx.gas_price,
+        fee_currency: tx.gas_currency_hash,
+        fee_token: fragment("coalesce(?, 'CELO')", token.symbol),
+        gateway_fee: tx.gateway_fee,
+        gateway_fee_recipient: tx.gas_fee_recipient_hash,
+        timestamp: b.timestamp,
+        input: tx.input,
+        nonce: tx.nonce,
+        block_number: tt.block_number
+      },
+      limit: ^first
+    )
+    |> order_by([transaction: t],
+      desc: t.block_number,
+      desc: t.hash,
+      asc: t.nonce,
+      desc: t.from_address_hash,
+      desc: t.to_address_hash
+    )
   end
 
   def celo_tx_transfers_query_by_txhash(tx_hash) do

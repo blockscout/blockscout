@@ -4,11 +4,11 @@ defmodule BlockScoutWeb.Resolvers.TokenTransferTx do
   alias Absinthe.Relay.Connection
   alias Explorer.{GraphQL, Repo}
 
-  def get_by(_, %{address_hash: address_hash} = args, _) do
+  def get_by(_, %{address_hash: address_hash, first: first} = args, _) do
     connection_args = Map.take(args, [:after, :before, :first, :last])
 
     address_hash
-    |> GraphQL.token_txtransfers_query_for_address()
+    |> GraphQL.token_txtransfers_query_for_address(first)
     |> Connection.from_query(&Repo.all/1, connection_args, options(args))
   end
 
