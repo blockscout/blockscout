@@ -27,10 +27,9 @@ services:
         DISABLE_WRITE_API: "false"
         CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED: ""
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
-        ADMIN_PANEL_ENABLED: ""
+        ADMIN_PANEL_ENABLED: "true"
         RELEASE_VERSION: 5.1.4
     restart: always
-    stop_grace_period: 5m
     container_name: 'blockscout'
     links:
       - db:database
@@ -40,9 +39,11 @@ services:
     env_file:
       -  ./envs/common-blockscout.env
     ports:
-      - 4000:4000
+      - 80:80
     volumes:
       - ./logs/:/app/logs/
+      - ./ssl/certificate.crt:/etc/ssl/certs/certificate.crt
+      - ./ssl/private.key:/etc/ssl/private/private.key
 
   smart-contract-verifier:
     extends:

@@ -31,7 +31,7 @@ export async function addChainToMM ({ btn }) {
             decimals: 18
           },
           rpcUrls: [jsonRPC],
-          blockExplorerUrls: [blockscoutURL]
+          blockExplorerUrls: ["https://testnet.bharatblockchain.io"]
         }]
       })
     } else {
