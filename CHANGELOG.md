@@ -26,6 +26,7 @@
 - [#7545](https://github.com/blockscout/blockscout/pull/7545) - API v2: Check if cached exchange rate is empty before replacing DB value in stats API
 - [#7516](https://github.com/blockscout/blockscout/pull/7516) - Fix shrinking logo in Safari
 - [#7590](https://github.com/blockscout/blockscout/pull/7590) - Drop genesis block in internal transactions fetcher
+- [#7639](https://github.com/blockscout/blockscout/pull/7639) - Fix contract creation transactions
 
 ### Chore
 
