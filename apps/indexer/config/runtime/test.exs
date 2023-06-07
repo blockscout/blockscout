@@ -1,5 +1,3 @@
-import Config
-
 alias EthereumJSONRPC.Variant
 
 variant = Variant.get()
