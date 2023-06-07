@@ -10,7 +10,6 @@ defmodule Explorer.Chain.Cache.OptimismFinalizationPeriod do
     key: :period
 
   import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
-  import Indexer.Fetcher.Optimism, only: [json_rpc_named_arguments: 1]
 
   alias EthereumJSONRPC.Contract
   alias Indexer.Fetcher.{Optimism, OptimismOutputRoot}
@@ -36,4 +35,19 @@ defmodule Explorer.Chain.Cache.OptimismFinalizationPeriod do
   end
 
   defp handle_fallback(_key), do: {:return, nil}
+
+  defp json_rpc_named_arguments(optimism_l1_rpc) do
+    [
+      transport: EthereumJSONRPC.HTTP,
+      transport_options: [
+        http: EthereumJSONRPC.HTTP.HTTPoison,
+        url: optimism_l1_rpc,
+        http_options: [
+          recv_timeout: :timer.minutes(10),
+          timeout: :timer.minutes(10),
+          hackney: [pool: :ethereum_jsonrpc]
+        ]
+      ]
+    ]
+  end
 end
