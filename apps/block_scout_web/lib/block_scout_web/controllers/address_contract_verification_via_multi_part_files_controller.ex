@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.AddressContractVerificationViaMultiPartFilesController d
       render(conn, "new.html",
         changeset: changeset,
         address_hash: address_hash_string,
-        evm_versions: CodeCompiler.allowed_evm_versions(),
+        evm_versions: CodeCompiler.evm_versions(:solidity),
         compiler_versions: compiler_versions
       )
     end

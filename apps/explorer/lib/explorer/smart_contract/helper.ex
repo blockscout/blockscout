@@ -12,8 +12,6 @@ defmodule Explorer.SmartContract.Helper do
 
   def constructor?(function), do: function["type"] == "constructor"
 
-  def fallback?(function), do: function["type"] == "fallback"
-
   def event?(function), do: function["type"] == "event"
 
   def error?(function), do: function["type"] == "error"
@@ -24,12 +22,10 @@ defmodule Explorer.SmartContract.Helper do
   @spec read_with_wallet_method?(%{}) :: true | false
   def read_with_wallet_method?(function),
     do:
-      !error?(function) && !event?(function) && !constructor?(function) && !fallback?(function) && nonpayable?(function) &&
+      !error?(function) && !event?(function) && !constructor?(function) && nonpayable?(function) &&
         !empty_outputs?(function)
 
-  def empty_inputs?(function), do: function["inputs"] == []
-
-  def empty_outputs?(function), do: function["outputs"] == []
+  def empty_outputs?(function), do: is_nil(function["outputs"]) || function["outputs"] == []
 
   def payable?(function), do: function["stateMutability"] == "payable" || function["payable"]
 

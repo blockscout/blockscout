@@ -9,13 +9,13 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporter do
 
   @paging_options %PagingOptions{page_size: Helper.page_size() + 1}
 
-  @spec export(Address.t(), String.t(), String.t()) :: Enumerable.t()
-  def export(address, from_period, to_period) do
+  @spec export(Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
+  def export(address, from_period, to_period, filter_type \\ nil, filter_value \\ nil) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
 
     res =
       address.hash
-      |> fetch_all_internal_transactions(from_block, to_block, @paging_options)
+      |> fetch_all_internal_transactions(from_block, to_block, filter_type, filter_value, @paging_options)
       |> Enum.sort_by(&{&1.block_number, &1.index, &1.transaction_index}, :desc)
       |> to_csv_format()
       |> Helper.dump_to_stream()
@@ -23,12 +23,25 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporter do
     res
   end
 
-  defp fetch_all_internal_transactions(address_hash, from_block, to_block, paging_options, acc \\ []) do
+  # sobelow_skip ["DOS.StringToAtom"]
+  defp fetch_all_internal_transactions(
+         address_hash,
+         from_block,
+         to_block,
+         filter_type,
+         filter_value,
+         paging_options,
+         acc \\ []
+       ) do
     options =
       []
       |> Keyword.put(:paging_options, paging_options)
       |> Keyword.put(:from_block, from_block)
       |> Keyword.put(:to_block, to_block)
+      |> (&if(Helper.is_valid_filter?(filter_type, filter_value, "internal_transactions"),
+            do: &1 |> Keyword.put(:direction, String.to_atom(filter_value)),
+            else: &1
+          )).()
 
     internal_transactions = Chain.address_to_internal_transactions(address_hash, options)
 
@@ -38,7 +51,16 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporter do
       {_internal_transactions,
        [%InternalTransaction{block_number: block_number, transaction_index: transaction_index, index: index}]} ->
         new_paging_options = %{@paging_options | key: {block_number, transaction_index, index}}
-        fetch_all_internal_transactions(address_hash, from_block, to_block, new_paging_options, new_acc)
+
+        fetch_all_internal_transactions(
+          address_hash,
+          from_block,
+          to_block,
+          filter_type,
+          filter_value,
+          new_paging_options,
+          new_acc
+        )
 
       {_, []} ->
         new_acc

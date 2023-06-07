@@ -155,9 +155,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         %{"token_id" => List.first(token_transfer.token_ids), "value" => value, "decimals" => decimals}
 
       {:ok, :erc1155_instance, values, token_ids, decimals} ->
-        Enum.map(Enum.zip(values, token_ids), fn {value, token_id} ->
-          %{"value" => value, "token_id" => token_id, "decimals" => decimals}
-        end)
+        %{"token_id" => List.first(token_ids), "value" => List.first(values), "decimals" => decimals}
 
       {:ok, value, decimals} ->
         %{"value" => value, "decimals" => decimals}

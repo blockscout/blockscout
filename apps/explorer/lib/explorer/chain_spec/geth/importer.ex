@@ -50,6 +50,10 @@ defmodule Explorer.ChainSpec.Geth.Importer do
     Chain.import(params)
   end
 
+  def genesis_accounts(%{"genesis" => genesis}) do
+    genesis_accounts(genesis)
+  end
+
   def genesis_accounts(chain_spec) do
     accounts = chain_spec["alloc"]
 
@@ -84,6 +88,8 @@ defmodule Explorer.ChainSpec.Geth.Importer do
 
     number
   end
+
+  defp parse_number(""), do: 0
 
   defp parse_number(string_number) do
     {number, ""} = Integer.parse(string_number, 10)

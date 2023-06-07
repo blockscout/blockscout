@@ -10,10 +10,11 @@
       <h1 class="card-title list-title-description"><%= gettext "Export Data" %></h1>
 
       <div>
-        <p class="card-subtitle list-title-description">Export <%= type_display_name(@type) %> for address <%= link(
+        <% filter_text = if Helper.is_valid_filter?(@filter_type, @filter_value, @type), do: " with applied filter by #{@filter_type} (#{@filter_value})", else: ""  %>
+        <p class="card-subtitle list-title-description"><%= gettext("Export") %> <%= type_display_name(@type) %> <%= gettext("for address") %> <%= link(
               @address_hash_string,
               to: address_path(@conn, :show, @address_hash_string)
-            ) %> to CSV file</p>
+            ) %><%= filter_text %> <%= gettext("to CSV file") %></p>
 	    </div>
 
       <div class="dates-container">

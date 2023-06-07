@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController do
       render(conn, "new.html",
         changeset: changeset,
         compiler_versions: compiler_versions,
-        evm_versions: CodeCompiler.allowed_evm_versions(),
+        evm_versions: CodeCompiler.evm_versions(:solidity),
         address_hash: address_hash_string
       )
     end

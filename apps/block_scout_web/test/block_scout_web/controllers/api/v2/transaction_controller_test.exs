@@ -109,7 +109,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       |> with_block()
 
       auth = build(:auth)
-      address = insert(:address)
+      insert(:address)
       {:ok, user} = UserFromAuth.find_or_create(auth)
 
       conn = Plug.Test.init_test_session(conn, current_user: user)
@@ -234,15 +234,14 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         |> insert()
         |> with_block()
 
-      tt =
-        insert(:token_transfer,
-          transaction: tx,
-          block: tx.block,
-          block_number: tx.block_number,
-          token_contract_address: token.contract_address,
-          token_ids: Enum.map(0..50, fn x -> x end),
-          amounts: Enum.map(0..50, fn x -> x end)
-        )
+      insert(:token_transfer,
+        transaction: tx,
+        block: tx.block,
+        block_number: tx.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
 
       request = get(conn, "/api/v2/transactions/" <> to_string(tx.hash))
 
@@ -250,6 +249,35 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       compare_item(tx, response)
 
       assert Enum.count(response["token_transfers"]) == 10
+    end
+
+    test "single 1155 flattened", %{conn: conn} do
+      token = insert(:token, type: "ERC-1155")
+
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      tt =
+        insert(:token_transfer,
+          transaction: tx,
+          block: tx.block,
+          block_number: tx.block_number,
+          token_contract_address: token.contract_address,
+          token_ids: [1],
+          amounts: [2],
+          amount: nil
+        )
+
+      request = get(conn, "/api/v2/transactions/" <> to_string(tx.hash))
+
+      assert response = json_response(request, 200)
+      compare_item(tx, response)
+
+      assert Enum.count(response["token_transfers"]) == 1
+      assert is_map(Enum.at(response["token_transfers"], 0)["total"])
+      assert compare_item(%TokenTransfer{tt | amount: 2}, Enum.at(response["token_transfers"], 0))
     end
   end
 
@@ -993,6 +1021,20 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     assert check_total(Repo.preload(token_transfer, [{:token, :contract_address}]).token, json["total"], token_transfer)
   end
 
+  defp compare_item(%Transaction{} = transaction, json, wl_names) do
+    assert to_string(transaction.hash) == json["hash"]
+    assert transaction.block_number == json["block"]
+    assert to_string(transaction.value.value) == json["value"]
+    assert Address.checksum(transaction.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
+
+    assert json["to"]["watchlist_names"] ==
+             if(wl_names[transaction.to_address_hash], do: [wl_names[transaction.to_address_hash]], else: [])
+
+    assert json["from"]["watchlist_names"] ==
+             if(wl_names[transaction.from_address_hash], do: [wl_names[transaction.from_address_hash]], else: [])
+  end
+
   defp check_paginated_response(first_page_resp, second_page_resp, txs) do
     assert Enum.count(first_page_resp["items"]) == 50
     assert first_page_resp["next_page_params"] != nil
@@ -1015,6 +1057,11 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     compare_item(Enum.at(txs, 0), Enum.at(second_page_resp["items"], 0), wl_names)
   end
 
+  # with the current implementation no transfers should come with list in totals
+  defp check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
+    false
+  end
+
   defp check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-1155"] do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end) and
       json["value"] == to_string(token_transfer.amount)
@@ -1022,11 +1069,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
   defp check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-721"] do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end)
-  end
-
-  # with the current implementation no transfers should come with list in totals
-  defp check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
-    false
   end
 
   defp check_total(_, _, _), do: true
