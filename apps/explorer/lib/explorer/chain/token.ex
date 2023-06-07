@@ -153,24 +153,7 @@ defmodule Explorer.Chain.Token do
     )
   end
 
-  @doc """
-  Builds an `Ecto.Query` to fetch a `batch_size` number of the tokens,
-  possibly starting from `last_updated_address_hash` ordered by `contract_address_hash`.
-  """
-  def tokens_to_update_fiat_value(nil, batch_size) do
-    from(
-      token in __MODULE__,
-      order_by: token.contract_address_hash,
-      limit: ^batch_size
-    )
-  end
-
-  def tokens_to_update_fiat_value(last_updated_address_hash, batch_size) do
-    from(
-      token in __MODULE__,
-      order_by: token.contract_address_hash,
-      where: token.contract_address_hash > ^last_updated_address_hash,
-      limit: ^batch_size
-    )
+  def tokens_by_contract_address_hashes(contract_address_hashes) do
+    from(token in __MODULE__, where: token.contract_address_hash in ^contract_address_hashes)
   end
 end
