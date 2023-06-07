@@ -1512,7 +1512,8 @@ defmodule Explorer.Chain do
         symbol: token.symbol,
         holder_count: token.holder_count,
         inserted_at: token.inserted_at,
-        block_number: 0
+        block_number: 0,
+        icon_url: token.icon_url
       }
     )
   end
@@ -1531,7 +1532,8 @@ defmodule Explorer.Chain do
         symbol: ^nil,
         holder_count: ^nil,
         inserted_at: address.inserted_at,
-        block_number: 0
+        block_number: 0,
+        icon_url: nil
       }
     )
   end
@@ -1559,7 +1561,8 @@ defmodule Explorer.Chain do
             symbol: ^nil,
             holder_count: ^nil,
             inserted_at: address.inserted_at,
-            block_number: 0
+            block_number: 0,
+            icon_url: nil
           }
         )
 
@@ -1582,7 +1585,8 @@ defmodule Explorer.Chain do
             symbol: ^nil,
             holder_count: ^nil,
             inserted_at: transaction.inserted_at,
-            block_number: 0
+            block_number: 0,
+            icon_url: nil
           }
         )
 
@@ -1605,7 +1609,8 @@ defmodule Explorer.Chain do
             symbol: ^nil,
             holder_count: ^nil,
             inserted_at: block.inserted_at,
-            block_number: block.number
+            block_number: block.number,
+            icon_url: nil
           }
         )
 
@@ -1623,7 +1628,8 @@ defmodule Explorer.Chain do
                 symbol: ^nil,
                 holder_count: ^nil,
                 inserted_at: block.inserted_at,
-                block_number: block.number
+                block_number: block.number,
+                icon_url: nil
               }
             )
 
@@ -2556,7 +2562,12 @@ defmodule Explorer.Chain do
 
   defp base_token_query(empty_type) when empty_type in [nil, []] do
     from(t in Token,
-      order_by: [desc_nulls_last: t.circulating_market_cap, desc_nulls_last: t.holder_count, asc: t.name],
+      order_by: [
+        desc_nulls_last: t.circulating_market_cap,
+        desc_nulls_last: t.holder_count,
+        asc: t.name,
+        asc: t.contract_address_hash
+      ],
       preload: [:contract_address]
     )
   end
@@ -2564,7 +2575,12 @@ defmodule Explorer.Chain do
   defp base_token_query(token_types) when is_list(token_types) do
     from(t in Token,
       where: t.type in ^token_types,
-      order_by: [desc_nulls_last: t.circulating_market_cap, desc_nulls_last: t.holder_count, asc: t.name],
+      order_by: [
+        desc_nulls_last: t.circulating_market_cap,
+        desc_nulls_last: t.holder_count,
+        asc: t.name,
+        asc: t.contract_address_hash
+      ],
       preload: [:contract_address]
     )
   end
@@ -4673,23 +4689,57 @@ defmodule Explorer.Chain do
 
   defp page_tokens(query, %PagingOptions{key: nil}), do: query
 
-  defp page_tokens(query, %PagingOptions{key: {nil, holder_count, name}}) do
+  defp page_tokens(query, %PagingOptions{key: {circulating_market_cap, holder_count, name, contract_address_hash}}) do
     from(token in query,
-      where:
-        is_nil(token.circulating_market_cap) and
-          (token.holder_count < ^holder_count or (token.holder_count == ^holder_count and token.name > ^name))
+      where: ^page_tokens_circulating_market_cap(circulating_market_cap, holder_count, name, contract_address_hash)
     )
   end
 
-  defp page_tokens(query, %PagingOptions{key: {circulating_market_cap, holder_count, name}}) do
-    from(token in query,
-      where:
-        is_nil(token.circulating_market_cap) or
-          (token.circulating_market_cap < ^circulating_market_cap or
-             (token.circulating_market_cap == ^circulating_market_cap and token.holder_count < ^holder_count) or
-             (token.circulating_market_cap == ^circulating_market_cap and token.holder_count == ^holder_count and
-                token.name > ^name))
+  defp page_tokens_circulating_market_cap(nil, holder_count, name, contract_address_hash) do
+    dynamic(
+      [t],
+      is_nil(t.circulating_market_cap) and ^page_tokens_holder_count(holder_count, name, contract_address_hash)
     )
+  end
+
+  defp page_tokens_circulating_market_cap(circulating_market_cap, holder_count, name, contract_address_hash) do
+    dynamic(
+      [t],
+      is_nil(t.circulating_market_cap) or t.circulating_market_cap < ^circulating_market_cap or
+        (t.circulating_market_cap == ^circulating_market_cap and
+           ^page_tokens_holder_count(holder_count, name, contract_address_hash))
+    )
+  end
+
+  defp page_tokens_holder_count(nil, name, contract_address_hash) do
+    dynamic(
+      [t],
+      is_nil(t.holder_count) and ^page_tokens_name(name, contract_address_hash)
+    )
+  end
+
+  defp page_tokens_holder_count(holder_count, name, contract_address_hash) do
+    dynamic(
+      [t],
+      is_nil(t.holder_count) or t.holder_count < ^holder_count or
+        (t.holder_count == ^holder_count and ^page_tokens_name(name, contract_address_hash))
+    )
+  end
+
+  defp page_tokens_name(nil, contract_address_hash) do
+    dynamic([t], is_nil(t.name) and ^page_tokens_contract_address_hash(contract_address_hash))
+  end
+
+  defp page_tokens_name(name, contract_address_hash) do
+    dynamic(
+      [t],
+      is_nil(t.name) or
+        (t.name > ^name or (t.name == ^name and ^page_tokens_contract_address_hash(contract_address_hash)))
+    )
+  end
+
+  defp page_tokens_contract_address_hash(contract_address_hash) do
+    dynamic([t], t.contract_address_hash > ^contract_address_hash)
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query

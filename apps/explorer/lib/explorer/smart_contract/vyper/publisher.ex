@@ -72,10 +72,12 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
           "contractName" => contract_name,
           "fileName" => file_name,
           "sourceFiles" => sources,
-          "compilerSettings" => compiler_settings_string
+          "compilerSettings" => compiler_settings_string,
+          "matchType" => match_type
         },
         address_hash,
-        save_file_path?
+        save_file_path?,
+        automatically_verified? \\ false
       ) do
     secondary_sources =
       for {file, source} <- sources,
@@ -96,6 +98,8 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       |> Map.put("file_path", if(save_file_path?, do: file_name))
       |> Map.put("secondary_sources", secondary_sources)
       |> Map.put("evm_version", compiler_settings["evmVersion"] || "istanbul")
+      |> Map.put("partially_verified", match_type == "PARTIAL")
+      |> Map.put("verified_via_eth_bytecode_db", automatically_verified?)
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
   end
@@ -145,9 +149,10 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       secondary_sources: [],
       abi: abi,
       verified_via_sourcify: false,
-      partially_verified: false,
+      partially_verified: params["partially_verified"] || false,
       is_vyper_contract: true,
-      file_path: params["file_path"]
+      file_path: params["file_path"],
+      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false
     }
   end
 end
