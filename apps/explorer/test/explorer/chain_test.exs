@@ -30,6 +30,7 @@ defmodule Explorer.ChainTest do
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
+  alias Explorer.Chain.Cache.PendingBlockOperation, as: PendingBlockOperationCache
   alias Explorer.Chain.InternalTransaction.Type
 
   alias Explorer.Chain.Supply.ProofOfAuthority
@@ -1207,6 +1208,12 @@ defmodule Explorer.ChainTest do
   end
 
   describe "finished_indexing_internal_transactions?/0" do
+    setup do
+      Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
+      on_exit(fn -> Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id()) end)
+    end
+
     test "finished indexing" do
       block = insert(:block, number: 1)
 
@@ -1538,8 +1545,12 @@ defmodule Explorer.ChainTest do
 
   describe "indexed_ratio_internal_transactions/0" do
     setup do
+      Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
+
       on_exit(fn ->
         Application.put_env(:indexer, :trace_first_block, "")
+        Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
       end)
     end
 
@@ -1551,6 +1562,8 @@ defmodule Explorer.ChainTest do
           insert(:pending_block_operation, block: block, block_number: block.number)
         end
       end
+
+      Chain.indexed_ratio_internal_transactions()
 
       assert Decimal.compare(Chain.indexed_ratio_internal_transactions(), Decimal.from_float(0.7)) == :eq
     end

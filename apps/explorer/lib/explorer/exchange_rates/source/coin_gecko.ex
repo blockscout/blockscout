@@ -69,6 +69,23 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   @impl Source
+  def format_data(supported_coins) when is_list(supported_coins) do
+    platform = platform()
+
+    supported_coins
+    |> Enum.reduce([], fn
+      %{"platforms" => %{^platform => token_contract_hash_str}}, acc ->
+        case Chain.Hash.Address.cast(token_contract_hash_str) do
+          {:ok, token_contract_hash} -> [token_contract_hash | acc]
+          _ -> acc
+        end
+
+      _, acc ->
+        acc
+    end)
+  end
+
+  @impl Source
   def format_data(_), do: []
 
   @impl Source
@@ -89,6 +106,11 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
       end
 
     if id, do: "#{base_url()}/coins/#{id}", else: nil
+  end
+
+  @impl Source
+  def source_url(:coins_list) do
+    "#{base_url()}/coins/list?include_platform=true"
   end
 
   @impl Source

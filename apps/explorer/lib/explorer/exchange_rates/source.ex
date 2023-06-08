@@ -40,6 +40,22 @@ defmodule Explorer.ExchangeRates.Source do
     fetch_exchange_rates_request(CoinGecko, source_url, headers)
   end
 
+  @spec fetch_token_hashes_with_market_data :: {:ok, [String.t()]} | {:error, any}
+  def fetch_token_hashes_with_market_data do
+    source_url = CoinGecko.source_url(:coins_list)
+    headers = CoinGecko.headers()
+
+    case http_request(source_url, headers) do
+      {:ok, result} ->
+        {:ok,
+         result
+         |> CoinGecko.format_data()}
+
+      resp ->
+        resp
+    end
+  end
+
   defp fetch_exchange_rates_request(_source, source_url, _headers) when is_nil(source_url),
     do: {:error, "Source URL is nil"}
 
@@ -60,7 +76,7 @@ defmodule Explorer.ExchangeRates.Source do
   @doc """
   Callback for api's to format the data returned by their query.
   """
-  @callback format_data(map()) :: [any]
+  @callback format_data(map() | list()) :: [any]
 
   @doc """
   Url for the api to query to get the market info.

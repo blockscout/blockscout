@@ -108,7 +108,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "has_tokens" => Chain.check_if_tokens_at_address(address.hash, @api_true),
       "has_token_transfers" => Chain.check_if_token_transfers_at_address(address.hash, @api_true),
       "watchlist_address_id" => Chain.select_watchlist_address_id(get_watchlist_id(conn), address.hash),
-      "has_beacon_chain_withdrawals" => Chain.check_if_withdrawals_at_address(address.hash, @api_true)
+      "has_beacon_chain_withdrawals" => Chain.check_if_withdrawals_at_address(address.hash, @api_true),
+      "contract_type" => contract_type(address)
     })
   end
 
@@ -169,5 +170,20 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       end
 
     TokenView.render("token_instance.json", %{token_instance: token_instance, token: token})
+  end
+
+  @spec contract_type(term) :: nil | :solidity | :vyper | :yul
+  def contract_type(%Address{smart_contract: nil}), do: nil
+
+  def contract_type(%Address{smart_contract: %SmartContract{}} = address) do
+    if address.smart_contract.is_vyper_contract do
+      :vyper
+    else
+      if address.smart_contract.abi do
+        :solidity
+      else
+        :yul
+      end
+    end
   end
 end

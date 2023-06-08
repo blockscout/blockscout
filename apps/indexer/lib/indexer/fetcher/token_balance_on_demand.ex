@@ -29,6 +29,20 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
     end
   end
 
+  @spec trigger_historic_fetch(
+          Hash.t(),
+          Hash.t(),
+          String.t(),
+          Decimal.t() | nil,
+          non_neg_integer()
+        ) :: {:ok, pid}
+
+  def trigger_historic_fetch(address_hash, contract_address_hash, token_type, token_id, block_number) do
+    Task.start(fn ->
+      do_trigger_historic_fetch(address_hash, contract_address_hash, token_type, token_id, block_number)
+    end)
+  end
+
   ## Implementation
 
   defp do_trigger_fetch(address_hash, current_token_balances, latest_block_number, stale_balance_window)
@@ -91,6 +105,43 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
       },
       broadcast: :on_demand
     })
+  end
+
+  defp do_trigger_historic_fetch(address_hash, contract_address_hash, token_type, token_id, block_number) do
+    request = %{
+      token_contract_address_hash: to_string(contract_address_hash),
+      address_hash: to_string(address_hash),
+      block_number: block_number,
+      token_id: token_id && Decimal.to_integer(token_id)
+    }
+
+    balance_response =
+      case token_type do
+        "ERC-1155" -> BalanceReader.get_balances_of_erc_1155([request])
+        _ -> BalanceReader.get_balances_of([request])
+      end
+
+    balance = balance_response[:ok]
+
+    if balance do
+      %{
+        address_token_balances: %{
+          params: [
+            %{
+              address_hash: address_hash,
+              token_contract_address_hash: contract_address_hash,
+              token_type: token_type,
+              token_id: token_id,
+              block_number: block_number,
+              value: Decimal.new(balance),
+              value_fetched_at: DateTime.utc_now()
+            }
+          ]
+        },
+        broadcast: :on_demand
+      }
+      |> Chain.import()
+    end
   end
 
   defp latest_block_number do

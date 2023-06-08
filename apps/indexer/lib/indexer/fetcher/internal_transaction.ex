@@ -96,8 +96,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
       |> Chain.filter_consensus_block_numbers()
 
     filtered_unique_numbers =
-      EthereumJSONRPC.block_numbers_in_range(unique_numbers) --
-        [EthereumJSONRPC.first_block_to_fetch(:trace_first_block)]
+      unique_numbers
+      |> EthereumJSONRPC.block_numbers_in_range()
+      |> drop_genesis(json_rpc_named_arguments)
 
     filtered_unique_numbers_count = Enum.count(filtered_unique_numbers)
     Logger.metadata(count: filtered_unique_numbers_count)
@@ -150,6 +151,19 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
       :ignore ->
         :ok
+    end
+  end
+
+  defp drop_genesis(block_numbers, json_rpc_named_arguments) do
+    first_block = EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
+
+    if first_block in block_numbers do
+      case EthereumJSONRPC.fetch_blocks_by_numbers([first_block], json_rpc_named_arguments) do
+        {:ok, %{transactions_params: [_ | _]}} -> block_numbers
+        _ -> block_numbers -- [first_block]
+      end
+    else
+      block_numbers
     end
   end
 
@@ -220,7 +234,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     address_hash_to_block_number =
       Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
-        {hash, block_number}
+        {String.downcase(hash), block_number}
       end)
 
     empty_block_numbers =
