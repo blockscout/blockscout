@@ -172,7 +172,7 @@ defmodule Indexer.Transform.TokenTransfers do
   # ERC-20 token transfer for WETH
   defp parse_params(%{second_topic: second_topic, third_topic: nil, fourth_topic: nil} = log)
        when not is_nil(second_topic) do
-    [amount] = decode_data(log.data, [{:uint, 256}])
+    [amount] = Helper.decode_data(log.data, [{:uint, 256}])
 
     {from_address_hash, to_address_hash} =
       if log.first_topic == TokenTransfer.weth_deposit_signature() do
