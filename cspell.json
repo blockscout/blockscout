@@ -519,7 +519,9 @@
         "erts",
         "Asfpp",
         "Nerg",
-        "Sepolia"
+        "Sepolia",
+        "relpages",
+        "regclass"
     ],
     "enableFiletypes": [
         "dotenv",
