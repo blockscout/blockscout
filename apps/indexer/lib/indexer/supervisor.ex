@@ -9,7 +9,7 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.{
     Block,
-    CalcLpTokensTotalLiqudity,
+    CalcLpTokensTotalLiquidity,
     PendingOpsCleaner,
     PendingTransactionsSanitizer,
     SetAmbBridgedMetadataForTokens,
@@ -157,7 +157,7 @@ defmodule Indexer.Supervisor do
     extended_fetchers =
       if Chain.bridged_tokens_enabled?() do
         fetchers_with_omni_status = [{SetOmniBridgedMetadataForTokens, [[], []]} | basic_fetchers]
-        [{CalcLpTokensTotalLiqudity, [[], []]} | fetchers_with_omni_status]
+        [{CalcLpTokensTotalLiquidity, [[], []]} | fetchers_with_omni_status]
       else
         basic_fetchers
       end

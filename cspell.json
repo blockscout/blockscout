@@ -518,7 +518,10 @@
         "zkbob",
         "erts",
         "Asfpp",
-        "Nerg"
+        "Nerg",
+        "sushiswap",
+        "defi",
+        "GTGS"
     ],
     "enableFiletypes": [
         "dotenv",

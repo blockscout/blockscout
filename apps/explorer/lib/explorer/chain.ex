@@ -5843,7 +5843,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  def calc_lp_tokens_total_liqudity do
+  def calc_lp_tokens_total_liquidity do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
     foreign_json_rpc = Application.get_env(:block_scout_web, :foreign_json_rpc)
     bridged_mainnet_tokens_list = BridgedToken.get_unprocessed_mainnet_lp_tokens_list()
@@ -5867,7 +5867,7 @@ defmodule Explorer.Chain do
       end
     end)
 
-    Logger.debug(fn -> "Total liqudity fetched for LP tokens" end)
+    Logger.debug(fn -> "Total liquidity fetched for LP tokens" end)
   end
 
   defp calc_sushiswap_lp_tokens_cap(

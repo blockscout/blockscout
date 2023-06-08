@@ -1,6 +1,6 @@
-defmodule Indexer.CalcLpTokensTotalLiqudity do
+defmodule Indexer.CalcLpTokensTotalLiquidity do
   @moduledoc """
-  Peiodically updates LP tokens total liquidity
+  Periodically updates LP tokens total liquidity
   """
 
   use GenServer
@@ -23,18 +23,18 @@ defmodule Indexer.CalcLpTokensTotalLiqudity do
   def init(opts) do
     interval = opts[:interval] || @interval
 
-    Process.send_after(self(), :calc_total_liqudity, interval)
+    Process.send_after(self(), :calc_total_liquidity, interval)
 
     {:ok, %{interval: interval}}
   end
 
   @impl GenServer
-  def handle_info(:calc_total_liqudity, %{interval: interval} = state) do
+  def handle_info(:calc_total_liquidity, %{interval: interval} = state) do
     Logger.debug(fn -> "Calc LP tokens total liquidity" end)
 
-    calc_total_liqudity()
+    calc_total_liquidity()
 
-    Process.send_after(self(), :calc_total_liqudity, interval)
+    Process.send_after(self(), :calc_total_liquidity, interval)
 
     {:noreply, state}
   end
@@ -44,9 +44,9 @@ defmodule Indexer.CalcLpTokensTotalLiqudity do
     {:noreply, state}
   end
 
-  defp calc_total_liqudity do
-    Chain.calc_lp_tokens_total_liqudity()
+  defp calc_total_liquidity do
+    Chain.calc_lp_tokens_total_liquidity()
 
-    Logger.debug(fn -> "Total liqudity fetched for LP tokens" end)
+    Logger.debug(fn -> "Total liquidity fetched for LP tokens" end)
   end
 end
