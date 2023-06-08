@@ -1,5 +1,3 @@
-import Config
-
 alias EthereumJSONRPC.Variant
 
 config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator, wait_per_timeout: 2

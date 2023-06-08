@@ -259,8 +259,6 @@ config :explorer, Explorer.Chain.Cache.RootstockLockedBTC,
   global_ttl: ConfigHelper.parse_time_env_var("ROOTSTOCK_LOCKED_BTC_CACHE_PERIOD", "10m"),
   locking_cap: ConfigHelper.parse_integer_env_var("ROOTSTOCK_LOCKING_CAP", 21_000_000)
 
-config :explorer, Explorer.Chain.Cache.OptimismFinalizationPeriod, enabled: ConfigHelper.chain_type() == "optimism"
-
 config :explorer, Explorer.Counters.AddressTransactionsGasUsageCounter,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_PERIOD", "30m")
 
@@ -488,14 +486,6 @@ config :explorer, Explorer.Migrator.TransactionsDenormalization,
   batch_size: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_BATCH_SIZE", 500),
   concurrency: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_CONCURRENCY", 10)
 
-config :explorer, Explorer.Migrator.TokenTransferTokenType,
-  batch_size: ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_TOKEN_TYPE_MIGRATION_BATCH_SIZE", 100),
-  concurrency: ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_TOKEN_TYPE_MIGRATION_CONCURRENCY", 1)
-
-config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers,
-  batch_size: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_NFT_BATCH_SIZE", 100),
-  concurrency: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_NFT_CONCURRENCY", 1)
-
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
   bsc_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_BSC_OMNI_BRIDGE_MEDIATOR"),
@@ -683,38 +673,30 @@ config :indexer, Indexer.Fetcher.CoinBalance.Realtime,
   batch_size: coin_balances_batch_size,
   concurrency: coin_balances_concurrency
 
-config :indexer, Indexer.Fetcher.Optimism.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
-config :indexer, Indexer.Fetcher.Optimism.TxnBatch.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
-config :indexer, Indexer.Fetcher.Optimism.OutputRoot.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
-config :indexer, Indexer.Fetcher.Optimism.Deposit.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
-config :indexer, Indexer.Fetcher.Optimism.Withdrawal.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
-config :indexer, Indexer.Fetcher.Optimism.WithdrawalEvent.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
-
 config :indexer, Indexer.Fetcher.Optimism,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
   optimism_l1_portal: System.get_env("INDEXER_OPTIMISM_L1_PORTAL_CONTRACT")
 
-config :indexer, Indexer.Fetcher.Optimism.Deposit,
+config :indexer, Indexer.Fetcher.OptimismDeposit,
   start_block_l1: System.get_env("INDEXER_OPTIMISM_L1_DEPOSITS_START_BLOCK"),
   batch_size: System.get_env("INDEXER_OPTIMISM_L1_DEPOSITS_BATCH_SIZE")
 
-config :indexer, Indexer.Fetcher.Optimism.OutputRoot,
+config :indexer, Indexer.Fetcher.OptimismOutputRoot,
   start_block_l1: System.get_env("INDEXER_OPTIMISM_L1_OUTPUT_ROOTS_START_BLOCK"),
   output_oracle: System.get_env("INDEXER_OPTIMISM_L1_OUTPUT_ORACLE_CONTRACT")
 
-config :indexer, Indexer.Fetcher.Optimism.Withdrawal,
+config :indexer, Indexer.Fetcher.OptimismWithdrawal,
   start_block_l2: System.get_env("INDEXER_OPTIMISM_L2_WITHDRAWALS_START_BLOCK"),
   message_passer: System.get_env("INDEXER_OPTIMISM_L2_MESSAGE_PASSER_CONTRACT")
 
-config :indexer, Indexer.Fetcher.Optimism.WithdrawalEvent,
+config :indexer, Indexer.Fetcher.OptimismWithdrawalEvent,
   start_block_l1: System.get_env("INDEXER_OPTIMISM_L1_WITHDRAWALS_START_BLOCK")
 
-config :indexer, Indexer.Fetcher.Optimism.TxnBatch,
+config :indexer, Indexer.Fetcher.OptimismTxnBatch,
   start_block_l1: System.get_env("INDEXER_OPTIMISM_L1_BATCH_START_BLOCK"),
   batch_inbox: System.get_env("INDEXER_OPTIMISM_L1_BATCH_INBOX"),
   batch_submitter: System.get_env("INDEXER_OPTIMISM_L1_BATCH_SUBMITTER"),
-  blocks_chunk_size: System.get_env("INDEXER_OPTIMISM_L1_BATCH_BLOCKS_CHUNK_SIZE", "4"),
-  genesis_block_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_BATCH_GENESIS_BLOCK_NUMBER")
+  blocks_chunk_size: System.get_env("INDEXER_OPTIMISM_L1_BATCH_BLOCKS_CHUNK_SIZE", "4")
 
 config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_WITHDRAWALS_FETCHER", "true") == "true"

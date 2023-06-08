@@ -496,10 +496,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                     %{
                       address_hash: third_address_hash,
                       block_number: 3_946_080
-                    },
-                    %{
-                      address_hash: fourth_address_hash,
-                      block_number: 3_946_079
                     }
                   ],
                   blocks: [%Chain.Block{number: 3_946_079}, %Chain.Block{number: 3_946_080}],
@@ -701,10 +697,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                     %{
                       address_hash: third_address_hash,
                       block_number: 3_946_080
-                    },
-                    %{
-                      address_hash: fourth_address_hash,
-                      block_number: 3_946_079
                     }
                   ],
                   block_rewards: [
