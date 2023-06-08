@@ -203,13 +203,26 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:already_verified, false} <-
            {:already_verified, Chain.smart_contract_fully_verified?(address_hash, @api_true)} do
+      interfaces =
+        if is_binary(params["interfaces"]) do
+          case Jason.decode(params["interfaces"]) do
+            {:ok, map} ->
+              map
+
+            _ ->
+              nil
+          end
+        else
+          params["interfaces"]
+        end
+
       verification_params =
         %{
           "address_hash" => String.downcase(address_hash_string),
           "compiler_version" => compiler_version
         }
         |> Map.put("evm_version", Map.get(params, "evm_version"))
-        |> Map.put("interfaces", Map.get(params, "interfaces"))
+        |> Map.put("interfaces", interfaces)
 
       files_array =
         files
