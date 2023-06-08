@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.AddressContractView do
 
     {_, result} =
       contract.constructor_arguments
-      |> decode_data(input_types)
+      |> Explorer.Helper.decode_data(input_types)
       |> Enum.zip(constructor_abi["inputs"])
       |> Enum.reduce({0, "#{contract.constructor_arguments}\n\n"}, fn {val, %{"type" => type}}, {count, acc} ->
         formatted_val = val_to_string(val, type, conn)

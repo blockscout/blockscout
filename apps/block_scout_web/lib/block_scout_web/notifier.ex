@@ -400,6 +400,10 @@ defmodule BlockScoutWeb.Notifier do
     end
   end
 
+  defp broadcast_optimism_deposits(deposits, deposit_channel, event) do
+    Endpoint.broadcast(deposit_channel, event, %{deposits: deposits})
+  end
+
   defp broadcast_transactions_websocket_v2(transactions) do
     pending_transactions =
       Enum.filter(transactions, fn

@@ -31,6 +31,8 @@ defmodule BlockScoutWeb.Chain do
     Hash,
     InternalTransaction,
     Log,
+    OptimismDeposit,
+    OptimismOutputRoot,
     SmartContract,
     Token,
     Token.Instance,
