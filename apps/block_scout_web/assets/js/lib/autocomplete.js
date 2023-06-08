@@ -146,7 +146,6 @@ const autoCompleteJSMobile = document.querySelector('#main-search-autocomplete-m
 const selection = (event) => {
   const selectionValue = event.detail.selection.value
 
-  const commonPath = process.env.NETWORK_PATH
   if (selectionValue.type === 'contract' || selectionValue.type === 'address' || selectionValue.type === 'label') {
     window.location.href = `${commonPath}/address/${selectionValue.address_hash}`
   } else if (selectionValue.type === 'token') {
