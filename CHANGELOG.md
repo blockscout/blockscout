@@ -10,6 +10,8 @@
 - [#7532](https://github.com/blockscout/blockscout/pull/7532) - Handle empty id in json rpc responses
 - [#7544](https://github.com/blockscout/blockscout/pull/7544) - Add ERC-1155 signatures to uncataloged_token_transfer_block_numbers
 - [#7363](https://github.com/blockscout/blockscout/pull/7363) - CSV export filters
+- [#6980](https://github.com/blockscout/blockscout/pull/6980) - Add Optimism BedRock support (Txn Batches, Output Roots, Deposits, Withdrawals)
+- [#7200](https://github.com/blockscout/blockscout/pull/7200) - Add Optimism BedRock Deposits to the main page in API
 
 ### Fixes
 
@@ -27,6 +29,7 @@
 - [#7516](https://github.com/blockscout/blockscout/pull/7516) - Fix shrinking logo in Safari
 - [#7590](https://github.com/blockscout/blockscout/pull/7590) - Drop genesis block in internal transactions fetcher
 - [#7639](https://github.com/blockscout/blockscout/pull/7639) - Fix contract creation transactions
+- [#7219](https://github.com/blockscout/blockscout/pull/7219) - Output L1 fields in API v2 for transaction page and fix transaction fee calculation
 
 ### Chore
 

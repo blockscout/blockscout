@@ -13,8 +13,9 @@ defmodule Indexer.Fetcher.TransactionAction do
       from: 2
     ]
 
+  import Explorer.Helper, only: [parse_integer: 1]
+
   alias Explorer.{Chain, Repo}
-  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Log, TransactionAction}
   alias Indexer.Transform.{Addresses, TransactionActions}
 
@@ -189,8 +190,8 @@ defmodule Indexer.Fetcher.TransactionAction do
   defp init_fetching(opts, first_block, last_block) do
     Logger.metadata(fetcher: :transaction_action)
 
-    first_block = ExplorerHelper.parse_integer(first_block)
-    last_block = ExplorerHelper.parse_integer(last_block)
+    first_block = parse_integer(first_block)
+    last_block = parse_integer(last_block)
 
     if is_nil(first_block) or is_nil(last_block) or first_block <= 0 or last_block <= 0 or first_block > last_block do
       {:stop, "Correct block range must be provided to #{__MODULE__}."}

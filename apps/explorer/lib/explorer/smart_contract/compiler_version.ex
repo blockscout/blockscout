@@ -3,8 +3,9 @@ defmodule Explorer.SmartContract.CompilerVersion do
   Adapter for fetching compiler versions from https://solc-bin.ethereum.org/bin/list.json.
   """
 
-  alias Explorer.Helper
   alias Explorer.SmartContract.RustVerifierInterface
+
+  import Explorer.Helper, only: [parse_integer: 1]
 
   @unsupported_solc_versions ~w(0.1.1 0.1.2)
   @unsupported_vyper_versions ~w(v0.2.9 v0.2.10)
@@ -92,12 +93,12 @@ defmodule Explorer.SmartContract.CompilerVersion do
           |> Enum.sort(fn version1, version2 ->
             versions1 = String.split(version1, ".")
             versions2 = String.split(version2, ".")
-            major1 = versions1 |> Enum.at(0) |> Helper.parse_integer()
-            major2 = versions2 |> Enum.at(0) |> Helper.parse_integer()
-            minor1 = versions1 |> Enum.at(1) |> Helper.parse_integer()
-            minor2 = versions2 |> Enum.at(1) |> Helper.parse_integer()
-            patch1 = versions1 |> Enum.at(2) |> String.split("-") |> Enum.at(0) |> Helper.parse_integer()
-            patch2 = versions2 |> Enum.at(2) |> String.split("-") |> Enum.at(0) |> Helper.parse_integer()
+            major1 = versions1 |> Enum.at(0) |> parse_integer()
+            major2 = versions2 |> Enum.at(0) |> parse_integer()
+            minor1 = versions1 |> Enum.at(1) |> parse_integer()
+            minor2 = versions2 |> Enum.at(1) |> parse_integer()
+            patch1 = versions1 |> Enum.at(2) |> String.split("-") |> Enum.at(0) |> parse_integer()
+            patch2 = versions2 |> Enum.at(2) |> String.split("-") |> Enum.at(0) |> parse_integer()
 
             major1 > major2 || (major1 == major2 && minor1 > minor2) ||
               (major1 == major2 && minor1 == minor2 && patch1 > patch2)
