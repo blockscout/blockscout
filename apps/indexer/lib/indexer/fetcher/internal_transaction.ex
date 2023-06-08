@@ -249,7 +249,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     imports =
       Chain.import(%{
-        addresses: %{params: addresses_params},
+        addresses: %{params: addresses_params, on_conflict: :update_contract_code},
         internal_transactions: %{params: internal_transactions_and_empty_block_numbers, with: :blockless_changeset},
         timeout: :infinity
       })
