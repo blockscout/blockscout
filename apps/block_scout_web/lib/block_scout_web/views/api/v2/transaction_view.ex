@@ -143,7 +143,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("logs.json", %{logs: logs, next_page_params: next_page_params, tx_hash: tx_hash}) do
-    {decoded_logs, _, _} = decode_logs(logs, tx_hash, false)
+    decoded_logs = decode_logs(logs, false)
 
     %{
       "items" =>
@@ -153,7 +153,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("logs.json", %{logs: logs, next_page_params: next_page_params}) do
-    {decoded_logs, _, _} = decode_logs(logs, nil, false)
+    decoded_logs = decode_logs(logs, false)
 
     %{
       "items" =>
@@ -171,26 +171,24 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  def decode_logs(logs, %Transaction{} = tx, skip_sig_provider?) do
-    Enum.reduce(logs, {[], %{}, %{}}, fn log, {results, contracts_acc, events_acc} ->
-      {result, contracts_acc, events_acc} =
-        Log.decode(log, tx, @api_true, skip_sig_provider?, contracts_acc, events_acc)
+  def decode_logs(logs, skip_sig_provider?) do
+    {result, _, _} =
+      Enum.reduce(logs, {[], %{}, %{}}, fn log, {results, contracts_acc, events_acc} ->
+        {result, contracts_acc, events_acc} =
+          Log.decode(
+            log,
+            %Transaction{hash: log.transaction_hash},
+            @api_true,
+            skip_sig_provider?,
+            contracts_acc,
+            events_acc
+          )
 
-      {Enum.reverse([format_decoded_log_input(result) | Enum.reverse(results)]), contracts_acc, events_acc}
-    end)
+        {[format_decoded_log_input(result) | results], contracts_acc, events_acc}
+      end)
+
+    Enum.reverse(result)
   end
-
-  def decode_logs(logs, nil, skip_sig_provider?) do
-    Enum.reduce(logs, {[], %{}, %{}}, fn log, {results, contracts_acc, events_acc} ->
-      {result, contracts_acc, events_acc} =
-        Log.decode(log, log.transaction, @api_true, skip_sig_provider?, contracts_acc, events_acc)
-
-      {Enum.reverse([format_decoded_log_input(result) | Enum.reverse(results)]), contracts_acc, events_acc}
-    end)
-  end
-
-  def decode_logs(logs, transaction_hash, skip_sig_provider?),
-    do: decode_logs(logs, %Transaction{hash: transaction_hash}, skip_sig_provider?)
 
   def decode_transactions(transactions, skip_sig_provider?) do
     Enum.reduce(transactions, {[], %{}, %{}}, fn transaction, {results, abi_acc, methods_acc} ->

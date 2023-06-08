@@ -1,10 +1,7 @@
 defmodule BlockScoutWeb.AddressLogsView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain.{Address, Log}
+  alias Explorer.Chain.Address
 
-  def decode(log, transaction) do
-    {result, _contracts_acc, _events_acc} = Log.decode(log, transaction, [], true)
-    result
-  end
+  import BlockScoutWeb.AddressView, only: [decode: 2]
 end

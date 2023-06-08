@@ -492,19 +492,7 @@ defmodule Explorer.Chain do
     |> Transaction.not_dropped_or_replaced_transactions()
     |> where_block_number_in_period(from_block, to_block)
     |> join_associations(necessity_by_association)
-    |> (&if(old_ui?,
-          do: &1,
-          else:
-            from(tx in &1,
-              select_merge: %{
-                has_token_transfers:
-                  fragment(
-                    "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
-                    tx.hash
-                  )
-              }
-            )
-        )).()
+    |> put_has_token_transfers_to_tx(old_ui?)
     |> Transaction.matching_address_queries_list(direction, address_hash)
     |> Enum.map(fn query -> Task.async(fn -> select_repo(options).all(query) end) end)
   end
@@ -928,19 +916,7 @@ defmodule Explorer.Chain do
     |> join(:inner, [transaction], block in assoc(transaction, :block))
     |> where([_, block], block.hash == ^block_hash)
     |> join_associations(necessity_by_association)
-    |> (&if(old_ui?,
-          do: &1,
-          else:
-            from(tx in &1,
-              select_merge: %{
-                has_token_transfers:
-                  fragment(
-                    "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
-                    tx.hash
-                  )
-              }
-            )
-        )).()
+    |> put_has_token_transfers_to_tx(old_ui?)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> select_repo(options).all()
     |> (&if(old_ui?,
@@ -3524,19 +3500,7 @@ defmodule Explorer.Chain do
     |> apply_filter_by_method_id_to_transactions(method_id_filter)
     |> apply_filter_by_tx_type_to_transactions(type_filter)
     |> join_associations(necessity_by_association)
-    |> (&if(old_ui?,
-          do: &1,
-          else:
-            from(tx in &1,
-              select_merge: %{
-                has_token_transfers:
-                  fragment(
-                    "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
-                    tx.hash
-                  )
-              }
-            )
-        )).()
+    |> put_has_token_transfers_to_tx(old_ui?)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> select_repo(options).all()
     |> (&if(old_ui?,
@@ -6999,5 +6963,19 @@ defmodule Explorer.Chain do
     fetcher_limit = Application.get_env(:indexer, :fetcher_init_limit)
 
     limit(query, ^fetcher_limit)
+  end
+
+  def put_has_token_transfers_to_tx(query, true), do: query
+
+  def put_has_token_transfers_to_tx(query, false) do
+    from(tx in query,
+      select_merge: %{
+        has_token_transfers:
+          fragment(
+            "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
+            tx.hash
+          )
+      }
+    )
   end
 end
