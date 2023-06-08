@@ -15,7 +15,16 @@ defmodule Indexer.MixProject do
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
       version: "5.1.5",
-      xref: [exclude: [Explorer.Chain.OptimismDeposit, Explorer.Chain.OptimismFrameSequence, Explorer.Chain.OptimismOutputRoot, Explorer.Chain.OptimismTxnBatch, Explorer.Chain.OptimismWithdrawal, Explorer.Chain.OptimismWithdrawalEvent]]
+      xref: [
+        exclude: [
+          Explorer.Chain.OptimismDeposit,
+          Explorer.Chain.OptimismFrameSequence,
+          Explorer.Chain.OptimismOutputRoot,
+          Explorer.Chain.OptimismTxnBatch,
+          Explorer.Chain.OptimismWithdrawal,
+          Explorer.Chain.OptimismWithdrawalEvent
+        ]
+      ]
     ]
   end
 
