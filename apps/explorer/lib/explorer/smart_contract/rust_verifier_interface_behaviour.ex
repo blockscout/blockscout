@@ -50,6 +50,18 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
         http_post_request(vyper_multiple_files_verification_url(), append_metadata(body, address_hash))
       end
 
+      def vyper_verify_standard_json(
+            %{
+              "bytecode" => _,
+              "bytecodeType" => _,
+              "compilerVersion" => _,
+              "input" => _
+            } = body,
+            address_hash
+          ) do
+        http_post_request(vyper_standard_json_verification_url(), append_metadata(body, address_hash))
+      end
+
       def http_post_request(url, body) do
         headers = [{"Content-Type", "application/json"}]
 
@@ -130,6 +142,9 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       def multiple_files_verification_url, do: "#{base_api_url()}" <> "/verifier/solidity/sources:verify-multi-part"
 
       def vyper_multiple_files_verification_url, do: "#{base_api_url()}" <> "/verifier/vyper/sources:verify-multi-part"
+
+      def vyper_standard_json_verification_url,
+        do: "#{base_api_url()}" <> "/verifier/vyper/sources:verify-standard-json"
 
       def standard_json_input_verification_url,
         do: "#{base_api_url()}" <> "/verifier/solidity/sources:verify-standard-json"

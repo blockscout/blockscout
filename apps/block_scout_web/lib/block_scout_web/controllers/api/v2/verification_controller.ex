@@ -25,8 +25,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
             do: ["sourcify" | &1],
             else: &1
           )).()
-      |> (&if(RustVerifierInterface.enabled?(), do: ["multi-part" | &1], else: &1)).()
-      |> (&if(RustVerifierInterface.enabled?(), do: ["vyper-multi-part" | &1], else: &1)).()
+      |> (&if(RustVerifierInterface.enabled?(), do: ["multi-part","vyper-multi-part", "vyper-standard-input"]++ &1, else: &1)).()
 
     conn
     |> json(%{
@@ -182,9 +181,9 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         }
         |> Map.put("constructor_arguments", Map.get(params, "constructor_args", "") || "")
         |> Map.put("name", Map.get(params, "contract_name", "Vyper_contract"))
-        |> Map.put("evm_version", Map.get(params, "evm_version", "istanbul"))
+        |> Map.put("evm_version", Map.get(params, "evm_version"))
 
-      Que.add(VyperPublisherWorker, {address_hash_string, verification_params})
+      Que.add(VyperPublisherWorker, {"vyper_flattened", verification_params})
 
       conn
       |> put_view(ApiView)
@@ -206,14 +205,42 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
           "address_hash" => String.downcase(address_hash_string),
           "compiler_version" => compiler_version
         }
-        |> Map.put("evm_version", Map.get(params, "evm_version", "istanbul"))
+        |> Map.put("evm_version", Map.get(params, "evm_version"))
+        |> Map.put("interfaces", Map.get(params, "interfaces"))
 
       files_array =
         files
         |> Map.values()
         |> PublishHelper.read_files()
 
-      Que.add(VyperPublisherWorker, {address_hash_string, verification_params, files_array})
+      Que.add(VyperPublisherWorker, {"vyper_multipart", verification_params, files_array})
+
+      conn
+      |> put_view(ApiView)
+      |> render(:message, %{message: "Verification started"})
+    end
+  end
+
+  # sobelow_skip ["Traversal.FileModule"]
+  def verification_via_vyper_standard_input(
+        conn,
+        %{"address_hash" => address_hash_string, "files" => files, "compiler_version" => compiler_version} = params
+      ) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         {:already_verified, false} <-
+           {:already_verified, Chain.smart_contract_fully_verified?(address_hash, @api_true)},
+         files_array <- PublishHelper.prepare_files_array(files),
+         {:no_json_file, %Plug.Upload{path: path}} <-
+           {:no_json_file, PublishHelper.get_one_json(files_array)},
+         {:file_error, {:ok, json_input}} <- {:file_error, File.read(path)} do
+      verification_params = %{
+        "address_hash" => String.downcase(address_hash_string),
+        "compiler_version" => compiler_version,
+        "input" => json_input
+      }
+
+      Que.add(VyperPublisherWorker, {"vyper_standard_json", verification_params})
 
       conn
       |> put_view(ApiView)

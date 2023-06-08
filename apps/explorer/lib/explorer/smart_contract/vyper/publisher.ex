@@ -64,6 +64,33 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
     end
   end
 
+  def publish_standard_json(%{"address_hash" => address_hash} = params) do
+    case Verifier.evaluate_authenticity_standard_json(params) do
+      {
+        :ok,
+        %{
+          "abi" => _abi_string,
+          "compilerVersion" => _compiler_version,
+          "constructorArguments" => _constructor_arguments,
+          "contractName" => _contract_name,
+          "fileName" => _file_name,
+          "sourceFiles" => _sources,
+          "compilerSettings" => _compiler_settings_string
+        } = source
+      } ->
+        process_rust_verifier_response(source, address_hash, true)
+
+      {:ok, %{abi: abi}} ->
+        publish_smart_contract(address_hash, params, abi)
+
+      {:error, error} ->
+        {:error, unverified_smart_contract(address_hash, params, error, nil)}
+
+      _ ->
+        {:error, unverified_smart_contract(address_hash, params, "Unexpected error", nil)}
+    end
+  end
+
   def process_rust_verifier_response(
         %{
           "abi" => abi_string,
