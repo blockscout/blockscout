@@ -3,6 +3,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
     This behaviour module was created in order to add possibility to extend the functionality of RustVerifierInterface
   """
   defmacro __using__(_) do
+    # credo:disable-for-next-line
     quote([]) do
       alias Explorer.Utility.RustService
       alias HTTPoison.Response

@@ -124,7 +124,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       |> Map.put("name", contract_name)
       |> Map.put("file_path", if(save_file_path?, do: file_name))
       |> Map.put("secondary_sources", secondary_sources)
-      |> Map.put("evm_version", compiler_settings["evmVersion"] || "istanbul")
+      |> Map.put("evm_version", compiler_settings["evmVersion"])
       |> Map.put("partially_verified", match_type == "PARTIAL")
       |> Map.put("verified_via_eth_bytecode_db", automatically_verified?)
 

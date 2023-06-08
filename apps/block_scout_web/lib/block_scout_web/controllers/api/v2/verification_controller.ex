@@ -25,7 +25,10 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
             do: ["sourcify" | &1],
             else: &1
           )).()
-      |> (&if(RustVerifierInterface.enabled?(), do: ["multi-part","vyper-multi-part", "vyper-standard-input"]++ &1, else: &1)).()
+      |> (&if(RustVerifierInterface.enabled?(),
+            do: ["multi-part", "vyper-multi-part", "vyper-standard-input"] ++ &1,
+            else: &1
+          )).()
 
     conn
     |> json(%{
