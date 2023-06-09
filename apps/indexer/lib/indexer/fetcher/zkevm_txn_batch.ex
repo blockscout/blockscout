@@ -152,16 +152,13 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
   end
 
   defp handle_batch_range(start_batch_number, end_batch_number, json_rpc_named_arguments) do
-    chunks_number = ceil((end_batch_number - start_batch_number + 1) / @batch_range_size)
-
-    chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
-
-    Enum.each(chunk_range, fn current_chunk ->
-      chunk_start = start_batch_number + @batch_range_size * current_chunk
-      chunk_end = min(chunk_start + @batch_range_size - 1, end_batch_number)
+    start_batch_number..end_batch_number
+    |> Enum.chunk_every(@batch_range_size)
+    |> Enum.each(fn chunk ->
+      chunk_start = List.first(chunk)
+      chunk_end = List.last(chunk)
 
       log_batches_chunk_handling(chunk_start, chunk_end, start_batch_number, end_batch_number)
-
       fetch_and_save_batches(chunk_start, chunk_end, json_rpc_named_arguments)
     end)
   end
