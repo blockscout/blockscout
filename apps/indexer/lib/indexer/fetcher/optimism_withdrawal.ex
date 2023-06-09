@@ -132,6 +132,12 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
     {:stop, :normal, state}
   end
 
+  @impl GenServer
+  def handle_info({ref, _result}, state) do
+    Process.demonitor(ref, [:flush])
+    {:noreply, state}
+  end
+
   def remove(starting_block) do
     Repo.delete_all(from(w in OptimismWithdrawal, where: w.l2_block_number >= ^starting_block))
   end
