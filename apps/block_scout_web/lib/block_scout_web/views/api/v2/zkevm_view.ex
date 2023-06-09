@@ -1,11 +1,6 @@
 defmodule BlockScoutWeb.API.V2.ZkevmView do
   use BlockScoutWeb, :view
 
-  import Ecto.Query, only: [from: 2]
-
-  alias Explorer.Chain.ZkevmBatchTxn
-  alias Explorer.Repo
-
   def render("zkevm_batch.json", %{batch: batch}) do
     sequence_tx_hash =
       if not is_nil(batch.sequence_transaction) do
@@ -64,33 +59,18 @@ defmodule BlockScoutWeb.API.V2.ZkevmView do
   end
 
   defp render_zkevm_batches(batches) do
-    batches
-    |> Enum.map(fn batch ->
-      Task.async(fn ->
-        tx_count =
-          Repo.replica().aggregate(
-            from(
-              t in ZkevmBatchTxn,
-              where: t.batch_number == ^batch.number
-            ),
-            :count,
-            timeout: :infinity
-          )
+    Enum.map(batches, fn batch ->
+      sequence_tx_hash =
+        if not is_nil(batch.sequence_transaction) do
+          batch.sequence_transaction.hash
+        end
 
-        sequence_tx_hash =
-          if not is_nil(batch.sequence_transaction) do
-            batch.sequence_transaction.hash
-          end
-
-        %{
-          "number" => batch.number,
-          "timestamp" => batch.timestamp,
-          "tx_count" => tx_count,
-          "sequence_tx_hash" => sequence_tx_hash
-        }
-      end)
+      %{
+        "number" => batch.number,
+        "timestamp" => batch.timestamp,
+        "tx_count" => batch.l2_transactions_count,
+        "sequence_tx_hash" => sequence_tx_hash
+      }
     end)
-    |> Task.yield_many(:infinity)
-    |> Enum.map(fn {_task, {:ok, item}} -> item end)
   end
 end

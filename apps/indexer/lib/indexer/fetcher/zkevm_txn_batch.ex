@@ -262,16 +262,6 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
           |> get_tx_hash("verifyBatchTxHash")
           |> handle_tx_hash(hash_to_id, next_id, l1_txs, true)
 
-        batch = %{
-          number: number,
-          timestamp: timestamp,
-          global_exit_root: global_exit_root,
-          acc_input_hash: acc_input_hash,
-          state_root: state_root,
-          sequence_id: sequence_id,
-          verify_id: verify_id
-        }
-
         l2_txs_append =
           l2_transaction_hashes
           |> Kernel.||([])
@@ -281,6 +271,17 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
               hash: l2_tx_hash
             }
           end)
+
+        batch = %{
+          number: number,
+          timestamp: timestamp,
+          l2_transactions_count: Enum.count(l2_txs_append),
+          global_exit_root: global_exit_root,
+          acc_input_hash: acc_input_hash,
+          state_root: state_root,
+          sequence_id: sequence_id,
+          verify_id: verify_id
+        }
 
         {[batch | batches], l2_txs ++ l2_txs_append, l1_txs, next_id, hash_to_id}
       end)

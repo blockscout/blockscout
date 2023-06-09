@@ -14,6 +14,7 @@ defmodule Explorer.Repo.Migrations.CreateZkevmTables do
     create table(:zkevm_transaction_batches, primary_key: false) do
       add(:number, :integer, null: false, primary_key: true)
       add(:timestamp, :"timestamp without time zone", null: false)
+      add(:l2_transactions_count, :integer, null: false)
       add(:global_exit_root, :bytea, null: false)
       add(:acc_input_hash, :bytea, null: false)
       add(:state_root, :bytea, null: false)

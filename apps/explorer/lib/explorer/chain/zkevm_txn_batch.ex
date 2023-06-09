@@ -7,11 +7,12 @@ defmodule Explorer.Chain.ZkevmTxnBatch do
 
   @optional_attrs ~w(sequence_id verify_id)a
 
-  @required_attrs ~w(number timestamp global_exit_root acc_input_hash state_root)a
+  @required_attrs ~w(number timestamp l2_transactions_count global_exit_root acc_input_hash state_root)a
 
   @type t :: %__MODULE__{
           number: non_neg_integer(),
           timestamp: DateTime.t(),
+          l2_transactions_count: non_neg_integer(),
           global_exit_root: Hash.t(),
           acc_input_hash: Hash.t(),
           state_root: Hash.t(),
@@ -25,6 +26,7 @@ defmodule Explorer.Chain.ZkevmTxnBatch do
   @primary_key {:number, :integer, autogenerate: false}
   schema "zkevm_transaction_batches" do
     field(:timestamp, :utc_datetime_usec)
+    field(:l2_transactions_count, :integer)
     field(:global_exit_root, Hash.Full)
     field(:acc_input_hash, Hash.Full)
     field(:state_root, Hash.Full)

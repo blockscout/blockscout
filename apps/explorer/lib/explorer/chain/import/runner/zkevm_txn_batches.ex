@@ -85,6 +85,7 @@ defmodule Explorer.Chain.Import.Runner.ZkevmTxnBatches do
         set: [
           # don't update `number` as it is a primary key and used for the conflict target
           timestamp: fragment("EXCLUDED.timestamp"),
+          l2_transactions_count: fragment("EXCLUDED.l2_transactions_count"),
           global_exit_root: fragment("EXCLUDED.global_exit_root"),
           acc_input_hash: fragment("EXCLUDED.acc_input_hash"),
           state_root: fragment("EXCLUDED.state_root"),
@@ -96,8 +97,9 @@ defmodule Explorer.Chain.Import.Runner.ZkevmTxnBatches do
       ],
       where:
         fragment(
-          "(EXCLUDED.timestamp, EXCLUDED.global_exit_root, EXCLUDED.acc_input_hash, EXCLUDED.state_root, EXCLUDED.sequence_id, EXCLUDED.verify_id) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.timestamp, EXCLUDED.l2_transactions_count, EXCLUDED.global_exit_root, EXCLUDED.acc_input_hash, EXCLUDED.state_root, EXCLUDED.sequence_id, EXCLUDED.verify_id) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
           tb.timestamp,
+          tb.l2_transactions_count,
           tb.global_exit_root,
           tb.acc_input_hash,
           tb.state_root,
