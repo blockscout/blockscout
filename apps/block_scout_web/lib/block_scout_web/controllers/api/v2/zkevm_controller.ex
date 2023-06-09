@@ -8,8 +8,7 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
       split_list_by_page: 1
     ]
 
-  alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.ZkevmTxnBatch
+  alias Explorer.Chain
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -37,15 +36,9 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
   end
 
   def batch_latest_number(conn, _params) do
-    number =
-      case Chain.zkevm_batch(:latest, api?: true) do
-        {:ok, batch} -> batch.number
-        {:error, :not_found} -> 0
-      end
-
     conn
     |> put_status(200)
-    |> render(:zkevm_batch_latest_number, %{number: number})
+    |> render(:zkevm_batch_latest_number, %{number: batch_latest_number()})
   end
 
   def batches(conn, params) do
@@ -68,11 +61,9 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
   end
 
   def batches_count(conn, _params) do
-    count = Repo.replica().aggregate(ZkevmTxnBatch, :count, timeout: :infinity)
-
     conn
     |> put_status(200)
-    |> render(:zkevm_batches_count, %{count: count})
+    |> render(:zkevm_batches_count, %{count: batch_latest_number()})
   end
 
   def batches_confirmed(conn, _params) do
@@ -86,5 +77,12 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
     conn
     |> put_status(200)
     |> render(:zkevm_batches, %{batches: batches})
+  end
+
+  defp batch_latest_number do
+    case Chain.zkevm_batch(:latest, api?: true) do
+      {:ok, batch} -> batch.number
+      {:error, :not_found} -> 0
+    end
   end
 end
