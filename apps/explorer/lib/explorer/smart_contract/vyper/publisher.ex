@@ -57,10 +57,10 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
         publish_smart_contract(address_hash, params, abi)
 
       {:error, error} ->
-        {:error, unverified_smart_contract(address_hash, params, error, nil)}
+        {:error, unverified_smart_contract(address_hash, params, error, nil, true)}
 
       _ ->
-        {:error, unverified_smart_contract(address_hash, params, "Unexpected error", nil)}
+        {:error, unverified_smart_contract(address_hash, params, "Unexpected error", nil, true)}
     end
   end
 
@@ -84,10 +84,10 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
         publish_smart_contract(address_hash, params, abi)
 
       {:error, error} ->
-        {:error, unverified_smart_contract(address_hash, params, error, nil)}
+        {:error, unverified_smart_contract(address_hash, params, error, nil, true)}
 
       _ ->
-        {:error, unverified_smart_contract(address_hash, params, "Unexpected error", nil)}
+        {:error, unverified_smart_contract(address_hash, params, "Unexpected error", nil, true)}
     end
   end
 
@@ -137,7 +137,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
     Chain.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
   end
 
-  defp unverified_smart_contract(address_hash, params, error, error_message) do
+  defp unverified_smart_contract(address_hash, params, error, error_message, verification_with_files? \\ false) do
     attrs = attributes(address_hash, params)
 
     changeset =
@@ -145,7 +145,8 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
         %SmartContract{address_hash: address_hash},
         attrs,
         error,
-        error_message
+        error_message,
+        verification_with_files?
       )
 
     %{changeset | action: :insert}
