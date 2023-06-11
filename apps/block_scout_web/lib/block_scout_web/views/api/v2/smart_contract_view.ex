@@ -130,7 +130,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   defp prepare_output(output), do: output
 
   # credo:disable-for-next-line
-  def prepare_smart_contract(%Address{smart_contract: %SmartContract{}} = address) do
+  def prepare_smart_contract(%Address{smart_contract: %SmartContract{} = smart_contract} = address) do
     minimal_proxy_template = Chain.get_minimal_proxy_template(address.hash, @api_true)
     twin = Chain.get_address_verified_twin_contract(address.hash, @api_true)
     metadata_for_verification = minimal_proxy_template || twin.verified_contract
@@ -178,7 +178,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "decoded_constructor_args" =>
         if(smart_contract_verified,
           do: format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
-        )
+        ),
+      "language" => smart_contract_language(smart_contract)
     }
     |> Map.merge(bytecode_info(address))
   end
