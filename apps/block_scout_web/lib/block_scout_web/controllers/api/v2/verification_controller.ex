@@ -229,7 +229,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   defp parse_interfaces(interfaces) do
     cond do
       is_binary(interfaces) ->
-        case Jason.decode(params["interfaces"]) do
+        case Jason.decode(interfaces) do
           {:ok, map} ->
             map
 
