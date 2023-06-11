@@ -24,7 +24,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
           "compilerSettings" => _compiler_settings_string
         } = source
       } ->
-        process_rust_verifier_response(source, address_hash, false)
+        process_rust_verifier_response(source, address_hash, false, false)
 
       {:ok, %{abi: abi}} ->
         publish_smart_contract(address_hash, params, abi)
@@ -51,7 +51,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
           "compilerSettings" => _compiler_settings_string
         } = source
       } ->
-        process_rust_verifier_response(source, address_hash, true)
+        process_rust_verifier_response(source, address_hash, true, false)
 
       {:ok, %{abi: abi}} ->
         publish_smart_contract(address_hash, params, abi)
@@ -78,7 +78,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
           "compilerSettings" => _compiler_settings_string
         } = source
       } ->
-        process_rust_verifier_response(source, address_hash, true)
+        process_rust_verifier_response(source, address_hash, true, true)
 
       {:ok, %{abi: abi}} ->
         publish_smart_contract(address_hash, params, abi)
@@ -104,6 +104,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
         },
         address_hash,
         save_file_path?,
+        standard_json?,
         automatically_verified? \\ false
       ) do
     secondary_sources =
@@ -127,6 +128,11 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       |> Map.put("evm_version", compiler_settings["evmVersion"])
       |> Map.put("partially_verified", match_type == "PARTIAL")
       |> Map.put("verified_via_eth_bytecode_db", automatically_verified?)
+      |> Map.put(
+        "optimization",
+        if(is_nil(compiler_settings["optimize"]), do: true, else: compiler_settings["optimize"])
+      )
+      |> Map.put("compiler_settings", if(standard_json?, do: compiler_settings))
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
   end
@@ -154,12 +160,20 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
 
   defp attributes(address_hash, params, abi \\ %{}) do
     constructor_arguments = params["constructor_arguments"]
+    compiler_settings = params["compiler_settings"]
 
     clean_constructor_arguments =
       if constructor_arguments != nil && constructor_arguments != "" do
         constructor_arguments
       else
         nil
+      end
+
+    clean_compiler_settings =
+      if compiler_settings in ["", nil, %{}] do
+        nil
+      else
+        compiler_settings
       end
 
     compiler_version = CompilerVersion.get_strict_compiler_version(:vyper, params["compiler_version"])
@@ -170,7 +184,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       compiler_version: compiler_version,
       evm_version: params["evm_version"],
       optimization_runs: nil,
-      optimization: false,
+      optimization: params["optimization"] || false,
       contract_source_code: params["contract_source_code"],
       constructor_arguments: clean_constructor_arguments,
       external_libraries: [],
@@ -180,7 +194,8 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       partially_verified: params["partially_verified"] || false,
       is_vyper_contract: true,
       file_path: params["file_path"],
-      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false
+      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
+      compiler_settings: clean_compiler_settings
     }
   end
 end

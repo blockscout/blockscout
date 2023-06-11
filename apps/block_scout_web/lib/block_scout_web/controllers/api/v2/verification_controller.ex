@@ -203,18 +203,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:already_verified, false} <-
            {:already_verified, Chain.smart_contract_fully_verified?(address_hash, @api_true)} do
-      interfaces =
-        if is_binary(params["interfaces"]) do
-          case Jason.decode(params["interfaces"]) do
-            {:ok, map} ->
-              map
-
-            _ ->
-              nil
-          end
-        else
-          params["interfaces"]
-        end
+      interfaces = parse_interfaces(params["interfaces"])
 
       verification_params =
         %{
@@ -234,6 +223,27 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
       conn
       |> put_view(ApiView)
       |> render(:message, %{message: "Verification started"})
+    end
+  end
+
+  defp parse_interfaces(interfaces) do
+    cond do
+      is_binary(interfaces) ->
+        case Jason.decode(params["interfaces"]) do
+          {:ok, map} ->
+            map
+
+          _ ->
+            nil
+        end
+
+      is_map(interfaces) ->
+        interfaces
+        |> Map.values()
+        |> PublishHelper.read_files()
+
+      true ->
+        nil
     end
   end
 
