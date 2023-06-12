@@ -80,7 +80,7 @@ defmodule Explorer.Chain do
     BlockNumber,
     Blocks,
     ContractsCounter,
-    NewContractsCounter,
+    # NewContractsCounter, celo: disable new contracts counter
     NewVerifiedContractsCounter,
     Transactions,
     Uncles,
