@@ -246,16 +246,14 @@ defmodule Explorer.GraphQL do
           transaction_hash: tt.transaction_hash,
           block_number: tt.block_number,
           to_address_hash: tt.to_address_hash,
-          from_address_hash: tt.from_address_hash,
-          token_id: tt.token_id
+          from_address_hash: tt.from_address_hash
         },
         distinct: [desc: tt.block_number, desc: tt.transaction_hash],
         order_by: [
           desc: tt.block_number,
           desc: tt.transaction_hash,
           desc: tt.from_address_hash,
-          desc: tt.to_address_hash,
-          desc: tt.token_id
+          desc: tt.to_address_hash
         ],
         limit: ^growing_limit
       )
@@ -283,8 +281,7 @@ defmodule Explorer.GraphQL do
         timestamp: b.timestamp,
         input: tx.input,
         nonce: tx.nonce,
-        block_number: tt.block_number,
-        token_id: tt.token_id
+        block_number: tt.block_number
       }
     )
     |> order_by([transaction: t],
