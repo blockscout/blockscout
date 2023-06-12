@@ -1496,8 +1496,8 @@ msgstr ""
 msgid "Is Yul contract"
 msgstr ""
 
-#: lib/block_scout_web/templates/verified_contracts/_stats.html.eex:13
-#: lib/block_scout_web/templates/verified_contracts/_stats.html.eex:26
+#: lib/block_scout_web/templates/verified_contracts/_stats.html.eex:14
+#: lib/block_scout_web/templates/verified_contracts/_stats.html.eex:28
 #, elixir-autogen, elixir-format
 msgid "Last 24h"
 msgstr ""
@@ -2723,7 +2723,7 @@ msgid "Topics"
 msgstr ""
 
 #: lib/block_scout_web/templates/verified_contracts/_stats.html.eex:9
-#: lib/block_scout_web/templates/verified_contracts/_stats.html.eex:22
+#: lib/block_scout_web/templates/verified_contracts/_stats.html.eex:24
 #, elixir-autogen, elixir-format
 msgid "Total"
 msgstr ""
@@ -2994,7 +2994,7 @@ msgstr ""
 msgid "Verified"
 msgstr ""
 
-#: lib/block_scout_web/templates/verified_contracts/_stats.html.eex:18
+#: lib/block_scout_web/templates/verified_contracts/_stats.html.eex:20
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:5
 #, elixir-autogen, elixir-format
 msgid "Verified Contracts"

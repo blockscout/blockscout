@@ -10,6 +10,6 @@ defmodule Clabs.Debug do
 
   def token_tx_for_valora_address do
     {:ok,hsh} = Address.cast("0x6131a6d616a4be3737b38988847270a64bc10caa")
-    Explorer.GraphQL.token_txtransfers_query_for_address(hsh, 26)
+    Explorer.GraphQL.token_txtransfers_query_for_address(hsh, 26, 0)
   end
 end

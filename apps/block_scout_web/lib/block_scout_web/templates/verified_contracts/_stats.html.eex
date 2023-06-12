@@ -9,8 +9,10 @@
               <span class="text-muted"><%= gettext ("Total") %></span>
             </div>
             <div class="d-flex flex-column">
-              <h1 class="text-success"><%= if 0 |> Decimal.new() |> Decimal.lt?(@new_contracts_count), do: "+" %><%= BlockScoutWeb.Cldr.Number.to_string!(@new_contracts_count, format: "#,###") %></h1>
-              <span class="text-muted"><%= gettext ("Last 24h") %></span>
+              <%= if ! is_nil(@new_contracts_count) do %>
+                <h1 class="text-success"><%= if 0 |> Decimal.new() |> Decimal.lt?(@new_contracts_count), do: "+" %><%= BlockScoutWeb.Cldr.Number.to_string!(@new_contracts_count, format: "#,###") %></h1>
+                <span class="text-muted"><%= gettext ("Last 24h") %></span>
+              <% end %>
             </div>
           </div>
         </div>

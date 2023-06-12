@@ -50,7 +50,8 @@ defmodule BlockScoutWeb.VerifiedContractsController do
       page_number: params |> fetch_page_number() |> Integer.to_string(),
       contracts_count: Chain.count_contracts_from_cache(),
       verified_contracts_count: Chain.count_verified_contracts_from_cache(),
-      new_contracts_count: Chain.count_new_contracts_from_cache(),
+      # celo: disabling new contract count
+      new_contracts_count: nil,
       new_verified_contracts_count: Chain.count_new_verified_contracts_from_cache()
     )
   end

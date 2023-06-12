@@ -232,8 +232,9 @@ defmodule Explorer.GraphQL do
     )
   end
 
-  def token_txtransfers_query_for_address(address_hash, first) do
-    tt_limit = first * 2
+  def token_txtransfers_query_for_address(address_hash, offset, limit) do
+    page = floor(offset / limit) + 1
+    growing_limit = limit * (page + 1)
 
     tokens =
       from(
@@ -254,8 +255,7 @@ defmodule Explorer.GraphQL do
           desc: tt.from_address_hash,
           desc: tt.to_address_hash
         ],
-        limit: ^tt_limit,
-        offset: 0
+        limit: ^growing_limit
       )
 
     from(
@@ -282,8 +282,7 @@ defmodule Explorer.GraphQL do
         input: tx.input,
         nonce: tx.nonce,
         block_number: tt.block_number
-      },
-      limit: ^first
+      }
     )
     |> order_by([transaction: t],
       desc: t.block_number,
@@ -425,7 +424,7 @@ defmodule Explorer.GraphQL do
         nonce: tx.nonce,
         block_number: tt.block_number,
         token_type: token.type,
-        token_id: tt.token_id
+        token_id: fragment("COALESCE(?, (COALESCE(?, ARRAY[]::Decimal[]))[1])", tt.token_id, tt.token_ids)
       },
       order_by: [desc: tt.block_number, desc: tt.amount, desc: tt.log_index]
     )

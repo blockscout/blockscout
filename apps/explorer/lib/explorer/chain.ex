@@ -80,7 +80,7 @@ defmodule Explorer.Chain do
     BlockNumber,
     Blocks,
     ContractsCounter,
-    NewContractsCounter,
+    # NewContractsCounter, celo: disable new contracts counter
     NewVerifiedContractsCounter,
     Transactions,
     Uncles,
@@ -1428,7 +1428,10 @@ defmodule Explorer.Chain do
               address_verified_twin_contract_updated =
                 address_verified_twin_contract
                 |> Map.put(:address_hash, hash)
-                |> Map.put_new(:metadata_from_verified_twin, true)
+                |> Map.put(:metadata_from_verified_twin, true)
+                |> Map.put(:implementation_address_hash, nil)
+                |> Map.put(:implementation_name, nil)
+                |> Map.put(:implementation_fetched_at, nil)
 
               address_result
               |> Map.put(:smart_contract, address_verified_twin_contract_updated)
@@ -1963,7 +1966,10 @@ defmodule Explorer.Chain do
               address_verified_twin_contract_updated =
                 address_verified_twin_contract
                 |> Map.put(:address_hash, hash)
-                |> Map.put_new(:metadata_from_verified_twin, true)
+                |> Map.put(:metadata_from_verified_twin, true)
+                |> Map.put(:implementation_address_hash, nil)
+                |> Map.put(:implementation_name, nil)
+                |> Map.put(:implementation_fetched_at, nil)
 
               address_result
               |> Map.put(:smart_contract, address_verified_twin_contract_updated)
@@ -4575,9 +4581,10 @@ defmodule Explorer.Chain do
       if address_verified_twin_contract do
         address_verified_twin_contract
         |> Map.put(:address_hash, address_hash)
-        |> Map.put(:implementation_address_hash, current_smart_contract.implementation_address_hash)
-        |> Map.put(:implementation_name, current_smart_contract.implementation_name)
-        |> Map.put(:implementation_fetched_at, current_smart_contract.implementation_fetched_at)
+        |> Map.put(:metadata_from_verified_twin, true)
+        |> Map.put(:implementation_address_hash, nil)
+        |> Map.put(:implementation_name, nil)
+        |> Map.put(:implementation_fetched_at, nil)
       else
         current_smart_contract
       end
@@ -7161,7 +7168,8 @@ defmodule Explorer.Chain do
   end
 
   def count_new_contracts_from_cache do
-    NewContractsCounter.fetch()
+    0
+    # celo: disable new contract count NewContractsCounter.fetch()
   end
 
   def address_counters(address) do
