@@ -7162,7 +7162,7 @@ defmodule Explorer.Chain do
 
   def count_new_contracts_from_cache do
     0
-    #celo: disable new contract count NewContractsCounter.fetch()
+    # celo: disable new contract count NewContractsCounter.fetch()
   end
 
   def address_counters(address) do

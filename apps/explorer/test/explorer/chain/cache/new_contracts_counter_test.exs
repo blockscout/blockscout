@@ -4,7 +4,8 @@ defmodule Explorer.Chain.Cache.NewContractsCounterTest do
   alias Explorer.Chain.Cache.NewContractsCounter
   alias Explorer.Chain
 
-  @tag :skip #celo: disabling new contract count
+  # celo: disabling new contract count
+  @tag :skip
   test "populates the cache with the number of new contracts (last 24h)" do
     :transaction
     |> insert(created_contract_code_indexed_at: Timex.shift(Timex.now(), hours: -1))

@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
 
   alias Explorer.Chain.Cache.{
     ContractsCounter,
-    #NewContractsCounter,
+    # NewContractsCounter,
     NewVerifiedContractsCounter,
     VerifiedContractsCounter
   }
@@ -16,9 +16,9 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
     test "returns 200", %{conn: conn} do
       start_supervised!(ContractsCounter)
       ContractsCounter.consolidate()
-      #celo: disable new contracts count
-#      start_supervised!(NewContractsCounter)
-#      NewContractsCounter.consolidate()
+      # celo: disable new contracts count
+      #      start_supervised!(NewContractsCounter)
+      #      NewContractsCounter.consolidate()
       start_supervised!(NewVerifiedContractsCounter)
       NewVerifiedContractsCounter.consolidate()
       start_supervised!(VerifiedContractsCounter)

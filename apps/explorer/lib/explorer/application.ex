@@ -98,8 +98,8 @@ defmodule Explorer.Application do
         configure(Explorer.Market.History.Cataloger),
         configure(Explorer.Chain.Cache.TokenExchangeRate),
         configure(Explorer.Chain.Cache.ContractsCounter),
-        #celo: disable new contract count
-        #configure(Explorer.Chain.Cache.NewContractsCounter),
+        # celo: disable new contract count
+        # configure(Explorer.Chain.Cache.NewContractsCounter),
         configure(Explorer.Chain.Cache.VerifiedContractsCounter),
         configure(Explorer.Chain.Cache.NewVerifiedContractsCounter),
         configure(Explorer.Chain.Transaction.History.Historian),

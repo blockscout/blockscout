@@ -233,7 +233,7 @@ defmodule Explorer.GraphQL do
   end
 
   def token_txtransfers_query_for_address(address_hash, offset, limit) do
-    page = floor(offset/limit) + 1
+    page = floor(offset / limit) + 1
     growing_limit = limit * (page + 1)
 
     tokens =
