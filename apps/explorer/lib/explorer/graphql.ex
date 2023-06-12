@@ -424,7 +424,7 @@ defmodule Explorer.GraphQL do
         nonce: tx.nonce,
         block_number: tt.block_number,
         token_type: token.type,
-        token_id: tt.token_id
+        token_id: fragment("COALESCE(?, (COALESCE(?, ARRAY[]::Decimal[]))[1])", tt.token_id, tt.token_ids)
       },
       order_by: [desc: tt.block_number, desc: tt.amount, desc: tt.log_index]
     )
