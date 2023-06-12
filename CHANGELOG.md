@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#7653](https://github.com/blockscout/blockscout/pull/7653) - Add support for DEPOSIT and WITHDRAW token transfer event in older contracts
 - [#7628](https://github.com/blockscout/blockscout/pull/7628) - Support partially verified property from verifier MS; Add property to track contracts automatically verified via eth-bytecode-db
 - [#7603](https://github.com/blockscout/blockscout/pull/7603) - Add Polygon Edge and optimism genesis files support
 - [#7513](https://github.com/blockscout/blockscout/pull/7513) - Add Polygon Edge support
@@ -31,6 +32,7 @@
 
 ### Chore
 
+- [#7666](https://github.com/blockscout/blockscout/pull/7666) - Search label query
 - [#7644](https://github.com/blockscout/blockscout/pull/7644) - Publish docker images CI for prod/staging branches
 - [#7594](https://github.com/blockscout/blockscout/pull/7594) - Stats service support in docker-compose config with new frontend
 - [#7576](https://github.com/blockscout/blockscout/pull/7576) - Check left blocks in pending block operations in order to decide, if we need to display indexing int tx banner at the top
