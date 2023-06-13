@@ -47,7 +47,8 @@ defmodule BlockScoutWeb.TransactionView do
   def value_transfer?(_), do: false
 
   def cosmos_hash(transaction) do
-    response = HTTPoison.get("https://test-api-insights.carbon.network/chain/transaction/hash/#{transaction.hash}/")
+    insights_api_url = Application.get_env(:block_scout_web, :insights_api_url)
+    response = HTTPoison.get("#{insights_api_url}/chain/transaction/hash/#{transaction.hash}/")
     case response do
       {:ok, %{body: body}} ->
         case Poison.decode(body) do
