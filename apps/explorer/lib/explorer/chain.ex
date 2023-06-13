@@ -2616,8 +2616,9 @@ defmodule Explorer.Chain do
   @doc """
   Calls `reducer` on a stream of `t:Explorer.Chain.Block.t/0` without `t:Explorer.Chain.Block.Reward.t/0`.
   """
-  def stream_blocks_without_rewards(initial, reducer) when is_function(reducer, 2) do
+  def stream_blocks_without_rewards(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
     Block.blocks_without_reward_query()
+    |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
 
@@ -2827,10 +2828,11 @@ defmodule Explorer.Chain do
   @spec stream_unfetched_balances(
           initial :: accumulator,
           reducer ::
-            (entry :: %{address_hash: Hash.Address.t(), block_number: Block.block_number()}, accumulator -> accumulator)
+            (entry :: %{address_hash: Hash.Address.t(), block_number: Block.block_number()}, accumulator -> accumulator),
+          limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_unfetched_balances(initial, reducer) when is_function(reducer, 2) do
+  def stream_unfetched_balances(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
     query =
       from(
         balance in CoinBalance,
@@ -2838,7 +2840,9 @@ defmodule Explorer.Chain do
         select: %{address_hash: balance.address_hash, block_number: balance.block_number}
       )
 
-    Repo.stream_reduce(query, initial, reducer)
+    query
+    |> add_fetcher_limit(limited?)
+    |> Repo.stream_reduce(initial, reducer)
   end
 
   @doc """
@@ -2846,11 +2850,13 @@ defmodule Explorer.Chain do
   """
   @spec stream_unfetched_token_balances(
           initial :: accumulator,
-          reducer :: (entry :: TokenBalance.t(), accumulator -> accumulator)
+          reducer :: (entry :: TokenBalance.t(), accumulator -> accumulator),
+          limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_unfetched_token_balances(initial, reducer) when is_function(reducer, 2) do
+  def stream_unfetched_token_balances(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
     TokenBalance.unfetched_token_balances()
+    |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
 
@@ -2872,10 +2878,12 @@ defmodule Explorer.Chain do
   """
   @spec stream_blocks_with_unfetched_internal_transactions(
           initial :: accumulator,
-          reducer :: (entry :: term(), accumulator -> accumulator)
+          reducer :: (entry :: term(), accumulator -> accumulator),
+          limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_blocks_with_unfetched_internal_transactions(initial, reducer) when is_function(reducer, 2) do
+  def stream_blocks_with_unfetched_internal_transactions(initial, reducer, limited? \\ false)
+      when is_function(reducer, 2) do
     query =
       from(
         po in PendingBlockOperation,
@@ -2883,7 +2891,9 @@ defmodule Explorer.Chain do
         select: po.block_number
       )
 
-    Repo.stream_reduce(query, initial, reducer)
+    query
+    |> add_fetcher_limit(limited?)
+    |> Repo.stream_reduce(initial, reducer)
   end
 
   def remove_nonconsensus_blocks_from_pending_ops(block_hashes) do
@@ -2930,10 +2940,11 @@ defmodule Explorer.Chain do
             | :value
           ],
           initial :: accumulator,
-          reducer :: (entry :: term(), accumulator -> accumulator)
+          reducer :: (entry :: term(), accumulator -> accumulator),
+          limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_transactions_with_unfetched_created_contract_codes(fields, initial, reducer)
+  def stream_transactions_with_unfetched_created_contract_codes(fields, initial, reducer, limited? \\ false)
       when is_function(reducer, 2) do
     query =
       from(t in Transaction,
@@ -2943,7 +2954,9 @@ defmodule Explorer.Chain do
         select: ^fields
       )
 
-    Repo.stream_reduce(query, initial, reducer)
+    query
+    |> add_fetcher_limit(limited?)
+    |> Repo.stream_reduce(initial, reducer)
   end
 
   @spec stream_mined_transactions(
@@ -2995,14 +3008,16 @@ defmodule Explorer.Chain do
             | :value
           ],
           initial :: accumulator,
-          reducer :: (entry :: term(), accumulator -> accumulator)
+          reducer :: (entry :: term(), accumulator -> accumulator),
+          limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_pending_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+  def stream_pending_transactions(fields, initial, reducer, limited? \\ false) when is_function(reducer, 2) do
     query =
       Transaction
       |> pending_transactions_query()
       |> select(^fields)
+      |> add_fetcher_limit(limited?)
 
     Repo.stream_reduce(query, initial, reducer)
   end
@@ -3017,17 +3032,20 @@ defmodule Explorer.Chain do
   """
   @spec stream_unfetched_uncles(
           initial :: accumulator,
-          reducer :: (entry :: term(), accumulator -> accumulator)
+          reducer :: (entry :: term(), accumulator -> accumulator),
+          limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_unfetched_uncles(initial, reducer) when is_function(reducer, 2) do
+  def stream_unfetched_uncles(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
     query =
       from(bsdr in Block.SecondDegreeRelation,
         where: is_nil(bsdr.uncle_fetched_at) and not is_nil(bsdr.index),
         select: [:nephew_hash, :index]
       )
 
-    Repo.stream_reduce(query, initial, reducer)
+    query
+    |> add_fetcher_limit(limited?)
+    |> Repo.stream_reduce(initial, reducer)
   end
 
   @doc """
@@ -5017,10 +5035,12 @@ defmodule Explorer.Chain do
   """
   @spec stream_uncataloged_token_contract_address_hashes(
           initial :: accumulator,
-          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
+          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator),
+          limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_uncataloged_token_contract_address_hashes(initial, reducer) when is_function(reducer, 2) do
+  def stream_uncataloged_token_contract_address_hashes(initial, reducer, limited? \\ false)
+      when is_function(reducer, 2) do
     query =
       from(
         token in Token,
@@ -5028,7 +5048,9 @@ defmodule Explorer.Chain do
         select: token.contract_address_hash
       )
 
-    Repo.stream_reduce(query, initial, reducer)
+    query
+    |> add_fetcher_limit(limited?)
+    |> Repo.stream_reduce(initial, reducer)
   end
 
   @spec stream_unfetched_token_instances(
@@ -5080,10 +5102,11 @@ defmodule Explorer.Chain do
 
   @spec stream_token_instances_with_error(
           initial :: accumulator,
-          reducer :: (entry :: map(), accumulator -> accumulator)
+          reducer :: (entry :: map(), accumulator -> accumulator),
+          limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_token_instances_with_error(initial, reducer) when is_function(reducer, 2) do
+  def stream_token_instances_with_error(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
     Instance
     |> where([instance], not is_nil(instance.error))
     |> select([instance], %{
@@ -5091,6 +5114,7 @@ defmodule Explorer.Chain do
       token_id: instance.token_id,
       updated_at: instance.updated_at
     })
+    |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
 
@@ -5099,13 +5123,16 @@ defmodule Explorer.Chain do
   """
   @spec stream_cataloged_token_contract_address_hashes(
           initial :: accumulator,
-          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
+          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator),
+          some_time_ago_updated :: integer(),
+          limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_cataloged_token_contract_address_hashes(initial, reducer, some_time_ago_updated \\ 2880)
+  def stream_cataloged_token_contract_address_hashes(initial, reducer, some_time_ago_updated \\ 2880, limited? \\ false)
       when is_function(reducer, 2) do
     some_time_ago_updated
     |> Token.cataloged_tokens()
+    |> add_fetcher_limit(limited?)
     |> order_by(asc: :updated_at)
     |> Repo.stream_reduce(initial, reducer)
   end
@@ -6912,5 +6939,13 @@ defmodule Explorer.Chain do
 
   def count_withdrawals_from_cache(options \\ []) do
     "withdrawals_count" |> get_last_fetched_counter(options) |> Decimal.add(1)
+  end
+
+  def add_fetcher_limit(query, false), do: query
+
+  def add_fetcher_limit(query, true) do
+    fetcher_limit = Application.get_env(:indexer, :fetcher_init_limit)
+
+    limit(query, ^fetcher_limit)
   end
 end
