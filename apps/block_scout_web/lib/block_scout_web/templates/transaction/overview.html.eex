@@ -7,7 +7,7 @@
 <% base_fee_per_gas = if block, do: block.base_fee_per_gas, else: nil %>
 <% max_priority_fee_per_gas = @transaction.max_priority_fee_per_gas %>
 <% max_fee_per_gas = @transaction.max_fee_per_gas %>
-<% burned_fee = 
+<% burned_fee =
   if !is_nil(max_fee_per_gas) and !is_nil(@transaction.gas_used) and !is_nil(base_fee_per_gas) do
     if Decimal.compare(max_fee_per_gas.value, 0) == :eq do
       %Wei{value: Decimal.new(0)}
@@ -88,6 +88,29 @@
                   title: gettext("Copy Txn Hash") %>
             </dd>
           </dl>
+          <!-- Carbon Transaction Hash -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+              text: gettext("Unique Cosmos character string assigned to every verified Cosmos transaction.") %>
+              <%= gettext "Cosmos Hash" %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10" style="word-break: break-all;">
+              <% carbon_hash = BlockScoutWeb.TransactionView.cosmos_hash(@transaction) %>
+              <%= if cosmos_hash_present(carbon_hash) do %>
+                <a href="<%= BlockScoutWeb.TransactionView.carbonscan_link(carbon_hash) %>" rel="noreferrer" target="_blank" title='<%= gettext("Carbonscan Transaction Link") %>'>
+                  <span class="transaction-details-address" data-test="transaction_detail_hash"><%= carbon_hash %> </span>
+                </a>
+              <%= else %>
+                  <span class="transaction-details-address" data-test="transaction_detail_hash"><%= carbon_hash %> </span>
+              <%= end %>
+              <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                  additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                  clipboard_text: carbon_hash,
+                  aria_label: gettext("Copy Carbon Transaction Hash"),
+                  title: gettext("Copy Carbon Txn Hash") %>
+            </dd>
+          </dl>
           <!-- Verify in other explorers -->
           <!-- <%= render BlockScoutWeb.AddressView, "_verify_other_explorers.html", hash: hash(@transaction), type: "tx" %> -->
           <!-- Result -->
@@ -122,7 +145,7 @@
                     <% true -> %>
                       <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["success", "large"] %></span>
                   <% end %>
-                
+
                 <%= if confirmations > 0 do %>
                   <span class="bs-label large ml-2 confirmations-label"><%= gettext "Confirmed by " %><span data-selector="block-confirmations"><%= confirmations %></span><%= " " <> confirmations_ds_name(confirmations) %></span>
                 <% end %>
@@ -429,7 +452,7 @@
               </dt>
               <dd class="col-sm-9 col-lg-10"> <%= format_wei_value(priority_fee, :ether) %> </dd>
             </dl>
-          <% end %> 
+          <% end %>
            <%= if !is_nil(burned_fee) do %>
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">

@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.TransactionView do
   use BlockScoutWeb, :view
+  use HTTPoison.Base
 
   alias BlockScoutWeb.{AccessHelper, AddressView, BlockView, TabHelper}
   alias BlockScoutWeb.Account.AuthController
@@ -44,6 +45,35 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def value_transfer?(_), do: false
+
+  def cosmos_hash(transaction) do
+    insights_api_url = Application.get_env(:block_scout_web, :insights_api_url)
+    response = HTTPoison.get("#{insights_api_url}/chain/transaction/hash/#{transaction.hash}/")
+    case response do
+      {:ok, %{body: body}} ->
+        case Poison.decode(body) do
+          {:ok, json} ->
+            case Map.get(json, "result") do
+              [] -> "Sync not available"
+              result ->
+                result
+                |> List.first()
+                |> Map.get("cosmosHash")
+            end
+          {:error, _} -> {:error, "Failed to decode JSON"}
+        end
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def cosmos_hash_present(cosmos_hash) do
+    cosmos_hash != "Sync not available"
+  end
+
+  def carbonscan_link(cosmos_hash) do
+    url = Application.get_env(:block_scout_web, :footer)[:carbonscan_link]
+    "#{url}transaction/#{cosmos_hash}"
+  end
 
   def token_transfer_type(transaction) do
     transaction_with_transfers = Repo.preload(transaction, token_transfers: :token)
