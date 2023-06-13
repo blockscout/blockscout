@@ -1966,8 +1966,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   defp compare_item(%SmartContract{} = smart_contract, json) do
     assert smart_contract.compiler_version == json["compiler_version"]
 
-    assert if(smart_contract.is_vyper_contract, do: nil, else: smart_contract.optimization) ==
-             json["optimization_enabled"]
+    assert smart_contract.optimization == json["optimization_enabled"]
 
     assert json["language"] == if(smart_contract.is_vyper_contract, do: "vyper", else: "solidity")
     assert json["verified_at"]
