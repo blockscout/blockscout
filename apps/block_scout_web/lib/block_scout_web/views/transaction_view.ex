@@ -66,6 +66,10 @@ defmodule BlockScoutWeb.TransactionView do
     end
   end
 
+  def cosmos_hash_present(cosmos_hash) do
+    cosmos_hash != "Sync not available"
+  end
+
   def carbonscan_link(cosmos_hash) do
     url = Application.get_env(:block_scout_web, :footer)[:carbonscan_link]
     "#{url}transaction/#{cosmos_hash}"

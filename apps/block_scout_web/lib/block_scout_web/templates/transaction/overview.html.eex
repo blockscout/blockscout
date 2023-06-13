@@ -97,9 +97,13 @@
             </dt>
             <dd class="col-sm-9 col-lg-10" style="word-break: break-all;">
               <% carbon_hash = BlockScoutWeb.TransactionView.cosmos_hash(@transaction) %>
-              <a href="<%= BlockScoutWeb.TransactionView.carbonscan_link(carbon_hash) %>" rel="noreferrer" target="_blank" title='<%= gettext("Carbonscan Transaction Link") %>'>
-                <span class="transaction-details-address" data-test="transaction_detail_hash"><%= carbon_hash %> </span>
-              </a>
+              <%= if cosmos_hash_present(carbon_hash) do %>
+                <a href="<%= BlockScoutWeb.TransactionView.carbonscan_link(carbon_hash) %>" rel="noreferrer" target="_blank" title='<%= gettext("Carbonscan Transaction Link") %>'>
+                  <span class="transaction-details-address" data-test="transaction_detail_hash"><%= carbon_hash %> </span>
+                </a>
+              <%= else %>
+                  <span class="transaction-details-address" data-test="transaction_detail_hash"><%= carbon_hash %> </span>
+              <%= end %>
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                   additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                   clipboard_text: carbon_hash,
