@@ -138,7 +138,9 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
     from(block in Block,
       where: is_nil(block.is_empty),
       where: block.consensus == true,
+      order_by: [asc: block.hash],
       limit: ^limit,
+      offset: 1000,
       lock: "FOR UPDATE"
     )
   end
@@ -151,7 +153,8 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
         inner_join: transaction in Transaction,
         on: q.number == transaction.block_number,
         select: q.hash,
-        distinct: q.hash
+        distinct: q.hash,
+        order_by: [asc: q.hash]
       )
 
     query
@@ -166,7 +169,8 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
         left_join: transaction in Transaction,
         on: q.number == transaction.block_number,
         where: is_nil(transaction.block_number),
-        select: {q.number, q.hash}
+        select: {q.number, q.hash},
+        order_by: [asc: q.hash]
       )
 
     query
