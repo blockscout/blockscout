@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:number, "~> 1.0.1"},
-      {:phoenix, "== 1.5.13"},
+      {:phoenix, "== 1.7.3"},
       {:phoenix_ecto, "~> 4.1"},
       {:phoenix_html, "== 3.0.4"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
