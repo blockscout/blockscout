@@ -22,7 +22,7 @@ jobs:
       - name: Merge upstream
         run: |
           git remote add upstream https://github.com/blockscout/blockscout.git
-          git fetch upstream develop
-          git checkout develop
-          git merge upstream/develop
-          git push origin develop
+          git fetch upstream master
+          git checkout master
+          git merge upstream/master
+          git push origin master
