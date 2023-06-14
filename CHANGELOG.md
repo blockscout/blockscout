@@ -32,6 +32,7 @@
 
 ### Chore
 
+- [#7699](https://github.com/blockscout/blockscout/pull/7699) - Add block_number index for address_coin_balances table
 - [#7666](https://github.com/blockscout/blockscout/pull/7666) - Search label query
 - [#7644](https://github.com/blockscout/blockscout/pull/7644) - Publish docker images CI for prod/staging branches
 - [#7594](https://github.com/blockscout/blockscout/pull/7594) - Stats service support in docker-compose config with new frontend
