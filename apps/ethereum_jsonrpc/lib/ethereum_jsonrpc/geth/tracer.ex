@@ -311,7 +311,7 @@ defmodule EthereumJSONRPC.Geth.Tracer do
     [%{top | "gasUsed" => top_call_gas} | Enum.reverse(calls)]
     |> List.flatten()
     |> Enum.map(fn %{"gas" => gas, "gasUsed" => gas_used} = call ->
-      %{call | "gas" => integer_to_quantity(gas), "gasUsed" => gas_used |> max(0) |> integer_to_quantity()}
+      %{call | "gas" => integer_to_quantity(gas), "gasUsed" => integer_to_quantity(gas_used)}
     end)
   end
 end

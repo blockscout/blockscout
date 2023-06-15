@@ -16,7 +16,6 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   @api_true [api?: true]
 
   def config(conn, _params) do
-    evm_versions = CodeCompiler.allowed_evm_versions()
     solidity_compiler_versions = CompilerVersion.fetch_version_list(:solc)
     vyper_compiler_versions = CompilerVersion.fetch_version_list(:vyper)
 
@@ -31,11 +30,11 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
 
     conn
     |> json(%{
-      solidity_evm_versions: evm_versions,
+      solidity_evm_versions: CodeCompiler.evm_versions(:solidity),
       solidity_compiler_versions: solidity_compiler_versions,
       vyper_compiler_versions: vyper_compiler_versions,
       verification_options: verification_options,
-      vyper_evm_versions: ["byzantium", "constantinople", "petersburg", "istanbul"],
+      vyper_evm_versions: CodeCompiler.evm_versions(:vyper),
       is_rust_verifier_microservice_enabled: RustVerifierInterface.enabled?()
     })
   end
