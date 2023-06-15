@@ -141,7 +141,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_address.html.eex:4
 #: lib/block_scout_web/templates/tokens/index.html.eex:34
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20
-#: lib/block_scout_web/templates/transaction_state/index.html.eex:29
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:34
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:54
 #: lib/block_scout_web/views/address_view.ex:107
 #, elixir-autogen, elixir-format
@@ -223,12 +223,12 @@ msgstr ""
 msgid "Balance"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction_state/index.html.eex:35
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:40
 #, elixir-autogen, elixir-format
 msgid "Balance after"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction_state/index.html.eex:32
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:37
 #, elixir-autogen, elixir-format
 msgid "Balance before"
 msgstr ""
@@ -1565,7 +1565,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/index.html.eex:25
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:13
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:15
-#: lib/block_scout_web/templates/transaction_state/index.html.eex:8
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:13
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:14
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:45
 #: lib/block_scout_web/templates/withdrawal/index.html.eex:14
@@ -2293,7 +2293,7 @@ msgstr ""
 msgid "CRC Worth"
 msgstr ""
 
-#: lib/block_scout_web/templates/common_components/_csv_export_button.html.eex:2
+#: lib/block_scout_web/templates/common_components/_csv_export_button.html.eex:4
 #, elixir-autogen, elixir-format
 msgid "CSV"
 msgstr ""
@@ -2395,7 +2395,8 @@ msgstr ""
 msgid "Date & time of transaction inclusion, including length of time for confirmation."
 msgstr ""
 
-#: lib/block_scout_web/templates/csv_export/index.html.eex:32
+#: lib/block_scout_web/templates/common_components/_csv_export_button.html.eex:4
+#: lib/block_scout_web/templates/csv_export/index.html.eex:33
 #, elixir-autogen, elixir-format
 msgid "Download"
 msgstr ""
@@ -2743,7 +2744,7 @@ msgstr ""
 msgid "The block height of a particular block is defined as the number of blocks preceding it in the blockchain."
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction_state/index.html.eex:13
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:18
 #, elixir-autogen, elixir-format
 msgid "The changes from this transaction have not yet happened since the transaction is still pending."
 msgstr ""
@@ -3349,7 +3350,7 @@ msgstr ""
 msgid "Burn address"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction_state/index.html.eex:38
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:43
 #, elixir-autogen, elixir-format
 msgid "Change"
 msgstr ""
@@ -3408,7 +3409,7 @@ msgstr ""
 msgid "There are no verified contracts."
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction_state/index.html.eex:17
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:22
 #, elixir-autogen, elixir-format
 msgid "This transaction hasn't changed state."
 msgstr ""
@@ -3620,11 +3621,6 @@ msgstr ""
 msgid "Please confirm your email address to use the My Account feature."
 msgstr ""
 
-#: lib/block_scout_web/templates/withdrawal/index.html.eex:11
-#, elixir-autogen, elixir-format
-msgid "There are %{withdrawals_count} withdrawals total that withdrawn %{withdrawals_sum}"
-msgstr ""
-
 #: lib/block_scout_web/templates/address_withdrawal/index.html.eex:54
 #, elixir-autogen, elixir-format, fuzzy
 msgid "There are no withdrawals for this address."
@@ -3669,4 +3665,24 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/app.html.eex:106
 #, elixir-autogen, elixir-format
 msgid "on sign up. Didn’t receive?"
+msgstr ""
+
+#: lib/block_scout_web/templates/withdrawal/index.html.eex:11
+#, elixir-autogen, elixir-format, fuzzy
+msgid "%{withdrawals_count} withdrawals processed and %{withdrawals_sum} withdrawn."
+msgstr ""
+
+#: lib/block_scout_web/templates/csv_export/index.html.eex:14
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Export"
+msgstr ""
+
+#: lib/block_scout_web/templates/csv_export/index.html.eex:14
+#, elixir-autogen, elixir-format, fuzzy
+msgid "for address"
+msgstr ""
+
+#: lib/block_scout_web/templates/csv_export/index.html.eex:17
+#, elixir-autogen, elixir-format
+msgid "to CSV file"
 msgstr ""

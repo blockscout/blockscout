@@ -4,9 +4,40 @@
 
 ### Features
 
+- [#7653](https://github.com/blockscout/blockscout/pull/7653) - Add support for DEPOSIT and WITHDRAW token transfer event in older contracts
+- [#7628](https://github.com/blockscout/blockscout/pull/7628) - Support partially verified property from verifier MS; Add property to track contracts automatically verified via eth-bytecode-db
+- [#7603](https://github.com/blockscout/blockscout/pull/7603) - Add Polygon Edge and optimism genesis files support
+- [#7513](https://github.com/blockscout/blockscout/pull/7513) - Add Polygon Edge support
+- [#7532](https://github.com/blockscout/blockscout/pull/7532) - Handle empty id in json rpc responses
+- [#7544](https://github.com/blockscout/blockscout/pull/7544) - Add ERC-1155 signatures to uncataloged_token_transfer_block_numbers
+- [#7363](https://github.com/blockscout/blockscout/pull/7363) - CSV export filters
+
 ### Fixes
 
+- [#7654](https://github.com/blockscout/blockscout/pull/7654) - Optimize exchange rates requests rate
+- [#7636](https://github.com/blockscout/blockscout/pull/7636) - Remove receive from read methods
+- [#7635](https://github.com/blockscout/blockscout/pull/7635) - Fix single 1155 transfer displaying
+- [#7629](https://github.com/blockscout/blockscout/pull/7629) - Fix NFT fetcher
+- [#7614](https://github.com/blockscout/blockscout/pull/7614) - API and smart-contracts fixes and improvements
+- [#7611](https://github.com/blockscout/blockscout/pull/7611) - Fix tokens pagination
+- [#7566](https://github.com/blockscout/blockscout/pull/7566) - Account: check composed email before sending
+- [#7564](https://github.com/blockscout/blockscout/pull/7564) - Return contract type in address view
+- [#7562](https://github.com/blockscout/blockscout/pull/7562) - Remove fallback from Read methods
+- [#7537](https://github.com/blockscout/blockscout/pull/7537), [#7553](https://github.com/blockscout/blockscout/pull/7553) - Withdrawals fixes and improvements
+- [#7546](https://github.com/blockscout/blockscout/pull/7546) - API v2: fix today coin price (use in-memory or cached in DB value)
+- [#7545](https://github.com/blockscout/blockscout/pull/7545) - API v2: Check if cached exchange rate is empty before replacing DB value in stats API
+- [#7516](https://github.com/blockscout/blockscout/pull/7516) - Fix shrinking logo in Safari
+- [#7590](https://github.com/blockscout/blockscout/pull/7590) - Drop genesis block in internal transactions fetcher
+- [#7639](https://github.com/blockscout/blockscout/pull/7639) - Fix contract creation transactions
+
 ### Chore
+
+- [#7699](https://github.com/blockscout/blockscout/pull/7699) - Add block_number index for address_coin_balances table
+- [#7666](https://github.com/blockscout/blockscout/pull/7666) - Search label query
+- [#7644](https://github.com/blockscout/blockscout/pull/7644) - Publish docker images CI for prod/staging branches
+- [#7594](https://github.com/blockscout/blockscout/pull/7594) - Stats service support in docker-compose config with new frontend
+- [#7576](https://github.com/blockscout/blockscout/pull/7576) - Check left blocks in pending block operations in order to decide, if we need to display indexing int tx banner at the top
+- [#7543](https://github.com/blockscout/blockscout/pull/7543) - Allow hyphen in DB username
 
 <details>
   <summary>Dependencies version bumps</summary>
@@ -19,6 +50,7 @@
 
 - [#7439](https://github.com/blockscout/blockscout/pull/7439) - Define batch size for token balance fetcher via runtime env var
 - [#7298](https://github.com/blockscout/blockscout/pull/7298) - Add changes to support force email verification
+- [#7422](https://github.com/blockscout/blockscout/pull/7422) - Refactor state changes
 - [#7416](https://github.com/blockscout/blockscout/pull/7416) - Add option to disable reCAPTCHA
 - [#6694](https://github.com/blockscout/blockscout/pull/6694) - Add withdrawals support (EIP-4895)
 - [#7355](https://github.com/blockscout/blockscout/pull/7355) - Add endpoint for token info import

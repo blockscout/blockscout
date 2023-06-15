@@ -23,7 +23,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "symbol" => search_result.symbol,
       "address" => search_result.address_hash,
       "token_url" => token_path(Endpoint, :show, search_result.address_hash),
-      "address_url" => address_path(Endpoint, :show, search_result.address_hash)
+      "address_url" => address_path(Endpoint, :show, search_result.address_hash),
+      "icon_url" => search_result.icon_url
     }
   end
 

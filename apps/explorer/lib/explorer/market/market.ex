@@ -25,6 +25,24 @@ defmodule Explorer.Market do
     MarketHistoryCache.fetch()
   end
 
+  @doc """
+  Retrieves today's native coin exchange rate from the database.
+  """
+  @spec get_native_coin_exchange_rate_from_db() :: Token.t() | nil
+  def get_native_coin_exchange_rate_from_db do
+    today =
+      case fetch_recent_history() do
+        [today | _the_rest] -> today
+        _ -> nil
+      end
+
+    if today do
+      Map.get(today, :closing_price)
+    else
+      nil
+    end
+  end
+
   @doc false
   def bulk_insert_history(records) do
     records_without_zeroes =

@@ -153,7 +153,7 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "constant" => true,
                  "inputs" => [],
                  "name" => "get",
-                 "outputs" => [%{"name" => "", "type" => "uint256", "value" => 0}],
+                 "outputs" => [%{"type" => "uint256", "value" => 0}],
                  "payable" => _,
                  "stateMutability" => _,
                  "type" => _
@@ -162,7 +162,7 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "constant" => true,
                  "inputs" => [%{"name" => "x", "type" => "uint256"}],
                  "name" => "with_arguments",
-                 "outputs" => [%{"name" => "", "type" => "bool"}],
+                 "outputs" => [%{"type" => "bool"}],
                  "payable" => _,
                  "stateMutability" => _,
                  "type" => _
@@ -238,7 +238,7 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "constant" => true,
                  "inputs" => [],
                  "name" => "get",
-                 "outputs" => [%{"name" => "", "type" => "uint256", "value" => 0}],
+                 "outputs" => [%{"type" => "uint256", "value" => 0}],
                  "payable" => _,
                  "stateMutability" => _,
                  "type" => _
@@ -247,7 +247,7 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "constant" => true,
                  "inputs" => [%{"name" => "x", "type" => "uint256"}],
                  "name" => "with_arguments",
-                 "outputs" => [%{"name" => "", "type" => "bool"}],
+                 "outputs" => [%{"type" => "bool"}],
                  "payable" => _,
                  "stateMutability" => _,
                  "type" => _
