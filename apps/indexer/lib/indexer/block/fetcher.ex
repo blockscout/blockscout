@@ -189,10 +189,16 @@ defmodule Indexer.Block.Fetcher do
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts},
-               transaction_actions: %{params: transaction_actions},
                withdrawals: %{params: withdrawals_params}
              }
-           ) do
+           ),
+         {:tx_actions, {:ok, inserted_tx_actions}} <-
+           {:tx_actions,
+            Chain.import(%{
+              transaction_actions: %{params: transaction_actions},
+              timeout: :infinity
+            })} do
+      inserted = Map.merge(inserted, inserted_tx_actions)
       Prometheus.Instrumenter.block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
       update_block_cache(inserted[:blocks])

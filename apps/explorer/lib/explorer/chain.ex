@@ -8068,6 +8068,10 @@ defmodule Explorer.Chain do
     |> where(is_vyper_contract: ^true)
   end
 
+  defp filter_contracts(basic_query, :yul) do
+    from(query in basic_query, where: is_nil(query.abi))
+  end
+
   defp filter_contracts(basic_query, _), do: basic_query
 
   def count_verified_contracts do

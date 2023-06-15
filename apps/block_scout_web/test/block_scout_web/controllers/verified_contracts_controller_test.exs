@@ -113,6 +113,23 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
       assert String.contains?(smart_contracts_tile, "data-identifier-hash=\"#{to_string(vyper_hash)}\"")
     end
 
+    test "returns yul contract", %{conn: conn} do
+      %SmartContract{address_hash: yul_hash} = insert(:smart_contract, abi: nil)
+      insert(:smart_contract)
+
+      path =
+        verified_contracts_path(conn, :index, %{
+          "filter" => "yul",
+          "type" => "JSON"
+        })
+
+      conn = get(conn, path)
+
+      [smart_contracts_tile] = json_response(conn, 200)["items"]
+
+      assert String.contains?(smart_contracts_tile, "data-identifier-hash=\"#{to_string(yul_hash)}\"")
+    end
+
     test "returns search results by name", %{conn: conn} do
       insert(:smart_contract)
       insert(:smart_contract)
