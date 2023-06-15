@@ -3,6 +3,7 @@ import omit from 'lodash.omit'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore, loadPage } from '../../lib/async_listing_load'
 import { commonPath } from '../../lib/path_helper'
+import { escapeHtml } from '../../lib/utils'
 import '../address'
 // @ts-ignore
 import { utils } from 'web3'
@@ -76,7 +77,20 @@ if ($('[data-page="address-logs"]').length) {
     const addressHashPlain = store.getState().addressHash
     const addressHashChecksum = addressHashPlain && utils.toChecksumAddress(addressHashPlain)
     const path = `${commonPath}/search-logs?topic=${topic}&address_id=${addressHashChecksum}`
+    changeDownloadButtonHref(topic)
     loadPage(store, path)
+  }
+
+  function changeDownloadButtonHref (filter) {
+    const currentHref = $('a.download-all-items-link').attr('href')
+    if (currentHref) {
+      let hrefWithTopic = currentHref
+      if (currentHref.includes('filter_type=&')) {
+        hrefWithTopic = currentHref.replace(/filter_type=.*?&/, 'filter_type=topic&')
+      }
+      const href = hrefWithTopic.replace(/filter_value=.*?&/, `filter_value=${escapeHtml(filter)}&`)
+      $('a.download-all-items-link').attr('href', href)
+    }
   }
 
   store.dispatch({

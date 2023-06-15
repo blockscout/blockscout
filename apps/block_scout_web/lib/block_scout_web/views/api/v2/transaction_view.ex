@@ -109,8 +109,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  def render("state_changes.json", %{state_changes: state_changes}) do
-    Enum.map(state_changes, &prepare_state_change(&1))
+  def render("state_changes.json", %{state_changes: state_changes, next_page_params: next_page_params}) do
+    %{
+      "items" => Enum.map(state_changes, &prepare_state_change(&1)),
+      "next_page_params" => next_page_params
+    }
   end
 
   def prepare_token_transfer(token_transfer, _conn) do
@@ -152,9 +155,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         %{"token_id" => List.first(token_transfer.token_ids), "value" => value, "decimals" => decimals}
 
       {:ok, :erc1155_instance, values, token_ids, decimals} ->
-        Enum.map(Enum.zip(values, token_ids), fn {value, token_id} ->
-          %{"value" => value, "token_id" => token_id, "decimals" => decimals}
-        end)
+        %{"token_id" => List.first(token_ids), "value" => List.first(values), "decimals" => decimals}
 
       {:ok, value, decimals} ->
         %{"value" => value, "decimals" => decimals}
@@ -544,7 +545,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         Helper.address_with_info(nil, state_change.address, state_change.address && state_change.address.hash),
       "is_miner" => state_change.miner?,
       "type" => type,
-      "token" => if(type == "token", do: TokenView.render("token.json", %{token: coin_or_transfer.token}))
+      "token" => if(type == "token", do: TokenView.render("token.json", %{token: coin_or_transfer.token})),
+      "token_id" => state_change.token_id
     }
     |> append_balances(state_change.balance_before, state_change.balance_after)
     |> append_balance_change(state_change, coin_or_transfer)
@@ -569,7 +571,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp append_balance_change(map, state_change, coin_or_transfer) do
     change =
-      if is_list(state_change.coin_or_token_transfers) and coin_or_transfer.token.type != "ERC-20" do
+      if is_list(state_change.coin_or_token_transfers) and coin_or_transfer.token.type == "ERC-721" do
         for {direction, token_transfer} <- state_change.coin_or_token_transfers do
           %{"total" => prepare_token_transfer_total(token_transfer), "direction" => direction}
         end
