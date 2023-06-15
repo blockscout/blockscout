@@ -187,6 +187,10 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     fetch_from_ipfs(right, hex_token_id)
   end
 
+  defp fetch_json_from_uri({:ok, ["ipfs/" <> right]}, hex_token_id) do
+    fetch_from_ipfs(right, hex_token_id)
+  end
+
   defp fetch_json_from_uri({:ok, [@ipfs_protocol <> right]}, hex_token_id) do
     fetch_from_ipfs(right, hex_token_id)
   end
@@ -240,8 +244,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
 
   def fetch_metadata_from_uri_inner(uri, hex_token_id) do
     case Application.get_env(:explorer, :http_adapter).get(uri, [],
-           timeout: 60_000,
-           recv_timeout: 60_000,
+           recv_timeout: 30_000,
            follow_redirect: true
          ) do
       {:ok, %Response{body: body, status_code: 200, headers: headers}} ->
@@ -263,7 +266,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
           fetcher: :token_instances
         )
 
-        {:error, reason |> inspect(reason) |> truncate_error()}
+        {:error, reason |> inspect() |> truncate_error()}
     end
   rescue
     e ->

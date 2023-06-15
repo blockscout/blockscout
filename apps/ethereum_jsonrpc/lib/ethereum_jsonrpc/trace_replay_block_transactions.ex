@@ -66,6 +66,7 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
   defp trace_replay_block_transactions_responses_to_traces(responses, id_to_params)
        when is_list(responses) and is_map(id_to_params) do
     responses
+    |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.map(&trace_replay_block_transactions_response_to_traces(&1, id_to_params))
     |> Enum.reduce(
       {:ok, []},
@@ -158,6 +159,7 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
   defp trace_replay_transaction_responses_to_first_trace(responses, id_to_params)
        when is_list(responses) and is_map(id_to_params) do
     responses
+    |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.map(&trace_replay_transaction_response_to_first_trace(&1, id_to_params))
     |> Enum.reduce(
       {:ok, []},

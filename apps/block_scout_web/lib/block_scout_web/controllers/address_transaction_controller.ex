@@ -187,15 +187,18 @@ defmodule BlockScoutWeb.AddressTransactionController do
            "from_period" => from_period,
            "to_period" => to_period,
            "recaptcha_response" => recaptcha_response
-         },
+         } = params,
          csv_export_module
        )
        when is_binary(address_hash_string) do
+    filter_type = Map.get(params, "filter_type")
+    filter_value = Map.get(params, "filter_value")
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:recaptcha, true} <- {:recaptcha, captcha_helper().recaptcha_passed?(recaptcha_response)} do
       address
-      |> csv_export_module.export(from_period, to_period)
+      |> csv_export_module.export(from_period, to_period, filter_type, filter_value)
       |> Enum.reduce_while(put_resp_params(conn), fn chunk, conn ->
         case Conn.chunk(conn, chunk) do
           {:ok, conn} ->

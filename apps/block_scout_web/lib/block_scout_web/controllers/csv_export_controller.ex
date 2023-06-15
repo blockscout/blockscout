@@ -8,8 +8,15 @@ defmodule BlockScoutWeb.CsvExportController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          :ok <- Chain.check_address_exists(address_hash),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         true <- supported_export_type(type) do
-      render(conn, "index.html", address_hash_string: address_hash_string, type: type)
+         true <- supported_export_type(type),
+         filter_type <- Map.get(params, "filter_type"),
+         filter_value <- Map.get(params, "filter_value") do
+      render(conn, "index.html",
+        address_hash_string: address_hash_string,
+        type: type,
+        filter_type: filter_type && String.downcase(filter_type),
+        filter_value: filter_value && String.downcase(filter_value)
+      )
     else
       _ ->
         not_found(conn)
