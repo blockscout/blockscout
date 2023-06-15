@@ -14,6 +14,7 @@
 
 ### Fixes
 
+- [#7712](https://github.com/blockscout/blockscout/pull/7712) - Transaction actions import fix
 - [#7709](https://github.com/blockscout/blockscout/pull/7709) - Contract args displaying bug
 - [#7654](https://github.com/blockscout/blockscout/pull/7654) - Optimize exchange rates requests rate
 - [#7636](https://github.com/blockscout/blockscout/pull/7636) - Remove receive from read methods
