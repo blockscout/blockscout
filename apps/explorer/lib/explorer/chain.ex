@@ -98,6 +98,7 @@ defmodule Explorer.Chain do
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.SmartContract.Helper
+  alias Explorer.Tags.{AddressTag, AddressToTag}
 
   alias Dataloader.Ecto, as: DataloaderEcto
 
@@ -1503,6 +1504,31 @@ defmodule Explorer.Chain do
     end
   end
 
+  def search_label_query(term) do
+    inner_query =
+      from(tag in AddressTag,
+        where: fragment("to_tsvector('english', display_name ) @@ to_tsquery(?)", ^term),
+        select: tag
+      )
+
+    from(att in AddressToTag,
+      inner_join: at in subquery(inner_query),
+      on: att.tag_id == at.id,
+      select: %{
+        address_hash: att.address_hash,
+        tx_hash: fragment("CAST(NULL AS bytea)"),
+        block_hash: fragment("CAST(NULL AS bytea)"),
+        type: "label",
+        name: at.display_name,
+        symbol: ^nil,
+        holder_count: ^nil,
+        inserted_at: att.inserted_at,
+        block_number: 0,
+        icon_url: nil
+      }
+    )
+  end
+
   defp search_token_query(term) do
     from(token in Token,
       where: fragment("to_tsvector(symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
@@ -1649,6 +1675,7 @@ defmodule Explorer.Chain do
       {:some, term} ->
         tokens_query = search_token_query(term)
         contracts_query = search_contract_query(term)
+        labels_query = search_label_query(term)
         tx_query = search_tx_query(string)
         address_query = search_address_query(string)
         block_query = search_block_query(string)
@@ -1656,7 +1683,8 @@ defmodule Explorer.Chain do
         basic_query =
           from(
             tokens in subquery(tokens_query),
-            union: ^contracts_query
+            union: ^contracts_query,
+            union: ^labels_query
           )
 
         query =
@@ -6622,6 +6650,10 @@ defmodule Explorer.Chain do
   defp filter_contracts(basic_query, :vyper) do
     basic_query
     |> where(is_vyper_contract: ^true)
+  end
+
+  defp filter_contracts(basic_query, :yul) do
+    from(query in basic_query, where: is_nil(query.abi))
   end
 
   defp filter_contracts(basic_query, _), do: basic_query
