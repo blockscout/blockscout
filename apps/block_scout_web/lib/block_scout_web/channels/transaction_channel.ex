@@ -33,15 +33,20 @@ defmodule BlockScoutWeb.TransactionChannel do
 
   def handle_out(
         "pending_transaction",
-        %{transaction: _transaction},
+        %{transactions: transactions},
         %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
-      ) do
-    push(socket, "pending_transaction", %{pending_transaction: 1})
+      )
+      when is_list(transactions) do
+    push(socket, "pending_transaction", %{pending_transaction: Enum.count(transactions)})
 
     {:noreply, socket}
   end
 
-  def handle_out("pending_transaction", %{transaction: transaction}, socket) do
+  def handle_out(
+        "pending_transaction",
+        %{transaction: transaction},
+        %Phoenix.Socket{handler: BlockScoutWeb.UserSocket} = socket
+      ) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
     rendered_transaction =
@@ -61,17 +66,26 @@ defmodule BlockScoutWeb.TransactionChannel do
     {:noreply, socket}
   end
 
+  def handle_out("pending_transaction", _, socket) do
+    {:noreply, socket}
+  end
+
   def handle_out(
         "transaction",
-        %{transaction: _transaction},
+        %{transactions: transactions},
         %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
-      ) do
-    push(socket, "transaction", %{transaction: 1})
+      )
+      when is_list(transactions) do
+    push(socket, "transaction", %{transaction: Enum.count(transactions)})
 
     {:noreply, socket}
   end
 
-  def handle_out("transaction", %{transaction: transaction}, socket) do
+  def handle_out(
+        "transaction",
+        %{transaction: transaction},
+        %Phoenix.Socket{handler: BlockScoutWeb.UserSocket} = socket
+      ) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
     rendered_transaction =
@@ -88,6 +102,10 @@ defmodule BlockScoutWeb.TransactionChannel do
       transaction_html: rendered_transaction
     })
 
+    {:noreply, socket}
+  end
+
+  def handle_out("transaction", _, socket) do
     {:noreply, socket}
   end
 

@@ -16,7 +16,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain.Block
   alias Explorer.Repo
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.BufferedTask
 
   @behaviour BufferedTask
@@ -53,7 +53,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
     query =
       from(block in Block,
         left_join: transactions in assoc(block, :transactions),
-        where: block.consensus and block.refetch_needed,
+        where: block.consensus == true and block.refetch_needed,
         group_by: block.hash,
         select: {block.hash, count(transactions.hash)}
       )
@@ -117,7 +117,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
         |> Enum.map(fn {hash, _trans_num} -> hash end)
         |> update_in_order(refetch_needed: false, consensus: false)
 
-      MissingBlockRange.add_ranges_by_block_numbers(updated_numbers)
+      MissingRangesManipulator.add_ranges_by_block_numbers(updated_numbers)
     end
 
     if Enum.empty?(missing_blocks_data) do
