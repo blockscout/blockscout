@@ -291,7 +291,7 @@ defmodule Explorer.Chain do
       |> union(^query_created_contract_address_hash_wrapped)
       |> wrapped_union_subquery()
       |> common_where_limit_order(paging_options)
-      |> preload(transaction: :block)
+      |> preload(:block)
       |> join_associations(necessity_by_association)
       |> select_repo(options).all()
     else
@@ -300,7 +300,7 @@ defmodule Explorer.Chain do
       |> InternalTransaction.where_address_fields_match(hash, direction)
       |> InternalTransaction.where_block_number_in_period(from_block, to_block)
       |> common_where_limit_order(paging_options)
-      |> preload(transaction: :block)
+      |> preload(:block)
       |> join_associations(necessity_by_association)
       |> select_repo(options).all()
     end
@@ -316,7 +316,7 @@ defmodule Explorer.Chain do
   defp common_where_limit_order(query, paging_options) do
     query
     |> InternalTransaction.where_is_different_from_parent_transaction()
-    |> InternalTransaction.where_block_number_is_not_null()
+    # |> InternalTransaction.where_block_number_is_not_null()
     |> page_internal_transaction(paging_options, %{index_int_tx_desc_order: true})
     |> limit(^paging_options.page_size)
     |> order_by(
@@ -484,13 +484,9 @@ defmodule Explorer.Chain do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    from_block = from_block(options)
-    to_block = to_block(options)
-
     options
     |> address_to_transactions_tasks_query()
     |> Transaction.not_dropped_or_replaced_transactions()
-    |> where_block_number_in_period(from_block, to_block)
     |> join_associations(necessity_by_association)
     |> put_has_token_transfers_to_tx(old_ui?)
     |> Transaction.matching_address_queries_list(direction, address_hash)
@@ -505,6 +501,7 @@ defmodule Explorer.Chain do
     |> address_to_transactions_tasks_query(true)
     |> Transaction.not_pending_transactions()
     |> join_associations(necessity_by_association)
+    |> put_has_token_transfers_to_tx(false)
     |> Transaction.matching_address_queries_list(direction, address_hashes)
     |> Enum.map(fn query -> Task.async(fn -> select_repo(options).all(query) end) end)
   end
@@ -636,23 +633,35 @@ defmodule Explorer.Chain do
   end
 
   @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
-  def address_to_logs(address_hash, options \\ []) when is_list(options) do
+  def address_to_logs(address_hash, csv_export?, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
     from_block = from_block(options)
     to_block = to_block(options)
 
     base =
-      from(log in Log,
-        order_by: [desc: log.block_number, desc: log.index],
-        where: log.address_hash == ^address_hash,
-        limit: ^paging_options.page_size,
-        select: log,
-        preload: [transaction: [to_address: :smart_contract]],
-        inner_join: block in Block,
-        on: block.hash == log.block_hash,
-        where: block.consensus
-      )
+      if csv_export? do
+        from(log in Log,
+          order_by: [desc: log.block_number, desc: log.index],
+          where: log.address_hash == ^address_hash,
+          limit: ^paging_options.page_size,
+          select: log,
+          inner_join: block in Block,
+          on: block.hash == log.block_hash,
+          where: block.consensus
+        )
+      else
+        from(log in Log,
+          order_by: [desc: log.block_number, desc: log.index],
+          where: log.address_hash == ^address_hash,
+          limit: ^paging_options.page_size,
+          select: log,
+          preload: [transaction: [to_address: :smart_contract]],
+          inner_join: block in Block,
+          on: block.hash == log.block_hash,
+          where: block.consensus
+        )
+      end
 
     base
     |> page_logs(paging_options)

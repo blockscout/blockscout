@@ -288,7 +288,7 @@ defmodule Explorer.ChainTest do
         address: address
       )
 
-      assert Enum.count(Chain.address_to_logs(address_hash)) == 2
+      assert Enum.count(Chain.address_to_logs(address_hash, false)) == 2
     end
 
     test "paginates logs" do
@@ -315,11 +315,11 @@ defmodule Explorer.ChainTest do
 
       paging_options1 = %PagingOptions{page_size: 1}
 
-      [_log] = Chain.address_to_logs(address_hash, paging_options: paging_options1)
+      [_log] = Chain.address_to_logs(address_hash, false, paging_options: paging_options1)
 
       paging_options2 = %PagingOptions{page_size: 60, key: {transaction.block_number, 51}}
 
-      assert Enum.count(Chain.address_to_logs(address_hash, paging_options: paging_options2)) == 50
+      assert Enum.count(Chain.address_to_logs(address_hash, false, paging_options: paging_options2)) == 50
     end
 
     test "searches logs by topic when the first topic matches" do
@@ -352,7 +352,7 @@ defmodule Explorer.ChainTest do
         block_number: transaction2.block_number
       )
 
-      [found_log] = Chain.address_to_logs(address_hash, topic: "test")
+      [found_log] = Chain.address_to_logs(address_hash, false, topic: "test")
 
       assert found_log.transaction.hash == transaction2.hash
     end
@@ -387,7 +387,7 @@ defmodule Explorer.ChainTest do
         address: address
       )
 
-      [found_log] = Chain.address_to_logs(address_hash, topic: "test")
+      [found_log] = Chain.address_to_logs(address_hash, false, topic: "test")
 
       assert found_log.transaction.hash == transaction1.hash
     end
