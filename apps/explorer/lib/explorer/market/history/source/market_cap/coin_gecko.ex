@@ -1,8 +1,8 @@
 defmodule Explorer.Market.History.Source.MarketCap.CoinGecko do
   @moduledoc """
-  Adapter for fetching market history from CoinGecko.
+  Adapter for fetching current market from CoinGecko.
 
-  The history is fetched for the configured coin. You can specify a
+  The current market is fetched for the configured coin. You can specify a
   different coin by changing the targeted coin.
 
       # In config.exs

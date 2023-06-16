@@ -47,7 +47,7 @@ defmodule Explorer.Market do
   end
 
   @doc """
-  Get most recent exchange rate for the given symbol from ETS or from DB.
+  Get most recent exchange rate for the native coin from ETS or from DB.
   """
   @spec get_coin_exchange_rate() :: Token.t() | nil
   def get_coin_exchange_rate do
