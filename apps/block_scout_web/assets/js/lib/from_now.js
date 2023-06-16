@@ -26,7 +26,9 @@ function updateAge (el, timestamp) {
     const offset = moment().utcOffset() / 60
     const sign = offset && Math.sign(offset) ? '+' : '-'
     const formatDate = `MMMM-DD-YYYY hh:mm:ss A ${sign}${offset} UTC`
-    fromNow = `${fromNow} | ${timestamp.format(formatDate)}`
+    fromNow = `Finalized ${fromNow} | ${timestamp.format(formatDate)}`
+  } else {
+    fromNow = `Finalized ${fromNow}`;
   }
   if (fromNow !== el.innerHTML) el.innerHTML = fromNow
 }
