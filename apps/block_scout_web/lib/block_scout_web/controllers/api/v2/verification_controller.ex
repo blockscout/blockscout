@@ -73,7 +73,6 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     end
   end
 
-  # sobelow_skip ["Traversal.FileModule"]
   def verification_via_standard_input(
         conn,
         %{"address_hash" => address_hash_string, "files" => _files, "compiler_version" => compiler_version} = params
@@ -204,7 +203,6 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     end
   end
 
-  # sobelow_skip ["Traversal.FileModule"]
   def verification_via_vyper_standard_input(
         conn,
         %{"address_hash" => address_hash_string, "files" => _files, "compiler_version" => compiler_version} = params
@@ -246,6 +244,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     end
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
   defp validate_params_standard_json_input(%{"files" => files} = params) do
     with :validated <- validate_address(params),
          files_array <- PublishHelper.prepare_files_array(files),
@@ -265,7 +264,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     end
   end
 
-  defp check_microservice() do
+  defp check_microservice do
     with {:not_found, true} <- {:not_found, RustVerifierInterface.enabled?()} do
       :verifier_enabled
     end
