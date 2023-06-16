@@ -32,6 +32,7 @@
 - [#7516](https://github.com/blockscout/blockscout/pull/7516) - Fix shrinking logo in Safari
 - [#7590](https://github.com/blockscout/blockscout/pull/7590) - Drop genesis block in internal transactions fetcher
 - [#7639](https://github.com/blockscout/blockscout/pull/7639) - Fix contract creation transactions
+- [#7724](https://github.com/blockscout/blockscout/pull/7724) - Move MissingRangesCollector init logic to handle_continue
 
 ### Chore
 
