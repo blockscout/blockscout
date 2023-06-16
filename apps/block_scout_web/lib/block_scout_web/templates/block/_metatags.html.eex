@@ -7,7 +7,7 @@
         ) %>
   </title>
   <meta name="keywords" content="<%= "#{@block.number}, #{BlockScoutWeb.LayoutView.subnetwork_title()} #{@block.number}" %>">
-  <meta name="description" content="<%= gettext "View the transactions, token transfers, and uncles for block number %{block_number}", block_number: @block.number %>">
+  <meta name="description" content="<%= gettext "View the transactions and token transfers for block number %{block_number}", block_number: @block.number %>">
 <% else %>
   <%= BlockScoutWeb.LayoutView.render("_default_title.html") %>
 <% end %>

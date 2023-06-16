@@ -3002,7 +3002,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_metatags.html.eex:10
-msgid "View the transactions, token transfers, and uncles for block number %{block_number}"
+msgid "View the transactions and token transfers for block number %{block_number}"
 msgstr ""
 
 #, elixir-format
