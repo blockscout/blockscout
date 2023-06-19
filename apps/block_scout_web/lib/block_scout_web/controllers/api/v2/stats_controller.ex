@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   use Phoenix.Controller
 
   alias BlockScoutWeb.API.V2.Helper
+  alias BlockScoutWeb.Chain.MarketHistoryChartController
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.{GasPriceOracle, GasUsage}
@@ -93,8 +94,9 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     exchange_rate = Market.get_coin_exchange_rate()
 
     recent_market_history = Market.fetch_recent_history()
+    current_total_supply = available_supply(Chain.supply_for_days(), exchange_rate)
 
-    market_history_data =
+    price_history_data =
       recent_market_history
       |> case do
         [today | the_rest] ->
@@ -109,11 +111,13 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         data ->
           data
       end
-      |> Enum.map(fn day -> Map.take(day, [:closing_price, :date]) end)
+      |> Enum.map(fn day -> Map.take(day, [:closing_price, :market_cap, :date]) end)
+
+    market_history_data =
+      MarketHistoryChartController.encode_market_history_data(price_history_data, current_total_supply)
 
     json(conn, %{
-      chart_data: market_history_data,
-      available_supply: available_supply(Chain.supply_for_days(), exchange_rate)
+      chart_data: market_history_data
     })
   end
 

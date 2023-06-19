@@ -8,19 +8,21 @@ defmodule BlockScoutWeb.Chain.MarketHistoryChartController do
       exchange_rate = Market.get_coin_exchange_rate()
 
       recent_market_history = Market.fetch_recent_history()
+      current_total_supply = available_supply(Chain.supply_for_days(), exchange_rate)
 
-      market_history_data =
+      price_history_data =
         case recent_market_history do
           [today | the_rest] ->
-            encode_market_history_data([%{today | closing_price: exchange_rate.usd_value} | the_rest])
+            [%{today | closing_price: exchange_rate.usd_value} | the_rest]
 
           data ->
-            encode_market_history_data(data)
+            data
         end
 
+      market_history_data = encode_market_history_data(price_history_data, current_total_supply)
+
       json(conn, %{
-        history_data: market_history_data,
-        supply_data: available_supply(Chain.supply_for_days(), exchange_rate)
+        history_data: market_history_data
       })
     else
       unprocessable_entity(conn)
@@ -40,9 +42,19 @@ defmodule BlockScoutWeb.Chain.MarketHistoryChartController do
     end
   end
 
-  defp encode_market_history_data(market_history_data) do
+  def encode_market_history_data(market_history_data, current_total_supply) when is_binary(current_total_supply) do
+    encode_market_history_data(market_history_data, Decimal.new(current_total_supply))
+  end
+
+  def encode_market_history_data(market_history_data, current_total_supply) do
     market_history_data
-    |> Enum.map(fn day -> Map.take(day, [:closing_price, :date]) end)
+    |> Enum.map(fn day ->
+      market_cap = if day.market_cap, do: day.market_cap, else: Decimal.mult(current_total_supply, day.closing_price)
+
+      day
+      |> Map.put(:market_cap, market_cap)
+      |> Map.take([:closing_price, :market_cap, :date])
+    end)
     |> Jason.encode()
     |> case do
       {:ok, data} -> data
