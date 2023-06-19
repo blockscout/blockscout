@@ -92,7 +92,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "can_be_visualized_via_sol2uml" => false,
         "name" => target_contract && target_contract.name,
         "compiler_version" => target_contract.compiler_version,
-        "optimization_enabled" => if(target_contract.is_vyper_contract, do: nil, else: target_contract.optimization),
+        "optimization_enabled" => target_contract.optimization,
         "optimization_runs" => target_contract.optimization_runs,
         "evm_version" => target_contract.evm_version,
         "verified_at" => target_contract.inserted_at |> to_string() |> String.replace(" ", "T"),
@@ -180,7 +180,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "can_be_visualized_via_sol2uml" => false,
         "name" => target_contract && target_contract.name,
         "compiler_version" => target_contract.compiler_version,
-        "optimization_enabled" => if(target_contract.is_vyper_contract, do: nil, else: target_contract.optimization),
+        "optimization_enabled" => target_contract.optimization,
         "optimization_runs" => target_contract.optimization_runs,
         "evm_version" => target_contract.evm_version,
         "verified_at" => target_contract.inserted_at |> to_string() |> String.replace(" ", "T"),
@@ -277,7 +277,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "can_be_visualized_via_sol2uml" => false,
         "name" => target_contract && target_contract.name,
         "compiler_version" => target_contract.compiler_version,
-        "optimization_enabled" => if(target_contract.is_vyper_contract, do: nil, else: target_contract.optimization),
+        "optimization_enabled" => target_contract.optimization,
         "optimization_runs" => target_contract.optimization_runs,
         "evm_version" => target_contract.evm_version,
         "verified_at" => target_contract.inserted_at |> to_string() |> String.replace(" ", "T"),
@@ -1966,8 +1966,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   defp compare_item(%SmartContract{} = smart_contract, json) do
     assert smart_contract.compiler_version == json["compiler_version"]
 
-    assert if(smart_contract.is_vyper_contract, do: nil, else: smart_contract.optimization) ==
-             json["optimization_enabled"]
+    assert smart_contract.optimization == json["optimization_enabled"]
 
     assert json["language"] == if(smart_contract.is_vyper_contract, do: "vyper", else: "solidity")
     assert json["verified_at"]
