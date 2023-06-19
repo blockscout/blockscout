@@ -45,7 +45,7 @@ defmodule Explorer.Market.History.Source.MarketCap.CoinGecko do
     end
   end
 
-  @spec format_data(term()) :: [SourceMarketCap.record()] | nil
+  @spec format_data(term()) :: SourceMarketCap.record() | nil
   defp format_data(nil), do: nil
 
   defp format_data(data) do

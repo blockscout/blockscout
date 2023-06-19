@@ -59,7 +59,9 @@ defmodule Explorer.Market do
     records_without_zeroes =
       records
       |> Enum.reject(fn item ->
-        Decimal.equal?(item.closing_price, 0) && Decimal.equal?(item.opening_price, 0)
+        Map.has_key?(item, :opening_price) && Map.has_key?(item, :closing_price) &&
+          Decimal.equal?(item.closing_price, 0) &&
+          Decimal.equal?(item.opening_price, 0)
       end)
       # Enforce MarketHistory ShareLocks order (see docs: sharelocks.md)
       |> Enum.sort_by(& &1.date)
