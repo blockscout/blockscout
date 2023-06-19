@@ -41,7 +41,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       request = get(conn, "/api/v2/stats/charts/market")
       assert response = json_response(request, 200)
 
-      assert response["chart_data"] == "[]"
+      assert response["chart_data"] == []
     end
   end
 

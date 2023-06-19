@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.Chain.MarketHistoryChartController do
     end)
     |> Jason.encode()
     |> case do
-      {:ok, data} -> data
+      {:ok, data} -> Jason.decode!(data)
       _ -> []
     end
   end
