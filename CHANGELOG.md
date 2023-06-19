@@ -38,7 +38,7 @@
 ### Chore
 
 - [#7699](https://github.com/blockscout/blockscout/pull/7699) - Add block_number index for address_coin_balances table
-- [#7666](https://github.com/blockscout/blockscout/pull/7666) - Search label query
+- [#7666](https://github.com/blockscout/blockscout/pull/7666), [#7740](https://github.com/blockscout/blockscout/pull/7740) - Search label query
 - [#7644](https://github.com/blockscout/blockscout/pull/7644) - Publish docker images CI for prod/staging branches
 - [#7594](https://github.com/blockscout/blockscout/pull/7594) - Stats service support in docker-compose config with new frontend
 - [#7576](https://github.com/blockscout/blockscout/pull/7576) - Check left blocks in pending block operations in order to decide, if we need to display indexing int tx banner at the top
