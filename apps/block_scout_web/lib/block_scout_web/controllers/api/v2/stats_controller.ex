@@ -117,7 +117,9 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       MarketHistoryChartController.encode_market_history_data(price_history_data, current_total_supply)
 
     json(conn, %{
-      chart_data: market_history_data
+      chart_data: market_history_data,
+      # todo: remove when new frontend is ready to use data from chart_data property only
+      available_supply: current_total_supply
     })
   end
 

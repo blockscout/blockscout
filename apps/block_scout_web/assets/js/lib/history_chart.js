@@ -316,7 +316,7 @@ export function createMarketHistoryChart (el) {
       .done(data => {
         switch (historySource) {
           case 'market': {
-            const marketHistoryData = humps.camelizeKeys(JSON.parse(data.history_data))
+            const marketHistoryData = humps.camelizeKeys(data.history_data)
 
             $(el).show()
             chart.updateMarketHistory(marketHistoryData)
