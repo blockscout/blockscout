@@ -44,7 +44,7 @@ defmodule Explorer.Factory do
   }
 
   alias Explorer.SmartContract.Helper
-
+  alias Explorer.Tags.{AddressTag, AddressToTag}
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
@@ -138,6 +138,16 @@ defmodule Explorer.Factory do
 
   def tag_transaction_factory do
     %{"name" => sequence("name"), "transaction_hash" => to_string(insert(:transaction).hash)}
+  end
+
+  def address_to_tag_factory do
+    %AddressToTag{
+      tag: %AddressTag{
+        label: sequence("label"),
+        display_name: sequence("display_name")
+      },
+      address: build(:address)
+    }
   end
 
   def account_watchlist_address_factory do

@@ -292,6 +292,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
 
       assert count(Chain.Block) == 0
 
+      Process.sleep(50)
+
       assert %{first_block_number: ^block_number, last_block_number: 0, missing_block_count: 2, shrunk: false} =
                Fetcher.task(%Fetcher{
                  block_fetcher: %Block.Fetcher{
@@ -446,6 +448,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
 
       Process.register(pid, BlockReward)
 
+      Process.sleep(50)
+
       assert %{first_block_number: ^block_number, last_block_number: 0, missing_block_count: 2, shrunk: false} =
                Fetcher.task(%Fetcher{
                  block_fetcher: %Block.Fetcher{
@@ -594,6 +598,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
         end)
 
       Process.register(pid, BlockReward)
+
+      Process.sleep(50)
 
       assert %{first_block_number: ^block_number, last_block_number: 0, missing_block_count: 2, shrunk: false} =
                Fetcher.task(%Fetcher{

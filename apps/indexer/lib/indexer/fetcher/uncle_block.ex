@@ -65,11 +65,15 @@ defmodule Indexer.Fetcher.UncleBlock do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_unfetched_uncles(initial, fn uncle, acc ->
-        uncle
-        |> entry()
-        |> reducer.(acc)
-      end)
+      Chain.stream_unfetched_uncles(
+        initial,
+        fn uncle, acc ->
+          uncle
+          |> entry()
+          |> reducer.(acc)
+        end,
+        true
+      )
 
     final
   end

@@ -63,9 +63,13 @@ defmodule Indexer.Fetcher.BlockReward do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_blocks_without_rewards(initial, fn %{number: number}, acc ->
-        reducer.(number, acc)
-      end)
+      Chain.stream_blocks_without_rewards(
+        initial,
+        fn %{number: number}, acc ->
+          reducer.(number, acc)
+        end,
+        true
+      )
 
     final
   end
