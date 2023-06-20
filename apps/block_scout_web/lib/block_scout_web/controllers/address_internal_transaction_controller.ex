@@ -12,7 +12,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
   alias BlockScoutWeb.{AccessHelper, Controller, InternalTransactionView}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Wei}
-  alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -86,7 +85,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         current_path: Controller.current_full_path(conn),
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        exchange_rate: Market.get_coin_exchange_rate(),
         filter: params["filter"],
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
         tags: get_address_tags(address_hash, current_user(conn))
@@ -113,7 +112,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
               address: address,
               filter: params["filter"],
               coin_balance_status: nil,
-              exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+              exchange_rate: Market.get_coin_exchange_rate(),
               counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
               current_path: Controller.current_full_path(conn),
               tags: get_address_tags(address_hash, current_user(conn))
