@@ -4,6 +4,19 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+</details>
+
+## 5.2.0-beta
+
+### Features
+
 - [#7502](https://github.com/blockscout/blockscout/pull/7502) - Improve performance of some methods, endpoints and SQL queries
 - [#7665](https://github.com/blockscout/blockscout/pull/7665) - Add standard-json vyper verification
 - [#7685](https://github.com/blockscout/blockscout/pull/7685) - Add yul filter and "language" field for smart contracts
@@ -50,6 +63,66 @@
 
 <details>
   <summary>Dependencies version bumps</summary>
+
+- [#7518](https://github.com/blockscout/blockscout/pull/7518) - Bump mini-css-extract-plugin from 2.7.5 to 2.7.6 in /apps/block_scout_web/assets
+- [#7519](https://github.com/blockscout/blockscout/pull/7519) - Bump style-loader from 3.3.2 to 3.3.3 in /apps/block_scout_web/assets
+- [#7505](https://github.com/blockscout/blockscout/pull/7505) - Bump webpack from 5.83.0 to 5.83.1 in /apps/block_scout_web/assets
+- [#7533](https://github.com/blockscout/blockscout/pull/7533) - Bump sass-loader from 13.2.2 to 13.3.0 in /apps/block_scout_web/assets
+- [#7534](https://github.com/blockscout/blockscout/pull/7534) - Bump eslint from 8.40.0 to 8.41.0 in /apps/block_scout_web/assets
+- [#7541](https://github.com/blockscout/blockscout/pull/7541) - Bump cldr_utils from 2.23.1 to 2.24.0
+- [#7542](https://github.com/blockscout/blockscout/pull/7542) - Bump ex_cldr_units from 3.16.0 to 3.16.1
+- [#7548](https://github.com/blockscout/blockscout/pull/7548) - Bump briefly from 20d1318 to 678a376
+- [#7547](https://github.com/blockscout/blockscout/pull/7547) - Bump webpack from 5.83.1 to 5.84.0 in /apps/block_scout_web/assets
+- [#7554](https://github.com/blockscout/blockscout/pull/7554) - Bump webpack from 5.84.0 to 5.84.1 in /apps/block_scout_web/assets
+- [#7568](https://github.com/blockscout/blockscout/pull/7568) - Bump @babel/core from 7.21.8 to 7.22.1 in /apps/block_scout_web/assets
+- [#7569](https://github.com/blockscout/blockscout/pull/7569) - Bump postcss-loader from 7.3.0 to 7.3.1 in /apps/block_scout_web/assets
+- [#7570](https://github.com/blockscout/blockscout/pull/7570) - Bump number from 1.0.3 to 1.0.4
+- [#7567](https://github.com/blockscout/blockscout/pull/7567) - Bump @babel/preset-env from 7.21.5 to 7.22.2 in /apps/block_scout_web/assets
+- [#7582](https://github.com/blockscout/blockscout/pull/7582) - Bump eslint-config-standard from 17.0.0 to 17.1.0 in /apps/block_scout_web/assets
+- [#7581](https://github.com/blockscout/blockscout/pull/7581) - Bump sass-loader from 13.3.0 to 13.3.1 in /apps/block_scout_web/assets
+- [#7578](https://github.com/blockscout/blockscout/pull/7578) - Bump @babel/preset-env from 7.22.2 to 7.22.4 in /apps/block_scout_web/assets
+- [#7577](https://github.com/blockscout/blockscout/pull/7577) - Bump postcss-loader from 7.3.1 to 7.3.2 in /apps/block_scout_web/assets
+- [#7579](https://github.com/blockscout/blockscout/pull/7579) - Bump sweetalert2 from 11.7.5 to 11.7.8 in /apps/block_scout_web/assets
+- [#7591](https://github.com/blockscout/blockscout/pull/7591) - Bump sweetalert2 from 11.7.8 to 11.7.9 in /apps/block_scout_web/assets
+- [#7593](https://github.com/blockscout/blockscout/pull/7593) - Bump ex_json_schema from 0.9.2 to 0.9.3
+- [#7580](https://github.com/blockscout/blockscout/pull/7580) - Bump postcss from 8.4.23 to 8.4.24 in /apps/block_scout_web/assets
+- [#7601](https://github.com/blockscout/blockscout/pull/7601) - Bump sweetalert2 from 11.7.9 to 11.7.10 in /apps/block_scout_web/assets
+- [#7602](https://github.com/blockscout/blockscout/pull/7602) - Bump mime from 2.0.3 to 2.0.4
+- [#7618](https://github.com/blockscout/blockscout/pull/7618) - Bump gettext from 0.22.1 to 0.22.2
+- [#7617](https://github.com/blockscout/blockscout/pull/7617) - Bump @amplitude/analytics-browser from 1.10.3 to 1.10.4 in /apps/block_scout_web/assets
+- [#7609](https://github.com/blockscout/blockscout/pull/7609) - Bump webpack from 5.84.1 to 5.85.0 in /apps/block_scout_web/assets
+- [#7610](https://github.com/blockscout/blockscout/pull/7610) - Bump mime from 2.0.4 to 2.0.5
+- [#7634](https://github.com/blockscout/blockscout/pull/7634) - Bump eslint from 8.41.0 to 8.42.0 in /apps/block_scout_web/assets
+- [#7633](https://github.com/blockscout/blockscout/pull/7633) - Bump floki from 0.34.2 to 0.34.3
+- [#7631](https://github.com/blockscout/blockscout/pull/7631) - Bump phoenix_ecto from 4.4.1 to 4.4.2
+- [#7630](https://github.com/blockscout/blockscout/pull/7630) - Bump webpack-cli from 5.1.1 to 5.1.3 in /apps/block_scout_web/assets
+- [#7632](https://github.com/blockscout/blockscout/pull/7632) - Bump webpack from 5.85.0 to 5.85.1 in /apps/block_scout_web/assets
+- [#7646](https://github.com/blockscout/blockscout/pull/7646) - Bump sweetalert2 from 11.7.10 to 11.7.11 in /apps/block_scout_web/assets
+- [#7647](https://github.com/blockscout/blockscout/pull/7647) - Bump @amplitude/analytics-browser from 1.10.4 to 1.10.6 in /apps/block_scout_web/assets
+- [#7659](https://github.com/blockscout/blockscout/pull/7659) - Bump webpack-cli from 5.1.3 to 5.1.4 in /apps/block_scout_web/assets
+- [#7658](https://github.com/blockscout/blockscout/pull/7658) - Bump @amplitude/analytics-browser from 1.10.6 to 1.10.7 in /apps/block_scout_web/assets
+- [#7657](https://github.com/blockscout/blockscout/pull/7657) - Bump webpack from 5.85.1 to 5.86.0 in /apps/block_scout_web/assets
+- [#7672](https://github.com/blockscout/blockscout/pull/7672) - Bump @babel/preset-env from 7.22.4 to 7.22.5 in /apps/block_scout_web/assets
+- [#7674](https://github.com/blockscout/blockscout/pull/7674) - Bump ecto from 3.10.1 to 3.10.2
+- [#7673](https://github.com/blockscout/blockscout/pull/7673) - Bump @babel/core from 7.22.1 to 7.22.5 in /apps/block_scout_web/assets
+- [#7671](https://github.com/blockscout/blockscout/pull/7671) - Bump sass from 1.62.1 to 1.63.2 in /apps/block_scout_web/assets
+- [#7681](https://github.com/blockscout/blockscout/pull/7681) - Bump sweetalert2 from 11.7.11 to 11.7.12 in /apps/block_scout_web/assets
+- [#7679](https://github.com/blockscout/blockscout/pull/7679) - Bump @amplitude/analytics-browser from 1.10.7 to 1.10.8 in /apps/block_scout_web/assets
+- [#7680](https://github.com/blockscout/blockscout/pull/7680) - Bump sass from 1.63.2 to 1.63.3 in /apps/block_scout_web/assets
+- [#7693](https://github.com/blockscout/blockscout/pull/7693) - Bump sass-loader from 13.3.1 to 13.3.2 in /apps/block_scout_web/assets
+- [#7692](https://github.com/blockscout/blockscout/pull/7692) - Bump postcss-loader from 7.3.2 to 7.3.3 in /apps/block_scout_web/assets
+- [#7691](https://github.com/blockscout/blockscout/pull/7691) - Bump url from 0.11.0 to 0.11.1 in /apps/block_scout_web/assets
+- [#7690](https://github.com/blockscout/blockscout/pull/7690) - Bump core-js from 3.30.2 to 3.31.0 in /apps/block_scout_web/assets
+- [#7701](https://github.com/blockscout/blockscout/pull/7701) - Bump css-minimizer-webpack-plugin from 5.0.0 to 5.0.1 in /apps/block_scout_web/assets
+- [#7702](https://github.com/blockscout/blockscout/pull/7702) - Bump @amplitude/analytics-browser from 1.10.8 to 1.11.0 in /apps/block_scout_web/assets
+- [#7708](https://github.com/blockscout/blockscout/pull/7708) - Bump phoenix_pubsub from 2.1.2 to 2.1.3
+- [#7707](https://github.com/blockscout/blockscout/pull/7707) - Bump @amplitude/analytics-browser from 1.11.0 to 2.0.0 in /apps/block_scout_web/assets
+- [#7706](https://github.com/blockscout/blockscout/pull/7706) - Bump webpack from 5.86.0 to 5.87.0 in /apps/block_scout_web/assets 
+- [#7705](https://github.com/blockscout/blockscout/pull/7705) - Bump sass from 1.63.3 to 1.63.4 in /apps/block_scout_web/assets
+- [#7714](https://github.com/blockscout/blockscout/pull/7714) - Bump ex_cldr_units from 3.16.1 to 3.16.2
+- [#7748](https://github.com/blockscout/blockscout/pull/7748) - Bump mock from 0.3.7 to 0.3.8
+- [#7746](https://github.com/blockscout/blockscout/pull/7746) - Bump eslint from 8.42.0 to 8.43.0 in /apps/block_scout_web/assets
+- [#7747](https://github.com/blockscout/blockscout/pull/7747) - Bump cldr_utils from 2.24.0 to 2.24.1
 
 </details>
 
