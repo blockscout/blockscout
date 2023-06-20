@@ -71,9 +71,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
   @impl BufferedTask
   def init(initial, reducer, _json_rpc_named_arguments) do
     {:ok, final} =
-      Chain.stream_blocks_with_unfetched_internal_transactions(initial, fn block_number, acc ->
-        reducer.(block_number, acc)
-      end)
+      Chain.stream_blocks_with_unfetched_internal_transactions(
+        initial,
+        fn block_number, acc ->
+          reducer.(block_number, acc)
+        end,
+        true
+      )
 
     final
   end
@@ -349,7 +353,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
       flush_interval: :timer.seconds(3),
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
       max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
-      poll: true,
       task_supervisor: Indexer.Fetcher.InternalTransaction.TaskSupervisor,
       metadata: [fetcher: :internal_transaction]
     ]
