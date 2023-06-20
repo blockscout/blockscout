@@ -29,6 +29,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     [created_contract_address: :token] => :optional,
     [from_address: :names] => :optional,
     [to_address: :names] => :optional,
+    # as far as I remember this needed for substituting implementation name in `to` address instead of is's real name (in transactions)
     [to_address: :smart_contract] => :optional
   }
 
@@ -36,9 +37,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     [from_address: :smart_contract] => :optional,
     [to_address: :smart_contract] => :optional,
     [from_address: :names] => :optional,
-    [to_address: :names] => :optional,
-    from_address: :required,
-    to_address: :required
+    [to_address: :names] => :optional
   }
 
   @token_transfers_in_tx_necessity_by_association %{
@@ -46,8 +45,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     [to_address: :smart_contract] => :optional,
     [from_address: :names] => :optional,
     [to_address: :names] => :optional,
-    from_address: :required,
-    to_address: :required,
     token: :required
   }
 

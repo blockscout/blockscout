@@ -8,7 +8,6 @@ defmodule BlockScoutWeb.AddressReadProxyController do
   alias BlockScoutWeb.AccessHelper
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
-  alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
@@ -33,7 +32,7 @@ defmodule BlockScoutWeb.AddressReadProxyController do
         type: :proxy,
         action: :read,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        exchange_rate: Market.get_coin_exchange_rate(),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
         tags: get_address_tags(address_hash, current_user(conn))
       )

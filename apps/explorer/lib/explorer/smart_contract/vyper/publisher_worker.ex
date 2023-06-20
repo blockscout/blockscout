@@ -8,21 +8,25 @@ defmodule Explorer.SmartContract.Vyper.PublisherWorker do
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.SmartContract.Vyper.Publisher
 
+  def perform({"vyper_standard_json", params}) do
+    broadcast(params["address_hash"], [params], :publish_standard_json)
+  end
+
+  def perform({"vyper_multipart", params, files}) do
+    broadcast(params["address_hash"], [params["address_hash"], params, files], :publish)
+  end
+
+  def perform({"vyper_flattened", params}) do
+    broadcast(params["address_hash"], [params["address_hash"], params], :publish)
+  end
+
   def perform({address_hash, params, %Plug.Conn{} = conn}) do
-    broadcast(address_hash, [address_hash, params], conn)
+    broadcast(address_hash, [address_hash, params], :publish, conn)
   end
 
-  def perform({address_hash, params, files}) do
-    broadcast(address_hash, [address_hash, params, files])
-  end
-
-  def perform({address_hash, params}) do
-    broadcast(address_hash, [address_hash, params])
-  end
-
-  defp broadcast(address_hash, args, conn \\ nil) do
+  defp broadcast(address_hash, args, function, conn \\ nil) do
     result =
-      case apply(Publisher, :publish, args) do
+      case apply(Publisher, function, args) do
         {:ok, _contract} = result ->
           result
 
