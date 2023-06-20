@@ -18,11 +18,11 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         :ok <- Chain.check_address_exists(address_hash),
+         {:ok, address} <- Chain.hash_to_address(address_hash, [], false),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       full_options = paging_options(params)
 
-      coin_balances_plus_one = Chain.address_to_coin_balances(address_hash, full_options)
+      coin_balances_plus_one = Chain.address_to_coin_balances(address, full_options)
 
       {coin_balances, next_page} = split_list_by_page(coin_balances_plus_one)
 
@@ -55,7 +55,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
       {:restricted_access, _} ->
         not_found(conn)
 
-      :not_found ->
+      {:error, :not_found} ->
         case Chain.Hash.Address.validate(address_hash_string) do
           {:ok, _} ->
             json(conn, %{items: [], next_page_path: ""})
