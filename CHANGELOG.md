@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#7739](https://github.com/blockscout/blockscout/pull/7739) - New DB indexes
 - [#7502](https://github.com/blockscout/blockscout/pull/7502) - Improve performance of some methods, endpoints and SQL queries
 - [#7665](https://github.com/blockscout/blockscout/pull/7665) - Add standard-json vyper verification
 - [#7685](https://github.com/blockscout/blockscout/pull/7685) - Add yul filter and "language" field for smart contracts
