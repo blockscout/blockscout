@@ -8,14 +8,14 @@ name: Publish Docker image for specific chain branches
 on:
   push:
     branches:
-      - production-eth-stg-experimental
+      - production-rsk-stg
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: 5.2.0
-      DOCKER_CHAIN_NAME: mainnet
+      DOCKER_CHAIN_NAME: rsk
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -36,18 +36,18 @@ jobs:
         run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
       
       - name: Build and push Docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags:  blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}-experimental
+          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:latest, blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
             DISABLE_WEBAPP=false
             DISABLE_WRITE_API=false
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=false
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
