@@ -12,7 +12,6 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
   alias Explorer.Market.MarketHistory
   alias Explorer.Chain.{Address, Transaction, Wei}
   alias Explorer.Chain.CSVExport.Helper
-  alias Explorer.ExchangeRates.Token
 
   @necessity_by_association [
     necessity_by_association: %{
@@ -32,7 +31,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
   @spec export(Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
   def export(address, from_period, to_period, filter_type \\ nil, filter_value \\ nil) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
-    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate = Market.get_coin_exchange_rate()
 
     address.hash
     |> fetch_all_transactions(from_block, to_block, filter_type, filter_value, @paging_options)

@@ -14,6 +14,7 @@ Chart.register(LineController, LineElement, PointElement, LinearScale, TimeScale
 
 // @ts-ignore
 const coinName = document.getElementById('js-coin-name').value
+// @ts-ignore
 const chainId = document.getElementById('js-chain-id').value
 const priceDataKey = `priceData${coinName}`
 const txHistoryDataKey = `txHistoryData${coinName}${chainId}`
@@ -188,15 +189,12 @@ function getTxHistoryData (transactionHistory) {
   return data
 }
 
-function getMarketCapData (marketHistoryData, availableSupply) {
+function getMarketCapData (marketHistoryData) {
   if (marketHistoryData.length === 0) {
     return getDataFromLocalStorage(marketCapDataKey)
   }
-  const data = marketHistoryData.map(({ date, closingPrice }) => {
-    const supply = (availableSupply !== null && typeof availableSupply === 'object')
-      ? availableSupply[date]
-      : availableSupply
-    return { x: date, y: closingPrice * supply }
+  const data = marketHistoryData.map(({ date, marketCap }) => {
+    return { x: date, y: marketCap }
   })
   setDataToLocalStorage(marketCapDataKey, data)
   return data
@@ -207,7 +205,7 @@ const priceLineColor = getPriceChartColor()
 const mcapLineColor = getMarketCapChartColor()
 
 class MarketHistoryChart {
-  constructor (el, availableSupply, _marketHistoryData, dataConfig) {
+  constructor (el, _marketHistoryData, dataConfig) {
     const axes = config.options.scales
 
     let priceActivated = true
@@ -271,8 +269,6 @@ class MarketHistoryChart {
       axes.numTransactions.position = 'left'
     }
 
-    this.availableSupply = availableSupply
-
     const txChartTitle = 'Daily transactions'
     const marketChartTitle = 'Daily price and market cap'
     let chartTitle = ''
@@ -297,15 +293,9 @@ class MarketHistoryChart {
     this.chart = new Chart(el, config)
   }
 
-  updateMarketHistory (availableSupply, marketHistoryData) {
+  updateMarketHistory (marketHistoryData) {
     this.price.data = getPriceData(marketHistoryData)
-    if (this.availableSupply !== null && typeof this.availableSupply === 'object') {
-      const today = new Date().toJSON().slice(0, 10)
-      this.availableSupply[today] = availableSupply
-      this.marketCap.data = getMarketCapData(marketHistoryData, this.availableSupply)
-    } else {
-      this.marketCap.data = getMarketCapData(marketHistoryData, availableSupply)
-    }
+    this.marketCap.data = getMarketCapData(marketHistoryData)
     this.chart.update()
   }
 
@@ -320,17 +310,16 @@ export function createMarketHistoryChart (el) {
   const dataConfig = $(el).data('history_chart_config')
 
   const $chartError = $('[data-chart-error-message]')
-  const chart = new MarketHistoryChart(el, 0, [], dataConfig)
+  const chart = new MarketHistoryChart(el, [], dataConfig)
   Object.keys(dataPaths).forEach(function (historySource) {
     $.getJSON(dataPaths[historySource], { type: 'JSON' })
       .done(data => {
         switch (historySource) {
           case 'market': {
-            const availableSupply = JSON.parse(data.supply_data)
-            const marketHistoryData = humps.camelizeKeys(JSON.parse(data.history_data))
+            const marketHistoryData = humps.camelizeKeys(data.history_data)
 
             $(el).show()
-            chart.updateMarketHistory(availableSupply, marketHistoryData)
+            chart.updateMarketHistory(marketHistoryData)
             break
           }
           case 'transaction': {
