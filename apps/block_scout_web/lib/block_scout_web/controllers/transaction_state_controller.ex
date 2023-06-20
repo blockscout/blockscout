@@ -10,7 +10,6 @@ defmodule BlockScoutWeb.TransactionStateController do
   }
 
   alias Explorer.{Chain, Market}
-  alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
@@ -107,7 +106,7 @@ defmodule BlockScoutWeb.TransactionStateController do
       render(
         conn,
         "index.html",
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        exchange_rate: Market.get_coin_exchange_rate(),
         block_height: Chain.block_height(),
         current_path: Controller.current_full_path(conn),
         show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),

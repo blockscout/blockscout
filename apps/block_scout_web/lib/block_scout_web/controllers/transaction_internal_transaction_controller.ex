@@ -8,7 +8,6 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
 
   alias BlockScoutWeb.{AccessHelper, Controller, InternalTransactionView, TransactionController}
   alias Explorer.{Chain, Market}
-  alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
   def index(conn, %{"transaction_id" => transaction_hash_string, "type" => "JSON"} = params) do
@@ -102,7 +101,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
       render(
         conn,
         "index.html",
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        exchange_rate: Market.get_coin_exchange_rate(),
         current_path: Controller.current_full_path(conn),
         current_user: current_user(conn),
         block_height: Chain.block_height(),

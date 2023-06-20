@@ -7,7 +7,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.Tokens.Helper, as: TokensHelper
   alias BlockScoutWeb.TransactionStateView
   alias Ecto.Association.NotLoaded
-  alias Explorer.ExchangeRates.Token, as: TokenRate
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
@@ -400,7 +399,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "token_transfers" => token_transfers(transaction.token_transfers, conn, single_tx?),
       "token_transfers_overflow" => token_transfers_overflow(transaction.token_transfers, single_tx?),
       "actions" => transaction_actions(transaction.transaction_actions),
-      "exchange_rate" => (Market.get_exchange_rate(Explorer.coin()) || TokenRate.null()).usd_value,
+      "exchange_rate" => Market.get_coin_exchange_rate().usd_value,
       "method" => method_name(transaction, decoded_input),
       "tx_types" => tx_types(transaction),
       "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_tx? && conn)),

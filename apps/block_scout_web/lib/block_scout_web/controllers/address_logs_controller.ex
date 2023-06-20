@@ -11,7 +11,6 @@ defmodule BlockScoutWeb.AddressLogsController do
 
   alias BlockScoutWeb.{AccessHelper, AddressLogsView, Controller}
   alias Explorer.{Chain, Market}
-  alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -67,7 +66,7 @@ defmodule BlockScoutWeb.AddressLogsController do
         address: address,
         current_path: Controller.current_full_path(conn),
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        exchange_rate: Market.get_coin_exchange_rate(),
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
         tags: get_address_tags(address_hash, current_user(conn))
       )
