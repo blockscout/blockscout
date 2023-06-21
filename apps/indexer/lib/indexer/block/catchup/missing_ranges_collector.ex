@@ -22,7 +22,12 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
   @impl true
   def init(_) do
-    {:ok, define_init()}
+    {:ok, %{min_fetched_block_number: nil, max_fetched_block_number: nil}, {:continue, :ok}}
+  end
+
+  @impl true
+  def handle_continue(:ok, _state) do
+    {:noreply, define_init()}
   end
 
   defp define_init do

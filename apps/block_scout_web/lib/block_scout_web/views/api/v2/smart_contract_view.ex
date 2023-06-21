@@ -164,7 +164,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         visualize_sol2uml_enabled && !target_contract.is_vyper_contract && !is_nil(target_contract.abi),
       "name" => target_contract && target_contract.name,
       "compiler_version" => target_contract.compiler_version,
-      "optimization_enabled" => if(target_contract.is_vyper_contract, do: nil, else: target_contract.optimization),
+      "optimization_enabled" => target_contract.optimization,
       "optimization_runs" => target_contract.optimization_runs,
       "evm_version" => target_contract.evm_version,
       "verified_at" => target_contract.inserted_at,
@@ -254,9 +254,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     token = smart_contract.address.token
 
     %{
-      "address" => Helper.address_with_info(nil, smart_contract.address, smart_contract.address.hash),
+      "address" => Helper.address_with_info(nil, smart_contract.address, smart_contract.address.hash, false),
       "compiler_version" => smart_contract.compiler_version,
-      "optimization_enabled" => if(smart_contract.is_vyper_contract, do: nil, else: smart_contract.optimization),
+      "optimization_enabled" => smart_contract.optimization,
       "tx_count" => smart_contract.address.transactions_count,
       "language" => smart_contract_language(smart_contract),
       "verified_at" => smart_contract.inserted_at,

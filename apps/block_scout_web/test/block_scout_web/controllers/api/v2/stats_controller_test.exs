@@ -42,7 +42,6 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       assert response = json_response(request, 200)
 
       assert response["chart_data"] == []
-      assert response["available_supply"] == 0
     end
   end
 

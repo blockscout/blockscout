@@ -28,7 +28,8 @@ defmodule Indexer.BufferedTaskTest do
           task_supervisor: BufferedTaskSup,
           flush_interval: @flush_interval,
           max_batch_size: max_batch_size,
-          max_concurrency: 2}
+          max_concurrency: 2,
+          poll: false}
        ]}
     )
   end

@@ -69,11 +69,15 @@ defmodule Indexer.Fetcher.TokenBalance do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_unfetched_token_balances(initial, fn token_balance, acc ->
-        token_balance
-        |> entry()
-        |> reducer.(acc)
-      end)
+      Chain.stream_unfetched_token_balances(
+        initial,
+        fn token_balance, acc ->
+          token_balance
+          |> entry()
+          |> reducer.(acc)
+        end,
+        true
+      )
 
     final
   end
