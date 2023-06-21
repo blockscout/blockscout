@@ -332,7 +332,7 @@ defmodule Explorer.Chain.SmartContract do
         attrs,
         error,
         error_message,
-        json_verification \\ false
+        verification_with_files? \\ false
       ) do
     validated =
       smart_contract
@@ -356,12 +356,12 @@ defmodule Explorer.Chain.SmartContract do
         :autodetect_constructor_args,
         :verified_via_eth_bytecode_db
       ])
-      |> (&if(json_verification,
+      |> (&if(verification_with_files?,
             do: &1,
             else: validate_required(&1, [:compiler_version, :optimization, :address_hash, :contract_code_md5])
           )).()
 
-    field_to_put_message = if json_verification, do: :files, else: select_error_field(error)
+    field_to_put_message = if verification_with_files?, do: :files, else: select_error_field(error)
 
     if error_message do
       add_error(validated, field_to_put_message, error_message(error, error_message))

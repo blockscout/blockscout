@@ -32,8 +32,8 @@ defmodule Explorer.Chain.CSVExport.AddressLogCsvExporter do
     new_acc = logs ++ acc
 
     case Enum.split(logs, Helper.page_size()) do
-      {_logs, [%Log{block_number: block_number, transaction: %Transaction{index: transaction_index}, index: index}]} ->
-        new_paging_options = %{@paging_options | key: {block_number, transaction_index, index}}
+      {_logs, [%Log{block_number: block_number, transaction: %Transaction{index: _transaction_index}, index: index}]} ->
+        new_paging_options = %{@paging_options | key: {block_number, index}}
         fetch_all_logs(address_hash, from_block, to_block, filter_type, filter_value, new_paging_options, new_acc)
 
       {_, []} ->

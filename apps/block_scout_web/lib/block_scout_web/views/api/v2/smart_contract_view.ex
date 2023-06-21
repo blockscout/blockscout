@@ -130,7 +130,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   defp prepare_output(output), do: output
 
   # credo:disable-for-next-line
-  def prepare_smart_contract(%Address{smart_contract: %SmartContract{}} = address) do
+  def prepare_smart_contract(%Address{smart_contract: %SmartContract{} = smart_contract} = address) do
     minimal_proxy_template = Chain.get_minimal_proxy_template(address.hash, @api_true)
     twin = Chain.get_address_verified_twin_contract(address.hash, @api_true)
     metadata_for_verification = minimal_proxy_template || twin.verified_contract
@@ -164,7 +164,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         visualize_sol2uml_enabled && !target_contract.is_vyper_contract && !is_nil(target_contract.abi),
       "name" => target_contract && target_contract.name,
       "compiler_version" => target_contract.compiler_version,
-      "optimization_enabled" => if(target_contract.is_vyper_contract, do: nil, else: target_contract.optimization),
+      "optimization_enabled" => target_contract.optimization,
       "optimization_runs" => target_contract.optimization_runs,
       "evm_version" => target_contract.evm_version,
       "verified_at" => target_contract.inserted_at,
@@ -178,7 +178,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "decoded_constructor_args" =>
         if(smart_contract_verified,
           do: format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
-        )
+        ),
+      "language" => smart_contract_language(smart_contract)
     }
     |> Map.merge(bytecode_info(address))
   end
@@ -253,9 +254,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     token = smart_contract.address.token
 
     %{
-      "address" => Helper.address_with_info(nil, smart_contract.address, smart_contract.address.hash),
+      "address" => Helper.address_with_info(nil, smart_contract.address, smart_contract.address.hash, false),
       "compiler_version" => smart_contract.compiler_version,
-      "optimization_enabled" => if(smart_contract.is_vyper_contract, do: nil, else: smart_contract.optimization),
+      "optimization_enabled" => smart_contract.optimization,
       "tx_count" => smart_contract.address.transactions_count,
       "language" => smart_contract_language(smart_contract),
       "verified_at" => smart_contract.inserted_at,

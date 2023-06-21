@@ -1,7 +1,7 @@
-defmodule Explorer.Market.History.Source.CryptoCompareTest do
+defmodule Explorer.Market.History.Source.Price.CryptoCompareTest do
   use ExUnit.Case, async: false
 
-  alias Explorer.Market.History.Source.CryptoCompare
+  alias Explorer.Market.History.Source.Price.CryptoCompare
   alias Plug.Conn
 
   @json """
@@ -48,7 +48,7 @@ defmodule Explorer.Market.History.Source.CryptoCompareTest do
   }
   """
 
-  describe "fetch_history/1" do
+  describe "fetch_price_history/1" do
     setup do
       bypass = Bypass.open()
       Application.put_env(:explorer, CryptoCompare, base_url: "http://localhost:#{bypass.port}")
@@ -77,14 +77,14 @@ defmodule Explorer.Market.History.Source.CryptoCompareTest do
         }
       ]
 
-      assert {:ok, expected} == CryptoCompare.fetch_history(3)
+      assert {:ok, expected} == CryptoCompare.fetch_price_history(3)
     end
 
     test "with errored request", %{bypass: bypass} do
       error_text = ~S({"error": "server error"})
       Bypass.expect(bypass, fn conn -> Conn.resp(conn, 500, error_text) end)
 
-      assert :error == CryptoCompare.fetch_history(3)
+      assert :error == CryptoCompare.fetch_price_history(3)
     end
 
     test "rejects empty prices", %{bypass: bypass} do
@@ -138,7 +138,7 @@ defmodule Explorer.Market.History.Source.CryptoCompareTest do
         %{closing_price: Decimal.from_float(8804.32), date: ~D[2018-04-26], opening_price: Decimal.from_float(8873.57)}
       ]
 
-      assert {:ok, expected} == CryptoCompare.fetch_history(3)
+      assert {:ok, expected} == CryptoCompare.fetch_price_history(3)
     end
   end
 end

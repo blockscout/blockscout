@@ -59,6 +59,15 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     }
   end
 
+  def prepare_search_result(%{type: "label"} = search_result) do
+    %{
+      "type" => search_result.type,
+      "address" => search_result.address_hash,
+      "name" => search_result.name,
+      "url" => address_path(Endpoint, :show, search_result.address_hash)
+    }
+  end
+
   defp hash_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
   defp redirect_search_results(%Address{} = item) do
