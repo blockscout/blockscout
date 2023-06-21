@@ -67,8 +67,7 @@ defmodule Indexer.Fetcher.BlockReward do
         initial,
         fn %{number: number}, acc ->
           reducer.(number, acc)
-        end,
-        true
+        end
       )
 
     final
