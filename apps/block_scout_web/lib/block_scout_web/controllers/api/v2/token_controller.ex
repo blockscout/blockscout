@@ -38,7 +38,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   def counters(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, {:ok, _}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
+         {:not_found, true} <- {:not_found, Chain.token_from_address_hash_exists?(address_hash, @api_true)} do
       {transfer_count, token_holder_count} = Chain.fetch_token_counters(address_hash, 30_000)
 
       json(conn, %{transfers_count: to_string(transfer_count), token_holders_count: to_string(token_holder_count)})
@@ -48,7 +48,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   def transfers(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, {:ok, _}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
+         {:not_found, true} <- {:not_found, Chain.token_from_address_hash_exists?(address_hash, @api_true)} do
       paging_options = paging_options(params)
 
       results =

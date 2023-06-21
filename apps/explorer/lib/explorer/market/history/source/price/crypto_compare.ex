@@ -1,4 +1,4 @@
-defmodule Explorer.Market.History.Source.CryptoCompare do
+defmodule Explorer.Market.History.Source.Price.CryptoCompare do
   @moduledoc """
   Adapter for fetching market history from https://cryptocompare.com.
 
@@ -10,15 +10,15 @@ defmodule Explorer.Market.History.Source.CryptoCompare do
 
   """
 
-  alias Explorer.Market.History.Source
+  alias Explorer.Market.History.Source.Price, as: SourcePrice
   alias HTTPoison.Response
 
-  @behaviour Source
+  @behaviour SourcePrice
 
   @typep unix_timestamp :: non_neg_integer()
 
-  @impl Source
-  def fetch_history(previous_days) do
+  @impl SourcePrice
+  def fetch_price_history(previous_days) do
     url = history_url(previous_days)
     headers = [{"Content-Type", "application/json"}]
 
@@ -49,7 +49,7 @@ defmodule Explorer.Market.History.Source.CryptoCompare do
     |> DateTime.to_date()
   end
 
-  @spec format_data(String.t()) :: [Source.record()]
+  @spec format_data(String.t()) :: [SourcePrice.record()]
   defp format_data(data) do
     json = Jason.decode!(data)
 

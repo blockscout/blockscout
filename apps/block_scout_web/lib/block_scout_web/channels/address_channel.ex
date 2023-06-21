@@ -18,7 +18,6 @@ defmodule BlockScoutWeb.AddressChannel do
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.{Hash, Transaction, Wei}
   alias Explorer.Chain.Hash.Address, as: AddressHash
-  alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
   intercept([
@@ -43,7 +42,7 @@ defmodule BlockScoutWeb.AddressChannel do
     with {:ok, casted_address_hash} <- AddressHash.cast(socket.assigns.address_hash),
          {:ok, address = %{fetched_coin_balance: balance}} when not is_nil(balance) <-
            Chain.hash_to_address(casted_address_hash),
-         exchange_rate <- Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+         exchange_rate <- Market.get_coin_exchange_rate(),
          {:ok, rendered} <- render_balance_card(address, exchange_rate, socket) do
       reply =
         {:ok,
@@ -233,7 +232,7 @@ defmodule BlockScoutWeb.AddressChannel do
       ) do
     push(socket, "current_coin_balance", %{
       coin_balance: (coin_balance && coin_balance.value) || %Wei{value: Decimal.new(0)},
-      exchange_rate: (Market.get_exchange_rate(Explorer.coin()) || Token.null()).usd_value,
+      exchange_rate: Market.get_coin_exchange_rate().usd_value,
       block_number: block_number
     })
   end
@@ -248,7 +247,7 @@ defmodule BlockScoutWeb.AddressChannel do
         conn: socket,
         address: Chain.hash_to_address(hash),
         coin_balance: (coin_balance && coin_balance.value) || %Wei{value: Decimal.new(0)},
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
+        exchange_rate: Market.get_coin_exchange_rate()
       )
 
     rendered_link =

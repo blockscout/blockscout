@@ -52,7 +52,7 @@ defmodule Indexer.Fetcher.TokenUpdater do
       |> Duration.to_minutes()
       |> trunc()
 
-    {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes(initial, reducer, interval_in_minutes)
+    {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes(initial, reducer, interval_in_minutes, true)
 
     tokens
   end

@@ -134,7 +134,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "msg_nonce_raw" => Decimal.to_string(w.msg_nonce, :normal),
             "msg_nonce" => msg_nonce,
             "msg_nonce_version" => msg_nonce_version,
-            "from" => Helper.address_with_info(conn, from_address, w.from),
+            "from" => Helper.address_with_info(conn, from_address, from_address.hash, w.from),
             "l2_tx_hash" => w.l2_transaction_hash,
             "l2_timestamp" => w.l2_timestamp,
             "status" => status,

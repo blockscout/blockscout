@@ -10,13 +10,13 @@ defmodule BlockScoutWeb.API.V2.Helper do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 3]
 
-  def address_with_info(conn, address, address_hash, watchlist_names_cached \\ nil)
+  def address_with_info(conn, address, address_hash, tags_needed?, watchlist_names_cached \\ nil)
 
-  def address_with_info(_, _, nil, _) do
+  def address_with_info(_, _, nil, _, _) do
     nil
   end
 
-  def address_with_info(conn, address, address_hash, nil) do
+  def address_with_info(conn, address, address_hash, true, nil) do
     %{
       common_tags: public_tags,
       personal_tags: private_tags,
@@ -30,7 +30,15 @@ defmodule BlockScoutWeb.API.V2.Helper do
     })
   end
 
-  def address_with_info(_conn, address, address_hash, watchlist_names_cached) do
+  def address_with_info(_conn, address, address_hash, false, nil) do
+    Map.merge(address_with_info(address, address_hash), %{
+      "private_tags" => [],
+      "watchlist_names" => [],
+      "public_tags" => []
+    })
+  end
+
+  def address_with_info(_conn, address, address_hash, _, watchlist_names_cached) do
     watchlist_name = watchlist_names_cached[address_hash]
 
     Map.merge(address_with_info(address, address_hash), %{
@@ -40,7 +48,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
     })
   end
 
-  def address_with_info(%Address{} = address, _address_hash) do
+  defp address_with_info(%Address{} = address, _address_hash) do
     %{
       "hash" => Address.checksum(address),
       "is_contract" => is_smart_contract(address),
@@ -50,15 +58,15 @@ defmodule BlockScoutWeb.API.V2.Helper do
     }
   end
 
-  def address_with_info(%NotLoaded{}, address_hash) do
+  defp address_with_info(%NotLoaded{}, address_hash) do
     address_with_info(nil, address_hash)
   end
 
-  def address_with_info(nil, nil) do
+  defp address_with_info(nil, nil) do
     nil
   end
 
-  def address_with_info(_, address_hash) do
+  defp address_with_info(_, address_hash) do
     %{
       "hash" => Address.checksum(address_hash),
       "is_contract" => false,
