@@ -15,7 +15,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
-  alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
   alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
 
@@ -115,7 +114,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      results_plus_one = Chain.address_to_transactions_with_rewards(address_hash, options)
+      results_plus_one = Chain.address_to_transactions_without_rewards(address_hash, options, false)
       {transactions, next_page} = split_list_by_page(results_plus_one)
 
       next_page_params =
@@ -251,7 +250,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       formatted_topic = if String.starts_with?(prepared_topic, "0x"), do: prepared_topic, else: "0x" <> prepared_topic
 
-      options = Keyword.merge([topic: formatted_topic], @api_true)
+      options = params |> paging_options() |> Keyword.merge(topic: formatted_topic) |> Keyword.merge(@api_true)
 
       results_plus_one = Chain.address_to_logs(address_hash, options)
 
@@ -316,10 +315,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   def coin_balance_history(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, {:ok, _address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true, false)} do
+         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true, false)} do
       full_options = params |> paging_options() |> Keyword.merge(@api_true)
 
-      results_plus_one = Chain.address_to_coin_balances(address_hash, full_options)
+      results_plus_one = Chain.address_to_coin_balances(address, full_options)
 
       {coin_balances, next_page} = split_list_by_page(results_plus_one)
 
@@ -360,6 +359,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> Keyword.merge(@api_true)
         )
 
+      Task.start_link(fn ->
+        TokenBalanceOnDemand.trigger_fetch(address_hash, results_plus_one)
+      end)
+
       {tokens, next_page} = split_list_by_page(results_plus_one)
 
       next_page_params = next_page |> next_page_params(tokens, params) |> delete_parameters_from_next_page_params()
@@ -397,7 +400,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
     next_page_params = next_page_params(next_page, addresses, params)
 
-    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate = Market.get_coin_exchange_rate()
     total_supply = Chain.total_supply()
 
     conn

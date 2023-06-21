@@ -8,7 +8,6 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
 
   alias BlockScoutWeb.{AccessHelper, Controller, TransactionController, TransactionTokenTransferView}
   alias Explorer.{Chain, Market}
-  alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
@@ -105,7 +104,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
       render(
         conn,
         "index.html",
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        exchange_rate: Market.get_coin_exchange_rate(),
         block_height: Chain.block_height(),
         current_path: Controller.current_full_path(conn),
         current_user: current_user(conn),

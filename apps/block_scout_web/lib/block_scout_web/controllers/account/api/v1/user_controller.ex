@@ -8,7 +8,6 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   alias Explorer.Account.Api.Key, as: ApiKey
   alias Explorer.Account.CustomABI
   alias Explorer.Account.{Identity, PublicTagsRequest, TagAddress, TagTransaction, WatchlistAddress}
-  alias Explorer.ExchangeRates.Token
   alias Explorer.{Market, Repo}
   alias Plug.CSRFProtection
 
@@ -34,7 +33,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       conn
       |> put_status(200)
       |> render(:watchlist_addresses, %{
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        exchange_rate: Market.get_coin_exchange_rate(),
         watchlist_addresses: watchlist_with_addresses.watchlist_addresses
       })
     end
@@ -103,7 +102,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       |> put_status(200)
       |> render(:watchlist_address, %{
         watchlist_address: watchlist_address,
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
+        exchange_rate: Market.get_coin_exchange_rate()
       })
     end
   end
@@ -160,7 +159,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       |> put_status(200)
       |> render(:watchlist_address, %{
         watchlist_address: watchlist_address,
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
+        exchange_rate: Market.get_coin_exchange_rate()
       })
     end
   end
