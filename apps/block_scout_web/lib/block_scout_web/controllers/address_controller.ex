@@ -16,7 +16,6 @@ defmodule BlockScoutWeb.AddressController do
 
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Wei
-  alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -41,7 +40,7 @@ defmodule BlockScoutWeb.AddressController do
           )
       end
 
-    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate = Market.get_coin_exchange_rate()
     total_supply = Chain.total_supply()
 
     items_count_str = Map.get(params, "items_count")
@@ -101,7 +100,7 @@ defmodule BlockScoutWeb.AddressController do
         "_show_address_transactions.html",
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        exchange_rate: Market.get_coin_exchange_rate(),
         filter: params["filter"],
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
         current_path: Controller.current_full_path(conn),
@@ -131,7 +130,7 @@ defmodule BlockScoutWeb.AddressController do
               "_show_address_transactions.html",
               address: address,
               coin_balance_status: nil,
-              exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+              exchange_rate: Market.get_coin_exchange_rate(),
               filter: params["filter"],
               counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
               current_path: Controller.current_full_path(conn),

@@ -8,7 +8,6 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, SmartContract}
-  alias Explorer.ExchangeRates.Token
 
   @api_true [api?: true]
 
@@ -78,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       end
 
     balance = address.fetched_coin_balance && address.fetched_coin_balance.value
-    exchange_rate = (Market.get_exchange_rate(Explorer.coin()) || Token.null()).usd_value
+    exchange_rate = Market.get_coin_exchange_rate().usd_value
 
     creator_hash = AddressView.from_address_hash(address)
     creation_tx = creator_hash && AddressView.transaction_hash(address)
