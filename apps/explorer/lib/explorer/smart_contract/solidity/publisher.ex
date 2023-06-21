@@ -194,7 +194,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     end
   end
 
-  defp unverified_smart_contract(address_hash, params, error, error_message, json_verification \\ false) do
+  defp unverified_smart_contract(address_hash, params, error, error_message, verification_with_files? \\ false) do
     attrs =
       address_hash
       |> attributes(params)
@@ -206,7 +206,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         attrs,
         error,
         error_message,
-        json_verification
+        verification_with_files?
       )
 
     %{changeset | action: :insert}

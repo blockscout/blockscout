@@ -143,6 +143,23 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["tx_hash"] == to_string(tx.hash)
       assert item["url"] =~ to_string(tx.hash)
     end
+
+    test "search tags", %{conn: conn} do
+      tag = insert(:address_to_tag)
+
+      request = get(conn, "/api/v2/search?q=#{tag.tag.display_name}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+
+      item = Enum.at(response["items"], 0)
+
+      assert item["type"] == "label"
+      assert item["address"] == Address.checksum(tag.address.hash)
+      assert item["name"] == tag.tag.display_name
+      assert item["url"] =~ Address.checksum(tag.address.hash)
+    end
   end
 
   describe "/search/check-redirect" do
