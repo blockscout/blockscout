@@ -33,8 +33,7 @@ defmodule Indexer.Fetcher.TokenInstance.Retry do
         initial_acc,
         fn data, acc ->
           reducer.(data, acc)
-        end,
-        true
+        end
       )
 
     acc
