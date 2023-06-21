@@ -967,7 +967,7 @@ defmodule EthereumJSONRPCSyncTest do
                   params_list: [
                     %{
                       address_hash: hash,
-                      block_number: :error,
+                      block_number: nil,
                       value: expected_fetched_balance
                     }
                   ]

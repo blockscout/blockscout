@@ -4,6 +4,11 @@
     <%= render BlockScoutWeb.TransactionView, "_tabs.html", assigns %>
     <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
       <h2 class="card-title list-title-description"><%= gettext "State changes" %></h2>
+      
+      <div class="list-top-pagination-container-wrapper">
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+      </div>
+      
       <div data-error-message class="alert alert-danger col-12 text-left" style="display: none; padding: 0.75rem 0rem; cursor: pointer;">
         <span href="#" class="alert alert-danger"><%= gettext("Something went wrong, click to reload.") %></span>
       </div>
@@ -46,6 +51,8 @@
           </div>
         </div>
       <% end %>
+      
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
     </div>
   </div>
 </section>

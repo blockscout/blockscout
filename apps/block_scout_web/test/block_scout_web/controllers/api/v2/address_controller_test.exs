@@ -67,7 +67,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "has_tokens" => false,
         "has_token_transfers" => false,
         "watchlist_address_id" => nil,
-        "has_beacon_chain_withdrawals" => false
+        "has_beacon_chain_withdrawals" => false,
+        "contract_type" => nil
       }
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
@@ -1745,6 +1746,11 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
   end
 
+  # with the current implementation no transfers should come with list in totals
+  def check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
+    false
+  end
+
   def check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-1155"] do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end) and
       json["value"] == to_string(token_transfer.amount)
@@ -1752,11 +1758,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   def check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-721"] do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end)
-  end
-
-  # with the current implementation no transfers should come with list in totals
-  def check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
-    false
   end
 
   def check_total(_, _, _), do: true

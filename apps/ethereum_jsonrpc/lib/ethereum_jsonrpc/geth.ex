@@ -8,7 +8,7 @@ defmodule EthereumJSONRPC.Geth do
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
   alias EthereumJSONRPC.{FetchedBalance, FetchedCode, PendingTransaction, Utility.CommonHelper}
-  alias EthereumJSONRPC.Geth.{Calls, Tracer}
+  alias EthereumJSONRPC.Geth.{Calls, PolygonTracer, Tracer}
 
   @behaviour EthereumJSONRPC.Variant
 
@@ -94,14 +94,25 @@ defmodule EthereumJSONRPC.Geth do
 
     tracer =
       case Application.get_env(:ethereum_jsonrpc, __MODULE__)[:tracer] do
-        "js" -> @tracer
-        "call_tracer" -> "callTracer"
+        "js" ->
+          %{"tracer" => @tracer}
+
+        "call_tracer" ->
+          %{"tracer" => "callTracer"}
+
+        _ ->
+          %{
+            "enableMemory" => true,
+            "disableStack" => false,
+            "disableStorage" => true,
+            "enableReturnData" => false
+          }
       end
 
     request(%{
       id: id,
       method: "debug_traceTransaction",
-      params: [hash_data, %{tracer: tracer, timeout: debug_trace_transaction_timeout}]
+      params: [hash_data, %{timeout: debug_trace_transaction_timeout} |> Map.merge(tracer)]
     })
   end
 
@@ -126,10 +137,15 @@ defmodule EthereumJSONRPC.Geth do
       receipts_map = Enum.into(receipts, %{}, fn %{id: id, result: receipt} -> {id, receipt} end)
       txs_map = Enum.into(txs, %{}, fn %{id: id, result: tx} -> {id, tx} end)
 
+      tracer =
+        if Application.get_env(:ethereum_jsonrpc, __MODULE__)[:tracer] == "polygon_edge",
+          do: PolygonTracer,
+          else: Tracer
+
       responses
       |> Enum.map(fn %{id: id, result: %{"structLogs" => _} = result} ->
         debug_trace_transaction_response_to_internal_transactions_params(
-          %{id: id, result: Tracer.replay(result, Map.fetch!(receipts_map, id), Map.fetch!(txs_map, id))},
+          %{id: id, result: tracer.replay(result, Map.fetch!(receipts_map, id), Map.fetch!(txs_map, id))},
           id_to_params
         )
       end)
@@ -145,6 +161,7 @@ defmodule EthereumJSONRPC.Geth do
        )
        when is_list(responses) and is_map(id_to_params) do
     responses
+    |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.map(&debug_trace_transaction_response_to_internal_transactions_params(&1, id_to_params))
     |> reduce_internal_transactions_params()
   end
@@ -158,7 +175,7 @@ defmodule EthereumJSONRPC.Geth do
              {id, %{created_contract_address_hash: address, block_number: block_number}} ->
                FetchedCode.request(%{id: id, block_quantity: integer_to_quantity(block_number), address: address})
 
-             {id, %{type: "selfdestruct", from: hash_data, block_number: block_number}} ->
+             {id, %{type: "selfdestruct", from_address_hash: hash_data, block_number: block_number}} ->
                FetchedBalance.request(%{id: id, block_quantity: integer_to_quantity(block_number), hash_data: hash_data})
 
              _ ->
@@ -244,7 +261,7 @@ defmodule EthereumJSONRPC.Geth do
   def prepare_calls(calls) do
     case Application.get_env(:ethereum_jsonrpc, __MODULE__)[:tracer] do
       "call_tracer" -> {calls, 0} |> parse_call_tracer_calls([], [], false) |> Enum.reverse()
-      "js" -> calls
+      _ -> calls
     end
   end
 

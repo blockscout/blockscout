@@ -110,6 +110,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        filter: params["filter"],
         current_path: Controller.current_full_path(conn),
         token: token,
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
