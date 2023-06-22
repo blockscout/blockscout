@@ -67,8 +67,7 @@ defmodule Indexer.Fetcher.CoinBalance do
           address_fields
           |> entry()
           |> reducer.(acc)
-        end,
-        true
+        end
       )
 
     final

@@ -75,8 +75,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
         initial,
         fn block_number, acc ->
           reducer.(block_number, acc)
-        end,
-        true
+        end
       )
 
     final
