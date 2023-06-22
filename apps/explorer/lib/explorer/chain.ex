@@ -6171,7 +6171,7 @@ defmodule Explorer.Chain do
     query
     |> join_associations(necessity_by_association)
     |> preload(:contract_address)
-    |> select_repo(options).all()
+    |> select_repo(options).one()
     |> case do
       nil ->
         {:error, :not_found}
