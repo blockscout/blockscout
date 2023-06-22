@@ -18,7 +18,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.1.5
+      RELEASE_VERSION: 5.2.0
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -79,15 +79,10 @@ jobs:
         production-eth-stg-experimental
         production-eth-goerli-stg
         production-lukso-stg
-        production-optimism-goerli-stg
-        production-optimism-mainnet-stg
-        production-optimism-opcraft-stg
         production-xdai-stg
         production-gc-chiado-stg
         production-polygon-supernets-stg
-        production-base-goerli-stg
         production-rsk-stg
-        production-neon-stg
     steps:
     - uses: actions/checkout@v2
     - name: Set Git config
