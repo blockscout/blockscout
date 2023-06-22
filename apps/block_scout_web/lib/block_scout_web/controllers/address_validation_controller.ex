@@ -12,7 +12,6 @@ defmodule BlockScoutWeb.AddressValidationController do
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelper, BlockView, Controller}
-  alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
@@ -83,7 +82,7 @@ defmodule BlockScoutWeb.AddressValidationController do
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         current_path: Controller.current_full_path(conn),
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        exchange_rate: Market.get_coin_exchange_rate(),
         tags: get_address_tags(address_hash, current_user(conn))
       )
     else

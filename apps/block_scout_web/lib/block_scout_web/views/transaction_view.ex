@@ -389,7 +389,8 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def decoded_input_data(transaction) do
-    Transaction.decoded_input_data(transaction, [])
+    {result, _, _} = Transaction.decoded_input_data(transaction, [])
+    result
   end
 
   def decoded_revert_reason(revert_reason, transaction, options) do

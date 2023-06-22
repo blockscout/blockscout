@@ -64,7 +64,8 @@ defmodule Indexer.Fetcher.ContractCode do
           transaction_fields
           |> entry()
           |> reducer.(acc)
-        end
+        end,
+        true
       )
 
     final
