@@ -2318,7 +2318,7 @@ defmodule Explorer.ChainTest do
                %InternalTransaction{
                  from_address: %Ecto.Association.NotLoaded{},
                  to_address: %Ecto.Association.NotLoaded{},
-                 transaction: %Transaction{}
+                 transaction: %Ecto.Association.NotLoaded{}
                }
                | _
              ] = Chain.address_to_internal_transactions(address_hash)
@@ -2778,7 +2778,7 @@ defmodule Explorer.ChainTest do
                  ])
              )
 
-      assert internal_transaction.transaction.block_number == block.number
+      assert internal_transaction.block_number == block.number
     end
 
     test "with transaction with internal transactions loads associations with in necessity_by_association" do
@@ -2800,7 +2800,7 @@ defmodule Explorer.ChainTest do
                %InternalTransaction{
                  from_address: %Ecto.Association.NotLoaded{},
                  to_address: %Ecto.Association.NotLoaded{},
-                 transaction: %Transaction{block: %Ecto.Association.NotLoaded{}}
+                 transaction: %Ecto.Association.NotLoaded{}
                }
              ] = Chain.transaction_to_internal_transactions(transaction.hash)
 
@@ -3052,7 +3052,7 @@ defmodule Explorer.ChainTest do
                  ])
              )
 
-      assert internal_transaction.transaction.block_number == block.number
+      assert internal_transaction.block_number == block.number
     end
 
     test "with transaction with internal transactions loads associations with in necessity_by_association" do
@@ -3074,7 +3074,7 @@ defmodule Explorer.ChainTest do
                %InternalTransaction{
                  from_address: %Ecto.Association.NotLoaded{},
                  to_address: %Ecto.Association.NotLoaded{},
-                 transaction: %Transaction{block: %Ecto.Association.NotLoaded{}}
+                 transaction: %Ecto.Association.NotLoaded{}
                }
              ] = Chain.all_transaction_to_internal_transactions(transaction.hash)
 

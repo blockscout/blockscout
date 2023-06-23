@@ -316,7 +316,6 @@ defmodule Explorer.Chain do
   defp common_where_limit_order(query, paging_options) do
     query
     |> InternalTransaction.where_is_different_from_parent_transaction()
-    # |> InternalTransaction.where_block_number_is_not_null()
     |> page_internal_transaction(paging_options, %{index_int_tx_desc_order: true})
     |> limit(^paging_options.page_size)
     |> order_by(
@@ -3673,7 +3672,6 @@ defmodule Explorer.Chain do
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
-    |> preload(:transaction)
     |> select_repo(options).all()
   end
 
@@ -3694,7 +3692,7 @@ defmodule Explorer.Chain do
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
-    |> preload(:transaction)
+    |> preload(:block)
     |> select_repo(options).all()
   end
 

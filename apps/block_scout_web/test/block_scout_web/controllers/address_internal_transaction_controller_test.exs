@@ -538,7 +538,8 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           from_address: address,
           index: index,
           block_hash: transaction.block_hash,
-          block_index: index
+          block_index: index,
+          block_number: transaction.block_number
         )
       end)
 
