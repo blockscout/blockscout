@@ -745,14 +745,36 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       end
     end)
     |> Enum.sort(fn t1, t2 ->
-      if direction == :asc do
-        t1.block_number < t2.block_number or
-          (t1.block_number == t2.block_number and t1.transaction_index < t2.transaction_index)
-      else
-        t1.block_number > t2.block_number or
-          (t1.block_number == t2.block_number and t1.transaction_index > t2.transaction_index)
-      end
+      txs_filter_sort_fn(direction, t1, t2)
     end)
+  end
+
+  # credo:disable-for-next-line /Complexity/
+  defp txs_filter_sort_fn(direction, t1, t2) do
+    cond do
+      direction == :asc and t1.block_number < t2.block_number ->
+        true
+
+      direction == :asc and t1.block_number == t2.block_number ->
+        t1_frame = input_to_frame(t1.input)
+        t2_frame = input_to_frame(t2.input)
+
+        (t1_frame.channel_id != t2_frame.channel_id and t1.transaction_index < t2.transaction_index) or
+          (t1_frame.channel_id == t2_frame.channel_id and t1_frame.number < t2_frame.number)
+
+      direction != :asc and t1.block_number > t2.block_number ->
+        true
+
+      direction != :asc and t1.block_number == t2.block_number ->
+        t1_frame = input_to_frame(t1.input)
+        t2_frame = input_to_frame(t2.input)
+
+        (t1_frame.channel_id != t2_frame.channel_id and t1.transaction_index > t2.transaction_index) or
+          (t1_frame.channel_id == t2_frame.channel_id and t1_frame.number > t2_frame.number)
+
+      true ->
+        false
+    end
   end
 
   defp zlib_decompress(bytes) do
