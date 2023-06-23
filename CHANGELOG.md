@@ -4,73 +4,14 @@
 
 ### Features
 
-- [#9461](https://github.com/blockscout/blockscout/pull/9461) - Fetch blocks without internal transactions backwards
-- [#9460](https://github.com/blockscout/blockscout/pull/9460) - Optimism chain type
-- [#8702](https://github.com/blockscout/blockscout/pull/8702) - Add OP withdrawal status to transaction page in API
-- [#7200](https://github.com/blockscout/blockscout/pull/7200) - Add Optimism BedRock Deposits to the main page in API
-- [#6980](https://github.com/blockscout/blockscout/pull/6980) - Add Optimism BedRock support (Txn Batches, Output Roots, Deposits, Withdrawals)
-
 ### Fixes
 
-- [#9512](https://github.com/blockscout/blockscout/pull/9512) - Docker-compose 2.24.6 compatibility
-- [#9262](https://github.com/blockscout/blockscout/pull/9262) - Fix withdrawal status
-- [#9123](https://github.com/blockscout/blockscout/pull/9123) - Fixes in Optimism due to changed log topics type
-- [#8831](https://github.com/blockscout/blockscout/pull/8831) - Return all OP Withdrawals bound to L2 transaction
-- [#8822](https://github.com/blockscout/blockscout/pull/8822) - Hotfix for optimism_withdrawal_transaction_status function
-- [#8811](https://github.com/blockscout/blockscout/pull/8811) - Consider consensus block only when retrieving OP withdrawal transaction status
-- [#8364](https://github.com/blockscout/blockscout/pull/8364) - Fix API v2 for OP Withdrawals
-- [#8229](https://github.com/blockscout/blockscout/pull/8229) - Fix Indexer.Fetcher.OptimismTxnBatch
-- [#8208](https://github.com/blockscout/blockscout/pull/8208) - Ignore invalid frame by OP transaction batches module
-- [#8122](https://github.com/blockscout/blockscout/pull/8122) - Ignore previously handled frame by OP transaction batches module
-- [#7827](https://github.com/blockscout/blockscout/pull/7827) - Fix transaction batches module for L2 OP stack
 - [#7776](https://github.com/blockscout/blockscout/pull/7776) - Fix transactions ordering in Indexer.Fetcher.OptimismTxnBatch
-- [#7219](https://github.com/blockscout/blockscout/pull/7219) - Output L1 fields in API v2 for transaction page and fix transaction fee calculation
-- [#6699](https://github.com/blockscout/blockscout/pull/6699) - L1 tx fields fix for Goerli Optimism BedRock update
-
-### Chore
-
-- [#9260](https://github.com/blockscout/blockscout/pull/9260) - Optimism Delta upgrade support by Indexer.Fetcher.OptimismTxnBatch module
-- [#8740](https://github.com/blockscout/blockscout/pull/8740) - Add delay to Indexer.Fetcher.OptimismTxnBatch module initialization
-
-## 6.2.2
-
-### Features
-
-### Fixes
-
-- [#9505](https://github.com/blockscout/blockscout/pull/9505) - Add env vars for NFT sanitize migration
-
-### Chore
-
-- [#9487](https://github.com/blockscout/blockscout/pull/9487) - Add tsvector index on smart_contracts.name
-
-<details>
-  <summary>Dependencies version bumps</summary>
-
-</details>
-
-## 6.2.1
-
-### Features
-
-### Fixes
-
-- [#9502](https://github.com/blockscout/blockscout/pull/9502) - Add batch_size and concurrency envs for tt token type migration
-- [#9493](https://github.com/blockscout/blockscout/pull/9493) - Fix API response for unknown blob hashes
-- [#9484](https://github.com/blockscout/blockscout/pull/9484) - Fix read contract error
-- [#9426](https://github.com/blockscout/blockscout/pull/9426) - Fix tabs counter cache bug
 
 ### Chore
 
 <details>
   <summary>Dependencies version bumps</summary>
-
-- [#9478](https://github.com/blockscout/blockscout/pull/9478) - Bump floki from 0.35.3 to 0.35.4
-- [#9477](https://github.com/blockscout/blockscout/pull/9477) - Bump hammer from 6.2.0 to 6.2.1
-- [#9476](https://github.com/blockscout/blockscout/pull/9476) - Bump eslint from 8.56.0 to 8.57.0 in /apps/block_scout_web/assets
-- [#9475](https://github.com/blockscout/blockscout/pull/9475) - Bump @amplitude/analytics-browser from 2.4.1 to 2.5.1 in /apps/block_scout_web/assets
-- [#9474](https://github.com/blockscout/blockscout/pull/9474) - Bump sass from 1.71.0 to 1.71.1 in /apps/block_scout_web/assets
-- [#9492](https://github.com/blockscout/blockscout/pull/9492) - Bump es5-ext from 0.10.62 to 0.10.64 in /apps/block_scout_web/assets
 
 </details>
 
