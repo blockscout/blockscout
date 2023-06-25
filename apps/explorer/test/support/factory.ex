@@ -654,7 +654,9 @@ defmodule Explorer.Factory do
       decimals: 18,
       contract_address: build(:address),
       type: "ERC-20",
-      cataloged: true
+      cataloged: true,
+      icon_url: sequence("https://example.com/icon"),
+      fiat_value: 10.1
     }
   end
 
