@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#7776](https://github.com/blockscout/blockscout/pull/7776) - Fix transactions ordering in Indexer.Fetcher.OptimismTxnBatch
+
 ### Chore
 
 <details>
