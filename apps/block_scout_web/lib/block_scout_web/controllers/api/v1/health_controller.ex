@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.API.V1.HealthController do
   alias Explorer.Chain
   alias Timex.Duration
 
+  @ok_message "OK"
+
   def health(conn, _) do
     with {:ok, number, timestamp} <- Chain.last_db_block_status(),
          {:ok, cache_number, cache_timestamp} <- Chain.last_cache_block_status() do
@@ -11,6 +13,16 @@ defmodule BlockScoutWeb.API.V1.HealthController do
     else
       status -> send_resp(conn, :internal_server_error, error(status))
     end
+  end
+
+  def liveness(conn, _) do
+    send_resp(conn, :ok, @ok_message)
+  end
+
+  def readiness(conn, _) do
+    Chain.last_db_block_status()
+
+    send_resp(conn, :ok, @ok_message)
   end
 
   def result(number, timestamp, cache_number, cache_timestamp) do
