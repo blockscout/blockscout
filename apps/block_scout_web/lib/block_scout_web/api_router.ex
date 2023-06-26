@@ -208,7 +208,13 @@ defmodule BlockScoutWeb.ApiRouter do
 
     # leave the same endpoint in v1 in order to keep backward compatibility
     get("/search", SearchController, :search)
-    get("/health", HealthController, :health)
+
+    scope "/health" do
+      get("/", HealthController, :health)
+      get("/liveness", HealthController, :liveness)
+      get("/readiness", HealthController, :readiness)
+    end
+
     get("/gas-price-oracle", V1.GasPriceOracleController, :gas_price_oracle)
 
     if Application.compile_env(:block_scout_web, __MODULE__)[:reading_enabled] do
