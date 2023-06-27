@@ -781,8 +781,8 @@ endif
 endif
 
 start: build postgres
-	@echo "==> Starting blockscout"
-	@docker run --rm --name $(BS_CONTAINER_NAME) \
+	@echo "==> Starting blockscout on $(PORT) port"
+	@docker run -d --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p $(PORT):$(PORT) \
 					$(BS_CONTAINER_IMAGE) /bin/sh -c "./bin/blockscout start"
