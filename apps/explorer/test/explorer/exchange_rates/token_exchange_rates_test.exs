@@ -5,7 +5,6 @@ defmodule Explorer.TokenExchangeRatesTest do
 
   alias Plug.Conn
   alias Explorer.Chain.Token
-  alias Explorer.ExchangeRates
   alias Explorer.ExchangeRates.TokenExchangeRates
 
   @moduletag :capture_log
@@ -100,7 +99,7 @@ defmodule Explorer.TokenExchangeRatesTest do
         base_url: "http://localhost:#{bypass.port}"
       )
 
-      [_token_with_no_exchange_rate | tokens] =
+      [_token_with_no_exchange_rate | _tokens] =
         for _ <- 0..4 do
           insert(:token)
         end
@@ -180,7 +179,7 @@ defmodule Explorer.TokenExchangeRatesTest do
         base_url: "http://localhost:#{bypass.port}"
       )
 
-      [_token_with_no_exchange_rate | tokens] =
+      [_token_with_no_exchange_rate | _tokens] =
         for _ <- 0..4 do
           insert(:token)
         end

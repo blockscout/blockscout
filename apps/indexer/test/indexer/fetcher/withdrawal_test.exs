@@ -5,7 +5,6 @@ defmodule Indexer.Fetcher.WithdrawalTest do
   import Mox
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
-  alias Explorer.Chain
   alias Indexer.Fetcher.Withdrawal
 
   setup :verify_on_exit!
