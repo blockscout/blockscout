@@ -128,7 +128,7 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
     |> Map.put("evmVersion", evm_version)
     |> Map.put("sourceFiles", files)
     |> Map.put("compilerVersion", params["compiler_version"])
-    |> Map.put("interfaces", params["interfaces"])
+    |> Map.put("interfaces", params["interfaces"] || %{})
     |> RustVerifierInterface.vyper_verify_multipart(address_hash)
   end
 
