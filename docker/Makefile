@@ -2,7 +2,7 @@ SYSTEM := $(shell uname -s)
 HOST := host.docker.internal
 DOCKER_REPO := blockscout
 APP_NAME := blockscout
-BS_CONTAINER_IMAGE := $(DOCKER_REPO)/$(APP_NAME)
+# BS_CONTAINER_IMAGE := $(DOCKER_REPO)/$(APP_NAME)
 BS_CONTAINER_NAME := blockscout_$(SCHAIN_NAME)
 PG_CONTAINER_IMAGE := postgres:14
 PG_CONTAINER_NAME := postgres_$(SCHAIN_NAME)
@@ -15,7 +15,7 @@ ifndef BLOCKSCOUT_VERSION
 	BLOCKSCOUT_VERSION = latest
 endif
 
-DOCKER_IMAGE = skalenetwork/skale_blockscout:$(BLOCKSCOUT_VERSION)
+BS_CONTAINER_IMAGE = skalenetwork/skale_blockscout:$(BLOCKSCOUT_VERSION)
 
 ifeq ($(SYSTEM), Linux)
 	HOST=localhost

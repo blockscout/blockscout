@@ -4,7 +4,7 @@ defmodule Explorer.Repo.Migrations.CreateBlocks do
   def change do
     create table(:blocks, primary_key: false) do
       add(:consensus, :boolean, null: false)
-      add(:difficulty, :numeric, precision: 50)
+      add(:difficulty, :numeric, precision: 100)
       add(:gas_limit, :numeric, precision: 100, null: false)
       add(:gas_used, :numeric, precision: 100, null: false)
       add(:hash, :bytea, null: false, primary_key: true)
@@ -17,7 +17,7 @@ defmodule Explorer.Repo.Migrations.CreateBlocks do
 
       add(:size, :integer, null: false)
       add(:timestamp, :utc_datetime_usec, null: false)
-      add(:total_difficulty, :numeric, precision: 50)
+      add(:total_difficulty, :numeric, precision: 100)
 
       timestamps(null: false, type: :utc_datetime_usec)
     end

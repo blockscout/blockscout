@@ -21,7 +21,6 @@ defmodule Indexer.Supervisor do
     CoinBalance,
     ContractCode,
     EmptyBlocksSanitizer,
-    PendingBlockOperationsSanitizer,
     ReplacedTransaction,
     Token,
     TokenBalance,
@@ -122,7 +121,6 @@ defmodule Indexer.Supervisor do
         {BlocksTransactionsMismatch.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {PendingOpsCleaner, [[], []]},
-        {PendingBlockOperationsSanitizer, [[]]},
 
         # Block fetchers
         configure(BlockRealtime.Supervisor, [
