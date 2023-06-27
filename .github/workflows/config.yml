@@ -150,7 +150,7 @@ jobs:
     needs: build-and-cache
     steps:
       - uses: actions/checkout@v3
-      - uses: erlef/setup-beam@v1
+      - uses: erlef/setup-beam@v1.15.4
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}

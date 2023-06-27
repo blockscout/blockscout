@@ -66,7 +66,7 @@ blockscout:
     image:
       tag: 6dd0c330fd4916e6ff52d2ee494a71a16a63d15a
     secrets:
-      segmentKey: gcp:secretmanager:projects/365081401101/secrets/rc1-blockscout-segmentKey
+      analyticsKey: gcp:secretmanager:projects/365081401101/secrets/rc1-blockscout-analyticsKey
       discordWebhookUrl: gcp:secretmanager:projects/365081401101/secrets/rc1-blockscout-discordWebhookUrl
       dbUser: gcp:secretmanager:projects/365081401101/secrets/rc1-blockscout3-dbUser
       dbPassword: gcp:secretmanager:projects/365081401101/secrets/rc1-blockscout3-dbPassword

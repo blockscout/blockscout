@@ -22,7 +22,7 @@
       </div>
 
       <div id="recaptcha" class=mb-3></div>
-      <button id="export-csv-button" class="button button-primary" disabled style="padding: 10px 25px;" data-link=<%= address_transaction_path(@conn, type_download_path(@type), %{"address_id" => address_checksum(@address_hash_string), "from_period" => default_period_start(), "to_period" => default_period_end()}) %>><%= gettext("Download") %></button>
+      <button id="export-csv-button" data-selector="csv-download" class="button button-primary" disabled style="padding: 10px 25px;" data-link=<%= address_transaction_path(@conn, type_download_path(@type), %{"address_id" => address_checksum(@address_hash_string), "from_period" => default_period_start(), "to_period" => default_period_end()}) %>><%= gettext("Download") %></button>
       <span id="downloading-message" class="hidden"><%= gettext("CSV is being prepared, please wait...") %> </span>
       </a>
     </div>

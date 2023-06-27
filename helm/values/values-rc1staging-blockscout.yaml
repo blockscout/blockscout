@@ -74,7 +74,7 @@ blockscout:
     epochRewards:
       enabled: true
     secrets:
-      segmentKey: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-segmentKey
+      analyticsKey: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-analyticsKey
       dbUser: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-dbUser
       dbPassword: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-dbPassword
       grafanaCloud: gcp:secretmanager:projects/365081401101/secrets/rc1staging-blockscout-grafanaCloud

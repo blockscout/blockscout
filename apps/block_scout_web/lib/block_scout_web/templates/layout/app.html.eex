@@ -48,7 +48,7 @@
         'Tx/day': '<%= gettext("Tx/day") %>'
       }
       // make analytics key variable accessible from js files
-      window.ANALYTICS_KEY = '<%= segment_key() %>'
+      window.ANALYTICS_KEY = '<%= analytics_key() %>'
     </script>
   </head>
 

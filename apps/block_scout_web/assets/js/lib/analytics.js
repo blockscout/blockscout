@@ -3,7 +3,7 @@ import { connectElements, createStore } from './redux_helpers.js'
 import $ from 'jquery'
 import Analytics from 'analytics'
 import omit from 'lodash/omit'
-import segmentPlugin from '@analytics/segment'
+import googlePlugin from '@analytics/google-analytics'
 import uniqid from 'uniqid'
 import { fullPath } from './utils'
 
@@ -61,25 +61,35 @@ function getPageName (path) {
       return 'home'
     case path === fullPath('/txs'):
       return 'validatedTransactions'
-    case path === fullPath('/pending_transactions'):
+    case path === fullPath('/pending-transactions'):
       return 'pendingTransactions'
     case path === fullPath('/blocks'):
       return 'blockHistory'
     case path === fullPath('/accounts'):
       return 'allAccounts'
+    case path === fullPath('/tokens'):
+      return 'allTokens'
+    case path === fullPath('/graphiql'):
+      return 'graphiql'
+    case path === fullPath('/api-docs'):
+      return 'apiDocs'
+    case path === fullPath('/eth-rpc-api-docs'):
+      return 'ethRpcApiDocs'
     case path.includes('/blocks') && path.includes('/transactions'):
+      return 'blockTransactions'
+    case path.includes('/block') && path.includes('/transactions'):
       return 'blockTransactions'
     case path.includes('/blocks') && path.includes('/signers'):
       return 'blockSigners'
     case path.includes('/address') && path.includes('/transactions'):
       return 'addressDetails'
-    case path.includes('/address') && path.includes('/token_transfers'):
+    case path.includes('/address') && path.includes('/token-transfers'):
       return 'addressTokenTransfers'
     case path.includes('/address') && path.includes('/tokens'):
       return 'addressTokens'
-    case path.includes('/address') && path.includes('/internal_transactions'):
+    case path.includes('/address') && path.includes('/internal-transactions'):
       return 'addressInternalTransactions'
-    case path.includes('/address') && path.includes('/coin_balances'):
+    case path.includes('/address') && path.includes('/coin-balances'):
       return 'addressCoinHistory'
     case path.includes('/address') && path.includes('/logs'):
       return 'addressLogs'
@@ -92,16 +102,22 @@ function getPageName (path) {
     // TODO: Add rest of contract pages
     case path.includes('/address') && path.includes('/contracts'):
       return 'contractAddressCode'
-    case path.includes('/address') && path.includes('/read_contract'):
+    case path.includes('/address') && path.includes('/read-contract'):
       return 'readContract'
-    case path.includes('/tx') && path.includes('/internal_transactions'):
+    case path.includes('/tx') && path.includes('/internal-transactions'):
       return 'transactionInternalTransaction'
     case path.includes('/tx') && path.includes('/logs'):
       return 'transactionLogs'
     case path.includes('/tx') && path.includes('/raw-trace'):
       return 'transactionRawTrace'
-    case path.includes('/tx') && path.includes('/token_transfers'):
+    case path.includes('/tx') && path.includes('/token-transfers'):
       return 'transactionTokenTransfers'
+    case path.includes('/tokens') && path.includes('/token-transfers'):
+      return 'tokenDetails'
+    case path.includes('/csv-export') && path.includes('address') && path.includes('transactions'):
+      return 'csvExportAddressTransactions'
+    case path.includes('/csv-export') && path.includes('address') && path.includes('token-transfers'):
+      return 'csvExportAddressTokenTransfers'
     default:
       return path
   }
@@ -169,6 +185,8 @@ function trackPage () {
     entityId: getEntityId(path),
     ...getCommonData()
   })
+
+  analytics.page()
 }
 
 function trackEvents () {
@@ -244,19 +262,45 @@ function trackEvents () {
         ...getCommonData()
       })
     })
+
+    // "csv download" click
+    $('[data-selector="csv-download"]').on('click', function () {
+      const path = window.location.pathname
+      analytics.track('click', {
+        targetName: 'csvDownload',
+        page: getPageName(path),
+        entityId: getEntityId(path),
+        ...getCommonData()
+      })
+    })
+
+    // apps navigator click
+    $('[data-selector="app-url"]').on('click', function () {
+      const path = window.location.pathname
+      analytics.track('click', {
+        targetName: 'appNavigator',
+        page: getPageName(path),
+        entityId: getEntityId(path),
+        ...getCommonData()
+      })
+    })
   })
 }
 
 // initiate analytics and store
 function initAnalytics () {
-  const analyticsKey = window.ANALYTICS_KEY || 'invalid key' // defined globally
+  const gaMeasurementId = window.ANALYTICS_KEY
+
+  if (typeof gaMeasurementId === 'undefined' || gaMeasurementId === '') {
+    return
+  }
 
   // instantiate analytics
   analytics = Analytics({
     app: 'Blockscout',
     plugins: [
-      segmentPlugin({
-        writeKey: analyticsKey
+      googlePlugin({
+        measurementIds: [gaMeasurementId]
       })
     ]
   })

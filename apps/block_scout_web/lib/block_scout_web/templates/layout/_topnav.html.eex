@@ -156,7 +156,7 @@
                 <div class="col-xs-12 col-md-3 col-lg-3">
                   <h3 class="apps-menu-header pl-2"><b><%= gettext("Swap") %></b></h3>
                   <%= for %{url: url, title: title} <- swap_list() do %>
-                  <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                  <a href="<%= url%>" class="dropdown-item" target="_blank" data-selector="app-url"><%= title %></a>
                   <% end %>
                 </div>
                  <div class="col-xs-12 col-md-3 col-lg-3">
@@ -164,20 +164,20 @@
                   <h3 class="apps-menu-header pl-2"><b><%= gettext("Wallet") %></b></h3>
                   <%= unless Enum.empty?(wallets_apps) do %>
                   <%= for %{url: url, title: title} <- wallets_apps do %>
-                  <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                  <a href="<%= url%>" class="dropdown-item" target="_blank" data-selector="app-url"><%= title %></a>
                   <% end %>
                   <% end %>
                 </div>
                 <div class="col-xs-12 col-md-3 col-lg-3">
                   <h3 class="apps-menu-header pl-2"><b><%= gettext("Connect") %></b></h3>
                   <%= for %{url: url, title: title} <- connect_list() do %>
-                  <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                  <a href="<%= url%>" class="dropdown-item" target="_blank" data-selector="app-url"><%= title %></a>
                 <% end %>
                 </div>
                 <div class="col-xs-12 col-md-3 col-lg-3">
                   <h3 class="apps-menu-header pl-2"><b><%= gettext("Learn") %></b></h3>
                   <%= for %{url: url, title: title} <- learning_list() do %>
-                  <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                  <a href="<%= url%>" class="dropdown-item" target="_blank" data-selector="app-url"><%= title %></a>
                   <% end %>
                 </div>
               </div>
@@ -185,26 +185,26 @@
                   <div class="col-xs-12 col-md-3 col-lg-3">
                     <h3 class="apps-menu-header pl-2"><b><%= gettext("Learn, Borrow, Earn") %></b></h3>
                     <%= for %{url: url, title: title} <- defi_list() do %>
-                    <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                    <a href="<%= url%>" class="dropdown-item" target="_blank" data-selector="app-url"><%= title %></a>
                     <% end %>
                   </div>
                   <div class="col-xs-12 col-md-3 col-lg-3">
                     <% nft_apps = nft_list() %>
                     <h3 class="apps-menu-header pl-2"><b><%= gettext("NFT") %></b></h3>
                     <%= for %{url: url, title: title} <- nft_apps do %>
-                    <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                    <a href="<%= url%>" class="dropdown-item" target="_blank" data-selector="app-url"><%= title %></a>
                     <% end %>
                   </div>
                   <div class="col-xs-12 col-md-3 col-lg-3">
                     <h3 class="apps-menu-header pl-2"><b><%= gettext("Spend") %></b></h3>
                     <%= for %{url: url, title: title} <- spend_list() do %>
-                    <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                    <a href="<%= url%>" class="dropdown-item" target="_blank" data-selector="app-url"><%= title %></a>
                     <% end %>
                   </div>
                   <div class="col-xs-12 col-md-3 col-lg-3">
                     <h3 class="apps-menu-header pl-2"><b><%= gettext("Resources") %></b></h3>
                     <%= for %{url: url, title: title} <- resources_list() do %>
-                    <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                    <a href="<%= url%>" class="dropdown-item" target="_blank" data-selector="app-url"><%= title %></a>
                     <% end %>
                   </div>
               </div>
@@ -212,7 +212,7 @@
                   <div class="col-xs-12 col-md-3 col-lg-3">
                     <h3 class="apps-menu-header pl-2"><b><%= gettext("Finance Tools") %></b></h3>
                     <%= for %{url: url, title: title} <- finance_tools_list() do %>
-                    <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                    <a href="<%= url%>" class="dropdown-item" target="_blank" data-selector="app-url"><%= title %></a>
                     <% end %>
                   </div>
                   <div class="col-xs-12 col-md-3 col-lg-3">

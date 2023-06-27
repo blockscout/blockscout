@@ -11,14 +11,14 @@ defmodule BlockScoutWeb.CSPHeader do
   def call(conn, _opts) do
     Controller.put_secure_browser_headers(conn, %{
       "content-security-policy" => "\
-        connect-src 'self' #{websocket_endpoints(conn)} wss://*.bridge.walletconnect.org/ https://raw.githubusercontent.com/trustwallet/assets/ https://registry.walletconnect.org/data/wallets.json; \
-        default-src 'self';\
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com;\
-        style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com;\
-        img-src 'self' * data:;\
+        connect-src 'self' 'unsafe-inline' 'unsafe-eval' 'unsafe-hashes' #{websocket_endpoints(conn)} wss://*.bridge.walletconnect.org/ https://raw.githubusercontent.com/trustwallet/assets/ https://registry.walletconnect.org/data/wallets.json https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com;\
+        default-src 'self'; \
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' 'unsafe-hashes' https://www.google.com https://www.gstatic.com https://www.googletagmanager.com;\
+        style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com; \
+        img-src 'self' * data: https://*.google-analytics.com https://*.googletagmanager.com;\
         media-src 'self' * data:;\
         font-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.gstatic.com data:;\
-        frame-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://datastudio.google.com/ https://lookerstudio.google.com/ https://makerdojo.io/ ;\
+        frame-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://datastudio.google.com/ https://lookerstudio.google.com/ https://makerdojo.io/;\
       "
     })
   end

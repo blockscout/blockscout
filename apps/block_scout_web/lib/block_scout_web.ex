@@ -17,7 +17,7 @@ defmodule BlockScoutWeb do
   and import those modules here.
   """
   def version(), do: Application.get_env(:block_scout_web, :version)
-  def segment_key(), do: Application.get_env(:block_scout_web, :segment_key)
+  def analytics_key(), do: Application.get_env(:block_scout_web, :analytics_key)
   def network_path(), do: Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path]
   def coin_name(), do: Application.get_env(:explorer, :coin_name)
   def subnetwork(), do: Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:subnetwork]

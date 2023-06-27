@@ -132,7 +132,7 @@ blockscout:
     image:
       tag: 6dd0c330fd4916e6ff52d2ee494a71a16a63d15a
     secrets:
-      segmentKey: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout-segmentKey
+      analyticsKey: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout-analyticsKey
       dbUser: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout3-dbUser
       dbPassword: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout3-dbPassword
       grafanaCloud: gcp:secretmanager:projects/365081401101/secrets/alfajores-blockscout-grafanaCloud

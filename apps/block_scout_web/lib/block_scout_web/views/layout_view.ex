@@ -81,7 +81,7 @@ defmodule BlockScoutWeb.LayoutView do
   end
 
   def version, do: BlockScoutWeb.version()
-  def segment_key, do: BlockScoutWeb.segment_key()
+  def analytics_key, do: BlockScoutWeb.analytics_key()
   def network_path, do: BlockScoutWeb.network_path()
   def coin_name, do: BlockScoutWeb.coin_name()
   def subnetwork, do: BlockScoutWeb.subnetwork()
