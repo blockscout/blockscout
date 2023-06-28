@@ -159,17 +159,19 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
 
     compiler_version = CompilerVersion.get_strict_compiler_version(:vyper, params["compiler_version"])
 
+    optimization = if is_nil(params["optimization"]), do: true, else: params["optimization"]
+
     %{
       address_hash: address_hash,
-      name: "Vyper_contract",
+      name: params["name"],
       compiler_version: compiler_version,
       evm_version: params["evm_version"],
       optimization_runs: nil,
-      optimization: params["optimization"] || false,
+      optimization: optimization,
       contract_source_code: params["contract_source_code"],
       constructor_arguments: clean_constructor_arguments,
       external_libraries: [],
-      secondary_sources: [],
+      secondary_sources: params["secondary_sources"],
       abi: abi,
       verified_via_sourcify: false,
       partially_verified: params["partially_verified"] || false,
