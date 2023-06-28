@@ -206,19 +206,15 @@ defmodule EthereumJSONRPC do
   end
 
   @quai_contexts [
-    %{shard: "prime", context: 0, byte: ["00", "09"]},
-    %{shard: "cyprus", context: 1, byte: ["0a", "13"]},
-    %{shard: "cyprus1", context: 2, byte: ["14", "1d"]},
-    %{shard: "cyprus2", context: 2, byte: ["1e", "27"]},
-    %{shard: "cyprus3", context: 2, byte: ["28", "31"]},
-    %{shard: "paxos", context: 1, byte: ["32", "3b"]},
-    %{shard: "paxos1", context: 2, byte: ["3c", "45"]},
-    %{shard: "paxos2", context: 2, byte: ["46", "4f"]},
-    %{shard: "paxos3", context: 2, byte: ["50", "59"]},
-    %{shard: "hydra", context: 1, byte: ["5a", "63"]},
-    %{shard: "hydra1", context: 2, byte: ["64", "6d"]},
-    %{shard: "hydra2", context: 2, byte: ["6e", "77"]},
-    %{shard: "hydra3", context: 2, byte: ["78", "81"]}
+    %{shard: "cyprus1", context: 2, byte: ["00", "1d"]},
+    %{shard: "cyprus2", context: 2, byte: ["1e", "3a"]},
+    %{shard: "cyprus3", context: 2, byte: ["3b", "57"]},
+    %{shard: "paxos1", context: 2, byte: ["58", "73"]},
+    %{shard: "paxos2", context: 2, byte: ["74", "8f"]},
+    %{shard: "paxos3", context: 2, byte: ["90", "ab"]},
+    %{shard: "hydra1", context: 2, byte: ["ac", "c7"]},
+    %{shard: "hydra2", context: 2, byte: ["c8", "e3"]},
+    %{shard: "hydra3", context: 2, byte: ["e4", "ff"]}
   ]
 
   def get_shard_from_address(address) do

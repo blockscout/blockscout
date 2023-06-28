@@ -4,7 +4,7 @@ defmodule EthereumJSONRPC.Block do
   and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbynumber).
   """
 
-  @quai_attrs ~w(baseFeePerGas extRollupRoot extTransactionsRoot gasLimit gasUsed logsBloom manifestHash miner number parentHash receiptsRoot sha3Uncles stateRoot transactionsRoot parentEntropy parentDeltaS)a
+  @quai_attrs ~w(manifestHash number parentHash parentEntropy parentDeltaS)a
   import EthereumJSONRPC, only: [quantity_to_integer: 1, timestamp_to_datetime: 1]
 
   alias EthereumJSONRPC.{Transactions, Uncles}
@@ -115,129 +115,58 @@ defmodule EthereumJSONRPC.Block do
   end
 
   @doc """
-  Converts `t:elixir/0` format to params used in `Explorer.Chain`.
-
-      iex> EthereumJSONRPC.Block.elixir_to_params(
-      ...>   %{
-      ...>     "author" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-      ...>     "difficulty" => 340282366920938463463374607431465537093,
-      ...>     "extraData" => "0xd5830108048650617269747986312e32322e31826c69",
-      ...>     "gasLimit" => 6706541,
-      ...>     "gasUsed" => 0,
-      ...>     "hash" => "0x52c867bc0a91e573dc39300143c3bead7408d09d45bdb686749f02684ece72f3",
-      ...>     "logsBloom" => "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-      ...>     "miner" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-      ...>     "number" => 1,
-      ...>     "parentHash" => "0x5b28c1bfd3a15230c9a46b399cd0f9a6920d432e85381cc6a140b06e8410112f",
-      ...>     "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-      ...>     "sealFields" => [
-      ...>       "0x84120a71ba",
-      ...>       "0xb8417a5887662f09ac4673af5850d28f3ad6550407b9c814ef563a13320f881b55ef03754f48f2dde027ad4a5abcabcc42780d9ebfc645f183e5252507d6a25bc2ec01"
-      ...>     ],
-      ...>     "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
-      ...>     "signature" => "7a5887662f09ac4673af5850d28f3ad6550407b9c814ef563a13320f881b55ef03754f48f2dde027ad4a5abcabcc42780d9ebfc645f183e5252507d6a25bc2ec01",
-      ...>     "size" => 576,
-      ...>     "stateRoot" => "0xc196ad59d867542ef20b29df5f418d07dc7234f4bc3d25260526620b7958a8fb",
-      ...>     "step" => "302674362",
-      ...>     "timestamp" => Timex.parse!("2017-12-15T21:03:30Z", "{ISO:Extended:Z}"),
-      ...>     "totalDifficulty" => 340282366920938463463374607431465668165,
-      ...>     "transactions" => [],
-      ...>     "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-      ...>     "uncles" => []
-      ...>   }
-      ...> )
-      %{
-        difficulty: 340282366920938463463374607431465537093,
-        extra_data: "0xd5830108048650617269747986312e32322e31826c69",
-        gas_limit: 6706541,
-        gas_used: 0,
-        hash: "0x52c867bc0a91e573dc39300143c3bead7408d09d45bdb686749f02684ece72f3",
-        logs_bloom: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-        miner_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-        mix_hash: "0x0",
-        nonce: 0,
-        number: 1,
-        parent_hash: "0x5b28c1bfd3a15230c9a46b399cd0f9a6920d432e85381cc6a140b06e8410112f",
-        receipts_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-        sha3_uncles: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
-        size: 576,
-        state_root: "0xc196ad59d867542ef20b29df5f418d07dc7234f4bc3d25260526620b7958a8fb",
-        timestamp: Timex.parse!("2017-12-15T21:03:30Z", "{ISO:Extended:Z}"),
-        total_difficulty: 340282366920938463463374607431465668165,
-        transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-        uncles: []
-      }
-
-  [Geth] `elixir` can be converted to params
-
-      iex> EthereumJSONRPC.Block.elixir_to_params(
-      ...>   %{
-      ...>     "difficulty" => 17561410778,
-      ...>     "extraData" => "0x476574682f4c5649562f76312e302e302f6c696e75782f676f312e342e32",
-      ...>     "gasLimit" => 5000,
-      ...>     "gasUsed" => 0,
-      ...>     "hash" => "0x4d9423080290a650eaf6db19c87c76dff83d1b4ab64aefe6e5c5aa2d1f4b6623",
-      ...>     "logsBloom" => "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-      ...>     "miner" => "0xbb7b8287f3f0a933474a79eae42cbca977791171",
-      ...>     "mixHash" => "0xbbb93d610b2b0296a59f18474ac3d6086a9902aa7ca4b9a306692f7c3d496fdf",
-      ...>     "nonce" => 5539500215739777653,
-      ...>     "number" => 59,
-      ...>     "parentHash" => "0xcd5b5c4cecd7f18a13fe974255badffd58e737dc67596d56bc01f063dd282e9e",
-      ...>     "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-      ...>     "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
-      ...>     "size" => 542,
-      ...>     "stateRoot" => "0x6fd0a5d82ca77d9f38c3ebbde11b11d304a5fcf3854f291df64395ab38ed43ba",
-      ...>     "timestamp" => Timex.parse!("2015-07-30T15:32:07Z", "{ISO:Extended:Z}"),
-      ...>     "totalDifficulty" => 1039309006117,
-      ...>     "transactions" => [],
-      ...>     "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-      ...>     "uncles" => []
-      ...>   }
-      ...> )
-      %{
-        difficulty: 17561410778,
-        extra_data: "0x476574682f4c5649562f76312e302e302f6c696e75782f676f312e342e32",
-        gas_limit: 5000,
-        gas_used: 0,
-        hash: "0x4d9423080290a650eaf6db19c87c76dff83d1b4ab64aefe6e5c5aa2d1f4b6623",
-        logs_bloom: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-        mix_hash: "0xbbb93d610b2b0296a59f18474ac3d6086a9902aa7ca4b9a306692f7c3d496fdf",
-        miner_hash: "0xbb7b8287f3f0a933474a79eae42cbca977791171",
-        nonce: 5539500215739777653,
-        number: 59,
-        parent_hash: "0xcd5b5c4cecd7f18a13fe974255badffd58e737dc67596d56bc01f063dd282e9e",
-        receipts_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-        sha3_uncles: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
-        size: 542,
-        state_root: "0x6fd0a5d82ca77d9f38c3ebbde11b11d304a5fcf3854f291df64395ab38ed43ba",
-        timestamp: Timex.parse!("2015-07-30T15:32:07Z", "{ISO:Extended:Z}"),
-        total_difficulty: 1039309006117,
-        transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-        uncles: []
-      }
-
+  {
+  "baseFeePerGas" => "0x1",
+  "difficulty" => "0x3e8",
+  "extRollupRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+  "extTransactions" => [],
+  "extTransactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+  "extraData" => "0xdf8776302e31302e3087676f2d7175616988676f312e32302e33856c696e7578",
+  "gasLimit" => "0x2f7f6b3",
+  "gasUsed" => "0x0",
+  "hash" => "0xebd1dd01d9392192f9ea78cf3c7c75005b035547b5abccc08692ca1d75b1184e",
+  "location" => "0x0000",
+  "manifestHash" => ["0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+   "0xd398fe86b8b6e1a8537cfee0e1428ee3a9a88b18bbffed11273d902942fd9f2b",
+   "0x71cf114b7b1166a0166c9fdd97ac800aeac0aadce341fa056c3e44e3d10da6ed"],
+  "miner" => "0x069c0ec28fcc5767fc10372604fdc9adafcebb36",
+  "mixHash" => "0xec29be6bb52e25a3475d826651518163be883e03998f4cf404e7ebf819a61d21",
+  "nonce" => "0x13cc3c6b423ea4e0",
+  "number" => ["0x1", "0x1", "0x4"],
+  "order" => 2,
+  "parentDeltaS" => ["0x0", "0x0", "0x200479a2404b70e074"],
+  "parentEntropy" => ["0x0", "0x0", "0x200479a2404b70e074"],
+  "parentHash" => ["0xff5907242c1dd76d1965e811bb65080788ead1f83863743d07302861ad8645c5",
+   "0xff5907242c1dd76d1965e811bb65080788ead1f83863743d07302861ad8645c5",
+   "0xaf2ef67cc773db9dbdada7b4797ade81cfc99c8536d7329fbc149f49af2cae4d"],
+  "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+  "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+  "size" => "0x22a",
+  "stateRoot" => "0xca311797c7d77c0b5d82cad309fbf9ccd87e79c5ea24ea3a66d0c123d7e9baa3",
+  "subManifest" => [],
+  "timestamp" => "0x649c50c7",
+  "totalEntropy" => "0x2bd1eb58a6fec163d9",
+  "transactions" => [],
+  "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+  "uncles" => []
+  }
   """
   @spec elixir_to_params(elixir) :: params
   def elixir_to_params(
         %{
           "baseFeePerGas" => base_fee_per_gas,
-          "baseFeePerGasFull" => base_fee_per_gas_full,
           "difficulty" => difficulty,
-          "extRollupRootFull" => ext_rollup_root_full,
           "extTransactions" => ext_transactions,
-          "extTransactionsRootFull" => ext_transactions_root_full,
+          "extTransactionsRoot" => ext_transactions_root,
+          "extRollupRoot" => ext_rollup_root,
           "extraData" => extra_data,
           "gasLimit" => gas_limit,
-          "gasLimitFull" => gas_limit_full,
           "gasUsed" => gas_used,
-          "gasUsedFull" => gas_used_full,
           "hash" => hash,
           "location" => location,
-          "logsBloom" => logs_bloom,
-          "logsBloomFull" => logs_bloom_full,
           "manifestHashFull" => manifest_hash_full,
           "miner" => miner_hash,
-          "minerFull" => miner_full,
+          "mixHash" => mix_hash,
           "number" => number,
           "numberFull" => number_full,
           "order" => order,
@@ -248,41 +177,29 @@ defmodule EthereumJSONRPC.Block do
           "parentHash" => parent_hash,
           "parentHashFull" => parent_hash_full,
           "receiptsRoot" => receipts_root,
-          "receiptsRootFull" => receipts_root_full,
           "sha3Uncles" => sha3_uncles,
-          "sha3UnclesFull" => sha3_uncles_full,
           "size" => size,
           "stateRoot" => state_root,
-          "stateRootFull" => state_root_full,
           "subManifest" => sub_manifest,
           "timestamp" => timestamp,
           "totalEntropy" => total_entropy,
           "transactionsRoot" => transactions_root,
-          "transactionsRootFull" => transactions_root_full,
           "uncles" => uncles
         } = elixir
       ) do
     coincidence = is_coincident(order)
     %{
       base_fee_per_gas: base_fee_per_gas,
-      base_fee_per_gas_full: base_fee_per_gas_full,
       difficulty: difficulty,
-      ext_rollup_root_full: ext_rollup_root_full,
       ext_transactions: ext_transactions,
-      ext_transactions_root_full: ext_transactions_root_full,
       extra_data: extra_data,
       gas_limit: gas_limit,
-      gas_limit_full: gas_limit_full,
       gas_used: gas_used,
-      gas_used_full: gas_used_full,
       hash: hash,
       is_prime_coincident: coincidence |> elem(0),
       is_region_coincident: coincidence |> elem(1),
       location: location,
-      logs_bloom: logs_bloom,
-      logs_bloom_full: logs_bloom_full,
       manifest_hash_full: manifest_hash_full,
-      miner_full: miner_full,
       miner_hash: miner_hash,
       mix_hash: Map.get(elixir, "mixHash", "0x0"), # maybe consider doing this instead of changing the method header ?
       nonce: Map.get(elixir, "nonce", 0),
@@ -295,17 +212,13 @@ defmodule EthereumJSONRPC.Block do
       parent_hash: parent_hash,
       parent_hash_full: parent_hash_full,
       receipts_root: receipts_root,
-      receipts_root_full: receipts_root_full,
       sha3_uncles: sha3_uncles,
-      sha3_uncles_full: sha3_uncles_full,
       size: size,
       state_root: state_root,
-      state_root_full: state_root_full,
       sub_manifest: sub_manifest,
       timestamp: timestamp,
       total_entropy: total_entropy,
       transactions_root: transactions_root,
-      transactions_root_full: transactions_root_full,
       uncles: uncles,
     }
   end

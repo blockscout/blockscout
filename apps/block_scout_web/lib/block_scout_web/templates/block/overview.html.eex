@@ -309,12 +309,8 @@
               text: gettext("Ext Rollup Root Hash when block was produced.") %>
               <%= gettext("Ext Rollup Root Hash") %>
             </dt>
-            <%= for {item, index} <- Enum.with_index(@block.ext_rollup_root_full) do %>
-            <%= if index > 0 do %>
             <dt class="col-sm-3 col-lg-2 text-muted"></dt>
-            <% end %>
-            <dd class="col-sm-9 col-lg-10"><%= to_string(item) %></dd>
-            <% end %>
+            <dd class="col-sm-9 col-lg-10"><%= to_string(@block.ext_rollup_root) %></dd>
           </dl>
           <% end %>
         </div>

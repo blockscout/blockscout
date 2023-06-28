@@ -14,7 +14,7 @@ defmodule Explorer.Chain.Block do
 
   @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
-  @quai_attrs ~w(base_fee_per_gas_full ext_rollup_root_full ext_transactions_root_full gas_limit_full gas_used_full logs_bloom_full manifest_hash_full miner_full number_full parent_hash_full receipts_root_full sha3_uncles_full state_root_full transactions_root_full ext_transactions sub_manifest location is_prime_coincident is_region_coincident total_entropy parent_entropy parent_delta_s)a
+  @quai_attrs ~w(manifest_hash_full number_full parent_hash_full parent_entropy_full parent_delta_s_full ext_transactions sub_manifest location is_prime_coincident is_region_coincident total_entropy parent_entropy parent_delta_s)a
 
   @typedoc """
   How much work is required to find a hash with some number of leading 0s.  It is measured in hashes for PoW
@@ -71,23 +71,13 @@ defmodule Explorer.Chain.Block do
           refetch_needed: boolean(),
           base_fee_per_gas: Wei.t(),
           is_empty: boolean(),
-          base_fee_per_gas_full: [Wei.t()],
-          ext_rollup_root_full: [Hash.Full.t()],
-          ext_transactions_root_full: [Hash.Full.t()],
 #          ext_transactions: [Transaction.t()],
           ext_transactions: [Hash.Full.t()],
+          ext_rollup_root: Hash.Full.t(),
           sub_manifest: [Hash.Full.t()],
-          gas_limit_full: [Gas.t()],
-          gas_used_full: [Gas.t()],
-          logs_bloom_full: [Hash.Full.t()],
           manifest_hash_full: [Hash.Full.t()],
-          miner_full: [Address.t()],
           number_full: [block_number()],
           parent_hash_full: [Hash.t()],
-          receipts_root_full: [Hash.Full.t()],
-          sha3_uncles_full: [Hash.Full.t()],
-          state_root_full: [Hash.Full.t()],
-          transactions_root_full: [Hash.Full.t()],
 #          location: [:integer],
           location: :string,
           is_prime_coincident: boolean(),
@@ -112,22 +102,12 @@ defmodule Explorer.Chain.Block do
     field(:parent_entropy_full, {:array, :decimal})
     field(:parent_delta_s_full, {:array, :decimal})
     field(:total_entropy, :decimal)
-    field(:base_fee_per_gas_full, {:array, Wei})
-    field(:ext_rollup_root_full, {:array, Hash.Full})
-    field(:ext_transactions_root_full, {:array, Hash.Full})
     field(:ext_transactions, {:array, Hash.Full})
+    field(:ext_rollup_root, Hash.Full)
     field(:sub_manifest, {:array, Hash.Full})
-    field(:gas_limit_full, {:array, :decimal})
-    field(:gas_used_full, {:array, :decimal})
-    field(:logs_bloom_full, {:array, Hash.Full})
     field(:manifest_hash_full, {:array, Hash.Full})
-    field(:miner_full, {:array, Hash.Address})
     field(:number_full, {:array, :integer})
     field(:parent_hash_full, {:array, Hash.Full})
-    field(:receipts_root_full, {:array, Hash.Full})
-    field(:sha3_uncles_full, {:array, Hash.Full})
-    field(:state_root_full, {:array, Hash.Full})
-    field(:transactions_root_full, {:array, Hash.Full})
     field(:location, :string)
     field(:is_prime_coincident, :boolean)
     field(:is_region_coincident, :boolean)
