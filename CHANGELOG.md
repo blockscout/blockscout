@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#7811](https://github.com/blockscout/blockscout/pull/7811) - Filter addresses before insertion
+
 ### Fixes
 
 - [#7758](https://github.com/blockscout/blockscout/pull/7758) - Remove limit for configurable fetchers
