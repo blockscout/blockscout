@@ -442,7 +442,10 @@ defmodule Explorer.Chain.SmartContract do
 
   defp error_message(string) when is_binary(string), do: string
 
-  defp error_message(_), do: "There was an error validating your contract, please try again."
+  defp error_message(error) do
+    Logger.warn(fn -> ["Unknown verifier error: ", inspect(error)] end)
+    "There was an error validating your contract, please try again."
+  end
 
   defp error_message(:compilation, error_message), do: "There was an error compiling your contract: #{error_message}"
 
