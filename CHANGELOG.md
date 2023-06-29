@@ -12,6 +12,7 @@
 
 ### Chore
 
+- [#7819](https://github.com/blockscout/blockscout/pull/7819) - Add logging for unknown error verification result
 - [#7781](https://github.com/blockscout/blockscout/pull/7781) - Add `/api/v1/health/liveness` and `/api/v1/health/readiness`
 
 <details>
