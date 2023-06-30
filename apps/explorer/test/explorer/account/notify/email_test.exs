@@ -1,9 +1,6 @@
 defmodule Explorer.Account.Notify.EmailTest do
   use ExUnit.Case
 
-  alias Explorer.Chain.Address
-  alias Explorer.Chain.Transaction
-
   alias Explorer.Account.{
     Identity,
     Watchlist,
@@ -47,7 +44,6 @@ defmodule Explorer.Account.Notify.EmailTest do
       {:ok, from_hash} = string_to_address_hash("0x092D537737E767Dae48c28aE509f34094496f030")
 
       {:ok, to_hash} = string_to_address_hash("0xE1F4dd38f00B0D8D4d2b4B5010bE53F2A0b934E5")
-      to_address = %Address{hash: to_hash}
 
       identity = %Identity{
         uid: "foo|bar",
