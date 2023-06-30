@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.4.0",
-    "@amplitude/analytics-browser": "^2.0.0",
+    "@amplitude/analytics-browser": "^2.1.0",
     "@tarekraafat/autocomplete.js": "^10.2.7",
     "@walletconnect/web3-provider": "^1.8.0",
     "assert": "^2.0.0",
@@ -101,10 +101,10 @@
     "mini-css-extract-plugin": "^2.7.6",
     "postcss": "^8.4.24",
     "postcss-loader": "^7.3.3",
-    "sass": "^1.63.4",
+    "sass": "^1.63.6",
     "sass-loader": "^13.3.2",
     "style-loader": "^3.3.3",
-    "webpack": "^5.87.0",
+    "webpack": "^5.88.1",
     "webpack-cli": "^5.1.4"
   },
   "jest": {

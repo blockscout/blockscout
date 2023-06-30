@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.WebsocketV2Test do
 
   alias BlockScoutWeb.Notifier
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Chain.{Address, Import, InternalTransaction, Log, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Import, Token, TokenTransfer, Transaction}
   alias Explorer.Repo
 
   describe "websocket v2" do
