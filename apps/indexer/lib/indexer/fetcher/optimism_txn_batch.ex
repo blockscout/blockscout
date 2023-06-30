@@ -523,6 +523,10 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         put_future_frame(current_channel_id, future_frame)
         {:cont, {:ok, batches, sequences, incomplete_frame_sequence, last_channel_id, current_channel_id}}
 
+      frame.number == last_frame_number && frame.channel_id == current_channel_id ->
+        # ignore duplicated frame
+        {:cont, {:ok, batches, sequences, incomplete_frame_sequence, last_channel_id, current_channel_id}}
+
       true ->
         {:halt,
          {:error,
