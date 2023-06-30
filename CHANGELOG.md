@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#7811](https://github.com/blockscout/blockscout/pull/7811) - Filter addresses before insertion
+
 ### Fixes
 
 - [#7803](https://github.com/blockscout/blockscout/pull/7803) - Fix additional sources and interfaces, save names for vyper contracts
