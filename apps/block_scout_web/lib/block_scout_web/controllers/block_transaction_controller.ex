@@ -2,9 +2,15 @@ defmodule BlockScoutWeb.BlockTransactionController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
-    only: [paging_options: 1, put_key_value_to_paging_options: 3, next_page_params: 3, split_list_by_page: 1]
+    only: [
+      paging_options: 1,
+      put_key_value_to_paging_options: 3,
+      next_page_params: 3,
+      split_list_by_page: 1,
+      parse_block_hash_or_number_param: 1
+    ]
 
-  import Explorer.Chain, only: [hash_to_block: 2, number_to_block: 2, string_to_block_hash: 1]
+  import Explorer.Chain, only: [hash_to_block: 2, number_to_block: 2]
 
   alias BlockScoutWeb.{Controller, TransactionView}
   alias Explorer.Chain
@@ -99,7 +105,7 @@ defmodule BlockScoutWeb.BlockTransactionController do
   def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number}) do
     case param_block_hash_or_number_to_block(formatted_block_hash_or_number,
            necessity_by_association: %{
-             [miner: :names] => :required,
+             [miner: :names] => :optional,
              :uncles => :optional,
              :nephews => :optional,
              :rewards => :optional
@@ -133,30 +139,22 @@ defmodule BlockScoutWeb.BlockTransactionController do
     end
   end
 
-  def param_block_hash_or_number_to_block("0x" <> _ = param, options) do
-    case string_to_block_hash(param) do
-      {:ok, hash} ->
-        hash_to_block(hash, options)
-
-      :error ->
-        {:error, {:invalid, :hash}}
-    end
-  end
-
-  def param_block_hash_or_number_to_block(number_string, options)
-      when is_binary(number_string) do
-    case BlockScoutWeb.Chain.param_to_block_number(number_string) do
-      {:ok, number} ->
+  def param_block_hash_or_number_to_block(param, options) do
+    case parse_block_hash_or_number_param(param) do
+      {:ok, :number, number} ->
         number_to_block(number, options)
 
-      {:error, :invalid} ->
-        {:error, {:invalid, :number}}
+      {:ok, :hash, hash} ->
+        hash_to_block(hash, options)
+
+      error ->
+        error
     end
   end
 
-  defp block_above_tip("0x" <> _), do: {:error, :hash}
+  def block_above_tip("0x" <> _), do: {:error, :hash}
 
-  defp block_above_tip(block_hash_or_number) when is_binary(block_hash_or_number) do
+  def block_above_tip(block_hash_or_number) when is_binary(block_hash_or_number) do
     case Chain.max_consensus_block_number() do
       {:ok, max_consensus_block_number} ->
         {block_number, _} = Integer.parse(block_hash_or_number)

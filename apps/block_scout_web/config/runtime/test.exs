@@ -4,16 +4,12 @@ alias EthereumJSONRPC.Variant
 
 config :explorer, Explorer.ExchangeRates, enabled: false, store: :none
 
-config :explorer, Explorer.KnownTokens, enabled: false, store: :none
-
 config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
   domain: "example.com",
-  client_id: "clien_id",
+  client_id: "client_id",
   client_secret: "secrets"
 
-config :ueberauth, Ueberauth,
-  logout_url: "example.com/logout",
-  logout_return_to_url: "example.com/return"
+config :ueberauth, Ueberauth, logout_url: "example.com/logout"
 
 variant = Variant.get()
 

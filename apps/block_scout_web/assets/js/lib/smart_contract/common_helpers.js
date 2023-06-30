@@ -36,9 +36,9 @@ export function prepareMethodArgs ($functionInputs, inputs) {
       if (sanitizedInputValue === '' || sanitizedInputValue === '[]') {
         return [[]]
       } else {
-        if (isArrayOfTuple(inputType)) {
+        if (isArrayOfTuple(inputType) || isMultidimensionalArray(inputType)) {
           const sanitizedInputValueElements = JSON.parse(sanitizedInputValue).map((elementValue, index) => {
-            return sanitizeMutipleInputValues(elementValue, inputType, inputComponents)
+            return sanitizeMultipleInputValues(elementValue, inputType, inputComponents)
           })
           return [sanitizedInputValueElements]
         } else {
@@ -46,7 +46,7 @@ export function prepareMethodArgs ($functionInputs, inputs) {
             sanitizedInputValue = sanitizedInputValue.substring(1, sanitizedInputValue.length - 1)
           }
           const inputValueElements = sanitizedInputValue.split(',')
-          const sanitizedInputValueElements = sanitizeMutipleInputValues(inputValueElements, inputType, inputComponents)
+          const sanitizedInputValueElements = sanitizeMultipleInputValues(inputValueElements, inputType, inputComponents)
           return [sanitizedInputValueElements]
         }
       }
@@ -54,7 +54,7 @@ export function prepareMethodArgs ($functionInputs, inputs) {
   })
 }
 
-function sanitizeMutipleInputValues (inputValueElements, inputType, inputComponents) {
+function sanitizeMultipleInputValues (inputValueElements, inputType, inputComponents) {
   return inputValueElements.map((elementValue, index) => {
     let elementInputType
     if (inputType.includes('tuple')) {
@@ -96,7 +96,9 @@ export const formatTitleAndError = (error) => {
   let errorMap = ''
   try {
     errorMap = message && message.indexOf('{') >= 0 ? JSON.parse(message && message.slice(message.indexOf('{'))) : ''
+    // @ts-ignore
     message = errorMap.error || ''
+    // @ts-ignore
     txHash = errorMap.transactionHash || ''
   } catch (exception) {
     message = ''
@@ -141,6 +143,7 @@ export const getCurrentAccountFromWCPromise = (provider) => {
 
 export const getCurrentAccountFromMMPromise = () => {
   return new Promise((resolve, reject) => {
+    // @ts-ignore
     window.ethereum.request({ method: 'eth_accounts' })
       .then(accounts => {
         const account = accounts[0] ? accounts[0].toLowerCase() : null
@@ -153,35 +156,43 @@ export const getCurrentAccountFromMMPromise = () => {
 }
 
 function hideConnectedToContainer () {
-  document.querySelector(connectedToSelector) && document.querySelector(connectedToSelector).classList.add('hidden')
+  const obj = document.querySelector(connectedToSelector)
+  obj && obj.classList.add('hidden')
 }
 
 function showConnectedToContainer () {
-  document.querySelector(connectedToSelector) && document.querySelector(connectedToSelector).classList.remove('hidden')
+  const obj = document.querySelector(connectedToSelector)
+  obj && obj.classList.remove('hidden')
 }
 
 function hideConnectContainer () {
-  document.querySelector(connectSelector) && document.querySelector(connectSelector).classList.add('hidden')
+  const obj = document.querySelector(connectSelector)
+  obj && obj.classList.add('hidden')
 }
 
 function showConnectContainer () {
-  document.querySelector(connectSelector) && document.querySelector(connectSelector).classList.remove('hidden')
+  const obj = document.querySelector(connectSelector)
+  obj && obj.classList.remove('hidden')
 }
 
 function hideConnectToContainer () {
-  document.querySelector(connectToSelector) && document.querySelector(connectToSelector).classList.add('hidden')
+  const obj = document.querySelector(connectToSelector)
+  obj && obj.classList.add('hidden')
 }
 
 function showConnectToContainer () {
-  document.querySelector(connectToSelector) && document.querySelector(connectToSelector).classList.remove('hidden')
+  const obj = document.querySelector(connectToSelector)
+  obj && obj.classList.remove('hidden')
 }
 
 export function showHideDisconnectButton () {
   // Show disconnect button only in case of Wallet Connect
+  const obj = document.querySelector(disconnectSelector)
+  // @ts-ignore
   if (window.web3 && window.web3.currentProvider && window.web3.currentProvider.wc) {
-    document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).classList.remove('hidden')
+    obj && obj.classList.remove('hidden')
   } else {
-    document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).classList.add('hidden')
+    obj && obj.classList.add('hidden')
   }
 }
 
@@ -206,12 +217,14 @@ export function hideConnectButton () {
 }
 
 function setConnectToAddress (account) {
-  if (document.querySelector('[connected-to-address]')) {
-    document.querySelector('[connected-to-address]').innerHTML = `<a href='/address/${account}'>${trimmedAddressHash(account)}</a>`
+  const obj = document.querySelector('[connected-to-address]')
+  if (obj) {
+    obj.innerHTML = `<a href='/address/${account}'>${trimmedAddressHash(account)}</a>`
   }
 }
 
 function trimmedAddressHash (account) {
+  // @ts-ignore
   if ($(window).width() < 544) {
     return `${account.slice(0, 7)}–${account.slice(-6)}`
   } else {
@@ -227,6 +240,10 @@ function convertToBool (value, type) {
   } else {
     return value
   }
+}
+
+function isMultidimensionalArray (inputType) {
+  return isArrayInputType(inputType) && inputType.includes('][')
 }
 
 function isArrayInputType (inputType) {

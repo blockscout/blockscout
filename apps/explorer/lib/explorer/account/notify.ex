@@ -20,7 +20,7 @@ defmodule Explorer.Account.Notify do
   rescue
     err ->
       Logger.info("--- Notifier error", fetcher: :account)
-      Logger.info(err, fetcher: :account)
+      :error |> Exception.format(err, __STACKTRACE__) |> Logger.info(fetcher: :account)
   end
 
   defp check_envs do
@@ -31,8 +31,7 @@ defmodule Explorer.Account.Notify do
   defp check_auth0 do
     (Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_id] &&
        Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_secret] &&
-       Application.get_env(:ueberauth, Ueberauth)[:logout_return_to_url] &&
-       Application.get_env(:ueberauth, Ueberauth)[:logout_url]) ||
+       Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:domain]) ||
       raise "Auth0 not configured"
   end
 

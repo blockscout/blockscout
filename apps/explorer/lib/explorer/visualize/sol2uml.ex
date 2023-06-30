@@ -18,7 +18,7 @@ defmodule Explorer.Visualize.Sol2uml do
 
     case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
       {:ok, %Response{body: body, status_code: 200}} ->
-        proccess_visualizer_response(body)
+        process_visualizer_response(body)
 
       {:ok, %Response{body: body, status_code: status_code}} ->
         Logger.error(fn -> ["Invalid status code from visualizer: #{status_code}. body: ", inspect(body)] end)
@@ -40,21 +40,21 @@ defmodule Explorer.Visualize.Sol2uml do
     end
   end
 
-  def proccess_visualizer_response(body) when is_binary(body) do
+  def process_visualizer_response(body) when is_binary(body) do
     case Jason.decode(body) do
       {:ok, decoded} ->
-        proccess_visualizer_response(decoded)
+        process_visualizer_response(decoded)
 
       _ ->
         {:error, body}
     end
   end
 
-  def proccess_visualizer_response(%{"svg" => svg}) do
+  def process_visualizer_response(%{"svg" => svg}) do
     {:ok, svg}
   end
 
-  def proccess_visualizer_response(other), do: {:error, other}
+  def process_visualizer_response(other), do: {:error, other}
 
   def visualize_contracts_url, do: "#{base_api_url()}" <> "/solidity:visualize-contracts"
 

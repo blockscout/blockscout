@@ -1,6 +1,6 @@
 defmodule Explorer.Account.WatchlistNotification do
   @moduledoc """
-    Strored notification about event 
+    Stored notification about event 
     related to WatchlistAddress
   """
 

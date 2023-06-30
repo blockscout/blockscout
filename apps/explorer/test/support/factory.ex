@@ -39,13 +39,16 @@ defmodule Explorer.Factory do
     Token,
     TokenTransfer,
     Token.Instance,
-    Transaction
+    Transaction,
+    Withdrawal
   }
 
   alias Explorer.SmartContract.Helper
-
+  alias Explorer.Tags.{AddressTag, AddressToTag}
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
+
+  alias Explorer.Utility.MissingBlockRange
 
   alias Ueberauth.Strategy.Auth0
   alias Ueberauth.Auth.Info
@@ -135,6 +138,16 @@ defmodule Explorer.Factory do
 
   def tag_transaction_factory do
     %{"name" => sequence("name"), "transaction_hash" => to_string(insert(:transaction).hash)}
+  end
+
+  def address_to_tag_factory do
+    %AddressToTag{
+      tag: %AddressTag{
+        label: sequence("label"),
+        display_name: sequence("display_name")
+      },
+      address: build(:address)
+    }
   end
 
   def account_watchlist_address_factory do
@@ -265,7 +278,7 @@ defmodule Explorer.Factory do
     }
   end
 
-  def contract_code_info_modern_compilator do
+  def contract_code_info_modern_compiler do
     %{
       bytecode:
         "0x608060405234801561001057600080fd5b50610150806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c806360fe47b11461003b5780636d4ce63c14610057575b600080fd5b610055600480360381019061005091906100c3565b610075565b005b61005f61007f565b60405161006c91906100ff565b60405180910390f35b8060008190555050565b60008054905090565b600080fd5b6000819050919050565b6100a08161008d565b81146100ab57600080fd5b50565b6000813590506100bd81610097565b92915050565b6000602082840312156100d9576100d8610088565b5b60006100e7848285016100ae565b91505092915050565b6100f98161008d565b82525050565b600060208201905061011460008301846100f0565b9291505056fea2646970667358221220d5d429d16f620053da9907372b66303e007b04bfd112159cff82cb67ff40da4264736f6c634300080a0033",
@@ -554,11 +567,7 @@ defmodule Explorer.Factory do
   end
 
   def pending_block_operation_factory do
-    %PendingBlockOperation{
-      # caller MUST supply block
-      # all operations will default to false
-      fetch_internal_transactions: false
-    }
+    %PendingBlockOperation{}
   end
 
   def internal_transaction_factory() do
@@ -807,7 +816,8 @@ defmodule Explorer.Factory do
   def smart_contract_factory do
     contract_code_info = contract_code_info()
 
-    bytecode_md5 = Helper.contract_code_md5(contract_code_info.bytecode)
+    {:ok, data} = Explorer.Chain.Data.cast(contract_code_info.bytecode)
+    bytecode_md5 = Helper.contract_code_md5(data.bytes)
 
     %SmartContract{
       address_hash: insert(:address, contract_code: contract_code_info.bytecode, verified: true).hash,
@@ -816,7 +826,10 @@ defmodule Explorer.Factory do
       contract_source_code: contract_code_info.source_code,
       optimization: contract_code_info.optimized,
       abi: contract_code_info.abi,
-      contract_code_md5: bytecode_md5
+      contract_code_md5: bytecode_md5,
+      verified_via_sourcify: Enum.random([true, false]),
+      is_vyper_contract: Enum.random([true, false]),
+      verified_via_eth_bytecode_db: Enum.random([true, false])
     }
   end
 
@@ -836,8 +849,8 @@ defmodule Explorer.Factory do
 
   def token_instance_factory do
     %Instance{
-      token_contract_address_hash: build(:address),
-      token_id: 5,
+      token_contract_address_hash: insert(:token).contract_address_hash,
+      token_id: sequence("token_id", & &1),
       metadata: %{key: "value"},
       error: nil
     }
@@ -874,13 +887,16 @@ defmodule Explorer.Factory do
   end
 
   def address_current_token_balance_with_token_id_factory do
+    {token_type, token_id} = Enum.random([{"ERC-20", nil}, {"ERC-721", nil}, {"ERC-1155", Enum.random(1..100_000)}])
+
     %CurrentTokenBalance{
       address: build(:address),
       token_contract_address_hash: insert(:token).contract_address_hash,
       block_number: block_number(),
       value: Enum.random(1..100_000),
       value_fetched_at: DateTime.utc_now(),
-      token_id: Enum.random([nil, Enum.random(1..100_000)])
+      token_id: token_id,
+      token_type: token_type
     }
   end
 
@@ -934,6 +950,36 @@ defmodule Explorer.Factory do
       role: "owner",
       user: build(:user)
     }
+  end
+
+  def missing_block_range_factory do
+    %MissingBlockRange{
+      from_number: 1,
+      to_number: 0
+    }
+  end
+
+  def withdrawal_factory do
+    block = build(:block)
+    address = build(:address)
+
+    %Withdrawal{
+      index: withdrawal_index(),
+      validator_index: withdrawal_validator_index(),
+      amount: Enum.random(1..100_000),
+      block: block,
+      block_hash: block.hash,
+      address: address,
+      address_hash: address.hash
+    }
+  end
+
+  def withdrawal_index do
+    sequence("withdrawal_index", & &1)
+  end
+
+  def withdrawal_validator_index do
+    sequence("withdrawal_validator_index", & &1)
   end
 
   def random_bool, do: Enum.random([true, false])

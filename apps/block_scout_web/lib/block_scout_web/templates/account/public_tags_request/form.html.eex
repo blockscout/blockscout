@@ -60,7 +60,7 @@
               <br>
               <div class="form-group float-left form-input">
                 <a class="btn btn-line" href="<%= public_tags_request_path(@conn, :index) %>"><%= gettext "Cancel"%></a>
-                <%= submit gettext("Send request"), class: "button button-primary button-sm ml-3" %>
+                <%= submit gettext("Send request"), class: "send-public-tag-request-button button button-primary button-sm ml-3" %>
               </div>
             <% end %>
           </div>

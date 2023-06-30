@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController do
       render(conn, "new.html",
         changeset: changeset,
         compiler_versions: compiler_versions,
-        evm_versions: CodeCompiler.allowed_evm_versions(),
+        evm_versions: CodeCompiler.evm_versions(:solidity),
         address_hash: address_hash_string
       )
     end
@@ -49,12 +49,5 @@ defmodule BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController do
     Que.add(PublisherWorker, {"flattened", smart_contract, external_libraries, conn})
 
     send_resp(conn, 204, "")
-  end
-
-  def parse_optimization_runs(%{"runs" => runs}) do
-    case Integer.parse(runs) do
-      {integer, ""} -> integer
-      _ -> 200
-    end
   end
 end

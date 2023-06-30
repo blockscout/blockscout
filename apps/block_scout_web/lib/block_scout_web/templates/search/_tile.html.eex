@@ -8,7 +8,7 @@
                     class="token-icon mr-1"
                     data-address-hash="<%= @result.address_hash %>"
                 >
-                <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
+                <%= if Application.get_env(:block_scout_web, :display_token_icons) do %>
                     <% chain_id_for_token_icon = Application.get_env(:block_scout_web, :chain_id) %>
                     <% address_hash = @result.address_hash %>
                     <%=

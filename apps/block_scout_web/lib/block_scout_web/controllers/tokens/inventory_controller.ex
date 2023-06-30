@@ -1,18 +1,22 @@
 defmodule BlockScoutWeb.Tokens.InventoryController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.AccessHelpers
+  alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.Tokens.{HolderController, InventoryView}
   alias Explorer.Chain
-  alias Explorer.Chain.Token.Instance
   alias Phoenix.View
 
-  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, default_paging_options: 0]
+  import BlockScoutWeb.Chain,
+    only: [
+      split_list_by_page: 1,
+      unique_tokens_paging_options: 1,
+      unique_tokens_next_page: 3
+    ]
 
   def index(conn, %{"token_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token} <- Chain.token_from_address_hash(address_hash),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       unique_token_instances =
         Chain.address_to_unique_tokens(
           token.contract_address_hash,
@@ -68,20 +72,5 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
 
   def index(conn, params) do
     HolderController.index(conn, params)
-  end
-
-  defp unique_tokens_paging_options(%{"unique_token" => token_id}),
-    do: [paging_options: %{default_paging_options() | key: {token_id}}]
-
-  defp unique_tokens_paging_options(_params), do: [paging_options: default_paging_options()]
-
-  defp unique_tokens_next_page([], _list, _params), do: nil
-
-  defp unique_tokens_next_page(_, list, params) do
-    Map.merge(params, paging_params(List.last(list)))
-  end
-
-  defp paging_params(%Instance{token_id: token_id}) do
-    %{"unique_token" => Decimal.to_integer(token_id)}
   end
 end

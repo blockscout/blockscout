@@ -11,11 +11,10 @@ defmodule BlockScoutWeb.AddressWriteContractController do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
-  alias BlockScoutWeb.AccessHelpers
+  alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.AddressView
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
-  alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
@@ -35,13 +34,14 @@ defmodule BlockScoutWeb.AddressWriteContractController do
       type: :regular,
       action: :write,
       custom_abi: custom_abi?,
-      exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
+      exchange_rate: Market.get_coin_exchange_rate()
     ]
 
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+    with false <- AddressView.contract_interaction_disabled?(),
+         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true),
          false <- is_nil(address.smart_contract),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "index.html",
@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.AddressWriteContractController do
         if custom_abi? do
           with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
                {:ok, address} <- Chain.find_contract_address(address_hash, address_options, false),
-               {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+               {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
             render(
               conn,
               "index.html",

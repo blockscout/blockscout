@@ -4,9 +4,11 @@ import WalletConnectProvider from '@walletconnect/web3-provider'
 import { compareChainIDs, formatError, showConnectElements, showConnectedToElements } from './common_helpers'
 import { openWarningModal } from '../modals'
 
+// @ts-ignore
 const instanceChainIdStr = document.getElementById('js-chain-id').value
 const instanceChainId = parseInt(instanceChainIdStr, 10)
 const walletConnectOptions = { rpc: {}, chainId: instanceChainId }
+// @ts-ignore
 const jsonRPC = document.getElementById('js-json-rpc').value
 walletConnectOptions.rpc[instanceChainId] = jsonRPC
 
@@ -102,7 +104,7 @@ export async function disconnect () {
   // If the cached provider is not cleared,
   // WalletConnect will default to the existing session
   // and does not allow to re-scan the QR code with a new wallet.
-  // Depending on your use case you may want or want not his behavir.
+  // Depending on your use case you may want or want not his behavior.
   await web3Modal.clearCachedProvider()
 }
 

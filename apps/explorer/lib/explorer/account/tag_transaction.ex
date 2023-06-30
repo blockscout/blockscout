@@ -40,7 +40,7 @@ defmodule Explorer.Account.TagTransaction do
     |> put_hashed_fields()
     |> unique_constraint([:identity_id, :tx_hash_hash], message: "Transaction tag already exists")
     |> tag_transaction_count_constraint()
-    |> check_transaction_existance()
+    |> check_transaction_existence()
   end
 
   def create(attrs) do
@@ -54,13 +54,13 @@ defmodule Explorer.Account.TagTransaction do
     |> put_change(:tx_hash_hash, hash_to_lower_case_string(get_field(changeset, :tx_hash)))
   end
 
-  defp check_transaction_existance(%Changeset{changes: %{tx_hash: tx_hash}} = changeset) do
-    check_transaction_existance_inner(changeset, tx_hash)
+  defp check_transaction_existence(%Changeset{changes: %{tx_hash: tx_hash}} = changeset) do
+    check_transaction_existence_inner(changeset, tx_hash)
   end
 
-  defp check_transaction_existance(changeset), do: changeset
+  defp check_transaction_existence(changeset), do: changeset
 
-  defp check_transaction_existance_inner(changeset, tx_hash) do
+  defp check_transaction_existence_inner(changeset, tx_hash) do
     if match?({:ok, _}, Chain.hash_to_transaction(tx_hash)) do
       changeset
     else

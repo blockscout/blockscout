@@ -12,7 +12,6 @@ defmodule BlockScoutWeb.ChainController do
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Counters.AverageBlockTime
-  alias Explorer.ExchangeRates.Token
   alias Explorer.Market
   alias Phoenix.View
 
@@ -31,7 +30,7 @@ defmodule BlockScoutWeb.ChainController do
           :standard
       end
 
-    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate = Market.get_coin_exchange_rate()
 
     transaction_stats = Helper.get_transaction_stats()
 
@@ -40,7 +39,7 @@ defmodule BlockScoutWeb.ChainController do
       transaction: transaction_history_chart_path(conn, :show)
     }
 
-    chart_config = Application.get_env(:block_scout_web, :chart_config, %{})
+    chart_config = Application.get_env(:block_scout_web, :chart)[:chart_config]
 
     render(
       conn,

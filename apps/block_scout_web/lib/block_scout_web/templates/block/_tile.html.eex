@@ -35,7 +35,7 @@
         <!-- age -->
         <span data-from-now="<%= @block.timestamp %>"></span>
       </div>
-      <%= if System.get_env("HIDE_BLOCK_MINER") !== "true" do %>
+      <%= if !Application.get_env(:block_scout_web, :hide_block_miner) do %>
         <div class="text-nowrap text-truncate mt-3 mt-md-0">
           <!-- validator -->
           <%= gettext "Miner" %>

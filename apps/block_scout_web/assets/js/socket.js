@@ -1,10 +1,8 @@
 import { Socket } from 'phoenix'
 import { locale } from './locale'
+import { commonPath } from './lib/path_helper'
 
-let websocketRootUrl = process.env.SOCKET_ROOT
-if (!websocketRootUrl) {
-  websocketRootUrl = ''
-}
+let websocketRootUrl = commonPath
 if (websocketRootUrl.endsWith('/')) {
   websocketRootUrl = websocketRootUrl.slice(0, -1)
 }
@@ -26,6 +24,7 @@ export default socket
  * Returns a Channel instance.
  */
 export function subscribeChannel (topic) {
+  // @ts-ignore
   const channel = socket.channels.find(channel => channel.topic === topic)
 
   if (channel) {

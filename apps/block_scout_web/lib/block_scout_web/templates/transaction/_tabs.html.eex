@@ -3,32 +3,32 @@
     <%= link(
           gettext("Token Transfers"),
           class: "card-tab #{tab_status("token-transfers", @conn.request_path, @show_token_transfers)}",
-          to: AccessHelpers.get_path(@conn, :transaction_token_transfer_path, :index, @transaction)
+          to: AccessHelper.get_path(@conn, :transaction_token_transfer_path, :index, @transaction)
         )
       %>
   <% end %>
   <%= link(
         gettext("Internal Transactions"),
         class: "card-tab #{tab_status("internal-transactions", @conn.request_path, @show_token_transfers)}",
-        to: AccessHelpers.get_path(@conn, :transaction_internal_transaction_path, :index, @transaction)
+        to: AccessHelper.get_path(@conn, :transaction_internal_transaction_path, :index, @transaction)
       )
     %>
   <%= link(
         gettext("Logs"),
         class: "card-tab #{tab_status("logs", @conn.request_path)}",
-        to: AccessHelpers.get_path(@conn, :transaction_log_path, :index, @transaction),
+        to: AccessHelper.get_path(@conn, :transaction_log_path, :index, @transaction),
         "data-test": "transaction_logs_link"
       )
     %>
   <%= link(
       gettext("Raw Trace"),
       class: "card-tab #{tab_status("raw-trace", @conn.request_path)}",
-      to: AccessHelpers.get_path(@conn, :transaction_raw_trace_path, :index, @transaction)
+      to: AccessHelper.get_path(@conn, :transaction_raw_trace_path, :index, @transaction)
       ) %>
   <%= link(
         gettext("State changes"),
         class: "card-tab #{tab_status("state", @conn.request_path)}",
-        to: AccessHelpers.get_path(@conn, :transaction_state_path, :index, @transaction)
+        to: AccessHelper.get_path(@conn, :transaction_state_path, :index, @transaction)
       ) 
     %>
 </div>

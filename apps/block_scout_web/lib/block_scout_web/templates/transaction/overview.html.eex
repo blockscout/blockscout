@@ -22,7 +22,7 @@
 <% priority_fee = if is_nil(priority_fee_per_gas), do: nil, else: Wei.mult(priority_fee_per_gas, @transaction.gas_used) %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
 <% status = transaction_status(@transaction) %>
-<% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
+<% circles_addresses_list = CustomContractsHelper.get_custom_addresses_list(:circles_addresses) %>
 <% address_hash_str = if to_address_hash, do: "0x" <> Base.encode16(to_address_hash.bytes, case: :lower), else: nil %>
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
@@ -114,10 +114,13 @@
               <% confirmations = confirmations(@transaction, block_height: @block_height) %>
               <span class="mr-4">
                 <span data-transaction-status="<%= formatted_status %>">
-                  <%= if status == :pending do %>
-                    <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["large"] %></span>
-                  <% else %>
-                    <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["success", "large"] %></span>
+                  <%= cond do %>
+                    <% status == :pending -> %>
+                      <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["large"] %></span>
+                    <% @transaction.error == "dropped/replaced" -> %>
+                      <%= render BlockScoutWeb.FormView, "_tag.html", text: @transaction.error, additional_classes: ["large"] %></span>
+                    <% true -> %>
+                      <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["success", "large"] %></span>
                   <% end %>
                 
                 <%= if confirmations > 0 do %>
@@ -189,6 +192,29 @@
                   <% {:ok, interval_string} -> %>
                     | <%= gettext("Confirmed within") %> <%= interval_string %>
                 <% end %>
+              </dd>
+            </dl>
+          <% end %>
+          <!-- Transaction Action -->
+          <% %{transaction_actions: transaction_actions} = transaction_actions(@transaction) %>
+          <%= if not Enum.empty?(transaction_actions) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("Highlighted events of the transaction.") %>
+                <%= gettext "Transaction Action" %>
+                <p id="actions-list-scroll-note"><%= gettext "Scroll to see more" %></p>
+              </dt>
+              <dd class="col-sm-9 col-lg-10 actions-list-mobile-container">
+                <div class="mCustomScrollbar" style="max-height:100px;width:90%">
+                  <% transaction_actions_indexed = Enum.with_index(transaction_actions) %>
+                  <% transaction_actions_length = Enum.count(transaction_actions) %>
+                  <%= for {action, i} <- transaction_actions_indexed do %>
+                    <% action_assigns = Map.put(assigns, :action, action) %>
+                    <% action_assigns = Map.put(action_assigns, :isLast, (i == transaction_actions_length - 1)) %>
+                    <%= render BlockScoutWeb.TransactionView, "_actions.html", action_assigns %>
+                  <% end %>
+                </div>
               </dd>
             </dl>
           <% end %>

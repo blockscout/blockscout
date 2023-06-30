@@ -77,32 +77,10 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesDaily do
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    combined_changes_list =
-      changes_list
-      |> Enum.reduce([], fn change, acc ->
-        if Enum.empty?(acc) do
-          [change | acc]
-        else
-          target_item =
-            Enum.find(acc, fn item ->
-              item.day == change.day && item.address_hash == change.address_hash
-            end)
-
-          if target_item do
-            if Map.has_key?(change, :value) && Map.has_key?(target_item, :value) && change.value > target_item.value do
-              acc_updated = List.delete(acc, target_item)
-              [change | acc_updated]
-            else
-              acc
-            end
-          else
-            [change | acc]
-          end
-        end
-      end)
+    combined_changes = changes_list |> Enum.reduce(%{}, &compose_change/2)
 
     # Enforce CoinBalanceDaily ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = Enum.sort_by(combined_changes_list, &{&1.address_hash, &1.day})
+    ordered_changes_list = combined_changes |> Map.values() |> Enum.sort_by(&{&1.address_hash, &1.day})
 
     {:ok, _} =
       Import.insert_changes_list(
@@ -118,6 +96,17 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesDaily do
     {:ok, Enum.map(ordered_changes_list, &Map.take(&1, ~w(address_hash day)a))}
   end
 
+  defp compose_change(change, acc) do
+    Map.update(acc, {change.address_hash, change.day}, change, fn existing_change ->
+      if Map.has_key?(change, :value) && Map.has_key?(existing_change, :value) &&
+           change.value > existing_change.value do
+        change
+      else
+        existing_change
+      end
+    end)
+  end
+
   def default_on_conflict do
     from(
       balance in CoinBalanceDaily,
@@ -126,12 +115,13 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesDaily do
           value:
             fragment(
               """
-              CASE WHEN EXCLUDED.value IS NOT NULL AND EXCLUDED.value > ? THEN
+              CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value > ?) THEN
                      EXCLUDED.value
                    ELSE
                      ?
               END
               """,
+              balance.value,
               balance.value,
               balance.value
             ),

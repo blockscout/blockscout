@@ -3,6 +3,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   Module responsible to control the contract verification.
   """
 
+  import Explorer.SmartContract.Helper, only: [cast_libraries: 1]
+
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{CompilerVersion, Helper}
@@ -25,52 +27,40 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
   """
   def publish(address_hash, params, external_libraries \\ %{}) do
-    params_with_external_libaries = add_external_libraries(params, external_libraries)
+    params_with_external_libraries = add_external_libraries(params, external_libraries)
 
-    case Verifier.evaluate_authenticity(address_hash, params_with_external_libaries) do
+    case Verifier.evaluate_authenticity(address_hash, params_with_external_libraries) do
       {
         :ok,
         %{
-          "abi" => abi_string,
-          "compiler_version" => _,
-          "constructor_arguments" => _,
-          "contract_libraries" => contract_libraries,
-          "contract_name" => contract_name,
-          "evm_version" => _,
-          "file_name" => file_name,
-          "optimization" => _,
-          "optimization_runs" => _,
-          "sources" => sources
+          "abi" => _,
+          "compilerVersion" => _,
+          "constructorArguments" => _,
+          "contractName" => _,
+          "fileName" => _,
+          "compilerSettings" => _,
+          "sourceFiles" => _
         } = result_params
       } ->
-        %{^file_name => contract_source_code} = sources
-
-        prepared_params =
-          result_params
-          |> Map.put("contract_source_code", contract_source_code)
-          |> Map.put("external_libraries", contract_libraries)
-          |> Map.put("name", contract_name)
-          |> cast_compiler_settings(false)
-
-        publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
+        process_rust_verifier_response(result_params, address_hash, false, false)
 
       {:ok, %{abi: abi, constructor_arguments: constructor_arguments}} ->
         params_with_constructor_arguments =
-          Map.put(params_with_external_libaries, "constructor_arguments", constructor_arguments)
+          Map.put(params_with_external_libraries, "constructor_arguments", constructor_arguments)
 
         publish_smart_contract(address_hash, params_with_constructor_arguments, abi)
 
       {:ok, %{abi: abi}} ->
-        publish_smart_contract(address_hash, params_with_external_libaries, abi)
+        publish_smart_contract(address_hash, params_with_external_libraries, abi)
 
       {:error, error} ->
-        {:error, unverified_smart_contract(address_hash, params_with_external_libaries, error, nil)}
+        {:error, unverified_smart_contract(address_hash, params_with_external_libraries, error, nil)}
 
       {:error, error, error_message} ->
-        {:error, unverified_smart_contract(address_hash, params_with_external_libaries, error, error_message)}
+        {:error, unverified_smart_contract(address_hash, params_with_external_libraries, error, error_message)}
 
       _ ->
-        {:error, unverified_smart_contract(address_hash, params_with_external_libaries, "Unexpected error", nil)}
+        {:error, unverified_smart_contract(address_hash, params_with_external_libraries, "Unexpected error", nil)}
     end
   end
 
@@ -79,17 +69,14 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       {:ok,
        %{
          "abi" => _,
-         "compiler_version" => _,
-         "constructor_arguments" => _,
-         "contract_libraries" => _,
-         "contract_name" => _,
-         "evm_version" => _,
-         "file_name" => _,
-         "optimization" => _,
-         "optimization_runs" => _,
-         "sources" => _
+         "compilerVersion" => _,
+         "constructorArguments" => _,
+         "contractName" => _,
+         "fileName" => _,
+         "sourceFiles" => _,
+         "compilerSettings" => _
        } = result_params} ->
-        proccess_rust_verifier_response(result_params, address_hash, true)
+        process_rust_verifier_response(result_params, address_hash, true, true)
 
       {:ok, %{abi: abi, constructor_arguments: constructor_arguments}, additional_params} ->
         params_with_constructor_arguments =
@@ -114,24 +101,21 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     end
   end
 
-  def publish_with_multi_part_files(%{"address_hash" => address_hash} = params, external_libraries, files) do
-    params_with_external_libaries = add_external_libraries(params, external_libraries)
+  def publish_with_multi_part_files(%{"address_hash" => address_hash} = params, external_libraries \\ %{}, files) do
+    params_with_external_libraries = add_external_libraries(params, external_libraries)
 
-    case Verifier.evaluate_authenticity_via_multi_part_files(address_hash, params_with_external_libaries, files) do
+    case Verifier.evaluate_authenticity_via_multi_part_files(address_hash, params_with_external_libraries, files) do
       {:ok,
        %{
          "abi" => _,
-         "compiler_version" => _,
-         "constructor_arguments" => _,
-         "contract_libraries" => _,
-         "contract_name" => _,
-         "evm_version" => _,
-         "file_name" => _,
-         "optimization" => _,
-         "optimization_runs" => _,
-         "sources" => _
+         "compilerVersion" => _,
+         "constructorArguments" => _,
+         "contractName" => _,
+         "fileName" => _,
+         "sourceFiles" => _,
+         "compilerSettings" => _
        } = result_params} ->
-        proccess_rust_verifier_response(result_params, address_hash)
+        process_rust_verifier_response(result_params, address_hash, false, true)
 
       {:error, error} ->
         {:error, unverified_smart_contract(address_hash, params, error, nil, true)}
@@ -141,21 +125,21 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     end
   end
 
-  def proccess_rust_verifier_response(
+  def process_rust_verifier_response(
         %{
           "abi" => abi_string,
-          "compiler_version" => _,
-          "constructor_arguments" => _,
-          "contract_libraries" => contract_libraries,
-          "contract_name" => contract_name,
-          "evm_version" => _,
-          "file_name" => file_name,
-          "optimization" => _,
-          "optimization_runs" => _,
-          "sources" => sources
-        } = result_params,
+          "compilerVersion" => compiler_version,
+          "constructorArguments" => constructor_arguments,
+          "contractName" => contract_name,
+          "fileName" => file_name,
+          "sourceFiles" => sources,
+          "compilerSettings" => compiler_settings_string,
+          "matchType" => match_type
+        },
         address_hash,
-        is_standard_json? \\ false
+        is_standard_json?,
+        save_file_path?,
+        automatically_verified? \\ false
       ) do
     secondary_sources =
       for {file, source} <- sources,
@@ -164,29 +148,31 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
     %{^file_name => contract_source_code} = sources
 
+    compiler_settings = Jason.decode!(compiler_settings_string)
+
+    optimization = extract_optimization(compiler_settings)
+
     prepared_params =
-      result_params
+      %{}
+      |> Map.put("optimization", optimization)
+      |> Map.put("optimization_runs", if(optimization, do: compiler_settings["optimizer"]["runs"]))
+      |> Map.put("evm_version", compiler_settings["evmVersion"] || "default")
+      |> Map.put("compiler_version", compiler_version)
+      |> Map.put("constructor_arguments", constructor_arguments)
       |> Map.put("contract_source_code", contract_source_code)
-      |> Map.put("external_libraries", contract_libraries)
+      |> Map.put("external_libraries", cast_libraries(compiler_settings["libraries"] || %{}))
       |> Map.put("name", contract_name)
-      |> Map.put("file_path", file_name)
+      |> Map.put("file_path", if(save_file_path?, do: file_name))
       |> Map.put("secondary_sources", secondary_sources)
-      |> cast_compiler_settings(is_standard_json?)
+      |> Map.put("compiler_settings", if(is_standard_json?, do: compiler_settings))
+      |> Map.put("partially_verified", match_type == "PARTIAL")
+      |> Map.put("verified_via_eth_bytecode_db", automatically_verified?)
 
-    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
+    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
   end
 
-  def cast_compiler_settings(params, false), do: Map.put(params, "compiler_settings", nil)
-
-  def cast_compiler_settings(params, true) do
-    case Jason.decode(params["compiler_settings"]) do
-      {:ok, map} ->
-        Map.put(params, "compiler_settings", map)
-
-      _ ->
-        Map.put(params, "compiler_settings", nil)
-    end
-  end
+  def extract_optimization(compiler_settings),
+    do: (compiler_settings["optimizer"] && compiler_settings["optimizer"]["enabled"]) || false
 
   def publish_smart_contract(address_hash, params, abi) do
     attrs = address_hash |> attributes(params, abi)
@@ -208,7 +194,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     end
   end
 
-  defp unverified_smart_contract(address_hash, params, error, error_message, json_verification \\ false) do
+  defp unverified_smart_contract(address_hash, params, error, error_message, verification_with_files? \\ false) do
     attrs =
       address_hash
       |> attributes(params)
@@ -220,7 +206,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         attrs,
         error,
         error_message,
-        json_verification
+        verification_with_files?
       )
 
     %{changeset | action: :insert}
@@ -248,7 +234,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         compiler_settings
       end
 
-    prepared_external_libraries = prepare_external_libraies(params["external_libraries"])
+    prepared_external_libraries = prepare_external_libraries(params["external_libraries"])
 
     compiler_version = CompilerVersion.get_strict_compiler_version(:solc, params["compiler_version"])
 
@@ -265,27 +251,31 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       external_libraries: prepared_external_libraries,
       secondary_sources: params["secondary_sources"],
       abi: abi,
-      verified_via_sourcify: params["verified_via_sourcify"],
-      partially_verified: params["partially_verified"],
+      verified_via_sourcify: params["verified_via_sourcify"] || false,
+      partially_verified: params["partially_verified"] || false,
       is_vyper_contract: false,
       autodetect_constructor_args: params["autodetect_constructor_args"],
       is_yul: params["is_yul"] || false,
-      compiler_settings: clean_compiler_settings
+      compiler_settings: clean_compiler_settings,
+      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false
     }
   end
 
-  defp prepare_external_libraies(nil), do: []
+  defp prepare_external_libraries(nil), do: []
 
-  defp prepare_external_libraies(map) do
+  defp prepare_external_libraries(map) do
     map
     |> Enum.map(fn {key, value} ->
       %{name: key, address_hash: value}
     end)
   end
 
+  defp add_external_libraries(%{"external_libraries" => _} = params, _external_libraries), do: params
+
   defp add_external_libraries(params, external_libraries) do
     clean_external_libraries =
-      Enum.reduce(1..Application.get_env(:block_scout_web, :verification_max_libraries), %{}, fn number, acc ->
+      Enum.reduce(1..Application.get_env(:block_scout_web, :contract)[:verification_max_libraries], %{}, fn number,
+                                                                                                            acc ->
         address_key = "library#{number}_address"
         name_key = "library#{number}_name"
 

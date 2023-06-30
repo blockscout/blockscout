@@ -328,6 +328,157 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
              end)
     end
 
+    test "next page doesn't miss internal transactions", %{conn: conn} do
+      address = insert(:address)
+
+      a_block = insert(:block, number: 1000)
+      b_block = insert(:block, number: 2000)
+
+      transaction_1 =
+        :transaction
+        |> insert()
+        |> with_block(a_block)
+
+      transaction_2 =
+        :transaction
+        |> insert()
+        |> with_block(a_block)
+
+      transaction_3 =
+        :transaction
+        |> insert()
+        |> with_block(b_block)
+
+      from_internal_transactions =
+        1..55
+        |> Enum.map(fn index ->
+          insert(
+            :internal_transaction,
+            transaction: transaction_1,
+            from_address: address,
+            index: index,
+            block_number: transaction_1.block_number,
+            transaction_index: transaction_1.index,
+            block_hash: a_block.hash,
+            block_index: index
+          )
+        end)
+
+      to_internal_transactions =
+        1..55
+        |> Enum.map(fn index ->
+          insert(
+            :internal_transaction,
+            transaction: transaction_2,
+            to_address: address,
+            index: index,
+            block_number: transaction_2.block_number,
+            transaction_index: transaction_2.index,
+            block_hash: a_block.hash,
+            block_index: 55 + index
+          )
+        end)
+
+      created_contract_internal_transactions =
+        1..55
+        |> Enum.map(fn index ->
+          insert(
+            :internal_transaction,
+            transaction: transaction_3,
+            created_contract_address: address,
+            index: index,
+            block_number: transaction_3.block_number,
+            transaction_index: transaction_3.index,
+            block_hash: b_block.hash,
+            block_index: index
+          )
+        end)
+
+      {second_page_contract_items, first_page_items} = Enum.split(created_contract_internal_transactions, 5)
+      {third_page_to_items, second_page_to_items} = Enum.split(to_internal_transactions, 10)
+      {fourth_page_items, third_page_from_items} = Enum.split(from_internal_transactions, 15)
+
+      second_page_items = second_page_contract_items ++ second_page_to_items
+      third_page_items = third_page_to_items ++ third_page_from_items
+
+      path = address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash))
+
+      first_page_response =
+        conn
+        |> get(path, %{"type" => "JSON"})
+        |> json_response(200)
+        |> Map.get("items")
+
+      second_page_response =
+        conn
+        |> get(path, %{
+          "block_number" => Integer.to_string(b_block.number),
+          "transaction_index" => Integer.to_string(transaction_3.index),
+          "index" => "6",
+          "type" => "JSON"
+        })
+        |> json_response(200)
+        |> Map.get("items")
+
+      third_page_response =
+        conn
+        |> get(path, %{
+          "block_number" => Integer.to_string(a_block.number),
+          "transaction_index" => Integer.to_string(transaction_2.index),
+          "index" => "11",
+          "type" => "JSON"
+        })
+        |> json_response(200)
+        |> Map.get("items")
+
+      fourth_page_response =
+        conn
+        |> get(path, %{
+          "block_number" => Integer.to_string(a_block.number),
+          "transaction_index" => Integer.to_string(transaction_1.index),
+          "index" => "16",
+          "type" => "JSON"
+        })
+        |> json_response(200)
+        |> Map.get("items")
+
+      assert Enum.count(first_page_response) == 50
+
+      assert Enum.all?(first_page_items, fn internal_transaction ->
+               Enum.any?(first_page_response, fn tile ->
+                 String.contains?(tile, to_string(internal_transaction.transaction_hash)) &&
+                   String.contains?(tile, "data-internal-transaction-index=\"#{internal_transaction.index}\"")
+               end)
+             end)
+
+      assert Enum.count(second_page_response) == 50
+
+      assert Enum.all?(second_page_items, fn internal_transaction ->
+               Enum.any?(second_page_response, fn tile ->
+                 String.contains?(tile, to_string(internal_transaction.transaction_hash)) &&
+                   String.contains?(tile, "data-internal-transaction-index=\"#{internal_transaction.index}\"")
+               end)
+             end)
+
+      assert Enum.count(third_page_response) == 50
+
+      assert Enum.all?(third_page_items, fn internal_transaction ->
+               Enum.any?(third_page_response, fn tile ->
+                 String.contains?(tile, to_string(internal_transaction.transaction_hash)) &&
+                   String.contains?(tile, "data-internal-transaction-index=\"#{internal_transaction.index}\"")
+               end)
+             end)
+
+      assert Enum.count(fourth_page_response) == 15
+
+      assert Enum.all?(fourth_page_items, fn internal_transaction ->
+               Enum.any?(fourth_page_response, fn tile ->
+                 String.contains?(tile, to_string(internal_transaction.transaction_hash)) &&
+                   String.contains?(tile, "data-internal-transaction-index=\"#{internal_transaction.index}\"")
+               end)
+             end)
+    end
+
     test "next_page_params exist if not on last page", %{conn: conn} do
       address = insert(:address)
       block = %Block{number: number} = insert(:block, number: 7000)

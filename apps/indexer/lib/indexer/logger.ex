@@ -1,6 +1,6 @@
 defmodule Indexer.Logger do
   @moduledoc """
-  Helpers for `Logger`.
+  Helper for `Logger`.
   """
 
   @doc """

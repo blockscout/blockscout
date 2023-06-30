@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import customAds from './custom_ad'
+import customAds from './custom_ad.json'
 
 function countImpressions (impressionUrl) {
   if (impressionUrl) {

@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.TransactionController do
   import BlockScoutWeb.Models.GetTransactionTags, only: [get_transaction_with_addresses_tags: 2]
 
   alias BlockScoutWeb.{
-    AccessHelpers,
+    AccessHelper,
     Controller,
     TransactionInternalTransactionController,
     TransactionTokenTransferController,
@@ -25,7 +25,6 @@ defmodule BlockScoutWeb.TransactionController do
 
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
-  alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
   @necessity_by_association %{
@@ -156,12 +155,12 @@ defmodule BlockScoutWeb.TransactionController do
                  transaction_hash,
                  necessity_by_association: @necessity_by_association
                ),
-             {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
-             {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
           render(
             conn,
             "show_token_transfers.html",
-            exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+            exchange_rate: Market.get_coin_exchange_rate(),
             block_height: Chain.block_height(),
             current_path: Controller.current_full_path(conn),
             current_user: current_user(conn),
@@ -180,7 +179,7 @@ defmodule BlockScoutWeb.TransactionController do
             set_not_found_view(conn, id)
 
           :error ->
-            set_invalid_view(conn, id)
+            unprocessable_entity(conn)
 
           {:error, :not_found} ->
             set_not_found_view(conn, id)
@@ -194,12 +193,12 @@ defmodule BlockScoutWeb.TransactionController do
                  transaction_hash,
                  necessity_by_association: @necessity_by_association
                ),
-             {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
-             {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
           render(
             conn,
             "show_internal_transactions.html",
-            exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+            exchange_rate: Market.get_coin_exchange_rate(),
             current_path: Controller.current_full_path(conn),
             current_user: current_user(conn),
             block_height: Chain.block_height(),
@@ -218,7 +217,7 @@ defmodule BlockScoutWeb.TransactionController do
             set_not_found_view(conn, id)
 
           :error ->
-            set_invalid_view(conn, id)
+            unprocessable_entity(conn)
 
           {:error, :not_found} ->
             set_not_found_view(conn, id)
@@ -229,7 +228,7 @@ defmodule BlockScoutWeb.TransactionController do
       end
     else
       :error ->
-        set_invalid_view(conn, id)
+        unprocessable_entity(conn)
 
       :not_found ->
         set_not_found_view(conn, id)
@@ -241,12 +240,5 @@ defmodule BlockScoutWeb.TransactionController do
     |> put_status(404)
     |> put_view(TransactionView)
     |> render("not_found.html", transaction_hash: transaction_hash_string)
-  end
-
-  def set_invalid_view(conn, transaction_hash_string) do
-    conn
-    |> put_status(422)
-    |> put_view(TransactionView)
-    |> render("invalid.html", transaction_hash: transaction_hash_string)
   end
 end

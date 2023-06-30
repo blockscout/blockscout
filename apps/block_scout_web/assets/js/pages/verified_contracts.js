@@ -2,6 +2,7 @@ import $ from 'jquery'
 import omit from 'lodash.omit'
 import { loadPage, createAsyncLoadStore } from '../lib/async_listing_load'
 import { connectElements } from '../lib/redux_helpers.js'
+import { formatUsdValue } from '../lib/currency'
 
 export const initialState = {
   isSearch: false
@@ -35,6 +36,15 @@ const elements = {
 
       return $el.show()
     }
+  },
+  '[data-usd-value]': {
+    render ($el, state) {
+      $el.each((i, el) => {
+        el.innerHTML = formatUsdValue(el.dataset.usdValue)
+      })
+      // @ts-ignore
+      if (!window.loading) $el.show()
+    }
   }
 }
 
@@ -59,7 +69,10 @@ if ($('[data-page="verified-contracts-list"]').length) {
   const $element = $('[data-async-listing]')
 
   $element.on('click', '[data-next-page-button], [data-prev-page-button]', (event) => {
-    document.getElementById('verified-contracts-list').scrollIntoView()
+    const obj = document.getElementById('verified-contracts-list')
+    if (obj) {
+      obj.scrollIntoView()
+    }
   })
 
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')

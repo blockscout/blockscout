@@ -5,30 +5,36 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
 
   import Ecto.Query, only: [from: 2]
 
+  import Explorer.Chain, only: [select_repo: 1]
+
   alias Explorer.Account.{TagAddress, WatchlistAddress}
   alias Explorer.Repo
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
-  def get_address_tags(nil, nil),
+  def get_address_tags(_, _, opts \\ [])
+
+  def get_address_tags(nil, nil, _),
     do: %{common_tags: [], personal_tags: [], watchlist_names: []}
 
-  def get_address_tags(address_hash, current_user) when not is_nil(address_hash) do
+  def get_address_tags(address_hash, current_user, opts) when not is_nil(address_hash) do
     %{
-      common_tags: get_tags_on_address(address_hash),
+      common_tags: get_tags_on_address(address_hash, opts),
       personal_tags: get_personal_tags(address_hash, current_user),
       watchlist_names: get_watchlist_names_on_address(address_hash, current_user)
     }
   end
 
-  def get_address_tags(_, _), do: %{common_tags: [], personal_tags: [], watchlist_names: []}
+  def get_address_tags(_, _, _), do: %{common_tags: [], personal_tags: [], watchlist_names: []}
 
-  def get_public_tags(address_hash) when not is_nil(address_hash) do
+  def get_public_tags(address_hash, opts \\ []) when not is_nil(address_hash) do
     %{
-      common_tags: get_tags_on_address(address_hash)
+      common_tags: get_tags_on_address(address_hash, opts)
     }
   end
 
-  def get_tags_on_address(address_hash) when not is_nil(address_hash) do
+  def get_tags_on_address(address_hash, opts \\ [])
+
+  def get_tags_on_address(address_hash, opts) when not is_nil(address_hash) do
     query =
       from(
         tt in AddressTag,
@@ -39,10 +45,10 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
         select: %{label: tt.label, display_name: tt.display_name, address_hash: att.address_hash}
       )
 
-    Repo.all(query)
+    select_repo(opts).all(query)
   end
 
-  def get_tags_on_address(_), do: []
+  def get_tags_on_address(_, _), do: []
 
   def get_personal_tags(address_hash, %{id: id}) when not is_nil(address_hash) do
     query =

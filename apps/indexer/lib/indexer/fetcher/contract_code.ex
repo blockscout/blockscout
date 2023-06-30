@@ -3,7 +3,7 @@ defmodule Indexer.Fetcher.ContractCode do
   Fetches `contract_code` `t:Explorer.Chain.Address.t/0`.
   """
 
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
   require Logger
@@ -64,7 +64,8 @@ defmodule Indexer.Fetcher.ContractCode do
           transaction_fields
           |> entry()
           |> reducer.(acc)
-        end
+        end,
+        true
       )
 
     final

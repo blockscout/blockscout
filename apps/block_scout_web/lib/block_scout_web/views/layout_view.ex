@@ -1,11 +1,11 @@
 defmodule BlockScoutWeb.LayoutView do
   use BlockScoutWeb, :view
 
-  alias Explorer.{Chain, CustomContractsHelpers}
+  alias Explorer.Chain
   alias Plug.Conn
   alias Poison.Parser
 
-  import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
+  import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1]
 
   @default_other_networks [
     %{
@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.LayoutView do
   end
 
   def logo_footer do
-    Keyword.get(application_config(), :logo_footer) || Keyword.get(application_config(), :logo)
+    Keyword.get(application_config(), :footer)[:logo] || Keyword.get(application_config(), :logo)
   end
 
   def logo_text do
@@ -111,25 +111,34 @@ defmodule BlockScoutWeb.LayoutView do
     BlockScoutWeb.version()
   end
 
+  def release_link(""), do: ""
+  def release_link(nil), do: ""
+
   def release_link(version) do
     release_link_env_var = Application.get_env(:block_scout_web, :release_link)
 
     release_link =
-      cond do
-        version == "" || version == nil ->
-          nil
-
-        release_link_env_var == "" || release_link_env_var == nil ->
-          "https://github.com/blockscout/blockscout/releases/tag/" <> version
-
-        true ->
-          release_link_env_var
+      if release_link_env_var == "" || release_link_env_var == nil do
+        release_link_from_version(version)
+      else
+        release_link_env_var
       end
 
-    if release_link == nil do
-      ""
+    html_escape({:safe, "<a href=\"#{release_link}\" class=\"footer-link\" target=\"_blank\">#{version}</a>"})
+  end
+
+  def release_link_from_version(version) do
+    repo = "https://github.com/blockscout/blockscout"
+
+    if String.contains?(version, "+commit.") do
+      commit_hash =
+        version
+        |> String.split("+commit.")
+        |> List.last()
+
+      repo <> "/commit/" <> commit_hash
     else
-      html_escape({:safe, "<a href=\"#{release_link}\" class=\"footer-link\" target=\"_blank\">#{version}</a>"})
+      repo <> "/releases/tag/" <> version
     end
   end
 
@@ -195,18 +204,22 @@ defmodule BlockScoutWeb.LayoutView do
     |> Enum.filter(&Map.get(&1, :other?))
   end
 
+  @spec other_explorers() :: map()
   def other_explorers do
-    if Application.get_env(:block_scout_web, :link_to_other_explorers) do
-      decode_other_explorers_json(Application.get_env(:block_scout_web, :other_explorers, []))
+    if Application.get_env(:block_scout_web, :footer)[:link_to_other_explorers] do
+      decode_other_explorers_json(Application.get_env(:block_scout_web, :footer)[:other_explorers])
     else
-      []
+      %{}
     end
   end
+
+  @spec decode_other_explorers_json(nil | String.t()) :: map()
+  defp decode_other_explorers_json(nil), do: %{}
 
   defp decode_other_explorers_json(data) do
     Jason.decode!(~s(#{data}))
   rescue
-    _ -> []
+    _ -> %{}
   end
 
   def webapp_url(conn) do
@@ -264,7 +277,7 @@ defmodule BlockScoutWeb.LayoutView do
 
   def sign_out_link do
     client_id = Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_id]
-    return_to = Application.get_env(:ueberauth, Ueberauth)[:logout_return_to_url]
+    return_to = blockscout_url(true) <> "/auth/logout"
     logout_url = Application.get_env(:ueberauth, Ueberauth)[:logout_url]
 
     if client_id && return_to && logout_url do

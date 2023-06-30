@@ -1,10 +1,10 @@
 defmodule BlockScoutWeb.AddressContractVerificationViaJsonController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
   alias BlockScoutWeb.Controller
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
+  alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
   def new(conn, %{"address_id" => address_hash_string}) do
@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.AddressContractVerificationViaJsonController do
     else
       case Sourcify.check_by_address(address_hash_string) do
         {:ok, _verified_status} ->
-          VerificationController.get_metadata_and_publish(address_hash_string, conn)
+          PublishHelper.get_metadata_and_publish(address_hash_string, conn)
           redirect(conn, to: address_contract_path)
 
         _ ->

@@ -1,10 +1,10 @@
 import $ from 'jquery'
-import { connectSelector, disconnectSelector, getContractABI, getMethodInputs, prepareMethodArgs } from './common_helpers'
+import { connectSelector, disconnectSelector, getCurrentAccountPromise, getContractABI, getMethodInputs, prepareMethodArgs } from './common_helpers'
 import { queryMethod, callMethod } from './interact'
 import { walletEnabled, connectToWallet, disconnectWallet, web3ModalInit } from './connect.js'
 import '../../pages/address'
 
-const loadFunctions = (element, isCustomABI) => {
+const loadFunctions = (element, isCustomABI, from) => {
   const $element = $(element)
   const url = $element.data('url')
   const hash = $element.data('hash')
@@ -13,12 +13,14 @@ const loadFunctions = (element, isCustomABI) => {
 
   $.get(
     url,
-    { hash, type, action, is_custom_abi: isCustomABI },
+    { hash, type, action, is_custom_abi: isCustomABI, from },
     response => $element.html(response)
   )
     .done(function () {
-      document.querySelector(connectSelector) && document.querySelector(connectSelector).addEventListener('click', connectToWallet)
-      document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).addEventListener('click', disconnectWallet)
+      const connectSelectorObj = document.querySelector(connectSelector)
+      connectSelectorObj && connectSelectorObj.addEventListener('click', connectToWallet)
+      const disconnectSelectorObj = document.querySelector(disconnectSelector)
+      disconnectSelectorObj && disconnectSelectorObj.addEventListener('click', disconnectWallet)
       web3ModalInit(connectToWallet)
 
       const selector = isCustomABI ? '[data-function-custom]' : '[data-function]'
@@ -31,11 +33,13 @@ const loadFunctions = (element, isCustomABI) => {
         const $customPower = $(event.currentTarget).find('[name=custom_power]')
         let power
         if ($customPower.length > 0) {
+          // @ts-ignore
           power = parseInt($customPower.val(), 10)
         } else {
           power = parseInt($(event.currentTarget).data('power'), 10)
         }
         const $input = $(event.currentTarget).parent().parent().parent().find('[name=function_input]')
+        // @ts-ignore
         const currentInputVal = parseInt($input.val(), 10) || 1
         const newInputVal = (currentInputVal * Math.pow(10, power)).toString()
         $input.val(newInputVal.toString())
@@ -73,8 +77,9 @@ const readWriteFunction = (element) => {
       const contractAbi = getContractABI($form)
       const inputs = getMethodInputs(contractAbi, functionName)
       const $methodId = $form.find('input[name=method_id]')
+      let args
       try {
-        var args = prepareMethodArgs($functionInputs, inputs)
+        args = prepareMethodArgs($functionInputs, inputs)
       } catch (exception) {
         $errorContainer.show()
         $errorContainer.text(exception)
@@ -96,11 +101,19 @@ const readWriteFunction = (element) => {
 const container = $('[data-smart-contract-functions]')
 
 if (container.length) {
-  loadFunctions(container, false)
+  getWalletAndLoadFunctions(false, container)
 }
 
 const customABIContainer = $('[data-smart-contract-functions-custom]')
 
 if (customABIContainer.length) {
-  loadFunctions(customABIContainer, true)
+  getWalletAndLoadFunctions(true, customABIContainer)
+}
+
+function getWalletAndLoadFunctions (isCustomABI, container) {
+  getCurrentAccountPromise(window.web3 && window.web3.currentProvider).then((currentAccount) => {
+    loadFunctions(container, isCustomABI, currentAccount)
+  }, () => {
+    loadFunctions(container, isCustomABI, null)
+  })
 }

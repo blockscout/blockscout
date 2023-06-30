@@ -5,7 +5,9 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
   use Explorer.DataCase
 
   import Mox
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
+  alias Explorer.Chain
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Wei
   alias Explorer.Counters.AverageBlockTime
@@ -26,10 +28,10 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
     start_supervised!(AverageBlockTime)
     start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
 
-    Application.put_env(:explorer, AverageBlockTime, enabled: true)
+    Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 
     on_exit(fn ->
-      Application.put_env(:explorer, AverageBlockTime, enabled: false)
+      Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
     end)
 
     %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}
@@ -58,7 +60,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
     end
 
     test "treats all addresses as current if the average block time is disabled", %{stale_address: address} do
-      Application.put_env(:explorer, AverageBlockTime, enabled: false)
+      Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
 
       assert CoinBalanceOnDemand.trigger_fetch(address) == :current
     end
@@ -79,6 +81,52 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
       pending_address: pending_address
     } do
       assert CoinBalanceOnDemand.trigger_fetch(pending_address) == {:pending, 102}
+    end
+  end
+
+  describe "trigger_historic_fetch/2" do
+    test "fetches and imports balance for any block" do
+      address = insert(:address)
+      block = insert(:block)
+      insert(:block)
+      string_address_hash = to_string(address.hash)
+      block_number = block.number
+      string_block_number = integer_to_quantity(block_number)
+      balance = 42
+      assert nil == Chain.get_coin_balance(address.hash, block_number)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  method: "eth_getBalance",
+                                  params: [^string_address_hash, ^string_block_number]
+                                }
+                              ],
+                              _options ->
+        {:ok, [%{id: id, jsonrpc: "2.0", result: integer_to_quantity(balance)}]}
+      end)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  jsonrpc: "2.0",
+                                  method: "eth_getBlockByNumber",
+                                  params: [^string_block_number, true]
+                                }
+                              ],
+                              _ ->
+        {:ok, [eth_block_number_fake_response(string_block_number, id)]}
+      end)
+
+      {:ok, expected_wei} = Wei.cast(balance)
+
+      CoinBalanceOnDemand.trigger_historic_fetch(address.hash, block_number)
+
+      :timer.sleep(1000)
+
+      assert %{value: expected_wei} = Chain.get_coin_balance(address.hash, block_number)
     end
   end
 
@@ -184,9 +232,9 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
     end
   end
 
-  defp eth_block_number_fake_response(block_quantity) do
+  defp eth_block_number_fake_response(block_quantity, id \\ 0) do
     %{
-      id: 0,
+      id: id,
       jsonrpc: "2.0",
       result: %{
         "author" => "0x0000000000000000000000000000000000000000",

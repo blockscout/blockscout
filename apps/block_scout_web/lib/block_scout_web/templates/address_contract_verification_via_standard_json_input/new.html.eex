@@ -6,7 +6,7 @@
   <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost") %>
 
   <div class="new-smart-contract-form">
-      <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification" %></h1>
+      <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification via Standard input JSON" %></h1>
       <%= form_for changeset,
                 address_contract_verification_path(@conn, :create),
                 [id: "standard-json-dropzone-form"],
@@ -26,7 +26,7 @@
             <div class="dropzone-1 dropzone-previews" style="display: flex; margin: 0 auto;", id="dropzone-previews">
               <div style="text-align: center;">
                 <span class="dz-message btn-full-primary" id="dz-button-message"><%= gettext("Drop the standard input JSON file or click here") %></span>
-                <%= error_tag f, :file, id: "file-help-block", class: "text-danger form-error", style: "max-width: 600px;" %>
+                <%= error_tag f, :files, id: "file-help-block", class: "text-danger form-error", style: "max-width: 600px;" %>
               </div>
             </div>
           </div>
@@ -61,3 +61,4 @@
       <% end %>
     </div>
 </section>
+<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>

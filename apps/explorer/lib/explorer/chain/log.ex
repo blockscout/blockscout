@@ -6,8 +6,9 @@ defmodule Explorer.Chain.Log do
   require Logger
 
   alias ABI.{Event, FunctionSelector}
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Transaction}
+  alias Explorer.SmartContract.SigProviderInterface
 
   @required_attrs ~w(address_hash data block_hash index transaction_hash)a
   @optional_attrs ~w(first_topic second_topic third_topic fourth_topic type block_number)a
@@ -120,61 +121,77 @@ defmodule Explorer.Chain.Log do
   Decode transaction log data.
   """
 
-  def decode(log, transaction) do
-    address_options = [
-      necessity_by_association: %{
-        :smart_contract => :optional
-      }
-    ]
+  def decode(log, transaction, options, skip_sig_provider?, contracts_acc \\ %{}, events_acc \\ %{}) do
+    case check_cache(contracts_acc, log.address_hash, options) do
+      {nil, contracts_acc} ->
+        {result, events_acc} = find_candidates(log, transaction, options, events_acc)
+        {result, contracts_acc, events_acc}
 
-    case Chain.find_contract_address(log.address_hash, address_options, true) do
-      {:ok, %{smart_contract: smart_contract}} ->
-        full_abi = Chain.combine_proxy_implementation_abi(smart_contract)
-
+      {full_abi, contracts_acc} ->
         with {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction),
              identifier <- Base.encode16(selector.method_id, case: :lower),
              text <- function_call(selector.function, mapping) do
-          {:ok, identifier, text, mapping}
+          {{:ok, identifier, text, mapping}, contracts_acc, events_acc}
         else
           {:error, :could_not_decode} ->
-            case find_candidates(log, transaction) do
-              {:error, :contract_not_verified, []} ->
-                {:error, :could_not_decode}
+            case find_candidates(log, transaction, options, events_acc) do
+              {{:error, :contract_not_verified, []}, events_acc} ->
+                {decode_event_via_sig_provider(log, transaction, false, skip_sig_provider?), contracts_acc, events_acc}
 
-              {:error, :contract_not_verified, candidates} ->
-                {:error, :contract_verified, candidates}
+              {{:error, :contract_not_verified, candidates}, events_acc} ->
+                {{:error, :contract_verified, candidates}, contracts_acc, events_acc}
 
-              _ ->
-                {:error, :could_not_decode}
+              {_, events_acc} ->
+                {decode_event_via_sig_provider(log, transaction, false, skip_sig_provider?), contracts_acc, events_acc}
             end
 
-          output ->
-            output
+          {:error, reason} ->
+            {{:error, reason}, contracts_acc, events_acc}
         end
-
-      _ ->
-        find_candidates(log, transaction)
     end
   end
 
-  defp find_candidates(log, transaction) do
+  defp check_cache(acc, address_hash, options) do
+    address_options =
+      [
+        necessity_by_association: %{
+          :smart_contract => :optional
+        }
+      ]
+      |> Keyword.merge(options)
+
+    if !is_nil(address_hash) && Map.has_key?(acc, address_hash) do
+      {acc[address_hash], acc}
+    else
+      case Chain.find_contract_address(address_hash, address_options, false) do
+        {:ok, %{smart_contract: smart_contract}} ->
+          full_abi = Chain.combine_proxy_implementation_abi(smart_contract, options)
+          {full_abi, Map.put(acc, address_hash, full_abi)}
+
+        _ ->
+          {nil, Map.put(acc, address_hash, nil)}
+      end
+    end
+  end
+
+  defp find_candidates(log, transaction, options, events_acc) do
     case log.first_topic do
       "0x" <> hex_part ->
         case Integer.parse(hex_part, 16) do
           {number, ""} ->
             <<method_id::binary-size(4), _rest::binary>> = :binary.encode_unsigned(number)
-            find_candidates_query(method_id, log, transaction)
+            check_events_cache(events_acc, method_id, log, transaction, options)
 
           _ ->
-            {:error, :could_not_decode}
+            {{:error, :could_not_decode}, events_acc}
         end
 
       _ ->
-        {:error, :could_not_decode}
+        {{:error, :could_not_decode}, events_acc}
     end
   end
 
-  defp find_candidates_query(method_id, log, transaction) do
+  defp find_candidates_query(method_id, log, transaction, options) do
     candidates_query =
       from(
         contract_method in ContractMethod,
@@ -184,7 +201,7 @@ defmodule Explorer.Chain.Log do
 
     candidates =
       candidates_query
-      |> Repo.all()
+      |> Chain.select_repo(options).all()
       |> Enum.flat_map(fn contract_method ->
         case find_and_decode([contract_method.abi], log, transaction) do
           {:ok, selector, mapping} ->
@@ -199,7 +216,17 @@ defmodule Explorer.Chain.Log do
       end)
       |> Enum.take(1)
 
-    {:error, :contract_not_verified, candidates}
+    {:error, :contract_not_verified,
+     if(candidates == [], do: decode_event_via_sig_provider(log, transaction, true), else: candidates)}
+  end
+
+  defp check_events_cache(events_acc, method_id, log, transaction, options) do
+    if Map.has_key?(events_acc, method_id) do
+      {events_acc[method_id], events_acc}
+    else
+      result = find_candidates_query(method_id, log, transaction, options)
+      {result, Map.put(events_acc, method_id, result)}
+    end
   end
 
   defp find_and_decode(abi, log, transaction) do
@@ -216,8 +243,14 @@ defmodule Explorer.Chain.Log do
       {:ok, selector, mapping}
     end
   rescue
-    _ ->
-      Logger.warn(fn -> ["Could not decode input data for log from transaction: ", Hash.to_iodata(transaction.hash)] end)
+    e ->
+      Logger.warn(fn ->
+        [
+          "Could not decode input data for log from transaction: ",
+          Hash.to_iodata(transaction.hash),
+          Exception.format(:error, e, __STACKTRACE__)
+        ]
+      end)
 
       {:error, :could_not_decode}
   end
@@ -238,6 +271,40 @@ defmodule Explorer.Chain.Log do
       |> Enum.intersperse(", ")
 
     IO.iodata_to_binary([name, "(", text, ")"])
+  end
+
+  defp decode_event_via_sig_provider(log, transaction, only_candidates?, skip_sig_provider? \\ false) do
+    with true <- SigProviderInterface.enabled?(),
+         false <- skip_sig_provider?,
+         {:ok, result} <-
+           SigProviderInterface.decode_event(
+             [
+               log.first_topic,
+               log.second_topic,
+               log.third_topic,
+               log.fourth_topic
+             ],
+             log.data
+           ),
+         true <- is_list(result),
+         false <- Enum.empty?(result),
+         abi <- [result |> List.first() |> Map.put("type", "event")],
+         {:ok, selector, mapping} <- find_and_decode(abi, log, transaction),
+         identifier <- Base.encode16(selector.method_id, case: :lower),
+         text <- function_call(selector.function, mapping) do
+      if only_candidates? do
+        [{:ok, identifier, text, mapping}]
+      else
+        {:error, :contract_not_verified, [{:ok, identifier, text, mapping}]}
+      end
+    else
+      _ ->
+        if only_candidates? do
+          []
+        else
+          {:error, :could_not_decode}
+        end
+    end
   end
 
   def decode16!(nil), do: nil

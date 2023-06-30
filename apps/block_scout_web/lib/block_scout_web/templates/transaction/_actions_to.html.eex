@@ -1,0 +1,4 @@
+<span data-toggle="tooltip" data-placement="top" title="<%= @address %>">
+  <span class="d-none d-md-none d-xl-inline"><%= @address %></span>
+  <span class="d-md-inline-block d-xl-none"><%= BlockScoutWeb.AddressView.trimmed_hash(@address) %></span>
+</span>

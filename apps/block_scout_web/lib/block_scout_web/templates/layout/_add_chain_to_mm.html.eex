@@ -1,13 +1,13 @@
-<input id="js-chain-id" class="d-none" value="<%= Application.get_env(:block_scout_web, :chain_id) %>" />
-<input id="js-coin-name" class="d-none" value="<%= Explorer.coin_name() %>" />
-<% sub_network = Keyword.get(Application.get_env(:block_scout_web, BlockScoutWeb.Chain), :subnetwork) %>
-<input id="js-subnetwork" class="d-none" value="<%= sub_network %>" />
-<input id="js-json-rpc" class="d-none" value="<%= Application.get_env(:block_scout_web, :json_rpc) %>" />
-<li>
-    <a 
-        class="footer-link js-btn-add-chain-to-mm btn-add-chain-to-mm in-footer"
-        style="cursor: pointer;"
-    >
-        <%= gettext("Add") <> " #{sub_network}" %>
-    </a>
-</li>
+<%= unless Application.get_env(:block_scout_web, :disable_add_to_mm_button) do %>
+    <input id="js-coin-name" class="d-none" value="<%= Explorer.coin_name() %>" />
+    <% sub_network = Keyword.get(Application.get_env(:block_scout_web, BlockScoutWeb.Chain), :subnetwork) %>
+    <input id="js-subnetwork" class="d-none" value="<%= sub_network %>" />
+    <li>
+        <a 
+            class="footer-link js-btn-add-chain-to-mm btn-add-chain-to-mm in-footer"
+            style="cursor: pointer;"
+        >
+            <%= gettext("Add") <> " #{sub_network}" %>
+        </a>
+    </li>
+<% end %>

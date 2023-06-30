@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.PendingTransaction do
   validated version that may make it to the database first.
   """
   use GenServer
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
 
   require Logger
 

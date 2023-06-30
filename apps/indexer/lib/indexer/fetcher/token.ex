@@ -3,7 +3,7 @@ defmodule Indexer.Fetcher.Token do
   Fetches information about a token.
   """
 
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
   alias Explorer.Chain
@@ -42,9 +42,13 @@ defmodule Indexer.Fetcher.Token do
   @impl BufferedTask
   def init(initial_acc, reducer, _) do
     {:ok, acc} =
-      Chain.stream_uncataloged_token_contract_address_hashes(initial_acc, fn address, acc ->
-        reducer.(address, acc)
-      end)
+      Chain.stream_uncataloged_token_contract_address_hashes(
+        initial_acc,
+        fn address, acc ->
+          reducer.(address, acc)
+        end,
+        true
+      )
 
     acc
   end
@@ -74,7 +78,7 @@ defmodule Indexer.Fetcher.Token do
       |> MetadataRetriever.get_functions_of()
       |> Map.put(:cataloged, true)
 
-    {:ok, _} = Chain.update_token(%{token | updated_at: DateTime.utc_now()}, token_params)
+    {:ok, _} = Chain.update_token(token, token_params)
     :ok
   end
 end

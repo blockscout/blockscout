@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   #     assert Decimal.compare(Explorer.Chain.indexed_ratio_blocks(), Decimal.from_float(0.5)) == :eq
 
-  #     insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
+  #     insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
 
   #     session
   #     |> AppPage.visit_page()
@@ -48,7 +48,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   #     assert Decimal.compare(Explorer.Chain.indexed_ratio_blocks(), 1) == :eq
 
-  #     insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
+  #     insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
 
   #     session
   #     |> AppPage.visit_page()
@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   #     assert Decimal.compare(Explorer.Chain.indexed_ratio_blocks(), Decimal.from_float(0.5)) == :eq
 
-  #     insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
+  #     insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
 
   #     session
   #     |> AppPage.visit_page()
@@ -96,7 +96,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   #     assert Decimal.compare(Explorer.Chain.indexed_ratio(), Decimal.from_float(0.9)) == :eq
 
-  #     insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
+  #     insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
 
   #     session
   #     |> AppPage.visit_page()
@@ -121,7 +121,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   #     block_hash = block.hash
 
-  #     insert(:pending_block_operation, block_hash: block_hash, fetch_internal_transactions: true)
+  #     insert(:pending_block_operation, block_hash: block_hash, block_number: block.number)
 
   #     BlocksIndexedCounter.calculate_blocks_indexed()
 
@@ -130,11 +130,6 @@ defmodule BlockScoutWeb.ViewingAppTest do
   #     session
   #     |> AppPage.visit_page()
   #     |> assert_has(AppPage.indexed_status("Indexing Internal Transactions"))
-
-  #     Repo.update_all(
-  #       from(p in PendingBlockOperation, where: p.block_hash == ^block_hash),
-  #       set: [fetch_internal_transactions: false]
-  #     )
 
   #     BlocksIndexedCounter.calculate_blocks_indexed()
 

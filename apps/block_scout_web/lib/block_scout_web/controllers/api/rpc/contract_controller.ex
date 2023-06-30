@@ -3,15 +3,13 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
   require Logger
 
-  alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
-  alias BlockScoutWeb.API.RPC.{AddressController, Helpers}
+  alias BlockScoutWeb.API.RPC.{AddressController, Helper}
   alias Explorer.Chain
-  alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.VerificationStatus
   alias Explorer.Etherscan.Contracts
-  alias Explorer.SmartContract.Helper
-  alias Explorer.SmartContract.Solidity.Publisher
+  alias Explorer.SmartContract.Helper, as: SmartContractHelper
+  alias Explorer.SmartContract.Solidity.{Publisher, PublishHelper}
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
@@ -160,7 +158,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   end
 
   defp prepare_params(files) when is_map(files) do
-    {:ok, VerificationController.prepare_files_array(files)}
+    {:ok, PublishHelper.prepare_files_array(files)}
   end
 
   defp prepare_params(files) when is_list(files) do
@@ -181,11 +179,11 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
       jsons =
         files_array
-        |> Enum.filter(fn file -> Helper.json_file?(file.filename) end)
+        |> Enum.filter(fn file -> SmartContractHelper.json_file?(file.filename) end)
 
       sols =
         files_array
-        |> Enum.filter(fn file -> Helper.sol_file?(file.filename) end)
+        |> Enum.filter(fn file -> SmartContractHelper.sol_file?(file.filename) end)
 
       if length(jsons) > 0 and length(sols) > 0 do
         {:ok, files_array}
@@ -240,7 +238,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
          secondary_sources,
          conn
        ) do
-    case publish_without_broadcast(%{
+    case PublishHelper.publish_without_broadcast(%{
            "addressHash" => address_hash_string,
            "params" => params_to_publish,
            "abi" => abi,
@@ -257,7 +255,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   end
 
   defp verify_and_publish(address_hash_string, files_array, conn) do
-    case Sourcify.verify(address_hash_string, files_array) do
+    case Sourcify.verify(address_hash_string, files_array, nil) do
       {:ok, _verified_status} ->
         case Sourcify.check_by_address(address_hash_string) do
           {:ok, _verified_status} ->
@@ -312,55 +310,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
-  def publish_without_broadcast(
-        %{"addressHash" => address_hash, "abi" => abi, "compilationTargetFilePath" => file_path} = input
-      ) do
-    params = proccess_params(input)
-
-    address_hash
-    |> Publisher.publish_smart_contract(params, abi, file_path)
-    |> proccess_response()
-  end
-
-  def publish_without_broadcast(%{"addressHash" => address_hash, "abi" => abi} = input) do
-    params = proccess_params(input)
-
-    address_hash
-    |> Publisher.publish_smart_contract(params, abi)
-    |> proccess_response()
-  end
-
-  def publish(nil, %{"addressHash" => _address_hash} = input) do
-    publish_without_broadcast(input)
-  end
-
-  def publish(conn, %{"addressHash" => address_hash} = input) do
-    result = publish_without_broadcast(input)
-
-    EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result, conn}}], :on_demand)
-  end
-
-  def proccess_params(input) do
-    if Map.has_key?(input, "secondarySources") do
-      input["params"]
-      |> Map.put("secondary_sources", Map.get(input, "secondarySources"))
-    else
-      input["params"]
-    end
-  end
-
-  def proccess_response(response) do
-    case response do
-      {:ok, _contract} = result ->
-        result
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
-  end
-
   def listcontracts(conn, params) do
-    with pagination_options <- Helpers.put_pagination_options(%{}, params),
+    with pagination_options <- Helper.put_pagination_options(%{}, params),
          {:params, {:ok, options}} <- {:params, add_filters(pagination_options, params)} do
       options_with_defaults =
         options
@@ -400,7 +351,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   def getsourcecode(conn, params) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
-      _ = VerificationController.check_and_verify(address_param)
+      _ = PublishHelper.check_and_verify(address_param)
       address = Contracts.address_hash_to_address_with_source_code(address_hash)
 
       render(conn, :getsourcecode, %{
@@ -503,7 +454,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   end
 
   defp to_smart_contract(address_hash) do
-    _ = VerificationController.check_and_verify(Hash.to_string(address_hash))
+    _ = PublishHelper.check_and_verify(Hash.to_string(address_hash))
 
     result =
       case Chain.address_hash_to_smart_contract(address_hash) do
@@ -545,7 +496,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> required_param(params, "contractaddress", "address_hash")
     |> required_param(params, "contractname", "name")
     |> required_param(params, "compilerversion", "compiler_version")
-    |> optional_param(params, "constructorArguements", "constructor_arguments")
+    |> optional_param(params, "constructorArguments", "constructor_arguments")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
   end
 
@@ -570,7 +521,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp parse_optimization_runs(other), do: other
 
   defp fetch_external_libraries(params) do
-    Enum.reduce(1..Application.get_env(:block_scout_web, :verification_max_libraries), %{}, fn number, acc ->
+    Enum.reduce(1..Application.get_env(:block_scout_web, :contract)[:verification_max_libraries], %{}, fn number, acc ->
       case Map.fetch(params, "library#{number}Name") do
         {:ok, library_name} ->
           library_address = Map.get(params, "library#{number}Address")

@@ -24,19 +24,19 @@
               <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
                 <%= link(
                   gettext("All"),
-                  to: AccessHelpers.get_path(@conn, :address_internal_transaction_path, :index, @address.hash),
+                  to: AccessHelper.get_path(@conn, :address_internal_transaction_path, :index, @address.hash),
                   class: "address__link address__link--active dropdown-item",
                   "data-test": "filter_option"
                 ) %>
                 <%= link(
                   gettext("To"),
-                  to: AccessHelpers.get_path(@conn, :address_internal_transaction_path, :index, @address.hash, %{:filter => "to"}),
+                  to: AccessHelper.get_path(@conn, :address_internal_transaction_path, :index, @address.hash, %{:filter => "to"}),
                   class: "address__link address__link--active dropdown-item",
                   "data-test": "filter_option"
                 ) %>
                 <%= link(
                   gettext("From"),
-                  to: AccessHelpers.get_path(@conn, :address_internal_transaction_path, :index, @address.hash, %{:filter => "from"}),
+                  to: AccessHelper.get_path(@conn, :address_internal_transaction_path, :index, @address.hash, %{:filter => "from"}),
                   class: "address__link address__link--active dropdown-item",
                   "data-test": "filter_option"
                 ) %>
@@ -60,7 +60,7 @@
         </div>
 
         <div class="transaction-bottom-panel">
-          <%= render BlockScoutWeb.CommonComponentsView, "_csv_export_button.html", address: Address.checksum(@address.hash), type: "internal-transactions", conn: @conn %>
+          <%= render BlockScoutWeb.CommonComponentsView, "_csv_export_button.html", address: Address.checksum(@address.hash), type: "internal-transactions", filter_type: :address, filter_value: @filter, conn: @conn %>
           <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
         </div>
 

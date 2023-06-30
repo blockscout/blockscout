@@ -8,6 +8,7 @@ import { createStore as reduxCreateStore } from 'redux'
  * Create a redux store given the reducer. It also enables the Redux dev tools.
  */
 export function createStore (reducer) {
+  // @ts-ignore
   return reduxCreateStore(reducer, window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__())
 }
 

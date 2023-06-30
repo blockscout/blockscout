@@ -1,3 +1,4 @@
+// @ts-nocheck
 import '../../lib/ace/src-min/ace'
 import '../../lib/ace/src-min/mode-csharp'
 import '../../lib/ace/src-min/theme-chrome'

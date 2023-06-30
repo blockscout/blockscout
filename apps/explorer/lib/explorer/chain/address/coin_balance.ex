@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
   use Explorer.Schema
 
   alias Explorer.PagingOptions
-  alias Explorer.Chain.{Address, Block, Hash, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, Wei}
   alias Explorer.Chain.Address.CoinBalance
 
   @optional_fields ~w(value value_fetched_at)a
@@ -43,7 +43,6 @@ defmodule Explorer.Chain.Address.CoinBalance do
     field(:value_fetched_at, :utc_datetime_usec)
     field(:delta, Wei, virtual: true)
     field(:transaction_hash, Hash.Full, virtual: true)
-    field(:transaction_value, Wei, virtual: true)
     field(:block_timestamp, :utc_datetime_usec, virtual: true)
 
     timestamps()
@@ -75,35 +74,6 @@ defmodule Explorer.Chain.Address.CoinBalance do
     )
   end
 
-  @doc """
-  Builds an `Ecto.Query` to fetch the last coin balances that have value greater than 0.
-
-  The last coin balance from an Address is the last block indexed.
-  """
-  def fetch_coin_balances_with_txs(address_hash, %PagingOptions{page_size: page_size}) do
-    query =
-      from(
-        cb in CoinBalance,
-        left_join: tx in Transaction,
-        on:
-          cb.block_number == tx.block_number and tx.value > ^0 and
-            (cb.address_hash == tx.to_address_hash or cb.address_hash == tx.from_address_hash),
-        where: cb.address_hash == ^address_hash,
-        where: not is_nil(cb.value),
-        order_by: [desc: :block_number],
-        select_merge: %{
-          delta: fragment("sa0.value - coalesce(lead(sa0.value, 1) over (order by sa0.block_number desc), 0)"),
-          transaction_hash: tx.hash,
-          transaction_value: tx.value
-        }
-      )
-
-    from(balance in subquery(query),
-      where: balance.delta != 0,
-      limit: ^page_size
-    )
-  end
-
   def fetch_coin_balances(address_hash, %PagingOptions{page_size: page_size}) do
     query =
       from(
@@ -112,7 +82,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
         where: not is_nil(cb.value),
         order_by: [desc: :block_number],
         select_merge: %{
-          delta: fragment("sa0.value - coalesce(lead(sa0.value, 1) over (order by sa0.block_number desc), 0)")
+          delta: fragment("? - coalesce(lead(?, 1) over (order by ? desc), 0)", cb.value, cb.value, cb.block_number)
         }
       )
 
@@ -120,8 +90,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
       where: balance.delta != 0,
       limit: ^page_size,
       select_merge: %{
-        transaction_hash: nil,
-        transaction_value: nil
+        transaction_hash: nil
       }
     )
   end
@@ -131,9 +100,8 @@ defmodule Explorer.Chain.Address.CoinBalance do
   corresponds to the maximum balance in that day. Only the last 90 days of data are used.
   """
   def balances_by_day(address_hash, block_timestamp \\ nil) do
-    {days_to_consider, _} =
+    days_to_consider =
       Application.get_env(:block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance)[:coin_balance_history_days]
-      |> Integer.parse()
 
     CoinBalance
     |> join(:inner, [cb], b in Block, on: cb.block_number == b.number)
@@ -176,10 +144,10 @@ defmodule Explorer.Chain.Address.CoinBalance do
 
     from(
       cb in subquery(coin_balance_query),
-      inner_join: b in Block,
-      on: cb.block_number == b.number,
-      where: b.consensus,
-      select: %{timestamp: b.timestamp, value: cb.value}
+      inner_join: block in Block,
+      on: cb.block_number == block.number,
+      where: block.consensus,
+      select: %{timestamp: block.timestamp, value: cb.value}
     )
   end
 

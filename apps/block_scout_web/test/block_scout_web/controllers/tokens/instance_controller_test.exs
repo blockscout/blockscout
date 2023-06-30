@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Tokens.InstanceControllerTest do
 
   describe "GET show/2" do
     test "redirects  with valid params", %{conn: conn} do
-      token = insert(:token)
+      token = insert(:token, type: "ERC-721")
 
       contract_address_hash = token.contract_address_hash
 

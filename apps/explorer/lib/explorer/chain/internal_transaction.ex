@@ -120,8 +120,7 @@ defmodule Explorer.Chain.InternalTransaction do
       foreign_key: :block_hash,
       define_field: false,
       references: :block_hash,
-      type: Hash.Full,
-      where: [fetch_internal_transactions: true]
+      type: Hash.Full
     )
   end
 
@@ -201,7 +200,7 @@ defmodule Explorer.Chain.InternalTransaction do
         bytes: <<120, 164, 45, 55, 5, 251, 60, 38, 164, 181, 71, 55, 167, 132, 191, 6, 79, 8, 21, 251>>
       }
 
-  `:call` type traces are generated when a method in a contrat is call.
+  `:call` type traces are generated when a method in a contract is call.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -281,8 +280,7 @@ defmodule Explorer.Chain.InternalTransaction do
       false
       iex> changeset.errors
       [
-        output: {"can't be present for failed call", []},
-        gas_used: {"can't be present for failed call", []}
+        output: {"can't be present for failed call", []}
       ]
 
   Likewise, successful `:call`s require `input`, `gas_used` and `output` to be set.
@@ -496,13 +494,11 @@ defmodule Explorer.Chain.InternalTransaction do
     end)
   end
 
-  @call_success_fields ~w(gas_used output)a
-
   # Validates that :call `type` changeset either has an `error` or both `gas_used` and `output`
   defp validate_call_error_or_result(changeset) do
     case get_field(changeset, :error) do
-      nil -> validate_required(changeset, @call_success_fields, message: "can't be blank for successful call")
-      _ -> validate_disallowed(changeset, @call_success_fields, message: "can't be present for failed call")
+      nil -> validate_required(changeset, [:gas_used, :output], message: "can't be blank for successful call")
+      _ -> validate_disallowed(changeset, [:output], message: "can't be present for failed call")
     end
   end
 
@@ -546,15 +542,6 @@ defmodule Explorer.Chain.InternalTransaction do
     where(query, [t], t.from_address_hash == ^address_hash)
   end
 
-  def where_address_fields_match(query, address_hash, nil) do
-    where(
-      query,
-      [it],
-      it.to_address_hash == ^address_hash or it.from_address_hash == ^address_hash or
-        it.created_contract_address_hash == ^address_hash
-    )
-  end
-
   def where_address_fields_match(query, address_hash, :to_address_hash) do
     where(query, [it], it.to_address_hash == ^address_hash)
   end
@@ -565,6 +552,19 @@ defmodule Explorer.Chain.InternalTransaction do
 
   def where_address_fields_match(query, address_hash, :created_contract_address_hash) do
     where(query, [it], it.created_contract_address_hash == ^address_hash)
+  end
+
+  def where_address_fields_match(query, address_hash, _) do
+    base_address_where(query, address_hash)
+  end
+
+  defp base_address_where(query, address_hash) do
+    where(
+      query,
+      [it],
+      it.to_address_hash == ^address_hash or it.from_address_hash == ^address_hash or
+        it.created_contract_address_hash == ^address_hash
+    )
   end
 
   def where_is_different_from_parent_transaction(query) do
@@ -612,7 +612,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @doc """
-  Filters out internal_transactions of blocks that are flagged as needing fethching
+  Filters out internal_transactions of blocks that are flagged as needing fetching
   of internal_transactions
   """
   def where_nonpending_block(query \\ nil) do

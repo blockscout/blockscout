@@ -93,6 +93,7 @@ $('button[data-selector*="btn-try-api-clear"]').click(event => {
 
 // Remove invalid class from required fields if not empty
 $('input[data-selector*="try-api-ui"][data-required="true"]').on('keyup', (event) => {
+  // @ts-ignore
   if (event.target.value !== '') {
     event.target.classList.remove('is-invalid')
   } else {

@@ -13,11 +13,11 @@ defmodule Explorer.Chain.Cache.BlockNumber do
 
   alias Explorer.Chain
 
-  defp handle_update(_key, nil, value), do: {:ok, value}
+  def handle_update(_key, nil, value), do: {:ok, value}
 
-  defp handle_update(:min, old_value, new_value), do: {:ok, min(new_value, old_value)}
+  def handle_update(:min, old_value, new_value), do: {:ok, min(new_value, old_value)}
 
-  defp handle_update(:max, old_value, new_value), do: {:ok, max(new_value, old_value)}
+  def handle_update(:max, old_value, new_value), do: {:ok, max(new_value, old_value)}
 
   defp handle_fallback(key) do
     result = fetch_from_db(key)

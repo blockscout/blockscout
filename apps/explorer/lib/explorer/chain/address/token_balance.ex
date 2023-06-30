@@ -2,7 +2,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
   @moduledoc """
   Represents a token balance from an address.
 
-  In this table we can see all token balances that a specific addreses had acording to the block
+  In this table we can see all token balances that a specific addresses had according to the block
   numbers. If you want to show only the last balance from an address, consider querying against
   `Address.CurrentTokenBalance` instead.
   """
@@ -94,11 +94,25 @@ defmodule Explorer.Chain.Address.TokenBalance do
   @doc """
   Builds an `Ecto.Query` to fetch the token balance of the given token contract hash of the given address in the given block.
   """
-  def fetch_token_balance(address_hash, token_contract_address_hash, block_number) do
+  def fetch_token_balance(address_hash, token_contract_address_hash, block_number, token_id \\ nil)
+
+  def fetch_token_balance(address_hash, token_contract_address_hash, block_number, nil) do
     from(
       tb in TokenBalance,
       where: tb.address_hash == ^address_hash,
       where: tb.token_contract_address_hash == ^token_contract_address_hash,
+      where: tb.block_number <= ^block_number,
+      limit: ^1,
+      order_by: [desc: :block_number]
+    )
+  end
+
+  def fetch_token_balance(address_hash, token_contract_address_hash, block_number, token_id) do
+    from(
+      tb in TokenBalance,
+      where: tb.address_hash == ^address_hash,
+      where: tb.token_contract_address_hash == ^token_contract_address_hash,
+      where: tb.token_id == ^token_id,
       where: tb.block_number <= ^block_number,
       limit: ^1,
       order_by: [desc: :block_number]

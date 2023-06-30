@@ -230,14 +230,14 @@ defmodule Explorer.SmartContract.WriterTest do
   setup :verify_on_exit!
 
   describe "write_functions/1" do
-    test "fetches the smart contract write functions" do
+    test "fetches the smart contract write functions with provided smart_contract" do
       smart_contract =
         insert(
           :smart_contract,
           abi: @abi
         )
 
-      response = Writer.write_functions(smart_contract.address_hash)
+      response = Writer.write_functions(smart_contract)
 
       assert [
                %{

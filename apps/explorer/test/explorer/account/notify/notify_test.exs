@@ -32,8 +32,7 @@ defmodule Explorer.Account.Notify.NotifyTest do
           [callback_url: "callback.url"]
         }
       ],
-      logout_url: "logout.url",
-      logout_return_to_url: "return.url"
+      logout_url: "logout.url"
     )
   end
 
@@ -53,7 +52,7 @@ defmodule Explorer.Account.Notify.NotifyTest do
       assert wn == nil
     end
 
-    test "when address apears in watchlist" do
+    test "when address appears in watchlist" do
       wa =
         %WatchlistAddress{address_hash: address_hash} =
         build(:account_watchlist_address)

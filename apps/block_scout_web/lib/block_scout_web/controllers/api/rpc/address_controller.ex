@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.AddressController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.API.RPC.Helpers
+  alias BlockScoutWeb.API.RPC.Helper
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.{Address, Wei}
   alias Explorer.Etherscan.{Addresses, Blocks}
@@ -221,7 +221,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   end
 
   def getminedblocks(conn, params) do
-    options = Helpers.put_pagination_options(%{}, params)
+    options = Helper.put_pagination_options(%{}, params)
 
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
@@ -248,7 +248,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   def optional_params(params) do
     %{}
     |> put_order_by_direction(params)
-    |> Helpers.put_pagination_options(params)
+    |> Helper.put_pagination_options(params)
     |> put_block(params, "start_block")
     |> put_block(params, "end_block")
     |> put_filter_by(params)

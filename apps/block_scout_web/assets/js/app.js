@@ -35,6 +35,8 @@ import './lib/tooltip'
 import './lib/modals'
 import './lib/card_tabs'
 import './lib/ad'
+import './lib/dark_mode'
 
 import swal from 'sweetalert2'
+// @ts-ignore
 window.Swal = swal

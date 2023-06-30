@@ -28,7 +28,7 @@ defmodule Explorer.Repo.ConfigHelperTest do
       assert result[:database] == "test_database"
     end
 
-    test "parse params from database url with hyphen in databasename" do
+    test "parse params from database url with hyphen in database name" do
       database_url = "postgresql://test_username:test_password@host-name.test.com:7777/test-database"
 
       result = ConfigHelper.get_db_config(%{url: database_url, env_func: fn _ -> nil end})
@@ -40,6 +40,18 @@ defmodule Explorer.Repo.ConfigHelperTest do
       assert result[:database] == "test-database"
     end
 
+    test "parse params from database url with hyphen in database user name" do
+      database_url = "postgresql://test-username:password@hostname.test.com:7777/database"
+
+      result = ConfigHelper.get_db_config(%{url: database_url, env_func: fn _ -> nil end})
+
+      assert result[:username] == "test-username"
+      assert result[:password] == "password"
+      assert result[:hostname] == "hostname.test.com"
+      assert result[:port] == "7777"
+      assert result[:database] == "database"
+    end
+
     test "parse params from database url with special characters in password" do
       database_url = "postgresql://test_username:awN!l#W*g$P%t-l^q&d@hostname.test.com:7777/test_database"
 
@@ -47,6 +59,18 @@ defmodule Explorer.Repo.ConfigHelperTest do
 
       assert result[:username] == "test_username"
       assert result[:password] == "awN!l#W*g$P%t-l^q&d"
+      assert result[:hostname] == "hostname.test.com"
+      assert result[:port] == "7777"
+      assert result[:database] == "test_database"
+    end
+
+    test "parse params from database url with encoded special characters in password" do
+      database_url = "postgresql://test_username:pass%23@hostname.test.com:7777/test_database"
+
+      result = ConfigHelper.get_db_config(%{url: database_url, env_func: fn _ -> nil end})
+
+      assert result[:username] == "test_username"
+      assert result[:password] == "pass#"
       assert result[:hostname] == "hostname.test.com"
       assert result[:port] == "7777"
       assert result[:database] == "test_database"

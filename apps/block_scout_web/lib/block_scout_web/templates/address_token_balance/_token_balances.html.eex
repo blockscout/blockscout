@@ -23,7 +23,7 @@
         </span>
       </a>
     <% else %>
-      <a href="<%= AccessHelpers.get_path(@conn, :address_token_path, :index, @address_hash) %>#tokens" style="text-decoration: none;">
+      <a href="<%= AccessHelper.get_path(@conn, :address_token_path, :index, @address_hash) %>#tokens" style="text-decoration: none;">
         <span class="btn-wallet-icon">
           <i class="fa-solid fa-wallet" style="line-height: 31px;"></i>
         </span>

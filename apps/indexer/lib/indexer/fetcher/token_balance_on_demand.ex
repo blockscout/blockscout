@@ -29,6 +29,20 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
     end
   end
 
+  @spec trigger_historic_fetch(
+          Hash.t(),
+          Hash.t(),
+          String.t(),
+          Decimal.t() | nil,
+          non_neg_integer()
+        ) :: {:ok, pid}
+
+  def trigger_historic_fetch(address_hash, contract_address_hash, token_type, token_id, block_number) do
+    Task.start(fn ->
+      do_trigger_historic_fetch(address_hash, contract_address_hash, token_type, token_id, block_number)
+    end)
+  end
+
   ## Implementation
 
   defp do_trigger_fetch(address_hash, current_token_balances, latest_block_number, stale_balance_window)
@@ -49,16 +63,22 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
   defp fetch_and_update(block_number, address_hash, stale_current_token_balances) do
     current_token_balances_update_params =
       stale_current_token_balances
-      |> Enum.map(fn {stale_current_token_balance, token} ->
+      |> Enum.map(fn {%{token_id: token_id} = stale_current_token_balance, token} ->
         stale_current_token_balances_to_fetch = [
           %{
             token_contract_address_hash: "0x" <> Base.encode16(token.contract_address_hash.bytes),
             address_hash: "0x" <> Base.encode16(address_hash.bytes),
-            block_number: block_number
+            block_number: block_number,
+            token_id: token_id && Decimal.to_integer(token_id)
           }
         ]
 
-        balance_response = BalanceReader.get_balances_of(stale_current_token_balances_to_fetch)
+        balance_response =
+          case stale_current_token_balance.token_type do
+            "ERC-1155" -> BalanceReader.get_balances_of_erc_1155(stale_current_token_balances_to_fetch)
+            _ -> BalanceReader.get_balances_of(stale_current_token_balances_to_fetch)
+          end
+
         updated_balance = balance_response[:ok]
 
         if updated_balance do
@@ -66,6 +86,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
           |> Map.put(:address_hash, stale_current_token_balance.address_hash)
           |> Map.put(:token_contract_address_hash, token.contract_address_hash)
           |> Map.put(:token_type, token.type)
+          |> Map.put(:token_id, token_id)
           |> Map.put(:block_number, block_number)
           |> Map.put(:value, Decimal.new(updated_balance))
           |> Map.put(:value_fetched_at, DateTime.utc_now())
@@ -86,6 +107,43 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
     })
   end
 
+  defp do_trigger_historic_fetch(address_hash, contract_address_hash, token_type, token_id, block_number) do
+    request = %{
+      token_contract_address_hash: to_string(contract_address_hash),
+      address_hash: to_string(address_hash),
+      block_number: block_number,
+      token_id: token_id && Decimal.to_integer(token_id)
+    }
+
+    balance_response =
+      case token_type do
+        "ERC-1155" -> BalanceReader.get_balances_of_erc_1155([request])
+        _ -> BalanceReader.get_balances_of([request])
+      end
+
+    balance = balance_response[:ok]
+
+    if balance do
+      %{
+        address_token_balances: %{
+          params: [
+            %{
+              address_hash: address_hash,
+              token_contract_address_hash: contract_address_hash,
+              token_type: token_type,
+              token_id: token_id,
+              block_number: block_number,
+              value: Decimal.new(balance),
+              value_fetched_at: DateTime.utc_now()
+            }
+          ]
+        },
+        broadcast: :on_demand
+      }
+      |> Chain.import()
+    end
+  end
+
   defp latest_block_number do
     BlockNumber.get_max()
   end
@@ -93,7 +151,8 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
   defp stale_balance_window(block_number) do
     case AverageBlockTime.average_block_time() do
       {:error, :disabled} ->
-        {:error, :no_average_block_time}
+        fallback_threshold_in_blocks = Application.get_env(:indexer, __MODULE__)[:fallback_threshold_in_blocks]
+        block_number - fallback_threshold_in_blocks
 
       duration ->
         average_block_time =
@@ -105,7 +164,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
           {:error, :empty_database}
         else
           threshold = Application.get_env(:indexer, __MODULE__)[:threshold]
-          block_number - div(:timer.minutes(threshold), average_block_time)
+          block_number - div(threshold, average_block_time)
         end
     end
   end

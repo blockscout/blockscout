@@ -3,7 +3,7 @@ defmodule EthereumJSONRPC.HTTP do
   JSONRPC over HTTP
   """
 
-  alias EthereumJSONRPC.{DecodeError, Transport}
+  alias EthereumJSONRPC.{DecodeError, Transport, Utility.EndpointAvailabilityObserver}
 
   require Logger
 
@@ -27,8 +27,14 @@ defmodule EthereumJSONRPC.HTTP do
     http_options = Keyword.fetch!(options, :http_options)
 
     with {:ok, %{body: body, status_code: code}} <- http.json_rpc(url, json, http_options),
-         {:ok, json} <- decode_json(request: [url: url, body: json], response: [status_code: code, body: body]) do
-      handle_response(json, code)
+         {:ok, json} <- decode_json(request: [url: url, body: json], response: [status_code: code, body: body]),
+         {:ok, response} <- handle_response(json, code) do
+      {:ok, response}
+    else
+      error ->
+        named_arguments = [transport: __MODULE__, transport_options: Keyword.delete(options, :method_to_url)]
+        EndpointAvailabilityObserver.inc_error_count(url, named_arguments)
+        error
     end
   end
 
@@ -74,6 +80,8 @@ defmodule EthereumJSONRPC.HTTP do
         rechunk_json_rpc(chunks, options, :timeout, decoded_response_bodies)
 
       {:error, _} = error ->
+        named_arguments = [transport: __MODULE__, transport_options: Keyword.delete(options, :method_to_url)]
+        EndpointAvailabilityObserver.inc_error_count(url, named_arguments)
         error
     end
   end
@@ -148,15 +156,18 @@ defmodule EthereumJSONRPC.HTTP do
 
     standardized = %{jsonrpc: jsonrpc, id: id}
 
-    case unstandardized do
-      %{"result" => _, "error" => _} ->
+    case {id, unstandardized} do
+      {_id, %{"result" => _, "error" => _}} ->
         raise ArgumentError,
               "result and error keys are mutually exclusive in JSONRPC 2.0 response objects, but got #{inspect(unstandardized)}"
 
-      %{"result" => result} ->
+      {nil, %{"result" => error}} ->
+        Map.put(standardized, :error, standardize_error(error))
+
+      {_id, %{"result" => result}} ->
         Map.put(standardized, :result, result)
 
-      %{"error" => error} ->
+      {_id, %{"error" => error}} ->
         Map.put(standardized, :error, standardize_error(error))
     end
   end
@@ -177,9 +188,12 @@ defmodule EthereumJSONRPC.HTTP do
     with {:ok, method_to_url} <- Keyword.fetch(options, :method_to_url),
          {:ok, method_atom} <- to_existing_atom(method),
          {:ok, url} <- Keyword.fetch(method_to_url, method_atom) do
-      url
+      EndpointAvailabilityObserver.maybe_replace_url(url, options[:fallback_trace_url])
     else
-      _ -> Keyword.fetch!(options, :url)
+      _ ->
+        options
+        |> Keyword.fetch!(:url)
+        |> EndpointAvailabilityObserver.maybe_replace_url(options[:fallback_url])
     end
   end
 

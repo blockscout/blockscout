@@ -43,7 +43,6 @@ defmodule BlockScoutWeb.Endpoint do
   end
 
   plug(Plug.RequestId)
-  plug(Plug.Logger)
 
   plug(
     Plug.Parsers,
@@ -67,7 +66,8 @@ defmodule BlockScoutWeb.Endpoint do
     key: "_explorer_key",
     signing_salt: "iC2ksJHS",
     same_site: "Lax",
-    http_only: false
+    http_only: false,
+    domain: Application.compile_env(:block_scout_web, :cookie_domain)
   )
 
   use SpandexPhoenix

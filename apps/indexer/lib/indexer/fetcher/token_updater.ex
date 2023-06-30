@@ -2,7 +2,7 @@ defmodule Indexer.Fetcher.TokenUpdater do
   @moduledoc """
   Updates metadata for cataloged tokens
   """
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
 
   require Logger
 
@@ -10,6 +10,7 @@ defmodule Indexer.Fetcher.TokenUpdater do
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.Token.MetadataRetriever
   alias Indexer.BufferedTask
+  alias Timex.Duration
 
   @behaviour BufferedTask
 
@@ -43,10 +44,15 @@ defmodule Indexer.Fetcher.TokenUpdater do
 
   @impl BufferedTask
   def init(initial, reducer, _) do
-    metadata_updater_inverval = Application.get_env(:indexer, :metadata_updater_seconds_interval)
-    interval_in_minutes = Kernel.round(metadata_updater_inverval / 60)
+    metadata_updater_milliseconds_interval = Application.get_env(:indexer, :metadata_updater_milliseconds_interval)
 
-    {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes(initial, reducer, interval_in_minutes)
+    interval_in_minutes =
+      metadata_updater_milliseconds_interval
+      |> Duration.from_milliseconds()
+      |> Duration.to_minutes()
+      |> trunc()
+
+    {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes(initial, reducer, interval_in_minutes, true)
 
     tokens
   end
@@ -85,6 +91,6 @@ defmodule Indexer.Fetcher.TokenUpdater do
   end
 
   def update_metadata(%Token{} = token, metadata) do
-    Chain.update_token(%{token | updated_at: DateTime.utc_now()}, metadata)
+    Chain.update_token(token, metadata)
   end
 end

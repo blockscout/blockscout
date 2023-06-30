@@ -7,6 +7,8 @@ defmodule Explorer.Chain.LogTest do
   alias Explorer.Chain.{Log, SmartContract}
   alias Explorer.Repo
 
+  setup :set_mox_from_context
+
   doctest Log
 
   describe "changeset/2" do
@@ -56,7 +58,7 @@ defmodule Explorer.Chain.LogTest do
 
       log = insert(:log, transaction: transaction)
 
-      assert Log.decode(log, transaction) == {:error, :could_not_decode}
+      assert {{:error, :could_not_decode}, _, _} = Log.decode(log, transaction, [], false)
     end
 
     test "that a contract call transaction that has a verified contract returns the decoded input data" do
@@ -102,20 +104,17 @@ defmodule Explorer.Chain.LogTest do
           data: data
         )
 
-      blockchain_get_code_mock()
-
       get_eip1967_implementation()
 
-      assert Log.decode(log, transaction) ==
-               {:ok, "eb9b3c4c", "WantsPets(string indexed _from_human, uint256 _number, bool indexed _belly)",
-                [
-                  {"_from_human", "string", true,
-                   {:dynamic,
-                    <<56, 228, 122, 123, 113, 157, 206, 99, 102, 42, 234, 244, 52, 64, 50, 111, 85, 27, 138, 126, 225,
-                      152, 206, 227, 92, 181, 213, 23, 242, 210, 150, 162>>}},
-                  {"_number", "uint256", false, 0},
-                  {"_belly", "bool", true, true}
-                ]}
+      assert {{:ok, "eb9b3c4c", "WantsPets(string indexed _from_human, uint256 _number, bool indexed _belly)",
+               [
+                 {"_from_human", "string", true,
+                  {:dynamic,
+                   <<56, 228, 122, 123, 113, 157, 206, 99, 102, 42, 234, 244, 52, 64, 50, 111, 85, 27, 138, 126, 225,
+                     152, 206, 227, 92, 181, 213, 23, 242, 210, 150, 162>>}},
+                 {"_number", "uint256", false, 0},
+                 {"_belly", "bool", true, true}
+               ]}, _, _} = Log.decode(log, transaction, [], false)
     end
 
     test "finds decoding candidates" do
@@ -159,30 +158,19 @@ defmodule Explorer.Chain.LogTest do
           data: data
         )
 
-      assert Log.decode(log, transaction) ==
-               {:error, :contract_not_verified,
-                [
-                  {:ok, "eb9b3c4c", "WantsPets(string indexed _from_human, uint256 _number, bool indexed _belly)",
-                   [
-                     {"_from_human", "string", true,
-                      {:dynamic,
-                       <<56, 228, 122, 123, 113, 157, 206, 99, 102, 42, 234, 244, 52, 64, 50, 111, 85, 27, 138, 126,
-                         225, 152, 206, 227, 92, 181, 213, 23, 242, 210, 150, 162>>}},
-                     {"_number", "uint256", false, 0},
-                     {"_belly", "bool", true, true}
-                   ]}
-                ]}
+      assert {{:error, :contract_not_verified,
+               [
+                 {:ok, "eb9b3c4c", "WantsPets(string indexed _from_human, uint256 _number, bool indexed _belly)",
+                  [
+                    {"_from_human", "string", true,
+                     {:dynamic,
+                      <<56, 228, 122, 123, 113, 157, 206, 99, 102, 42, 234, 244, 52, 64, 50, 111, 85, 27, 138, 126, 225,
+                        152, 206, 227, 92, 181, 213, 23, 242, 210, 150, 162>>}},
+                    {"_number", "uint256", false, 0},
+                    {"_belly", "bool", true, true}
+                  ]}
+               ]}, _, _} = Log.decode(log, transaction, [], false)
     end
-  end
-
-  defp blockchain_get_code_mock do
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn [%{id: id, method: "eth_getCode", params: [_, _]}], _options ->
-        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0"}]}
-      end
-    )
   end
 
   def get_eip1967_implementation do

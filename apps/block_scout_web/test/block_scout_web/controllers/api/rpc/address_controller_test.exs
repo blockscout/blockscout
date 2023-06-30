@@ -24,10 +24,10 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
     start_supervised!(AddressesCounter)
 
-    Application.put_env(:explorer, AverageBlockTime, enabled: true)
+    Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 
     on_exit(fn ->
-      Application.put_env(:explorer, AverageBlockTime, enabled: false)
+      Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
     end)
 
     :ok
@@ -102,8 +102,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       first_address_hash = to_string(first_address.hash)
       second_address_hash = to_string(second_address.hash)
 
-      first_address_inserted_at = to_string(first_address.inserted_at)
-      second_address_inserted_at = to_string(second_address.inserted_at)
+      _first_address_inserted_at = to_string(first_address.inserted_at)
+      _second_address_inserted_at = to_string(second_address.inserted_at)
 
       response =
         conn

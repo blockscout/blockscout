@@ -34,7 +34,7 @@
             </div>
           </div>
           <%= if Enum.count(@address_tags) < TagAddress.get_max_tags_count() do %>
-            <a class="button button-primary button-sm" href="<%= tag_address_path(@conn, :new) %>"><%= gettext "Add address tag" %></a>
+            <a class="add-address-tag-button button button-primary button-sm" href="<%= tag_address_path(@conn, :new) %>"><%= gettext "Add address tag" %></a>
           <% end %>
         </div>
       </div>

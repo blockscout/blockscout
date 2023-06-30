@@ -72,7 +72,7 @@ defmodule BlockScoutWeb.Plug.RedisCookie do
          Logger.log(
            log,
            "Plug.Session could not decode incoming session cookie. Reason: " <>
-             Exception.message(e)
+             Exception.format(:error, e, __STACKTRACE__)
          )
 
          %{}

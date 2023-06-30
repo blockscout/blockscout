@@ -8,6 +8,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   alias HTTPoison.{Error, Response}
   alias Tesla.Multipart
 
+  @post_timeout :timer.seconds(30)
   @no_metadata_message "Sourcify did not return metadata"
   @failed_verification_message "Unsuccessful Sourcify verification"
 
@@ -27,9 +28,9 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     http_get_request(get_metadata_full_url, [])
   end
 
-  def verify(address_hash_string, files) do
+  def verify(address_hash_string, files, chosen_contract) do
     if RustVerifierInterface.enabled?() do
-      verify_via_rust_microservice(address_hash_string, files)
+      verify_via_rust_microservice(address_hash_string, files, chosen_contract)
     else
       verify_via_sourcify_server(address_hash_string, files)
     end
@@ -43,59 +44,111 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       |> Multipart.add_field("chain", chain_id)
       |> Multipart.add_field("address", address_hash_string)
 
-    multipart_body =
-      files
-      |> Enum.reduce(multipart_text_params, fn file, acc ->
-        if file do
-          acc
-          |> Multipart.add_file(file.path,
-            name: "files",
-            file_name: Path.basename(file.path)
-          )
-        else
-          acc
-        end
-      end)
+    multipart_body = prepare_body_for_sourcify(files, multipart_text_params)
 
     http_post_request(verify_url(), multipart_body)
   end
 
-  # sobelow_skip ["Traversal.FileModule"]
-  def verify_via_rust_microservice(address_hash_string, files) do
+  defp prepare_body_for_sourcify(files, multipart_text_params) when is_map(files) do
+    files
+    |> Enum.reduce(multipart_text_params, fn {name, content}, acc ->
+      if content do
+        acc
+        |> Multipart.add_file_content(content, name, name: "files")
+      else
+        acc
+      end
+    end)
+  end
+
+  defp prepare_body_for_sourcify(files, multipart_text_params) do
+    files
+    |> Enum.reduce(multipart_text_params, fn file, acc ->
+      if file do
+        acc
+        |> Multipart.add_file(file.path,
+          name: "files",
+          file_name: Path.basename(file.path)
+        )
+      else
+        acc
+      end
+    end)
+  end
+
+  def verify_via_rust_microservice(address_hash_string, files, chosen_contract) do
     chain_id = config(__MODULE__, :chain_id)
 
     body_params =
       Map.new()
       |> Map.put("chain", chain_id)
       |> Map.put("address", address_hash_string)
+      |> add_chosen_contract(chosen_contract)
 
-    files_body =
-      files
-      |> Enum.reduce(Map.new(), fn file, acc ->
-        if file do
-          {:ok, file_content} = File.read(file.path)
-
-          file_content =
-            if Helper.json_file?(file.filename) do
-              file_content
-              |> Jason.decode!()
-              |> Jason.encode!()
-            else
-              file_content
-            end
-
-          acc
-          |> Map.put(file.filename, file_content)
-        else
-          acc
-        end
-      end)
+    files_body = prepare_body_for_microservice(files)
 
     body =
       body_params
       |> Map.put("files", files_body)
 
     http_post_request_rust_microservice(verify_url_rust_microservice(), body)
+  end
+
+  defp add_chosen_contract(params, index) when is_binary(index) do
+    case Integer.parse(index) do
+      {integer, ""} ->
+        Map.put(params, "chosenContract", integer)
+
+      _ ->
+        params
+    end
+  end
+
+  defp add_chosen_contract(params, index) when is_number(index) do
+    Map.put(params, "chosenContract", index)
+  end
+
+  defp add_chosen_contract(params, _index), do: params
+
+  defp prepare_body_for_microservice(files) when is_map(files) do
+    files
+    |> Enum.reduce(Map.new(), fn {name, content}, acc ->
+      if content do
+        file_content = get_file_content(name, content)
+
+        acc
+        |> Map.put(name, file_content)
+      else
+        acc
+      end
+    end)
+  end
+
+  # sobelow_skip ["Traversal.FileModule"]
+  defp prepare_body_for_microservice(files) do
+    files
+    |> Enum.reduce(Map.new(), fn file, acc ->
+      if file do
+        {:ok, file_content} = File.read(file.path)
+
+        file_content = get_file_content(file.filename, file_content)
+
+        acc
+        |> Map.put(file.filename, file_content)
+      else
+        acc
+      end
+    end)
+  end
+
+  defp get_file_content(name, content) do
+    if Helper.json_file?(name) do
+      content
+      |> Jason.decode!()
+      |> Jason.encode!()
+    else
+      content
+    end
   end
 
   def http_get_request(url, params) do
@@ -117,10 +170,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       {:error, %Error{reason: reason}} ->
         {:error, reason}
 
-      {:error, :nxdomain} ->
-        {:error, "Sourcify is not responsive"}
-
-      {:error, _} ->
+      _ ->
         {:error, "Unexpected response from Sourcify"}
     end
   end
@@ -138,7 +188,8 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   def http_post_request_rust_microservice(url, body) do
-    request = HTTPoison.post(url, Jason.encode!(body), [{"Content-Type", "application/json"}], recv_timeout: :infinity)
+    request =
+      HTTPoison.post(url, Jason.encode!(body), [{"Content-Type", "application/json"}], recv_timeout: @post_timeout)
 
     case request do
       {:ok, %Response{body: body, status_code: 200}} ->
@@ -155,6 +206,9 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
         parse_check_by_address_http_response(body)
 
       url =~ "/verify" ->
+        parse_verify_http_response(body)
+
+      url =~ "/sourcify/sources:verify" ->
         parse_verify_http_response(body)
 
       url =~ "/files/any" ->
@@ -177,10 +231,10 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
         {:ok, body_json}
 
       # Success status code from Rust microservice
-      %{"status" => "0"} ->
+      %{"status" => "SUCCESS"} ->
         {:ok, body_json}
 
-      %{"status" => "1", "message" => message} ->
+      %{"status" => "FAILURE", "message" => message} ->
         {:error, message}
 
       %{"result" => [%{"status" => unknown_status}]} ->
@@ -265,31 +319,33 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       verification_metadata_sol
       |> Enum.reduce(full_params_initial, fn %{"name" => name, "content" => content, "path" => _path} = param,
                                              full_params_acc ->
-        compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
-
-        if String.downcase(name) == String.downcase(compilation_target_file_name) do
-          %{
-            "params_to_publish" => extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish")),
-            "abi" => Map.get(full_params_acc, "abi"),
-            "secondary_sources" => Map.get(full_params_acc, "secondary_sources"),
-            "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
-            "compilation_target_file_name" => compilation_target_file_name
-          }
-        else
-          secondary_sources = [
-            prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
-          ]
-
-          %{
-            "params_to_publish" => Map.get(full_params_acc, "params_to_publish"),
-            "abi" => Map.get(full_params_acc, "abi"),
-            "secondary_sources" => secondary_sources,
-            "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
-            "compilation_target_file_name" => compilation_target_file_name
-          }
-        end
+        construct_params_from_sourcify(name, full_params_acc, content, param, address_hash_string)
       end)
     end
+  end
+
+  defp construct_params_from_sourcify(name, full_params_acc, content, param, address_hash_string) do
+    compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
+
+    {params_to_publish, secondary_sources} =
+      if String.downcase(name) == String.downcase(compilation_target_file_name) do
+        params_to_publish = extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish"))
+        {params_to_publish, Map.get(full_params_acc, "secondary_sources")}
+      else
+        secondary_sources = [
+          prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
+        ]
+
+        {Map.get(full_params_acc, "params_to_publish"), secondary_sources}
+      end
+
+    %{
+      "params_to_publish" => params_to_publish,
+      "abi" => Map.get(full_params_acc, "abi"),
+      "secondary_sources" => secondary_sources,
+      "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
+      "compilation_target_file_name" => compilation_target_file_name
+    }
   end
 
   defp parse_json_from_sourcify_for_insertion(verification_metadata_json) do
@@ -366,7 +422,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp verify_url_rust_microservice do
-    "#{RustVerifierInterface.base_api_url()}" <> "/sourcify/verify"
+    "#{RustVerifierInterface.base_api_url()}" <> "/verifier/sourcify/sources:verify"
   end
 
   defp check_by_address_url do

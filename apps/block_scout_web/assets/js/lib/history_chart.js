@@ -5,10 +5,21 @@ import humps from 'humps'
 import numeral from 'numeral'
 import { DateTime } from 'luxon'
 import { formatUsdValue } from '../lib/currency'
+import { isDarkMode } from '../lib/dark_mode'
+// @ts-ignore
 import sassVariables from '../../css/export-vars-to-js.module.scss'
 
 Chart.defaults.font.family = 'Nunito, "Helvetica Neue", Arial, sans-serif,"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
 Chart.register(LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip)
+
+// @ts-ignore
+const coinName = document.getElementById('js-coin-name').value
+// @ts-ignore
+const chainId = document.getElementById('js-chain-id').value
+const priceDataKey = `priceData${coinName}`
+const txHistoryDataKey = `txHistoryData${coinName}${chainId}`
+const marketCapDataKey = `marketCapData${coinName}${chainId}`
+const isChartLoadedKey = `isChartLoaded${coinName}${chainId}`
 
 const grid = {
   display: false,
@@ -17,7 +28,7 @@ const grid = {
 }
 
 function getTxChartColor () {
-  if (localStorage.getItem('current-color-mode') === 'dark') {
+  if ((isDarkMode())) {
     return sassVariables.dashboardLineColorTransactionsDarkTheme
   } else {
     return sassVariables.dashboardLineColorTransactions
@@ -25,7 +36,7 @@ function getTxChartColor () {
 }
 
 function getPriceChartColor () {
-  if (localStorage.getItem('current-color-mode') === 'dark') {
+  if ((isDarkMode())) {
     return sassVariables.dashboardLineColorPriceDarkTheme
   } else {
     return sassVariables.dashboardLineColorPrice
@@ -33,7 +44,7 @@ function getPriceChartColor () {
 }
 
 function getMarketCapChartColor () {
-  if (localStorage.getItem('current-color-mode') === 'dark') {
+  if ((isDarkMode())) {
     return sassVariables.dashboardLineColorMarketDarkTheme
   } else {
     return sassVariables.dashboardLineColorMarket
@@ -155,41 +166,37 @@ function setDataToLocalStorage (key, data) {
 
 function getPriceData (marketHistoryData) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('priceData')
+    return getDataFromLocalStorage(priceDataKey)
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
-  setDataToLocalStorage('priceData', data)
+  setDataToLocalStorage(priceDataKey, data)
   return data
 }
 
 function getTxHistoryData (transactionHistory) {
   if (transactionHistory.length === 0) {
-    return getDataFromLocalStorage('txHistoryData')
+    return getDataFromLocalStorage(txHistoryDataKey)
   }
   const data = transactionHistory.map(dataPoint => ({ x: dataPoint.date, y: dataPoint.number_of_transactions }))
 
   // it should be empty value for tx history the current day
   const prevDayStr = data[0].x
   const prevDay = DateTime.fromISO(prevDayStr)
-  let curDay = prevDay.plus({ days: 1 })
-  curDay = curDay.toISODate()
+  const curDay = prevDay.plus({ days: 1 }).toISODate()
   data.unshift({ x: curDay, y: null })
 
-  setDataToLocalStorage('txHistoryData', data)
+  setDataToLocalStorage(txHistoryDataKey, data)
   return data
 }
 
-function getMarketCapData (marketHistoryData, availableSupply) {
+function getMarketCapData (marketHistoryData) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('marketCapData')
+    return getDataFromLocalStorage(marketCapDataKey)
   }
-  const data = marketHistoryData.map(({ date, closingPrice }) => {
-    const supply = (availableSupply !== null && typeof availableSupply === 'object')
-      ? availableSupply[date]
-      : availableSupply
-    return { x: date, y: closingPrice * supply }
+  const data = marketHistoryData.map(({ date, marketCap }) => {
+    return { x: date, y: marketCap }
   })
-  setDataToLocalStorage('marketCapData', data)
+  setDataToLocalStorage(marketCapDataKey, data)
   return data
 }
 
@@ -198,13 +205,14 @@ const priceLineColor = getPriceChartColor()
 const mcapLineColor = getMarketCapChartColor()
 
 class MarketHistoryChart {
-  constructor (el, availableSupply, _marketHistoryData, dataConfig) {
+  constructor (el, _marketHistoryData, dataConfig) {
     const axes = config.options.scales
 
     let priceActivated = true
     let marketCapActivated = true
 
     this.price = {
+      // @ts-ignore
       label: window.localized.Price,
       yAxisID: 'price',
       data: [],
@@ -222,6 +230,7 @@ class MarketHistoryChart {
     }
 
     this.marketCap = {
+      // @ts-ignore
       label: window.localized['Market Cap'],
       yAxisID: 'marketCap',
       data: [],
@@ -241,6 +250,7 @@ class MarketHistoryChart {
     }
 
     this.numTransactions = {
+      // @ts-ignore
       label: window.localized['Tx/day'],
       yAxisID: 'numTransactions',
       data: [],
@@ -259,8 +269,6 @@ class MarketHistoryChart {
       axes.numTransactions.position = 'left'
     }
 
-    this.availableSupply = availableSupply
-
     const txChartTitle = 'Daily transactions'
     const marketChartTitle = 'Daily price and market cap'
     let chartTitle = ''
@@ -271,28 +279,23 @@ class MarketHistoryChart {
     }
     config.options.plugins.title.text = chartTitle
 
+    // @ts-ignore
     config.data.datasets = [this.price, this.marketCap, this.numTransactions]
 
-    const isChartLoadedKey = 'isChartLoaded'
     const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
     if (isChartLoaded) {
       config.options.animation = false
     } else {
-      window.sessionStorage.setItem(isChartLoadedKey, true)
+      window.sessionStorage.setItem(isChartLoadedKey, 'true')
     }
 
+    // @ts-ignore
     this.chart = new Chart(el, config)
   }
 
-  updateMarketHistory (availableSupply, marketHistoryData) {
+  updateMarketHistory (marketHistoryData) {
     this.price.data = getPriceData(marketHistoryData)
-    if (this.availableSupply !== null && typeof this.availableSupply === 'object') {
-      const today = new Date().toJSON().slice(0, 10)
-      this.availableSupply[today] = availableSupply
-      this.marketCap.data = getMarketCapData(marketHistoryData, this.availableSupply)
-    } else {
-      this.marketCap.data = getMarketCapData(marketHistoryData, availableSupply)
-    }
+    this.marketCap.data = getMarketCapData(marketHistoryData)
     this.chart.update()
   }
 
@@ -307,17 +310,16 @@ export function createMarketHistoryChart (el) {
   const dataConfig = $(el).data('history_chart_config')
 
   const $chartError = $('[data-chart-error-message]')
-  const chart = new MarketHistoryChart(el, 0, [], dataConfig)
+  const chart = new MarketHistoryChart(el, [], dataConfig)
   Object.keys(dataPaths).forEach(function (historySource) {
     $.getJSON(dataPaths[historySource], { type: 'JSON' })
       .done(data => {
         switch (historySource) {
           case 'market': {
-            const availableSupply = JSON.parse(data.supply_data)
-            const marketHistoryData = humps.camelizeKeys(JSON.parse(data.history_data))
+            const marketHistoryData = humps.camelizeKeys(data.history_data)
 
             $(el).show()
-            chart.updateMarketHistory(availableSupply, marketHistoryData)
+            chart.updateMarketHistory(marketHistoryData)
             break
           }
           case 'transaction': {

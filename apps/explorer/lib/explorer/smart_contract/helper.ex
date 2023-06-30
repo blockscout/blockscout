@@ -17,7 +17,7 @@ defmodule Explorer.SmartContract.Helper do
   def error?(function), do: function["type"] == "error"
 
   @doc """
-    Checks whether the function which is not queriable can be consider as read function or not. 
+    Checks whether the function which is not queriable can be consider as read function or not.
   """
   @spec read_with_wallet_method?(%{}) :: true | false
   def read_with_wallet_method?(function),
@@ -25,9 +25,7 @@ defmodule Explorer.SmartContract.Helper do
       !error?(function) && !event?(function) && !constructor?(function) && nonpayable?(function) &&
         !empty_outputs?(function)
 
-  def empty_inputs?(function), do: function["inputs"] == []
-
-  def empty_outputs?(function), do: function["outputs"] == []
+  def empty_outputs?(function), do: is_nil(function["outputs"]) || function["outputs"] == []
 
   def payable?(function), do: function["stateMutability"] == "payable" || function["payable"]
 
@@ -99,6 +97,36 @@ defmodule Explorer.SmartContract.Helper do
 
       _ ->
         false
+    end
+  end
+
+  def prepare_bytecode_for_microservice(body, creation_input, deployed_bytecode)
+
+  def prepare_bytecode_for_microservice(body, empty, deployed_bytecode) when is_nil(empty) do
+    body
+    |> Map.put("bytecodeType", "DEPLOYED_BYTECODE")
+    |> Map.put("bytecode", deployed_bytecode)
+  end
+
+  def prepare_bytecode_for_microservice(body, creation_bytecode, _deployed_bytecode) do
+    body
+    |> Map.put("bytecodeType", "CREATION_INPUT")
+    |> Map.put("bytecode", creation_bytecode)
+  end
+
+  def cast_libraries(map) do
+    map
+    |> Map.values()
+    |> Enum.reduce(%{}, fn map, acc -> Map.merge(acc, map) end)
+  end
+
+  def contract_creation_input(address_hash) do
+    case Chain.smart_contract_creation_tx_bytecode(address_hash) do
+      %{init: init, created_contract_code: _created_contract_code} ->
+        init
+
+      _ ->
+        nil
     end
   end
 end

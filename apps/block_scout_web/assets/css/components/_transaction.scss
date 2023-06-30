@@ -8,7 +8,7 @@
 	}
 }
 
-.download-all-transactions {
+.download-all-items {
 	text-align: center;
 	color: #a3a9b5;
 	font-size: 13px;
@@ -16,7 +16,7 @@
 	@media (min-width: 768px) {
 		margin-top: 30px;
 	}
-	.download-all-transactions-link {
+	.download-all-items-link {
 		display: inline-flex;
 		align-items: center;
 		text-decoration: none;
@@ -51,6 +51,34 @@
 .address-mobile {
 	@include media-breakpoint-down(sm) {
 		width: 80px;
+	}
+}
+
+.actions-item {
+	margin-bottom: 4px;
+	display: inline-block;
+
+	i {
+		font-size: 10px;
+	}
+	&.subitem {
+		margin-left: 10px;
+	}
+}
+
+.actions-list-mobile-container {
+	@include media-breakpoint-down(sm) {
+		margin-top: 0.5rem;
+	}
+}
+
+#actions-list-scroll-note {
+	padding-left: 19px;
+	font-size: 11px;
+	display: none;
+
+	@media (max-width: $breakpoint-md) {
+		padding-left: 0;
 	}
 }
 

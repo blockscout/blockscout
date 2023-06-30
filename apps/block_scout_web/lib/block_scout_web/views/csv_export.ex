@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.CsvExportView do
 
   alias Explorer.Chain
   alias Explorer.Chain.Address
+  alias Explorer.Chain.CSVExport.Helper
 
   defp type_display_name(type) do
     case type do
@@ -29,16 +30,5 @@ defmodule BlockScoutWeb.CsvExportView do
       address_hash
       |> Address.checksum()
     end
-  end
-
-  defp default_period_start do
-    DateTime.utc_now()
-    |> Timex.shift(months: -1)
-    |> Timex.format!("{YYYY}-{0M}-{0D}")
-  end
-
-  defp default_period_end do
-    DateTime.utc_now()
-    |> Timex.format!("{YYYY}-{0M}-{0D}")
   end
 end

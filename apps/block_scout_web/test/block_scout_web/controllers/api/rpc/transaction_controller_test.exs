@@ -739,7 +739,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
       EthereumJSONRPC.Mox,
       :json_rpc,
       fn _json, [] ->
-        {:ok}
+        {:ok, :ok}
       end
     )
 

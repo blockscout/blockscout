@@ -28,25 +28,27 @@ const elements = {
         $('#spinner').hide()
         $('#gallery img').attr('src', 'data:image/svg+xml;base64,' + state.contract_svg)
         const gallery = document.getElementById('gallery')
-        const viewer = new Viewer(gallery, {
-          inline: false,
-          toolbar: {
-            zoomIn: 2,
-            zoomOut: 4,
-            oneToOne: 4,
-            reset: 4,
-            play: {
-              show: 4,
-              size: 'large'
-            },
-            rotateLeft: 4,
-            rotateRight: 4,
-            flipHorizontal: 4,
-            flipVertical: 4
-          }
-        })
-        viewer.update()
-        $el.show()
+        if (gallery) {
+          const viewer = new Viewer(gallery, {
+            inline: false,
+            toolbar: {
+              zoomIn: 2,
+              zoomOut: 4,
+              oneToOne: 4,
+              reset: 4,
+              play: {
+                show: 4,
+                size: 'large'
+              },
+              rotateLeft: 4,
+              rotateRight: 4,
+              flipHorizontal: 4,
+              flipVertical: 4
+            }
+          })
+          viewer.update()
+          $el.show()
+        }
       } else if (state.visualize_error) {
         $('#spinner').hide()
         $el.empty().text('Cannot visualize contract: ' + state.visualize_error)

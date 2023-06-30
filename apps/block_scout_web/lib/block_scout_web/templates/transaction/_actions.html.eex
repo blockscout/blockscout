@@ -1,0 +1,140 @@
+<%= if @action.protocol == :aave_v3 do %>
+  <%= if Enum.member?([:borrow, :supply, :withdraw, :repay, :flash_loan], @action.type) do %>
+    <div class="<%= if @isLast, do: "lastItem", else: "" %>">
+      <span class="actions-item">
+        <% amount = formatted_action_amount(@action.data, "amount") %>
+        <% symbol = Map.get(@action.data, "symbol") %>
+        <% address = Map.get(@action.data, "address") %>
+
+        <i class="fa fa-caret-right"></i>
+
+        <% symbol = if symbol != "Ether", do: link(symbol, to: token_path(BlockScoutWeb.Endpoint, :show, address), "data-test": "token_link"), else: raw(symbol) %>
+
+        <%= if @action.type == :borrow do %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_aave.html", action: "Borrow", amount: amount, symbol: symbol, tail: "From Aave Protocol V3" %>
+        <% end %>
+        <%= if @action.type == :supply do %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_aave.html", action: "Supply", amount: amount, symbol: symbol, tail: "To Aave Protocol V3" %>
+        <% end %>
+        <%= if @action.type == :withdraw do %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_aave.html", action: "Withdraw", amount: amount, symbol: symbol, tail: "From Aave Protocol V3" %>
+        <% end %>
+        <%= if @action.type == :repay do %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_aave.html", action: "Repay", amount: amount, symbol: symbol, tail: "To Aave Protocol V3" %>
+        <% end %>
+        <%= if @action.type == :flash_loan do %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_aave.html", action: "Flash Loan", amount: amount, symbol: symbol, tail: "From Aave Protocol V3" %>
+        <% end %>
+      </span>
+      <br />
+    </div>
+  <% end %>
+  <%= if Enum.member?([:enable_collateral, :disable_collateral], @action.type) do %>
+    <div class="<%= if @isLast, do: "lastItem", else: "" %>">
+      <span class="actions-item">
+        <% symbol = Map.get(@action.data, "symbol") %>
+        <% address = Map.get(@action.data, "address") %>
+
+        <i class="fa fa-caret-right"></i>
+
+        <% symbol = if symbol != "Ether", do: link(symbol, to: token_path(BlockScoutWeb.Endpoint, :show, address), "data-test": "token_link"), else: raw(symbol) %>
+
+        <%= if @action.type == :enable_collateral do %>
+          <span class="text-muted">Enable</span>
+        <% else %>
+          <span class="text-muted">Disable</span>
+        <% end %>
+
+        <%= symbol %> <span class="text-muted">as Collateral on Aave Protocol V3</span>
+      </span>
+      <br />
+    </div>
+  <% end %>
+  <%= if @action.type == :liquidation_call do %>
+    <div class="<%= if @isLast, do: "lastItem", else: "" %>">
+      <% debt_amount = formatted_action_amount(@action.data, "debt_amount") %>
+      <% debt_symbol = Map.get(@action.data, "debt_symbol") %>
+      <% debt_address = Map.get(@action.data, "debt_address") %>
+      <% debt_symbol = if debt_symbol != "Ether", do: link(debt_symbol, to: token_path(BlockScoutWeb.Endpoint, :show, debt_address), "data-test": "token_link"), else: raw(debt_symbol) %>
+
+      <span class="actions-item">
+        <i class="fa fa-caret-right"></i>
+        <%= render BlockScoutWeb.TransactionView, "_actions_aave.html", action: "Liquidator Repay", amount: debt_amount, symbol: debt_symbol, tail: "To Aave Protocol V3" %>
+      </span>
+      <br />
+
+      <% collateral_amount = formatted_action_amount(@action.data, "collateral_amount") %>
+      <% collateral_symbol = Map.get(@action.data, "collateral_symbol") %>
+      <% collateral_address = Map.get(@action.data, "collateral_address") %>
+      <% collateral_symbol = if collateral_symbol != "Ether", do: link(collateral_symbol, to: token_path(BlockScoutWeb.Endpoint, :show, collateral_address), "data-test": "token_link"), else: raw(collateral_symbol) %>
+
+      <span class="actions-item">
+        <i class="fa fa-caret-right"></i>
+        <%= render BlockScoutWeb.TransactionView, "_actions_aave.html", action: "Liquidation", amount: collateral_amount, symbol: collateral_symbol, tail: "On Aave Protocol V3" %>
+      </span>
+      <br />
+    </div>
+  <% end %>
+<% end %>
+<%= if @action.protocol == :uniswap_v3 do %>
+  <%= if @action.type == :mint_nft do %>
+    <div class="<%= if @isLast, do: "lastItem", else: "" %>">
+      <span class="actions-item">
+        <i class="fa fa-caret-right"></i>
+
+        <% address_string = Map.get(@action.data, "address") %>
+        <% {address_status, address} = transaction_action_string_to_address(address_string) %>
+        <% address = if address_status == :ok, do: render_to_string(BlockScoutWeb.AddressView, "_link.html", address: address, contract: BlockScoutWeb.AddressView.contract?(address), use_custom_tooltip: false, trimmed: false), else: render_to_string(BlockScoutWeb.TransactionView, "_actions_address.html", address_string: address_string, action: @action) %>
+        <% to_address = Map.get(@action.data, "to") %>
+        <% to_content = raw(render_to_string BlockScoutWeb.TransactionView, "_actions_to.html", address: to_address) %>
+        <% to = link to: address_path(BlockScoutWeb.Endpoint, :show, to_address), "data-test": "address_hash_link", do: to_content %>
+
+        <%= gettext("Mint of %{address} <span class=\"text-muted\">To</span> %{to}", address: address, to: safe_to_string(to)) |> raw() %>
+      </span>
+      <br />
+
+      <% token_ids = Map.get(@action.data, "ids") %>
+      <%= for id <- token_ids do %>
+        <span class="actions-item subitem">
+          <i class="fa fa-caret-right"></i>
+          <% link_to_id = link id, to: token_instance_path(BlockScoutWeb.Endpoint, :show, address_string, id), "data-test": "token_link" %>
+          <%= gettext("%{qty} of <span class=\"text-muted\">Token ID [%{link_to_id}]</span>", qty: 1, link_to_id: safe_to_string(link_to_id)) |> raw() %>
+        </span>
+        <br />
+      <% end %>
+    </div>
+  <% end %>
+  <%= if Enum.member?([:mint, :burn, :collect, :swap], @action.type) do %>
+    <div class="<%= if @isLast, do: "lastItem", else: "" %>">
+      <span class="actions-item">
+        <% amount0 = formatted_action_amount(@action.data, "amount0") %>
+        <% amount1 = formatted_action_amount(@action.data, "amount1") %>
+
+        <% symbol0 = Map.get(@action.data, "symbol0") %>
+        <% address0 = Map.get(@action.data, "address0") %>
+        <% symbol1 = Map.get(@action.data, "symbol1") %>
+        <% address1 = Map.get(@action.data, "address1") %>
+        
+        <i class="fa fa-caret-right"></i>
+        
+        <% symbol0 = if symbol0 != "Ether", do: link(symbol0, to: token_path(BlockScoutWeb.Endpoint, :show, address0), "data-test": "token_link"), else: raw(symbol0) %>
+        
+        <% symbol1 = if symbol1 != "Ether", do: link(symbol1, to: token_path(BlockScoutWeb.Endpoint, :show, address1), "data-test": "token_link"), else: raw(symbol1) %>
+
+        <%= if @action.type == :mint do %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_uniswap.html", action: "Add", amount0: amount0, symbol0: symbol0, conjunction: "And", amount1: amount1, symbol1: symbol1, tail: "Liquidity To Uniswap V3" %>
+        <% end %>
+        <%= if @action.type == :burn do %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_uniswap.html", action: "Remove", amount0: amount0, symbol0: symbol0, conjunction: "And", amount1: amount1, symbol1: symbol1, tail: "Liquidity From Uniswap V3" %>
+        <% end %>
+        <%= if @action.type == :collect do %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_uniswap.html", action: "Collect", amount0: amount0, symbol0: symbol0, conjunction: "And", amount1: amount1, symbol1: symbol1, tail: "From Uniswap V3" %>
+        <% end %>
+        <%= if @action.type == :swap do %>
+          <%= render BlockScoutWeb.TransactionView, "_actions_uniswap.html", action: "Swap", amount0: amount0, symbol0: symbol0, conjunction: "For", amount1: amount1, symbol1: symbol1, tail: "On Uniswap V3" %>
+        <% end %>
+      </span>
+      <br />
+    </div>
+  <% end %>
+<% end %>

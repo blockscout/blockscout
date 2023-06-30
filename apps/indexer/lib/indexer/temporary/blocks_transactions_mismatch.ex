@@ -3,7 +3,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
   Fetches `consensus` `t:Explorer.Chain.Block.t/0` and compares their transaction
   number against a node, to revoke `consensus` on mismatch.
 
-  This is meant to fix incorrectly strored transactions that happened as a result
+  This is meant to fix incorrectly stored transactions that happened as a result
   of a race condition due to the asynchronicity of indexer's components.
   """
 
@@ -14,8 +14,9 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
   import Ecto.Query
 
   alias EthereumJSONRPC.Blocks
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block
-  alias Explorer.Repo
+  alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.BufferedTask
 
   @behaviour BufferedTask
@@ -52,12 +53,15 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
     query =
       from(block in Block,
         left_join: transactions in assoc(block, :transactions),
-        where: block.consensus and block.refetch_needed,
+        where: block.consensus == true and block.refetch_needed,
         group_by: block.hash,
         select: {block.hash, count(transactions.hash)}
       )
 
-    {:ok, final} = Repo.stream_reduce(query, initial, &reducer.(&1, &2))
+    {:ok, final} =
+      query
+      |> Chain.add_fetcher_limit(true)
+      |> Repo.stream_reduce(initial, &reducer.(&1, &2))
 
     final
   end
@@ -111,9 +115,12 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
     end
 
     unless Enum.empty?(unmatching_blocks_data) do
-      unmatching_blocks_data
-      |> Enum.map(fn {hash, _trans_num} -> hash end)
-      |> update_in_order(refetch_needed: false, consensus: false)
+      {_, updated_numbers} =
+        unmatching_blocks_data
+        |> Enum.map(fn {hash, _trans_num} -> hash end)
+        |> update_in_order(refetch_needed: false, consensus: false)
+
+      MissingRangesManipulator.add_ranges_by_block_numbers(updated_numbers)
     end
 
     if Enum.empty?(missing_blocks_data) do
@@ -133,7 +140,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
       )
 
     Repo.update_all(
-      from(b in Block, join: s in subquery(query), on: b.hash == s.hash),
+      from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: b.number),
       set: fields_to_set
     )
   end

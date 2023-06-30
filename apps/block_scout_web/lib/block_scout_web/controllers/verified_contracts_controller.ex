@@ -4,9 +4,10 @@ defmodule BlockScoutWeb.VerifiedContractsController do
   import BlockScoutWeb.Chain,
     only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1, fetch_page_number: 1]
 
+  import BlockScoutWeb.PagingHelper, only: [current_filter: 1, search_query: 1]
+
   alias BlockScoutWeb.{Controller, VerifiedContractsView}
-  alias Explorer.{Chain, Market}
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Chain
   alias Phoenix.View
 
   @necessity_by_association %{[address: :token] => :optional}
@@ -23,14 +24,9 @@ defmodule BlockScoutWeb.VerifiedContractsController do
 
     items =
       for contract <- verified_contracts do
-        token =
-          if contract.address.token,
-            do: Market.get_exchange_rate(contract.address.token.symbol),
-            else: Token.null()
-
         View.render_to_string(VerifiedContractsView, "_contract.html",
           contract: contract,
-          token: token
+          token: contract.address.token
         )
       end
 
@@ -54,22 +50,4 @@ defmodule BlockScoutWeb.VerifiedContractsController do
       new_verified_contracts_count: Chain.count_new_verified_contracts_from_cache()
     )
   end
-
-  defp current_filter(%{"filter" => "solidity"}) do
-    [filter: :solidity]
-  end
-
-  defp current_filter(%{"filter" => "vyper"}) do
-    [filter: :vyper]
-  end
-
-  defp current_filter(_), do: []
-
-  defp search_query(%{"search" => ""}), do: []
-
-  defp search_query(%{"search" => search_string}) do
-    [search: search_string]
-  end
-
-  defp search_query(_), do: []
 end

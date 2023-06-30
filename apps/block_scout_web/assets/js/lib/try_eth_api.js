@@ -40,6 +40,7 @@ function parseInput (input) {
       return value
     case 'json':
       try {
+        // @ts-ignore
         return JSON.parse(value)
       } catch (e) {
         return {}

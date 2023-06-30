@@ -144,7 +144,7 @@ defmodule BlockScoutWeb.Tokens.OverviewViewTest do
       token =
         :token
         |> build(decimals: Decimal.new(0), total_supply: Decimal.new(20))
-        |> Map.put(:usd_value, Decimal.new(10))
+        |> Map.put(:fiat_value, Decimal.new(10))
         |> Map.put(:custom_cap, nil)
 
       result = OverviewView.total_supply_usd(token)
@@ -156,7 +156,7 @@ defmodule BlockScoutWeb.Tokens.OverviewViewTest do
       token =
         :token
         |> build(decimals: Decimal.new(1), total_supply: Decimal.new(20))
-        |> Map.put(:usd_value, Decimal.new(10))
+        |> Map.put(:fiat_value, Decimal.new(10))
         |> Map.put(:custom_cap, nil)
 
       result = OverviewView.total_supply_usd(token)

@@ -19,6 +19,7 @@ defmodule EthereumJSONRPC.FetchedBalances do
   """
   def from_responses(responses, id_to_params) do
     responses
+    |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.map(&FetchedBalance.from_response(&1, id_to_params))
     |> Enum.reduce(
       %__MODULE__{},

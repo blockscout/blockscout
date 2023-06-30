@@ -22,6 +22,13 @@ defmodule BlockScoutWeb.ErrorView do
     "Unprocessable entity"
   end
 
+  def render("500.html", %{conn: conn}) do
+    render(BlockScoutWeb.InternalServerErrorView, "index.html",
+      layout: {BlockScoutWeb.LayoutView, "app.html"},
+      conn: conn
+    )
+  end
+
   def render("500." <> _type, _assigns) do
     "Internal server error"
   end

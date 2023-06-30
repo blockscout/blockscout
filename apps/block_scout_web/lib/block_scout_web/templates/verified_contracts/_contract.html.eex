@@ -41,7 +41,7 @@
             <i style="color: #dc3545;" class="fa-regular fa-circle-xmark"></i>
         <% end %>
     </td>
-    <!-- Construcor agruments -->
+    <!-- Constructor arguments -->
     <td class="stakes-td text-center">
         <%= if @contract.constructor_arguments do %>
             <i style="color: #20b760;" class="fa-regular fa-circle-check"></i>
@@ -55,7 +55,10 @@
     </td>
     <!-- Market cap -->
     <td class="stakes-td">
-        <% market_cap_usd = if @token && @token.market_cap_usd, do: @token.market_cap_usd, else: gettext("N/A") %>
-        <span><%= market_cap_usd %></span>
+        <%= if @token && @token.decimals && @token.total_supply && @token.fiat_value do %>
+            <span data-selector="verified-contract-market-cap-usd" data-usd-value="<%= total_supply_usd(@token) %>"></span>
+        <% else %>
+            <span data-selector="verified-contract-market-cap-usd"> <%= gettext "N/A" %> </span>
+        <% end %>
     </td>
 </tr>

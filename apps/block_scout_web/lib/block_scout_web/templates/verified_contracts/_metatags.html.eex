@@ -4,5 +4,5 @@
         subnetwork: BlockScoutWeb.LayoutView.subnetwork_title()
     ) %>
 </title>
-<meta name="keywords" content="<%= gettext "Verifed contracts, %{subnetwork}, %{coin}", subnetwork: BlockScoutWeb.LayoutView.subnetwork_title(), coin: Explorer.coin() %>">
+<meta name="keywords" content="<%= gettext "Verified contracts, %{subnetwork}, %{coin}", subnetwork: BlockScoutWeb.LayoutView.subnetwork_title(), coin: Explorer.coin() %>">
 <meta name="description" content="<%= gettext "View the verified contracts on %{subnetwork}", subnetwork: BlockScoutWeb.LayoutView.subnetwork_title() %>">

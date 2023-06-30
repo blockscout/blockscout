@@ -1,6 +1,6 @@
 defmodule Explorer.ExchangeRates do
   @moduledoc """
-  Local cache for token exchange rates.
+  Local cache for native coin exchange rates.
 
   Exchange rate data is updated every 10 minutes or CACHE_EXCHANGE_RATES_PERIOD seconds.
   """
@@ -10,10 +10,9 @@ defmodule Explorer.ExchangeRates do
   require Logger
 
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Counters.Helper
   alias Explorer.ExchangeRates.{Source, Token}
 
-  @interval Helper.cache_period_default_in_minutes("CACHE_EXCHANGE_RATES_PERIOD", 10)
+  @interval Application.compile_env(:explorer, __MODULE__)[:cache_period]
   @table_name :exchange_rates
 
   @impl GenServer

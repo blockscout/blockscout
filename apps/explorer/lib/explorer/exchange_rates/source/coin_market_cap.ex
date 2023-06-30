@@ -3,7 +3,7 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   Adapter for fetching exchange rates from https://coinmarketcap.com/api/
   """
 
-  alias Explorer.{Chain, ExchangeRates}
+  alias Explorer.Chain
   alias Explorer.ExchangeRates.{Source, Token}
 
   import Source, only: [to_decimal: 1]
@@ -81,7 +81,7 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   end
 
   defp api_key do
-    Application.get_env(:explorer, ExchangeRates)[:coinmarketcap_api_key]
+    config(:api_key)
   end
 
   defp get_token_properties(market_data) do

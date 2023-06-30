@@ -3,7 +3,7 @@
     <%= @type %> (<span data-number-of-tokens-by-type="<%= @type %>"><%= Enum.count(@token_balances)%></span>)
   </h6>
 
-  <%= for {token_balance, token} <- sort_by_usd_value_and_name(@token_balances) do %>
+  <%= for {token_balance, token} <- @token_balances do %>
     <div
       class="border-bottom"
       data-dropdown-token-balance-test
@@ -21,7 +21,7 @@
             class: "dropdown-item"
           ) do %>
         <div class="row dropdown-row wh-sp">
-          <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
+          <%= if Application.get_env(:block_scout_web, :display_token_icons) do %>
             <% chain_id_for_token_icon = Application.get_env(:block_scout_web, :chain_id) %>
             <% address_hash = token.contract_address_hash %>
             <%=
@@ -32,23 +32,23 @@
               additional_classes: ["token-wallet-icon"]
             %>
           <% end %>
-          <p class="mb-0 col-md-6 pl-0 pr-0 el-1 flex-grow-2 <%= if System.get_env("DISPLAY_TOKEN_ICONS") !== "true", do: "ml-5px" %>"><%= token_name(token) %>
+          <p class="mb-0 col-md-6 pl-0 pr-0 el-1 flex-grow-2 <%= if !Application.get_env(:block_scout_web, :display_token_icons), do: "ml-5px" %>"><%= token_name(token) %>
           </p>
-          <%= if token.usd_value do %>
+          <%= if token.fiat_value && token.decimals do %>
             <p class="mb-0 col-md-6 text-right usd-total">
-              <span data-selector="token-balance-usd" data-usd-value="<%= Chain.balance_in_usd(token_balance, token) %>"></span>
+              <span data-selector="token-balance-usd" data-usd-value="<%= Chain.balance_in_fiat(token_balance, token) %>"></span>
             </p>
           <% end %>
         </div>
         <div class="row dropdown-row wh-sp">
-          <%= if token.usd_value do %>
+          <%= if token.fiat_value do %>
             <p class="mb-0 text-right text-muted usd-rate">
-              <span data-selector="token-price" data-token-usd-value="<%= token.usd_value %>"></span>
+              <span data-selector="token-price" data-token-usd-value="<%= token.fiat_value %>"></span>
             </p>
           <% end %>
         </div>
         <div class="row dropdown-row wh-sp">
-          <p class="mb-0 ml-5px dropdown-amount <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true", do: "ml-20px" %>">
+          <p class="mb-0 ml-5px dropdown-amount <%= if Application.get_env(:block_scout_web, :display_token_icons), do: "ml-20px" %>">
             <%= if token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id) do %>
               1
             <% else %>
