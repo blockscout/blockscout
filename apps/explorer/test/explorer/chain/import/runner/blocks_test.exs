@@ -354,10 +354,9 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, new_block)
       %Ecto.Changeset{valid?: true, changes: block_changes1} = Block.changeset(%Block{}, new_block1)
 
-      result =
-        Multi.new()
-        |> Blocks.run([block_changes, block_changes1], options)
-        |> Repo.transaction()
+      Multi.new()
+      |> Blocks.run([block_changes, block_changes1], options)
+      |> Repo.transaction()
 
       assert %{block_number: ^number, block_hash: ^hash} = Repo.one(PendingBlockOperation)
     end

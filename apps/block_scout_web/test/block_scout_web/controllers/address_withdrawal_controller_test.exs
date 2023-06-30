@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.AddressWithdrawalControllerTest do
   import BlockScoutWeb.WeiHelper, only: [format_wei_value: 2]
   import Mox
 
-  alias Explorer.Chain.{Address, Transaction}
+  alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
 
   setup :verify_on_exit!
