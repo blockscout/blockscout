@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  redis_db:
+    extends:
+      file: ./services/docker-compose-redis.yml
+      service: redis_db
+
+  db:
+    extends:
+      file: ./services/docker-compose-db.yml
+      service: db
+
+  backend:
+    depends_on:
+      - db
+      - smart-contract-verifier
+      - redis_db
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+      args:
+        CACHE_EXCHANGE_RATES_PERIOD: ""
+        API_V1_READ_METHODS_DISABLED: "true"
+        DISABLE_WEBAPP: "true"
+        API_V1_WRITE_METHODS_DISABLED: "true"
+        CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED: ""
+        CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
+        ADMIN_PANEL_ENABLED: ""
+        RELEASE_VERSION: 5.2.0
+    restart: always
+    container_name: 'blockscout'
+    links:
+      - db:database
+    command: bash -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      -  ./envs/common-blockscout.env
+    environment:
+      API_V2_ENABLED: 'true'
+      ETHEREUM_JSONRPC_HTTP_URL: 'http://temporary-inhouse-alb-1675552331.ap-northeast-2.elb.amazonaws.com:8545'
+      CHAIN_ID: '7791'
+      INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
+      INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
+      INDEXER_OPTIMISM_L1_RPC: 'https://api.easel.kroma.cc'
+      INDEXER_OPTIMISM_L1_BATCH_START_BLOCK: '483000'
+      INDEXER_OPTIMISM_L1_BATCH_INBOX: '0xbac1000000000000000000000000000000000001'
+      INDEXER_OPTIMISM_L1_BATCH_SUBMITTER: '0xDE59a71027b7605DeB314a39A8455f1d69b7a9a3'
+      INDEXER_OPTIMISM_L1_PORTAL_CONTRACT: '0x66F625B8c4c635af8b74ECe2d7eD0D58b4af3C3d'
+      INDEXER_OPTIMISM_L1_OUTPUT_ROOTS_START_BLOCK: '483649'
+      INDEXER_OPTIMISM_L1_OUTPUT_ORACLE_CONTRACT: '0x74Cf9087AD26D541930BaC724B7ab21bA8F00a27'
+      INDEXER_OPTIMISM_L1_WITHDRAWALS_START_BLOCK: '502139'
+      INDEXER_OPTIMISM_L2_WITHDRAWALS_START_BLOCK: '82718'
+      INDEXER_OPTIMISM_L2_MESSAGE_PASSER_CONTRACT: '0x4200000000000000000000000000000000000003'
+      INDEXER_OPTIMISM_L1_DEPOSITS_START_BLOCK: '483700'
+    ports:
+      - 4000:4000
+    volumes:
+      - ./logs/:/app/logs/
+
+  smart-contract-verifier:
+    extends:
+      file: ./services/docker-compose-smart-contract-verifier.yml
+      service: smart-contract-verifier
+
+  visualizer:
+    extends:
+      file: ./services/docker-compose-visualizer.yml
+      service: visualizer
+
+  sig-provider:
+    extends:
+      file: ./services/docker-compose-sig-provider.yml
+      service: sig-provider
+
+  stats-db:
+    depends_on:
+      - backend
+    extends:
+      file: ./services/docker-compose-stats.yml
+      service: stats-db
+
+  stats:
+    depends_on:
+      - backend
+    extends:
+      file: ./services/docker-compose-stats.yml
+      service: stats
