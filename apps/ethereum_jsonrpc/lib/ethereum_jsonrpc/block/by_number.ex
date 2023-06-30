@@ -5,7 +5,7 @@ defmodule EthereumJSONRPC.Block.ByNumber do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
-  def request(%{id: id, number: number}) do
-    EthereumJSONRPC.request(%{id: id, method: "eth_getBlockByNumber", params: [integer_to_quantity(number), true]})
+  def request(%{id: id, number: number}, hydrated \\ true) do
+    EthereumJSONRPC.request(%{id: id, method: "eth_getBlockByNumber", params: [integer_to_quantity(number), hydrated]})
   end
 end

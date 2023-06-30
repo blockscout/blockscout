@@ -538,6 +538,17 @@ config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
 
 config :indexer, Indexer.Fetcher.Withdrawal, first_block: System.get_env("WITHDRAWALS_FIRST_BLOCK")
 
+config :indexer, Indexer.Fetcher.PolygonSupernet,
+  polygon_supernet_l1_rpc: System.get_env("INDEXER_POLYGON_SUPERNET_L1_RPC")
+
+config :indexer, Indexer.Fetcher.PolygonSupernetWithdrawal,
+  start_block_l2: System.get_env("INDEXER_POLYGON_SUPERNET_L2_WITHDRAWALS_START_BLOCK"),
+  state_sender: System.get_env("INDEXER_POLYGON_SUPERNET_L2_STATE_SENDER_CONTRACT")
+
+config :indexer, Indexer.Fetcher.PolygonSupernetWithdrawalExit,
+  start_block_l1: System.get_env("INDEXER_POLYGON_SUPERNET_L1_WITHDRAWALS_START_BLOCK"),
+  exit_helper: System.get_env("INDEXER_POLYGON_SUPERNET_L1_EXIT_HELPER_CONTRACT")
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do

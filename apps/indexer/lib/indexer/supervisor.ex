@@ -122,6 +122,9 @@ defmodule Indexer.Supervisor do
         {TokenUpdater.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
+        {PolygonSupernet.Supervisor, [[memory_monitor: memory_monitor]]},
+        {PolygonSupernetWithdrawal.Supervisor,
+         [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]},
 
         # Out-of-band fetchers
         {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
