@@ -2,7 +2,6 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.Cache.GasPriceOracle
-  alias Explorer.Repo
 
   describe "get_average_gas_price/4" do
     test "returns nil percentile values if no blocks in the DB" do
