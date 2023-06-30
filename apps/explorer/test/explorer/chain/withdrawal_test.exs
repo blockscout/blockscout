@@ -3,7 +3,6 @@ defmodule Explorer.Chain.WithdrawalTest do
 
   alias Ecto.Changeset
   alias Explorer.Chain.Withdrawal
-  alias Explorer.Chain
 
   describe "changeset/2" do
     test "with valid attributes" do

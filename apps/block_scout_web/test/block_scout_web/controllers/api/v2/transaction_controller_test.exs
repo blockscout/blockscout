@@ -1,9 +1,7 @@
 defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
-  import Mox
 
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Account.WatchlistAddress
@@ -109,7 +107,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       |> with_block()
 
       auth = build(:auth)
-      address = insert(:address)
+      insert(:address)
       {:ok, user} = UserFromAuth.find_or_create(auth)
 
       conn = Plug.Test.init_test_session(conn, current_user: user)
@@ -234,15 +232,14 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         |> insert()
         |> with_block()
 
-      tt =
-        insert(:token_transfer,
-          transaction: tx,
-          block: tx.block,
-          block_number: tx.block_number,
-          token_contract_address: token.contract_address,
-          token_ids: Enum.map(0..50, fn x -> x end),
-          amounts: Enum.map(0..50, fn x -> x end)
-        )
+      insert(:token_transfer,
+        transaction: tx,
+        block: tx.block,
+        block_number: tx.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
 
       request = get(conn, "/api/v2/transactions/" <> to_string(tx.hash))
 
@@ -250,6 +247,35 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       compare_item(tx, response)
 
       assert Enum.count(response["token_transfers"]) == 10
+    end
+
+    test "single 1155 flattened", %{conn: conn} do
+      token = insert(:token, type: "ERC-1155")
+
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      tt =
+        insert(:token_transfer,
+          transaction: tx,
+          block: tx.block,
+          block_number: tx.block_number,
+          token_contract_address: token.contract_address,
+          token_ids: [1],
+          amounts: [2],
+          amount: nil
+        )
+
+      request = get(conn, "/api/v2/transactions/" <> to_string(tx.hash))
+
+      assert response = json_response(request, 200)
+      compare_item(tx, response)
+
+      assert Enum.count(response["token_transfers"]) == 1
+      assert is_map(Enum.at(response["token_transfers"], 0)["total"])
+      assert compare_item(%TokenTransfer{tt | amount: 2}, Enum.at(response["token_transfers"], 0))
     end
   end
 
@@ -896,64 +922,35 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
 
     test "return existing tx", %{conn: conn} do
-      EthereumJSONRPC.Mox
-      |> stub(:json_rpc, fn
-        [%{id: id, method: "eth_getBalance", params: _}], _options ->
-          {:ok, [%{id: id, result: integer_to_quantity(123)}]}
-
-        [%{id: _id, method: "eth_getBlockByNumber", params: _}], _options ->
-          {:ok,
-           [
-             %{
-               id: 0,
-               jsonrpc: "2.0",
-               result: %{
-                 "author" => "0x0000000000000000000000000000000000000000",
-                 "difficulty" => "0x20000",
-                 "extraData" => "0x",
-                 "gasLimit" => "0x663be0",
-                 "gasUsed" => "0x0",
-                 "hash" => "0x5b28c1bfd3a15230c9a46b399cd0f9a6920d432e85381cc6a140b06e8410112f",
-                 "logsBloom" =>
-                   "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-                 "miner" => "0x0000000000000000000000000000000000000000",
-                 "number" => integer_to_quantity(1),
-                 "parentHash" => "0x0000000000000000000000000000000000000000000000000000000000000000",
-                 "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-                 "sealFields" => [
-                   "0x80",
-                   "0xb8410000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-                 ],
-                 "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
-                 "signature" =>
-                   "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-                 "size" => "0x215",
-                 "stateRoot" => "0xfad4af258fd11939fae0c6c6eec9d340b1caac0b0196fd9a1bc3f489c5bf00b3",
-                 "step" => "0",
-                 "timestamp" => "0x0",
-                 "totalDifficulty" => "0x20000",
-                 "transactions" => [],
-                 "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-                 "uncles" => []
-               }
-             }
-           ]}
-      end)
-
-      insert(:block)
-      insert(:block)
-      address_a = insert(:address)
-      address_b = insert(:address)
+      block_before = insert(:block)
 
       transaction =
         :transaction
-        |> insert(from_address: address_a, to_address: address_b, value: 1000)
+        |> insert()
         |> with_block(status: :ok)
+
+      insert(:address_coin_balance,
+        address: transaction.from_address,
+        address_hash: transaction.from_address_hash,
+        block_number: block_before.number
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.to_address,
+        address_hash: transaction.to_address_hash,
+        block_number: block_before.number
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.block.miner,
+        address_hash: transaction.block.miner_hash,
+        block_number: block_before.number
+      )
 
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
 
       assert response = json_response(request, 200)
-      assert Enum.count(response) == 3
+      assert Enum.count(response["items"]) == 3
     end
   end
 
@@ -963,6 +960,33 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     assert to_string(transaction.value.value) == json["value"]
     assert Address.checksum(transaction.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
+  end
+
+  defp compare_item(%InternalTransaction{} = internal_tx, json) do
+    assert internal_tx.block_number == json["block"]
+    assert to_string(internal_tx.gas) == json["gas_limit"]
+    assert internal_tx.index == json["index"]
+    assert to_string(internal_tx.transaction_hash) == json["transaction_hash"]
+    assert Address.checksum(internal_tx.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(internal_tx.to_address_hash) == json["to"]["hash"]
+  end
+
+  defp compare_item(%Log{} = log, json) do
+    assert to_string(log.data) == json["data"]
+    assert log.index == json["index"]
+    assert Address.checksum(log.address_hash) == json["address"]["hash"]
+    assert to_string(log.transaction_hash) == json["tx_hash"]
+  end
+
+  defp compare_item(%TokenTransfer{} = token_transfer, json) do
+    assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
+    assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
+    assert json["timestamp"] == nil
+    assert json["method"] == nil
+    assert to_string(token_transfer.block_hash) == json["block_hash"]
+    assert to_string(token_transfer.log_index) == json["log_index"]
+    assert check_total(Repo.preload(token_transfer, [{:token, :contract_address}]).token, json["total"], token_transfer)
   end
 
   defp compare_item(%Transaction{} = transaction, json, wl_names) do
@@ -995,33 +1019,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
              )
   end
 
-  defp compare_item(%InternalTransaction{} = internal_tx, json) do
-    assert internal_tx.block_number == json["block"]
-    assert to_string(internal_tx.gas) == json["gas_limit"]
-    assert internal_tx.index == json["index"]
-    assert to_string(internal_tx.transaction_hash) == json["transaction_hash"]
-    assert Address.checksum(internal_tx.from_address_hash) == json["from"]["hash"]
-    assert Address.checksum(internal_tx.to_address_hash) == json["to"]["hash"]
-  end
-
-  defp compare_item(%Log{} = log, json) do
-    assert to_string(log.data) == json["data"]
-    assert log.index == json["index"]
-    assert Address.checksum(log.address_hash) == json["address"]["hash"]
-    assert to_string(log.transaction_hash) == json["tx_hash"]
-  end
-
-  defp compare_item(%TokenTransfer{} = token_transfer, json) do
-    assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
-    assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
-    assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
-    assert json["timestamp"] == nil
-    assert json["method"] == nil
-    assert to_string(token_transfer.block_hash) == json["block_hash"]
-    assert to_string(token_transfer.log_index) == json["log_index"]
-    assert check_total(Repo.preload(token_transfer, [{:token, :contract_address}]).token, json["total"], token_transfer)
-  end
-
   defp check_paginated_response(first_page_resp, second_page_resp, txs) do
     assert Enum.count(first_page_resp["items"]) == 50
     assert first_page_resp["next_page_params"] != nil
@@ -1044,6 +1041,11 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     compare_item(Enum.at(txs, 0), Enum.at(second_page_resp["items"], 0), wl_names)
   end
 
+  # with the current implementation no transfers should come with list in totals
+  defp check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
+    false
+  end
+
   defp check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-1155"] do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end) and
       json["value"] == to_string(token_transfer.amount)
@@ -1051,11 +1053,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
   defp check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-721"] do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end)
-  end
-
-  # with the current implementation no transfers should come with list in totals
-  defp check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
-    false
   end
 
   defp check_total(_, _, _), do: true

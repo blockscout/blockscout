@@ -1,1 +1,5 @@
-<%= format_according_to_decimals(@balance, @transfer.token.decimals) %><%= " " %><%= render BlockScoutWeb.TransactionView, "_link_to_token_symbol.html", transfer: @transfer %>
+<%= if @token_id do %>
+    <%= BlockScoutWeb.Cldr.Number.to_string!(@balance, format: "#,###") %> <%= render BlockScoutWeb.TransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: @token_id %>            
+<% else %>
+    <%= format_according_to_decimals(@balance, @transfer.token.decimals) %><%= " " %><%= render BlockScoutWeb.TransactionView, "_link_to_token_symbol.html", transfer: @transfer %>
+<% end %>

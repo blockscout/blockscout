@@ -21,7 +21,6 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.{AverageBlockTime, Helper}
-  alias Explorer.ExchangeRates.Token
   alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
   alias Phoenix.View
 
@@ -80,7 +79,7 @@ defmodule BlockScoutWeb.Notifier do
             |> View.render_to_string("new.html",
               changeset: changeset,
               compiler_versions: compiler_versions,
-              evm_versions: CodeCompiler.allowed_evm_versions(),
+              evm_versions: CodeCompiler.evm_versions(:solidity),
               address_hash: address_hash,
               conn: conn,
               retrying: true
@@ -115,7 +114,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :exchange_rate}) do
-    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate = Market.get_coin_exchange_rate()
 
     market_history_data =
       case Market.fetch_recent_history() do
@@ -323,7 +322,7 @@ defmodule BlockScoutWeb.Notifier do
       "balance_update",
       %{
         address: address,
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
+        exchange_rate: Market.get_coin_exchange_rate()
       }
     )
   end

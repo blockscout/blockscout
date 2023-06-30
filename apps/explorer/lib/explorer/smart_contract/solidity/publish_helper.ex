@@ -88,9 +88,9 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
     )
   end
 
-  def prepare_files_array(files) do
-    if is_map(files), do: Enum.map(files, fn {_, file} -> file end), else: []
-  end
+  def prepare_files_array(files) when is_map(files), do: Map.values(files)
+
+  def prepare_files_array(_), do: []
 
   def get_one_json(files_array) do
     files_array

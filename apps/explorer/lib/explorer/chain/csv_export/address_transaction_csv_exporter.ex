@@ -12,7 +12,6 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
   alias Explorer.Market.MarketHistory
   alias Explorer.Chain.{Address, Transaction, Wei}
   alias Explorer.Chain.CSVExport.Helper
-  alias Explorer.ExchangeRates.Token
 
   @necessity_by_association [
     necessity_by_association: %{
@@ -29,23 +28,28 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
 
   @paging_options %PagingOptions{page_size: Helper.page_size() + 1}
 
-  @spec export(Address.t(), String.t(), String.t()) :: Enumerable.t()
-  def export(address, from_period, to_period) do
+  @spec export(Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
+  def export(address, from_period, to_period, filter_type \\ nil, filter_value \\ nil) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
-    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate = Market.get_coin_exchange_rate()
 
     address.hash
-    |> fetch_all_transactions(from_block, to_block, @paging_options)
+    |> fetch_all_transactions(from_block, to_block, filter_type, filter_value, @paging_options)
     |> to_csv_format(address, exchange_rate)
     |> Helper.dump_to_stream()
   end
 
-  def fetch_all_transactions(address_hash, from_block, to_block, paging_options, acc \\ []) do
+  # sobelow_skip ["DOS.StringToAtom"]
+  def fetch_all_transactions(address_hash, from_block, to_block, filter_type, filter_value, paging_options, acc \\ []) do
     options =
       @necessity_by_association
       |> Keyword.put(:paging_options, paging_options)
       |> Keyword.put(:from_block, from_block)
       |> Keyword.put(:to_block, to_block)
+      |> (&if(Helper.is_valid_filter?(filter_type, filter_value, "transactions"),
+            do: &1 |> Keyword.put(:direction, String.to_atom(filter_value)),
+            else: &1
+          )).()
 
     transactions = Chain.address_to_transactions_without_rewards(address_hash, options)
     new_acc = transactions ++ acc
@@ -53,7 +57,16 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
     case Enum.split(transactions, Helper.page_size()) do
       {_transactions, [%Transaction{block_number: block_number, index: index}]} ->
         new_paging_options = %{@paging_options | key: {block_number, index}}
-        fetch_all_transactions(address_hash, from_block, to_block, new_paging_options, new_acc)
+
+        fetch_all_transactions(
+          address_hash,
+          from_block,
+          to_block,
+          filter_type,
+          filter_value,
+          new_paging_options,
+          new_acc
+        )
 
       {_, []} ->
         new_acc

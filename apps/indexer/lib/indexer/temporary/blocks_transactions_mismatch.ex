@@ -14,8 +14,8 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
   import Ecto.Query
 
   alias EthereumJSONRPC.Blocks
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block
-  alias Explorer.Repo
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.BufferedTask
 
@@ -58,7 +58,10 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
         select: {block.hash, count(transactions.hash)}
       )
 
-    {:ok, final} = Repo.stream_reduce(query, initial, &reducer.(&1, &2))
+    {:ok, final} =
+      query
+      |> Chain.add_fetcher_limit(true)
+      |> Repo.stream_reduce(initial, &reducer.(&1, &2))
 
     final
   end

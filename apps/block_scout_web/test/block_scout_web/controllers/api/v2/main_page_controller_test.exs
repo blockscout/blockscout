@@ -62,7 +62,7 @@ defmodule BlockScoutWeb.API.V2.MainPageControllerTest do
     end
 
     test "get last 6 txs", %{conn: conn} do
-      txs = insert_list(10, :transaction) |> with_block()
+      insert_list(10, :transaction) |> with_block()
 
       auth = build(:auth)
       {:ok, user} = UserFromAuth.find_or_create(auth)

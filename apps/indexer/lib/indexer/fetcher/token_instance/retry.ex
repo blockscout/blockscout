@@ -29,9 +29,12 @@ defmodule Indexer.Fetcher.TokenInstance.Retry do
   @impl BufferedTask
   def init(initial_acc, reducer, _) do
     {:ok, acc} =
-      Chain.stream_token_instances_with_error(initial_acc, fn data, acc ->
-        reducer.(data, acc)
-      end)
+      Chain.stream_token_instances_with_error(
+        initial_acc,
+        fn data, acc ->
+          reducer.(data, acc)
+        end
+      )
 
     acc
   end
@@ -54,7 +57,6 @@ defmodule Indexer.Fetcher.TokenInstance.Retry do
       flush_interval: :timer.minutes(10),
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
       max_batch_size: @default_max_batch_size,
-      poll: true,
       task_supervisor: __MODULE__.TaskSupervisor
     ]
   end

@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.WithdrawalControllerTest do
 
   describe "/withdrawals" do
     test "empty lists", %{conn: conn} do
-      request = get(conn, "/api/v2/blocks")
+      request = get(conn, "/api/v2/withdrawals")
       assert response = json_response(request, 200)
       assert response["items"] == []
       assert response["next_page_params"] == nil

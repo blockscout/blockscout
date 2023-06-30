@@ -393,26 +393,170 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   end
 
   describe "/tokens" do
+    defp check_tokens_pagination(tokens, conn) do
+      request = get(conn, "/api/v2/tokens")
+      assert response = json_response(request, 200)
+      request_2nd_page = get(conn, "/api/v2/tokens", response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+      check_paginated_response(response, response_2nd_page, tokens)
+    end
+
     test "get empty list", %{conn: conn} do
       request = get(conn, "/api/v2/tokens")
 
       assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
-    test "check pagination", %{conn: conn} do
+    # these tests that tokens paginates by each parameter separately and by any combination of them
+    test "pagination by address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
+          insert(:token, name: nil)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by name", %{conn: conn} do
+      tokens =
+        for i <- 0..48 do
           insert(:token, holder_count: i)
         end
 
-      request = get(conn, "/api/v2/tokens")
-      assert response = json_response(request, 200)
+      empty_named_token = insert(:token, name: "")
+      named_token = insert(:token)
 
-      request_2nd_page = get(conn, "/api/v2/tokens", response["next_page_params"])
+      tokens = [named_token, empty_named_token | tokens]
 
-      assert response_2nd_page = json_response(request_2nd_page, 200)
+      check_tokens_pagination(tokens, conn)
+    end
 
-      check_paginated_response(response, response_2nd_page, tokens)
+    test "pagination by holders", %{conn: conn} do
+      tokens =
+        for i <- 0..50 do
+          insert(:token, holder_count: i, name: nil)
+        end
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap", %{conn: conn} do
+      tokens =
+        for i <- 0..50 do
+          insert(:token, circulating_market_cap: i, name: nil)
+        end
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by name and address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by holders and address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token, holder_count: 1, name: nil)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap and address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token, circulating_market_cap: 1, name: nil)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by holders and name", %{conn: conn} do
+      tokens =
+        for i <- 1..51 do
+          insert(:token, holder_count: 1, name: List.to_string([i]))
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap and name", %{conn: conn} do
+      tokens =
+        for i <- 1..51 do
+          insert(:token, circulating_market_cap: 1, name: List.to_string([i]))
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap and holders", %{conn: conn} do
+      tokens =
+        for i <- 0..50 do
+          insert(:token, circulating_market_cap: 1, holder_count: i, name: nil)
+        end
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by holders, name and address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token, holder_count: 1)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap, name and address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token, circulating_market_cap: 1)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap, holders and address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token, circulating_market_cap: 1, holder_count: 1, name: nil)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap, holders and name", %{conn: conn} do
+      tokens =
+        for i <- 1..51 do
+          insert(:token, circulating_market_cap: 1, holder_count: 1, name: List.to_string([i]))
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap, holders, name and address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token, holder_count: 1, circulating_market_cap: 1)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
     end
 
     test "check nil", %{conn: conn} do
@@ -853,6 +997,11 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     compare_item(Repo.preload(instance, [{:token, :contract_address}]).token, json["token"])
   end
 
+  # with the current implementation no transfers should come with list in totals
+  def check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
+    false
+  end
+
   def check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-1155"] do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end) and
       json["value"] == to_string(token_transfer.amount)
@@ -860,11 +1009,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
   def check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-721"] do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end)
-  end
-
-  # with the current implementation no transfers should come with list in totals
-  def check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
-    false
   end
 
   def check_total(_, _, _), do: true

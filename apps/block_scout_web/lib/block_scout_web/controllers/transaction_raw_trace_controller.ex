@@ -8,7 +8,6 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
   alias BlockScoutWeb.{AccessHelper, TransactionController}
   alias EthereumJSONRPC
   alias Explorer.{Chain, Market}
-  alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.FirstTraceOnDemand
 
   def index(conn, %{"transaction_id" => hash_string} = params) do
@@ -59,7 +58,7 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
     render(
       conn,
       "index.html",
-      exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+      exchange_rate: Market.get_coin_exchange_rate(),
       internal_transactions: internal_transactions,
       block_height: Chain.block_height(),
       current_user: current_user(conn),

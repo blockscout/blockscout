@@ -59,7 +59,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     if is_nil(params["name"]) or params["name"] == "" do
       {:error, :name}
     else
-      latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
+      latest_evm_version = List.last(CodeCompiler.evm_versions(:solidity))
       evm_version = Map.get(params, "evm_version", latest_evm_version)
 
       all_versions = [evm_version | previous_evm_versions(evm_version)]
@@ -505,19 +505,19 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   end
 
   def previous_evm_versions(current_evm_version) do
-    index = Enum.find_index(CodeCompiler.allowed_evm_versions(), fn el -> el == current_evm_version end)
+    index = Enum.find_index(CodeCompiler.evm_versions(:solidity), fn el -> el == current_evm_version end)
 
     cond do
       index == 0 ->
         []
 
       index == 1 ->
-        [List.first(CodeCompiler.allowed_evm_versions())]
+        [List.first(CodeCompiler.evm_versions(:solidity))]
 
       true ->
         [
-          Enum.at(CodeCompiler.allowed_evm_versions(), index - 1),
-          Enum.at(CodeCompiler.allowed_evm_versions(), index - 2)
+          Enum.at(CodeCompiler.evm_versions(:solidity), index - 1),
+          Enum.at(CodeCompiler.evm_versions(:solidity), index - 2)
         ]
     end
   end
