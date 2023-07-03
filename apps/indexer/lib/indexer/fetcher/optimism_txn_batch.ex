@@ -544,7 +544,11 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          current_channel_id,
          json_rpc_named_arguments_l2
        ) do
-    future_frames = get_future_frames(current_channel_id, true)
+    future_frames =
+      current_channel_id
+      |> get_future_frames(true)
+      |> Enum.sort(fn f1, f2 -> f1.frame.number > f2.frame.number end)
+
     # %{frame: frame, l1_tx_hash: tx.hash, l1_timestamp: l1_timestamp}
 
     incomplete_frame_sequence_extended =
@@ -966,7 +970,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   end
 
   defp put_future_frame(channel_id, data) do
-    list = Enum.reverse([data | Enum.reverse(get_future_frames(channel_id))])
+    list = [data | get_future_frames(channel_id)]
     :ets.insert(@future_frames_table_name, {channel_id, list})
   end
 end
