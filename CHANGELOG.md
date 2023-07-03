@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#7811](https://github.com/blockscout/blockscout/pull/7811) - Filter addresses before insertion
+
 ### Fixes
 
 - [#7772](https://github.com/blockscout/blockscout/pull/7772) - Fix parsing of database password period(s)
