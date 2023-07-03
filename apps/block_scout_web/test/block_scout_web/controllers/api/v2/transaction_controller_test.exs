@@ -976,6 +976,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     assert log.index == json["index"]
     assert Address.checksum(log.address_hash) == json["address"]["hash"]
     assert to_string(log.transaction_hash) == json["tx_hash"]
+    assert json["block_number"] == log.block_number
   end
 
   defp compare_item(%TokenTransfer{} = token_transfer, json) do
