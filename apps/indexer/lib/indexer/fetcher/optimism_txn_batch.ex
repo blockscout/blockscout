@@ -547,7 +547,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     future_frames =
       current_channel_id
       |> get_future_frames(true)
-      |> Enum.sort(fn f1, f2 -> f1.frame.number > f2.frame.number end)
+      |> Enum.sort(fn f1, f2 -> f1.frame.number < f2.frame.number end)
 
     # %{frame: frame, l1_tx_hash: tx.hash, l1_timestamp: l1_timestamp}
 
