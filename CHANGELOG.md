@@ -13,6 +13,7 @@
 
 ### Chore
 
+- [#7832](https://github.com/blockscout/blockscout/pull/7832) - API v2: Add block_number to logs
 - [#7789](https://github.com/blockscout/blockscout/pull/7789) - Fix test warnings; Fix name of `MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS` env variable
 - [#7819](https://github.com/blockscout/blockscout/pull/7819) - Add logging for unknown error verification result
 - [#7781](https://github.com/blockscout/blockscout/pull/7781) - Add `/api/v1/health/liveness` and `/api/v1/health/readiness`
