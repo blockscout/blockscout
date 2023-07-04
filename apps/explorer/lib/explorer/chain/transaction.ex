@@ -34,7 +34,7 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.SmartContract.SigProviderInterface
 
   @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
-                     error gas_used index created_contract_code_indexed_at status to_address_hash revert_reason type has_error_in_internal_txs)a
+                     error gas_used index created_contract_code_indexed_at status to_address_hash revert_reason type has_error_in_internal_txs near_receipt_hash near_transaction_hash)a
 
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
@@ -174,7 +174,9 @@ defmodule Explorer.Chain.Transaction do
           max_priority_fee_per_gas: wei_per_gas | nil,
           max_fee_per_gas: wei_per_gas | nil,
           type: non_neg_integer() | nil,
-          has_error_in_internal_txs: boolean()
+          has_error_in_internal_txs: boolean(),
+          near_receipt_hash: String.t() | nil,
+          near_transaction_hash: String.t() | nil
         }
 
   @derive {Poison.Encoder,
@@ -241,6 +243,8 @@ defmodule Explorer.Chain.Transaction do
     field(:type, :integer)
     field(:has_error_in_internal_txs, :boolean)
     field(:has_token_transfers, :boolean, virtual: true)
+    field(:near_receipt_hash, :string)
+    field(:near_transaction_hash, :string)
 
     # A transient field for deriving old block hash during transaction upserts.
     # Used to force refetch of a block in case a transaction is re-collated

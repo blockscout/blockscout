@@ -227,14 +227,25 @@ defmodule EthereumJSONRPC.Receipts do
   defp response_to_receipt(%{id: id, result: receipt}, id_to_transaction_params) do
     %{gas: gas} = Map.fetch!(id_to_transaction_params, id)
 
-    # gas from the transaction is needed for pre-Byzantium derived status
-    {:ok, Map.put(receipt, "gas", gas)}
+    receipt
+    |> Map.put("gas", gas)
+    |> convert_hash("nearReceiptHash")
+    |> convert_hash("nearTransactionHash")
+    |> (&{:ok, &1}).()
   end
 
   defp response_to_receipt(%{id: id, error: reason}, id_to_transaction_params) do
     data = Map.fetch!(id_to_transaction_params, id)
     annotated_reason = Map.put(reason, :data, data)
     {:error, annotated_reason}
+  end
+
+  defp convert_hash(receipt, key) do
+    hash_hex = receipt[key] |> String.slice(2..-1)
+    hash_bin = Base.decode16!(hash_hex, case: :lower)
+    hash_base58 = Base58.encode(hash_bin)
+
+    Map.put(receipt, key, hash_base58)
   end
 
   defp reduce_responses(responses, id_to_transaction_params)
