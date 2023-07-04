@@ -18,16 +18,16 @@ defmodule Explorer.ExchangeRates.Token do
    * `:volume_24h_usd` - The volume from the last 24 hours in USD
   """
   @type t :: %__MODULE__{
-          available_supply: Decimal.t(),
-          total_supply: Decimal.t(),
-          btc_value: Decimal.t(),
-          id: String.t(),
-          last_updated: DateTime.t(),
-          market_cap_usd: Decimal.t(),
-          name: String.t(),
-          symbol: String.t(),
-          usd_value: Decimal.t(),
-          volume_24h_usd: Decimal.t()
+          available_supply: Decimal.t() | nil,
+          total_supply: Decimal.t() | nil,
+          btc_value: Decimal.t() | nil,
+          id: String.t() | nil,
+          last_updated: DateTime.t() | nil,
+          market_cap_usd: Decimal.t() | nil,
+          name: String.t() | nil,
+          symbol: String.t() | nil,
+          usd_value: Decimal.t() | nil,
+          volume_24h_usd: Decimal.t() | nil
         }
 
   @derive Jason.Encoder

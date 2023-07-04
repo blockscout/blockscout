@@ -57,7 +57,7 @@ defmodule Explorer.Utility.MissingBlockRange do
         update_range(range, %{to_number: min_number})
 
       {%__MODULE__{} = range_1, %__MODULE__{} = range_2} ->
-        delete_ranges_between(range_2.from_number, range_1.from_number)
+        delete_ranges_between(range_2.from_number + 1, range_1.from_number)
         update_range(range_1, %{from_number: range_2.from_number})
 
       _ ->
@@ -92,7 +92,7 @@ defmodule Explorer.Utility.MissingBlockRange do
         update_to_number_or_delete_range(range_2, max_number + 1)
 
       _ ->
-        :ok
+        delete_ranges_between(max_number, min_number)
     end
   end
 

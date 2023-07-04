@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.WebsocketV2Test do
 
   alias BlockScoutWeb.Notifier
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Chain.{Address, Import, InternalTransaction, Log, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Import, Token, TokenTransfer, Transaction}
   alias Explorer.Repo
 
   describe "websocket v2" do
@@ -375,6 +375,11 @@ defmodule BlockScoutWeb.WebsocketV2Test do
     assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
   end
 
+  # with the current implementation no transfers should come with list in totals
+  defp check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
+    false
+  end
+
   defp check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-1155"] do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end) and
       json["value"] == to_string(token_transfer.amount)
@@ -382,11 +387,6 @@ defmodule BlockScoutWeb.WebsocketV2Test do
 
   defp check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-721"] do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end)
-  end
-
-  # with the current implementation no transfers should come with list in totals
-  defp check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
-    false
   end
 
   defp check_total(_, _, _), do: true

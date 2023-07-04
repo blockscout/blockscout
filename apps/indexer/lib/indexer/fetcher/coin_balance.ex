@@ -61,11 +61,14 @@ defmodule Indexer.Fetcher.CoinBalance do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_unfetched_balances(initial, fn address_fields, acc ->
-        address_fields
-        |> entry()
-        |> reducer.(acc)
-      end)
+      Chain.stream_unfetched_balances(
+        initial,
+        fn address_fields, acc ->
+          address_fields
+          |> entry()
+          |> reducer.(acc)
+        end
+      )
 
     final
   end

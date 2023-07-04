@@ -16,6 +16,8 @@ defmodule BlockScoutWeb.Chain do
       token_contract_address_from_token_name: 1
     ]
 
+  import Explorer.Helper, only: [parse_integer: 1]
+
   alias Explorer.Chain.Block.Reward
 
   alias Explorer.Chain.{
@@ -23,6 +25,7 @@ defmodule BlockScoutWeb.Chain do
     Address.CoinBalance,
     Address.CurrentTokenBalance,
     Block,
+    Hash,
     InternalTransaction,
     Log,
     SmartContract,
@@ -30,6 +33,7 @@ defmodule BlockScoutWeb.Chain do
     Token.Instance,
     TokenTransfer,
     Transaction,
+    Transaction.StateChange,
     Wei,
     Withdrawal
   }
@@ -140,16 +144,30 @@ defmodule BlockScoutWeb.Chain do
     ]
   end
 
-  def paging_options(%{"market_cap" => market_cap, "holder_count" => holder_count, "name" => token_name}) do
+  def paging_options(%{
+        "market_cap" => market_cap,
+        "holder_count" => holder_count_str,
+        "name" => name,
+        "contract_address_hash" => contract_address_hash_str,
+        "is_name_null" => is_name_null
+      }) do
     market_cap_decimal =
       case Decimal.parse(market_cap) do
         {decimal, ""} -> Decimal.round(decimal, 16)
         _ -> nil
       end
 
-    case Integer.parse(holder_count) do
-      {holder_count, ""} ->
-        [paging_options: %{@default_paging_options | key: {market_cap_decimal, holder_count, token_name}}]
+    holder_count = parse_integer(holder_count_str)
+    token_name = if is_name_null == "true", do: nil, else: name
+
+    case Hash.Address.cast(contract_address_hash_str) do
+      {:ok, contract_address_hash} ->
+        [
+          paging_options: %{
+            @default_paging_options
+            | key: {market_cap_decimal, holder_count, token_name, contract_address_hash}
+          }
+        ]
 
       _ ->
         [paging_options: @default_paging_options]
@@ -289,6 +307,13 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {id}}]
   end
 
+  def paging_options(%{"items_count" => items_count, "state_changes" => _}) do
+    case Integer.parse(items_count) do
+      {count, ""} -> [paging_options: %{@default_paging_options | key: {count}}]
+      _ -> @default_paging_options
+    end
+  end
+
   def paging_options(_params), do: [paging_options: @default_paging_options]
 
   def put_key_value_to_paging_options([paging_options: paging_options], key, value) do
@@ -369,18 +394,22 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%Token{
+         contract_address_hash: contract_address_hash,
          circulating_market_cap: circulating_market_cap,
          holder_count: holder_count,
          name: token_name
        }) do
-    %{"market_cap" => circulating_market_cap, "holder_count" => holder_count, "name" => token_name}
+    %{
+      "market_cap" => circulating_market_cap,
+      "holder_count" => holder_count,
+      "contract_address_hash" => contract_address_hash,
+      "name" => token_name,
+      "is_name_null" => is_nil(token_name)
+    }
   end
 
-  defp paging_params([
-         %Token{circulating_market_cap: circulating_market_cap, holder_count: holder_count, name: token_name},
-         _
-       ]) do
-    %{"market_cap" => circulating_market_cap, "holder_count" => holder_count, "name" => token_name}
+  defp paging_params([%Token{} = token, _]) do
+    paging_params(token)
   end
 
   defp paging_params({%Reward{block: %{number: number}}, _}) do
@@ -396,12 +425,8 @@ defmodule BlockScoutWeb.Chain do
     %{"block_number" => block_number, "transaction_index" => transaction_index, "index" => index}
   end
 
-  defp paging_params(%Log{index: index} = log) do
-    if Ecto.assoc_loaded?(log.transaction) do
-      %{"block_number" => log.transaction.block_number, "transaction_index" => log.transaction.index, "index" => index}
-    else
-      %{"index" => index}
-    end
+  defp paging_params(%Log{index: index, block_number: block_number}) do
+    %{"block_number" => block_number, "index" => index}
   end
 
   defp paging_params(%Transaction{block_number: nil, inserted_at: inserted_at, hash: hash}) do
@@ -467,6 +492,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%Instance{token_id: token_id}) do
     %{"unique_token" => Decimal.to_integer(token_id)}
+  end
+
+  defp paging_params(%StateChange{}) do
+    %{"state_changes" => nil}
   end
 
   defp block_or_transaction_from_param(param) do

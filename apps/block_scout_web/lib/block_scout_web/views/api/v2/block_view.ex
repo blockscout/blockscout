@@ -38,7 +38,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "height" => block.number,
       "timestamp" => block.timestamp,
       "tx_count" => count_transactions(block),
-      "miner" => Helper.address_with_info(block.miner, block.miner_hash),
+      "miner" => Helper.address_with_info(nil, block.miner, block.miner_hash, false),
       "size" => block.size,
       "hash" => block.hash,
       "parent_hash" => block.parent_hash,

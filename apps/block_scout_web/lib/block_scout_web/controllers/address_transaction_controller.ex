@@ -23,7 +23,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   alias Explorer.Chain.Wei
 
-  alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -124,7 +123,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         "index.html",
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        exchange_rate: Market.get_coin_exchange_rate(),
         filter: params["filter"],
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
         current_path: Controller.current_full_path(conn),
@@ -154,7 +153,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
               "index.html",
               address: address,
               coin_balance_status: nil,
-              exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+              exchange_rate: Market.get_coin_exchange_rate(),
               filter: params["filter"],
               counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
               current_path: Controller.current_full_path(conn),
@@ -187,15 +186,18 @@ defmodule BlockScoutWeb.AddressTransactionController do
            "from_period" => from_period,
            "to_period" => to_period,
            "recaptcha_response" => recaptcha_response
-         },
+         } = params,
          csv_export_module
        )
        when is_binary(address_hash_string) do
+    filter_type = Map.get(params, "filter_type")
+    filter_value = Map.get(params, "filter_value")
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:recaptcha, true} <- {:recaptcha, captcha_helper().recaptcha_passed?(recaptcha_response)} do
       address
-      |> csv_export_module.export(from_period, to_period)
+      |> csv_export_module.export(from_period, to_period, filter_type, filter_value)
       |> Enum.reduce_while(put_resp_params(conn), fn chunk, conn ->
         case Conn.chunk(conn, chunk) do
           {:ok, conn} ->

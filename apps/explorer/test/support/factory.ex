@@ -44,7 +44,7 @@ defmodule Explorer.Factory do
   }
 
   alias Explorer.SmartContract.Helper
-
+  alias Explorer.Tags.{AddressTag, AddressToTag}
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
@@ -138,6 +138,16 @@ defmodule Explorer.Factory do
 
   def tag_transaction_factory do
     %{"name" => sequence("name"), "transaction_hash" => to_string(insert(:transaction).hash)}
+  end
+
+  def address_to_tag_factory do
+    %AddressToTag{
+      tag: %AddressTag{
+        label: sequence("label"),
+        display_name: sequence("display_name")
+      },
+      address: build(:address)
+    }
   end
 
   def account_watchlist_address_factory do
@@ -818,7 +828,8 @@ defmodule Explorer.Factory do
       abi: contract_code_info.abi,
       contract_code_md5: bytecode_md5,
       verified_via_sourcify: Enum.random([true, false]),
-      is_vyper_contract: Enum.random([true, false])
+      is_vyper_contract: Enum.random([true, false]),
+      verified_via_eth_bytecode_db: Enum.random([true, false])
     }
   end
 
