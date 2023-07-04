@@ -7,7 +7,7 @@
 - [#7811](https://github.com/blockscout/blockscout/pull/7811) - Filter addresses before insertion
 
 ### Fixes
-
+- [#7825](https://github.com/blockscout/blockscout/pull/7825) - Fix nginx config for the new frontend websockets
 - [#7772](https://github.com/blockscout/blockscout/pull/7772) - Fix parsing of database password period(s)
 - [#7803](https://github.com/blockscout/blockscout/pull/7803) - Fix additional sources and interfaces, save names for vyper contracts
 - [#7758](https://github.com/blockscout/blockscout/pull/7758) - Remove limit for configurable fetchers
