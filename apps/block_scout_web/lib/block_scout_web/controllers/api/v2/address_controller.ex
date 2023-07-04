@@ -72,7 +72,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true, false)} do
-      {validation_count} = Chain.address_counters(address, @api_true)
+      {validation_count, _crc_total_worth} = Chain.address_counters(address, @api_true)
 
       transactions_from_db = address.transactions_count || 0
       token_transfers_from_db = address.token_transfers_count || 0

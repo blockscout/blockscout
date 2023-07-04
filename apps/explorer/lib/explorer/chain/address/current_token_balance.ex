@@ -189,7 +189,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       on: ctb.token_contract_address_hash == bt.home_token_contract_address_hash,
       left_join: t in Token,
       on: ctb.token_contract_address_hash == t.contract_address_hash,
-      select: {ctb, bt, t},
+      select: {ctb, t},
       order_by: ^[desc_nulls_last: fiat_balance],
       order_by: [desc: ctb.value, desc: ctb.id]
     )

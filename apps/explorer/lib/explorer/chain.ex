@@ -2701,7 +2701,7 @@ defmodule Explorer.Chain do
         asc: t.name,
         asc: t.contract_address_hash
       ],
-      select: [t, bt],
+      select: t,
       preload: [:contract_address]
     )
   end
@@ -5103,7 +5103,7 @@ defmodule Explorer.Chain do
 
     where(
       query,
-      [ctb, bt, t],
+      [ctb, t],
       ^condition
     )
   end
@@ -6162,10 +6162,8 @@ defmodule Explorer.Chain do
     query =
       from(
         t in Token,
-        left_join: bt in BridgedToken,
-        on: t.contract_address_hash == bt.home_token_contract_address_hash,
         where: t.contract_address_hash == ^hash,
-        select: [t, bt]
+        select: t
       )
 
     query
@@ -6176,22 +6174,7 @@ defmodule Explorer.Chain do
       nil ->
         {:error, :not_found}
 
-      [%Token{} = token, %BridgedToken{} = bridged_token] ->
-        foreign_token_contract_address_hash = Map.get(bridged_token, :foreign_token_contract_address_hash)
-        foreign_chain_id = Map.get(bridged_token, :foreign_chain_id)
-        custom_metadata = Map.get(bridged_token, :custom_metadata)
-        custom_cap = Map.get(bridged_token, :custom_cap)
-
-        extended_token =
-          token
-          |> Map.put(:foreign_token_contract_address_hash, foreign_token_contract_address_hash)
-          |> Map.put(:foreign_chain_id, foreign_chain_id)
-          |> Map.put(:custom_metadata, custom_metadata)
-          |> Map.put(:custom_cap, custom_cap)
-
-        {:ok, extended_token}
-
-      [%Token{} = token, nil] ->
+      %Token{} = token ->
         {:ok, token}
     end
   end
