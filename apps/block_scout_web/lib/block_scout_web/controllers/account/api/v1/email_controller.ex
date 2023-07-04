@@ -8,10 +8,14 @@ defmodule BlockScoutWeb.Account.Api.V1.EmailController do
 
   require Logger
 
+  @invalid_session_key Application.compile_env(:block_scout_web, :invalid_session_key)
+
   action_fallback(BlockScoutWeb.Account.Api.V1.FallbackController)
 
+  plug(:fetch_cookies, signed: [@invalid_session_key])
+
   def resend_email(conn, _params) do
-    with user <- get_session(conn, :current_user),
+    with user <- conn.cookies[@invalid_session_key],
          {:auth, false} <- {:auth, is_nil(user)},
          {:email_verified, false} <- {:email_verified, user[:email_verified]},
          {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(user[:id])},
