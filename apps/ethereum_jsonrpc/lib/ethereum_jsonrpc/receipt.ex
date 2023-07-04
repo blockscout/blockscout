@@ -117,7 +117,9 @@ defmodule EthereumJSONRPC.Receipt do
           created_contract_address_hash: String.t() | nil,
           status: status(),
           transaction_hash: String.t(),
-          transaction_index: non_neg_integer()
+          transaction_index: non_neg_integer(),
+          near_receipt_hash: String.t() | nil,
+          near_transaction_hash: String.t() | nil
         }
   def elixir_to_params(
         %{
@@ -125,7 +127,9 @@ defmodule EthereumJSONRPC.Receipt do
           "gasUsed" => gas_used,
           "contractAddress" => created_contract_address_hash,
           "transactionHash" => transaction_hash,
-          "transactionIndex" => transaction_index
+          "transactionIndex" => transaction_index,
+          "nearReceiptHash" => near_receipt_hash,
+          "nearTransactionHash" => near_transaction_hash
         } = elixir
       ) do
     status = elixir_to_status(elixir)
@@ -136,7 +140,9 @@ defmodule EthereumJSONRPC.Receipt do
       created_contract_address_hash: created_contract_address_hash,
       status: status,
       transaction_hash: transaction_hash,
-      transaction_index: transaction_index
+      transaction_index: transaction_index,
+      near_receipt_hash: near_receipt_hash,
+      near_transaction_hash: near_transaction_hash
     }
   end
 
@@ -267,6 +273,9 @@ defmodule EthereumJSONRPC.Receipt do
 
     {:ok, {key, result}}
   end
+
+  defp entry_to_elixir({"nearReceiptHash" = key, value}), do: {:ok, {key, value}}
+  defp entry_to_elixir({"nearTransactionHash" = key, value}), do: {:ok, {key, value}}
 
   defp entry_to_elixir({"logs" = key, logs}) do
     {:ok, {key, Logs.to_elixir(logs)}}

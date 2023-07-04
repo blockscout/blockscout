@@ -31,7 +31,7 @@ defmodule EthereumJsonrpc.MixProject do
   def application do
     [
       mod: {EthereumJSONRPC.Application, []},
-      extra_applications: [:logger]
+      extra_applications: [:logger, :b58]
     ]
   end
 
@@ -85,7 +85,8 @@ defmodule EthereumJsonrpc.MixProject do
       {:decimal, "~> 2.0"},
       {:decorator, "~> 1.4"},
       {:hackney, "~> 1.18"},
-      {:poolboy, "~> 1.5.2"}
+      {:poolboy, "~> 1.5.2"},
+      {:b58, "~> 1.0.2"}
     ]
   end
 end

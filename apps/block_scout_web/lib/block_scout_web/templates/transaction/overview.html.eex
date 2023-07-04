@@ -7,7 +7,7 @@
 <% base_fee_per_gas = if block, do: block.base_fee_per_gas, else: nil %>
 <% max_priority_fee_per_gas = @transaction.max_priority_fee_per_gas %>
 <% max_fee_per_gas = @transaction.max_fee_per_gas %>
-<% burned_fee = 
+<% burned_fee =
   if !is_nil(max_fee_per_gas) and !is_nil(@transaction.gas_used) and !is_nil(base_fee_per_gas) do
     if Decimal.compare(max_fee_per_gas.value, 0) == :eq do
       %Wei{value: Decimal.new(0)}
@@ -27,6 +27,10 @@
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
+<% near_receipt_hash = @transaction.near_receipt_hash %>
+<% near_transaction_hash = @transaction.near_transaction_hash %>
+<% near_network = System.get_env("NEAR_NETWORK") || nil %>
+
 <section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
     <div class="col-md-12">
@@ -122,7 +126,7 @@
                     <% true -> %>
                       <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["success", "large"] %></span>
                   <% end %>
-                
+
                 <%= if confirmations > 0 do %>
                   <span class="bs-label large ml-2 confirmations-label"><%= gettext "Confirmed by " %><span data-selector="block-confirmations"><%= confirmations %></span><%= " " <> confirmations_ds_name(confirmations) %></span>
                 <% end %>
@@ -390,6 +394,42 @@
               <dd class="col-sm-9 col-lg-10"> <%= type %> </dd>
             </dl>
           <% end %>
+          <!-- Near receipt -->
+          <%= if !is_nil(near_receipt_hash) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= gettext "Near Receipt" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10" style="word-break: break-all;">
+                <span>
+                  <%= near_receipt_hash %>
+                </span>
+                <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                    additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                    clipboard_text: near_receipt_hash,
+                    aria_label: gettext("Copy Near Receipt"),
+                    title: gettext("Copy Near Receipt") %>
+              </dd>
+            </dl>
+          <% end %>
+          <!-- Near transaction -->
+          <%= if !is_nil(near_transaction_hash) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= gettext "Near Transaction" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10" style="word-break: break-all;">
+                <span>
+                  <%= render BlockScoutWeb.AddressView, "_near_tx.html", hash: near_transaction_hash, near_network: near_network %>
+                </span>
+                <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                    additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                    clipboard_text: near_transaction_hash,
+                    aria_label: gettext("Copy Near Transaction"),
+                    title: gettext("Copy Near Transaction") %>
+              </dd>
+            </dl>
+          <% end %>
           <hr>
           <!-- Gas Limit -->
           <dl class="row">
@@ -429,7 +469,7 @@
               </dt>
               <dd class="col-sm-9 col-lg-10"> <%= format_wei_value(priority_fee, :ether) %> </dd>
             </dl>
-          <% end %> 
+          <% end %>
            <%= if !is_nil(burned_fee) do %>
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">
