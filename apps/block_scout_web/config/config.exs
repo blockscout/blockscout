@@ -94,13 +94,9 @@ config :block_scout_web, BlockScoutWeb.CSPHeader,
 # Configures Ueberauth local settings
 config :ueberauth, Ueberauth,
   providers: [
-    auth0_api: {
-      Ueberauth.Strategy.Auth0,
-      [callback_url: "https://blockscout.com/xdai/mainnet/auth/auth0_api/api_callback"]
-    },
     auth0: {
       Ueberauth.Strategy.Auth0,
-      [callback_url: "https://blockscout.com/xdai/mainnet/auth/auth0/callback"]
+      [callback_path: "/auth/auth0/callback", callback_params: ["path"]]
     }
   ]
 
