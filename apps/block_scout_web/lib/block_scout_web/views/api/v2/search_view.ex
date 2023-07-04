@@ -24,17 +24,22 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "address" => search_result.address_hash,
       "token_url" => token_path(Endpoint, :show, search_result.address_hash),
       "address_url" => address_path(Endpoint, :show, search_result.address_hash),
-      "icon_url" => search_result.icon_url
+      "icon_url" => search_result.icon_url,
+      "token_type" => search_result.token_type,
+      "is_smart_contract_verified" => search_result.verified,
+      "exchange_rate" => search_result.exchange_rate && to_string(search_result.exchange_rate),
+      "total_supply" => search_result.total_supply
     }
   end
 
-  def prepare_search_result(%{type: address_or_contract} = search_result)
-      when address_or_contract in ["address", "contract"] do
+  def prepare_search_result(%{type: address_or_contract_or_label} = search_result)
+      when address_or_contract_or_label in ["address", "contract", "label"] do
     %{
       "type" => search_result.type,
       "name" => search_result.name,
       "address" => search_result.address_hash,
-      "url" => address_path(Endpoint, :show, search_result.address_hash)
+      "url" => address_path(Endpoint, :show, search_result.address_hash),
+      "is_smart_contract_verified" => search_result.verified
     }
   end
 
@@ -45,7 +50,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "type" => search_result.type,
       "block_number" => search_result.block_number,
       "block_hash" => block_hash,
-      "url" => block_path(Endpoint, :show, block_hash)
+      "url" => block_path(Endpoint, :show, block_hash),
+      "timestamp" => search_result.timestamp
     }
   end
 
@@ -55,16 +61,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     %{
       "type" => search_result.type,
       "tx_hash" => tx_hash,
-      "url" => transaction_path(Endpoint, :show, tx_hash)
-    }
-  end
-
-  def prepare_search_result(%{type: "label"} = search_result) do
-    %{
-      "type" => search_result.type,
-      "address" => search_result.address_hash,
-      "name" => search_result.name,
-      "url" => address_path(Endpoint, :show, search_result.address_hash)
+      "url" => transaction_path(Endpoint, :show, tx_hash),
+      "timestamp" => search_result.timestamp
     }
   end
 
