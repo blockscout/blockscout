@@ -92,8 +92,9 @@ defmodule BlockScoutWeb.NFTHelper do
       image_url
     else
       # Gitcoin Kudos token
-      if Base.encode16(token_contract_address_hash.bytes, case: :lower) ==
-           "74e596525c63393f42c76987b6a66f4e52733efa" do
+      if image_url &&
+           Base.encode16(token_contract_address_hash.bytes, case: :lower) ==
+             "74e596525c63393f42c76987b6a66f4e52733efa" do
         "https://s.gitcoin.co/static/" <> image_url
       else
         image_url
