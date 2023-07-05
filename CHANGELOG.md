@@ -14,6 +14,7 @@
 - [#7803](https://github.com/blockscout/blockscout/pull/7803) - Fix additional sources and interfaces, save names for vyper contracts
 - [#7758](https://github.com/blockscout/blockscout/pull/7758) - Remove limit for configurable fetchers
 - [#7764](https://github.com/blockscout/blockscout/pull/7764) - Fix missing ranges insertion and deletion logic
+- [#7843](https://github.com/blockscout/blockscout/pull/7843) - Fix created_contract_code_indexed_at updating
 
 ### Chore
 
