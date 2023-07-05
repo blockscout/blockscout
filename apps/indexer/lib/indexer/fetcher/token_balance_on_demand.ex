@@ -49,7 +49,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
        when not is_nil(address_hash) do
     stale_current_token_balances =
       current_token_balances
-      |> Enum.filter(fn {current_token_balance, _, _} -> current_token_balance.block_number < stale_balance_window end)
+      |> Enum.filter(fn {current_token_balance, _} -> current_token_balance.block_number < stale_balance_window end)
 
     if Enum.count(stale_current_token_balances) > 0 do
       fetch_and_update(latest_block_number, address_hash, stale_current_token_balances)
