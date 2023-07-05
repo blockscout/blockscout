@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   def exchange_rate(%{fiat_value: fiat_value}) when not is_nil(fiat_value), do: to_string(fiat_value)
   def exchange_rate(_), do: nil
 
-  def prepare_token_balance(token_balance, [token, _]) do
+  def prepare_token_balance(token_balance, token) do
     %{
       "address" => Helper.address_with_info(nil, token_balance.address, token_balance.address_hash, false),
       "value" => token_balance.value,
