@@ -77,7 +77,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
         :filter_addresses
       )
     end)
-    |> Multi.run(:addresses, fn repo, %{filter_addresses: addresses} ->
+    |> Multi.run(:addresses, fn repo, %{filter_addresses: {addresses, _existing_addresses}} ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, addresses, insert_options) end,
         :addresses,
@@ -85,10 +85,14 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
         :addresses
       )
     end)
-    |> Multi.run(:created_address_code_indexed_at_transactions, fn repo, %{addresses: addresses}
+    |> Multi.run(:created_address_code_indexed_at_transactions, fn repo,
+                                                                   %{
+                                                                     addresses: addresses,
+                                                                     filter_addresses: {_, existing_addresses_map}
+                                                                   }
                                                                    when is_list(addresses) ->
       Instrumenter.block_import_stage_runner(
-        fn -> update_transactions(repo, addresses, update_transactions_options) end,
+        fn -> update_transactions(repo, addresses, existing_addresses_map, update_transactions_options) end,
         :addresses,
         :addresses,
         :created_address_code_indexed_at_transactions
@@ -101,7 +105,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
 
   ## Private Functions
 
-  @spec filter_addresses(Repo.t(), [map()]) :: {:ok, [map()]}
+  @spec filter_addresses(Repo.t(), [map()]) :: {:ok, {[map()], map()}}
   defp filter_addresses(repo, changes_list) do
     hashes = Enum.map(changes_list, & &1.hash)
 
@@ -129,7 +133,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
       end)
       |> Enum.reverse()
 
-    {:ok, filtered_addresses}
+    {:ok, {filtered_addresses, existing_addresses_map}}
   end
 
   defp should_update?(new_address, existing_address) do
@@ -220,10 +224,14 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
     )
   end
 
-  defp update_transactions(repo, addresses, %{timeout: timeout, timestamps: timestamps}) do
+  defp update_transactions(repo, addresses, existing_addresses_map, %{timeout: timeout, timestamps: timestamps}) do
     ordered_created_contract_hashes =
       addresses
-      |> Enum.filter(& &1.contract_code)
+      |> Enum.filter(fn address ->
+        existing_address = existing_addresses_map[address.hash]
+
+        not is_nil(address.contract_code) and (is_nil(existing_address) or is_nil(existing_address.contract_code))
+      end)
       |> MapSet.new(& &1.hash)
       |> Enum.sort()
 
