@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.Chain do
 
   import Explorer.Chain,
     only: [
-      balance_in_fiat: 2,
+      balance_in_fiat: 1,
       find_or_insert_address_from_hash: 1,
       hash_to_block: 1,
       hash_to_transaction: 1,
@@ -100,10 +100,17 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def next_page_params([], _list, _params), do: nil
+  def next_page_params(next_page, list, params, is_ctb_with_fiat_value \\ false)
 
-  def next_page_params(_, list, params) do
-    next_page_params = Map.merge(params, paging_params(List.last(list)))
+  def next_page_params([], _list, _params, _), do: nil
+
+  def next_page_params(_, list, params, is_ctb_with_fiat_value) do
+    paging_params =
+      if is_ctb_with_fiat_value,
+        do: paging_params_with_fiat_value(List.last(list)),
+        else: paging_params(List.last(list))
+
+    next_page_params = Map.merge(params, paging_params)
     current_items_count_str = Map.get(next_page_params, "items_count")
 
     items_count =
@@ -451,10 +458,6 @@ defmodule BlockScoutWeb.Chain do
     %{"address_hash" => to_string(address_hash), "value" => Decimal.to_integer(value)}
   end
 
-  defp paging_params({%CurrentTokenBalance{id: id, value: value} = ctb, token}) do
-    %{"fiat_value" => balance_in_fiat(ctb, token), "value" => value, "id" => id}
-  end
-
   defp paging_params(%CoinBalance{block_number: block_number}) do
     %{"block_number" => block_number}
   end
@@ -496,6 +499,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%StateChange{}) do
     %{"state_changes" => nil}
+  end
+
+  defp paging_params_with_fiat_value(%CurrentTokenBalance{id: id, value: value} = ctb) do
+    %{"fiat_value" => balance_in_fiat(ctb), "value" => value, "id" => id}
   end
 
   defp block_or_transaction_from_param(param) do

@@ -2690,24 +2690,8 @@ defmodule Explorer.Chain do
   @doc """
   Return the balance in usd corresponding to this token. Return nil if the fiat_value of the token is not present.
   """
-  def balance_in_fiat(_token_balance, %{fiat_value: fiat_value, decimals: decimals})
-      when nil in [fiat_value, decimals] do
-    nil
-  end
-
-  def balance_in_fiat(token_balance, %{fiat_value: fiat_value, decimals: decimals}) do
-    tokens = CurrencyHelper.divide_decimals(token_balance.value, decimals)
-    Decimal.mult(tokens, fiat_value)
-  end
-
-  def balance_in_fiat(%{token: %{fiat_value: nil}}) do
-    nil
-  end
-
   def balance_in_fiat(token_balance) do
-    tokens = CurrencyHelper.divide_decimals(token_balance.value, token_balance.token.decimals)
-    price = token_balance.token.fiat_value
-    Decimal.mult(tokens, price)
+    token_balance.fiat_value
   end
 
   defp contract?(%{contract_code: nil}), do: false
