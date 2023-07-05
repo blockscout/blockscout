@@ -47,7 +47,6 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
-    CurrencyHelper,
     Data,
     DecompiledSmartContract,
     Hash,
