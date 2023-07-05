@@ -48,8 +48,8 @@ blockscout:
       proxy:
         resources:
           requests:
-            memory: 500Mi
-            cpu: 300m
+            memory: 5Gi
+            cpu: 4
     poolSize: 30
     resources:
       requests:
