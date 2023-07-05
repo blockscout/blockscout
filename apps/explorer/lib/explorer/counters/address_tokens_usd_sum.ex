@@ -54,7 +54,7 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
           Decimal.t()
   defp address_tokens_fiat_sum(token_balances) do
     token_balances
-    |> Enum.reduce(Decimal.new(0), fn {token_balance, _, token}, acc ->
+    |> Enum.reduce(Decimal.new(0), fn {token_balance, token}, acc ->
       if token_balance.value && token.fiat_value && token.decimals do
         Decimal.add(acc, Chain.balance_in_fiat(token_balance, token))
       else

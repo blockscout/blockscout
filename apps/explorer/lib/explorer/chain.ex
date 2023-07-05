@@ -8165,12 +8165,12 @@ defmodule Explorer.Chain do
 
     token_balances_except_bridged =
       token_balances
-      |> Enum.filter(fn {_, _, token} -> !token.bridged end)
+      |> Enum.filter(fn {_, token} -> !token.bridged end)
 
     circles_total_balance_raw =
       if Enum.count(circles_addresses_list) > 0 do
         token_balances_except_bridged
-        |> Enum.reduce(Decimal.new(0), fn {token_balance, _, token}, acc_balance ->
+        |> Enum.reduce(Decimal.new(0), fn {token_balance, token}, acc_balance ->
           {:ok, token_address} = Chain.hash_to_address(token.contract_address_hash)
 
           from_address = from_address_hash(token_address)
