@@ -11,8 +11,6 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   import EthereumJSONRPC,
     only: [fetch_block_number_by_tag: 2, json_rpc: 2, integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
 
-  # import Explorer.Helper, only: [parse_integer: 1]
-
   alias EthereumJSONRPC.Block.ByNumber
   alias Explorer.Chain.Events.Publisher
   alias Indexer.BoundQueue
