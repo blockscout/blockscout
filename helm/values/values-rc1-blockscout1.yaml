@@ -53,8 +53,8 @@ blockscout:
     poolSize: 30
     resources:
       requests:
-        memory: 500Mi
-        cpu: 1500m
+        memory: 5Gi
+        cpu: 4
     stats:
       enabled: true
       reportUrl: '{"overview": "https://datastudio.google.com/embed/reporting/dbe0c03a-47a7-4b51-8236-0b9023c22017/page/hDehC?hl=en", "addresses":"https://datastudio.google.com/embed/reporting/7336873f-23dc-4ce3-b556-eaeae323f480/page/hDehC?hl=en", "cStables":"https://datastudio.google.com/embed/reporting/7e6f4ff4-6e47-461f-a1b7-d0c1457f7807/page/hDehC?hl=en", "transactions":"https://datastudio.google.com/embed/reporting/4ec9cd78-9013-4ab1-8cf1-923997b32919/page/hDehC?hl=en", "reserve": "https://datastudio.google.com/embed/reporting/33907f50-c872-47db-984f-ea4fa200bc0f/page/hDehC?hl=en", "epoch": "https://datastudio.google.com/embed/reporting/221a435f-c4b3-4de6-9047-e472e336d88f/page/VEuZC"}'
