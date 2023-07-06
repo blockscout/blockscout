@@ -1,6 +1,7 @@
 import Config
 
 config :indexer, Indexer.Tracer, env: "production", disabled?: true
+config :indexer, Indexer.Fetcher.CoinBalance, concurrency: 1
 
 config :indexer, :environment, :prod
 
