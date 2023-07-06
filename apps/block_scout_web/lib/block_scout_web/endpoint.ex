@@ -68,7 +68,7 @@ defmodule BlockScoutWeb.Endpoint do
     same_site: "Lax",
     http_only: false,
     domain: Application.compile_env(:block_scout_web, :cookie_domain),
-    max_age: Application.get_env(:block_scout_web, :session_cookie_ttl)
+    max_age: Application.compile_env(:block_scout_web, :session_cookie_ttl)
   )
 
   use SpandexPhoenix
