@@ -526,7 +526,7 @@ config :indexer, Indexer.Block.Catchup.Fetcher,
   Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", "4"))
 
 {internal_transaction_fetcher_concurrency, _} =
-  Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY", "5"))
+  Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY", "4"))
 
 config :indexer, Indexer.Fetcher.InternalTransaction,
   batch_size: internal_transaction_fetcher_batch_size,
