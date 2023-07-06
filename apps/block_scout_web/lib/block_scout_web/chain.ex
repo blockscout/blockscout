@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.Chain do
 
   import Explorer.Chain,
     only: [
-      balance_in_fiat: 1,
       find_or_insert_address_from_hash: 1,
       hash_to_block: 1,
       hash_to_transaction: 1,
@@ -502,7 +501,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params_with_fiat_value(%CurrentTokenBalance{id: id, value: value} = ctb) do
-    %{"fiat_value" => balance_in_fiat(ctb), "value" => value, "id" => id}
+    %{"fiat_value" => ctb.fiat_value, "value" => value, "id" => id}
   end
 
   defp block_or_transaction_from_param(param) do
