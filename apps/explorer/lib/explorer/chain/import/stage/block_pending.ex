@@ -14,7 +14,7 @@ defmodule Explorer.Chain.Import.Stage.BlockPending do
   @impl Stage
   def runners,
     do: [
-      Runner.InternalTransactions
+      Runner.InternalTransactions,
     ]
 
   @impl Stage

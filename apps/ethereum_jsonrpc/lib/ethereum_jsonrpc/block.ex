@@ -156,7 +156,6 @@ defmodule EthereumJSONRPC.Block do
         %{
           "baseFeePerGas" => base_fee_per_gas,
           "difficulty" => difficulty,
-          "extTransactions" => ext_transactions,
           "extTransactionsRoot" => ext_transactions_root,
           "extRollupRoot" => ext_rollup_root,
           "extraData" => extra_data,
@@ -191,8 +190,9 @@ defmodule EthereumJSONRPC.Block do
     %{
       base_fee_per_gas: base_fee_per_gas,
       difficulty: difficulty,
-      ext_transactions: ext_transactions,
+      ext_rollup_root: ext_rollup_root,
       extra_data: extra_data,
+      ext_transactions_root: ext_transactions_root,
       gas_limit: gas_limit,
       gas_used: gas_used,
       hash: hash,
@@ -201,7 +201,7 @@ defmodule EthereumJSONRPC.Block do
       location: location,
       manifest_hash_full: manifest_hash_full,
       miner_hash: miner_hash,
-      mix_hash: Map.get(elixir, "mixHash", "0x0"), # maybe consider doing this instead of changing the method header ?
+      mix_hash: mix_hash,
       nonce: Map.get(elixir, "nonce", 0),
       number: number,
       number_full: number_full,
@@ -442,6 +442,11 @@ defmodule EthereumJSONRPC.Block do
 
   def elixir_to_transactions(_), do: []
 
+  @spec elixir_to_ext_transactions(elixir) :: Transactions.elixir()
+  def elixir_to_ext_transactions(%{"extTransactions" => extTransactions}), do: extTransactions
+
+  def elixir_to_ext_transactions(_), do: []
+
   @doc """
   Get `t:EthereumJSONRPC.Uncles.elixir/0` from `t:elixir/0`.
 
@@ -589,6 +594,10 @@ defmodule EthereumJSONRPC.Block do
 
   defp entry_to_elixir({"transactions" = key, transactions}) do
     {key, Transactions.to_elixir(transactions)}
+  end
+
+  defp entry_to_elixir({"extTransactions" = key, extTransactions}) do
+    {key, Transactions.ext_to_elixir(extTransactions)}
   end
 
   # Arbitrum fields

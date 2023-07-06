@@ -1,6 +1,12 @@
-alias Explorer.Chain.{Address, Block, Hash, Transaction}
+alias Explorer.Chain.{Address, Block, Hash, Transaction, ExternalTransaction}
 
 defimpl Phoenix.Param, for: Transaction do
+  def to_param(%@for{hash: hash}) do
+    @protocol.to_param(hash)
+  end
+end
+
+defimpl Phoenix.Param, for: ExternalTransaction do
   def to_param(%@for{hash: hash}) do
     @protocol.to_param(hash)
   end

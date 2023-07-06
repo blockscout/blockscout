@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
-  alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
+  alias BlockScoutWeb.{ABIEncodedValueView, TransactionView, ExternalTransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
   alias BlockScoutWeb.Tokens.Helpers
   alias Ecto.Association.NotLoaded

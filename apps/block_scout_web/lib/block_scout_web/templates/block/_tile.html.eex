@@ -30,7 +30,7 @@
         </span>
         <!-- external transactions -->
         <span class="mr-2">
-          <%= ngettext("%{count} Etxn", "%{count} Etxn", Enum.count(@block.ext_transactions)) %>
+          <%= ngettext("%{count} Etxn", "%{count} Etxn", Enum.count(@block.ext_transactions)) %> <!--  -->
         </span>
         <%= if @block.size do %>
            <!-- size -->

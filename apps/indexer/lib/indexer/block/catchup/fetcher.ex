@@ -118,8 +118,10 @@ defmodule Indexer.Block.Catchup.Fetcher do
     {async_import_remaining_block_data_options, options_with_block_rewards_errors} =
       Map.split(options, @async_import_remaining_block_data_options)
 
+
     {block_reward_errors, options_without_block_rewards_errors} =
       pop_in(options_with_block_rewards_errors[:block_rewards][:errors])
+
 
     full_chain_import_options =
       put_in(options_without_block_rewards_errors, [:blocks, :params, Access.all(), :consensus], true)

@@ -98,19 +98,19 @@
               </a>
             </dd>
           </dl>
-          <!-- # of Transactions -->
+          <!-- # of ExternalTransactions -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-              text: gettext("The number of transactions in the block.") %>
+              text: gettext("The number of external transactions in the block.") %>
               <%= gettext("External Transactions") %>
             </dt>
             <dd class="col-sm-9 col-lg-10">
               <a href="#txs" class="page-link bs-label large btn-no-border-link-to-tems">
                 <%= if @block_transaction_count == 1 do %>
-                <%= gettext "%{count} External Transaction", count: Enum.count(@block.ext_transactions) %>
+                  <%= gettext "%{count} External Transaction", count: @block_transaction_count %>
                 <% else %>
-                <%= gettext "%{count} External Transactions", count: Enum.count(@block.ext_transactions) %>
+                  <%= gettext "%{count} External Transactions", count: @block_external_transaction_count %>
                 <% end %>
               </a>
             </dd>
@@ -309,7 +309,6 @@
               text: gettext("Ext Rollup Root Hash when block was produced.") %>
               <%= gettext("Ext Rollup Root Hash") %>
             </dt>
-            <dt class="col-sm-3 col-lg-2 text-muted"></dt>
             <dd class="col-sm-9 col-lg-10"><%= to_string(@block.ext_rollup_root) %></dd>
           </dl>
           <% end %>

@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.AddressView do
   alias BlockScoutWeb.{AccessHelpers, LayoutView}
   alias Explorer.Account.CustomABI
   alias Explorer.{Chain, CustomContractsHelpers, Repo}
-  alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.{Address, ExternalTransaction, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
@@ -77,6 +77,23 @@ defmodule BlockScoutWeb.AddressView do
         _truncate
       ) do
     gettext("Contract Address Pending")
+  end
+
+  def address_partial_selector(
+        %ExternalTransaction{to_address: nil, created_contract_address: contract_address},
+        :to,
+        current_address,
+        truncate
+      ) do
+    matching_address_check(current_address, contract_address, true, truncate)
+  end
+
+  def address_partial_selector(%ExternalTransaction{to_address: address}, :to, current_address, truncate) do
+    matching_address_check(current_address, address, contract?(address), truncate)
+  end
+
+  def address_partial_selector(%ExternalTransaction{from_address: address}, :from, current_address, truncate) do
+    matching_address_check(current_address, address, contract?(address), truncate)
   end
 
   def address_partial_selector(

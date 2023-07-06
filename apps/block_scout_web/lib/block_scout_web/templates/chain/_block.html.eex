@@ -8,7 +8,8 @@
         ) %>
     <div class="tile-bottom-contents">
       <div class="tile-transactions">
-        <span class="mr-2"><%= gettext("%{count} Transactions", count: Enum.count(@block.transactions)) %></span>
+        <span class="mr-2"><%= gettext("%{count} Txn", count: Enum.count(@block.transactions)) %></span>
+        <span class="mr-2"><%= gettext("%{count} Etxn", count: Enum.count(@block.ext_transactions)) %></span>
         <span class="text-nowrap" data-from-now="<%= @block.timestamp %>"> </span>
       </div>
       <%= if System.get_env("HIDE_BLOCK_MINER") !== "true" do %>

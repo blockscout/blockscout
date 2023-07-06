@@ -61,6 +61,7 @@ defmodule Indexer.Block.Fetcher do
                 block_second_degree_relations: Import.Runner.options(),
                 block_rewards: Import.Runner.options(),
                 broadcast: term(),
+                ext_transactions: Import.Runner.options(),
                 logs: Import.Runner.options(),
                 token_transfers: Import.Runner.options(),
                 tokens: Import.Runner.options(),
@@ -130,6 +131,7 @@ defmodule Indexer.Block.Fetcher do
            %Blocks{
              blocks_params: blocks_params,
              transactions_params: transactions_params_without_receipts,
+             ext_transactions_params: ext_transactions,
              block_second_degree_relations_params: block_second_degree_relations_params,
              errors: blocks_errors
            }}} <- {:blocks, fetched_blocks}, # this is calling chain/block.ex
@@ -167,6 +169,7 @@ defmodule Indexer.Block.Fetcher do
          beneficiaries_with_gas_payment =
            beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_receipts),
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
+
          {:ok, inserted} <-
            __MODULE__.import(
              state,
@@ -181,7 +184,8 @@ defmodule Indexer.Block.Fetcher do
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
-               transactions: %{params: transactions_with_receipts}
+               transactions: %{params: transactions_with_receipts},
+               ext_transactions: %{params: ext_transactions}
              }
            ) do
       Prometheus.Instrumenter.block_batch_fetch(fetch_time, callback_module)

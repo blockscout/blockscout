@@ -1,0 +1,34 @@
+<div class="tile tile-type-emission-reward fade-in" data-identifier-hash="<%= @validator.block.hash %>">
+  <div class="row tile-body">
+    <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
+      <span class="tile-label">
+        <%= gettext("Emission Contract") %>
+      </span>
+      <span class="tile-status-label ml-2 ml-md-0">
+        <%= gettext("Success") %>
+      </span>
+    </div>
+    <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
+      <%= link(
+        @validator.block.hash,
+        to: block_path(BlockScoutWeb.Endpoint, :show, @validator.block.hash),
+        class: "text-truncate") %>
+      <span class="text-nowrap">
+        <%= @emission_funds |> BlockScoutWeb.AddressView.address_partial_selector(nil, @current_address) |> BlockScoutWeb.RenderHelpers.render_partial() %>
+        &rarr;
+        <%= @validator |> BlockScoutWeb.AddressView.address_partial_selector(nil, @current_address) |> BlockScoutWeb.RenderHelpers.render_partial() %>
+      </span>
+      <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
+        <span class="tile-title">
+          <%= format_wei_value(@emission_funds.reward, :ether) %>
+        </span>
+      </span>
+    </div>
+    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-start text-md-right mt-3 mt-md-0">
+      <span class="mr-2 mr-md-0 order-1">
+        <%= @validator |> block_number() |> BlockScoutWeb.RenderHelpers.render_partial() %>
+      </span>
+      <span class="mr-2 mr-md-0 order-2" data-from-now="<%= block_timestamp(@validator) %>"></span>
+    </div>
+  </div>
+</div>

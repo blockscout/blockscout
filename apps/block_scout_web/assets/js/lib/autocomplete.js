@@ -148,6 +148,8 @@ const selection = (event) => {
     window.location = `/tx/${selectionValue.tx_hash}`
   } else if (selectionValue.type === 'block') {
     window.location = `/blocks/${selectionValue.block_hash}`
+  } else if (selectionValue.type === 'external-transaction') {
+    window.location = `/etx/${selectionValue.tx_hash}`
   }
 }
 

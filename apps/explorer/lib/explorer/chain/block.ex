@@ -7,14 +7,14 @@ defmodule Explorer.Chain.Block do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Gas, Hash, PendingBlockOperation, Transaction, Wei}
+  alias Explorer.Chain.{Address, Gas, Hash, PendingBlockOperation, ExternalTransaction, Transaction, Wei}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
   @optional_attrs ~w(size refetch_needed difficulty base_fee_per_gas)a
 
   @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
-  @quai_attrs ~w(manifest_hash_full number_full parent_hash_full parent_entropy_full parent_delta_s_full ext_transactions sub_manifest location is_prime_coincident is_region_coincident total_entropy parent_entropy parent_delta_s)a
+  @quai_attrs ~w(manifest_hash_full number_full parent_hash_full parent_entropy_full parent_delta_s_full sub_manifest location is_prime_coincident is_region_coincident total_entropy parent_entropy parent_delta_s transactions_root ext_transactions_root ext_rollup_root)a
 
   @typedoc """
   How much work is required to find a hash with some number of leading 0s.  It is measured in hashes for PoW
@@ -71,8 +71,10 @@ defmodule Explorer.Chain.Block do
           refetch_needed: boolean(),
           base_fee_per_gas: Wei.t(),
           is_empty: boolean(),
+          ext_transactions: %Ecto.Association.NotLoaded{} | [ExternalTransaction.t()],
 #          ext_transactions: [Transaction.t()],
-          ext_transactions: [Hash.Full.t()],
+          ext_transactions_root: Hash.Full.t(),
+          transactions_root: Hash.Full.t(),
           ext_rollup_root: Hash.Full.t(),
           sub_manifest: [Hash.Full.t()],
           manifest_hash_full: [Hash.Full.t()],
@@ -102,7 +104,9 @@ defmodule Explorer.Chain.Block do
     field(:parent_entropy_full, {:array, :decimal})
     field(:parent_delta_s_full, {:array, :decimal})
     field(:total_entropy, :decimal)
-    field(:ext_transactions, {:array, Hash.Full})
+    #field(:ext_transactions, {:array, Hash.Full})
+    field(:transactions_root, Hash.Full)
+    field(:ext_transactions_root, Hash.Full)
     field(:ext_rollup_root, Hash.Full)
     field(:sub_manifest, {:array, Hash.Full})
     field(:manifest_hash_full, {:array, Hash.Full})
@@ -124,6 +128,7 @@ defmodule Explorer.Chain.Block do
     has_many(:uncles, through: [:uncle_relations, :uncle])
 
     has_many(:transactions, Transaction)
+    has_many(:ext_transactions, ExternalTransaction)
 #    has_many(:ext_transactions, Transaction)
     has_many(:transaction_forks, Transaction.Fork, foreign_key: :uncle_hash)
 

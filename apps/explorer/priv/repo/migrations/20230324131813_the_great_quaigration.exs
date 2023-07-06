@@ -9,8 +9,9 @@ defmodule Explorer.Repo.Migrations.Quaigrate do
       add :parent_delta_s_full, {:array, :numeric}
       add :parent_hash_full, {:array, :bytea}
       add :sub_manifest, {:array, :bytea}
-      add :ext_transactions, {:array, :bytea}
       add :ext_rollup_root, :bytea
+      add :transactions_root, :bytea
+      add :ext_transactions_root, :bytea
       add :location, :string
       add :is_prime_coincident, :boolean
       add :is_region_coincident, :boolean

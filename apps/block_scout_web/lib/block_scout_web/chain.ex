@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.Chain do
     Token,
     TokenTransfer,
     Transaction,
+    ExternalTransaction,
     Wei
   }
 
@@ -71,7 +72,7 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  @spec from_param(String.t()) :: {:ok, Address.t() | Block.t() | Transaction.t()} | {:error, :not_found}
+  @spec from_param(String.t()) :: {:ok, Address.t() | Block.t() | Transaction.t() | ExternalTransaction.t() } | {:error, :not_found}
   def from_param(param)
 
   def from_param("0x" <> number_string = param) when byte_size(number_string) == @address_hash_len,
@@ -333,7 +334,15 @@ defmodule BlockScoutWeb.Chain do
     %{"inserted_at" => DateTime.to_iso8601(inserted_at), "hash" => hash}
   end
 
+  defp paging_params(%ExternalTransaction{block_number: nil, inserted_at: inserted_at, hash: hash}) do
+    %{"inserted_at" => DateTime.to_iso8601(inserted_at), "hash" => hash}
+  end
+
   defp paging_params(%Transaction{block_number: block_number, index: index}) do
+    %{"block_number" => block_number, "index" => index}
+  end
+
+  defp paging_params(%ExternalTransaction{block_number: block_number, index: index}) do
     %{"block_number" => block_number, "index" => index}
   end
 

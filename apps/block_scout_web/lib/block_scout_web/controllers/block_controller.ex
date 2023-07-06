@@ -19,6 +19,7 @@ defmodule BlockScoutWeb.BlockController do
         [
           necessity_by_association: %{
             :transactions => :optional,
+            :ext_transactions => :optional,
             [miner: :names] => :optional,
             :rewards => :optional
           },
@@ -41,6 +42,7 @@ defmodule BlockScoutWeb.BlockController do
     [
       necessity_by_association: %{
         :transactions => :optional,
+        :ext_transactions => :optional,
         [miner: :names] => :optional,
         :rewards => :optional
       },
@@ -53,6 +55,7 @@ defmodule BlockScoutWeb.BlockController do
     [
       necessity_by_association: %{
         :transactions => :optional,
+        :ext_transactions => :optional,
         [miner: :names] => :optional,
         :nephews => :required,
         :rewards => :optional

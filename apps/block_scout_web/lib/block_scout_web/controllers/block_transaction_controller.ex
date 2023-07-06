@@ -13,6 +13,80 @@ defmodule BlockScoutWeb.BlockTransactionController do
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
   @burn_address_hash burn_address_hash
 
+  def etx(conn, %{"block_hash_or_number" => formatted_block_hash_or_number, "type" => "JSON"} = params) do
+    case param_block_hash_or_number_to_block(formatted_block_hash_or_number, []) do
+      {:ok, block} ->
+        full_options =
+          Keyword.merge(
+            [
+              necessity_by_association: %{
+                :block => :optional,
+                [created_contract_address: :names] => :optional,
+                [from_address: :names] => :required,
+                [to_address: :names] => :optional,
+                [created_contract_address: :smart_contract] => :optional,
+                [from_address: :smart_contract] => :optional,
+                [to_address: :smart_contract] => :optional
+              }
+            ],
+            put_key_value_to_paging_options(paging_options(params), :is_index_in_asc_order, true)
+          )
+
+        transactions_plus_one = Chain.block_to_transactions(block.hash, full_options)
+
+        {transactions, next_page} = split_list_by_page(transactions_plus_one)
+
+        next_page_path =
+          case next_page_params(next_page, transactions, params) do
+            nil ->
+              nil
+
+            next_page_params ->
+              block_transaction_path(
+                conn,
+                :index,
+                block,
+                Map.delete(next_page_params, "type")
+              )
+          end
+
+        items =
+          transactions
+          |> Enum.map(fn transaction ->
+            View.render_to_string(
+              TransactionView,
+              "_tile.html",
+              transaction: transaction,
+              burn_address_hash: @burn_address_hash,
+              conn: conn
+            )
+          end)
+
+        json(
+          conn,
+          %{
+            items: items,
+            next_page_path: next_page_path
+          }
+        )
+
+      {:error, {:invalid, :hash}} ->
+        not_found(conn)
+
+      {:error, {:invalid, :number}} ->
+        not_found(conn)
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> render(
+          "404.html",
+          block: nil,
+          block_above_tip: block_above_tip(formatted_block_hash_or_number)
+        )
+    end
+  end
+
   def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number, "type" => "JSON"} = params) do
     case param_block_hash_or_number_to_block(formatted_block_hash_or_number, []) do
       {:ok, block} ->
@@ -71,6 +145,7 @@ defmodule BlockScoutWeb.BlockTransactionController do
             )
           end)
 
+
         json(
           conn,
           %{
@@ -107,12 +182,14 @@ defmodule BlockScoutWeb.BlockTransactionController do
          ) do
       {:ok, block} ->
         block_transaction_count = Chain.block_to_transaction_count(block.hash)
+        block_external_transaction_count = Chain.block_to_external_transaction_count(block.hash)
 
         render(
           conn,
           "index.html",
           block: block,
           block_transaction_count: block_transaction_count,
+          block_external_transaction_count: block_external_transaction_count,
           current_path: Controller.current_full_path(conn)
         )
 

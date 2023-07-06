@@ -455,7 +455,11 @@ defmodule BlockScoutWeb.TransactionView do
         gettext("Contract Call")
 
       true ->
-        gettext("Transaction")
+        cond do
+          transaction.type == 0 -> gettext("Type 0 Transaction")
+          transaction.type == 2 -> gettext("Type 2 Transaction")
+          true -> gettext("Transaction")
+        end
     end
   end
 

@@ -1,0 +1,23 @@
+<%= case token_transfer_amount(@transfer) do %>
+    <% {:ok, :erc721_instance} -> %>
+        <%= render BlockScoutWeb.ExternalTransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: List.first(@transfer.token_ids) %>
+    <% {:ok, :erc1155_instance, value} -> %>
+        <% transfer_type = Chain.get_token_transfer_type(@transfer) %>
+        <%= if transfer_type == :token_spawning do %>
+            <%= render BlockScoutWeb.ExternalTransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: List.first(@transfer.token_ids) %>
+        <% else %>
+            <%= "#{value} " %>
+            <%= render BlockScoutWeb.ExternalTransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: List.first(@transfer.token_ids) %>
+        <% end %>
+    <% {:ok, :erc1155_instance, values, token_ids, _decimals} -> %>
+        <% values_ids = Enum.zip(values, token_ids) %>
+        <%= for {value, token_id} <- values_ids do %>
+            <div>
+            <%= "#{value} "%>
+            <%= render BlockScoutWeb.ExternalTransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: token_id %>
+            </div>
+        <% end %>
+    <% {:ok, value} -> %>
+        <%= value %>
+        <%= " " %><%= render BlockScoutWeb.ExternalTransactionView, "_link_to_token_symbol.html", transfer: @transfer %>
+<% end %>

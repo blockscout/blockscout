@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.TransactionPage do
   end
 
   def visit_page(session, %Transaction{hash: transaction_hash}) do
+    IO.puts(transaction_hash)
     visit(session, "/tx/#{transaction_hash}")
   end
 end

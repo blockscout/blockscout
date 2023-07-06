@@ -126,11 +126,15 @@ defmodule EthereumJSONRPC.Receipts do
     {requests, id_to_transaction_params} =
       transactions_params
       |> Stream.with_index()
-      |> Enum.reduce({[], %{}}, fn {%{hash: transaction_hash} = transaction_params, id},
+      |> Enum.reduce({[], %{}}, fn {%{hash: transaction_hash, type: type} = transaction_params, id},
                                    {acc_requests, acc_id_to_transaction_params} ->
-        requests = [request(id, transaction_hash) | acc_requests]
-        id_to_transaction_params = Map.put(acc_id_to_transaction_params, id, transaction_params)
-        {requests, id_to_transaction_params}
+#        if type == 1 do
+#          {acc_requests, acc_id_to_transaction_params}
+#        else
+          requests = [request(id, transaction_hash) | acc_requests]
+          id_to_transaction_params = Map.put(acc_id_to_transaction_params, id, transaction_params)
+          {requests, id_to_transaction_params}
+#        end
       end)
 
     with {:ok, responses} <- json_rpc(requests, json_rpc_named_arguments),
@@ -214,7 +218,7 @@ defmodule EthereumJSONRPC.Receipts do
   defp request(id, transaction_hash) when is_integer(id) and is_binary(transaction_hash) do
     request(%{
       id: id,
-      method: "eth_getTransactionReceipt",
+      method: "quai_getTransactionReceipt",
       params: [transaction_hash]
     })
   end

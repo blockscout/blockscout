@@ -51,6 +51,7 @@ const appJs =
       'verified-contracts': './js/pages/verified_contracts.js',
       'pending-transactions': './js/pages/pending_transactions.js',
       'transaction': './js/pages/transaction.js',
+      'external-transaction': './js/pages/external-transaction.js',
       'verification-form': './js/pages/verification_form.js',
       'token-counters': './js/pages/token_counters.js',
       'token-transfers': './js/pages/token/token_transfers.js',

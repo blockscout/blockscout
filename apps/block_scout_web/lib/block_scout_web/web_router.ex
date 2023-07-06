@@ -102,7 +102,7 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources "/block", BlockController, only: [:show], param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
-      resources("/external-transactions", BlockTransactionController, only: [:index], as: :external_transaction)
+      resources("/external-transactions", BlockExternalTransactionController, only: [:index], as: :external_transaction)
     end
 
     resources("/blocks", BlockController, as: :blocks, only: [:index])
@@ -112,6 +112,7 @@ defmodule BlockScoutWeb.WebRouter do
       only: [:show],
       param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
+      resources("/external-transactions", BlockExternalTransactionController, only: [:index], as: :transaction)
     end
 
     get("/reorgs", BlockController, :reorg, as: :reorg)
@@ -125,6 +126,9 @@ defmodule BlockScoutWeb.WebRouter do
     resources("/verified-contracts", VerifiedContractsController, only: [:index])
 
     get("/txs", TransactionController, :index)
+    get("/etxs", ExternalTransactionController, :index)
+
+    resources("/etx", ExternalTransactionController, only: [:show])
 
     resources "/tx", TransactionController, only: [:show] do
       resources(

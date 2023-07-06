@@ -156,4 +156,10 @@ defmodule EthereumJSONRPC.Transactions do
     |> Enum.map(&Transaction.to_elixir/1)
     |> Enum.filter(&(!is_nil(&1)))
   end
+
+  def ext_to_elixir(transactions) when is_list(transactions) do
+    transactions
+    |> Enum.map(&Transaction.to_elixir/1)
+    |> Enum.filter(&(!is_nil(&1)))
+  end
 end

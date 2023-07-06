@@ -1,0 +1,62 @@
+<div class="table-responsive text-center">
+  <table style="color: black;" summary="<%= gettext "Transaction Inputs" %>" class="table thead-light table-bordered">
+  <%= if !assigns[:error] do %>
+    <tr>
+    <td><%= gettext "Method Id" %></td>
+    <td colspan="3"><code>0x<%= @method_id %></code></td>
+    </tr>
+  <% end %>
+  <tr>
+  <td><%= if assigns[:error], do: gettext("Error"), else: gettext("Call") %></td>
+  <td colspan="3"><code><%= @text %></code></td>
+  </tr>
+  </table>
+</div>
+
+<% max_length = get_max_length() %>
+<%= unless Enum.empty?(@mapping) do %>
+  <div class="table-responsive text-center">
+    <table style="color: black; table-layout: fixed;" summary="<%= gettext "Transaction Inputs" %>" class="table thead-light table-bordered">
+      <tr>
+      <th scope="col" style="width: 10%;"><%= gettext "Name" %></th>
+      <th scope="col" style="width: 10%;"><%= gettext "Type" %></th>
+      <th scope="col"><%= gettext "Data" %></th>
+      <tr>
+      <%= for {name, type, value} <- @mapping do %>
+        <tr>
+          <td><%= name %></td>
+          <td><%= type %></td>
+          <td align=left>
+            <%= case BlockScoutWeb.ABIEncodedValueView.value_html(type, value, true) do %>
+              <% :error -> %>
+                <div class="alert alert-danger">
+                  <%= gettext "Error rendering value" %>
+                </div>
+              <% value_with_no_links -> %>
+                <%= case BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) do %>
+                  <% :error -> %>
+                    <%= nil %>
+                  <% copy_text -> %>
+                    <span
+                      aria-label='<%= gettext "Copy Value" %>'
+                      class="btn-copy-ico"
+                      data-clipboard-text='<%= copy_text %>'
+                      data-placement="top"
+                      data-toggle="tooltip"
+                      style="float: left;height: 20px;"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="25" height="25">
+                        <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
+                      </svg>
+                    </span>
+                <% end %>
+                <% value_with_links = BlockScoutWeb.ABIEncodedValueView.value_html(type, value, false)%>
+                <% string = template_to_string(value_with_no_links) %>
+                <pre class="transaction-input-text pre-wrap" style="margin-bottom: 0px;"><code style="line-height: 25px;"><%= if String.length(string) > max_length do %><div data-input-container><% input = trim(max_length, string) %><%= input[:show] %><span data-placeholder-dots>...</span><button type="button" class="btn-line" id="button-expand" aria-label="Expand" button-expand-input><%= gettext "Expand" %></button><span class="more d-none" data-hidden-text><%= input[:hide] %></span><button type="button" class="btn-line d-none" aria-label="Collapse" button-collapse-input><%= gettext "Collapse" %></button></div><% else %><%= value_with_links %><% end %></code></pre>
+              <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </table>
+   </div>
+<% end %>

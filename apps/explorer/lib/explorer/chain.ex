@@ -49,6 +49,7 @@ defmodule Explorer.Chain do
     CurrencyHelpers,
     Data,
     DecompiledSmartContract,
+    ExternalTransaction,
     Hash,
     Import,
     InternalTransaction,
@@ -957,6 +958,33 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Finds all `t:Explorer.Chain.ExternalTransaction.t/0`s in the `t:Explorer.Chain.Block.t/0`.
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
+      `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (a tuple of the lowest/oldest `{index}`) and. Results will be the transactions older than
+      the `index` that are passed.
+  """
+  @spec block_to_external_transactions(Hash.Full.t(), [paging_options | necessity_by_association_option]) :: [
+          ExternalTransaction.t()
+        ]
+  def block_to_external_transactions(block_hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    options
+    |> Keyword.get(:paging_options, @default_paging_options)
+    |> fetch_external_transactions_in_ascending_order_by_index()
+    |> join(:inner, [transaction], block in assoc(transaction, :block))
+    |> where([_, block], block.hash == ^block_hash)
+    |> join_associations(necessity_by_association)
+    |> Repo.all()
+  end
+
+  @doc """
   Finds sum of gas_used for new (EIP-1559) txs belongs to block
   """
   @spec block_to_gas_used_by_1559_txs(Hash.Full.t()) :: non_neg_integer()
@@ -1016,6 +1044,20 @@ defmodule Explorer.Chain do
       _ ->
         0
     end
+  end
+
+  @doc """
+  Counts the number of `t:Explorer.Chain.ExternalTransaction.t/0` in the `block`.
+  """
+  @spec block_to_external_transaction_count(Hash.Full.t()) :: non_neg_integer()
+  def block_to_external_transaction_count(block_hash) do
+    query =
+      from(
+        transaction in ExternalTransaction,
+        where: transaction.block_hash == ^block_hash
+      )
+
+    Repo.aggregate(query, :count, :hash)
   end
 
   @doc """
@@ -1202,6 +1244,54 @@ defmodule Explorer.Chain do
   @spec data_to_iodata(Data.t()) :: iodata()
   def data_to_iodata(data) do
     Data.to_iodata(data)
+  end
+
+  @doc """
+  The fee a `transaction` paid for the `t:Explorer.ExternalTransaction.t/0` `gas`
+
+  If the transaction is pending, then the fee will be a range of `unit`
+
+      iex> Explorer.Chain.fee(
+      ...>   %Explorer.Chain.ExternalTransaction{
+      ...>     gas: Decimal.new(3),
+      ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
+      ...>     gas_used: nil
+      ...>   },
+      ...>   :wei
+      ...> )
+      {:maximum, Decimal.new(6)}
+
+  If the transaction has been confirmed in block, then the fee will be the actual fee paid in `unit` for the `gas_used`
+  in the `transaction`.
+
+      iex> Explorer.Chain.fee(
+      ...>   %Explorer.Chain.ExternalTransaction{
+      ...>     gas: Decimal.new(3),
+      ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
+      ...>     gas_used: Decimal.new(2)
+      ...>   },
+      ...>   :wei
+      ...> )
+      {:actual, Decimal.new(4)}
+
+  """
+  @spec fee(ExternalTransaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t()}
+  def fee(%ExternalTransaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
+    fee =
+      gas_price
+      |> Wei.to(unit)
+      |> Decimal.mult(gas)
+
+    {:maximum, fee}
+  end
+
+  def fee(%ExternalTransaction{gas_price: gas_price, gas_used: gas_used}, unit) do
+    fee =
+      gas_price
+      |> Wei.to(unit)
+      |> Decimal.mult(gas_used)
+
+    {:actual, fee}
   end
 
   @doc """
@@ -2113,6 +2203,58 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+  Converts `t:Explorer.Chain.ExternalTransaction.t/0` `hash` to the `t:Explorer.Chain.ExternalTransaction.t/0` with that `hash`.
+
+  Returns `{:ok, %Explorer.Chain.ExternalTransaction{}}` if found
+
+      iex> %ExternalTransaction{hash: hash} = insert(:external_transaction)
+      iex> {:ok, %Explorer.Chain.ExternalTransaction{hash: found_hash}} = Explorer.Chain.hash_to_external_transaction(hash)
+      iex> found_hash == hash
+      true
+
+  Returns `{:error, :not_found}` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_external_transaction_hash(
+      ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
+      ...> )
+      iex> Explorer.Chain.hash_to_external_transaction(hash)
+      {:error, :not_found}
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.ExternalTransaction.t/0` has no associated record for that association, then the
+      `t:Explorer.Chain.ExternalTransaction.t/0` will not be included in the page `entries`.
+  """
+  @spec hash_to_external_transaction(Hash.Full.t(), [necessity_by_association_option]) ::
+          {:ok, ExternalTransaction.t()} | {:error, :not_found}
+  def hash_to_external_transaction(
+        %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash,
+        options \\ []
+      )
+      when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    ExternalTransaction
+    |> where(hash: ^hash)
+    |> join_associations(%{
+      :block => :optional,
+      [from_address: :names] => :optional,
+      [to_address: :names] => :optional,
+      [to_address: :smart_contract] => :optional
+    })
+    |> Repo.one()
+    |> case do
+      nil ->
+        {:error, :not_found}
+
+      external_transaction ->
+        {:ok, external_transaction}
+    end
+  end
+
+
   # preload_to_detect_tt?: we don't need to preload more than one token transfer in case the tx inside the list (we dont't show any token transfers on tx tile in new UI)
   def preload_token_transfers(
         %Transaction{hash: tx_hash, block_hash: block_hash} = transaction,
@@ -2323,6 +2465,7 @@ defmodule Explorer.Chain do
   """
   @spec list_blocks([paging_options | necessity_by_association_option]) :: [Block.t()]
   def list_blocks(options \\ []) when is_list(options) do
+    IO.puts("list_blocks")
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options) || @default_paging_options
     block_type = Keyword.get(options, :block_type, "Block")
@@ -3375,7 +3518,48 @@ defmodule Explorer.Chain do
     %{total_transactions_count: total_transactions_count, transactions: fetched_transactions}
   end
 
+  # RAP - random access pagination
+  @spec recent_collated_external_transactions_for_rap([paging_options | necessity_by_association_option]) :: %{
+          :total_transactions_count => non_neg_integer(),
+          :transactions => [ExternalTransaction.t()]
+        }
+  def recent_collated_external_transactions_for_rap(options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    total_transactions_count = external_transactions_available_count()
+
+    fetched_transactions =
+      if is_nil(paging_options.key) or paging_options.page_number == 1 do
+        paging_options.page_size
+        |> Kernel.+(1)
+        |> ExternalTransactions.take_enough()
+        |> case do
+          nil ->
+            transactions = fetch_recent_collated_external_transactions_for_rap(paging_options, necessity_by_association)
+            ExternalTransactions.update(transactions)
+            transactions
+
+          transactions ->
+            transactions
+        end
+      else
+        fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association)
+      end
+
+    %{total_transactions_count: total_transactions_count, transactions: fetched_transactions}
+  end
+
   def default_page_size, do: @default_page_size
+
+  def fetch_recent_collated_external_transactions_for_rap(paging_options, necessity_by_association) do
+    fetch_external_transactions_for_rap()
+    |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
+    |> handle_random_access_paging_options(paging_options)
+    |> join_associations(necessity_by_association)
+    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
+    |> Repo.all()
+  end
 
   def fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association) do
     fetch_transactions_for_rap()
@@ -3393,6 +3577,18 @@ defmodule Explorer.Chain do
 
   def transactions_available_count do
     Transaction
+    |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
+    |> limit(^@limit_showing_transactions)
+    |> Repo.aggregate(:count, :hash)
+  end
+
+  defp fetch_external_transactions_for_rap do
+    ExternalTransaction
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+  end
+
+  def external_transactions_available_count do
+    ExternalTransaction
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
     |> limit(^@limit_showing_transactions)
     |> Repo.aggregate(:count, :hash)
@@ -3709,6 +3905,47 @@ defmodule Explorer.Chain do
     |> order_by([token_transfer], asc: token_transfer.log_index)
     |> join_associations(necessity_by_association)
     |> Repo.all()
+  end
+
+  @doc """
+  Converts `transaction` to the status of the `t:Explorer.Chain.ExternalTransaction.t/0` whether pending or collated.
+
+  ## Returns
+
+    * `:pending` - the transaction has not be confirmed in a block yet.
+    * `:awaiting_internal_transactions` - the transaction happened in a pre-Byzantium block or on a chain like Ethereum
+      Classic (ETC) that never adopted [EIP-658](https://github.com/Arachnid/EIPs/blob/master/EIPS/eip-658.md), which
+      add transaction status to transaction receipts, so the status can only be derived whether the first internal
+      transaction has an error.
+    * `:success` - the transaction has been confirmed in a block
+    * `{:error, :awaiting_internal_transactions}` - the transactions happened post-Byzantium, but the error message
+       requires the internal transactions.
+    * `{:error, reason}` - the transaction failed due to `reason` in its first internal transaction.
+
+  """
+  @spec transaction_to_status(ExternalTransaction.t()) ::
+          :pending
+          | :success
+          | {:error, :awaiting_internal_transactions}
+          | {:error, reason :: String.t()}
+  def transaction_to_status(%ExternalTransaction{error: "dropped/replaced"}), do: {:error, "dropped/replaced"}
+  def transaction_to_status(%ExternalTransaction{block_hash: nil, status: nil}), do: :pending
+  def transaction_to_status(%ExternalTransaction{status: nil}), do: :success
+  def transaction_to_status(%ExternalTransaction{status: :ok}), do: :success
+
+  def transaction_to_status(%ExternalTransaction{status: :error, error: nil}),
+    do: {:error, :awaiting_internal_transactions}
+
+  def transaction_to_status(%ExternalTransaction{status: :error, error: error}) when is_binary(error), do: {:error, error}
+
+  def transaction_to_revert_reason(transaction) do
+    %ExternalTransaction{revert_reason: revert_reason} = transaction
+
+    if revert_reason == nil do
+      fetch_tx_revert_reason(transaction)
+    else
+      revert_reason
+    end
   end
 
   @doc """
@@ -4440,6 +4677,12 @@ defmodule Explorer.Chain do
 
   defp fetch_transactions_in_ascending_order_by_index(paging_options) do
     Transaction
+    |> order_by([transaction], desc: transaction.block_number, asc: transaction.index)
+    |> handle_paging_options(paging_options)
+  end
+
+  defp fetch_external_transactions_in_ascending_order_by_index(paging_options) do
+    ExternalTransaction
     |> order_by([transaction], desc: transaction.block_number, asc: transaction.index)
     |> handle_paging_options(paging_options)
   end
@@ -5724,6 +5967,57 @@ defmodule Explorer.Chain do
     hash
     |> transaction_exists?()
     |> boolean_to_check_result()
+  end
+
+  @doc """
+  Checks if a `t:Explorer.Chain.ExternalTransaction.t/0` with the given `hash` exists.
+
+  Returns `:ok` if found
+
+      iex> %ExternalTransaction{hash: hash} = insert(:external_transaction)
+      iex> Explorer.Chain.check_external_transaction_exists(hash)
+      :ok
+
+  Returns `:not_found` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_external_transaction_hash(
+      ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
+      ...> )
+      iex> Explorer.Chain.check_external_transaction_exists(hash)
+      :not_found
+  """
+  @spec check_external_transaction_exists(Hash.Full.t()) :: :ok | :not_found
+  def check_external_transaction_exists(hash) do
+    hash
+    |> external_transaction_exists?()
+    |> boolean_to_check_result()
+  end
+
+  @doc """
+  Checks if a `t:Explorer.Chain.ExternalTransaction.t/0` with the given `hash` exists.
+
+  Returns `true` if found
+
+      iex> %ExternalTransaction{hash: hash} = insert(:external_transaction)
+      iex> Explorer.Chain.external_transaction_exists?(hash)
+      true
+
+  Returns `false` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_external_transaction_hash(
+      ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
+      ...> )
+      iex> Explorer.Chain.external_transaction_exists?(hash)
+      false
+  """
+  @spec external_transaction_exists?(Hash.Full.t()) :: boolean()
+  def external_transaction_exists?(hash) do
+    query =
+      from(
+        external_transaction in ExternalTransaction,
+        where: external_transaction.hash == ^hash
+      )
+    Repo.exists?(query)
   end
 
   @doc """

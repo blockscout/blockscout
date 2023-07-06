@@ -13,13 +13,13 @@
         <%=
           link(
             gettext("External Transactions"),
-            class: "card-tab #{tab_status("external_transactions", @conn.request_path)}",
+            class: "card-tab #{tab_status("external-transactions", @conn.request_path)}",
             to: block_transaction_path(@conn, :index, @conn.params["block_hash_or_number"])
             )
         %>
       </div>
 
-      <div class="card-body" data-async-load data-async-listing="<%= @current_path %>" id="txs">
+      <div class="card-body" data-async-load data-async-listing="<%= @current_path %>" id="etxs">
 
       <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
