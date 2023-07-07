@@ -7,6 +7,7 @@
 - [#7836](https://github.com/blockscout/blockscout/pull/7836) - Improve unverified email flow
 - [#7784](https://github.com/blockscout/blockscout/pull/7784) - Search improvements: Add new fields, light refactoring
 - [#7811](https://github.com/blockscout/blockscout/pull/7811) - Filter addresses before insertion
+- [#7873](https://github.com/blockscout/blockscout/pull/7873) - Chunk realtime balances requests
 
 ### Fixes
 - [#7825](https://github.com/blockscout/blockscout/pull/7825) - Fix nginx config for the new frontend websockets
