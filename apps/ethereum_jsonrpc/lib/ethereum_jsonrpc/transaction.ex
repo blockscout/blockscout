@@ -230,6 +230,7 @@ defmodule EthereumJSONRPC.Transaction do
       block_number: block_number,
       from_address_hash: from_address_hash,
       gas: gas,
+      gas_price: nil,
       hash: hash,
       index: index,
       input: input,
