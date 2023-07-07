@@ -135,6 +135,7 @@ defmodule EthereumJSONRPC.Transaction do
       %{
         block_hash: nil,
         block_number: nil,
+        gas_price: nil,
         from_address_hash: "0x870006d72c247bc1e90983c71b3234ee01d3c9d9",
         gas: 182154,
         hash: "0x8d2cd1fae48ea0d2a20bb74abbfca05c2d805793e1b42fa844bbdd90f2512f39",
