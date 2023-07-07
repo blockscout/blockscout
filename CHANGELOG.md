@@ -8,6 +8,7 @@
 - [#7784](https://github.com/blockscout/blockscout/pull/7784) - Search improvements: Add new fields, light refactoring
 - [#7811](https://github.com/blockscout/blockscout/pull/7811) - Filter addresses before insertion
 - [#7859](https://github.com/blockscout/blockscout/pull/7859) - Add TokenTotalSupplyUpdater
+- [#7873](https://github.com/blockscout/blockscout/pull/7873) - Chunk realtime balances requests
 
 ### Fixes
 - [#7825](https://github.com/blockscout/blockscout/pull/7825) - Fix nginx config for the new frontend websockets
@@ -20,6 +21,7 @@
 
 ### Chore
 
+- [#7863](https://github.com/blockscout/blockscout/pull/7863) - Add max_age for account sessions
 - [#7841](https://github.com/blockscout/blockscout/pull/7841) - CORS setup for docker-compose config with new frontend
 - [#7832](https://github.com/blockscout/blockscout/pull/7832) - API v2: Add block_number to logs
 - [#7789](https://github.com/blockscout/blockscout/pull/7789) - Fix test warnings; Fix name of `MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS` env variable
