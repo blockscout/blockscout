@@ -20,6 +20,8 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       Runner.Address.TokenBalances,
       Runner.TransactionActions,
       Runner.Withdrawals,
+      Runner.PolygonSupernetDeposits,
+      Runner.PolygonSupernetDepositExecutes,
       Runner.PolygonSupernetWithdrawals,
       Runner.PolygonSupernetWithdrawalExits
     ]
