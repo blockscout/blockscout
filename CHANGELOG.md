@@ -9,7 +9,9 @@
 - [#7811](https://github.com/blockscout/blockscout/pull/7811) - Filter addresses before insertion
 
 ### Fixes
+
 - [#7872](https://github.com/blockscout/blockscout/pull/7872) - Fix pending gas price in pending tx
+- [#7875](https://github.com/blockscout/blockscout/pull/7875) - Fix twin compiler version
 - [#7825](https://github.com/blockscout/blockscout/pull/7825) - Fix nginx config for the new frontend websockets
 - [#7772](https://github.com/blockscout/blockscout/pull/7772) - Fix parsing of database password period(s)
 - [#7803](https://github.com/blockscout/blockscout/pull/7803) - Fix additional sources and interfaces, save names for vyper contracts
