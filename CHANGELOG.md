@@ -20,6 +20,7 @@
 - [#7764](https://github.com/blockscout/blockscout/pull/7764) - Fix missing ranges insertion and deletion logic
 - [#7843](https://github.com/blockscout/blockscout/pull/7843) - Fix created_contract_code_indexed_at updating
 - [#7855](https://github.com/blockscout/blockscout/pull/7855) - Handle internal transactions unique_violation
+- [#7899](https://github.com/blockscout/blockscout/pull/7899) - Fix catchup numbers_to_ranges function
 
 ### Chore
 
