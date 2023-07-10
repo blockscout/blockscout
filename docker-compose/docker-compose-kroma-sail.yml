@@ -39,7 +39,7 @@ services:
       -  ./envs/common-blockscout.env
     environment:
       API_V2_ENABLED: 'true'
-      ETHEREUM_JSONRPC_HTTP_URL: 'http://temporary-inhouse-alb-1675552331.ap-northeast-2.elb.amazonaws.com:8545'
+      ETHEREUM_JSONRPC_HTTP_URL: 'https://api.sail.kroma.cc'
       CHAIN_ID: '7791'
       INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
       INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
