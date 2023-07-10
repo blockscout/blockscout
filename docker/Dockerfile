@@ -1,4 +1,4 @@
-FROM bitwalker/alpine-elixir-phoenix:1.14 AS builder
+FROM bitwalker/alpine-elixir-phoenix:1.15 AS builder
 
 WORKDIR /app
 
@@ -62,7 +62,7 @@ RUN mkdir -p /opt/release \
   && mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
 ##############################################################
-FROM bitwalker/alpine-elixir-phoenix:1.14
+FROM bitwalker/alpine-elixir-phoenix:1.15
 
 ARG RELEASE_VERSION
 ENV RELEASE_VERSION=${RELEASE_VERSION}
