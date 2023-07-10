@@ -119,4 +119,13 @@ defmodule ConfigHelper do
         transformer
     end
   end
+
+  @spec parse_json_env_var(String.t(), String.t()) :: any()
+  def parse_json_env_var(env_var, default_value) do
+    env_var
+    |> safe_get_env(default_value)
+    |> Jason.decode!()
+  rescue
+    err -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(err)}"
+  end
 end
