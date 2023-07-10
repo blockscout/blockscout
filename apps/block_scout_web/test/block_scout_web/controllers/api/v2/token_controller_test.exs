@@ -399,12 +399,155 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       request_2nd_page = get(conn, "/api/v2/tokens", response["next_page_params"])
       assert response_2nd_page = json_response(request_2nd_page, 200)
       check_paginated_response(response, response_2nd_page, tokens)
+
+      # by fiat_value
+      tokens_ordered_by_fiat_value = Enum.sort(tokens, &(&1.fiat_value <= &2.fiat_value))
+      request_ordered_by_fiat_value = get(conn, "/api/v2/tokens", %{"sort" => "fiat_value", "order" => "desc"})
+      assert response_ordered_by_fiat_value = json_response(request_ordered_by_fiat_value, 200)
+
+      request_ordered_by_fiat_value_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          %{"sort" => "fiat_value", "order" => "desc"} |> Map.merge(response_ordered_by_fiat_value["next_page_params"])
+        )
+
+      assert response_ordered_by_fiat_value_2nd_page = json_response(request_ordered_by_fiat_value_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_fiat_value,
+        response_ordered_by_fiat_value_2nd_page,
+        tokens_ordered_by_fiat_value
+      )
+
+      tokens_ordered_by_fiat_value_asc = Enum.sort(tokens, &(&1.fiat_value >= &2.fiat_value))
+      request_ordered_by_fiat_value_asc = get(conn, "/api/v2/tokens", %{"sort" => "fiat_value", "order" => "asc"})
+      assert response_ordered_by_fiat_value_asc = json_response(request_ordered_by_fiat_value_asc, 200)
+
+      request_ordered_by_fiat_value_asc_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          %{"sort" => "fiat_value", "order" => "asc"}
+          |> Map.merge(response_ordered_by_fiat_value_asc["next_page_params"])
+        )
+
+      assert response_ordered_by_fiat_value_asc_2nd_page =
+               json_response(request_ordered_by_fiat_value_asc_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_fiat_value_asc,
+        response_ordered_by_fiat_value_asc_2nd_page,
+        tokens_ordered_by_fiat_value_asc
+      )
+
+      # by holders
+      tokens_ordered_by_holders = Enum.sort(tokens, &(&1.holder_count <= &2.holder_count))
+      request_ordered_by_holders = get(conn, "/api/v2/tokens", %{"sort" => "holder_count", "order" => "desc"})
+      assert response_ordered_by_holders = json_response(request_ordered_by_holders, 200)
+
+      request_ordered_by_holders_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          %{"sort" => "holder_count", "order" => "desc"} |> Map.merge(response_ordered_by_holders["next_page_params"])
+        )
+
+      assert response_ordered_by_holders_2nd_page = json_response(request_ordered_by_holders_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_holders,
+        response_ordered_by_holders_2nd_page,
+        tokens_ordered_by_holders
+      )
+
+      tokens_ordered_by_holders_asc = Enum.sort(tokens, &(&1.holder_count >= &2.holder_count))
+      request_ordered_by_holders_asc = get(conn, "/api/v2/tokens", %{"sort" => "holder_count", "order" => "asc"})
+      assert response_ordered_by_holders_asc = json_response(request_ordered_by_holders_asc, 200)
+
+      request_ordered_by_holders_asc_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          %{"sort" => "holder_count", "order" => "asc"}
+          |> Map.merge(response_ordered_by_holders_asc["next_page_params"])
+        )
+
+      assert response_ordered_by_holders_asc_2nd_page = json_response(request_ordered_by_holders_asc_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_holders_asc,
+        response_ordered_by_holders_asc_2nd_page,
+        tokens_ordered_by_holders_asc
+      )
+
+      # by circulating_market_cap
+      tokens_ordered_by_circulating_market_cap =
+        Enum.sort(tokens, &(&1.circulating_market_cap <= &2.circulating_market_cap))
+
+      request_ordered_by_circulating_market_cap =
+        get(conn, "/api/v2/tokens", %{"sort" => "circulating_market_cap", "order" => "desc"})
+
+      assert response_ordered_by_circulating_market_cap = json_response(request_ordered_by_circulating_market_cap, 200)
+
+      request_ordered_by_circulating_market_cap_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          %{"sort" => "circulating_market_cap", "order" => "desc"}
+          |> Map.merge(response_ordered_by_circulating_market_cap["next_page_params"])
+        )
+
+      assert response_ordered_by_circulating_market_cap_2nd_page =
+               json_response(request_ordered_by_circulating_market_cap_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_circulating_market_cap,
+        response_ordered_by_circulating_market_cap_2nd_page,
+        tokens_ordered_by_circulating_market_cap
+      )
+
+      tokens_ordered_by_circulating_market_cap_asc =
+        Enum.sort(tokens, &(&1.circulating_market_cap >= &2.circulating_market_cap))
+
+      request_ordered_by_circulating_market_cap_asc =
+        get(conn, "/api/v2/tokens", %{"sort" => "circulating_market_cap", "order" => "asc"})
+
+      assert response_ordered_by_circulating_market_cap_asc =
+               json_response(request_ordered_by_circulating_market_cap_asc, 200)
+
+      request_ordered_by_circulating_market_cap_asc_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          %{"sort" => "circulating_market_cap", "order" => "asc"}
+          |> Map.merge(response_ordered_by_circulating_market_cap_asc["next_page_params"])
+        )
+
+      assert response_ordered_by_circulating_market_cap_asc_2nd_page =
+               json_response(request_ordered_by_circulating_market_cap_asc_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_circulating_market_cap_asc,
+        response_ordered_by_circulating_market_cap_asc_2nd_page,
+        tokens_ordered_by_circulating_market_cap_asc
+      )
     end
 
     test "get empty list", %{conn: conn} do
       request = get(conn, "/api/v2/tokens")
 
       assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
+    test "sorting by fiat_value", %{conn: conn} do
+      tokens =
+        for i <- 0..50 do
+          insert(:token, fiat_value: i)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
     end
 
     # these tests that tokens paginates by each parameter separately and by any combination of them
@@ -419,13 +562,13 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
 
     test "pagination by name", %{conn: conn} do
+      named_token = insert(:token, holder_count: 0)
+      empty_named_token = insert(:token, name: "", holder_count: 0)
+
       tokens =
-        for i <- 0..48 do
+        for i <- 1..49 do
           insert(:token, holder_count: i)
         end
-
-      empty_named_token = insert(:token, name: "")
-      named_token = insert(:token)
 
       tokens = [named_token, empty_named_token | tokens]
 
@@ -1016,6 +1159,9 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   defp check_paginated_response(first_page_resp, second_page_resp, list) do
     assert Enum.count(first_page_resp["items"]) == 50
     assert first_page_resp["next_page_params"] != nil
+    # list |> dbg(limit: :infinity)
+    # first_page_resp |> dbg(limit: :infinity)
+    # second_page_resp |> dbg(limit: :infinity)
     compare_item(Enum.at(list, 50), Enum.at(first_page_resp["items"], 0))
     compare_item(Enum.at(list, 1), Enum.at(first_page_resp["items"], 49))
 
