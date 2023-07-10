@@ -309,6 +309,11 @@ defmodule EthereumJSONRPC.Receipt do
     :ignore
   end
 
+  # OpStack fields
+  defp entry_to_elixir({key, _}) when key in ~w(depositNonce) do
+    :ignore
+  end
+
   # GoQuorum specific transaction receipt fields
   defp entry_to_elixir({key, _}) when key in ~w(isPrivacyMarkerTransaction) do
     :ignore

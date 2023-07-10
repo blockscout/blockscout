@@ -29,6 +29,14 @@ defmodule EthereumJSONRPC.ReceiptTest do
     test ~s|"status" => nil is treated the same as no status| do
       assert Receipt.to_elixir(%{"status" => nil, "transactionHash" => "0x0"}) == %{"transactionHash" => "0x0"}
     end
+
+    test "ignore edge case fields" do
+      edge_case_fields = ~w(error returnData returnCode feeStats l1BlockNumber l1GasUsed l1GasPrice l1FeeScalar l1Fee isPrivacyMarkerTransaction depositNonce)
+
+      Enum.each(edge_case_fields, fn field ->
+        assert Receipt.to_elixir(%{field => nil, "transactionHash" => "0x0"}) == %{"transactionHash" => "0x0"}
+      end)
+    end
   end
 
   test "leaves nil if blockNumber is nil" do
