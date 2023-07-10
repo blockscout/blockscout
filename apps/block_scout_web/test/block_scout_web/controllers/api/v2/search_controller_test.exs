@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Chain.{Address, Block}
+  alias Explorer.Repo
 
   setup do
     insert(:block)
@@ -43,6 +44,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["block_number"] == block.number
       assert item["block_hash"] == to_string(block.hash)
       assert item["url"] =~ to_string(block.hash)
+      assert item["timestamp"] == block.timestamp |> to_string() |> String.replace(" ", "T")
     end
 
     test "search address", %{conn: conn} do
@@ -61,6 +63,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["name"] == name.name
       assert item["address"] == Address.checksum(address.hash)
       assert item["url"] =~ Address.checksum(address.hash)
+      assert item["is_smart_contract_verified"] == address.verified
     end
 
     test "search contract", %{conn: conn} do
@@ -78,6 +81,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["name"] == contract.name
       assert item["address"] == Address.checksum(contract.address_hash)
       assert item["url"] =~ Address.checksum(contract.address_hash)
+      assert item["is_smart_contract_verified"] == true
     end
 
     test "check pagination", %{conn: conn} do
@@ -126,6 +130,11 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["address"] == Address.checksum(token.contract_address_hash)
       assert item["token_url"] =~ Address.checksum(token.contract_address_hash)
       assert item["address_url"] =~ Address.checksum(token.contract_address_hash)
+      assert item["token_type"] == token.type
+      assert item["is_smart_contract_verified"] == token.contract_address.verified
+      assert item["exchange_rate"] == (token.fiat_value && to_string(token.fiat_value))
+      assert item["total_supply"] == to_string(token.total_supply)
+      assert item["icon_url"] == token.icon_url
     end
 
     test "search transaction", %{conn: conn} do
@@ -142,6 +151,24 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["type"] == "transaction"
       assert item["tx_hash"] == to_string(tx.hash)
       assert item["url"] =~ to_string(tx.hash)
+      assert item["timestamp"] == nil
+    end
+
+    test "search transaction with timestamp", %{conn: conn} do
+      tx = :transaction |> insert() |> with_block()
+
+      request = get(conn, "/api/v2/search?q=#{tx.hash}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+
+      item = Enum.at(response["items"], 0)
+
+      assert item["type"] == "transaction"
+      assert item["tx_hash"] == to_string(tx.hash)
+      assert item["url"] =~ to_string(tx.hash)
+      assert item["timestamp"] == Repo.preload(tx, [:block]).block.timestamp |> to_string() |> String.replace(" ", "T")
     end
 
     test "search tags", %{conn: conn} do
@@ -159,6 +186,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["address"] == Address.checksum(tag.address.hash)
       assert item["name"] == tag.tag.display_name
       assert item["url"] =~ Address.checksum(tag.address.hash)
+      assert item["is_smart_contract_verified"] == tag.address.verified
     end
   end
 

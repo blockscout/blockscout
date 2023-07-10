@@ -47,6 +47,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     field(:value_fetched_at, :utc_datetime_usec)
     field(:token_id, :decimal)
     field(:token_type, :string)
+    field(:fiat_value, :decimal, virtual: true)
 
     # A transient field for deriving token holder count deltas during address_current_token_balances upserts
     field(:old_value, :decimal)
@@ -170,9 +171,11 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       where: ctb.address_hash == ^address_hash,
       where: ctb.value > 0,
       where: ctb.token_type == ^type,
-      left_join: t in Token,
+      left_join: t in assoc(ctb, :token),
       on: ctb.token_contract_address_hash == t.contract_address_hash,
-      select: {ctb, t},
+      preload: [token: t],
+      select: ctb,
+      select_merge: ^%{fiat_value: fiat_balance},
       order_by: ^[desc_nulls_last: fiat_balance],
       order_by: [desc: ctb.value, desc: ctb.id]
     )
@@ -185,9 +188,11 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       ctb in __MODULE__,
       where: ctb.address_hash == ^address_hash,
       where: ctb.value > 0,
-      left_join: t in Token,
+      left_join: t in assoc(ctb, :token),
       on: ctb.token_contract_address_hash == t.contract_address_hash,
-      select: {ctb, t},
+      preload: [token: t],
+      select: ctb,
+      select_merge: ^%{fiat_value: fiat_balance},
       order_by: ^[desc_nulls_last: fiat_balance],
       order_by: [desc: ctb.value, desc: ctb.id]
     )

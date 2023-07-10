@@ -4,7 +4,6 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
   """
 
   require Ecto.Query
-  require Logger
 
   alias Ecto.{Multi, Repo}
   alias Explorer.Chain.{Address, Hash, Import, Transaction}
@@ -41,10 +40,6 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Addresses run STARTED length #{inspect(Enum.count(changes_list))} ###")
-    # Logger.info("### multi #{inspect(multi)} ###")
-    # Logger.info("### changes_list length #{inspect(Enum.count(changes_list))} ###")
-
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -63,23 +58,41 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
         end)
       end)
 
-    Logger.info("### Addresses run started. Before multi.run #1 #{inspect(Multi.to_list(multi))} ###")
+    ordered_changes_list =
+      changes_list_with_defaults
+      |> Enum.group_by(& &1.hash)
+      |> Enum.map(fn {_, grouped_addresses} ->
+        Enum.max_by(grouped_addresses, fn address ->
+          address_max_by(address)
+        end)
+      end)
+      |> Enum.sort_by(& &1.hash)
 
     multi
-    |> Multi.run(:addresses, fn repo, _ ->
-      Logger.info("### Addresses insert started (internal, outside) ###")
-
+    |> Multi.run(:filter_addresses, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
-        fn -> insert(repo, changes_list_with_defaults, insert_options) end,
+        fn -> filter_addresses(repo, ordered_changes_list) end,
+        :addresses,
+        :addresses,
+        :filter_addresses
+      )
+    end)
+    |> Multi.run(:addresses, fn repo, %{filter_addresses: {addresses, _existing_addresses}} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> insert(repo, addresses, insert_options) end,
         :addresses,
         :addresses,
         :addresses
       )
     end)
-    |> Multi.run(:created_address_code_indexed_at_transactions, fn repo, %{addresses: addresses}
+    |> Multi.run(:created_address_code_indexed_at_transactions, fn repo,
+                                                                   %{
+                                                                     addresses: addresses,
+                                                                     filter_addresses: {_, existing_addresses_map}
+                                                                   }
                                                                    when is_list(addresses) ->
       Instrumenter.block_import_stage_runner(
-        fn -> update_transactions(repo, addresses, update_transactions_options) end,
+        fn -> update_transactions(repo, addresses, existing_addresses_map, update_transactions_options) end,
         :addresses,
         :addresses,
         :created_address_code_indexed_at_transactions
@@ -92,73 +105,66 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
 
   ## Private Functions
 
+  @spec filter_addresses(Repo.t(), [map()]) :: {:ok, {[map()], map()}}
+  defp filter_addresses(repo, changes_list) do
+    hashes = Enum.map(changes_list, & &1.hash)
+
+    existing_addresses_query =
+      from(a in Address,
+        where: a.hash in ^hashes,
+        select: [:hash, :contract_code, :fetched_coin_balance_block_number, :nonce]
+      )
+
+    existing_addresses_map =
+      existing_addresses_query
+      |> repo.all()
+      |> Map.new(&{&1.hash, &1})
+
+    filtered_addresses =
+      changes_list
+      |> Enum.reduce([], fn address, acc ->
+        existing_address = existing_addresses_map[address.hash]
+
+        if should_update?(address, existing_address) do
+          [address | acc]
+        else
+          acc
+        end
+      end)
+      |> Enum.reverse()
+
+    {:ok, {filtered_addresses, existing_addresses_map}}
+  end
+
+  defp should_update?(new_address, existing_address) do
+    is_nil(existing_address) or
+      (not is_nil(new_address[:contract_code]) and new_address[:contract_code] != existing_address.contract_code) or
+      (not is_nil(new_address[:fetched_coin_balance_block_number]) and
+         (is_nil(existing_address.fetched_coin_balance_block_number) or
+            new_address[:fetched_coin_balance_block_number] >= existing_address.fetched_coin_balance_block_number)) or
+      (not is_nil(new_address[:nonce]) and
+         (is_nil(existing_address.nonce) or new_address[:nonce] > existing_address.nonce))
+  end
+
   @spec insert(Repo.t(), [%{hash: Hash.Address.t()}], %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Address.t()]}
-  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    Logger.info([
-      "### Addresses insert started (internal). Changes list length #{inspect(Enum.count(changes_list))} ###"
-    ])
+  defp insert(repo, ordered_changes_list, %{timeout: timeout, timestamps: timestamps} = options)
+       when is_list(ordered_changes_list) do
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    on_conflict = Map.get(options, :on_conflict, :nothing)
-
-    on_conflic_func =
-      case on_conflict do
-        :update_coin_balance -> default_on_conflict_update_coin_balance()
-        :update_contract_code -> default_on_conflict_update_contract_code()
-        _ -> :nothing
-      end
-
-    # Enforce Address ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list =
-      changes_list
-      |> Enum.group_by(fn %{
-                            hash: hash
-                          } ->
-        {hash}
-      end)
-      |> Enum.map(fn {_, grouped_addresses} ->
-        Enum.max_by(grouped_addresses, fn address ->
-          address_max_by(address)
-        end)
-      end)
-      |> Enum.sort_by(& &1.hash)
-
-    # Logger.info(
-    #   inspect(
-    #     changes_list
-    #     |> Enum.map(
-    #       &%{
-    #         hash: &1.hash |> to_string(),
-    #         fetched_coin_balance: if(Map.has_key?(&1, :fetched_coin_balance), do: &1.fetched_coin_balance, else: nil),
-    #         fetched_coin_balance_block_number:
-    #           if(Map.has_key?(&1, :fetched_coin_balance_block_number),
-    #             do: &1.fetched_coin_balance_block_number,
-    #             else: nil
-    #           )
-    #       }
-    #     )
-    #   )
-    # )
-
-    # Logger.info("address changes list length " <> inspect(Enum.count(changes_list)))
-
-    {:ok, addresses} =
-      Import.insert_changes_list(
-        repo,
-        ordered_changes_list,
-        conflict_target: :hash,
-        on_conflict: on_conflic_func,
-        for: Address,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
-
-    Logger.info(["### Addresses insert FINISHED ###"])
-    {:ok, addresses}
+    Import.insert_changes_list(
+      repo,
+      ordered_changes_list,
+      conflict_target: :hash,
+      on_conflict: on_conflict,
+      for: Address,
+      returning: true,
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 
   defp address_max_by(address) do
@@ -174,10 +180,11 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
     end
   end
 
-  defp default_on_conflict_update_coin_balance do
+  defp default_on_conflict do
     from(address in Address,
       update: [
         set: [
+          contract_code: fragment("COALESCE(EXCLUDED.contract_code, ?)", address.contract_code),
           # ARGMAX on two columns
           fetched_coin_balance:
             fragment(
@@ -201,39 +208,30 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
               "GREATEST(EXCLUDED.fetched_coin_balance_block_number, ?)",
               address.fetched_coin_balance_block_number
             ),
+          nonce: fragment("GREATEST(EXCLUDED.nonce, ?)", address.nonce),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", address.updated_at)
         ]
       ],
       # where any of `set`s would make a change
       # This is so that tuples are only generated when a change would occur
       where:
-        fragment(
-          "EXCLUDED.fetched_coin_balance IS NOT NULL AND (? IS NULL OR EXCLUDED.fetched_coin_balance_block_number >= ?)",
-          address.fetched_coin_balance_block_number,
-          address.fetched_coin_balance_block_number
-        )
+        fragment("COALESCE(?, EXCLUDED.contract_code) IS DISTINCT FROM ?", address.contract_code, address.contract_code) or
+          fragment(
+            "EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND (? IS NULL OR EXCLUDED.fetched_coin_balance_block_number >= ?)",
+            address.fetched_coin_balance_block_number,
+            address.fetched_coin_balance_block_number
+          ) or fragment("GREATEST(?, EXCLUDED.nonce) IS DISTINCT FROM  ?", address.nonce, address.nonce)
     )
   end
 
-  defp default_on_conflict_update_contract_code do
-    from(address in Address,
-      update: [
-        set: [
-          contract_code: fragment("COALESCE(EXCLUDED.contract_code, ?)", address.contract_code),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", address.updated_at)
-        ]
-      ],
-      # where any of `set`s would make a change
-      # This is so that tuples are only generated when a change would occur
-      where:
-        fragment("COALESCE(?, EXCLUDED.contract_code) IS DISTINCT FROM ?", address.contract_code, address.contract_code)
-    )
-  end
-
-  defp update_transactions(repo, addresses, %{timeout: timeout, timestamps: timestamps}) do
+  defp update_transactions(repo, addresses, existing_addresses_map, %{timeout: timeout, timestamps: timestamps}) do
     ordered_created_contract_hashes =
       addresses
-      |> Enum.filter(& &1.contract_code)
+      |> Enum.filter(fn address ->
+        existing_address = existing_addresses_map[address.hash]
+
+        not is_nil(address.contract_code) and (is_nil(existing_address) or is_nil(existing_address.contract_code))
+      end)
       |> MapSet.new(& &1.hash)
       |> Enum.sort()
 

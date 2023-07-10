@@ -410,7 +410,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     # these tests that tokens paginates by each parameter separately and by any combination of them
     test "pagination by address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token, name: nil)
         end
         |> Enum.reverse()
@@ -452,7 +452,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "pagination by name and address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token)
         end
         |> Enum.reverse()
@@ -462,7 +462,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "pagination by holders and address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token, holder_count: 1, name: nil)
         end
         |> Enum.reverse()
@@ -472,7 +472,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "pagination by circulating_market_cap and address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token, circulating_market_cap: 1, name: nil)
         end
         |> Enum.reverse()
@@ -511,7 +511,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "pagination by holders, name and address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token, holder_count: 1)
         end
         |> Enum.reverse()
@@ -521,7 +521,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "pagination by circulating_market_cap, name and address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token, circulating_market_cap: 1)
         end
         |> Enum.reverse()
@@ -531,7 +531,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "pagination by circulating_market_cap, holders and address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token, circulating_market_cap: 1, holder_count: 1, name: nil)
         end
         |> Enum.reverse()
@@ -551,7 +551,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "pagination by circulating_market_cap, holders, name and address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token, holder_count: 1, circulating_market_cap: 1)
         end
         |> Enum.reverse()

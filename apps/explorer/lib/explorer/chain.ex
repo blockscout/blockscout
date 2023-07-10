@@ -1489,13 +1489,15 @@ defmodule Explorer.Chain do
   def search_label_query(term) do
     inner_query =
       from(tag in AddressTag,
-        where: fragment("to_tsvector('english', display_name ) @@ to_tsquery(?)", ^term),
+        where: fragment("to_tsvector('english', ?) @@ to_tsquery(?)", tag.display_name, ^term),
         select: tag
       )
 
     from(att in AddressToTag,
       inner_join: at in subquery(inner_query),
       on: att.tag_id == at.id,
+      left_join: smart_contract in SmartContract,
+      on: att.address_hash == smart_contract.address_hash,
       select: %{
         address_hash: att.address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
@@ -1506,14 +1508,21 @@ defmodule Explorer.Chain do
         holder_count: ^nil,
         inserted_at: att.inserted_at,
         block_number: 0,
-        icon_url: nil
+        icon_url: nil,
+        token_type: nil,
+        timestamp: fragment("NULL::timestamp without time zone"),
+        verified: not is_nil(smart_contract),
+        exchange_rate: nil,
+        total_supply: nil
       }
     )
   end
 
   defp search_token_query(term) do
     from(token in Token,
-      where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
+      left_join: smart_contract in SmartContract,
+      on: token.contract_address_hash == smart_contract.address_hash,
+      where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term),
       select: %{
         address_hash: token.contract_address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
@@ -1524,7 +1533,12 @@ defmodule Explorer.Chain do
         holder_count: token.holder_count,
         inserted_at: token.inserted_at,
         block_number: 0,
-        icon_url: token.icon_url
+        icon_url: token.icon_url,
+        token_type: token.type,
+        timestamp: fragment("NULL::timestamp without time zone"),
+        verified: not is_nil(smart_contract),
+        exchange_rate: token.fiat_value,
+        total_supply: token.total_supply
       }
     )
   end
@@ -1533,7 +1547,7 @@ defmodule Explorer.Chain do
     from(smart_contract in SmartContract,
       left_join: address in Address,
       on: smart_contract.address_hash == address.hash,
-      where: fragment("to_tsvector('english', name) @@ to_tsquery(?)", ^term),
+      where: fragment("to_tsvector('english', ?) @@ to_tsquery(?)", smart_contract.name, ^term),
       select: %{
         address_hash: smart_contract.address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
@@ -1544,7 +1558,12 @@ defmodule Explorer.Chain do
         holder_count: ^nil,
         inserted_at: address.inserted_at,
         block_number: 0,
-        icon_url: nil
+        icon_url: nil,
+        token_type: nil,
+        timestamp: fragment("NULL::timestamp without time zone"),
+        verified: true,
+        exchange_rate: nil,
+        total_supply: nil
       }
     )
   end
@@ -1573,7 +1592,12 @@ defmodule Explorer.Chain do
             holder_count: ^nil,
             inserted_at: address.inserted_at,
             block_number: 0,
-            icon_url: nil
+            icon_url: nil,
+            token_type: nil,
+            timestamp: fragment("NULL::timestamp without time zone"),
+            verified: address.verified,
+            exchange_rate: nil,
+            total_supply: nil
           }
         )
 
@@ -1586,6 +1610,8 @@ defmodule Explorer.Chain do
     case Chain.string_to_transaction_hash(term) do
       {:ok, tx_hash} ->
         from(transaction in Transaction,
+          left_join: block in Block,
+          on: transaction.block_hash == block.hash,
           where: transaction.hash == ^tx_hash,
           select: %{
             address_hash: fragment("CAST(NULL AS bytea)"),
@@ -1597,7 +1623,12 @@ defmodule Explorer.Chain do
             holder_count: ^nil,
             inserted_at: transaction.inserted_at,
             block_number: 0,
-            icon_url: nil
+            icon_url: nil,
+            token_type: nil,
+            timestamp: block.timestamp,
+            verified: nil,
+            exchange_rate: nil,
+            total_supply: nil
           }
         )
 
@@ -1621,7 +1652,12 @@ defmodule Explorer.Chain do
             holder_count: ^nil,
             inserted_at: block.inserted_at,
             block_number: block.number,
-            icon_url: nil
+            icon_url: nil,
+            token_type: nil,
+            timestamp: block.timestamp,
+            verified: nil,
+            exchange_rate: nil,
+            total_supply: nil
           }
         )
 
@@ -1640,7 +1676,12 @@ defmodule Explorer.Chain do
                 holder_count: ^nil,
                 inserted_at: block.inserted_at,
                 block_number: block.number,
-                icon_url: nil
+                icon_url: nil,
+                token_type: nil,
+                timestamp: block.timestamp,
+                verified: nil,
+                exchange_rate: nil,
+                total_supply: nil
               }
             )
 
@@ -1703,7 +1744,9 @@ defmodule Explorer.Chain do
 
         search_results
         |> Enum.map(fn result ->
-          compose_result_checksummed_address_hash(result)
+          result
+          |> compose_result_checksummed_address_hash()
+          |> format_timestamp()
         end)
 
       _ ->
@@ -1720,80 +1763,13 @@ defmodule Explorer.Chain do
     end
   end
 
-  def search_tx(term) do
-    case Chain.string_to_transaction_hash(term) do
-      {:ok, tx_hash} ->
-        query =
-          from(transaction in Transaction,
-            where: transaction.hash == ^tx_hash,
-            select: %{
-              link: transaction.hash,
-              type: "transaction"
-            }
-          )
-
-        Repo.all(query)
-
-      _ ->
-        []
-    end
-  end
-
-  def search_address(term) do
-    case Chain.string_to_address_hash(term) do
-      {:ok, address_hash} ->
-        query =
-          from(address in Address,
-            left_join: address_name in Address.Name,
-            on: address.hash == address_name.address_hash,
-            where: address.hash == ^address_hash,
-            select: %{
-              name: address_name.name,
-              link: address.hash,
-              type: "address"
-            }
-          )
-
-        Repo.all(query)
-
-      _ ->
-        []
-    end
-  end
-
-  def search_block(term) do
-    case Chain.string_to_block_hash(term) do
-      {:ok, block_hash} ->
-        query =
-          from(block in Block,
-            where: block.hash == ^block_hash,
-            select: %{
-              link: block.hash,
-              block_number: block.number,
-              type: "block"
-            }
-          )
-
-        Repo.all(query)
-
-      _ ->
-        case Integer.parse(term) do
-          {block_number, _} ->
-            query =
-              from(block in Block,
-                where: block.number == ^block_number,
-                select: %{
-                  link: block.hash,
-                  block_number: block.number,
-                  type: "block"
-                }
-              )
-
-            Repo.all(query)
-
-          _ ->
-            []
-        end
+  # For some reasons timestamp for blocks and txs returns as ~N[2023-06-25 19:39:47.339493]
+  defp format_timestamp(result) do
+    if result.timestamp do
+      result
+      |> Map.put(:timestamp, DateTime.from_naive!(result.timestamp, "Etc/UTC"))
+    else
+      result
     end
   end
 
@@ -2717,24 +2693,17 @@ defmodule Explorer.Chain do
   @doc """
   Return the balance in usd corresponding to this token. Return nil if the fiat_value of the token is not present.
   """
-  def balance_in_fiat(_token_balance, %{fiat_value: fiat_value, decimals: decimals})
-      when nil in [fiat_value, decimals] do
+  def balance_in_fiat(%{fiat_value: fiat_value} = token_balance) when not is_nil(fiat_value) do
+    token_balance.fiat_value
+  end
+
+  def balance_in_fiat(%{token: %{fiat_value: fiat_value, decimals: decimals}}) when nil in [fiat_value, decimals] do
     nil
   end
 
-  def balance_in_fiat(token_balance, %{fiat_value: fiat_value, decimals: decimals}) do
+  def balance_in_fiat(%{token: %{fiat_value: fiat_value, decimals: decimals}} = token_balance) do
     tokens = CurrencyHelper.divide_decimals(token_balance.value, decimals)
     Decimal.mult(tokens, fiat_value)
-  end
-
-  def balance_in_fiat(%{token: %{fiat_value: nil}}) do
-    nil
-  end
-
-  def balance_in_fiat(token_balance) do
-    tokens = CurrencyHelper.divide_decimals(token_balance.value, token_balance.token.decimals)
-    price = token_balance.token.fiat_value
-    Decimal.mult(tokens, price)
   end
 
   defp contract?(%{contract_code: nil}), do: false
