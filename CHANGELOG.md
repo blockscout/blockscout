@@ -10,6 +10,7 @@
 
 ### Fixes
 
+- [#7852](https://github.com/blockscout/blockscout/pull/7852) - Token balances refactoring & fixes
 - [#7872](https://github.com/blockscout/blockscout/pull/7872) - Fix pending gas price in pending tx
 - [#7875](https://github.com/blockscout/blockscout/pull/7875) - Fix twin compiler version
 - [#7825](https://github.com/blockscout/blockscout/pull/7825) - Fix nginx config for the new frontend websockets
