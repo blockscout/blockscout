@@ -2,6 +2,9 @@ defmodule BlockScoutWeb.TokensController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+
+
+    only: [token_transfers_types_options: 1, tokens_sorting: 1]
   alias BlockScoutWeb.{Controller, TokensView}
   alias Explorer.Chain
   alias Phoenix.View
