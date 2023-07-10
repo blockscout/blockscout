@@ -3,11 +3,14 @@ defmodule BlockScoutWeb.TokensController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-
+  import BlockScoutWeb.PagingHelper,
     only: [token_transfers_types_options: 1, tokens_sorting: 1]
+
   alias BlockScoutWeb.{Controller, TokensView}
   alias Explorer.Chain
   alias Phoenix.View
+
+  @api_true [api?: true]
 
   def index(conn, %{"type" => "JSON"} = params) do
     filter =
@@ -17,11 +20,15 @@ defmodule BlockScoutWeb.TokensController do
         nil
       end
 
-    paging_params =
+    options =
       params
       |> paging_options()
+      |> Keyword.merge(token_transfers_types_options(params))
+      |> Keyword.merge(tokens_sorting(params))
+      |> dbg()
+      |> Keyword.merge(@api_true)
 
-    tokens = Chain.list_top_tokens(filter, paging_params)
+    tokens = Chain.list_top_tokens(filter, options)
 
     {tokens_page, next_page} = split_list_by_page(tokens)
 
