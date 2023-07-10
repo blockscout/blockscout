@@ -25,7 +25,7 @@
 
 - [#7863](https://github.com/blockscout/blockscout/pull/7863) - Add max_age for account sessions
 - [#7841](https://github.com/blockscout/blockscout/pull/7841) - CORS setup for docker-compose config with new frontend
-- [#7832](https://github.com/blockscout/blockscout/pull/7832) - API v2: Add block_number to logs
+- [#7832](https://github.com/blockscout/blockscout/pull/7832), [#7891](https://github.com/blockscout/blockscout/pull/7891) - API v2: Add block_number, block_hash to logs
 - [#7789](https://github.com/blockscout/blockscout/pull/7789) - Fix test warnings; Fix name of `MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS` env variable
 - [#7819](https://github.com/blockscout/blockscout/pull/7819) - Add logging for unknown error verification result
 - [#7781](https://github.com/blockscout/blockscout/pull/7781) - Add `/api/v1/health/liveness` and `/api/v1/health/readiness`
