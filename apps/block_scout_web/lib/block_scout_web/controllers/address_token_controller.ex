@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressTokenController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain, only: [next_page_params: 3, paging_options: 1, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [next_page_params: 4, paging_options: 1, split_list_by_page: 1]
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.AddressTokenController do
       {tokens, next_page} = split_list_by_page(token_balances_plus_one)
 
       next_page_path =
-        case next_page_params(next_page, tokens, params) do
+        case next_page_params(next_page, tokens, params, true) do
           nil ->
             nil
 
@@ -32,13 +32,12 @@ defmodule BlockScoutWeb.AddressTokenController do
 
       items =
         tokens
-        |> Enum.map(fn {token_balance, bridged_token, token} ->
+        |> Enum.map(fn token_balance ->
           View.render_to_string(
             AddressTokenView,
             "_tokens.html",
             token_balance: token_balance,
-            token: token,
-            bridged_token: bridged_token,
+            token: token_balance.token,
             address: address,
             conn: conn
           )

@@ -38,12 +38,12 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
     } do
       if json_rpc_named_arguments[:transport_options][:http] == EthereumJSONRPC.HTTP.Mox do
         EthereumJSONRPC.HTTP.Mox
-        |> expect(:json_rpc, 2, fn _url, json, _options ->
+        |> expect(:json_rpc, 2, fn _url, json, _headers, _options ->
           assert IO.iodata_to_binary(json) =~ ":13000"
 
           {:ok, %{body: "413 Request Entity Too Large", status_code: 413}}
         end)
-        |> expect(:json_rpc, fn _url, json, _options ->
+        |> expect(:json_rpc, fn _url, json, _headers, _options ->
           json_binary = IO.iodata_to_binary(json)
 
           refute json_binary =~ ":13000"
@@ -58,7 +58,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
 
           {:ok, %{body: body, status_code: 200}}
         end)
-        |> expect(:json_rpc, fn _url, json, _options ->
+        |> expect(:json_rpc, fn _url, json, _headers, _options ->
           json_binary = IO.iodata_to_binary(json)
 
           refute json_binary =~ ":6499"
@@ -107,10 +107,10 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
 
       if json_rpc_named_arguments[:transport_options][:http] == EthereumJSONRPC.HTTP.Mox do
         EthereumJSONRPC.HTTP.Mox
-        |> expect(:json_rpc, fn _url, _json, _options ->
+        |> expect(:json_rpc, fn _url, _json, _headers, _options ->
           {:ok, %{body: "504 Gateway Timeout", status_code: 504}}
         end)
-        |> expect(:json_rpc, fn _url, json, _options ->
+        |> expect(:json_rpc, fn _url, json, _headers, _options ->
           json_binary = IO.iodata_to_binary(json)
 
           refute json_binary =~ "0xD2849"
@@ -141,7 +141,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
 
           {:ok, %{body: body, status_code: 200}}
         end)
-        |> expect(:json_rpc, fn _url, json, _options ->
+        |> expect(:json_rpc, fn _url, json, _headers, _options ->
           json_binary = IO.iodata_to_binary(json)
 
           refute json_binary =~ "0xD2844"
@@ -199,10 +199,10 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
 
       if json_rpc_named_arguments[:transport_options][:http] == EthereumJSONRPC.HTTP.Mox do
         EthereumJSONRPC.HTTP.Mox
-        |> expect(:json_rpc, fn _url, _json, _options ->
+        |> expect(:json_rpc, fn _url, _json, _headers, _options ->
           {:error, :timeout}
         end)
-        |> expect(:json_rpc, fn _url, json, _options ->
+        |> expect(:json_rpc, fn _url, json, _headers, _options ->
           json_binary = IO.iodata_to_binary(json)
 
           refute json_binary =~ "0xD2849"
@@ -233,7 +233,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
 
           {:ok, %{body: body, status_code: 200}}
         end)
-        |> expect(:json_rpc, fn _url, json, _options ->
+        |> expect(:json_rpc, fn _url, json, _headers, _options ->
           json_binary = IO.iodata_to_binary(json)
 
           refute json_binary =~ "0xD2844"
@@ -293,7 +293,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
     json = Jason.encode_to_iodata!(payload)
     http_options = Keyword.fetch!(transport_options, :http_options)
 
-    assert {:ok, %{body: body, status_code: 413}} = http.json_rpc(url, json, http_options)
+    assert {:ok, %{body: body, status_code: 413}} = http.json_rpc(url, json, [], http_options)
     assert body =~ "413 Request Entity Too Large"
   end
 
