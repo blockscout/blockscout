@@ -18,7 +18,7 @@ services:
       - redis_db
     build:
       context: ..
-      dockerfile: ./docker/Dockerfile
+      dockerfile: ./docker/Dockerfile_AppleSilicon
       args:
         CACHE_EXCHANGE_RATES_PERIOD: ""
         API_V1_READ_METHODS_DISABLED: "true"
@@ -60,16 +60,19 @@ services:
       - ./logs/:/app/logs/
 
   smart-contract-verifier:
+    platform: linux/amd64
     extends:
       file: ./services/docker-compose-smart-contract-verifier.yml
       service: smart-contract-verifier
 
   visualizer:
+    platform: linux/amd64
     extends:
       file: ./services/docker-compose-visualizer.yml
       service: visualizer
 
   sig-provider:
+    platform: linux/amd64
     extends:
       file: ./services/docker-compose-sig-provider.yml
       service: sig-provider
@@ -82,6 +85,7 @@ services:
       service: stats-db
 
   stats:
+    platform: linux/amd64
     depends_on:
       - backend
     extends:
