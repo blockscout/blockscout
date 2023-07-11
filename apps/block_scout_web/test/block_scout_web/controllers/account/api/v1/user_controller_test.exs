@@ -638,6 +638,47 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert wa2["tokens_overflow"] == true
     end
 
+    test "watchlist address returns with token balances info + handle nil fiat values", %{conn: conn} do
+      watchlist_address_map = build(:watchlist_address)
+
+      conn
+      |> post(
+        "/api/account/v1/user/watchlist",
+        watchlist_address_map
+      )
+      |> json_response(200)
+
+      values =
+        for _i <- 0..148 do
+          ctb =
+            insert(:address_current_token_balance_with_token_id,
+              address: Repo.get_by(Address, hash: watchlist_address_map["address_hash"])
+            )
+            |> Repo.preload([:token])
+
+          Decimal.div(
+            Decimal.mult(ctb.value, ctb.token.fiat_value),
+            Decimal.new(10 ** Decimal.to_integer(ctb.token.decimals))
+          )
+        end
+
+      token = insert(:token, fiat_value: nil)
+
+      insert(:address_current_token_balance_with_token_id,
+        address: Repo.get_by(Address, hash: watchlist_address_map["address_hash"]),
+        token: token,
+        token_contract_address_hash: token.contract_address_hash
+      )
+
+      [wa1] = conn |> get("/api/account/v1/user/watchlist") |> json_response(200)
+
+      assert wa1["tokens_fiat_value"] |> Decimal.new() |> Decimal.round(14) ==
+               values |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end) |> Decimal.round(14)
+
+      assert wa1["tokens_count"] == 150
+      assert wa1["tokens_overflow"] == false
+    end
+
     test "post api key", %{conn: conn} do
       post_api_key_response =
         conn

@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
           fiat_sum =
             balances
             |> Enum.take(@token_balances_amount)
-            |> Enum.reduce(Decimal.new(0), fn tb, acc -> Decimal.add(acc, tb.fiat_value) end)
+            |> Enum.reduce(Decimal.new(0), fn tb, acc -> Decimal.add(acc, tb.fiat_value || 0) end)
 
           %WatchlistAddress{
             wa
