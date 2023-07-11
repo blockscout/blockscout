@@ -285,7 +285,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "index" => log.index,
       "decoded" => decoded,
       "smart_contract" => smart_contract_info(transaction_or_hash),
-      "block_number" => log.block_number
+      "block_number" => log.block_number,
+      "block_hash" => log.block_hash
     }
   end
 
