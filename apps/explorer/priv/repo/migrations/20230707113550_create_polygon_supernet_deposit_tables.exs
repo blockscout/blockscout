@@ -6,7 +6,7 @@ defmodule Explorer.Repo.Migrations.CreatePolygonSupernetDepositTables do
       add(:msg_id, :bigint, null: false, primary_key: true)
       add(:from, :bytea, null: true)
       add(:to, :bytea, null: true)
-      add(:l1_transaction_hash, :bytea, null: true)
+      add(:l1_transaction_hash, :bytea, null: false)
       add(:l1_block_number, :bigint, null: false)
       add(:l1_timestamp, :"timestamp without time zone", null: true)
 

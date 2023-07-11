@@ -162,7 +162,7 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
       end
 
     %{
-      msg_id: Decimal.new(quantity_to_integer(second_topic)),
+      msg_id: quantity_to_integer(second_topic),
       from: from,
       to: to,
       l2_transaction_hash: l2_transaction_hash,
