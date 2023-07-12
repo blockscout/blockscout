@@ -21,12 +21,7 @@ services:
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     env_file:
-      -  ../envs/common-stats.env
-    environment:
-      - STATS__DB_URL=postgres://postgres:@stats-db:5432/stats
-      - STATS__BLOCKSCOUT_DB_URL=postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
-      - STATS__CREATE_DATABASE=true
-      - STATS__RUN_MIGRATIONS=true
+      -  ../envs/common-stats-sepolia.env
     ports:
       - 8153:8050
     volumes:
