@@ -541,7 +541,65 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          %{timeout: timeout} = options
        )
        when is_list(deleted_address_current_token_balances) do
-    final_query = derive_address_current_token_balances_grouped_query(deleted_address_current_token_balances)
+    current_token_balance = select_new_current_token_balances(repo, deleted_address_current_token_balances)
+
+    timestamps = Import.timestamps()
+
+    result =
+      CurrentTokenBalances.insert_changes_list_with_and_without_token_id(
+        current_token_balance,
+        repo,
+        timestamps,
+        timeout,
+        options
+      )
+
+    derived_address_current_token_balances =
+      Enum.map(result, &Map.take(&1, [:address_hash, :token_contract_address_hash, :token_id, :block_number, :value]))
+
+    {:ok, derived_address_current_token_balances}
+  end
+
+  @chunk_size 100
+  @chunk_timeout :timer.minutes(2)
+  defp select_new_current_token_balances(repo, deleted_balances) do
+    balances_chunks =
+      deleted_balances
+      |> Enum.chunk_every(@chunk_size)
+      |> Enum.with_index(&{&2, &1})
+      |> Map.new()
+
+    {current_token_balances, success_indexes} =
+      balances_chunks
+      |> Task.async_stream(
+        fn {index, chunk} ->
+          {index, do_select_new_current_token_balances(repo, chunk)}
+        end,
+        timeout: @chunk_timeout,
+        on_timeout: :kill_task
+      )
+      |> Enum.reduce({[], []}, fn
+        {:ok, {index, balances}}, {result, indexes} -> {Enum.concat(balances, result), [index | indexes]}
+        _, acc -> acc
+      end)
+
+    case Map.keys(balances_chunks) -- success_indexes do
+      [] ->
+        current_token_balances
+
+      failed_indexes ->
+        failed_balances =
+          balances_chunks
+          |> Map.take(failed_indexes)
+          |> Map.values()
+          |> List.flatten()
+
+        current_token_balances ++ select_new_current_token_balances(repo, failed_balances)
+    end
+  end
+
+  defp do_select_new_current_token_balances(repo, deleted_balances) do
+    final_query = derive_address_current_token_balances_grouped_query(deleted_balances)
 
     new_current_token_balance_query =
       from(new_current_token_balance in subquery(final_query),
@@ -567,25 +625,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         ]
       )
 
-    current_token_balance =
-      new_current_token_balance_query
-      |> repo.all()
-
-    timestamps = Import.timestamps()
-
-    result =
-      CurrentTokenBalances.insert_changes_list_with_and_without_token_id(
-        current_token_balance,
-        repo,
-        timestamps,
-        timeout,
-        options
-      )
-
-    derived_address_current_token_balances =
-      Enum.map(result, &Map.take(&1, [:address_hash, :token_contract_address_hash, :token_id, :block_number, :value]))
-
-    {:ok, derived_address_current_token_balances}
+    repo.all(new_current_token_balance_query)
   end
 
   defp derive_address_current_token_balances_grouped_query(deleted_address_current_token_balances) do
