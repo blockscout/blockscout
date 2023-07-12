@@ -6,14 +6,8 @@ services:
       file: ./services/docker-compose-redis.yml
       service: redis_db
 
-  db:
-    extends:
-      file: ./services/docker-compose-db.yml
-      service: db
-
   backend:
     depends_on:
-      - db
       - smart-contract-verifier
       - redis_db
     build:
@@ -30,13 +24,11 @@ services:
         RELEASE_VERSION: 5.2.0
     restart: always
     container_name: 'blockscout'
-    links:
-      - db:database
     command: bash -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     env_file:
-      -  ./envs/common-blockscout.env
+      -  ./envs/common-blockscout-sepolia.env
     environment:
       API_V2_ENABLED: 'true'
       ETHEREUM_JSONRPC_HTTP_URL: 'https://tmp-api.sepolia.kroma.network/'
@@ -73,13 +65,6 @@ services:
     extends:
       file: ./services/docker-compose-sig-provider.yml
       service: sig-provider
-
-  stats-db:
-    depends_on:
-      - backend
-    extends:
-      file: ./services/docker-compose-stats.yml
-      service: stats-db
 
   stats:
     depends_on:
