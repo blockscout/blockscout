@@ -15,6 +15,7 @@
 - [#7895](https://github.com/blockscout/blockscout/pull/7895) - API v2: Add sorting to tokens page
 - [#7859](https://github.com/blockscout/blockscout/pull/7859) - Add TokenTotalSupplyUpdater
 - [#7873](https://github.com/blockscout/blockscout/pull/7873) - Chunk realtime balances requests
+- [#7927](https://github.com/blockscout/blockscout/pull/7927) - Delete token balances only for blocks that lost consensus
 
 ### Fixes
 
