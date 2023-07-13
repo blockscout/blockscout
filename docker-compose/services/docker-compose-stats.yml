@@ -9,9 +9,8 @@ services:
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     env_file:
-    ################## Sepolia 시에 변수 세팅
-      # - ../envs/common-stats-sepolia.env
-      -  ../envs/common-stats.env
+      -  ../envs/common-stats-sepolia.env
+>>>>>>> Stashed changes
     ports:
       - 8153:8050
     volumes:
