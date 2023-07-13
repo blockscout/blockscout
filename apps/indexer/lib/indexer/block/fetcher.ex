@@ -37,6 +37,7 @@ defmodule Indexer.Block.Fetcher do
     Addresses,
     AddressTokenBalances,
     MintTransfers,
+    PolygonSupernetDepositExecutes,
     PolygonSupernetWithdrawals,
     TokenTransfers,
     TransactionActions
@@ -144,6 +145,11 @@ defmodule Indexer.Block.Fetcher do
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          polygon_supernet_withdrawals =
            if(callback_module == Indexer.Block.Realtime.Fetcher, do: PolygonSupernetWithdrawals.parse(logs), else: []),
+         polygon_supernet_deposit_executes =
+           if(callback_module == Indexer.Block.Realtime.Fetcher,
+             do: PolygonSupernetDepositExecutes.parse(logs),
+             else: []
+           ),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
          addresses =
@@ -193,6 +199,7 @@ defmodule Indexer.Block.Fetcher do
                block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
                logs: %{params: logs},
                polygon_supernet_withdrawals: %{params: polygon_supernet_withdrawals},
+               polygon_supernet_deposit_executes: %{params: polygon_supernet_deposit_executes},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts},

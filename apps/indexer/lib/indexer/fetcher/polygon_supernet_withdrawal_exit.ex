@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawalExit do
   alias Indexer.Fetcher.PolygonSupernet
   alias Indexer.Helper
 
-  @fetcher_name :polygon_supernet_withdrawal_exits
+  @fetcher_name :polygon_supernet_withdrawal_exit
 
   # 32-byte signature of the event ExitProcessed(uint256 indexed id, bool indexed success, bytes returnData)
   @exit_processed_event "0x8bbfa0c9bee3785c03700d2a909592286efb83fc7e7002be5764424b9842f7ec"

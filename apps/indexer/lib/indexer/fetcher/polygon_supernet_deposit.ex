@@ -21,7 +21,7 @@ defmodule Indexer.Fetcher.PolygonSupernetDeposit do
   alias Indexer.Fetcher.PolygonSupernet
   alias Indexer.Helper
 
-  @fetcher_name :polygon_supernet_deposits
+  @fetcher_name :polygon_supernet_deposit
 
   # 32-byte signature of the event StateSynced(uint256 indexed id, address indexed sender, address indexed receiver, bytes data)
   @state_synced_event "0xd1d7f6609674cc5871fdb4b0bcd4f0a214118411de9e38983866514f22659165"
