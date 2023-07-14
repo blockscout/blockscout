@@ -26,7 +26,7 @@
 
 ### Chore
 
-- [#7934](https://github.com/blockscout/blockscout/pull/7934) - Explicitly set consensus == true in queries (convenient for search)
+- [#7934](https://github.com/blockscout/blockscout/pull/7934), [#7936](https://github.com/blockscout/blockscout/pull/7936) - Explicitly set consensus == true in queries (convenient for search), remove logger requirements, where it is not used anymore
 - [#7901](https://github.com/blockscout/blockscout/pull/7901) - Fix Docker image build
 - [#7890](https://github.com/blockscout/blockscout/pull/7890), [#7918](https://github.com/blockscout/blockscout/pull/7918) - Resolve warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
 - [#7863](https://github.com/blockscout/blockscout/pull/7863) - Add max_age for account sessions
