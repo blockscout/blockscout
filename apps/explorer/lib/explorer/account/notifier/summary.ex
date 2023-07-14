@@ -3,8 +3,6 @@ defmodule Explorer.Account.Notifier.Summary do
     Compose a summary from transactions
   """
 
-  require Logger
-
   alias Explorer
   alias Explorer.Account.Notifier.Summary
   alias Explorer.{Chain, Repo}
