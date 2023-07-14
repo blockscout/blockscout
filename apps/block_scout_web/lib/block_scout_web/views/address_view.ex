@@ -1,8 +1,6 @@
 defmodule BlockScoutWeb.AddressView do
   use BlockScoutWeb, :view
 
-  require Logger
-
   alias BlockScoutWeb.{AccessHelper, LayoutView}
   alias Explorer.Account.CustomABI
   alias Explorer.{Chain, CustomContractsHelper, Repo}

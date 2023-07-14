@@ -5,8 +5,6 @@ defmodule Explorer.SmartContract.Vyper.CodeCompiler do
 
   alias Explorer.SmartContract.VyperDownloader
 
-  require Logger
-
   @spec run(Keyword.t()) :: {:ok, map} | {:error, :compilation | :name}
   def run(params) do
     compiler_version = Keyword.fetch!(params, :compiler_version)

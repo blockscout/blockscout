@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Import.Runner do
   @type changes_list :: [changes]
 
   @type changeset_function_name :: atom
-  @type on_conflict :: :nothing | :replace_all | :update_coin_balance | :update_contract_code | Ecto.Query.t()
+  @type on_conflict :: :nothing | :replace_all | Ecto.Query.t()
 
   @typedoc """
   Runner-specific options under `c:option_key/0` in all options passed to `c:run/3`.
@@ -48,7 +48,7 @@ defmodule Explorer.Chain.Import.Runner do
   The `Ecto.Schema` module that contains the `:changeset` function for validating `options[options_key][:params]`.
   """
   @callback ecto_schema_module() :: module()
-  @callback run(Multi.t(), changes_list, %{optional(atom()) => term()}) :: Multi.t() | [any()]
+  @callback run(Multi.t(), changes_list, %{optional(atom()) => term()}) :: Multi.t()
   # @callback run_insert_only(Multi.t(), changes_list, %{optional(atom()) => term()}) :: Multi.t()
   @callback timeout() :: timeout()
 

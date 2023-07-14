@@ -4,7 +4,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   """
 
   require Ecto.Query
-  require Logger
 
   import Ecto.Query, only: [from: 2, where: 3]
 
@@ -39,8 +38,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   @impl Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info(["### Blocks run STARTED length #{Enum.count(changes_list)} ###"])
-
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -161,8 +158,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          timestamps: %{updated_at: updated_at},
          blocks_changes: blocks_changes
        }) do
-    Logger.info(["### Blocks fork_transactions STARTED ###"])
-
     query =
       from(
         transaction in where_forked(blocks_changes),
@@ -194,12 +189,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     {_num, transactions} = repo.update_all(update_query, [], timeout: timeout)
 
-    Logger.info(["### Blocks fork_transactions FINISHED ###"])
-
     {:ok, transactions}
   rescue
     postgrex_error in Postgrex.Error ->
-      Logger.info(["### Blocks fork_transactions ERROR ###"])
       {:error, %{exception: postgrex_error}}
   end
 
@@ -209,8 +201,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          timestamps: %{inserted_at: inserted_at, updated_at: updated_at},
          transactions: transactions
        }) do
-    Logger.info(["### Blocks derive_transaction_forks STARTED ###"])
-
     transaction_forks =
       transactions
       |> Enum.map(fn transaction ->
@@ -224,8 +214,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       end)
       # Enforce Fork ShareLocks order (see docs: sharelocks.md)
       |> Enum.sort_by(&{&1.uncle_hash, &1.index})
-
-    Logger.info(["### Blocks derive_transaction_forks length #{Enum.count(transaction_forks)} ###"])
 
     {_total, forked_transaction} =
       repo.insert_all(
@@ -242,8 +230,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         timeout: timeout
       )
 
-    Logger.info(["### Blocks derive_transaction_forks FINISHED ###"])
-
     {:ok, Enum.map(forked_transaction, & &1.hash)}
   end
 
@@ -253,7 +239,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Block.t()]} | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    Logger.info(["### Blocks insert STARTED ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Block ShareLocks order (see docs: sharelocks.md)
@@ -261,8 +246,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       changes_list
       |> Enum.sort_by(& &1.hash)
       |> Enum.dedup_by(& &1.hash)
-
-    Logger.info(["### Blocks insert length #{Enum.count(ordered_changes_list)} ###"])
 
     Import.insert_changes_list(
       repo,
@@ -320,8 +303,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         timeout: timeout,
         timestamps: %{updated_at: updated_at}
       }) do
-    Logger.info(["### Blocks lose_consensus STARTED ###"])
-
     acquire_query =
       from(
         block in where_invalid_neighbor(changes_list),
@@ -348,8 +329,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         timeout: timeout
       )
 
-    Logger.info(["### Blocks lose_consensus FINISHED ###"])
-
     removed_consensus_block_hashes
     |> Enum.map(fn {number, _hash} -> number end)
     |> MissingRangesManipulator.add_ranges_by_block_numbers()
@@ -357,7 +336,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     {:ok, removed_consensus_block_hashes}
   rescue
     postgrex_error in Postgrex.Error ->
-      Logger.info(["### Blocks lose_consensus ERROR ###"])
       {:error, %{exception: postgrex_error, consensus_block_numbers: consensus_block_numbers}}
   end
 
@@ -378,8 +356,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          timeout: timeout,
          timestamps: timestamps
        }) do
-    Logger.info(["### Blocks new_pending_operations STARTED ###"])
-
     if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
       {:ok, []}
     else
@@ -391,8 +367,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         |> Enum.map(fn {number, hash} ->
           %{block_hash: hash, block_number: number}
         end)
-
-      Logger.info(["### Blocks new_pending_operations length #{Enum.count(sorted_pending_ops)} ###"])
 
       Import.insert_changes_list(
         repo,
@@ -410,8 +384,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   # `block_rewards` are linked to `blocks.hash`, but fetched by `blocks.number`, so when a block with the same number is
   # inserted, the old block rewards need to be deleted, so that the old and new rewards aren't combined.
   defp delete_rewards(repo, blocks_changes, %{timeout: timeout}) do
-    Logger.info(["### Blocks delete_rewards STARTED ###"])
-
     {hashes, numbers} =
       Enum.reduce(blocks_changes, {[], []}, fn
         %{consensus: false, hash: hash}, {acc_hashes, acc_numbers} ->
@@ -443,11 +415,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     try do
       {count, nil} = repo.delete_all(delete_query, timeout: timeout)
 
-      Logger.info(["### Blocks delete_rewards FINISHED ###"])
       {:ok, count}
     rescue
       postgrex_error in Postgrex.Error ->
-        Logger.info(["### Blocks delete_rewards ERROR ###"])
         {:error, %{exception: postgrex_error, blocks_changes: blocks_changes}}
     end
   end
@@ -457,8 +427,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          timestamps: %{updated_at: updated_at}
        })
        when is_list(uncle_hashes) do
-    Logger.info(["### Blocks update_block_second_degree_relations STARTED ###"])
-
     query =
       from(
         bsdr in Block.SecondDegreeRelation,
@@ -480,11 +448,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     try do
       {_, result} = repo.update_all(update_query, [], timeout: timeout)
 
-      Logger.info(["### Blocks update_block_second_degree_relations FINISHED ###"])
       {:ok, result}
     rescue
       postgrex_error in Postgrex.Error ->
-        Logger.info(["### Blocks update_block_second_degree_relations ERROR ###"])
         {:error, %{exception: postgrex_error, uncle_hashes: uncle_hashes}}
     end
   end

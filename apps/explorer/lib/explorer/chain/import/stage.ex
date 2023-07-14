@@ -6,7 +6,6 @@ defmodule Explorer.Chain.Import.Stage do
 
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner
-  require Logger
 
   @typedoc """
   Maps `t:Explorer.Chain.Import.Runner.t/0` callback module to the `t:Explorer.Chain.Import.Runner.changes_list/0` it

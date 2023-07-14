@@ -4,7 +4,6 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
   """
 
   require Ecto.Query
-  require Logger
 
   import Ecto.Query, only: [from: 2]
 
@@ -35,8 +34,6 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Token transfers run STARTED length #{Enum.count(changes_list)} ###")
-
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -61,12 +58,10 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
           {:ok, [TokenTransfer.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    Logger.info(["### Token transfers insert STARTED ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce TokenTransfer ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.log_index})
-    Logger.info("### Token transfers length #{Enum.count(ordered_changes_list)} ###")
 
     {:ok, inserted} =
       Import.insert_changes_list(
@@ -79,8 +74,6 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
         timeout: timeout,
         timestamps: timestamps
       )
-
-    Logger.info(["### Token transfers insert FINISHED ###"])
 
     {:ok, inserted}
   end

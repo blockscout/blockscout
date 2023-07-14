@@ -7,8 +7,6 @@ defmodule Explorer do
   if it comes from the database, an external API or others.
   """
 
-  require Logger
-
   @doc """
   Returns the configured coin for `Explorer`
   """

@@ -4,7 +4,6 @@ defmodule Explorer.Chain.Import.Runner.Block.Rewards do
   """
 
   import Ecto.Query, only: [from: 2]
-  require Logger
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Block.Reward
@@ -34,8 +33,6 @@ defmodule Explorer.Chain.Import.Runner.Block.Rewards do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Block rewards run STARTED length #{Enum.count(changes_list)} ###")
-
     insert_options =
       options
       |> Map.put_new(:timeout, @timeout)
@@ -61,12 +58,10 @@ defmodule Explorer.Chain.Import.Runner.Block.Rewards do
         }) :: {:ok, [Reward.t()]} | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
        when is_list(changes_list) do
-    Logger.info(["### Block rewards insert STARTED ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Reward ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.block_hash, &1.address_hash, &1.address_type})
-    Logger.info(["### Block rewards insert STARTED length #{Enum.count(ordered_changes_list)} ###"])
 
     {:ok, block_rewards} =
       Import.insert_changes_list(
@@ -79,8 +74,6 @@ defmodule Explorer.Chain.Import.Runner.Block.Rewards do
         timeout: timeout,
         timestamps: timestamps
       )
-
-    Logger.info(["### Block rewards insert FINISHED ###"])
 
     {:ok, block_rewards}
   end

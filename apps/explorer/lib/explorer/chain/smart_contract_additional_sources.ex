@@ -4,8 +4,6 @@ defmodule Explorer.Chain.SmartContractAdditionalSource do
   It is used when contract is verified with Sourcify utility.
   """
 
-  require Logger
-
   use Explorer.Schema
 
   alias Explorer.Chain.{Hash, SmartContract}

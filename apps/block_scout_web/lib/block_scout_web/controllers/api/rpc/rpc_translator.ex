@@ -13,8 +13,6 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
 
   """
 
-  require Logger
-
   import Plug.Conn
   import Phoenix.Controller, only: [put_view: 2]
 

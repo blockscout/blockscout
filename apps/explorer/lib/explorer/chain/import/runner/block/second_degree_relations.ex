@@ -4,7 +4,6 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
   """
 
   require Ecto.Query
-  require Logger
 
   import Ecto.Query, only: [from: 2]
 
@@ -41,8 +40,6 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
 
   @impl Import.Runner
   def run(multi, changes_list, options) when is_map(options) do
-    Logger.info("### Second degree relations run STARTED length #{Enum.count(changes_list)} ###")
-
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -69,7 +66,6 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
           {:ok, nil | %{nephew_hash: Hash.Full.t(), uncle_hash: Hash.Full.t(), index: non_neg_integer()}}
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout} = options) when is_atom(repo) and is_list(changes_list) do
-    Logger.info(["### Second degree relations insert STARTED ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce SeconDegreeRelation ShareLocks order (see docs: sharelocks.md)
@@ -77,8 +73,6 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
       changes_list
       |> Enum.sort_by(&{&1.nephew_hash, &1.uncle_hash})
       |> Enum.dedup()
-
-    Logger.info(["### Second degree relations insert length #{Enum.count(ordered_changes_list)} ###"])
 
     {:ok, second_degree_relations} =
       Import.insert_changes_list(repo, ordered_changes_list,
@@ -90,8 +84,6 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
         # block_second_degree_relations doesn't have timestamps
         timestamps: %{}
       )
-
-    Logger.info(["### Second degree relations insert FINISHED ###"])
 
     {:ok, second_degree_relations}
   end

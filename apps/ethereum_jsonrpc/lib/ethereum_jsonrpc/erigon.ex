@@ -4,7 +4,6 @@ defmodule EthereumJSONRPC.Erigon do
   Ethereum JSONRPC methods that are only supported by Erigon.
   """
 
-  require Logger
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2]
 
   alias EthereumJSONRPC.Nethermind.Traces
@@ -15,8 +14,6 @@ defmodule EthereumJSONRPC.Erigon do
   @impl EthereumJSONRPC.Variant
   def fetch_beneficiaries(block_numbers, json_rpc_named_arguments)
       when is_list(block_numbers) and is_list(json_rpc_named_arguments) do
-    Logger.info(["### Beneficiaries started. Range starts with ", inspect(Enum.at(block_numbers, 0)), " ###"])
-
     id_to_params =
       block_numbers
       |> block_numbers_to_params_list()
@@ -26,7 +23,6 @@ defmodule EthereumJSONRPC.Erigon do
            id_to_params
            |> FetchedBeneficiaries.requests()
            |> json_rpc(json_rpc_named_arguments) do
-      Logger.info(["### Beneficiaries FINISHED. Range starts with ", inspect(Enum.at(block_numbers, 0)), " ###"])
       {:ok, FetchedBeneficiaries.from_responses(responses, id_to_params)}
     end
   end

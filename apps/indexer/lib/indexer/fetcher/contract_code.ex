@@ -14,7 +14,7 @@ defmodule Indexer.Fetcher.ContractCode do
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
-  # alias Indexer.Fetcher.CoinBalance, as: CoinBalanceFetcher
+  alias Indexer.Fetcher.CoinBalance, as: CoinBalanceFetcher
   alias Indexer.Transform.Addresses
 
   @behaviour BufferedTask
@@ -115,75 +115,52 @@ defmodule Indexer.Fetcher.ContractCode do
     end
   end
 
-  # todo: return
-  defp import_with_balances(addresses_params, entries, _json_rpc_named_arguments) do
-    case Chain.import(%{
-           addresses: %{params: addresses_params, on_conflict: :update_contract_code},
-           timeout: :infinity
-         }) do
-      {:ok, imported} ->
-        Accounts.drop(imported[:addresses])
-        :ok
+  defp import_with_balances(addresses_params, entries, json_rpc_named_arguments) do
+    entries
+    |> coin_balances_request_params()
+    |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments)
+    |> case do
+      {:ok, fetched_balances} ->
+        balance_addresses_params = CoinBalanceFetcher.balances_params_to_address_params(fetched_balances.params_list)
 
-      {:error, step, reason, _changes_so_far} ->
-        Logger.error(
-          fn ->
-            [
-              "failed to import created_contract_code for transactions: ",
-              inspect(reason)
-            ]
-          end,
-          step: step
+        merged_addresses_params = Addresses.merge_addresses(addresses_params ++ balance_addresses_params)
+
+        case Chain.import(%{
+               addresses: %{params: merged_addresses_params},
+               timeout: :infinity
+             }) do
+          {:ok, imported} ->
+            Accounts.drop(imported[:addresses])
+            :ok
+
+          {:error, step, reason, _changes_so_far} ->
+            Logger.error(
+              fn ->
+                [
+                  "failed to import created_contract_code for transactions: ",
+                  inspect(reason)
+                ]
+              end,
+              step: step
+            )
+
+            {:retry, entries}
+        end
+
+      {:error, reason} ->
+        Logger.error(fn -> ["failed to fetch contract codes: ", inspect(reason)] end,
+          error_count: Enum.count(entries)
         )
 
         {:retry, entries}
     end
-
-    # entries
-    # |> coin_balances_request_params()
-    # |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments)
-    # |> case do
-    #   {:ok, fetched_balances} ->
-    #     # balance_addresses_params = CoinBalanceFetcher.balances_params_to_address_params(fetched_balances.params_list)
-
-    #     # merged_addresses_params = Addresses.merge_addresses(addresses_params ++ balance_addresses_params)
-
-    #     case Chain.import(%{
-    #            addresses: %{params: addresses_params},
-    #            timeout: :infinity
-    #          }) do
-    #       {:ok, imported} ->
-    #         Accounts.drop(imported[:addresses])
-    #         :ok
-
-    #       {:error, step, reason, _changes_so_far} ->
-    #         Logger.error(
-    #           fn ->
-    #             [
-    #               "failed to import created_contract_code for transactions: ",
-    #               inspect(reason)
-    #             ]
-    #           end,
-    #           step: step
-    #         )
-
-    #         {:retry, entries}
-    #     end
-
-    #   {:error, reason} ->
-    #     Logger.error(fn -> ["failed to fetch contract codes: ", inspect(reason)] end,
-    #       error_count: Enum.count(entries)
-    #     )
-
-    #     {:retry, entries}
-    # end
   end
 
-  # defp coin_balances_request_params(entries) do
-  #   Enum.map(entries, fn {block_number, created_contract_address_hash_bytes, _transaction_hash_bytes} ->
-  #     {:ok, created_contract_address_hash} = Hash.Address.cast(created_contract_address_hash_bytes)
+  defp coin_balances_request_params(entries) do
+    Enum.map(entries, fn {block_number, created_contract_address_hash_bytes, _transaction_hash_bytes} ->
+      {:ok, created_contract_address_hash} = Hash.Address.cast(created_contract_address_hash_bytes)
 
-  #     %{block_quantity: integer_to_quantity(block_number), hash_data: to_string(created_contract_address_hash)}
-  #   end)
-  # end
+      %{block_quantity: integer_to_quantity(block_number), hash_data: to_string(created_contract_address_hash)}
+    end)
+  end
 end

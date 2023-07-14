@@ -1,8 +1,6 @@
 defmodule BlockScoutWeb.Tokens.TokenController do
   use BlockScoutWeb, :controller
 
-  require Logger
-
   alias BlockScoutWeb.AccessHelper
   alias Explorer.Chain
 

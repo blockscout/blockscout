@@ -94,8 +94,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
       when is_binary(quantity) do
     number = quantity_to_integer(quantity)
 
-    Logger.info("Block from socket at #{:os.system_time(:second)} find_by_this: #{inspect(number)}")
-
     if number > 0 do
       Publisher.broadcast([{:last_block_number, number}], :realtime)
     end
@@ -136,7 +134,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
           end
 
         _ ->
-          Logger.info("No latest block at #{:os.system_time(:second)} find_by_this:")
           previous_number
       end
 
@@ -202,8 +199,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
           block_rewards: block_rewards
         } = options
       ) do
-    Logger.info("### Realtime fetcher START ###")
-
     with {:balances,
           {:ok,
            %{
@@ -301,8 +296,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
       fetcher: :block_realtime,
       block_number: block_number_to_fetch
     )
-
-    Logger.info("Finish block import at #{:os.system_time(:second)} find_by_this: #{inspect(block_number_to_fetch)}")
   end
 
   @decorate span(tracer: Tracer)
@@ -397,8 +390,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defp retry_fetch_and_import_block(%{retry: retry}) when retry < 1, do: :ignore
 
   defp retry_fetch_and_import_block(%{changesets: changesets} = params) do
-    Logger.info("### RETRY FETCH AND IMPORT BLOCK ###")
-
     if unknown_block_number_error?(changesets) do
       # Wait half a second to give Nethermind time to sync.
       :timer.sleep(500)
@@ -421,7 +412,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
          imported,
          %{block_rewards: %{errors: block_reward_errors}}
        ) do
-    Logger.info("### Realtime fetcher async_import_remaining_block_data STARTED ###")
     async_import_block_rewards(block_reward_errors)
     async_import_created_contract_codes(imported)
     async_import_internal_transactions(imported)
@@ -430,19 +420,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
     async_import_token_instances(imported)
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
-
-    res = async_import_replaced_transactions(imported)
-
-    Logger.info("### Realtime fetcher async_import_remaining_block_data FINISHED ###")
-    res
   end
 
   defp balances(
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
          %{addresses_params: addresses_params} = options
        ) do
-    Logger.info("### Realtime fetcher balances collection STARTED ###")
-
     case options
          |> fetch_balances_params_list()
          |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments) do

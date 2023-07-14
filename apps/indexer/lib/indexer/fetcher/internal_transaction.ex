@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   require Logger
 
-  # import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
+  import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
 
   alias Explorer.Chain
   alias Explorer.Chain.Block
@@ -220,7 +220,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   defp safe_import_internal_transaction(internal_transactions_params, block_numbers) do
-    Process.flag(:trap_exit, true)
     import_internal_transaction(internal_transactions_params, block_numbers)
   rescue
     Postgrex.Error ->
@@ -236,10 +235,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
         internal_transactions: internal_transactions_params_without_failed_creations
       })
 
-    # address_hash_to_block_number =
-    #   Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
-    #     {String.downcase(hash), block_number}
-    #   end)
+    address_hash_to_block_number =
+      Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
+        {String.downcase(hash), block_number}
+      end)
 
     empty_block_numbers =
       unique_numbers
@@ -252,7 +251,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     imports =
       Chain.import(%{
-        addresses: %{params: addresses_params, on_conflict: :update_contract_code},
+        addresses: %{params: addresses_params},
         internal_transactions: %{params: internal_transactions_and_empty_block_numbers, with: :blockless_changeset},
         timeout: :infinity
       })
@@ -262,9 +261,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
         Accounts.drop(imported[:addresses])
         Blocks.drop_nonconsensus(imported[:remove_consensus_of_missing_transactions_blocks])
 
-      # async_import_coin_balances(imported, %{
-      #   address_hash_to_fetched_balance_block_number: address_hash_to_block_number
-      # })
+        async_import_coin_balances(imported, %{
+          address_hash_to_fetched_balance_block_number: address_hash_to_block_number
+        })
 
       {:error, step, reason, _changes_so_far} ->
         Logger.error(
@@ -281,10 +280,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
         handle_unique_key_violation(reason, unique_numbers)
 
         # re-queue the de-duped entries
-        {:retry, unique_numbers}
-
-      {:error, [{:exit, {%Postgrex.Error{}, _}}]} ->
-        handle_foreign_key_violation(internal_transactions_params, unique_numbers)
         {:retry, unique_numbers}
     end
   end

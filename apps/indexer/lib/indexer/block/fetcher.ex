@@ -134,26 +134,15 @@ defmodule Indexer.Block.Fetcher do
              block_second_degree_relations_params: block_second_degree_relations_params,
              errors: blocks_errors
            }}} <- {:blocks, fetched_blocks},
-         Logger.info(
-           "Block #{Enum.at(blocks_params, 0)[:number]} timestamp find_by_this: #{Timex.to_unix(Enum.at(blocks_params, 0)[:timestamp])}"
-         ),
-         Logger.info("### BEFORE blocks CHANGESET ###"),
          blocks = TransformBlocks.transform_blocks(blocks_params),
-         Logger.info("### BEFORE receipts params ###"),
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
-         Logger.info("### BEFORE logs CHANGESET ###"),
          %{logs: logs, receipts: receipts} = receipt_params,
-         Logger.info("### BEFORE transactions_with_receipts CHANGESET ###"),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
-         Logger.info("### BEFORE token_transfers CHANGESET ###"),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
-         Logger.info("### BEFORE mint_transfers CHANGESET ###"),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
-         Logger.info("### BEFORE FetchedBeneficiaries CHANGESET ###"),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
-         Logger.info("### BEFORE addresses CHANGESET ###"),
          addresses =
            Addresses.extract_addresses(%{
              block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
@@ -165,7 +154,6 @@ defmodule Indexer.Block.Fetcher do
              transaction_actions: transaction_actions,
              withdrawals: withdrawals_params
            }),
-         Logger.info("### BEFORE coin_balances_params_set CHANGESET ###"),
          coin_balances_params_set =
            %{
              beneficiary_params: MapSet.to_list(beneficiary_params_set),
@@ -175,7 +163,6 @@ defmodule Indexer.Block.Fetcher do
              withdrawals: withdrawals_params
            }
            |> AddressCoinBalances.params_set(),
-         Logger.info("### BEFORE coin_balances_params_daily_set CHANGESET ###"),
          coin_balances_params_daily_set =
            %{
              coin_balances_params: coin_balances_params_set,
@@ -184,11 +171,9 @@ defmodule Indexer.Block.Fetcher do
            |> AddressCoinBalancesDaily.params_set(),
          beneficiaries_with_gas_payment =
            beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_receipts),
-         Logger.info("### BEFORE address_token_balances CHANGESET ###"),
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
          transaction_actions =
            Enum.map(transaction_actions, fn action -> Map.put(action, :data, Map.delete(action.data, :block_number)) end),
-         Logger.info("### BEFORE INSERT BLOCK CHANGESETS ###"),
          {:ok, inserted} <-
            __MODULE__.import(
              state,
