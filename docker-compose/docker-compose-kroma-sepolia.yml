@@ -31,11 +31,11 @@ services:
       -  ./envs/common-blockscout-sepolia.env
     environment:
       API_V2_ENABLED: 'true'
-      ETHEREUM_JSONRPC_HTTP_URL: 'https://tmp-api.sepolia.kroma.network/'
+      ETHEREUM_JSONRPC_HTTP_URL: 'https://api.sepolia.kroma.network/'
       CHAIN_ID: '2358'
       INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
       INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
-      INDEXER_OPTIMISM_L1_RPC: 'http://proposer-vanilla.sepolia.kroma.internal:8545'
+      INDEXER_OPTIMISM_L1_RPC: 'https://rpc.sepolia.org'
       INDEXER_OPTIMISM_L1_BATCH_START_BLOCK: '3834891'
       INDEXER_OPTIMISM_L1_BATCH_INBOX: '0xfa79000000000000000000000000000000000001'
       INDEXER_OPTIMISM_L1_BATCH_SUBMITTER: '0xf15dc770221b99c98d4aaed568f2ab04b9d16e42'

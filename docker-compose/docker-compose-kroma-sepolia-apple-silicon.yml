@@ -39,7 +39,7 @@ services:
       -  ./envs/common-blockscout.env
     environment:
       API_V2_ENABLED: 'true'
-      ETHEREUM_JSONRPC_HTTP_URL: 'https://tmp-api.sepolia.kroma.network/'
+      ETHEREUM_JSONRPC_HTTP_URL: 'https://api.sepolia.kroma.network/'
       CHAIN_ID: '2358'
       INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
       INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
