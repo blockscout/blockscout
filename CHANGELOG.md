@@ -8,6 +8,7 @@
 - [#7836](https://github.com/blockscout/blockscout/pull/7836) - Improve unverified email flow
 - [#7784](https://github.com/blockscout/blockscout/pull/7784) - Search improvements: Add new fields, light refactoring
 - [#7811](https://github.com/blockscout/blockscout/pull/7811) - Filter addresses before insertion
+- [#7935](https://github.com/blockscout/blockscout/pull/7935) - Do not delete data for old blocks
 
 ### Fixes
 

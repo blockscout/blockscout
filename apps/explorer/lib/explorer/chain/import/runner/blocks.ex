@@ -59,6 +59,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     consensus_block_numbers = consensus_block_numbers(changes_list)
 
+    potential_reorg_changes = filter_potential_reorgs(changes_list, options)
+    potential_reorg_block_numbers = consensus_block_numbers(potential_reorg_changes)
+
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     run_func = fn repo ->
       {:ok, nonconsensus_items} = lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
@@ -113,7 +116,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end)
     |> Multi.run(:delete_rewards, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
-        fn -> delete_rewards(repo, changes_list, insert_options) end,
+        fn -> delete_rewards(repo, potential_reorg_changes, insert_options) end,
         :address_referencing,
         :blocks,
         :delete_rewards
@@ -151,7 +154,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end)
     |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
-        fn -> acquire_contract_address_tokens(repo, consensus_block_numbers) end,
+        fn -> acquire_contract_address_tokens(repo, potential_reorg_block_numbers) end,
         :address_referencing,
         :blocks,
         :acquire_contract_address_tokens
@@ -159,7 +162,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end)
     |> Multi.run(:delete_address_token_balances, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
-        fn -> delete_address_token_balances(repo, consensus_block_numbers, insert_options) end,
+        fn -> delete_address_token_balances(repo, potential_reorg_block_numbers, insert_options) end,
         :address_referencing,
         :blocks,
         :delete_address_token_balances
@@ -167,7 +170,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end)
     |> Multi.run(:delete_address_current_token_balances, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
-        fn -> delete_address_current_token_balances(repo, consensus_block_numbers, insert_options) end,
+        fn -> delete_address_current_token_balances(repo, potential_reorg_block_numbers, insert_options) end,
         :address_referencing,
         :blocks,
         :delete_address_current_token_balances
@@ -204,6 +207,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   @impl Runner
   def timeout, do: @timeout
+
+  defp filter_potential_reorgs(changes_list, %{max_block_height: max_block_height, max_height_diff: max_height_diff}) do
+    Enum.filter(changes_list, &(&1.number > max_block_height - max_height_diff))
+  end
+
+  defp filter_potential_reorgs(changes_list, _options), do: changes_list
 
   defp acquire_contract_address_tokens(repo, consensus_block_numbers) do
     query =
