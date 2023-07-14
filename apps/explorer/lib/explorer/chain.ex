@@ -39,7 +39,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Counters.{LastFetchedCounter, TokenHoldersCounter, TokenTransfersCounter}
 
-  alias Explorer.{Chain, CustomContractsHelper}
+  alias Explorer.Chain
 
   alias Explorer.Chain.{
     Address,
@@ -8096,10 +8096,10 @@ defmodule Explorer.Chain do
         address_to_validation_count(address.hash, options)
       end)
 
-    crc_total_worth_task =
-      Task.async(fn ->
-        crc_total_worth(address)
-      end)
+    # crc_total_worth_task =
+    #   Task.async(fn ->
+    #     crc_total_worth(address)
+    #   end)
 
     Task.start_link(fn ->
       transaction_count(address)
@@ -8113,10 +8113,11 @@ defmodule Explorer.Chain do
       gas_usage_count(address)
     end)
 
-    [
-      validation_count_task,
-      crc_total_worth_task
-    ]
+    # [
+    #   validation_count_task,
+    #   crc_total_worth_task
+    # ]
+    [validation_count_task]
     |> Task.yield_many(:infinity)
     |> Enum.map(fn {_task, res} ->
       case res do
@@ -8145,57 +8146,57 @@ defmodule Explorer.Chain do
     AddressTransactionsGasUsageCounter.fetch(address)
   end
 
-  defp crc_total_worth(address) do
-    circles_total_balance(address.hash)
-  end
+  # defp crc_total_worth(address) do
+  #   circles_total_balance(address.hash)
+  # end
 
-  defp circles_total_balance(address_hash) do
-    circles_addresses_list = CustomContractsHelper.get_custom_addresses_list(:circles_addresses)
+  # defp circles_total_balance(address_hash) do
+  #   circles_addresses_list = CustomContractsHelper.get_custom_addresses_list(:circles_addresses)
 
-    token_balances =
-      address_hash
-      |> Chain.fetch_last_token_balances()
+  #   token_balances =
+  #     address_hash
+  #     |> Chain.fetch_last_token_balances()
 
-    token_balances_except_bridged =
-      token_balances
-      |> Enum.filter(fn {_, token} -> !token.bridged end)
+  #   token_balances_except_bridged =
+  #     token_balances
+  #     |> Enum.filter(fn {_, token} -> !token.bridged end)
 
-    circles_total_balance_raw =
-      if Enum.count(circles_addresses_list) > 0 do
-        token_balances_except_bridged
-        |> Enum.reduce(Decimal.new(0), fn {token_balance, token}, acc_balance ->
-          {:ok, token_address} = Chain.hash_to_address(token.contract_address_hash)
+  #   circles_total_balance_raw =
+  #     if Enum.count(circles_addresses_list) > 0 do
+  #       token_balances_except_bridged
+  #       |> Enum.reduce(Decimal.new(0), fn {token_balance, token}, acc_balance ->
+  #         {:ok, token_address} = Chain.hash_to_address(token.contract_address_hash)
 
-          from_address = from_address_hash(token_address)
+  #         from_address = from_address_hash(token_address)
 
-          created_from_address_hash =
-            if from_address,
-              do: "0x" <> Base.encode16(from_address.bytes, case: :lower),
-              else: nil
+  #         created_from_address_hash =
+  #           if from_address,
+  #             do: "0x" <> Base.encode16(from_address.bytes, case: :lower),
+  #             else: nil
 
-          if Enum.member?(circles_addresses_list, created_from_address_hash) && token.name == "Circles" &&
-               token.symbol == "CRC" do
-            Decimal.add(acc_balance, token_balance.value)
-          else
-            acc_balance
-          end
-        end)
-      else
-        Decimal.new(0)
-      end
+  #         if Enum.member?(circles_addresses_list, created_from_address_hash) && token.name == "Circles" &&
+  #              token.symbol == "CRC" do
+  #           Decimal.add(acc_balance, token_balance.value)
+  #         else
+  #           acc_balance
+  #         end
+  #       end)
+  #     else
+  #       Decimal.new(0)
+  #     end
 
-    CurrencyHelper.format_according_to_decimals(circles_total_balance_raw, Decimal.new(18))
-  end
+  #   CurrencyHelper.format_according_to_decimals(circles_total_balance_raw, Decimal.new(18))
+  # end
 
-  defp from_address_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
-    address.contracts_creation_internal_transaction.from_address_hash
-  end
+  # defp from_address_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
+  #   address.contracts_creation_internal_transaction.from_address_hash
+  # end
 
-  defp from_address_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
-    address.contracts_creation_transaction.from_address_hash
-  end
+  # defp from_address_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
+  #   address.contracts_creation_transaction.from_address_hash
+  # end
 
-  defp from_address_hash(_address), do: nil
+  # defp from_address_hash(_address), do: nil
 
   def fetch_token_counters(address_hash, timeout) do
     total_token_transfers_task =

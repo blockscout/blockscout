@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   import Ecto.Query, only: [from: 2, limit: 2, offset: 2, order_by: 3, preload: 2, dynamic: 2]
 
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Block, BridgedToken, Hash, Token}
+  alias Explorer.Chain.{Address, Block, Hash, Token}
 
   @default_paging_options %PagingOptions{page_size: 50}
 

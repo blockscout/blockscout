@@ -6,9 +6,9 @@ defmodule Indexer.Transform.TokenTransfers do
   require Logger
 
   alias ABI.TypeDecoder
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
   alias Explorer.Chain.{Token, TokenTransfer}
-  alias Explorer.Token.MetadataRetriever
+  # alias Explorer.Token.MetadataRetriever
   alias Indexer.Fetcher.TokenTotalSupplyUpdater
 
   @burn_address "0x0000000000000000000000000000000000000000"
