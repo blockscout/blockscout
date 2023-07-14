@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceView do
   end
 
   def filter_by_type(token_balances, type) do
-    Enum.filter(token_balances, fn {_token_balance, token} -> token.type == type end)
+    Enum.filter(token_balances, fn token_balance -> token_balance.token.type == type end)
   end
 
   def address_tokens_usd_sum_cache(address, token_balances) do

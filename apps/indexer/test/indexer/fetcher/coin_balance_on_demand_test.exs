@@ -126,7 +126,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
 
       :timer.sleep(1000)
 
-      assert %{value: expected_wei} = Chain.get_coin_balance(address.hash, block_number)
+      assert %{value: ^expected_wei} = Chain.get_coin_balance(address.hash, block_number)
     end
   end
 
