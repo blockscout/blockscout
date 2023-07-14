@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#7888](https://github.com/blockscout/blockscout/pull/7888) - Add token balances info to watchlist address response
 - [#7898](https://github.com/blockscout/blockscout/pull/7898) - Add possibility to add extra headers with JSON RPC URL
 - [#7836](https://github.com/blockscout/blockscout/pull/7836) - Improve unverified email flow
 - [#7784](https://github.com/blockscout/blockscout/pull/7784) - Search improvements: Add new fields, light refactoring
