@@ -764,7 +764,7 @@ defmodule Explorer.Chain do
   def block_reward(block_number) do
     block_hash =
       Block
-      |> where([block], block.number == ^block_number and block.consensus)
+      |> where([block], block.number == ^block_number and block.consensus == true)
       |> select([block], block.hash)
       |> Repo.one!()
 
@@ -784,7 +784,7 @@ defmodule Explorer.Chain do
             left_join: transaction in assoc(block, :transactions),
             inner_join: emission_reward in EmissionReward,
             on: fragment("? <@ ?", block.number, emission_reward.block_range),
-            where: block.number == ^block_number and block.consensus,
+            where: block.number == ^block_number and block.consensus == true,
             group_by: [emission_reward.reward, block.hash],
             select: %Wei{
               value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0) + emission_reward.reward
@@ -6373,8 +6373,8 @@ defmodule Explorer.Chain do
 
   defp find_block_timestamp(number, options) do
     Block
-    |> where([b], b.number == ^number)
-    |> select([b], b.timestamp)
+    |> where([block], block.number == ^number)
+    |> select([block], block.timestamp)
     |> limit(1)
     |> select_repo(options).one()
   end
