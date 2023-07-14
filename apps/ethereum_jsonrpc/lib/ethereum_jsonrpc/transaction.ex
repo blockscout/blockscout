@@ -7,8 +7,6 @@ defmodule EthereumJSONRPC.Transaction do
   [`eth_getTransactionByBlockHashAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyblockhashandindex),
   and [`eth_getTransactionByBlockNumberAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyblocknumberandindex)
   """
-  require Logger
-
   import EthereumJSONRPC, only: [quantity_to_integer: 1, integer_to_quantity: 1, request: 1]
 
   alias EthereumJSONRPC
@@ -425,8 +423,6 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   def to_elixir(transaction) when is_binary(transaction) do
-    #    Logger.warn(["Fetched transaction is not full: ", transaction])
-
     nil
   end
 

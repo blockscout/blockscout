@@ -21,8 +21,6 @@ defmodule EthereumJSONRPC.RollingWindow do
 
   use GenServer
 
-  require Logger
-
   def child_spec([init_arguments]) do
     child_spec([init_arguments, []])
   end
