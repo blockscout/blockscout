@@ -69,14 +69,30 @@ services:
   stats-db:
     depends_on:
       - backend
-    extends:
-      file: ./services/docker-compose-stats.yml
-      service: stats-db
+    image: postgres:14
+    restart: always
+    container_name: 'stats-postgres'
+    command: postgres -c 'max_connections=200'
+    environment:
+      POSTGRES_PASSWORD: ''
+      POSTGRES_USER: 'postgres'
+      POSTGRES_HOST_AUTH_METHOD: 'trust'
+    ports:
+      - 7433:5432
+    volumes:
+      - ./services/stats-db-data:/var/lib/postgresql/data/
 
   stats:
-    platform: linux/amd64
     depends_on:
-      - backend
-    extends:
-      file: ./services/docker-compose-stats.yml
-      service: stats
+      - stats-db
+    platform: linux/amd64
+    image: ghcr.io/blockscout/stats:${STATS_DOCKER_TAG:-v1.2.2}
+    pull_policy: always
+    restart: always
+    container_name: 'stats'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      -  ./envs/common-stats-apple-silicon.env
+    ports:
+      - 8153:8050

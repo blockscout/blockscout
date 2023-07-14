@@ -10,8 +10,3 @@ services:
       - 'host.docker.internal:host-gateway'
     env_file:
       -  ../envs/common-stats-sepolia.env
->>>>>>> Stashed changes
-    ports:
-      - 8153:8050
-    volumes:
-      - ./stats-db-data:/var/lib/postgresql/data/
