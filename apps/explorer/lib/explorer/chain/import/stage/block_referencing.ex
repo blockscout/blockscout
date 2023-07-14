@@ -13,21 +13,20 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   def runners,
     do: [
       Runner.Transactions,
+      Runner.Transaction.Forks,
+      Runner.Logs,
       Runner.Tokens,
+      Runner.TokenTransfers,
+      Runner.Address.TokenBalances,
       Runner.TransactionActions,
       Runner.Withdrawals
     ]
 
-  @transactions_chunk_size 50
-
   @impl Stage
   def multis(runner_to_changes_list, options) do
-    {transactions_multis, runner_to_changes_list_without_trans} =
-      Stage.chunk_every(runner_to_changes_list, Runner.Transactions, @transactions_chunk_size, options)
+    {final_multi, final_remaining_runner_to_changes_list} =
+      Stage.single_multi(runners(), runner_to_changes_list, options)
 
-    {rest_multis, result_runner_to_changes_list} =
-      Stage.split_multis(runners() -- [Runner.Transactions], runner_to_changes_list_without_trans, options)
-
-    {transactions_multis ++ rest_multis, result_runner_to_changes_list}
+    {[final_multi], final_remaining_runner_to_changes_list}
   end
 end
