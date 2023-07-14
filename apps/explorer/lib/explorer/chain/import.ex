@@ -40,8 +40,6 @@ defmodule Explorer.Chain.Import do
   @type all_options :: %{
           optional(:broadcast) => atom,
           optional(:timeout) => timeout,
-          optional(:max_block_height) => integer,
-          optional(:max_height_diff) => integer,
           unquote_splicing(quoted_runner_options)
         }
 
@@ -184,7 +182,7 @@ defmodule Explorer.Chain.Import do
     end
   end
 
-  @global_options ~w(broadcast timeout max_block_height max_height_diff)a
+  @global_options ~w(broadcast timeout)a
 
   defp validate_options(options) when is_map(options) do
     local_options = Map.drop(options, @global_options)

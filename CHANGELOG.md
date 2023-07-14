@@ -10,7 +10,6 @@
 - [#7811](https://github.com/blockscout/blockscout/pull/7811) - Filter addresses before insertion
 - [#7859](https://github.com/blockscout/blockscout/pull/7859) - Add TokenTotalSupplyUpdater
 - [#7873](https://github.com/blockscout/blockscout/pull/7873) - Chunk realtime balances requests
-- [#7935](https://github.com/blockscout/blockscout/pull/7935) - Do not delete data for old blocks
 
 ### Fixes
 
