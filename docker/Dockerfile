@@ -5,7 +5,7 @@ WORKDIR /app
 RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file qemu-x86_64
 
 ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc \
-    GLIBC_VERSION=2.34-r0 \
+    GLIBC_VERSION=2.35-r1 \
     PORT=4000 \
     MIX_ENV="prod"
 
