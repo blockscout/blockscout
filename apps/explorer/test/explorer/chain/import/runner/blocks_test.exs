@@ -174,6 +174,51 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
                )
     end
 
+    test "address_token_balances are not deleted for old blocks",
+         %{consensus_block: %{number: block_number} = block, options: options} do
+      token = insert(:token)
+      token_contract_address_hash = token.contract_address_hash
+
+      %Address{hash: address_hash} =
+        insert_address_with_token_balances(%{
+          previous: %{value: 1},
+          current: %{block_number: block_number, value: 2},
+          token_contract_address_hash: token_contract_address_hash
+        })
+
+      # Token must exist with non-`nil` `holder_count` for `blocks_update_token_holder_counts` to update
+      update_holder_count!(token_contract_address_hash, 1)
+
+      assert count(Address.TokenBalance) == 2
+      assert count(Address.CurrentTokenBalance) == 1
+
+      previous_block_number = block_number - 1
+
+      assert {:ok,
+              %{
+                delete_address_current_token_balances: [],
+                delete_address_token_balances: [],
+                derive_address_current_token_balances: [],
+                blocks_update_token_holder_counts: []
+              }} =
+               run_block_consensus_change(
+                 block,
+                 true,
+                 Map.merge(options, %{max_block_height: block_number + 100, max_height_diff: 50})
+               )
+
+      assert count(Address.TokenBalance) == 2
+      assert count(Address.CurrentTokenBalance) == 1
+
+      current_value = Decimal.new(2)
+
+      assert %Address.CurrentTokenBalance{block_number: ^block_number, value: ^current_value} =
+               Repo.get_by(Address.CurrentTokenBalance,
+                 address_hash: address_hash,
+                 token_contract_address_hash: token_contract_address_hash
+               )
+    end
+
     test "a non-holder reverting to a holder increases the holder_count",
          %{consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number}, options: options} do
       token = insert(:token)

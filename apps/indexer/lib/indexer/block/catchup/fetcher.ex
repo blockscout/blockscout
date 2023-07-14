@@ -23,6 +23,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   alias Ecto.Changeset
   alias Explorer.Chain
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Catchup.{Sequence, TaskSupervisor}
@@ -120,8 +121,16 @@ defmodule Indexer.Block.Catchup.Fetcher do
     {block_reward_errors, options_without_block_rewards_errors} =
       pop_in(options_with_block_rewards_errors[:block_rewards][:errors])
 
+    chain_import_options =
+      options_without_block_rewards_errors
+      |> put_in([:blocks, :params, Access.all(), :consensus], true)
+      |> Map.put(:max_height_diff, Application.get_env(:indexer, __MODULE__)[:max_height_diff])
+
     full_chain_import_options =
-      put_in(options_without_block_rewards_errors, [:blocks, :params, Access.all(), :consensus], true)
+      case BlockNumber.get_max() do
+        0 -> chain_import_options
+        max_block_height -> Map.put(chain_import_options, :max_block_height, max_block_height)
+      end
 
     with {:import, {:ok, imported} = ok} <- {:import, Chain.import(full_chain_import_options)} do
       async_import_remaining_block_data(
