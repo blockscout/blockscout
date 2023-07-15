@@ -16,7 +16,7 @@ services:
   stats:
     depends_on:
       - stats-db
-    image: ghcr.io/blockscout/stats:${STATS_DOCKER_TAG:-main}
+    image: ghcr.io/blockscout/stats:${STATS_DOCKER_TAG:-latest}
     pull_policy: always
     restart: always
     container_name: 'stats'
