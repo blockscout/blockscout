@@ -1938,7 +1938,8 @@ defmodule Explorer.Chain do
   end
 
   defp check_and_update_constructor_args(
-         %SmartContract{address_hash: address_hash, constructor_arguments: nil} = smart_contract
+         %SmartContract{address_hash: address_hash, constructor_arguments: nil, verified_via_sourcify: true} =
+           smart_contract
        ) do
     if args = Verifier.parse_constructor_arguments_for_sourcify_contract(address_hash, smart_contract.abi) do
       smart_contract |> SmartContract.changeset(%{constructor_arguments: args}) |> Repo.update()
@@ -1952,7 +1953,7 @@ defmodule Explorer.Chain do
          %Address{
            hash: address_hash,
            contract_code: deployed_bytecode,
-           smart_contract: %SmartContract{constructor_arguments: nil} = smart_contract
+           smart_contract: %SmartContract{constructor_arguments: nil, verified_via_sourcify: true} = smart_contract
          } = address
        ) do
     if args =

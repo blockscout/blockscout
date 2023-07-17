@@ -43,7 +43,7 @@
       <% end %>
       <%= if smart_contract_verified || (!smart_contract_verified && metadata_for_verification) do %>
         <% target_contract = if smart_contract_verified, do: @address.smart_contract, else: metadata_for_verification %>
-        <%= if @address.smart_contract.partially_verified && smart_contract_verified do %>
+        <%= if @address.smart_contract.verified_via_sourcify && @address.smart_contract.partially_verified && smart_contract_verified do %>
           <div class="mb-4">
             <i style="color: #f7b32b;" class="fa fa-info-circle"></i><span> <%= gettext("This contract has been partially verified via Sourcify.") %>
         <% else %>
