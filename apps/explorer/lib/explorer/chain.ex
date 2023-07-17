@@ -98,6 +98,7 @@ defmodule Explorer.Chain do
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.SmartContract.Helper
+  alias Explorer.SmartContract.Solidity.Verifier
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
   alias Dataloader.Ecto, as: DataloaderEcto
@@ -1913,7 +1914,7 @@ defmodule Explorer.Chain do
           if smart_contract do
             CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, smart_contract)
-            address_result
+            check_and_update_constructor_args(address_result)
           else
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
 
@@ -1935,6 +1936,35 @@ defmodule Explorer.Chain do
       address -> {:ok, address}
     end
   end
+
+  defp check_and_update_constructor_args(
+         %SmartContract{address_hash: address_hash, constructor_arguments: nil} = smart_contract
+       ) do
+    if args = Verifier.parse_constructor_arguments_for_sourcify_contract(address_hash, smart_contract.abi) do
+      smart_contract |> SmartContract.changeset(%{constructor_arguments: args}) |> Repo.update()
+      %SmartContract{smart_contract | constructor_arguments: args}
+    else
+      smart_contract
+    end
+  end
+
+  defp check_and_update_constructor_args(
+         %Address{
+           hash: address_hash,
+           contract_code: deployed_bytecode,
+           smart_contract: %SmartContract{constructor_arguments: nil} = smart_contract
+         } = address
+       ) do
+    if args =
+         Verifier.parse_constructor_arguments_for_sourcify_contract(address_hash, smart_contract.abi, deployed_bytecode) do
+      smart_contract |> SmartContract.changeset(%{constructor_arguments: args}) |> Repo.update()
+      %Address{address | smart_contract: %SmartContract{smart_contract | constructor_arguments: args}}
+    else
+      address
+    end
+  end
+
+  defp check_and_update_constructor_args(other), do: other
 
   defp add_twin_info_to_contract(address_result, address_verified_twin_contract, _hash)
        when is_nil(address_verified_twin_contract),
@@ -4310,7 +4340,7 @@ defmodule Explorer.Chain do
       verified_contract_twin_additional_sources = get_contract_additional_sources(verified_contract_twin, options)
 
       %{
-        :verified_contract => verified_contract_twin,
+        :verified_contract => check_and_update_constructor_args(verified_contract_twin),
         :additional_sources => verified_contract_twin_additional_sources
       }
     else

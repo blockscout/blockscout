@@ -13,6 +13,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
+  alias Explorer.Chain.Data
   alias Explorer.SmartContract.RustVerifierInterface
   alias Explorer.SmartContract.Solidity.CodeCompiler
 
@@ -533,4 +534,37 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   def parse_boolean(false), do: false
 
   def parse_boolean(_), do: false
+
+  def parse_constructor_arguments_for_sourcify_contract(address_hash, abi) do
+    parse_constructor_arguments_for_sourcify_contract(address_hash, abi, Chain.smart_contract_bytecode(address_hash))
+  end
+
+  def parse_constructor_arguments_for_sourcify_contract(address_hash, abi, deployed_bytecode)
+      when is_binary(deployed_bytecode) do
+    creation_tx_input =
+      case Chain.smart_contract_creation_tx_bytecode(address_hash) do
+        %{init: init, created_contract_code: _created_contract_code} ->
+          "0x" <> init_without_0x = init
+          init_without_0x
+
+        _ ->
+          nil
+      end
+
+    with true <- has_constructor_with_params?(abi),
+         check_function <- parse_constructor_and_return_check_function(abi),
+         false <- is_nil(creation_tx_input) || deployed_bytecode == "0x",
+         {meta, meta_length} <- extract_meta_from_deployed_bytecode(deployed_bytecode),
+         [_bytecode, constructor_args] <- String.split(creation_tx_input, meta <> meta_length),
+         ^constructor_args <- check_function.(constructor_args) do
+      constructor_args
+    else
+      _ ->
+        nil
+    end
+  end
+
+  def parse_constructor_arguments_for_sourcify_contract(address_hash, abi, deployed_bytecode) do
+    parse_constructor_arguments_for_sourcify_contract(address_hash, abi, Data.to_string(deployed_bytecode))
+  end
 end
