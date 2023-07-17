@@ -639,27 +639,22 @@ defmodule Explorer.Chain do
     to_block = to_block(options)
 
     base =
-      if csv_export? do
-        from(log in Log,
-          order_by: [desc: log.block_number, desc: log.index],
-          where: log.address_hash == ^address_hash,
-          limit: ^paging_options.page_size,
-          select: log,
-          inner_join: block in Block,
-          on: block.hash == log.block_hash,
-          where: block.consensus
-        )
+      from(log in Log,
+        order_by: [desc: log.block_number, desc: log.index],
+        where: log.address_hash == ^address_hash,
+        limit: ^paging_options.page_size,
+        select: log,
+        inner_join: block in Block,
+        on: block.hash == log.block_hash,
+        where: block.consensus
+      )
+
+    base =
+      unless csv_export? do
+        base
+        |> preload(transaction: [:to_address, :from_address])
       else
-        from(log in Log,
-          order_by: [desc: log.block_number, desc: log.index],
-          where: log.address_hash == ^address_hash,
-          limit: ^paging_options.page_size,
-          select: log,
-          preload: [transaction: [to_address: :smart_contract]],
-          inner_join: block in Block,
-          on: block.hash == log.block_hash,
-          where: block.consensus
-        )
+        base
       end
 
     base
