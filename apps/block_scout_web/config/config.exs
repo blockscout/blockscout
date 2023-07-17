@@ -12,7 +12,8 @@ config :block_scout_web,
   cookie_domain: System.get_env("SESSION_COOKIE_DOMAIN"),
   # 604800 seconds, 1 week
   session_cookie_ttl: 60 * 60 * 24 * 7,
-  invalid_session_key: "invalid_session"
+  invalid_session_key: "invalid_session",
+  api_v2_temp_token_key: "api_v2_temp_client_key"
 
 config :block_scout_web,
   admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
