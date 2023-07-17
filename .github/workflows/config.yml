@@ -6,8 +6,8 @@ on:
       - master
       - production-optimism-stg
       - production-eth-stg-experimental
+      - production-eth-goerli-stg
       - production-xdai-stg
-      - production-polygon-supernets-stg
       - production-core-stg
       - production-sokol-stg
       - production-rsk-stg

@@ -850,4 +850,3 @@ tag-stable-version: ## Generate container `{version}` tag
 				tag \
 				tag-latest \
 				tag-version
-
