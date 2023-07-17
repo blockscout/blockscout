@@ -42,6 +42,7 @@ services:
       API_V2_ENABLED: 'true'
       ETHEREUM_JSONRPC_HTTP_URL: 'https://api.sepolia.kroma.network/'
       CHAIN_ID: '2358'
+      INDEXER_MEMORY_LIMIT: '8GB'
       INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
       INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
       INDEXER_OPTIMISM_L1_RPC: 'https://rpc.sepolia.org'
