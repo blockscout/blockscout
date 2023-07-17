@@ -149,14 +149,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :derive_transaction_forks
       )
     end)
-    |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
-      Instrumenter.block_import_stage_runner(
-        fn -> acquire_contract_address_tokens(repo, consensus_block_numbers) end,
-        :address_referencing,
-        :blocks,
-        :acquire_contract_address_tokens
-      )
-    end)
     |> Multi.run(:delete_address_token_balances, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> delete_address_token_balances(repo, consensus_block_numbers, insert_options) end,
@@ -204,19 +196,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   @impl Runner
   def timeout, do: @timeout
-
-  defp acquire_contract_address_tokens(repo, consensus_block_numbers) do
-    query =
-      from(ctb in Address.CurrentTokenBalance,
-        where: ctb.block_number in ^consensus_block_numbers,
-        select: {ctb.token_contract_address_hash, ctb.token_id},
-        distinct: [ctb.token_contract_address_hash, ctb.token_id]
-      )
-
-    contract_address_hashes_and_token_ids = repo.all(query)
-
-    Tokens.acquire_contract_address_tokens(repo, contract_address_hashes_and_token_ids)
-  end
 
   defp fork_transactions(%{
          repo: repo,
