@@ -134,11 +134,7 @@ defmodule Explorer.Account.Notifier.Email do
   end
 
   defp host do
-    if System.get_env("MIX_ENV") == "prod" do
-      "blockscout.com"
-    else
-      Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-    end
+    Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
   end
 
   defp path do
