@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#7946](https://github.com/blockscout/blockscout/pull/7946) - API v2 rate limit: Put token to cookies & change /api/v2/key method
 - [#7888](https://github.com/blockscout/blockscout/pull/7888) - Add token balances info to watchlist address response
 - [#7898](https://github.com/blockscout/blockscout/pull/7898) - Add possibility to add extra headers with JSON RPC URL
 - [#7836](https://github.com/blockscout/blockscout/pull/7836) - Improve unverified email flow
@@ -30,6 +31,7 @@
 
 ### Chore
 
+- [#7950](https://github.com/blockscout/blockscout/pull/7950) - Add GA CI for Eth Goerli chain
 - [#7934](https://github.com/blockscout/blockscout/pull/7934), [#7936](https://github.com/blockscout/blockscout/pull/7936) - Explicitly set consensus == true in queries (convenient for search), remove logger requirements, where it is not used anymore
 - [#7901](https://github.com/blockscout/blockscout/pull/7901) - Fix Docker image build
 - [#7890](https://github.com/blockscout/blockscout/pull/7890), [#7918](https://github.com/blockscout/blockscout/pull/7918) - Resolve warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
