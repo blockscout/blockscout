@@ -194,7 +194,7 @@ debug_trace_transaction_timeout = System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_T
 config :ethereum_jsonrpc, :internal_transaction_timeout, debug_trace_transaction_timeout
 
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
-  tracer: System.get_env("INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE", "call_tracer")
+  tracer: System.get_env("INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE", "js")
 
 config :ethereum_jsonrpc, EthereumJSONRPC.PendingTransaction,
   type: System.get_env("ETHEREUM_JSONRPC_PENDING_TRANSACTIONS_TYPE", "default")
