@@ -14,7 +14,7 @@ defmodule Indexer.Memory.Monitor do
 
   alias Indexer.Memory.Shrinkable
 
-  defstruct limit: Application.get_env(:indexer, :memory_limit),
+  defstruct limit: 0,
             timer_interval: :timer.minutes(1),
             timer_reference: nil,
             shrinkable_set: MapSet.new()
@@ -62,11 +62,11 @@ defmodule Indexer.Memory.Monitor do
   end
 
   @impl GenServer
-  def handle_info(:check, %__MODULE__{limit: limit} = state) do
+  def handle_info(:check, state) do
     total = :erlang.memory(:total)
 
-    if limit < total do
-      log_memory(%{limit: limit, total: total})
+    if memory_limit() < total do
+      log_memory(%{limit: memory_limit(), total: total})
       shrink_or_log(state)
     end
 
@@ -168,5 +168,9 @@ defmodule Indexer.Memory.Monitor do
     shrinkable_set
     |> Enum.map(fn pid -> {pid, memory(pid)} end)
     |> Enum.sort_by(&elem(&1, 1), &>=/2)
+  end
+
+  defp memory_limit do
+    Application.get_env(:indexer, :memory_limit)
   end
 end

@@ -150,6 +150,12 @@ config :ethereum_jsonrpc,
   ipc_path: System.get_env("IPC_PATH"),
   disable_archive_balances?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES")
 
+config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
+  headers:
+    %{"Content-Type" => "application/json"}
+    |> Map.merge(ConfigHelper.parse_json_env_var("ETHEREUM_JSONRPC_HTTP_HEADERS", "{}"))
+    |> Map.to_list()
+
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
   debug_trace_transaction_timeout: System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s"),
   tracer: System.get_env("INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE", "call_tracer")
@@ -387,8 +393,7 @@ config :explorer, Explorer.Chain.Cache.TransactionActionTokensData,
   max_cache_size: ConfigHelper.parse_integer_env_var("INDEXER_TX_ACTIONS_MAX_TOKEN_CACHE_SIZE", 100_000)
 
 config :explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand,
-  fetch_interval:
-    ConfigHelper.parse_time_env_var("MICROSERVICE_MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS", "10m")
+  fetch_interval: ConfigHelper.parse_time_env_var("MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS", "10m")
 
 config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")

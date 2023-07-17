@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   import BlockScoutWeb.Chain,
     only: [
       next_page_params: 3,
+      next_page_params: 4,
       token_transfers_next_page_params: 3,
       paging_options: 1,
       split_list_by_page: 1,
@@ -365,7 +366,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       {tokens, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page |> next_page_params(tokens, params) |> delete_parameters_from_next_page_params()
+      next_page_params =
+        next_page |> next_page_params(tokens, params, true) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)

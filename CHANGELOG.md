@@ -4,9 +4,37 @@
 
 ### Features
 
+- [#7888](https://github.com/blockscout/blockscout/pull/7888) - Add token balances info to watchlist address response
+- [#7898](https://github.com/blockscout/blockscout/pull/7898) - Add possibility to add extra headers with JSON RPC URL
+- [#7836](https://github.com/blockscout/blockscout/pull/7836) - Improve unverified email flow
+- [#7784](https://github.com/blockscout/blockscout/pull/7784) - Search improvements: Add new fields, light refactoring
+- [#7811](https://github.com/blockscout/blockscout/pull/7811) - Filter addresses before insertion
+
 ### Fixes
 
+- [#7852](https://github.com/blockscout/blockscout/pull/7852) - Token balances refactoring & fixes
+- [#7872](https://github.com/blockscout/blockscout/pull/7872) - Fix pending gas price in pending tx
+- [#7875](https://github.com/blockscout/blockscout/pull/7875) - Fix twin compiler version
+- [#7825](https://github.com/blockscout/blockscout/pull/7825) - Fix nginx config for the new frontend websockets
+- [#7772](https://github.com/blockscout/blockscout/pull/7772) - Fix parsing of database password period(s)
+- [#7803](https://github.com/blockscout/blockscout/pull/7803) - Fix additional sources and interfaces, save names for vyper contracts
+- [#7758](https://github.com/blockscout/blockscout/pull/7758) - Remove limit for configurable fetchers
+- [#7764](https://github.com/blockscout/blockscout/pull/7764) - Fix missing ranges insertion and deletion logic
+- [#7843](https://github.com/blockscout/blockscout/pull/7843) - Fix created_contract_code_indexed_at updating
+- [#7855](https://github.com/blockscout/blockscout/pull/7855) - Handle internal transactions unique_violation
+- [#7899](https://github.com/blockscout/blockscout/pull/7899) - Fix catchup numbers_to_ranges function
+
 ### Chore
+
+- [#7934](https://github.com/blockscout/blockscout/pull/7934), [#7936](https://github.com/blockscout/blockscout/pull/7936) - Explicitly set consensus == true in queries (convenient for search), remove logger requirements, where it is not used anymore
+- [#7901](https://github.com/blockscout/blockscout/pull/7901) - Fix Docker image build
+- [#7890](https://github.com/blockscout/blockscout/pull/7890), [#7918](https://github.com/blockscout/blockscout/pull/7918) - Resolve warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+- [#7863](https://github.com/blockscout/blockscout/pull/7863) - Add max_age for account sessions
+- [#7841](https://github.com/blockscout/blockscout/pull/7841) - CORS setup for docker-compose config with new frontend
+- [#7832](https://github.com/blockscout/blockscout/pull/7832), [#7891](https://github.com/blockscout/blockscout/pull/7891) - API v2: Add block_number, block_hash to logs
+- [#7789](https://github.com/blockscout/blockscout/pull/7789) - Fix test warnings; Fix name of `MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS` env variable
+- [#7819](https://github.com/blockscout/blockscout/pull/7819) - Add logging for unknown error verification result
+- [#7781](https://github.com/blockscout/blockscout/pull/7781) - Add `/api/v1/health/liveness` and `/api/v1/health/readiness`
 
 <details>
   <summary>Dependencies version bumps</summary>

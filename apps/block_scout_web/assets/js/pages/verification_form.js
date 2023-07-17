@@ -127,9 +127,7 @@ if ($contractVerificationPage.length) {
   $(function () {
     initializeDropzone()
 
-    setTimeout(function () {
-      $('.nightly-builds-false').trigger('click')
-    }, 10)
+    filterNightlyBuilds(true, false)
 
     $('body').on('click', '.js-btn-add-contract-libraries', function () {
       $('.js-smart-contract-libraries-wrapper').show()
