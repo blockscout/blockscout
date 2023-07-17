@@ -38,6 +38,7 @@ services:
     env_file:
       -  ./envs/common-blockscout.env
     environment:
+      API_RATE_LIMIT_DISABLED: 'true'
       API_V2_ENABLED: 'true'
       ETHEREUM_JSONRPC_HTTP_URL: 'https://api.sail.kroma.cc'
       CHAIN_ID: '7791'

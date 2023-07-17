@@ -30,6 +30,7 @@ services:
     env_file:
       -  ./envs/common-blockscout-sepolia.env
     environment:
+      API_RATE_LIMIT_DISABLED: 'true'
       API_V2_ENABLED: 'true'
       ETHEREUM_JSONRPC_HTTP_URL: 'https://api.sepolia.kroma.network/'
       CHAIN_ID: '2358'

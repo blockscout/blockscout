@@ -10,3 +10,5 @@ services:
       - 'host.docker.internal:host-gateway'
     env_file:
       -  ../envs/common-stats-sepolia.env
+    ports:
+      - 8153:8050
