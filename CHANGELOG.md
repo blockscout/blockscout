@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#7888](https://github.com/blockscout/blockscout/pull/7888) - Add token balances info to watchlist address response
 - [#7898](https://github.com/blockscout/blockscout/pull/7898) - Add possibility to add extra headers with JSON RPC URL
 - [#7836](https://github.com/blockscout/blockscout/pull/7836) - Improve unverified email flow
 - [#7784](https://github.com/blockscout/blockscout/pull/7784) - Search improvements: Add new fields, light refactoring
@@ -11,6 +12,7 @@
 - [#7859](https://github.com/blockscout/blockscout/pull/7859) - Add TokenTotalSupplyUpdater
 - [#7873](https://github.com/blockscout/blockscout/pull/7873) - Chunk realtime balances requests
 - [#7927](https://github.com/blockscout/blockscout/pull/7927) - Delete token balances only for blocks that lost consensus
+- [#7947](https://github.com/blockscout/blockscout/pull/7947) - Decrease locks level
 
 ### Fixes
 
@@ -28,7 +30,7 @@
 
 ### Chore
 
-- [#7934](https://github.com/blockscout/blockscout/pull/7934) - Explicitly set consensus == true in queries (convenient for search)
+- [#7934](https://github.com/blockscout/blockscout/pull/7934), [#7936](https://github.com/blockscout/blockscout/pull/7936) - Explicitly set consensus == true in queries (convenient for search), remove logger requirements, where it is not used anymore
 - [#7901](https://github.com/blockscout/blockscout/pull/7901) - Fix Docker image build
 - [#7890](https://github.com/blockscout/blockscout/pull/7890), [#7918](https://github.com/blockscout/blockscout/pull/7918) - Resolve warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
 - [#7863](https://github.com/blockscout/blockscout/pull/7863) - Add max_age for account sessions

@@ -142,7 +142,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
       order_by: [asc: block.hash],
       limit: ^limit,
       offset: 1000,
-      lock: "FOR UPDATE"
+      lock: "FOR NO KEY UPDATE"
     )
   end
 

@@ -232,7 +232,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         select: transaction,
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     update_query =
@@ -378,7 +378,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         select: block.hash,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: block.hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     {_, removed_consensus_block_hashes} =
@@ -683,7 +683,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         where: bsdr.uncle_hash in ^uncle_hashes,
         # Enforce SeconDegreeRelation ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :nephew_hash, asc: :uncle_hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     update_query =
