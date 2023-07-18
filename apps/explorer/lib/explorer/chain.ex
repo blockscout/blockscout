@@ -649,15 +649,15 @@ defmodule Explorer.Chain do
         where: block.consensus
       )
 
-    base =
-      unless csv_export? do
+    preloaded_query =
+      if csv_export? do
         base
-        |> preload(transaction: [:to_address, :from_address])
       else
         base
+        |> preload(transaction: [:to_address, :from_address])
       end
 
-    base
+    preloaded_query
     |> page_logs(paging_options)
     |> filter_topic(Keyword.get(options, :topic))
     |> where_block_number_in_period(from_block, to_block)
