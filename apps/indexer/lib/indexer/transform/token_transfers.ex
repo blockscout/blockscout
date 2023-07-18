@@ -139,7 +139,7 @@ defmodule Indexer.Transform.TokenTransfers do
         }
 
       nil ->
-          acc
+        acc
     end
   rescue
     e in [FunctionClauseError, MatchError] ->
