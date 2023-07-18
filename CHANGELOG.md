@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#7771](https://github.com/blockscout/blockscout/pull/7771) - CSV export: speed up
 - [#7946](https://github.com/blockscout/blockscout/pull/7946) - API v2 rate limit: Put token to cookies & change /api/v2/key method
 - [#7888](https://github.com/blockscout/blockscout/pull/7888) - Add token balances info to watchlist address response
 - [#7898](https://github.com/blockscout/blockscout/pull/7898) - Add possibility to add extra headers with JSON RPC URL
