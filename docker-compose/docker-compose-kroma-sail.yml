@@ -32,6 +32,7 @@ services:
     environment:
       API_RATE_LIMIT_DISABLED: 'true'
       API_V2_ENABLED: 'true'
+      DATABASE_URL: 'postgresql://blockscout:YKWiMHY76rrgJWHn3e@db-blockscout.sail.kroma.internal:5432/blockscout?ssl=false'
       ETHEREUM_JSONRPC_HTTP_URL: 'http://proposer-vanilla.sail.kroma.internal:8545'
       CHAIN_ID: '7791'
       INDEXER_MEMORY_LIMIT: '8GB'
@@ -72,6 +73,8 @@ services:
   stats:
     depends_on:
       - backend
+    env_file:
+      -  ./envs/common-stats.env
     extends:
       file: ./services/docker-compose-stats.yml
       service: stats
