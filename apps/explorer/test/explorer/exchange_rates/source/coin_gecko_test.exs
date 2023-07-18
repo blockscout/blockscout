@@ -58,6 +58,38 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
   ]
   """
 
+  describe "source_url/1" do
+    setup do
+      bypass = Bypass.open()
+      Application.put_env(:explorer, CoinGecko, base_url: "https://api.coingecko.com/api/v3")
+
+      {:ok, bypass: bypass}
+    end
+
+    test "composes cg :coins_list URL" do
+      assert "https://api.coingecko.com/api/v3/coins/list?include_platform=true" == CoinGecko.source_url(:coins_list)
+    end
+
+    test "composes cg url to list of contract address hashes" do
+      assert "https://api.coingecko.com/api/v3/simple/token_price/ethereum?vs_currencies=usd&include_market_cap=true&contract_addresses=0xdAC17F958D2ee523a2206206994597C13D831ec7" ==
+               CoinGecko.source_url(["0xdAC17F958D2ee523a2206206994597C13D831ec7"])
+    end
+
+    test "composes cg url by contract address hash" do
+      assert "https://api.coingecko.com/api/v3/coins/ethereum/contract/0xdAC17F958D2ee523a2206206994597C13D831ec7" ==
+               CoinGecko.source_url("0xdAC17F958D2ee523a2206206994597C13D831ec7")
+    end
+
+    test "composes cg url by contract address hash with custom coin_id" do
+      Application.put_env(:explorer, CoinGecko, platform: "poa-network")
+
+      assert "https://api.coingecko.com/api/v3/coins/poa-network/contract/0xdAC17F958D2ee523a2206206994597C13D831ec7" ==
+               CoinGecko.source_url("0xdAC17F958D2ee523a2206206994597C13D831ec7")
+
+      Application.put_env(:explorer, CoinGecko, platform: nil)
+    end
+  end
+
   describe "format_data/1" do
     setup do
       bypass = Bypass.open()
