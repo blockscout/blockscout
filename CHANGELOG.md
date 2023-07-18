@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#6190](https://github.com/blockscout/blockscout/pull/6190) - Add EIP-1559 support to gas price oracle
+
 ### Fixes
 
 ### Chore
