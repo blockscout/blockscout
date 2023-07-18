@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#6721](https://github.com/blockscout/blockscout/pull/6721) - Implement fetching internal transactions from callTracer
 - [#5561](https://github.com/blockscout/blockscout/pull/5561), [#6523](https://github.com/blockscout/blockscout/pull/6523) - Improve working with contracts implementations
 - [#6401](https://github.com/blockscout/blockscout/pull/6401) - Add Sol2Uml contract visualization
 - [#6481](https://github.com/blockscout/blockscout/pull/6481) - Smart contract verification improvements
@@ -29,6 +30,7 @@
 
 ### Fixes
 
+- [#6827](https://github.com/blockscout/blockscout/pull/6827) - Fix handling unknown calls from `callTracer`
 - [#6532](https://github.com/blockscout/blockscout/pull/6532) - Fix index creation migration
 - [#6473](https://github.com/blockscout/blockscout/pull/6473) - Fix state changes for contract creation transactions
 - [#6475](https://github.com/blockscout/blockscout/pull/6475) - Fix token name with unicode graphemes shortening

@@ -193,6 +193,9 @@ config :ethereum_jsonrpc,
 debug_trace_transaction_timeout = System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "900s")
 config :ethereum_jsonrpc, :internal_transaction_timeout, debug_trace_transaction_timeout
 
+config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
+  tracer: System.get_env("INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE", "js")
+
 config :ethereum_jsonrpc, EthereumJSONRPC.PendingTransaction,
   type: System.get_env("ETHEREUM_JSONRPC_PENDING_TRANSACTIONS_TYPE", "default")
 
@@ -520,10 +523,10 @@ config :indexer, Indexer.Block.Catchup.Fetcher,
   concurrency: blocks_catchup_fetcher_concurrency
 
 {internal_transaction_fetcher_batch_size, _} =
-  Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", "8"))
+  Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", "4"))
 
 {internal_transaction_fetcher_concurrency, _} =
-  Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY", "8"))
+  Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY", "4"))
 
 config :indexer, Indexer.Fetcher.InternalTransaction,
   batch_size: internal_transaction_fetcher_batch_size,
@@ -531,7 +534,7 @@ config :indexer, Indexer.Fetcher.InternalTransaction,
 
 {coin_balance_fetcher_batch_size, _} = Integer.parse(System.get_env("INDEXER_COIN_BALANCES_BATCH_SIZE", "500"))
 
-{coin_balance_fetcher_concurrency, _} = Integer.parse(System.get_env("INDEXER_COIN_BALANCES_CONCURRENCY", "4"))
+{coin_balance_fetcher_concurrency, _} = Integer.parse(System.get_env("INDEXER_COIN_BALANCES_CONCURRENCY", "1"))
 
 config :indexer, Indexer.Fetcher.CoinBalance,
   batch_size: coin_balance_fetcher_batch_size,
