@@ -8,7 +8,6 @@ defmodule Indexer.Transform.TokenTransfers do
   alias ABI.TypeDecoder
   alias Explorer.Repo
   alias Explorer.Chain.{Token, TokenTransfer}
-  # alias Explorer.Token.MetadataRetriever
   alias Indexer.Fetcher.TokenTotalSupplyUpdater
 
   @burn_address "0x0000000000000000000000000000000000000000"

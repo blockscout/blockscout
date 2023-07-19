@@ -7,9 +7,11 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Token
+  alias Explorer.Counters.AverageBlockTime
   alias Explorer.Token.MetadataRetriever
+  alias Timex.Duration
 
-  @update_interval :timer.seconds(10)
+  @default_update_interval :timer.seconds(10)
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -38,7 +40,13 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
   end
 
   defp schedule_next_update do
-    Process.send_after(self(), :update, @update_interval)
+    update_interval =
+      case AverageBlockTime.average_block_time() do
+        {:error, :disabled} -> @default_update_interval
+        block_time -> round(Duration.to_milliseconds(block_time))
+      end
+
+    Process.send_after(self(), :update, update_interval)
   end
 
   defp update_token(nil), do: :ok
@@ -49,16 +57,10 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
     token = Repo.get_by(Token, contract_address_hash: address_hash)
 
     if token && !token.skip_metadata do
-      token_params =
-        address_hash_string
-        |> MetadataRetriever.get_total_supply_of()
-
-      token_to_update =
-        token
-        |> Repo.preload([:contract_address])
+      token_params = MetadataRetriever.get_total_supply_of(address_hash_string)
 
       if token_params !== %{} do
-        {:ok, _} = Chain.update_token(token_to_update, token_params)
+        {:ok, _} = Chain.update_token(token, token_params)
       end
     end
 
