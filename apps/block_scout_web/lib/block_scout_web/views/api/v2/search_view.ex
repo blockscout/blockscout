@@ -28,7 +28,9 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "token_type" => search_result.token_type,
       "is_smart_contract_verified" => search_result.verified,
       "exchange_rate" => search_result.exchange_rate && to_string(search_result.exchange_rate),
-      "total_supply" => search_result.total_supply
+      "total_supply" => search_result.total_supply,
+      "circulating_market_cap" =>
+        search_result.circulating_market_cap && to_string(search_result.circulating_market_cap)
     }
   end
 
