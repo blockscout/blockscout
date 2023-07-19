@@ -6,9 +6,9 @@ defmodule Indexer.Transform.TokenTransfers do
   require Logger
 
   alias ABI.TypeDecoder
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
   alias Explorer.Chain.{Token, TokenTransfer}
-  alias Explorer.Token.MetadataRetriever
+  alias Indexer.Fetcher.TokenTotalSupplyUpdater
 
   @burn_address "0x0000000000000000000000000000000000000000"
 
@@ -57,7 +57,7 @@ defmodule Indexer.Transform.TokenTransfers do
       token_transfer.token_contract_address_hash
     end)
     |> Enum.uniq()
-    |> Enum.each(&update_token/1)
+    |> TokenTotalSupplyUpdater.add_tokens()
 
     tokens_uniq = tokens |> Enum.uniq()
 
@@ -258,30 +258,6 @@ defmodule Indexer.Transform.TokenTransfers do
     }
 
     {token, token_transfer}
-  end
-
-  defp update_token(nil), do: :ok
-
-  defp update_token(address_hash_string) do
-    {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
-
-    token = Repo.get_by(Token, contract_address_hash: address_hash)
-
-    if token && !token.skip_metadata do
-      token_params =
-        address_hash_string
-        |> MetadataRetriever.get_total_supply_of()
-
-      token_to_update =
-        token
-        |> Repo.preload([:contract_address])
-
-      if token_params !== %{} do
-        {:ok, _} = Chain.update_token(token_to_update, token_params)
-      end
-    end
-
-    :ok
   end
 
   def parse_erc1155_params(

@@ -291,7 +291,7 @@ defmodule Explorer.Chain do
       |> union(^query_created_contract_address_hash_wrapped)
       |> wrapped_union_subquery()
       |> common_where_limit_order(paging_options)
-      |> preload(transaction: :block)
+      |> preload(:block)
       |> join_associations(necessity_by_association)
       |> select_repo(options).all()
     else
@@ -300,7 +300,7 @@ defmodule Explorer.Chain do
       |> InternalTransaction.where_address_fields_match(hash, direction)
       |> InternalTransaction.where_block_number_in_period(from_block, to_block)
       |> common_where_limit_order(paging_options)
-      |> preload(:transaction)
+      |> preload(:block)
       |> join_associations(necessity_by_association)
       |> select_repo(options).all()
     end
@@ -316,7 +316,6 @@ defmodule Explorer.Chain do
   defp common_where_limit_order(query, paging_options) do
     query
     |> InternalTransaction.where_is_different_from_parent_transaction()
-    |> InternalTransaction.where_block_number_is_not_null()
     |> page_internal_transaction(paging_options, %{index_int_tx_desc_order: true})
     |> limit(^paging_options.page_size)
     |> order_by(
@@ -484,13 +483,9 @@ defmodule Explorer.Chain do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    from_block = from_block(options)
-    to_block = to_block(options)
-
     options
     |> address_to_transactions_tasks_query()
     |> Transaction.not_dropped_or_replaced_transactions()
-    |> where_block_number_in_period(from_block, to_block)
     |> join_associations(necessity_by_association)
     |> put_has_token_transfers_to_tx(old_ui?)
     |> Transaction.matching_address_queries_list(direction, address_hash)
@@ -505,6 +500,7 @@ defmodule Explorer.Chain do
     |> address_to_transactions_tasks_query(true)
     |> Transaction.not_pending_transactions()
     |> join_associations(necessity_by_association)
+    |> put_has_token_transfers_to_tx(false)
     |> Transaction.matching_address_queries_list(direction, address_hashes)
     |> Enum.map(fn query -> Task.async(fn -> select_repo(options).all(query) end) end)
   end
@@ -636,7 +632,7 @@ defmodule Explorer.Chain do
   end
 
   @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
-  def address_to_logs(address_hash, options \\ []) when is_list(options) do
+  def address_to_logs(address_hash, csv_export?, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
     from_block = from_block(options)
@@ -648,13 +644,20 @@ defmodule Explorer.Chain do
         where: log.address_hash == ^address_hash,
         limit: ^paging_options.page_size,
         select: log,
-        preload: [transaction: [to_address: :smart_contract]],
         inner_join: block in Block,
         on: block.hash == log.block_hash,
         where: block.consensus
       )
 
-    base
+    preloaded_query =
+      if csv_export? do
+        base
+      else
+        base
+        |> preload(transaction: [:to_address, :from_address])
+      end
+
+    preloaded_query
     |> page_logs(paging_options)
     |> filter_topic(Keyword.get(options, :topic))
     |> where_block_number_in_period(from_block, to_block)
@@ -2474,16 +2477,17 @@ defmodule Explorer.Chain do
   def list_top_tokens(filter, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     token_type = Keyword.get(options, :token_type, nil)
+    sorting = Keyword.get(options, :sorting, [])
 
-    fetch_top_tokens(filter, paging_options, token_type, options)
+    fetch_top_tokens(filter, paging_options, token_type, sorting, options)
   end
 
-  defp fetch_top_tokens(filter, paging_options, token_type, options) do
-    base_query = base_token_query(token_type)
+  defp fetch_top_tokens(filter, paging_options, token_type, sorting, options) do
+    base_query = Token.base_token_query(token_type, sorting)
 
     base_query_with_paging =
       base_query
-      |> page_tokens(paging_options)
+      |> Token.page_tokens(paging_options, sorting)
       |> limit(^paging_options.page_size)
 
     query =
@@ -2502,31 +2506,6 @@ defmodule Explorer.Chain do
 
     query
     |> select_repo(options).all()
-  end
-
-  defp base_token_query(empty_type) when empty_type in [nil, []] do
-    from(t in Token,
-      order_by: [
-        desc_nulls_last: t.circulating_market_cap,
-        desc_nulls_last: t.holder_count,
-        asc: t.name,
-        asc: t.contract_address_hash
-      ],
-      preload: [:contract_address]
-    )
-  end
-
-  defp base_token_query(token_types) when is_list(token_types) do
-    from(t in Token,
-      where: t.type in ^token_types,
-      order_by: [
-        desc_nulls_last: t.circulating_market_cap,
-        desc_nulls_last: t.holder_count,
-        asc: t.name,
-        asc: t.contract_address_hash
-      ],
-      preload: [:contract_address]
-    )
   end
 
   @doc """
@@ -3679,7 +3658,6 @@ defmodule Explorer.Chain do
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
-    |> preload(:transaction)
     |> select_repo(options).all()
   end
 
@@ -3700,7 +3678,7 @@ defmodule Explorer.Chain do
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
-    |> preload(:transaction)
+    |> preload(:block)
     |> select_repo(options).all()
   end
 
@@ -4658,61 +4636,6 @@ defmodule Explorer.Chain do
         (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
           address.fetched_coin_balance < ^coin_balance
     )
-  end
-
-  defp page_tokens(query, %PagingOptions{key: nil}), do: query
-
-  defp page_tokens(query, %PagingOptions{key: {circulating_market_cap, holder_count, name, contract_address_hash}}) do
-    from(token in query,
-      where: ^page_tokens_circulating_market_cap(circulating_market_cap, holder_count, name, contract_address_hash)
-    )
-  end
-
-  defp page_tokens_circulating_market_cap(nil, holder_count, name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.circulating_market_cap) and ^page_tokens_holder_count(holder_count, name, contract_address_hash)
-    )
-  end
-
-  defp page_tokens_circulating_market_cap(circulating_market_cap, holder_count, name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.circulating_market_cap) or t.circulating_market_cap < ^circulating_market_cap or
-        (t.circulating_market_cap == ^circulating_market_cap and
-           ^page_tokens_holder_count(holder_count, name, contract_address_hash))
-    )
-  end
-
-  defp page_tokens_holder_count(nil, name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.holder_count) and ^page_tokens_name(name, contract_address_hash)
-    )
-  end
-
-  defp page_tokens_holder_count(holder_count, name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.holder_count) or t.holder_count < ^holder_count or
-        (t.holder_count == ^holder_count and ^page_tokens_name(name, contract_address_hash))
-    )
-  end
-
-  defp page_tokens_name(nil, contract_address_hash) do
-    dynamic([t], is_nil(t.name) and ^page_tokens_contract_address_hash(contract_address_hash))
-  end
-
-  defp page_tokens_name(name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.name) or
-        (t.name > ^name or (t.name == ^name and ^page_tokens_contract_address_hash(contract_address_hash)))
-    )
-  end
-
-  defp page_tokens_contract_address_hash(contract_address_hash) do
-    dynamic([t], t.contract_address_hash > ^contract_address_hash)
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query

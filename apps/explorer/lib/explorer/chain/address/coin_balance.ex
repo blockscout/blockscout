@@ -104,12 +104,12 @@ defmodule Explorer.Chain.Address.CoinBalance do
       Application.get_env(:block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance)[:coin_balance_history_days]
 
     CoinBalance
-    |> join(:inner, [cb], b in Block, on: cb.block_number == b.number)
+    |> join(:inner, [cb], block in Block, on: cb.block_number == block.number)
     |> where([cb], cb.address_hash == ^address_hash)
     |> limit_time_interval(days_to_consider, block_timestamp)
-    |> group_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
-    |> order_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
-    |> select([cb, b], %{date: type(fragment("date_trunc('day', ?)", b.timestamp), :date), value: max(cb.value)})
+    |> group_by([cb, block], fragment("date_trunc('day', ?)", block.timestamp))
+    |> order_by([cb, block], fragment("date_trunc('day', ?)", block.timestamp))
+    |> select([cb, block], %{date: type(fragment("date_trunc('day', ?)", block.timestamp), :date), value: max(cb.value)})
   end
 
   def limit_time_interval(query, days_to_consider, nil) do

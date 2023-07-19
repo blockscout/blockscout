@@ -428,7 +428,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
        ) do
     case options
          |> fetch_balances_params_list()
-         |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments) do
+         |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments, CoinBalance.batch_size()) do
       {:ok, %FetchedBalances{params_list: params_list, errors: []}} ->
         merged_addresses_params =
           %{address_coin_balances: params_list}

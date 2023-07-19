@@ -30,7 +30,7 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       [result] =
-        address
+        address.hash
         |> AddressLogCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)
@@ -106,7 +106,7 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       result =
-        address
+        address.hash
         |> AddressLogCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)
