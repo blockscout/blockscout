@@ -150,7 +150,7 @@ defmodule BlockScoutWeb.Notifier do
     |> Stream.map(
       &(InternalTransaction.where_nonpending_block()
         |> Repo.get_by(transaction_hash: &1.transaction_hash, index: &1.index)
-        |> Repo.preload([:from_address, :to_address, transaction: :block]))
+        |> Repo.preload([:from_address, :to_address, :block]))
     )
     |> Enum.each(&broadcast_internal_transaction/1)
   end

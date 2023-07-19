@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.AddressLogsController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          :ok <- Chain.check_address_exists(address_hash),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
-      logs_plus_one = Chain.address_to_logs(address_hash, paging_options(params))
+      logs_plus_one = Chain.address_to_logs(address_hash, false, paging_options(params))
       {results, next_page} = split_list_by_page(logs_plus_one)
 
       next_page_url =
@@ -83,7 +83,7 @@ defmodule BlockScoutWeb.AddressLogsController do
 
       formatted_topic = if String.starts_with?(topic, "0x"), do: topic, else: "0x" <> topic
 
-      logs_plus_one = Chain.address_to_logs(address_hash, topic: formatted_topic)
+      logs_plus_one = Chain.address_to_logs(address_hash, false, topic: formatted_topic)
 
       {results, next_page} = split_list_by_page(logs_plus_one)
 

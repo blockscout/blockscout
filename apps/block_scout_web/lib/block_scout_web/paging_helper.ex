@@ -127,14 +127,18 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def delete_parameters_from_next_page_params(params) when is_map(params) do
     params
-    |> Map.delete("block_hash_or_number")
-    |> Map.delete("transaction_hash")
-    |> Map.delete("address_hash")
-    |> Map.delete("type")
-    |> Map.delete("method")
-    |> Map.delete("filter")
-    |> Map.delete("token_address_hash")
-    |> Map.delete("q")
+    |> Map.drop([
+      "block_hash_or_number",
+      "transaction_hash",
+      "address_hash",
+      "type",
+      "method",
+      "filter",
+      "token_address_hash",
+      "q",
+      "sort",
+      "order"
+    ])
   end
 
   def delete_parameters_from_next_page_params(_), do: nil
@@ -166,4 +170,18 @@ defmodule BlockScoutWeb.PagingHelper do
   end
 
   def search_query(_), do: []
+
+  def tokens_sorting(%{"sort" => sort_field, "order" => order}) do
+    [sorting: do_tokens_sorting(sort_field, order)]
+  end
+
+  def tokens_sorting(_), do: []
+
+  defp do_tokens_sorting("fiat_value", "asc"), do: [asc_nulls_first: :fiat_value]
+  defp do_tokens_sorting("fiat_value", "desc"), do: [desc_nulls_last: :fiat_value]
+  defp do_tokens_sorting("holder_count", "asc"), do: [asc_nulls_first: :holder_count]
+  defp do_tokens_sorting("holder_count", "desc"), do: [desc_nulls_last: :holder_count]
+  defp do_tokens_sorting("circulating_market_cap", "asc"), do: [asc_nulls_first: :circulating_market_cap]
+  defp do_tokens_sorting("circulating_market_cap", "desc"), do: [desc_nulls_last: :circulating_market_cap]
+  defp do_tokens_sorting(_, _), do: []
 end

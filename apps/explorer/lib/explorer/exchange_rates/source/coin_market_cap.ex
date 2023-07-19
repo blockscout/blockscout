@@ -55,8 +55,18 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   def source_url do
     coin = Explorer.coin()
     symbol = if coin, do: String.upcase(Explorer.coin()), else: nil
+    coin_id = coin_id()
 
-    if symbol, do: "#{api_quotes_latest_url()}?symbol=#{symbol}&CMC_PRO_API_KEY=#{api_key()}", else: nil
+    cond do
+      coin_id ->
+        "#{api_quotes_latest_url()}?id=#{coin_id}&CMC_PRO_API_KEY=#{api_key()}"
+
+      symbol ->
+        "#{api_quotes_latest_url()}?symbol=#{symbol}&CMC_PRO_API_KEY=#{api_key()}"
+
+      true ->
+        nil
+    end
   end
 
   @impl Source
@@ -82,6 +92,10 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
 
   defp api_key do
     config(:api_key)
+  end
+
+  defp coin_id do
+    config(:coin_id)
   end
 
   defp get_token_properties(market_data) do

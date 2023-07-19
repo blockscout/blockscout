@@ -4,12 +4,20 @@
 
 ### Features
 
+- [#7970](https://github.com/blockscout/blockscout/pull/7970) - Search improvements: add sorting
+- [#7771](https://github.com/blockscout/blockscout/pull/7771) - CSV export: speed up
+- [#7962](https://github.com/blockscout/blockscout/pull/7962) - Allow indicate CMC id of the coin through env var
 - [#7946](https://github.com/blockscout/blockscout/pull/7946) - API v2 rate limit: Put token to cookies & change /api/v2/key method
 - [#7888](https://github.com/blockscout/blockscout/pull/7888) - Add token balances info to watchlist address response
 - [#7898](https://github.com/blockscout/blockscout/pull/7898) - Add possibility to add extra headers with JSON RPC URL
 - [#7836](https://github.com/blockscout/blockscout/pull/7836) - Improve unverified email flow
 - [#7784](https://github.com/blockscout/blockscout/pull/7784) - Search improvements: Add new fields, light refactoring
 - [#7811](https://github.com/blockscout/blockscout/pull/7811) - Filter addresses before insertion
+- [#7895](https://github.com/blockscout/blockscout/pull/7895) - API v2: Add sorting to tokens page
+- [#7859](https://github.com/blockscout/blockscout/pull/7859) - Add TokenTotalSupplyUpdater
+- [#7873](https://github.com/blockscout/blockscout/pull/7873) - Chunk realtime balances requests
+- [#7927](https://github.com/blockscout/blockscout/pull/7927) - Delete token balances only for blocks that lost consensus
+- [#7947](https://github.com/blockscout/blockscout/pull/7947) - Improve locks acquiring
 
 ### Fixes
 
@@ -29,6 +37,7 @@
 
 ### Chore
 
+- [#7963](https://github.com/blockscout/blockscout/pull/7963) - Op Stack: ignore depositNonce
 - [#7954](https://github.com/blockscout/blockscout/pull/7954) - Enhance Account Explorer.Account.Notifier.Email module tests
 - [#7950](https://github.com/blockscout/blockscout/pull/7950) - Add GA CI for Eth Goerli chain
 - [#7934](https://github.com/blockscout/blockscout/pull/7934), [#7936](https://github.com/blockscout/blockscout/pull/7936) - Explicitly set consensus == true in queries (convenient for search), remove logger requirements, where it is not used anymore
