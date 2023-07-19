@@ -56,6 +56,10 @@ defmodule Explorer.Chain do
     InternalTransaction,
     Log,
     PendingBlockOperation,
+    PolygonSupernetDeposit,
+    PolygonSupernetDepositExecute,
+    PolygonSupernetWithdrawal,
+    PolygonSupernetWithdrawalExit,
     Search,
     SmartContract,
     SmartContractAdditionalSource,
@@ -6327,6 +6331,43 @@ defmodule Explorer.Chain do
           )
       }
     )
+
+  def polygon_supernet_deposit_by_transaction_hash(hash) do
+    query =
+      from(
+        de in PolygonSupernetDepositExecute,
+        inner_join: d in PolygonSupernetDeposit,
+        on: d.msg_id == de.msg_id and not is_nil(d.from),
+        select: %{
+          msg_id: de.msg_id,
+          from: d.from,
+          to: d.to,
+          success: de.success,
+          l1_transaction_hash: d.l1_transaction_hash
+        },
+        where: de.l2_transaction_hash == ^hash
+      )
+
+    Repo.replica().one(query)
+  end
+
+  def polygon_supernet_withdrawal_by_transaction_hash(hash) do
+    query =
+      from(
+        w in PolygonSupernetWithdrawal,
+        left_join: we in PolygonSupernetWithdrawalExit,
+        on: we.msg_id == w.msg_id,
+        select: %{
+          msg_id: w.msg_id,
+          from: w.from,
+          to: w.to,
+          success: we.success,
+          l1_transaction_hash: we.l1_transaction_hash
+        },
+        where: w.l2_transaction_hash == ^hash and not is_nil(w.from)
+      )
+
+    Repo.replica().one(query)
   end
 
   @spec verified_contracts_top(non_neg_integer()) :: [Hash.Address.t()]
