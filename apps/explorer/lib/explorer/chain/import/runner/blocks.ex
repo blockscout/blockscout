@@ -149,14 +149,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :derive_transaction_forks
       )
     end)
-    |> Multi.run(:acquire_contract_address_tokens, fn repo, %{lose_consensus: non_consensus_blocks} ->
-      Instrumenter.block_import_stage_runner(
-        fn -> acquire_contract_address_tokens(repo, non_consensus_blocks) end,
-        :address_referencing,
-        :blocks,
-        :acquire_contract_address_tokens
-      )
-    end)
     |> Multi.run(:delete_address_token_balances, fn repo, %{lose_consensus: non_consensus_blocks} ->
       Instrumenter.block_import_stage_runner(
         fn -> delete_address_token_balances(repo, non_consensus_blocks, insert_options) end,
@@ -205,21 +197,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   @impl Runner
   def timeout, do: @timeout
 
-  defp acquire_contract_address_tokens(repo, non_consensus_blocks) do
-    non_consensus_block_numbers = Enum.map(non_consensus_blocks, fn {number, _hash} -> number end)
-
-    query =
-      from(ctb in Address.CurrentTokenBalance,
-        where: ctb.block_number in ^non_consensus_block_numbers,
-        select: {ctb.token_contract_address_hash, ctb.token_id},
-        distinct: [ctb.token_contract_address_hash, ctb.token_id]
-      )
-
-    contract_address_hashes_and_token_ids = repo.all(query)
-
-    Tokens.acquire_contract_address_tokens(repo, contract_address_hashes_and_token_ids)
-  end
-
   defp fork_transactions(%{
          repo: repo,
          timeout: timeout,
@@ -232,7 +209,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         select: transaction,
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     update_query =
@@ -378,7 +355,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         select: block.hash,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: block.hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     {_, removed_consensus_block_hashes} =
@@ -683,7 +660,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         where: bsdr.uncle_hash in ^uncle_hashes,
         # Enforce SeconDegreeRelation ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :nephew_hash, asc: :uncle_hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     update_query =
