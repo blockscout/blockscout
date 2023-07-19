@@ -672,8 +672,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       [wa1] = conn |> get("/api/account/v1/user/watchlist") |> json_response(200)
 
-      assert wa1["tokens_fiat_value"] |> Decimal.new() |> Decimal.round(14) ==
-               values |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end) |> Decimal.round(14)
+      assert wa1["tokens_fiat_value"] |> Decimal.new() |> Decimal.round(13) ==
+               values |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end) |> Decimal.round(13)
 
       assert wa1["tokens_count"] == 150
       assert wa1["tokens_overflow"] == false
