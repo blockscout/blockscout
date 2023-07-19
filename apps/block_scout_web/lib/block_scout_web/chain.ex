@@ -150,16 +150,24 @@ defmodule BlockScoutWeb.Chain do
     ]
   end
 
-  def paging_options(%{
-        "market_cap" => market_cap,
-        "holder_count" => holder_count_str,
-        "name" => name,
-        "contract_address_hash" => contract_address_hash_str,
-        "is_name_null" => is_name_null
-      }) do
+  def paging_options(
+        %{
+          "market_cap" => market_cap,
+          "holder_count" => holder_count_str,
+          "name" => name,
+          "contract_address_hash" => contract_address_hash_str,
+          "is_name_null" => is_name_null
+        } = params
+      ) do
     market_cap_decimal =
       case Decimal.parse(market_cap) do
-        {decimal, ""} -> Decimal.round(decimal, 16)
+        {decimal, ""} -> decimal
+        _ -> nil
+      end
+
+    fiat_value_decimal =
+      case Decimal.parse(params["fiat_value"]) do
+        {decimal, ""} -> decimal
         _ -> nil
       end
 
@@ -171,7 +179,13 @@ defmodule BlockScoutWeb.Chain do
         [
           paging_options: %{
             @default_paging_options
-            | key: {market_cap_decimal, holder_count, token_name, contract_address_hash}
+            | key: %{
+                fiat_value: fiat_value_decimal,
+                circulating_market_cap: market_cap_decimal,
+                holder_count: holder_count,
+                name: token_name,
+                contract_address_hash: contract_address_hash
+              }
           }
         ]
 
@@ -403,14 +417,16 @@ defmodule BlockScoutWeb.Chain do
          contract_address_hash: contract_address_hash,
          circulating_market_cap: circulating_market_cap,
          holder_count: holder_count,
-         name: token_name
+         name: token_name,
+         fiat_value: fiat_value
        }) do
     %{
       "market_cap" => circulating_market_cap,
       "holder_count" => holder_count,
       "contract_address_hash" => contract_address_hash,
       "name" => token_name,
-      "is_name_null" => is_nil(token_name)
+      "is_name_null" => is_nil(token_name),
+      "fiat_value" => fiat_value
     }
   end
 

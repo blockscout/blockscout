@@ -9,8 +9,6 @@ defmodule BlockScoutWeb.APIKeyV2Router do
     plug(Logger, application: :api_v2)
     plug(:accepts, ["json"])
     plug(CheckApiV2)
-    plug(:fetch_session)
-    plug(:protect_from_forgery)
   end
 
   scope "/", as: :api_v2 do
@@ -18,6 +16,6 @@ defmodule BlockScoutWeb.APIKeyV2Router do
 
     alias BlockScoutWeb.API.V2
 
-    get("/", V2.APIKeyController, :get_key)
+    post("/", V2.APIKeyController, :get_key)
   end
 end

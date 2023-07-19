@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   import BlockScoutWeb.PagingHelper,
-    only: [delete_parameters_from_next_page_params: 1, token_transfers_types_options: 1]
+    only: [delete_parameters_from_next_page_params: 1, token_transfers_types_options: 1, tokens_sorting: 1]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -208,6 +208,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       params
       |> paging_options()
       |> Keyword.merge(token_transfers_types_options(params))
+      |> Keyword.merge(tokens_sorting(params))
       |> Keyword.merge(@api_true)
 
     {tokens, next_page} = filter |> Chain.list_top_tokens(options) |> split_list_by_page()
