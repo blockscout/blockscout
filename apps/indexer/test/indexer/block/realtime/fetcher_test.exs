@@ -472,30 +472,32 @@ defmodule Indexer.Block.Realtime.FetcherTest do
              ]}
 
           [
-            %{
-              id: 0,
-              jsonrpc: "2.0",
-              method: "eth_getBalance",
-              params: ["0x40b18103537c0f15d5e137dd8ddd019b84949d16", "0x3C365F"]
-            },
-            %{
-              id: 1,
-              jsonrpc: "2.0",
-              method: "eth_getBalance",
-              params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
-            },
-            %{
-              id: 2,
-              jsonrpc: "2.0",
-              method: "eth_getBalance",
-              params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
-            },
-            %{
-              id: 3,
-              jsonrpc: "2.0",
-              method: "eth_getBalance",
-              params: ["0x698bf6943bab687b2756394624aa183f434f65da", "0x3C365F"]
-            }
+            [
+              %{
+                id: 0,
+                jsonrpc: "2.0",
+                method: "eth_getBalance",
+                params: ["0x40b18103537c0f15d5e137dd8ddd019b84949d16", "0x3C365F"]
+              },
+              %{
+                id: 1,
+                jsonrpc: "2.0",
+                method: "eth_getBalance",
+                params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
+              },
+              %{
+                id: 2,
+                jsonrpc: "2.0",
+                method: "eth_getBalance",
+                params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
+              },
+              %{
+                id: 3,
+                jsonrpc: "2.0",
+                method: "eth_getBalance",
+                params: ["0x698bf6943bab687b2756394624aa183f434f65da", "0x3C365F"]
+              }
+            ]
           ],
           _ ->
             {:ok,
@@ -964,30 +966,32 @@ defmodule Indexer.Block.Realtime.FetcherTest do
              ]}
 
           [
-            %{
-              id: 0,
-              jsonrpc: "2.0",
-              method: "eth_getBalance",
-              params: ["0x40b18103537c0f15d5e137dd8ddd019b84949d16", "0x3C365F"]
-            },
-            %{
-              id: 1,
-              jsonrpc: "2.0",
-              method: "eth_getBalance",
-              params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
-            },
-            %{
-              id: 2,
-              jsonrpc: "2.0",
-              method: "eth_getBalance",
-              params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
-            },
-            %{
-              id: 3,
-              jsonrpc: "2.0",
-              method: "eth_getBalance",
-              params: ["0x698bf6943bab687b2756394624aa183f434f65da", "0x3C365F"]
-            }
+            [
+              %{
+                id: 0,
+                jsonrpc: "2.0",
+                method: "eth_getBalance",
+                params: ["0x40b18103537c0f15d5e137dd8ddd019b84949d16", "0x3C365F"]
+              },
+              %{
+                id: 1,
+                jsonrpc: "2.0",
+                method: "eth_getBalance",
+                params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
+              },
+              %{
+                id: 2,
+                jsonrpc: "2.0",
+                method: "eth_getBalance",
+                params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
+              },
+              %{
+                id: 3,
+                jsonrpc: "2.0",
+                method: "eth_getBalance",
+                params: ["0x698bf6943bab687b2756394624aa183f434f65da", "0x3C365F"]
+              }
+            ]
           ],
           _ ->
             {:ok,
@@ -1183,23 +1187,27 @@ defmodule Indexer.Block.Realtime.FetcherTest do
              ]}
 
           [
-            %{
-              id: 0,
-              jsonrpc: "2.0",
-              method: "eth_getBalance",
-              params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
-            }
+            [
+              %{
+                id: 0,
+                jsonrpc: "2.0",
+                method: "eth_getBalance",
+                params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
+              }
+            ]
           ],
           _ ->
             {:ok, [%{id: 0, jsonrpc: "2.0", result: "0x53474fa377a46000"}]}
 
           [
-            %{
-              id: 0,
-              jsonrpc: "2.0",
-              method: "eth_getBalance",
-              params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
-            }
+            [
+              %{
+                id: 0,
+                jsonrpc: "2.0",
+                method: "eth_getBalance",
+                params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
+              }
+            ]
           ],
           _ ->
             {:ok, [%{id: 0, jsonrpc: "2.0", result: "0x53507afe51f28000"}]}
@@ -1224,12 +1232,14 @@ defmodule Indexer.Block.Realtime.FetcherTest do
              ]}
 
           [
-            %{
-              id: 0,
-              jsonrpc: "2.0",
-              method: "eth_getBalance",
-              params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
-            }
+            [
+              %{
+                id: 0,
+                jsonrpc: "2.0",
+                method: "eth_getBalance",
+                params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
+              }
+            ]
           ],
           _ ->
             {:ok, [%{id: 0, jsonrpc: "2.0", result: "0x53474fa377a46000"}]}

@@ -269,7 +269,8 @@ config :explorer, Explorer.ExchangeRates,
 config :explorer, Explorer.ExchangeRates.Source, source: ConfigHelper.exchange_rates_source()
 
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
-  api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY")
+  api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY"),
+  coin_id: System.get_env("EXCHANGE_RATES_COINMARKETCAP_COIN_ID")
 
 config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
   platform: System.get_env("EXCHANGE_RATES_COINGECKO_PLATFORM_ID"),

@@ -122,27 +122,41 @@ defmodule Explorer.Account.Notifier.Email do
   end
 
   defp block_url(notification) do
-    URI.to_string(uri()) <> "block/" <> Integer.to_string(notification.block_number)
+    Helpers.block_url(uri(), :show, Integer.to_string(notification.block_number))
   end
 
   defp transaction_url(notification) do
     Helpers.transaction_url(uri(), :show, notification.transaction_hash)
   end
 
+  defp url_params do
+    Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
+  end
+
   defp uri do
-    %URI{scheme: "https", host: host(), path: path()}
+    %URI{scheme: scheme(), host: host(), port: port(), path: path()}
+  end
+
+  defp scheme do
+    Keyword.get(url_params(), :scheme, "http")
   end
 
   defp host do
-    if System.get_env("MIX_ENV") == "prod" do
-      "blockscout.com"
-    else
-      Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-    end
+    url_params()[:host]
+  end
+
+  defp port do
+    url_params()[:http][:port]
   end
 
   defp path do
-    Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path]
+    raw_path = url_params()[:path]
+
+    if raw_path |> String.ends_with?("/") do
+      raw_path |> String.slice(0..-2)
+    else
+      raw_path
+    end
   end
 
   defp sender do

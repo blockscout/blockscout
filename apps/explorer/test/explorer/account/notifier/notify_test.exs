@@ -1,4 +1,4 @@
-defmodule Explorer.Account.Notify.NotifyTest do
+defmodule Explorer.Account.Notifier.NotifyTest do
   # use ExUnit.Case
   use Explorer.DataCase
 

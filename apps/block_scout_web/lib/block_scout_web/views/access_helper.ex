@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.AccessHelper do
   alias BlockScoutWeb.WebRouter.Helpers
   alias Explorer.AccessHelper
   alias Explorer.Account.Api.Key, as: ApiKey
-  alias Plug.{Conn, Crypto}
+  alias Plug.Conn
 
   alias RemoteIp
 
@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.AccessHelper do
     ip_string = conn_to_ip_string(conn)
 
     plan = get_plan(conn.query_params)
-    token = get_ui_v2_token(conn, conn.query_params, ip_string)
+    token = get_ui_v2_token(conn, ip_string)
 
     user_agent = get_user_agent(conn)
 
@@ -167,17 +167,18 @@ defmodule BlockScoutWeb.AccessHelper do
     to_string(:inet_parse.ntoa(ip))
   end
 
-  defp get_ui_v2_token(conn, %{"token" => token}, ip_string) do
-    case is_api_v2_request?(conn) && Crypto.verify(conn.secret_key_base, conn.secret_key_base, token) do
-      {:ok, %{ip: ^ip_string}} ->
-        token
+  defp get_ui_v2_token(conn, ip_string) do
+    api_v2_temp_token_key = Application.get_env(:block_scout_web, :api_v2_temp_token_key)
+    conn = Conn.fetch_cookies(conn, signed: [api_v2_temp_token_key])
+
+    case is_api_v2_request?(conn) && conn.cookies[api_v2_temp_token_key] do
+      %{ip: ^ip_string} ->
+        conn.req_cookies[api_v2_temp_token_key]
 
       _ ->
         nil
     end
   end
-
-  defp get_ui_v2_token(_conn, _params, _ip_string), do: nil
 
   defp get_user_agent(conn) do
     case Conn.get_req_header(conn, "user-agent") do

@@ -253,7 +253,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       options = params |> paging_options() |> Keyword.merge(topic: formatted_topic) |> Keyword.merge(@api_true)
 
-      results_plus_one = Chain.address_to_logs(address_hash, options)
+      results_plus_one = Chain.address_to_logs(address_hash, false, options)
 
       {logs, next_page} = split_list_by_page(results_plus_one)
 
@@ -272,7 +272,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
          {:not_found, {:ok, _address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true, false)} do
       options = params |> paging_options() |> Keyword.merge(@api_true)
 
-      results_plus_one = Chain.address_to_logs(address_hash, options)
+      results_plus_one = Chain.address_to_logs(address_hash, false, options)
 
       {logs, next_page} = split_list_by_page(results_plus_one)
 

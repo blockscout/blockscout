@@ -243,7 +243,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
           where: t.created_contract_address_hash in ^ordered_created_contract_hashes,
           # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
           order_by: t.hash,
-          lock: "FOR UPDATE"
+          lock: "FOR NO KEY UPDATE"
         )
 
       try do
