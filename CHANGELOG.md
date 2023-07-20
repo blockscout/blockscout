@@ -4,6 +4,19 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+</details>
+
+## 5.2.1-beta
+
+### Features
+
 - [#7970](https://github.com/blockscout/blockscout/pull/7970) - Search improvements: add sorting
 - [#7771](https://github.com/blockscout/blockscout/pull/7771) - CSV export: speed up
 - [#7962](https://github.com/blockscout/blockscout/pull/7962) - Allow indicate CMC id of the coin through env var
@@ -52,6 +65,48 @@
 <details>
   <summary>Dependencies version bumps</summary>
 
+- [#7759](https://github.com/blockscout/blockscout/pull/7759) - Bump sass from 1.63.4 to 1.63.5 in /apps/block_scout_web/assets
+- [#7760](https://github.com/blockscout/blockscout/pull/7760) - Bump @amplitude/analytics-browser from 2.0.0 to 2.0.1 in /apps/block_scout_web/assets
+- [#7762](https://github.com/blockscout/blockscout/pull/7762) - Bump webpack from 5.87.0 to 5.88.0 in /apps/block_scout_web/assets
+- [#7769](https://github.com/blockscout/blockscout/pull/7769) - Bump sass from 1.63.5 to 1.63.6 in /apps/block_scout_web/assets
+- [#7805](https://github.com/blockscout/blockscout/pull/7805) - Bump ssl_verify_fun from 1.1.6 to 1.1.7
+- [#7812](https://github.com/blockscout/blockscout/pull/7812) - Bump webpack from 5.88.0 to 5.88.1 in /apps/block_scout_web/assets
+- [#7770](https://github.com/blockscout/blockscout/pull/7770) - Bump @amplitude/analytics-browser from 2.0.1 to 2.1.0 in /apps/block_scout_web/assets
+- [#7821](https://github.com/blockscout/blockscout/pull/7821) - Bump absinthe from 1.7.1 to 1.7.3
+- [#7823](https://github.com/blockscout/blockscout/pull/7823) - Bump @amplitude/analytics-browser from 2.1.0 to 2.1.1 in /apps/block_scout_web/assets
+- [#7838](https://github.com/blockscout/blockscout/pull/7838) - Bump gettext from 0.22.2 to 0.22.3
+- [#7840](https://github.com/blockscout/blockscout/pull/7840) - Bump eslint from 8.43.0 to 8.44.0 in /apps/block_scout_web/assets
+- [#7839](https://github.com/blockscout/blockscout/pull/7839) - Bump photoswipe from 5.3.7 to 5.3.8 in /apps/block_scout_web/assets
+- [#7850](https://github.com/blockscout/blockscout/pull/7850) - Bump jest-environment-jsdom from 29.5.0 to 29.6.0 in /apps/block_scout_web/assets
+- [#7848](https://github.com/blockscout/blockscout/pull/7848) - Bump @amplitude/analytics-browser from 2.1.1 to 2.1.2 in /apps/block_scout_web/assets
+- [#7847](https://github.com/blockscout/blockscout/pull/7847) - Bump @babel/core from 7.22.5 to 7.22.6 in /apps/block_scout_web/assets
+- [#7846](https://github.com/blockscout/blockscout/pull/7846) - Bump @babel/preset-env from 7.22.5 to 7.22.6 in /apps/block_scout_web/assets
+- [#7856](https://github.com/blockscout/blockscout/pull/7856) - Bump ex_cldr from 2.37.1 to 2.37.2
+- [#7870](https://github.com/blockscout/blockscout/pull/7870) - Bump jest from 29.5.0 to 29.6.1 in /apps/block_scout_web/assets
+- [#7867](https://github.com/blockscout/blockscout/pull/7867) - Bump postcss from 8.4.24 to 8.4.25 in /apps/block_scout_web/assets
+- [#7871](https://github.com/blockscout/blockscout/pull/7871) - Bump @babel/core from 7.22.6 to 7.22.8 in /apps/block_scout_web/assets
+- [#7868](https://github.com/blockscout/blockscout/pull/7868) - Bump jest-environment-jsdom from 29.6.0 to 29.6.1 in /apps/block_scout_web/assets
+- [#7866](https://github.com/blockscout/blockscout/pull/7866) - Bump @babel/preset-env from 7.22.6 to 7.22.7 in /apps/block_scout_web/assets 
+- [#7869](https://github.com/blockscout/blockscout/pull/7869) - Bump core-js from 3.31.0 to 3.31.1 in /apps/block_scout_web/assets
+- [#7884](https://github.com/blockscout/blockscout/pull/7884) - Bump ecto from 3.10.2 to 3.10.3
+- [#7882](https://github.com/blockscout/blockscout/pull/7882) - Bump jason from 1.4.0 to 1.4.1
+- [#7880](https://github.com/blockscout/blockscout/pull/7880) - Bump absinthe from 1.7.3 to 1.7.4
+- [#7879](https://github.com/blockscout/blockscout/pull/7879) - Bump babel-loader from 9.1.2 to 9.1.3 in /apps/block_scout_web/assets
+- [#7881](https://github.com/blockscout/blockscout/pull/7881) - Bump ex_cldr_numbers from 2.31.1 to 2.31.2
+- [#7883](https://github.com/blockscout/blockscout/pull/7883) - Bump ex_doc from 0.29.4 to 0.30.1
+- [#7916](https://github.com/blockscout/blockscout/pull/7916) - Bump semver from 5.7.1 to 5.7.2 in /apps/explorer
+- [#7912](https://github.com/blockscout/blockscout/pull/7912) - Bump sweetalert2 from 11.7.12 to 11.7.16 in /apps/block_scout_web/assets
+- [#7913](https://github.com/blockscout/blockscout/pull/7913) - Bump ex_doc from 0.30.1 to 0.30.2
+- [#7923](https://github.com/blockscout/blockscout/pull/7923) - Bump postgrex from 0.17.1 to 0.17.2
+- [#7921](https://github.com/blockscout/blockscout/pull/7921) - Bump @babel/preset-env from 7.22.7 to 7.22.9 in /apps/block_scout_web/assets
+- [#7922](https://github.com/blockscout/blockscout/pull/7922) - Bump @babel/core from 7.22.8 to 7.22.9 in /apps/block_scout_web/assets
+- [#7931](https://github.com/blockscout/blockscout/pull/7931) - Bump wallaby from 0.30.3 to 0.30.4
+- [#7940](https://github.com/blockscout/blockscout/pull/7940) - Bump postcss from 8.4.25 to 8.4.26 in /apps/block_scout_web/assets
+- [#7939](https://github.com/blockscout/blockscout/pull/7939) - Bump eslint from 8.44.0 to 8.45.0 in /apps/block_scout_web/assets
+- [#7955](https://github.com/blockscout/blockscout/pull/7955) - Bump sweetalert2 from 11.7.16 to 11.7.18 in /apps/block_scout_web/assets
+- [#7958](https://github.com/blockscout/blockscout/pull/7958) - Bump ex_doc from 0.30.2 to 0.30.3
+- [#7965](https://github.com/blockscout/blockscout/pull/7965) - Bump webpack from 5.88.1 to 5.88.2 in /apps/block_scout_web/assets
+- [#7972](https://github.com/blockscout/blockscout/pull/7972) - Bump word-wrap from 1.2.3 to 1.2.4 in /apps/block_scout_web/assets
 </details>
 
 ## 5.2.0-beta
