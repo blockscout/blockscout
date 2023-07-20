@@ -3,7 +3,6 @@ defmodule Explorer.Chain.Address.TokenBalanceTest do
 
   alias Explorer.Repo
   alias Explorer.Chain.Address.TokenBalance
-  alias Explorer.Chain
 
   describe "unfetched_token_balances/0" do
     test "returns only the token balances that have value_fetched_at nil" do

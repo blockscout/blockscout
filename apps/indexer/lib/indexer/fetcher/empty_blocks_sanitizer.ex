@@ -68,19 +68,15 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   end
 
   defp sanitize_empty_blocks(json_rpc_named_arguments) do
-    unprocessed_non_empty_blocks_from_db = unprocessed_non_empty_blocks_query_list(limit())
+    unprocessed_non_empty_blocks_query = unprocessed_non_empty_blocks_query(limit())
 
-    uniq_block_hashes = unprocessed_non_empty_blocks_from_db
-
-    if Enum.count(uniq_block_hashes) > 0 do
-      Repo.update_all(
-        from(
-          block in Block,
-          where: block.hash in ^uniq_block_hashes
-        ),
-        set: [is_empty: false, updated_at: Timex.now()]
-      )
-    end
+    Repo.update_all(
+      from(
+        block in Block,
+        where: block.hash in subquery(unprocessed_non_empty_blocks_query)
+      ),
+      set: [is_empty: false, updated_at: Timex.now()]
+    )
 
     unprocessed_empty_blocks_from_db = unprocessed_empty_blocks_query_list(limit())
 
@@ -97,7 +93,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
         if transactions_count > 0 do
           Logger.info(
-            "Block with number #{block_number} and hash #{to_string(block_hash)} is full of transactions. We should set consensus=false for it in order to refetch.",
+            "Block with number #{block_number} and hash #{to_string(block_hash)} is full of transactions. We should set consensus = false for it in order to refetch.",
             fetcher: :empty_blocks_to_refetch
           )
 
@@ -141,25 +137,20 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
       where: block.consensus == true,
       order_by: [asc: block.hash],
       limit: ^limit,
-      offset: 1000,
-      lock: "FOR UPDATE"
+      offset: 1000
     )
   end
 
-  defp unprocessed_non_empty_blocks_query_list(limit) do
+  defp unprocessed_non_empty_blocks_query(limit) do
     blocks_query = consensus_blocks_with_nil_is_empty_query(limit)
 
-    query =
-      from(q in subquery(blocks_query),
-        inner_join: transaction in Transaction,
-        on: q.number == transaction.block_number,
-        select: q.hash,
-        distinct: q.hash,
-        order_by: [asc: q.hash]
-      )
-
-    query
-    |> Repo.all(timeout: :infinity)
+    from(q in subquery(blocks_query),
+      inner_join: transaction in Transaction,
+      on: q.number == transaction.block_number,
+      select: q.hash,
+      order_by: [asc: q.hash],
+      lock: fragment("FOR NO KEY UPDATE OF ?", q)
+    )
   end
 
   defp unprocessed_empty_blocks_query_list(limit) do

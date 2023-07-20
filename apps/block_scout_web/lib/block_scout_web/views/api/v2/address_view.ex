@@ -111,17 +111,17 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     })
   end
 
-  def prepare_token_balance({token_balance, token}, fetch_token_instance? \\ false) do
+  def prepare_token_balance(token_balance, fetch_token_instance? \\ false) do
     %{
       "value" => token_balance.value,
-      "token" => TokenView.render("token.json", %{token: token}),
+      "token" => TokenView.render("token.json", %{token: token_balance.token}),
       "token_id" => token_balance.token_id,
       "token_instance" =>
         if(fetch_token_instance? && token_balance.token_id,
           do:
             fetch_and_render_token_instance(
               token_balance.token_id,
-              token,
+              token_balance.token,
               token_balance.address_hash
             )
         )

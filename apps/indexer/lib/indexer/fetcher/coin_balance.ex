@@ -23,6 +23,8 @@ defmodule Indexer.Fetcher.CoinBalance do
   @default_max_batch_size 500
   @default_max_concurrency 4
 
+  def batch_size, do: defaults()[:max_batch_size]
+
   @doc """
   Asynchronously fetches balances for each address `hash` at the `block_number`.
   """
@@ -67,8 +69,7 @@ defmodule Indexer.Fetcher.CoinBalance do
           address_fields
           |> entry()
           |> reducer.(acc)
-        end,
-        true
+        end
       )
 
     final

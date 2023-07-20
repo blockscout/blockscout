@@ -107,35 +107,13 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    run_func = fn repo ->
-      token_contract_address_hashes_and_ids =
-        changes_list
-        |> Enum.map(fn change ->
-          token_id = get_token_id(change)
-
-          {change.token_contract_address_hash, token_id}
-        end)
-        |> Enum.uniq()
-
-      Tokens.acquire_contract_address_tokens(repo, token_contract_address_hashes_and_ids)
-    end
-
     multi
-    |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
-      Instrumenter.block_import_stage_runner(
-        fn -> run_func.(repo) end,
-        :block_following,
-        :current_token_balances,
-        :acquire_contract_address_tokens
-      )
-    end)
     |> Multi.run(:address_current_token_balances, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_following,
         :current_token_balances,
-        :acquire_contract_address_tokens
+        :address_current_token_balances
       )
     end)
     |> Multi.run(:address_current_token_balances_update_token_holder_counts, fn repo,
@@ -156,13 +134,9 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         end,
         :block_following,
         :current_token_balances,
-        :acquire_contract_address_tokens
+        :address_current_token_balances_update_token_holder_counts
       )
     end)
-  end
-
-  defp get_token_id(change) do
-    if Map.has_key?(change, :token_id), do: change.token_id, else: nil
   end
 
   @impl Import.Runner

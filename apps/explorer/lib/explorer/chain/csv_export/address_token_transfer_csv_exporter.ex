@@ -15,15 +15,15 @@ defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
   alias Explorer.Chain.{Address, Hash, TokenTransfer}
   alias Explorer.Chain.CSVExport.Helper
 
-  @paging_options %PagingOptions{page_size: Helper.page_size() + 1, asc_order: true}
+  @paging_options %PagingOptions{page_size: Helper.limit(), asc_order: true}
 
-  @spec export(Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
-  def export(address, from_period, to_period, filter_type \\ nil, filter_value \\ nil) do
+  @spec export(Hash.Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
+  def export(address_hash, from_period, to_period, filter_type \\ nil, filter_value \\ nil) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
 
-    address.hash
+    address_hash
     |> fetch_all_token_transfers(from_block, to_block, filter_type, filter_value, @paging_options)
-    |> to_csv_format(address)
+    |> to_csv_format(address_hash)
     |> Helper.dump_to_stream()
   end
 
@@ -33,8 +33,7 @@ defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
         to_block,
         filter_type,
         filter_value,
-        paging_options,
-        acc \\ []
+        paging_options
       ) do
     options =
       []
@@ -44,30 +43,10 @@ defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
       |> Keyword.put(:filter_type, filter_type)
       |> Keyword.put(:filter_value, filter_value)
 
-    token_transfers = address_hash_to_token_transfers_including_contract(address_hash, options)
-
-    new_acc = acc ++ token_transfers
-
-    case Enum.split(token_transfers, Helper.page_size()) do
-      {_token_transfers, [%TokenTransfer{block_number: block_number, log_index: log_index}]} ->
-        new_paging_options = %{@paging_options | key: {block_number, log_index}}
-
-        fetch_all_token_transfers(
-          address_hash,
-          from_block,
-          to_block,
-          filter_type,
-          filter_value,
-          new_paging_options,
-          new_acc
-        )
-
-      {_, []} ->
-        new_acc
-    end
+    address_hash_to_token_transfers_including_contract(address_hash, options)
   end
 
-  defp to_csv_format(token_transfers, address) do
+  defp to_csv_format(token_transfers, address_hash) do
     row_names = [
       "TxHash",
       "BlockNumber",
@@ -90,10 +69,10 @@ defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
           to_string(token_transfer.transaction_hash),
           token_transfer.transaction.block_number,
           token_transfer.transaction.block.timestamp,
-          token_transfer.from_address_hash |> to_string() |> String.downcase(),
-          token_transfer.to_address_hash |> to_string() |> String.downcase(),
-          token_transfer.token_contract_address_hash |> to_string() |> String.downcase(),
-          type(token_transfer, address.hash),
+          Address.checksum(token_transfer.from_address_hash),
+          Address.checksum(token_transfer.to_address_hash),
+          Address.checksum(token_transfer.token_contract_address_hash),
+          type(token_transfer, address_hash),
           token_transfer.token.symbol,
           token_transfer.amount,
           fee(token_transfer.transaction),
