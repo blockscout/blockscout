@@ -47,11 +47,12 @@ jobs:
           push: true
           tags: ${{ secrets.AWS_ECR_REPOSITORY }}/blockscout-v2:${{ steps.prepare.outputs.docker-tag }}, ${{ secrets.AWS_ECR_REPOSITORY }}/blockscout-v2:latest
           build-args: |
-            CACHE_EXCHANGE_RATES_PERIOD: ""
-            API_V1_READ_METHODS_DISABLED: "true"
-            DISABLE_WEBAPP: "true"
-            API_V1_WRITE_METHODS_DISABLED: "true"
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED: ""
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
-            ADMIN_PANEL_ENABLED: ""
-            RELEASE_VERSION: 5.2.0
+            CACHE_EXCHANGE_RATES_PERIOD=
+            API_V1_READ_METHODS_DISABLED="true"
+            DISABLE_WEBAPP="true"
+            API_V1_WRITE_METHODS_DISABLED="true"
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            ADMIN_PANEL_ENABLED=
+            RELEASE_VERSION="5.2.0"
+            
