@@ -289,14 +289,14 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   defp numbers_to_ranges(numbers) when is_list(numbers) do
     numbers
-    |> Enum.sort()
+    |> Enum.sort(&>=/2)
     |> Enum.chunk_while(
       nil,
       fn
         number, nil ->
           {:cont, number..number}
 
-        number, first..last when number == last + 1 ->
+        number, first..last when number == last - 1 ->
           {:cont, first..number}
 
         number, range ->

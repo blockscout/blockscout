@@ -90,6 +90,8 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
       assert count(Address.CurrentTokenBalance) == 1
 
+      insert(:block, number: block_number, consensus: true)
+
       assert {:ok,
               %{
                 delete_address_current_token_balances: [
@@ -135,6 +137,8 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       assert count(Address.CurrentTokenBalance) == 1
 
       previous_block_number = block_number - 1
+
+      insert(:block, number: block_number, consensus: true)
 
       assert {:ok,
               %{
@@ -187,6 +191,8 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       # Token must exist with non-`nil` `holder_count` for `blocks_update_token_holder_counts` to update
       update_holder_count!(token_contract_address_hash, 0)
 
+      insert(:block, number: block_number, consensus: true)
+
       block_params = params_for(:block, hash: block_hash, miner_hash: miner_hash, number: block_number, consensus: true)
 
       %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
@@ -218,6 +224,8 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
       # Token must exist with non-`nil` `holder_count` for `blocks_update_token_holder_counts` to update
       update_holder_count!(token_contract_address_hash, 1)
+
+      insert(:block, number: block_number, consensus: true)
 
       block_params = params_for(:block, hash: block_hash, miner_hash: miner_hash, number: block_number, consensus: true)
 
@@ -354,10 +362,9 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, new_block)
       %Ecto.Changeset{valid?: true, changes: block_changes1} = Block.changeset(%Block{}, new_block1)
 
-      result =
-        Multi.new()
-        |> Blocks.run([block_changes, block_changes1], options)
-        |> Repo.transaction()
+      Multi.new()
+      |> Blocks.run([block_changes, block_changes1], options)
+      |> Repo.transaction()
 
       assert %{block_number: ^number, block_hash: ^hash} = Repo.one(PendingBlockOperation)
     end

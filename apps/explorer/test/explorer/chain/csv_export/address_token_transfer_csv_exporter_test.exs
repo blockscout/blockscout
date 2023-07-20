@@ -1,6 +1,7 @@
 defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
   use Explorer.DataCase
 
+  alias Explorer.Chain.Address
   alias Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter
 
   describe "export/3" do
@@ -19,7 +20,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       [result] =
-        address
+        address.hash
         |> AddressTokenTransferCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)
@@ -67,8 +68,8 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
 
       assert result.block_number == to_string(transaction.block_number)
       assert result.tx_hash == to_string(transaction.hash)
-      assert result.from_address == token_transfer.from_address_hash |> to_string() |> String.downcase()
-      assert result.to_address == token_transfer.to_address_hash |> to_string() |> String.downcase()
+      assert result.from_address == Address.checksum(token_transfer.from_address_hash)
+      assert result.to_address == Address.checksum(token_transfer.to_address_hash)
       assert result.timestamp == to_string(transaction.block.timestamp)
       assert result.type == "OUT"
     end
@@ -110,7 +111,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       result =
-        address
+        address.hash
         |> AddressTokenTransferCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)

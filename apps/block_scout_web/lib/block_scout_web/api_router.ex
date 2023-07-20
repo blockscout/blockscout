@@ -203,13 +203,19 @@ defmodule BlockScoutWeb.ApiRouter do
   scope "/v1", as: :api_v1 do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC, V1}
-    alias BlockScoutWeb.API.V1.HealthController
+    alias BlockScoutWeb.API.V1.{GasPriceOracleController, HealthController}
     alias BlockScoutWeb.API.V2.SearchController
 
     # leave the same endpoint in v1 in order to keep backward compatibility
     get("/search", SearchController, :search)
-    get("/health", HealthController, :health)
-    get("/gas-price-oracle", V1.GasPriceOracleController, :gas_price_oracle)
+
+    scope "/health" do
+      get("/", HealthController, :health)
+      get("/liveness", HealthController, :liveness)
+      get("/readiness", HealthController, :readiness)
+    end
+
+    get("/gas-price-oracle", GasPriceOracleController, :gas_price_oracle)
 
     if Application.compile_env(:block_scout_web, __MODULE__)[:reading_enabled] do
       get("/supply", V1.SupplyController, :supply)

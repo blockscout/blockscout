@@ -2,7 +2,7 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporter
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.{Address, Wei}
 
   describe "export/3" do
     test "exports address internal transactions to csv" do
@@ -28,7 +28,7 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       res =
-        address
+        address.hash
         |> AddressInternalTransactionCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)
@@ -102,8 +102,8 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
       assert result.block_hash == to_string(internal_transaction.block_hash)
       assert result.transaction_index == to_string(internal_transaction.transaction_index)
       assert result.timestamp
-      assert result.from_address_hash == to_string(internal_transaction.from_address_hash)
-      assert result.to_address_hash == to_string(internal_transaction.to_address_hash)
+      assert result.from_address_hash == Address.checksum(internal_transaction.from_address_hash)
+      assert result.to_address_hash == Address.checksum(internal_transaction.to_address_hash)
       assert result.created_contract_address_hash == to_string(internal_transaction.created_contract_address_hash)
       assert result.type == to_string(internal_transaction.type)
       assert result.call_type == to_string(internal_transaction.call_type)
@@ -179,7 +179,7 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       result =
-        address
+        address.hash
         |> AddressInternalTransactionCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)
