@@ -1,4 +1,4 @@
-defmodule Explorer.Account.Notify.SummaryTest do
+defmodule Explorer.Account.Notifier.SummaryTest do
   use Explorer.DataCase
 
   import Explorer.Factory

@@ -14,7 +14,7 @@ defmodule EthereumJSONRPC.HTTP do
   @doc """
   Sends JSONRPC request encoded as `t:iodata/0` to `url` with `options`
   """
-  @callback json_rpc(url :: String.t(), json :: iodata(), options :: term()) ::
+  @callback json_rpc(url :: String.t(), json :: iodata(), headers :: [{String.t(), String.t()}], options :: term()) ::
               {:ok, %{body: body :: String.t(), status_code: status_code :: pos_integer()}}
               | {:error, reason :: term}
 
@@ -26,7 +26,7 @@ defmodule EthereumJSONRPC.HTTP do
     url = url(options, method)
     http_options = Keyword.fetch!(options, :http_options)
 
-    with {:ok, %{body: body, status_code: code}} <- http.json_rpc(url, json, http_options),
+    with {:ok, %{body: body, status_code: code}} <- http.json_rpc(url, json, headers(), http_options),
          {:ok, json} <- decode_json(request: [url: url, body: json], response: [status_code: code, body: body]),
          {:ok, response} <- handle_response(json, code) do
       {:ok, response}
@@ -36,6 +36,10 @@ defmodule EthereumJSONRPC.HTTP do
         EndpointAvailabilityObserver.inc_error_count(url, named_arguments)
         error
     end
+  end
+
+  def json_rpc([batch | _] = chunked_batch_request, options) when is_list(batch) do
+    chunked_json_rpc(chunked_batch_request, options, [])
   end
 
   def json_rpc(batch_request, options) when is_list(batch_request) do
@@ -66,7 +70,7 @@ defmodule EthereumJSONRPC.HTTP do
 
     json = encode_json(batch)
 
-    case http.json_rpc(url, json, http_options) do
+    case http.json_rpc(url, json, headers(), http_options) do
       {:ok, %{status_code: status_code} = response} when status_code in [413, 504] ->
         rechunk_json_rpc(chunks, options, response, decoded_response_bodies)
 
@@ -202,5 +206,9 @@ defmodule EthereumJSONRPC.HTTP do
   rescue
     ArgumentError ->
       :error
+  end
+
+  defp headers do
+    Application.get_env(:ethereum_jsonrpc, __MODULE__)[:headers]
   end
 end

@@ -296,7 +296,7 @@ defmodule Explorer.Chain do
       |> union(^query_created_contract_address_hash_wrapped)
       |> wrapped_union_subquery()
       |> common_where_limit_order(paging_options)
-      |> preload(transaction: :block)
+      |> preload(:block)
       |> join_associations(necessity_by_association)
       |> select_repo(options).all()
     else
@@ -305,7 +305,7 @@ defmodule Explorer.Chain do
       |> InternalTransaction.where_address_fields_match(hash, direction)
       |> InternalTransaction.where_block_number_in_period(from_block, to_block)
       |> common_where_limit_order(paging_options)
-      |> preload(transaction: :block)
+      |> preload(:block)
       |> join_associations(necessity_by_association)
       |> select_repo(options).all()
     end
@@ -321,7 +321,6 @@ defmodule Explorer.Chain do
   defp common_where_limit_order(query, paging_options) do
     query
     |> InternalTransaction.where_is_different_from_parent_transaction()
-    |> InternalTransaction.where_block_number_is_not_null()
     |> page_internal_transaction(paging_options, %{index_int_tx_desc_order: true})
     |> limit(^paging_options.page_size)
     |> order_by(
@@ -489,13 +488,9 @@ defmodule Explorer.Chain do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    from_block = from_block(options)
-    to_block = to_block(options)
-
     options
     |> address_to_transactions_tasks_query()
     |> Transaction.not_dropped_or_replaced_transactions()
-    |> where_block_number_in_period(from_block, to_block)
     |> join_associations(necessity_by_association)
     |> put_has_token_transfers_to_tx(old_ui?)
     |> Transaction.matching_address_queries_list(direction, address_hash)
@@ -510,6 +505,7 @@ defmodule Explorer.Chain do
     |> address_to_transactions_tasks_query(true)
     |> Transaction.not_pending_transactions()
     |> join_associations(necessity_by_association)
+    |> put_has_token_transfers_to_tx(false)
     |> Transaction.matching_address_queries_list(direction, address_hashes)
     |> Enum.map(fn query -> Task.async(fn -> select_repo(options).all(query) end) end)
   end
@@ -641,7 +637,7 @@ defmodule Explorer.Chain do
   end
 
   @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
-  def address_to_logs(address_hash, options \\ []) when is_list(options) do
+  def address_to_logs(address_hash, csv_export?, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
     from_block = from_block(options)
@@ -653,13 +649,20 @@ defmodule Explorer.Chain do
         where: log.address_hash == ^address_hash,
         limit: ^paging_options.page_size,
         select: log,
-        preload: [transaction: [to_address: :smart_contract]],
         inner_join: block in Block,
         on: block.hash == log.block_hash,
         where: block.consensus
       )
 
-    base
+    preloaded_query =
+      if csv_export? do
+        base
+      else
+        base
+        |> preload(transaction: [:to_address, :from_address])
+      end
+
+    preloaded_query
     |> page_logs(paging_options)
     |> filter_topic(Keyword.get(options, :topic))
     |> where_block_number_in_period(from_block, to_block)
@@ -769,7 +772,7 @@ defmodule Explorer.Chain do
   def block_reward(block_number) do
     block_hash =
       Block
-      |> where([block], block.number == ^block_number and block.consensus)
+      |> where([block], block.number == ^block_number and block.consensus == true)
       |> select([block], block.hash)
       |> Repo.one!()
 
@@ -789,7 +792,7 @@ defmodule Explorer.Chain do
             left_join: transaction in assoc(block, :transactions),
             inner_join: emission_reward in EmissionReward,
             on: fragment("? <@ ?", block.number, emission_reward.block_range),
-            where: block.number == ^block_number and block.consensus,
+            where: block.number == ^block_number and block.consensus == true,
             group_by: [emission_reward.reward, block.hash],
             select: %Wei{
               value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0) + emission_reward.reward
@@ -1496,13 +1499,15 @@ defmodule Explorer.Chain do
   def search_label_query(term) do
     inner_query =
       from(tag in AddressTag,
-        where: fragment("to_tsvector('english', display_name ) @@ to_tsquery(?)", ^term),
+        where: fragment("to_tsvector('english', ?) @@ to_tsquery(?)", tag.display_name, ^term),
         select: tag
       )
 
     from(att in AddressToTag,
       inner_join: at in subquery(inner_query),
       on: att.tag_id == at.id,
+      left_join: smart_contract in SmartContract,
+      on: att.address_hash == smart_contract.address_hash,
       select: %{
         address_hash: att.address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
@@ -1513,14 +1518,23 @@ defmodule Explorer.Chain do
         holder_count: ^nil,
         inserted_at: att.inserted_at,
         block_number: 0,
-        icon_url: nil
+        icon_url: nil,
+        token_type: nil,
+        timestamp: fragment("NULL::timestamp without time zone"),
+        verified: not is_nil(smart_contract),
+        exchange_rate: nil,
+        total_supply: nil,
+        circulating_market_cap: nil,
+        priority: 1
       }
     )
   end
 
   defp search_token_query(term) do
     from(token in Token,
-      where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
+      left_join: smart_contract in SmartContract,
+      on: token.contract_address_hash == smart_contract.address_hash,
+      where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term),
       select: %{
         address_hash: token.contract_address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
@@ -1531,7 +1545,14 @@ defmodule Explorer.Chain do
         holder_count: token.holder_count,
         inserted_at: token.inserted_at,
         block_number: 0,
-        icon_url: token.icon_url
+        icon_url: token.icon_url,
+        token_type: token.type,
+        timestamp: fragment("NULL::timestamp without time zone"),
+        verified: not is_nil(smart_contract),
+        exchange_rate: token.fiat_value,
+        total_supply: token.total_supply,
+        circulating_market_cap: token.circulating_market_cap,
+        priority: 0
       }
     )
   end
@@ -1540,7 +1561,7 @@ defmodule Explorer.Chain do
     from(smart_contract in SmartContract,
       left_join: address in Address,
       on: smart_contract.address_hash == address.hash,
-      where: fragment("to_tsvector('english', name) @@ to_tsquery(?)", ^term),
+      where: fragment("to_tsvector('english', ?) @@ to_tsquery(?)", smart_contract.name, ^term),
       select: %{
         address_hash: smart_contract.address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
@@ -1551,7 +1572,14 @@ defmodule Explorer.Chain do
         holder_count: ^nil,
         inserted_at: address.inserted_at,
         block_number: 0,
-        icon_url: nil
+        icon_url: nil,
+        token_type: nil,
+        timestamp: fragment("NULL::timestamp without time zone"),
+        verified: true,
+        exchange_rate: nil,
+        total_supply: nil,
+        circulating_market_cap: nil,
+        priority: 0
       }
     )
   end
@@ -1580,7 +1608,14 @@ defmodule Explorer.Chain do
             holder_count: ^nil,
             inserted_at: address.inserted_at,
             block_number: 0,
-            icon_url: nil
+            icon_url: nil,
+            token_type: nil,
+            timestamp: fragment("NULL::timestamp without time zone"),
+            verified: address.verified,
+            exchange_rate: nil,
+            total_supply: nil,
+            circulating_market_cap: nil,
+            priority: 0
           }
         )
 
@@ -1593,6 +1628,8 @@ defmodule Explorer.Chain do
     case Chain.string_to_transaction_hash(term) do
       {:ok, tx_hash} ->
         from(transaction in Transaction,
+          left_join: block in Block,
+          on: transaction.block_hash == block.hash,
           where: transaction.hash == ^tx_hash,
           select: %{
             address_hash: fragment("CAST(NULL AS bytea)"),
@@ -1604,7 +1641,14 @@ defmodule Explorer.Chain do
             holder_count: ^nil,
             inserted_at: transaction.inserted_at,
             block_number: 0,
-            icon_url: nil
+            icon_url: nil,
+            token_type: nil,
+            timestamp: block.timestamp,
+            verified: nil,
+            exchange_rate: nil,
+            total_supply: nil,
+            circulating_market_cap: nil,
+            priority: 0
           }
         )
 
@@ -1628,7 +1672,14 @@ defmodule Explorer.Chain do
             holder_count: ^nil,
             inserted_at: block.inserted_at,
             block_number: block.number,
-            icon_url: nil
+            icon_url: nil,
+            token_type: nil,
+            timestamp: block.timestamp,
+            verified: nil,
+            exchange_rate: nil,
+            total_supply: nil,
+            circulating_market_cap: nil,
+            priority: 0
           }
         )
 
@@ -1647,7 +1698,14 @@ defmodule Explorer.Chain do
                 holder_count: ^nil,
                 inserted_at: block.inserted_at,
                 block_number: block.number,
-                icon_url: nil
+                icon_url: nil,
+                token_type: nil,
+                timestamp: block.timestamp,
+                verified: nil,
+                exchange_rate: nil,
+                total_supply: nil,
+                circulating_market_cap: nil,
+                priority: 0
               }
             )
 
@@ -1697,7 +1755,14 @@ defmodule Explorer.Chain do
 
         ordered_query =
           from(items in subquery(query),
-            order_by: [desc_nulls_last: items.holder_count, asc: items.name, desc: items.inserted_at],
+            order_by: [
+              desc: items.priority,
+              desc_nulls_last: items.circulating_market_cap,
+              desc_nulls_last: items.exchange_rate,
+              desc_nulls_last: items.holder_count,
+              asc: items.name,
+              desc: items.inserted_at
+            ],
             limit: ^paging_options.page_size,
             offset: ^offset
           )
@@ -1710,7 +1775,9 @@ defmodule Explorer.Chain do
 
         search_results
         |> Enum.map(fn result ->
-          compose_result_checksummed_address_hash(result)
+          result
+          |> compose_result_checksummed_address_hash()
+          |> format_timestamp()
         end)
 
       _ ->
@@ -1727,80 +1794,13 @@ defmodule Explorer.Chain do
     end
   end
 
-  def search_tx(term) do
-    case Chain.string_to_transaction_hash(term) do
-      {:ok, tx_hash} ->
-        query =
-          from(transaction in Transaction,
-            where: transaction.hash == ^tx_hash,
-            select: %{
-              link: transaction.hash,
-              type: "transaction"
-            }
-          )
-
-        Repo.all(query)
-
-      _ ->
-        []
-    end
-  end
-
-  def search_address(term) do
-    case Chain.string_to_address_hash(term) do
-      {:ok, address_hash} ->
-        query =
-          from(address in Address,
-            left_join: address_name in Address.Name,
-            on: address.hash == address_name.address_hash,
-            where: address.hash == ^address_hash,
-            select: %{
-              name: address_name.name,
-              link: address.hash,
-              type: "address"
-            }
-          )
-
-        Repo.all(query)
-
-      _ ->
-        []
-    end
-  end
-
-  def search_block(term) do
-    case Chain.string_to_block_hash(term) do
-      {:ok, block_hash} ->
-        query =
-          from(block in Block,
-            where: block.hash == ^block_hash,
-            select: %{
-              link: block.hash,
-              block_number: block.number,
-              type: "block"
-            }
-          )
-
-        Repo.all(query)
-
-      _ ->
-        case Integer.parse(term) do
-          {block_number, _} ->
-            query =
-              from(block in Block,
-                where: block.number == ^block_number,
-                select: %{
-                  link: block.hash,
-                  block_number: block.number,
-                  type: "block"
-                }
-              )
-
-            Repo.all(query)
-
-          _ ->
-            []
-        end
+  # For some reasons timestamp for blocks and txs returns as ~N[2023-06-25 19:39:47.339493]
+  defp format_timestamp(result) do
+    if result.timestamp do
+      result
+      |> Map.put(:timestamp, DateTime.from_naive!(result.timestamp, "Etc/UTC"))
+    else
+      result
     end
   end
 
@@ -2611,16 +2611,17 @@ defmodule Explorer.Chain do
   def list_top_tokens(filter, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     token_type = Keyword.get(options, :token_type, nil)
+    sorting = Keyword.get(options, :sorting, [])
 
-    fetch_top_tokens(filter, paging_options, token_type, options)
+    fetch_top_tokens(filter, paging_options, token_type, sorting, options)
   end
 
-  defp fetch_top_tokens(filter, paging_options, token_type, options) do
-    base_query = base_token_query(token_type)
+  defp fetch_top_tokens(filter, paging_options, token_type, sorting, options) do
+    base_query = Token.base_token_query(token_type, sorting)
 
     base_query_with_paging =
       base_query
-      |> page_tokens(paging_options)
+      |> Token.page_tokens(paging_options, sorting)
       |> limit(^paging_options.page_size)
 
     query =
@@ -2639,31 +2640,6 @@ defmodule Explorer.Chain do
 
     query
     |> select_repo(options).all()
-  end
-
-  defp base_token_query(empty_type) when empty_type in [nil, []] do
-    from(t in Token,
-      order_by: [
-        desc_nulls_last: t.circulating_market_cap,
-        desc_nulls_last: t.holder_count,
-        asc: t.name,
-        asc: t.contract_address_hash
-      ],
-      preload: [:contract_address]
-    )
-  end
-
-  defp base_token_query(token_types) when is_list(token_types) do
-    from(t in Token,
-      where: t.type in ^token_types,
-      order_by: [
-        desc_nulls_last: t.circulating_market_cap,
-        desc_nulls_last: t.holder_count,
-        asc: t.name,
-        asc: t.contract_address_hash
-      ],
-      preload: [:contract_address]
-    )
   end
 
   @doc """
@@ -2830,24 +2806,17 @@ defmodule Explorer.Chain do
   @doc """
   Return the balance in usd corresponding to this token. Return nil if the fiat_value of the token is not present.
   """
-  def balance_in_fiat(_token_balance, %{fiat_value: fiat_value, decimals: decimals})
-      when nil in [fiat_value, decimals] do
+  def balance_in_fiat(%{fiat_value: fiat_value} = token_balance) when not is_nil(fiat_value) do
+    token_balance.fiat_value
+  end
+
+  def balance_in_fiat(%{token: %{fiat_value: fiat_value, decimals: decimals}}) when nil in [fiat_value, decimals] do
     nil
   end
 
-  def balance_in_fiat(token_balance, %{fiat_value: fiat_value, decimals: decimals}) do
+  def balance_in_fiat(%{token: %{fiat_value: fiat_value, decimals: decimals}} = token_balance) do
     tokens = CurrencyHelper.divide_decimals(token_balance.value, decimals)
     Decimal.mult(tokens, fiat_value)
-  end
-
-  def balance_in_fiat(%{token: %{fiat_value: nil}}) do
-    nil
-  end
-
-  def balance_in_fiat(token_balance) do
-    tokens = CurrencyHelper.divide_decimals(token_balance.value, token_balance.token.decimals)
-    price = token_balance.token.fiat_value
-    Decimal.mult(tokens, price)
   end
 
   defp contract?(%{contract_code: nil}), do: false
@@ -3811,7 +3780,6 @@ defmodule Explorer.Chain do
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
-    |> preload(:transaction)
     |> select_repo(options).all()
   end
 
@@ -3832,7 +3800,7 @@ defmodule Explorer.Chain do
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
-    |> preload(:transaction)
+    |> preload(:block)
     |> select_repo(options).all()
   end
 
@@ -4390,7 +4358,7 @@ defmodule Explorer.Chain do
         where: address_name.address_hash == ^address_hash,
         # Enforce Name ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :address_hash, asc: :name],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     repo.update_all(
@@ -5410,7 +5378,7 @@ defmodule Explorer.Chain do
       )
       # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
       |> order_by(asc: :hash)
-      |> lock("FOR UPDATE")
+      |> lock("FOR NO KEY UPDATE")
 
     hashes = Enum.map(transactions, & &1.hash)
 
@@ -5455,7 +5423,7 @@ defmodule Explorer.Chain do
         end)
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         |> order_by(asc: :hash)
-        |> lock("FOR UPDATE")
+        |> lock("FOR NO KEY UPDATE")
 
       Repo.update_all(
         from(t in Transaction, join: s in subquery(query), on: t.hash == s.hash),
@@ -6547,8 +6515,8 @@ defmodule Explorer.Chain do
 
   defp find_block_timestamp(number, options) do
     Block
-    |> where([b], b.number == ^number)
-    |> select([b], b.timestamp)
+    |> where([block], block.number == ^number)
+    |> select([block], block.timestamp)
     |> limit(1)
     |> select_repo(options).one()
   end

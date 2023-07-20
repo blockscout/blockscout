@@ -18,7 +18,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       [result] =
-        address
+        address.hash
         |> AddressTransactionCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)
@@ -117,7 +117,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       result =
-        address
+        address.hash
         |> AddressTransactionCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)

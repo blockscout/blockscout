@@ -185,7 +185,7 @@ defmodule EthereumJSONRPC do
           [%{required(:block_quantity) => quantity, required(:hash_data) => data()}],
           json_rpc_named_arguments
         ) :: {:ok, FetchedBalances.t()} | {:error, reason :: term}
-  def fetch_balances(params_list, json_rpc_named_arguments)
+  def fetch_balances(params_list, json_rpc_named_arguments, chunk_size \\ nil)
       when is_list(params_list) and is_list(json_rpc_named_arguments) do
     filtered_params =
       if Application.get_env(:ethereum_jsonrpc, :disable_archive_balances?) do
@@ -203,6 +203,7 @@ defmodule EthereumJSONRPC do
     with {:ok, responses} <-
            id_to_params
            |> FetchedBalances.requests()
+           |> chunk_requests(chunk_size)
            |> json_rpc(json_rpc_named_arguments) do
       {:ok, FetchedBalances.from_responses(responses, id_to_params)}
     end
@@ -549,6 +550,9 @@ defmodule EthereumJSONRPC do
       {:ok, Blocks.from_responses(responses, id_to_params)}
     end
   end
+
+  defp chunk_requests(requests, nil), do: requests
+  defp chunk_requests(requests, chunk_size), do: Enum.chunk_every(requests, chunk_size)
 
   def first_block_to_fetch(config) do
     string_value = Application.get_env(:indexer, config)

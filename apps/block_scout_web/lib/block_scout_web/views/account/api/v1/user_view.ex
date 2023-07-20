@@ -102,7 +102,10 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
       },
       "notification_methods" => %{
         "email" => watchlist.notify_email
-      }
+      },
+      "tokens_fiat_value" => watchlist.tokens_fiat_value,
+      "tokens_count" => watchlist.tokens_count,
+      "tokens_overflow" => watchlist.tokens_overflow
     }
   end
 
