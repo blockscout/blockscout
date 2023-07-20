@@ -1,9 +1,7 @@
 defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
-  import Mox
 
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Account.WatchlistAddress
@@ -964,6 +962,34 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
   end
 
+  defp compare_item(%InternalTransaction{} = internal_tx, json) do
+    assert internal_tx.block_number == json["block"]
+    assert to_string(internal_tx.gas) == json["gas_limit"]
+    assert internal_tx.index == json["index"]
+    assert to_string(internal_tx.transaction_hash) == json["transaction_hash"]
+    assert Address.checksum(internal_tx.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(internal_tx.to_address_hash) == json["to"]["hash"]
+  end
+
+  defp compare_item(%Log{} = log, json) do
+    assert to_string(log.data) == json["data"]
+    assert log.index == json["index"]
+    assert Address.checksum(log.address_hash) == json["address"]["hash"]
+    assert to_string(log.transaction_hash) == json["tx_hash"]
+    assert json["block_number"] == log.block_number
+  end
+
+  defp compare_item(%TokenTransfer{} = token_transfer, json) do
+    assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
+    assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
+    assert json["timestamp"] == nil
+    assert json["method"] == nil
+    assert to_string(token_transfer.block_hash) == json["block_hash"]
+    assert to_string(token_transfer.log_index) == json["log_index"]
+    assert check_total(Repo.preload(token_transfer, [{:token, :contract_address}]).token, json["total"], token_transfer)
+  end
+
   defp compare_item(%Transaction{} = transaction, json, wl_names) do
     assert to_string(transaction.hash) == json["hash"]
     assert transaction.block_number == json["block"]
@@ -992,47 +1018,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                ],
                else: []
              )
-  end
-
-  defp compare_item(%InternalTransaction{} = internal_tx, json) do
-    assert internal_tx.block_number == json["block"]
-    assert to_string(internal_tx.gas) == json["gas_limit"]
-    assert internal_tx.index == json["index"]
-    assert to_string(internal_tx.transaction_hash) == json["transaction_hash"]
-    assert Address.checksum(internal_tx.from_address_hash) == json["from"]["hash"]
-    assert Address.checksum(internal_tx.to_address_hash) == json["to"]["hash"]
-  end
-
-  defp compare_item(%Log{} = log, json) do
-    assert to_string(log.data) == json["data"]
-    assert log.index == json["index"]
-    assert Address.checksum(log.address_hash) == json["address"]["hash"]
-    assert to_string(log.transaction_hash) == json["tx_hash"]
-  end
-
-  defp compare_item(%TokenTransfer{} = token_transfer, json) do
-    assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
-    assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
-    assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
-    assert json["timestamp"] == nil
-    assert json["method"] == nil
-    assert to_string(token_transfer.block_hash) == json["block_hash"]
-    assert to_string(token_transfer.log_index) == json["log_index"]
-    assert check_total(Repo.preload(token_transfer, [{:token, :contract_address}]).token, json["total"], token_transfer)
-  end
-
-  defp compare_item(%Transaction{} = transaction, json, wl_names) do
-    assert to_string(transaction.hash) == json["hash"]
-    assert transaction.block_number == json["block"]
-    assert to_string(transaction.value.value) == json["value"]
-    assert Address.checksum(transaction.from_address_hash) == json["from"]["hash"]
-    assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
-
-    assert json["to"]["watchlist_names"] ==
-             if(wl_names[transaction.to_address_hash], do: [wl_names[transaction.to_address_hash]], else: [])
-
-    assert json["from"]["watchlist_names"] ==
-             if(wl_names[transaction.from_address_hash], do: [wl_names[transaction.from_address_hash]], else: [])
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, txs) do

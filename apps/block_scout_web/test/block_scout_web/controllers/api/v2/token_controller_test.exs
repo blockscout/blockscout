@@ -393,12 +393,174 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   end
 
   describe "/tokens" do
-    defp check_tokens_pagination(tokens, conn) do
-      request = get(conn, "/api/v2/tokens")
+    defp check_tokens_pagination(tokens, conn, additional_params \\ %{}) do
+      request = get(conn, "/api/v2/tokens", additional_params)
       assert response = json_response(request, 200)
-      request_2nd_page = get(conn, "/api/v2/tokens", response["next_page_params"])
+      request_2nd_page = get(conn, "/api/v2/tokens", additional_params |> Map.merge(response["next_page_params"]))
       assert response_2nd_page = json_response(request_2nd_page, 200)
       check_paginated_response(response, response_2nd_page, tokens)
+
+      # by fiat_value
+      tokens_ordered_by_fiat_value = Enum.sort(tokens, &(Decimal.compare(&1.fiat_value, &2.fiat_value) in [:eq, :lt]))
+
+      request_ordered_by_fiat_value =
+        get(conn, "/api/v2/tokens", additional_params |> Map.merge(%{"sort" => "fiat_value", "order" => "desc"}))
+
+      assert response_ordered_by_fiat_value = json_response(request_ordered_by_fiat_value, 200)
+
+      request_ordered_by_fiat_value_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params
+          |> Map.merge(%{"sort" => "fiat_value", "order" => "desc"})
+          |> Map.merge(response_ordered_by_fiat_value["next_page_params"])
+        )
+
+      assert response_ordered_by_fiat_value_2nd_page = json_response(request_ordered_by_fiat_value_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_fiat_value,
+        response_ordered_by_fiat_value_2nd_page,
+        tokens_ordered_by_fiat_value
+      )
+
+      tokens_ordered_by_fiat_value_asc =
+        Enum.sort(tokens, &(Decimal.compare(&1.fiat_value, &2.fiat_value) in [:eq, :gt]))
+
+      request_ordered_by_fiat_value_asc =
+        get(conn, "/api/v2/tokens", additional_params |> Map.merge(%{"sort" => "fiat_value", "order" => "asc"}))
+
+      assert response_ordered_by_fiat_value_asc = json_response(request_ordered_by_fiat_value_asc, 200)
+
+      request_ordered_by_fiat_value_asc_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params
+          |> Map.merge(%{"sort" => "fiat_value", "order" => "asc"})
+          |> Map.merge(response_ordered_by_fiat_value_asc["next_page_params"])
+        )
+
+      assert response_ordered_by_fiat_value_asc_2nd_page =
+               json_response(request_ordered_by_fiat_value_asc_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_fiat_value_asc,
+        response_ordered_by_fiat_value_asc_2nd_page,
+        tokens_ordered_by_fiat_value_asc
+      )
+
+      # by holders
+      tokens_ordered_by_holders = Enum.sort(tokens, &(&1.holder_count <= &2.holder_count))
+
+      request_ordered_by_holders =
+        get(conn, "/api/v2/tokens", additional_params |> Map.merge(%{"sort" => "holder_count", "order" => "desc"}))
+
+      assert response_ordered_by_holders = json_response(request_ordered_by_holders, 200)
+
+      request_ordered_by_holders_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params
+          |> Map.merge(%{"sort" => "holder_count", "order" => "desc"})
+          |> Map.merge(response_ordered_by_holders["next_page_params"])
+        )
+
+      assert response_ordered_by_holders_2nd_page = json_response(request_ordered_by_holders_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_holders,
+        response_ordered_by_holders_2nd_page,
+        tokens_ordered_by_holders
+      )
+
+      tokens_ordered_by_holders_asc = Enum.sort(tokens, &(&1.holder_count >= &2.holder_count))
+
+      request_ordered_by_holders_asc =
+        get(conn, "/api/v2/tokens", additional_params |> Map.merge(%{"sort" => "holder_count", "order" => "asc"}))
+
+      assert response_ordered_by_holders_asc = json_response(request_ordered_by_holders_asc, 200)
+
+      request_ordered_by_holders_asc_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params
+          |> Map.merge(%{"sort" => "holder_count", "order" => "asc"})
+          |> Map.merge(response_ordered_by_holders_asc["next_page_params"])
+        )
+
+      assert response_ordered_by_holders_asc_2nd_page = json_response(request_ordered_by_holders_asc_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_holders_asc,
+        response_ordered_by_holders_asc_2nd_page,
+        tokens_ordered_by_holders_asc
+      )
+
+      # by circulating_market_cap
+      tokens_ordered_by_circulating_market_cap =
+        Enum.sort(tokens, &(&1.circulating_market_cap <= &2.circulating_market_cap))
+
+      request_ordered_by_circulating_market_cap =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params |> Map.merge(%{"sort" => "circulating_market_cap", "order" => "desc"})
+        )
+
+      assert response_ordered_by_circulating_market_cap = json_response(request_ordered_by_circulating_market_cap, 200)
+
+      request_ordered_by_circulating_market_cap_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params
+          |> Map.merge(%{"sort" => "circulating_market_cap", "order" => "desc"})
+          |> Map.merge(response_ordered_by_circulating_market_cap["next_page_params"])
+        )
+
+      assert response_ordered_by_circulating_market_cap_2nd_page =
+               json_response(request_ordered_by_circulating_market_cap_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_circulating_market_cap,
+        response_ordered_by_circulating_market_cap_2nd_page,
+        tokens_ordered_by_circulating_market_cap
+      )
+
+      tokens_ordered_by_circulating_market_cap_asc =
+        Enum.sort(tokens, &(&1.circulating_market_cap >= &2.circulating_market_cap))
+
+      request_ordered_by_circulating_market_cap_asc =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params |> Map.merge(%{"sort" => "circulating_market_cap", "order" => "asc"})
+        )
+
+      assert response_ordered_by_circulating_market_cap_asc =
+               json_response(request_ordered_by_circulating_market_cap_asc, 200)
+
+      request_ordered_by_circulating_market_cap_asc_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params
+          |> Map.merge(%{"sort" => "circulating_market_cap", "order" => "asc"})
+          |> Map.merge(response_ordered_by_circulating_market_cap_asc["next_page_params"])
+        )
+
+      assert response_ordered_by_circulating_market_cap_asc_2nd_page =
+               json_response(request_ordered_by_circulating_market_cap_asc_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_circulating_market_cap_asc,
+        response_ordered_by_circulating_market_cap_asc_2nd_page,
+        tokens_ordered_by_circulating_market_cap_asc
+      )
     end
 
     test "get empty list", %{conn: conn} do
@@ -407,10 +569,74 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
+    test "tokens are filtered by single type", %{conn: conn} do
+      erc_20_tokens =
+        for i <- 0..50 do
+          insert(:token, fiat_value: i)
+        end
+
+      erc_721_tokens =
+        for _i <- 0..50 do
+          insert(:token, type: "ERC-721")
+        end
+
+      erc_1155_tokens =
+        for _i <- 0..50 do
+          insert(:token, type: "ERC-1155")
+        end
+
+      check_tokens_pagination(erc_20_tokens |> Enum.reverse(), conn, %{"type" => "ERC-20"})
+      check_tokens_pagination(erc_721_tokens |> Enum.reverse(), conn, %{"type" => "ERC-721"})
+      check_tokens_pagination(erc_1155_tokens |> Enum.reverse(), conn, %{"type" => "ERC-1155"})
+    end
+
+    test "tokens are filtered by multiple type", %{conn: conn} do
+      erc_20_tokens =
+        for i <- 0..25 do
+          insert(:token, fiat_value: i)
+        end
+
+      erc_721_tokens =
+        for _i <- 0..25 do
+          insert(:token, type: "ERC-721")
+        end
+
+      erc_1155_tokens =
+        for _i <- 0..24 do
+          insert(:token, type: "ERC-1155")
+        end
+
+      check_tokens_pagination(
+        erc_721_tokens |> Kernel.++(erc_1155_tokens) |> Enum.reverse(),
+        conn,
+        %{
+          "type" => "ERC-1155,ERC-721"
+        }
+      )
+
+      check_tokens_pagination(
+        erc_20_tokens |> Kernel.++(erc_1155_tokens) |> Enum.reverse(),
+        conn,
+        %{
+          "type" => "[erc-20,ERC-1155]"
+        }
+      )
+    end
+
+    test "sorting by fiat_value", %{conn: conn} do
+      tokens =
+        for i <- 0..50 do
+          insert(:token, fiat_value: i)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
     # these tests that tokens paginates by each parameter separately and by any combination of them
     test "pagination by address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token, name: nil)
         end
         |> Enum.reverse()
@@ -419,13 +645,13 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
 
     test "pagination by name", %{conn: conn} do
+      named_token = insert(:token, holder_count: 0)
+      empty_named_token = insert(:token, name: "", holder_count: 0)
+
       tokens =
-        for i <- 0..48 do
+        for i <- 1..49 do
           insert(:token, holder_count: i)
         end
-
-      empty_named_token = insert(:token, name: "")
-      named_token = insert(:token)
 
       tokens = [named_token, empty_named_token | tokens]
 
@@ -452,7 +678,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "pagination by name and address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token)
         end
         |> Enum.reverse()
@@ -462,7 +688,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "pagination by holders and address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token, holder_count: 1, name: nil)
         end
         |> Enum.reverse()
@@ -472,7 +698,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "pagination by circulating_market_cap and address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token, circulating_market_cap: 1, name: nil)
         end
         |> Enum.reverse()
@@ -511,7 +737,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "pagination by holders, name and address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token, holder_count: 1)
         end
         |> Enum.reverse()
@@ -521,7 +747,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "pagination by circulating_market_cap, name and address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token, circulating_market_cap: 1)
         end
         |> Enum.reverse()
@@ -531,7 +757,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "pagination by circulating_market_cap, holders and address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token, circulating_market_cap: 1, holder_count: 1, name: nil)
         end
         |> Enum.reverse()
@@ -551,7 +777,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "pagination by circulating_market_cap, holders, name and address", %{conn: conn} do
       tokens =
-        for i <- 0..50 do
+        for _i <- 0..50 do
           insert(:token, holder_count: 1, circulating_market_cap: 1)
         end
         |> Enum.reverse()

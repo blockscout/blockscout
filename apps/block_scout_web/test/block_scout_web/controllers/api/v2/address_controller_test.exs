@@ -1728,6 +1728,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert to_string(log.data) == json["data"]
     assert Address.checksum(log.address_hash) == json["address"]["hash"]
     assert to_string(log.transaction_hash) == json["tx_hash"]
+    assert json["block_number"] == log.block_number
+    assert json["block_hash"] == to_string(log.block_hash)
   end
 
   defp compare_item(%Withdrawal{} = withdrawal, json) do
