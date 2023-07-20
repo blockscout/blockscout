@@ -21,7 +21,7 @@ jobs:
 
       - name: Prepare
         id: prepare
-        run: echo "docker-tag=sail-${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        run: echo "docker-tag=sail-$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
