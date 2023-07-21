@@ -13,6 +13,7 @@ on:
 
 jobs:
   ci:
+    environment: dev
     outputs:
       docker-tag: ${{ steps.prepare.outputs.docker-tag }}
       target-cluster: ${{ steps.prepare.outputs.target-cluster }}
@@ -42,19 +43,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Docker Image Tag
-        id: docker-image-tag
-        run: echo "docker-tag=sail-$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
-
-      - name: Publish Kroma Blockscout V2 Frontend
+      - name: Publish Kroma Blockscout V2 Backend
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ./Dockerfile-sail
+          file: ./docker/Dockerfile
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
-          tags: ${{ secrets.AWS_ECR_REPOSITORY }}/blockscout-v2:${{ steps.docker-image-tag.outputs.docker-tag }},${{ secrets.AWS_ECR_REPOSITORY }}/blockscout-v2:latest
+          tags: ${{ secrets.AWS_ECR_REPOSITORY }}/blockscout-v2:${{ steps.prepare.outputs.docker-tag }},${{ secrets.AWS_ECR_REPOSITORY }}/blockscout-v2:latest
           platforms: linux/amd64
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
