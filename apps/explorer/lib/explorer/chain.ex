@@ -2750,7 +2750,7 @@ defmodule Explorer.Chain do
       )
 
     query
-    |> add_fetcher_limit(limited?)
+    |> add_coin_balances_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
 
@@ -6891,6 +6891,14 @@ defmodule Explorer.Chain do
     fetcher_limit = Application.get_env(:indexer, :fetcher_init_limit)
 
     limit(query, ^fetcher_limit)
+  end
+
+  defp add_coin_balances_fetcher_limit(query, false), do: query
+
+  defp add_coin_balances_fetcher_limit(query, true) do
+    coin_balances_fetcher_limit = Application.get_env(:indexer, :coin_balances_fetcher_init_limit)
+
+    limit(query, ^coin_balances_fetcher_limit)
   end
 
   def put_has_token_transfers_to_tx(query, true), do: query
