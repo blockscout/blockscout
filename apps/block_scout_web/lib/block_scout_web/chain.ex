@@ -334,6 +334,20 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  def paging_options(%{"id" => id_string}) when is_binary(id_string) do
+    case Integer.parse(id_string) do
+      {id, ""} ->
+        [paging_options: %{@default_paging_options | key: {id}}]
+
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{"id" => id}) when is_integer(id) do
+    [paging_options: %{@default_paging_options | key: {id}}]
+  end
+
   def paging_options(_params), do: [paging_options: @default_paging_options]
 
   def put_key_value_to_paging_options([paging_options: paging_options], key, value) do

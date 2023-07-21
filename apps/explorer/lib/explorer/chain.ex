@@ -6331,6 +6331,39 @@ defmodule Explorer.Chain do
           )
       }
     )
+  end
+
+  defp page_polygon_supernet_deposits(query, %PagingOptions{key: nil}), do: query
+
+  defp page_polygon_supernet_deposits(query, %PagingOptions{key: {msg_id}}) do
+    from(de in query, where: de.msg_id < ^msg_id)
+  end
+
+  def polygon_supernet_deposits(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(
+        de in PolygonSupernetDepositExecute,
+        inner_join: d in PolygonSupernetDeposit,
+        on: d.msg_id == de.msg_id and not is_nil(d.l1_timestamp),
+        select: %{
+          msg_id: de.msg_id,
+          from: d.from,
+          to: d.to,
+          l1_transaction_hash: d.l1_transaction_hash,
+          l1_timestamp: d.l1_timestamp,
+          success: de.success,
+          l2_transaction_hash: de.l2_transaction_hash
+        },
+        order_by: [desc: de.msg_id]
+      )
+
+    base_query
+    |> page_polygon_supernet_deposits(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
+  end
 
   def polygon_supernet_deposit_by_transaction_hash(hash) do
     query =
@@ -6382,5 +6415,17 @@ defmodule Explorer.Chain do
       )
 
     Repo.all(query)
+  end
+
+  def get_table_rows_total_count(module, options) do
+    table_name = module.__schema__(:source)
+
+    count = CacheHelper.estimated_count_from(table_name, options)
+
+    if is_nil(count) do
+      select_repo(options).aggregate(module, :count, timeout: :infinity)
+    else
+      count
+    end
   end
 end

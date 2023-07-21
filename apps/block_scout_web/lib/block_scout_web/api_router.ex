@@ -196,6 +196,11 @@ defmodule BlockScoutWeb.ApiRouter do
       end
     end
 
+    scope "/polygon-supernet" do
+      get("/deposits", V2.PolygonSupernetController, :deposits)
+      get("/deposits/count", V2.PolygonSupernetController, :deposits_count)
+    end
+
     scope "/withdrawals" do
       get("/", V2.WithdrawalController, :withdrawals_list)
       get("/counters", V2.WithdrawalController, :withdrawals_counters)
