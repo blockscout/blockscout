@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#7992](https://github.com/blockscout/blockscout/pull/7992) - Fix missing range insert
+
 ### Chore
 
 <details>
