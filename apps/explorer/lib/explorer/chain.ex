@@ -1516,7 +1516,9 @@ defmodule Explorer.Chain do
         timestamp: fragment("NULL::timestamp without time zone"),
         verified: not is_nil(smart_contract),
         exchange_rate: nil,
-        total_supply: nil
+        total_supply: nil,
+        circulating_market_cap: nil,
+        priority: 1
       }
     )
   end
@@ -1541,7 +1543,9 @@ defmodule Explorer.Chain do
         timestamp: fragment("NULL::timestamp without time zone"),
         verified: not is_nil(smart_contract),
         exchange_rate: token.fiat_value,
-        total_supply: token.total_supply
+        total_supply: token.total_supply,
+        circulating_market_cap: token.circulating_market_cap,
+        priority: 0
       }
     )
   end
@@ -1566,7 +1570,9 @@ defmodule Explorer.Chain do
         timestamp: fragment("NULL::timestamp without time zone"),
         verified: true,
         exchange_rate: nil,
-        total_supply: nil
+        total_supply: nil,
+        circulating_market_cap: nil,
+        priority: 0
       }
     )
   end
@@ -1600,7 +1606,9 @@ defmodule Explorer.Chain do
             timestamp: fragment("NULL::timestamp without time zone"),
             verified: address.verified,
             exchange_rate: nil,
-            total_supply: nil
+            total_supply: nil,
+            circulating_market_cap: nil,
+            priority: 0
           }
         )
 
@@ -1631,7 +1639,9 @@ defmodule Explorer.Chain do
             timestamp: block.timestamp,
             verified: nil,
             exchange_rate: nil,
-            total_supply: nil
+            total_supply: nil,
+            circulating_market_cap: nil,
+            priority: 0
           }
         )
 
@@ -1660,7 +1670,9 @@ defmodule Explorer.Chain do
             timestamp: block.timestamp,
             verified: nil,
             exchange_rate: nil,
-            total_supply: nil
+            total_supply: nil,
+            circulating_market_cap: nil,
+            priority: 0
           }
         )
 
@@ -1684,7 +1696,9 @@ defmodule Explorer.Chain do
                 timestamp: block.timestamp,
                 verified: nil,
                 exchange_rate: nil,
-                total_supply: nil
+                total_supply: nil,
+                circulating_market_cap: nil,
+                priority: 0
               }
             )
 
@@ -1734,7 +1748,14 @@ defmodule Explorer.Chain do
 
         ordered_query =
           from(items in subquery(query),
-            order_by: [desc_nulls_last: items.holder_count, asc: items.name, desc: items.inserted_at],
+            order_by: [
+              desc: items.priority,
+              desc_nulls_last: items.circulating_market_cap,
+              desc_nulls_last: items.exchange_rate,
+              desc_nulls_last: items.holder_count,
+              asc: items.name,
+              desc: items.inserted_at
+            ],
             limit: ^paging_options.page_size,
             offset: ^offset
           )
@@ -4236,7 +4257,7 @@ defmodule Explorer.Chain do
         where: address_name.address_hash == ^address_hash,
         # Enforce Name ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :address_hash, asc: :name],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     repo.update_all(
@@ -5174,7 +5195,7 @@ defmodule Explorer.Chain do
       )
       # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
       |> order_by(asc: :hash)
-      |> lock("FOR UPDATE")
+      |> lock("FOR NO KEY UPDATE")
 
     hashes = Enum.map(transactions, & &1.hash)
 
@@ -5219,7 +5240,7 @@ defmodule Explorer.Chain do
         end)
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         |> order_by(asc: :hash)
-        |> lock("FOR UPDATE")
+        |> lock("FOR NO KEY UPDATE")
 
       Repo.update_all(
         from(t in Transaction, join: s in subquery(query), on: t.hash == s.hash),

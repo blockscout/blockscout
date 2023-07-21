@@ -5,12 +5,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   require Ecto.Query
 
-  import Ecto.Query, only: [from: 2, where: 3]
+  import Ecto.Query, only: [from: 2, subquery: 1, where: 3]
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Block, Import, PendingBlockOperation, Transaction}
+  alias Explorer.Chain.{Address, Block, Import, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
+  alias Explorer.Chain.Import.Runner.Tokens
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
@@ -147,6 +149,49 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :derive_transaction_forks
       )
     end)
+    |> Multi.run(:delete_address_token_balances, fn repo, %{lose_consensus: non_consensus_blocks} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> delete_address_token_balances(repo, non_consensus_blocks, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :delete_address_token_balances
+      )
+    end)
+    |> Multi.run(:delete_address_current_token_balances, fn repo, %{lose_consensus: non_consensus_blocks} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> delete_address_current_token_balances(repo, non_consensus_blocks, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :delete_address_current_token_balances
+      )
+    end)
+    |> Multi.run(:derive_address_current_token_balances, fn repo,
+                                                            %{
+                                                              delete_address_current_token_balances:
+                                                                deleted_address_current_token_balances
+                                                            } ->
+      Instrumenter.block_import_stage_runner(
+        fn -> derive_address_current_token_balances(repo, deleted_address_current_token_balances, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :derive_address_current_token_balances
+      )
+    end)
+    |> Multi.run(:blocks_update_token_holder_counts, fn repo,
+                                                        %{
+                                                          delete_address_current_token_balances: deleted,
+                                                          derive_address_current_token_balances: inserted
+                                                        } ->
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          deltas = CurrentTokenBalances.token_holder_count_deltas(%{deleted: deleted, inserted: inserted})
+          Tokens.update_holder_counts_with_deltas(repo, deltas, insert_options)
+        end,
+        :address_referencing,
+        :blocks,
+        :blocks_update_token_holder_counts
+      )
+    end)
   end
 
   @impl Runner
@@ -164,7 +209,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         select: transaction,
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     update_query =
@@ -312,7 +357,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         select: block.hash,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: block.hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     {_, removed_consensus_block_hashes} =
@@ -381,6 +426,190 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end
   end
 
+  defp delete_address_token_balances(_, [], _), do: {:ok, []}
+
+  defp delete_address_token_balances(repo, non_consensus_blocks, %{timeout: timeout}) do
+    non_consensus_block_numbers = Enum.map(non_consensus_blocks, fn {number, _hash} -> number end)
+
+    ordered_query =
+      from(tb in Address.TokenBalance,
+        where: tb.block_number in ^non_consensus_block_numbers,
+        select: map(tb, [:address_hash, :token_contract_address_hash, :token_id, :block_number]),
+        # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)
+        order_by: [
+          tb.token_contract_address_hash,
+          tb.token_id,
+          tb.address_hash,
+          tb.block_number
+        ],
+        lock: "FOR UPDATE"
+      )
+
+    query =
+      from(tb in Address.TokenBalance,
+        select: map(tb, [:address_hash, :token_contract_address_hash, :block_number]),
+        inner_join: ordered_address_token_balance in subquery(ordered_query),
+        on:
+          ordered_address_token_balance.address_hash == tb.address_hash and
+            ordered_address_token_balance.token_contract_address_hash ==
+              tb.token_contract_address_hash and
+            ((is_nil(ordered_address_token_balance.token_id) and is_nil(tb.token_id)) or
+               (ordered_address_token_balance.token_id == tb.token_id and
+                  not is_nil(ordered_address_token_balance.token_id) and not is_nil(tb.token_id))) and
+            ordered_address_token_balance.block_number == tb.block_number
+      )
+
+    try do
+      {_count, deleted_address_token_balances} = repo.delete_all(query, timeout: timeout)
+
+      {:ok, deleted_address_token_balances}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, block_numbers: non_consensus_block_numbers}}
+    end
+  end
+
+  defp delete_address_current_token_balances(_, [], _), do: {:ok, []}
+
+  defp delete_address_current_token_balances(repo, non_consensus_blocks, %{timeout: timeout}) do
+    non_consensus_block_numbers = Enum.map(non_consensus_blocks, fn {number, _hash} -> number end)
+
+    ordered_query =
+      from(ctb in Address.CurrentTokenBalance,
+        where: ctb.block_number in ^non_consensus_block_numbers,
+        select: map(ctb, [:address_hash, :token_contract_address_hash, :token_id]),
+        # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
+        order_by: [
+          ctb.token_contract_address_hash,
+          ctb.token_id,
+          ctb.address_hash
+        ],
+        lock: "FOR UPDATE"
+      )
+
+    query =
+      from(ctb in Address.CurrentTokenBalance,
+        select:
+          map(ctb, [
+            :address_hash,
+            :token_contract_address_hash,
+            :token_id,
+            # Used to determine if `address_hash` was a holder of `token_contract_address_hash` before
+
+            # `address_current_token_balance` is deleted in `update_tokens_holder_count`.
+            :value
+          ]),
+        inner_join: ordered_address_current_token_balance in subquery(ordered_query),
+        on:
+          ordered_address_current_token_balance.address_hash == ctb.address_hash and
+            ordered_address_current_token_balance.token_contract_address_hash == ctb.token_contract_address_hash and
+            ((is_nil(ordered_address_current_token_balance.token_id) and is_nil(ctb.token_id)) or
+               (ordered_address_current_token_balance.token_id == ctb.token_id and
+                  not is_nil(ordered_address_current_token_balance.token_id) and not is_nil(ctb.token_id)))
+      )
+
+    try do
+      {_count, deleted_address_current_token_balances} = repo.delete_all(query, timeout: timeout)
+
+      {:ok, deleted_address_current_token_balances}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, block_numbers: non_consensus_block_numbers}}
+    end
+  end
+
+  defp derive_address_current_token_balances(_, [], _), do: {:ok, []}
+
+  defp derive_address_current_token_balances(
+         repo,
+         deleted_address_current_token_balances,
+         %{timeout: timeout} = options
+       )
+       when is_list(deleted_address_current_token_balances) do
+    final_query = derive_address_current_token_balances_grouped_query(deleted_address_current_token_balances)
+
+    new_current_token_balance_query =
+      from(new_current_token_balance in subquery(final_query),
+        inner_join: tb in Address.TokenBalance,
+        on:
+          tb.address_hash == new_current_token_balance.address_hash and
+            tb.token_contract_address_hash == new_current_token_balance.token_contract_address_hash and
+            ((is_nil(tb.token_id) and is_nil(new_current_token_balance.token_id)) or
+               (tb.token_id == new_current_token_balance.token_id and
+                  not is_nil(tb.token_id) and not is_nil(new_current_token_balance.token_id))) and
+            tb.block_number == new_current_token_balance.block_number,
+        select: %{
+          address_hash: new_current_token_balance.address_hash,
+          token_contract_address_hash: new_current_token_balance.token_contract_address_hash,
+          token_id: new_current_token_balance.token_id,
+          block_number: new_current_token_balance.block_number,
+          value: tb.value,
+          inserted_at: over(min(tb.inserted_at), :w),
+          updated_at: over(max(tb.updated_at), :w)
+        },
+        windows: [
+          w: [partition_by: [tb.address_hash, tb.token_contract_address_hash, tb.token_id]]
+        ]
+      )
+
+    current_token_balance =
+      new_current_token_balance_query
+      |> repo.all()
+
+    timestamps = Import.timestamps()
+
+    result =
+      CurrentTokenBalances.insert_changes_list_with_and_without_token_id(
+        current_token_balance,
+        repo,
+        timestamps,
+        timeout,
+        options
+      )
+
+    derived_address_current_token_balances =
+      Enum.map(result, &Map.take(&1, [:address_hash, :token_contract_address_hash, :token_id, :block_number, :value]))
+
+    {:ok, derived_address_current_token_balances}
+  end
+
+  defp derive_address_current_token_balances_grouped_query(deleted_address_current_token_balances) do
+    initial_query =
+      from(tb in Address.TokenBalance,
+        select: %{
+          address_hash: tb.address_hash,
+          token_contract_address_hash: tb.token_contract_address_hash,
+          token_id: tb.token_id,
+          block_number: max(tb.block_number)
+        },
+        group_by: [tb.address_hash, tb.token_contract_address_hash, tb.token_id]
+      )
+
+    Enum.reduce(deleted_address_current_token_balances, initial_query, fn %{
+                                                                            address_hash: address_hash,
+                                                                            token_contract_address_hash:
+                                                                              token_contract_address_hash,
+                                                                            token_id: token_id
+                                                                          },
+                                                                          acc_query ->
+      if token_id do
+        from(tb in acc_query,
+          or_where:
+            tb.address_hash == ^address_hash and
+              tb.token_contract_address_hash == ^token_contract_address_hash and
+              tb.token_id == ^token_id
+        )
+      else
+        from(tb in acc_query,
+          or_where:
+            tb.address_hash == ^address_hash and
+              tb.token_contract_address_hash == ^token_contract_address_hash and
+              is_nil(tb.token_id)
+        )
+      end
+    end)
+  end
+
   # `block_rewards` are linked to `blocks.hash`, but fetched by `blocks.number`, so when a block with the same number is
   # inserted, the old block rewards need to be deleted, so that the old and new rewards aren't combined.
   defp delete_rewards(repo, blocks_changes, %{timeout: timeout}) do
@@ -433,7 +662,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         where: bsdr.uncle_hash in ^uncle_hashes,
         # Enforce SeconDegreeRelation ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :nephew_hash, asc: :uncle_hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     update_query =
