@@ -8,6 +8,8 @@
 
 ### Chore
 
+- [#8012](https://github.com/blockscout/blockscout/pull/8012) - API v2 smart-contract verification extended logging
+
 <details>
   <summary>Dependencies version bumps</summary>
 

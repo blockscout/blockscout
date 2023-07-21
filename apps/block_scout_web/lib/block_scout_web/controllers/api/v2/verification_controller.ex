@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
 
   import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
 
+  require Logger
+
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Chain
@@ -14,6 +16,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @api_true [api?: true]
+  @sc_verification_started "Smart-contract verification started"
 
   def config(conn, _params) do
     solidity_compiler_versions = CompilerVersion.fetch_version_list(:solc)
@@ -46,6 +49,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         %{"address_hash" => address_hash_string, "compiler_version" => compiler_version, "source_code" => source_code} =
           params
       ) do
+    Logger.info("API v2 smart-contract #{address_hash_string} verification via flattened file")
+
     with :validated <- validate_address(params) do
       verification_params =
         %{
@@ -65,11 +70,12 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         |> Map.put("external_libraries", Map.get(params, "libraries", %{}))
         |> Map.put("is_yul", Map.get(params, "is_yul_contract", false))
 
+      log_sc_verification_started(address_hash_string)
       Que.add(SolidityPublisherWorker, {"flattened_api_v2", verification_params})
 
       conn
       |> put_view(ApiView)
-      |> render(:message, %{message: "Verification started"})
+      |> render(:message, %{message: @sc_verification_started})
     end
   end
 
@@ -77,6 +83,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         conn,
         %{"address_hash" => address_hash_string, "files" => _files, "compiler_version" => compiler_version} = params
       ) do
+    Logger.info("API v2 smart-contract #{address_hash_string} verification via standard json input")
+
     with {:json_input, json_input} <- validate_params_standard_json_input(params) do
       verification_params =
         %{
@@ -87,15 +95,18 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         |> Map.put("constructor_arguments", Map.get(params, "constructor_args", ""))
         |> Map.put("name", Map.get(params, "contract_name", ""))
 
+      log_sc_verification_started(address_hash_string)
       Que.add(SolidityPublisherWorker, {"json_api_v2", verification_params, json_input})
 
       conn
       |> put_view(ApiView)
-      |> render(:message, %{message: "Verification started"})
+      |> render(:message, %{message: @sc_verification_started})
     end
   end
 
   def verification_via_sourcify(conn, %{"address_hash" => address_hash_string, "files" => files} = params) do
+    Logger.info("API v2 smart-contract #{address_hash_string} verification via Sourcify")
+
     with {:not_found, true} <-
            {:not_found, Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled]},
          :validated <- validate_address(params),
@@ -105,6 +116,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
          files_content <- PublishHelper.read_files(files_array) do
       chosen_contract = params["chosen_contract_index"]
 
+      log_sc_verification_started(address_hash_string)
+
       Que.add(
         SolidityPublisherWorker,
         {"sourcify_api_v2", String.downcase(address_hash_string), files_content, conn, chosen_contract}
@@ -112,7 +125,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
 
       conn
       |> put_view(ApiView)
-      |> render(:message, %{message: "Verification started"})
+      |> render(:message, %{message: @sc_verification_started})
     end
   end
 
@@ -120,6 +133,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         conn,
         %{"address_hash" => address_hash_string, "compiler_version" => compiler_version, "files" => files} = params
       ) do
+    Logger.info("API v2 smart-contract #{address_hash_string} verification via multipart")
+
     with :verifier_enabled <- check_microservice(),
          :validated <- validate_address(params),
          libraries <- Map.get(params, "libraries", "{}"),
@@ -142,11 +157,12 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         |> PublishHelper.prepare_files_array()
         |> PublishHelper.read_files()
 
+      log_sc_verification_started(address_hash_string)
       Que.add(SolidityPublisherWorker, {"multipart_api_v2", verification_params, files_array})
 
       conn
       |> put_view(ApiView)
-      |> render(:message, %{message: "Verification started"})
+      |> render(:message, %{message: @sc_verification_started})
     end
   end
 
@@ -166,11 +182,12 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         |> Map.put("name", Map.get(params, "contract_name", "Vyper_contract"))
         |> Map.put("evm_version", Map.get(params, "evm_version"))
 
+      log_sc_verification_started(address_hash_string)
       Que.add(VyperPublisherWorker, {"vyper_flattened", verification_params})
 
       conn
       |> put_view(ApiView)
-      |> render(:message, %{message: "Verification started"})
+      |> render(:message, %{message: @sc_verification_started})
     end
   end
 
@@ -178,6 +195,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         conn,
         %{"address_hash" => address_hash_string, "compiler_version" => compiler_version, "files" => files} = params
       ) do
+    Logger.info("API v2 vyper smart-contract #{address_hash_string} verification")
+
     with :verifier_enabled <- check_microservice(),
          :validated <- validate_address(params) do
       interfaces = parse_interfaces(params["interfaces"])
@@ -195,11 +214,12 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         |> PublishHelper.prepare_files_array()
         |> PublishHelper.read_files()
 
+      log_sc_verification_started(address_hash_string)
       Que.add(VyperPublisherWorker, {"vyper_multipart", verification_params, files_array})
 
       conn
       |> put_view(ApiView)
-      |> render(:message, %{message: "Verification started"})
+      |> render(:message, %{message: @sc_verification_started})
     end
   end
 
@@ -207,6 +227,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         conn,
         %{"address_hash" => address_hash_string, "files" => _files, "compiler_version" => compiler_version} = params
       ) do
+    Logger.info("API v2 vyper smart-contract #{address_hash_string} verification via standard json input")
+
     with :verifier_enabled <- check_microservice(),
          {:json_input, json_input} <- validate_params_standard_json_input(params) do
       verification_params = %{
@@ -215,11 +237,12 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         "input" => json_input
       }
 
+      log_sc_verification_started(address_hash_string)
       Que.add(VyperPublisherWorker, {"vyper_standard_json", verification_params})
 
       conn
       |> put_view(ApiView)
-      |> render(:message, %{message: "Verification started"})
+      |> render(:message, %{message: @sc_verification_started})
     end
   end
 
@@ -268,5 +291,9 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     with {:not_found, true} <- {:not_found, RustVerifierInterface.enabled?()} do
       :verifier_enabled
     end
+  end
+
+  defp log_sc_verification_started(address_hash_string) do
+    Logger.info("API v2 smart-contract #{address_hash_string} verification request sent to the microservice")
   end
 end

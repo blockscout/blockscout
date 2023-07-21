@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.Notifier do
   Responds to events by sending appropriate channel updates to front-end.
   """
 
+  require Logger
+
   alias Absinthe.Subscription
 
   alias BlockScoutWeb.API.V2, as: API_V2
@@ -52,6 +54,8 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event(
         {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result}}
       ) do
+    Logger.info("Broadcast smart-contract #{address_hash} verification results")
+
     Endpoint.broadcast(
       "addresses:#{address_hash}",
       "verification_result",
@@ -64,6 +68,7 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event(
         {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result, conn}}
       ) do
+    Logger.info("Broadcast smart-contract #{address_hash} verification results")
     %{view: view, compiler: compiler} = select_contract_type_and_form_view(conn.params)
 
     contract_verification_result =
