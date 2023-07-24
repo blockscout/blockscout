@@ -139,7 +139,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
         verification_with_files?
       )
 
-    Logger.error("Verification of Vyper smart-contract #{address_hash} failed because of the error #{error}")
+    Logger.error("Vyper smart-contract verification #{address_hash} failed because of the error #{error}")
 
     %{changeset | action: :insert}
   end

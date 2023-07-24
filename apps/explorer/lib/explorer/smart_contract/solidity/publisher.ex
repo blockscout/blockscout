@@ -221,7 +221,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         verification_with_files?
       )
 
-    Logger.error("Verification of Solidity smart-contract #{address_hash} failed because of the error #{error}")
+    Logger.error("Solidity smart-contract verification #{address_hash} failed because of the error #{error}")
 
     %{changeset | action: :insert}
   end

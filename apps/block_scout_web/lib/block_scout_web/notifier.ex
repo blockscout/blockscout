@@ -227,10 +227,14 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :smart_contract_was_verified, :on_demand, [address_hash]}) do
+    log_broadcast_smart_contract_was_verified(address_hash)
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", "smart_contract_was_verified", %{})
   end
 
-  def handle_event(_), do: nil
+  def handle_event(event) do
+    Logger.warning("Unknown broadcasted event #{inspect(event)}.")
+    nil
+  end
 
   def fetch_compiler_version(compiler) do
     case CompilerVersion.fetch_versions(compiler) do
@@ -487,5 +491,9 @@ defmodule BlockScoutWeb.Notifier do
 
   defp log_broadcast_verification_results_for_address(address_hash) do
     Logger.info("Broadcast smart-contract #{address_hash} verification results")
+  end
+
+  defp log_broadcast_smart_contract_was_verified(address_hash) do
+    Logger.info("Broadcast smart-contract #{address_hash} was verified")
   end
 end
