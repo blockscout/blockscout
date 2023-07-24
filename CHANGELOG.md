@@ -7,6 +7,7 @@
 ### Fixes
 
 - [#7992](https://github.com/blockscout/blockscout/pull/7992) - Fix missing range insert
+- [#8022](https://github.com/blockscout/blockscout/pull/8022) - Don't add reorg block number to missing blocks
 
 ### Chore
 
