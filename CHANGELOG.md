@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#8024](https://github.com/blockscout/blockscout/pull/8024) - Limit token instance retry fetcher
+
 ### Fixes
 
 ### Chore
