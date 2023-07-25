@@ -30,6 +30,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
   alias Indexer.Fetcher.CoinBalance
@@ -310,6 +311,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     case result do
       {:ok, %{inserted: inserted, errors: []}} ->
         log_import_timings(inserted, fetch_duration, time_before)
+        MissingRangesManipulator.clear_batch([block_number_to_fetch..block_number_to_fetch])
         Logger.debug("Fetched and imported.")
 
       {:ok, %{inserted: _, errors: [_ | _] = errors}} ->
