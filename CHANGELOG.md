@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#8040](https://github.com/blockscout/blockscout/pull/8040) - Resolve issue with Docker image for Mac M1/M2
+
 ### Chore
 
 <details>
