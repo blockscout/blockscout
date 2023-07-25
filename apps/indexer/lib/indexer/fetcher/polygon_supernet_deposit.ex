@@ -238,14 +238,7 @@ defmodule Indexer.Fetcher.PolygonSupernetDeposit do
 
       {from, to, l1_timestamp} =
         if Base.encode16(sig, case: :lower) == @deposit_signature do
-          timestamps =
-            events
-            |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
-            |> Enum.reduce(%{}, fn block, acc ->
-              block_number = quantity_to_integer(Map.get(block, "number"))
-              {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
-              Map.put(acc, block_number, timestamp)
-            end)
+          timestamps = get_timestamps_by_events(events, json_rpc_named_arguments)
 
           [_sig, _root_token, sender, receiver, _amount] =
             decode_data(data_bytes, [{:bytes, 32}, :address, :address, :address, {:uint, 256}])
@@ -283,6 +276,16 @@ defmodule Indexer.Fetcher.PolygonSupernetDeposit do
       {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
       {:error, _} -> []
     end
+  end
+
+  defp get_timestamps_by_events(events, json_rpc_named_arguments) do
+    events
+    |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+    |> Enum.reduce(%{}, fn block, acc ->
+      block_number = quantity_to_integer(Map.get(block, "number"))
+      {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
+      Map.put(acc, block_number, timestamp)
+    end)
   end
 
   defp get_last_l1_item do

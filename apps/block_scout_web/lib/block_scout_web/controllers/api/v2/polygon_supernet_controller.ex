@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.V2.PolygonSupernetController do
     ]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{PolygonSupernetDepositExecute}
+  alias Explorer.Chain.{PolygonSupernetDepositExecute, PolygonSupernetWithdrawal}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -33,6 +33,28 @@ defmodule BlockScoutWeb.API.V2.PolygonSupernetController do
 
   def deposits_count(conn, _params) do
     items_count(conn, PolygonSupernetDepositExecute)
+  end
+
+  def withdrawals(conn, params) do
+    {withdrawals, next_page} =
+      params
+      |> paging_options()
+      |> Keyword.put(:api?, true)
+      |> Chain.polygon_supernet_withdrawals()
+      |> split_list_by_page()
+
+    next_page_params = next_page_params(next_page, withdrawals, params)
+
+    conn
+    |> put_status(200)
+    |> render(:polygon_supernet_withdrawals, %{
+      withdrawals: withdrawals,
+      next_page_params: next_page_params
+    })
+  end
+
+  def withdrawals_count(conn, _params) do
+    items_count(conn, PolygonSupernetWithdrawal)
   end
 
   defp items_count(conn, module) do

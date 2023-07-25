@@ -22,6 +22,27 @@ defmodule BlockScoutWeb.API.V2.PolygonSupernetView do
     }
   end
 
+  def render("polygon_supernet_withdrawals.json", %{
+        withdrawals: withdrawals,
+        next_page_params: next_page_params
+      }) do
+    %{
+      items:
+        Enum.map(withdrawals, fn withdrawal ->
+          %{
+            "msg_id" => withdrawal.msg_id,
+            "from" => withdrawal.from,
+            "to" => withdrawal.to,
+            "l2_transaction_hash" => withdrawal.l2_transaction_hash,
+            "l2_timestamp" => withdrawal.l2_timestamp,
+            "success" => withdrawal.success,
+            "l1_transaction_hash" => withdrawal.l1_transaction_hash
+          }
+        end),
+      next_page_params: next_page_params
+    }
+  end
+
   def render("polygon_supernet_items_count.json", %{count: count}) do
     count
   end
