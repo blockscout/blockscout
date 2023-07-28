@@ -13,7 +13,7 @@
       </div>
       <%= if !Application.get_env(:block_scout_web, :hide_block_miner) do %>
         <div class="text-truncate">
-          <%= gettext "Miner" %>
+          <%= gettext "Farmer" %>
           <%= render BlockScoutWeb.AddressView,
             "_link.html",
             address: @block.miner,

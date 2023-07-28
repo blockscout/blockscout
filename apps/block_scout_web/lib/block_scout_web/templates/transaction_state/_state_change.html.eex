@@ -19,7 +19,7 @@
         <dt class="text-muted">
           <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                   text: gettext("A block producer who successfully included the block onto the blockchain.") %>
-          <%= gettext("Miner") %>
+          <%= gettext("Farmer") %>
         </dt>
       </td>
       <td class="stakes-td">
