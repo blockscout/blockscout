@@ -16,7 +16,7 @@ defmodule EthereumJSONRPC.Withdrawals do
       iex> EthereumJSONRPC.Withdrawals.elixir_to_params([
       ...>   %{
       ...>     "address" => "0x388ea662ef2c223ec0b047d41bf3c0f362142ad5",
-      ...>     "amount" => 4040000000000,
+      ...>     "amount" => 1,
       ...>     "index" => 3867,
       ...>     "validatorIndex" => 1721,
       ...>     "blockHash" => "0x7f035c5f3c0678250853a1fde6027def7cac1812667bd0d5ab7ccb94eb8b6f3a",
@@ -26,7 +26,7 @@ defmodule EthereumJSONRPC.Withdrawals do
       [
         %{
           address_hash: "0x388ea662ef2c223ec0b047d41bf3c0f362142ad5",
-          amount: 4040000000000000000000,
+          amount: 31250000,
           block_hash: "0x7f035c5f3c0678250853a1fde6027def7cac1812667bd0d5ab7ccb94eb8b6f3a",
           index: 3867,
           validator_index: 1721,
