@@ -10,7 +10,7 @@
 
 - [#8040](https://github.com/blockscout/blockscout/pull/8040) - Resolve issue with Docker image for Mac M1/M2
 - [#8060](https://github.com/blockscout/blockscout/pull/8060) - Fix eth_getLogs API endpoint
-- [#8082](https://github.com/blockscout/blockscout/pull/8082) - Fix Rootstock charts API
+- [#8082](https://github.com/blockscout/blockscout/pull/8082), [#8088](https://github.com/blockscout/blockscout/pull/8088) - Fix Rootstock charts API
 
 ### Chore
 
