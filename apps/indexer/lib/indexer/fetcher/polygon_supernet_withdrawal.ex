@@ -130,7 +130,7 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
     fill_block_range(start_block, safe_block, state_sender, json_rpc_named_arguments)
 
     # find and fill all events between "safe" and "latest" block (excluding "safe")
-    {:ok, latest_block} = PolygonSupernet.get_block_number_by_tag("latest", json_rpc_named_arguments)
+    {:ok, latest_block} = PolygonSupernet.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
     fill_block_range(safe_block + 1, latest_block, state_sender, json_rpc_named_arguments)
 
     {:stop, :normal, state}
@@ -230,7 +230,7 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
             state_sender,
             @l2_state_synced_event,
             json_rpc_named_arguments,
-            3
+            100_000_000
           )
 
         Enum.map(result, fn event ->
