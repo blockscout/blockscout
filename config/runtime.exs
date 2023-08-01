@@ -630,6 +630,15 @@ config :indexer, Indexer.Fetcher.Zkevm.TransactionBatch.Supervisor,
     System.get_env("CHAIN_TYPE", "ethereum") == "polygon_zkevm" &&
       ConfigHelper.parse_bool_env_var("INDEXER_ZKEVM_BATCHES_ENABLED")
 
+      config :indexer, Indexer.Fetcher.RootstockData.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ROOTSTOCK_DATA_FETCHER")
+
+config :indexer, Indexer.Fetcher.RootstockData,
+  interval: ConfigHelper.parse_time_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_INTERVAL", "3s"),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_BATCH_SIZE", 10),
+  max_concurrency: ConfigHelper.parse_integer_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_CONCURRENCY", 5),
+  db_batch_size: ConfigHelper.parse_integer_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_DB_BATCH_SIZE", 300)
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do

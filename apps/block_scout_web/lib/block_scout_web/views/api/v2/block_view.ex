@@ -61,6 +61,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "tx_fees" => tx_fees,
       "withdrawals_count" => count_withdrawals(block)
     }
+    |> add_rootstock_fields(block, single_block?)
   end
 
   def prepare_rewards(rewards, block, single_block?) do
@@ -115,4 +116,15 @@ defmodule BlockScoutWeb.API.V2.BlockView do
 
   def count_withdrawals(%Block{withdrawals: withdrawals}) when is_list(withdrawals), do: Enum.count(withdrawals)
   def count_withdrawals(_), do: nil
+
+  defp add_rootstock_fields(prepared_block, _block, false), do: prepared_block
+
+  defp add_rootstock_fields(prepared_block, block, true) do
+    prepared_block
+    |> Map.put("minimum_gas_price", block.minimum_gas_price)
+    |> Map.put("bitcoin_merged_mining_header", block.bitcoin_merged_mining_header)
+    |> Map.put("bitcoin_merged_mining_coinbase_transaction", block.bitcoin_merged_mining_coinbase_transaction)
+    |> Map.put("bitcoin_merged_mining_merkle_proof", block.bitcoin_merged_mining_merkle_proof)
+    |> Map.put("hash_for_merged_mining", block.hash_for_merged_mining)
+  end
 end

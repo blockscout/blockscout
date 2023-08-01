@@ -10,7 +10,7 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Chain.{Address, Block, Gas, Hash, PendingBlockOperation, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
-  @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
+  @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas minimum_gas_price bitcoin_merged_mining_header bitcoin_merged_mining_coinbase_transaction bitcoin_merged_mining_merkle_proof hash_for_merged_mining)a
 
   @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
@@ -65,7 +65,12 @@ defmodule Explorer.Chain.Block do
           transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()],
           refetch_needed: boolean(),
           base_fee_per_gas: Wei.t(),
-          is_empty: boolean()
+          is_empty: boolean(),
+          minimum_gas_price: Decimal.t(),
+          bitcoin_merged_mining_header: binary(),
+          bitcoin_merged_mining_coinbase_transaction: binary(),
+          bitcoin_merged_mining_merkle_proof: binary(),
+          hash_for_merged_mining: binary()
         }
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -82,6 +87,11 @@ defmodule Explorer.Chain.Block do
     field(:refetch_needed, :boolean)
     field(:base_fee_per_gas, Wei)
     field(:is_empty, :boolean)
+    field(:minimum_gas_price, :decimal)
+    field(:bitcoin_merged_mining_header, :binary)
+    field(:bitcoin_merged_mining_coinbase_transaction, :binary)
+    field(:bitcoin_merged_mining_merkle_proof, :binary)
+    field(:hash_for_merged_mining, :binary)
 
     timestamps()
 
@@ -159,4 +169,24 @@ defmodule Explorer.Chain.Block do
   end
 
   def block_type_filter(query, "Uncle"), do: where(query, [block], block.consensus == false)
+
+  @doc """
+  Returns query that fetches up to `limit` of consensus blocks
+  that are missing rootstock data ordered by number desc.
+  """
+  @spec blocks_without_rootstock_data_query(non_neg_integer()) :: Ecto.Query.t()
+  def blocks_without_rootstock_data_query(limit) do
+    from(
+      block in __MODULE__,
+      where:
+        is_nil(block.minimum_gas_price) or
+          is_nil(block.bitcoin_merged_mining_header) or
+          is_nil(block.bitcoin_merged_mining_coinbase_transaction) or
+          is_nil(block.bitcoin_merged_mining_merkle_proof) or
+          is_nil(block.hash_for_merged_mining),
+      where: block.consensus == true,
+      limit: ^limit,
+      order_by: [desc: block.number]
+    )
+  end
 end
