@@ -58,8 +58,6 @@ jobs:
           mix local.rebar --force
           mix deps.get
           mix deps.compile
-          cd deps/libsecp256k1
-          make
 
       - name: Restore Explorer NPM Cache
         uses: actions/cache@v2

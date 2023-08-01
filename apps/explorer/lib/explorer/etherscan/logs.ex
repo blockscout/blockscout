@@ -248,16 +248,14 @@ defmodule Explorer.Etherscan.Logs do
 
   defp where_multiple_topics_match(query, _, _, _), do: query
 
-  defp page_logs(query, %{block_number: nil, transaction_index: nil, log_index: nil}) do
+  defp page_logs(query, %{block_number: nil, log_index: nil}) do
     query
   end
 
-  defp page_logs(query, %{block_number: block_number, transaction_index: transaction_index, log_index: log_index}) do
+  defp page_logs(query, %{block_number: block_number, log_index: log_index}) do
     from(
       data in query,
-      where:
-        data.index > ^log_index and data.block_number >= ^block_number and
-          data.transaction_index >= ^transaction_index
+      where: data.index > ^log_index and data.block_number >= ^block_number
     )
   end
 
