@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#6190](https://github.com/blockscout/blockscout/pull/6190) - Add EIP-1559 support to gas price oracle
+
 ### Fixes
 
 - [#8040](https://github.com/blockscout/blockscout/pull/8040) - Resolve issue with Docker image for Mac M1/M2
