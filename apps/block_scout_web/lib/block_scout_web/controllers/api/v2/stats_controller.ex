@@ -94,7 +94,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     exchange_rate = Market.get_coin_exchange_rate()
 
     recent_market_history = Market.fetch_recent_history()
-    current_total_supply = available_supply(Chain.supply_for_days(), exchange_rate)
+    current_total_supply = MarketHistoryChartController.available_supply(Chain.supply_for_days(), exchange_rate)
 
     price_history_data =
       recent_market_history
@@ -121,24 +121,5 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       # todo: remove when new frontend is ready to use data from chart_data property only
       available_supply: current_total_supply
     })
-  end
-
-  defp available_supply(:ok, exchange_rate), do: exchange_rate.available_supply || 0
-
-  defp available_supply({:ok, supply_for_days}, _exchange_rate) do
-    supply_for_days
-    |> Jason.encode()
-    |> case do
-      {:ok, _data} ->
-        current_date =
-          supply_for_days
-          |> Map.keys()
-          |> Enum.max(Date)
-
-        Map.get(supply_for_days, current_date)
-
-      _ ->
-        nil
-    end
   end
 end
