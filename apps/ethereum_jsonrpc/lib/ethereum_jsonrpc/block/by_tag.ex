@@ -5,6 +5,7 @@ defmodule EthereumJSONRPC.Block.ByTag do
   """
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  alias EthereumJSONRPC.Blocks
 
   def request(%{id: id, tag: tag}) when is_binary(tag) do
     EthereumJSONRPC.request(%{id: id, method: "eth_getBlockByNumber", params: [tag, false]})
@@ -15,6 +16,10 @@ defmodule EthereumJSONRPC.Block.ByTag do
   def number_from_result({:ok, %{"number" => quantity}}) when is_binary(quantity) do
     {:ok, quantity_to_integer(quantity)}
   end
+
+  def number_from_result({:ok, %Blocks{blocks_params: []}}), do: {:error, :not_found}
+
+  def number_from_result({:ok, %Blocks{blocks_params: [%{number: number}]}}), do: {:ok, number}
 
   def number_from_result({:ok, nil}), do: {:error, :not_found}
 

@@ -282,11 +282,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     query =
       from(
         block in Block,
-        where: block.number in ^block_numbers and block.consensus,
+        where: block.number in ^block_numbers and block.consensus == true,
         select: block.hash,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: block.hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     {:ok, repo.all(query)}
@@ -314,7 +314,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         select: map(t, [:hash, :block_hash, :block_number, :cumulative_gas_used]),
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: t.hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     {:ok, repo.all(query)}
@@ -672,7 +672,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       update_query =
         from(
           block in Block,
-          where: block.number in ^invalid_block_numbers and block.consensus,
+          where: block.number in ^invalid_block_numbers and block.consensus == true,
           where: block.number > ^minimal_block,
           select: block.hash,
           # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
