@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.API.V2.ImportControllerTest do
 
       Application.put_env(:block_scout_web, :sensitive_endpoints_api_key, api_key)
 
-      token_address = to_string(insert(:token).contract_address_hash)
+      token_address = to_string(insert(:token, icon_url: nil).contract_address_hash)
 
       body = %{"iconUrl" => icon_url, "tokenAddress" => token_address}
 

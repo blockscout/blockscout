@@ -3,7 +3,7 @@
 :0: Unknown type 'Elixir.Map':t/0
 :0: Unknown type 'Elixir.Hash':t/0
 :0: Unknown type 'Elixir.Address':t/0
-lib/ethereum_jsonrpc/rolling_window.ex:173
+lib/ethereum_jsonrpc/rolling_window.ex:171
 lib/explorer/smart_contract/solidity/publisher_worker.ex:1
 lib/explorer/smart_contract/vyper/publisher_worker.ex:1
 lib/explorer/smart_contract/solidity/publisher_worker.ex:6
