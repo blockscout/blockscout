@@ -30,6 +30,14 @@ server {
         proxy_pass          http://backend:4000;
     }
 
+    location /auth {
+        proxy_pass http://backend:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+    }
+
     location /socket {
         proxy_pass http://backend:4000;
         proxy_http_version 1.1;
