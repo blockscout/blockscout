@@ -14,6 +14,8 @@
 
 ### Chore
 
+- [#8100](https://github.com/blockscout/blockscout/pull/8100) - Extend docker-compose configs with new config when front is running externally
+
 <details>
   <summary>Dependencies version bumps</summary>
 
