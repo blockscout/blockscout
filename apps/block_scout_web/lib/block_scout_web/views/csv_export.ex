@@ -15,14 +15,10 @@ defmodule BlockScoutWeb.CsvExportView do
     end
   end
 
+  defp type_download_path(nil), do: ""
+
   defp type_download_path(type) do
-    case type do
-      "internal-transactions" -> :internal_transactions_csv
-      "transactions" -> :transactions_csv
-      "token-transfers" -> :token_transfers_csv
-      "logs" -> :logs_csv
-      _ -> ""
-    end
+    type <> "-csv"
   end
 
   defp address_checksum(address_hash_string) do
