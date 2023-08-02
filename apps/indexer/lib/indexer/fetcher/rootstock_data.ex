@@ -126,7 +126,7 @@ defmodule Indexer.Fetcher.RootstockData do
     end
   end
 
-  defp fetch_blocks(%__MODULE__{db_batch_size: db_batch_size} = state) do
+  defp fetch_blocks(%__MODULE__{db_batch_size: db_batch_size, interval: interval} = state) do
     blocks_to_fetch = db_batch_size |> Block.blocks_without_rootstock_data_query() |> Repo.all()
 
     if Enum.empty?(blocks_to_fetch) do
@@ -139,6 +139,8 @@ defmodule Indexer.Fetcher.RootstockData do
       Logger.info(
         "Rootstock data will now be fetched for #{Enum.count(blocks_to_fetch)} blocks starting from #{max_number}."
       )
+
+      Process.send_after(self(), :fetch_rootstock_data, interval)
 
       {:noreply, %__MODULE__{state | blocks_to_fetch: blocks_to_fetch}}
     end
