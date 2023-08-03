@@ -82,6 +82,7 @@ jobs:
         production-xdai-stg
         production-polygon-supernets-stg
         production-rsk-stg
+        production-immutable-stg
     steps:
     - uses: actions/checkout@v2
     - name: Set Git config
