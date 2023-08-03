@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Explorer.Helper, only: [decode_data: 2, parse_integer: 1]
+  import Indexer.Fetcher.PolygonSupernet, only: [get_block_number_by_tag: 3]
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Log, PolygonSupernetWithdrawal}
@@ -54,7 +55,7 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
          false <- is_nil(start_block_l2),
          true <- start_block_l2 > 0,
          {last_l2_block_number, last_l2_transaction_hash} <- get_last_l2_item(),
-         {:ok, safe_block} = PolygonSupernet.get_block_number_by_tag("safe", json_rpc_named_arguments),
+         {safe_block, safe_block_is_latest} = get_safe_block(json_rpc_named_arguments),
          {:start_block_l2_valid, true} <-
            {:start_block_l2_valid,
             (start_block_l2 <= last_l2_block_number || last_l2_block_number == 0) && start_block_l2 <= safe_block},
@@ -68,6 +69,7 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
          start_block: max(start_block_l2, last_l2_block_number),
          start_block_l2: start_block_l2,
          safe_block: safe_block,
+         safe_block_is_latest: safe_block_is_latest,
          state_sender: env[:state_sender],
          json_rpc_named_arguments: json_rpc_named_arguments
        }}
@@ -122,16 +124,20 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
         %{
           start_block: start_block,
           safe_block: safe_block,
+          safe_block_is_latest: safe_block_is_latest,
           state_sender: state_sender,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
     # find and fill all events between start_block and "safe" block
+    # the "safe" block can be "latest" (when safe_block_is_latest == true)
     fill_block_range(start_block, safe_block, state_sender, json_rpc_named_arguments)
 
-    # find and fill all events between "safe" and "latest" block (excluding "safe")
-    {:ok, latest_block} = PolygonSupernet.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-    fill_block_range(safe_block + 1, latest_block, state_sender, json_rpc_named_arguments)
+    if not safe_block_is_latest do
+      # find and fill all events between "safe" and "latest" block (excluding "safe")
+      {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+      fill_block_range(safe_block + 1, latest_block, state_sender, json_rpc_named_arguments)
+    end
 
     {:stop, :normal, state}
   end
@@ -154,7 +160,7 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
     {from, to} =
       if Base.encode16(sig, case: :lower) == @withdrawal_signature do
         [_sig, _root_token, sender, receiver, _amount] =
-          decode_data(data_bytes, [{:bytes, 32}, :address, :address, :address, {:uint, 256}])
+          ABI.TypeDecoder.decode_raw(data_bytes, [{:bytes, 32}, :address, :address, :address, {:uint, 256}])
 
         {sender, receiver}
       else
@@ -168,6 +174,17 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
       l2_transaction_hash: l2_transaction_hash,
       l2_block_number: quantity_to_integer(l2_block_number)
     }
+  end
+
+  defp get_safe_block(json_rpc_named_arguments) do
+    case get_block_number_by_tag("safe", json_rpc_named_arguments, 3) do
+      {:ok, safe_block} ->
+        {safe_block, false}
+
+      {:error, :not_found} ->
+        {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+        {latest_block, true}
+    end
   end
 
   defp msg_id_gap_starts(id_max) do
