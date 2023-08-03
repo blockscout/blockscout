@@ -723,13 +723,18 @@ defmodule Explorer.Chain do
 
   def txn_fees(transactions) do
     Enum.reduce(transactions, Decimal.new(0), fn %{gas_used: gas_used, gas_price: gas_price}, acc ->
-      gas_used
-      |> Decimal.new()
-      |> Decimal.mult(gas_price_to_decimal(gas_price))
-      |> Decimal.add(acc)
+      if gas_price do
+        gas_used
+        |> Decimal.new()
+        |> Decimal.mult(gas_price_to_decimal(gas_price))
+        |> Decimal.add(acc)
+      else
+        acc
+      end
     end)
   end
 
+  defp gas_price_to_decimal(nil), do: nil
   defp gas_price_to_decimal(%Wei{} = wei), do: wei.value
   defp gas_price_to_decimal(gas_price), do: Decimal.new(gas_price)
 
@@ -1119,6 +1124,8 @@ defmodule Explorer.Chain do
 
   """
   @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t()}
+  def fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
+
   def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
     fee =
       gas_price
@@ -1127,6 +1134,8 @@ defmodule Explorer.Chain do
 
     {:maximum, fee}
   end
+
+  def fee(%Transaction{gas_price: nil, gas_used: _gas_used}, _unit), do: {:actual, nil}
 
   def fee(%Transaction{gas_price: gas_price, gas_used: gas_used}, unit) do
     fee =
