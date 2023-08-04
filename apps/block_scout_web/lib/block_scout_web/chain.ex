@@ -48,7 +48,7 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  @page_size 50
+  @page_size 10
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @address_hash_len 40
   @tx_block_hash_len 64
@@ -528,6 +528,11 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%StateChange{}) do
     %{"state_changes" => nil}
+  end
+
+  # clause for Polygon Supernet Deposits and Withdrawals
+  defp paging_params(%{msg_id: msg_id}) do
+    %{"id" => msg_id}
   end
 
   defp paging_params_with_fiat_value(%CurrentTokenBalance{id: id, value: value} = ctb) do

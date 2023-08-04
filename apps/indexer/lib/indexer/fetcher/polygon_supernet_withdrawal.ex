@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Explorer.Helper, only: [decode_data: 2, parse_integer: 1]
-  import Indexer.Fetcher.PolygonSupernet, only: [get_block_number_by_tag: 3]
+  import Indexer.Fetcher.PolygonSupernet, only: [get_block_number_by_tag: 3, get_safe_block: 1]
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Log, PolygonSupernetWithdrawal}
@@ -174,17 +174,6 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
       l2_transaction_hash: l2_transaction_hash,
       l2_block_number: quantity_to_integer(l2_block_number)
     }
-  end
-
-  defp get_safe_block(json_rpc_named_arguments) do
-    case get_block_number_by_tag("safe", json_rpc_named_arguments, 3) do
-      {:ok, safe_block} ->
-        {safe_block, false}
-
-      {:error, :not_found} ->
-        {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-        {latest_block, true}
-    end
   end
 
   defp msg_id_gap_starts(id_max) do

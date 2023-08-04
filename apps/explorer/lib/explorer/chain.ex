@@ -6378,7 +6378,7 @@ defmodule Explorer.Chain do
       from(
         w in PolygonSupernetWithdrawal,
         left_join: we in PolygonSupernetWithdrawalExit,
-        on: we.msg_id == w.msg_id and not is_nil(w.from),
+        on: we.msg_id == w.msg_id,
         left_join: b in Block,
         on: b.number == w.l2_block_number and b.consensus == true,
         select: %{
@@ -6390,6 +6390,7 @@ defmodule Explorer.Chain do
           success: we.success,
           l1_transaction_hash: we.l1_transaction_hash
         },
+        where: not is_nil(w.from),
         order_by: [desc: w.msg_id]
       )
 
@@ -6397,6 +6398,16 @@ defmodule Explorer.Chain do
     |> page_polygon_supernet_withdrawals(paging_options)
     |> limit(^paging_options.page_size)
     |> select_repo(options).all()
+  end
+
+  def polygon_supernet_withdrawals_count(options \\ []) do
+    query =
+      from(
+        w in PolygonSupernetWithdrawal,
+        where: not is_nil(w.from)
+      )
+
+    select_repo(options).aggregate(query, :count, timeout: :infinity)
   end
 
   def polygon_supernet_deposit_by_transaction_hash(hash) do

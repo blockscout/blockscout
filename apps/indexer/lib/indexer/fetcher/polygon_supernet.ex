@@ -87,8 +87,9 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   end
 
   def get_block_check_interval(json_rpc_named_arguments) do
-    with {:ok, last_safe_block} <- get_block_number_by_tag("safe", json_rpc_named_arguments),
-         first_block = max(last_safe_block - @block_check_interval_range_size, 1),
+    {last_safe_block, _} = get_safe_block(json_rpc_named_arguments)
+
+    with first_block = max(last_safe_block - @block_check_interval_range_size, 1),
          {:ok, first_block_timestamp} <- get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
          {:ok, last_safe_block_timestamp} <- get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
       block_check_interval =
@@ -132,6 +133,17 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     args = [number, json_rpc_named_arguments]
     error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"
     repeated_call(func, args, error_message, retries)
+  end
+
+  def get_safe_block(json_rpc_named_arguments) do
+    case get_block_number_by_tag("safe", json_rpc_named_arguments, 3) do
+      {:ok, safe_block} ->
+        {safe_block, false}
+
+      {:error, :not_found} ->
+        {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+        {latest_block, true}
+    end
   end
 
   def get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments, retries) do
