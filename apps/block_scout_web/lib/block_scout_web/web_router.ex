@@ -493,9 +493,10 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/csv-export", CsvExportController, :index)
 
-    get("/transactions-csv", AddressTransactionController, :transactions_csv)
-
     get("/token-autocomplete", ChainController, :token_autocomplete)
+
+    # todo: remove once frontend will migrate to /api/v1/... path
+    get("/transactions-csv", AddressTransactionController, :transactions_csv)
 
     get("/token-transfers-csv", AddressTransactionController, :token_transfers_csv)
 
