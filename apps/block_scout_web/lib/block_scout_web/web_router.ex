@@ -495,6 +495,15 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/token-autocomplete", ChainController, :token_autocomplete)
 
+    # todo: remove once frontend will migrate to /api/v1/... path
+    get("/transactions-csv", AddressTransactionController, :transactions_csv)
+
+    get("/token-transfers-csv", AddressTransactionController, :token_transfers_csv)
+
+    get("/internal-transactions-csv", AddressTransactionController, :internal_transactions_csv)
+
+    get("/logs-csv", AddressTransactionController, :logs_csv)
+
     get("/chain-blocks", ChainController, :chain_blocks, as: :chain_blocks)
 
     get("/token-counters", Tokens.TokenController, :token_counters)
