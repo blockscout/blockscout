@@ -14,7 +14,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   alias EthereumJSONRPC.Block.ByNumber
   alias Explorer.Chain.Events.Publisher
   alias Indexer.BoundQueue
-  alias Indexer.Fetcher.PolygonSupernetWithdrawalExit
+  alias Indexer.Fetcher.{PolygonSupernetDeposit, PolygonSupernetWithdrawalExit}
 
   @fetcher_name :polygon_supernet
   @block_check_interval_range_size 100
@@ -39,7 +39,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   def init(_args) do
     Logger.metadata(fetcher: @fetcher_name)
 
-    modules_using_reorg_monitor = [PolygonSupernetWithdrawalExit]
+    modules_using_reorg_monitor = [PolygonSupernetDeposit, PolygonSupernetWithdrawalExit]
 
     reorg_monitor_not_needed =
       modules_using_reorg_monitor

@@ -241,7 +241,7 @@ defmodule Indexer.Fetcher.PolygonSupernetDeposit do
           timestamps = get_timestamps_by_events(events, json_rpc_named_arguments)
 
           [_sig, _root_token, sender, receiver, _amount] =
-            decode_data(data_bytes, [{:bytes, 32}, :address, :address, :address, {:uint, 256}])
+            ABI.TypeDecoder.decode_raw(data_bytes, [{:bytes, 32}, :address, :address, :address, {:uint, 256}])
 
           {sender, receiver, Map.get(timestamps, l1_block_number)}
         else

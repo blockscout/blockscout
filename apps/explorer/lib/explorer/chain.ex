@@ -6371,6 +6371,17 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
+  def polygon_supernet_deposits_count(options \\ []) do
+    query =
+      from(
+        de in PolygonSupernetDepositExecute,
+        inner_join: d in PolygonSupernetDeposit,
+        on: d.msg_id == de.msg_id and not is_nil(d.l1_timestamp)
+      )
+
+    select_repo(options).aggregate(query, :count, timeout: :infinity)
+  end
+
   def polygon_supernet_withdrawals(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
