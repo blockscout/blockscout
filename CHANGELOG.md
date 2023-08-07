@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#8122](https://github.com/blockscout/blockscout/pull/8122) - Ignore previously handled frame by OP transaction batches module
+
 ### Chore
 
 <details>
