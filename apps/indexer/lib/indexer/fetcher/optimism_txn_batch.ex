@@ -523,6 +523,11 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         put_future_frame(current_channel_id, future_frame)
         {:cont, {:ok, batches, sequences, incomplete_frame_sequence, last_channel_id, current_channel_id}}
 
+      frame.number < last_frame_number && frame.channel_id == current_channel_id &&
+          :binary.match(incomplete_frame_sequence.bytes, frame.data) != :nomatch ->
+        # ignore the frame (with the same channel id) which has already been concatenated before
+        {:cont, {:ok, batches, sequences, incomplete_frame_sequence, last_channel_id, current_channel_id}}
+
       frame.number == last_frame_number && frame.channel_id == current_channel_id ->
         # ignore duplicated frame
         {:cont, {:ok, batches, sequences, incomplete_frame_sequence, last_channel_id, current_channel_id}}
