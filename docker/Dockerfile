@@ -37,7 +37,7 @@ RUN mix do deps.get, local.rebar --force, deps.compile
 ADD apps ./apps
 ADD config ./config
 ADD rel ./rel
-ADD *.exs .
+ADD *.exs ./
 
 RUN apk add --update nodejs npm
 

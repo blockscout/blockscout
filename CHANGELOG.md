@@ -5,6 +5,7 @@
 ### Features
 
 - [#6190](https://github.com/blockscout/blockscout/pull/6190) - Add EIP-1559 support to gas price oracle
+- [#7977](https://github.com/blockscout/blockscout/pull/7977) - GraphQL: extend schema with new field for existing objects
 
 ### Fixes
 
@@ -14,7 +15,9 @@
 
 ### Chore
 
-- [#8100](https://github.com/blockscout/blockscout/pull/8100) - Extend docker-compose configs with new config when front is running externally
+- [#8105](https://github.com/blockscout/blockscout/pull/8105) - Extend API v1 with endpoints used by new UI
+- [#8104](https://github.com/blockscout/blockscout/pull/8104) - remove "TODO" from API v2 response
+- [#8100](https://github.com/blockscout/blockscout/pull/8100), [#8103](https://github.com/blockscout/blockscout/pull/8103) - Extend docker-compose configs with new config when front is running externally
 
 <details>
   <summary>Dependencies version bumps</summary>

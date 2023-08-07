@@ -12,6 +12,7 @@ on:
       - production-sokol-stg
       - production-rsk-stg
       - production-lukso-stg
+      - production-immutable-stg
       - staging-l2
   pull_request:
     branches:
