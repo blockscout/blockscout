@@ -253,13 +253,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp determine_start_at(number, nil), do: number
 
+  @max_concurrency 10
   defp determine_start_at(number, previous_number) do
     if reorg?(number, previous_number) do
       # set start_at to NOT fill in skipped numbers
       number
     else
       # set start_at to fill in skipped numbers, if any
-      previous_number + 1
+      max(previous_number + 1, number - @max_concurrency)
     end
   end
 
