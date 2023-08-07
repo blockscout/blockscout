@@ -12,6 +12,7 @@
 - [#8040](https://github.com/blockscout/blockscout/pull/8040) - Resolve issue with Docker image for Mac M1/M2
 - [#8060](https://github.com/blockscout/blockscout/pull/8060) - Fix eth_getLogs API endpoint
 - [#8082](https://github.com/blockscout/blockscout/pull/8082), [#8088](https://github.com/blockscout/blockscout/pull/8088) - Fix Rootstock charts API
+- [#7959](https://github.com/blockscout/blockscout/pull/7959) - Fix empty batch transfers handling
 
 ### Chore
 
@@ -57,7 +58,6 @@
 - [#7855](https://github.com/blockscout/blockscout/pull/7855) - Handle internal transactions unique_violation
 - [#7899](https://github.com/blockscout/blockscout/pull/7899) - Fix catchup numbers_to_ranges function
 - [#7951](https://github.com/blockscout/blockscout/pull/7951) - Fix TX url in email notifications on mainnet
-- [#7959](https://github.com/blockscout/blockscout/pull/7959) - Fix empty batch transfers handling
 
 ### Chore
 
