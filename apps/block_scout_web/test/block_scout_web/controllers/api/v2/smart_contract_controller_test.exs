@@ -2394,6 +2394,107 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       check_paginated_response(response, response_2nd_page, smart_contracts)
     end
+
+    test "ignores wrong ordering params", %{conn: conn} do
+      smart_contracts =
+        for _ <- 0..50 do
+          insert(:smart_contract)
+        end
+
+      ordering_params = %{"sort" => "foo", "order" => "bar"}
+
+      request = get(conn, "/api/v2/smart-contracts", ordering_params)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, smart_contracts)
+    end
+
+    test "can order by balance ascending", %{conn: conn} do
+      smart_contracts =
+        for i <- 0..50 do
+          address = insert(:address, fetched_coin_balance: i)
+          insert(:smart_contract, address_hash: address.hash, address: address)
+        end
+        |> Enum.reverse()
+
+      ordering_params = %{"sort" => "balance", "order" => "asc"}
+
+      request = get(conn, "/api/v2/smart-contracts", ordering_params)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, smart_contracts)
+    end
+
+    test "can order by balance descending", %{conn: conn} do
+      smart_contracts =
+        for i <- 0..50 do
+          address = insert(:address, fetched_coin_balance: i)
+          insert(:smart_contract, address_hash: address.hash, address: address)
+        end
+
+      ordering_params = %{"sort" => "balance", "order" => "desc"}
+
+      request = get(conn, "/api/v2/smart-contracts", ordering_params)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, smart_contracts)
+    end
+
+    test "can order by transaction count ascending", %{conn: conn} do
+      smart_contracts =
+        for i <- 0..50 do
+          address = insert(:address, transactions_count: i)
+          insert(:smart_contract, address_hash: address.hash, address: address)
+        end
+        |> Enum.reverse()
+
+      ordering_params = %{"sort" => "txs_count", "order" => "asc"}
+
+      request = get(conn, "/api/v2/smart-contracts", ordering_params)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, smart_contracts)
+    end
+
+    test "can order by transaction count descending", %{conn: conn} do
+      smart_contracts =
+        for i <- 0..50 do
+          address = insert(:address, transactions_count: i)
+          insert(:smart_contract, address_hash: address.hash, address: address)
+        end
+
+      ordering_params = %{"sort" => "txs_count", "order" => "desc"}
+
+      request = get(conn, "/api/v2/smart-contracts", ordering_params)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, smart_contracts)
+    end
   end
 
   describe "/smart-contracts/counters" do

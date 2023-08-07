@@ -2,8 +2,8 @@ defmodule Explorer.Chain.SmartContractTest do
   use Explorer.DataCase, async: false
 
   import Mox
-  alias Explorer.Chain
-  alias Explorer.Chain.SmartContract
+  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain.{Hash, SmartContract}
 
   doctest Explorer.Chain.SmartContract
 
@@ -294,6 +294,66 @@ defmodule Explorer.Chain.SmartContractTest do
       verify!(EthereumJSONRPC.Mox)
 
       assert_implementation_never_fetched(smart_contract.address_hash)
+    end
+  end
+
+  describe "verified_contracts/2" do
+    test "without contracts" do
+      assert [] = SmartContract.verified_contracts()
+    end
+
+    test "with contracts" do
+      %SmartContract{address_hash: hash} = insert(:smart_contract)
+
+      assert [%SmartContract{address_hash: ^hash}] = SmartContract.verified_contracts()
+    end
+
+    test "with contracts can be paginated" do
+      second_page_contracts_ids =
+        50
+        |> insert_list(:smart_contract)
+        |> Enum.map(& &1.id)
+
+      contract = insert(:smart_contract)
+
+      assert second_page_contracts_ids ==
+               [paging_options: %PagingOptions{key: %{id: contract.id}, page_size: 50}]
+               |> SmartContract.verified_contracts()
+               |> Enum.map(& &1.id)
+               |> Enum.reverse()
+    end
+
+    test "filters solidity" do
+      insert(:smart_contract, is_vyper_contract: true)
+      %SmartContract{address_hash: hash} = insert(:smart_contract, is_vyper_contract: false)
+
+      assert [%SmartContract{address_hash: ^hash}] = SmartContract.verified_contracts(filter: :solidity)
+    end
+
+    test "filters vyper" do
+      insert(:smart_contract, is_vyper_contract: false)
+      %SmartContract{address_hash: hash} = insert(:smart_contract, is_vyper_contract: true)
+
+      assert [%SmartContract{address_hash: ^hash}] = SmartContract.verified_contracts(filter: :vyper)
+    end
+
+    test "search by address" do
+      insert(:smart_contract)
+      insert(:smart_contract)
+      insert(:smart_contract)
+      %SmartContract{address_hash: hash} = insert(:smart_contract)
+
+      assert [%SmartContract{address_hash: ^hash}] = SmartContract.verified_contracts(search: Hash.to_string(hash))
+    end
+
+    test "search by name" do
+      insert(:smart_contract)
+      insert(:smart_contract)
+      insert(:smart_contract)
+      contract_name = "qwertyufhgkhiop"
+      %SmartContract{address_hash: hash} = insert(:smart_contract, name: contract_name)
+
+      assert [%SmartContract{address_hash: ^hash}] = SmartContract.verified_contracts(search: contract_name)
     end
   end
 

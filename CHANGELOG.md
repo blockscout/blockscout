@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#8611](https://github.com/blockscout/blockscout/pull/8611) - Implement sorting of smart contracts, address transactions
+
 ### Fixes
 
 - [#8752](https://github.com/blockscout/blockscout/pull/8752) - Add `TOKEN_INSTANCE_OWNER_MIGRATION_ENABLED` env

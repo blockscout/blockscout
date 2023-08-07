@@ -593,6 +593,24 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
+    test "ignores wrong ordering params", %{conn: conn} do
+      tokens =
+        for i <- 0..50 do
+          insert(:token, fiat_value: i)
+        end
+        |> Enum.reverse()
+
+      request = get(conn, "/api/v2/tokens", %{"sort" => "foo", "order" => "bar"})
+
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/tokens", %{"sort" => "foo", "order" => "bar"} |> Map.merge(response["next_page_params"]))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+      check_paginated_response(response, response_2nd_page, tokens)
+    end
+
     test "tokens are filtered by single type", %{conn: conn} do
       erc_20_tokens =
         for i <- 0..50 do

@@ -8,17 +8,24 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       token_transfers_next_page_params: 3,
       paging_options: 1,
       split_list_by_page: 1,
-      current_filter: 1
+      current_filter: 1,
+      paging_params_with_fiat_value: 1
     ]
 
   import BlockScoutWeb.PagingHelper,
-    only: [delete_parameters_from_next_page_params: 1, token_transfers_types_options: 1, nft_token_types_options: 1]
+    only: [
+      delete_parameters_from_next_page_params: 1,
+      token_transfers_types_options: 1,
+      address_transactions_sorting: 1,
+      nft_token_types_options: 1
+    ]
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Token.Instance
+  alias Explorer.Chain.Transaction
   alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
 
   @transaction_necessity_by_association [
@@ -114,11 +121,18 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         @transaction_necessity_by_association
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
+        |> Keyword.merge(address_transactions_sorting(params))
 
-      results_plus_one = Chain.address_to_transactions_without_rewards(address_hash, options, false)
+      results_plus_one = Transaction.address_to_transactions_without_rewards(address_hash, options, false)
       {transactions, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
+      next_page_params =
+        next_page
+        |> next_page_params(
+          transactions,
+          delete_parameters_from_next_page_params(params),
+          &Transaction.address_transactions_next_page_params/1
+        )
 
       conn
       |> put_status(200)
@@ -348,7 +362,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> next_page_params(
           tokens,
           delete_parameters_from_next_page_params(params),
-          &BlockScoutWeb.Chain.paging_params_with_fiat_value/1
+          &paging_params_with_fiat_value/1
         )
 
       conn

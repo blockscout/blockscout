@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   import BlockScoutWeb.PagingHelper,
-    only: [current_filter: 1, delete_parameters_from_next_page_params: 1, search_query: 1]
+    only: [current_filter: 1, delete_parameters_from_next_page_params: 1, search_query: 1, smart_contracts_sorting: 1]
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
   import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
@@ -192,13 +192,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   def smart_contracts_list(conn, params) do
     full_options =
-      [necessity_by_association: %{[address: :token] => :optional, [address: :names] => :optional}]
+      [necessity_by_association: %{[address: :token] => :optional, [address: :names] => :optional, address: :required}]
       |> Keyword.merge(paging_options(params))
       |> Keyword.merge(current_filter(params))
       |> Keyword.merge(search_query(params))
+      |> Keyword.merge(smart_contracts_sorting(params))
       |> Keyword.merge(@api_true)
 
-    smart_contracts_plus_one = Chain.verified_contracts(full_options)
+    smart_contracts_plus_one = SmartContract.verified_contracts(full_options)
     {smart_contracts, next_page} = split_list_by_page(smart_contracts_plus_one)
 
     next_page_params =

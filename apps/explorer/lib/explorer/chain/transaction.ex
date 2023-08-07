@@ -5,14 +5,12 @@ defmodule Explorer.Chain.Transaction do
 
   require Logger
 
-  import Ecto.Query, only: [from: 2, preload: 3, subquery: 1, where: 3]
-
   alias ABI.FunctionSelector
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
 
   alias Explorer.Chain.{
     Address,
@@ -31,8 +29,10 @@ defmodule Explorer.Chain.Transaction do
     Wei
   }
 
+  alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Transaction.{Fork, Status}
   alias Explorer.Chain.Zkevm.BatchTransaction
+  alias Explorer.{PagingOptions, SortingHelper}
   alias Explorer.SmartContract.SigProviderInterface
 
   @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
@@ -1212,4 +1212,434 @@ defmodule Explorer.Chain.Transaction do
   end
 
   def bytes_to_address_hash(bytes), do: %Hash{byte_count: 20, bytes: bytes}
+
+  @doc """
+  Fetches the transactions related to the address with the given hash, including
+  transactions that only have the address in the `token_transfers` related table
+  and rewards for block validation.
+
+  This query is divided into multiple subqueries intentionally in order to
+  improve the listing performance.
+
+  The `token_transfers` table tends to grow exponentially, and the query results
+  with a `transactions` `join` statement takes too long.
+
+  To solve this the `transaction_hashes` are fetched in a separate query, and
+  paginated through the `block_number` already present in the `token_transfers`
+  table.
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
+      `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (a tuple of the lowest/oldest `{block_number, index}`) and. Results will be the transactions older than
+      the `block_number` and `index` that are passed.
+
+  """
+  @spec address_to_transactions_with_rewards(Hash.Address.t(), [
+          Chain.paging_options() | Chain.necessity_by_association_option()
+        ]) :: [__MODULE__.t()]
+  def address_to_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    case Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] &&
+           Keyword.get(options, :direction) != :from &&
+           Reward.address_has_rewards?(address_hash) &&
+           Reward.get_validator_payout_key_by_mining_from_db(address_hash, options) do
+      %{payout_key: block_miner_payout_address}
+      when not is_nil(block_miner_payout_address) and address_hash == block_miner_payout_address ->
+        transactions_with_rewards_results(address_hash, options, paging_options)
+
+      _ ->
+        address_to_transactions_without_rewards(address_hash, options)
+    end
+  end
+
+  defp transactions_with_rewards_results(address_hash, options, paging_options) do
+    blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
+
+    rewards_task =
+      Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range, options) end)
+
+    [rewards_task | address_to_transactions_tasks(address_hash, options, true)]
+    |> wait_for_address_transactions()
+    |> Enum.sort_by(fn item ->
+      case item do
+        {%Reward{} = emission_reward, _} ->
+          {-emission_reward.block.number, 1}
+
+        item ->
+          process_item(item)
+      end
+    end)
+    |> Enum.dedup_by(fn item ->
+      case item do
+        {%Reward{} = emission_reward, _} ->
+          {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
+
+        transaction ->
+          transaction.hash
+      end
+    end)
+    |> Enum.take(paging_options.page_size)
+  end
+
+  @doc false
+  def address_to_transactions_tasks_range_of_blocks(address_hash, options) do
+    extremums_list =
+      address_hash
+      |> transactions_block_numbers_at_address(options)
+      |> Enum.map(fn query ->
+        extremum_query =
+          from(
+            q in subquery(query),
+            select: %{min_block_number: min(q.block_number), max_block_number: max(q.block_number)}
+          )
+
+        extremum_query
+        |> Repo.one!()
+      end)
+
+    extremums_list
+    |> Enum.reduce(%{min_block_number: nil, max_block_number: 0}, fn %{
+                                                                       min_block_number: min_number,
+                                                                       max_block_number: max_number
+                                                                     },
+                                                                     extremums_result ->
+      current_min_number = Map.get(extremums_result, :min_block_number)
+      current_max_number = Map.get(extremums_result, :max_block_number)
+
+      extremums_result
+      |> process_extremums_result_against_min_number(current_min_number, min_number)
+      |> process_extremums_result_against_max_number(current_max_number, max_number)
+    end)
+  end
+
+  defp transactions_block_numbers_at_address(address_hash, options) do
+    direction = Keyword.get(options, :direction)
+
+    options
+    |> address_to_transactions_tasks_query()
+    |> not_pending_transactions()
+    |> select([t], t.block_number)
+    |> matching_address_queries_list(direction, address_hash)
+  end
+
+  defp process_extremums_result_against_min_number(extremums_result, current_min_number, min_number)
+       when is_number(current_min_number) and
+              not (is_number(min_number) and min_number > 0 and min_number < current_min_number) do
+    extremums_result
+  end
+
+  defp process_extremums_result_against_min_number(extremums_result, _current_min_number, min_number) do
+    extremums_result
+    |> Map.put(:min_block_number, min_number)
+  end
+
+  defp process_extremums_result_against_max_number(extremums_result, current_max_number, max_number)
+       when is_number(max_number) and max_number > 0 and max_number > current_max_number do
+    extremums_result
+    |> Map.put(:max_block_number, max_number)
+  end
+
+  defp process_extremums_result_against_max_number(extremums_result, _current_max_number, _max_number) do
+    extremums_result
+  end
+
+  defp process_item(item) do
+    block_number = if item.block_number, do: -item.block_number, else: 0
+    index = if item.index, do: -item.index, else: 0
+    {block_number, index}
+  end
+
+  @spec address_to_transactions_without_rewards(
+          Hash.Address.t(),
+          [
+            Chain.paging_options()
+            | Chain.necessity_by_association_option()
+            | {:sorting, SortingHelper.sorting_params()}
+          ],
+          boolean()
+        ) :: [__MODULE__.t()]
+  def address_to_transactions_without_rewards(address_hash, options, old_ui? \\ true) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    address_hash
+    |> address_to_transactions_tasks(options, old_ui?)
+    |> wait_for_address_transactions()
+    |> Enum.sort(compare_custom_sorting(Keyword.get(options, :sorting, [])))
+    |> Enum.dedup_by(& &1.hash)
+    |> Enum.take(paging_options.page_size)
+  end
+
+  defp address_to_transactions_tasks(address_hash, options, old_ui?) do
+    direction = Keyword.get(options, :direction)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    options
+    |> address_to_transactions_tasks_query(false, old_ui?)
+    |> not_dropped_or_replaced_transactions()
+    |> Chain.join_associations(necessity_by_association)
+    |> put_has_token_transfers_to_tx(old_ui?)
+    |> matching_address_queries_list(direction, address_hash)
+    |> Enum.map(fn query -> Task.async(fn -> Chain.select_repo(options).all(query) end) end)
+  end
+
+  @doc """
+  Returns the address to transactions tasks query based on provided options.
+  Boolean `only_mined?` argument specifies if only mined transactions should be returned,
+  boolean `old_ui?` argument specifies if the query is for the old UI, i.e. is query dynamically sorted or no.
+  """
+  @spec address_to_transactions_tasks_query(keyword, boolean, boolean) :: Ecto.Query.t()
+  def address_to_transactions_tasks_query(options, only_mined? \\ false, old_ui? \\ true)
+
+  def address_to_transactions_tasks_query(options, only_mined?, true) do
+    from_block = Chain.from_block(options)
+    to_block = Chain.to_block(options)
+
+    options
+    |> Keyword.get(:paging_options, Chain.default_paging_options())
+    |> fetch_transactions(from_block, to_block, !only_mined?)
+  end
+
+  def address_to_transactions_tasks_query(options, _only_mined?, false) do
+    from_block = Chain.from_block(options)
+    to_block = Chain.to_block(options)
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+    sorting_options = Keyword.get(options, :sorting, [])
+
+    fetch_transactions_with_custom_sorting(paging_options, from_block, to_block, sorting_options)
+  end
+
+  @doc """
+  Waits for the address transactions tasks to complete and returns the transactions flattened
+  in case of success or raises an error otherwise.
+  """
+  @spec wait_for_address_transactions([Task.t()]) :: [__MODULE__.t()]
+  def wait_for_address_transactions(tasks) do
+    tasks
+    |> Task.yield_many(:timer.seconds(20))
+    |> Enum.flat_map(fn {_task, res} ->
+      case res do
+        {:ok, result} ->
+          result
+
+        {:exit, reason} ->
+          raise "Query fetching address transactions terminated: #{inspect(reason)}"
+
+        nil ->
+          raise "Query fetching address transactions timed out."
+      end
+    end)
+  end
+
+  defp compare_custom_sorting([{order, :value}]) do
+    fn a, b ->
+      case Decimal.compare(Wei.to(a.value, :wei), Wei.to(b.value, :wei)) do
+        :eq -> compare_default_sorting(a, b)
+        :gt -> order == :desc
+        :lt -> order == :asc
+      end
+    end
+  end
+
+  defp compare_custom_sorting([{:dynamic, :fee, order, _dynamic_fee}]) do
+    fn a, b ->
+      case Decimal.compare(a |> Chain.fee(:wei) |> elem(1), b |> Chain.fee(:wei) |> elem(1)) do
+        :eq -> compare_default_sorting(a, b)
+        :gt -> order == :desc
+        :lt -> order == :asc
+      end
+    end
+  end
+
+  defp compare_custom_sorting([]), do: &compare_default_sorting/2
+
+  defp compare_default_sorting(a, b) do
+    case {
+      compare(a.block_number, b.block_number),
+      compare(a.index, b.index),
+      DateTime.compare(a.inserted_at, b.inserted_at),
+      compare(to_string(a.hash), to_string(b.hash))
+    } do
+      {:lt, _, _, _} -> false
+      {:eq, :lt, _, _} -> false
+      {:eq, :eq, :lt, _} -> false
+      {:eq, :eq, :eq, :gt} -> false
+      _ -> true
+    end
+  end
+
+  defp compare(a, b) do
+    cond do
+      a < b -> :lt
+      a > b -> :gt
+      true -> :eq
+    end
+  end
+
+  @doc """
+  Creates a query to fetch transactions taking into account paging_options (possibly nil),
+  from_block (may be nil), to_block (may be nil) and boolean `with_pending?` that indicates if pending transactions should be included
+  into the query.
+  """
+  @spec fetch_transactions(PagingOptions.t() | nil, non_neg_integer | nil, non_neg_integer | nil, boolean()) ::
+          Ecto.Query.t()
+  def fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil, with_pending? \\ false) do
+    __MODULE__
+    |> order_for_transactions(with_pending?)
+    |> Chain.where_block_number_in_period(from_block, to_block)
+    |> handle_paging_options(paging_options)
+  end
+
+  @default_sorting [
+    desc: :block_number,
+    desc: :index,
+    desc: :inserted_at,
+    asc: :hash
+  ]
+
+  @doc """
+  Creates a query to fetch transactions taking into account paging_options (possibly nil),
+  from_block (may be nil), to_block (may be nil) and sorting_params.
+  """
+  @spec fetch_transactions_with_custom_sorting(
+          PagingOptions.t() | nil,
+          non_neg_integer | nil,
+          non_neg_integer | nil,
+          SortingHelper.sorting_params()
+        ) :: Ecto.Query.t()
+  def fetch_transactions_with_custom_sorting(paging_options, from_block, to_block, sorting) do
+    query = from(transaction in __MODULE__)
+
+    query
+    |> Chain.where_block_number_in_period(from_block, to_block)
+    |> SortingHelper.apply_sorting(sorting, @default_sorting)
+    |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
+  end
+
+  defp order_for_transactions(query, true) do
+    query
+    |> order_by([transaction],
+      desc: transaction.block_number,
+      desc: transaction.index,
+      desc: transaction.inserted_at,
+      asc: transaction.hash
+    )
+  end
+
+  defp order_for_transactions(query, _) do
+    query
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+  end
+
+  @doc """
+  Updates the provided query with necessary `where`s and `limit`s to take into account paging_options (may be nil).
+  """
+  @spec handle_paging_options(Ecto.Query.t() | atom, nil | Explorer.PagingOptions.t()) :: Ecto.Query.t()
+  def handle_paging_options(query, nil), do: query
+
+  def handle_paging_options(query, %PagingOptions{key: nil, page_size: nil}), do: query
+
+  def handle_paging_options(query, paging_options) do
+    query
+    |> page_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+  end
+
+  @doc """
+  Updates the provided query with necessary `where`s to take into account paging_options.
+  """
+  @spec page_transaction(Ecto.Query.t() | atom, Explorer.PagingOptions.t()) :: Ecto.Query.t()
+  def page_transaction(query, %PagingOptions{key: nil}), do: query
+
+  def page_transaction(query, %PagingOptions{is_pending_tx: true} = options),
+    do: page_pending_transaction(query, options)
+
+  def page_transaction(query, %PagingOptions{key: {block_number, index}, is_index_in_asc_order: true}) do
+    where(
+      query,
+      [transaction],
+      transaction.block_number < ^block_number or
+        (transaction.block_number == ^block_number and transaction.index > ^index)
+    )
+  end
+
+  def page_transaction(query, %PagingOptions{key: {block_number, index}}) do
+    where(
+      query,
+      [transaction],
+      transaction.block_number < ^block_number or
+        (transaction.block_number == ^block_number and transaction.index < ^index)
+    )
+  end
+
+  def page_transaction(query, %PagingOptions{key: {index}}) do
+    where(query, [transaction], transaction.index < ^index)
+  end
+
+  @doc """
+  Updates the provided query with necessary `where`s to take into account paging_options.
+  """
+  @spec page_pending_transaction(Ecto.Query.t() | atom, Explorer.PagingOptions.t()) :: Ecto.Query.t()
+  def page_pending_transaction(query, %PagingOptions{key: nil}), do: query
+
+  def page_pending_transaction(query, %PagingOptions{key: {inserted_at, hash}}) do
+    where(
+      query,
+      [transaction],
+      (is_nil(transaction.block_number) and
+         (transaction.inserted_at < ^inserted_at or
+            (transaction.inserted_at == ^inserted_at and transaction.hash > ^hash))) or
+        not is_nil(transaction.block_number)
+    )
+  end
+
+  @doc """
+  Adds a `has_token_transfers` field to the query via `select_merge` if second argument is `true` and returns
+  the query untouched otherwise.
+  """
+  @spec put_has_token_transfers_to_tx(Ecto.Query.t() | atom, boolean) :: Ecto.Query.t()
+  def put_has_token_transfers_to_tx(query, true), do: query
+
+  def put_has_token_transfers_to_tx(query, false) do
+    from(tx in query,
+      select_merge: %{
+        has_token_transfers:
+          fragment(
+            "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
+            tx.hash
+          )
+      }
+    )
+  end
+
+  @doc """
+  Return the dynamic that calculates the fee for transactions.
+  """
+  @spec dynamic_fee :: struct()
+  def dynamic_fee do
+    dynamic([tx], tx.gas_price * fragment("COALESCE(?, ?)", tx.gas_used, tx.gas))
+  end
+
+  @doc """
+  Returns next page params based on the provided transaction.
+  """
+  @spec address_transactions_next_page_params(Explorer.Chain.Transaction.t()) :: %{
+          required(String.t()) => Decimal.t() | Wei.t() | non_neg_integer | DateTime.t() | Hash.t()
+        }
+  def address_transactions_next_page_params(
+        %__MODULE__{block_number: block_number, index: index, inserted_at: inserted_at, hash: hash, value: value} = tx
+      ) do
+    %{
+      "fee" => tx |> Chain.fee(:wei) |> elem(1),
+      "value" => value,
+      "block_number" => block_number,
+      "index" => index,
+      "inserted_at" => inserted_at,
+      "hash" => hash
+    }
+  end
 end
