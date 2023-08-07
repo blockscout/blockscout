@@ -119,7 +119,7 @@ defmodule BlockScoutWeb.BlockWithdrawalControllerTest do
     end
 
     test "displays miner primary address name", %{conn: conn} do
-      miner_name = "POA Miner Pool"
+      miner_name = "POA Farmer Pool"
       %{address: miner_address} = insert(:address_name, name: miner_name, primary: true)
 
       block = insert(:block, miner: miner_address, miner_hash: nil)
