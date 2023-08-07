@@ -593,6 +593,23 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
+    test "ignores wrong ordering params", %{conn: conn} do
+      tokens =
+        for i <- 0..50 do
+          insert(:token, fiat_value: i)
+        end
+
+      request = get(conn, "/api/v2/tokens", %{"sort" => "foo", "order" => "bar"})
+
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/tokens", %{"sort" => "foo", "order" => "bar"} |> Map.merge(response["next_page_params"]))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+      check_paginated_response(response, response_2nd_page, tokens)
+    end
+
     test "tokens are filtered by single type", %{conn: conn} do
       erc_20_tokens =
         for i <- 0..50 do
@@ -609,14 +626,14 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           insert(:token, type: "ERC-1155")
         end
 
-      check_tokens_pagination(erc_20_tokens |> Enum.reverse(), conn, %{"type" => "ERC-20"})
+      check_tokens_pagination(erc_20_tokens, conn, %{"type" => "ERC-20"})
       check_tokens_pagination(erc_721_tokens |> Enum.reverse(), conn, %{"type" => "ERC-721"})
       check_tokens_pagination(erc_1155_tokens |> Enum.reverse(), conn, %{"type" => "ERC-1155"})
     end
 
     test "tokens are filtered by multiple type", %{conn: conn} do
       erc_20_tokens =
-        for i <- 0..25 do
+        for i <- 11..36 do
           insert(:token, fiat_value: i)
         end
 
@@ -639,7 +656,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       )
 
       check_tokens_pagination(
-        erc_20_tokens |> Kernel.++(erc_1155_tokens) |> Enum.reverse(),
+        erc_1155_tokens |> Enum.reverse() |> Kernel.++(erc_20_tokens),
         conn,
         %{
           "type" => "[erc-20,ERC-1155]"
@@ -652,7 +669,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         for i <- 0..50 do
           insert(:token, fiat_value: i)
         end
-        |> Enum.reverse()
 
       check_tokens_pagination(tokens, conn)
     end

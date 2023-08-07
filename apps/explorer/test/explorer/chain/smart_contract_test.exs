@@ -2,8 +2,9 @@ defmodule Explorer.Chain.SmartContractTest do
   use Explorer.DataCase, async: false
 
   import Mox
-  alias Explorer.Chain
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.SmartContract.Proxy
 
   doctest Explorer.Chain.SmartContract
@@ -262,14 +263,6 @@ defmodule Explorer.Chain.SmartContractTest do
       verify!(EthereumJSONRPC.Mox)
 
       assert_implementation_never_fetched(smart_contract.address_hash)
-    end
-  end
-
-  describe "address_hash_to_smart_contract/1" do
-    test "fetches a smart contract" do
-      smart_contract = insert(:smart_contract, contract_code_md5: "123")
-
-      assert ^smart_contract = SmartContract.address_hash_to_smart_contract(smart_contract.address_hash)
     end
   end
 

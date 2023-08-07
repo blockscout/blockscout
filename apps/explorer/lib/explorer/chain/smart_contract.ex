@@ -14,7 +14,7 @@ defmodule Explorer.Chain.SmartContract do
 
   alias Ecto.{Changeset, Multi}
   alias Explorer.Counters.AverageBlockTime
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, Repo, SortingHelper}
 
   alias Explorer.Chain.{
     Address,
@@ -52,6 +52,10 @@ defmodule Explorer.Chain.SmartContract do
   def burn_address_hash_string do
     @burn_address_hash_string
   end
+
+  @default_sorting [desc: :id]
+
+  @typep api? :: {:api?, true | false}
 
   @typedoc """
   The name of a parameter to a function or event.
@@ -1242,4 +1246,56 @@ defmodule Explorer.Chain.SmartContract do
 
     if smart_contract, do: !smart_contract.partially_verified, else: false
   end
+
+  @spec verified_contracts([
+          Chain.paging_options()
+          | Chain.necessity_by_association_option()
+          | {:filter, :solidity | :vyper | :yul}
+          | {:search, String.t()}
+          | {:sorting, SortingHelper.sorting_params()}
+          | Chain.api?()
+        ]) :: [__MODULE__.t()]
+  def verified_contracts(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+    sorting_options = Keyword.get(options, :sorting, [])
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    filter = Keyword.get(options, :filter, nil)
+    search_string = Keyword.get(options, :search, nil)
+
+    query = from(contract in __MODULE__)
+
+    query
+    |> filter_contracts(filter)
+    |> search_contracts(search_string)
+    |> SortingHelper.apply_sorting(sorting_options, @default_sorting)
+    |> SortingHelper.page_with_sorting(paging_options, sorting_options, @default_sorting)
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).all()
+  end
+
+  defp search_contracts(basic_query, nil), do: basic_query
+
+  defp search_contracts(basic_query, search_string) do
+    from(contract in basic_query,
+      where:
+        ilike(contract.name, ^"%#{search_string}%") or
+          ilike(fragment("'0x' || encode(?, 'hex')", contract.address_hash), ^"%#{search_string}%")
+    )
+  end
+
+  defp filter_contracts(basic_query, :solidity) do
+    basic_query
+    |> where(is_vyper_contract: ^false)
+  end
+
+  defp filter_contracts(basic_query, :vyper) do
+    basic_query
+    |> where(is_vyper_contract: ^true)
+  end
+
+  defp filter_contracts(basic_query, :yul) do
+    from(query in basic_query, where: is_nil(query.abi))
+  end
+
+  defp filter_contracts(basic_query, _), do: basic_query
 end

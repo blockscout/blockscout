@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Block.Reward do
   use Explorer.Schema
 
   alias Explorer.Application.Constants
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.Block.Reward.AddressType
   alias Explorer.Chain.{Address, Block, Hash, Validator, Wei}
   alias Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand
@@ -277,5 +277,15 @@ defmodule Explorer.Chain.Block.Reward do
     else
       query
     end
+  end
+
+  @doc """
+  Checks if an address has rewards
+  """
+  @spec address_has_rewards?(Hash.Address.t()) :: boolean()
+  def address_has_rewards?(address_hash) do
+    query = from(r in __MODULE__, where: r.address_hash == ^address_hash)
+
+    Repo.exists?(query)
   end
 end
