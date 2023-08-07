@@ -11,9 +11,10 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   import Explorer.SmartContract.Helper,
     only: [cast_libraries: 1, prepare_bytecode_for_microservice: 3, contract_creation_input: 1]
 
+  # import  Explorer.Chain.SmartContract, only: [:function_description]
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
-  alias Explorer.Chain.Data
+  alias Explorer.Chain.{Data, Hash, SmartContract}
   alias Explorer.SmartContract.RustVerifierInterface
   alias Explorer.SmartContract.Solidity.CodeCompiler
 
@@ -535,10 +536,26 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   def parse_boolean(_), do: false
 
+  @doc """
+    Function tries to parse constructor args from smart contract creation input.
+      1. using `extract_meta_from_deployed_bytecode/1` we derive CBOR metadata string
+      2. using metadata we split creation_tx_input and try to decode resulting constructor arguments
+       2.1. if we successfully decoded args using constructor's abi, then return constructor args
+       2.2 otherwise return nil
+  """
+  @spec parse_constructor_arguments_for_sourcify_contract(Hash.Address.t(), SmartContract.abi()) :: nil | binary
   def parse_constructor_arguments_for_sourcify_contract(address_hash, abi) do
     parse_constructor_arguments_for_sourcify_contract(address_hash, abi, Chain.smart_contract_bytecode(address_hash))
   end
 
+  @doc """
+    Clause for cases when we already can pass deployed bytecode to this function (in order to avoid excessive read DB accesses)
+  """
+  @spec parse_constructor_arguments_for_sourcify_contract(
+          Hash.Address.t(),
+          SmartContract.abi(),
+          binary | Explorer.Chain.Data.t()
+        ) :: nil | binary
   def parse_constructor_arguments_for_sourcify_contract(address_hash, abi, deployed_bytecode)
       when is_binary(deployed_bytecode) do
     creation_tx_input =
