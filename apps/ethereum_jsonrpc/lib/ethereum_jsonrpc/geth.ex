@@ -161,9 +161,22 @@ defmodule EthereumJSONRPC.Geth do
        )
        when is_list(responses) and is_map(id_to_params) do
     responses
+    |> Enum.map(&sanitize_not_evm_transaction/1)
     |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.map(&debug_trace_transaction_response_to_internal_transactions_params(&1, id_to_params))
     |> reduce_internal_transactions_params()
+  end
+
+  defp sanitize_not_evm_transaction(%{"result" => result} = response) when is_map(result), do: process_not_evm_transaction(response, result)
+  defp sanitize_not_evm_transaction(%{result: result} = response) when is_map(result), do: process_not_evm_transaction(response, result)
+  defp sanitize_not_evm_transaction(response), do: response
+
+  defp process_not_evm_transaction(response, result) do
+    if Map.has_key?(result, "error") and not Map.has_key?(result, "to") do
+      put_in(response, [:result, "to"], "0x0000000000000000000000000000000000000000")
+    else
+      response
+    end
   end
 
   defp fetch_missing_data({:ok, transactions}, json_rpc_named_arguments) when is_list(transactions) do
