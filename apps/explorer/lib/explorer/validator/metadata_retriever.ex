@@ -16,16 +16,19 @@ defmodule Explorer.Validator.MetadataRetriever do
   end
 
   def fetch_validators_list do
+    validators_contract_address = config(:validators_contract_address)
+
     # b7ab4db5 = keccak256(getValidators())
-    case Reader.query_contract(
-           config(:validators_contract_address),
-           contract_abi("validators.json"),
-           %{
-             "b7ab4db5" => []
-           },
-           false
-         ) do
-      %{"b7ab4db5" => {:ok, [validators]}} -> validators
+    with false <- is_nil(validators_contract_address),
+         %{"b7ab4db5" => {:ok, [validators]}} <-
+           Reader.query_contract(
+             validators_contract_address,
+             contract_abi("validators.json"),
+             %{"b7ab4db5" => []},
+             false
+           ) do
+      validators
+    else
       _ -> []
     end
   end
