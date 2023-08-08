@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "name" => token.name,
       "decimals" => token.decimals,
       "type" => token.type,
-      "holders" => token.holder_count && to_string(token.holder_count),
+      "holders" => prepare_holders_count(token.holder_count),
       "exchange_rate" => exchange_rate(token),
       "total_supply" => token.total_supply,
       "icon_url" => token.icon_url,
@@ -80,4 +80,8 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "is_unique" => is_unique
     }
   end
+
+  defp prepare_holders_count(nil), do: nil
+  defp prepare_holders_count(count) when count < 0, do: prepare_holders_count(0)
+  defp prepare_holders_count(count), do: to_string(count)
 end
