@@ -10,6 +10,7 @@
 
 ### Fixes
 
+- [#8147](https://github.com/blockscout/blockscout/pull/8147) - Switch sourcify tests from POA Sokol to Gnosis Chiado
 - [#8145](https://github.com/blockscout/blockscout/pull/8145) - Handle negative holders count in API v2
 - [#8040](https://github.com/blockscout/blockscout/pull/8040) - Resolve issue with Docker image for Mac M1/M2
 - [#8060](https://github.com/blockscout/blockscout/pull/8060) - Fix eth_getLogs API endpoint

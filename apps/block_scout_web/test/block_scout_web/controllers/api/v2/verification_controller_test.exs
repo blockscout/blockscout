@@ -222,7 +222,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
     end
 
     test "verify contract from sourcify repo", %{conn: conn} do
-      address = "0x18d89C12e9463Be6343c35C9990361bA4C42AfC2"
+      address = "0xf26594F585De4EB0Ae9De865d9053FEe02ac6eF1"
 
       _contract = insert(:address, hash: address, contract_code: "0x01")
 
