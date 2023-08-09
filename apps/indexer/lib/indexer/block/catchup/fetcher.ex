@@ -55,7 +55,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
           shrunk: false
         }
 
-      missing_ranges ->
+      latest_missing_ranges ->
+        missing_ranges = filter_consensus_blocks(latest_missing_ranges)
+
         first.._ = List.first(missing_ranges)
         _..last = List.last(missing_ranges)
 
@@ -83,6 +85,21 @@ defmodule Indexer.Block.Catchup.Fetcher do
           shrunk: shrunk
         }
     end
+  end
+
+  defp filter_consensus_blocks(ranges) do
+    filtered_ranges =
+      ranges
+      |> Enum.map(&Chain.missing_block_number_ranges(&1))
+      |> List.flatten()
+
+    consensus_blocks = ranges_to_numbers(ranges) -- ranges_to_numbers(filtered_ranges)
+
+    consensus_blocks
+    |> numbers_to_ranges()
+    |> MissingRangesManipulator.clear_batch()
+
+    filtered_ranges
   end
 
   @doc """
@@ -304,6 +321,12 @@ defmodule Indexer.Block.Catchup.Fetcher do
       end,
       fn range -> {:cont, range, nil} end
     )
+  end
+
+  defp ranges_to_numbers(ranges) do
+    ranges
+    |> Enum.map(&Enum.to_list/1)
+    |> List.flatten()
   end
 
   defp put_memory_monitor(sequence_options, %__MODULE__{memory_monitor: nil}) when is_list(sequence_options),
