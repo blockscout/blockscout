@@ -12,6 +12,7 @@ on:
       - production-sokol-stg
       - production-rsk-stg
       - production-lukso-stg
+      - production-immutable-stg
       - staging-l2
   pull_request:
     branches:
@@ -58,8 +59,6 @@ jobs:
           mix local.rebar --force
           mix deps.get
           mix deps.compile
-          cd deps/libsecp256k1
-          make
 
       - name: Restore Explorer NPM Cache
         uses: actions/cache@v2
@@ -626,7 +625,7 @@ jobs:
           PGUSER: postgres
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
-          CHAIN_ID: "77"
+          CHAIN_ID: "10200"
           API_RATE_LIMIT_DISABLED: "true"
           ADMIN_PANEL_ENABLED: "true"
           ACCOUNT_ENABLED: "true"

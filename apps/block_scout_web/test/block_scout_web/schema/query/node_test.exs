@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.Schema.Query.NodeTest do
 
       variables = %{"id" => id}
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = get(conn, "/api/v1/graphql", query: query, variables: variables)
 
       assert json_response(conn, 200) == %{
                "data" => %{
@@ -50,7 +50,7 @@ defmodule BlockScoutWeb.Schema.Query.NodeTest do
 
       variables = %{"id" => id}
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = get(conn, "/api/v1/graphql", query: query, variables: variables)
 
       %{"errors" => [error]} = json_response(conn, 200)
 
@@ -88,7 +88,7 @@ defmodule BlockScoutWeb.Schema.Query.NodeTest do
 
       variables = %{"id" => id}
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = get(conn, "/api/v1/graphql", query: query, variables: variables)
 
       assert json_response(conn, 200) == %{
                "data" => %{
@@ -132,7 +132,7 @@ defmodule BlockScoutWeb.Schema.Query.NodeTest do
 
       variables = %{"id" => id}
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = get(conn, "/api/v1/graphql", query: query, variables: variables)
 
       %{"errors" => [error]} = json_response(conn, 200)
 
@@ -163,7 +163,7 @@ defmodule BlockScoutWeb.Schema.Query.NodeTest do
 
       variables = %{"id" => id}
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = get(conn, "/api/v1/graphql", query: query, variables: variables)
 
       assert json_response(conn, 200) == %{
                "data" => %{
@@ -199,7 +199,7 @@ defmodule BlockScoutWeb.Schema.Query.NodeTest do
 
       variables = %{"id" => id}
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = get(conn, "/api/v1/graphql", query: query, variables: variables)
 
       %{"errors" => [error]} = json_response(conn, 200)
 
