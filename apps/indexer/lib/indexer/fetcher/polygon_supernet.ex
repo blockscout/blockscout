@@ -8,12 +8,17 @@ defmodule Indexer.Fetcher.PolygonSupernet do
 
   require Logger
 
+  import Ecto.Query
+
   import EthereumJSONRPC,
     only: [fetch_block_number_by_tag: 2, json_rpc: 2, integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
 
+  import Explorer.Helper, only: [parse_integer: 1]
+
   alias EthereumJSONRPC.Block.ByNumber
   alias Explorer.Chain.Events.Publisher
-  alias Indexer.BoundQueue
+  alias Explorer.{Chain, Repo}
+  alias Indexer.{BoundQueue, Helper}
   alias Indexer.Fetcher.{PolygonSupernetDeposit, PolygonSupernetWithdrawalExit}
 
   @fetcher_name :polygon_supernet
@@ -64,6 +69,81 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     end
   end
 
+  def init_l1(module, env, pid, contract_address, contract_name, table_name, entity_name)
+      when module in [Explorer.Chain.PolygonSupernetDeposit, Explorer.Chain.PolygonSupernetWithdrawalExit] do
+    with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
+         {:reorg_monitor_started, true} <-
+           {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.PolygonSupernet))},
+         polygon_supernet_l1_rpc =
+           Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonSupernet][:polygon_supernet_l1_rpc],
+         {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(polygon_supernet_l1_rpc)},
+         {:contract_is_valid, true} <- {:contract_is_valid, Helper.is_address_correct?(contract_address)},
+         start_block_l1 = parse_integer(env[:start_block_l1]),
+         false <- is_nil(start_block_l1),
+         true <- start_block_l1 > 0,
+         {last_l1_block_number, last_l1_transaction_hash} <- get_last_l1_item(module),
+         {:start_block_l1_valid, true} <-
+           {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
+         json_rpc_named_arguments = json_rpc_named_arguments(polygon_supernet_l1_rpc),
+         {:ok, last_l1_tx} <-
+           get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
+         {:ok, block_check_interval, last_safe_block} <-
+           get_block_check_interval(json_rpc_named_arguments) do
+      start_block = max(start_block_l1, last_l1_block_number)
+
+      Process.send(pid, :continue, [])
+
+      {:ok,
+       %{
+         contract_address: contract_address,
+         block_check_interval: block_check_interval,
+         start_block: start_block,
+         end_block: last_safe_block,
+         json_rpc_named_arguments: json_rpc_named_arguments
+       }}
+    else
+      {:start_block_l1_undefined, true} ->
+        # the process shouldn't start if the start block is not defined
+        :ignore
+
+      {:reorg_monitor_started, false} ->
+        Logger.error("Cannot start this process as reorg monitor in Indexer.Fetcher.PolygonSupernet is not started.")
+        :ignore
+
+      {:rpc_l1_undefined, true} ->
+        Logger.error("L1 RPC URL is not defined.")
+        :ignore
+
+      {:contract_is_valid, false} ->
+        Logger.error("#{contract_name} contract address is invalid or not defined.")
+        :ignore
+
+      {:start_block_l1_valid, false} ->
+        Logger.error("Invalid L1 Start Block value. Please, check the value and #{table_name} table.")
+
+        :ignore
+
+      {:error, error_data} ->
+        Logger.error(
+          "Cannot get last L1 transaction from RPC by its hash, last safe block, or block timestamp by its number due to RPC error: #{inspect(error_data)}"
+        )
+
+        :ignore
+
+      {:l1_tx_not_found, true} ->
+        Logger.error(
+          "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check #{table_name} table."
+        )
+
+        :ignore
+
+      _ ->
+        Logger.error("#{entity_name} L1 Start Block is invalid or zero.")
+        :ignore
+    end
+  end
+
   @impl GenServer
   def handle_info(
         :reorg_monitor,
@@ -86,11 +166,263 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     {:noreply, %{state | prev_latest: latest}}
   end
 
-  def get_block_check_interval(json_rpc_named_arguments) do
+  def handle_continue(
+        %{
+          contract_address: contract_address,
+          block_check_interval: block_check_interval,
+          start_block: start_block,
+          end_block: end_block,
+          json_rpc_named_arguments: json_rpc_named_arguments
+        } = state,
+        event_signature,
+        calling_module,
+        fetcher_name
+      )
+      when calling_module in [PolygonSupernetDeposit, PolygonSupernetWithdrawalExit] do
+    time_before = Timex.now()
+
+    chunks_number = ceil((end_block - start_block + 1) / @eth_get_logs_range_size)
+    chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
+
+    last_written_block =
+      chunk_range
+      |> Enum.reduce_while(start_block - 1, fn current_chunk, _ ->
+        chunk_start = start_block + @eth_get_logs_range_size * current_chunk
+        chunk_end = min(chunk_start + @eth_get_logs_range_size - 1, end_block)
+
+        if chunk_end >= chunk_start do
+          log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+
+          {:ok, result} =
+            get_logs(
+              chunk_start,
+              chunk_end,
+              contract_address,
+              event_signature,
+              json_rpc_named_arguments,
+              100_000_000
+            )
+
+          {events, event_name} =
+            result
+            |> calling_module.prepare_events(json_rpc_named_arguments)
+            |> import_events(calling_module)
+
+          log_blocks_chunk_handling(
+            chunk_start,
+            chunk_end,
+            start_block,
+            end_block,
+            "#{Enum.count(events)} #{event_name} event(s)",
+            "L1"
+          )
+        end
+
+        reorg_block = reorg_block_pop(fetcher_name)
+
+        if !is_nil(reorg_block) && reorg_block > 0 do
+          reorg_handle(reorg_block, calling_module)
+          {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
+        else
+          {:cont, chunk_end}
+        end
+      end)
+
+    new_start_block = last_written_block + 1
+    {:ok, new_end_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+
+    delay =
+      if new_end_block == last_written_block do
+        # there is no new block, so wait for some time to let the chain issue the new block
+        max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0)
+      else
+        0
+      end
+
+    Process.send_after(self(), :continue, delay)
+
+    {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
+  end
+
+  def fill_block_range(
+        l2_block_start,
+        l2_block_end,
+        calling_module,
+        contract_address,
+        json_rpc_named_arguments,
+        scan_db
+      )
+      when calling_module in [Indexer.Fetcher.PolygonSupernetDepositExecute, Indexer.Fetcher.PolygonSupernetWithdrawal] do
+    chunks_number =
+      if scan_db do
+        1
+      else
+        ceil((l2_block_end - l2_block_start + 1) / @eth_get_logs_range_size)
+      end
+
+    chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
+
+    Enum.reduce(chunk_range, 0, fn current_chunk, count_acc ->
+      chunk_start = l2_block_start + @eth_get_logs_range_size * current_chunk
+
+      chunk_end =
+        if scan_db do
+          l2_block_end
+        else
+          min(chunk_start + @eth_get_logs_range_size - 1, l2_block_end)
+        end
+
+      log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, "L2")
+
+      count =
+        calling_module.find_and_save_entities(
+          scan_db,
+          contract_address,
+          chunk_start,
+          chunk_end,
+          json_rpc_named_arguments
+        )
+
+      event_name =
+        if calling_module == Indexer.Fetcher.PolygonSupernetDepositExecute do
+          "StateSyncResult"
+        else
+          "L2StateSynced"
+        end
+
+      log_blocks_chunk_handling(
+        chunk_start,
+        chunk_end,
+        l2_block_start,
+        l2_block_end,
+        "#{count} #{event_name} event(s)",
+        "L2"
+      )
+
+      count_acc + count
+    end)
+  end
+
+  def fill_msg_id_gaps(
+        start_block_l2,
+        table,
+        calling_module,
+        contract_address,
+        json_rpc_named_arguments,
+        scan_db \\ true
+      ) do
+    id_min = Repo.aggregate(table, :min, :msg_id)
+    id_max = Repo.aggregate(table, :max, :msg_id)
+
+    with true <- !is_nil(id_min) and !is_nil(id_max),
+         starts = msg_id_gap_starts(id_max, table),
+         ends = msg_id_gap_ends(id_min, table),
+         min_block_l2 = l2_block_number_by_msg_id(id_min, table),
+         {new_starts, new_ends} =
+           if(start_block_l2 < min_block_l2,
+             do: {[start_block_l2 | starts], [min_block_l2 | ends]},
+             else: {starts, ends}
+           ),
+         true <- Enum.count(new_starts) == Enum.count(new_ends) do
+      new_starts
+      |> Enum.zip(new_ends)
+      |> Enum.each(fn {l2_block_start, l2_block_end} ->
+        count =
+          fill_block_range(
+            l2_block_start,
+            l2_block_end,
+            calling_module,
+            contract_address,
+            json_rpc_named_arguments,
+            scan_db
+          )
+
+        if count > 0 do
+          log_fill_msg_id_gaps(scan_db, l2_block_start, l2_block_end, table, count)
+        end
+      end)
+
+      if scan_db do
+        fill_msg_id_gaps(start_block_l2, table, calling_module, contract_address, json_rpc_named_arguments, false)
+      end
+    end
+  end
+
+  defp log_fill_msg_id_gaps(scan_db, l2_block_start, l2_block_end, table, count) do
+    find_place = if scan_db, do: "in DB", else: "through RPC"
+    table_name = table.__schema__(:source)
+
+    Logger.info(
+      "Filled gaps between L2 blocks #{l2_block_start} and #{l2_block_end}. #{count} event(s) were found #{find_place} and written to #{table_name} table."
+    )
+  end
+
+  defp msg_id_gap_starts(id_max, table)
+       when table in [Explorer.Chain.PolygonSupernetDepositExecute, Explorer.Chain.PolygonSupernetWithdrawal] do
+    query =
+      if table == Explorer.Chain.PolygonSupernetDepositExecute do
+        from(item in table,
+          select: item.l2_block_number,
+          order_by: item.msg_id,
+          where:
+            fragment(
+              "NOT EXISTS (SELECT msg_id FROM polygon_supernet_deposit_executes WHERE msg_id = (? + 1)) AND msg_id != ?",
+              item.msg_id,
+              ^id_max
+            )
+        )
+      else
+        from(item in table,
+          select: item.l2_block_number,
+          order_by: item.msg_id,
+          where:
+            fragment(
+              "NOT EXISTS (SELECT msg_id FROM polygon_supernet_withdrawals WHERE msg_id = (? + 1)) AND msg_id != ?",
+              item.msg_id,
+              ^id_max
+            )
+        )
+      end
+
+    Repo.all(query)
+  end
+
+  defp msg_id_gap_ends(id_min, table)
+       when table in [Explorer.Chain.PolygonSupernetDepositExecute, Explorer.Chain.PolygonSupernetWithdrawal] do
+    query =
+      if table == Explorer.Chain.PolygonSupernetDepositExecute do
+        from(item in table,
+          select: item.l2_block_number,
+          order_by: item.msg_id,
+          where:
+            fragment(
+              "NOT EXISTS (SELECT msg_id FROM polygon_supernet_deposit_executes WHERE msg_id = (? - 1)) AND msg_id != ?",
+              item.msg_id,
+              ^id_min
+            )
+        )
+      else
+        from(item in table,
+          select: item.l2_block_number,
+          order_by: item.msg_id,
+          where:
+            fragment(
+              "NOT EXISTS (SELECT msg_id FROM polygon_supernet_withdrawals WHERE msg_id = (? - 1)) AND msg_id != ?",
+              item.msg_id,
+              ^id_min
+            )
+        )
+      end
+
+    Repo.all(query)
+  end
+
+  defp get_block_check_interval(json_rpc_named_arguments) do
     {last_safe_block, _} = get_safe_block(json_rpc_named_arguments)
 
-    with first_block = max(last_safe_block - @block_check_interval_range_size, 1),
-         {:ok, first_block_timestamp} <- get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
+    first_block = max(last_safe_block - @block_check_interval_range_size, 1)
+
+    with {:ok, first_block_timestamp} <- get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
          {:ok, last_safe_block_timestamp} <- get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
       block_check_interval =
         ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
@@ -128,7 +460,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     end
   end
 
-  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ 3) do
+  defp get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ 3) do
     func = &get_block_timestamp_by_number_inner/2
     args = [number, json_rpc_named_arguments]
     error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"
@@ -186,11 +518,33 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
-  def get_logs_range_size do
-    @eth_get_logs_range_size
+  defp get_last_l1_item(table) do
+    query =
+      from(item in table,
+        select: {item.l1_block_number, item.l1_transaction_hash},
+        order_by: [desc: item.msg_id],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||({0, nil})
   end
 
-  def json_rpc_named_arguments(polygon_supernet_l1_rpc) do
+  def get_last_l2_item(table) do
+    query =
+      from(item in table,
+        select: {item.l2_block_number, item.l2_transaction_hash},
+        order_by: [desc: item.msg_id],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||({0, nil})
+  end
+
+  defp json_rpc_named_arguments(polygon_supernet_l1_rpc) do
     [
       transport: EthereumJSONRPC.HTTP,
       transport_options: [
@@ -205,7 +559,11 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     ]
   end
 
-  def log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, items_count, layer) do
+  defp l2_block_number_by_msg_id(id, table) do
+    Repo.one(from(item in table, select: item.l2_block_number, where: item.msg_id == ^id))
+  end
+
+  defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, items_count, layer) do
     is_start = is_nil(items_count)
 
     {type, found} =
@@ -243,6 +601,27 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     end
   end
 
+  defp import_events(events, calling_module) do
+    {import_data, event_name} =
+      if calling_module == PolygonSupernetDeposit do
+        {%{polygon_supernet_deposits: %{params: events}, timeout: :infinity}, "StateSynced"}
+      else
+        {%{polygon_supernet_withdrawal_exits: %{params: events}, timeout: :infinity}, "ExitProcessed"}
+      end
+
+    {:ok, _} = Chain.import(import_data)
+
+    {events, event_name}
+  end
+
+  defp log_deleted_rows_count(reorg_block, count, table_name) do
+    if count > 0 do
+      Logger.warning(
+        "As L1 reorg was detected, all rows with l1_block_number >= #{reorg_block} were removed from the #{table_name} table. Number of removed rows: #{count}."
+      )
+    end
+  end
+
   defp repeated_call(func, args, error_message, retries_left) do
     case apply(func, args) do
       {:ok, _} = res ->
@@ -266,7 +645,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
-  def reorg_block_pop(fetcher_name) do
+  defp reorg_block_pop(fetcher_name) do
     table_name = reorg_table_name(fetcher_name)
 
     case BoundQueue.pop_front(reorg_queue_get(table_name)) do
@@ -283,6 +662,19 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     table_name = reorg_table_name(fetcher_name)
     {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(table_name), block_number)
     :ets.insert(table_name, {:queue, updated_queue})
+  end
+
+  defp reorg_handle(reorg_block, calling_module) do
+    {table, table_name} =
+      if calling_module == PolygonSupernetDeposit do
+        {Explorer.Chain.PolygonSupernetDeposit, "polygon_supernet_deposits"}
+      else
+        {Explorer.Chain.PolygonSupernetWithdrawalExit, "polygon_supernet_withdrawal_exits"}
+      end
+
+    {deleted_count, _} = Repo.delete_all(from(item in table, where: item.l1_block_number >= ^reorg_block))
+
+    log_deleted_rows_count(reorg_block, deleted_count, table_name)
   end
 
   defp reorg_queue_get(table_name) do

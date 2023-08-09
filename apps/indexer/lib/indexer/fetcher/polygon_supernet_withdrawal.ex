@@ -14,6 +14,7 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
   import Explorer.Helper, only: [decode_data: 2, parse_integer: 1]
   import Indexer.Fetcher.PolygonSupernet, only: [get_block_number_by_tag: 3, get_safe_block: 1]
 
+  alias ABI.TypeDecoder
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Log, PolygonSupernetWithdrawal}
   alias Indexer.Fetcher.PolygonSupernet
@@ -54,7 +55,8 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
          start_block_l2 = parse_integer(env[:start_block_l2]),
          false <- is_nil(start_block_l2),
          true <- start_block_l2 > 0,
-         {last_l2_block_number, last_l2_transaction_hash} <- get_last_l2_item(),
+         {last_l2_block_number, last_l2_transaction_hash} <-
+           PolygonSupernet.get_last_l2_item(PolygonSupernetWithdrawal),
          {safe_block, safe_block_is_latest} = get_safe_block(json_rpc_named_arguments),
          {:start_block_l2_valid, true} <-
            {:start_block_l2_valid,
@@ -113,7 +115,14 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
-    fill_msg_id_gaps(start_block_l2, state_sender, json_rpc_named_arguments)
+    PolygonSupernet.fill_msg_id_gaps(
+      start_block_l2,
+      PolygonSupernetWithdrawal,
+      __MODULE__,
+      state_sender,
+      json_rpc_named_arguments
+    )
+
     Process.send(self(), :find_new_events, [])
     {:noreply, state}
   end
@@ -160,7 +169,7 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
     {from, to} =
       if Base.encode16(sig, case: :lower) == @withdrawal_signature do
         [_sig, _root_token, sender, receiver, _amount] =
-          ABI.TypeDecoder.decode_raw(data_bytes, [{:bytes, 32}, :address, :address, :address, {:uint, 256}])
+          TypeDecoder.decode_raw(data_bytes, [{:bytes, 32}, :address, :address, :address, {:uint, 256}])
 
         {sender, receiver}
       else
@@ -176,43 +185,13 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
     }
   end
 
-  defp msg_id_gap_starts(id_max) do
-    Repo.all(
-      from(w in PolygonSupernetWithdrawal,
-        select: w.l2_block_number,
-        order_by: w.msg_id,
-        where:
-          fragment(
-            "NOT EXISTS (SELECT msg_id FROM polygon_supernet_withdrawals WHERE msg_id = (? + 1)) AND msg_id != ?",
-            w.msg_id,
-            ^id_max
-          )
-      )
-    )
-  end
-
-  defp msg_id_gap_ends(id_min) do
-    Repo.all(
-      from(w in PolygonSupernetWithdrawal,
-        select: w.l2_block_number,
-        order_by: w.msg_id,
-        where:
-          fragment(
-            "NOT EXISTS (SELECT msg_id FROM polygon_supernet_withdrawals WHERE msg_id = (? - 1)) AND msg_id != ?",
-            w.msg_id,
-            ^id_min
-          )
-      )
-    )
-  end
-
-  defp find_and_save_withdrawals(
-         scan_db,
-         state_sender,
-         block_start,
-         block_end,
-         json_rpc_named_arguments
-       ) do
+  def find_and_save_entities(
+        scan_db,
+        state_sender,
+        block_start,
+        block_end,
+        json_rpc_named_arguments
+      ) do
     withdrawals =
       if scan_db do
         query =
@@ -258,110 +237,27 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
     Enum.count(withdrawals)
   end
 
-  defp fill_block_range(l2_block_start, l2_block_end, state_sender, json_rpc_named_arguments, scan_db) do
-    chunks_number =
-      if scan_db do
-        1
-      else
-        ceil((l2_block_end - l2_block_start + 1) / PolygonSupernet.get_logs_range_size())
-      end
-
-    chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
-
-    Enum.reduce(chunk_range, 0, fn current_chunk, withdrawals_count_acc ->
-      chunk_start = l2_block_start + PolygonSupernet.get_logs_range_size() * current_chunk
-
-      chunk_end =
-        if scan_db do
-          l2_block_end
-        else
-          min(chunk_start + PolygonSupernet.get_logs_range_size() - 1, l2_block_end)
-        end
-
-      PolygonSupernet.log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, "L2")
-
-      withdrawals_count =
-        find_and_save_withdrawals(
-          scan_db,
-          state_sender,
-          chunk_start,
-          chunk_end,
-          json_rpc_named_arguments
-        )
-
-      PolygonSupernet.log_blocks_chunk_handling(
-        chunk_start,
-        chunk_end,
-        l2_block_start,
-        l2_block_end,
-        "#{withdrawals_count} L2StateSynced event(s)",
-        "L2"
-      )
-
-      withdrawals_count_acc + withdrawals_count
-    end)
-  end
-
   defp fill_block_range(start_block, end_block, state_sender, json_rpc_named_arguments) do
-    fill_block_range(start_block, end_block, state_sender, json_rpc_named_arguments, true)
-    fill_msg_id_gaps(start_block, state_sender, json_rpc_named_arguments, false)
-    {last_l2_block_number, _} = get_last_l2_item()
-    fill_block_range(max(start_block, last_l2_block_number), end_block, state_sender, json_rpc_named_arguments, false)
-  end
+    PolygonSupernet.fill_block_range(start_block, end_block, __MODULE__, state_sender, json_rpc_named_arguments, true)
 
-  defp fill_msg_id_gaps(start_block_l2, state_sender, json_rpc_named_arguments, scan_db \\ true) do
-    id_min = Repo.aggregate(PolygonSupernetWithdrawal, :min, :msg_id)
-    id_max = Repo.aggregate(PolygonSupernetWithdrawal, :max, :msg_id)
-
-    with true <- !is_nil(id_min) and !is_nil(id_max),
-         starts = msg_id_gap_starts(id_max),
-         ends = msg_id_gap_ends(id_min),
-         min_block_l2 = l2_block_number_by_msg_id(id_min),
-         {new_starts, new_ends} =
-           if(start_block_l2 < min_block_l2,
-             do: {[start_block_l2 | starts], [min_block_l2 | ends]},
-             else: {starts, ends}
-           ),
-         true <- Enum.count(new_starts) == Enum.count(new_ends) do
-      new_starts
-      |> Enum.zip(new_ends)
-      |> Enum.each(fn {l2_block_start, l2_block_end} ->
-        withdrawals_count =
-          fill_block_range(l2_block_start, l2_block_end, state_sender, json_rpc_named_arguments, scan_db)
-
-        if withdrawals_count > 0 do
-          log_fill_msg_id_gaps(scan_db, l2_block_start, l2_block_end, withdrawals_count)
-        end
-      end)
-
-      if scan_db do
-        fill_msg_id_gaps(start_block_l2, state_sender, json_rpc_named_arguments, false)
-      end
-    end
-  end
-
-  defp get_last_l2_item do
-    query =
-      from(w in PolygonSupernetWithdrawal,
-        select: {w.l2_block_number, w.l2_transaction_hash},
-        order_by: [desc: w.msg_id],
-        limit: 1
-      )
-
-    query
-    |> Repo.one()
-    |> Kernel.||({0, nil})
-  end
-
-  defp log_fill_msg_id_gaps(scan_db, l2_block_start, l2_block_end, withdrawals_count) do
-    find_place = if scan_db, do: "in DB", else: "through RPC"
-
-    Logger.info(
-      "Filled gaps between L2 blocks #{l2_block_start} and #{l2_block_end}. #{withdrawals_count} event(s) were found #{find_place} and written to polygon_supernet_withdrawals table."
+    PolygonSupernet.fill_msg_id_gaps(
+      start_block,
+      PolygonSupernetWithdrawal,
+      __MODULE__,
+      state_sender,
+      json_rpc_named_arguments,
+      false
     )
-  end
 
-  defp l2_block_number_by_msg_id(id) do
-    Repo.one(from(w in PolygonSupernetWithdrawal, select: w.l2_block_number, where: w.msg_id == ^id))
+    {last_l2_block_number, _} = PolygonSupernet.get_last_l2_item(PolygonSupernetWithdrawal)
+
+    PolygonSupernet.fill_block_range(
+      max(start_block, last_l2_block_number),
+      end_block,
+      Indexer.Fetcher.PolygonSupernetWithdrawal,
+      state_sender,
+      json_rpc_named_arguments,
+      false
+    )
   end
 end

@@ -8,18 +8,15 @@ defmodule Indexer.Fetcher.PolygonSupernetDeposit do
 
   require Logger
 
-  import Ecto.Query
-
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
-  import Explorer.Helper, only: [decode_data: 2, parse_integer: 1]
+  import Explorer.Helper, only: [decode_data: 2]
 
+  alias ABI.TypeDecoder
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
-  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.PolygonSupernetDeposit
   alias Indexer.Fetcher.PolygonSupernet
-  alias Indexer.Helper
 
   @fetcher_name :polygon_supernet_deposit
 
@@ -50,162 +47,22 @@ defmodule Indexer.Fetcher.PolygonSupernetDeposit do
 
     env = Application.get_all_env(:indexer)[__MODULE__]
 
-    with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
-         {:reorg_monitor_started, true} <-
-           {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.PolygonSupernet))},
-         polygon_supernet_l1_rpc =
-           Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonSupernet][:polygon_supernet_l1_rpc],
-         {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(polygon_supernet_l1_rpc)},
-         {:contract_is_valid, true} <- {:contract_is_valid, Helper.is_address_correct?(env[:state_sender])},
-         start_block_l1 = parse_integer(env[:start_block_l1]),
-         false <- is_nil(start_block_l1),
-         true <- start_block_l1 > 0,
-         {last_l1_block_number, last_l1_transaction_hash} <- get_last_l1_item(),
-         {:start_block_l1_valid, true} <-
-           {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
-         json_rpc_named_arguments = PolygonSupernet.json_rpc_named_arguments(polygon_supernet_l1_rpc),
-         {:ok, last_l1_tx} <-
-           PolygonSupernet.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
-         {:ok, block_check_interval, last_safe_block} <-
-           PolygonSupernet.get_block_check_interval(json_rpc_named_arguments) do
-      start_block = max(start_block_l1, last_l1_block_number)
+    Subscriber.to(:polygon_supernet_reorg_block, :realtime)
 
-      Subscriber.to(:polygon_supernet_reorg_block, :realtime)
-
-      Process.send(self(), :continue, [])
-
-      {:ok,
-       %{
-         state_sender: env[:state_sender],
-         block_check_interval: block_check_interval,
-         start_block: start_block,
-         end_block: last_safe_block,
-         json_rpc_named_arguments: json_rpc_named_arguments
-       }}
-    else
-      {:start_block_l1_undefined, true} ->
-        # the process shouldn't start if the start block is not defined
-        :ignore
-
-      {:reorg_monitor_started, false} ->
-        Logger.error("Cannot start this process as reorg monitor in Indexer.Fetcher.PolygonSupernet is not started.")
-        :ignore
-
-      {:rpc_l1_undefined, true} ->
-        Logger.error("L1 RPC URL is not defined.")
-        :ignore
-
-      {:contract_is_valid, false} ->
-        Logger.error("State Sender contract address is invalid or not defined.")
-        :ignore
-
-      {:start_block_l1_valid, false} ->
-        Logger.error("Invalid L1 Start Block value. Please, check the value and polygon_supernet_deposits table.")
-
-        :ignore
-
-      {:error, error_data} ->
-        Logger.error(
-          "Cannot get last L1 transaction from RPC by its hash, last safe block, or block timestamp by its number due to RPC error: #{inspect(error_data)}"
-        )
-
-        :ignore
-
-      {:l1_tx_not_found, true} ->
-        Logger.error(
-          "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check polygon_supernet_deposits table."
-        )
-
-        :ignore
-
-      _ ->
-        Logger.error("Deposits L1 Start Block is invalid or zero.")
-        :ignore
-    end
+    PolygonSupernet.init_l1(
+      PolygonSupernetDeposit,
+      env,
+      self(),
+      env[:state_sender],
+      "State Sender",
+      "polygon_supernet_deposits",
+      "Deposits"
+    )
   end
 
   @impl GenServer
-  def handle_info(
-        :continue,
-        %{
-          state_sender: state_sender,
-          block_check_interval: block_check_interval,
-          start_block: start_block,
-          end_block: end_block,
-          json_rpc_named_arguments: json_rpc_named_arguments
-        } = state
-      ) do
-    time_before = Timex.now()
-
-    chunks_number = ceil((end_block - start_block + 1) / PolygonSupernet.get_logs_range_size())
-    chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
-
-    last_written_block =
-      chunk_range
-      |> Enum.reduce_while(start_block - 1, fn current_chunk, _ ->
-        chunk_start = start_block + PolygonSupernet.get_logs_range_size() * current_chunk
-        chunk_end = min(chunk_start + PolygonSupernet.get_logs_range_size() - 1, end_block)
-
-        if chunk_end >= chunk_start do
-          PolygonSupernet.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
-
-          {:ok, result} =
-            PolygonSupernet.get_logs(
-              chunk_start,
-              chunk_end,
-              state_sender,
-              @state_synced_event,
-              json_rpc_named_arguments,
-              100_000_000
-            )
-
-          deposit_events = prepare_events(result, json_rpc_named_arguments)
-
-          {:ok, _} =
-            Chain.import(%{
-              polygon_supernet_deposits: %{params: deposit_events},
-              timeout: :infinity
-            })
-
-          PolygonSupernet.log_blocks_chunk_handling(
-            chunk_start,
-            chunk_end,
-            start_block,
-            end_block,
-            "#{Enum.count(deposit_events)} StateSynced event(s)",
-            "L1"
-          )
-        end
-
-        reorg_block = PolygonSupernet.reorg_block_pop(@fetcher_name)
-
-        if !is_nil(reorg_block) && reorg_block > 0 do
-          {deleted_count, _} =
-            Repo.delete_all(from(d in PolygonSupernetDeposit, where: d.l1_block_number >= ^reorg_block))
-
-          log_deleted_rows_count(reorg_block, deleted_count)
-
-          {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
-        else
-          {:cont, chunk_end}
-        end
-      end)
-
-    new_start_block = last_written_block + 1
-    {:ok, new_end_block} = PolygonSupernet.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-
-    delay =
-      if new_end_block == last_written_block do
-        # there is no new block, so wait for some time to let the chain issue the new block
-        max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0)
-      else
-        0
-      end
-
-    Process.send_after(self(), :continue, delay)
-
-    {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
+  def handle_info(:continue, state) do
+    PolygonSupernet.handle_continue(state, @state_synced_event, __MODULE__, @fetcher_name)
   end
 
   @impl GenServer
@@ -220,15 +77,7 @@ defmodule Indexer.Fetcher.PolygonSupernetDeposit do
     {:noreply, state}
   end
 
-  defp log_deleted_rows_count(reorg_block, count) do
-    if count > 0 do
-      Logger.warning(
-        "As L1 reorg was detected, all rows with l1_block_number >= #{reorg_block} were removed from the polygon_supernet_deposits table. Number of removed rows: #{count}."
-      )
-    end
-  end
-
-  defp prepare_events(events, json_rpc_named_arguments) do
+  def prepare_events(events, json_rpc_named_arguments) do
     Enum.map(events, fn event ->
       [data_bytes] = decode_data(event["data"], [:bytes])
 
@@ -241,7 +90,7 @@ defmodule Indexer.Fetcher.PolygonSupernetDeposit do
           timestamps = get_timestamps_by_events(events, json_rpc_named_arguments)
 
           [_sig, _root_token, sender, receiver, _amount] =
-            ABI.TypeDecoder.decode_raw(data_bytes, [{:bytes, 32}, :address, :address, :address, {:uint, 256}])
+            TypeDecoder.decode_raw(data_bytes, [{:bytes, 32}, :address, :address, :address, {:uint, 256}])
 
           {sender, receiver, Map.get(timestamps, l1_block_number)}
         else
@@ -286,18 +135,5 @@ defmodule Indexer.Fetcher.PolygonSupernetDeposit do
       {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
       Map.put(acc, block_number, timestamp)
     end)
-  end
-
-  defp get_last_l1_item do
-    query =
-      from(d in PolygonSupernetDeposit,
-        select: {d.l1_block_number, d.l1_transaction_hash},
-        order_by: [desc: d.msg_id],
-        limit: 1
-      )
-
-    query
-    |> Repo.one()
-    |> Kernel.||({0, nil})
   end
 end
