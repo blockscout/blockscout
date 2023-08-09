@@ -656,7 +656,8 @@ defmodule Explorer.Factory do
       type: "ERC-20",
       cataloged: true,
       icon_url: sequence("https://example.com/icon"),
-      fiat_value: 10.1
+      fiat_value: 10.1,
+      is_verified_via_admin_panel: Enum.random([true, false])
     }
   end
 
