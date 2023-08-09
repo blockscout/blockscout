@@ -67,7 +67,7 @@ defmodule EthereumJSONRPC.Withdrawal do
       address_hash: address_hash,
       block_hash: block_hash,
       block_number: block_number,
-      amount: amount * 31250000
+      amount: amount * 31_250_000
     }
   end
 

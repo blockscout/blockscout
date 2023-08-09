@@ -1205,6 +1205,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert [
                %{
+                 "method_id" => "49ba1b49",
                  "type" => "function",
                  "stateMutability" => "nonpayable",
                  "outputs" => [],
@@ -1271,7 +1272,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "stateMutability" => "nonpayable",
                  "outputs" => [],
                  "name" => "disableWhitelist",
-                 "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
+                 "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}],
+                 "method_id" => "49ba1b49"
                }
              ] == response
     end
@@ -1912,7 +1914,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "stateMutability" => "nonpayable",
                  "outputs" => [],
                  "name" => "disableWhitelist",
-                 "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}]
+                 "inputs" => [%{"type" => "bool", "name" => "disable", "internalType" => "bool"}],
+                 "method_id" => "49ba1b49"
                }
              ] == response
     end

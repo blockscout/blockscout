@@ -521,7 +521,8 @@
         "Nerg",
         "sushiswap",
         "defi",
-        "GTGS"
+        "GTGS",
+        "secp"
     ],
     "enableFiletypes": [
         "dotenv",

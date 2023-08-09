@@ -29,16 +29,22 @@ defmodule BlockScoutWeb.Chain.MarketHistoryChartController do
     end
   end
 
-  defp available_supply(:ok, exchange_rate) do
-    to_string(exchange_rate.available_supply || 0)
-  end
+  def available_supply(:ok, exchange_rate), do: exchange_rate.available_supply || 0
 
-  defp available_supply({:ok, supply_for_days}, _exchange_rate) do
+  def available_supply({:ok, supply_for_days}, _exchange_rate) do
     supply_for_days
     |> Jason.encode()
     |> case do
-      {:ok, data} -> data
-      _ -> []
+      {:ok, _data} ->
+        current_date =
+          supply_for_days
+          |> Map.keys()
+          |> Enum.max(Date)
+
+        Map.get(supply_for_days, current_date)
+
+      _ ->
+        nil
     end
   end
 
