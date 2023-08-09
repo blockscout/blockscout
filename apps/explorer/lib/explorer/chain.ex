@@ -5326,6 +5326,13 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec fetch_last_token_balances_include_unfetched(Hash.Address.t(), [api?]) :: []
+  def fetch_last_token_balances_include_unfetched(address_hash, options \\ []) do
+    address_hash
+    |> CurrentTokenBalance.last_token_balances_include_unfetched()
+    |> select_repo(options).all()
+  end
+
   @spec fetch_last_token_balances(Hash.Address.t(), [api?]) :: []
   def fetch_last_token_balances(address_hash, options \\ []) do
     address_hash
