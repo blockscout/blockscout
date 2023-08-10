@@ -167,7 +167,6 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     from(
       ctb in __MODULE__,
       where: ctb.address_hash == ^address_hash,
-      where: ctb.value > 0 or is_nil(ctb.value_fetched_at),
       left_join: t in assoc(ctb, :token),
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       preload: [token: t],
