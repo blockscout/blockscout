@@ -7,11 +7,15 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
   use Indexer.Fetcher
 
   alias Explorer.Chain
+  alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Hash
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Token.BalanceReader
   alias Timex.Duration
+
+  require Logger
 
   ## Interface
 
@@ -35,7 +39,6 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
           Decimal.t() | nil,
           non_neg_integer()
         ) :: {:ok, pid}
-
   def trigger_historic_fetch(address_hash, contract_address_hash, token_type, token_id, block_number) do
     Task.start(fn ->
       do_trigger_historic_fetch(address_hash, contract_address_hash, token_type, token_id, block_number)
@@ -61,51 +64,101 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
   end
 
   defp fetch_and_update(block_number, address_hash, stale_current_token_balances) do
-    current_token_balances_update_params =
+    %{erc_1155: erc_1155_ctbs, other: other_ctbs, tokens: tokens} =
       stale_current_token_balances
-      |> Enum.map(fn %{token_id: token_id} = stale_current_token_balance ->
-        stale_current_token_balances_to_fetch = [
-          %{
-            token_contract_address_hash:
-              "0x" <> Base.encode16(stale_current_token_balance.token.contract_address_hash.bytes),
-            address_hash: "0x" <> Base.encode16(address_hash.bytes),
-            block_number: block_number,
-            token_id: token_id && Decimal.to_integer(token_id)
-          }
-        ]
+      |> Enum.reduce(%{erc_1155: [], other: [], tokens: %{}}, fn %{token_id: token_id} = stale_current_token_balance,
+                                                                 acc ->
+        prepared_ctb = %{
+          token_contract_address_hash:
+            "0x" <> Base.encode16(stale_current_token_balance.token.contract_address_hash.bytes),
+          address_hash: "0x" <> Base.encode16(address_hash.bytes),
+          block_number: block_number,
+          token_id: token_id && Decimal.to_integer(token_id),
+          token_type: stale_current_token_balance.token_type
+        }
 
-        balance_response =
-          case stale_current_token_balance.token_type do
-            "ERC-1155" -> BalanceReader.get_balances_of_erc_1155(stale_current_token_balances_to_fetch)
-            _ -> BalanceReader.get_balances_of(stale_current_token_balances_to_fetch)
+        updated_tokens =
+          Map.put_new(
+            acc[:tokens],
+            stale_current_token_balance.token.contract_address_hash.bytes,
+            stale_current_token_balance.token
+          )
+
+        result =
+          if stale_current_token_balance.token_type == "ERC-1155" do
+            Map.put(acc, :erc_1155, [prepared_ctb | acc[:erc_1155]])
+          else
+            Map.put(acc, :other, [prepared_ctb | acc[:other]])
           end
 
-        updated_balance = balance_response[:ok]
-
-        if updated_balance do
-          %{}
-          |> Map.put(:address_hash, stale_current_token_balance.address_hash)
-          |> Map.put(:token_contract_address_hash, stale_current_token_balance.token.contract_address_hash)
-          |> Map.put(:token_type, stale_current_token_balance.token.type)
-          |> Map.put(:token_id, token_id)
-          |> Map.put(:block_number, block_number)
-          |> Map.put(:value, Decimal.new(updated_balance))
-          |> Map.put(:value_fetched_at, DateTime.utc_now())
-        else
-          nil
-        end
+        Map.put(result, :tokens, updated_tokens)
       end)
 
+    erc_1155_ctbs_reversed = Enum.reverse(erc_1155_ctbs)
+    other_ctbs_reversed = Enum.reverse(other_ctbs)
+
+    updated_erc_1155_ctbs =
+      if Enum.count(erc_1155_ctbs_reversed) > 0 do
+        erc_1155_ctbs_reversed
+        |> BalanceReader.get_balances_of_erc_1155()
+        |> Enum.zip(erc_1155_ctbs_reversed)
+        |> Enum.map(&prepare_updated_balance(&1, block_number))
+      else
+        []
+      end
+
+    updated_other_ctbs =
+      if Enum.count(other_ctbs_reversed) > 0 do
+        other_ctbs_reversed
+        |> BalanceReader.get_balances_of()
+        |> Enum.zip(other_ctbs_reversed)
+        |> Enum.map(&prepare_updated_balance(&1, block_number))
+      else
+        []
+      end
+
     filtered_current_token_balances_update_params =
-      current_token_balances_update_params
+      (updated_erc_1155_ctbs ++ updated_other_ctbs)
       |> Enum.filter(&(!is_nil(&1)))
 
-    Chain.import(%{
-      address_current_token_balances: %{
-        params: filtered_current_token_balances_update_params
+    {:ok,
+     %{
+       address_current_token_balances: imported_ctbs
+     }} =
+      Chain.import(%{
+        address_current_token_balances: %{
+          params: filtered_current_token_balances_update_params
+        },
+        broadcast: false
+      })
+
+    Publisher.broadcast(
+      %{
+        address_current_token_balances: %{
+          address_hash: to_string(address_hash),
+          address_current_token_balances:
+            imported_ctbs
+            |> Enum.map(fn ctb -> %CurrentTokenBalance{ctb | token: tokens[ctb.token_contract_address_hash.bytes]} end)
+        }
       },
-      broadcast: :on_demand
-    })
+      :on_demand
+    )
+  end
+
+  defp prepare_updated_balance({{:ok, updated_balance}, stale_current_token_balance}, block_number) do
+    %{}
+    |> Map.put(:address_hash, stale_current_token_balance.address_hash)
+    |> Map.put(:token_contract_address_hash, stale_current_token_balance.token_contract_address_hash)
+    |> Map.put(:token_type, stale_current_token_balance.token_type)
+    |> Map.put(:token_id, stale_current_token_balance.token_id)
+    |> Map.put(:block_number, block_number)
+    |> Map.put(:value, Decimal.new(updated_balance))
+    |> Map.put(:value_fetched_at, DateTime.utc_now())
+  end
+
+  defp prepare_updated_balance({{:error, error}, _ctb}, _block_number) do
+    Logger.warn(fn -> ["Error on updating current token balance: ", inspect(error)] end)
+    nil
   end
 
   defp do_trigger_historic_fetch(address_hash, contract_address_hash, token_type, token_id, block_number) do
