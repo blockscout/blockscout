@@ -20,9 +20,8 @@ defmodule Indexer.Transform.PolygonSupernetDepositExecutes do
 
     items =
       with false <-
-             is_nil(Application.get_env(:indexer, Indexer.Fetcher.PolygonSupernetDepositExecute)[:start_block_l2]),
-           state_receiver =
-             Application.get_env(:indexer, Indexer.Fetcher.PolygonSupernetDepositExecute)[:state_receiver],
+             is_nil(Application.get_env(:indexer, PolygonSupernetDepositExecute)[:start_block_l2]),
+           state_receiver = Application.get_env(:indexer, PolygonSupernetDepositExecute)[:state_receiver],
            true <- Helper.is_address_correct?(state_receiver) do
         state_receiver = String.downcase(state_receiver)
 

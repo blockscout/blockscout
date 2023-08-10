@@ -69,8 +69,8 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     end
   end
 
-  def init_l1(module, env, pid, contract_address, contract_name, table_name, entity_name)
-      when module in [Explorer.Chain.PolygonSupernetDeposit, Explorer.Chain.PolygonSupernetWithdrawalExit] do
+  def init_l1(table, env, pid, contract_address, contract_name, table_name, entity_name)
+      when table in [Explorer.Chain.PolygonSupernetDeposit, Explorer.Chain.PolygonSupernetWithdrawalExit] do
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
          {:reorg_monitor_started, true} <-
            {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.PolygonSupernet))},
@@ -81,7 +81,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
          start_block_l1 = parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
-         {last_l1_block_number, last_l1_transaction_hash} <- get_last_l1_item(module),
+         {last_l1_block_number, last_l1_transaction_hash} <- get_last_l1_item(table),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
          json_rpc_named_arguments = json_rpc_named_arguments(polygon_supernet_l1_rpc),
@@ -140,6 +140,63 @@ defmodule Indexer.Fetcher.PolygonSupernet do
 
       _ ->
         Logger.error("#{entity_name} L1 Start Block is invalid or zero.")
+        :ignore
+    end
+  end
+
+  def init_l2(table, env, pid, contract_address, contract_name, table_name, entity_name, json_rpc_named_arguments)
+      when table in [Explorer.Chain.PolygonSupernetDepositExecute, Explorer.Chain.PolygonSupernetWithdrawal] do
+    with {:start_block_l2_undefined, false} <- {:start_block_l2_undefined, is_nil(env[:start_block_l2])},
+         {:contract_address_valid, true} <- {:contract_address_valid, Helper.is_address_correct?(contract_address)},
+         start_block_l2 = parse_integer(env[:start_block_l2]),
+         false <- is_nil(start_block_l2),
+         true <- start_block_l2 > 0,
+         {last_l2_block_number, last_l2_transaction_hash} <- get_last_l2_item(table),
+         {safe_block, safe_block_is_latest} = get_safe_block(json_rpc_named_arguments),
+         {:start_block_l2_valid, true} <-
+           {:start_block_l2_valid,
+            (start_block_l2 <= last_l2_block_number || last_l2_block_number == 0) && start_block_l2 <= safe_block},
+         {:ok, last_l2_tx} <- get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments),
+         {:l2_tx_not_found, false} <- {:l2_tx_not_found, !is_nil(last_l2_transaction_hash) && is_nil(last_l2_tx)} do
+      Process.send(pid, :continue, [])
+
+      {:ok,
+       %{
+         start_block: max(start_block_l2, last_l2_block_number),
+         start_block_l2: start_block_l2,
+         safe_block: safe_block,
+         safe_block_is_latest: safe_block_is_latest,
+         contract_address: contract_address,
+         json_rpc_named_arguments: json_rpc_named_arguments
+       }}
+    else
+      {:start_block_l2_undefined, true} ->
+        # the process shouldn't start if the start block is not defined
+        :ignore
+
+      {:contract_address_valid, false} ->
+        Logger.error("#{contract_name} contract address is invalid or not defined.")
+        :ignore
+
+      {:start_block_l2_valid, false} ->
+        Logger.error("Invalid L2 Start Block value. Please, check the value and #{table_name} table.")
+
+        :ignore
+
+      {:error, error_data} ->
+        Logger.error("Cannot get last L2 transaction from RPC by its hash due to RPC error: #{inspect(error_data)}")
+
+        :ignore
+
+      {:l2_tx_not_found, true} ->
+        Logger.error(
+          "Cannot find last L2 transaction from RPC by its hash. Probably, there was a reorg on L2 chain. Please, check #{table_name} table."
+        )
+
+        :ignore
+
+      _ ->
+        Logger.error("#{entity_name} L2 Start Block is invalid or zero.")
         :ignore
     end
   end
@@ -324,8 +381,21 @@ defmodule Indexer.Fetcher.PolygonSupernet do
              else: {starts, ends}
            ),
          true <- Enum.count(new_starts) == Enum.count(new_ends) do
-      new_starts
-      |> Enum.zip(new_ends)
+      ranges = Enum.zip(new_starts, new_ends)
+
+      invalid_range_exists = Enum.any?(ranges, fn {l2_block_start, l2_block_end} -> l2_block_start > l2_block_end end)
+
+      ranges_final =
+        with {:ranges_are_invalid, true} <- {:ranges_are_invalid, invalid_range_exists},
+             {max_block_l2, _} = get_last_l2_item(table),
+             {:start_block_l2_is_min, true} <- {:start_block_l2_is_min, start_block_l2 <= max_block_l2} do
+          [{start_block_l2, max_block_l2}]
+        else
+          {:ranges_are_invalid, false} -> ranges
+          {:start_block_l2_is_min, false} -> []
+        end
+
+      ranges_final
       |> Enum.each(fn {l2_block_start, l2_block_end} ->
         count =
           fill_block_range(
@@ -467,7 +537,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     repeated_call(func, args, error_message, retries)
   end
 
-  def get_safe_block(json_rpc_named_arguments) do
+  defp get_safe_block(json_rpc_named_arguments) do
     case get_block_number_by_tag("safe", json_rpc_named_arguments, 3) do
       {:ok, safe_block} ->
         {safe_block, false}
@@ -501,11 +571,11 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
-  def get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
+  defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
 
-  def get_transaction_by_hash(hash, _json_rpc_named_arguments, _retries_left) when is_nil(hash), do: {:ok, nil}
+  defp get_transaction_by_hash(hash, _json_rpc_named_arguments, _retries_left) when is_nil(hash), do: {:ok, nil}
 
-  def get_transaction_by_hash(hash, json_rpc_named_arguments, retries) do
+  defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries) do
     req =
       request(%{
         id: 0,

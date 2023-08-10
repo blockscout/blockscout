@@ -19,8 +19,8 @@ defmodule Indexer.Transform.PolygonSupernetWithdrawals do
     Logger.metadata(fetcher: :polygon_supernet_withdrawals_realtime)
 
     items =
-      with false <- is_nil(Application.get_env(:indexer, Indexer.Fetcher.PolygonSupernetWithdrawal)[:start_block_l2]),
-           state_sender = Application.get_env(:indexer, Indexer.Fetcher.PolygonSupernetWithdrawal)[:state_sender],
+      with false <- is_nil(Application.get_env(:indexer, PolygonSupernetWithdrawal)[:start_block_l2]),
+           state_sender = Application.get_env(:indexer, PolygonSupernetWithdrawal)[:state_sender],
            true <- Helper.is_address_correct?(state_sender) do
         state_sender = String.downcase(state_sender)
 
