@@ -16,8 +16,8 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
 
   ## Interface
 
-  @spec trigger_fetch(Hash.t(), [CurrentTokenBalance.t()]) :: :ok
-  def trigger_fetch(address_hash, current_token_balances) do
+  @spec trigger_fetch(Hash.t()) :: :ok
+  def trigger_fetch(address_hash) do
     latest_block_number = latest_block_number()
 
     case stale_balance_window(latest_block_number) do
@@ -25,7 +25,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
         :current
 
       stale_balance_window ->
-        do_trigger_fetch(address_hash, current_token_balances, latest_block_number, stale_balance_window)
+        do_trigger_fetch(address_hash, latest_block_number, stale_balance_window)
     end
   end
 
@@ -45,10 +45,11 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
 
   ## Implementation
 
-  defp do_trigger_fetch(address_hash, current_token_balances, latest_block_number, stale_balance_window)
+  defp do_trigger_fetch(address_hash, latest_block_number, stale_balance_window)
        when not is_nil(address_hash) do
     stale_current_token_balances =
-      current_token_balances
+      address_hash
+      |> Chain.fetch_last_token_balances_include_unfetched()
       |> Enum.filter(fn current_token_balance -> current_token_balance.block_number < stale_balance_window end)
 
     if Enum.count(stale_current_token_balances) > 0 do
