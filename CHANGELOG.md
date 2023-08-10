@@ -17,6 +17,7 @@
 - [#8060](https://github.com/blockscout/blockscout/pull/8060) - Fix eth_getLogs API endpoint
 - [#8082](https://github.com/blockscout/blockscout/pull/8082), [#8088](https://github.com/blockscout/blockscout/pull/8088) - Fix Rootstock charts API
 - [#7992](https://github.com/blockscout/blockscout/pull/7992) - Fix missing range insert
+- [#8022](https://github.com/blockscout/blockscout/pull/8022) - Don't add reorg block number to missing blocks
 
 ### Chore
 
