@@ -16,7 +16,7 @@ server {
         proxy_set_header Connection "Upgrade";
         proxy_set_header Host $host;
     }
-    location ~ ^/(_next|node-api|apps|account|accounts|static|auth/profile|/auth/unverified-email|txs|tx|blocks|block|login|address|stats|search-results|token|tokens|visualize|api-docs|csv-export|verified-contracts|graphiql|withdrawals) {
+    location ~ ^/(_next|node-api|apps|account|accounts|static|auth/profile|/auth/unverified-email|txs|tx|blocks|block|login|address|stats|search-results|token|tokens|visualize|api-docs|csv-export|verified-contracts|graphiql|withdrawals|l2-output-roots|l2-txn-batches|l2-withdrawals|l2-deposits) {
         proxy_pass          ${FRONT_PROXY_PASS};
     }
 }
