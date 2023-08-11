@@ -4,11 +4,13 @@
 
 ### Features
 
+- [#8156](https://github.com/blockscout/blockscout/pull/8156) - Add `is_verified_via_admin_panel` property to tokens table
 - [#8165](https://github.com/blockscout/blockscout/pull/8165) - Add broadcast of updated address_current_token_balances
 - [#7952](https://github.com/blockscout/blockscout/pull/7952) - Add parsing constructor arguments for sourcify contracts
 - [#6190](https://github.com/blockscout/blockscout/pull/6190) - Add EIP-1559 support to gas price oracle
 - [#7977](https://github.com/blockscout/blockscout/pull/7977) - GraphQL: extend schema with new field for existing objects
 - [#8158](https://github.com/blockscout/blockscout/pull/8158), [#8164](https://github.com/blockscout/blockscout/pull/8164) - Include unfetched balances in TokenBalanceOnDemand fetcher
+- [#8181](https://github.com/blockscout/blockscout/pull/8181) - Insert current token balances placeholders along with historical
 
 ### Fixes
 
@@ -22,6 +24,7 @@
 
 ### Chore
 
+- [#8167](https://github.com/blockscout/blockscout/pull/8167) - Manage concurrency for Token and TokenBalance fetcher
 - [#8146](https://github.com/blockscout/blockscout/pull/8146) - Add method_id to write methods in API v2 response
 - [#8105](https://github.com/blockscout/blockscout/pull/8105) - Extend API v1 with endpoints used by new UI
 - [#8104](https://github.com/blockscout/blockscout/pull/8104) - remove "TODO" from API v2 response
