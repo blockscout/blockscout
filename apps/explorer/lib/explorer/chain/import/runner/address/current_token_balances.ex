@@ -273,11 +273,12 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         ]
       ],
       where:
-        fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
-          (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
-             fragment("EXCLUDED.value IS NOT NULL") and
-             (is_nil(current_token_balance.value_fetched_at) or
-                fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at)))
+        fragment("EXCLUDED.value_fetched_at IS NOT NULL") and
+          (fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
+             (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
+                fragment("EXCLUDED.value IS NOT NULL") and
+                (is_nil(current_token_balance.value_fetched_at) or
+                   fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at))))
     )
   end
 
