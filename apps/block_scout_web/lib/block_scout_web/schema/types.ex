@@ -22,10 +22,14 @@ defmodule BlockScoutWeb.Schema.Types do
   A stored representation of a Web3 address.
   """
   object :address do
-    field(:hash, :address_hash)
     field(:fetched_coin_balance, :wei)
     field(:fetched_coin_balance_block_number, :integer)
+    field(:hash, :address_hash)
     field(:contract_code, :data)
+    field(:nonce, :integer)
+    field(:gas_used, :integer)
+    field(:transactions_count, :integer)
+    field(:token_transfers_count, :integer)
 
     field :smart_contract, :smart_contract do
       resolve(dataloader(:db, :smart_contract))
@@ -36,16 +40,7 @@ defmodule BlockScoutWeb.Schema.Types do
       arg(:order, type: :sort_order, default_value: :desc)
       resolve(&Transaction.get_by/3)
 
-      complexity(fn
-        %{first: first}, child_complexity ->
-          first * child_complexity
-
-        %{last: last}, child_complexity ->
-          last * child_complexity
-
-        %{}, _child_complexity ->
-          0
-      end)
+      complexity(fn params, child_complexity -> process_complexity(params, child_complexity) end)
     end
   end
 
@@ -55,18 +50,20 @@ defmodule BlockScoutWeb.Schema.Types do
   structure that they form is called a "blockchain".
   """
   object :block do
-    field(:hash, :full_hash)
     field(:consensus, :boolean)
     field(:difficulty, :decimal)
     field(:gas_limit, :decimal)
     field(:gas_used, :decimal)
+    field(:hash, :full_hash)
+    field(:miner_hash, :address_hash)
     field(:nonce, :nonce_hash)
     field(:number, :integer)
+    field(:parent_hash, :full_hash)
     field(:size, :integer)
     field(:timestamp, :datetime)
     field(:total_difficulty, :decimal)
-    field(:miner_hash, :address_hash)
-    field(:parent_hash, :full_hash)
+    field(:base_fee_per_gas, :wei)
+    field(:is_empty, :boolean)
   end
 
   @desc """
@@ -85,12 +82,14 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:trace_address, :json)
     field(:type, :type)
     field(:value, :wei)
-    field(:block_number, :integer)
-    field(:transaction_index, :integer)
     field(:created_contract_address_hash, :address_hash)
     field(:from_address_hash, :address_hash)
     field(:to_address_hash, :address_hash)
     field(:transaction_hash, :full_hash)
+    field(:block_number, :integer)
+    field(:transaction_index, :integer)
+    field(:block_hash, :full_hash)
+    field(:block_index, :integer)
   end
 
   @desc """
@@ -108,6 +107,19 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:contract_source_code, :string)
     field(:abi, :json)
     field(:address_hash, :address_hash)
+    field(:constructor_arguments, :string)
+    field(:optimization_runs, :integer)
+    field(:evm_version, :string)
+    field(:external_libraries, :json)
+    field(:verified_via_sourcify, :boolean)
+    field(:partially_verified, :boolean)
+    field(:file_path, :string)
+    field(:is_vyper_contract, :boolean)
+    field(:is_changed_bytecode, :boolean)
+    field(:implementation_name, :string)
+    field(:implementation_address_hash, :address_hash)
+    field(:compiler_settings, :json)
+    field(:verified_via_eth_bytecode_db, :boolean)
   end
 
   @desc """
@@ -130,13 +142,12 @@ defmodule BlockScoutWeb.Schema.Types do
   Models a Web3 transaction.
   """
   node object(:transaction, id_fetcher: &transaction_id_fetcher/2) do
-    field(:hash, :full_hash)
-    field(:block_number, :integer)
     field(:cumulative_gas_used, :decimal)
     field(:error, :string)
     field(:gas, :decimal)
     field(:gas_price, :wei)
     field(:gas_used, :decimal)
+    field(:hash, :full_hash)
     field(:index, :integer)
     field(:input, :string)
     field(:nonce, :nonce_hash)
@@ -145,24 +156,23 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:status, :status)
     field(:v, :decimal)
     field(:value, :wei)
+    field(:block_hash, :full_hash)
+    field(:block_number, :integer)
     field(:from_address_hash, :address_hash)
     field(:to_address_hash, :address_hash)
     field(:created_contract_address_hash, :address_hash)
+    field(:earliest_processing_start, :datetime)
+    field(:revert_reason, :string)
+    field(:max_priority_fee_per_gas, :wei)
+    field(:max_fee_per_gas, :wei)
+    field(:type, :integer)
+    field(:has_error_in_internal_txs, :boolean)
 
     connection field(:internal_transactions, node_type: :internal_transaction) do
       arg(:count, :integer)
       resolve(&InternalTransaction.get_by/3)
 
-      complexity(fn
-        %{first: first}, child_complexity ->
-          first * child_complexity
-
-        %{last: last}, child_complexity ->
-          last * child_complexity
-
-        %{}, _child_complexity ->
-          0
-      end)
+      complexity(fn params, child_complexity -> process_complexity(params, child_complexity) end)
     end
   end
 
@@ -174,5 +184,18 @@ defmodule BlockScoutWeb.Schema.Types do
 
   def internal_transaction_id_fetcher(%{transaction_hash: transaction_hash, index: index}, _) do
     Jason.encode!(%{transaction_hash: to_string(transaction_hash), index: index})
+  end
+
+  defp process_complexity(params, child_complexity) do
+    case params do
+      %{first: first} ->
+        first * child_complexity
+
+      %{last: last} ->
+        last * child_complexity
+
+      %{} ->
+        0
+    end
   end
 end

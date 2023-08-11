@@ -12,12 +12,13 @@ services:
         POSTGRES_HOST_AUTH_METHOD: 'trust'
     ports:
       - 7433:5432
+    volumes:
+      - ./stats-db-data:/var/lib/postgresql/data/
 
   stats:
-    depends_on:
-      - stats-db
     image: ghcr.io/blockscout/stats:${STATS_DOCKER_TAG:-latest}
     pull_policy: always
+    platform: linux/amd64
     restart: always
     container_name: 'stats'
     extra_hosts:
@@ -31,5 +32,3 @@ services:
       - STATS__RUN_MIGRATIONS=true
     ports:
       - 8153:8050
-    volumes:
-      - ./stats-db-data:/var/lib/postgresql/data/

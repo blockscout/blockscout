@@ -135,6 +135,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["exchange_rate"] == (token.fiat_value && to_string(token.fiat_value))
       assert item["total_supply"] == to_string(token.total_supply)
       assert item["icon_url"] == token.icon_url
+      assert item["is_verified_via_admin_panel"] == token.is_verified_via_admin_panel
     end
 
     test "search transaction", %{conn: conn} do

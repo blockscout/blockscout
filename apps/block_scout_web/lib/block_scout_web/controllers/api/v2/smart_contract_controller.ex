@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:not_found, true} <- {:not_found, AddressView.check_custom_abi_for_having_write_functions(custom_abi)} do
       conn
       |> put_status(200)
-      |> json(Writer.filter_write_functions(custom_abi.abi))
+      |> json(custom_abi.abi |> Writer.filter_write_functions() |> Reader.get_abi_with_method_id())
     end
   end
 
@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:not_found, false} <- {:not_found, is_nil(smart_contract)} do
       conn
       |> put_status(200)
-      |> json(Writer.write_functions(smart_contract))
+      |> json(smart_contract |> Writer.write_functions() |> Reader.get_abi_with_method_id())
     end
   end
 
@@ -135,7 +135,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
       conn
       |> put_status(200)
-      |> json(Writer.write_functions_proxy(implementation_address_hash_string, @api_true))
+      |> json(
+        implementation_address_hash_string
+        |> Writer.write_functions_proxy(@api_true)
+        |> Reader.get_abi_with_method_id()
+      )
     end
   end
 

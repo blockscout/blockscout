@@ -98,6 +98,7 @@ defmodule Explorer.Chain do
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.SmartContract.Helper
+  alias Explorer.SmartContract.Solidity.Verifier
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
   alias Dataloader.Ecto, as: DataloaderEcto
@@ -1515,7 +1516,8 @@ defmodule Explorer.Chain do
         exchange_rate: nil,
         total_supply: nil,
         circulating_market_cap: nil,
-        priority: 1
+        priority: 1,
+        is_verified_via_admin_panel: nil
       }
     )
   end
@@ -1542,7 +1544,8 @@ defmodule Explorer.Chain do
         exchange_rate: token.fiat_value,
         total_supply: token.total_supply,
         circulating_market_cap: token.circulating_market_cap,
-        priority: 0
+        priority: 0,
+        is_verified_via_admin_panel: token.is_verified_via_admin_panel
       }
     )
   end
@@ -1569,7 +1572,8 @@ defmodule Explorer.Chain do
         exchange_rate: nil,
         total_supply: nil,
         circulating_market_cap: nil,
-        priority: 0
+        priority: 0,
+        is_verified_via_admin_panel: nil
       }
     )
   end
@@ -1605,7 +1609,8 @@ defmodule Explorer.Chain do
             exchange_rate: nil,
             total_supply: nil,
             circulating_market_cap: nil,
-            priority: 0
+            priority: 0,
+            is_verified_via_admin_panel: nil
           }
         )
 
@@ -1638,7 +1643,8 @@ defmodule Explorer.Chain do
             exchange_rate: nil,
             total_supply: nil,
             circulating_market_cap: nil,
-            priority: 0
+            priority: 0,
+            is_verified_via_admin_panel: nil
           }
         )
 
@@ -1669,7 +1675,8 @@ defmodule Explorer.Chain do
             exchange_rate: nil,
             total_supply: nil,
             circulating_market_cap: nil,
-            priority: 0
+            priority: 0,
+            is_verified_via_admin_panel: nil
           }
         )
 
@@ -1695,7 +1702,8 @@ defmodule Explorer.Chain do
                 exchange_rate: nil,
                 total_supply: nil,
                 circulating_market_cap: nil,
-                priority: 0
+                priority: 0,
+                is_verified_via_admin_panel: nil
               }
             )
 
@@ -1749,6 +1757,7 @@ defmodule Explorer.Chain do
               desc: items.priority,
               desc_nulls_last: items.circulating_market_cap,
               desc_nulls_last: items.exchange_rate,
+              desc_nulls_last: items.is_verified_via_admin_panel,
               desc_nulls_last: items.holder_count,
               asc: items.name,
               desc: items.inserted_at
@@ -1913,7 +1922,7 @@ defmodule Explorer.Chain do
           if smart_contract do
             CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, smart_contract)
-            address_result
+            check_and_update_constructor_args(address_result)
           else
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
 
@@ -1935,6 +1944,36 @@ defmodule Explorer.Chain do
       address -> {:ok, address}
     end
   end
+
+  defp check_and_update_constructor_args(
+         %SmartContract{address_hash: address_hash, constructor_arguments: nil, verified_via_sourcify: true} =
+           smart_contract
+       ) do
+    if args = Verifier.parse_constructor_arguments_for_sourcify_contract(address_hash, smart_contract.abi) do
+      smart_contract |> SmartContract.changeset(%{constructor_arguments: args}) |> Repo.update()
+      %SmartContract{smart_contract | constructor_arguments: args}
+    else
+      smart_contract
+    end
+  end
+
+  defp check_and_update_constructor_args(
+         %Address{
+           hash: address_hash,
+           contract_code: deployed_bytecode,
+           smart_contract: %SmartContract{constructor_arguments: nil, verified_via_sourcify: true} = smart_contract
+         } = address
+       ) do
+    if args =
+         Verifier.parse_constructor_arguments_for_sourcify_contract(address_hash, smart_contract.abi, deployed_bytecode) do
+      smart_contract |> SmartContract.changeset(%{constructor_arguments: args}) |> Repo.update()
+      %Address{address | smart_contract: %SmartContract{smart_contract | constructor_arguments: args}}
+    else
+      address
+    end
+  end
+
+  defp check_and_update_constructor_args(other), do: other
 
   defp add_twin_info_to_contract(address_result, address_verified_twin_contract, _hash)
        when is_nil(address_verified_twin_contract),
@@ -4310,7 +4349,7 @@ defmodule Explorer.Chain do
       verified_contract_twin_additional_sources = get_contract_additional_sources(verified_contract_twin, options)
 
       %{
-        :verified_contract => verified_contract_twin,
+        :verified_contract => check_and_update_constructor_args(verified_contract_twin),
         :additional_sources => verified_contract_twin_additional_sources
       }
     else
@@ -5293,6 +5332,13 @@ defmodule Explorer.Chain do
       {:error, :token, changeset, _} ->
         {:error, changeset}
     end
+  end
+
+  @spec fetch_last_token_balances_include_unfetched(Hash.Address.t(), [api?]) :: []
+  def fetch_last_token_balances_include_unfetched(address_hash, options \\ []) do
+    address_hash
+    |> CurrentTokenBalance.last_token_balances_include_unfetched()
+    |> select_repo(options).all()
   end
 
   @spec fetch_last_token_balances(Hash.Address.t(), [api?]) :: []

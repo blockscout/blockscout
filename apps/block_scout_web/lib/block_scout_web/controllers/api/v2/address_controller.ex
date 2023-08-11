@@ -97,7 +97,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> Chain.fetch_last_token_balances(@api_true)
 
       Task.start_link(fn ->
-        TokenBalanceOnDemand.trigger_fetch(address_hash, token_balances)
+        TokenBalanceOnDemand.trigger_fetch(address_hash)
       end)
 
       conn
@@ -361,7 +361,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         )
 
       Task.start_link(fn ->
-        TokenBalanceOnDemand.trigger_fetch(address_hash, results_plus_one)
+        TokenBalanceOnDemand.trigger_fetch(address_hash)
       end)
 
       {tokens, next_page} = split_list_by_page(results_plus_one)

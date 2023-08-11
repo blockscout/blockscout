@@ -30,7 +30,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "exchange_rate" => search_result.exchange_rate && to_string(search_result.exchange_rate),
       "total_supply" => search_result.total_supply,
       "circulating_market_cap" =>
-        search_result.circulating_market_cap && to_string(search_result.circulating_market_cap)
+        search_result.circulating_market_cap && to_string(search_result.circulating_market_cap),
+      "is_verified_via_admin_panel" => search_result.is_verified_via_admin_panel
     }
   end
 

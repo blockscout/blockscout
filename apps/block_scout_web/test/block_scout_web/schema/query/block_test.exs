@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.Schema.Query.BlockTest do
 
       variables = %{"number" => block.number}
 
-      conn = post(conn, "/graphql", query: query, variables: variables)
+      conn = post(conn, "/api/v1/graphql", query: query, variables: variables)
 
       assert json_response(conn, 200) == %{
                "data" => %{
@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.Schema.Query.BlockTest do
 
       variables = %{"number" => non_existent_block_number}
 
-      conn = post(conn, "/graphql", query: query, variables: variables)
+      conn = post(conn, "/api/v1/graphql", query: query, variables: variables)
 
       assert %{"errors" => [error]} = json_response(conn, 200)
       assert error["message"] =~ ~s(Block number #{non_existent_block_number} was not found)
@@ -80,7 +80,7 @@ defmodule BlockScoutWeb.Schema.Query.BlockTest do
       }
       """
 
-      conn = get(conn, "/graphql", query: query)
+      conn = get(conn, "/api/v1/graphql", query: query)
 
       assert %{"errors" => [error]} = json_response(conn, 200)
       assert error["message"] == ~s(In argument "number": Expected type "Int!", found null.)
@@ -99,7 +99,7 @@ defmodule BlockScoutWeb.Schema.Query.BlockTest do
 
       variables = %{"number" => "invalid"}
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = get(conn, "/api/v1/graphql", query: query, variables: variables)
 
       assert %{"errors" => [error]} = json_response(conn, 200)
       assert error["message"] =~ ~s(Argument "number" has invalid value)
