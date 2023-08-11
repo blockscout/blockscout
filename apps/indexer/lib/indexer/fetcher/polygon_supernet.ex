@@ -86,7 +86,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
          json_rpc_named_arguments = json_rpc_named_arguments(polygon_supernet_l1_rpc),
          {:ok, last_l1_tx} <-
-           get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+           get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments, 100_000_000),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
          {:ok, block_check_interval, last_safe_block} <-
            get_block_check_interval(json_rpc_named_arguments) do
@@ -156,7 +156,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
          {:start_block_l2_valid, true} <-
            {:start_block_l2_valid,
             (start_block_l2 <= last_l2_block_number || last_l2_block_number == 0) && start_block_l2 <= safe_block},
-         {:ok, last_l2_tx} <- get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments),
+         {:ok, last_l2_tx} <- get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments, 100_000_000),
          {:l2_tx_not_found, false} <- {:l2_tx_not_found, !is_nil(last_l2_transaction_hash) && is_nil(last_l2_tx)} do
       Process.send(pid, :continue, [])
 
@@ -492,8 +492,10 @@ defmodule Indexer.Fetcher.PolygonSupernet do
 
     first_block = max(last_safe_block - @block_check_interval_range_size, 1)
 
-    with {:ok, first_block_timestamp} <- get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
-         {:ok, last_safe_block_timestamp} <- get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
+    with {:ok, first_block_timestamp} <-
+           get_block_timestamp_by_number(first_block, json_rpc_named_arguments, 100_000_000),
+         {:ok, last_safe_block_timestamp} <-
+           get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, 100_000_000) do
       block_check_interval =
         ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
@@ -530,7 +532,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     end
   end
 
-  defp get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ 3) do
+  defp get_block_timestamp_by_number(number, json_rpc_named_arguments, retries) do
     func = &get_block_timestamp_by_number_inner/2
     args = [number, json_rpc_named_arguments]
     error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"
@@ -538,7 +540,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   end
 
   defp get_safe_block(json_rpc_named_arguments) do
-    case get_block_number_by_tag("safe", json_rpc_named_arguments, 3) do
+    case get_block_number_by_tag("safe", json_rpc_named_arguments, 100_000_000) do
       {:ok, safe_block} ->
         {safe_block, false}
 
@@ -570,8 +572,6 @@ defmodule Indexer.Fetcher.PolygonSupernet do
 
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
-
-  defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
 
   defp get_transaction_by_hash(hash, _json_rpc_named_arguments, _retries_left) when is_nil(hash), do: {:ok, nil}
 
