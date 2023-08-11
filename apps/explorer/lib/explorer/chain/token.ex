@@ -41,6 +41,7 @@ defmodule Explorer.Chain.Token do
   * `fiat_value` - The price of a token in a configured currency (USD by default).
   * `circulating_market_cap` - The circulating market cap of a token in a configured currency (USD by default).
   * `icon_url` - URL of the token's icon.
+  * `is_verified_via_admin_panel` - is token verified via admin panel.
   """
   @type t :: %Token{
           name: String.t(),
@@ -56,7 +57,8 @@ defmodule Explorer.Chain.Token do
           total_supply_updated_at_block: non_neg_integer() | nil,
           fiat_value: Decimal.t() | nil,
           circulating_market_cap: Decimal.t() | nil,
-          icon_url: String.t()
+          icon_url: String.t(),
+          is_verified_via_admin_panel: boolean()
         }
 
   @derive {Poison.Encoder,
@@ -89,6 +91,7 @@ defmodule Explorer.Chain.Token do
     field(:fiat_value, :decimal)
     field(:circulating_market_cap, :decimal)
     field(:icon_url, :string)
+    field(:is_verified_via_admin_panel, :boolean)
 
     belongs_to(
       :contract_address,
@@ -103,7 +106,7 @@ defmodule Explorer.Chain.Token do
   end
 
   @required_attrs ~w(contract_address_hash type)a
-  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block updated_at fiat_value circulating_market_cap icon_url)a
+  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block updated_at fiat_value circulating_market_cap icon_url is_verified_via_admin_panel)a
 
   @doc false
   def changeset(%Token{} = token, params \\ %{}) do
