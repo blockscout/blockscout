@@ -23,6 +23,7 @@
 
 ### Chore
 
+- [#8177](https://github.com/blockscout/blockscout/pull/8177) - Refactor address counter functions
 - [#8183](https://github.com/blockscout/blockscout/pull/8183) - Update frontend envs in order to pass their validation
 - [#8167](https://github.com/blockscout/blockscout/pull/8167) - Manage concurrency for Token and TokenBalance fetcher
 - [#8179](https://github.com/blockscout/blockscout/pull/8179) - Enhance nginx config
