@@ -25,6 +25,7 @@
 
 - [#8183](https://github.com/blockscout/blockscout/pull/8183) - Update frontend envs in order to pass their validation
 - [#8167](https://github.com/blockscout/blockscout/pull/8167) - Manage concurrency for Token and TokenBalance fetcher
+- [#8179](https://github.com/blockscout/blockscout/pull/8179) - Enhance nginx config
 - [#8146](https://github.com/blockscout/blockscout/pull/8146) - Add method_id to write methods in API v2 response
 - [#8105](https://github.com/blockscout/blockscout/pull/8105) - Extend API v1 with endpoints used by new UI
 - [#8104](https://github.com/blockscout/blockscout/pull/8104) - remove "TODO" from API v2 response
