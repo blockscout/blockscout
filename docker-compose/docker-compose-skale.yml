@@ -55,7 +55,14 @@ services:
       INDEXER_HIDE_INDEXING_PROGRESS_ALERT: "true"
       CHAIN_SPEC_PATH: "/opt/app/config.json"
       COIN: "ETH"
+      SECRET_KEY_BASE: "RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
     ports:
       - ${PORT}:4000
     volumes:
       - ./logs/:/app/logs/
+      - ${CONFIG_PATH:-./}:/opt/app/config.json
+
+  smart-contract-verifier:
+    extends:
+      file: ./services/docker-compose-smart-contract-verifier-skale.yml
+      service: smart-contract-verifier
