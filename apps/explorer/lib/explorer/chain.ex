@@ -1524,7 +1524,8 @@ defmodule Explorer.Chain do
         exchange_rate: nil,
         total_supply: nil,
         circulating_market_cap: nil,
-        priority: 1
+        priority: 1,
+        is_verified_via_admin_panel: nil
       }
     )
   end
@@ -1555,7 +1556,8 @@ defmodule Explorer.Chain do
         exchange_rate: token.fiat_value,
         total_supply: token.total_supply,
         circulating_market_cap: token.circulating_market_cap,
-        priority: 0
+        priority: 0,
+        is_verified_via_admin_panel: token.is_verified_via_admin_panel
       }
     )
   end
@@ -1584,7 +1586,8 @@ defmodule Explorer.Chain do
         exchange_rate: nil,
         total_supply: nil,
         circulating_market_cap: nil,
-        priority: 0
+        priority: 0,
+        is_verified_via_admin_panel: nil
       }
     )
   end
@@ -1622,7 +1625,8 @@ defmodule Explorer.Chain do
             exchange_rate: nil,
             total_supply: nil,
             circulating_market_cap: nil,
-            priority: 0
+            priority: 0,
+            is_verified_via_admin_panel: nil
           }
         )
 
@@ -1657,7 +1661,8 @@ defmodule Explorer.Chain do
             exchange_rate: nil,
             total_supply: nil,
             circulating_market_cap: nil,
-            priority: 0
+            priority: 0,
+            is_verified_via_admin_panel: nil
           }
         )
 
@@ -1690,7 +1695,8 @@ defmodule Explorer.Chain do
             exchange_rate: nil,
             total_supply: nil,
             circulating_market_cap: nil,
-            priority: 0
+            priority: 0,
+            is_verified_via_admin_panel: nil
           }
         )
 
@@ -1718,7 +1724,8 @@ defmodule Explorer.Chain do
                 exchange_rate: nil,
                 total_supply: nil,
                 circulating_market_cap: nil,
-                priority: 0
+                priority: 0,
+                is_verified_via_admin_panel: nil
               }
             )
 
@@ -1772,6 +1779,7 @@ defmodule Explorer.Chain do
               desc: items.priority,
               desc_nulls_last: items.circulating_market_cap,
               desc_nulls_last: items.exchange_rate,
+              desc_nulls_last: items.is_verified_via_admin_panel,
               desc_nulls_last: items.holder_count,
               asc: items.name,
               desc: items.inserted_at
@@ -6347,6 +6355,13 @@ defmodule Explorer.Chain do
       {:error, :token, changeset, _} ->
         {:error, changeset}
     end
+  end
+
+  @spec fetch_last_token_balances_include_unfetched(Hash.Address.t(), [api?]) :: []
+  def fetch_last_token_balances_include_unfetched(address_hash, options \\ []) do
+    address_hash
+    |> CurrentTokenBalance.last_token_balances_include_unfetched()
+    |> select_repo(options).all()
   end
 
   @spec fetch_last_token_balances(Hash.Address.t(), [api?]) :: []
