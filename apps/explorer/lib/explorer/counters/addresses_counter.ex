@@ -7,7 +7,7 @@ defmodule Explorer.Counters.AddressesCounter do
 
   use GenServer
 
-  alias Explorer.Chain
+  alias Explorer.Chain.Address.Counters
 
   @table :addresses_counter
 
@@ -104,7 +104,7 @@ defmodule Explorer.Counters.AddressesCounter do
   Consolidates the info by populating the `:ets` table with the current database information.
   """
   def consolidate do
-    counter = Chain.count_addresses()
+    counter = Counters.count_addresses()
 
     insert_counter({cache_key(), counter})
   end
