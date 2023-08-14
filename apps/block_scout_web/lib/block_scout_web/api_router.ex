@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
-  alias BlockScoutWeb.{APIKeyV2Router, SmartContractsApiV2Router}
+  alias BlockScoutWeb.{AddressTransactionController, APIKeyV2Router, SmartContractsApiV2Router}
   alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2, RateLimit}
 
   forward("/v2/smart-contracts", SmartContractsApiV2Router)
@@ -220,6 +220,22 @@ defmodule BlockScoutWeb.ApiRouter do
 
     # leave the same endpoint in v1 in order to keep backward compatibility
     get("/search", SearchController, :search)
+
+    @max_complexity 200
+
+    forward("/graphql", Absinthe.Plug,
+      schema: BlockScoutWeb.Schema,
+      analyze_complexity: true,
+      max_complexity: @max_complexity
+    )
+
+    get("/transactions-csv", AddressTransactionController, :transactions_csv)
+
+    get("/token-transfers-csv", AddressTransactionController, :token_transfers_csv)
+
+    get("/internal-transactions-csv", AddressTransactionController, :internal_transactions_csv)
+
+    get("/logs-csv", AddressTransactionController, :logs_csv)
 
     scope "/health" do
       get("/", HealthController, :health)

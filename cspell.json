@@ -521,7 +521,8 @@
         "Nerg",
         "Sepolia",
         "relpages",
-        "regclass"
+        "regclass",
+        "secp"
     ],
     "enableFiletypes": [
         "dotenv",

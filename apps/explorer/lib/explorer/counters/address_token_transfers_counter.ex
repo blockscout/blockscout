@@ -5,8 +5,9 @@ defmodule Explorer.Counters.AddressTokenTransfersCounter do
   use GenServer
 
   alias Ecto.Changeset
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Address.Counters
   alias Explorer.Counters.Helper
+  alias Explorer.Repo
 
   @cache_name :address_token_transfers_counter
   @last_update_key "last_update"
@@ -67,7 +68,7 @@ defmodule Explorer.Counters.AddressTokenTransfersCounter do
   defp update_cache(address) do
     address_hash_string = to_string(address.hash)
     put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
-    new_data = Chain.address_to_token_transfer_count(address)
+    new_data = Counters.address_to_token_transfer_count(address)
     put_into_cache("hash_#{address_hash_string}", new_data)
     put_into_db(address, new_data)
   end
