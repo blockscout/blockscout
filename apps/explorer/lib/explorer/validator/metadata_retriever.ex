@@ -18,11 +18,18 @@ defmodule Explorer.Validator.MetadataRetriever do
   def fetch_validators_list do
     validators_contract_address = config(:validators_contract_address)
 
+    validators_contract_address_checked =
+      if is_nil(validators_contract_address) and Mix.env() == :test do
+        "0x0000000000000000000000000000000000006001"
+      else
+        validators_contract_address
+      end
+
     # b7ab4db5 = keccak256(getValidators())
-    with false <- is_nil(validators_contract_address),
+    with false <- is_nil(validators_contract_address_checked),
          %{"b7ab4db5" => {:ok, [validators]}} <-
            Reader.query_contract(
-             validators_contract_address,
+             validators_contract_address_checked,
              contract_abi("validators.json"),
              %{"b7ab4db5" => []},
              false
