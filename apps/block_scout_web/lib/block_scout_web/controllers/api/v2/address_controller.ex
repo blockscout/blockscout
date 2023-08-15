@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address.Counters
   alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
 
   @transaction_necessity_by_association [
@@ -73,7 +74,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true, false)} do
-      {validation_count} = Chain.address_counters(address, @api_true)
+      {validation_count} = Counters.address_counters(address, @api_true)
 
       transactions_from_db = address.transactions_count || 0
       token_transfers_from_db = address.token_transfers_count || 0
@@ -97,7 +98,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> Chain.fetch_last_token_balances(@api_true)
 
       Task.start_link(fn ->
-        TokenBalanceOnDemand.trigger_fetch(address_hash, token_balances)
+        TokenBalanceOnDemand.trigger_fetch(address_hash)
       end)
 
       conn
@@ -361,7 +362,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         )
 
       Task.start_link(fn ->
-        TokenBalanceOnDemand.trigger_fetch(address_hash, results_plus_one)
+        TokenBalanceOnDemand.trigger_fetch(address_hash)
       end)
 
       {tokens, next_page} = split_list_by_page(results_plus_one)

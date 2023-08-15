@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.Router do
     # Needs to be 200 to support the schema introspection for graphiql
     @max_complexity 200
 
+    # todo: remove once frontend will migrate to /api/v1/... path
     forward("/graphql", Absinthe.Plug,
       schema: BlockScoutWeb.Schema,
       analyze_complexity: true,

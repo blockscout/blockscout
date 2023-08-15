@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.ChainController do
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.{ChainView, Controller}
   alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.GasUsage
@@ -19,7 +20,7 @@ defmodule BlockScoutWeb.ChainController do
     transaction_estimated_count = TransactionCache.estimated_count()
     total_gas_usage = GasUsage.total()
     block_count = BlockCache.estimated_count()
-    address_count = Chain.address_estimated_count()
+    address_count = Counters.address_estimated_count()
 
     market_cap_calculation =
       case Application.get_env(:explorer, :supply) do

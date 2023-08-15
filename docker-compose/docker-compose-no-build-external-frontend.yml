@@ -40,6 +40,7 @@ services:
         CHAIN_ID: '1337'
         API_V2_ENABLED: 'true'
         MIX_ENV: 'prod'
+        ACCOUNT_ENABLED: 'false'
     ports:
       - 4000:4000
     volumes:
@@ -60,13 +61,6 @@ services:
       file: ./services/docker-compose-sig-provider.yml
       service: sig-provider
 
-  frontend:
-    depends_on:
-      - backend
-    extends:
-      file: ./services/docker-compose-frontend.yml
-      service: frontend
-
   stats-db:
     depends_on:
       - backend
@@ -84,7 +78,6 @@ services:
   proxy:
     depends_on:
       - backend
-      - frontend
       - stats
     extends:
       file: ./services/docker-compose-nginx.yml
