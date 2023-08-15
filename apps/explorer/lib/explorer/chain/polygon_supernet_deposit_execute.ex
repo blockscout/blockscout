@@ -3,7 +3,7 @@ defmodule Explorer.Chain.PolygonSupernetDepositExecute do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Block, Hash}
 
   @required_attrs ~w(msg_id l2_transaction_hash l2_block_number success)a
 

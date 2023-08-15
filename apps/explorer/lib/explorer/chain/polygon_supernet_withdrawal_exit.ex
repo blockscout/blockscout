@@ -3,7 +3,7 @@ defmodule Explorer.Chain.PolygonSupernetWithdrawalExit do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Block, Hash}
 
   @required_attrs ~w(msg_id l1_transaction_hash l1_block_number success)a
 
