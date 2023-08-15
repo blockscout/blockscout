@@ -10,6 +10,7 @@
 - [#6190](https://github.com/blockscout/blockscout/pull/6190) - Add EIP-1559 support to gas price oracle
 - [#7977](https://github.com/blockscout/blockscout/pull/7977) - GraphQL: extend schema with new field for existing objects
 - [#8158](https://github.com/blockscout/blockscout/pull/8158), [#8164](https://github.com/blockscout/blockscout/pull/8164) - Include unfetched balances in TokenBalanceOnDemand fetcher
+- [#8210](https://github.com/blockscout/blockscout/pull/8210) - Drop logs address_hash foreign key
 
 ### Fixes
 
