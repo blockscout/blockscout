@@ -9,7 +9,9 @@ services:
     volumes:
       - "../proxy:/etc/nginx/templates"
     environment:
+      BACK_PROXY_PASS: ${BACK_PROXY_PASS:-http://backend:4000}
       FRONT_PROXY_PASS: ${FRONT_PROXY_PASS:-http://frontend:3000}
     ports:
       - 80:80
       - 8080:8080
+      - 8090:8090

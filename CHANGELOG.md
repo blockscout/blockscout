@@ -24,6 +24,7 @@
 
 ### Chore
 
+- [#8222](https://github.com/blockscout/blockscout/pull/8222) - docker-compose for new UI with external backend
 - [#8177](https://github.com/blockscout/blockscout/pull/8177) - Refactor address counter functions
 - [#8183](https://github.com/blockscout/blockscout/pull/8183) - Update frontend envs in order to pass their validation
 - [#8167](https://github.com/blockscout/blockscout/pull/8167) - Manage concurrency for Token and TokenBalance fetcher
