@@ -1,19 +1,16 @@
-name: ci/cd
+name: ci/cd sepolia
 on:
-  push:
-    branches:
-      - kroma
   workflow_dispatch:
     cluster:
       environment:
         description: 'Select Target Cluster'
-        default: 'dev-kroma-sail-apne2'
+        default: 'prod-kroma-sepolia-apne2'
         options:
-          - 'dev-kroma-sail-apne2'
+          - 'prod-kroma-sepolia-apne2'
 
 jobs:
   ci:
-    environment: dev
+    environment: prod
     outputs:
       docker-tag: ${{ steps.prepare.outputs.docker-tag }}
       target-cluster: ${{ steps.prepare.outputs.target-cluster }}
@@ -22,12 +19,12 @@ jobs:
     steps:
       - name: Check out source code
         uses: actions/checkout@v3
-      
+
       - name: Prepare
         id: prepare
         run: |
           echo "docker-tag=dev-$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
-          echo "target-cluster=${{ github.event.cluster.environment || 'dev-kroma-sail-apne2' }}" >> $GITHUB_OUTPUT
+          echo "target-cluster=${{ github.event.cluster.environment || 'prod-kroma-sepolia-apne2' }}" >> $GITHUB_OUTPUT
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -77,15 +74,15 @@ jobs:
         uses: mikefarah/yq@master
         with:
           cmd: yq -i '.backend.image.tag = "${{ needs.ci.outputs.docker-tag }}"' 'kroma-ecosystem/blockscout-v2/${{ needs.ci.outputs.target-cluster }}.yaml'
-        
+
       - name: Push Changed Image Tag
-        run: | 
+        run: |
           git config --global user.email lightscale@lightscale.io
           git config --global user.name lightscale
           git config --global push.default matching
           git fetch && git checkout main
-          
-          if [ -z "$(git status --porcelain)" ] 
+
+          if [ -z "$(git status --porcelain)" ]
           then
             echo "Nothing to commit, working directory clean"
           else
