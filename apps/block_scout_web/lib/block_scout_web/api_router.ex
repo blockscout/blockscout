@@ -124,6 +124,7 @@ defmodule BlockScoutWeb.ApiRouter do
     scope "/search" do
       get("/", V2.SearchController, :search)
       get("/check-redirect", V2.SearchController, :check_redirect)
+      get("/quick", V2.SearchController, :quick_search)
     end
 
     scope "/config" do

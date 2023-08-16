@@ -1658,6 +1658,127 @@ defmodule Explorer.Chain do
     end
   end
 
+  def balanced_unpaginated_search(paging_options, raw_search_query, options \\ []) do
+    search_query = String.trim(raw_search_query)
+
+    case prepare_search_term(search_query) do
+      {:some, term} ->
+        tokens_result =
+          term
+          |> search_token_query()
+          |> order_by([token],
+            desc_nulls_last: token.circulating_market_cap,
+            desc_nulls_last: token.fiat_value,
+            desc_nulls_last: token.is_verified_via_admin_panel,
+            desc_nulls_last: token.holder_count,
+            asc: token.name,
+            desc: token.inserted_at
+          )
+          |> limit(^paging_options.page_size)
+          |> select_repo(options).all()
+
+        contracts_result =
+          term
+          |> search_contract_query()
+          |> order_by([items], asc: items.name, desc: items.inserted_at)
+          |> limit(^paging_options.page_size)
+          |> select_repo(options).all()
+
+        labels_result =
+          term
+          |> search_label_query()
+          |> order_by([att, at], asc: at.display_name, desc: att.inserted_at)
+          |> limit(^paging_options.page_size)
+          |> select_repo(options).all()
+
+        tx_result =
+          if query = search_tx_query(search_query) do
+            query
+            |> select_repo(options).all()
+          else
+            []
+          end
+
+        address_result =
+          if query = search_address_query(search_query) do
+            query
+            |> select_repo(options).all()
+          else
+            []
+          end
+
+        blocks_result =
+          if query = search_block_query(search_query) do
+            query
+            |> limit(^paging_options.page_size)
+            |> select_repo(options).all()
+          else
+            []
+          end
+
+        non_empty_lists =
+          [tokens_result, contracts_result, labels_result, tx_result, address_result, blocks_result]
+          |> Enum.filter(fn list -> Enum.count(list) > 0 end)
+          |> Enum.sort_by(fn list -> Enum.count(list) end, :asc)
+
+        to_take =
+          non_empty_lists
+          |> Enum.map(fn list -> Enum.count(list) end)
+          |> take_all_categories(List.duplicate(0, Enum.count(non_empty_lists)), paging_options.page_size)
+
+        non_empty_lists
+        |> Enum.zip_reduce(to_take, [], fn x, y, acc -> acc ++ Enum.take(x, y) end)
+        |> Enum.map(fn result ->
+          result
+          |> compose_result_checksummed_address_hash()
+          |> format_timestamp()
+        end)
+
+      _ ->
+        []
+    end
+  end
+
+  defp take_all_categories(lengths, taken_lengths, remained) do
+    non_zero_count = count_non_zero(lengths)
+
+    target = if(remained < non_zero_count, do: 1, else: div(remained, non_zero_count))
+
+    {lengths_updated, %{result: taken_lengths_reversed}} =
+      Enum.map_reduce(lengths, %{result: [], sum: 0}, fn el, acc ->
+        taken =
+          cond do
+            acc[:sum] >= remained ->
+              0
+
+            el < target ->
+              el
+
+            true ->
+              target
+          end
+
+        {el - taken, %{result: [taken | acc[:result]], sum: acc[:sum] + taken}}
+      end)
+
+    taken_lengths =
+      taken_lengths
+      |> Enum.zip_reduce(Enum.reverse(taken_lengths_reversed), [], fn x, y, acc -> [x + y | acc] end)
+      |> Enum.reverse()
+
+    remained = remained - Enum.sum(taken_lengths_reversed)
+
+    if remained > 0 and count_non_zero(lengths_updated) > 0 do
+      take_all_categories(lengths_updated, taken_lengths, remained)
+    else
+      taken_lengths
+    end
+  end
+
+  defp count_non_zero(list) do
+    Enum.reduce(list, 0, fn el, acc -> acc + if el > 0, do: 1, else: 0 end)
+  end
+
   defp compose_result_checksummed_address_hash(result) do
     if result.address_hash do
       result
