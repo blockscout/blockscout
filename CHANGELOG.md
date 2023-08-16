@@ -13,6 +13,7 @@
 
 ### Fixes
 
+- [#8208](https://github.com/blockscout/blockscout/pull/8208) - Ignore invalid frame by OP transaction batches module
 - [#8122](https://github.com/blockscout/blockscout/pull/8122) - Ignore previously handled frame by OP transaction batches module
 - [#8147](https://github.com/blockscout/blockscout/pull/8147) - Switch sourcify tests from POA Sokol to Gnosis Chiado
 - [#8145](https://github.com/blockscout/blockscout/pull/8145) - Handle negative holders count in API v2
@@ -59,11 +60,8 @@
 
 ### Fixes
 
-<<<<<<< HEAD
 - [#7776](https://github.com/blockscout/blockscout/pull/7776) - Fix transactions ordering in Indexer.Fetcher.OptimismTxnBatch
-=======
 - [#8187](https://github.com/blockscout/blockscout/pull/8187) - API v1 500 error convert to 404, if requested path is incorrect
->>>>>>> origin/master
 - [#7852](https://github.com/blockscout/blockscout/pull/7852) - Token balances refactoring & fixes
 - [#7872](https://github.com/blockscout/blockscout/pull/7872) - Fix pending gas price in pending tx
 - [#7875](https://github.com/blockscout/blockscout/pull/7875) - Fix twin compiler version
