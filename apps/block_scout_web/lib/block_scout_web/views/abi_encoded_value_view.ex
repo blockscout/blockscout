@@ -192,23 +192,21 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   end
 
   defp base_value_json(_, {:dynamic, value}) do
-    hex(value)
+    hex_for_json(value)
   end
 
   defp base_value_json(:address, value) do
-    hex(value)
-  end
-
-  defp base_value_json(:address_text, value) do
-    hex(value)
+    hex_for_json(value)
   end
 
   defp base_value_json(:bytes, value) do
-    hex(value)
+    hex_for_json(value)
   end
 
   defp base_value_json(_, value), do: to_string(value)
 
   defp hex("0x" <> value), do: "0x" <> value
   defp hex(value), do: "0x" <> Base.encode16(value, case: :lower)
+
+  defp hex_for_json(value), do: "0x" <> Base.encode16(value, case: :lower)
 end

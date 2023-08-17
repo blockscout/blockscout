@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.ChainController do
   alias Explorer.Chain.Cache.Block, as: BlockCache
   # alias Explorer.Chain.Cache.GasUsage
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
+  alias Explorer.Chain.Search
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Market
@@ -91,7 +92,7 @@ defmodule BlockScoutWeb.ChainController do
 
     results =
       paging_options
-      |> Chain.joint_search(offset, term)
+      |> Search.joint_search(offset, term)
 
     encoded_results =
       results

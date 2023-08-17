@@ -142,11 +142,15 @@ defmodule Explorer.Factory do
 
   def address_to_tag_factory do
     %AddressToTag{
-      tag: %AddressTag{
-        label: sequence("label"),
-        display_name: sequence("display_name")
-      },
+      tag: build(:address_tag),
       address: build(:address)
+    }
+  end
+
+  def address_tag_factory do
+    %AddressTag{
+      label: sequence("label"),
+      display_name: sequence("display_name")
     }
   end
 
