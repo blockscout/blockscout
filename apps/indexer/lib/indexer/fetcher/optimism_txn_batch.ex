@@ -439,6 +439,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
         with {:new_channel_id, true} <- {:new_channel_id, frame.channel_id != last_channel_id},
              {:frame_number_valid, true} <- {:frame_number_valid, frame.number == last_frame_number + 1},
+             {:channel_id_valid, true} <-
+               {:channel_id_valid, frame.channel_id == current_channel_id or current_channel_id == <<>>},
              {:frame_is_last, true} <- {:frame_is_last, frame.is_last},
              l1_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params),
              {batches_parsed, seq} =
@@ -472,6 +474,10 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
               {last_channel_id, current_channel_id},
               incomplete_frame_sequence_acc
             )
+
+          {:channel_id_valid, false} ->
+            # ignore invalid frame
+            {:cont, {:ok, batches, sequences, incomplete_frame_sequence_acc, last_channel_id, current_channel_id}}
 
           {:frame_is_last, false} ->
             handle_not_last_valid_frame(
