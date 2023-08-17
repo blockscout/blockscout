@@ -65,7 +65,6 @@ defmodule Explorer.Chain.Address.TokenBalance do
     token_balance
     |> cast(attrs, @allowed_fields)
     |> validate_required(@required_fields)
-    |> foreign_key_constraint(:address_hash)
     |> foreign_key_constraint(:token_contract_address_hash)
     |> unique_constraint(:block_number, name: :token_balances_address_hash_block_number_index)
   end
