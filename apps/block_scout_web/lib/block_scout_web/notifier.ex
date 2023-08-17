@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.Notifier do
   }
 
   alias Explorer.{Chain, Market, Repo}
+  alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
@@ -27,7 +28,7 @@ defmodule BlockScoutWeb.Notifier do
   @check_broadcast_sequence_period 500
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
-    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})
+    Endpoint.broadcast("addresses:new_address", "count", %{count: Counters.address_estimated_count()})
 
     addresses
     |> Stream.reject(fn %Address{fetched_coin_balance: fetched_coin_balance} -> is_nil(fetched_coin_balance) end)
@@ -42,11 +43,6 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :address_token_balances, type, address_token_balances})
       when type in [:realtime, :on_demand] do
     Enum.each(address_token_balances, &broadcast_address_token_balance/1)
-  end
-
-  def handle_event({:chain_event, :address_current_token_balances, type, address_current_token_balances})
-      when type in [:realtime, :on_demand] do
-    Enum.each(address_current_token_balances, &broadcast_address_token_balance/1)
   end
 
   def handle_event(
@@ -223,6 +219,12 @@ defmodule BlockScoutWeb.Notifier do
 
   def handle_event({:chain_event, :smart_contract_was_verified, :on_demand, [address_hash]}) do
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", "smart_contract_was_verified", %{})
+  end
+
+  def handle_event({:chain_event, :address_current_token_balances, :on_demand, address_current_token_balances}) do
+    Endpoint.broadcast("addresses:#{address_current_token_balances.address_hash}", "address_current_token_balances", %{
+      address_current_token_balances: address_current_token_balances.address_current_token_balances
+    })
   end
 
   def handle_event(_), do: nil

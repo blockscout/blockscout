@@ -1,14 +1,17 @@
 version: '3.8'
 
-services:  
+services:
   proxy:
     image: nginx
+    container_name: proxy
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     volumes:
-      - type: bind
-        source: ../proxy/nginx.conf
-        target: /etc/nginx/conf.d/default.conf
-        read_only: true
+      - "../proxy:/etc/nginx/templates"
+    environment:
+      BACK_PROXY_PASS: ${BACK_PROXY_PASS:-http://backend:4000}
+      FRONT_PROXY_PASS: ${FRONT_PROXY_PASS:-http://frontend:3000}
     ports:
       - 80:80
-      - 81:81
-      - 82:82
+      - 8080:8080
+      - 8090:8090

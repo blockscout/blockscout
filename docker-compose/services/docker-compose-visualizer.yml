@@ -4,6 +4,7 @@ services:
   visualizer:
     image: ghcr.io/blockscout/visualizer:${VISUALIZER_DOCKER_TAG:-latest}
     pull_policy: always
+    platform: linux/amd64
     restart: always
     container_name: 'visualizer'
     env_file:

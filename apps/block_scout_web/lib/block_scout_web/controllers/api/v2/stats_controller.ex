@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.Chain.MarketHistoryChartController
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.{GasPriceOracle, GasUsage}
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
@@ -43,7 +44,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       conn,
       %{
         "total_blocks" => BlockCache.estimated_count() |> to_string(),
-        "total_addresses" => @api_true |> Chain.address_estimated_count() |> to_string(),
+        "total_addresses" => @api_true |> Counters.address_estimated_count() |> to_string(),
         "total_transactions" => TransactionCache.estimated_count() |> to_string(),
         "average_block_time" => AverageBlockTime.average_block_time() |> Duration.to_milliseconds(),
         "coin_price" => exchange_rate.usd_value,
@@ -94,7 +95,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     exchange_rate = Market.get_coin_exchange_rate()
 
     recent_market_history = Market.fetch_recent_history()
-    current_total_supply = available_supply(Chain.supply_for_days(), exchange_rate)
+    current_total_supply = MarketHistoryChartController.available_supply(Chain.supply_for_days(), exchange_rate)
 
     price_history_data =
       recent_market_history
@@ -122,8 +123,4 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       available_supply: current_total_supply
     })
   end
-
-  defp available_supply(:ok, exchange_rate), do: exchange_rate.available_supply || 0
-
-  defp available_supply({:ok, supply_for_days}, _exchange_rate), do: supply_for_days
 end

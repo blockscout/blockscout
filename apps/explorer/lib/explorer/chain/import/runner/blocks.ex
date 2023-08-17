@@ -374,6 +374,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     removed_consensus_block_hashes
     |> Enum.map(fn {number, _hash} -> number end)
+    |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
     |> MissingRangesManipulator.add_ranges_by_block_numbers()
 
     {:ok, removed_consensus_block_hashes}

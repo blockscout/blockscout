@@ -518,7 +518,9 @@
         "zkbob",
         "erts",
         "Asfpp",
-        "Nerg"
+        "Nerg",
+        "secp",
+        "qwertyuioiuytrewertyuioiuytrertyuio"
     ],
     "enableFiletypes": [
         "dotenv",

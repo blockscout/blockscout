@@ -13,6 +13,87 @@
 
 </details>
 
+## 5.2.2-beta
+
+### Features
+
+- [#8218](https://github.com/blockscout/blockscout/pull/8218) - Add `/api/v2/search/quick` method
+- [#8202](https://github.com/blockscout/blockscout/pull/8202) - Add `/api/v2/addresses/:address_hash/tabs-counters` endpoint
+- [#8156](https://github.com/blockscout/blockscout/pull/8156) - Add `is_verified_via_admin_panel` property to tokens table
+- [#8165](https://github.com/blockscout/blockscout/pull/8165), [#8201](https://github.com/blockscout/blockscout/pull/8201) - Add broadcast of updated address_current_token_balances
+- [#7952](https://github.com/blockscout/blockscout/pull/7952) - Add parsing constructor arguments for sourcify contracts
+- [#6190](https://github.com/blockscout/blockscout/pull/6190) - Add EIP-1559 support to gas price oracle
+- [#7977](https://github.com/blockscout/blockscout/pull/7977) - GraphQL: extend schema with new field for existing objects
+- [#8158](https://github.com/blockscout/blockscout/pull/8158), [#8164](https://github.com/blockscout/blockscout/pull/8164) - Include unfetched balances in TokenBalanceOnDemand fetcher
+
+### Fixes
+
+- [#8233](https://github.com/blockscout/blockscout/pull/8233) - Fix API v2 broken tx response
+- [#8147](https://github.com/blockscout/blockscout/pull/8147) - Switch sourcify tests from POA Sokol to Gnosis Chiado
+- [#8145](https://github.com/blockscout/blockscout/pull/8145) - Handle negative holders count in API v2
+- [#8040](https://github.com/blockscout/blockscout/pull/8040) - Resolve issue with Docker image for Mac M1/M2
+- [#8060](https://github.com/blockscout/blockscout/pull/8060) - Fix eth_getLogs API endpoint
+- [#8082](https://github.com/blockscout/blockscout/pull/8082), [#8088](https://github.com/blockscout/blockscout/pull/8088) - Fix Rootstock charts API
+- [#7992](https://github.com/blockscout/blockscout/pull/7992) - Fix missing range insert
+- [#8022](https://github.com/blockscout/blockscout/pull/8022) - Don't add reorg block number to missing blocks
+
+### Chore
+
+- [#8222](https://github.com/blockscout/blockscout/pull/8222) - docker-compose for new UI with external backend
+- [#8177](https://github.com/blockscout/blockscout/pull/8177) - Refactor address counter functions
+- [#8183](https://github.com/blockscout/blockscout/pull/8183) - Update frontend envs in order to pass their validation
+- [#8167](https://github.com/blockscout/blockscout/pull/8167) - Manage concurrency for Token and TokenBalance fetcher
+- [#8179](https://github.com/blockscout/blockscout/pull/8179) - Enhance nginx config
+- [#8146](https://github.com/blockscout/blockscout/pull/8146) - Add method_id to write methods in API v2 response
+- [#8105](https://github.com/blockscout/blockscout/pull/8105) - Extend API v1 with endpoints used by new UI
+- [#8104](https://github.com/blockscout/blockscout/pull/8104) - remove "TODO" from API v2 response
+- [#8100](https://github.com/blockscout/blockscout/pull/8100), [#8103](https://github.com/blockscout/blockscout/pull/8103) - Extend docker-compose configs with new config when front is running externally
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+- [#7980](https://github.com/blockscout/blockscout/pull/7980) - Bump solc from 0.8.20 to 0.8.21 in /apps/explorer
+- [#7986](https://github.com/blockscout/blockscout/pull/7986) - Bump sass from 1.63.6 to 1.64.0 in /apps/block_scout_web/assets
+- [#8030](https://github.com/blockscout/blockscout/pull/8030) - Bump sweetalert2 from 11.7.18 to 11.7.20 in /apps/block_scout_web/assets
+- [#8029](https://github.com/blockscout/blockscout/pull/8029) - Bump viewerjs from 1.11.3 to 1.11.4 in /apps/block_scout_web/assets
+- [#8028](https://github.com/blockscout/blockscout/pull/8028) - Bump sass from 1.64.0 to 1.64.1 in /apps/block_scout_web/assets
+- [#8026](https://github.com/blockscout/blockscout/pull/8026) - Bump dataloader from 1.0.10 to 1.0.11
+- [#8036](https://github.com/blockscout/blockscout/pull/8036) - Bump ex_cldr_numbers from 2.31.1 to 2.31.3
+- [#8027](https://github.com/blockscout/blockscout/pull/8027) - Bump absinthe from 1.7.4 to 1.7.5
+- [#8035](https://github.com/blockscout/blockscout/pull/8035) - Bump wallaby from 0.30.4 to 0.30.5
+- [#8038](https://github.com/blockscout/blockscout/pull/8038) - Bump chart.js from 4.3.0 to 4.3.1 in /apps/block_scout_web/assets
+- [#8047](https://github.com/blockscout/blockscout/pull/8047) - Bump chart.js from 4.3.1 to 4.3.2 in /apps/block_scout_web/assets
+- [#8000](https://github.com/blockscout/blockscout/pull/8000) - Bump postcss from 8.4.26 to 8.4.27 in /apps/block_scout_web/assets
+- [#8052](https://github.com/blockscout/blockscout/pull/8052) - Bump @amplitude/analytics-browser from 2.1.2 to 2.1.3 in /apps/block_scout_web/assets
+- [#8054](https://github.com/blockscout/blockscout/pull/8054) - Bump jest-environment-jsdom from 29.6.1 to 29.6.2 in /apps/block_scout_web/assets
+- [#8063](https://github.com/blockscout/blockscout/pull/8063) - Bump eslint from 8.45.0 to 8.46.0 in /apps/block_scout_web/assets
+- [#8066](https://github.com/blockscout/blockscout/pull/8066) - Bump ex_json_schema from 0.9.3 to 0.10.1
+- [#8064](https://github.com/blockscout/blockscout/pull/8064) - Bump core-js from 3.31.1 to 3.32.0 in /apps/block_scout_web/assets
+- [#8053](https://github.com/blockscout/blockscout/pull/8053) - Bump jest from 29.6.1 to 29.6.2 in /apps/block_scout_web/assets
+- [#8065](https://github.com/blockscout/blockscout/pull/8065) - Bump eslint-plugin-import from 2.27.5 to 2.28.0 in /apps/block_scout_web/assets
+- [#8092](https://github.com/blockscout/blockscout/pull/8092) - Bump exvcr from 0.14.1 to 0.14.2
+- [#8091](https://github.com/blockscout/blockscout/pull/8091) - Bump sass from 1.64.1 to 1.64.2 in /apps/block_scout_web/assets
+- [#8114](https://github.com/blockscout/blockscout/pull/8114) - Bump ex_doc from 0.30.3 to 0.30.4
+- [#8115](https://github.com/blockscout/blockscout/pull/8115) - Bump chart.js from 4.3.2 to 4.3.3 in /apps/block_scout_web/assets
+- [#8116](https://github.com/blockscout/blockscout/pull/8116) - Bump @fortawesome/fontawesome-free from 6.4.0 to 6.4.2 in /apps/block_scout_web/assets
+- [#8142](https://github.com/blockscout/blockscout/pull/8142) - Bump sobelow from 0.12.2 to 0.13.0
+- [#8141](https://github.com/blockscout/blockscout/pull/8141) - Bump @babel/core from 7.22.9 to 7.22.10 in /apps/block_scout_web/assets
+- [#8140](https://github.com/blockscout/blockscout/pull/8140) - Bump @babel/preset-env from 7.22.9 to 7.22.10 in /apps/block_scout_web/assets
+- [#8160](https://github.com/blockscout/blockscout/pull/8160) - Bump exvcr from 0.14.2 to 0.14.3
+- [#8159](https://github.com/blockscout/blockscout/pull/8159) - Bump luxon from 3.3.0 to 3.4.0 in /apps/block_scout_web/assets
+- [#8169](https://github.com/blockscout/blockscout/pull/8169) - Bump sass from 1.64.2 to 1.65.1 in /apps/block_scout_web/assets
+- [#8170](https://github.com/blockscout/blockscout/pull/8170) - Bump sweetalert2 from 11.7.20 to 11.7.22 in /apps/block_scout_web/assets
+- [#8188](https://github.com/blockscout/blockscout/pull/8188) - Bump eslint from 8.46.0 to 8.47.0 in /apps/block_scout_web/assets
+- [#8204](https://github.com/blockscout/blockscout/pull/8204) - Bump ex_doc from 0.30.4 to 0.30.5
+- [#8207](https://github.com/blockscout/blockscout/pull/8207) - Bump wallaby from 0.30.5 to 0.30.6
+- [#8212](https://github.com/blockscout/blockscout/pull/8212) - Bump sweetalert2 from 11.7.22 to 11.7.23 in /apps/block_scout_web/assets
+- [#8203](https://github.com/blockscout/blockscout/pull/8203) - Bump autoprefixer from 10.4.14 to 10.4.15 in /apps/block_scout_web/assets
+- [#8214](https://github.com/blockscout/blockscout/pull/8214) - Bump @amplitude/analytics-browser from 2.1.3 to 2.2.0 in /apps/block_scout_web/assets
+- [#8225](https://github.com/blockscout/blockscout/pull/8225) - Bump postcss from 8.4.27 to 8.4.28 in /apps/block_scout_web/assets
+- [#8224](https://github.com/blockscout/blockscout/pull/8224) - Bump gettext from 0.22.3 to 0.23.1
+
+</details>
+
 ## 5.2.1-beta
 
 ### Features
@@ -34,6 +115,7 @@
 
 ### Fixes
 
+- [#8187](https://github.com/blockscout/blockscout/pull/8187) - API v1 500 error convert to 404, if requested path is incorrect
 - [#7852](https://github.com/blockscout/blockscout/pull/7852) - Token balances refactoring & fixes
 - [#7872](https://github.com/blockscout/blockscout/pull/7872) - Fix pending gas price in pending tx
 - [#7875](https://github.com/blockscout/blockscout/pull/7875) - Fix twin compiler version

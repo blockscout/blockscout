@@ -148,7 +148,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20
 #: lib/block_scout_web/templates/transaction_state/index.html.eex:34
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:60
-#: lib/block_scout_web/views/address_view.ex:107
+#: lib/block_scout_web/views/address_view.ex:108
 #, elixir-autogen, elixir-format
 msgid "Address"
 msgstr ""
@@ -410,14 +410,14 @@ msgstr ""
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:18
 #: lib/block_scout_web/templates/account/custom_abi/index.html.eex:29
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_contract_address_field.html.eex:3
-#: lib/block_scout_web/views/address_view.ex:105
+#: lib/block_scout_web/views/address_view.ex:106
 #, elixir-autogen, elixir-format
 msgid "Contract Address"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:16
-#: lib/block_scout_web/views/address_view.ex:45
-#: lib/block_scout_web/views/address_view.ex:79
+#: lib/block_scout_web/views/address_view.ex:46
+#: lib/block_scout_web/views/address_view.ex:80
 #, elixir-autogen, elixir-format
 msgid "Contract Address Pending"
 msgstr ""
@@ -1146,7 +1146,7 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/show.html.eex:53
 #: lib/block_scout_web/templates/layout/app.html.eex:59
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:85
-#: lib/block_scout_web/views/address_view.ex:145
+#: lib/block_scout_web/views/address_view.ex:146
 #, elixir-autogen, elixir-format
 msgid "Market Cap"
 msgstr ""

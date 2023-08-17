@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  redis_db:
+    extends:
+      file: ./services/docker-compose-redis.yml
+      service: redis_db
+
+  db:
+    extends:
+      file: ./services/docker-compose-db.yml
+      service: db
+
+  smart-contract-verifier:
+    extends:
+      file: ./services/docker-compose-smart-contract-verifier.yml
+      service: smart-contract-verifier
+
+  visualizer:
+    extends:
+      file: ./services/docker-compose-visualizer.yml
+      service: visualizer
+
+  sig-provider:
+    extends:
+      file: ./services/docker-compose-sig-provider.yml
+      service: sig-provider
+
+  frontend:
+    extends:
+      file: ./services/docker-compose-frontend.yml
+      service: frontend
+
+  stats-db:
+    extends:
+      file: ./services/docker-compose-stats.yml
+      service: stats-db
+
+  stats:
+    depends_on:
+      - stats-db
+    extends:
+      file: ./services/docker-compose-stats.yml
+      service: stats
+
+  proxy:
+    depends_on:
+      - frontend
+      - stats
+    extends:
+      file: ./services/docker-compose-nginx.yml
+      service: proxy

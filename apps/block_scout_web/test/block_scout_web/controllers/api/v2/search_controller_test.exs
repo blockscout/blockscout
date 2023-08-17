@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
   alias Explorer.Chain.{Address, Block}
   alias Explorer.Repo
+  alias Explorer.Tags.AddressTag
 
   setup do
     insert(:block)
@@ -135,6 +136,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["exchange_rate"] == (token.fiat_value && to_string(token.fiat_value))
       assert item["total_supply"] == to_string(token.total_supply)
       assert item["icon_url"] == token.icon_url
+      assert item["is_verified_via_admin_panel"] == token.is_verified_via_admin_panel
     end
 
     test "search transaction", %{conn: conn} do
@@ -285,6 +287,51 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       request = get(conn, "/api/v2/search/check-redirect?q=qwerty")
 
       %{"redirect" => false, "type" => nil, "parameter" => nil} = json_response(request, 200)
+    end
+  end
+
+  describe "/search/quick" do
+    test "check that all categories are in response list", %{conn: conn} do
+      name = "156000"
+
+      tags =
+        for _ <- 0..50 do
+          insert(:address_to_tag, tag: build(:address_tag, display_name: name))
+        end
+
+      contracts = insert_list(50, :smart_contract, name: name)
+      tokens = insert_list(50, :token, name: name)
+      blocks = [insert(:block, number: name, consensus: false), insert(:block, number: name)]
+
+      request = get(conn, "/api/v2/search/quick?q=#{name}")
+      assert response = json_response(request, 200)
+      assert Enum.count(response) == 50
+
+      assert response |> Enum.filter(fn x -> x["type"] == "label" end) |> Enum.map(fn x -> x["address"] end) ==
+               tags |> Enum.reverse() |> Enum.take(16) |> Enum.map(fn tag -> Address.checksum(tag.address.hash) end)
+
+      assert response |> Enum.filter(fn x -> x["type"] == "contract" end) |> Enum.map(fn x -> x["address"] end) ==
+               contracts
+               |> Enum.reverse()
+               |> Enum.take(16)
+               |> Enum.map(fn contract -> Address.checksum(contract.address_hash) end)
+
+      assert response |> Enum.filter(fn x -> x["type"] == "token" end) |> Enum.map(fn x -> x["address"] end) ==
+               tokens
+               |> Enum.reverse()
+               |> Enum.sort_by(fn x -> x.is_verified_via_admin_panel end, :desc)
+               |> Enum.take(16)
+               |> Enum.map(fn token -> Address.checksum(token.contract_address_hash) end)
+
+      block_hashes = response |> Enum.filter(fn x -> x["type"] == "block" end) |> Enum.map(fn x -> x["block_hash"] end)
+
+      assert block_hashes == blocks |> Enum.reverse() |> Enum.map(fn block -> to_string(block.hash) end) ||
+               block_hashes == blocks |> Enum.map(fn block -> to_string(block.hash) end)
+    end
+
+    test "returns empty list and don't crash", %{conn: conn} do
+      request = get(conn, "/api/v2/search/quick?q=qwertyuioiuytrewertyuioiuytrertyuio")
+      assert [] = json_response(request, 200)
     end
   end
 end

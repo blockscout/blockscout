@@ -14,7 +14,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.2.1
+      RELEASE_VERSION: 5.2.2
       DOCKER_CHAIN_NAME: rsk
     steps:
       - name: Check out the repo
@@ -41,12 +41,12 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:latest, blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
+          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:latest, blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
-            DISABLE_READ_API=false
+            API_V1_READ_METHODS_DISABLED=false
             DISABLE_WEBAPP=false
-            DISABLE_WRITE_API=false
+            API_V1_WRITE_METHODS_DISABLED=false
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
