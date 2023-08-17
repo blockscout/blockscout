@@ -13,6 +13,7 @@
 
 ### Fixes
 
+- [#8229](https://github.com/blockscout/blockscout/pull/8229) - Fix Indexer.Fetcher.OptimismTxnBatch
 - [#8208](https://github.com/blockscout/blockscout/pull/8208) - Ignore invalid frame by OP transaction batches module
 - [#8122](https://github.com/blockscout/blockscout/pull/8122) - Ignore previously handled frame by OP transaction batches module
 - [#8147](https://github.com/blockscout/blockscout/pull/8147) - Switch sourcify tests from POA Sokol to Gnosis Chiado
