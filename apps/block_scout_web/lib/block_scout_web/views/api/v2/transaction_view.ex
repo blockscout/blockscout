@@ -17,6 +17,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
   @api_true [api?: true]
+  defp debug(value, key) do
+    require Logger
+    Logger.configure(truncate: :infinity)
+    Logger.info(key)
+    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
+    value
+  end
 
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
@@ -64,10 +71,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{
       "items" =>
         transactions
+        |> debug("Transactions for #{List.first(transactions).block_number}")
         |> Enum.zip(decoded_transactions)
         |> Enum.map(fn {tx, decoded_input} -> prepare_transaction(tx, conn, false, block_height, decoded_input) end),
       "next_page_params" => next_page_params
     }
+    |> debug("Rendered transactions for #{List.first(transactions).block_number}")
   end
 
   def render("transactions.json", %{transactions: transactions, conn: conn}) do
@@ -82,7 +91,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def render("transaction.json", %{transaction: transaction, conn: conn}) do
     block_height = Chain.block_height(@api_true)
     {[decoded_input], _, _} = decode_transactions([transaction], false)
+    debug(transaction, "Transaction #{to_string(transaction.hash)}")
+
     prepare_transaction(transaction, conn, true, block_height, decoded_input)
+    |> debug("Rendered transaction #{to_string(transaction.hash)}")
   end
 
   def render("raw_trace.json", %{internal_transactions: internal_transactions}) do
