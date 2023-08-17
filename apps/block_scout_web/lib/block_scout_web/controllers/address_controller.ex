@@ -15,6 +15,7 @@ defmodule BlockScoutWeb.AddressController do
   }
 
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Wei
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
@@ -82,7 +83,7 @@ defmodule BlockScoutWeb.AddressController do
 
     render(conn, "index.html",
       current_path: Controller.current_full_path(conn),
-      address_count: Chain.address_estimated_count(),
+      address_count: Counters.address_estimated_count(),
       total_supply: total_supply
     )
   end
@@ -147,7 +148,7 @@ defmodule BlockScoutWeb.AddressController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
       # {validation_count, crc_total_worth} = Chain.address_counters(address)
-      {validation_count} = Chain.address_counters(address)
+      {validation_count} = Counters.address_counters(address)
 
       transactions_from_db = address.transactions_count || 0
       token_transfers_from_db = address.token_transfers_count || 0

@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.AddressView do
     Wei
   }
 
+  alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Block.Reward
   alias Explorer.EnvVarTranslator
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate

@@ -2,10 +2,14 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.Endpoint
-  alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.Chain.{Address, Block, Hash, Transaction}
 
   def render("search_results.json", %{search_results: search_results, next_page_params: next_page_params}) do
     %{"items" => Enum.map(search_results, &prepare_search_result/1), "next_page_params" => next_page_params}
+  end
+
+  def render("search_results.json", %{search_results: search_results}) do
+    Enum.map(search_results, &prepare_search_result/1)
   end
 
   def render("search_results.json", %{result: {:ok, result}}) do
@@ -69,6 +73,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     }
   end
 
+  defp hash_to_string(%Hash{bytes: bytes}), do: hash_to_string(bytes)
   defp hash_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
   defp redirect_search_results(%Address{} = item) do
