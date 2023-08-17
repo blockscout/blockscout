@@ -460,6 +460,8 @@ defmodule Explorer.Chain.Search do
     )
   end
 
+  defp take_all_categories([], taken_lengths, _remained), do: taken_lengths
+
   defp take_all_categories(lengths, taken_lengths, remained) do
     non_zero_count = count_non_zero(lengths)
 

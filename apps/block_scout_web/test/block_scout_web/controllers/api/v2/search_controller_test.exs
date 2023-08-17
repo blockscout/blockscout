@@ -328,5 +328,10 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert block_hashes == blocks |> Enum.reverse() |> Enum.map(fn block -> to_string(block.hash) end) ||
                block_hashes == blocks |> Enum.map(fn block -> to_string(block.hash) end)
     end
+
+    test "returns empty list and don't crash", %{conn: conn} do
+      request = get(conn, "/api/v2/search/quick?q=qwertyuioiuytrewertyuioiuytrertyuio")
+      assert [] = json_response(request, 200)
+    end
   end
 end
