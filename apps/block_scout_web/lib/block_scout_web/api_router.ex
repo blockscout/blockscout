@@ -124,6 +124,7 @@ defmodule BlockScoutWeb.ApiRouter do
     scope "/search" do
       get("/", V2.SearchController, :search)
       get("/check-redirect", V2.SearchController, :check_redirect)
+      get("/quick", V2.SearchController, :quick_search)
     end
 
     scope "/config" do
@@ -152,6 +153,7 @@ defmodule BlockScoutWeb.ApiRouter do
     scope "/addresses" do
       get("/", V2.AddressController, :addresses_list)
       get("/:address_hash", V2.AddressController, :address)
+      get("/:address_hash/tabs-counters", V2.AddressController, :tabs_counters)
       get("/:address_hash/counters", V2.AddressController, :counters)
       get("/:address_hash/token-balances", V2.AddressController, :token_balances)
       get("/:address_hash/tokens", V2.AddressController, :tokens)

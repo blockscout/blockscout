@@ -519,7 +519,8 @@
         "erts",
         "Asfpp",
         "Nerg",
-        "secp"
+        "secp",
+        "qwertyuioiuytrewertyuioiuytrertyuio"
     ],
     "enableFiletypes": [
         "dotenv",
