@@ -5,6 +5,7 @@
 ### Features
 
 - [#8218](https://github.com/blockscout/blockscout/pull/8218) - Add `/api/v2/search/quick` method
+- [#8202](https://github.com/blockscout/blockscout/pull/8202) - Add `/api/v2/addresses/:address_hash/tabs-counters` endpoint
 - [#8156](https://github.com/blockscout/blockscout/pull/8156) - Add `is_verified_via_admin_panel` property to tokens table
 - [#8165](https://github.com/blockscout/blockscout/pull/8165), [#8201](https://github.com/blockscout/blockscout/pull/8201) - Add broadcast of updated address_current_token_balances
 - [#7952](https://github.com/blockscout/blockscout/pull/7952) - Add parsing constructor arguments for sourcify contracts
@@ -14,7 +15,7 @@
 
 ### Fixes
 
-- [#8202](https://github.com/blockscout/blockscout/pull/8202) - Add `/api/v2/addresses/:address_hash/tabs-counters` endpoint
+- [#8233](https://github.com/blockscout/blockscout/pull/8233) - Fix API v2 broken tx response
 - [#8147](https://github.com/blockscout/blockscout/pull/8147) - Switch sourcify tests from POA Sokol to Gnosis Chiado
 - [#8145](https://github.com/blockscout/blockscout/pull/8145) - Handle negative holders count in API v2
 - [#8040](https://github.com/blockscout/blockscout/pull/8040) - Resolve issue with Docker image for Mac M1/M2
