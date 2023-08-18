@@ -28,6 +28,7 @@
 
 ### Fixes
 
+- [#8229](https://github.com/blockscout/blockscout/pull/8229) - Fix Indexer.Fetcher.OptimismTxnBatch
 - [#8208](https://github.com/blockscout/blockscout/pull/8208) - Ignore invalid frame by OP transaction batches module
 - [#8122](https://github.com/blockscout/blockscout/pull/8122) - Ignore previously handled frame by OP transaction batches module
 - [#8233](https://github.com/blockscout/blockscout/pull/8233) - Fix API v2 broken tx response
