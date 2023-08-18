@@ -204,8 +204,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
     next_page_params =
       next_page
-      |> next_page_params(smart_contracts, params)
-      |> delete_parameters_from_next_page_params()
+      |> next_page_params(smart_contracts, delete_parameters_from_next_page_params(params))
 
     conn
     |> put_status(200)

@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#8240](https://github.com/blockscout/blockscout/pull/8240) - Refactor and fix paging params in API v2
+
 ### Chore
 
 <details>
