@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.ExternalTransactionController do
   }
 
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Cache.Transaction, as: TransactionCache
+  alias Explorer.Chain.Cache.ExternalTransaction, as: ExternalTransactionCache
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.ExternalTransactionController do
       )
 
     %{total_transactions_count: transactions_count, transactions: transactions_plus_one} =
-      Chain.recent_collated_transactions_for_rap(full_options)
+      Chain.recent_collated_external_transactions_for_rap(full_options)
 
     {transactions, next_page} =
       if fetch_page_number(params) == 1 do
@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.ExternalTransactionController do
   end
 
   def index(conn, _params) do
-    transaction_estimated_count = TransactionCache.estimated_count()
+    transaction_estimated_count = ExternalTransactionCache.estimated_count()
 
     render(
       conn,

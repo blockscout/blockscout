@@ -70,6 +70,7 @@ defmodule Explorer.Chain do
     Accounts,
     BlockNumber,
     Blocks,
+    ExternalTransactions,
     ContractsCounter,
     NewContractsCounter,
     NewVerifiedContractsCounter,
@@ -3544,7 +3545,7 @@ defmodule Explorer.Chain do
             transactions
         end
       else
-        fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association)
+        fetch_recent_collated_external_transactions_for_rap(paging_options, necessity_by_association)
       end
 
     %{total_transactions_count: total_transactions_count, transactions: fetched_transactions}
@@ -3557,7 +3558,7 @@ defmodule Explorer.Chain do
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
     |> handle_random_access_paging_options(paging_options)
     |> join_associations(necessity_by_association)
-    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
+    #|> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
   end
 
