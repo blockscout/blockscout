@@ -390,6 +390,30 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       check_paginated_response(response, response_2nd_page, token_balances)
     end
+
+    test "check pagination with the same values", %{conn: conn} do
+      token = insert(:token)
+
+      token_balances =
+        for _ <- 0..50 do
+          insert(
+            :address_current_token_balance,
+            token_contract_address_hash: token.contract_address_hash,
+            value: 1000
+          )
+        end
+        |> Enum.sort_by(fn x -> x.address_hash end, :asc)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/holders")
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/tokens/#{token.contract_address.hash}/holders", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_balances)
+    end
   end
 
   describe "/tokens" do
