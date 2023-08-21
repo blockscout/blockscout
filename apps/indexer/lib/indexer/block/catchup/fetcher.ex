@@ -216,7 +216,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
         Prometheus.Instrumenter.import_errors()
         Logger.error(fn -> [inspect(reason), ". Retrying."] end, step: step)
 
-        split_and_push_back(sequence, range)
+        push_back(sequence, range)
 
         error
 
@@ -240,7 +240,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
           step: step
         )
 
-        split_and_push_back(sequence, range)
+        push_back(sequence, range)
 
         error
     end
@@ -248,7 +248,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     exception ->
       Logger.error(fn -> [Exception.format(:error, exception, __STACKTRACE__), ?\n, ?\n, "Retrying."] end)
 
-      split_and_push_back(sequence, range)
+      push_back(sequence, range)
 
       {:error, exception}
   end
@@ -271,20 +271,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
 
     other_errors
-  end
-
-  defp split_and_push_back(sequence, same_number..same_number = range) do
-    Logger.error("Range #{inspect(range)} is at its minimum size and cannot be split")
-
-    push_back(sequence, range)
-  end
-
-  defp split_and_push_back(sequence, from..to) do
-    middle_left = div(from + to, 2)
-    middle_right = if from > to, do: middle_left - 1, else: middle_left + 1
-
-    push_back(sequence, from..middle_left)
-    push_back(sequence, middle_right..to)
   end
 
   defp push_back(sequence, range) do
