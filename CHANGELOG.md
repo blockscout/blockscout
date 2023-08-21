@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#8181](https://github.com/blockscout/blockscout/pull/8181) - Insert current token balances placeholders along with historical
+
 ### Fixes
 
 - [#8240](https://github.com/blockscout/blockscout/pull/8240) - Refactor and fix paging params in API v2
