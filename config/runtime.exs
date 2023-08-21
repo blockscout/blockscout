@@ -416,6 +416,10 @@ config :explorer, Explorer.TokenInstanceOwnerAddressMigration,
   concurrency: ConfigHelper.parse_integer_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_CONCURRENCY", 5),
   batch_size: ConfigHelper.parse_integer_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_BATCH_SIZE", 50)
 
+config :explorer, Explorer.Chain.Transaction,
+  rootstock_remasc_address: System.get_env("ROOTSTOCK_REMASC_ADDRESS"),
+  rootstock_bridge_address: System.get_env("ROOTSTOCK_BRIDGE_ADDRESS")
+
 ###############
 ### Indexer ###
 ###############

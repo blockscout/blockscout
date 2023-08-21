@@ -629,9 +629,31 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     tx_types(tx, types, :coin_transfer)
   end
 
-  defp tx_types(%Transaction{value: value}, types, :coin_transfer) do
-    if Decimal.compare(value.value, 0) == :gt do
-      [:coin_transfer | types]
+  defp tx_types(%Transaction{value: value} = tx, types, :coin_transfer) do
+    types =
+      if Decimal.compare(value.value, 0) == :gt do
+        [:coin_transfer | types]
+      else
+        types
+      end
+
+    tx_types(tx, types, :rootstock_remasc)
+  end
+
+  defp tx_types(%Transaction{to_address_hash: to_address_hash} = tx, types, :rootstock_remasc) do
+    types =
+      if to_address_hash && to_address_hash == Transaction.rootstock_remasc_address_hash() do
+        [:rootstock_remasc | types]
+      else
+        types
+      end
+
+    tx_types(tx, types, :rootstock_bridge)
+  end
+
+  defp tx_types(%Transaction{to_address_hash: to_address_hash}, types, :rootstock_bridge) do
+    if to_address_hash && to_address_hash == Transaction.rootstock_bridge_address_hash() do
+      [:rootstock_bridge | types]
     else
       types
     end
