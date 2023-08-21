@@ -155,7 +155,6 @@ defmodule Explorer.Chain.Address.CoinBalance do
     balance
     |> cast(params, @allowed_fields)
     |> validate_required(@required_fields)
-    |> foreign_key_constraint(:address_hash)
     |> unique_constraint(:block_number, name: :address_coin_balances_address_hash_block_number_index)
   end
 end

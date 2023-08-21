@@ -74,7 +74,6 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     token_balance
     |> cast(attrs, @allowed_fields)
     |> validate_required(@required_fields)
-    |> foreign_key_constraint(:address_hash)
     |> foreign_key_constraint(:token_contract_address_hash)
   end
 

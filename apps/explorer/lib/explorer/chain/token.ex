@@ -113,7 +113,6 @@ defmodule Explorer.Chain.Token do
     token
     |> cast(params, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
-    |> foreign_key_constraint(:contract_address)
     |> trim_name()
     |> sanitize_token_input(:name)
     |> sanitize_token_input(:symbol)
