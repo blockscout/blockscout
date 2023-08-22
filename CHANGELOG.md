@@ -6,6 +6,7 @@
 
 - [#8181](https://github.com/blockscout/blockscout/pull/8181) - Insert current token balances placeholders along with historical
 - [#8210](https://github.com/blockscout/blockscout/pull/8210) - Drop address foreign keys
+- [#8269](https://github.com/blockscout/blockscout/pull/8269) - Don't push back to sequence on catchup exception
 
 ### Fixes
 
