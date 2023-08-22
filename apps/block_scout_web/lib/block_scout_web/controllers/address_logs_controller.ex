@@ -11,7 +11,6 @@ defmodule BlockScoutWeb.AddressLogsController do
 
   alias BlockScoutWeb.{AccessHelper, AddressLogsView, Controller}
   alias Explorer.{Chain, Market}
-  alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -21,7 +20,7 @@ defmodule BlockScoutWeb.AddressLogsController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          :ok <- Chain.check_address_exists(address_hash),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
-      logs_plus_one = Chain.address_to_logs(address_hash, paging_options(params))
+      logs_plus_one = Chain.address_to_logs(address_hash, false, paging_options(params))
       {results, next_page} = split_list_by_page(logs_plus_one)
 
       next_page_url =
@@ -67,7 +66,7 @@ defmodule BlockScoutWeb.AddressLogsController do
         address: address,
         current_path: Controller.current_full_path(conn),
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        exchange_rate: Market.get_coin_exchange_rate(),
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
         tags: get_address_tags(address_hash, current_user(conn))
       )
@@ -84,7 +83,7 @@ defmodule BlockScoutWeb.AddressLogsController do
 
       formatted_topic = if String.starts_with?(topic, "0x"), do: topic, else: "0x" <> topic
 
-      logs_plus_one = Chain.address_to_logs(address_hash, topic: formatted_topic)
+      logs_plus_one = Chain.address_to_logs(address_hash, false, topic: formatted_topic)
 
       {results, next_page} = split_list_by_page(logs_plus_one)
 

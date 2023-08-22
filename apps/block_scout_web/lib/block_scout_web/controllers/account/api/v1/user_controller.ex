@@ -8,13 +8,13 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   alias Explorer.Account.Api.Key, as: ApiKey
   alias Explorer.Account.CustomABI
   alias Explorer.Account.{Identity, PublicTagsRequest, TagAddress, TagTransaction, WatchlistAddress}
-  alias Explorer.ExchangeRates.Token
-  alias Explorer.{Market, Repo}
+  alias Explorer.{Chain, Market, PagingOptions, Repo}
   alias Plug.CSRFProtection
 
   action_fallback(BlockScoutWeb.Account.Api.V1.FallbackController)
 
   @ok_message "OK"
+  @token_balances_amount 150
 
   def info(conn, _params) do
     with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
@@ -31,11 +31,34 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
          {:watchlist, %{watchlists: [watchlist | _]}} <-
            {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
          watchlist_with_addresses <- preload_watchlist_addresses(watchlist) do
+      watchlist_addresses =
+        Enum.map(watchlist_with_addresses.watchlist_addresses, fn wa ->
+          balances =
+            Chain.fetch_paginated_last_token_balances(wa.address_hash,
+              paging_options: %PagingOptions{page_size: @token_balances_amount + 1}
+            )
+
+          count = Enum.count(balances)
+          overflow? = count > @token_balances_amount
+
+          fiat_sum =
+            balances
+            |> Enum.take(@token_balances_amount)
+            |> Enum.reduce(Decimal.new(0), fn tb, acc -> Decimal.add(acc, tb.fiat_value || 0) end)
+
+          %WatchlistAddress{
+            wa
+            | tokens_fiat_value: fiat_sum,
+              tokens_count: min(count, @token_balances_amount),
+              tokens_overflow: overflow?
+          }
+        end)
+
       conn
       |> put_status(200)
       |> render(:watchlist_addresses, %{
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        watchlist_addresses: watchlist_with_addresses.watchlist_addresses
+        exchange_rate: Market.get_coin_exchange_rate(),
+        watchlist_addresses: watchlist_addresses
       })
     end
   end
@@ -103,7 +126,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       |> put_status(200)
       |> render(:watchlist_address, %{
         watchlist_address: watchlist_address,
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
+        exchange_rate: Market.get_coin_exchange_rate()
       })
     end
   end
@@ -160,7 +183,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       |> put_status(200)
       |> render(:watchlist_address, %{
         watchlist_address: watchlist_address,
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
+        exchange_rate: Market.get_coin_exchange_rate()
       })
     end
   end

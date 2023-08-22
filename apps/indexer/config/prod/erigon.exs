@@ -8,7 +8,7 @@ hackney_opts = ConfigHelper.hackney_options()
 timeout = ConfigHelper.timeout(10)
 
 config :indexer,
-  block_interval: :timer.seconds(5),
+  block_interval: ConfigHelper.parse_time_env_var("INDEXER_CATCHUP_BLOCK_INTERVAL", "5s"),
   json_rpc_named_arguments: [
     transport:
       if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http",
@@ -23,6 +23,7 @@ config :indexer,
       method_to_url: [
         eth_getBalance: System.get_env("ETHEREUM_JSONRPC_TRACE_URL"),
         trace_block: System.get_env("ETHEREUM_JSONRPC_TRACE_URL"),
+        trace_replayBlockTransactions: System.get_env("ETHEREUM_JSONRPC_TRACE_URL"),
         trace_replayTransaction: System.get_env("ETHEREUM_JSONRPC_TRACE_URL")
       ],
       http_options: [recv_timeout: timeout, timeout: timeout, hackney: hackney_opts]

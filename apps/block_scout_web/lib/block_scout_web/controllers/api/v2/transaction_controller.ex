@@ -29,6 +29,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     [created_contract_address: :token] => :optional,
     [from_address: :names] => :optional,
     [to_address: :names] => :optional,
+    # as far as I remember this needed for substituting implementation name in `to` address instead of is's real name (in transactions)
     [to_address: :smart_contract] => :optional
   }
 
@@ -36,9 +37,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     [from_address: :smart_contract] => :optional,
     [to_address: :smart_contract] => :optional,
     [from_address: :names] => :optional,
-    [to_address: :names] => :optional,
-    from_address: :required,
-    to_address: :required
+    [to_address: :names] => :optional
   }
 
   @token_transfers_in_tx_necessity_by_association %{
@@ -46,8 +45,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     [to_address: :smart_contract] => :optional,
     [from_address: :names] => :optional,
     [to_address: :names] => :optional,
-    from_address: :required,
-    to_address: :required,
     token: :required
   }
 
@@ -65,7 +62,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   @api_true [api?: true]
 
-  def transaction(conn, %{"transaction_hash" => transaction_hash_string} = params) do
+  def transaction(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
            {:not_found,
@@ -100,14 +97,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
     {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
-    next_page_params = next_page |> next_page_params(transactions, params) |> delete_parameters_from_next_page_params()
+    next_page_params = next_page |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
 
     conn
     |> put_status(200)
     |> render(:transactions, %{transactions: transactions, next_page_params: next_page_params})
   end
 
-  def raw_trace(conn, %{"transaction_hash" => transaction_hash_string} = params) do
+  def raw_trace(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
            {:not_found, Chain.hash_to_transaction(transaction_hash, @api_true)},
@@ -136,7 +133,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     end
   end
 
-  def token_transfers(conn, %{"transaction_hash" => transaction_hash_string} = params) do
+  def token_transfers(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
            {:not_found, Chain.hash_to_transaction(transaction_hash, @api_true)},
@@ -160,8 +157,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       next_page_params =
         next_page
-        |> token_transfers_next_page_params(token_transfers, params)
-        |> delete_parameters_from_next_page_params()
+        |> token_transfers_next_page_params(token_transfers, delete_parameters_from_next_page_params(params))
 
       conn
       |> put_status(200)
@@ -169,7 +165,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     end
   end
 
-  def internal_transactions(conn, %{"transaction_hash" => transaction_hash_string} = params) do
+  def internal_transactions(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
            {:not_found, Chain.hash_to_transaction(transaction_hash, @api_true)},
@@ -186,8 +182,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       next_page_params =
         next_page
-        |> next_page_params(internal_transactions, params)
-        |> delete_parameters_from_next_page_params()
+        |> next_page_params(internal_transactions, delete_parameters_from_next_page_params(params))
 
       conn
       |> put_status(200)
@@ -198,7 +193,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     end
   end
 
-  def logs(conn, %{"transaction_hash" => transaction_hash_string} = params) do
+  def logs(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
            {:not_found, Chain.hash_to_transaction(transaction_hash, @api_true)},
@@ -221,8 +216,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       next_page_params =
         next_page
-        |> next_page_params(logs, params)
-        |> delete_parameters_from_next_page_params()
+        |> next_page_params(logs, delete_parameters_from_next_page_params(params))
 
       conn
       |> put_status(200)
@@ -234,7 +228,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     end
   end
 
-  def state_changes(conn, %{"transaction_hash" => transaction_hash_string} = params) do
+  def state_changes(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
            {:not_found,
@@ -245,11 +239,18 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
             )},
          {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
-      state_changes = TransactionStateHelper.state_changes(transaction)
+      state_changes_plus_next_page =
+        transaction |> TransactionStateHelper.state_changes(params |> paging_options() |> Keyword.merge(api?: true))
+
+      {state_changes, next_page} = split_list_by_page(state_changes_plus_next_page)
+
+      next_page_params =
+        next_page
+        |> next_page_params(state_changes, delete_parameters_from_next_page_params(params))
 
       conn
       |> put_status(200)
-      |> render(:state_changes, %{state_changes: state_changes})
+      |> render(:state_changes, %{state_changes: state_changes, next_page_params: next_page_params})
     end
   end
 
@@ -266,8 +267,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
-      next_page_params =
-        next_page |> next_page_params(transactions, params) |> delete_parameters_from_next_page_params()
+      next_page_params = next_page |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
 
       conn
       |> put_status(200)

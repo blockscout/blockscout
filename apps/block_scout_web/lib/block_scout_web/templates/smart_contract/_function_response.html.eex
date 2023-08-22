@@ -32,7 +32,7 @@
     <% {:error, %{code: code, message: message}} -> %>
         <pre><div style="padding-left: 20px">(error) : <%= "(#{code}) #{message}" %></div></pre>
     <% {:error, error} -> %>
-        <pre><div style="padding-left: 20px">(error) : <%= error %></div></pre>
+        <pre><div style="padding-left: 20px">(error) : <%= cut_rpc_url(error) %></div></pre>
     <% _ -> %>
 <pre>
 [<%= for {item, index} <- Enum.with_index(@outputs) do %>

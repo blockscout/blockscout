@@ -23,6 +23,8 @@ defmodule Indexer.Fetcher.CoinBalance do
   @default_max_batch_size 500
   @default_max_concurrency 4
 
+  def batch_size, do: defaults()[:max_batch_size]
+
   @doc """
   Asynchronously fetches balances for each address `hash` at the `block_number`.
   """
@@ -61,11 +63,14 @@ defmodule Indexer.Fetcher.CoinBalance do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_unfetched_balances(initial, fn address_fields, acc ->
-        address_fields
-        |> entry()
-        |> reducer.(acc)
-      end)
+      Chain.stream_unfetched_balances(
+        initial,
+        fn address_fields, acc ->
+          address_fields
+          |> entry()
+          |> reducer.(acc)
+        end
+      )
 
     final
   end

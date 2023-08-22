@@ -150,6 +150,8 @@ defmodule Explorer.Chain.Address do
 
   def checksum(address_or_hash, iodata? \\ false)
 
+  def checksum(nil, _iodata?), do: ""
+
   def checksum(%__MODULE__{hash: hash}, iodata?) do
     checksum(hash, iodata?)
   end

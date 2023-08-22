@@ -50,37 +50,42 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
             EthereumJSONRPC.Mox
             |> stub(:json_rpc, fn
               # latest block number to seed starting block number for genesis and realtime tasks
-              %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
+              [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}], _options ->
                 {:ok,
-                 %{
-                   "author" => "0xe2ac1c6843a33f81ae4935e5ef1277a392990381",
-                   "difficulty" => "0xfffffffffffffffffffffffffffffffe",
-                   "extraData" => "0xd583010a068650617269747986312e32362e32826c69",
-                   "gasLimit" => "0x7a1200",
-                   "gasUsed" => "0x0",
-                   "hash" => "0x627baabf5a17c0cfc547b6903ac5e19eaa91f30d9141be1034e3768f6adbc94e",
-                   "logsBloom" =>
-                     "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-                   "miner" => "0xe2ac1c6843a33f81ae4935e5ef1277a392990381",
-                   "number" => block_quantity,
-                   "parentHash" => "0x006edcaa1e6fde822908783bc4ef1ad3675532d542fce53537557391cfe34c3c",
-                   "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-                   "sealFields" => [
-                     "0x841240b30d",
-                     "0xb84158bc4fa5891934bc94c5dca0301867ce4f35925ef46ea187496162668210bba61b4cda09d7e0dca2f1dd041fad498ced6697aeef72656927f52c55b630f2591c01"
-                   ],
-                   "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
-                   "signature" =>
-                     "58bc4fa5891934bc94c5dca0301867ce4f35925ef46ea187496162668210bba61b4cda09d7e0dca2f1dd041fad498ced6697aeef72656927f52c55b630f2591c01",
-                   "size" => "0x243",
-                   "stateRoot" => "0x9a8111062667f7b162851a1cbbe8aece5ff12e761b3dcee93b787fcc12548cf7",
-                   "step" => "306230029",
-                   "timestamp" => "0x5b437f41",
-                   "totalDifficulty" => "0x342337ffffffffffffffffffffffffed8d29bb",
-                   "transactions" => [],
-                   "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-                   "uncles" => []
-                 }}
+                 [
+                   %{
+                     id: id,
+                     result: %{
+                       "author" => "0xe2ac1c6843a33f81ae4935e5ef1277a392990381",
+                       "difficulty" => "0xfffffffffffffffffffffffffffffffe",
+                       "extraData" => "0xd583010a068650617269747986312e32362e32826c69",
+                       "gasLimit" => "0x7a1200",
+                       "gasUsed" => "0x0",
+                       "hash" => "0x627baabf5a17c0cfc547b6903ac5e19eaa91f30d9141be1034e3768f6adbc94e",
+                       "logsBloom" =>
+                         "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                       "miner" => "0xe2ac1c6843a33f81ae4935e5ef1277a392990381",
+                       "number" => block_quantity,
+                       "parentHash" => "0x006edcaa1e6fde822908783bc4ef1ad3675532d542fce53537557391cfe34c3c",
+                       "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+                       "sealFields" => [
+                         "0x841240b30d",
+                         "0xb84158bc4fa5891934bc94c5dca0301867ce4f35925ef46ea187496162668210bba61b4cda09d7e0dca2f1dd041fad498ced6697aeef72656927f52c55b630f2591c01"
+                       ],
+                       "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+                       "signature" =>
+                         "58bc4fa5891934bc94c5dca0301867ce4f35925ef46ea187496162668210bba61b4cda09d7e0dca2f1dd041fad498ced6697aeef72656927f52c55b630f2591c01",
+                       "size" => "0x243",
+                       "stateRoot" => "0x9a8111062667f7b162851a1cbbe8aece5ff12e761b3dcee93b787fcc12548cf7",
+                       "step" => "306230029",
+                       "timestamp" => "0x5b437f41",
+                       "totalDifficulty" => "0x342337ffffffffffffffffffffffffed8d29bb",
+                       "transactions" => [],
+                       "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+                       "uncles" => []
+                     }
+                   }
+                 ]}
 
               [%{method: "trace_block"} | _] = requests, _options ->
                 {:ok, Enum.map(requests, fn %{id: id} -> %{id: id, result: []} end)}
@@ -531,6 +536,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
       # from `setup :state`
       assert_received :catchup_index
+
+      Process.sleep(50)
 
       assert {:noreply,
               %Catchup.BoundIntervalSupervisor{fetcher: %Catchup.Fetcher{}, task: %Task{pid: pid, ref: ref}} =
