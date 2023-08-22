@@ -135,12 +135,12 @@ defmodule BlockScoutWeb.ApiRouter do
     scope "/transactions" do
       get("/", V2.TransactionController, :transactions)
       get("/watchlist", V2.TransactionController, :watchlist_transactions)
-      get("/:transaction_hash", V2.TransactionController, :transaction)
-      get("/:transaction_hash/token-transfers", V2.TransactionController, :token_transfers)
-      get("/:transaction_hash/internal-transactions", V2.TransactionController, :internal_transactions)
-      get("/:transaction_hash/logs", V2.TransactionController, :logs)
-      get("/:transaction_hash/raw-trace", V2.TransactionController, :raw_trace)
-      get("/:transaction_hash/state-changes", V2.TransactionController, :state_changes)
+      get("/:transaction_hash_param", V2.TransactionController, :transaction)
+      get("/:transaction_hash_param/token-transfers", V2.TransactionController, :token_transfers)
+      get("/:transaction_hash_param/internal-transactions", V2.TransactionController, :internal_transactions)
+      get("/:transaction_hash_param/logs", V2.TransactionController, :logs)
+      get("/:transaction_hash_param/raw-trace", V2.TransactionController, :raw_trace)
+      get("/:transaction_hash_param/state-changes", V2.TransactionController, :state_changes)
     end
 
     scope "/blocks" do
@@ -152,32 +152,32 @@ defmodule BlockScoutWeb.ApiRouter do
 
     scope "/addresses" do
       get("/", V2.AddressController, :addresses_list)
-      get("/:address_hash", V2.AddressController, :address)
-      get("/:address_hash/tabs-counters", V2.AddressController, :tabs_counters)
-      get("/:address_hash/counters", V2.AddressController, :counters)
-      get("/:address_hash/token-balances", V2.AddressController, :token_balances)
-      get("/:address_hash/tokens", V2.AddressController, :tokens)
-      get("/:address_hash/transactions", V2.AddressController, :transactions)
-      get("/:address_hash/token-transfers", V2.AddressController, :token_transfers)
-      get("/:address_hash/internal-transactions", V2.AddressController, :internal_transactions)
-      get("/:address_hash/logs", V2.AddressController, :logs)
-      get("/:address_hash/blocks-validated", V2.AddressController, :blocks_validated)
-      get("/:address_hash/coin-balance-history", V2.AddressController, :coin_balance_history)
-      get("/:address_hash/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
-      get("/:address_hash/withdrawals", V2.AddressController, :withdrawals)
+      get("/:address_hash_param", V2.AddressController, :address)
+      get("/:address_hash_param/tabs-counters", V2.AddressController, :tabs_counters)
+      get("/:address_hash_param/counters", V2.AddressController, :counters)
+      get("/:address_hash_param/token-balances", V2.AddressController, :token_balances)
+      get("/:address_hash_param/tokens", V2.AddressController, :tokens)
+      get("/:address_hash_param/transactions", V2.AddressController, :transactions)
+      get("/:address_hash_param/token-transfers", V2.AddressController, :token_transfers)
+      get("/:address_hash_param/internal-transactions", V2.AddressController, :internal_transactions)
+      get("/:address_hash_param/logs", V2.AddressController, :logs)
+      get("/:address_hash_param/blocks-validated", V2.AddressController, :blocks_validated)
+      get("/:address_hash_param/coin-balance-history", V2.AddressController, :coin_balance_history)
+      get("/:address_hash_param/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
+      get("/:address_hash_param/withdrawals", V2.AddressController, :withdrawals)
     end
 
     scope "/tokens" do
       get("/", V2.TokenController, :tokens_list)
-      get("/:address_hash", V2.TokenController, :token)
-      get("/:address_hash/counters", V2.TokenController, :counters)
-      get("/:address_hash/transfers", V2.TokenController, :transfers)
-      get("/:address_hash/holders", V2.TokenController, :holders)
-      get("/:address_hash/instances", V2.TokenController, :instances)
-      get("/:address_hash/instances/:token_id", V2.TokenController, :instance)
-      get("/:address_hash/instances/:token_id/transfers", V2.TokenController, :transfers_by_instance)
-      get("/:address_hash/instances/:token_id/holders", V2.TokenController, :holders_by_instance)
-      get("/:address_hash/instances/:token_id/transfers-count", V2.TokenController, :transfers_count_by_instance)
+      get("/:address_hash_param", V2.TokenController, :token)
+      get("/:address_hash_param/counters", V2.TokenController, :counters)
+      get("/:address_hash_param/transfers", V2.TokenController, :transfers)
+      get("/:address_hash_param/holders", V2.TokenController, :holders)
+      get("/:address_hash_param/instances", V2.TokenController, :instances)
+      get("/:address_hash_param/instances/:token_id", V2.TokenController, :instance)
+      get("/:address_hash_param/instances/:token_id/transfers", V2.TokenController, :transfers_by_instance)
+      get("/:address_hash_param/instances/:token_id/holders", V2.TokenController, :holders_by_instance)
+      get("/:address_hash_param/instances/:token_id/transfers-count", V2.TokenController, :transfers_count_by_instance)
     end
 
     scope "/main-page" do

@@ -3,7 +3,6 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
   alias Explorer.Chain.{Address, Block}
   alias Explorer.Repo
-  alias Explorer.Tags.AddressTag
 
   setup do
     insert(:block)
