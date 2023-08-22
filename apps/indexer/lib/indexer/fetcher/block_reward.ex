@@ -62,9 +62,12 @@ defmodule Indexer.Fetcher.BlockReward do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_blocks_without_rewards(initial, fn %{number: number}, acc ->
-        reducer.(number, acc)
-      end)
+      Chain.stream_blocks_without_rewards(
+        initial,
+        fn %{number: number}, acc ->
+          reducer.(number, acc)
+        end
+      )
 
     final
   end
@@ -97,7 +100,7 @@ defmodule Indexer.Fetcher.BlockReward do
       {:error, reason} ->
         Logger.error(
           fn ->
-            ["failed to fetch: ", inspect(reason)]
+            ["failed to fetch: ", inspect(reason), " hash: ", inspect(hash_string_by_number)]
           end,
           error_count: consensus_number_count
         )

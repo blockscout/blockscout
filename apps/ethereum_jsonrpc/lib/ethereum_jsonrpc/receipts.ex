@@ -240,6 +240,7 @@ defmodule EthereumJSONRPC.Receipts do
   defp reduce_responses(responses, id_to_transaction_params)
        when is_list(responses) and is_map(id_to_transaction_params) do
     responses
+    |> EthereumJSONRPC.sanitize_responses(id_to_transaction_params)
     |> Stream.map(&response_to_receipt(&1, id_to_transaction_params))
     |> Enum.reduce({:ok, []}, &reduce_receipt(&1, &2))
   end

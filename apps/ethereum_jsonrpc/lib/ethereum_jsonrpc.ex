@@ -25,6 +25,8 @@ defmodule EthereumJSONRPC do
   documentation for `EthereumJSONRPC.RequestCoordinator`.
   """
 
+  require Logger
+
   alias EthereumJSONRPC.{
     Block,
     Blocks,
@@ -183,7 +185,7 @@ defmodule EthereumJSONRPC do
           [%{required(:block_quantity) => quantity, required(:hash_data) => data()}],
           json_rpc_named_arguments
         ) :: {:ok, FetchedBalances.t()} | {:error, reason :: term}
-  def fetch_balances(params_list, json_rpc_named_arguments)
+  def fetch_balances(params_list, json_rpc_named_arguments, chunk_size \\ nil)
       when is_list(params_list) and is_list(json_rpc_named_arguments) do
     filtered_params =
       if Application.get_env(:ethereum_jsonrpc, :disable_archive_balances?) do
@@ -201,6 +203,7 @@ defmodule EthereumJSONRPC do
     with {:ok, responses} <-
            id_to_params
            |> FetchedBalances.requests()
+           |> chunk_requests(chunk_size)
            |> json_rpc(json_rpc_named_arguments) do
       {:ok, FetchedBalances.from_responses(responses, id_to_params)}
     end
@@ -273,6 +276,16 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Fetches block by "t:tag/0".
+  """
+  @spec fetch_block_by_tag(tag(), json_rpc_named_arguments) ::
+          {:ok, Blocks.t()} | {:error, reason :: :invalid_tag | :not_found | term()}
+  def fetch_block_by_tag(tag, json_rpc_named_arguments) when tag in ~w(earliest latest pending) do
+    [%{tag: tag}]
+    |> fetch_blocks_by_params(&Block.ByTag.request/1, json_rpc_named_arguments)
+  end
+
+  @doc """
   Fetches uncle blocks by nephew hashes and indices.
   """
   @spec fetch_uncle_blocks([nephew_index()], json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}
@@ -307,9 +320,8 @@ defmodule EthereumJSONRPC do
   @spec fetch_block_number_by_tag(tag(), json_rpc_named_arguments) ::
           {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | :not_found | term()}
   def fetch_block_number_by_tag(tag, json_rpc_named_arguments) when tag in ~w(earliest latest pending) do
-    %{id: 0, tag: tag}
-    |> Block.ByTag.request()
-    |> json_rpc(json_rpc_named_arguments)
+    tag
+    |> fetch_block_by_tag(json_rpc_named_arguments)
     |> Block.ByTag.number_from_result()
   end
 
@@ -382,6 +394,29 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Assigns not matched ids between requests and responses to responses with incorrect ids
+  """
+  def sanitize_responses(responses, id_to_params) do
+    responses
+    |> Enum.reduce(
+      {[], Map.keys(id_to_params) -- Enum.map(responses, & &1.id)},
+      fn
+        %{id: nil} = res, {result_res, [id | rest]} ->
+          Logger.error(
+            "Empty id in response: #{inspect(res)}, stacktrace: #{inspect(Process.info(self(), :current_stacktrace))}"
+          )
+
+          {[%{res | id: id} | result_res], rest}
+
+        res, {result_res, non_matched} ->
+          {[res | result_res], non_matched}
+      end
+    )
+    |> elem(0)
+    |> Enum.reverse()
+  end
+
+  @doc """
     1. POSTs JSON `payload` to `url`
     2. Decodes the response
     3. Handles the response
@@ -422,7 +457,7 @@ defmodule EthereumJSONRPC do
   @doc """
   Converts `t:quantity/0` to `t:non_neg_integer/0`.
   """
-  @spec quantity_to_integer(quantity) :: non_neg_integer() | :error
+  @spec quantity_to_integer(quantity) :: non_neg_integer() | nil
   def quantity_to_integer("0x" <> hexadecimal_digits) do
     String.to_integer(hexadecimal_digits, 16)
   end
@@ -432,9 +467,11 @@ defmodule EthereumJSONRPC do
   def quantity_to_integer(string) when is_binary(string) do
     case Integer.parse(string) do
       {integer, ""} -> integer
-      _ -> :error
+      _ -> nil
     end
   end
+
+  def quantity_to_integer(_), do: nil
 
   @doc """
   Converts `t:non_neg_integer/0` to `t:quantity/0`
@@ -503,7 +540,7 @@ defmodule EthereumJSONRPC do
   """
   def timestamp_to_datetime(timestamp) do
     case quantity_to_integer(timestamp) do
-      :error ->
+      nil ->
         nil
 
       quantity ->
@@ -522,6 +559,9 @@ defmodule EthereumJSONRPC do
       {:ok, Blocks.from_responses(responses, id_to_params)}
     end
   end
+
+  defp chunk_requests(requests, nil), do: requests
+  defp chunk_requests(requests, chunk_size), do: Enum.chunk_every(requests, chunk_size)
 
   def first_block_to_fetch(config) do
     string_value = Application.get_env(:indexer, config)

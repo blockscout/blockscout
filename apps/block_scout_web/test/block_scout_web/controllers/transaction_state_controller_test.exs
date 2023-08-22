@@ -7,6 +7,31 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
   import BlockScoutWeb.WeiHelper, only: [format_wei_value: 2]
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
   alias Explorer.Chain.Wei
+  alias Indexer.Fetcher.CoinBalance
+  alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
+  alias Indexer.Fetcher.CoinBalanceOnDemand
+
+  setup :set_mox_global
+
+  setup :verify_on_exit!
+
+  setup do
+    mocked_json_rpc_named_arguments = [
+      transport: EthereumJSONRPC.Mox,
+      transport_options: []
+    ]
+
+    start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+    start_supervised!(AverageBlockTime)
+    start_supervised!(AddressesCounter)
+    start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
+
+    Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
+    end)
+  end
 
   describe "GET index/3" do
     test "loads existing transaction", %{conn: conn} do
@@ -156,16 +181,19 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
     end
 
     test "fetch coin balances if needed", %{conn: conn} do
+      json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
+      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
       EthereumJSONRPC.Mox
       |> stub(:json_rpc, fn
         [%{id: id, method: "eth_getBalance", params: _}], _options ->
           {:ok, [%{id: id, result: integer_to_quantity(123)}]}
 
-        [%{id: _id, method: "eth_getBlockByNumber", params: _}], _options ->
+        [%{id: id, method: "eth_getBlockByNumber", params: _}], _options ->
           {:ok,
            [
              %{
-               id: 0,
+               id: id,
                jsonrpc: "2.0",
                result: %{
                  "author" => "0x0000000000000000000000000000000000000000",
@@ -215,6 +243,13 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
       {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
       full_text = Enum.join(items)
 
+      assert(length(items) == 3)
+      assert(String.contains?(full_text, format_wei_value(%Wei{value: Decimal.new(0)}, :ether)))
+
+      1 |> :timer.seconds() |> :timer.sleep()
+      conn = get(conn, transaction_state_path(conn, :index, transaction), %{type: "JSON"})
+      {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
+      full_text = Enum.join(items)
       assert(String.contains?(full_text, format_wei_value(%Wei{value: Decimal.new(123)}, :ether)))
       assert(length(items) == 3)
     end

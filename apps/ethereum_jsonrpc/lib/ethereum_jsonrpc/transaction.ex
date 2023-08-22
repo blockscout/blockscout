@@ -7,8 +7,6 @@ defmodule EthereumJSONRPC.Transaction do
   [`eth_getTransactionByBlockHashAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyblockhashandindex),
   and [`eth_getTransactionByBlockNumberAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyblocknumberandindex)
   """
-  require Logger
-
   import EthereumJSONRPC, only: [quantity_to_integer: 1, integer_to_quantity: 1, request: 1]
 
   alias EthereumJSONRPC
@@ -135,6 +133,7 @@ defmodule EthereumJSONRPC.Transaction do
       %{
         block_hash: nil,
         block_number: nil,
+        gas_price: nil,
         from_address_hash: "0x870006d72c247bc1e90983c71b3234ee01d3c9d9",
         gas: 182154,
         hash: "0x8d2cd1fae48ea0d2a20bb74abbfca05c2d805793e1b42fa844bbdd90f2512f39",
@@ -230,6 +229,7 @@ defmodule EthereumJSONRPC.Transaction do
       block_number: block_number,
       from_address_hash: from_address_hash,
       gas: gas,
+      gas_price: nil,
       hash: hash,
       index: index,
       input: input,
@@ -423,8 +423,6 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   def to_elixir(transaction) when is_binary(transaction) do
-    #    Logger.warn(["Fetched transaction is not full: ", transaction])
-
     nil
   end
 

@@ -97,15 +97,15 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   end
 
   def process_contract_source("SOLIDITY", source, address_hash) do
-    SolidityPublisher.process_rust_verifier_response(source, address_hash, true, true)
+    SolidityPublisher.process_rust_verifier_response(source, address_hash, true, true, true)
   end
 
   def process_contract_source("VYPER", source, address_hash) do
-    VyperPublisher.process_rust_verifier_response(source, address_hash, true)
+    VyperPublisher.process_rust_verifier_response(source, address_hash, true, true)
   end
 
   def process_contract_source("YUL", source, address_hash) do
-    SolidityPublisher.process_rust_verifier_response(source, address_hash, true, true)
+    SolidityPublisher.process_rust_verifier_response(source, address_hash, true, true, true)
   end
 
   def process_contract_source(_, _source, _address_hash), do: false

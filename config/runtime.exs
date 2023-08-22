@@ -150,6 +150,12 @@ config :ethereum_jsonrpc,
   ipc_path: System.get_env("IPC_PATH"),
   disable_archive_balances?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES")
 
+config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
+  headers:
+    %{"Content-Type" => "application/json"}
+    |> Map.merge(ConfigHelper.parse_json_env_var("ETHEREUM_JSONRPC_HTTP_HEADERS", "{}"))
+    |> Map.to_list()
+
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
   debug_trace_transaction_timeout: System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s"),
   tracer: System.get_env("INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE", "call_tracer")
@@ -170,9 +176,12 @@ exchange_rates_coin = System.get_env("EXCHANGE_RATES_COIN")
 config :explorer,
   coin: System.get_env("COIN") || exchange_rates_coin || "ETH",
   coin_name: System.get_env("COIN_NAME") || exchange_rates_coin || "ETH",
-  allowed_evm_versions:
-    System.get_env("CONTRACT_VERIFICATION_ALLOWED_EVM_VERSIONS") ||
-      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,paris,default",
+  allowed_solidity_evm_versions:
+    System.get_env("CONTRACT_VERIFICATION_ALLOWED_SOLIDITY_EVM_VERSIONS") ||
+      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,paris,shanghai,default",
+  allowed_vyper_evm_versions:
+    System.get_env("CONTRACT_VERIFICATION_ALLOWED_VYPER_EVM_VERSIONS") ||
+      "byzantium,constantinople,petersburg,istanbul,berlin,paris,shanghai,default",
   include_uncles_in_average_block_time: ConfigHelper.parse_bool_env_var("UNCLES_IN_AVERAGE_BLOCK_TIME"),
   healthy_blocks_period: ConfigHelper.parse_time_env_var("HEALTHY_BLOCKS_PERIOD", "5m"),
   realtime_events_sender:
@@ -216,6 +225,9 @@ config :explorer, Explorer.Chain.Cache.Block,
 config :explorer, Explorer.Chain.Cache.Transaction,
   global_ttl: ConfigHelper.parse_time_env_var("CACHE_TXS_COUNT_PERIOD", "2h")
 
+config :explorer, Explorer.Chain.Cache.PendingBlockOperation,
+  global_ttl: ConfigHelper.parse_time_env_var("CACHE_PBO_COUNT_PERIOD", "20m")
+
 config :explorer, Explorer.Chain.Cache.GasPriceOracle,
   global_ttl: ConfigHelper.parse_time_env_var("GAS_PRICE_ORACLE_CACHE_PERIOD", "30s"),
   num_of_blocks: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_NUM_OF_BLOCKS", 200),
@@ -257,7 +269,8 @@ config :explorer, Explorer.ExchangeRates,
 config :explorer, Explorer.ExchangeRates.Source, source: ConfigHelper.exchange_rates_source()
 
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
-  api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY")
+  api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY"),
+  coin_id: System.get_env("EXCHANGE_RATES_COINMARKETCAP_COIN_ID")
 
 config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
   platform: System.get_env("EXCHANGE_RATES_COINGECKO_PLATFORM_ID"),
@@ -323,6 +336,10 @@ config :explorer, Explorer.Chain.Cache.Uncles,
   ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
   global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
 
+config :explorer, Explorer.Chain.Cache.Uncles,
+  ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
+  global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
+
 config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   server_url: System.get_env("SOURCIFY_SERVER_URL") || "https://sourcify.dev/server",
   enabled: ConfigHelper.parse_bool_env_var("SOURCIFY_INTEGRATION_ENABLED"),
@@ -377,8 +394,7 @@ config :explorer, Explorer.Chain.Cache.TransactionActionTokensData,
   max_cache_size: ConfigHelper.parse_integer_env_var("INDEXER_TX_ACTIONS_MAX_TOKEN_CACHE_SIZE", 100_000)
 
 config :explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand,
-  fetch_interval:
-    ConfigHelper.parse_time_env_var("MICROSERVICE_MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS", "10m")
+  fetch_interval: ConfigHelper.parse_time_env_var("MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS", "10m")
 
 config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
@@ -399,7 +415,8 @@ config :indexer,
   memory_limit: ConfigHelper.indexer_memory_limit(),
   receipts_batch_size: ConfigHelper.parse_integer_env_var("INDEXER_RECEIPTS_BATCH_SIZE", 250),
   receipts_concurrency: ConfigHelper.parse_integer_env_var("INDEXER_RECEIPTS_CONCURRENCY", 10),
-  hide_indexing_progress_alert: ConfigHelper.parse_bool_env_var("INDEXER_HIDE_INDEXING_PROGRESS_ALERT")
+  hide_indexing_progress_alert: ConfigHelper.parse_bool_env_var("INDEXER_HIDE_INDEXING_PROGRESS_ALERT"),
+  fetcher_init_limit: ConfigHelper.parse_integer_env_var("INDEXER_FETCHER_INIT_QUERY_LIMIT", 100)
 
 config :indexer, Indexer.Supervisor, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
 
@@ -427,8 +444,11 @@ config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
     System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu" ||
       ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER")
 
+config :indexer, Indexer.Fetcher.Token, concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_CONCURRENCY", 10)
+
 config :indexer, Indexer.Fetcher.TokenBalance,
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_BATCH_SIZE", 100)
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_CONCURRENCY", 10)
 
 config :indexer, Indexer.Fetcher.TokenBalanceOnDemand,
   threshold: ConfigHelper.parse_time_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD", "1h"),
@@ -494,7 +514,9 @@ config :indexer, Indexer.Fetcher.TokenInstance.Sanitize,
 
 config :indexer, Indexer.Fetcher.InternalTransaction,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", 10),
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY", 4)
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY", 4),
+  indexing_finished_threshold:
+    ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_INDEXING_FINISHED_THRESHOLD", 1000)
 
 config :indexer, Indexer.Fetcher.CoinBalance,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_BATCH_SIZE", 500),

@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "5.1.4"
+      version: "5.2.2"
     ]
   end
 
@@ -83,7 +83,7 @@ defmodule BlockScoutWeb.Mixfile do
       # HTML CSS selectors for Phoenix controller tests
       {:floki, "~> 0.31"},
       {:flow, "~> 1.2"},
-      {:gettext, "~> 0.22.0"},
+      {:gettext, "~> 0.23.1"},
       {:hammer, "~> 6.0"},
       {:httpoison, "~> 2.0"},
       {:indexer, in_umbrella: true, runtime: false},
@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:number, "~> 1.0.1"},
-      {:phoenix, "== 1.5.13"},
+      {:phoenix, "== 1.5.14"},
       {:phoenix_ecto, "~> 4.1"},
       {:phoenix_html, "== 3.0.4"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
@@ -128,7 +128,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:wallaby, "~> 0.30", only: :test, runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:websocket_client, git: "https://github.com/blockscout/websocket_client.git", branch: "master", override: true},
-      {:ex_json_schema, "~> 0.9.1"},
+      {:ex_json_schema, "~> 0.10.1"},
       {:ueberauth, "~> 0.7"},
       {:ueberauth_auth0, "~> 2.0"},
       {:bureaucrat, "~> 0.2.9", only: :test}

@@ -33,10 +33,10 @@
     <% end %>
     <%= if not_negative?(@balance_before) and not_negative?(@balance_after) do %>
       <td class="stakes-td">
-        <span><%= display_value(@balance_before, coin_or_transfer) %></span>
+        <span><%= display_value(@balance_before, coin_or_transfer, @token_id) %></span>
       </td>
       <td class="stakes-td">
-        <span><%= display_value(@balance_after, coin_or_transfer) %></span>
+        <span><%= display_value(@balance_after, coin_or_transfer, @token_id) %></span>
       </td>
     <% else %>
       <td class="stakes-td"></td>
@@ -44,20 +44,20 @@
     <% end %>
   <% end %>
   <td class="stakes-td">
-    <%= if is_list(@coin_or_token_transfers) and coin_or_transfer.token.type != "ERC-20" do %>
+    <%= if is_list(@coin_or_token_transfers) and coin_or_transfer.token.type == "ERC-721" do %>
       <%= for {type, transfer} <- @coin_or_token_transfers do %>
         <%= case type do %>
           <% :from ->  %>
-          <div class="py-1 mr-4 text-danger">▼ <%= display_nft(transfer) %></div>
+          <div class="py-1 mr-4 text-danger">▼ <%= display_erc_721(transfer) %></div>
           <% :to -> %>
-          <div class="py-1 mr-4 text-success">▲ <%= display_nft(transfer) %></div>
+          <div class="py-1 mr-4 text-success">▲ <%= display_erc_721(transfer) %></div>
         <% end %>
       <% end %>
     <% else %>
       <%= if not_negative?(@balance_diff) do %>
-        <span class="mr-4 text-success">▲ <%= display_value(@balance_diff, coin_or_transfer) %></span>
+        <span class="mr-4 text-success">▲ <%= display_value(@balance_diff, coin_or_transfer, @token_id) %></span>
       <% else %>
-        <span class="mr-4 text-danger">▼ <%= display_value(absolute_value_of(@balance_diff), coin_or_transfer) %></span>
+        <span class="mr-4 text-danger">▼ <%= display_value(absolute_value_of(@balance_diff), coin_or_transfer, @token_id) %></span>
       <% end %>
     <% end %>
   </td>

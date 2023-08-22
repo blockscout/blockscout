@@ -3,6 +3,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
     This behaviour module was created in order to add possibility to extend the functionality of RustVerifierInterface
   """
   defmacro __using__(_) do
+    # credo:disable-for-next-line
     quote([]) do
       alias Explorer.Utility.RustService
       alias HTTPoison.Response
@@ -23,7 +24,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
             } = body,
             address_hash
           ) do
-        http_post_request(multiple_files_verification_url(), append_metadata(body, address_hash))
+        http_post_request(solidity_multiple_files_verification_url(), append_metadata(body, address_hash))
       end
 
       def verify_standard_json_input(
@@ -35,7 +36,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
             } = body,
             address_hash
           ) do
-        http_post_request(standard_json_input_verification_url(), append_metadata(body, address_hash))
+        http_post_request(solidity_standard_json_verification_url(), append_metadata(body, address_hash))
       end
 
       def vyper_verify_multipart(
@@ -48,6 +49,18 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
             address_hash
           ) do
         http_post_request(vyper_multiple_files_verification_url(), append_metadata(body, address_hash))
+      end
+
+      def vyper_verify_standard_json(
+            %{
+              "bytecode" => _,
+              "bytecodeType" => _,
+              "compilerVersion" => _,
+              "input" => _
+            } = body,
+            address_hash
+          ) do
+        http_post_request(vyper_standard_json_verification_url(), append_metadata(body, address_hash))
       end
 
       def http_post_request(url, body) do
@@ -127,11 +140,15 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
 
       def process_verifier_response(other), do: {:error, other}
 
-      def multiple_files_verification_url, do: "#{base_api_url()}" <> "/verifier/solidity/sources:verify-multi-part"
+      def solidity_multiple_files_verification_url,
+        do: "#{base_api_url()}" <> "/verifier/solidity/sources:verify-multi-part"
 
       def vyper_multiple_files_verification_url, do: "#{base_api_url()}" <> "/verifier/vyper/sources:verify-multi-part"
 
-      def standard_json_input_verification_url,
+      def vyper_standard_json_verification_url,
+        do: "#{base_api_url()}" <> "/verifier/vyper/sources:verify-standard-json"
+
+      def solidity_standard_json_verification_url,
         do: "#{base_api_url()}" <> "/verifier/solidity/sources:verify-standard-json"
 
       def versions_list_url, do: "#{base_api_url()}" <> "/verifier/solidity/versions"

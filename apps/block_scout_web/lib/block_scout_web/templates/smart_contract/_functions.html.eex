@@ -145,14 +145,14 @@
                     </div>
                   </div> 
                 <% else %>
-                  <div class="align-self-center function-output word-break-all <%= if not_last_element?(length, index), do: "mb-1" %>"><%= raw(values_with_type(output["value"], output["type"], [output["name"]], 0, output["components"])) %></div>
+                  <div class="align-self-center function-output word-break-all <%= if not_last_element?(length, index), do: "mb-1" %>"><%= raw(values_with_type(output["value"], output["type"], fetch_name(function["names"], index), 0)) %></div>
                 <% end %>
               <% end %>
             <% end %>
           </div>
         <% error?(function["outputs"]) -> %>
           <% {:error, text_error} = function["outputs"] %>
-          <div class="alert alert-danger py-2 word-break-all" style="margin-bottom: 0;"><%= text_error %></div>
+          <div class="alert alert-danger py-2 word-break-all" style="margin-bottom: 0;"><%= cut_rpc_url(text_error) %></div>
         <% true -> %>
           <% nil %>
       <% end %>

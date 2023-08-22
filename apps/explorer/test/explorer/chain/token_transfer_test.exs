@@ -3,7 +3,7 @@ defmodule Explorer.Chain.TokenTransferTest do
 
   import Explorer.Factory
 
-  alias Explorer.{PagingOptions, Repo}
+  alias Explorer.PagingOptions
   alias Explorer.Chain.TokenTransfer
 
   doctest Explorer.Chain.TokenTransfer

@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.AddressWithdrawalControllerTest do
   import BlockScoutWeb.WeiHelper, only: [format_wei_value: 2]
   import Mox
 
-  alias Explorer.Chain.{Address, Transaction}
+  alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
 
   setup :verify_on_exit!
@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.AddressWithdrawalControllerTest do
     test "returns withdrawals for the address", %{conn: conn} do
       address = insert(:address, withdrawals: insert_list(30, :withdrawal))
 
-      # to check that we can correctly render adress overview
+      # to check that we can correctly render address overview
       get(conn, address_withdrawal_path(conn, :index, Address.checksum(address)))
 
       conn = get(conn, address_withdrawal_path(conn, :index, Address.checksum(address), %{"type" => "JSON"}))

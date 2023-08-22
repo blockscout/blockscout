@@ -6,7 +6,8 @@ defmodule BlockScoutWeb.AddressView do
   alias BlockScoutWeb.{AccessHelper, LayoutView}
   alias Explorer.Account.CustomABI
   alias Explorer.{Chain, CustomContractsHelper, Repo}
-  alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.{Address, Hash, InternalTransaction, Log, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
@@ -494,4 +495,9 @@ defmodule BlockScoutWeb.AddressView do
     do: !is_nil(custom_abi) && Enum.any?(custom_abi.abi, &Writer.write_function?(&1))
 
   def contract_interaction_disabled?, do: Application.get_env(:block_scout_web, :contract)[:disable_interaction]
+
+  def decode(log, transaction) do
+    {result, _contracts_acc, _events_acc} = Log.decode(log, transaction, [], true)
+    result
+  end
 end

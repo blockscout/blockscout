@@ -555,5 +555,52 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
               }} ==
                InstanceMetadataRetriever.fetch_json(%{"0e89341c" => {:ok, ["http://localhost:#{bypass.port}#{path}"]}})
     end
+
+    test "fetch ipfs of ipfs/{id} format" do
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data:
+                                        "0xc87b56dd0000000000000000000000000000000000000000000000000000000000000000",
+                                      to: "0x7e01CC81fCfdf6a71323900288A69e234C464f63"
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             id: 0,
+             jsonrpc: "2.0",
+             result:
+               "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000033697066732f516d6439707654684577676a544262456b4e6d6d47466263704a4b773137666e524241543454643472636f67323200000000000000000000000000"
+           }
+         ]}
+      end)
+
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      Explorer.Mox.HTTPoison
+      |> expect(:get, fn "https://ipfs.io/ipfs/Qmd9pvThEwgjTBbEkNmmGFbcpJKw17fnRBAT4Td4rcog22", _headers, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: "123", headers: [{"Content-Type", "image/jpg"}]}}
+      end)
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "image" => "https://ipfs.io/ipfs/Qmd9pvThEwgjTBbEkNmmGFbcpJKw17fnRBAT4Td4rcog22"
+                }
+              }} ==
+               InstanceMetadataRetriever.fetch_metadata("0x7e01CC81fCfdf6a71323900288A69e234C464f63", 0)
+
+      Application.put_env(:explorer, :http_adapter, HTTPoison)
+    end
   end
 end
