@@ -14,6 +14,8 @@
 
 ### Chore
 
+- [#8281](https://github.com/blockscout/blockscout/pull/8281) - Planned removal of duplicate API endpoints: for CSV export and GraphQL
+
 <details>
   <summary>Dependencies version bumps</summary>
 
