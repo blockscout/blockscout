@@ -136,9 +136,6 @@ defmodule Explorer.Chain.TokenTransfer do
     struct
     |> cast(params, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
-    |> foreign_key_constraint(:from_address)
-    |> foreign_key_constraint(:to_address)
-    |> foreign_key_constraint(:token_contract_address)
     |> foreign_key_constraint(:transaction)
   end
 

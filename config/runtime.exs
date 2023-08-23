@@ -444,8 +444,11 @@ config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
     System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu" ||
       ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER")
 
+config :indexer, Indexer.Fetcher.Token, concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_CONCURRENCY", 10)
+
 config :indexer, Indexer.Fetcher.TokenBalance,
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_BATCH_SIZE", 100)
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_CONCURRENCY", 10)
 
 config :indexer, Indexer.Fetcher.TokenBalanceOnDemand,
   threshold: ConfigHelper.parse_time_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD", "1h"),

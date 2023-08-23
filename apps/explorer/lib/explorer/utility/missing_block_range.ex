@@ -61,6 +61,7 @@ defmodule Explorer.Utility.MissingBlockRange do
         update_range(range_1, %{from_number: range_2.from_number})
 
       _ ->
+        delete_ranges_between(max_number, min_number)
         insert_range(%{from_number: max_number, to_number: min_number})
     end
   end

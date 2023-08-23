@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
            {:format_address, Chain.string_to_address_hash(token_address_hash_string)},
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
          {:format_url, true} <- {:format_url, valid_url?(icon_url)} do
-      case token |> Token.changeset(%{icon_url: icon_url}) |> Repo.update() do
+      case token |> Token.changeset(%{icon_url: icon_url, is_verified_via_admin_panel: true}) |> Repo.update() do
         {:ok, _} ->
           conn
           |> put_view(ApiView)
