@@ -269,7 +269,10 @@ config :explorer, Explorer.ExchangeRates,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_EXCHANGE_RATES"),
   fetch_btc_value: ConfigHelper.parse_bool_env_var("EXCHANGE_RATES_FETCH_BTC_VALUE")
 
-config :explorer, Explorer.ExchangeRates.Source, source: ConfigHelper.exchange_rates_source()
+config :explorer, Explorer.ExchangeRates.Source,
+  source: ConfigHelper.exchange_rates_source(),
+  price_source: ConfigHelper.exchange_rates_price_source(),
+  market_cap_source: ConfigHelper.exchange_rates_market_cap_source()
 
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
   api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY"),
