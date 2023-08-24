@@ -163,6 +163,9 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
 config :ethereum_jsonrpc, EthereumJSONRPC.PendingTransaction,
   type: System.get_env("ETHEREUM_JSONRPC_PENDING_TRANSACTIONS_TYPE", "default")
 
+config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
+  wait_per_timeout: ConfigHelper.parse_time_env_var("ETHEREUM_JSONRPC_WAIT_PER_TIMEOUT", "20s")
+
 ################
 ### Explorer ###
 ################
