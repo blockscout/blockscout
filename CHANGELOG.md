@@ -6,6 +6,7 @@
 
 - [#8181](https://github.com/blockscout/blockscout/pull/8181) - Insert current token balances placeholders along with historical
 - [#8210](https://github.com/blockscout/blockscout/pull/8210) - Drop address foreign keys
+- [#8292](https://github.com/blockscout/blockscout/pull/8292) - Add ETHEREUM_JSONRPC_WAIT_PER_TIMEOUT env var
 
 ### Fixes
 
