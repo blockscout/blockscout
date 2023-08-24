@@ -18,3 +18,74 @@
 @import "components/modal_variables";
 @import "components/modal";
 @import "components/modal_status";
+
+
+body {
+    font-family:"IBM Plex Mono"!important;
+}
+
+h1, h2, h3, h4,h5,h6 {
+    font-family:"Kanit"!important;
+}
+
+.dashboard-banner-network-plain-container {
+    background-color: black!important;
+}
+
+.dashboard-banner-network-plain-container:after {
+    background-color: black!important;
+}
+
+.footer {
+    background-color: black!important;
+    color: #fff!important;
+}
+
+.footer-list h3 {
+    color: #bbb!important;
+}
+
+.dashboard-banner-network-stats-label {
+    color: #08ff00!important;
+}
+
+.dashboard-banner-chart-legend .dashboard-banner-chart-legend-label {
+    color: #08ff00!important;
+}
+
+.alert-warning {
+    background-color: #08ff00!important;
+    border-color: #08ff00!important;
+    color: black!important;
+    font-size: 17px!important;
+}
+
+.footer-link {
+    color: #08ff00;
+}
+
+.footer-social-icons .fontawesome-icon {
+    background-color: #08ff00!important;
+}
+
+.layout-container .dashboard-banner-container {
+    background-color: #333;
+    background-image: none!important;
+    background-image: none!important;
+}
+
+.tile .tile-body a, .tile a[data-test=token_link], .tile span[data-address-hash] {
+    color: #129d0d!important;
+}
+
+.tile.tile-type-block {
+    border-left: 4px solid #129d0d;
+}
+
+a.tile-title {
+    color: #129d0d!important;
+}
+
+.navbar-logo {
+    height: 22px!important;
+}

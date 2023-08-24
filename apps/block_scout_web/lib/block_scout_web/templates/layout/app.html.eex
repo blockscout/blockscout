@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
+    <link rel='dns-prefetch' href='//fonts.googleapis.com' />
     <%= case @view_module do %>
       <% Elixir.BlockScoutWeb.ChainView -> %>
         <link rel="stylesheet" href="<%= static_path(@conn, "/css/main-page.css") %>">
@@ -18,6 +18,7 @@
       <% _ -> %>
         <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
     <% end %>
+    <link rel='stylesheet' id='satoshie-fonts' href='https://fonts.googleapis.com/css?family=IBM+Plex+Mono%3A700%2C400%2C400italic%2C500%7CRoboto%3A400%7CKanit%3A700%2C600%2C500%7CCabin%3A400%2C700%2C500&#038;subset=latin&#038;ver=6.3' type='text/css' media='all' />    
     <link rel="preload" href="<%= static_path(@conn, "/js/autocomplete.js") %>" as="script">
     <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/github.svg") %>" as="image" crossorigin>
     <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/twitter.svg") %>" as="image" crossorigin>
