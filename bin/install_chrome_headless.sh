@@ -9,4 +9,4 @@ sudo chmod +x chromedriver
 sudo mv chromedriver /usr/local/bin
 wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 sudo apt install -y ./google-chrome-stable_current_amd64.deb
-sudo apt-get install libstdc++6 libnss3-dev
+sudo apt-get install -y libstdc++6 libnss3-dev

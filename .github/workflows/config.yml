@@ -380,7 +380,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
-      - run: ./bin/install_chrome_headless.sh
       - run: echo 'export PATH=/usr/local/bin:$PATH' >> $GITHUB_ENV
       - name: mix test --exclude no_nethermind
         run: |
@@ -453,7 +452,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm
 
-      - run: ./bin/install_chrome_headless.sh
       - run: echo 'export PATH=/usr/local/bin:$PATH' >> $GITHUB_ENV
       - name: mix test --exclude no_nethermind --exclude smart_contract_compiler
         run: |
@@ -617,7 +615,6 @@ jobs:
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
 
-      - run: ./bin/install_chrome_headless.sh
       - run: echo 'export PATH=/usr/local/bin:$PATH' >> $GITHUB_ENV
 
       - name: mix test --exclude no_nethermind
