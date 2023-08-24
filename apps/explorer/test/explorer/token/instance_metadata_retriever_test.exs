@@ -1,8 +1,8 @@
-defmodule Explorer.Token.InstanceMetadataRetrieverTest do
+defmodule Explorer.Token.MetadataRetrieverTest do
   use EthereumJSONRPC.Case
 
   alias EthereumJSONRPC.Encoder
-  alias Explorer.Token.InstanceMetadataRetriever
+  alias Indexer.Fetcher.TokenInstance.MetadataRetriever
   alias Plug.Conn
 
   import Mox
@@ -90,7 +90,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
       assert %{
                "c87b56dd" => {:ok, ["https://vault.warriders.com/18290729947667102496.json"]}
              } ==
-               InstanceMetadataRetriever.query_contract(
+               MetadataRetriever.query_contract(
                  "0x5caebd3b32e210e85ce3e9d51638b9c445481567",
                  %{
                    "c87b56dd" => [18_290_729_947_667_102_496]
@@ -133,7 +133,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
       assert %{
                "0e89341c" => {:ok, ["https://vault.warriders.com/18290729947667102496.json"]}
              } ==
-               InstanceMetadataRetriever.query_contract(
+               MetadataRetriever.query_contract(
                  "0x5caebd3b32e210e85ce3e9d51638b9c445481567",
                  %{
                    "0e89341c" => [18_290_729_947_667_102_496]
@@ -164,7 +164,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
       end)
 
       assert {:ok, %{metadata: %{"name" => "Sérgio Mendonça"}}} ==
-               InstanceMetadataRetriever.fetch_json(%{
+               MetadataRetriever.fetch_json(%{
                  "c87b56dd" => {:ok, ["http://localhost:#{bypass.port}#{path}"]}
                })
     end
@@ -181,7 +181,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
       end)
 
       {:ok, %{metadata: metadata}} =
-        InstanceMetadataRetriever.fetch_metadata("0x06012c8cf97bead5deae237070f9587f8e7a266d", 100_500)
+        MetadataRetriever.fetch_metadata("0x06012c8cf97bead5deae237070f9587f8e7a266d", 100_500)
 
       assert Map.get(metadata, "name") == "KittyBlue_2_Lemonade"
 
@@ -212,8 +212,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
         Conn.resp(conn, 200, json)
       end)
 
-      {:ok, %{metadata: metadata}} =
-        InstanceMetadataRetriever.fetch_metadata_from_uri("http://localhost:#{bypass.port}#{path}")
+      {:ok, %{metadata: metadata}} = MetadataRetriever.fetch_metadata_from_uri("http://localhost:#{bypass.port}#{path}")
 
       assert Map.get(metadata, "attributes") == Jason.decode!(attributes)
     end
@@ -313,7 +312,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                   "name" => "Sérgio Mendonça 0000000000000000000000000000000000000000000000000000000000000309"
                 }
               }} ==
-               InstanceMetadataRetriever.fetch_metadata("0x5caebd3b32e210e85ce3e9d51638b9c445481567", 777)
+               MetadataRetriever.fetch_metadata("0x5caebd3b32e210e85ce3e9d51638b9c445481567", 777)
     end
 
     test "decodes json file in tokenURI" do
@@ -325,7 +324,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
            ]}
       }
 
-      assert InstanceMetadataRetriever.fetch_json(data) ==
+      assert MetadataRetriever.fetch_json(data) ==
                {:ok,
                 %{
                   metadata: %{
@@ -347,7 +346,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
            ]}
       }
 
-      assert InstanceMetadataRetriever.fetch_json(data) ==
+      assert MetadataRetriever.fetch_json(data) ==
                {:ok,
                 %{
                   metadata: %{
@@ -368,7 +367,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
            ]}
       }
 
-      assert InstanceMetadataRetriever.fetch_json(data) ==
+      assert MetadataRetriever.fetch_json(data) ==
                {:ok,
                 %{
                   metadata: %{
@@ -403,7 +402,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                 metadata: %{
                   "image" => "https://ipfs.io/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
                 }
-              }} == InstanceMetadataRetriever.fetch_json(data)
+              }} == MetadataRetriever.fetch_json(data)
     end
 
     test "Fetches metadata from ipfs", %{bypass: bypass} do
@@ -430,7 +429,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
       {:ok,
        %{
          metadata: metadata
-       }} = InstanceMetadataRetriever.fetch_json(data)
+       }} = MetadataRetriever.fetch_json(data)
 
       assert "ipfs://bafybeihxuj3gxk7x5p36amzootyukbugmx3pw7dyntsrohg3se64efkuga/51.png" == Map.get(metadata, "image")
     end
@@ -467,7 +466,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
       assert {:ok,
               %{
                 metadata: Jason.decode!(json)
-              }} == InstanceMetadataRetriever.fetch_json(data)
+              }} == MetadataRetriever.fetch_json(data)
     end
 
     test "Process custom execution reverted" do
@@ -477,7 +476,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
            "(3) execution reverted: Nonexistent token (0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000114e6f6e6578697374656e7420746f6b656e000000000000000000000000000000)"}
       }
 
-      assert {:ok, %{error: "VM execution error"}} == InstanceMetadataRetriever.fetch_json(data)
+      assert {:ok, %{error: "VM execution error"}} == MetadataRetriever.fetch_json(data)
     end
 
     test "Process CIDv0 IPFS links" do
@@ -507,7 +506,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                   "name" => "asda",
                   "salePrice" => 34
                 }
-              }} == InstanceMetadataRetriever.fetch_json(%{"0e89341c" => {:ok, [data]}})
+              }} == MetadataRetriever.fetch_json(%{"0e89341c" => {:ok, [data]}})
 
       Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
@@ -553,7 +552,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
               %{
                 metadata: Jason.decode!(json)
               }} ==
-               InstanceMetadataRetriever.fetch_json(%{"0e89341c" => {:ok, ["http://localhost:#{bypass.port}#{path}"]}})
+               MetadataRetriever.fetch_json(%{"0e89341c" => {:ok, ["http://localhost:#{bypass.port}#{path}"]}})
     end
 
     test "fetch ipfs of ipfs/{id} format" do
@@ -598,7 +597,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                   "image" => "https://ipfs.io/ipfs/Qmd9pvThEwgjTBbEkNmmGFbcpJKw17fnRBAT4Td4rcog22"
                 }
               }} ==
-               InstanceMetadataRetriever.fetch_metadata("0x7e01CC81fCfdf6a71323900288A69e234C464f63", 0)
+               MetadataRetriever.fetch_metadata("0x7e01CC81fCfdf6a71323900288A69e234C464f63", 0)
 
       Application.put_env(:explorer, :http_adapter, HTTPoison)
     end

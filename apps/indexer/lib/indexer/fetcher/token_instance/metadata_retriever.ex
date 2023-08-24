@@ -1,4 +1,4 @@
-defmodule Explorer.Token.InstanceMetadataRetriever do
+defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   @moduledoc """
   Fetches ERC721 token instance metadata.
   """
@@ -245,7 +245,8 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   def fetch_metadata_from_uri_inner(uri, hex_token_id) do
     case Application.get_env(:explorer, :http_adapter).get(uri, [],
            recv_timeout: 30_000,
-           follow_redirect: true
+           follow_redirect: true,
+           pool: :token_instance_fetcher
          ) do
       {:ok, %Response{body: body, status_code: 200, headers: headers}} ->
         content_type = get_content_type_from_headers(headers)
