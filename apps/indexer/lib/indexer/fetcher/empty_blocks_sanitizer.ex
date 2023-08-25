@@ -84,11 +84,13 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
     unprocessed_empty_blocks_from_db = unprocessed_empty_blocks_query_list(limit())
 
+    unprocessed_empty_blocks_from_db |> IO.inspect()
+
     unprocessed_empty_blocks_from_db
     |> Enum.with_index()
     |> Enum.each(fn {{block_number, block_hash}, ind} ->
       with {:ok, %{"transactions" => transactions}} <-
-             %{id: ind, method: "eth_getBlockByNumber", params: [integer_to_quantity(block_number), false]}
+             %{id: ind, method: "quai_getBlockByNumber", params: [integer_to_quantity(block_number), false]}
              |> request()
              |> json_rpc(json_rpc_named_arguments) do
         transactions_count =

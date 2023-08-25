@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  quai-blockscout-postgres:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: blockscout
+    command:
+      -c max_connections=300 -c shared_buffers=512MB
+
+  quai-blockscout-setup:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:password@quai-blockscout-postgres:5432/blockscout
+      ECTO_USE_SSL: "false"
+    command: >
+      sh -c "
+        mix ecto.drop ; 
+        mix ecto.create ;
+        mix ecto.migrate
+      "
+    depends_on:
+      - quai-blockscout-postgres
+
+  quai-blockscout-app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgresql://postgres:password@quai-blockscout-postgres:5432/blockscout
+      INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: "true"
+      ECTO_USE_SSL: "false"
+      ETHEREUM_JSONRPC_VARIANT: geth
+      ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8610
+      ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8611
+      COIN: QUAI
+      COIN_NAME: QUAI
+      CHAIN_INDEX: "2"
+      SUBNETWORK: Cyprus1
+      BLOCKSCOUT_HOST: http://localhost:4000
+    depends_on:
+      - quai-blockscout-postgres
+      - quai-blockscout-setup
+

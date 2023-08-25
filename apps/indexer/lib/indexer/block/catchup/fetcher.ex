@@ -180,6 +180,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
     Prometheus.Instrumenter.block_full_process(fetch_duration, __MODULE__)
 
+    IO.puts("Fetched and imported")
+    IO.inspect(result)
+
     case result do
       {:ok, %{inserted: inserted, errors: errors}} ->
         errors = cap_seq(sequence, errors)
