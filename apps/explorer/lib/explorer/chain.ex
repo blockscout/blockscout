@@ -4690,6 +4690,9 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+    Expects map of change params. Inserts using on_conflict: :replace_all
+  """
   @spec upsert_token_instance(map()) :: {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
   def upsert_token_instance(params) do
     changeset = Instance.changeset(%Instance{}, params)
@@ -4698,6 +4701,14 @@ defmodule Explorer.Chain do
       on_conflict: :replace_all,
       conflict_target: [:token_id, :token_contract_address_hash]
     )
+  end
+
+  @doc """
+    Inserts list of token instances via upsert_token_instance/1.
+  """
+  @spec upsert_token_instances_list([map()]) :: list()
+  def upsert_token_instances_list(instances) do
+    Enum.map(instances, &upsert_token_instance/1)
   end
 
   @doc """
