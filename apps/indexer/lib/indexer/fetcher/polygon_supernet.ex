@@ -23,7 +23,6 @@ defmodule Indexer.Fetcher.PolygonSupernet do
 
   @fetcher_name :polygon_supernet
   @block_check_interval_range_size 100
-  @eth_get_logs_range_size 1000
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -238,14 +237,17 @@ defmodule Indexer.Fetcher.PolygonSupernet do
       when calling_module in [PolygonSupernetDeposit, PolygonSupernetWithdrawalExit] do
     time_before = Timex.now()
 
-    chunks_number = ceil((end_block - start_block + 1) / @eth_get_logs_range_size)
+    eth_get_logs_range_size =
+      Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonSupernet][:polygon_supernet_eth_get_logs_range_size]
+
+    chunks_number = ceil((end_block - start_block + 1) / eth_get_logs_range_size)
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
 
     last_written_block =
       chunk_range
       |> Enum.reduce_while(start_block - 1, fn current_chunk, _ ->
-        chunk_start = start_block + @eth_get_logs_range_size * current_chunk
-        chunk_end = min(chunk_start + @eth_get_logs_range_size - 1, end_block)
+        chunk_start = start_block + eth_get_logs_range_size * current_chunk
+        chunk_end = min(chunk_start + eth_get_logs_range_size - 1, end_block)
 
         if chunk_end >= chunk_start do
           log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
@@ -310,23 +312,26 @@ defmodule Indexer.Fetcher.PolygonSupernet do
         scan_db
       )
       when calling_module in [Indexer.Fetcher.PolygonSupernetDepositExecute, Indexer.Fetcher.PolygonSupernetWithdrawal] do
+    eth_get_logs_range_size =
+      Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonSupernet][:polygon_supernet_eth_get_logs_range_size]
+
     chunks_number =
       if scan_db do
         1
       else
-        ceil((l2_block_end - l2_block_start + 1) / @eth_get_logs_range_size)
+        ceil((l2_block_end - l2_block_start + 1) / eth_get_logs_range_size)
       end
 
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
 
     Enum.reduce(chunk_range, 0, fn current_chunk, count_acc ->
-      chunk_start = l2_block_start + @eth_get_logs_range_size * current_chunk
+      chunk_start = l2_block_start + eth_get_logs_range_size * current_chunk
 
       chunk_end =
         if scan_db do
           l2_block_end
         else
-          min(chunk_start + @eth_get_logs_range_size - 1, l2_block_end)
+          min(chunk_start + eth_get_logs_range_size - 1, l2_block_end)
         end
 
       log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, "L2")

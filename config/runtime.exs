@@ -539,7 +539,9 @@ config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
 config :indexer, Indexer.Fetcher.Withdrawal, first_block: System.get_env("WITHDRAWALS_FIRST_BLOCK")
 
 config :indexer, Indexer.Fetcher.PolygonSupernet,
-  polygon_supernet_l1_rpc: System.get_env("INDEXER_POLYGON_SUPERNET_L1_RPC")
+  polygon_supernet_l1_rpc: System.get_env("INDEXER_POLYGON_SUPERNET_L1_RPC"),
+  polygon_supernet_eth_get_logs_range_size:
+    ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_SUPERNET_ETH_GET_LOGS_RANGE_SIZE", 1000)
 
 config :indexer, Indexer.Fetcher.PolygonSupernetDeposit,
   start_block_l1: System.get_env("INDEXER_POLYGON_SUPERNET_L1_DEPOSITS_START_BLOCK"),
