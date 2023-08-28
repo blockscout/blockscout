@@ -4446,6 +4446,11 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_token_instances_with_error(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
+    # likely to get valid metadata
+    high_priority = ["request error: 429", ":checkout_timeout", ":econnrefused", ":timeout"]
+    # almost impossible to get valid metadata
+    negative_priority = ["VM execution error", "no uri", "invalid json"]
+
     Instance
     |> where([instance], not is_nil(instance.error))
     |> select([instance], %{
@@ -4453,6 +4458,7 @@ defmodule Explorer.Chain do
       token_id: instance.token_id,
       updated_at: instance.updated_at
     })
+    |> order_by([instance], desc: instance.error in ^high_priority, asc: instance.error in ^negative_priority)
     |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
