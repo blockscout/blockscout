@@ -6,13 +6,19 @@
 
 - [#8181](https://github.com/blockscout/blockscout/pull/8181) - Insert current token balances placeholders along with historical
 - [#8210](https://github.com/blockscout/blockscout/pull/8210) - Drop address foreign keys
+- [#8292](https://github.com/blockscout/blockscout/pull/8292) - Add ETHEREUM_JSONRPC_WAIT_PER_TIMEOUT env var
+- [#8269](https://github.com/blockscout/blockscout/pull/8269) - Don't push back to sequence on catchup exception
 
 ### Fixes
 
+- [#8287](https://github.com/blockscout/blockscout/pull/8287) - Add separate hackney pool for TokenInstance fetchers
+- [#8293](https://github.com/blockscout/blockscout/pull/8293) - Add ETHEREUM_JSONRPC_TRACE_URL for Geth in docker-compose.yml
 - [#8240](https://github.com/blockscout/blockscout/pull/8240) - Refactor and fix paging params in API v2
 - [#8242](https://github.com/blockscout/blockscout/pull/8242) - Fixing visualizer service CORS issue when running docker-compose
 
 ### Chore
+
+- [#8281](https://github.com/blockscout/blockscout/pull/8281) - Planned removal of duplicate API endpoints: for CSV export and GraphQL
 
 <details>
   <summary>Dependencies version bumps</summary>
@@ -54,6 +60,7 @@
 - [#8105](https://github.com/blockscout/blockscout/pull/8105) - Extend API v1 with endpoints used by new UI
 - [#8104](https://github.com/blockscout/blockscout/pull/8104) - remove "TODO" from API v2 response
 - [#8100](https://github.com/blockscout/blockscout/pull/8100), [#8103](https://github.com/blockscout/blockscout/pull/8103) - Extend docker-compose configs with new config when front is running externally
+- [#8012](https://github.com/blockscout/blockscout/pull/8012) - API v2 smart-contract verification extended logging
 
 <details>
   <summary>Dependencies version bumps</summary>

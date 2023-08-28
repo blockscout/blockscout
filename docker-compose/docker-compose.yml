@@ -30,7 +30,6 @@ services:
         ADMIN_PANEL_ENABLED: ""
         RELEASE_VERSION: 5.2.2
     restart: always
-    stop_grace_period: 5m
     container_name: 'blockscout'
     links:
       - db:database
@@ -40,9 +39,11 @@ services:
     env_file:
       -  ./envs/common-blockscout.env
     ports:
-      - 4000:4000
+      - 3000:3000
     volumes:
       - ./logs/:/app/logs/
+      - ./ssl/certificate.crt:/etc/ssl/certs/certificate.crt
+      - ./ssl/private.key:/etc/ssl/private/private.key
 
   smart-contract-verifier:
     extends:

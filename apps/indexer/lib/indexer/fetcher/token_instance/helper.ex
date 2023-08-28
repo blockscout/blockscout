@@ -4,13 +4,13 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   """
   alias Explorer.Chain
   alias Explorer.Chain.{Hash, Token.Instance}
-  alias Explorer.Token.InstanceMetadataRetriever
+  alias Indexer.Fetcher.TokenInstance.MetadataRetriever
 
   @spec fetch_instance(Hash.Address.t(), Decimal.t() | non_neg_integer()) :: {:ok, Instance.t()}
   def fetch_instance(token_contract_address_hash, token_id) do
     token_id = prepare_token_id(token_id)
 
-    case InstanceMetadataRetriever.fetch_metadata(to_string(token_contract_address_hash), token_id) do
+    case MetadataRetriever.fetch_metadata(to_string(token_contract_address_hash), token_id) do
       {:ok, %{metadata: metadata}} ->
         params = %{
           token_id: token_id,
