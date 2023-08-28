@@ -8,9 +8,6 @@ defmodule Indexer.Transform.PolygonSupernetWithdrawals do
   alias Indexer.Fetcher.PolygonSupernetWithdrawal
   alias Indexer.Helper
 
-  # 32-byte signature of the event L2StateSynced(uint256 indexed id, address indexed sender, address indexed receiver, bytes data)
-  @l2_state_synced_event "0xedaf3c471ebd67d60c29efe34b639ede7d6a1d92eaeb3f503e784971e67118a5"
-
   @doc """
   Returns a list of withdrawals given a list of logs.
   """
@@ -23,10 +20,11 @@ defmodule Indexer.Transform.PolygonSupernetWithdrawals do
            state_sender = Application.get_env(:indexer, PolygonSupernetWithdrawal)[:state_sender],
            true <- Helper.is_address_correct?(state_sender) do
         state_sender = String.downcase(state_sender)
+        l2_state_synced_event_signature = PolygonSupernetWithdrawal.l2_state_synced_event_signature()
 
         logs
         |> Enum.filter(fn log ->
-          !is_nil(log.first_topic) && String.downcase(log.first_topic) == @l2_state_synced_event &&
+          !is_nil(log.first_topic) && String.downcase(log.first_topic) == l2_state_synced_event_signature &&
             String.downcase(Helper.address_hash_to_string(log.address_hash)) == state_sender
         end)
         |> Enum.map(fn log ->

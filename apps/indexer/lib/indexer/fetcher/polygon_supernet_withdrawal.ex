@@ -192,6 +192,10 @@ defmodule Indexer.Fetcher.PolygonSupernetWithdrawal do
     Enum.count(withdrawals)
   end
 
+  def l2_state_synced_event_signature do
+    @l2_state_synced_event
+  end
+
   defp fill_block_range(start_block, end_block, state_sender, json_rpc_named_arguments) do
     PolygonSupernet.fill_block_range(start_block, end_block, __MODULE__, state_sender, json_rpc_named_arguments, true)
 

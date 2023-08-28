@@ -8,9 +8,6 @@ defmodule Indexer.Transform.PolygonSupernetDepositExecutes do
   alias Indexer.Fetcher.PolygonSupernetDepositExecute
   alias Indexer.Helper
 
-  # 32-byte signature of the event StateSyncResult(uint256 indexed counter, bool indexed status, bytes message)
-  @state_sync_result_event "0x31c652130602f3ce96ceaf8a4c2b8b49f049166c6fcf2eb31943a75ec7c936ae"
-
   @doc """
   Returns a list of deposit executes given a list of logs.
   """
@@ -24,10 +21,11 @@ defmodule Indexer.Transform.PolygonSupernetDepositExecutes do
            state_receiver = Application.get_env(:indexer, PolygonSupernetDepositExecute)[:state_receiver],
            true <- Helper.is_address_correct?(state_receiver) do
         state_receiver = String.downcase(state_receiver)
+        state_sync_result_event_signature = PolygonSupernetDepositExecute.state_sync_result_event_signature()
 
         logs
         |> Enum.filter(fn log ->
-          !is_nil(log.first_topic) && String.downcase(log.first_topic) == @state_sync_result_event &&
+          !is_nil(log.first_topic) && String.downcase(log.first_topic) == state_sync_result_event_signature &&
             String.downcase(Helper.address_hash_to_string(log.address_hash)) == state_receiver
         end)
         |> Enum.map(fn log ->

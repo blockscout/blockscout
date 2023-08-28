@@ -172,6 +172,10 @@ defmodule Indexer.Fetcher.PolygonSupernetDepositExecute do
     Enum.count(executes)
   end
 
+  def state_sync_result_event_signature do
+    @state_sync_result_event
+  end
+
   defp fill_block_range(start_block, end_block, state_receiver, json_rpc_named_arguments) do
     PolygonSupernet.fill_block_range(start_block, end_block, __MODULE__, state_receiver, json_rpc_named_arguments, true)
 
