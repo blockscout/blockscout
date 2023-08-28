@@ -6,7 +6,9 @@ defmodule Explorer.Market.History.CatalogerTest do
   alias Explorer.Market.MarketHistory
   alias Explorer.Market.History.Cataloger
   alias Explorer.Market.History.Source.Price.TestSource
+  alias Explorer.Market.History.Source.Price.CryptoCompare
   alias Explorer.Repo
+  alias Plug.Conn
 
   setup do
     Application.put_env(:explorer, Cataloger, source: TestSource)
@@ -19,6 +21,38 @@ defmodule Explorer.Market.History.CatalogerTest do
   end
 
   test "handle_info with `{:fetch_price_history, days}`" do
+    bypass = Bypass.open()
+    Application.put_env(:explorer, CryptoCompare, base_url: "http://localhost:#{bypass.port}")
+
+    resp = """
+    {
+      "Response": "Success",
+      "Type": 100,
+      "Aggregated": false,
+      "TimeTo": 1522569618,
+      "TimeFrom": 1522566018,
+      "FirstValueInArray": true,
+      "ConversionType": {
+        "type": "multiply",
+        "conversionSymbol": "ETH"
+      },
+      "Data": [{
+        "time": 1522566018,
+        "high": 10,
+        "low": 5,
+        "open": 5,
+        "volumefrom": 0,
+        "volumeto": 0,
+        "close": 10,
+        "conversionType": "multiply",
+        "conversionSymbol": "ETH"
+      }],
+      "RateLimit": {},
+      "HasWarning": false
+    }
+    """
+
+    Bypass.expect(bypass, fn conn -> Conn.resp(conn, 200, resp) end)
     records = [%{date: ~D[2018-04-01], closing_price: Decimal.new(10), opening_price: Decimal.new(5)}]
     expect(TestSource, :fetch_price_history, fn 1 -> {:ok, records} end)
     set_mox_global()

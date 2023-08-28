@@ -13,7 +13,7 @@ defmodule Indexer.Fetcher.TokenInstance.Retry do
 
   @behaviour BufferedTask
 
-  @default_max_batch_size 1
+  @default_max_batch_size 10
   @default_max_concurrency 10
 
   @doc false
@@ -40,14 +40,16 @@ defmodule Indexer.Fetcher.TokenInstance.Retry do
   end
 
   @impl BufferedTask
-  def run([%{contract_address_hash: hash, token_id: token_id, updated_at: updated_at}], _json_rpc_named_arguments) do
+  def run(token_instances, _json_rpc_named_arguments) when is_list(token_instances) do
     refetch_interval = Application.get_env(:indexer, __MODULE__)[:refetch_interval]
 
-    if updated_at
-       |> DateTime.add(refetch_interval, :millisecond)
-       |> DateTime.compare(DateTime.utc_now()) != :gt do
-      fetch_instance(hash, token_id)
-    end
+    token_instances
+    |> Enum.filter(fn %{contract_address_hash: _hash, token_id: _token_id, updated_at: updated_at} ->
+      updated_at
+      |> DateTime.add(refetch_interval, :millisecond)
+      |> DateTime.compare(DateTime.utc_now()) != :gt
+    end)
+    |> batch_fetch_instances()
 
     :ok
   end
@@ -56,7 +58,7 @@ defmodule Indexer.Fetcher.TokenInstance.Retry do
     [
       flush_interval: :timer.minutes(10),
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
-      max_batch_size: @default_max_batch_size,
+      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
       task_supervisor: __MODULE__.TaskSupervisor
     ]
   end

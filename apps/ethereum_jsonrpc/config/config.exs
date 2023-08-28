@@ -6,7 +6,6 @@ config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
     duration: :timer.minutes(1),
     table: EthereumJSONRPC.RequestCoordinator.TimeoutCounter
   ],
-  wait_per_timeout: :timer.seconds(20),
   max_jitter: :timer.seconds(2)
 
 # Add this configuration to add global RPC request throttling.
