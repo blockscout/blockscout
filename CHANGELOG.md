@@ -25,6 +25,7 @@
 - [#8240](https://github.com/blockscout/blockscout/pull/8240) - Refactor and fix paging params in API v2
 - [#8242](https://github.com/blockscout/blockscout/pull/8242) - Fixing visualizer service CORS issue when running docker-compose
 - [#8355](https://github.com/blockscout/blockscout/pull/8355) - Fix current token balances redefining
+- [#8338](https://github.com/blockscout/blockscout/pull/8338) - Fix reorgs query
 
 ### Chore
 
