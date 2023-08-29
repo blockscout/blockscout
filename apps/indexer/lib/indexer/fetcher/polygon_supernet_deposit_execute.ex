@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.PolygonSupernetDepositExecute do
   import Ecto.Query
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
-  import Indexer.Fetcher.PolygonSupernet, only: [get_block_number_by_tag: 3]
+  import Indexer.Fetcher.PolygonSupernet, only: [fill_block_range: 5, get_block_number_by_tag: 3]
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Log, PolygonSupernetDepositExecute}
@@ -90,12 +90,25 @@ defmodule Indexer.Fetcher.PolygonSupernetDepositExecute do
       ) do
     # find and fill all events between start_block and "safe" block
     # the "safe" block can be "latest" (when safe_block_is_latest == true)
-    fill_block_range(start_block, safe_block, contract_address, json_rpc_named_arguments)
+    fill_block_range(
+      start_block,
+      safe_block,
+      {__MODULE__, PolygonSupernetDepositExecute},
+      contract_address,
+      json_rpc_named_arguments
+    )
 
     if not safe_block_is_latest do
       # find and fill all events between "safe" and "latest" block (excluding "safe")
       {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-      fill_block_range(safe_block + 1, latest_block, contract_address, json_rpc_named_arguments)
+
+      fill_block_range(
+        safe_block + 1,
+        latest_block,
+        {__MODULE__, PolygonSupernetDepositExecute},
+        contract_address,
+        json_rpc_named_arguments
+      )
     end
 
     {:stop, :normal, state}
@@ -174,29 +187,5 @@ defmodule Indexer.Fetcher.PolygonSupernetDepositExecute do
 
   def state_sync_result_event_signature do
     @state_sync_result_event
-  end
-
-  defp fill_block_range(start_block, end_block, state_receiver, json_rpc_named_arguments) do
-    PolygonSupernet.fill_block_range(start_block, end_block, __MODULE__, state_receiver, json_rpc_named_arguments, true)
-
-    PolygonSupernet.fill_msg_id_gaps(
-      start_block,
-      PolygonSupernetDepositExecute,
-      __MODULE__,
-      state_receiver,
-      json_rpc_named_arguments,
-      false
-    )
-
-    {last_l2_block_number, _} = PolygonSupernet.get_last_l2_item(PolygonSupernetDepositExecute)
-
-    PolygonSupernet.fill_block_range(
-      max(start_block, last_l2_block_number),
-      end_block,
-      Indexer.Fetcher.PolygonSupernetDepositExecute,
-      state_receiver,
-      json_rpc_named_arguments,
-      false
-    )
   end
 end
