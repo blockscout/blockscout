@@ -4645,6 +4645,11 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_token_instances_with_error(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
+    # likely to get valid metadata
+    high_priority = ["request error: 429", ":checkout_timeout", ":econnrefused", ":timeout"]
+    # almost impossible to get valid metadata
+    negative_priority = ["VM execution error", "no uri", "invalid json"]
+
     Instance
     |> where([instance], not is_nil(instance.error))
     |> select([instance], %{
@@ -4652,6 +4657,7 @@ defmodule Explorer.Chain do
       token_id: instance.token_id,
       updated_at: instance.updated_at
     })
+    |> order_by([instance], desc: instance.error in ^high_priority, asc: instance.error in ^negative_priority)
     |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
@@ -4889,6 +4895,9 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+    Expects map of change params. Inserts using on_conflict: :replace_all
+  """
   @spec upsert_token_instance(map()) :: {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
   def upsert_token_instance(params) do
     changeset = Instance.changeset(%Instance{}, params)
@@ -4897,6 +4906,14 @@ defmodule Explorer.Chain do
       on_conflict: :replace_all,
       conflict_target: [:token_id, :token_contract_address_hash]
     )
+  end
+
+  @doc """
+    Inserts list of token instances via upsert_token_instance/1.
+  """
+  @spec upsert_token_instances_list([map()]) :: list()
+  def upsert_token_instances_list(instances) do
+    Enum.map(instances, &upsert_token_instance/1)
   end
 
   @doc """
