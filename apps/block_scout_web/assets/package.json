@@ -36,7 +36,7 @@
     "highlight.js": "^11.8.0",
     "https-browserify": "^1.0.0",
     "humps": "^2.0.1",
-    "jquery": "^3.7.0",
+    "jquery": "^3.7.1",
     "js-cookie": "^3.0.5",
     "lodash.debounce": "^4.0.8",
     "lodash.differenceby": "^4.8.0",
