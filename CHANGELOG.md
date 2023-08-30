@@ -13,6 +13,7 @@
 
 ### Fixes
 
+- [#8350](https://github.com/blockscout/blockscout/pull/8350) - Add Base Mainnet support for tx actions
 - [#8282](https://github.com/blockscout/blockscout/pull/8282) - NFT fetcher improvements
 - [#8287](https://github.com/blockscout/blockscout/pull/8287) - Add separate hackney pool for TokenInstance fetchers
 - [#8293](https://github.com/blockscout/blockscout/pull/8293) - Add ETHEREUM_JSONRPC_TRACE_URL for Geth in docker-compose.yml
