@@ -247,9 +247,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
   rescue
     exception ->
       Logger.error(fn -> [Exception.format(:error, exception, __STACKTRACE__), ?\n, ?\n, "Retrying."] end)
-
-      push_back(sequence, range)
-
       {:error, exception}
   end
 

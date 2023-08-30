@@ -28,6 +28,7 @@ services:
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
         ADMIN_PANEL_ENABLED: ""
         RELEASE_VERSION: 5.2.2
+        MIX_ENV: 'prod'
     restart: always
     stop_grace_period: 5m
     container_name: 'blockscout'
