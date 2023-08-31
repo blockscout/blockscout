@@ -8,6 +8,6 @@ services:
     restart: always
     container_name: 'frontend'
     env_file:
-      -  ../envs/common-frontend.env
+      -  ../envs/common-frontend-meer.env
     ports:
       - 3000:3000
