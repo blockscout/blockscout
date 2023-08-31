@@ -8,7 +8,7 @@ server {
     listen       80;
     server_name  localhost;
     proxy_http_version 1.1;
-    location /statsapi/ {
+    location /sai/ {
         proxy_pass            http://stats:8050/;
         proxy_http_version    1.1;
         proxy_set_header      Host "$host";
@@ -20,7 +20,7 @@ server {
         proxy_cache_bypass    $http_upgrade;
     }
 
-    location /visualizerapi/ {
+    location /vai/ {
         proxy_pass            http://visualizer:8050/;
         proxy_http_version    1.1;
         proxy_buffering       off;
