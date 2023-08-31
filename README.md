@@ -33,6 +33,10 @@ See the [project documentation](https://docs.blockscout.com/) for instructions:
 - [Manual deployment](https://docs.blockscout.com/for-developers/manual-deployment)
 - [ENV variables](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
 - [Configuration options](https://docs.blockscout.com/for-developers/configuration-options)
+- Deploy API V2
+```bash
+# cd docker-compose && docker-compose -f docker-compose-no-build-frontend.yml up -d
+```
 
 ## Acknowledgements
 
