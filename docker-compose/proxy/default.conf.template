@@ -99,6 +99,11 @@ server {
         proxy_set_header      Upgrade "$http_upgrade";
         proxy_set_header      Connection $connection_upgrade;
         proxy_cache_bypass    $http_upgrade;
+        add_header 'Access-Control-Allow-Origin' 'http://localhost' always;
+        add_header 'Access-Control-Allow-Credentials' 'true' always;
+        add_header 'Access-Control-Allow-Methods' 'PUT, GET, POST, OPTIONS, DELETE, PATCH' always;
+        add_header 'Access-Control-Allow-Headers' 'DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,x-csrf-token' always;
+
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Origin' 'http://localhost' always;
             add_header 'Access-Control-Allow-Credentials' 'true' always;
@@ -136,6 +141,11 @@ server {
         proxy_set_header      Upgrade "$http_upgrade";
         proxy_set_header      Connection $connection_upgrade;
         proxy_cache_bypass    $http_upgrade;
+        add_header 'Access-Control-Allow-Origin' 'http://localhost' always;
+        add_header 'Access-Control-Allow-Credentials' 'true' always;
+        add_header 'Access-Control-Allow-Methods' 'PUT, GET, POST, OPTIONS, DELETE, PATCH' always;
+        add_header 'Access-Control-Allow-Headers' 'DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,x-csrf-token' always;
+
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Origin' 'http://localhost' always;
             add_header 'Access-Control-Allow-Credentials' 'true' always;
