@@ -35,9 +35,9 @@ See the [project documentation](https://docs.blockscout.com/) for instructions:
 - [Configuration options](https://docs.blockscout.com/for-developers/configuration-options)
 - Deploy API V2
  
-  - `docker-compose-no-build-frontend.yml` replace the `meernode` to you qng node evm rpc
+  - `./docker-compose/docker-compose-no-build-frontend.yml` replace the `meernode` to you qng node evm rpc
   
-  - `envs/common-frontend-meer.env` replace the `meernode` to you qng node evm rpc, replace `localhost` to your domain or ip
+  - `./docker-compose/envs/common-frontend-meer.env` replace the `meernode` to you qng node evm rpc, replace `localhost` to your domain or ip
 ```bash
 # cd docker-compose && docker-compose -f docker-compose-no-build-frontend.yml up -d
 ```
