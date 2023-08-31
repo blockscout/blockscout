@@ -115,7 +115,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
           msg_nonce_version = Bitwise.bsr(Decimal.to_integer(w.msg_nonce), 240)
 
-          from_address =
+          {from_address, from_address_hash} =
             with false <- is_nil(w.from),
                  {:ok, address} <-
                    Chain.hash_to_address(
@@ -123,9 +123,9 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
                      [necessity_by_association: %{:names => :optional, :smart_contract => :optional}, api?: true],
                      false
                    ) do
-              address
+              {address, address.hash}
             else
-              _ -> nil
+              _ -> {nil, nil}
             end
 
           {status, challenge_period_end} = withdrawal_status(w)
