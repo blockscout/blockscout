@@ -2,7 +2,7 @@
 import $ from 'jquery'
 import { showAd } from './ad.js'
 
-if (showAd()) {
+if (false) {
   // @ts-ignore
   window.coinzilla_display = window.coinzilla_display || []
   var c_display_preferences = {}
