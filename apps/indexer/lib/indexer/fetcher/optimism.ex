@@ -9,7 +9,13 @@ defmodule Indexer.Fetcher.Optimism do
   require Logger
 
   import EthereumJSONRPC,
-    only: [fetch_block_number_by_tag: 2, json_rpc: 2, integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
+    only: [
+      fetch_block_number_by_tag_op_version: 2,
+      json_rpc: 2,
+      integer_to_quantity: 1,
+      quantity_to_integer: 1,
+      request: 1
+    ]
 
   import Explorer.Helper, only: [parse_integer: 1]
 
@@ -105,7 +111,7 @@ defmodule Indexer.Fetcher.Optimism do
 
   def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ 3) do
     error_message = &"Cannot fetch #{tag} block number. Error: #{inspect(&1)}"
-    repeated_call(&fetch_block_number_by_tag/2, [tag, json_rpc_named_arguments], error_message, retries)
+    repeated_call(&fetch_block_number_by_tag_op_version/2, [tag, json_rpc_named_arguments], error_message, retries)
   end
 
   defp get_block_timestamp_by_number_inner(number, json_rpc_named_arguments) do

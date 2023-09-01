@@ -5,8 +5,7 @@ WORKDIR /app
 RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file gcompat
 
 ENV PORT=4000 \
-    MIX_ENV="prod" \
-    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
+    MIX_ENV="prod"
 
 RUN apk --update add libstdc++ curl ca-certificates gcompat
 
@@ -32,7 +31,7 @@ ADD apps/indexer/mix.exs ./apps/indexer/
 
 ENV MIX_HOME=/opt/mix
 RUN mix local.hex --force
-RUN mix do deps.get, local.rebar --force, deps.compile
+RUN HEX_HTTP_TIMEOUT=3600 mix do deps.get, local.rebar --force, deps.compile
 
 ADD apps ./apps
 ADD config ./config

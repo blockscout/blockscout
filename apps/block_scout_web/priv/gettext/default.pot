@@ -1557,7 +1557,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:11
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:6
 #: lib/block_scout_web/views/address_view.ex:375
-#: lib/block_scout_web/views/transaction_view.ex:533
+#: lib/block_scout_web/views/transaction_view.ex:543
 #, elixir-autogen, elixir-format
 msgid "Internal Transactions"
 msgstr ""
@@ -1674,7 +1674,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:17
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:8
 #: lib/block_scout_web/views/address_view.ex:386
-#: lib/block_scout_web/views/transaction_view.ex:534
+#: lib/block_scout_web/views/transaction_view.ex:544
 #, elixir-autogen, elixir-format
 msgid "Logs"
 msgstr ""
