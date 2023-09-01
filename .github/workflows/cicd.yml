@@ -82,7 +82,7 @@ jobs:
         uses: mikefarah/yq@master
         with:
           cmd: |
-            yq -i '.image.tag = "${{ needs.ci.outputs.IMAGE_TAG }}"' '${{ env.NAMESPACE }}/${{ env.APP_NAME }}/${{ secrets.CLUSTER }}.yaml'
+            yq -i '.backend.image.tag = "${{ needs.ci.outputs.IMAGE_TAG }}"' '${{ env.NAMESPACE }}/${{ env.APP_NAME }}/${{ secrets.CLUSTER }}.yaml'
       - name: Push Changed Image Tag
         run: |
           git config --global user.email lightscale@lightscale.io
