@@ -712,7 +712,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       params = %{
         "module" => "contract",
         "action" => "verify_via_sourcify",
-        "addressHash" => "0x18d89C12e9463Be6343c35C9990361bA4C42AfC2"
+        "addressHash" => "0xf26594F585De4EB0Ae9De865d9053FEe02ac6eF1"
       }
 
       response =
@@ -732,14 +732,14 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       _created_contract_address =
         insert(
           :address,
-          hash: "0x18d89C12e9463Be6343c35C9990361bA4C42AfC2",
+          hash: "0xf26594F585De4EB0Ae9De865d9053FEe02ac6eF1",
           contract_code: smart_contract_bytecode
         )
 
       params = %{
         "module" => "contract",
         "action" => "verify_via_sourcify",
-        "addressHash" => "0x18d89C12e9463Be6343c35C9990361bA4C42AfC2"
+        "addressHash" => "0xf26594F585De4EB0Ae9De865d9053FEe02ac6eF1"
       }
 
       get_implementation()

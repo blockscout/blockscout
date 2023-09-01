@@ -30,6 +30,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
   alias Indexer.Fetcher.{CoinBalance, OptimismWithdrawal}
@@ -313,6 +314,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     case result do
       {:ok, %{inserted: inserted, errors: []}} ->
         log_import_timings(inserted, fetch_duration, time_before)
+        MissingRangesManipulator.clear_batch([block_number_to_fetch..block_number_to_fetch])
         Logger.debug("Fetched and imported.")
 
       {:ok, %{inserted: _, errors: [_ | _] = errors}} ->
@@ -431,7 +433,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
        ) do
     case options
          |> fetch_balances_params_list()
-         |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments) do
+         |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments, CoinBalance.batch_size()) do
       {:ok, %FetchedBalances{params_list: params_list, errors: []}} ->
         merged_addresses_params =
           %{address_coin_balances: params_list}

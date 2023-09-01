@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "priority_fee" => priority_fee,
       "extra_data" => "Limitless Web3 Universe: Kroma",
       "uncles_hashes" => prepare_uncles(block.uncle_relations),
-      "state_root" => "TODO",
+      # "state_root" => "TODO",
       "rewards" => prepare_rewards(block.rewards, block, single_block?),
       "gas_target_percentage" => gas_target(block),
       "gas_used_percentage" => gas_used_percentage(block),

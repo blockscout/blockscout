@@ -28,12 +28,6 @@ defmodule BlockScoutWeb.Router do
     # Needs to be 200 to support the schema introspection for graphiql
     @max_complexity 200
 
-    forward("/graphql", Absinthe.Plug,
-      schema: BlockScoutWeb.Schema,
-      analyze_complexity: true,
-      max_complexity: @max_complexity
-    )
-
     forward("/graphiql", Absinthe.Plug.GraphiQL,
       schema: BlockScoutWeb.Schema,
       interface: :advanced,

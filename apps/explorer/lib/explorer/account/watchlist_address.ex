@@ -38,6 +38,9 @@ defmodule Explorer.Account.WatchlistAddress do
     field(:notify_inapp, :boolean)
 
     field(:fetched_coin_balance, Wei, virtual: true)
+    field(:tokens_fiat_value, :decimal, virtual: true)
+    field(:tokens_count, :integer, virtual: true)
+    field(:tokens_overflow, :boolean, virtual: true)
 
     timestamps()
   end

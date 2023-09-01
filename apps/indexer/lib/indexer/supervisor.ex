@@ -34,6 +34,7 @@ defmodule Indexer.Supervisor do
     ReplacedTransaction,
     Token,
     TokenBalance,
+    TokenTotalSupplyUpdater,
     TokenUpdater,
     TransactionAction,
     UncleBlock,
@@ -139,6 +140,7 @@ defmodule Indexer.Supervisor do
         # Out-of-band fetchers
         {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
+        {TokenTotalSupplyUpdater, [[]]},
 
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},
