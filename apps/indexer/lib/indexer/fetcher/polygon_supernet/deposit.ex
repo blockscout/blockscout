@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.PolygonSupernetDeposit do
+defmodule Indexer.Fetcher.PolygonSupernet.Deposit do
   @moduledoc """
   Fills polygon_supernet_deposits DB table.
   """

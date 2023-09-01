@@ -1,6 +1,6 @@
-defmodule Indexer.Fetcher.PolygonSupernetDepositExecute do
+defmodule Indexer.Fetcher.PolygonSupernet.Withdrawal do
   @moduledoc """
-  Fills polygon_supernet_deposit_executes DB table.
+  Fills polygon_supernet_withdrawals DB table.
   """
 
   use GenServer
@@ -11,16 +11,21 @@ defmodule Indexer.Fetcher.PolygonSupernetDepositExecute do
   import Ecto.Query
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  import Explorer.Helper, only: [decode_data: 2]
   import Indexer.Fetcher.PolygonSupernet, only: [fill_block_range: 5, get_block_number_by_tag: 3]
 
+  alias ABI.TypeDecoder
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Log, PolygonSupernetDepositExecute}
+  alias Explorer.Chain.{Log, PolygonSupernetWithdrawal}
   alias Indexer.Fetcher.PolygonSupernet
 
-  @fetcher_name :polygon_supernet_deposit_execute
+  @fetcher_name :polygon_supernet_withdrawal
 
-  # 32-byte signature of the event StateSyncResult(uint256 indexed counter, bool indexed status, bytes message)
-  @state_sync_result_event "0x31c652130602f3ce96ceaf8a4c2b8b49f049166c6fcf2eb31943a75ec7c936ae"
+  # 32-byte signature of the event L2StateSynced(uint256 indexed id, address indexed sender, address indexed receiver, bytes data)
+  @l2_state_synced_event "0xedaf3c471ebd67d60c29efe34b639ede7d6a1d92eaeb3f503e784971e67118a5"
+
+  # 32-byte representation of withdrawal signature, keccak256("WITHDRAW")
+  @withdrawal_signature "7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -45,13 +50,13 @@ defmodule Indexer.Fetcher.PolygonSupernetDepositExecute do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     PolygonSupernet.init_l2(
-      PolygonSupernetDepositExecute,
+      PolygonSupernetWithdrawal,
       env,
       self(),
-      env[:state_receiver],
-      "StateReceiver",
-      "polygon_supernet_deposit_executes",
-      "Deposit Executes",
+      env[:state_sender],
+      "L2StateSender",
+      "polygon_supernet_withdrawals",
+      "Withdrawals",
       json_rpc_named_arguments
     )
   end
@@ -67,7 +72,7 @@ defmodule Indexer.Fetcher.PolygonSupernetDepositExecute do
       ) do
     PolygonSupernet.fill_msg_id_gaps(
       start_block_l2,
-      PolygonSupernetDepositExecute,
+      PolygonSupernetWithdrawal,
       __MODULE__,
       contract_address,
       json_rpc_named_arguments
@@ -93,7 +98,7 @@ defmodule Indexer.Fetcher.PolygonSupernetDepositExecute do
     fill_block_range(
       start_block,
       safe_block,
-      {__MODULE__, PolygonSupernetDepositExecute},
+      {__MODULE__, PolygonSupernetWithdrawal},
       contract_address,
       json_rpc_named_arguments
     )
@@ -105,7 +110,7 @@ defmodule Indexer.Fetcher.PolygonSupernetDepositExecute do
       fill_block_range(
         safe_block + 1,
         latest_block,
-        {__MODULE__, PolygonSupernetDepositExecute},
+        {__MODULE__, PolygonSupernetWithdrawal},
         contract_address,
         json_rpc_named_arguments
       )
@@ -121,55 +126,70 @@ defmodule Indexer.Fetcher.PolygonSupernetDepositExecute do
   end
 
   def remove(starting_block) do
-    Repo.delete_all(from(de in PolygonSupernetDepositExecute, where: de.l2_block_number >= ^starting_block))
+    Repo.delete_all(from(w in PolygonSupernetWithdrawal, where: w.l2_block_number >= ^starting_block))
   end
 
-  def event_to_deposit_execute(second_topic, third_topic, l2_transaction_hash, l2_block_number) do
+  def event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number) do
+    [data_bytes] = decode_data(data, [:bytes])
+
+    sig = binary_part(data_bytes, 0, 32)
+
+    {from, to} =
+      if Base.encode16(sig, case: :lower) == @withdrawal_signature do
+        [_sig, _root_token, sender, receiver, _amount] =
+          TypeDecoder.decode_raw(data_bytes, [{:bytes, 32}, :address, :address, :address, {:uint, 256}])
+
+        {sender, receiver}
+      else
+        {nil, nil}
+      end
+
     %{
       msg_id: quantity_to_integer(second_topic),
+      from: from,
+      to: to,
       l2_transaction_hash: l2_transaction_hash,
-      l2_block_number: quantity_to_integer(l2_block_number),
-      success: quantity_to_integer(third_topic) != 0
+      l2_block_number: quantity_to_integer(l2_block_number)
     }
   end
 
   def find_and_save_entities(
         scan_db,
-        state_receiver,
+        state_sender,
         block_start,
         block_end,
         json_rpc_named_arguments
       ) do
-    executes =
+    withdrawals =
       if scan_db do
         query =
           from(log in Log,
-            select: {log.second_topic, log.third_topic, log.transaction_hash, log.block_number},
+            select: {log.second_topic, log.data, log.transaction_hash, log.block_number},
             where:
-              log.first_topic == @state_sync_result_event and log.address_hash == ^state_receiver and
+              log.first_topic == @l2_state_synced_event and log.address_hash == ^state_sender and
                 log.block_number >= ^block_start and log.block_number <= ^block_end
           )
 
         query
         |> Repo.all(timeout: :infinity)
-        |> Enum.map(fn {second_topic, third_topic, l2_transaction_hash, l2_block_number} ->
-          event_to_deposit_execute(second_topic, third_topic, l2_transaction_hash, l2_block_number)
+        |> Enum.map(fn {second_topic, data, l2_transaction_hash, l2_block_number} ->
+          event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number)
         end)
       else
         {:ok, result} =
           PolygonSupernet.get_logs(
             block_start,
             block_end,
-            state_receiver,
-            @state_sync_result_event,
+            state_sender,
+            @l2_state_synced_event,
             json_rpc_named_arguments,
             100_000_000
           )
 
         Enum.map(result, fn event ->
-          event_to_deposit_execute(
+          event_to_withdrawal(
             Enum.at(event["topics"], 1),
-            Enum.at(event["topics"], 2),
+            event["data"],
             event["transactionHash"],
             event["blockNumber"]
           )
@@ -178,14 +198,14 @@ defmodule Indexer.Fetcher.PolygonSupernetDepositExecute do
 
     {:ok, _} =
       Chain.import(%{
-        polygon_supernet_deposit_executes: %{params: executes},
+        polygon_supernet_withdrawals: %{params: withdrawals},
         timeout: :infinity
       })
 
-    Enum.count(executes)
+    Enum.count(withdrawals)
   end
 
-  def state_sync_result_event_signature do
-    @state_sync_result_event
+  def l2_state_synced_event_signature do
+    @l2_state_synced_event
   end
 end

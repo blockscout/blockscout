@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.PolygonSupernetWithdrawalExit do
+defmodule Indexer.Fetcher.PolygonSupernet.WithdrawalExit do
   @moduledoc """
   Fills polygon_supernet_withdrawal_exits DB table.
   """

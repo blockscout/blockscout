@@ -1,6 +1,6 @@
 defmodule Indexer.Fetcher.PolygonSupernet do
   @moduledoc """
-  Contains common functions for PolygonSupernet* fetchers.
+  Contains common functions for PolygonSupernet.* fetchers.
   """
 
   use GenServer
@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   alias Explorer.Chain.Events.Publisher
   alias Explorer.{Chain, Repo}
   alias Indexer.{BoundQueue, Helper}
-  alias Indexer.Fetcher.{PolygonSupernetDeposit, PolygonSupernetWithdrawalExit}
+  alias Indexer.Fetcher.PolygonSupernet.{Deposit, WithdrawalExit}
 
   @fetcher_name :polygon_supernet
   @block_check_interval_range_size 100
@@ -43,7 +43,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   def init(_args) do
     Logger.metadata(fetcher: @fetcher_name)
 
-    modules_using_reorg_monitor = [PolygonSupernetDeposit, PolygonSupernetWithdrawalExit]
+    modules_using_reorg_monitor = [Deposit, WithdrawalExit]
 
     reorg_monitor_not_needed =
       modules_using_reorg_monitor
@@ -234,7 +234,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
         calling_module,
         fetcher_name
       )
-      when calling_module in [PolygonSupernetDeposit, PolygonSupernetWithdrawalExit] do
+      when calling_module in [Deposit, WithdrawalExit] do
     time_before = Timex.now()
 
     eth_get_logs_range_size =
@@ -311,7 +311,10 @@ defmodule Indexer.Fetcher.PolygonSupernet do
         json_rpc_named_arguments,
         scan_db
       )
-      when calling_module in [Indexer.Fetcher.PolygonSupernetDepositExecute, Indexer.Fetcher.PolygonSupernetWithdrawal] do
+      when calling_module in [
+             Indexer.Fetcher.PolygonSupernet.DepositExecute,
+             Indexer.Fetcher.PolygonSupernet.Withdrawal
+           ] do
     eth_get_logs_range_size =
       Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonSupernet][:polygon_supernet_eth_get_logs_range_size]
 
@@ -346,7 +349,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
         )
 
       event_name =
-        if calling_module == Indexer.Fetcher.PolygonSupernetDepositExecute do
+        if calling_module == Indexer.Fetcher.PolygonSupernet.DepositExecute do
           "StateSyncResult"
         else
           "L2StateSynced"
@@ -702,7 +705,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
 
   defp import_events(events, calling_module) do
     {import_data, event_name} =
-      if calling_module == PolygonSupernetDeposit do
+      if calling_module == Deposit do
         {%{polygon_supernet_deposits: %{params: events}, timeout: :infinity}, "StateSynced"}
       else
         {%{polygon_supernet_withdrawal_exits: %{params: events}, timeout: :infinity}, "ExitProcessed"}
@@ -765,7 +768,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
 
   defp reorg_handle(reorg_block, calling_module) do
     {table, table_name} =
-      if calling_module == PolygonSupernetDeposit do
+      if calling_module == Deposit do
         {Explorer.Chain.PolygonSupernetDeposit, "polygon_supernet_deposits"}
       else
         {Explorer.Chain.PolygonSupernetWithdrawalExit, "polygon_supernet_withdrawal_exits"}

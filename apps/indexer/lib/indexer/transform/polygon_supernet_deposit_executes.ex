@@ -5,7 +5,7 @@ defmodule Indexer.Transform.PolygonSupernetDepositExecutes do
 
   require Logger
 
-  alias Indexer.Fetcher.PolygonSupernetDepositExecute
+  alias Indexer.Fetcher.PolygonSupernet.DepositExecute
   alias Indexer.Helper
 
   @doc """
@@ -17,11 +17,11 @@ defmodule Indexer.Transform.PolygonSupernetDepositExecutes do
 
     items =
       with false <-
-             is_nil(Application.get_env(:indexer, PolygonSupernetDepositExecute)[:start_block_l2]),
-           state_receiver = Application.get_env(:indexer, PolygonSupernetDepositExecute)[:state_receiver],
+             is_nil(Application.get_env(:indexer, DepositExecute)[:start_block_l2]),
+           state_receiver = Application.get_env(:indexer, DepositExecute)[:state_receiver],
            true <- Helper.is_address_correct?(state_receiver) do
         state_receiver = String.downcase(state_receiver)
-        state_sync_result_event_signature = PolygonSupernetDepositExecute.state_sync_result_event_signature()
+        state_sync_result_event_signature = DepositExecute.state_sync_result_event_signature()
 
         logs
         |> Enum.filter(fn log ->
@@ -31,7 +31,7 @@ defmodule Indexer.Transform.PolygonSupernetDepositExecutes do
         |> Enum.map(fn log ->
           Logger.info("Deposit Execute (StateSyncResult) message found, id: #{log.second_topic}.")
 
-          PolygonSupernetDepositExecute.event_to_deposit_execute(
+          DepositExecute.event_to_deposit_execute(
             log.second_topic,
             log.third_topic,
             log.transaction_hash,

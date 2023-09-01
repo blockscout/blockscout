@@ -543,19 +543,19 @@ config :indexer, Indexer.Fetcher.PolygonSupernet,
   polygon_supernet_eth_get_logs_range_size:
     ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_SUPERNET_ETH_GET_LOGS_RANGE_SIZE", 1000)
 
-config :indexer, Indexer.Fetcher.PolygonSupernetDeposit,
+config :indexer, Indexer.Fetcher.PolygonSupernet.Deposit,
   start_block_l1: System.get_env("INDEXER_POLYGON_SUPERNET_L1_DEPOSITS_START_BLOCK"),
   state_sender: System.get_env("INDEXER_POLYGON_SUPERNET_L1_STATE_SENDER_CONTRACT")
 
-config :indexer, Indexer.Fetcher.PolygonSupernetDepositExecute,
+config :indexer, Indexer.Fetcher.PolygonSupernet.DepositExecute,
   start_block_l2: System.get_env("INDEXER_POLYGON_SUPERNET_L2_DEPOSITS_START_BLOCK"),
   state_receiver: System.get_env("INDEXER_POLYGON_SUPERNET_L2_STATE_RECEIVER_CONTRACT")
 
-config :indexer, Indexer.Fetcher.PolygonSupernetWithdrawal,
+config :indexer, Indexer.Fetcher.PolygonSupernet.Withdrawal,
   start_block_l2: System.get_env("INDEXER_POLYGON_SUPERNET_L2_WITHDRAWALS_START_BLOCK"),
   state_sender: System.get_env("INDEXER_POLYGON_SUPERNET_L2_STATE_SENDER_CONTRACT")
 
-config :indexer, Indexer.Fetcher.PolygonSupernetWithdrawalExit,
+config :indexer, Indexer.Fetcher.PolygonSupernet.WithdrawalExit,
   start_block_l1: System.get_env("INDEXER_POLYGON_SUPERNET_L1_WITHDRAWALS_START_BLOCK"),
   exit_helper: System.get_env("INDEXER_POLYGON_SUPERNET_L1_EXIT_HELPER_CONTRACT")
 

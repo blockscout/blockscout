@@ -33,7 +33,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
-  alias Indexer.Fetcher.{CoinBalance, PolygonSupernetDepositExecute, PolygonSupernetWithdrawal}
+  alias Indexer.Fetcher.CoinBalance
+  alias Indexer.Fetcher.PolygonSupernet.{DepositExecute, Withdrawal}
   alias Indexer.Prometheus
   alias Indexer.Transform.Addresses
   alias Timex.Duration
@@ -288,8 +289,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
       fn ->
         if reorg? do
           # we need to remove all rows from `polygon_supernet_withdrawals` and `polygon_supernet_deposit_executes` tables previously written starting from reorg block number
-          PolygonSupernetWithdrawal.remove(block_number_to_fetch)
-          PolygonSupernetDepositExecute.remove(block_number_to_fetch)
+          Withdrawal.remove(block_number_to_fetch)
+          DepositExecute.remove(block_number_to_fetch)
 
           # give previous fetch attempt (for same block number) a chance to finish
           # before fetching again, to reduce block consensus mistakes
