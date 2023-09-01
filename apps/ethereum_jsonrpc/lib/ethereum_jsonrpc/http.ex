@@ -38,6 +38,10 @@ defmodule EthereumJSONRPC.HTTP do
     end
   end
 
+  def json_rpc([batch | _] = chunked_batch_request, options) when is_list(batch) do
+    chunked_json_rpc(chunked_batch_request, options, [])
+  end
+
   def json_rpc(batch_request, options) when is_list(batch_request) do
     chunked_json_rpc([batch_request], options, [])
   end

@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
 
       variables = %{"hash" => to_string(transaction.hash)}
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = get(conn, "/api/v1/graphql", query: query, variables: variables)
 
       assert json_response(conn, 200) == %{
                "data" => %{
@@ -78,7 +78,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
 
       variables = %{"hash" => to_string(transaction.hash)}
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = get(conn, "/api/v1/graphql", query: query, variables: variables)
 
       assert %{"errors" => [error]} = json_response(conn, 200)
       assert error["message"] == "Transaction not found."
@@ -93,7 +93,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
       }
       """
 
-      conn = get(conn, "/graphql", query: query)
+      conn = get(conn, "/api/v1/graphql", query: query)
 
       assert %{"errors" => [error]} = json_response(conn, 200)
       assert error["message"] == ~s(In argument "hash": Expected type "FullHash!", found null.)
@@ -110,7 +110,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
 
       variables = %{"hash" => "0x000"}
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = get(conn, "/api/v1/graphql", query: query, variables: variables)
 
       assert %{"errors" => [error]} = json_response(conn, 200)
       assert error["message"] =~ ~s(Argument "hash" has invalid value)
@@ -180,7 +180,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
         "first" => 1
       }
 
-      conn = post(conn, "/graphql", query: query, variables: variables)
+      conn = post(conn, "/api/v1/graphql", query: query, variables: variables)
 
       assert json_response(conn, 200) == %{
                "data" => %{
@@ -247,7 +247,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
         "first" => 1
       }
 
-      conn = post(conn, "/graphql", query: query, variables: variables)
+      conn = post(conn, "/api/v1/graphql", query: query, variables: variables)
 
       assert json_response(conn, 200) == %{
                "data" => %{
@@ -306,7 +306,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
 
       response =
         conn
-        |> post("/graphql", query: query, variables: variables)
+        |> post("/api/v1/graphql", query: query, variables: variables)
         |> json_response(200)
 
       internal_transactions = get_in(response, ["data", "transaction", "internal_transactions", "edges"])
@@ -341,7 +341,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
 
       response1 =
         conn
-        |> post("/graphql", query: query1, variables: variables1)
+        |> post("/api/v1/graphql", query: query1, variables: variables1)
         |> json_response(200)
 
       assert %{"errors" => [error1, error2, error3]} = response1
@@ -372,7 +372,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
 
       response2 =
         conn
-        |> post("/graphql", query: query2, variables: variables2)
+        |> post("/api/v1/graphql", query: query2, variables: variables2)
         |> json_response(200)
 
       assert %{"errors" => [error1, error2, error3]} = response2
@@ -435,7 +435,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
 
       [internal_transaction] =
         conn
-        |> post("/graphql", query: query, variables: variables)
+        |> post("/api/v1/graphql", query: query, variables: variables)
         |> json_response(200)
         |> get_in(["data", "transaction", "internal_transactions", "edges"])
 
@@ -479,7 +479,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
         "first" => 2
       }
 
-      conn = post(conn, "/graphql", query: query1, variables: variables1)
+      conn = post(conn, "/api/v1/graphql", query: query1, variables: variables1)
 
       %{"data" => %{"transaction" => %{"internal_transactions" => page1}}} = json_response(conn, 200)
 
@@ -520,7 +520,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
 
       page2 =
         conn
-        |> post("/graphql", query: query2, variables: variables2)
+        |> post("/api/v1/graphql", query: query2, variables: variables2)
         |> json_response(200)
         |> get_in(["data", "transaction", "internal_transactions"])
 
@@ -541,7 +541,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
 
       page3 =
         conn
-        |> post("/graphql", query: query2, variables: variables3)
+        |> post("/api/v1/graphql", query: query2, variables: variables3)
         |> json_response(200)
         |> get_in(["data", "transaction", "internal_transactions"])
 

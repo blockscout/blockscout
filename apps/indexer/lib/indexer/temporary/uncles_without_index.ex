@@ -52,7 +52,7 @@ defmodule Indexer.Temporary.UnclesWithoutIndex do
     query =
       from(bsdr in SecondDegreeRelation,
         join: block in assoc(bsdr, :nephew),
-        where: is_nil(bsdr.index) and is_nil(bsdr.uncle_fetched_at) and block.consensus,
+        where: is_nil(bsdr.index) and is_nil(bsdr.uncle_fetched_at) and block.consensus == true,
         select: bsdr.nephew_hash,
         group_by: bsdr.nephew_hash
       )

@@ -176,7 +176,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       conn =
-        get(conn, "/token-transfers-csv", %{
+        get(conn, "/api/v1/token-transfers-csv", %{
           "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
@@ -203,7 +203,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       conn =
-        get(conn, "/token-transfers-csv", %{
+        get(conn, "/api/v1/token-transfers-csv", %{
           "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period,
@@ -231,7 +231,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       conn =
-        get(conn, "/token-transfers-csv", %{
+        get(conn, "/api/v1/token-transfers-csv", %{
           "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
@@ -260,7 +260,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       conn =
-        get(conn, "/token-transfers-csv", %{
+        get(conn, "/api/v1/token-transfers-csv", %{
           "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period,
@@ -290,7 +290,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       conn =
-        get(conn, "/transactions-csv", %{
+        get(conn, "/api/v1/transactions-csv", %{
           "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period,
@@ -357,7 +357,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       conn =
-        get(conn, "/internal-transactions-csv", %{
+        get(conn, "/api/v1/internal-transactions-csv", %{
           "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period,
@@ -418,7 +418,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       conn =
-        get(conn, "/logs-csv", %{
+        get(conn, "/api/v1/logs-csv", %{
           "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period,

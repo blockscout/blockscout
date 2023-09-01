@@ -1,61 +1,12 @@
-defmodule Explorer.Token.InstanceMetadataRetriever do
+defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   @moduledoc """
-  Fetches ERC721 token instance metadata.
+  Fetches ERC-721 & ERC-1155 token instance metadata.
   """
 
   require Logger
 
   alias Explorer.SmartContract.Reader
   alias HTTPoison.{Error, Response}
-
-  @token_uri "c87b56dd"
-
-  @abi [
-    %{
-      "type" => "function",
-      "stateMutability" => "view",
-      "payable" => false,
-      "outputs" => [
-        %{"type" => "string", "name" => ""}
-      ],
-      "name" => "tokenURI",
-      "inputs" => [
-        %{
-          "type" => "uint256",
-          "name" => "_tokenId"
-        }
-      ],
-      "constant" => true
-    }
-  ]
-
-  @uri "0e89341c"
-
-  @abi_uri [
-    %{
-      "type" => "function",
-      "stateMutability" => "view",
-      "payable" => false,
-      "outputs" => [
-        %{
-          "type" => "string",
-          "name" => "",
-          "internalType" => "string"
-        }
-      ],
-      "name" => "uri",
-      "inputs" => [
-        %{
-          "type" => "uint256",
-          "name" => "_id",
-          "internalType" => "uint256"
-        }
-      ],
-      "constant" => true
-    }
-  ]
-
-  @cryptokitties_address_hash "0x06012c8cf97bead5deae237070f9587f8e7a266d"
 
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
@@ -69,54 +20,29 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
 
   @ignored_hosts ["localhost", "127.0.0.1", "0.0.0.0", "", nil]
 
-  def fetch_metadata(unquote(@cryptokitties_address_hash), token_id) do
-    %{@token_uri => {:ok, ["https://api.cryptokitties.co/kitties/{id}"]}}
-    |> fetch_json(to_string(token_id))
-  end
-
-  def fetch_metadata(contract_address_hash, token_id) do
-    # c87b56dd =  keccak256(tokenURI(uint256))
-    contract_functions = %{@token_uri => [token_id]}
-
-    res =
-      contract_address_hash
-      |> query_contract(contract_functions, @abi)
-      |> fetch_json()
-
-    if res == {:ok, %{error: @vm_execution_error}} do
-      hex_normalized_token_id = token_id |> Integer.to_string(16) |> String.downcase() |> String.pad_leading(64, "0")
-
-      contract_functions_uri = %{@uri => [token_id]}
-
-      contract_address_hash
-      |> query_contract(contract_functions_uri, @abi_uri)
-      |> fetch_json(hex_normalized_token_id)
-    else
-      res
-    end
-  end
-
   def query_contract(contract_address_hash, contract_functions, abi) do
     Reader.query_contract(contract_address_hash, abi, contract_functions, false)
   end
 
+  @doc """
+    Fetch/parse metadata using smart-contract's response
+  """
+  @spec fetch_json(any, binary() | nil) :: {:error, binary} | {:error_code, any} | {:ok, %{metadata: any}}
   def fetch_json(uri, hex_token_id \\ nil)
 
-  def fetch_json(uri, _hex_token_id) when uri in [%{@token_uri => {:ok, [""]}}, %{@uri => {:ok, [""]}}] do
-    {:ok, %{error: @no_uri_error}}
+  def fetch_json(uri, _hex_token_id) when uri in [{:ok, [""]}, {:ok, [""]}] do
+    {:error, @no_uri_error}
   end
 
-  def fetch_json(%{@token_uri => uri}, hex_token_id) do
-    fetch_json_from_uri(uri, hex_token_id)
-  end
-
-  def fetch_json(%{@uri => uri}, hex_token_id) do
+  def fetch_json(uri, hex_token_id) do
     fetch_json_from_uri(uri, hex_token_id)
   end
 
   defp fetch_json_from_uri({:error, error}, _hex_token_id) do
+    error = to_string(error)
+
     if error =~ "execution reverted" or error =~ @vm_execution_error do
-      {:ok, %{error: @vm_execution_error}}
+      {:error, @vm_execution_error}
     else
       Logger.debug(["Unknown metadata format error #{inspect(error)}."], fetcher: :token_instances)
 
@@ -245,7 +171,8 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   def fetch_metadata_from_uri_inner(uri, hex_token_id) do
     case Application.get_env(:explorer, :http_adapter).get(uri, [],
            recv_timeout: 30_000,
-           follow_redirect: true
+           follow_redirect: true,
+           hackney: [pool: :token_instance_fetcher]
          ) do
       {:ok, %Response{body: body, status_code: 200, headers: headers}} ->
         content_type = get_content_type_from_headers(headers)
@@ -350,5 +277,9 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     String.replace(token_uri, @erc1155_token_id_placeholder, hex_token_id)
   end
 
-  defp truncate_error(error), do: String.slice(error, 0, @max_error_length)
+  @doc """
+    Truncate error string to @max_error_length symbols
+  """
+  @spec truncate_error(binary()) :: binary()
+  def truncate_error(error), do: String.slice(error, 0, @max_error_length)
 end

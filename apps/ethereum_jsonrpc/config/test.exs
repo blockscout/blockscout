@@ -6,7 +6,6 @@ config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
     duration: :timer.seconds(6),
     table: EthereumJSONRPC.RequestCoordinator.TimeoutCounter
   ],
-  wait_per_timeout: 2,
   max_jitter: 1,
   # This should not actually limit anything in tests, but it is here to enable the relevant code for testing
   throttle_rate_limit: 10_000,

@@ -263,7 +263,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         ),
       "value" => internal_transaction.value,
       "block" => internal_transaction.block_number,
-      "timestamp" => internal_transaction.transaction.block.timestamp,
+      "timestamp" => internal_transaction.block.timestamp,
       "index" => internal_transaction.index,
       "gas_limit" => internal_transaction.gas
     }

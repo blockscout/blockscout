@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
     {blocks, next_page} = split_list_by_page(blocks_plus_one)
 
-    next_page_params = next_page |> next_page_params(blocks, params) |> delete_parameters_from_next_page_params()
+    next_page_params = next_page |> next_page_params(blocks, delete_parameters_from_next_page_params(params))
 
     conn
     |> put_status(200)
@@ -98,8 +98,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
       next_page_params =
         next_page
-        |> next_page_params(transactions, params)
-        |> delete_parameters_from_next_page_params()
+        |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
 
       conn
       |> put_status(200)
@@ -118,7 +117,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       withdrawals_plus_one = Chain.block_to_withdrawals(block.hash, full_options)
       {withdrawals, next_page} = split_list_by_page(withdrawals_plus_one)
 
-      next_page_params = next_page |> next_page_params(withdrawals, params) |> delete_parameters_from_next_page_params()
+      next_page_params = next_page |> next_page_params(withdrawals, delete_parameters_from_next_page_params(params))
 
       conn
       |> put_status(200)
