@@ -7,8 +7,7 @@ RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tool
 ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc \
     GLIBC_VERSION=2.34-r0 \
     PORT=4000 \
-    MIX_ENV="prod" \
-    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
+    MIX_ENV="prod"
 
 RUN set -ex && \
     apk --update add libstdc++ curl ca-certificates && \
@@ -38,23 +37,14 @@ ADD apps/explorer/mix.exs ./apps/explorer/
 ADD apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
 ADD apps/indexer/mix.exs ./apps/indexer/
 
-RUN mix do deps.get, local.rebar --force, deps.compile
+RUN HEX_HTTP_TIMEOUT=3600 mix do deps.get, local.rebar --force, deps.compile
 
 ADD . .
 
 COPY . .
 
 # Run forderground build and phoenix digest
-RUN mix compile && npm install npm@latest
-
-# Add blockscout npm deps
-RUN cd apps/block_scout_web/assets/ && \
-    npm install && \
-    npm run deploy && \
-    cd /app/apps/explorer/ && \
-    npm install && \
-    apk update && \
-    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
+RUN mix compile
 
 RUN mix phx.digest
 
@@ -75,7 +65,5 @@ RUN apk --no-cache --update add jq
 WORKDIR /app
 
 COPY --from=builder /opt/release/blockscout .
-COPY --from=builder /app/apps/explorer/node_modules ./node_modules
 COPY --from=builder /app/config/config_helper.exs ./config/config_helper.exs
 COPY --from=builder /app/config/config_helper.exs /app/releases/${RELEASE_VERSION}/config_helper.exs
-

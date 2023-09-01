@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  redis_db:
+    extends:
+      file: ./services/docker-compose-redis.yml
+      service: redis_db
+
+  db:
+    extends:
+      file: ./services/docker-compose-db.yml
+      service: db
+
+  backend:
+    depends_on:
+      - db
+      - smart-contract-verifier
+      - redis_db
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile_AppleSilicon
+      args:
+        CACHE_EXCHANGE_RATES_PERIOD: ""
+        API_V1_READ_METHODS_DISABLED: "true"
+        DISABLE_WEBAPP: "true"
+        API_V1_WRITE_METHODS_DISABLED: "true"
+        CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED: ""
+        CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
+        ADMIN_PANEL_ENABLED: ""
+        RELEASE_VERSION: 5.2.0
+    restart: always
+    container_name: 'blockscout'
+    links:
+      - db:database
+    command: bash -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      -  ./envs/common-blockscout.env
+    environment:
+      API_RATE_LIMIT_DISABLED: 'true'
+      API_V2_ENABLED: 'true'
+      ETHEREUM_JSONRPC_HTTP_URL: 'https://api.easel.kroma.cc'
+      CHAIN_ID: '7789'
+      INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
+      INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
+    ports:
+      - 4000:4000
+    volumes:
+      - ./logs/:/app/logs/
+
+  smart-contract-verifier:
+    platform: linux/amd64
+    extends:
+      file: ./services/docker-compose-smart-contract-verifier.yml
+      service: smart-contract-verifier
+
+  visualizer:
+    platform: linux/amd64
+    extends:
+      file: ./services/docker-compose-visualizer.yml
+      service: visualizer
+
+  sig-provider:
+    platform: linux/amd64
+    extends:
+      file: ./services/docker-compose-sig-provider.yml
+      service: sig-provider
+
+  stats-db:
+    depends_on:
+      - backend
+    image: postgres:14
+    restart: always
+    container_name: 'stats-postgres'
+    command: postgres -c 'max_connections=200'
+    environment:
+      POSTGRES_PASSWORD: ''
+      POSTGRES_USER: 'postgres'
+      POSTGRES_HOST_AUTH_METHOD: 'trust'
+    ports:
+      - 7433:5432
+    volumes:
+      - ./services/stats-db-data:/var/lib/postgresql/data/
+
+  stats:
+    depends_on:
+      - stats-db
+    platform: linux/amd64
+    image: ghcr.io/blockscout/stats:${STATS_DOCKER_TAG:-v1.2.2}
+    pull_policy: always
+    restart: always
+    container_name: 'stats'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      -  ./envs/common-stats-apple-silicon.env
+    ports:
+      - 8153:8050

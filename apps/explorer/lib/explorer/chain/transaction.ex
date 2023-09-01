@@ -174,7 +174,13 @@ defmodule Explorer.Chain.Transaction do
           max_priority_fee_per_gas: wei_per_gas | nil,
           max_fee_per_gas: wei_per_gas | nil,
           type: non_neg_integer() | nil,
-          has_error_in_internal_txs: boolean()
+          has_error_in_internal_txs: boolean(),
+          l1_fee: wei_per_gas | nil,
+          l1_fee_scalar: Decimal.t() | nil,
+          l1_gas_price: wei_per_gas | nil,
+          l1_gas_used: Gas.t() | nil,
+          l1_tx_origin: Hash.t() | nil,
+          l1_block_number: Decimal.t() | nil
         }
 
   @derive {Poison.Encoder,
@@ -194,7 +200,13 @@ defmodule Explorer.Chain.Transaction do
              :v,
              :status,
              :value,
-             :revert_reason
+             :revert_reason,
+             :l1_fee,
+             :l1_fee_scalar,
+             :l1_gas_price,
+             :l1_gas_used,
+             :l1_tx_origin,
+             :l1_block_number
            ]}
 
   @derive {Jason.Encoder,
@@ -214,7 +226,13 @@ defmodule Explorer.Chain.Transaction do
              :v,
              :status,
              :value,
-             :revert_reason
+             :revert_reason,
+             :l1_fee,
+             :l1_fee_scalar,
+             :l1_gas_price,
+             :l1_gas_used,
+             :l1_tx_origin,
+             :l1_block_number
            ]}
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -241,6 +259,12 @@ defmodule Explorer.Chain.Transaction do
     field(:type, :integer)
     field(:has_error_in_internal_txs, :boolean)
     field(:has_token_transfers, :boolean, virtual: true)
+    field(:l1_fee, Wei)
+    field(:l1_fee_scalar, :decimal)
+    field(:l1_gas_price, Wei)
+    field(:l1_gas_used, :decimal)
+    field(:l1_tx_origin, Hash.Full)
+    field(:l1_block_number, :integer)
 
     # A transient field for deriving old block hash during transaction upserts.
     # Used to force refetch of a block in case a transaction is re-collated

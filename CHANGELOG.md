@@ -19,6 +19,7 @@
 - [#7803](https://github.com/blockscout/blockscout/pull/7803) - Fix additional sources and interfaces, save names for vyper contracts
 - [#7758](https://github.com/blockscout/blockscout/pull/7758) - Remove limit for configurable fetchers
 - [#7764](https://github.com/blockscout/blockscout/pull/7764) - Fix missing ranges insertion and deletion logic
+- [#7776](https://github.com/blockscout/blockscout/pull/7776) - Fix transactions ordering in Indexer.Fetcher.OptimismTxnBatch
 - [#7843](https://github.com/blockscout/blockscout/pull/7843) - Fix created_contract_code_indexed_at updating
 - [#7855](https://github.com/blockscout/blockscout/pull/7855) - Handle internal transactions unique_violation
 - [#7899](https://github.com/blockscout/blockscout/pull/7899) - Fix catchup numbers_to_ranges function
@@ -54,6 +55,8 @@
 - [#7532](https://github.com/blockscout/blockscout/pull/7532) - Handle empty id in json rpc responses
 - [#7544](https://github.com/blockscout/blockscout/pull/7544) - Add ERC-1155 signatures to uncataloged_token_transfer_block_numbers
 - [#7363](https://github.com/blockscout/blockscout/pull/7363) - CSV export filters
+- [#6980](https://github.com/blockscout/blockscout/pull/6980) - Add Optimism BedRock support (Txn Batches, Output Roots, Deposits, Withdrawals)
+- [#7200](https://github.com/blockscout/blockscout/pull/7200) - Add Optimism BedRock Deposits to the main page in API
 - [#7697](https://github.com/blockscout/blockscout/pull/7697) - Limit fetchers init tasks
 
 ### Fixes
@@ -75,6 +78,7 @@
 - [#7516](https://github.com/blockscout/blockscout/pull/7516) - Fix shrinking logo in Safari
 - [#7590](https://github.com/blockscout/blockscout/pull/7590) - Drop genesis block in internal transactions fetcher
 - [#7639](https://github.com/blockscout/blockscout/pull/7639) - Fix contract creation transactions
+- [#7219](https://github.com/blockscout/blockscout/pull/7219) - Output L1 fields in API v2 for transaction page and fix transaction fee calculation
 - [#7724](https://github.com/blockscout/blockscout/pull/7724), [#7753](https://github.com/blockscout/blockscout/pull/7753) - Move MissingRangesCollector init logic to handle_continue
 - [#7751](https://github.com/blockscout/blockscout/pull/7751) - Add missing method_to_url params for trace transactions
 
@@ -348,6 +352,7 @@
 - [#7009](https://github.com/blockscout/blockscout/pull/7009) - Fix updating coin balances with empty value
 - [#7055](https://github.com/blockscout/blockscout/pull/7055) - Set updated_at on token update even if there are no changes
 - [#7080](https://github.com/blockscout/blockscout/pull/7080) - Deduplicate second degree relations before insert
+- [#7135](https://github.com/blockscout/blockscout/pull/7135) - Block reorg fixes
 - [#7161](https://github.com/blockscout/blockscout/pull/7161) - Treat "" as empty value while parsing env vars
 - [#7135](https://github.com/blockscout/blockscout/pull/7135) - Block reorg fixes
 
@@ -611,6 +616,7 @@
 
 ### Fixes
 
+- [#6699](https://github.com/blockscout/blockscout/pull/6699) - L1 tx fields fix for Goerli Optimism BedRock update
 - [#6676](https://github.com/blockscout/blockscout/pull/6676) - Fix `/smart-contracts` bugs in API v2
 - [#6603](https://github.com/blockscout/blockscout/pull/6603) - Add to MM button explorer URL fix
 - [#6512](https://github.com/blockscout/blockscout/pull/6512) - Allow gasUsed in failed internal txs; Leave error field for staticcall

@@ -1,3 +1,5 @@
+$testnet-label-svg: no-repeat url(../static/images/testnet_label_light.svg) !default;
+
 .bs-label {
     display: inline-block;
     padding: 0 5px;
@@ -98,7 +100,7 @@
 }
 
 .testnet-label {
-    background-color: transparent;
-    border: 1px solid #828ba0;
-    color: #828ba0;
+    background: $testnet-label-svg;
+    background-size: contain;
+    width: 70px;
 }
