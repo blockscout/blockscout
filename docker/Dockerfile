@@ -46,6 +46,8 @@ RUN mix compile
 
 RUN apk add --update git make 
 
+RUN apk add --update git make 
+
 RUN export "CFLAGS=-I/usr/local/include -L/usr/local/lib" && cd deps/ex_secp256k1 && mix deps.get && mix compile
 RUN mix phx.digest
 
