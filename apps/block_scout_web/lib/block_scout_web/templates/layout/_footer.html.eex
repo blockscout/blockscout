@@ -19,31 +19,39 @@
 
     <div class="row">
       <div class="col-xs-12 col-lg-3">
-        <p class="footer-info-text"><%= gettext("Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks.") %></p>
+        <p class="footer-info-text"><%= gettext("SECRYPT is a fast and efficient PoS blockchain that supports the Ethereum Virtual Machine.") %></p>
         <div class="footer-social-icons">
           <a href="<%= Application.get_env(:block_scout_web, :footer)[:github_link] %>" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
             <div class="footer-social-icon-container fontawesome-icon github"></div>
           </a>
-          <a href="https://www.twitter.com/blockscoutcom/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
-            <div class="footer-social-icon-container fontawesome-icon twitter"></div>
+          <a href="https://instagram.com/secrypt.tech?igshid=YmMyMTA2M2Y=" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Instagram") %>'>
+            <div class="footer-social-icon-container fontawesome-icon instagram"></div>
           </a>
-          <%= if Application.get_env(:block_scout_web, :footer)[:telegram_link_enabled] && Application.get_env(:block_scout_web, :footer)[:telegram_link] do %>
-            <a href="<%= Application.get_env(:block_scout_web, :footer)[:telegram_link] %>" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
-              <div class="footer-social-icon-container fontawesome-icon telegram"></div>
-            </a>
-          <% end %>
+          <a href="https://www.linkedin.com/in/secrypt-tech-343665243" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("LinkedIn") %>'>
+            <div class="footer-social-icon-container fontawesome-icon linkedin"></div>
+          </a>
+          <a href="https://www.tiktok.com/@secrypt.tech?_t=8WlcPl0Zija&_r=1" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("TikTok") %>'>
+            <div class="footer-social-icon-container fontawesome-icon tiktok"></div>
+          </a>
+          <a href="https://pin.it/4ePVwNP" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Pinterest") %>'>
+            <div class="footer-social-icon-container fontawesome-icon pinterest"></div>
+          </a>
+          <a href="https://t.me/SECRYPT_2022" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
+            <div class="footer-social-icon-container fontawesome-icon telegram"></div>
+          </a>
+          <a href="https://discord.gg/tgmKUkaJ" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Discord") %>'>
+            <div class="footer-social-icon-container fontawesome-icon discord"></div>
+          </a>
         </div>
       </div>
 
       <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
-        <h3>BlockScout</h3>
+        <h3>SECRYPT</h3>
         <ul>
           <li><a href="<%= issue_link(@conn) %>" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Submit an Issue") %></a></li>
           <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:github_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
-          <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:chat_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Chat (#blockscout)") %></a></li>
-          <%= if Application.get_env(:block_scout_web, :footer)[:forum_link_enabled] && Application.get_env(:block_scout_web, :footer)[:forum_link] do %>
-            <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:forum_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Forum") %></a></li>
-          <% end %>
+          <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:chat_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Website") %></a></li>
+          <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:forum_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Test Faucet") %></a></li>
           <%= render BlockScoutWeb.LayoutView, "_add_chain_to_mm.html" %>
         </ul>
       </div>
@@ -54,7 +62,7 @@
           <h3><%= gettext("Main Networks") %></h3>
           <ul>
             <%= for %{title: title, url: url} <- main_nets do %>
-              <li><a href="<%= url %>" rel="noreferrer" class="footer-link"> <%= title %> </a></li>
+              <li><a href="<%= url %>" rel="norefferer" class="footer-link"> <%= title %> </a></li>
             <% end %>
           </ul>
         </div>
