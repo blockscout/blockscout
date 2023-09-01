@@ -38,12 +38,11 @@ ADD config ./config
 ADD rel ./rel
 ADD *.exs ./
 
-RUN apk add --update nodejs npm
-
 # Run forderground build and phoenix digest
 RUN mix compile
 
-RUN apk add --update git make 
+RUN apk update && \
+    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
 
 RUN apk add --update git make 
 
