@@ -58,7 +58,7 @@ jobs:
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             ADMIN_PANEL_ENABLED=
-            RELEASE_VERSION="5.2.0"
+            RELEASE_VERSION="5.2.2"
   cd:
     needs: ci
     runs-on: ubuntu-latest
