@@ -3,12 +3,18 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   Module responsible to control the contract verification.
   """
 
+  require Logger
+
   import Explorer.SmartContract.Helper, only: [cast_libraries: 1]
 
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{CompilerVersion, Helper}
   alias Explorer.SmartContract.Solidity.Verifier
+
+  @sc_verification_via_flattened_file_started "Smart-contract verification via flattened file started"
+  @sc_verification_via_standard_json_input_started "Smart-contract verification via standard json input started"
+  @sc_verification_via_multipart_files_started "Smart-contract verification via multipart files started"
 
   @doc """
   Evaluates smart contract authenticity and saves its details.
@@ -27,6 +33,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
   """
   def publish(address_hash, params, external_libraries \\ %{}) do
+    Logger.info(@sc_verification_via_flattened_file_started)
     params_with_external_libraries = add_external_libraries(params, external_libraries)
 
     case Verifier.evaluate_authenticity(address_hash, params_with_external_libraries) do
@@ -65,6 +72,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   end
 
   def publish_with_standard_json_input(%{"address_hash" => address_hash} = params, json_input) do
+    Logger.info(@sc_verification_via_standard_json_input_started)
+
     case Verifier.evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
       {:ok,
        %{
@@ -102,6 +111,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   end
 
   def publish_with_multi_part_files(%{"address_hash" => address_hash} = params, external_libraries \\ %{}, files) do
+    Logger.info(@sc_verification_via_multipart_files_started)
     params_with_external_libraries = add_external_libraries(params, external_libraries)
 
     case Verifier.evaluate_authenticity_via_multi_part_files(address_hash, params_with_external_libraries, files) do
@@ -187,6 +197,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   end
 
   defp create_or_update_smart_contract(address_hash, attrs) do
+    Logger.info("Publish successfully verified Solidity smart-contract #{address_hash} into the DB")
+
     if Chain.smart_contract_verified?(address_hash) do
       Chain.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
     else
@@ -208,6 +220,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         error_message,
         verification_with_files?
       )
+
+    Logger.error("Solidity smart-contract verification #{address_hash} failed because of the error #{error}")
 
     %{changeset | action: :insert}
   end

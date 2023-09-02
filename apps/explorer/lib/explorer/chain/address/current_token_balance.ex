@@ -74,7 +74,6 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     token_balance
     |> cast(attrs, @allowed_fields)
     |> validate_required(@required_fields)
-    |> foreign_key_constraint(:address_hash)
     |> foreign_key_constraint(:token_contract_address_hash)
   end
 
@@ -159,6 +158,25 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   end
 
   @doc """
+  Builds an `t:Ecto.Query.t/0` to fetch the current token balances of the given address (include unfetched).
+  """
+  def last_token_balances_include_unfetched(address_hash) do
+    fiat_balance = fiat_value_query()
+
+    from(
+      ctb in __MODULE__,
+      where: ctb.address_hash == ^address_hash,
+      left_join: t in assoc(ctb, :token),
+      on: ctb.token_contract_address_hash == t.contract_address_hash,
+      preload: [token: t],
+      select: ctb,
+      select_merge: ^%{fiat_value: fiat_balance},
+      order_by: ^[desc_nulls_last: fiat_balance],
+      order_by: [desc: ctb.value, desc: ctb.id]
+    )
+  end
+
+  @doc """
   Builds an `t:Ecto.Query.t/0` to fetch the current token balances of the given address.
   """
   def last_token_balances(address_hash, type \\ [])
@@ -170,10 +188,10 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       ctb in __MODULE__,
       where: ctb.address_hash == ^address_hash,
       where: ctb.value > 0,
-      where: ctb.token_type == ^type,
       left_join: t in assoc(ctb, :token),
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       preload: [token: t],
+      where: t.type == ^type,
       select: ctb,
       select_merge: ^%{fiat_value: fiat_balance},
       order_by: ^[desc_nulls_last: fiat_balance],

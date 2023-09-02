@@ -3,6 +3,8 @@ defmodule Explorer.SmartContract.Solidity.PublisherWorker do
   Background smart contract verification worker.
   """
 
+  require Logger
+
   use Que.Worker, concurrency: 5
 
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
@@ -67,6 +69,8 @@ defmodule Explorer.SmartContract.Solidity.PublisherWorker do
         {:error, changeset} ->
           {:error, changeset}
       end
+
+    Logger.info("Smart-contract #{address_hash} verification: broadcast verification results")
 
     if conn do
       EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result, conn}}], :on_demand)

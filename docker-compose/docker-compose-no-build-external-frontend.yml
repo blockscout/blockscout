@@ -31,6 +31,7 @@ services:
     environment:
         ETHEREUM_JSONRPC_VARIANT: 'ganache'
         ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
+        ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545/
         ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
         INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
         INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
@@ -40,15 +41,7 @@ services:
         CHAIN_ID: '1337'
         API_V2_ENABLED: 'true'
         MIX_ENV: 'prod'
-        ACCOUNT_ENABLED: 'true'
-        ACCOUNT_AUTH0_DOMAIN: 'dev-d1e3mu4f.us.auth0.com'
-        ACCOUNT_AUTH0_CLIENT_ID: '0Kz1eaBlFGEjtdtbRaEyUAjMxTGcWPbw'
-        ACCOUNT_AUTH0_CLIENT_SECRET: 'kkbPvKz79UG13HBavWlCUqDER8QkuMYvBLlh4xriiZNdlL9FPmyGjzfALn00hker'
-        ACCOUNT_SENDGRID_SENDER: 'noreply@blockscout.com'
-        ACCOUNT_SENDGRID_TEMPLATE: 'd-7ab86397e5bb4f0e94e285879a42be64'
-        ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL: '"https://api.airtable.com/v0/appKlc01pN7paPrhk/Public%20Tags"'
-        ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY: 'keySVvWCUqSuQMfJB'
-        ACCOUNT_CLOAK_KEY: 'yb49fJfTh0lyifuXIWKxcf4rrK9elF5D45e4pgvmcn4='
+        ACCOUNT_ENABLED: 'false'
     ports:
       - 4000:4000
     volumes:

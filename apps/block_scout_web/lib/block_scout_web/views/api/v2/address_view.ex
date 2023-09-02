@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, SmartContract}
 
   @api_true [api?: true]
@@ -102,12 +103,12 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "has_methods_read_proxy" => is_proxy,
       "has_methods_write_proxy" => AddressView.smart_contract_with_write_functions?(address) && is_proxy,
       "has_decompiled_code" => AddressView.has_decompiled_code?(address),
-      "has_validated_blocks" => Chain.check_if_validated_blocks_at_address(address.hash, @api_true),
-      "has_logs" => Chain.check_if_logs_at_address(address.hash, @api_true),
-      "has_tokens" => Chain.check_if_tokens_at_address(address.hash, @api_true),
-      "has_token_transfers" => Chain.check_if_token_transfers_at_address(address.hash, @api_true),
+      "has_validated_blocks" => Counters.check_if_validated_blocks_at_address(address.hash, @api_true),
+      "has_logs" => Counters.check_if_logs_at_address(address.hash, @api_true),
+      "has_tokens" => Counters.check_if_tokens_at_address(address.hash, @api_true),
+      "has_token_transfers" => Counters.check_if_token_transfers_at_address(address.hash, @api_true),
       "watchlist_address_id" => Chain.select_watchlist_address_id(get_watchlist_id(conn), address.hash),
-      "has_beacon_chain_withdrawals" => Chain.check_if_withdrawals_at_address(address.hash, @api_true)
+      "has_beacon_chain_withdrawals" => Counters.check_if_withdrawals_at_address(address.hash, @api_true)
     })
   end
 
