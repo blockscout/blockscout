@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#8382](https://github.com/blockscout/blockscout/pull/8382) - Add sitemap.xml
 - [#8313](https://github.com/blockscout/blockscout/pull/8313) - Add batches to TokenInstance fetchers
 - [#8285](https://github.com/blockscout/blockscout/pull/8285) - Add CG/CMC coin price sources
 - [#8181](https://github.com/blockscout/blockscout/pull/8181) - Insert current token balances placeholders along with historical
