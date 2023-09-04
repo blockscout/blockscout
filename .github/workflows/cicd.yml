@@ -58,13 +58,20 @@ jobs:
           platforms: linux/amd64
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED="true"
-            DISABLE_WEBAPP="true"
-            API_V1_WRITE_METHODS_DISABLED="true"
+            API_V1_READ_METHODS_DISABLED=false
+            DISABLE_WEBAPP=false
+            API_V1_WRITE_METHODS_DISABLED=false
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            ADMIN_PANEL_ENABLED=false
+            DECODE_NOT_A_CONTRACT_CALLS=false
+            MIXPANEL_URL=
+            MIXPANEL_TOKEN=
+            AMPLITUDE_URL=
+            AMPLITUDE_API_KEY=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=
-            RELEASE_VERSION="5.2.2"
+            BLOCKSCOUT_VERSION=v5.2.2
+            RELEASE_VERSION=5.2.2
+
 
   cd:
     needs: ci
