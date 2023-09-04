@@ -1,13 +1,12 @@
-FROM hexpm/elixir:1.14.5-erlang-25.3.2.4-alpine-3.18.2 AS builder
+FROM hexpm/elixir:1.14.5-erlang-25.3.2.4-alpine-3.18.2 AS base
 
-WORKDIR /app
-
-RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file gcompat
+ARG RELEASE_VERSION
+ENV RELEASE_VERSION=${RELEASE_VERSION}
+ARG BLOCKSCOUT_VERSION
+ENV BLOCKSCOUT_VERSION=${BLOCKSCOUT_VERSION}
 
 ENV PORT=4000 \
     MIX_ENV="prod"
-
-RUN apk --update add libstdc++ curl ca-certificates gcompat
 
 ARG CACHE_EXCHANGE_RATES_PERIOD
 ARG API_V1_READ_METHODS_DISABLED
@@ -22,6 +21,16 @@ ARG MIXPANEL_URL
 ARG AMPLITUDE_API_KEY
 ARG AMPLITUDE_URL
 
+ENV MIX_HOME=/opt/mix
+
+FROM base AS builder
+
+WORKDIR /app
+
+RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file gcompat
+
+RUN apk --update add libstdc++ curl ca-certificates gcompat
+
 # Cache elixir deps
 ADD mix.exs mix.lock ./
 ADD apps/block_scout_web/mix.exs ./apps/block_scout_web/
@@ -29,7 +38,6 @@ ADD apps/explorer/mix.exs ./apps/explorer/
 ADD apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
 ADD apps/indexer/mix.exs ./apps/indexer/
 
-ENV MIX_HOME=/opt/mix
 RUN mix local.hex --force
 RUN HEX_HTTP_TIMEOUT=3600 mix do deps.get, local.rebar --force, deps.compile
 
@@ -54,12 +62,7 @@ RUN mkdir -p /opt/release \
   && mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
 ##############################################################
-FROM hexpm/elixir:1.14.5-erlang-25.3.2.4-alpine-3.18.2
-
-ARG RELEASE_VERSION
-ENV RELEASE_VERSION=${RELEASE_VERSION}
-ARG BLOCKSCOUT_VERSION
-ENV BLOCKSCOUT_VERSION=${BLOCKSCOUT_VERSION}
+FROM base
 
 RUN apk --no-cache --update add jq curl
 
@@ -67,4 +70,4 @@ WORKDIR /app
 
 COPY --from=builder /opt/release/blockscout .
 COPY --from=builder /app/config/config_helper.exs ./config/config_helper.exs
-COPY --from=builder /app/config/config_helper.exs /app/releases/5.2.2/config_helper.exs
+COPY --from=builder /app/config/config_helper.exs /app/releases/${RELEASE_VERSION}/config_helper.exs
