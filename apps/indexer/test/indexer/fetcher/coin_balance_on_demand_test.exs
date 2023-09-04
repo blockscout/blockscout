@@ -101,6 +101,8 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
       :ok
     end
 
+    # celo - deactivating event broadcast
+    @tag :skip
     test "a stale address broadcasts the new address" do
       address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 100)
       address_hash = address.hash
@@ -142,6 +144,8 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
       )
     end
 
+    # celo - deactivating event broadcast
+    @tag :skip
     test "a pending address broadcasts the new address and the new coin balance" do
       address = insert(:address, fetched_coin_balance: 0, fetched_coin_balance_block_number: 101)
       insert(:unfetched_balance, address_hash: address.hash, block_number: 102)

@@ -133,7 +133,10 @@ defmodule Explorer.Chain.Import do
          {:ok, data} <- insert_runner_to_changes_list(runner_to_changes_list, options) do
       emit_ingestion_metrics(data)
       Notify.async(data[:transactions])
-      Publisher.broadcast(data, Map.get(options, :broadcast, false))
+
+      # elo - deactivating real time notifications of indexed + imported data
+      Publisher.broadcast(data, false)
+
       {:ok, data}
     end
   end

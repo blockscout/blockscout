@@ -472,18 +472,24 @@ defmodule Explorer.Chain.ImportTest do
       assert changeset_errors(changeset)[:call_type] == ["can't be blank"]
     end
 
+    # celo - deactivating event broadcast
+    @tag :skip
     test "publishes addresses with updated fetched_coin_balance data to subscribers on insert" do
       Subscriber.to(:addresses, :realtime)
       Import.all(@import_data)
       assert_receive {:chain_event, :addresses, :realtime, [%Address{}, %Address{}, %Address{}]}
     end
 
+    # celo - deactivating event broadcast
+    @tag :skip
     test "publishes block data to subscribers on insert" do
       Subscriber.to(:blocks, :realtime)
       Import.all(@import_data)
       assert_receive {:chain_event, :blocks, :realtime, [%Block{}]}
     end
 
+    # celo - deactivating event broadcast
+    @tag :skip
     test "publishes internal_transaction data to subscribers on insert" do
       Subscriber.to(:internal_transactions, :realtime)
       Import.all(@import_data)
@@ -491,12 +497,16 @@ defmodule Explorer.Chain.ImportTest do
       assert_receive {:chain_event, :internal_transactions, :realtime, [%{transaction_hash: _, index: _}]}
     end
 
+    # celo - deactivating event broadcast
+    @tag :skip
     test "publishes transactions data to subscribers on insert" do
       Subscriber.to(:transactions, :realtime)
       Import.all(@import_data)
       assert_receive {:chain_event, :transactions, :realtime, [%Transaction{}]}
     end
 
+    # celo - deactivating event broadcast
+    @tag :skip
     test "publishes token_transfers data to subscribers on insert" do
       Subscriber.to(:token_transfers, :realtime)
 

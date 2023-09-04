@@ -125,6 +125,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
              ] = response["result"]
     end
 
+    # celo - deactivating event broadcast
+    @tag :skip
     test "with a stale balance", %{conn: conn, params: params} do
       now = Timex.now()
 
@@ -225,11 +227,12 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       {:ok, expected_wei} = Wei.cast(2)
 
-      assert_receive({:chain_event, :addresses, :on_demand, [received_address]}, 1000)
+      # celo - deactivating event broadcast
+      # assert_receive({:chain_event, :addresses, :on_demand, [received_address]}, 1000)
 
-      assert received_address.hash == address.hash
-      assert received_address.fetched_coin_balance == expected_wei
-      assert received_address.fetched_coin_balance_block_number == 101
+      #      assert received_address.hash == address.hash
+      #      assert received_address.fetched_coin_balance == expected_wei
+      #      assert received_address.fetched_coin_balance_block_number == 101
     end
   end
 
