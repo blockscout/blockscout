@@ -61,5 +61,5 @@ RUN apk --no-cache --update add jq
 WORKDIR /app
 
 RUN cp -r /opt/release/blockscout/* .
-RUN mkdir -p /app/releases/${RELEASE_VERSION}
-RUN cp -r /app/config/config_helper.exs /app/releases/${RELEASE_VERSION}/config_helper.exs
+RUN mkdir -p /app/releases/5.2.2
+RUN cp -r /app/config/config_helper.exs /app/releases/5.2.2/config_helper.exs
