@@ -16,6 +16,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Indexer.Fetcher.TokenInstance.Retry, as: TokenInstanceRetry
   alias Indexer.Fetcher.TokenInstance.Sanitize, as: TokenInstanceSanitize
+  alias Indexer.Fetcher.TokenInstance.LegacySanitize, as: TokenInstanceLegacySanitize
 
   alias Indexer.Fetcher.{
     BlockReward,
@@ -115,6 +116,7 @@ defmodule Indexer.Supervisor do
         {TokenInstanceRealtime.Supervisor, [[memory_monitor: memory_monitor]]},
         {TokenInstanceRetry.Supervisor, [[memory_monitor: memory_monitor]]},
         {TokenInstanceSanitize.Supervisor, [[memory_monitor: memory_monitor]]},
+        {TokenInstanceLegacySanitize.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(TransactionAction.Supervisor, [[memory_monitor: memory_monitor]]),
         {ContractCode.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},

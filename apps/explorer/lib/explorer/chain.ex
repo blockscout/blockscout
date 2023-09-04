@@ -4391,12 +4391,12 @@ defmodule Explorer.Chain do
     |> Repo.stream_reduce(initial, reducer)
   end
 
-  @spec stream_unfetched_token_instances(
+  @spec stream_not_inserted_token_instances(
           initial :: accumulator,
           reducer :: (entry :: map(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_unfetched_token_instances(initial, reducer) when is_function(reducer, 2) do
+  def stream_not_inserted_token_instances(initial, reducer) when is_function(reducer, 2) do
     nft_tokens =
       from(
         token in Token,
@@ -4436,6 +4436,21 @@ defmodule Explorer.Chain do
       )
 
     Repo.stream_reduce(distinct_query, initial, reducer)
+  end
+
+  @spec stream_token_instances_with_unfetched_metadata(
+          initial :: accumulator,
+          reducer :: (entry :: map(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_token_instances_with_unfetched_metadata(initial, reducer) when is_function(reducer, 2) do
+    Instance
+    |> where([instance], is_nil(instance.error) and is_nil(instance.metadata))
+    |> select([instance], %{
+      contract_address_hash: instance.token_contract_address_hash,
+      token_id: instance.token_id
+    })
+    |> Repo.stream_reduce(initial, reducer)
   end
 
   @spec stream_token_instances_with_error(
@@ -4696,15 +4711,34 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-    Expects map of change params. Inserts using on_conflict: :replace_all
+    Expects map of change params. Inserts using on_conflict: `token_instance_metadata_on_conflict/0`
+    !!! Supposed to be used ONLY for import of `metadata` or `error`.
   """
   @spec upsert_token_instance(map()) :: {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
   def upsert_token_instance(params) do
     changeset = Instance.changeset(%Instance{}, params)
 
     Repo.insert(changeset,
-      on_conflict: :replace_all,
+      on_conflict: token_instance_metadata_on_conflict(),
       conflict_target: [:token_id, :token_contract_address_hash]
+    )
+  end
+
+  defp token_instance_metadata_on_conflict do
+    from(
+      token_instance in Instance,
+      update: [
+        set: [
+          metadata: fragment("EXCLUDED.metadata"),
+          error: fragment("EXCLUDED.error"),
+          owner_updated_at_block: fragment("?", token_instance.owner_updated_at_block),
+          owner_updated_at_log_index: fragment("?", token_instance.owner_updated_at_log_index),
+          owner_address_hash: fragment("?", token_instance.owner_address_hash),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token_instance.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_instance.updated_at)
+        ]
+      ],
+      where: fragment("? IS NULL", token_instance.metadata)
     )
   end
 
@@ -4807,6 +4841,17 @@ defmodule Explorer.Chain do
     query = Instance.token_instance_query(token_id, token_contract_address)
 
     select_repo(options).exists?(query)
+  end
+
+  @spec token_instance_with_unfetched_metadata?(non_neg_integer, Hash.Address.t(), [api?]) :: boolean
+  def token_instance_with_unfetched_metadata?(token_id, token_contract_address, options \\ []) do
+    Instance
+    |> where([instance], is_nil(instance.error) and is_nil(instance.metadata))
+    |> where(
+      [instance],
+      instance.token_id == ^token_id and instance.token_contract_address_hash == ^token_contract_address
+    )
+    |> select_repo(options).exists?()
   end
 
   defp fetch_coin_balances(address, paging_options) do
