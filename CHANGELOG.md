@@ -10,6 +10,7 @@
 - [#8210](https://github.com/blockscout/blockscout/pull/8210) - Drop address foreign keys
 - [#8292](https://github.com/blockscout/blockscout/pull/8292) - Add ETHEREUM_JSONRPC_WAIT_PER_TIMEOUT env var
 - [#8269](https://github.com/blockscout/blockscout/pull/8269) - Don't push back to sequence on catchup exception
+- [#8362](https://github.com/blockscout/blockscout/pull/8362) - Drop current token balances tokens foreign key
 
 ### Fixes
 
