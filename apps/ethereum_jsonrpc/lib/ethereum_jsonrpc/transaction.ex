@@ -180,7 +180,7 @@ defmodule EthereumJSONRPC.Transaction do
   def elixir_to_params(%{"type" => type} = transaction) when type in [1, "0x1"],
     do: TransactionParsing.parse_access_list_transaction(transaction)
 
-  def elixir_to_params(%{"type" => type} = transaction) when type in [2, "0x2", "0x02"],
+  def elixir_to_params(%{"type" => type} = transaction) when type in [2, "0x2", "0x02", 123, "0x7b"],
     do: TransactionParsing.parse_dynamic_fee_transaction(transaction)
 
   def elixir_to_params(%{"type" => type} = transaction) when type in [124, "0x7c"],

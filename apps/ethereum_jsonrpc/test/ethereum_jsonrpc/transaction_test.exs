@@ -204,5 +204,43 @@ defmodule EthereumJSONRPC.TransactionTest do
       assert result.max_fee_per_gas == 7_777_777
       assert result.max_priority_fee_per_gas == 666_666
     end
+
+    # https://github.com/celo-org/data-services/issues/724
+    test "handles 0x7b transaction type" do
+      transaction_json = ~S"""
+      {
+        "blockHash": "0x1f07e34685a3b970ef9c71272f3945418794b991adedbc962de39332d229ef97",
+        "blockNumber": "0x1245938",
+        "from": "0x0cc59ed03b3e763c02d54d695ffe353055f1502d",
+        "gas": "0x1688c",
+        "gasPrice": 77777,
+        "maxFeePerGas": "0x362b7669",
+        "maxPriorityFeePerGas": "0x313ec8bd",
+        "feeCurrency": "0x62492a644a588fd904270bed06ad52b9abfea1ae",
+        "gatewayFeeRecipient": null,
+        "gatewayFee": "0x0",
+        "hash": "0x2e003d340a2a83c7daf11d951fa525d6e76b0eac5b53c787be1f86d18443ba36",
+        "input": "0x",
+        "nonce": "0x505",
+        "to": "0x325f890e573880311cfbadfe8ec3d51ffdd97a76",
+        "transactionIndex": "0x0",
+        "value": "0x38d7ea4c68000",
+        "type": "0x7b",
+        "accessList": [],
+        "chainId": "0xf370",
+        "v": "0x1",
+        "r": "0x22b6471286077b287235600964542af771b00cbc1829633207d6d316ebfb391e",
+        "s": "0x3310de0fe2cc0ee3f516e075f077f657f87f89aeb23321ed774f8754b0f33554",
+        "ethCompatible": false
+      }
+      """
+
+      result =
+        transaction_json
+        |> Jason.decode!()
+        |> Transaction.elixir_to_params()
+
+      assert result.gas_price == 77777
+    end
   end
 end
