@@ -13,11 +13,14 @@
 
 ### Fixes
 
+- [#8354](https://github.com/blockscout/blockscout/pull/8354) - Hotfix for proper addresses' tokens displaying
+- [#8350](https://github.com/blockscout/blockscout/pull/8350) - Add Base Mainnet support for tx actions
 - [#8282](https://github.com/blockscout/blockscout/pull/8282) - NFT fetcher improvements
 - [#8287](https://github.com/blockscout/blockscout/pull/8287) - Add separate hackney pool for TokenInstance fetchers
 - [#8293](https://github.com/blockscout/blockscout/pull/8293) - Add ETHEREUM_JSONRPC_TRACE_URL for Geth in docker-compose.yml
 - [#8240](https://github.com/blockscout/blockscout/pull/8240) - Refactor and fix paging params in API v2
 - [#8242](https://github.com/blockscout/blockscout/pull/8242) - Fixing visualizer service CORS issue when running docker-compose
+- [#8355](https://github.com/blockscout/blockscout/pull/8355) - Fix current token balances redefining
 
 ### Chore
 
