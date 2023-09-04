@@ -1,21 +1,13 @@
-FROM bitwalker/alpine-elixir-phoenix:1.13
+FROM hexpm/elixir:1.14.5-erlang-25.3.2.4-alpine-3.18.2 AS builder
 
 WORKDIR /app
 
-RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file qemu-x86_64
+RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file gcompat
 
-ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc \
-    GLIBC_VERSION=2.30-r0 \
-    PORT=4000 \
+ENV PORT=4000 \
     MIX_ENV="prod"
 
-RUN set -ex && \
-    apk --update add libstdc++ curl ca-certificates && \
-    for pkg in glibc-${GLIBC_VERSION} glibc-bin-${GLIBC_VERSION}; \
-        do curl -sSL ${GLIBC_REPO}/releases/download/${GLIBC_VERSION}/${pkg}.apk -o /tmp/${pkg}.apk; done && \
-    apk add --allow-untrusted /tmp/*.apk && \
-    rm -v /tmp/*.apk && \
-    /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib
+RUN apk --update add libstdc++ curl ca-certificates gcompat
 
 ARG CACHE_EXCHANGE_RATES_PERIOD
 ARG API_V1_READ_METHODS_DISABLED
@@ -29,10 +21,6 @@ ARG MIXPANEL_TOKEN
 ARG MIXPANEL_URL
 ARG AMPLITUDE_API_KEY
 ARG AMPLITUDE_URL
-ARG RELEASE_VERSION
-ENV RELEASE_VERSION=${RELEASE_VERSION}
-ARG BLOCKSCOUT_VERSION
-ENV BLOCKSCOUT_VERSION=${BLOCKSCOUT_VERSION}
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
@@ -41,22 +29,39 @@ ADD apps/explorer/mix.exs ./apps/explorer/
 ADD apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
 ADD apps/indexer/mix.exs ./apps/indexer/
 
+ENV MIX_HOME=/opt/mix
+RUN mix local.hex --force
 RUN HEX_HTTP_TIMEOUT=3600 mix do deps.get, local.rebar --force, deps.compile
 
-ADD . .
-
-COPY . .
+ADD apps ./apps
+ADD config ./config
+ADD rel ./rel
+ADD *.exs ./
 
 # Run forderground build and phoenix digest
 RUN mix compile
 
+RUN apk update && \
+    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
+
+RUN apk add --update git make 
+
+RUN export "CFLAGS=-I/usr/local/include -L/usr/local/lib" && cd deps/ex_secp256k1 && mix deps.get && mix compile
 RUN mix phx.digest
 
 RUN mkdir -p /opt/release \
   && mix release blockscout \
   && mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
-RUN apk --no-cache --update add jq
+##############################################################
+FROM hexpm/elixir:1.14.5-erlang-25.3.2.4-alpine-3.18.2
+
+ARG RELEASE_VERSION
+ENV RELEASE_VERSION=${RELEASE_VERSION}
+ARG BLOCKSCOUT_VERSION
+ENV BLOCKSCOUT_VERSION=${BLOCKSCOUT_VERSION}
+
+RUN apk --no-cache --update add jq curl
 
 WORKDIR /app
 
