@@ -29,7 +29,6 @@ defmodule BlockScoutWeb.Endpoint do
       browserconfig.xml
       mstile-150x150.png
       safari-pinned-tab.svg
-      robots.txt
     ),
     only_matching: ~w(manifest)
   )

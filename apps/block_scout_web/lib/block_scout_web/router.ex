@@ -47,6 +47,8 @@ defmodule BlockScoutWeb.Router do
   scope "/", BlockScoutWeb do
     pipe_through(:browser)
 
+    get("/robots.txt", RobotsController, :robots)
+    get("/sitemap.xml", RobotsController, :sitemap)
     get("/api-docs", APIDocsController, :index)
     get("/eth-rpc-api-docs", APIDocsController, :eth_rpc)
   end
