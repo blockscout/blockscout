@@ -540,6 +540,19 @@ config :indexer, Indexer.Fetcher.CoinBalance,
   batch_size: coin_balance_fetcher_batch_size,
   concurrency: coin_balance_fetcher_concurrency
 
+# Configure open telemetry if endpoint is set
+if System.get_env("OTLP_ENDPOINT", nil) do
+  config :opentelemetry_exporter,
+    otlp_protocol: :http_protobuf,
+    otlp_endpoint: System.fetch_env!("OTLP_ENDPOINT")
+
+  config :opentelemetry, :resource,
+    service: [
+      name: System.get_env("HOSTNAME", "blockscout_web_dev"),
+      namespace: "blockscout"
+    ]
+end
+
 if File.exists?("#{Path.absname(__DIR__)}/runtime/#{config_env()}.exs") do
   Code.require_file("#{config_env()}.exs", "#{Path.absname(__DIR__)}/runtime")
 end

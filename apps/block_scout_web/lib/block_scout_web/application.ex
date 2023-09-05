@@ -7,7 +7,6 @@ defmodule BlockScoutWeb.Application do
 
   require Logger
 
-  alias BlockScoutWeb.API.APILogger
   alias BlockScoutWeb.{CampaignBannerCache, LoggerBackend}
   alias BlockScoutWeb.Celo.MetricsCron
   alias BlockScoutWeb.Counters.{BlocksIndexedCounter, InternalTransactionsIndexedCounter}
@@ -22,17 +21,7 @@ defmodule BlockScoutWeb.Application do
 
     Logger.add_backend(LoggerBackend, level: :error)
 
-    APILogger.message(
-      "Current global API rate limit #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:global_limit])} reqs/sec"
-    )
-
-    APILogger.message(
-      "Current API rate limit by key #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_key])} reqs/sec"
-    )
-
-    APILogger.message(
-      "Current API rate limit by IP #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_ip])} reqs/sec"
-    )
+    setup_opentelemetry()
 
     # Define workers and child supervisors to be supervised
     children =
@@ -77,4 +66,17 @@ defmodule BlockScoutWeb.Application do
   end
 
   def cluster_process(acc, _environment), do: acc
+
+  def setup_opentelemetry do
+    # celo - initalize otel if an endpoint is configured
+    if System.get_env("OTLP_ENDPOINT", nil) do
+      :ok = :opentelemetry_cowboy.setup()
+      :ok = OpentelemetryPhoenix.setup(adapter: :cowboy2)
+
+      :ok =
+        Explorer.Repo.config()
+        |> Keyword.fetch!(:telemetry_prefix)
+        |> OpentelemetryEcto.setup()
+    end
+  end
 end

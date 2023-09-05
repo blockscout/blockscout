@@ -23,6 +23,8 @@ defmodule Explorer.Repo.RepoHelper do
         )
       end
 
+      @chunk_size 500
+
       @doc """
       Chunks elements into multiple `insert_all`'s to avoid DB driver param limits.
 
@@ -31,8 +33,10 @@ defmodule Explorer.Repo.RepoHelper do
       def safe_insert_all(kind, elements, opts) do
         returning = opts[:returning]
 
+        chunk_size = Keyword.get(opts, :chunk_size, @chunk_size)
+
         elements
-        |> Enum.chunk_every(500)
+        |> Enum.chunk_every(chunk_size)
         |> Enum.reduce({0, []}, fn chunk, {total_count, acc} ->
           {count, inserted} =
             try do

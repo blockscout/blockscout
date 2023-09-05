@@ -4,17 +4,20 @@ import Config
 config :explorer, Explorer.Repo.Local,
   prepare: :unnamed,
   timeout: :timer.seconds(60),
-  migration_lock: nil
+  migration_lock: nil,
+  telemetry_prefix: [:explorer, :repo]
 
 # Configures API the database
 config :explorer, Explorer.Repo.Replica1,
   prepare: :unnamed,
-  timeout: :timer.seconds(60)
+  timeout: :timer.seconds(60),
+  telemetry_prefix: [:explorer, :repo]
 
 # Configures Account database
 config :explorer, Explorer.Repo.Account,
   prepare: :unnamed,
-  timeout: :timer.seconds(60)
+  timeout: :timer.seconds(60),
+  telemetry_prefix: [:explorer, :repo]
 
 config :explorer, Explorer.Tracer, env: "production", disabled?: true
 

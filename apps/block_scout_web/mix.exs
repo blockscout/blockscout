@@ -131,7 +131,15 @@ defmodule BlockScoutWeb.Mixfile do
       {:ueberauth_auth0, "~> 2.0"},
       {:bureaucrat, "~> 0.2.9", only: :test},
       # Log json format
-      {:logger_json, "~> 3.2"}
+      {:logger_json, "~> 3.2"},
+      # celo - otel
+      {:opentelemetry_exporter, "~> 1.0"},
+      {:opentelemetry, "~> 1.0"},
+      {:opentelemetry_api, "~> 1.0"},
+      {:opentelemetry_ecto, "~> 1.0"},
+      {:opentelemetry_liveview, "~> 1.0.0-rc.4"},
+      {:opentelemetry_phoenix, "~> 1.0"},
+      {:opentelemetry_cowboy, "~> 0.2"}
     ]
   end
 
