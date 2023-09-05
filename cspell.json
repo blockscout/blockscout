@@ -523,7 +523,9 @@
         "relpages",
         "regclass",
         "secp",
-        "qwertyuioiuytrewertyuioiuytrertyuio"
+        "qwertyuioiuytrewertyuioiuytrertyuio",
+        "urlset",
+        "lastmod"
     ],
     "enableFiletypes": [
         "dotenv",
