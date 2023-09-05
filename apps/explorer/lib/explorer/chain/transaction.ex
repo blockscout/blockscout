@@ -221,7 +221,7 @@ defmodule Explorer.Chain.Transaction do
   @optimism_optional_attrs ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
   @suave_optional_attrs ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
 
-  @required_attrs ~w(from_address_hash gas hash input nonce r s v value)a
+  @required_attrs ~w(from_address_hash gas hash input nonce value)a
 
   @empty_attrs ~w()a
 
