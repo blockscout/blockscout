@@ -125,6 +125,7 @@ defmodule Indexer.Fetcher.CoinBalance do
     |> Enum.map(fn %{address_hash: address_hash, block_number: block_number, value: value} ->
       %{hash: address_hash, fetched_coin_balance_block_number: block_number, fetched_coin_balance: value}
     end)
+    |> Enum.sort_by(& &1.hash)
   end
 
   def import_fetched_balances(%FetchedBalances{params_list: params_list}, broadcast_type \\ false) do

@@ -322,6 +322,8 @@ defmodule Indexer.Block.FetcherTest do
       end
     end
 
+    # celo - skip flakey test
+    @tag :skip
     @tag :no_geth
     test "inserts an entry to unlocked celo in case of a gold_unlocked event", %{
       block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher

@@ -129,7 +129,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
         where: block.hash in ^hashes,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: block.hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     Repo.update_all(

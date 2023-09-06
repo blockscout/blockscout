@@ -239,7 +239,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         select: b.hash,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: b.hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     res = repo.all(query)
@@ -256,7 +256,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         select: pending_ops.block_hash,
         # Enforce PendingBlockOperation ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: pending_ops.block_hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     res = repo.all(query)
@@ -272,7 +272,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         select: map(t, [:hash, :block_hash, :block_number, :cumulative_gas_used]),
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: t.hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     {:ok, repo.all(query)}
