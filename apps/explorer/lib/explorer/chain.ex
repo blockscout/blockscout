@@ -6472,16 +6472,4 @@ defmodule Explorer.Chain do
 
     Repo.all(query)
   end
-
-  def get_table_rows_total_count(module, options) do
-    table_name = module.__schema__(:source)
-
-    count = CacheHelper.estimated_count_from(table_name, options)
-
-    if is_nil(count) or count < 0 do
-      select_repo(options).aggregate(module, :count, timeout: :infinity)
-    else
-      count
-    end
-  end
 end
