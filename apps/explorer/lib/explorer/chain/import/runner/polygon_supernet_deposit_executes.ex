@@ -25,6 +25,7 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernetDepositExecutes do
   def option_key, do: :polygon_supernet_deposit_executes
 
   @impl Import.Runner
+  @spec imported_table_row() :: %{:value_description => binary(), :value_type => binary()}
   def imported_table_row do
     %{
       value_type: "[#{ecto_schema_module()}.t()]",
@@ -33,6 +34,7 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernetDepositExecutes do
   end
 
   @impl Import.Runner
+  @spec run(Multi.t(), list(), map()) :: Multi.t()
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
     insert_options =
       options

@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.API.V2.PolygonSupernetController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  @spec deposits(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def deposits(conn, params) do
     {deposits, next_page} =
       params
@@ -30,6 +31,7 @@ defmodule BlockScoutWeb.API.V2.PolygonSupernetController do
     })
   end
 
+  @spec deposits_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def deposits_count(conn, _params) do
     count = Chain.polygon_supernet_deposits_count(api?: true)
 
@@ -38,6 +40,7 @@ defmodule BlockScoutWeb.API.V2.PolygonSupernetController do
     |> render(:polygon_supernet_items_count, %{count: count})
   end
 
+  @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def withdrawals(conn, params) do
     {withdrawals, next_page} =
       params
@@ -56,6 +59,7 @@ defmodule BlockScoutWeb.API.V2.PolygonSupernetController do
     })
   end
 
+  @spec withdrawals_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def withdrawals_count(conn, _params) do
     count = Chain.polygon_supernet_withdrawals_count(api?: true)
 

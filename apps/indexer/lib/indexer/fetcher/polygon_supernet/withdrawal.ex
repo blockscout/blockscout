@@ -125,10 +125,12 @@ defmodule Indexer.Fetcher.PolygonSupernet.Withdrawal do
     {:noreply, state}
   end
 
+  @spec remove(non_neg_integer()) :: no_return()
   def remove(starting_block) do
     Repo.delete_all(from(w in PolygonSupernetWithdrawal, where: w.l2_block_number >= ^starting_block))
   end
 
+  @spec event_to_withdrawal(binary(), map(), binary(), binary()) :: map()
   def event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number) do
     [data_bytes] = decode_data(data, [:bytes])
 
@@ -153,6 +155,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.Withdrawal do
     }
   end
 
+  @spec find_and_save_entities(boolean(), binary(), non_neg_integer(), non_neg_integer(), list()) :: non_neg_integer()
   def find_and_save_entities(
         scan_db,
         state_sender,
@@ -205,6 +208,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.Withdrawal do
     Enum.count(withdrawals)
   end
 
+  @spec l2_state_synced_event_signature() :: binary()
   def l2_state_synced_event_signature do
     @l2_state_synced_event
   end

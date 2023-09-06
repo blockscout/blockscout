@@ -120,10 +120,12 @@ defmodule Indexer.Fetcher.PolygonSupernet.DepositExecute do
     {:noreply, state}
   end
 
+  @spec remove(non_neg_integer()) :: no_return()
   def remove(starting_block) do
     Repo.delete_all(from(de in PolygonSupernetDepositExecute, where: de.l2_block_number >= ^starting_block))
   end
 
+  @spec event_to_deposit_execute(binary(), binary(), binary(), binary()) :: map()
   def event_to_deposit_execute(second_topic, third_topic, l2_transaction_hash, l2_block_number) do
     %{
       msg_id: quantity_to_integer(second_topic),
@@ -133,6 +135,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.DepositExecute do
     }
   end
 
+  @spec find_and_save_entities(boolean(), binary(), non_neg_integer(), non_neg_integer(), list()) :: non_neg_integer()
   def find_and_save_entities(
         scan_db,
         state_receiver,
@@ -185,6 +188,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.DepositExecute do
     Enum.count(executes)
   end
 
+  @spec state_sync_result_event_signature() :: binary()
   def state_sync_result_event_signature do
     @state_sync_result_event
   end

@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   alias Explorer.Chain.Events.Publisher
   alias Explorer.{Chain, Repo}
   alias Indexer.{BoundQueue, Helper}
-  alias Indexer.Fetcher.PolygonSupernet.{Deposit, WithdrawalExit}
+  alias Indexer.Fetcher.PolygonSupernet.{Deposit, DepositExecute, Withdrawal, WithdrawalExit}
 
   @fetcher_name :polygon_supernet
   @block_check_interval_range_size 100
@@ -68,6 +68,15 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     end
   end
 
+  @spec init_l1(
+          Explorer.Chain.PolygonSupernetDeposit | Explorer.Chain.PolygonSupernetWithdrawalExit,
+          list(),
+          pid(),
+          binary(),
+          binary(),
+          binary(),
+          binary()
+        ) :: {:ok, map()} | :ignore
   def init_l1(table, env, pid, contract_address, contract_name, table_name, entity_name)
       when table in [Explorer.Chain.PolygonSupernetDeposit, Explorer.Chain.PolygonSupernetWithdrawalExit] do
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
@@ -143,6 +152,16 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     end
   end
 
+  @spec init_l2(
+          Explorer.Chain.PolygonSupernetDepositExecute | Explorer.Chain.PolygonSupernetWithdrawal,
+          list(),
+          pid(),
+          binary(),
+          binary(),
+          binary(),
+          binary(),
+          list()
+        ) :: {:ok, map()} | :ignore
   def init_l2(table, env, pid, contract_address, contract_name, table_name, entity_name, json_rpc_named_arguments)
       when table in [Explorer.Chain.PolygonSupernetDepositExecute, Explorer.Chain.PolygonSupernetWithdrawal] do
     with {:start_block_l2_undefined, false} <- {:start_block_l2_undefined, is_nil(env[:start_block_l2])},
@@ -222,6 +241,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     {:noreply, %{state | prev_latest: latest}}
   end
 
+  @spec handle_continue(map(), binary(), Deposit | WithdrawalExit, atom()) :: {:noreply, map()}
   def handle_continue(
         %{
           contract_address: contract_address,
@@ -303,6 +323,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
   end
 
+  @spec fill_block_range(integer(), integer(), DepositExecute | Withdrawal, binary(), list(), boolean()) :: integer()
   def fill_block_range(
         l2_block_start,
         l2_block_end,
@@ -312,8 +333,8 @@ defmodule Indexer.Fetcher.PolygonSupernet do
         scan_db
       )
       when calling_module in [
-             Indexer.Fetcher.PolygonSupernet.DepositExecute,
-             Indexer.Fetcher.PolygonSupernet.Withdrawal
+             DepositExecute,
+             Withdrawal
            ] do
     eth_get_logs_range_size =
       Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonSupernet][:polygon_supernet_eth_get_logs_range_size]
@@ -368,6 +389,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     end)
   end
 
+  @spec fill_block_range(integer(), integer(), {module(), module()}, binary(), list()) :: integer()
   def fill_block_range(start_block, end_block, {module, table}, contract_address, json_rpc_named_arguments) do
     fill_block_range(start_block, end_block, module, contract_address, json_rpc_named_arguments, true)
 
@@ -392,6 +414,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     )
   end
 
+  @spec fill_msg_id_gaps(integer(), module(), module(), binary(), list(), boolean()) :: no_return()
   def fill_msg_id_gaps(
         start_block_l2,
         table,
@@ -539,6 +562,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     end
   end
 
+  @spec get_block_number_by_tag(binary(), list(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
   def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ 3) do
     error_message = &"Cannot fetch #{tag} block number. Error: #{inspect(&1)}"
     repeated_call(&fetch_block_number_by_tag/2, [tag, json_rpc_named_arguments], error_message, retries)
@@ -582,6 +606,14 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     end
   end
 
+  @spec get_logs(
+          non_neg_integer() | binary(),
+          non_neg_integer() | binary(),
+          binary(),
+          binary(),
+          list(),
+          non_neg_integer()
+        ) :: {:ok, list()} | {:error, term()}
   def get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments, retries) do
     processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
     processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
@@ -633,6 +665,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     |> Kernel.||({0, nil})
   end
 
+  @spec get_last_l2_item(module()) :: {non_neg_integer(), binary() | nil}
   def get_last_l2_item(table) do
     query =
       from(item in table,
@@ -743,6 +776,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     end
   end
 
+  @spec repeated_request(list(), any(), list(), non_neg_integer()) :: {:ok, any()} | {:error, atom()}
   def repeated_request(req, error_message, json_rpc_named_arguments, retries) do
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
@@ -760,6 +794,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     end
   end
 
+  @spec reorg_block_push(atom(), non_neg_integer()) :: no_return()
   def reorg_block_push(fetcher_name, block_number) do
     table_name = reorg_table_name(fetcher_name)
     {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(table_name), block_number)

@@ -43,6 +43,7 @@ defmodule Explorer.Chain.PolygonSupernetDeposit do
     timestamps()
   end
 
+  @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Schema.t()
   def changeset(%__MODULE__{} = module, attrs \\ %{}) do
     module
     |> cast(attrs, @allowed_attrs)

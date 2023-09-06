@@ -5,6 +5,7 @@ defmodule Indexer.Helper do
 
   alias Explorer.Chain.Hash
 
+  @spec address_hash_to_string(binary(), boolean()) :: binary()
   def address_hash_to_string(hash, downcase \\ false)
 
   def address_hash_to_string(hash, downcase) when is_binary(hash) do
@@ -23,6 +24,7 @@ defmodule Indexer.Helper do
     end
   end
 
+  @spec is_address_correct?(binary()) :: boolean()
   def is_address_correct?(address) when is_binary(address) do
     String.match?(address, ~r/^0x[[:xdigit:]]{40}$/i)
   end

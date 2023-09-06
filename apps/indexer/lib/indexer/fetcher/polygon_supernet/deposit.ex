@@ -77,6 +77,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.Deposit do
     {:noreply, state}
   end
 
+  @spec prepare_events(list(), list()) :: list()
   def prepare_events(events, json_rpc_named_arguments) do
     Enum.map(events, fn event ->
       [data_bytes] = decode_data(event["data"], [:bytes])

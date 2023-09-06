@@ -5,22 +5,23 @@ defmodule Indexer.Transform.PolygonSupernetWithdrawals do
 
   require Logger
 
-  alias Indexer.Fetcher.PolygonSupernetWithdrawal
+  alias Indexer.Fetcher.PolygonSupernet.Withdrawal
   alias Indexer.Helper
 
   @doc """
   Returns a list of withdrawals given a list of logs.
   """
+  @spec parse(list()) :: list()
   def parse(logs) do
     prev_metadata = Logger.metadata()
     Logger.metadata(fetcher: :polygon_supernet_withdrawals_realtime)
 
     items =
-      with false <- is_nil(Application.get_env(:indexer, PolygonSupernetWithdrawal)[:start_block_l2]),
-           state_sender = Application.get_env(:indexer, PolygonSupernetWithdrawal)[:state_sender],
+      with false <- is_nil(Application.get_env(:indexer, Withdrawal)[:start_block_l2]),
+           state_sender = Application.get_env(:indexer, Withdrawal)[:state_sender],
            true <- Helper.is_address_correct?(state_sender) do
         state_sender = String.downcase(state_sender)
-        l2_state_synced_event_signature = PolygonSupernetWithdrawal.l2_state_synced_event_signature()
+        l2_state_synced_event_signature = Withdrawal.l2_state_synced_event_signature()
 
         logs
         |> Enum.filter(fn log ->
@@ -30,7 +31,7 @@ defmodule Indexer.Transform.PolygonSupernetWithdrawals do
         |> Enum.map(fn log ->
           Logger.info("Withdrawal message found, id: #{log.second_topic}.")
 
-          PolygonSupernetWithdrawal.event_to_withdrawal(
+          Withdrawal.event_to_withdrawal(
             log.second_topic,
             log.data,
             log.transaction_hash,

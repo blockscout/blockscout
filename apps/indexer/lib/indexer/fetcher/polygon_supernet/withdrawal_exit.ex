@@ -70,6 +70,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.WithdrawalExit do
     {:noreply, state}
   end
 
+  @spec prepare_events(list(), list()) :: list()
   def prepare_events(events, _) do
     Enum.map(events, fn event ->
       %{

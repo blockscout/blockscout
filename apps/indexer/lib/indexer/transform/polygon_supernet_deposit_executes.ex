@@ -11,6 +11,7 @@ defmodule Indexer.Transform.PolygonSupernetDepositExecutes do
   @doc """
   Returns a list of deposit executes given a list of logs.
   """
+  @spec parse(list()) :: list()
   def parse(logs) do
     prev_metadata = Logger.metadata()
     Logger.metadata(fetcher: :polygon_supernet_deposit_executes_realtime)

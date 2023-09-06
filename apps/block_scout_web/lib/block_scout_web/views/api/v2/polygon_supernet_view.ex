@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.V2.PolygonSupernetView do
   use BlockScoutWeb, :view
 
+  @spec render(String.t(), map()) :: map()
   def render("polygon_supernet_deposits.json", %{
         deposits: deposits,
         next_page_params: next_page_params
