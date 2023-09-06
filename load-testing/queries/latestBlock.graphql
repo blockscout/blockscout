@@ -1,1 +1,0 @@
-query LATEST_BLOCK {latestBlock}

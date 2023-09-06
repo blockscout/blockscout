@@ -1,1 +1,0 @@
-query SEARCH_BLOCK($number: Number!) {block(number: $number) { hash, gasUsed, number}}

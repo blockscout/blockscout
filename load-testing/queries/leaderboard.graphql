@@ -1,1 +1,0 @@
-query LEADERBOARD {leaderboard{address, identity, points}}
