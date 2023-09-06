@@ -104,17 +104,13 @@ defmodule BlockScoutWeb.API.V2.Helper do
   def is_verified(%Address{smart_contract: %NotLoaded{}}), do: nil
   def is_verified(%Address{smart_contract: _}), do: true
 
-  def market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value})
+  def market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value, market_cap_usd: market_cap_usd})
       when is_nil(available_supply) or is_nil(usd_value) do
-    Decimal.new(0)
+    max(Decimal.new(0), market_cap_usd)
   end
 
   def market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value}) do
     Decimal.mult(available_supply, usd_value)
-  end
-
-  def market_cap(:standard, exchange_rate) do
-    exchange_rate.market_cap_usd
   end
 
   def market_cap(module, exchange_rate) do
