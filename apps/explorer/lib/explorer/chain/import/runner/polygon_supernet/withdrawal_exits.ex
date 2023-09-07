@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.Runner.PolygonSupernetWithdrawalExits do
+defmodule Explorer.Chain.Import.Runner.PolygonSupernet.WithdrawalExits do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.PolygonSupernetWithdrawalExit.t/0`.
   """

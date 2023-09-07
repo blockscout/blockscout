@@ -1,4 +1,4 @@
-defmodule Indexer.Transform.PolygonSupernetDepositExecutes do
+defmodule Indexer.Transform.PolygonSupernet.DepositExecutes do
   @moduledoc """
   Helper functions for transforming data for Polygon Supernet deposit executes.
   """

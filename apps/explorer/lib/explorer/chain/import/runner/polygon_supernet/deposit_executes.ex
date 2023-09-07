@@ -1,6 +1,6 @@
-defmodule Explorer.Chain.Import.Runner.PolygonSupernetWithdrawals do
+defmodule Explorer.Chain.Import.Runner.PolygonSupernet.DepositExecutes do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.PolygonSupernetWithdrawal.t/0`.
+  Bulk imports `t:Explorer.Chain.PolygonSupernetDepositExecute.t/0`.
   """
 
   require Ecto.Query
@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernetWithdrawals do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, PolygonSupernetWithdrawal}
+  alias Explorer.Chain.{Import, PolygonSupernetDepositExecute}
   alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
@@ -16,13 +16,13 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernetWithdrawals do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [PolygonSupernetWithdrawal.t()]
+  @type imported :: [PolygonSupernetDepositExecute.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: PolygonSupernetWithdrawal
+  def ecto_schema_module, do: PolygonSupernetDepositExecute
 
   @impl Import.Runner
-  def option_key, do: :polygon_supernet_withdrawals
+  def option_key, do: :polygon_supernet_deposit_executes
 
   @impl Import.Runner
   @spec imported_table_row() :: %{:value_description => binary(), :value_type => binary()}
@@ -43,12 +43,12 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernetWithdrawals do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_polygon_supernet_withdrawals, fn repo, _ ->
+    Multi.run(multi, :insert_polygon_supernet_deposit_executes, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :polygon_supernet_withdrawals,
-        :polygon_supernet_withdrawals
+        :polygon_supernet_deposit_executes,
+        :polygon_supernet_deposit_executes
       )
     end)
   end
@@ -57,12 +57,12 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernetWithdrawals do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [PolygonSupernetWithdrawal.t()]}
+          {:ok, [PolygonSupernetDepositExecute.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce PolygonSupernetWithdrawal ShareLocks order (see docs: sharelock.md)
+    # Enforce PolygonSupernetDepositExecute ShareLocks order (see docs: sharelock.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.msg_id)
 
     {:ok, inserted} =
@@ -71,7 +71,7 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernetWithdrawals do
         ordered_changes_list,
         conflict_target: :msg_id,
         on_conflict: on_conflict,
-        for: PolygonSupernetWithdrawal,
+        for: PolygonSupernetDepositExecute,
         returning: true,
         timeout: timeout,
         timestamps: timestamps
@@ -82,25 +82,23 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernetWithdrawals do
 
   defp default_on_conflict do
     from(
-      w in PolygonSupernetWithdrawal,
+      de in PolygonSupernetDepositExecute,
       update: [
         set: [
           # Don't update `msg_id` as it is a primary key and used for the conflict target
-          from: fragment("EXCLUDED.from"),
-          to: fragment("EXCLUDED.to"),
           l2_transaction_hash: fragment("EXCLUDED.l2_transaction_hash"),
           l2_block_number: fragment("EXCLUDED.l2_block_number"),
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", w.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", w.updated_at)
+          success: fragment("EXCLUDED.success"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", de.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", de.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.from, EXCLUDED.to, EXCLUDED.l2_transaction_hash, EXCLUDED.l2_block_number) IS DISTINCT FROM (?, ?, ?, ?)",
-          w.from,
-          w.to,
-          w.l2_transaction_hash,
-          w.l2_block_number
+          "(EXCLUDED.l2_transaction_hash, EXCLUDED.l2_block_number, EXCLUDED.success) IS DISTINCT FROM (?, ?, ?)",
+          de.l2_transaction_hash,
+          de.l2_block_number,
+          de.success
         )
     )
   end

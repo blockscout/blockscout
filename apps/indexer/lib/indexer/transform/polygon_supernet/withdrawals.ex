@@ -1,4 +1,4 @@
-defmodule Indexer.Transform.PolygonSupernetWithdrawals do
+defmodule Indexer.Transform.PolygonSupernet.Withdrawals do
   @moduledoc """
   Helper functions for transforming data for Polygon Supernet withdrawals.
   """

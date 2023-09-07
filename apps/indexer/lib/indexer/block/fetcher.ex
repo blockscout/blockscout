@@ -37,11 +37,11 @@ defmodule Indexer.Block.Fetcher do
     Addresses,
     AddressTokenBalances,
     MintTransfers,
-    PolygonSupernetDepositExecutes,
-    PolygonSupernetWithdrawals,
     TokenTransfers,
     TransactionActions
   }
+
+  alias Indexer.Transform.PolygonSupernet.{DepositExecutes, Withdrawals}
 
   alias Indexer.Transform.Blocks, as: TransformBlocks
 
@@ -144,10 +144,10 @@ defmodule Indexer.Block.Fetcher do
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          polygon_supernet_withdrawals =
-           if(callback_module == Indexer.Block.Realtime.Fetcher, do: PolygonSupernetWithdrawals.parse(logs), else: []),
+           if(callback_module == Indexer.Block.Realtime.Fetcher, do: Withdrawals.parse(logs), else: []),
          polygon_supernet_deposit_executes =
            if(callback_module == Indexer.Block.Realtime.Fetcher,
-             do: PolygonSupernetDepositExecutes.parse(logs),
+             do: DepositExecutes.parse(logs),
              else: []
            ),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
