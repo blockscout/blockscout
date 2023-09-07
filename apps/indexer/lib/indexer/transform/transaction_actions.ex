@@ -7,11 +7,11 @@ defmodule Indexer.Transform.TransactionActions do
 
   import Ecto.Query, only: [from: 2]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  import Explorer.Helper, only: [decode_data: 2]
 
-  alias ABI.TypeDecoder
   alias Explorer.Chain.Cache.NetVersion
   alias Explorer.Chain.Cache.{TransactionActionTokensData, TransactionActionUniswapPools}
-  alias Explorer.Chain.{Address, Data, Hash, Token, TransactionAction}
+  alias Explorer.Chain.{Address, Hash, Token, TransactionAction}
   alias Explorer.Repo
   alias Explorer.SmartContract.Reader
   alias Indexer.Helper
@@ -759,22 +759,6 @@ defmodule Indexer.Transform.TransactionActions do
 
       Repo.delete_all(query)
     end)
-  end
-
-  defp decode_data("0x", types) do
-    for _ <- types, do: nil
-  end
-
-  defp decode_data("0x" <> encoded_data, types) do
-    encoded_data
-    |> Base.decode16!(case: :mixed)
-    |> TypeDecoder.decode_raw(types)
-  end
-
-  defp decode_data(%Data{} = data, types) do
-    data
-    |> Data.to_string()
-    |> decode_data(types)
   end
 
   defp fractional(%Decimal{} = amount, %Decimal{} = decimals) do
