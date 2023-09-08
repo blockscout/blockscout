@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.CreatePolygonSupernetDepositTables do
+defmodule Explorer.Repo.PolygonSupernet.Migrations.CreatePolygonSupernetDepositTables do
   use Ecto.Migration
 
   def change do

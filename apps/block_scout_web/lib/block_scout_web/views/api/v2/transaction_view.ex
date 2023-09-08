@@ -408,7 +408,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "has_error_in_internal_txs" => transaction.has_error_in_internal_txs
     }
 
-    if single_tx? do
+    if Application.get_env(:explorer, :chain_type) == "polygon_supernet" && single_tx? do
       result
       |> Map.put("polygon_supernet_deposit", polygon_supernet_deposit(transaction.hash, conn))
       |> Map.put("polygon_supernet_withdrawal", polygon_supernet_withdrawal(transaction.hash, conn))

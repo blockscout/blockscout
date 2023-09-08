@@ -177,6 +177,7 @@ checksum_function = System.get_env("CHECKSUM_FUNCTION")
 exchange_rates_coin = System.get_env("EXCHANGE_RATES_COIN")
 
 config :explorer,
+  chain_type: System.get_env("CHAIN_TYPE") || "ethereum",
   coin: System.get_env("COIN") || exchange_rates_coin || "ETH",
   coin_name: System.get_env("COIN_NAME") || exchange_rates_coin || "ETH",
   allowed_solidity_evm_versions:
@@ -537,6 +538,21 @@ config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_WITHDRAWALS_FETCHER", "true") == "true"
 
 config :indexer, Indexer.Fetcher.Withdrawal, first_block: System.get_env("WITHDRAWALS_FIRST_BLOCK")
+
+config :indexer, Indexer.Fetcher.PolygonSupernet.Supervisor,
+  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_supernet")
+
+config :indexer, Indexer.Fetcher.PolygonSupernet.Deposit.Supervisor,
+  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_supernet")
+
+config :indexer, Indexer.Fetcher.PolygonSupernet.DepositExecute.Supervisor,
+  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_supernet")
+
+config :indexer, Indexer.Fetcher.PolygonSupernet.Withdrawal.Supervisor,
+  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_supernet")
+
+config :indexer, Indexer.Fetcher.PolygonSupernet.WithdrawalExit.Supervisor,
+  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_supernet")
 
 config :indexer, Indexer.Fetcher.PolygonSupernet,
   polygon_supernet_l1_rpc: System.get_env("INDEXER_POLYGON_SUPERNET_L1_RPC"),

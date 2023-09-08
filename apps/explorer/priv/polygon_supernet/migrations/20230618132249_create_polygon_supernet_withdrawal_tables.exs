@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.CreatePolygonSupernetWithdrawalTables do
+defmodule Explorer.Repo.PolygonSupernet.Migrations.CreatePolygonSupernetWithdrawalTables do
   use Ecto.Migration
 
   def change do

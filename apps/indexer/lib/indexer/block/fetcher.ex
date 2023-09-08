@@ -183,28 +183,35 @@ defmodule Indexer.Block.Fetcher do
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
          transaction_actions =
            Enum.map(transaction_actions, fn action -> Map.put(action, :data, Map.delete(action.data, :block_number)) end),
+         basic_import_options = %{
+           addresses: %{params: addresses},
+           address_coin_balances: %{params: coin_balances_params_set},
+           address_coin_balances_daily: %{params: coin_balances_params_daily_set},
+           address_token_balances: %{params: address_token_balances},
+           address_current_token_balances: %{
+             params: address_token_balances |> MapSet.to_list() |> TokenBalances.to_address_current_token_balances()
+           },
+           blocks: %{params: blocks},
+           block_second_degree_relations: %{params: block_second_degree_relations_params},
+           block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
+           logs: %{params: logs},
+           token_transfers: %{params: token_transfers},
+           tokens: %{on_conflict: :nothing, params: tokens},
+           transactions: %{params: transactions_with_receipts},
+           withdrawals: %{params: withdrawals_params}
+         },
+         import_options =
+           (if Application.get_env(:explorer, :chain_type) == "polygon_supernet" do
+              basic_import_options
+              |> Map.put_new(:polygon_supernet_withdrawals, %{params: polygon_supernet_withdrawals})
+              |> Map.put_new(:polygon_supernet_deposit_executes, %{params: polygon_supernet_deposit_executes})
+            else
+              basic_import_options
+            end),
          {:ok, inserted} <-
            __MODULE__.import(
              state,
-             %{
-               addresses: %{params: addresses},
-               address_coin_balances: %{params: coin_balances_params_set},
-               address_coin_balances_daily: %{params: coin_balances_params_daily_set},
-               address_token_balances: %{params: address_token_balances},
-               address_current_token_balances: %{
-                 params: address_token_balances |> MapSet.to_list() |> TokenBalances.to_address_current_token_balances()
-               },
-               blocks: %{params: blocks},
-               block_second_degree_relations: %{params: block_second_degree_relations_params},
-               block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
-               logs: %{params: logs},
-               polygon_supernet_withdrawals: %{params: polygon_supernet_withdrawals},
-               polygon_supernet_deposit_executes: %{params: polygon_supernet_deposit_executes},
-               token_transfers: %{params: token_transfers},
-               tokens: %{on_conflict: :nothing, params: tokens},
-               transactions: %{params: transactions_with_receipts},
-               withdrawals: %{params: withdrawals_params}
-             }
+             import_options
            ),
          {:tx_actions, {:ok, inserted_tx_actions}} <-
            {:tx_actions,

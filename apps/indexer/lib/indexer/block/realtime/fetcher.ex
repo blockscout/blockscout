@@ -289,8 +289,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       fn ->
         if reorg? do
           # we need to remove all rows from `polygon_supernet_withdrawals` and `polygon_supernet_deposit_executes` tables previously written starting from reorg block number
-          Withdrawal.remove(block_number_to_fetch)
-          DepositExecute.remove(block_number_to_fetch)
+          remove_polygon_supernet_assets_by_number(block_number_to_fetch)
 
           # give previous fetch attempt (for same block number) a chance to finish
           # before fetching again, to reduce block consensus mistakes
@@ -302,6 +301,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
       fetcher: :block_realtime,
       block_number: block_number_to_fetch
     )
+  end
+
+  defp remove_polygon_supernet_assets_by_number(block_number_to_fetch) do
+    if Application.get_env(:explorer, :chain_type) == "polygon_supernet" do
+      Withdrawal.remove(block_number_to_fetch)
+      DepositExecute.remove(block_number_to_fetch)
+    end
   end
 
   @decorate span(tracer: Tracer)
