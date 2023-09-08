@@ -87,8 +87,6 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
-  alias Explorer.Chain.PolygonSupernet.{Deposit, DepositExecute, WithdrawalExit}
-  alias Explorer.Chain.PolygonSupernet.Withdrawal, as: PolygonSupernetWithdrawal
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
@@ -6331,132 +6329,6 @@ defmodule Explorer.Chain do
     )
   end
 
-  defp page_polygon_supernet_deposits_or_withdrawals(query, %PagingOptions{key: nil}), do: query
-
-  defp page_polygon_supernet_deposits_or_withdrawals(query, %PagingOptions{key: {msg_id}}) do
-    from(item in query, where: item.msg_id < ^msg_id)
-  end
-
-  @spec polygon_supernet_deposits(list()) :: list()
-  def polygon_supernet_deposits(options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    base_query =
-      from(
-        de in DepositExecute,
-        inner_join: d in Deposit,
-        on: d.msg_id == de.msg_id and not is_nil(d.l1_timestamp),
-        select: %{
-          msg_id: de.msg_id,
-          from: d.from,
-          to: d.to,
-          l1_transaction_hash: d.l1_transaction_hash,
-          l1_timestamp: d.l1_timestamp,
-          success: de.success,
-          l2_transaction_hash: de.l2_transaction_hash
-        },
-        order_by: [desc: de.msg_id]
-      )
-
-    base_query
-    |> page_polygon_supernet_deposits_or_withdrawals(paging_options)
-    |> limit(^paging_options.page_size)
-    |> select_repo(options).all()
-  end
-
-  @spec polygon_supernet_deposits_count(list()) :: term() | nil
-  def polygon_supernet_deposits_count(options \\ []) do
-    query =
-      from(
-        de in DepositExecute,
-        inner_join: d in Deposit,
-        on: d.msg_id == de.msg_id and not is_nil(d.l1_timestamp)
-      )
-
-    select_repo(options).aggregate(query, :count, timeout: :infinity)
-  end
-
-  @spec polygon_supernet_withdrawals(list()) :: list()
-  def polygon_supernet_withdrawals(options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    base_query =
-      from(
-        w in PolygonSupernetWithdrawal,
-        left_join: we in WithdrawalExit,
-        on: we.msg_id == w.msg_id,
-        left_join: b in Block,
-        on: b.number == w.l2_block_number and b.consensus == true,
-        select: %{
-          msg_id: w.msg_id,
-          from: w.from,
-          to: w.to,
-          l2_transaction_hash: w.l2_transaction_hash,
-          l2_timestamp: b.timestamp,
-          success: we.success,
-          l1_transaction_hash: we.l1_transaction_hash
-        },
-        where: not is_nil(w.from),
-        order_by: [desc: w.msg_id]
-      )
-
-    base_query
-    |> page_polygon_supernet_deposits_or_withdrawals(paging_options)
-    |> limit(^paging_options.page_size)
-    |> select_repo(options).all()
-  end
-
-  @spec polygon_supernet_withdrawals_count(list()) :: term() | nil
-  def polygon_supernet_withdrawals_count(options \\ []) do
-    query =
-      from(
-        w in PolygonSupernetWithdrawal,
-        where: not is_nil(w.from)
-      )
-
-    select_repo(options).aggregate(query, :count, timeout: :infinity)
-  end
-
-  @spec polygon_supernet_deposit_by_transaction_hash(Hash.t()) :: Ecto.Schema.t() | term() | nil
-  def polygon_supernet_deposit_by_transaction_hash(hash) do
-    query =
-      from(
-        de in DepositExecute,
-        inner_join: d in Deposit,
-        on: d.msg_id == de.msg_id and not is_nil(d.from),
-        select: %{
-          msg_id: de.msg_id,
-          from: d.from,
-          to: d.to,
-          success: de.success,
-          l1_transaction_hash: d.l1_transaction_hash
-        },
-        where: de.l2_transaction_hash == ^hash
-      )
-
-    Repo.replica().one(query)
-  end
-
-  @spec polygon_supernet_withdrawal_by_transaction_hash(Hash.t()) :: Ecto.Schema.t() | term() | nil
-  def polygon_supernet_withdrawal_by_transaction_hash(hash) do
-    query =
-      from(
-        w in PolygonSupernetWithdrawal,
-        left_join: we in WithdrawalExit,
-        on: we.msg_id == w.msg_id,
-        select: %{
-          msg_id: w.msg_id,
-          from: w.from,
-          to: w.to,
-          success: we.success,
-          l1_transaction_hash: we.l1_transaction_hash
-        },
-        where: w.l2_transaction_hash == ^hash and not is_nil(w.from)
-      )
-
-    Repo.replica().one(query)
-  end
-
   @spec verified_contracts_top(non_neg_integer()) :: [Hash.Address.t()]
   def verified_contracts_top(limit) do
     query =
@@ -6469,5 +6341,10 @@ defmodule Explorer.Chain do
       )
 
     Repo.all(query)
+  end
+
+  @spec default_paging_options() :: map()
+  def default_paging_options do
+    @default_paging_options
   end
 end

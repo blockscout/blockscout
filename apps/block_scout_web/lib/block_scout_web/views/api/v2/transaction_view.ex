@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.PolygonSupernet.Reader
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.Counters.AverageBlockTime
   alias Timex.Duration
@@ -692,13 +693,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp polygon_supernet_deposit(transaction_hash, conn) do
     transaction_hash
-    |> Chain.polygon_supernet_deposit_by_transaction_hash()
+    |> Reader.deposit_by_transaction_hash()
     |> polygon_supernet_deposit_or_withdrawal(conn)
   end
 
   defp polygon_supernet_withdrawal(transaction_hash, conn) do
     transaction_hash
-    |> Chain.polygon_supernet_withdrawal_by_transaction_hash()
+    |> Reader.withdrawal_by_transaction_hash()
     |> polygon_supernet_deposit_or_withdrawal(conn)
   end
 
