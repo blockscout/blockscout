@@ -69,7 +69,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   end
 
   @spec init_l1(
-          Explorer.Chain.PolygonSupernetDeposit | Explorer.Chain.PolygonSupernetWithdrawalExit,
+          Explorer.Chain.PolygonSupernet.Deposit | Explorer.Chain.PolygonSupernet.WithdrawalExit,
           list(),
           pid(),
           binary(),
@@ -78,7 +78,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
           binary()
         ) :: {:ok, map()} | :ignore
   def init_l1(table, env, pid, contract_address, contract_name, table_name, entity_name)
-      when table in [Explorer.Chain.PolygonSupernetDeposit, Explorer.Chain.PolygonSupernetWithdrawalExit] do
+      when table in [Explorer.Chain.PolygonSupernet.Deposit, Explorer.Chain.PolygonSupernet.WithdrawalExit] do
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
          {:reorg_monitor_started, true} <-
            {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.PolygonSupernet))},
@@ -153,7 +153,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   end
 
   @spec init_l2(
-          Explorer.Chain.PolygonSupernetDepositExecute | Explorer.Chain.PolygonSupernetWithdrawal,
+          Explorer.Chain.PolygonSupernet.DepositExecute | Explorer.Chain.PolygonSupernet.Withdrawal,
           list(),
           pid(),
           binary(),
@@ -163,7 +163,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
           list()
         ) :: {:ok, map()} | :ignore
   def init_l2(table, env, pid, contract_address, contract_name, table_name, entity_name, json_rpc_named_arguments)
-      when table in [Explorer.Chain.PolygonSupernetDepositExecute, Explorer.Chain.PolygonSupernetWithdrawal] do
+      when table in [Explorer.Chain.PolygonSupernet.DepositExecute, Explorer.Chain.PolygonSupernet.Withdrawal] do
     with {:start_block_l2_undefined, false} <- {:start_block_l2_undefined, is_nil(env[:start_block_l2])},
          {:contract_address_valid, true} <- {:contract_address_valid, Helper.is_address_correct?(contract_address)},
          start_block_l2 = parse_integer(env[:start_block_l2]),
@@ -483,9 +483,9 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   end
 
   defp msg_id_gap_starts(id_max, table)
-       when table in [Explorer.Chain.PolygonSupernetDepositExecute, Explorer.Chain.PolygonSupernetWithdrawal] do
+       when table in [Explorer.Chain.PolygonSupernet.DepositExecute, Explorer.Chain.PolygonSupernet.Withdrawal] do
     query =
-      if table == Explorer.Chain.PolygonSupernetDepositExecute do
+      if table == Explorer.Chain.PolygonSupernet.DepositExecute do
         from(item in table,
           select: item.l2_block_number,
           order_by: item.msg_id,
@@ -513,9 +513,9 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   end
 
   defp msg_id_gap_ends(id_min, table)
-       when table in [Explorer.Chain.PolygonSupernetDepositExecute, Explorer.Chain.PolygonSupernetWithdrawal] do
+       when table in [Explorer.Chain.PolygonSupernet.DepositExecute, Explorer.Chain.PolygonSupernet.Withdrawal] do
     query =
-      if table == Explorer.Chain.PolygonSupernetDepositExecute do
+      if table == Explorer.Chain.PolygonSupernet.DepositExecute do
         from(item in table,
           select: item.l2_block_number,
           order_by: item.msg_id,
@@ -804,9 +804,9 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   defp reorg_handle(reorg_block, calling_module) do
     {table, table_name} =
       if calling_module == Deposit do
-        {Explorer.Chain.PolygonSupernetDeposit, "polygon_supernet_deposits"}
+        {Explorer.Chain.PolygonSupernet.Deposit, "polygon_supernet_deposits"}
       else
-        {Explorer.Chain.PolygonSupernetWithdrawalExit, "polygon_supernet_withdrawal_exits"}
+        {Explorer.Chain.PolygonSupernet.WithdrawalExit, "polygon_supernet_withdrawal_exits"}
       end
 
     {deleted_count, _} = Repo.delete_all(from(item in table, where: item.l1_block_number >= ^reorg_block))

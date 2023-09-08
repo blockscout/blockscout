@@ -14,7 +14,8 @@ defmodule Indexer.Fetcher.PolygonSupernet.DepositExecute do
   import Indexer.Fetcher.PolygonSupernet, only: [fill_block_range: 5, get_block_number_by_tag: 3]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Log, PolygonSupernetDepositExecute}
+  alias Explorer.Chain.Log
+  alias Explorer.Chain.PolygonSupernet.DepositExecute
   alias Indexer.Fetcher.PolygonSupernet
 
   @fetcher_name :polygon_supernet_deposit_execute
@@ -45,7 +46,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.DepositExecute do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     PolygonSupernet.init_l2(
-      PolygonSupernetDepositExecute,
+      DepositExecute,
       env,
       self(),
       env[:state_receiver],
@@ -67,7 +68,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.DepositExecute do
       ) do
     PolygonSupernet.fill_msg_id_gaps(
       start_block_l2,
-      PolygonSupernetDepositExecute,
+      DepositExecute,
       __MODULE__,
       contract_address,
       json_rpc_named_arguments
@@ -93,7 +94,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.DepositExecute do
     fill_block_range(
       start_block,
       safe_block,
-      {__MODULE__, PolygonSupernetDepositExecute},
+      {__MODULE__, DepositExecute},
       contract_address,
       json_rpc_named_arguments
     )
@@ -105,7 +106,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.DepositExecute do
       fill_block_range(
         safe_block + 1,
         latest_block,
-        {__MODULE__, PolygonSupernetDepositExecute},
+        {__MODULE__, DepositExecute},
         contract_address,
         json_rpc_named_arguments
       )
@@ -122,7 +123,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.DepositExecute do
 
   @spec remove(non_neg_integer()) :: no_return()
   def remove(starting_block) do
-    Repo.delete_all(from(de in PolygonSupernetDepositExecute, where: de.l2_block_number >= ^starting_block))
+    Repo.delete_all(from(de in DepositExecute, where: de.l2_block_number >= ^starting_block))
   end
 
   @spec event_to_deposit_execute(binary(), binary(), binary(), binary()) :: map()

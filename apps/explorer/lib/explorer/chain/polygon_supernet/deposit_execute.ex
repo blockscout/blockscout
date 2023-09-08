@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.PolygonSupernetDepositExecute do
+defmodule Explorer.Chain.PolygonSupernet.DepositExecute do
   @moduledoc "Models polygon supernet deposit execute."
 
   use Explorer.Schema

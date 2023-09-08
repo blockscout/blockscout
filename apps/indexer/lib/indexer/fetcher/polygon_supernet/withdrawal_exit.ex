@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.WithdrawalExit do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Chain.PolygonSupernetWithdrawalExit
+  alias Explorer.Chain.PolygonSupernet.WithdrawalExit
   alias Indexer.Fetcher.PolygonSupernet
 
   @fetcher_name :polygon_supernet_withdrawal_exit
@@ -43,7 +43,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.WithdrawalExit do
     Subscriber.to(:polygon_supernet_reorg_block, :realtime)
 
     PolygonSupernet.init_l1(
-      PolygonSupernetWithdrawalExit,
+      WithdrawalExit,
       env,
       self(),
       env[:exit_helper],

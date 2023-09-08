@@ -15,7 +15,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.Deposit do
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Chain.PolygonSupernetDeposit
+  alias Explorer.Chain.PolygonSupernet.Deposit
   alias Indexer.Fetcher.PolygonSupernet
 
   @fetcher_name :polygon_supernet_deposit
@@ -50,7 +50,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.Deposit do
     Subscriber.to(:polygon_supernet_reorg_block, :realtime)
 
     PolygonSupernet.init_l1(
-      PolygonSupernetDeposit,
+      Deposit,
       env,
       self(),
       env[:state_sender],

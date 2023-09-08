@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.PolygonSupernetWithdrawalExit do
+defmodule Explorer.Chain.PolygonSupernet.WithdrawalExit do
   @moduledoc "Models polygon supernet withdrawal exit."
 
   use Explorer.Schema

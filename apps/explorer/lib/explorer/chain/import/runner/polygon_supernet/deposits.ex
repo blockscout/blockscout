@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Import.Runner.PolygonSupernet.Deposits do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.PolygonSupernetDeposit.t/0`.
+  Bulk imports `t:Explorer.Chain.PolygonSupernet.Deposit.t/0`.
   """
 
   require Ecto.Query
@@ -8,7 +8,8 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernet.Deposits do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, PolygonSupernetDeposit}
+  alias Explorer.Chain.Import
+  alias Explorer.Chain.PolygonSupernet.Deposit
   alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
@@ -16,10 +17,10 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernet.Deposits do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [PolygonSupernetDeposit.t()]
+  @type imported :: [Deposit.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: PolygonSupernetDeposit
+  def ecto_schema_module, do: Deposit
 
   @impl Import.Runner
   def option_key, do: :polygon_supernet_deposits
@@ -57,12 +58,12 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernet.Deposits do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [PolygonSupernetDeposit.t()]}
+          {:ok, [Deposit.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce PolygonSupernetDeposit ShareLocks order (see docs: sharelock.md)
+    # Enforce PolygonSupernet.Deposit ShareLocks order (see docs: sharelock.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.msg_id)
 
     {:ok, inserted} =
@@ -71,7 +72,7 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernet.Deposits do
         ordered_changes_list,
         conflict_target: :msg_id,
         on_conflict: on_conflict,
-        for: PolygonSupernetDeposit,
+        for: Deposit,
         returning: true,
         timeout: timeout,
         timestamps: timestamps
@@ -82,7 +83,7 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernet.Deposits do
 
   defp default_on_conflict do
     from(
-      d in PolygonSupernetDeposit,
+      d in Deposit,
       update: [
         set: [
           # Don't update `msg_id` as it is a primary key and used for the conflict target

@@ -16,7 +16,8 @@ defmodule Indexer.Fetcher.PolygonSupernet.Withdrawal do
 
   alias ABI.TypeDecoder
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Log, PolygonSupernetWithdrawal}
+  alias Explorer.Chain.Log
+  alias Explorer.Chain.PolygonSupernet.Withdrawal
   alias Indexer.Fetcher.PolygonSupernet
 
   @fetcher_name :polygon_supernet_withdrawal
@@ -50,7 +51,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.Withdrawal do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     PolygonSupernet.init_l2(
-      PolygonSupernetWithdrawal,
+      Withdrawal,
       env,
       self(),
       env[:state_sender],
@@ -72,7 +73,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.Withdrawal do
       ) do
     PolygonSupernet.fill_msg_id_gaps(
       start_block_l2,
-      PolygonSupernetWithdrawal,
+      Withdrawal,
       __MODULE__,
       contract_address,
       json_rpc_named_arguments
@@ -98,7 +99,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.Withdrawal do
     fill_block_range(
       start_block,
       safe_block,
-      {__MODULE__, PolygonSupernetWithdrawal},
+      {__MODULE__, Withdrawal},
       contract_address,
       json_rpc_named_arguments
     )
@@ -110,7 +111,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.Withdrawal do
       fill_block_range(
         safe_block + 1,
         latest_block,
-        {__MODULE__, PolygonSupernetWithdrawal},
+        {__MODULE__, Withdrawal},
         contract_address,
         json_rpc_named_arguments
       )
@@ -127,7 +128,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.Withdrawal do
 
   @spec remove(non_neg_integer()) :: no_return()
   def remove(starting_block) do
-    Repo.delete_all(from(w in PolygonSupernetWithdrawal, where: w.l2_block_number >= ^starting_block))
+    Repo.delete_all(from(w in Withdrawal, where: w.l2_block_number >= ^starting_block))
   end
 
   @spec event_to_withdrawal(binary(), map(), binary(), binary()) :: map()
