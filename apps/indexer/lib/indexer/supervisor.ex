@@ -13,10 +13,10 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Block.Catchup, as: BlockCatchup
   alias Indexer.Block.Realtime, as: BlockRealtime
+  alias Indexer.Fetcher.TokenInstance.LegacySanitize, as: TokenInstanceLegacySanitize
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Indexer.Fetcher.TokenInstance.Retry, as: TokenInstanceRetry
   alias Indexer.Fetcher.TokenInstance.Sanitize, as: TokenInstanceSanitize
-  alias Indexer.Fetcher.TokenInstance.LegacySanitize, as: TokenInstanceLegacySanitize
 
   alias Indexer.Fetcher.{
     BlockReward,

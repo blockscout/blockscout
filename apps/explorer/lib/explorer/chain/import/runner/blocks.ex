@@ -599,129 +599,133 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   defp update_token_instances_owner(_, [], _), do: {:ok, []}
 
   defp update_token_instances_owner(repo, forked_transaction_hashes, options) do
-    query =
-      from(token_transfer in TokenTransfer,
-        where: token_transfer.transaction_hash in ^forked_transaction_hashes,
-        inner_join: token in Token,
-        on: token.contract_address_hash == token_transfer.token_contract_address_hash,
-        where: token.type == "ERC-721",
-        inner_join: instance in Instance,
-        on:
-          fragment("? @> ARRAY[?::decimal]", token_transfer.token_ids, instance.token_id) and
-            instance.token_contract_address_hash == token_transfer.token_contract_address_hash,
-        # per one token instance we will have only one token transfer
-        where:
-          token_transfer.block_number == instance.owner_updated_at_block and
-            token_transfer.log_index == instance.owner_updated_at_log_index,
+    forked_transaction_hashes
+    |> forked_token_transfers_query()
+    |> repo.all()
+    |> process_forked_token_transfers(repo, options)
+  end
+
+  defp process_forked_token_transfers([], _, _), do: {:ok, []}
+
+  defp process_forked_token_transfers(token_transfers, repo, options) do
+    changes_initial =
+      Enum.reduce(token_transfers, %{}, fn tt, acc ->
+        Map.put_new(acc, {tt.token_contract_address_hash, tt.token_id}, %{
+          token_contract_address_hash: tt.token_contract_address_hash,
+          token_id: tt.token_id,
+          owner_address_hash: tt.from,
+          owner_updated_at_block: -1,
+          owner_updated_at_log_index: -1
+        })
+      end)
+
+    non_consensus_block_numbers = token_transfers |> Enum.map(fn tt -> tt.block_number end) |> Enum.uniq()
+
+    filtered_query = TokenTransfer.only_consensus_transfers_query()
+
+    base_query =
+      from(token_transfer in subquery(filtered_query),
         select: %{
-          from: token_transfer.from_address_hash,
-          to: token_transfer.to_address_hash,
-          token_id: instance.token_id,
           token_contract_address_hash: token_transfer.token_contract_address_hash,
-          block_number: token_transfer.block_number,
-          log_index: token_transfer.log_index
+          token_id: fragment("(?)[1]", token_transfer.token_ids),
+          block_number: max(token_transfer.block_number)
+        },
+        group_by: [token_transfer.token_contract_address_hash, fragment("(?)[1]", token_transfer.token_ids)]
+      )
+
+    historical_token_transfers_query =
+      Enum.reduce(token_transfers, base_query, fn tt, acc ->
+        from(token_transfer in acc,
+          or_where:
+            token_transfer.token_contract_address_hash == ^tt.token_contract_address_hash and
+              fragment("? @> ARRAY[?::decimal]", token_transfer.token_ids, ^tt.token_id) and
+              token_transfer.block_number < ^tt.block_number and
+              token_transfer.block_number not in ^non_consensus_block_numbers
+        )
+      end)
+
+    refs_to_token_transfers =
+      from(historical_tt in subquery(historical_token_transfers_query),
+        inner_join: tt in subquery(filtered_query),
+        on:
+          tt.token_contract_address_hash == historical_tt.token_contract_address_hash and
+            tt.block_number == historical_tt.block_number and
+            fragment("? @> ARRAY[?::decimal]", tt.token_ids, historical_tt.token_id),
+        select: %{
+          token_contract_address_hash: tt.token_contract_address_hash,
+          token_id: historical_tt.token_id,
+          log_index: max(tt.log_index),
+          block_number: tt.block_number
+        },
+        group_by: [tt.token_contract_address_hash, historical_tt.token_id, tt.block_number]
+      )
+
+    derived_token_transfers_query =
+      from(tt in filtered_query,
+        inner_join: tt_1 in subquery(refs_to_token_transfers),
+        on: tt_1.log_index == tt.log_index and tt_1.block_number == tt.block_number
+      )
+
+    changes =
+      derived_token_transfers_query
+      |> repo.all()
+      |> Enum.reduce(changes_initial, fn tt, acc ->
+        token_id = List.first(tt.token_ids)
+        current_key = {tt.token_contract_address_hash, token_id}
+
+        params = %{
+          token_contract_address_hash: tt.token_contract_address_hash,
+          token_id: token_id,
+          owner_address_hash: tt.to_address_hash,
+          owner_updated_at_block: tt.block_number,
+          owner_updated_at_log_index: tt.log_index
         }
-      )
 
-    token_transfers = repo.all(query) |> dbg()
-
-    if token_transfers != [] do
-      changes_initial =
-        Enum.reduce(token_transfers, %{}, fn tt, acc ->
-          Map.put_new(acc, {tt.token_contract_address_hash, tt.token_id}, %{
-            token_contract_address_hash: tt.token_contract_address_hash,
-            token_id: tt.token_id,
-            owner_address_hash: tt.from,
-            owner_updated_at_block: -1,
-            owner_updated_at_log_index: -1
-          })
-        end)
-
-      non_consensus_block_numbers = token_transfers |> Enum.map(fn tt -> tt.block_number end) |> Enum.uniq()
-
-      filtered_query = TokenTransfer.only_consensus_transfers_query()
-
-      base_query =
-        from(token_transfer in subquery(filtered_query),
-          select: %{
-            token_contract_address_hash: token_transfer.token_contract_address_hash,
-            token_id: fragment("(?)[1]", token_transfer.token_ids),
-            block_number: max(token_transfer.block_number)
-          },
-          group_by: [token_transfer.token_contract_address_hash, fragment("(?)[1]", token_transfer.token_ids)]
+        Map.put(
+          acc,
+          current_key,
+          Enum.max_by([acc[current_key], params], fn %{
+                                                       owner_updated_at_block: block_number,
+                                                       owner_updated_at_log_index: log_index
+                                                     } ->
+            {block_number, log_index}
+          end)
         )
+      end)
+      |> Map.values()
 
-      historical_token_transfers_query =
-        Enum.reduce(token_transfers, base_query, fn tt, acc ->
-          from(token_transfer in acc,
-            or_where:
-              token_transfer.token_contract_address_hash == ^tt.token_contract_address_hash and
-                fragment("? @> ARRAY[?::decimal]", token_transfer.token_ids, ^tt.token_id) and
-                token_transfer.block_number < ^tt.block_number and
-                token_transfer.block_number not in ^non_consensus_block_numbers
-          )
-        end)
+    TokenInstances.insert(
+      repo,
+      changes,
+      options
+      |> Map.put(:timestamps, Import.timestamps())
+      |> Map.put(:on_conflict, token_instances_on_conflict())
+    )
+  end
 
-      refs_to_token_transfers =
-        from(historical_tt in subquery(historical_token_transfers_query),
-          inner_join: tt in subquery(filtered_query),
-          on:
-            tt.token_contract_address_hash == historical_tt.token_contract_address_hash and
-              tt.block_number == historical_tt.block_number and
-              fragment("? @> ARRAY[?::decimal]", tt.token_ids, historical_tt.token_id),
-          select: %{
-            token_contract_address_hash: tt.token_contract_address_hash,
-            token_id: historical_tt.token_id,
-            log_index: max(tt.log_index),
-            block_number: tt.block_number
-          },
-          group_by: [tt.token_contract_address_hash, historical_tt.token_id, tt.block_number]
-        )
-
-      derived_token_transfers_query =
-        from(tt in filtered_query,
-          inner_join: tt_1 in subquery(refs_to_token_transfers),
-          on: tt_1.log_index == tt.log_index and tt_1.block_number == tt.block_number
-        )
-
-      changes =
-        derived_token_transfers_query
-        |> repo.all()
-        |> Enum.reduce(changes_initial, fn tt, acc ->
-          token_id = List.first(tt.token_ids)
-          current_key = {tt.token_contract_address_hash, token_id}
-
-          params = %{
-            token_contract_address_hash: tt.token_contract_address_hash,
-            token_id: token_id,
-            owner_address_hash: tt.to_address_hash,
-            owner_updated_at_block: tt.block_number,
-            owner_updated_at_log_index: tt.log_index
-          }
-
-          Map.put(
-            acc,
-            current_key,
-            Enum.max_by([acc[current_key], params], fn %{
-                                                         owner_updated_at_block: block_number,
-                                                         owner_updated_at_log_index: log_index
-                                                       } ->
-              {block_number, log_index}
-            end)
-          )
-        end)
-        |> Map.values()
-
-      TokenInstances.insert(
-        repo,
-        changes,
-        options
-        |> Map.put(:timestamps, Import.timestamps())
-        |> Map.put(:on_conflict, token_instances_on_conflict())
-      )
-    else
-      {:ok, []}
-    end
+  defp forked_token_transfers_query(forked_transaction_hashes) do
+    from(token_transfer in TokenTransfer,
+      where: token_transfer.transaction_hash in ^forked_transaction_hashes,
+      inner_join: token in Token,
+      on: token.contract_address_hash == token_transfer.token_contract_address_hash,
+      where: token.type == "ERC-721",
+      inner_join: instance in Instance,
+      on:
+        fragment("? @> ARRAY[?::decimal]", token_transfer.token_ids, instance.token_id) and
+          instance.token_contract_address_hash == token_transfer.token_contract_address_hash,
+      # per one token instance we will have only one token transfer
+      where:
+        token_transfer.block_number == instance.owner_updated_at_block and
+          token_transfer.log_index == instance.owner_updated_at_log_index,
+      select: %{
+        from: token_transfer.from_address_hash,
+        to: token_transfer.to_address_hash,
+        token_id: instance.token_id,
+        token_contract_address_hash: token_transfer.token_contract_address_hash,
+        block_number: token_transfer.block_number,
+        log_index: token_transfer.log_index
+      }
+    )
   end
 
   defp token_instances_on_conflict do

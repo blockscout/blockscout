@@ -119,6 +119,7 @@ defmodule Explorer.Application do
       configure(TokenTransferTokenIdMigration.Supervisor),
       configure(Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand),
       configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand),
+      configure(Explorer.TokenInstanceOwnerAddressMigration.Supervisor),
       sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
     ]
     |> List.flatten()
