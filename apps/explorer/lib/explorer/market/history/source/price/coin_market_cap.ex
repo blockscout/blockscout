@@ -39,7 +39,7 @@ defmodule Explorer.Market.History.Source.Price.CoinMarketCap do
 
     last_updated =
       token_properties
-      |> ExchangeRatesSourceCoinMarketCap.get_last_updated()
+      |> ExchangeRatesSourceCoinMarketCap.get_last_updated(token_properties)
       |> DateTime.to_date()
 
     current_price_usd = ExchangeRatesSourceCoinMarketCap.get_current_price(token_properties)
