@@ -754,12 +754,124 @@ defmodule Explorer.SmartContract.Reader do
     Map.put_new(output, "value", Encoder.unescape(value))
   end
 
+  defp new_value(%{"type" => "tuple" <> _types = type} = output, values, index) do
+    value = Enum.at(values, index)
+
+    result =
+      if String.ends_with?(type, "[]") do
+        value
+        |> Enum.map(fn tuple -> new_value(%{"type" => String.slice(type, 0..-3)}, [tuple], 0) end)
+        |> flat_arrays_map()
+      else
+        value
+        |> zip_tuple_values_with_types(type)
+        |> Enum.map(fn {type, part_value} ->
+          new_value(%{"type" => type}, [part_value], 0)
+        end)
+        |> flat_arrays_map()
+        |> List.to_tuple()
+      end
+
+    Map.put_new(output, "value", result)
+  end
+
   defp new_value(output, [value], _index) do
     Map.put_new(output, "value", value)
   end
 
   defp new_value(output, values, index) do
     Map.put_new(output, "value", Enum.at(values, index))
+  end
+
+  defp flat_arrays_map(%{"value" => value}) do
+    flat_arrays_map(value)
+  end
+
+  defp flat_arrays_map(value) when is_list(value) do
+    Enum.map(value, &flat_arrays_map/1)
+  end
+
+  defp flat_arrays_map(value) when is_tuple(value) do
+    value
+    |> Tuple.to_list()
+    |> flat_arrays_map()
+    |> List.to_tuple()
+  end
+
+  defp flat_arrays_map(value) do
+    value
+  end
+
+  def zip_tuple_values_with_types(value, type) do
+    types_string =
+      type
+      |> String.slice(6..-2)
+
+    types =
+      if String.trim(types_string) == "" do
+        []
+      else
+        types_string
+        |> String.split(",")
+      end
+
+    {tuple_types, _} =
+      types
+      |> Enum.reduce({[], nil}, fn val, acc ->
+        {arr, to_merge} = acc
+
+        if to_merge do
+          compose_array_if_to_merge(arr, val, to_merge)
+        else
+          compose_array_else(arr, val, to_merge)
+        end
+      end)
+
+    values_list =
+      value
+      |> Tuple.to_list()
+
+    Enum.zip(tuple_types, values_list)
+  end
+
+  def compose_array_if_to_merge(arr, val, to_merge) do
+    if count_string_symbols(val)["]"] > count_string_symbols(val)["["] do
+      updated_arr = update_last_list_item(arr, val)
+      {updated_arr, !to_merge}
+    else
+      updated_arr = update_last_list_item(arr, val)
+      {updated_arr, to_merge}
+    end
+  end
+
+  def compose_array_else(arr, val, to_merge) do
+    if count_string_symbols(val)["["] > count_string_symbols(val)["]"] do
+      # credo:disable-for-next-line
+      {arr ++ [val], !to_merge}
+    else
+      # credo:disable-for-next-line
+      {arr ++ [val], to_merge}
+    end
+  end
+
+  defp update_last_list_item(arr, new_val) do
+    arr
+    |> Enum.with_index()
+    |> Enum.map(fn {item, index} ->
+      if index == Enum.count(arr) - 1 do
+        item <> "," <> new_val
+      else
+        item
+      end
+    end)
+  end
+
+  defp count_string_symbols(str) do
+    str
+    |> String.graphemes()
+    |> Enum.reduce(%{"[" => 0, "]" => 0}, fn char, acc ->
+      Map.update(acc, char, 1, &(&1 + 1))
+    end)
   end
 
   @spec bytes_to_string(<<_::_*8>>) :: String.t()

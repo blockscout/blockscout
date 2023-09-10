@@ -15,6 +15,7 @@
 
 ### Fixes
 
+- [#8431](https://github.com/blockscout/blockscout/pull/8431) - Fix contracts' output decoding
 - [#8354](https://github.com/blockscout/blockscout/pull/8354) - Hotfix for proper addresses' tokens displaying
 - [#8350](https://github.com/blockscout/blockscout/pull/8350) - Add Base Mainnet support for tx actions
 - [#8282](https://github.com/blockscout/blockscout/pull/8282) - NFT fetcher improvements
