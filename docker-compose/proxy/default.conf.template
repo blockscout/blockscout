@@ -31,7 +31,7 @@ server {
         proxy_set_header      Connection $connection_upgrade;
         proxy_cache_bypass    $http_upgrade;
     }
-    location ~ ^/(_next|node-api|apps|account|accounts|static|auth/profile|auth/unverified-email|txs|tx|blocks|block|login|address|stats|search-results|token|tokens|visualize|api-docs|csv-export|verified-contracts|graphiql|withdrawals) {
+    location ~ ^/(_next|node-api|apps|account|accounts|favicon|static|auth/profile|auth/unverified-email|txs|tx|blocks|block|login|address|stats|search-results|token|tokens|visualize|api-docs|csv-export|verified-contracts|graphiql|withdrawals) {
         proxy_pass            ${FRONT_PROXY_PASS};
         proxy_http_version    1.1;
         proxy_set_header      Host "$host";
