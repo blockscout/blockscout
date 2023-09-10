@@ -23,7 +23,7 @@
     "@amplitude/analytics-browser": "^2.2.3",
     "@tarekraafat/autocomplete.js": "^10.2.7",
     "@walletconnect/web3-provider": "^1.8.0",
-    "assert": "^2.0.0",
+    "assert": "^2.1.0",
     "bignumber.js": "^9.1.2",
     "bootstrap": "^4.6.0",
     "chart.js": "^4.4.0",
