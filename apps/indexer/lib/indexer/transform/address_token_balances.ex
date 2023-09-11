@@ -3,7 +3,7 @@ defmodule Indexer.Transform.AddressTokenBalances do
   Extracts `Explorer.Address.TokenBalance` params from other schema's params.
   """
 
-  @burn_address "0x0000000000000000000000000000000000000000"
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   def params_set(%{} = import_options) do
     Enum.reduce(import_options, MapSet.new(), &reducer/2)
@@ -35,7 +35,7 @@ defmodule Indexer.Transform.AddressTokenBalances do
     Enum.filter(token_transfers_params, &do_filter_burn_address/1)
   end
 
-  defp add_token_balance_address(map_set, unquote(@burn_address), _, _, _, _), do: map_set
+  defp add_token_balance_address(map_set, unquote(burn_address_hash_string()), _, _, _, _), do: map_set
 
   defp add_token_balance_address(map_set, address, token_contract_address, token_id, token_type, block_number) do
     MapSet.put(map_set, %{
@@ -47,7 +47,7 @@ defmodule Indexer.Transform.AddressTokenBalances do
     })
   end
 
-  def do_filter_burn_address(%{to_address_hash: unquote(@burn_address), token_type: "ERC-721"}) do
+  def do_filter_burn_address(%{to_address_hash: unquote(burn_address_hash_string()), token_type: "ERC-721"}) do
     false
   end
 
