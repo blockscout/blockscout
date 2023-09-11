@@ -1,12 +1,12 @@
-defmodule Explorer.Chain.Import.Runner.ZkevmTxnBatches do
+defmodule Explorer.Chain.Import.Runner.ZkevmTransactionBatches do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.ZkevmTxnBatch.t/0`.
+  Bulk imports `t:Explorer.Chain.ZkevmTransactionBatch.t/0`.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, ZkevmTxnBatch}
+  alias Explorer.Chain.{Import, ZkevmTransactionBatch}
   alias Explorer.Prometheus.Instrumenter
 
   import Ecto.Query, only: [from: 2]
@@ -16,13 +16,13 @@ defmodule Explorer.Chain.Import.Runner.ZkevmTxnBatches do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [ZkevmTxnBatch.t()]
+  @type imported :: [ZkevmTransactionBatch.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: ZkevmTxnBatch
+  def ecto_schema_module, do: ZkevmTransactionBatch
 
   @impl Import.Runner
-  def option_key, do: :zkevm_txn_batches
+  def option_key, do: :zkevm_transaction_batches
 
   @impl Import.Runner
   def imported_table_row do
@@ -41,12 +41,12 @@ defmodule Explorer.Chain.Import.Runner.ZkevmTxnBatches do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_zkevm_txn_batches, fn repo, _ ->
+    Multi.run(multi, :insert_zkevm_transaction_batches, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :zkevm_txn_batches,
-        :zkevm_txn_batches
+        :zkevm_transaction_batches,
+        :zkevm_transaction_batches
       )
     end)
   end
@@ -55,19 +55,19 @@ defmodule Explorer.Chain.Import.Runner.ZkevmTxnBatches do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [ZkevmTxnBatch.t()]}
+          {:ok, [ZkevmTransactionBatch.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce ZkevmTxnBatch ShareLocks order (see docs: sharelock.md)
+    # Enforce ZkevmTransactionBatch ShareLocks order (see docs: sharelock.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.number)
 
     {:ok, inserted} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        for: ZkevmTxnBatch,
+        for: ZkevmTransactionBatch,
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
@@ -80,7 +80,7 @@ defmodule Explorer.Chain.Import.Runner.ZkevmTxnBatches do
 
   defp default_on_conflict do
     from(
-      tb in ZkevmTxnBatch,
+      tb in ZkevmTransactionBatch,
       update: [
         set: [
           # don't update `number` as it is a primary key and used for the conflict target

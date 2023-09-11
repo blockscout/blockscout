@@ -35,7 +35,7 @@ defmodule Indexer.Supervisor do
     TransactionAction,
     UncleBlock,
     Withdrawal,
-    ZkevmTxnBatch
+    ZkevmTransactionBatch
   }
 
   alias Indexer.Temporary.{
@@ -133,7 +133,7 @@ defmodule Indexer.Supervisor do
         {Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor,
          [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]},
         {Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor, [[memory_monitor: memory_monitor]]},
-        configure(ZkevmTxnBatch.Supervisor, [
+        configure(ZkevmTransactionBatch.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
 

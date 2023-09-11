@@ -1,9 +1,9 @@
-defmodule Explorer.Chain.ZkevmTxnBatch do
+defmodule Explorer.Chain.ZkevmTransactionBatch do
   @moduledoc "Models a batch of transactions for zkEVM."
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, ZkevmBatchTxn, ZkevmLifecycleTxn}
+  alias Explorer.Chain.{Hash, ZkevmBatchTransaction, ZkevmLifecycleTransaction}
 
   @optional_attrs ~w(sequence_id verify_id)a
 
@@ -17,10 +17,10 @@ defmodule Explorer.Chain.ZkevmTxnBatch do
           acc_input_hash: Hash.t(),
           state_root: Hash.t(),
           sequence_id: non_neg_integer() | nil,
-          sequence_transaction: %Ecto.Association.NotLoaded{} | ZkevmLifecycleTxn.t() | nil,
+          sequence_transaction: %Ecto.Association.NotLoaded{} | ZkevmLifecycleTransaction.t() | nil,
           verify_id: non_neg_integer() | nil,
-          verify_transaction: %Ecto.Association.NotLoaded{} | ZkevmLifecycleTxn.t() | nil,
-          l2_transactions: %Ecto.Association.NotLoaded{} | [ZkevmBatchTxn.t()]
+          verify_transaction: %Ecto.Association.NotLoaded{} | ZkevmLifecycleTransaction.t() | nil,
+          l2_transactions: %Ecto.Association.NotLoaded{} | [ZkevmBatchTransaction.t()]
         }
 
   @primary_key {:number, :integer, autogenerate: false}
@@ -31,10 +31,15 @@ defmodule Explorer.Chain.ZkevmTxnBatch do
     field(:acc_input_hash, Hash.Full)
     field(:state_root, Hash.Full)
 
-    belongs_to(:sequence_transaction, ZkevmLifecycleTxn, foreign_key: :sequence_id, references: :id, type: :integer)
-    belongs_to(:verify_transaction, ZkevmLifecycleTxn, foreign_key: :verify_id, references: :id, type: :integer)
+    belongs_to(:sequence_transaction, ZkevmLifecycleTransaction,
+      foreign_key: :sequence_id,
+      references: :id,
+      type: :integer
+    )
 
-    has_many(:l2_transactions, ZkevmBatchTxn, foreign_key: :batch_number)
+    belongs_to(:verify_transaction, ZkevmLifecycleTransaction, foreign_key: :verify_id, references: :id, type: :integer)
+
+    has_many(:l2_transactions, ZkevmBatchTransaction, foreign_key: :batch_number)
 
     timestamps()
   end

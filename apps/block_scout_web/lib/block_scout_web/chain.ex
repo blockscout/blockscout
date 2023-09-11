@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.Chain do
     Transaction.StateChange,
     Wei,
     Withdrawal,
-    ZkevmTxnBatch
+    ZkevmTransactionBatch
   }
 
   alias Explorer.PagingOptions
@@ -535,7 +535,7 @@ defmodule BlockScoutWeb.Chain do
     %{"index" => index}
   end
 
-  defp paging_params(%ZkevmTxnBatch{number: number}) do
+  defp paging_params(%ZkevmTransactionBatch{number: number}) do
     %{"number" => number}
   end
 

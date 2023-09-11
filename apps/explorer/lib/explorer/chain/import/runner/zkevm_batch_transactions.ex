@@ -1,12 +1,12 @@
-defmodule Explorer.Chain.Import.Runner.ZkevmBatchTxns do
+defmodule Explorer.Chain.Import.Runner.ZkevmBatchTransactions do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.ZkevmBatchTxn.t/0`.
+  Bulk imports `t:Explorer.Chain.ZkevmBatchTransaction.t/0`.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, ZkevmBatchTxn}
+  alias Explorer.Chain.{Import, ZkevmBatchTransaction}
   alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
@@ -14,13 +14,13 @@ defmodule Explorer.Chain.Import.Runner.ZkevmBatchTxns do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [ZkevmBatchTxn.t()]
+  @type imported :: [ZkevmBatchTransaction.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: ZkevmBatchTxn
+  def ecto_schema_module, do: ZkevmBatchTransaction
 
   @impl Import.Runner
-  def option_key, do: :zkevm_batch_txns
+  def option_key, do: :zkevm_batch_transactions
 
   @impl Import.Runner
   def imported_table_row do
@@ -39,12 +39,12 @@ defmodule Explorer.Chain.Import.Runner.ZkevmBatchTxns do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_zkevm_batch_txns, fn repo, _ ->
+    Multi.run(multi, :insert_zkevm_batch_transactions, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :zkevm_batch_txns,
-        :zkevm_batch_txns
+        :zkevm_batch_transactions,
+        :zkevm_batch_transactions
       )
     end)
   end
@@ -53,17 +53,17 @@ defmodule Explorer.Chain.Import.Runner.ZkevmBatchTxns do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [ZkevmBatchTxn.t()]}
+          {:ok, [ZkevmBatchTransaction.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = _options) when is_list(changes_list) do
-    # Enforce ZkevmBatchTxn ShareLocks order (see docs: sharelock.md)
+    # Enforce ZkevmBatchTransaction ShareLocks order (see docs: sharelock.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
 
     {:ok, inserted} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        for: ZkevmBatchTxn,
+        for: ZkevmBatchTransaction,
         returning: true,
         timeout: timeout,
         timestamps: timestamps,

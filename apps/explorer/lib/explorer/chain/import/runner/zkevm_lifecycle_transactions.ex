@@ -1,12 +1,12 @@
-defmodule Explorer.Chain.Import.Runner.ZkevmLifecycleTxns do
+defmodule Explorer.Chain.Import.Runner.ZkevmLifecycleTransactions do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.ZkevmLifecycleTxn.t/0`.
+  Bulk imports `t:Explorer.Chain.ZkevmLifecycleTransaction.t/0`.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, ZkevmLifecycleTxn}
+  alias Explorer.Chain.{Import, ZkevmLifecycleTransaction}
   alias Explorer.Prometheus.Instrumenter
 
   import Ecto.Query, only: [from: 2]
@@ -16,13 +16,13 @@ defmodule Explorer.Chain.Import.Runner.ZkevmLifecycleTxns do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [ZkevmLifecycleTxn.t()]
+  @type imported :: [ZkevmLifecycleTransaction.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: ZkevmLifecycleTxn
+  def ecto_schema_module, do: ZkevmLifecycleTransaction
 
   @impl Import.Runner
-  def option_key, do: :zkevm_lifecycle_txns
+  def option_key, do: :zkevm_lifecycle_transactions
 
   @impl Import.Runner
   def imported_table_row do
@@ -41,12 +41,12 @@ defmodule Explorer.Chain.Import.Runner.ZkevmLifecycleTxns do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_zkevm_lifecycle_txns, fn repo, _ ->
+    Multi.run(multi, :insert_zkevm_lifecycle_transactions, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :zkevm_lifecycle_txns,
-        :zkevm_lifecycle_txns
+        :zkevm_lifecycle_transactions,
+        :zkevm_lifecycle_transactions
       )
     end)
   end
@@ -55,19 +55,19 @@ defmodule Explorer.Chain.Import.Runner.ZkevmLifecycleTxns do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [ZkevmLifecycleTxn.t()]}
+          {:ok, [ZkevmLifecycleTransaction.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce ZkevmLifecycleTxn ShareLocks order (see docs: sharelock.md)
+    # Enforce ZkevmLifecycleTransaction ShareLocks order (see docs: sharelock.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.id)
 
     {:ok, inserted} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        for: ZkevmLifecycleTxn,
+        for: ZkevmLifecycleTransaction,
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
@@ -80,7 +80,7 @@ defmodule Explorer.Chain.Import.Runner.ZkevmLifecycleTxns do
 
   defp default_on_conflict do
     from(
-      tx in ZkevmLifecycleTxn,
+      tx in ZkevmLifecycleTransaction,
       update: [
         set: [
           # don't update `id` as it is a primary key 

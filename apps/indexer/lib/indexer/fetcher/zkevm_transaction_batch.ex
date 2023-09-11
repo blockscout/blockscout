@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.ZkevmTxnBatch do
+defmodule Indexer.Fetcher.ZkevmTransactionBatch do
   @moduledoc """
   Fills zkevm_transaction_batches DB table.
   """
@@ -13,7 +13,7 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
   import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, quantity_to_integer: 1]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{ZkevmLifecycleTxn, ZkevmTxnBatch}
+  alias Explorer.Chain.{ZkevmLifecycleTransaction, ZkevmTransactionBatch}
 
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
 
@@ -34,9 +34,9 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
 
   @impl GenServer
   def init(args) do
-    Logger.metadata(fetcher: :zkevm_txn_batches)
+    Logger.metadata(fetcher: :zkevm_transaction_batches)
 
-    config = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkevmTxnBatch]
+    config = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkevmTransactionBatch]
     chunk_size = config[:chunk_size]
     recheck_interval = config[:recheck_interval]
 
@@ -113,7 +113,7 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
 
   defp get_last_verified_batch_number do
     query =
-      from(tb in ZkevmTxnBatch,
+      from(tb in ZkevmTransactionBatch,
         select: tb.number,
         where: not is_nil(tb.verify_id),
         order_by: [desc: tb.number],
@@ -127,7 +127,7 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
 
   defp get_next_id do
     query =
-      from(lt in ZkevmLifecycleTxn,
+      from(lt in ZkevmLifecycleTransaction,
         select: lt.id,
         order_by: [desc: lt.id],
         limit: 1
@@ -228,7 +228,7 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
 
     query =
       from(
-        lt in ZkevmLifecycleTxn,
+        lt in ZkevmLifecycleTransaction,
         select: {lt.hash, lt.id},
         where: lt.hash in ^l1_tx_hashes
       )
@@ -287,9 +287,9 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
 
     {:ok, _} =
       Chain.import(%{
-        zkevm_lifecycle_txns: %{params: l1_txs_to_import},
-        zkevm_txn_batches: %{params: batches_to_import},
-        zkevm_batch_txns: %{params: l2_txs_to_import},
+        zkevm_lifecycle_transactions: %{params: l1_txs_to_import},
+        zkevm_transaction_batches: %{params: batches_to_import},
+        zkevm_batch_transactions: %{params: l2_txs_to_import},
         timeout: :infinity
       })
   end

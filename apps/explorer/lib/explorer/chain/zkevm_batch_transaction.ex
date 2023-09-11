@@ -1,22 +1,22 @@
-defmodule Explorer.Chain.ZkevmBatchTxn do
+defmodule Explorer.Chain.ZkevmBatchTransaction do
   @moduledoc "Models a list of transactions related to a batch for zkEVM."
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, Transaction, ZkevmTxnBatch}
+  alias Explorer.Chain.{Hash, Transaction, ZkevmTransactionBatch}
 
   @required_attrs ~w(batch_number hash)a
 
   @type t :: %__MODULE__{
           batch_number: non_neg_integer(),
-          batch: %Ecto.Association.NotLoaded{} | ZkevmTxnBatch.t() | nil,
+          batch: %Ecto.Association.NotLoaded{} | ZkevmTransactionBatch.t() | nil,
           hash: Hash.t(),
           l2_transaction: %Ecto.Association.NotLoaded{} | Transaction.t() | nil
         }
 
   @primary_key false
   schema "zkevm_batch_l2_transactions" do
-    belongs_to(:batch, ZkevmTxnBatch, foreign_key: :batch_number, references: :number, type: :integer)
+    belongs_to(:batch, ZkevmTransactionBatch, foreign_key: :batch_number, references: :number, type: :integer)
     belongs_to(:l2_transaction, Transaction, foreign_key: :hash, primary_key: true, references: :hash, type: Hash.Full)
 
     timestamps()

@@ -65,8 +65,8 @@ defmodule Explorer.Chain do
     Transaction,
     Wei,
     Withdrawal,
-    ZkevmBatchTxn,
-    ZkevmTxnBatch
+    ZkevmBatchTransaction,
+    ZkevmTransactionBatch
   }
 
   alias Explorer.Chain.Block.{EmissionReward, Reward}
@@ -6396,7 +6396,7 @@ defmodule Explorer.Chain do
   def zkevm_batch(number, options \\ [])
 
   def zkevm_batch(:latest, options) when is_list(options) do
-    ZkevmTxnBatch
+    ZkevmTransactionBatch
     |> order_by(desc: :number)
     |> limit(1)
     |> select_repo(options).one()
@@ -6409,7 +6409,7 @@ defmodule Explorer.Chain do
   def zkevm_batch(number, options) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    ZkevmTxnBatch
+    ZkevmTransactionBatch
     |> where(number: ^number)
     |> join_associations(necessity_by_association)
     |> select_repo(options).one()
@@ -6442,7 +6442,7 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     base_query =
-      from(tb in ZkevmTxnBatch,
+      from(tb in ZkevmTransactionBatch,
         order_by: [desc: tb.number]
       )
 
@@ -6465,7 +6465,7 @@ defmodule Explorer.Chain do
   end
 
   def zkevm_batch_transactions(batch_number, options \\ []) do
-    query = from(bts in ZkevmBatchTxn, where: bts.batch_number == ^batch_number)
+    query = from(bts in ZkevmBatchTransaction, where: bts.batch_number == ^batch_number)
 
     select_repo(options).all(query)
   end
