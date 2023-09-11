@@ -15,7 +15,6 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{ZkevmLifecycleTxn, ZkevmTxnBatch}
 
-  @batch_range_size 20
   @recheck_latest_batch_interval 60
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
 
@@ -39,10 +38,13 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
     Logger.metadata(fetcher: :zkevm_txn_batches)
     # Logger.configure(truncate: :infinity)
 
+    chunk_size = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkevmTxnBatch][:chunk_size]
+
     Process.send(self(), :continue, [])
 
     {:ok,
      %{
+       chunk_size: chunk_size,
        json_rpc_named_arguments: args[:json_rpc_named_arguments],
        prev_latest_batch_number: 0,
        prev_virtual_batch_number: 0,
@@ -54,6 +56,7 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
   def handle_info(
         :continue,
         %{
+          chunk_size: chunk_size,
           json_rpc_named_arguments: json_rpc_named_arguments,
           prev_latest_batch_number: prev_latest_batch_number,
           prev_virtual_batch_number: prev_virtual_batch_number,
@@ -95,7 +98,9 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
         Logger.info(log_message <> "Handling the batch range #{start_batch_number}..#{end_batch_number}.")
 
         {handle_duration, _} =
-          :timer.tc(fn -> handle_batch_range(start_batch_number, end_batch_number, json_rpc_named_arguments) end)
+          :timer.tc(fn ->
+            handle_batch_range(start_batch_number, end_batch_number, json_rpc_named_arguments, chunk_size)
+          end)
 
         {
           %{
@@ -151,9 +156,9 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
     last_id + 1
   end
 
-  defp handle_batch_range(start_batch_number, end_batch_number, json_rpc_named_arguments) do
+  defp handle_batch_range(start_batch_number, end_batch_number, json_rpc_named_arguments, chunk_size) do
     start_batch_number..end_batch_number
-    |> Enum.chunk_every(@batch_range_size)
+    |> Enum.chunk_every(chunk_size)
     |> Enum.each(fn chunk ->
       chunk_start = List.first(chunk)
       chunk_end = List.last(chunk)
