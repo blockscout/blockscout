@@ -813,19 +813,29 @@ defmodule Explorer.SmartContract.Reader do
         []
       else
         types_string
-        |> String.split(",")
+        |> String.graphemes()
       end
 
-    {tuple_types_reversed, _} =
-      types
-      |> Enum.reduce({[], false}, fn val, acc ->
-        {arr, to_merge} = acc
-
-        compose_array(to_merge, arr, val)
-      end)
-
     tuple_types =
-      tuple_types_reversed
+      types
+      |> Enum.reduce(
+        {[""], 0},
+        fn
+          ",", {types_acc, 0} ->
+            {["" | types_acc], 0}
+
+          char, {[acc | types_acc], bracket_stack} ->
+            new_bracket_stack =
+              case char do
+                "[" -> bracket_stack + 1
+                "]" -> bracket_stack - 1
+                _ -> bracket_stack
+              end
+
+            {[acc <> char | types_acc], new_bracket_stack}
+        end
+      )
+      |> elem(0)
       |> Enum.reverse()
 
     values_list =
@@ -833,38 +843,6 @@ defmodule Explorer.SmartContract.Reader do
       |> Tuple.to_list()
 
     Enum.zip(tuple_types, values_list)
-  end
-
-  defp compose_array(true, arr, val) do
-    updated_arr = update_last_list_item(arr, val)
-
-    if count_string_symbols(val)["]"] > count_string_symbols(val)["["] do
-      {updated_arr, false}
-    else
-      {updated_arr, true}
-    end
-  end
-
-  defp compose_array(to_merge, arr, val) do
-    if count_string_symbols(val)["["] > count_string_symbols(val)["]"] do
-      {[val | arr], !to_merge}
-    else
-      {[val | arr], to_merge}
-    end
-  end
-
-  defp update_last_list_item(arr, new_val) do
-    [last_element | remain] = arr
-
-    [last_element <> "," <> new_val | remain]
-  end
-
-  defp count_string_symbols(str) do
-    str
-    |> String.graphemes()
-    |> Enum.reduce(%{"[" => 0, "]" => 0}, fn char, acc ->
-      Map.update(acc, char, 1, &(&1 + 1))
-    end)
   end
 
   @spec bytes_to_string(<<_::_*8>>) :: String.t()
