@@ -802,6 +802,7 @@ defmodule Explorer.SmartContract.Reader do
     value
   end
 
+  @spec zip_tuple_values_with_types(tuple, binary) :: [{binary, any}]
   def zip_tuple_values_with_types(value, type) do
     types_string =
       type
@@ -815,17 +816,17 @@ defmodule Explorer.SmartContract.Reader do
         |> String.split(",")
       end
 
-    {tuple_types, _} =
+    {tuple_types_reversed, _} =
       types
-      |> Enum.reduce({[], nil}, fn val, acc ->
+      |> Enum.reduce({[], false}, fn val, acc ->
         {arr, to_merge} = acc
 
-        if to_merge do
-          compose_array_if_to_merge(arr, val, to_merge)
-        else
-          compose_array_else(arr, val, to_merge)
-        end
+        compose_array(to_merge, arr, val)
       end)
+
+    tuple_types =
+      tuple_types_reversed
+      |> Enum.reverse()
 
     values_list =
       value
@@ -834,36 +835,28 @@ defmodule Explorer.SmartContract.Reader do
     Enum.zip(tuple_types, values_list)
   end
 
-  def compose_array_if_to_merge(arr, val, to_merge) do
+  defp compose_array(true, arr, val) do
+    updated_arr = update_last_list_item(arr, val)
+
     if count_string_symbols(val)["]"] > count_string_symbols(val)["["] do
-      updated_arr = update_last_list_item(arr, val)
-      {updated_arr, !to_merge}
+      {updated_arr, false}
     else
-      updated_arr = update_last_list_item(arr, val)
-      {updated_arr, to_merge}
+      {updated_arr, true}
     end
   end
 
-  def compose_array_else(arr, val, to_merge) do
+  defp compose_array(to_merge, arr, val) do
     if count_string_symbols(val)["["] > count_string_symbols(val)["]"] do
-      # credo:disable-for-next-line
-      {arr ++ [val], !to_merge}
+      {[val | arr], !to_merge}
     else
-      # credo:disable-for-next-line
-      {arr ++ [val], to_merge}
+      {[val | arr], to_merge}
     end
   end
 
   defp update_last_list_item(arr, new_val) do
-    arr
-    |> Enum.with_index()
-    |> Enum.map(fn {item, index} ->
-      if index == Enum.count(arr) - 1 do
-        item <> "," <> new_val
-      else
-        item
-      end
-    end)
+    [last_element | remain] = arr
+
+    [last_element <> "," <> new_val | remain]
   end
 
   defp count_string_symbols(str) do
