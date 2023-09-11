@@ -614,7 +614,8 @@ config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit,
   exit_helper: System.get_env("INDEXER_POLYGON_EDGE_L1_EXIT_HELPER_CONTRACT")
 
 config :indexer, Indexer.Fetcher.ZkevmTxnBatch,
-  chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_ZKEVM_BATCHES_CHUNK_SIZE", 20)
+  chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_ZKEVM_BATCHES_CHUNK_SIZE", 20),
+  recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_ZKEVM_BATCHES_RECHECK_INTERVAL", 60)
 
 config :indexer, Indexer.Fetcher.ZkevmTxnBatch.Supervisor,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_ZKEVM_BATCHES_ENABLED")

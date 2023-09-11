@@ -15,7 +15,6 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{ZkevmLifecycleTxn, ZkevmTxnBatch}
 
-  @recheck_latest_batch_interval 60
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
 
   def child_spec(start_link_arguments) do
@@ -38,7 +37,9 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
     Logger.metadata(fetcher: :zkevm_txn_batches)
     # Logger.configure(truncate: :infinity)
 
-    chunk_size = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkevmTxnBatch][:chunk_size]
+    config = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkevmTxnBatch]
+    chunk_size = config[:chunk_size]
+    recheck_interval = config[:recheck_interval]
 
     Process.send(self(), :continue, [])
 
@@ -48,7 +49,8 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
        json_rpc_named_arguments: args[:json_rpc_named_arguments],
        prev_latest_batch_number: 0,
        prev_virtual_batch_number: 0,
-       prev_verified_batch_number: 0
+       prev_verified_batch_number: 0,
+       recheck_interval: recheck_interval
      }}
   end
 
@@ -60,7 +62,8 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
           json_rpc_named_arguments: json_rpc_named_arguments,
           prev_latest_batch_number: prev_latest_batch_number,
           prev_virtual_batch_number: prev_virtual_batch_number,
-          prev_verified_batch_number: prev_verified_batch_number
+          prev_verified_batch_number: prev_verified_batch_number,
+          recheck_interval: recheck_interval
         } = state
       ) do
     {latest_batch_number, virtual_batch_number, verified_batch_number} =
@@ -115,7 +118,7 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
         {state, 0}
       end
 
-    Process.send_after(self(), :continue, max(:timer.seconds(@recheck_latest_batch_interval) - handle_duration, 0))
+    Process.send_after(self(), :continue, max(:timer.seconds(recheck_interval) - handle_duration, 0))
 
     {:noreply, new_state}
   end
