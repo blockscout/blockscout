@@ -14,6 +14,7 @@ defmodule Explorer.TokenInstanceOwnerAddressMigration.Helper do
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
   @burn_address_hash burn_address_hash
 
+  @spec filtered_token_instances_query(non_neg_integer()) :: Ecto.Query.t()
   def filtered_token_instances_query(limit) do
     from(instance in Instance,
       where: is_nil(instance.owner_address_hash),
@@ -24,6 +25,13 @@ defmodule Explorer.TokenInstanceOwnerAddressMigration.Helper do
     )
   end
 
+  @spec fetch_and_insert([map]) ::
+          {:error, :timeout | [map]}
+          | {:ok,
+             %{
+               :token_instances => [Instance.t()]
+             }}
+          | {:error, any, any, map}
   def fetch_and_insert(batch) do
     changes =
       Enum.map(batch, fn %{token_id: token_id, token_contract_address_hash: token_contract_address_hash} ->
@@ -45,7 +53,7 @@ defmodule Explorer.TokenInstanceOwnerAddressMigration.Helper do
 
         token_transfer =
           Repo.one(token_transfer_query) ||
-            %{owner_address_hash: @burn_address_hash, owner_updated_at_block: -1, owner_updated_at_log_index: -1}
+            %{to_address_hash: @burn_address_hash, block_number: -1, log_index: -1}
 
         %{
           token_contract_address_hash: token_contract_address_hash,
@@ -60,6 +68,7 @@ defmodule Explorer.TokenInstanceOwnerAddressMigration.Helper do
     Chain.import(%{token_instances: %{params: changes}})
   end
 
+  @spec unfilled_token_instances_exists? :: boolean
   def unfilled_token_instances_exists? do
     1
     |> filtered_token_instances_query()
