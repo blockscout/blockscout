@@ -35,7 +35,6 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
   @impl GenServer
   def init(args) do
     Logger.metadata(fetcher: :zkevm_txn_batches)
-    # Logger.configure(truncate: :infinity)
 
     config = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkevmTxnBatch]
     chunk_size = config[:chunk_size]
