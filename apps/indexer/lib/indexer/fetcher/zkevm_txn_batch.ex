@@ -75,27 +75,10 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
         end_batch_number = latest_batch_number
 
         log_message =
-          if latest_batch_number > prev_latest_batch_number do
-            "Found a new latest batch number #{latest_batch_number}. Previous batch number is #{prev_latest_batch_number}. "
-          else
-            ""
-          end
-
-        log_message =
-          if virtual_batch_number > prev_virtual_batch_number do
-            log_message <>
-              "Found a new virtual batch number #{virtual_batch_number}. Previous virtual batch number is #{prev_virtual_batch_number}. "
-          else
-            log_message
-          end
-
-        log_message =
-          if verified_batch_number > prev_verified_batch_number do
-            log_message <>
-              "Found a new verified batch number #{verified_batch_number}. Previous verified batch number is #{prev_verified_batch_number}. "
-          else
-            log_message
-          end
+          ""
+          |> make_log_message(latest_batch_number, prev_latest_batch_number, "latest")
+          |> make_log_message(virtual_batch_number, prev_virtual_batch_number, "virtual")
+          |> make_log_message(verified_batch_number, prev_verified_batch_number, "verified")
 
         Logger.info(log_message <> "Handling the batch range #{start_batch_number}..#{end_batch_number}.")
 
@@ -189,6 +172,15 @@ defmodule Indexer.Fetcher.ZkevmTxnBatch do
       Logger.info("Handling batch ##{chunk_start}.#{target_range}")
     else
       Logger.info("Handling batch range #{chunk_start}..#{chunk_end}.#{target_range}")
+    end
+  end
+
+  defp make_log_message(prev_message, batch_number, prev_batch_number, type) do
+    if batch_number > prev_batch_number do
+      prev_message <>
+        "Found a new #{type} batch number #{batch_number}. Previous #{type} batch number is #{prev_batch_number}. "
+    else
+      prev_message
     end
   end
 
