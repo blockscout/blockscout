@@ -29,6 +29,7 @@ defmodule Explorer.TokenInstanceOwnerAddressMigration.Worker do
   def handle_cast(:check_necessity, state) do
     if Helper.unfilled_token_instances_exists?() do
       GenServer.cast(__MODULE__, :backfill)
+      {:noreply, state}
     else
       {:stop, :normal, state}
     end

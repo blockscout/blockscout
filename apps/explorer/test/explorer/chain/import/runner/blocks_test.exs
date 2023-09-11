@@ -371,7 +371,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
     test "change instance owner if was token transfer in older blocks",
          %{consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number}, options: options} do
-      block_number = block_number + 1
+      block_number = block_number + 2
       consensus_block = insert(:block, %{hash: block_hash, number: block_number})
 
       transaction =
@@ -401,6 +401,16 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
         |> insert()
         |> with_block(consensus_block_1)
 
+      for _ <- 0..10 do
+        insert(:token_transfer,
+          token_ids: [id],
+          transaction: transaction,
+          token_contract_address: tt.token_contract_address,
+          block_number: consensus_block_1.number,
+          block: consensus_block_1
+        )
+      end
+
       tt_1 =
         insert(:token_transfer,
           token_ids: [id],
@@ -409,6 +419,24 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
           block_number: consensus_block_1.number,
           block: consensus_block_1
         )
+
+      %{hash: hash_2} = params_for(:block, consensus: true, miner_hash: miner_hash)
+      consensus_block_2 = insert(:block, %{hash: hash_2, number: block_number - 2})
+
+      for _ <- 0..10 do
+        tx =
+          :transaction
+          |> insert()
+          |> with_block(consensus_block_2)
+
+        insert(:token_transfer,
+          token_ids: [id],
+          transaction: tx,
+          token_contract_address: tt.token_contract_address,
+          block_number: consensus_block_2.number,
+          block: consensus_block_2
+        )
+      end
 
       instance =
         insert(:token_instance,

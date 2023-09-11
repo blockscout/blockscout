@@ -30,7 +30,7 @@ config :explorer, Explorer.Tracer, disabled?: false
 
 config :explorer, Explorer.TokenTransferTokenIdMigration.Supervisor, enabled: false
 
-config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: true
+config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: false
 
 config :explorer,
   realtime_events_sender: Explorer.Chain.Events.SimpleSender
