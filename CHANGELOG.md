@@ -30,6 +30,7 @@
 - [#8543](https://github.com/blockscout/blockscout/pull/8543) - Fix polygon tracer
 - [#8386](https://github.com/blockscout/blockscout/pull/8386) - Add `owner_address_hash` to the `token_instances`
 - [#8530](https://github.com/blockscout/blockscout/pull/8530) - Add `block_type` to search results
+- [#7584](https://github.com/blockscout/blockscout/pull/7584) - Add Polygon zkEVM batches fetcher
 - [#8180](https://github.com/blockscout/blockscout/pull/8180) - Deposits and Withdrawals for Polygon Edge
 - [#7996](https://github.com/blockscout/blockscout/pull/7996) - Add CoinBalance fetcher init query limit
 - [#8658](https://github.com/blockscout/blockscout/pull/8658) - Remove block consensus on import fail
@@ -391,7 +392,6 @@
 - [#7585](https://github.com/blockscout/blockscout/pull/7585) - Store and display native coin market cap from the DB
 - [#7513](https://github.com/blockscout/blockscout/pull/7513) - Add Polygon Edge support
 - [#7532](https://github.com/blockscout/blockscout/pull/7532) - Handle empty id in json rpc responses
-- [#7584](https://github.com/blockscout/blockscout/pull/7584) - Add Polygon zkEVM batches fetcher
 - [#7544](https://github.com/blockscout/blockscout/pull/7544) - Add ERC-1155 signatures to uncataloged_token_transfer_block_numbers
 - [#7363](https://github.com/blockscout/blockscout/pull/7363) - CSV export filters
 - [#7697](https://github.com/blockscout/blockscout/pull/7697) - Limit fetchers init tasks
