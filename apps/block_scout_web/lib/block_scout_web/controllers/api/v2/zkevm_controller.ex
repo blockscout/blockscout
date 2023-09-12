@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
     ]
 
   alias Explorer.Chain
+  alias Explorer.Chain.Zkevm.Reader
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -24,7 +25,7 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
 
   def batch(conn, %{"batch_number" => batch_number} = _params) do
     {:ok, batch} =
-      Chain.zkevm_batch(
+      Reader.batch(
         batch_number,
         necessity_by_association: @batch_necessity_by_association,
         api?: true
@@ -47,7 +48,7 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
       |> paging_options()
       |> Keyword.put(:necessity_by_association, @batches_necessity_by_association)
       |> Keyword.put(:api?, true)
-      |> Chain.zkevm_batches()
+      |> Reader.batches()
       |> split_list_by_page()
 
     next_page_params = next_page_params(next_page, batches, params)
@@ -72,7 +73,7 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
       |> Keyword.put(:necessity_by_association, @batches_necessity_by_association)
       |> Keyword.put(:api?, true)
       |> Keyword.put(:confirmed?, true)
-      |> Chain.zkevm_batches()
+      |> Reader.batches()
 
     conn
     |> put_status(200)
@@ -80,7 +81,7 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
   end
 
   defp batch_latest_number do
-    case Chain.zkevm_batch(:latest, api?: true) do
+    case Reader.batch(:latest, api?: true) do
       {:ok, batch} -> batch.number
       {:error, :not_found} -> 0
     end

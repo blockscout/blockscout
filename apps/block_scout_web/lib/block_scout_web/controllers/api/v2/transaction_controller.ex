@@ -19,6 +19,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.Models.TransactionStateHelper
   alias Explorer.Chain
+  alias Explorer.Chain.Zkevm.Reader
   alias Indexer.Fetcher.FirstTraceOnDemand
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -114,7 +115,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def zkevm_batch(conn, %{"batch_number" => batch_number} = _params) do
     transactions =
       batch_number
-      |> Chain.zkevm_batch_transactions(api?: true)
+      |> Reader.batch_transactions(api?: true)
       |> Enum.map(fn tx -> tx.hash end)
       |> Chain.hashes_to_transactions(api?: true, necessity_by_association: @transaction_necessity_by_association)
 

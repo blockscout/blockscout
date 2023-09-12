@@ -67,8 +67,6 @@ defmodule Explorer.Chain do
     Withdrawal
   }
 
-  alias Explorer.Chain.Zkevm.{BatchTransaction, TransactionBatch}
-
   alias Explorer.Chain.Block.{EmissionReward, Reward}
 
   alias Explorer.Chain.Cache.{
@@ -4118,7 +4116,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
+  def join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
     end)
@@ -6391,32 +6389,6 @@ defmodule Explorer.Chain do
           )
       }
     )
-  end
-
-  def zkevm_batch(number, options \\ [])
-
-  def zkevm_batch(:latest, options) when is_list(options) do
-    TransactionBatch
-    |> order_by(desc: :number)
-    |> limit(1)
-    |> select_repo(options).one()
-    |> case do
-      nil -> {:error, :not_found}
-      batch -> {:ok, batch}
-    end
-  end
-
-  def zkevm_batch(number, options) when is_list(options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-
-    TransactionBatch
-    |> where(number: ^number)
-    |> join_associations(necessity_by_association)
-    |> select_repo(options).one()
-    |> case do
-      nil -> {:error, :not_found}
-      batch -> {:ok, batch}
-    end
   end
 
   @spec verified_contracts_top(non_neg_integer()) :: [Hash.Address.t()]

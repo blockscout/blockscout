@@ -8,12 +8,10 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
 
   require Logger
 
-  import Ecto.Query
-
   import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, quantity_to_integer: 1]
 
-  alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Zkevm.{LifecycleTransaction, TransactionBatch}
+  alias Explorer.Chain
+  alias Explorer.Chain.Zkevm.Reader
 
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
 
@@ -71,7 +69,7 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
     {new_state, handle_duration} =
       if latest_batch_number > prev_latest_batch_number or virtual_batch_number > prev_virtual_batch_number or
            verified_batch_number > prev_verified_batch_number do
-        start_batch_number = get_last_verified_batch_number() + 1
+        start_batch_number = Reader.last_verified_batch_number() + 1
         end_batch_number = latest_batch_number
 
         log_message =
@@ -109,36 +107,6 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
-  end
-
-  defp get_last_verified_batch_number do
-    query =
-      from(tb in TransactionBatch,
-        select: tb.number,
-        where: not is_nil(tb.verify_id),
-        order_by: [desc: tb.number],
-        limit: 1
-      )
-
-    query
-    |> Repo.one()
-    |> Kernel.||(0)
-  end
-
-  defp get_next_id do
-    query =
-      from(lt in LifecycleTransaction,
-        select: lt.id,
-        order_by: [desc: lt.id],
-        limit: 1
-      )
-
-    last_id =
-      query
-      |> Repo.one()
-      |> Kernel.||(0)
-
-    last_id + 1
   end
 
   defp handle_batch_range(start_batch_number, end_batch_number, json_rpc_named_arguments, chunk_size) do
@@ -226,24 +194,18 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
 
     l1_tx_hashes = Enum.uniq(sequence_hashes ++ verify_hashes)
 
-    query =
-      from(
-        lt in LifecycleTransaction,
-        select: {lt.hash, lt.id},
-        where: lt.hash in ^l1_tx_hashes
-      )
-
     hash_to_id =
-      query
-      |> Repo.all(timeout: :infinity)
+      l1_tx_hashes
+      |> Reader.lifecycle_transactions()
       |> Enum.reduce(%{}, fn {hash, id}, acc ->
         Map.put(acc, hash.bytes, id)
       end)
 
     {batches_to_import, l2_txs_to_import, l1_txs_to_import, _, _} =
       responses
-      |> Enum.reduce({[], [], [], get_next_id(), hash_to_id}, fn res,
-                                                                 {batches, l2_txs, l1_txs, next_id, hash_to_id} = _acc ->
+      |> Enum.reduce({[], [], [], Reader.next_id(), hash_to_id}, fn res,
+                                                                    {batches, l2_txs, l1_txs, next_id, hash_to_id} =
+                                                                      _acc ->
         number = quantity_to_integer(Map.get(res.result, "number"))
         {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(res.result, "timestamp")))
         l2_transaction_hashes = Map.get(res.result, "transactions")
