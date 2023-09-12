@@ -184,6 +184,12 @@ $tile-body-a-color: #5959d8 !default;
     color: $tile-body-a-color;
   }
 
+  &[class*="status--error"] {
+    .tile-transaction-type-block {
+      word-break: break-word;
+    }
+  }
+
   .tile-body {
     a {
       color: $tile-body-a-color;
@@ -353,8 +359,8 @@ $tile-body-a-color: #5959d8 !default;
         padding-right: 6px;
       }
     }
-    .tile-type-block {  
-      overflow: hidden; 
+    .tile-type-block {
+      overflow: hidden;
     }
     .row {
       @include media-breakpoint-down(lg) {
