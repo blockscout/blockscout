@@ -1,12 +1,13 @@
-defmodule Explorer.Chain.Import.Runner.ZkevmBatchTransactions do
+defmodule Explorer.Chain.Import.Runner.Zkevm.BatchTransactions do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.ZkevmBatchTransaction.t/0`.
+  Bulk imports `t:Explorer.Chain.Zkevm.BatchTransaction.t/0`.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, ZkevmBatchTransaction}
+  alias Explorer.Chain.Import
+  alias Explorer.Chain.Zkevm.BatchTransaction
   alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
@@ -14,10 +15,10 @@ defmodule Explorer.Chain.Import.Runner.ZkevmBatchTransactions do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [ZkevmBatchTransaction.t()]
+  @type imported :: [BatchTransaction.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: ZkevmBatchTransaction
+  def ecto_schema_module, do: BatchTransaction
 
   @impl Import.Runner
   def option_key, do: :zkevm_batch_transactions
@@ -53,17 +54,17 @@ defmodule Explorer.Chain.Import.Runner.ZkevmBatchTransactions do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [ZkevmBatchTransaction.t()]}
+          {:ok, [BatchTransaction.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = _options) when is_list(changes_list) do
-    # Enforce ZkevmBatchTransaction ShareLocks order (see docs: sharelock.md)
+    # Enforce Zkevm.BatchTransaction ShareLocks order (see docs: sharelock.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
 
     {:ok, inserted} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        for: ZkevmBatchTransaction,
+        for: BatchTransaction,
         returning: true,
         timeout: timeout,
         timestamps: timestamps,

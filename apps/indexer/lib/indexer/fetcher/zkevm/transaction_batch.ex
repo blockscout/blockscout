@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.ZkevmTransactionBatch do
+defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
   @moduledoc """
   Fills zkevm_transaction_batches DB table.
   """
@@ -13,7 +13,7 @@ defmodule Indexer.Fetcher.ZkevmTransactionBatch do
   import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, quantity_to_integer: 1]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{ZkevmLifecycleTransaction, ZkevmTransactionBatch}
+  alias Explorer.Chain.Zkevm.{LifecycleTransaction, TransactionBatch}
 
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
 
@@ -36,7 +36,7 @@ defmodule Indexer.Fetcher.ZkevmTransactionBatch do
   def init(args) do
     Logger.metadata(fetcher: :zkevm_transaction_batches)
 
-    config = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkevmTransactionBatch]
+    config = Application.get_all_env(:indexer)[Indexer.Fetcher.Zkevm.TransactionBatch]
     chunk_size = config[:chunk_size]
     recheck_interval = config[:recheck_interval]
 
@@ -113,7 +113,7 @@ defmodule Indexer.Fetcher.ZkevmTransactionBatch do
 
   defp get_last_verified_batch_number do
     query =
-      from(tb in ZkevmTransactionBatch,
+      from(tb in TransactionBatch,
         select: tb.number,
         where: not is_nil(tb.verify_id),
         order_by: [desc: tb.number],
@@ -127,7 +127,7 @@ defmodule Indexer.Fetcher.ZkevmTransactionBatch do
 
   defp get_next_id do
     query =
-      from(lt in ZkevmLifecycleTransaction,
+      from(lt in LifecycleTransaction,
         select: lt.id,
         order_by: [desc: lt.id],
         limit: 1
@@ -228,7 +228,7 @@ defmodule Indexer.Fetcher.ZkevmTransactionBatch do
 
     query =
       from(
-        lt in ZkevmLifecycleTransaction,
+        lt in LifecycleTransaction,
         select: {lt.hash, lt.id},
         where: lt.hash in ^l1_tx_hashes
       )

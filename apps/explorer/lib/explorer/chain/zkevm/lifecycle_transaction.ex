@@ -1,9 +1,10 @@
-defmodule Explorer.Chain.ZkevmLifecycleTransaction do
+defmodule Explorer.Chain.Zkevm.LifecycleTransaction do
   @moduledoc "Models an L1 lifecycle transaction for zkEVM."
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, ZkevmTransactionBatch}
+  alias Explorer.Chain.Hash
+  alias Explorer.Chain.Zkevm.TransactionBatch
 
   @required_attrs ~w(id hash is_verify)a
 
@@ -17,8 +18,8 @@ defmodule Explorer.Chain.ZkevmLifecycleTransaction do
     field(:hash, Hash.Full)
     field(:is_verify, :boolean)
 
-    has_many(:sequenced_batches, ZkevmTransactionBatch, foreign_key: :sequence_id)
-    has_many(:verified_batches, ZkevmTransactionBatch, foreign_key: :verify_id)
+    has_many(:sequenced_batches, TransactionBatch, foreign_key: :sequence_id)
+    has_many(:verified_batches, TransactionBatch, foreign_key: :verify_id)
 
     timestamps()
   end

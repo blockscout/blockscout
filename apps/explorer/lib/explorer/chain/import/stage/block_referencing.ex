@@ -33,9 +33,9 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       "polygon_zkevm" ->
         @default_runners ++
           [
-            Runner.ZkevmLifecycleTransactions,
-            Runner.ZkevmTransactionBatches,
-            Runner.ZkevmBatchTransactions
+            Runner.Zkevm.LifecycleTransactions,
+            Runner.Zkevm.TransactionBatches,
+            Runner.Zkevm.BatchTransactions
           ]
       _ -> @default_runners
     end

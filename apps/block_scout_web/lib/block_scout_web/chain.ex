@@ -34,10 +34,10 @@ defmodule BlockScoutWeb.Chain do
     Transaction,
     Transaction.StateChange,
     Wei,
-    Withdrawal,
-    ZkevmTransactionBatch
+    Withdrawal
   }
 
+  alias Explorer.Chain.Zkevm.TransactionBatch
   alias Explorer.PagingOptions
 
   defimpl Poison.Encoder, for: Decimal do
@@ -535,7 +535,7 @@ defmodule BlockScoutWeb.Chain do
     %{"index" => index}
   end
 
-  defp paging_params(%ZkevmTransactionBatch{number: number}) do
+  defp paging_params(%TransactionBatch{number: number}) do
     %{"number" => number}
   end
 

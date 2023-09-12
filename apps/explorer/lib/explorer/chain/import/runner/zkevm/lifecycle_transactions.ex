@@ -1,12 +1,13 @@
-defmodule Explorer.Chain.Import.Runner.ZkevmLifecycleTransactions do
+defmodule Explorer.Chain.Import.Runner.Zkevm.LifecycleTransactions do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.ZkevmLifecycleTransaction.t/0`.
+  Bulk imports `t:Explorer.Chain.Zkevm.LifecycleTransaction.t/0`.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, ZkevmLifecycleTransaction}
+  alias Explorer.Chain.Import
+  alias Explorer.Chain.Zkevm.LifecycleTransaction
   alias Explorer.Prometheus.Instrumenter
 
   import Ecto.Query, only: [from: 2]
@@ -16,10 +17,10 @@ defmodule Explorer.Chain.Import.Runner.ZkevmLifecycleTransactions do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [ZkevmLifecycleTransaction.t()]
+  @type imported :: [LifecycleTransaction.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: ZkevmLifecycleTransaction
+  def ecto_schema_module, do: LifecycleTransaction
 
   @impl Import.Runner
   def option_key, do: :zkevm_lifecycle_transactions
@@ -55,19 +56,19 @@ defmodule Explorer.Chain.Import.Runner.ZkevmLifecycleTransactions do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [ZkevmLifecycleTransaction.t()]}
+          {:ok, [LifecycleTransaction.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce ZkevmLifecycleTransaction ShareLocks order (see docs: sharelock.md)
+    # Enforce Zkevm.LifecycleTransaction ShareLocks order (see docs: sharelock.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.id)
 
     {:ok, inserted} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        for: ZkevmLifecycleTransaction,
+        for: LifecycleTransaction,
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
@@ -80,7 +81,7 @@ defmodule Explorer.Chain.Import.Runner.ZkevmLifecycleTransactions do
 
   defp default_on_conflict do
     from(
-      tx in ZkevmLifecycleTransaction,
+      tx in LifecycleTransaction,
       update: [
         set: [
           # don't update `id` as it is a primary key 

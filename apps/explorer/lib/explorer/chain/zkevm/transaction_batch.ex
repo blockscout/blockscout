@@ -1,9 +1,10 @@
-defmodule Explorer.Chain.ZkevmTransactionBatch do
+defmodule Explorer.Chain.Zkevm.TransactionBatch do
   @moduledoc "Models a batch of transactions for zkEVM."
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, ZkevmBatchTransaction, ZkevmLifecycleTransaction}
+  alias Explorer.Chain.Hash
+  alias Explorer.Chain.Zkevm.{BatchTransaction, LifecycleTransaction}
 
   @optional_attrs ~w(sequence_id verify_id)a
 
@@ -17,10 +18,10 @@ defmodule Explorer.Chain.ZkevmTransactionBatch do
           acc_input_hash: Hash.t(),
           state_root: Hash.t(),
           sequence_id: non_neg_integer() | nil,
-          sequence_transaction: %Ecto.Association.NotLoaded{} | ZkevmLifecycleTransaction.t() | nil,
+          sequence_transaction: %Ecto.Association.NotLoaded{} | LifecycleTransaction.t() | nil,
           verify_id: non_neg_integer() | nil,
-          verify_transaction: %Ecto.Association.NotLoaded{} | ZkevmLifecycleTransaction.t() | nil,
-          l2_transactions: %Ecto.Association.NotLoaded{} | [ZkevmBatchTransaction.t()]
+          verify_transaction: %Ecto.Association.NotLoaded{} | LifecycleTransaction.t() | nil,
+          l2_transactions: %Ecto.Association.NotLoaded{} | [BatchTransaction.t()]
         }
 
   @primary_key {:number, :integer, autogenerate: false}
@@ -31,15 +32,15 @@ defmodule Explorer.Chain.ZkevmTransactionBatch do
     field(:acc_input_hash, Hash.Full)
     field(:state_root, Hash.Full)
 
-    belongs_to(:sequence_transaction, ZkevmLifecycleTransaction,
+    belongs_to(:sequence_transaction, LifecycleTransaction,
       foreign_key: :sequence_id,
       references: :id,
       type: :integer
     )
 
-    belongs_to(:verify_transaction, ZkevmLifecycleTransaction, foreign_key: :verify_id, references: :id, type: :integer)
+    belongs_to(:verify_transaction, LifecycleTransaction, foreign_key: :verify_id, references: :id, type: :integer)
 
-    has_many(:l2_transactions, ZkevmBatchTransaction, foreign_key: :batch_number)
+    has_many(:l2_transactions, BatchTransaction, foreign_key: :batch_number)
 
     timestamps()
   end
