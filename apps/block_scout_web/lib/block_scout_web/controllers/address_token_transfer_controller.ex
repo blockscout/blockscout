@@ -13,6 +13,8 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
   import BlockScoutWeb.Chain,
     only: [current_filter: 1, next_page_params: 3, paging_options: 1, split_list_by_page: 1]
 
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
   @transaction_necessity_by_association [
     necessity_by_association: %{
       [created_contract_address: :names] => :optional,
@@ -29,7 +31,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
     }
   ]
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
 
   def index(

@@ -519,7 +519,12 @@
         "erts",
         "Asfpp",
         "Nerg",
-        "secp"
+        "secp",
+        "qwertyuioiuytrewertyuioiuytrertyuio",
+        "urlset",
+        "lastmod",
+        "qitmeer",
+        "meer",
     ],
     "enableFiletypes": [
         "dotenv",

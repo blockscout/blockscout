@@ -4,13 +4,15 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
   """
 
   import BlockScoutWeb.Chain, only: [default_paging_options: 0]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Block, Transaction, Wei}
   alias Explorer.Chain.Cache.StateChanges
   alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
 
   def state_changes(transaction, options \\ [])
