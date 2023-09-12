@@ -702,6 +702,148 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                "method_id" => Base.encode16(id, case: :lower)
              } in response
     end
+
+    test "get correct bytes value 1", %{conn: conn} do
+      abi = [
+        %{
+          "inputs" => [],
+          "name" => "all_messages_hash",
+          "outputs" => [
+            %{
+              "internalType" => "bytes32",
+              "name" => "",
+              "type" => "bytes32"
+            }
+          ],
+          "stateMutability" => "view",
+          "type" => "function"
+        }
+      ]
+
+      id_1 =
+        abi
+        |> ABI.parse_specification()
+        |> Enum.at(0)
+        |> Map.fetch!(:method_id)
+
+      target_contract = insert(:smart_contract, abi: abi)
+      address_hash_string = to_string(target_contract.address_hash)
+
+      EthereumJSONRPC.Mox
+      |> expect(
+        :json_rpc,
+        fn [
+             %{
+               id: id,
+               method: "eth_call",
+               params: [
+                 %{data: "0x1dd69d06", to: ^address_hash_string},
+                 "latest"
+               ]
+             }
+           ],
+           _opts ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x0000000000000000000000000000000000000000000000000000000000000000"
+             }
+           ]}
+        end
+      )
+
+      request = get(conn, "/api/v2/smart-contracts/#{target_contract.address_hash}/methods-read")
+      assert response = json_response(request, 200)
+
+      assert %{
+               "inputs" => [],
+               "name" => "all_messages_hash",
+               "outputs" => [
+                 %{
+                   "value" => "0x0000000000000000000000000000000000000000000000000000000000000000",
+                   "type" => "bytes32"
+                 }
+               ],
+               "stateMutability" => "view",
+               "type" => "function",
+               "method_id" => Base.encode16(id_1, case: :lower),
+               "names" => ["bytes32"]
+             } in response
+    end
+
+    test "get correct bytes value 2", %{conn: conn} do
+      abi = [
+        %{
+          "inputs" => [],
+          "name" => "FRAUD_STRING",
+          "outputs" => [
+            %{
+              "internalType" => "bytes",
+              "name" => "",
+              "type" => "bytes"
+            }
+          ],
+          "stateMutability" => "view",
+          "type" => "function"
+        }
+      ]
+
+      id_2 =
+        abi
+        |> ABI.parse_specification()
+        |> Enum.at(0)
+        |> Map.fetch!(:method_id)
+
+      target_contract = insert(:smart_contract, abi: abi)
+      address_hash_string = to_string(target_contract.address_hash)
+
+      EthereumJSONRPC.Mox
+      |> expect(
+        :json_rpc,
+        fn [
+             %{
+               id: id,
+               method: "eth_call",
+               params: [
+                 %{data: "0x46b2eb9b", to: ^address_hash_string},
+                 "latest"
+               ]
+             }
+           ],
+           _opts ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result:
+                 "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000322d2d5468697320697320612062616420737472696e672e204e6f626f64792073617973207468697320737472696e672e2d2d0000000000000000000000000000"
+             }
+           ]}
+        end
+      )
+
+      request = get(conn, "/api/v2/smart-contracts/#{target_contract.address_hash}/methods-read")
+      assert response = json_response(request, 200)
+
+      assert %{
+               "inputs" => [],
+               "name" => "FRAUD_STRING",
+               "outputs" => [
+                 %{
+                   "value" =>
+                     "0x2d2d5468697320697320612062616420737472696e672e204e6f626f64792073617973207468697320737472696e672e2d2d",
+                   "type" => "bytes"
+                 }
+               ],
+               "stateMutability" => "view",
+               "type" => "function",
+               "method_id" => Base.encode16(id_2, case: :lower),
+               "names" => ["bytes"]
+             } in response
+    end
   end
 
   describe "/smart-contracts/{address_hash}/query-read-method" do
