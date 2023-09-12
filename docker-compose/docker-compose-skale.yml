@@ -39,6 +39,7 @@ services:
       ETHEREUM_JSONRPC_HTTP_URL: ${ENDPOINT}
       ETHEREUM_JSONRPC_WS_URL: ${WS_ENDPOINT}
       DATABASE_URL: postgresql://postgres:@host.docker.internal:${DB_PORT}/blockscout?ssl=false
+      FIRST_BLOCK: ${FIRST_BLOCK:-0}
       NETWORK: "SKALE"
       INDEXER_RECEIPTS_BATCH_SIZE: 128
       INDEXER_COIN_BALANCES_BATCH_SIZE: 128
@@ -59,7 +60,7 @@ services:
     ports:
       - ${PORT}:4000
     volumes:
-      - ./logs/:/app/logs/
+      - ./logs/${SCHAIN_NAME}:/app/logs/
       - ${CONFIG_PATH:-./}:/opt/app/config.json
 
   smart-contract-verifier:
