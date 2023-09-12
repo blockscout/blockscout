@@ -107,7 +107,11 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
          true <- Enum.count(token_values_list) > 0,
          token_values <- token_values_list |> Enum.at(0),
          true <- Enum.count(token_values) > 0 do
-      token_values |> Enum.at(0)
+      if is_list(token_values) do
+        token_values |> Enum.at(0)
+      else
+        token_values
+      end
     else
       _ -> %{}
     end
