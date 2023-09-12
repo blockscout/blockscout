@@ -26,6 +26,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   @behaviour BufferedTask
 
   @default_max_batch_size 100
+  @default_max_concurrency 10
 
   @max_retries 3
 
@@ -75,8 +76,7 @@ defmodule Indexer.Fetcher.TokenBalance do
           token_balance
           |> entry()
           |> reducer.(acc)
-        end,
-        true
+        end
       )
 
     final
@@ -235,7 +235,7 @@ defmodule Indexer.Fetcher.TokenBalance do
     [
       flush_interval: 300,
       max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
-      max_concurrency: 10,
+      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
       task_supervisor: Indexer.Fetcher.TokenBalance.TaskSupervisor
     ]
   end

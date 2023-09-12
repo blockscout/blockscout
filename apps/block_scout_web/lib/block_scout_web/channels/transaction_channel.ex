@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.TransactionChannel do
   """
   use BlockScoutWeb, :channel
 
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
   alias BlockScoutWeb.API.V2.TransactionView, as: TransactionViewV2
   alias BlockScoutWeb.{TransactionRawTraceView, TransactionView}
   alias Explorer.Chain
@@ -12,7 +14,7 @@ defmodule BlockScoutWeb.TransactionChannel do
 
   intercept(["pending_transaction", "transaction", "raw_trace"])
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
 
   def join("transactions:new_transaction", _params, socket) do

@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.Notifier do
   Responds to events by sending appropriate channel updates to front-end.
   """
 
+  require Logger
+
   alias Absinthe.Subscription
 
   alias BlockScoutWeb.API.V2, as: API_V2
@@ -17,6 +19,7 @@ defmodule BlockScoutWeb.Notifier do
   }
 
   alias Explorer.{Chain, Market, Repo}
+  alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
@@ -27,7 +30,7 @@ defmodule BlockScoutWeb.Notifier do
   @check_broadcast_sequence_period 500
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
-    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})
+    Endpoint.broadcast("addresses:new_address", "count", %{count: Counters.address_estimated_count()})
 
     addresses
     |> Stream.reject(fn %Address{fetched_coin_balance: fetched_coin_balance} -> is_nil(fetched_coin_balance) end)
@@ -44,14 +47,11 @@ defmodule BlockScoutWeb.Notifier do
     Enum.each(address_token_balances, &broadcast_address_token_balance/1)
   end
 
-  def handle_event({:chain_event, :address_current_token_balances, type, address_current_token_balances})
-      when type in [:realtime, :on_demand] do
-    Enum.each(address_current_token_balances, &broadcast_address_token_balance/1)
-  end
-
   def handle_event(
         {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result}}
       ) do
+    log_broadcast_verification_results_for_address(address_hash)
+
     Endpoint.broadcast(
       "addresses:#{address_hash}",
       "verification_result",
@@ -64,6 +64,7 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event(
         {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result, conn}}
       ) do
+    log_broadcast_verification_results_for_address(address_hash)
     %{view: view, compiler: compiler} = select_contract_type_and_form_view(conn.params)
 
     contract_verification_result =
@@ -222,10 +223,20 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :smart_contract_was_verified, :on_demand, [address_hash]}) do
+    log_broadcast_smart_contract_was_verified(address_hash)
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", "smart_contract_was_verified", %{})
   end
 
-  def handle_event(_), do: nil
+  def handle_event({:chain_event, :address_current_token_balances, :on_demand, address_current_token_balances}) do
+    Endpoint.broadcast("addresses:#{address_current_token_balances.address_hash}", "address_current_token_balances", %{
+      address_current_token_balances: address_current_token_balances.address_current_token_balances
+    })
+  end
+
+  def handle_event(event) do
+    Logger.warning("Unknown broadcasted event #{inspect(event)}.")
+    nil
+  end
 
   def fetch_compiler_version(compiler) do
     case CompilerVersion.fetch_versions(compiler) do
@@ -478,5 +489,13 @@ defmodule BlockScoutWeb.Notifier do
     for {address_hash, elements} <- grouped do
       Endpoint.broadcast("addresses:#{address_hash}", event, %{map_key => elements})
     end
+  end
+
+  defp log_broadcast_verification_results_for_address(address_hash) do
+    Logger.info("Broadcast smart-contract #{address_hash} verification results")
+  end
+
+  defp log_broadcast_smart_contract_was_verified(address_hash) do
+    Logger.info("Broadcast smart-contract #{address_hash} was verified")
   end
 end

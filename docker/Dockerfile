@@ -37,7 +37,7 @@ RUN mix do deps.get, local.rebar --force, deps.compile
 ADD apps ./apps
 ADD config ./config
 ADD rel ./rel
-ADD *.exs .
+ADD *.exs ./
 
 RUN apk add --update nodejs npm
 
@@ -70,7 +70,7 @@ ENV RELEASE_VERSION=${RELEASE_VERSION}
 ARG BLOCKSCOUT_VERSION
 ENV BLOCKSCOUT_VERSION=${BLOCKSCOUT_VERSION}
 
-RUN apk --no-cache --update add jq
+RUN apk --no-cache --update add jq curl
 
 WORKDIR /app
 

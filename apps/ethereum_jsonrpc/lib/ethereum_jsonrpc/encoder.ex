@@ -69,7 +69,7 @@ defmodule EthereumJSONRPC.Encoder do
     end
   end
 
-  def decode_result(result, selectors, _leave_error_as_map) when is_list(selectors) do
+  def decode_result(%{id: id, result: _result} = result, selectors, _leave_error_as_map) when is_list(selectors) do
     selectors
     |> Enum.map(fn selector ->
       try do
@@ -78,7 +78,7 @@ defmodule EthereumJSONRPC.Encoder do
         _ -> :error
       end
     end)
-    |> Enum.find(fn decode ->
+    |> Enum.find({id, {:error, :unable_to_decode}}, fn decode ->
       case decode do
         {_id, {:ok, _}} -> true
         _ -> false

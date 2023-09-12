@@ -37,14 +37,6 @@ defmodule Explorer.Market.History.Source.MarketCap.CoinGecko do
     end
   end
 
-  @spec date(String.t()) :: Date.t()
-  defp date(date_time_string) do
-    with {:ok, datetime, _} <- DateTime.from_iso8601(date_time_string) do
-      datetime
-      |> DateTime.to_date()
-    end
-  end
-
   @spec format_data(term()) :: SourceMarketCap.record() | nil
   defp format_data(nil), do: nil
 
@@ -54,7 +46,7 @@ defmodule Explorer.Market.History.Source.MarketCap.CoinGecko do
 
     %{
       market_cap: Decimal.new(to_string(market_cap["usd"])),
-      date: date(data["last_updated"])
+      date: ExchangeRatesSourceCoinGecko.date(data["last_updated"])
     }
   end
 end

@@ -6,10 +6,9 @@ defmodule BlockScoutWeb.AddressTransactionController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
-
   import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
-
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias BlockScoutWeb.{AccessHelper, Controller, TransactionView}
   alias Explorer.{Chain, Market}
@@ -40,7 +39,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
     }
   ]
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
