@@ -754,12 +754,95 @@ defmodule Explorer.SmartContract.Reader do
     Map.put_new(output, "value", Encoder.unescape(value))
   end
 
+  defp new_value(%{"type" => "tuple" <> _types = type} = output, values, index) do
+    value = Enum.at(values, index)
+
+    result =
+      if String.ends_with?(type, "[]") do
+        value
+        |> Enum.map(fn tuple -> new_value(%{"type" => String.slice(type, 0..-3)}, [tuple], 0) end)
+        |> flat_arrays_map()
+      else
+        value
+        |> zip_tuple_values_with_types(type)
+        |> Enum.map(fn {type, part_value} ->
+          new_value(%{"type" => type}, [part_value], 0)
+        end)
+        |> flat_arrays_map()
+        |> List.to_tuple()
+      end
+
+    Map.put_new(output, "value", result)
+  end
+
   defp new_value(output, [value], _index) do
     Map.put_new(output, "value", value)
   end
 
   defp new_value(output, values, index) do
     Map.put_new(output, "value", Enum.at(values, index))
+  end
+
+  defp flat_arrays_map(%{"value" => value}) do
+    flat_arrays_map(value)
+  end
+
+  defp flat_arrays_map(value) when is_list(value) do
+    Enum.map(value, &flat_arrays_map/1)
+  end
+
+  defp flat_arrays_map(value) when is_tuple(value) do
+    value
+    |> Tuple.to_list()
+    |> flat_arrays_map()
+    |> List.to_tuple()
+  end
+
+  defp flat_arrays_map(value) do
+    value
+  end
+
+  @spec zip_tuple_values_with_types(tuple, binary) :: [{binary, any}]
+  def zip_tuple_values_with_types(value, type) do
+    types_string =
+      type
+      |> String.slice(6..-2)
+
+    types =
+      if String.trim(types_string) == "" do
+        []
+      else
+        types_string
+        |> String.graphemes()
+      end
+
+    tuple_types =
+      types
+      |> Enum.reduce(
+        {[""], 0},
+        fn
+          ",", {types_acc, 0} ->
+            {["" | types_acc], 0}
+
+          char, {[acc | types_acc], bracket_stack} ->
+            new_bracket_stack =
+              case char do
+                "[" -> bracket_stack + 1
+                "]" -> bracket_stack - 1
+                _ -> bracket_stack
+              end
+
+            {[acc <> char | types_acc], new_bracket_stack}
+        end
+      )
+      |> elem(0)
+      |> Enum.reverse()
+
+    values_list =
+      value
+      |> Tuple.to_list()
+
+    Enum.zip(tuple_types, values_list)
   end
 
   @spec bytes_to_string(<<_::_*8>>) :: String.t()

@@ -8,8 +8,9 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
 
   def index(conn, %{"token_id" => token_address_hash, "instance_id" => token_id_str, "type" => "JSON"} = params) do

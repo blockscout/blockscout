@@ -103,6 +103,8 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
         |> insert_list(:block, consensus: false)
         |> Enum.reverse()
 
+      Enum.each(reorgs, fn b -> insert(:block, number: b.number, consensus: true) end)
+
       request = get(conn, "/api/v2/blocks", %{"type" => "reorg"})
 
       assert response = json_response(request, 200)
@@ -118,6 +120,8 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       reorgs =
         51
         |> insert_list(:block, consensus: false)
+
+      Enum.each(reorgs, fn b -> insert(:block, number: b.number, consensus: true) end)
 
       filter = %{"type" => "reorg"}
       request = get(conn, "/api/v2/blocks", filter)

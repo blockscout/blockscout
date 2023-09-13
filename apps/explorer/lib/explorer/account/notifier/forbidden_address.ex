@@ -3,8 +3,10 @@ defmodule Explorer.Account.Notifier.ForbiddenAddress do
     Check if address is forbidden to notify
   """
 
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
   @blacklist [
-    "0x0000000000000000000000000000000000000000",
+    burn_address_hash_string(),
     "0x000000000000000000000000000000000000dEaD"
   ]
 
