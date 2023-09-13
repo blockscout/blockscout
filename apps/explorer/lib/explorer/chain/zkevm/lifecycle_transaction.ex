@@ -24,6 +24,7 @@ defmodule Explorer.Chain.Zkevm.LifecycleTransaction do
     timestamps()
   end
 
+  @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Schema.t()
   def changeset(%__MODULE__{} = txn, attrs \\ %{}) do
     txn
     |> cast(attrs, @required_attrs)

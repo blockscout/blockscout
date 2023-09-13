@@ -15,6 +15,7 @@ defmodule Explorer.Chain.Zkevm.Reader do
   alias Explorer.Chain.Zkevm.{BatchTransaction, LifecycleTransaction, TransactionBatch}
   alias Explorer.{Chain, PagingOptions, Repo}
 
+  @spec batch(non_neg_integer() | :latest, list()) :: {:ok, map()} | {:error, :not_found}
   def batch(number, options \\ [])
 
   def batch(:latest, options) when is_list(options) do

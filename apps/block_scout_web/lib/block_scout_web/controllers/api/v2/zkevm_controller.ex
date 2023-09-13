@@ -8,7 +8,6 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
       split_list_by_page: 1
     ]
 
-  alias Explorer.Chain
   alias Explorer.Chain.Zkevm.Reader
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -23,6 +22,7 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
     :sequence_transaction => :optional
   }
 
+  @spec batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batch(conn, %{"batch_number" => batch_number} = _params) do
     {:ok, batch} =
       Reader.batch(
@@ -36,12 +36,14 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
     |> render(:zkevm_batch, %{batch: batch})
   end
 
+  @spec batch_latest_number(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batch_latest_number(conn, _params) do
     conn
     |> put_status(200)
     |> render(:zkevm_batch_latest_number, %{number: batch_latest_number()})
   end
 
+  @spec batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batches(conn, params) do
     {batches, next_page} =
       params
@@ -61,12 +63,14 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
     })
   end
 
+  @spec batches_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batches_count(conn, _params) do
     conn
     |> put_status(200)
     |> render(:zkevm_batches_count, %{count: batch_latest_number()})
   end
 
+  @spec batches_confirmed(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batches_confirmed(conn, _params) do
     batches =
       []

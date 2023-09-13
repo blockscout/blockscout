@@ -63,6 +63,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   @api_true [api?: true]
 
+  @spec transaction(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transaction(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     necessity_by_association =
       @transaction_necessity_by_association
@@ -89,6 +90,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     end
   end
 
+  @spec transactions(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transactions(conn, params) do
     filter_options = filter_options(params, :validated)
 
@@ -112,6 +114,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     |> render(:transactions, %{transactions: transactions, next_page_params: next_page_params})
   end
 
+  @spec zkevm_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def zkevm_batch(conn, %{"batch_number" => batch_number} = _params) do
     transactions =
       batch_number
@@ -124,6 +127,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     |> render(:transactions, %{transactions: transactions})
   end
 
+  @spec raw_trace(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def raw_trace(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
@@ -153,6 +157,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     end
   end
 
+  @spec token_transfers(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def token_transfers(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
@@ -185,6 +190,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     end
   end
 
+  @spec internal_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def internal_transactions(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
@@ -213,6 +219,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     end
   end
 
+  @spec logs(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def logs(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
@@ -248,6 +255,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     end
   end
 
+  @spec state_changes(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def state_changes(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
@@ -274,6 +282,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     end
   end
 
+  @spec watchlist_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def watchlist_transactions(conn, params) do
     with {:auth, %{watchlist_id: watchlist_id}} <- {:auth, current_user(conn)} do
       full_options =

@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.V2.ZkevmView do
   use BlockScoutWeb, :view
 
+  @spec render(binary(), map()) :: map() | non_neg_integer()
   def render("zkevm_batch.json", %{batch: batch}) do
     sequence_tx_hash =
       if not is_nil(batch.sequence_transaction) do
