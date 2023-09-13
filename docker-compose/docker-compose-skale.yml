@@ -60,7 +60,7 @@ services:
     ports:
       - ${PORT}:4000
     volumes:
-      - ./logs/${SCHAIN_NAME}:/app/logs/
+      - ${SCHAIN_DATA_DIR:-./blockscout-data}/logs:/app/logs/
       - ${CONFIG_PATH:-./}:/opt/app/config.json
 
   smart-contract-verifier:

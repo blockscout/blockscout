@@ -14,4 +14,4 @@ services:
     ports:
       - ${DB_PORT}:5432
     volumes:
-      - ./blockscout-db-data/${SCHAIN_NAME}:/var/lib/postgresql/data/
+      - ${SCHAIN_DATA_DIR:-./blockscout-data}/data:/var/lib/postgresql/data/
