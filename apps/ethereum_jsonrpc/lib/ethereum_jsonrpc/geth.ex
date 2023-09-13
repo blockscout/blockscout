@@ -279,7 +279,7 @@ defmodule EthereumJSONRPC.Geth do
          trace_address,
          inner?
        )
-       when type in ~w(CALL CALLCODE DELEGATECALL STATICCALL CREATE CREATE2 SELFDESTRUCT REVERT) do
+       when type in ~w(CALL CALLCODE DELEGATECALL STATICCALL CREATE CREATE2 SELFDESTRUCT REVERT STOP) do
     new_trace_address = [index | trace_address]
 
     formatted_call =
