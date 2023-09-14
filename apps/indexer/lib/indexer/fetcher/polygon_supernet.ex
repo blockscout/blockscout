@@ -596,7 +596,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   end
 
   defp get_safe_block(json_rpc_named_arguments) do
-    case get_block_number_by_tag("safe", json_rpc_named_arguments, 100_000_000) do
+    case get_block_number_by_tag("safe", json_rpc_named_arguments) do
       {:ok, safe_block} ->
         {safe_block, false}
 
