@@ -474,7 +474,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @stop_optional_fields ~w(from_address_hash gas gas_used error)a
-  @stop_required_fields ~w(block_number transaction_hash transaction_index index type value)a
+  @stop_required_fields ~w(block_number transaction_hash transaction_index index type value trace_address)a
   @stop_allowed_fields @stop_optional_fields ++ @stop_required_fields
 
   defp type_changeset(changeset, attrs, :stop) do
