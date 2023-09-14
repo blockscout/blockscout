@@ -534,7 +534,8 @@ defmodule EthereumJSONRPC.Geth.Call do
       from_address_hash: from_address_hash,
       input: input,
       gas: gas,
-      gas_used: gas_used
+      gas_used: gas_used,
+      error: "execution stopped"
     }
   end
 end
