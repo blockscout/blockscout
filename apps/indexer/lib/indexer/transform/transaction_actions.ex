@@ -652,8 +652,12 @@ defmodule Indexer.Transform.TransactionActions do
         end
       end)
       |> Enum.map(fn {pool_address, pool} ->
-        token0 = if Helper.is_address_correct?(pool.token0), do: String.downcase(pool.token0), else: burn_address_hash_string()
-        token1 = if Helper.is_address_correct?(pool.token1), do: String.downcase(pool.token1), else: burn_address_hash_string()
+        token0 =
+          if Helper.is_address_correct?(pool.token0), do: String.downcase(pool.token0), else: burn_address_hash_string()
+
+        token1 =
+          if Helper.is_address_correct?(pool.token1), do: String.downcase(pool.token1), else: burn_address_hash_string()
+
         fee = if pool.fee == "", do: 0, else: pool.fee
 
         # we will call getPool(token0, token1, fee) public getter
