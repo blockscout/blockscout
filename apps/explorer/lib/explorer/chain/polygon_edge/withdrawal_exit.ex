@@ -1,5 +1,5 @@
-defmodule Explorer.Chain.PolygonSupernet.WithdrawalExit do
-  @moduledoc "Models polygon supernet withdrawal exit."
+defmodule Explorer.Chain.PolygonEdge.WithdrawalExit do
+  @moduledoc "Models Polygon Edge withdrawal exit."
 
   use Explorer.Schema
 
@@ -21,7 +21,7 @@ defmodule Explorer.Chain.PolygonSupernet.WithdrawalExit do
         }
 
   @primary_key false
-  schema "polygon_supernet_withdrawal_exits" do
+  schema "polygon_edge_withdrawal_exits" do
     field(:msg_id, :integer, primary_key: true)
     field(:l1_transaction_hash, Hash.Full)
     field(:l1_block_number, :integer)

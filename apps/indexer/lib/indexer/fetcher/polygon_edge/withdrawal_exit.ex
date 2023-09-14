@@ -1,6 +1,6 @@
-defmodule Indexer.Fetcher.PolygonSupernet.WithdrawalExit do
+defmodule Indexer.Fetcher.PolygonEdge.WithdrawalExit do
   @moduledoc """
-  Fills polygon_supernet_withdrawal_exits DB table.
+  Fills polygon_edge_withdrawal_exits DB table.
   """
 
   use GenServer
@@ -11,10 +11,10 @@ defmodule Indexer.Fetcher.PolygonSupernet.WithdrawalExit do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Chain.PolygonSupernet.WithdrawalExit
-  alias Indexer.Fetcher.PolygonSupernet
+  alias Explorer.Chain.PolygonEdge.WithdrawalExit
+  alias Indexer.Fetcher.PolygonEdge
 
-  @fetcher_name :polygon_supernet_withdrawal_exit
+  @fetcher_name :polygon_edge_withdrawal_exit
 
   # 32-byte signature of the event ExitProcessed(uint256 indexed id, bool indexed success, bytes returnData)
   @exit_processed_event "0x8bbfa0c9bee3785c03700d2a909592286efb83fc7e7002be5764424b9842f7ec"
@@ -40,27 +40,27 @@ defmodule Indexer.Fetcher.PolygonSupernet.WithdrawalExit do
 
     env = Application.get_all_env(:indexer)[__MODULE__]
 
-    Subscriber.to(:polygon_supernet_reorg_block, :realtime)
+    Subscriber.to(:polygon_edge_reorg_block, :realtime)
 
-    PolygonSupernet.init_l1(
+    PolygonEdge.init_l1(
       WithdrawalExit,
       env,
       self(),
       env[:exit_helper],
       "Exit Helper",
-      "polygon_supernet_withdrawal_exits",
+      "polygon_edge_withdrawal_exits",
       "Withdrawals"
     )
   end
 
   @impl GenServer
   def handle_info(:continue, state) do
-    PolygonSupernet.handle_continue(state, @exit_processed_event, __MODULE__, @fetcher_name)
+    PolygonEdge.handle_continue(state, @exit_processed_event, __MODULE__, @fetcher_name)
   end
 
   @impl GenServer
-  def handle_info({:chain_event, :polygon_supernet_reorg_block, :realtime, block_number}, state) do
-    PolygonSupernet.reorg_block_push(@fetcher_name, block_number)
+  def handle_info({:chain_event, :polygon_edge_reorg_block, :realtime, block_number}, state) do
+    PolygonEdge.reorg_block_push(@fetcher_name, block_number)
     {:noreply, state}
   end
 

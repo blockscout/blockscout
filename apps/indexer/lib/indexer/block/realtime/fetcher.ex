@@ -34,7 +34,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
   alias Indexer.Fetcher.CoinBalance
-  alias Indexer.Fetcher.PolygonSupernet.{DepositExecute, Withdrawal}
+  alias Indexer.Fetcher.PolygonEdge.{DepositExecute, Withdrawal}
   alias Indexer.Prometheus
   alias Indexer.Transform.Addresses
   alias Timex.Duration
@@ -288,8 +288,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Indexer.Logger.metadata(
       fn ->
         if reorg? do
-          # we need to remove all rows from `polygon_supernet_withdrawals` and `polygon_supernet_deposit_executes` tables previously written starting from reorg block number
-          remove_polygon_supernet_assets_by_number(block_number_to_fetch)
+          # we need to remove all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables previously written starting from reorg block number
+          remove_polygon_edge_assets_by_number(block_number_to_fetch)
 
           # give previous fetch attempt (for same block number) a chance to finish
           # before fetching again, to reduce block consensus mistakes
@@ -303,8 +303,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
     )
   end
 
-  defp remove_polygon_supernet_assets_by_number(block_number_to_fetch) do
-    if Application.get_env(:explorer, :chain_type) == "polygon_supernet" do
+  defp remove_polygon_edge_assets_by_number(block_number_to_fetch) do
+    if Application.get_env(:explorer, :chain_type) == "polygon_edge" do
       Withdrawal.remove(block_number_to_fetch)
       DepositExecute.remove(block_number_to_fetch)
     end

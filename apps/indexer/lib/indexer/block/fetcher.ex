@@ -41,7 +41,7 @@ defmodule Indexer.Block.Fetcher do
     TransactionActions
   }
 
-  alias Indexer.Transform.PolygonSupernet.{DepositExecutes, Withdrawals}
+  alias Indexer.Transform.PolygonEdge.{DepositExecutes, Withdrawals}
 
   alias Indexer.Transform.Blocks, as: TransformBlocks
 
@@ -143,9 +143,9 @@ defmodule Indexer.Block.Fetcher do
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
-         polygon_supernet_withdrawals =
+         polygon_edge_withdrawals =
            if(callback_module == Indexer.Block.Realtime.Fetcher, do: Withdrawals.parse(logs), else: []),
-         polygon_supernet_deposit_executes =
+         polygon_edge_deposit_executes =
            if(callback_module == Indexer.Block.Realtime.Fetcher,
              do: DepositExecutes.parse(logs),
              else: []
@@ -201,10 +201,10 @@ defmodule Indexer.Block.Fetcher do
            withdrawals: %{params: withdrawals_params}
          },
          import_options =
-           (if Application.get_env(:explorer, :chain_type) == "polygon_supernet" do
+           (if Application.get_env(:explorer, :chain_type) == "polygon_edge" do
               basic_import_options
-              |> Map.put_new(:polygon_supernet_withdrawals, %{params: polygon_supernet_withdrawals})
-              |> Map.put_new(:polygon_supernet_deposit_executes, %{params: polygon_supernet_deposit_executes})
+              |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
+              |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
             else
               basic_import_options
             end),

@@ -1,5 +1,5 @@
-defmodule Explorer.Chain.PolygonSupernet.DepositExecute do
-  @moduledoc "Models polygon supernet deposit execute."
+defmodule Explorer.Chain.PolygonEdge.DepositExecute do
+  @moduledoc "Models Polygon Edge deposit execute."
 
   use Explorer.Schema
 
@@ -21,7 +21,7 @@ defmodule Explorer.Chain.PolygonSupernet.DepositExecute do
         }
 
   @primary_key false
-  schema "polygon_supernet_deposit_executes" do
+  schema "polygon_edge_deposit_executes" do
     field(:msg_id, :integer, primary_key: true)
     field(:l2_transaction_hash, Hash.Full)
     field(:l2_block_number, :integer)

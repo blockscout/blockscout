@@ -1,8 +1,8 @@
-defmodule BlockScoutWeb.API.V2.PolygonSupernetView do
+defmodule BlockScoutWeb.API.V2.PolygonEdgeView do
   use BlockScoutWeb, :view
 
   @spec render(String.t(), map()) :: map()
-  def render("polygon_supernet_deposits.json", %{
+  def render("polygon_edge_deposits.json", %{
         deposits: deposits,
         next_page_params: next_page_params
       }) do
@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.API.V2.PolygonSupernetView do
     }
   end
 
-  def render("polygon_supernet_withdrawals.json", %{
+  def render("polygon_edge_withdrawals.json", %{
         withdrawals: withdrawals,
         next_page_params: next_page_params
       }) do
@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.API.V2.PolygonSupernetView do
     }
   end
 
-  def render("polygon_supernet_items_count.json", %{count: count}) do
+  def render("polygon_edge_items_count.json", %{count: count}) do
     count
   end
 end

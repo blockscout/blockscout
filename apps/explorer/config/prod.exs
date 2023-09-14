@@ -16,7 +16,7 @@ config :explorer, Explorer.Repo.Account,
   prepare: :unnamed,
   timeout: :timer.seconds(60)
 
-config :explorer, Explorer.Repo.PolygonSupernet,
+config :explorer, Explorer.Repo.PolygonEdge,
   prepare: :unnamed,
   timeout: :timer.seconds(60)
 

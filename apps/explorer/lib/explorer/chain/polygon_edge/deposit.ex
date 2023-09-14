@@ -1,5 +1,5 @@
-defmodule Explorer.Chain.PolygonSupernet.Deposit do
-  @moduledoc "Models polygon supernet deposit."
+defmodule Explorer.Chain.PolygonEdge.Deposit do
+  @moduledoc "Models Polygon Edge deposit."
 
   use Explorer.Schema
 
@@ -32,7 +32,7 @@ defmodule Explorer.Chain.PolygonSupernet.Deposit do
         }
 
   @primary_key false
-  schema "polygon_supernet_deposits" do
+  schema "polygon_edge_deposits" do
     field(:msg_id, :integer, primary_key: true)
     field(:from, Hash.Address)
     field(:to, Hash.Address)

@@ -196,12 +196,12 @@ defmodule BlockScoutWeb.ApiRouter do
       end
     end
 
-    scope "/polygon-supernet" do
-      if System.get_env("CHAIN_TYPE") == "polygon_supernet" do
-        get("/deposits", V2.PolygonSupernetController, :deposits)
-        get("/deposits/count", V2.PolygonSupernetController, :deposits_count)
-        get("/withdrawals", V2.PolygonSupernetController, :withdrawals)
-        get("/withdrawals/count", V2.PolygonSupernetController, :withdrawals_count)
+    scope "/polygon-edge" do
+      if System.get_env("CHAIN_TYPE") == "polygon_edge" do
+        get("/deposits", V2.PolygonEdgeController, :deposits)
+        get("/deposits/count", V2.PolygonEdgeController, :deposits_count)
+        get("/withdrawals", V2.PolygonEdgeController, :withdrawals)
+        get("/withdrawals/count", V2.PolygonEdgeController, :withdrawals_count)
       end
     end
 

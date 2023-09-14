@@ -1,6 +1,6 @@
-defmodule Indexer.Fetcher.PolygonSupernet do
+defmodule Indexer.Fetcher.PolygonEdge do
   @moduledoc """
-  Contains common functions for PolygonSupernet.* fetchers.
+  Contains common functions for PolygonEdge.* fetchers.
   """
 
   use GenServer
@@ -19,9 +19,9 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   alias Explorer.Chain.Events.Publisher
   alias Explorer.{Chain, Repo}
   alias Indexer.{BoundQueue, Helper}
-  alias Indexer.Fetcher.PolygonSupernet.{Deposit, DepositExecute, Withdrawal, WithdrawalExit}
+  alias Indexer.Fetcher.PolygonEdge.{Deposit, DepositExecute, Withdrawal, WithdrawalExit}
 
-  @fetcher_name :polygon_supernet
+  @fetcher_name :polygon_edge
   @block_check_interval_range_size 100
 
   def child_spec(start_link_arguments) do
@@ -54,10 +54,9 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     if reorg_monitor_not_needed do
       :ignore
     else
-      polygon_supernet_l1_rpc =
-        Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonSupernet][:polygon_supernet_l1_rpc]
+      polygon_edge_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonEdge][:polygon_edge_l1_rpc]
 
-      json_rpc_named_arguments = json_rpc_named_arguments(polygon_supernet_l1_rpc)
+      json_rpc_named_arguments = json_rpc_named_arguments(polygon_edge_l1_rpc)
 
       {:ok, block_check_interval, _} = get_block_check_interval(json_rpc_named_arguments)
 
@@ -69,7 +68,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   end
 
   @spec init_l1(
-          Explorer.Chain.PolygonSupernet.Deposit | Explorer.Chain.PolygonSupernet.WithdrawalExit,
+          Explorer.Chain.PolygonEdge.Deposit | Explorer.Chain.PolygonEdge.WithdrawalExit,
           list(),
           pid(),
           binary(),
@@ -78,13 +77,12 @@ defmodule Indexer.Fetcher.PolygonSupernet do
           binary()
         ) :: {:ok, map()} | :ignore
   def init_l1(table, env, pid, contract_address, contract_name, table_name, entity_name)
-      when table in [Explorer.Chain.PolygonSupernet.Deposit, Explorer.Chain.PolygonSupernet.WithdrawalExit] do
+      when table in [Explorer.Chain.PolygonEdge.Deposit, Explorer.Chain.PolygonEdge.WithdrawalExit] do
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
          {:reorg_monitor_started, true} <-
-           {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.PolygonSupernet))},
-         polygon_supernet_l1_rpc =
-           Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonSupernet][:polygon_supernet_l1_rpc],
-         {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(polygon_supernet_l1_rpc)},
+           {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.PolygonEdge))},
+         polygon_edge_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonEdge][:polygon_edge_l1_rpc],
+         {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(polygon_edge_l1_rpc)},
          {:contract_is_valid, true} <- {:contract_is_valid, Helper.is_address_correct?(contract_address)},
          start_block_l1 = parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
@@ -92,7 +90,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
          {last_l1_block_number, last_l1_transaction_hash} <- get_last_l1_item(table),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
-         json_rpc_named_arguments = json_rpc_named_arguments(polygon_supernet_l1_rpc),
+         json_rpc_named_arguments = json_rpc_named_arguments(polygon_edge_l1_rpc),
          {:ok, last_l1_tx} <-
            get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments, 100_000_000),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
@@ -116,7 +114,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
         :ignore
 
       {:reorg_monitor_started, false} ->
-        Logger.error("Cannot start this process as reorg monitor in Indexer.Fetcher.PolygonSupernet is not started.")
+        Logger.error("Cannot start this process as reorg monitor in Indexer.Fetcher.PolygonEdge is not started.")
         :ignore
 
       {:rpc_l1_undefined, true} ->
@@ -153,7 +151,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   end
 
   @spec init_l2(
-          Explorer.Chain.PolygonSupernet.DepositExecute | Explorer.Chain.PolygonSupernet.Withdrawal,
+          Explorer.Chain.PolygonEdge.DepositExecute | Explorer.Chain.PolygonEdge.Withdrawal,
           list(),
           pid(),
           binary(),
@@ -163,7 +161,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
           list()
         ) :: {:ok, map()} | :ignore
   def init_l2(table, env, pid, contract_address, contract_name, table_name, entity_name, json_rpc_named_arguments)
-      when table in [Explorer.Chain.PolygonSupernet.DepositExecute, Explorer.Chain.PolygonSupernet.Withdrawal] do
+      when table in [Explorer.Chain.PolygonEdge.DepositExecute, Explorer.Chain.PolygonEdge.Withdrawal] do
     with {:start_block_l2_undefined, false} <- {:start_block_l2_undefined, is_nil(env[:start_block_l2])},
          {:contract_address_valid, true} <- {:contract_address_valid, Helper.is_address_correct?(contract_address)},
          start_block_l2 = parse_integer(env[:start_block_l2]),
@@ -233,7 +231,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     if latest < prev_latest do
       Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
 
-      Publisher.broadcast([{:polygon_supernet_reorg_block, latest}], :realtime)
+      Publisher.broadcast([{:polygon_edge_reorg_block, latest}], :realtime)
     end
 
     Process.send_after(self(), :reorg_monitor, block_check_interval)
@@ -258,7 +256,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     time_before = Timex.now()
 
     eth_get_logs_range_size =
-      Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonSupernet][:polygon_supernet_eth_get_logs_range_size]
+      Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonEdge][:polygon_edge_eth_get_logs_range_size]
 
     chunks_number = ceil((end_block - start_block + 1) / eth_get_logs_range_size)
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
@@ -337,7 +335,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
              Withdrawal
            ] do
     eth_get_logs_range_size =
-      Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonSupernet][:polygon_supernet_eth_get_logs_range_size]
+      Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonEdge][:polygon_edge_eth_get_logs_range_size]
 
     chunks_number =
       if scan_db do
@@ -370,7 +368,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
         )
 
       event_name =
-        if calling_module == Indexer.Fetcher.PolygonSupernet.DepositExecute do
+        if calling_module == Indexer.Fetcher.PolygonEdge.DepositExecute do
           "StateSyncResult"
         else
           "L2StateSynced"
@@ -483,15 +481,15 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   end
 
   defp msg_id_gap_starts(id_max, table)
-       when table in [Explorer.Chain.PolygonSupernet.DepositExecute, Explorer.Chain.PolygonSupernet.Withdrawal] do
+       when table in [Explorer.Chain.PolygonEdge.DepositExecute, Explorer.Chain.PolygonEdge.Withdrawal] do
     query =
-      if table == Explorer.Chain.PolygonSupernet.DepositExecute do
+      if table == Explorer.Chain.PolygonEdge.DepositExecute do
         from(item in table,
           select: item.l2_block_number,
           order_by: item.msg_id,
           where:
             fragment(
-              "NOT EXISTS (SELECT msg_id FROM polygon_supernet_deposit_executes WHERE msg_id = (? + 1)) AND msg_id != ?",
+              "NOT EXISTS (SELECT msg_id FROM polygon_edge_deposit_executes WHERE msg_id = (? + 1)) AND msg_id != ?",
               item.msg_id,
               ^id_max
             )
@@ -502,7 +500,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
           order_by: item.msg_id,
           where:
             fragment(
-              "NOT EXISTS (SELECT msg_id FROM polygon_supernet_withdrawals WHERE msg_id = (? + 1)) AND msg_id != ?",
+              "NOT EXISTS (SELECT msg_id FROM polygon_edge_withdrawals WHERE msg_id = (? + 1)) AND msg_id != ?",
               item.msg_id,
               ^id_max
             )
@@ -513,15 +511,15 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   end
 
   defp msg_id_gap_ends(id_min, table)
-       when table in [Explorer.Chain.PolygonSupernet.DepositExecute, Explorer.Chain.PolygonSupernet.Withdrawal] do
+       when table in [Explorer.Chain.PolygonEdge.DepositExecute, Explorer.Chain.PolygonEdge.Withdrawal] do
     query =
-      if table == Explorer.Chain.PolygonSupernet.DepositExecute do
+      if table == Explorer.Chain.PolygonEdge.DepositExecute do
         from(item in table,
           select: item.l2_block_number,
           order_by: item.msg_id,
           where:
             fragment(
-              "NOT EXISTS (SELECT msg_id FROM polygon_supernet_deposit_executes WHERE msg_id = (? - 1)) AND msg_id != ?",
+              "NOT EXISTS (SELECT msg_id FROM polygon_edge_deposit_executes WHERE msg_id = (? - 1)) AND msg_id != ?",
               item.msg_id,
               ^id_min
             )
@@ -532,7 +530,7 @@ defmodule Indexer.Fetcher.PolygonSupernet do
           order_by: item.msg_id,
           where:
             fragment(
-              "NOT EXISTS (SELECT msg_id FROM polygon_supernet_withdrawals WHERE msg_id = (? - 1)) AND msg_id != ?",
+              "NOT EXISTS (SELECT msg_id FROM polygon_edge_withdrawals WHERE msg_id = (? - 1)) AND msg_id != ?",
               item.msg_id,
               ^id_min
             )
@@ -679,12 +677,12 @@ defmodule Indexer.Fetcher.PolygonSupernet do
     |> Kernel.||({0, nil})
   end
 
-  defp json_rpc_named_arguments(polygon_supernet_l1_rpc) do
+  defp json_rpc_named_arguments(polygon_edge_l1_rpc) do
     [
       transport: EthereumJSONRPC.HTTP,
       transport_options: [
         http: EthereumJSONRPC.HTTP.HTTPoison,
-        url: polygon_supernet_l1_rpc,
+        url: polygon_edge_l1_rpc,
         http_options: [
           recv_timeout: :timer.minutes(10),
           timeout: :timer.minutes(10),
@@ -739,9 +737,9 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   defp import_events(events, calling_module) do
     {import_data, event_name} =
       if calling_module == Deposit do
-        {%{polygon_supernet_deposits: %{params: events}, timeout: :infinity}, "StateSynced"}
+        {%{polygon_edge_deposits: %{params: events}, timeout: :infinity}, "StateSynced"}
       else
-        {%{polygon_supernet_withdrawal_exits: %{params: events}, timeout: :infinity}, "ExitProcessed"}
+        {%{polygon_edge_withdrawal_exits: %{params: events}, timeout: :infinity}, "ExitProcessed"}
       end
 
     {:ok, _} = Chain.import(import_data)
@@ -804,9 +802,9 @@ defmodule Indexer.Fetcher.PolygonSupernet do
   defp reorg_handle(reorg_block, calling_module) do
     {table, table_name} =
       if calling_module == Deposit do
-        {Explorer.Chain.PolygonSupernet.Deposit, "polygon_supernet_deposits"}
+        {Explorer.Chain.PolygonEdge.Deposit, "polygon_edge_deposits"}
       else
-        {Explorer.Chain.PolygonSupernet.WithdrawalExit, "polygon_supernet_withdrawal_exits"}
+        {Explorer.Chain.PolygonEdge.WithdrawalExit, "polygon_edge_withdrawal_exits"}
       end
 
     {deleted_count, _} = Repo.delete_all(from(item in table, where: item.l1_block_number >= ^reorg_block))

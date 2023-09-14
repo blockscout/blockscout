@@ -539,41 +539,41 @@ config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
 
 config :indexer, Indexer.Fetcher.Withdrawal, first_block: System.get_env("WITHDRAWALS_FIRST_BLOCK")
 
-config :indexer, Indexer.Fetcher.PolygonSupernet.Supervisor,
-  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_supernet")
+config :indexer, Indexer.Fetcher.PolygonEdge.Supervisor,
+  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_edge")
 
-config :indexer, Indexer.Fetcher.PolygonSupernet.Deposit.Supervisor,
-  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_supernet")
+config :indexer, Indexer.Fetcher.PolygonEdge.Deposit.Supervisor,
+  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_edge")
 
-config :indexer, Indexer.Fetcher.PolygonSupernet.DepositExecute.Supervisor,
-  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_supernet")
+config :indexer, Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor,
+  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_edge")
 
-config :indexer, Indexer.Fetcher.PolygonSupernet.Withdrawal.Supervisor,
-  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_supernet")
+config :indexer, Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor,
+  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_edge")
 
-config :indexer, Indexer.Fetcher.PolygonSupernet.WithdrawalExit.Supervisor,
-  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_supernet")
+config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor,
+  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_edge")
 
-config :indexer, Indexer.Fetcher.PolygonSupernet,
-  polygon_supernet_l1_rpc: System.get_env("INDEXER_POLYGON_SUPERNET_L1_RPC"),
-  polygon_supernet_eth_get_logs_range_size:
-    ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_SUPERNET_ETH_GET_LOGS_RANGE_SIZE", 1000)
+config :indexer, Indexer.Fetcher.PolygonEdge,
+  polygon_edge_l1_rpc: System.get_env("INDEXER_POLYGON_EDGE_L1_RPC"),
+  polygon_edge_eth_get_logs_range_size:
+    ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_EDGE_ETH_GET_LOGS_RANGE_SIZE", 1000)
 
-config :indexer, Indexer.Fetcher.PolygonSupernet.Deposit,
-  start_block_l1: System.get_env("INDEXER_POLYGON_SUPERNET_L1_DEPOSITS_START_BLOCK"),
-  state_sender: System.get_env("INDEXER_POLYGON_SUPERNET_L1_STATE_SENDER_CONTRACT")
+config :indexer, Indexer.Fetcher.PolygonEdge.Deposit,
+  start_block_l1: System.get_env("INDEXER_POLYGON_EDGE_L1_DEPOSITS_START_BLOCK"),
+  state_sender: System.get_env("INDEXER_POLYGON_EDGE_L1_STATE_SENDER_CONTRACT")
 
-config :indexer, Indexer.Fetcher.PolygonSupernet.DepositExecute,
-  start_block_l2: System.get_env("INDEXER_POLYGON_SUPERNET_L2_DEPOSITS_START_BLOCK"),
-  state_receiver: System.get_env("INDEXER_POLYGON_SUPERNET_L2_STATE_RECEIVER_CONTRACT")
+config :indexer, Indexer.Fetcher.PolygonEdge.DepositExecute,
+  start_block_l2: System.get_env("INDEXER_POLYGON_EDGE_L2_DEPOSITS_START_BLOCK"),
+  state_receiver: System.get_env("INDEXER_POLYGON_EDGE_L2_STATE_RECEIVER_CONTRACT")
 
-config :indexer, Indexer.Fetcher.PolygonSupernet.Withdrawal,
-  start_block_l2: System.get_env("INDEXER_POLYGON_SUPERNET_L2_WITHDRAWALS_START_BLOCK"),
-  state_sender: System.get_env("INDEXER_POLYGON_SUPERNET_L2_STATE_SENDER_CONTRACT")
+config :indexer, Indexer.Fetcher.PolygonEdge.Withdrawal,
+  start_block_l2: System.get_env("INDEXER_POLYGON_EDGE_L2_WITHDRAWALS_START_BLOCK"),
+  state_sender: System.get_env("INDEXER_POLYGON_EDGE_L2_STATE_SENDER_CONTRACT")
 
-config :indexer, Indexer.Fetcher.PolygonSupernet.WithdrawalExit,
-  start_block_l1: System.get_env("INDEXER_POLYGON_SUPERNET_L1_WITHDRAWALS_START_BLOCK"),
-  exit_helper: System.get_env("INDEXER_POLYGON_SUPERNET_L1_EXIT_HELPER_CONTRACT")
+config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit,
+  start_block_l1: System.get_env("INDEXER_POLYGON_EDGE_L1_WITHDRAWALS_START_BLOCK"),
+  exit_helper: System.get_env("INDEXER_POLYGON_EDGE_L1_EXIT_HELPER_CONTRACT")
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 

@@ -1,11 +1,11 @@
-defmodule Indexer.Transform.PolygonSupernet.DepositExecutes do
+defmodule Indexer.Transform.PolygonEdge.DepositExecutes do
   @moduledoc """
-  Helper functions for transforming data for Polygon Supernet deposit executes.
+  Helper functions for transforming data for Polygon Edge deposit executes.
   """
 
   require Logger
 
-  alias Indexer.Fetcher.PolygonSupernet.DepositExecute
+  alias Indexer.Fetcher.PolygonEdge.DepositExecute
   alias Indexer.Helper
 
   @doc """
@@ -14,7 +14,7 @@ defmodule Indexer.Transform.PolygonSupernet.DepositExecutes do
   @spec parse(list()) :: list()
   def parse(logs) do
     prev_metadata = Logger.metadata()
-    Logger.metadata(fetcher: :polygon_supernet_deposit_executes_realtime)
+    Logger.metadata(fetcher: :polygon_edge_deposit_executes_realtime)
 
     items =
       with false <-

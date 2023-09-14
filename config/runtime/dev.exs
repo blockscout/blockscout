@@ -69,12 +69,12 @@ config :explorer, Explorer.Repo.Account,
   url: ExplorerConfigHelper.get_account_db_url(),
   pool_size: ConfigHelper.parse_integer_env_var("ACCOUNT_POOL_SIZE", 10)
 
-# Configure PolygonSupernet database
-config :explorer, Explorer.Repo.PolygonSupernet,
+# Configure PolygonEdge database
+config :explorer, Explorer.Repo.PolygonEdge,
   database: database,
   hostname: hostname,
   url: System.get_env("DATABASE_URL"),
-  pool_size: ConfigHelper.parse_integer_env_var("POLYGON_SUPERNET_POOL_SIZE", 10)
+  pool_size: ConfigHelper.parse_integer_env_var("POLYGON_EDGE_POOL_SIZE", 10)
 
 variant = Variant.get()
 

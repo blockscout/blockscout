@@ -1,5 +1,5 @@
-defmodule Explorer.Chain.PolygonSupernet.Withdrawal do
-  @moduledoc "Models polygon supernet withdrawal."
+defmodule Explorer.Chain.PolygonEdge.Withdrawal do
+  @moduledoc "Models Polygon Edge withdrawal."
 
   use Explorer.Schema
 
@@ -36,7 +36,7 @@ defmodule Explorer.Chain.PolygonSupernet.Withdrawal do
         }
 
   @primary_key false
-  schema "polygon_supernet_withdrawals" do
+  schema "polygon_edge_withdrawals" do
     field(:msg_id, :integer, primary_key: true)
 
     belongs_to(:from_address, Address, foreign_key: :from, references: :hash, type: Hash.Address)

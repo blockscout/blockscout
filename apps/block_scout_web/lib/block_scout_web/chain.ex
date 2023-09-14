@@ -334,7 +334,7 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  # clause for Polygon Supernet Deposits and Withdrawals
+  # clause for Polygon Edge Deposits and Withdrawals
   def paging_options(%{"id" => id_string}) when is_binary(id_string) do
     case Integer.parse(id_string) do
       {id, ""} ->
@@ -345,7 +345,7 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  # clause for Polygon Supernet Deposits and Withdrawals
+  # clause for Polygon Edge Deposits and Withdrawals
   def paging_options(%{"id" => id}) when is_integer(id) do
     [paging_options: %{@default_paging_options | key: {id}}]
   end
@@ -532,7 +532,7 @@ defmodule BlockScoutWeb.Chain do
     %{"state_changes" => nil}
   end
 
-  # clause for Polygon Supernet Deposits and Withdrawals
+  # clause for Polygon Edge Deposits and Withdrawals
   defp paging_params(%{msg_id: msg_id}) do
     %{"id" => msg_id}
   end

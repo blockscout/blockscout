@@ -179,14 +179,14 @@ defmodule Explorer.Repo do
     end
   end
 
-  defmodule PolygonSupernet do
+  defmodule PolygonEdge do
     use Ecto.Repo,
       otp_app: :explorer,
       adapter: Ecto.Adapters.Postgres
 
     def init(_, opts) do
-      db_url = Application.get_env(:explorer, Explorer.Repo.PolygonSupernet)[:url]
-      repo_conf = Application.get_env(:explorer, Explorer.Repo.PolygonSupernet)
+      db_url = Application.get_env(:explorer, Explorer.Repo.PolygonEdge)[:url]
+      repo_conf = Application.get_env(:explorer, Explorer.Repo.PolygonEdge)
 
       merged =
         %{url: db_url}
@@ -197,7 +197,7 @@ defmodule Explorer.Repo do
           _, _, v2 -> v2
         end)
 
-      Application.put_env(:explorer, Explorer.Repo.PolygonSupernet, merged)
+      Application.put_env(:explorer, Explorer.Repo.PolygonEdge, merged)
 
       {:ok, Keyword.put(opts, :url, db_url)}
     end

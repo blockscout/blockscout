@@ -17,7 +17,7 @@ defmodule Explorer.ReleaseTasks do
   @repos Application.compile_env(:blockscout, :ecto_repos, [
            Explorer.Repo,
            Explorer.Repo.Account,
-           Explorer.Repo.PolygonSupernet
+           Explorer.Repo.PolygonEdge
          ])
 
   def create_and_migrate do

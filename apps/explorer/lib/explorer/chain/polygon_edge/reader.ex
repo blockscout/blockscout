@@ -1,5 +1,5 @@
-defmodule Explorer.Chain.PolygonSupernet.Reader do
-  @moduledoc "Contains read functions for polygon supernet modules."
+defmodule Explorer.Chain.PolygonEdge.Reader do
+  @moduledoc "Contains read functions for Polygon Edge modules."
 
   import Ecto.Query,
     only: [
@@ -10,7 +10,7 @@ defmodule Explorer.Chain.PolygonSupernet.Reader do
   import Explorer.Chain, only: [default_paging_options: 0, select_repo: 1]
 
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.Chain.PolygonSupernet.{Deposit, DepositExecute, Withdrawal, WithdrawalExit}
+  alias Explorer.Chain.PolygonEdge.{Deposit, DepositExecute, Withdrawal, WithdrawalExit}
   alias Explorer.Chain.{Block, Hash}
 
   @spec deposits(list()) :: list()

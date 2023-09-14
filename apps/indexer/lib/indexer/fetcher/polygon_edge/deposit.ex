@@ -1,6 +1,6 @@
-defmodule Indexer.Fetcher.PolygonSupernet.Deposit do
+defmodule Indexer.Fetcher.PolygonEdge.Deposit do
   @moduledoc """
-  Fills polygon_supernet_deposits DB table.
+  Fills polygon_edge_deposits DB table.
   """
 
   use GenServer
@@ -15,10 +15,10 @@ defmodule Indexer.Fetcher.PolygonSupernet.Deposit do
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Chain.PolygonSupernet.Deposit
-  alias Indexer.Fetcher.PolygonSupernet
+  alias Explorer.Chain.PolygonEdge.Deposit
+  alias Indexer.Fetcher.PolygonEdge
 
-  @fetcher_name :polygon_supernet_deposit
+  @fetcher_name :polygon_edge_deposit
 
   # 32-byte signature of the event StateSynced(uint256 indexed id, address indexed sender, address indexed receiver, bytes data)
   @state_synced_event "0xd1d7f6609674cc5871fdb4b0bcd4f0a214118411de9e38983866514f22659165"
@@ -47,27 +47,27 @@ defmodule Indexer.Fetcher.PolygonSupernet.Deposit do
 
     env = Application.get_all_env(:indexer)[__MODULE__]
 
-    Subscriber.to(:polygon_supernet_reorg_block, :realtime)
+    Subscriber.to(:polygon_edge_reorg_block, :realtime)
 
-    PolygonSupernet.init_l1(
+    PolygonEdge.init_l1(
       Deposit,
       env,
       self(),
       env[:state_sender],
       "State Sender",
-      "polygon_supernet_deposits",
+      "polygon_edge_deposits",
       "Deposits"
     )
   end
 
   @impl GenServer
   def handle_info(:continue, state) do
-    PolygonSupernet.handle_continue(state, @state_synced_event, __MODULE__, @fetcher_name)
+    PolygonEdge.handle_continue(state, @state_synced_event, __MODULE__, @fetcher_name)
   end
 
   @impl GenServer
-  def handle_info({:chain_event, :polygon_supernet_reorg_block, :realtime, block_number}, state) do
-    PolygonSupernet.reorg_block_push(@fetcher_name, block_number)
+  def handle_info({:chain_event, :polygon_edge_reorg_block, :realtime, block_number}, state) do
+    PolygonEdge.reorg_block_push(@fetcher_name, block_number)
     {:noreply, state}
   end
 
@@ -122,7 +122,7 @@ defmodule Indexer.Fetcher.PolygonSupernet.Deposit do
 
     error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
 
-    case PolygonSupernet.repeated_request(request, error_message, json_rpc_named_arguments, retries) do
+    case PolygonEdge.repeated_request(request, error_message, json_rpc_named_arguments, retries) do
       {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
       {:error, _} -> []
     end

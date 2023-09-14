@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.API.V2.PolygonSupernetController do
+defmodule BlockScoutWeb.API.V2.PolygonEdgeController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.PolygonSupernetController do
       split_list_by_page: 1
     ]
 
-  alias Explorer.Chain.PolygonSupernet.Reader
+  alias Explorer.Chain.PolygonEdge.Reader
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.API.V2.PolygonSupernetController do
 
     conn
     |> put_status(200)
-    |> render(:polygon_supernet_deposits, %{
+    |> render(:polygon_edge_deposits, %{
       deposits: deposits,
       next_page_params: next_page_params
     })
@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.API.V2.PolygonSupernetController do
 
     conn
     |> put_status(200)
-    |> render(:polygon_supernet_items_count, %{count: count})
+    |> render(:polygon_edge_items_count, %{count: count})
   end
 
   @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -53,7 +53,7 @@ defmodule BlockScoutWeb.API.V2.PolygonSupernetController do
 
     conn
     |> put_status(200)
-    |> render(:polygon_supernet_withdrawals, %{
+    |> render(:polygon_edge_withdrawals, %{
       withdrawals: withdrawals,
       next_page_params: next_page_params
     })
@@ -65,6 +65,6 @@ defmodule BlockScoutWeb.API.V2.PolygonSupernetController do
 
     conn
     |> put_status(200)
-    |> render(:polygon_supernet_items_count, %{count: count})
+    |> render(:polygon_edge_items_count, %{count: count})
   end
 end

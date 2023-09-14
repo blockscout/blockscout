@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.PolygonSupernet.Reader
+  alias Explorer.Chain.PolygonEdge.Reader
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.Counters.AverageBlockTime
   alias Timex.Duration
@@ -408,10 +408,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "has_error_in_internal_txs" => transaction.has_error_in_internal_txs
     }
 
-    if Application.get_env(:explorer, :chain_type) == "polygon_supernet" && single_tx? do
+    if Application.get_env(:explorer, :chain_type) == "polygon_edge" && single_tx? do
       result
-      |> Map.put("polygon_supernet_deposit", polygon_supernet_deposit(transaction.hash, conn))
-      |> Map.put("polygon_supernet_withdrawal", polygon_supernet_withdrawal(transaction.hash, conn))
+      |> Map.put("polygon_edge_deposit", polygon_edge_deposit(transaction.hash, conn))
+      |> Map.put("polygon_edge_withdrawal", polygon_edge_withdrawal(transaction.hash, conn))
     else
       result
     end
@@ -691,19 +691,19 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     Map.merge(map, %{"change" => change})
   end
 
-  defp polygon_supernet_deposit(transaction_hash, conn) do
+  defp polygon_edge_deposit(transaction_hash, conn) do
     transaction_hash
     |> Reader.deposit_by_transaction_hash()
-    |> polygon_supernet_deposit_or_withdrawal(conn)
+    |> polygon_edge_deposit_or_withdrawal(conn)
   end
 
-  defp polygon_supernet_withdrawal(transaction_hash, conn) do
+  defp polygon_edge_withdrawal(transaction_hash, conn) do
     transaction_hash
     |> Reader.withdrawal_by_transaction_hash()
-    |> polygon_supernet_deposit_or_withdrawal(conn)
+    |> polygon_edge_deposit_or_withdrawal(conn)
   end
 
-  defp polygon_supernet_deposit_or_withdrawal(item, conn) do
+  defp polygon_edge_deposit_or_withdrawal(item, conn) do
     if not is_nil(item) do
       {from_address, from_address_hash} = hash_to_address_and_hash(item.from)
       {to_address, to_address_hash} = hash_to_address_and_hash(item.to)

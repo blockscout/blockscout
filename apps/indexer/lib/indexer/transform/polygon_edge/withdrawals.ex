@@ -1,11 +1,11 @@
-defmodule Indexer.Transform.PolygonSupernet.Withdrawals do
+defmodule Indexer.Transform.PolygonEdge.Withdrawals do
   @moduledoc """
-  Helper functions for transforming data for Polygon Supernet withdrawals.
+  Helper functions for transforming data for Polygon Edge withdrawals.
   """
 
   require Logger
 
-  alias Indexer.Fetcher.PolygonSupernet.Withdrawal
+  alias Indexer.Fetcher.PolygonEdge.Withdrawal
   alias Indexer.Helper
 
   @doc """
@@ -14,7 +14,7 @@ defmodule Indexer.Transform.PolygonSupernet.Withdrawals do
   @spec parse(list()) :: list()
   def parse(logs) do
     prev_metadata = Logger.metadata()
-    Logger.metadata(fetcher: :polygon_supernet_withdrawals_realtime)
+    Logger.metadata(fetcher: :polygon_edge_withdrawals_realtime)
 
     items =
       with false <- is_nil(Application.get_env(:indexer, Withdrawal)[:start_block_l2]),

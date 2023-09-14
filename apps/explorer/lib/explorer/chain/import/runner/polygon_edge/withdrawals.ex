@@ -1,6 +1,6 @@
-defmodule Explorer.Chain.Import.Runner.PolygonSupernet.Withdrawals do
+defmodule Explorer.Chain.Import.Runner.PolygonEdge.Withdrawals do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.PolygonSupernet.Withdrawal.t/0`.
+  Bulk imports `t:Explorer.Chain.PolygonEdge.Withdrawal.t/0`.
   """
 
   require Ecto.Query
@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernet.Withdrawals do
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Import
-  alias Explorer.Chain.PolygonSupernet.Withdrawal
+  alias Explorer.Chain.PolygonEdge.Withdrawal
   alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
@@ -23,7 +23,7 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernet.Withdrawals do
   def ecto_schema_module, do: Withdrawal
 
   @impl Import.Runner
-  def option_key, do: :polygon_supernet_withdrawals
+  def option_key, do: :polygon_edge_withdrawals
 
   @impl Import.Runner
   @spec imported_table_row() :: %{:value_description => binary(), :value_type => binary()}
@@ -44,12 +44,12 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernet.Withdrawals do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_polygon_supernet_withdrawals, fn repo, _ ->
+    Multi.run(multi, :insert_polygon_edge_withdrawals, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :polygon_supernet_withdrawals,
-        :polygon_supernet_withdrawals
+        :polygon_edge_withdrawals,
+        :polygon_edge_withdrawals
       )
     end)
   end
@@ -63,7 +63,7 @@ defmodule Explorer.Chain.Import.Runner.PolygonSupernet.Withdrawals do
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce PolygonSupernet.Withdrawal ShareLocks order (see docs: sharelock.md)
+    # Enforce PolygonEdge.Withdrawal ShareLocks order (see docs: sharelock.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.msg_id)
 
     {:ok, inserted} =

@@ -21,13 +21,13 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
   @impl Stage
   def runners do
-    if System.get_env("CHAIN_TYPE") == "polygon_supernet" do
+    if System.get_env("CHAIN_TYPE") == "polygon_edge" do
       @default_runners ++
         [
-          Runner.PolygonSupernet.Deposits,
-          Runner.PolygonSupernet.DepositExecutes,
-          Runner.PolygonSupernet.Withdrawals,
-          Runner.PolygonSupernet.WithdrawalExits
+          Runner.PolygonEdge.Deposits,
+          Runner.PolygonEdge.DepositExecutes,
+          Runner.PolygonEdge.Withdrawals,
+          Runner.PolygonEdge.WithdrawalExits
         ]
     else
       @default_runners
