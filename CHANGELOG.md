@@ -4,16 +4,19 @@
 
 ### Features
 
+- [#8382](https://github.com/blockscout/blockscout/pull/8382) - Add sitemap.xml
 - [#8313](https://github.com/blockscout/blockscout/pull/8313) - Add batches to TokenInstance fetchers
-- [#8285](https://github.com/blockscout/blockscout/pull/8285) - Add CG/CMC coin price sources
+- [#8285](https://github.com/blockscout/blockscout/pull/8285), [#8399](https://github.com/blockscout/blockscout/pull/8399) - Add CG/CMC coin price sources
 - [#8181](https://github.com/blockscout/blockscout/pull/8181) - Insert current token balances placeholders along with historical
 - [#8210](https://github.com/blockscout/blockscout/pull/8210) - Drop address foreign keys
 - [#8292](https://github.com/blockscout/blockscout/pull/8292) - Add ETHEREUM_JSONRPC_WAIT_PER_TIMEOUT env var
 - [#8269](https://github.com/blockscout/blockscout/pull/8269) - Don't push back to sequence on catchup exception
-- [#8362](https://github.com/blockscout/blockscout/pull/8362) - Drop current token balances tokens foreign key
+- [#8362](https://github.com/blockscout/blockscout/pull/8362), [#8398](https://github.com/blockscout/blockscout/pull/8398) - Drop token balances tokens foreign key
 
 ### Fixes
 
+- [#8446](https://github.com/blockscout/blockscout/pull/8446) - Fix market cap calculation in case of CMC
+- [#8431](https://github.com/blockscout/blockscout/pull/8431) - Fix contracts' output decoding
 - [#8354](https://github.com/blockscout/blockscout/pull/8354) - Hotfix for proper addresses' tokens displaying
 - [#8350](https://github.com/blockscout/blockscout/pull/8350) - Add Base Mainnet support for tx actions
 - [#8282](https://github.com/blockscout/blockscout/pull/8282) - NFT fetcher improvements
@@ -22,9 +25,11 @@
 - [#8240](https://github.com/blockscout/blockscout/pull/8240) - Refactor and fix paging params in API v2
 - [#8242](https://github.com/blockscout/blockscout/pull/8242) - Fixing visualizer service CORS issue when running docker-compose
 - [#8355](https://github.com/blockscout/blockscout/pull/8355) - Fix current token balances redefining
+- [#8338](https://github.com/blockscout/blockscout/pull/8338) - Fix reorgs query
 
 ### Chore
 
+- [#8442](https://github.com/blockscout/blockscout/pull/8442) - Unify burn address definition
 - [#8321](https://github.com/blockscout/blockscout/pull/8321) - Add curl into resulting Docker image
 - [#8319](https://github.com/blockscout/blockscout/pull/8319) - Add MIX_ENV: 'prod' to docker-compose
 - [#8281](https://github.com/blockscout/blockscout/pull/8281) - Planned removal of duplicate API endpoints: for CSV export and GraphQL

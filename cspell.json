@@ -520,7 +520,11 @@
         "Asfpp",
         "Nerg",
         "secp",
-        "qwertyuioiuytrewertyuioiuytrertyuio"
+        "qwertyuioiuytrewertyuioiuytrertyuio",
+        "urlset",
+        "lastmod",
+        "qitmeer",
+        "meer",
     ],
     "enableFiletypes": [
         "dotenv",

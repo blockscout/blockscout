@@ -26,6 +26,7 @@ defmodule Explorer.Chain do
     ]
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, fetch_block_internal_transactions: 2]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   require Logger
 
@@ -121,8 +122,6 @@ defmodule Explorer.Chain do
   @revert_msg_prefix_5 "execution reverted: "
   # keccak256("Error(string)")
   @revert_error_method_id "08c379a0"
-
-  @burn_address_hash_str "0x0000000000000000000000000000000000000000"
 
   @limit_showing_transactions 10_000
   @default_page_size 50
@@ -5820,7 +5819,7 @@ defmodule Explorer.Chain do
   @spec get_token_transfer_type(TokenTransfer.t()) ::
           :token_burning | :token_minting | :token_spawning | :token_transfer
   def get_token_transfer_type(transfer) do
-    {:ok, burn_address_hash} = Chain.string_to_address_hash(@burn_address_hash_str)
+    {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
 
     cond do
       transfer.to_address_hash == burn_address_hash && transfer.from_address_hash !== burn_address_hash ->
@@ -6343,5 +6342,19 @@ defmodule Explorer.Chain do
           )
       }
     )
+  end
+
+  @spec verified_contracts_top(non_neg_integer()) :: [Hash.Address.t()]
+  def verified_contracts_top(limit) do
+    query =
+      from(contract in SmartContract,
+        inner_join: address in Address,
+        on: contract.address_hash == address.hash,
+        order_by: [desc: address.transactions_count],
+        limit: ^limit,
+        select: contract.address_hash
+      )
+
+    Repo.all(query)
   end
 end
