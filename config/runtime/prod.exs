@@ -51,6 +51,22 @@ config :explorer, Explorer.Repo.Account,
   ssl: ExplorerConfigHelper.ssl_enabled?(),
   queue_target: queue_target
 
+# Configure Beacon Chain database
+config :explorer, Explorer.Repo.Beacon,
+  url: System.get_env("DATABASE_URL"),
+  # actually this repo is not started, and its pool size remains unused.
+  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+  pool_size: 1,
+  ssl: ExplorerConfigHelper.ssl_enabled?()
+
+# Configures BridgedTokens database
+config :explorer, Explorer.Repo.BridgedTokens,
+  url: System.get_env("DATABASE_URL"),
+  # actually this repo is not started, and its pool size remains unused.
+  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+  pool_size: 1,
+  ssl: ExplorerConfigHelper.ssl_enabled?()
+
 # Configures PolygonEdge database
 config :explorer, Explorer.Repo.PolygonEdge,
   url: System.get_env("DATABASE_URL"),
@@ -75,31 +91,15 @@ config :explorer, Explorer.Repo.RSK,
   pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
-# Configure Beacon Chain database
-config :explorer, Explorer.Repo.Beacon,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
-  pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
-
-# Configures Suave database
-config :explorer, Explorer.Repo.Suave,
-  url: ExplorerConfigHelper.get_suave_db_url(),
-  pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
-
 # Configures Shibarium database
 config :explorer, Explorer.Repo.Shibarium,
   url: System.get_env("DATABASE_URL"),
   pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
-# Configures BridgedTokens database
-config :explorer, Explorer.Repo.BridgedTokens,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+# Configures Suave database
+config :explorer, Explorer.Repo.Suave,
+  url: ExplorerConfigHelper.get_suave_db_url(),
   pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
