@@ -7,6 +7,7 @@ defmodule Indexer.Transform.TransactionActions do
 
   import Ecto.Query, only: [from: 2]
   import Explorer.Helper, only: [decode_data: 2]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias Explorer.Chain.Cache.NetVersion
   alias Explorer.Chain.Cache.{TransactionActionTokensData, TransactionActionUniswapPools}
@@ -23,7 +24,6 @@ defmodule Indexer.Transform.TransactionActions do
   @base_goerli 84531
   # @gnosis 100
 
-  @burn_address "0x0000000000000000000000000000000000000000"
   @uniswap_v3_factory_abi [
     %{
       "inputs" => [
@@ -451,7 +451,7 @@ defmodule Indexer.Transform.TransactionActions do
           from = truncate_address_hash(log.second_topic)
 
           # credo:disable-for-next-line
-          if from == @burn_address do
+          if from == burn_address_hash_string() do
             to = truncate_address_hash(log.third_topic)
             [token_id] = decode_data(log.fourth_topic, [{:uint, 256}])
             mint_nft_ids = Map.put_new(acc, to, %{ids: [], log_index: log.index})
@@ -652,8 +652,12 @@ defmodule Indexer.Transform.TransactionActions do
         end
       end)
       |> Enum.map(fn {pool_address, pool} ->
-        token0 = if Helper.is_address_correct?(pool.token0), do: String.downcase(pool.token0), else: @burn_address
-        token1 = if Helper.is_address_correct?(pool.token1), do: String.downcase(pool.token1), else: @burn_address
+        token0 =
+          if Helper.is_address_correct?(pool.token0), do: String.downcase(pool.token0), else: burn_address_hash_string()
+
+        token1 =
+          if Helper.is_address_correct?(pool.token1), do: String.downcase(pool.token1), else: burn_address_hash_string()
+
         fee = if pool.fee == "", do: 0, else: pool.fee
 
         # we will call getPool(token0, token1, fee) public getter
@@ -969,7 +973,7 @@ defmodule Indexer.Transform.TransactionActions do
     if is_nil(first_topic), do: "", else: String.downcase(first_topic)
   end
 
-  defp truncate_address_hash(nil), do: @burn_address
+  defp truncate_address_hash(nil), do: burn_address_hash_string()
 
   defp truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
     "0x#{truncated_hash}"

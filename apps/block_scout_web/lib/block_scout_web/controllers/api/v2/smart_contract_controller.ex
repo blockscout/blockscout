@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   import BlockScoutWeb.PagingHelper,
     only: [current_filter: 1, delete_parameters_from_next_page_params: 1, search_query: 1]
 
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
   import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
 
   alias BlockScoutWeb.{AccessHelper, AddressView}
@@ -25,8 +26,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   ]
 
   @api_true [api?: true]
-
-  @burn_address "0x0000000000000000000000000000000000000000"
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -109,7 +108,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
         address.smart_contract
         |> SmartContract.get_implementation_address_hash(@api_true)
         |> Tuple.to_list()
-        |> List.first() || @burn_address
+        |> List.first() || burn_address_hash_string()
 
       conn
       |> put_status(200)
@@ -131,7 +130,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
         address.smart_contract
         |> SmartContract.get_implementation_address_hash(@api_true)
         |> Tuple.to_list()
-        |> List.first() || @burn_address
+        |> List.first() || burn_address_hash_string()
 
       conn
       |> put_status(200)

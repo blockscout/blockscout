@@ -5,6 +5,8 @@ defmodule Explorer.Chain.Block.Reward do
 
   use Explorer.Schema
 
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
   alias Explorer.Application.Constants
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Block.Reward.AddressType
@@ -33,8 +35,6 @@ defmodule Explorer.Chain.Block.Reward do
     "inputs" => [%{"type" => "address", "name" => ""}],
     "constant" => true
   }
-
-  @empty_address "0x0000000000000000000000000000000000000000"
 
   @typedoc """
   The validation reward given related to a block.
@@ -218,7 +218,7 @@ defmodule Explorer.Chain.Block.Reward do
       payout_key_hash =
         call_contract(keys_manager_contract_address, @get_payout_by_mining_abi, get_payout_by_mining_params)
 
-      if payout_key_hash == @empty_address do
+      if payout_key_hash == burn_address_hash_string() do
         mining_key
       else
         choose_key(payout_key_hash, mining_key)
@@ -248,7 +248,7 @@ defmodule Explorer.Chain.Block.Reward do
 
     case Reader.query_contract(address, abi, params, false) do
       %{^method_id => {:ok, [result]}} -> result
-      _ -> @empty_address
+      _ -> burn_address_hash_string()
     end
   end
 

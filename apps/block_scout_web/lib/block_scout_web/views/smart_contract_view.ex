@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.SmartContractView do
   use BlockScoutWeb, :view
 
+  import Explorer.SmartContract.Reader, only: [zip_tuple_values_with_types: 2]
+
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Transaction}
   alias Explorer.Chain.Hash.Address, as: HashAddress
@@ -72,7 +74,7 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "bytes") ->
         values =
           value
-          |> Enum.map_join(", ", &binary_to_utf_string(&1))
+          |> Enum.join(", ")
 
         render_array_type_value(type, values, fetch_name(names, index))
 
@@ -107,6 +109,9 @@ defmodule BlockScoutWeb.SmartContractView do
   def values_with_type(value, string, names, index, _components) when string in ["string", :string],
     do: render_type_value("string", Helper.sanitize_input(value), fetch_name(names, index))
 
+  def values_with_type(value, "bytes" <> _ = bytes_type, names, index, _components),
+    do: render_type_value(bytes_type, Helper.sanitize_input(value), fetch_name(names, index))
+
   def values_with_type(value, bytes, names, index, _components) when bytes in [:bytes],
     do: render_type_value("bytes", Helper.sanitize_input(value), fetch_name(names, index))
 
@@ -114,7 +119,7 @@ defmodule BlockScoutWeb.SmartContractView do
     do: render_type_value("bool", Helper.sanitize_input(to_string(value)), fetch_name(names, index))
 
   def values_with_type(value, type, names, index, _components),
-    do: render_type_value(type, Helper.sanitize_input(binary_to_utf_string(value)), fetch_name(names, index))
+    do: render_type_value(type, Helper.sanitize_input(value), fetch_name(names, index))
 
   def values_with_type(value, :error, _components),
     do: render_type_value("error", Helper.sanitize_input(value), "error")
@@ -155,78 +160,6 @@ defmodule BlockScoutWeb.SmartContractView do
     |> Enum.with_index()
     |> Enum.map(fn {{type, value}, index} ->
       values_with_type(value, type, fetch_name(names, index), 0)
-    end)
-  end
-
-  def zip_tuple_values_with_types(value, type) do
-    types_string =
-      type
-      |> String.slice(6..-2)
-
-    types =
-      if String.trim(types_string) == "" do
-        []
-      else
-        types_string
-        |> String.split(",")
-      end
-
-    {tuple_types, _} =
-      types
-      |> Enum.reduce({[], nil}, fn val, acc ->
-        {arr, to_merge} = acc
-
-        if to_merge do
-          compose_array_if_to_merge(arr, val, to_merge)
-        else
-          compose_array_else(arr, val, to_merge)
-        end
-      end)
-
-    values_list =
-      value
-      |> Tuple.to_list()
-
-    Enum.zip(tuple_types, values_list)
-  end
-
-  def compose_array_if_to_merge(arr, val, to_merge) do
-    if count_string_symbols(val)["]"] > count_string_symbols(val)["["] do
-      updated_arr = update_last_list_item(arr, val)
-      {updated_arr, !to_merge}
-    else
-      updated_arr = update_last_list_item(arr, val)
-      {updated_arr, to_merge}
-    end
-  end
-
-  def compose_array_else(arr, val, to_merge) do
-    if count_string_symbols(val)["["] > count_string_symbols(val)["]"] do
-      # credo:disable-for-next-line
-      {arr ++ [val], !to_merge}
-    else
-      # credo:disable-for-next-line
-      {arr ++ [val], to_merge}
-    end
-  end
-
-  defp update_last_list_item(arr, new_val) do
-    arr
-    |> Enum.with_index()
-    |> Enum.map(fn {item, index} ->
-      if index == Enum.count(arr) - 1 do
-        item <> "," <> new_val
-      else
-        item
-      end
-    end)
-  end
-
-  defp count_string_symbols(str) do
-    str
-    |> String.graphemes()
-    |> Enum.reduce(%{"[" => 0, "]" => 0}, fn char, acc ->
-      Map.update(acc, char, 1, &(&1 + 1))
     end)
   end
 

@@ -21,8 +21,26 @@ defmodule Explorer.Chain.SmartContract do
   alias Explorer.SmartContract.Reader
   alias Timex.Duration
 
-  @burn_address_hash_str "0x0000000000000000000000000000000000000000"
-  @burn_address_hash_str_32 "0x0000000000000000000000000000000000000000000000000000000000000000"
+  # supported signatures:
+  # 5c60da1b = keccak256(implementation())
+  @implementation_signature "5c60da1b"
+  # aaf10f42 = keccak256(getImplementation())
+  @get_implementation_signature "aaf10f42"
+
+  @burn_address_hash_string "0x0000000000000000000000000000000000000000"
+  @burn_address_hash_string_32 "0x0000000000000000000000000000000000000000000000000000000000000000"
+
+  defguard is_burn_signature(term) when term in ["0x", "0x0", @burn_address_hash_string_32]
+  defguard is_burn_signature_or_nil(term) when is_burn_signature(term) or term == nil
+  defguard is_burn_signature_extended(term) when is_burn_signature(term) or term == @burn_address_hash_string
+
+  @doc """
+    Returns burn address hash
+  """
+  @spec burn_address_hash_string() :: String.t()
+  def burn_address_hash_string do
+    @burn_address_hash_string
+  end
 
   @typep api? :: {:api?, true | false}
 
@@ -699,10 +717,10 @@ defmodule Explorer.Chain.SmartContract do
     implementation_address =
       cond do
         implementation_method_abi ->
-          get_implementation_address_hash_basic("5c60da1b", proxy_address_hash, abi)
+          get_implementation_address_hash_basic(@implementation_signature, proxy_address_hash, abi)
 
         get_implementation_method_abi ->
-          get_implementation_address_hash_basic("aaf10f42", proxy_address_hash, abi)
+          get_implementation_address_hash_basic(@get_implementation_signature, proxy_address_hash, abi)
 
         master_copy_method_abi ->
           get_implementation_address_hash_from_master_copy_pattern(proxy_address_hash)
@@ -732,7 +750,7 @@ defmodule Explorer.Chain.SmartContract do
              json_rpc_named_arguments
            ) do
         {:ok, empty_address}
-        when empty_address in ["0x", "0x0", @burn_address_hash_str_32, nil] ->
+        when is_burn_signature_or_nil(empty_address) ->
           fetch_beacon_proxy_implementation(proxy_address_hash, json_rpc_named_arguments)
 
         {:ok, implementation_logic_address} ->
@@ -768,13 +786,13 @@ defmodule Explorer.Chain.SmartContract do
            json_rpc_named_arguments
          ) do
       {:ok, empty_address}
-      when empty_address in ["0x", "0x0", @burn_address_hash_str_32, nil] ->
+      when is_burn_signature_or_nil(empty_address) ->
         fetch_openzeppelin_proxy_implementation(proxy_address_hash, json_rpc_named_arguments)
 
       {:ok, beacon_contract_address} ->
         case beacon_contract_address
              |> abi_decode_address_output()
-             |> get_implementation_address_hash_basic("5c60da1b", implementation_method_abi) do
+             |> get_implementation_address_hash_basic(@implementation_signature, implementation_method_abi) do
           <<implementation_address::binary-size(42)>> ->
             {:ok, implementation_address}
 
@@ -799,7 +817,7 @@ defmodule Explorer.Chain.SmartContract do
            json_rpc_named_arguments
          ) do
       {:ok, empty_address}
-      when empty_address in ["0x", "0x0", @burn_address_hash_str_32] ->
+      when is_burn_signature(empty_address) ->
         {:ok, "0x"}
 
       {:ok, logic_contract_address} ->
@@ -811,9 +829,6 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   defp get_implementation_address_hash_basic(signature, proxy_address_hash, abi) do
-    # supported signatures:
-    # 5c60da1b = keccak256(implementation())
-    # aaf10f42 = keccak256(getImplementation())
     implementation_address =
       case Reader.query_contract(
              proxy_address_hash,
@@ -843,7 +858,7 @@ defmodule Explorer.Chain.SmartContract do
              json_rpc_named_arguments
            ) do
         {:ok, empty_address}
-        when empty_address in ["0x", "0x0", @burn_address_hash_str_32] ->
+        when is_burn_signature(empty_address) ->
           {:ok, "0x"}
 
         {:ok, logic_contract_address} ->
@@ -859,12 +874,7 @@ defmodule Explorer.Chain.SmartContract do
   defp save_implementation_data(nil, _, _, _), do: {nil, nil}
 
   defp save_implementation_data(empty_address_hash_string, proxy_address_hash, metadata_from_verified_twin, options)
-       when empty_address_hash_string in [
-              "0x",
-              "0x0",
-              @burn_address_hash_str_32,
-              @burn_address_hash_str
-            ] do
+       when is_burn_signature_extended(empty_address_hash_string) do
     if is_nil(metadata_from_verified_twin) or !metadata_from_verified_twin do
       proxy_address_hash
       |> Chain.address_hash_to_smart_contract_without_twin(options)
@@ -932,7 +942,7 @@ defmodule Explorer.Chain.SmartContract do
 
   defp abi_decode_address_output(nil), do: nil
 
-  defp abi_decode_address_output("0x"), do: @burn_address_hash_str
+  defp abi_decode_address_output("0x"), do: burn_address_hash_string()
 
   defp abi_decode_address_output(address) when is_binary(address) do
     if String.length(address) > 42 do
