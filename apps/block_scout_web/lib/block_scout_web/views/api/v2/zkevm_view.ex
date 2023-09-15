@@ -66,11 +66,18 @@ defmodule BlockScoutWeb.API.V2.ZkevmView do
           batch.sequence_transaction.hash
         end
 
+      verify_tx_hash =
+        if not is_nil(batch.verify_transaction) do
+          batch.verify_transaction.hash
+        end
+
       %{
         "number" => batch.number,
+        "status" => batch_status(batch),
         "timestamp" => batch.timestamp,
         "tx_count" => batch.l2_transactions_count,
-        "sequence_tx_hash" => sequence_tx_hash
+        "sequence_tx_hash" => sequence_tx_hash,
+        "verify_tx_hash" => verify_tx_hash
       }
     end)
   end
