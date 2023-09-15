@@ -139,6 +139,7 @@ defmodule EthereumJSONRPC.Receipts do
 
     with {:ok, responses} <- json_rpc(requests, json_rpc_named_arguments),
          {:ok, receipts} <- reduce_responses(responses, id_to_transaction_params) do
+          IO.inspect(receipts, label: "Elixir Receipts TESTME")
       elixir_receipts = to_elixir(receipts)
 
       elixir_logs = elixir_to_logs(elixir_receipts)

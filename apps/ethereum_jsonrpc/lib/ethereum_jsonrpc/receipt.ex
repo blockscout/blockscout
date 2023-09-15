@@ -267,6 +267,22 @@ defmodule EthereumJSONRPC.Receipt do
 
     {:ok, {key, result}}
   end
+  # New clause to handle "etxs"
+  defp entry_to_elixir({"etxs" = key, etxs_list}) when is_list(etxs_list) do
+    transformed_etxs = Enum.map(etxs_list, &transform_etxs/1)
+    {:ok, {key, transformed_etxs}}
+  end
+
+  # Helper function to transform etxs
+  defp transform_etxs(etxs_map) when is_map(etxs_map) do
+    etxs_map
+    |> Enum.map(fn {key, value} -> {key, transform_etxs_field(value)} end)
+    |> Enum.into(%{})
+  end
+
+  defp transform_etxs_field(value) do
+    value
+  end
 
   defp entry_to_elixir({"logs" = key, logs}) do
     {:ok, {key, Logs.to_elixir(logs)}}

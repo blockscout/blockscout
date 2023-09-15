@@ -456,8 +456,8 @@ defmodule BlockScoutWeb.TransactionView do
 
       true ->
         cond do
-          transaction.type == 0 -> gettext("Type 0 Transaction")
-          transaction.type == 2 -> gettext("Type 2 Transaction")
+          transaction.type == 1 -> gettext("External Transaction")
+          transaction.type == 2 -> gettext("Internal to External Transaction")
           true -> gettext("Transaction")
         end
     end
