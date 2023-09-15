@@ -40,7 +40,7 @@ spec:
         - name: INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
           value: "true"
         - name: LOGO
-          value: /images/quai_logo.png
+          value: /images/quai_logo_black.png
         - name: NETWORK
           value: QUAI
         - name: SUBNETWORK
