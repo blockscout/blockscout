@@ -76,7 +76,8 @@ defmodule Indexer.Fetcher.TokenBalance do
           token_balance
           |> entry()
           |> reducer.(acc)
-        end
+        end,
+        true
       )
 
     final
