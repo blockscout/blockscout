@@ -4,6 +4,10 @@ import Config
 |> Path.join()
 |> Code.eval_file()
 
+defp chain_type do
+  System.get_env("CHAIN_TYPE") || "ethereum"
+end
+
 ######################
 ### BlockScout Web ###
 ######################
@@ -158,7 +162,11 @@ config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
 
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
   debug_trace_transaction_timeout: System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s"),
-  tracer: System.get_env("INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE", "call_tracer")
+  tracer:
+    if(chain_type() == "polygon_edge",
+      do: "polygon_edge",
+      else: System.get_env("INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE", "call_tracer")
+    )
 
 config :ethereum_jsonrpc, EthereumJSONRPC.PendingTransaction,
   type: System.get_env("ETHEREUM_JSONRPC_PENDING_TRANSACTIONS_TYPE", "default")
@@ -177,7 +185,7 @@ checksum_function = System.get_env("CHECKSUM_FUNCTION")
 exchange_rates_coin = System.get_env("EXCHANGE_RATES_COIN")
 
 config :explorer,
-  chain_type: System.get_env("CHAIN_TYPE") || "ethereum",
+  chain_type: chain_type(),
   coin: System.get_env("COIN") || exchange_rates_coin || "ETH",
   coin_name: System.get_env("COIN_NAME") || exchange_rates_coin || "ETH",
   allowed_solidity_evm_versions:
