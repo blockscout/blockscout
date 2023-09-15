@@ -4,9 +4,7 @@ import Config
 |> Path.join()
 |> Code.eval_file()
 
-defp chain_type do
-  System.get_env("CHAIN_TYPE") || "ethereum"
-end
+chain_type = System.get_env("CHAIN_TYPE") || "ethereum"
 
 ######################
 ### BlockScout Web ###
@@ -163,7 +161,7 @@ config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
   debug_trace_transaction_timeout: System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s"),
   tracer:
-    if(chain_type() == "polygon_edge",
+    if(chain_type == "polygon_edge",
       do: "polygon_edge",
       else: System.get_env("INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE", "call_tracer")
     )
@@ -185,7 +183,7 @@ checksum_function = System.get_env("CHECKSUM_FUNCTION")
 exchange_rates_coin = System.get_env("EXCHANGE_RATES_COIN")
 
 config :explorer,
-  chain_type: chain_type(),
+  chain_type: chain_type,
   coin: System.get_env("COIN") || exchange_rates_coin || "ETH",
   coin_name: System.get_env("COIN_NAME") || exchange_rates_coin || "ETH",
   allowed_solidity_evm_versions:
@@ -547,20 +545,15 @@ config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
 
 config :indexer, Indexer.Fetcher.Withdrawal, first_block: System.get_env("WITHDRAWALS_FIRST_BLOCK")
 
-config :indexer, Indexer.Fetcher.PolygonEdge.Supervisor,
-  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_edge")
+config :indexer, Indexer.Fetcher.PolygonEdge.Supervisor, disabled?: !(chain_type == "polygon_edge")
 
-config :indexer, Indexer.Fetcher.PolygonEdge.Deposit.Supervisor,
-  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_edge")
+config :indexer, Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, disabled?: !(chain_type == "polygon_edge")
 
-config :indexer, Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor,
-  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_edge")
+config :indexer, Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor, disabled?: !(chain_type == "polygon_edge")
 
-config :indexer, Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor,
-  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_edge")
+config :indexer, Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor, disabled?: !(chain_type == "polygon_edge")
 
-config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor,
-  disabled?: !(System.get_env("CHAIN_TYPE", "ethereum") == "polygon_edge")
+config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor, disabled?: !(chain_type == "polygon_edge")
 
 config :indexer, Indexer.Fetcher.PolygonEdge,
   polygon_edge_l1_rpc: System.get_env("INDEXER_POLYGON_EDGE_L1_RPC"),
