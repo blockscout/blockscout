@@ -424,7 +424,9 @@ config :indexer,
   hide_indexing_progress_alert: ConfigHelper.parse_bool_env_var("INDEXER_HIDE_INDEXING_PROGRESS_ALERT"),
   fetcher_init_limit: ConfigHelper.parse_integer_env_var("INDEXER_FETCHER_INIT_QUERY_LIMIT", 100),
   coin_balances_fetcher_init_limit:
-    ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 2000)
+    ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 2000),
+  token_balances_fetcher_init_limit:
+    ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 100_000)
 
 config :indexer, Indexer.Supervisor, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
 

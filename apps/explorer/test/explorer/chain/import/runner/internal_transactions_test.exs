@@ -329,6 +329,34 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert %{consensus: true} = Repo.get(Block, full_block.hash)
       assert PendingBlockOperation |> Repo.get(full_block.hash) |> is_nil()
     end
+
+    test "successfully imports internal transaction with stop type" do
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block, status: :ok)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      assert :ok == transaction.status
+
+      {:ok, from_address_hash} = Explorer.Chain.Hash.Address.cast("0x0000000000000000000000000000000000000000")
+      {:ok, input} = Explorer.Chain.Data.cast("0x")
+
+      internal_transaction_changes = %{
+        block_number: block.number,
+        error: "execution stopped",
+        from_address_hash: from_address_hash,
+        gas: 0,
+        gas_used: 22594,
+        index: 0,
+        input: input,
+        trace_address: [],
+        transaction_hash: transaction.hash,
+        transaction_index: 0,
+        type: :stop,
+        value: Wei.from(Decimal.new(0), :wei)
+      }
+
+      assert {:ok, _} = run_internal_transactions([internal_transaction_changes])
+    end
   end
 
   defp run_internal_transactions(changes_list, multi \\ Multi.new()) when is_list(changes_list) do
