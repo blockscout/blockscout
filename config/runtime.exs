@@ -618,7 +618,9 @@ config :indexer, Indexer.Fetcher.Zkevm.TransactionBatch,
   recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_ZKEVM_BATCHES_RECHECK_INTERVAL", 60)
 
 config :indexer, Indexer.Fetcher.Zkevm.TransactionBatch.Supervisor,
-  enabled: ConfigHelper.parse_bool_env_var("INDEXER_ZKEVM_BATCHES_ENABLED")
+  enabled:
+    System.get_env("CHAIN_TYPE", "ethereum") == "polygon_zkevm" &&
+      ConfigHelper.parse_bool_env_var("INDEXER_ZKEVM_BATCHES_ENABLED")
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 

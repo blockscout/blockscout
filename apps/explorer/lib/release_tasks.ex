@@ -21,10 +21,10 @@ defmodule Explorer.ReleaseTasks do
     ]
 
     repos_list =
-      if System.get_env("CHAIN_TYPE") == "polygon_edge" do
-        [Explorer.Repo.PolygonEdge | base_repos_list]
-      else
-        base_repos_list
+      case System.get_env("CHAIN_TYPE") do
+        "polygon_edge" -> [Explorer.Repo.PolygonEdge | base_repos_list]
+        "polygon_zkevm" -> [Explorer.Repo.PolygonZkevm | base_repos_list]
+        _ -> base_repos_list
       end
 
     Application.get_env(:explorer, :ecto_repos, repos_list)

@@ -78,6 +78,13 @@ config :explorer, Explorer.Repo.PolygonEdge,
   # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
   pool_size: 1
 
+# Configure PolygonZkevm database
+config :explorer, Explorer.Repo.PolygonZkevm,
+  database: database,
+  hostname: hostname,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: ConfigHelper.parse_integer_env_var("POLYGON_ZKEVM_POOL_SIZE", 10)
+
 # Configure Rootstock database
 config :explorer, Explorer.Repo.RSK,
   database: database,

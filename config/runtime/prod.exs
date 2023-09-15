@@ -55,6 +55,12 @@ config :explorer, Explorer.Repo.PolygonEdge,
   pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
+# Configures PolygonZkevm database
+config :explorer, Explorer.Repo.PolygonZkevm,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: ConfigHelper.parse_integer_env_var("POLYGON_ZKEVM_POOL_SIZE", 50),
+  ssl: ExplorerConfigHelper.ssl_enabled?()
+
 # Configures Rootstock database
 config :explorer, Explorer.Repo.RSK,
   url: System.get_env("DATABASE_URL"),

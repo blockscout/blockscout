@@ -135,7 +135,11 @@ defmodule BlockScoutWeb.ApiRouter do
     scope "/transactions" do
       get("/", V2.TransactionController, :transactions)
       get("/watchlist", V2.TransactionController, :watchlist_transactions)
-      get("/zkevm-batch/:batch_number", V2.TransactionController, :zkevm_batch)
+
+      if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
+        get("/zkevm-batch/:batch_number", V2.TransactionController, :zkevm_batch)
+      end
+
       get("/:transaction_hash_param", V2.TransactionController, :transaction)
       get("/:transaction_hash_param/token-transfers", V2.TransactionController, :token_transfers)
       get("/:transaction_hash_param/internal-transactions", V2.TransactionController, :internal_transactions)
@@ -186,8 +190,11 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/transactions", V2.MainPageController, :transactions)
       get("/transactions/watchlist", V2.MainPageController, :watchlist_transactions)
       get("/indexing-status", V2.MainPageController, :indexing_status)
-      get("/zkevm/batches/confirmed", V2.ZkevmController, :batches_confirmed)
-      get("/zkevm/batches/latest-number", V2.ZkevmController, :batch_latest_number)
+
+      if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
+        get("/zkevm/batches/confirmed", V2.ZkevmController, :batches_confirmed)
+        get("/zkevm/batches/latest-number", V2.ZkevmController, :batch_latest_number)
+      end
     end
 
     scope "/stats" do
@@ -214,9 +221,11 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/zkevm" do
-      get("/batches", V2.ZkevmController, :batches)
-      get("/batches/count", V2.ZkevmController, :batches_count)
-      get("/batches/:batch_number", V2.ZkevmController, :batch)
+      if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
+        get("/batches", V2.ZkevmController, :batches)
+        get("/batches/count", V2.ZkevmController, :batches_count)
+        get("/batches/:batch_number", V2.ZkevmController, :batch)
+      end
     end
   end
 

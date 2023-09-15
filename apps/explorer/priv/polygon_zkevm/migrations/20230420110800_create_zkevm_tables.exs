@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.CreateZkevmTables do
+defmodule Explorer.Repo.PolygonZkevm.Migrations.CreateZkevmTables do
   use Ecto.Migration
 
   def change do
