@@ -226,6 +226,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
             index: nil,
             status: nil,
             error: nil,
+            max_priority_fee_per_gas: nil,
+            max_fee_per_gas: nil,
+            type: nil,
             updated_at: ^updated_at
           ]
         ],
