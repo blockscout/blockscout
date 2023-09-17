@@ -359,11 +359,15 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   chain_id: System.get_env("CHAIN_ID"),
   repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://repo.sourcify.dev/contracts"
 
+enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED")
+# or "eth_bytecode_db"
+type = System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")
+
 config :explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
   service_url: System.get_env("MICROSERVICE_SC_VERIFIER_URL") || "https://eth-bytecode-db.services.blockscout.com/",
-  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED"),
-  # or "eth_bytecode_db"
-  type: System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "eth_bytecode_db")
+  enabled: enabled?,
+  type: type,
+  eth_bytecode_db?: enabled? && type == "eth_bytecode_db"
 
 config :explorer, Explorer.Visualize.Sol2uml,
   service_url: System.get_env("MICROSERVICE_VISUALIZE_SOL2UML_URL"),
@@ -407,7 +411,8 @@ config :explorer, Explorer.Chain.Cache.TransactionActionTokensData,
   max_cache_size: ConfigHelper.parse_integer_env_var("INDEXER_TX_ACTIONS_MAX_TOKEN_CACHE_SIZE", 100_000)
 
 config :explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand,
-  fetch_interval: ConfigHelper.parse_time_env_var("MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS", "10m")
+  fetch_interval: ConfigHelper.parse_time_env_var("MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS", "10m"),
+  max_concurrency: ConfigHelper.parse_integer_env_var("MICROSERVICE_ETH_BYTECODE_DB_MAX_LOOKUPS_CONCURRENCY", 10)
 
 config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
