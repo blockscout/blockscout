@@ -60,17 +60,6 @@
 
       <% test_nets = test_nets(other_networks()) %>
 
-      <%= unless Enum.empty?(test_nets) do %>
-        <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
-          <h3><%= gettext("Garden") %></h3>
-          <ul>
-            <%= for %{title: title, url: url} <- test_nets do %>
-              <li><a href="<%= url %>" rel="noreferrer" class="footer-link"> <%= title %> </a></li>
-            <% end %>
-          </ul>
-        </div>
-      <% end %>
-
       <%= unless Enum.empty?(other_explorers) do %>
         <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
           <h3><%= gettext("Other Explorers") %></h3>
