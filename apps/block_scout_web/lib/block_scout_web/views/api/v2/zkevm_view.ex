@@ -1,6 +1,9 @@
 defmodule BlockScoutWeb.API.V2.ZkevmView do
   use BlockScoutWeb, :view
 
+  @doc """
+    Function to render GET requests to `/api/v2/zkevm/batches/:batch_number` endpoint.
+  """
   @spec render(binary(), map()) :: map() | non_neg_integer()
   def render("zkevm_batch.json", %{batch: batch}) do
     sequence_tx_hash =
@@ -26,6 +29,9 @@ defmodule BlockScoutWeb.API.V2.ZkevmView do
     }
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/zkevm/batches` endpoint.
+  """
   def render("zkevm_batches.json", %{
         batches: batches,
         next_page_params: next_page_params
@@ -36,14 +42,23 @@ defmodule BlockScoutWeb.API.V2.ZkevmView do
     }
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/main-page/zkevm/batches/confirmed` endpoint.
+  """
   def render("zkevm_batches.json", %{batches: batches}) do
     %{items: render_zkevm_batches(batches)}
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/zkevm/batches/count` endpoint.
+  """
   def render("zkevm_batches_count.json", %{count: count}) do
     count
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/main-page/zkevm/batches/latest-number` endpoint.
+  """
   def render("zkevm_batch_latest_number.json", %{number: number}) do
     number
   end

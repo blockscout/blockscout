@@ -23,6 +23,9 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
     :verify_transaction => :optional
   }
 
+  @doc """
+    Function to handle GET requests to `/api/v2/zkevm/batches/:batch_number` endpoint.
+  """
   @spec batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batch(conn, %{"batch_number" => batch_number} = _params) do
     {:ok, batch} =
@@ -37,6 +40,9 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
     |> render(:zkevm_batch, %{batch: batch})
   end
 
+  @doc """
+    Function to handle GET requests to `/api/v2/main-page/zkevm/batches/latest-number` endpoint.
+  """
   @spec batch_latest_number(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batch_latest_number(conn, _params) do
     conn
@@ -44,6 +50,9 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
     |> render(:zkevm_batch_latest_number, %{number: batch_latest_number()})
   end
 
+  @doc """
+    Function to handle GET requests to `/api/v2/zkevm/batches` endpoint.
+  """
   @spec batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batches(conn, params) do
     {batches, next_page} =
@@ -64,6 +73,9 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
     })
   end
 
+  @doc """
+    Function to handle GET requests to `/api/v2/zkevm/batches/count` endpoint.
+  """
   @spec batches_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batches_count(conn, _params) do
     conn
@@ -71,6 +83,9 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
     |> render(:zkevm_batches_count, %{count: batch_latest_number()})
   end
 
+  @doc """
+    Function to handle GET requests to `/api/v2/main-page/zkevm/batches/confirmed` endpoint.
+  """
   @spec batches_confirmed(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batches_confirmed(conn, _params) do
     batches =

@@ -45,6 +45,9 @@ defmodule Explorer.Chain.Zkevm.TransactionBatch do
     timestamps()
   end
 
+  @doc """
+    Validates that the `attrs` are valid.
+  """
   @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Schema.t()
   def changeset(%__MODULE__{} = batches, attrs \\ %{}) do
     batches

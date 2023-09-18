@@ -15,6 +15,11 @@ defmodule Explorer.Chain.Zkevm.Reader do
   alias Explorer.Chain.Zkevm.{BatchTransaction, LifecycleTransaction, TransactionBatch}
   alias Explorer.{Chain, PagingOptions, Repo}
 
+  @doc """
+    Reads a batch by its number from database.
+    If the number is :latest, gets the latest batch from `zkevm_transaction_batches` table.
+    Returns {:error, :not_found} in case the batch is not found.
+  """
   @spec batch(non_neg_integer() | :latest, list()) :: {:ok, map()} | {:error, :not_found}
   def batch(number, options \\ [])
 
@@ -42,6 +47,10 @@ defmodule Explorer.Chain.Zkevm.Reader do
     end
   end
 
+  @doc """
+    Reads a list of batches from `zkevm_transaction_batches` table.
+  """
+  @spec batches(list()) :: list()
   def batches(options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -68,12 +77,21 @@ defmodule Explorer.Chain.Zkevm.Reader do
     select_repo(options).all(query)
   end
 
+  @doc """
+    Reads a list of L2 transaction hashes from `zkevm_batch_l2_transactions` table.
+  """
+  @spec batch_transactions(non_neg_integer(), list()) :: list()
   def batch_transactions(batch_number, options \\ []) do
     query = from(bts in BatchTransaction, where: bts.batch_number == ^batch_number)
 
     select_repo(options).all(query)
   end
 
+  @doc """
+    Gets the number of the latest batch with defined verify_id from `zkevm_transaction_batches` table.
+    Returns 0 if not found.
+  """
+  @spec last_verified_batch_number() :: non_neg_integer()
   def last_verified_batch_number do
     query =
       from(tb in TransactionBatch,
@@ -88,6 +106,10 @@ defmodule Explorer.Chain.Zkevm.Reader do
     |> Kernel.||(0)
   end
 
+  @doc """
+    Reads a list of L1 transactions by their hashes from `zkevm_lifecycle_l1_transactions` table.
+  """
+  @spec lifecycle_transactions(list()) :: list()
   def lifecycle_transactions(l1_tx_hashes) do
     query =
       from(
@@ -99,6 +121,10 @@ defmodule Explorer.Chain.Zkevm.Reader do
     Repo.all(query, timeout: :infinity)
   end
 
+  @doc """
+    Determines ID of the future lifecycle transaction by reading `zkevm_lifecycle_l1_transactions` table.
+  """
+  @spec next_id() :: non_neg_integer()
   def next_id do
     query =
       from(lt in LifecycleTransaction,
