@@ -17,7 +17,7 @@ $navbar-logo-width: 100% !default;
   background-color: $header-background-color;
   position: relative;
   z-index: 100;
-  max-width: '1270px!important';
+  max-width: 1270px!important;
   align-self: center;
 
   .nav-item {
@@ -251,7 +251,7 @@ $navbar-logo-width: 100% !default;
 .navbar-logo {
   max-height: $navbar-logo-height;
   width: $navbar-logo-width;
-  max-width: '200px';
+  max-width: 200px;
 }
 
 .logo-text {
