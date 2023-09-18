@@ -23,7 +23,7 @@ else
 	ECTO_USE_SSL = 'false'
 endif
 BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
-															 -e 'DATABASE_URL=$(DB_URL)'
+							  -e 'DATABASE_URL=$(DB_URL)'
 ifeq ($(SYSTEM), Linux)
 	BLOCKSCOUT_CONTAINER_PARAMS += --network=host
 endif
@@ -805,7 +805,7 @@ start: build postgres
 					-p 4000:4000 \
 					$(BS_CONTAINER_IMAGE) /bin/sh -c "./bin/blockscout start"
 
-BS_STARTED := $(shell docker ps --no-trunc --filter name=^/${BS_CONTAINER_NAME}$)
+BS_STARTED := $(shell docker ps --no-trunc --filter name=^/${BS_CONTAINER_NAME}$  | grep ${BS_CONTAINER_NAME})
 stop:
 ifdef BS_STARTED
 	@echo "==> Stopping BlockScout container."
