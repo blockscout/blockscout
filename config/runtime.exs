@@ -353,10 +353,10 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://repo.sourcify.dev/contracts"
 
 config :explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-  service_url: System.get_env("MICROSERVICE_SC_VERIFIER_URL"),
+  service_url: System.get_env("MICROSERVICE_SC_VERIFIER_URL") || "https://eth-bytecode-db.services.blockscout.com/",
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED"),
   # or "eth_bytecode_db"
-  type: System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")
+  type: System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "eth_bytecode_db")
 
 config :explorer, Explorer.Visualize.Sol2uml,
   service_url: System.get_env("MICROSERVICE_VISUALIZE_SOL2UML_URL"),
