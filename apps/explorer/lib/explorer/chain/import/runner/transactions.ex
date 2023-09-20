@@ -229,11 +229,41 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           lock: "FOR NO KEY UPDATE"
         )
 
+      transactions_query =
+        from(
+          transaction in Transaction,
+          where: transaction.block_hash in ^block_hashes,
+          # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+          order_by: [asc: :hash],
+          lock: "FOR NO KEY UPDATE"
+        )
+
+      transactions_replacements = [
+        block_hash: nil,
+        block_number: nil,
+        gas_used: nil,
+        cumulative_gas_used: nil,
+        index: nil,
+        status: nil,
+        error: nil,
+        max_priority_fee_per_gas: nil,
+        max_fee_per_gas: nil,
+        type: nil,
+        updated_at: updated_at
+      ]
+
       try do
         {_, result} =
           repo.update_all(
             from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: b.number),
             [set: [consensus: false, updated_at: updated_at]],
+            timeout: timeout
+          )
+
+        {_, _transactions_result} =
+          repo.update_all(
+            from(t in Transaction, join: s in subquery(transactions_query), on: t.hash == s.hash),
+            [set: transactions_replacements],
             timeout: timeout
           )
 

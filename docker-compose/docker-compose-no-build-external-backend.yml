@@ -11,11 +11,6 @@ services:
       file: ./services/docker-compose-db.yml
       service: db
 
-  smart-contract-verifier:
-    extends:
-      file: ./services/docker-compose-smart-contract-verifier.yml
-      service: smart-contract-verifier
-
   visualizer:
     extends:
       file: ./services/docker-compose-visualizer.yml
