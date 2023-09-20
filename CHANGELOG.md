@@ -31,6 +31,7 @@
 
 ### Chore
 
+- [#8493](https://github.com/blockscout/blockscout/pull/8493) - Fix arm docker image build
 - [#8478](https://github.com/blockscout/blockscout/pull/8478) - Set integration with Blockscout's eth bytecode DB endpoint by default and other enhancements
 - [#8442](https://github.com/blockscout/blockscout/pull/8442) - Unify burn address definition
 - [#8321](https://github.com/blockscout/blockscout/pull/8321) - Add curl into resulting Docker image
