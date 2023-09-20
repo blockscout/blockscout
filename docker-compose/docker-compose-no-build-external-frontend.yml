@@ -36,8 +36,6 @@ services:
         INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
         DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
         CHAIN_ID: '1337'
-    ports:
-      - 4000:4000
     volumes:
       - ./logs/:/app/logs/
 
