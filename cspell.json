@@ -523,7 +523,11 @@
         "defi",
         "GTGS",
         "secp",
-        "qwertyuioiuytrewertyuioiuytrertyuio"
+        "qwertyuioiuytrewertyuioiuytrertyuio",
+        "urlset",
+        "lastmod",
+        "qitmeer",
+        "meer",
     ],
     "enableFiletypes": [
         "dotenv",

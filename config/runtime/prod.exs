@@ -7,16 +7,15 @@ alias Explorer.Repo.ConfigHelper, as: ExplorerConfigHelper
 ### BlockScout Web ###
 ######################
 
+port = ExplorerConfigHelper.get_port()
+
 config :block_scout_web, BlockScoutWeb.Endpoint,
   secret_key_base: System.get_env("SECRET_KEY_BASE"),
   check_origin: System.get_env("CHECK_ORIGIN", "false") == "true" || false,
-  http: [
-    port: System.get_env("PORT"),
-    protocol_options: [idle_timeout: 300_000]
-  ],
+  http: [port: port, protocol_options: [idle_timeout: 300_000]],
   url: [
     scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "https",
-    port: System.get_env("PORT"),
+    port: port,
     host: System.get_env("BLOCKSCOUT_HOST") || "localhost"
   ]
 

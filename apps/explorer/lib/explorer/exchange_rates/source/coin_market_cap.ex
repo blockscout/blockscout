@@ -18,7 +18,7 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
     last_updated = get_last_updated(token_properties)
     current_price = get_current_price(token_properties)
 
-    id = token_properties && token_properties["id"]
+    id = token_properties["id"]
 
     btc_value =
       if Application.get_env(:explorer, Explorer.ExchangeRates)[:fetch_btc_value],
@@ -40,8 +40,8 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
         id: id,
         last_updated: last_updated,
         market_cap_usd: to_decimal(market_cap_data_usd),
-        name: token_properties && token_properties["name"],
-        symbol: token_properties && String.upcase(token_properties["symbol"]),
+        name: token_properties["name"],
+        symbol: String.upcase(token_properties["symbol"]),
         usd_value: current_price,
         volume_24h_usd: to_decimal(total_volume_data_usd)
       }
@@ -98,45 +98,54 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
     config(:coin_id)
   end
 
-  defp get_token_properties(market_data) do
-    token_values_list =
-      market_data
-      |> Map.values()
-
-    if Enum.count(token_values_list) > 0 do
-      token_values = token_values_list |> Enum.at(0)
-
-      if Enum.count(token_values) > 0 do
+  @doc """
+  Extracts token properties from CoinMarketCap coin endpoint response
+  """
+  @spec get_token_properties(map()) :: map()
+  def get_token_properties(market_data) do
+    with token_values_list <- market_data |> Map.values(),
+         true <- Enum.count(token_values_list) > 0,
+         token_values <- token_values_list |> Enum.at(0),
+         true <- Enum.count(token_values) > 0 do
+      if is_list(token_values) do
         token_values |> Enum.at(0)
       else
-        %{}
+        token_values
       end
     else
-      %{}
+      _ -> %{}
     end
   end
 
   defp get_circulating_supply(token_properties) do
-    token_properties && token_properties["circulating_supply"]
+    token_properties["circulating_supply"]
   end
 
   defp get_total_supply(token_properties) do
-    token_properties && token_properties["total_supply"]
+    token_properties["total_supply"]
   end
 
-  defp get_market_cap_data_usd(token_properties) do
-    token_properties && token_properties["quote"] &&
+  @doc """
+  Extracts market cap in usd from token properties, which are returned in get_token_properties/1
+  """
+  @spec get_market_cap_data_usd(map()) :: String.t()
+  def get_market_cap_data_usd(token_properties) do
+    token_properties["quote"] &&
       token_properties["quote"]["USD"] &&
       token_properties["quote"]["USD"]["market_cap"]
   end
 
   defp get_total_volume_data_usd(token_properties) do
-    token_properties && token_properties["quote"] &&
+    token_properties["quote"] &&
       token_properties["quote"]["USD"] &&
       token_properties["quote"]["USD"]["volume_24h"]
   end
 
-  defp get_last_updated(token_properties) do
+  @doc """
+  Extracts last updated from token properties, which are returned in get_token_properties/1
+  """
+  @spec get_last_updated(map()) :: DateTime.t()
+  def get_last_updated(token_properties) do
     last_updated_data = token_properties && token_properties["last_updated"]
 
     if last_updated_data do
@@ -147,8 +156,12 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
     end
   end
 
-  defp get_current_price(token_properties) do
-    if token_properties && token_properties["quote"] && token_properties["quote"]["USD"] &&
+  @doc """
+  Extracts current price from token properties, which are returned in get_token_properties/1
+  """
+  @spec get_current_price(map()) :: String.t() | non_neg_integer()
+  def get_current_price(token_properties) do
+    if token_properties["quote"] && token_properties["quote"]["USD"] &&
          token_properties["quote"]["USD"]["price"] do
       to_decimal(token_properties["quote"]["USD"]["price"])
     else

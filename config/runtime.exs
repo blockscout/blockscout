@@ -189,6 +189,9 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
 config :ethereum_jsonrpc, EthereumJSONRPC.PendingTransaction,
   type: System.get_env("ETHEREUM_JSONRPC_PENDING_TRANSACTIONS_TYPE", "default")
 
+config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
+  wait_per_timeout: ConfigHelper.parse_time_env_var("ETHEREUM_JSONRPC_WAIT_PER_TIMEOUT", "20s")
+
 ################
 ### Explorer ###
 ################
@@ -296,7 +299,10 @@ config :explorer, Explorer.ExchangeRates,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_EXCHANGE_RATES"),
   fetch_btc_value: ConfigHelper.parse_bool_env_var("EXCHANGE_RATES_FETCH_BTC_VALUE")
 
-config :explorer, Explorer.ExchangeRates.Source, source: ConfigHelper.exchange_rates_source()
+config :explorer, Explorer.ExchangeRates.Source,
+  source: ConfigHelper.exchange_rates_source(),
+  price_source: ConfigHelper.exchange_rates_price_source(),
+  market_cap_source: ConfigHelper.exchange_rates_market_cap_source()
 
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
   api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY"),
@@ -406,10 +412,10 @@ config :explorer, Explorer.Account,
   ]
 
 config :explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-  service_url: System.get_env("MICROSERVICE_SC_VERIFIER_URL"),
+  service_url: System.get_env("MICROSERVICE_SC_VERIFIER_URL") || "https://eth-bytecode-db.services.blockscout.com/",
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED"),
   # or "eth_bytecode_db"
-  type: System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")
+  type: System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "eth_bytecode_db")
 
 config :explorer, Explorer.Visualize.Sol2uml,
   service_url: System.get_env("MICROSERVICE_VISUALIZE_SOL2UML_URL"),
@@ -475,7 +481,9 @@ config :indexer,
   receipts_batch_size: ConfigHelper.parse_integer_env_var("INDEXER_RECEIPTS_BATCH_SIZE", 250),
   receipts_concurrency: ConfigHelper.parse_integer_env_var("INDEXER_RECEIPTS_CONCURRENCY", 10),
   hide_indexing_progress_alert: ConfigHelper.parse_bool_env_var("INDEXER_HIDE_INDEXING_PROGRESS_ALERT"),
-  fetcher_init_limit: ConfigHelper.parse_integer_env_var("INDEXER_FETCHER_INIT_QUERY_LIMIT", 100)
+  fetcher_init_limit: ConfigHelper.parse_integer_env_var("INDEXER_FETCHER_INIT_QUERY_LIMIT", 100),
+  token_balances_fetcher_init_limit:
+    ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 100_000)
 
 config :indexer, Indexer.Supervisor, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
 
@@ -567,13 +575,16 @@ config :indexer, Indexer.Fetcher.BlockReward,
 
 config :indexer, Indexer.Fetcher.TokenInstance.Retry,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_RETRY_CONCURRENCY", 10),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_RETRY_BATCH_SIZE", 10),
   refetch_interval: ConfigHelper.parse_time_env_var("INDEXER_TOKEN_INSTANCE_RETRY_REFETCH_INTERVAL", "24h")
 
 config :indexer, Indexer.Fetcher.TokenInstance.Realtime,
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_REALTIME_CONCURRENCY", 10)
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_REALTIME_CONCURRENCY", 10),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_REALTIME_BATCH_SIZE", 1)
 
 config :indexer, Indexer.Fetcher.TokenInstance.Sanitize,
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_SANITIZE_CONCURRENCY", 10)
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_SANITIZE_CONCURRENCY", 10),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_SANITIZE_BATCH_SIZE", 10)
 
 config :indexer, Indexer.Fetcher.InternalTransaction,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", 10),

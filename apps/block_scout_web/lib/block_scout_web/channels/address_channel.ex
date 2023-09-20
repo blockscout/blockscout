@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.AddressChannel do
   """
   use BlockScoutWeb, :channel
 
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
   alias BlockScoutWeb.API.V2.AddressView, as: AddressViewAPI
   alias BlockScoutWeb.API.V2.SmartContractView, as: SmartContractViewAPI
   alias BlockScoutWeb.API.V2.TransactionView, as: TransactionViewAPI
@@ -32,7 +34,7 @@ defmodule BlockScoutWeb.AddressChannel do
     "address_current_token_balances"
   ])
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
   @current_token_balances_limit 50
 

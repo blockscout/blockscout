@@ -18,7 +18,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.2.2
+      RELEASE_VERSION: 5.2.3
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -69,44 +69,56 @@ jobs:
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
-  merge-master-after-release:
-    name: Merge 'master' to specific branch after release
-    runs-on: ubuntu-latest
-    env:
-      BRANCHES: |
-        production-core-stg
-        production-sokol-stg
-        production-eth-stg-experimental
-        production-eth-goerli-stg
-        production-lukso-stg
-        production-xdai-stg
-        production-polygon-supernets-stg
-        production-rsk-stg
-        production-immutable-stg
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set Git config
-      run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "Github Actions"
-    - name: Merge master back after release
-      run: |
-          git fetch --unshallow
-          touch errors.txt
-          for branch in $BRANCHES;
-          do
-            git reset --merge
-            git checkout master
-            git fetch origin
-            echo $branch
-            git ls-remote --exit-code --heads origin $branch || { echo $branch >> errors.txt; continue; }
-            echo "Merge 'master' to $branch"
-            git checkout $branch
-            git pull || { echo $branch >> errors.txt; continue; }
-            git merge --no-ff master -m "Auto-merge master back to $branch" || { echo $branch >> errors.txt; continue; }
-            git push || { echo $branch >> errors.txt; continue; }
-            git checkout master;
-          done
-          [ -s errors.txt ] && echo "There are problems with merging 'master' to branches:" || echo "Errors file is empty"
-          cat errors.txt
-          [ ! -s errors.txt ]
+      - name: Send release announcement to Slack workflow
+        id: slack
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "release-version": "${{ env.RELEASE_VERSION }}",
+              "release-link": "https://github.com/blockscout/blockscout/releases/tag/v${{ env.RELEASE_VERSION }}-beta"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # merge-master-after-release:
+  #   name: Merge 'master' to specific branch after release
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     BRANCHES: |
+  #       production-core-stg
+  #       production-sokol-stg
+  #       production-eth-stg-experimental
+  #       production-eth-goerli-stg
+  #       production-lukso-stg
+  #       production-xdai-stg
+  #       production-polygon-supernets-stg
+  #       production-rsk-stg
+  #       production-immutable-stg
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - name: Set Git config
+  #     run: |
+  #         git config --local user.email "actions@github.com"
+  #         git config --local user.name "Github Actions"
+  #   - name: Merge master back after release
+  #     run: |
+  #         git fetch --unshallow
+  #         touch errors.txt
+  #         for branch in $BRANCHES;
+  #         do
+  #           git reset --merge
+  #           git checkout master
+  #           git fetch origin
+  #           echo $branch
+  #           git ls-remote --exit-code --heads origin $branch || { echo $branch >> errors.txt; continue; }
+  #           echo "Merge 'master' to $branch"
+  #           git checkout $branch
+  #           git pull || { echo $branch >> errors.txt; continue; }
+  #           git merge --no-ff master -m "Auto-merge master back to $branch" || { echo $branch >> errors.txt; continue; }
+  #           git push || { echo $branch >> errors.txt; continue; }
+  #           git checkout master;
+  #         done
+  #         [ -s errors.txt ] && echo "There are problems with merging 'master' to branches:" || echo "Errors file is empty"
+  #         cat errors.txt
+  #         [ ! -s errors.txt ]

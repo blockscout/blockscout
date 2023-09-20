@@ -152,6 +152,17 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
     end
   end
 
+  @doc """
+  Converts date time string into DateTime object formatted as date
+  """
+  @spec date(String.t()) :: Date.t()
+  def date(date_time_string) do
+    with {:ok, datetime, _} <- DateTime.from_iso8601(date_time_string) do
+      datetime
+      |> DateTime.to_date()
+    end
+  end
+
   defp api_key do
     config(:api_key) || nil
   end

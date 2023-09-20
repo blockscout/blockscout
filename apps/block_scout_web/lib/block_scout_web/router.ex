@@ -28,13 +28,6 @@ defmodule BlockScoutWeb.Router do
     # Needs to be 200 to support the schema introspection for graphiql
     @max_complexity 200
 
-    # todo: remove once frontend will migrate to /api/v1/... path
-    forward("/graphql", Absinthe.Plug,
-      schema: BlockScoutWeb.Schema,
-      analyze_complexity: true,
-      max_complexity: @max_complexity
-    )
-
     forward("/graphiql", Absinthe.Plug.GraphiQL,
       schema: BlockScoutWeb.Schema,
       interface: :advanced,
@@ -54,6 +47,8 @@ defmodule BlockScoutWeb.Router do
   scope "/", BlockScoutWeb do
     pipe_through(:browser)
 
+    get("/robots.txt", RobotsController, :robots)
+    get("/sitemap.xml", RobotsController, :sitemap)
     get("/api-docs", APIDocsController, :index)
     get("/eth-rpc-api-docs", APIDocsController, :eth_rpc)
   end
