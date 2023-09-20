@@ -58,6 +58,30 @@ defmodule Explorer.Chain.InternalTransactionTest do
 
       assert Repo.insert(changeset)
     end
+
+    test "with stop type" do
+      transaction = insert(:transaction)
+
+      changeset =
+        InternalTransaction.changeset(%InternalTransaction{}, %{
+          from_address_hash: "0x0000000000000000000000000000000000000000",
+          gas: 0,
+          gas_used: 22234,
+          index: 0,
+          input: "0x",
+          trace_address: [],
+          transaction_hash: transaction.hash,
+          transaction_index: 0,
+          type: "stop",
+          error: "execution stopped",
+          value: 0,
+          block_number: 35,
+          block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+          block_index: 0
+        })
+
+      assert changeset.valid?
+    end
   end
 
   defp call_type(opts) do

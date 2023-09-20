@@ -3,6 +3,8 @@ defmodule Explorer.Account.Notifier.Summary do
     Compose a summary from transactions
   """
 
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
   alias Explorer
   alias Explorer.Account.Notifier.Summary
   alias Explorer.{Chain, Repo}
@@ -154,10 +156,8 @@ defmodule Explorer.Account.Notifier.Summary do
 
   def fetch_summary(_, _), do: :nothing
 
-  @burn_address "0x0000000000000000000000000000000000000000"
-
   def method(%{from_address_hash: from, to_address_hash: to}) do
-    {:ok, burn_address} = format_address(@burn_address)
+    {:ok, burn_address} = format_address(burn_address_hash_string())
 
     cond do
       burn_address == from -> "mint"

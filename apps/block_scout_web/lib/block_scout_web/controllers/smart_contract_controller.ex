@@ -7,8 +7,7 @@ defmodule BlockScoutWeb.SmartContractController do
   alias Explorer.SmartContract.{Reader, Writer}
 
   import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
-
-  @burn_address "0x0000000000000000000000000000000000000000"
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action} = params) do
     address_options = [
@@ -30,9 +29,9 @@ defmodule BlockScoutWeb.SmartContractController do
           address.smart_contract
           |> SmartContract.get_implementation_address_hash()
           |> Tuple.to_list()
-          |> List.first() || @burn_address
+          |> List.first() || burn_address_hash_string()
         else
-          @burn_address
+          burn_address_hash_string()
         end
 
       functions =
@@ -137,7 +136,7 @@ defmodule BlockScoutWeb.SmartContractController do
         address: %{hash: address_hash},
         custom_abi: true,
         contract_abi: contract_abi,
-        implementation_address: @burn_address,
+        implementation_address: burn_address_hash_string(),
         implementation_abi: [],
         contract_type: contract_type,
         action: action

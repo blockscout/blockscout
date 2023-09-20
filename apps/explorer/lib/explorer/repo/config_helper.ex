@@ -58,6 +58,17 @@ defmodule Explorer.Repo.ConfigHelper do
     path_from_env(path)
   end
 
+  @doc """
+  Defines http port of the application
+  """
+  @spec get_port() :: non_neg_integer()
+  def get_port do
+    case System.get_env("PORT") && Integer.parse(System.get_env("PORT")) do
+      {port, _} -> port
+      _ -> 4000
+    end
+  end
+
   defp path_from_env(path_env_var) do
     if String.ends_with?(path_env_var, "/") do
       path_env_var
