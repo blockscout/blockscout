@@ -34,7 +34,12 @@ config :block_scout_web,
   display_token_icons: ConfigHelper.parse_bool_env_var("DISPLAY_TOKEN_ICONS"),
   hide_block_miner: ConfigHelper.parse_bool_env_var("HIDE_BLOCK_MINER"),
   show_tenderly_link: ConfigHelper.parse_bool_env_var("SHOW_TENDERLY_LINK"),
-  sensitive_endpoints_api_key: System.get_env("API_SENSITIVE_ENDPOINTS_KEY")
+  sensitive_endpoints_api_key: System.get_env("API_SENSITIVE_ENDPOINTS_KEY"),
+  eth_omni_bridge_mediator: System.get_env("ETH_OMNI_BRIDGE_MEDIATOR"),
+  bsc_omni_bridge_mediator: System.get_env("BSC_OMNI_BRIDGE_MEDIATOR"),
+  poa_omni_bridge_mediator: System.get_env("POA_OMNI_BRIDGE_MEDIATOR"),
+  amb_bridge_mediators: System.get_env("AMB_BRIDGE_MEDIATORS"),
+  foreign_json_rpc: System.get_env("FOREIGN_JSON_RPC", "")
 
 config :block_scout_web, :recaptcha,
   v2_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY"),
