@@ -30,5 +30,3 @@ services:
       - STATS__BLOCKSCOUT_DB_URL=postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
       - STATS__CREATE_DATABASE=true
       - STATS__RUN_MIGRATIONS=true
-    ports:
-      - 8153:8050

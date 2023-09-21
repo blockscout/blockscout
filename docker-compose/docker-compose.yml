@@ -45,8 +45,6 @@ services:
         ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
         DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
         CHAIN_ID: '1337'
-    ports:
-      - 4000:4000
     volumes:
       - ./logs/:/app/logs/
 
