@@ -15,7 +15,7 @@ cd ./docker-compose
 docker-compose up --build
 ```
 
-Note: if you don't need to make backend customizations, you can run `docker-compose up` in order to launch from pre-build backend Docker image. This will be much faster.
+**Note**: if you don't need to make backend customizations, you can run `docker-compose up` in order to launch from pre-build backend Docker image. This will be much faster.
 
 This command uses `docker-compose.yml` by-default, which builds the backend of the explorer into the Docker image and runs 9 Docker containers:
 
@@ -31,7 +31,7 @@ and 4 containers for microservices (written in Rust):
 - [Sol2UML visualizer](https://github.com/blockscout/blockscout-rs/tree/main/visualizer) service.
 - [Sig-provider](https://github.com/blockscout/blockscout-rs/tree/main/sig-provider) service.
 
-Note for Linux users: Linux users need to run the local node on http://0.0.0.0/ rather than http://127.0.0.1/
+**Note for Linux users**: Linux users need to run the local node on http://0.0.0.0/ rather than http://127.0.0.1/
 
 ## Configs for different Ethereum clients
 
@@ -59,5 +59,26 @@ You can adjust BlockScout environment variables:
 - for visualizer in `./envs/common-visualizer.env`
 
 Descriptions of the ENVs are available
--  for [backend](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
--  for [frontend](https://github.com/blockscout/frontend/blob/main/docs/ENVS.md).
+
+- for [backend](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
+- for [frontend](https://github.com/blockscout/frontend/blob/main/docs/ENVS.md).
+
+## Running Docker containers via Makefile
+
+Prerequisites are the same, as for docker-compose setup.
+
+Start all containers:
+
+```bash
+cd ./docker
+make start
+```
+
+Stop all containers:
+
+```bash
+cd ./docker
+make stop
+```
+
+***Note***: Makefile uses the same .env files since it is running docker-compose services inside.
