@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- [#8515](https://github.com/blockscout/blockscout/pull/8515) - Fix `:error.types/0 is undefined` warning
+
 ### Chore
 
 - [#8504](https://github.com/blockscout/blockscout/pull/8504) - Deploy new UI through Makefile
