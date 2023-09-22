@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.ApiRouter do
     scope "/user" do
       get("/info", UserController, :info)
 
-      get("/watchlist", UserController, :watchlist)
+      get("/watchlist", UserController, :watchlist_old)
       delete("/watchlist/:id", UserController, :delete_watchlist)
       post("/watchlist", UserController, :create_watchlist)
       put("/watchlist/:id", UserController, :update_watchlist)
@@ -86,18 +86,24 @@ defmodule BlockScoutWeb.ApiRouter do
       put("/public_tags/:id", UserController, :update_public_tags_request)
 
       scope "/tags" do
-        get("/address/", UserController, :tags_address)
+        get("/address/", UserController, :tags_address_old)
         get("/address/:id", UserController, :tags_address)
         delete("/address/:id", UserController, :delete_tag_address)
         post("/address/", UserController, :create_tag_address)
         put("/address/:id", UserController, :update_tag_address)
 
-        get("/transaction/", UserController, :tags_transaction)
+        get("/transaction/", UserController, :tags_transaction_old)
         get("/transaction/:id", UserController, :tags_transaction)
         delete("/transaction/:id", UserController, :delete_tag_transaction)
         post("/transaction/", UserController, :create_tag_transaction)
         put("/transaction/:id", UserController, :update_tag_transaction)
       end
+    end
+
+    scope "/migration" do
+      get("/user/watchlist", UserController, :watchlist)
+      get("/user/tags/address", UserController, :tags_address)
+      get("/user/tags/transaction", UserController, :tags_transaction)
     end
   end
 
