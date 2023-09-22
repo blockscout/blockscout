@@ -39,6 +39,7 @@
 - [#8338](https://github.com/blockscout/blockscout/pull/8338) - Fix reorgs query
 - [#8413](https://github.com/blockscout/blockscout/pull/8413) - Put error in last call for STOP opcode
 - [#8447](https://github.com/blockscout/blockscout/pull/8447) - Fix reorg transactions
+- [#8513](https://github.com/blockscout/blockscout/pull/8513) - Don't override transaction status
 
 ### Chore
 
