@@ -6,13 +6,11 @@ defmodule Explorer.Chain.BridgedToken do
 
   import Ecto.Changeset
   import EthereumJSONRPC, only: [json_rpc: 2]
-  import Explorer.Chain.Token, only: [page_tokens: 2]
 
   import Ecto.Query,
     only: [
       from: 2,
       limit: 2,
-      offset: 2,
       where: 2
     ]
 
@@ -26,6 +24,7 @@ defmodule Explorer.Chain.BridgedToken do
     BridgedToken,
     Hash,
     InternalTransaction,
+    Search,
     Token,
     Transaction
   }
@@ -952,82 +951,57 @@ defmodule Explorer.Chain.BridgedToken do
       else: current_weights <> "/" <> "#{normalized_weight_in_perc}"
   end
 
-  defp fetch_top_bridged_tokens(destination, paging_options, filter, from_api) do
-    offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
-    chain_id = translate_destination_to_chain_id(destination)
+  defp fetch_top_bridged_tokens(chain_ids, paging_options, filter, sorting, options) do
+    bridged_tokens_query =
+      __MODULE__
+      |> apply_chain_ids_filter(chain_ids)
 
-    if chain_id == :undefined do
-      []
-    else
-      bridged_tokens_query =
-        if chain_id do
-          from(bt in BridgedToken,
-            select: bt,
-            where: bt.foreign_chain_id == ^chain_id
-          )
-        else
-          from(bt in BridgedToken,
-            select: bt
-          )
+    base_query =
+      from(t in Token.base_token_query(nil, sorting),
+        right_join: bt in subquery(bridged_tokens_query),
+        on: t.contract_address_hash == bt.home_token_contract_address_hash,
+        where: t.total_supply > ^0,
+        where: t.bridged,
+        select: {t, bt},
+        preload: [:contract_address]
+      )
+
+    base_query_with_paging =
+      base_query
+      |> Token.page_tokens(paging_options)
+      |> limit(^paging_options.page_size)
+
+    query =
+      if filter && filter !== "" do
+        case Search.prepare_search_term(filter) do
+          {:some, filter_term} ->
+            base_query_with_paging
+            |> where(fragment("to_tsvector('english', symbol || ' ' || name) @@ to_tsquery(?)", ^filter_term))
+
+          _ ->
+            base_query_with_paging
         end
-
-      base_query =
-        from(t in Token,
-          right_join: bt in subquery(bridged_tokens_query),
-          on: t.contract_address_hash == bt.home_token_contract_address_hash,
-          where: t.total_supply > ^0,
-          where: t.bridged,
-          order_by: [desc: t.holder_count, asc: t.name],
-          select: [t, bt],
-          preload: [:contract_address]
-        )
-
-      base_query_with_paging =
-        base_query
-        |> page_tokens(paging_options)
-        |> limit(^paging_options.page_size)
-        |> offset(^offset)
-
-      query =
-        if filter && filter !== "" do
-          base_query_with_paging
-          |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter))
-        else
-          base_query_with_paging
-        end
-
-      if from_api do
-        query
-        |> Repo.replica().all()
       else
-        query
-        |> Repo.all()
+        base_query_with_paging
       end
-    end
+
+    query
+    |> Chain.select_repo(options).all()
   end
 
-  @spec list_top_bridged_tokens(atom(), String.t() | nil, boolean(), [
-          Chain.paging_options() | Chain.necessity_by_association_option()
-        ]) ::
-          [
-            {Token.t(), BridgedToken.t()}
-          ]
-  def list_top_bridged_tokens(destination, filter, from_api, options \\ []) do
+  @spec list_top_bridged_tokens(String.t()) :: [{Token.t(), BridgedToken.t()}]
+  def list_top_bridged_tokens(filter, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    chain_ids = Keyword.get(options, :chain_ids, nil)
+    sorting = Keyword.get(options, :sorting, [])
 
-    fetch_top_bridged_tokens(destination, paging_options, filter, from_api)
+    fetch_top_bridged_tokens(chain_ids, paging_options, filter, sorting, options)
   end
 
-  defp translate_destination_to_chain_id(destination) do
-    case destination do
-      :eth -> 1
-      :kovan -> 42
-      :bsc -> 56
-      :poa -> 99
-      nil -> nil
-      _ -> :undefined
-    end
-  end
+  defp apply_chain_ids_filter(query, chain_ids) when chain_ids in [[], nil], do: query
+
+  defp apply_chain_ids_filter(query, chain_ids) when is_list(chain_ids),
+    do: from(bt in query, where: bt.foreign_chain_id in ^chain_ids)
 
   def binary_to_string(binary) do
     binary

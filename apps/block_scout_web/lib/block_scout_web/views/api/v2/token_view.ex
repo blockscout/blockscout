@@ -17,7 +17,8 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "exchange_rate" => exchange_rate(token),
       "total_supply" => token.total_supply,
       "icon_url" => token.icon_url,
-      "circulating_market_cap" => token.circulating_market_cap
+      "circulating_market_cap" => token.circulating_market_cap,
+      "is_bridged" => token.bridged
     }
   end
 
@@ -49,6 +50,20 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "items" => Enum.map(token_instances, &render("token_instance.json", %{token_instance: &1, token: token})),
       "next_page_params" => next_page_params
     }
+  end
+
+  def render("bridged_tokens.json", %{tokens: tokens, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(tokens, &render("bridged_token.json", %{token: &1})), "next_page_params" => next_page_params}
+  end
+
+  def render("bridged_token.json", %{token: {token, bridged_token}}) do
+    "token.json"
+    |> render(%{token: token})
+    |> Map.merge(%{
+      foreign_address: Address.checksum(bridged_token.foreign_token_contract_address_hash),
+      bridge_type: bridged_token.type,
+      origin_chain_id: bridged_token.foreign_chain_id
+    })
   end
 
   def exchange_rate(%{fiat_value: fiat_value}) when not is_nil(fiat_value), do: to_string(fiat_value)

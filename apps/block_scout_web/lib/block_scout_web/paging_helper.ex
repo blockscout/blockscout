@@ -3,13 +3,14 @@ defmodule BlockScoutWeb.PagingHelper do
     Helper for fetching filters and other url query parameters
   """
   import Explorer.Chain, only: [string_to_transaction_hash: 1]
-  alias Explorer.PagingOptions
+  alias Explorer.{Helper, PagingOptions}
 
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @allowed_filter_labels ["validated", "pending"]
   @allowed_type_labels ["coin_transfer", "contract_call", "contract_creation", "token_transfer", "token_creation"]
   @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155"]
+  @allowed_chain_id [1, 56, 99]
 
   def paging_options(%{"block_number" => block_number_string, "index" => index_string}, [:validated | _]) do
     with {block_number, ""} <- Integer.parse(block_number_string),
@@ -48,6 +49,19 @@ defmodule BlockScoutWeb.PagingHelper do
   end
 
   def filter_options(_params, fallback), do: [fallback]
+
+  def chain_ids_filter_options(%{"chain_ids" => chain_id}) do
+    [
+      chain_ids:
+        chain_id
+        |> String.split(",")
+        |> Enum.uniq()
+        |> Enum.map(&Helper.parse_integer/1)
+        |> Enum.filter(&Enum.member?(@allowed_chain_id, &1))
+    ]
+  end
+
+  def chain_ids_filter_options(_), do: [chain_id: []]
 
   # sobelow_skip ["DOS.StringToAtom"]
   def type_filter_options(%{"type" => type}) do
