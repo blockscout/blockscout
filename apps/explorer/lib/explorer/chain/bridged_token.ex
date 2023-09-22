@@ -8,8 +8,24 @@ defmodule Explorer.Chain.BridgedToken do
 
   import Ecto.Changeset
 
-  alias Explorer.Chain.{Address, BridgedToken, Hash, Token}
-  alias Explorer.Repo
+  import Ecto.Query,
+    only: [
+      from: 2,
+      limit: 2,
+      where: 2
+    ]
+
+  alias Explorer.{Chain, PagingOptions, Repo}
+
+  alias Explorer.Chain.{
+    Address,
+    BridgedToken,
+    Hash,
+    Search,
+    Token
+  }
+
+  @default_paging_options %PagingOptions{page_size: 50}
 
   @typedoc """
   * `foreign_chain_id` - chain ID of a foreign token
@@ -94,4 +110,56 @@ defmodule Explorer.Chain.BridgedToken do
     query
     |> Repo.all()
   end
+
+  defp fetch_top_bridged_tokens(chain_ids, paging_options, filter, sorting, options) do
+    bridged_tokens_query =
+      __MODULE__
+      |> apply_chain_ids_filter(chain_ids)
+
+    base_query =
+      from(t in Token.base_token_query(nil, sorting),
+        right_join: bt in subquery(bridged_tokens_query),
+        on: t.contract_address_hash == bt.home_token_contract_address_hash,
+        where: t.total_supply > ^0,
+        where: t.bridged,
+        select: {t, bt},
+        preload: [:contract_address]
+      )
+
+    base_query_with_paging =
+      base_query
+      |> Token.page_tokens(paging_options)
+      |> limit(^paging_options.page_size)
+
+    query =
+      if filter && filter !== "" do
+        case Search.prepare_search_term(filter) do
+          {:some, filter_term} ->
+            base_query_with_paging
+            |> where(fragment("to_tsvector('english', symbol || ' ' || name) @@ to_tsquery(?)", ^filter_term))
+
+          _ ->
+            base_query_with_paging
+        end
+      else
+        base_query_with_paging
+      end
+
+    query
+    |> Chain.select_repo(options).all()
+  end
+
+  @spec list_top_bridged_tokens(String.t()) :: [{Token.t(), BridgedToken.t()}]
+  def list_top_bridged_tokens(filter, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    chain_ids = Keyword.get(options, :chain_ids, nil)
+    sorting = Keyword.get(options, :sorting, [])
+
+    fetch_top_bridged_tokens(chain_ids, paging_options, filter, sorting, options)
+  end
+
+  defp apply_chain_ids_filter(query, chain_ids) when chain_ids in [[], nil], do: query
+
+  defp apply_chain_ids_filter(query, chain_ids) when is_list(chain_ids),
+    do: from(bt in query, where: bt.foreign_chain_id in ^chain_ids)
 end
