@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
   alias Explorer.Chain.Import.Runner.InternalTransactions
 
   describe "run/1" do
-    test "transaction's status becomes :error when its internal_transaction has an error" do
+    test "transaction's status doesn't become :error when its internal_transaction has an error" do
       transaction = insert(:transaction) |> with_block(status: :ok)
       insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
 
@@ -19,7 +19,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert {:ok, _} = run_internal_transactions([internal_transaction_changes])
 
-      assert :error == Repo.get(Transaction, transaction.hash).status
+      assert :ok == Repo.get(Transaction, transaction.hash).status
     end
 
     test "transaction's has_error_in_internal_txs become true when its internal_transaction (where index != 0) has an error" do
@@ -61,7 +61,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert {:ok, _} = run_internal_transactions([internal_transaction_changes])
       tx = Repo.get(Transaction, transaction.hash)
 
-      assert :error == tx.status
+      assert :ok == tx.status
       assert false == tx.has_error_in_internal_txs
     end
 
@@ -90,7 +90,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert false == tx.has_error_in_internal_txs
     end
 
-    test "simple coin transfer's status becomes :error when its internal_transaction has an error" do
+    test "simple coin transfer's status doesn't become :error when its internal_transaction has an error" do
       transaction = insert(:transaction) |> with_block(status: :ok)
       insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
 
@@ -104,10 +104,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert {:ok, _} = run_internal_transactions([internal_transaction_changes])
 
-      assert :error == Repo.get(Transaction, transaction.hash).status
+      assert :ok == Repo.get(Transaction, transaction.hash).status
     end
 
-    test "for block with 2 simple coin transfer's statuses become :error when its both internal_transactions has an error" do
+    test "for block with 2 simple coin transfer's statuses doesn't become :error even when its both internal_transactions has an error" do
       a_block = insert(:block, number: 1000)
       transaction1 = insert(:transaction) |> with_block(a_block, status: :ok)
       transaction2 = insert(:transaction) |> with_block(a_block, status: :ok)
@@ -128,31 +128,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert {:ok, _} = run_internal_transactions([internal_transaction_changes_1, internal_transaction_changes_2])
 
-      assert :error == Repo.get(Transaction, transaction1.hash).status
-      assert :error == Repo.get(Transaction, transaction2.hash).status
-    end
-
-    test "for block with 2 simple coin transfer's only status become :error for tx where internal_transactions has an error" do
-      a_block = insert(:block, number: 1000)
-      transaction1 = insert(:transaction) |> with_block(a_block, status: :ok)
-      transaction2 = insert(:transaction) |> with_block(a_block, status: :ok)
-      insert(:pending_block_operation, block_hash: a_block.hash, block_number: a_block.number)
-
-      assert :ok == transaction1.status
-      assert :ok == transaction2.status
-
-      index = 0
-      error = "Out of gas"
-
-      internal_transaction_changes_1 =
-        make_internal_transaction_changes_for_simple_coin_transfers(transaction1, index, error)
-
-      internal_transaction_changes_2 =
-        make_internal_transaction_changes_for_simple_coin_transfers(transaction2, index, nil)
-
-      assert {:ok, _} = run_internal_transactions([internal_transaction_changes_1, internal_transaction_changes_2])
-
-      assert :error == Repo.get(Transaction, transaction1.hash).status
+      assert :ok == Repo.get(Transaction, transaction1.hash).status
       assert :ok == Repo.get(Transaction, transaction2.hash).status
     end
 
