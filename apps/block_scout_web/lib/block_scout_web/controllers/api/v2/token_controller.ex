@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.TransactionView
   alias Explorer.Chain
+  alias Explorer.Chain.BridgedToken
   alias Indexer.Fetcher.TokenTotalSupplyOnDemand
 
   import BlockScoutWeb.Chain,
@@ -17,7 +18,12 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   import BlockScoutWeb.PagingHelper,
-    only: [delete_parameters_from_next_page_params: 1, token_transfers_types_options: 1, tokens_sorting: 1]
+    only: [
+      chain_ids_filter_options: 1,
+      delete_parameters_from_next_page_params: 1,
+      token_transfers_types_options: 1,
+      tokens_sorting: 1
+    ]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -217,5 +223,24 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     conn
     |> put_status(200)
     |> render(:tokens, %{tokens: tokens, next_page_params: next_page_params})
+  end
+
+  def bridged_tokens_list(conn, params) do
+    filter = params["q"]
+
+    options =
+      params
+      |> paging_options()
+      |> Keyword.merge(chain_ids_filter_options(params))
+      |> Keyword.merge(tokens_sorting(params))
+      |> Keyword.merge(@api_true)
+
+    {tokens, next_page} = filter |> BridgedToken.list_top_bridged_tokens(options) |> split_list_by_page()
+
+    next_page_params = next_page |> next_page_params(tokens, delete_parameters_from_next_page_params(params))
+
+    conn
+    |> put_status(200)
+    |> render(:bridged_tokens, %{tokens: tokens, next_page_params: next_page_params})
   end
 end
