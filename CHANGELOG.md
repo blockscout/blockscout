@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- [#8513](https://github.com/blockscout/blockscout/pull/8513) - Don't override transaction status
+
 ### Chore
 
 - [#8504](https://github.com/blockscout/blockscout/pull/8504) - Deploy new UI through Makefile
