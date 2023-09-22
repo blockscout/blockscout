@@ -4,6 +4,14 @@ defmodule ConfigHelper do
   alias Explorer.Market.History.Source.{MarketCap, Price}
   alias Indexer.Transform.Blocks
 
+  def repos do
+    if System.get_env("CHAIN_TYPE") == "polygon_edge" do
+      [Explorer.Repo, Explorer.Repo.Account, Explorer.Repo.PolygonEdge]
+    else
+      [Explorer.Repo, Explorer.Repo.Account]
+    end
+  end
+
   @spec hackney_options() :: any()
   def hackney_options() do
     basic_auth_user = System.get_env("ETHEREUM_JSONRPC_USER", "")

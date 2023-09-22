@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#8180](https://github.com/blockscout/blockscout/pull/8180) - Deposits and Withdrawals for Polygon Edge
+
 ### Fixes
 
 ### Chore

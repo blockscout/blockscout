@@ -11,7 +11,7 @@ import Config
 
 # General application configuration
 config :explorer,
-  ecto_repos: [Explorer.Repo, Explorer.Repo.Account],
+  ecto_repos: ConfigHelper.repos(),
   token_functions_reader_max_retries: 3,
   # for not fully indexed blockchains
   decode_not_a_contract_calls: ConfigHelper.parse_bool_env_var("DECODE_NOT_A_CONTRACT_CALLS")

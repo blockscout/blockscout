@@ -6,8 +6,8 @@ defmodule Indexer.Transform.TokenTransfers do
   require Logger
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  import Explorer.Helper, only: [decode_data: 2]
 
-  alias ABI.TypeDecoder
   alias Explorer.Repo
   alias Explorer.Chain.{Token, TokenTransfer}
   alias Indexer.Fetcher.TokenTotalSupplyUpdater
@@ -324,15 +324,5 @@ defmodule Indexer.Transform.TokenTransfers do
 
   defp encode_address_hash(binary) do
     "0x" <> Base.encode16(binary, case: :lower)
-  end
-
-  defp decode_data("0x", types) do
-    for _ <- types, do: nil
-  end
-
-  defp decode_data("0x" <> encoded_data, types) do
-    encoded_data
-    |> Base.decode16!(case: :mixed)
-    |> TypeDecoder.decode_raw(types)
   end
 end
