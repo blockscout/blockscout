@@ -4,9 +4,14 @@
 
 ### Features
 
+- [#8180](https://github.com/blockscout/blockscout/pull/8180) - Deposits and Withdrawals for Polygon Edge
+
 ### Fixes
 
 ### Chore
+
+- [#8504](https://github.com/blockscout/blockscout/pull/8504) - Deploy new UI through Makefile
+- [#8501](https://github.com/blockscout/blockscout/pull/8501) - Conceal secondary ports in docker compose setup
 
 ## 5.2.3-beta
 

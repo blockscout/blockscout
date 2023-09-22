@@ -6342,4 +6342,9 @@ defmodule Explorer.Chain do
 
     Repo.all(query)
   end
+
+  @spec default_paging_options() :: map()
+  def default_paging_options do
+    @default_paging_options
+  end
 end
