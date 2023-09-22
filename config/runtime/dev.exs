@@ -96,6 +96,14 @@ config :explorer, Explorer.Repo.RSK,
   # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
   pool_size: 1
 
+# Configure Suave database
+config :explorer, Explorer.Repo.Suave,
+  database: database,
+  hostname: hostname,
+  url: ExplorerConfigHelper.get_suave_db_url(),
+  pool_size: ConfigHelper.parse_integer_env_var("SUAVE_POOL_SIZE", 10)
+
+
 variant = Variant.get()
 
 Code.require_file("#{variant}.exs", "apps/explorer/config/dev")

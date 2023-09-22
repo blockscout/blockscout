@@ -35,7 +35,7 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.SmartContract.SigProviderInterface
 
   @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
-                     error gas_price gas_used index created_contract_code_indexed_at status to_address_hash revert_reason type has_error_in_internal_txs)a
+                     error gas_price gas_used index created_contract_code_indexed_at status to_address_hash revert_reason type has_error_in_internal_txs execution_node_hash)a
 
   @required_attrs ~w(from_address_hash gas hash input nonce r s v value)a
 
@@ -140,6 +140,8 @@ defmodule Explorer.Chain.Transaction do
    * `max_fee_per_gas` - Maximum total amount per unit of gas a user is willing to pay for a transaction, including base fee and priority fee.
    * `type` - New transaction type identifier introduced in EIP 2718 (Berlin HF)
    * `has_error_in_internal_txs` - shows if the internal transactions related to transaction have errors
+   * `execution_node` - execution node address (used by Suave)
+   * `execution_node_hash` - foreign key of `execution_node` (used by Suave)
   """
   @type t :: %__MODULE__{
           block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
@@ -175,7 +177,9 @@ defmodule Explorer.Chain.Transaction do
           max_priority_fee_per_gas: wei_per_gas | nil,
           max_fee_per_gas: wei_per_gas | nil,
           type: non_neg_integer() | nil,
-          has_error_in_internal_txs: boolean()
+          has_error_in_internal_txs: boolean(),
+          execution_node: %Ecto.Association.NotLoaded{} | Address.t() | nil,
+          execution_node_hash: Hash.Address.t() | nil
         }
 
   @derive {Poison.Encoder,
@@ -285,6 +289,14 @@ defmodule Explorer.Chain.Transaction do
       :created_contract_address,
       Address,
       foreign_key: :created_contract_address_hash,
+      references: :hash,
+      type: Hash.Address
+    )
+
+    belongs_to(
+      :execution_node,
+      Address,
+      foreign_key: :execution_node_hash,
       references: :hash,
       type: Hash.Address
     )
