@@ -8,6 +8,7 @@ services:
 
   backend:
     depends_on:
+      - smart-contract-verifier
       - redis_db
     extends:
       file: ./services/docker-compose-backend.yml
@@ -16,6 +17,11 @@ services:
         ETHEREUM_JSONRPC_VARIANT: 'geth'
         ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
         DATABASE_URL: postgresql://postgres:@host.docker.internal:5432/blockscout?ssl=false
+
+  smart-contract-verifier:
+    extends:
+      file: ./services/docker-compose-smart-contract-verifier.yml
+      service: smart-contract-verifier
 
   visualizer:
     extends:
