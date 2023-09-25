@@ -130,6 +130,7 @@ defmodule Explorer.Account.WatchlistAddress do
     watchlist_id
     |> watchlist_addresses_by_watchlist_id_query()
     |> order_by([wla], desc: wla.id)
+    |> page_watchlist_address(paging_options)
     |> limit(^paging_options.page_size)
     |> Repo.account_repo().all()
   end
@@ -140,6 +141,8 @@ defmodule Explorer.Account.WatchlistAddress do
     query
     |> where([wla], wla.id < ^id)
   end
+
+  def page_watchlist_address(query, _), do: query
 
   def page_address_tags(query, _), do: query
 

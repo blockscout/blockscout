@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     only: [
       next_page_params: 3,
       paging_options: 1,
-      split_list_by_page: 1,
+      split_list_by_page: 1
     ]
 
   import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
@@ -85,7 +85,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       next_page_params =
         next_page |> next_page_params(watchlist_addresses, delete_parameters_from_next_page_params(params))
 
-      watchlist_addresses =
+      watchlist_addresses_prepared =
         Enum.map(watchlist_addresses, fn wa ->
           balances =
             Chain.fetch_paginated_last_token_balances(wa.address_hash,
@@ -112,7 +112,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       |> put_status(200)
       |> render(:watchlist_addresses, %{
         exchange_rate: Market.get_coin_exchange_rate(),
-        watchlist_addresses: watchlist_addresses,
+        watchlist_addresses: watchlist_addresses_prepared,
         next_page_params: next_page_params
       })
     end
