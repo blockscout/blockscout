@@ -1,7 +1,16 @@
 defmodule ConfigHelper do
   import Bitwise
   alias Explorer.ExchangeRates.Source
+  alias Explorer.Market.History.Source.{MarketCap, Price}
   alias Indexer.Transform.Blocks
+
+  def repos do
+    if System.get_env("CHAIN_TYPE") == "polygon_edge" do
+      [Explorer.Repo, Explorer.Repo.Account, Explorer.Repo.PolygonEdge]
+    else
+      [Explorer.Repo, Explorer.Repo.Account]
+    end
+  end
 
   @spec hackney_options() :: any()
   def hackney_options() do
@@ -88,10 +97,29 @@ defmodule ConfigHelper do
 
   @spec exchange_rates_source() :: Source.CoinGecko | Source.CoinMarketCap
   def exchange_rates_source do
-    cond do
-      System.get_env("EXCHANGE_RATES_SOURCE") == "coin_gecko" -> Source.CoinGecko
-      System.get_env("EXCHANGE_RATES_SOURCE") == "coin_market_cap" -> Source.CoinMarketCap
-      true -> Source.CoinGecko
+    case System.get_env("EXCHANGE_RATES_MARKET_CAP_SOURCE") do
+      "coin_gecko" -> Source.CoinGecko
+      "coin_market_cap" -> Source.CoinMarketCap
+      _ -> Source.CoinGecko
+    end
+  end
+
+  @spec exchange_rates_market_cap_source() :: MarketCap.CoinGecko | MarketCap.CoinMarketCap
+  def exchange_rates_market_cap_source do
+    case System.get_env("EXCHANGE_RATES_MARKET_CAP_SOURCE") do
+      "coin_gecko" -> MarketCap.CoinGecko
+      "coin_market_cap" -> MarketCap.CoinMarketCap
+      _ -> MarketCap.CoinGecko
+    end
+  end
+
+  @spec exchange_rates_price_source() :: Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare
+  def exchange_rates_price_source do
+    case System.get_env("EXCHANGE_RATES_PRICE_SOURCE") do
+      "coin_gecko" -> Price.CoinGecko
+      "coin_market_cap" -> Price.CoinMarketCap
+      "crypto_compare" -> Price.CryptoCompare
+      _ -> Price.CryptoCompare
     end
   end
 

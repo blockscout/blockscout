@@ -26,6 +26,7 @@ defmodule Explorer.Chain do
     ]
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, fetch_block_internal_transactions: 2]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   require Logger
 
@@ -121,8 +122,6 @@ defmodule Explorer.Chain do
   @revert_msg_prefix_5 "execution reverted: "
   # keccak256("Error(string)")
   @revert_error_method_id "08c379a0"
-
-  @burn_address_hash_str "0x0000000000000000000000000000000000000000"
 
   @limit_showing_transactions 10_000
   @default_page_size 50
@@ -2248,7 +2247,7 @@ defmodule Explorer.Chain do
         when accumulator: term()
   def stream_unfetched_token_balances(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
     TokenBalance.unfetched_token_balances()
-    |> add_fetcher_limit(limited?)
+    |> add_token_balances_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
 
@@ -4446,6 +4445,11 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_token_instances_with_error(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
+    # likely to get valid metadata
+    high_priority = ["request error: 429", ":checkout_timeout", ":econnrefused", ":timeout"]
+    # almost impossible to get valid metadata
+    negative_priority = ["VM execution error", "no uri", "invalid json"]
+
     Instance
     |> where([instance], not is_nil(instance.error))
     |> select([instance], %{
@@ -4453,6 +4457,7 @@ defmodule Explorer.Chain do
       token_id: instance.token_id,
       updated_at: instance.updated_at
     })
+    |> order_by([instance], desc: instance.error in ^high_priority, asc: instance.error in ^negative_priority)
     |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
@@ -4690,6 +4695,9 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+    Expects map of change params. Inserts using on_conflict: :replace_all
+  """
   @spec upsert_token_instance(map()) :: {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
   def upsert_token_instance(params) do
     changeset = Instance.changeset(%Instance{}, params)
@@ -4698,6 +4706,14 @@ defmodule Explorer.Chain do
       on_conflict: :replace_all,
       conflict_target: [:token_id, :token_contract_address_hash]
     )
+  end
+
+  @doc """
+    Inserts list of token instances via upsert_token_instance/1.
+  """
+  @spec upsert_token_instances_list([map()]) :: list()
+  def upsert_token_instances_list(instances) do
+    Enum.map(instances, &upsert_token_instance/1)
   end
 
   @doc """
@@ -5788,7 +5804,7 @@ defmodule Explorer.Chain do
   @spec get_token_transfer_type(TokenTransfer.t()) ::
           :token_burning | :token_minting | :token_spawning | :token_transfer
   def get_token_transfer_type(transfer) do
-    {:ok, burn_address_hash} = Chain.string_to_address_hash(@burn_address_hash_str)
+    {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
 
     cond do
       transfer.to_address_hash == burn_address_hash && transfer.from_address_hash !== burn_address_hash ->
@@ -6291,6 +6307,14 @@ defmodule Explorer.Chain do
     limit(query, ^fetcher_limit)
   end
 
+  defp add_token_balances_fetcher_limit(query, false), do: query
+
+  defp add_token_balances_fetcher_limit(query, true) do
+    token_balances_fetcher_limit = Application.get_env(:indexer, :token_balances_fetcher_init_limit)
+
+    limit(query, ^token_balances_fetcher_limit)
+  end
+
   def put_has_token_transfers_to_tx(query, true), do: query
 
   def put_has_token_transfers_to_tx(query, false) do
@@ -6303,5 +6327,24 @@ defmodule Explorer.Chain do
           )
       }
     )
+  end
+
+  @spec verified_contracts_top(non_neg_integer()) :: [Hash.Address.t()]
+  def verified_contracts_top(limit) do
+    query =
+      from(contract in SmartContract,
+        inner_join: address in Address,
+        on: contract.address_hash == address.hash,
+        order_by: [desc: address.transactions_count],
+        limit: ^limit,
+        select: contract.address_hash
+      )
+
+    Repo.all(query)
+  end
+
+  @spec default_paging_options() :: map()
+  def default_paging_options do
+    @default_paging_options
   end
 end

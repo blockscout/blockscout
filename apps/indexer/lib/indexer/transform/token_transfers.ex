@@ -5,12 +5,12 @@ defmodule Indexer.Transform.TokenTransfers do
 
   require Logger
 
-  alias ABI.TypeDecoder
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  import Explorer.Helper, only: [decode_data: 2]
+
   alias Explorer.Repo
   alias Explorer.Chain.{Token, TokenTransfer}
   alias Indexer.Fetcher.TokenTotalSupplyUpdater
-
-  @burn_address "0x0000000000000000000000000000000000000000"
 
   @doc """
   Returns a list of token transfers given a list of logs.
@@ -51,7 +51,8 @@ defmodule Indexer.Transform.TokenTransfers do
 
     token_transfers
     |> Enum.filter(fn token_transfer ->
-      token_transfer.to_address_hash == @burn_address || token_transfer.from_address_hash == @burn_address
+      token_transfer.to_address_hash == burn_address_hash_string() ||
+        token_transfer.from_address_hash == burn_address_hash_string()
     end)
     |> Enum.map(fn token_transfer ->
       token_transfer.token_contract_address_hash
@@ -183,9 +184,9 @@ defmodule Indexer.Transform.TokenTransfers do
 
     {from_address_hash, to_address_hash} =
       if log.first_topic == TokenTransfer.weth_deposit_signature() do
-        {@burn_address, truncate_address_hash(log.second_topic)}
+        {burn_address_hash_string(), truncate_address_hash(log.second_topic)}
       else
-        {truncate_address_hash(log.second_topic), @burn_address}
+        {truncate_address_hash(log.second_topic), burn_address_hash_string()}
       end
 
     token_transfer = %{
@@ -325,7 +326,7 @@ defmodule Indexer.Transform.TokenTransfers do
     {token, token_transfer}
   end
 
-  defp truncate_address_hash(nil), do: "0x0000000000000000000000000000000000000000"
+  defp truncate_address_hash(nil), do: burn_address_hash_string()
 
   defp truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
     "0x#{truncated_hash}"
@@ -333,15 +334,5 @@ defmodule Indexer.Transform.TokenTransfers do
 
   defp encode_address_hash(binary) do
     "0x" <> Base.encode16(binary, case: :lower)
-  end
-
-  defp decode_data("0x", types) do
-    for _ <- types, do: nil
-  end
-
-  defp decode_data("0x" <> encoded_data, types) do
-    encoded_data
-    |> Base.decode16!(case: :mixed)
-    |> TypeDecoder.decode_raw(types)
   end
 end

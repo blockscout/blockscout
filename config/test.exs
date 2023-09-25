@@ -10,6 +10,8 @@ config :logger, :ecto,
 
 config :logger, :error, path: Path.absname("logs/test/error.log")
 
-config :explorer, Explorer.ExchangeRates,
+config :explorer, Explorer.ExchangeRates, store: :none
+
+config :explorer, Explorer.ExchangeRates.Source,
   source: Explorer.ExchangeRates.Source.NoOpSource,
-  store: :none
+  price_source: Explorer.ExchangeRates.Source.NoOpPriceSource
