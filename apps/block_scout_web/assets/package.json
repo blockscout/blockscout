@@ -83,7 +83,7 @@
     "xss": "^1.0.14"
   },
   "devDependencies": {
-    "@babel/core": "^7.22.20",
+    "@babel/core": "^7.23.0",
     "@babel/preset-env": "^7.22.20",
     "autoprefixer": "^10.4.16",
     "babel-loader": "^9.1.3",
