@@ -6,6 +6,7 @@
 
 - [#8386](https://github.com/blockscout/blockscout/pull/8386) - Add `owner_address_hash` to the `token_instances`
 - [#8180](https://github.com/blockscout/blockscout/pull/8180) - Deposits and Withdrawals for Polygon Edge
+- [#7996](https://github.com/blockscout/blockscout/pull/7996) - Add CoinBalance fetcher init query limit
 
 ### Fixes
 
@@ -14,6 +15,7 @@
 
 ### Chore
 
+- [#8529](https://github.com/blockscout/blockscout/pull/8529) - Move PolygonEdge-related migration to the corresponding ecto repository
 - [#8504](https://github.com/blockscout/blockscout/pull/8504) - Deploy new UI through Makefile
 - [#8501](https://github.com/blockscout/blockscout/pull/8501) - Conceal secondary ports in docker compose setup
 
