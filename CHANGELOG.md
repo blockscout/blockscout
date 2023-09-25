@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#8528](https://github.com/blockscout/blockscout/pull/8528) - Account: add pagination + envs for limits
 - [#8180](https://github.com/blockscout/blockscout/pull/8180) - Deposits and Withdrawals for Polygon Edge
 
 ### Fixes

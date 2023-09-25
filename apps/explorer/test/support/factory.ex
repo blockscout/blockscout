@@ -9,6 +9,8 @@ defmodule Explorer.Factory do
 
   alias Explorer.Account.{
     Identity,
+    TagAddress,
+    TagTransaction,
     Watchlist,
     WatchlistAddress
   }
@@ -107,6 +109,26 @@ defmodule Explorer.Factory do
     }
   end
 
+  def watchlist_address_db_factory(%{wl_id: id}) do
+    hash = build(:address).hash
+
+    %WatchlistAddress{
+      name: sequence("test"),
+      watchlist_id: id,
+      address_hash: hash,
+      address_hash_hash: hash_to_lower_case_string(hash),
+      watch_coin_input: random_bool(),
+      watch_coin_output: random_bool(),
+      watch_erc_20_input: random_bool(),
+      watch_erc_20_output: random_bool(),
+      watch_erc_721_input: random_bool(),
+      watch_erc_721_output: random_bool(),
+      watch_erc_1155_input: random_bool(),
+      watch_erc_1155_output: random_bool(),
+      notify_email: random_bool()
+    }
+  end
+
   def custom_abi_factory do
     contract_address_hash = to_string(insert(:contract_address).hash)
 
@@ -140,6 +162,14 @@ defmodule Explorer.Factory do
     %{"name" => sequence("name"), "transaction_hash" => to_string(insert(:transaction).hash)}
   end
 
+  def tag_address_db_factory(%{user: user}) do
+    %TagAddress{name: sequence("name"), address_hash: build(:address).hash, identity_id: user.id}
+  end
+
+  def tag_transaction_db_factory(%{user: user}) do
+    %TagTransaction{name: sequence("name"), tx_hash: insert(:transaction).hash, identity_id: user.id}
+  end
+
   def address_to_tag_factory do
     %AddressToTag{
       tag: build(:address_tag),
@@ -162,15 +192,15 @@ defmodule Explorer.Factory do
       watchlist: build(:account_watchlist),
       address_hash: hash,
       address_hash_hash: hash_to_lower_case_string(hash),
-      watch_coin_input: true,
-      watch_coin_output: true,
-      watch_erc_20_input: true,
-      watch_erc_20_output: true,
-      watch_erc_721_input: true,
-      watch_erc_721_output: true,
-      watch_erc_1155_input: true,
-      watch_erc_1155_output: true,
-      notify_email: true
+      watch_coin_input: random_bool(),
+      watch_coin_output: random_bool(),
+      watch_erc_20_input: random_bool(),
+      watch_erc_20_output: random_bool(),
+      watch_erc_721_input: random_bool(),
+      watch_erc_721_output: random_bool(),
+      watch_erc_1155_input: random_bool(),
+      watch_erc_1155_output: random_bool(),
+      notify_email: random_bool()
     }
   end
 
