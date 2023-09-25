@@ -138,6 +138,19 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           max_fee_per_gas: fragment("EXCLUDED.max_fee_per_gas"),
           type: fragment("EXCLUDED.type"),
           execution_node_hash: fragment("EXCLUDED.execution_node_hash"),
+          wrapped_type: fragment("EXCLUDED.wrapped_type"),
+          wrapped_nonce: fragment("EXCLUDED.wrapped_nonce"),
+          wrapped_to_address_hash: fragment("EXCLUDED.wrapped_to_address_hash"),
+          wrapped_gas: fragment("EXCLUDED.wrapped_gas"),
+          wrapped_gas_price: fragment("EXCLUDED.wrapped_gas_price"),
+          wrapped_max_priority_fee_per_gas: fragment("EXCLUDED.wrapped_max_priority_fee_per_gas"),
+          wrapped_max_fee_per_gas: fragment("EXCLUDED.wrapped_max_fee_per_gas"),
+          wrapped_value: fragment("EXCLUDED.wrapped_value"),
+          wrapped_input: fragment("EXCLUDED.wrapped_input"),
+          wrapped_v: fragment("EXCLUDED.wrapped_v"),
+          wrapped_r: fragment("EXCLUDED.wrapped_r"),
+          wrapped_s: fragment("EXCLUDED.wrapped_s"),
+          wrapped_hash: fragment("EXCLUDED.wrapped_hash"),
           # Don't update `hash` as it is part of the primary key and used for the conflict target
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", transaction.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", transaction.updated_at)
@@ -145,7 +158,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       ],
       where:
         fragment(
-          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value, EXCLUDED.earliest_processing_start, EXCLUDED.revert_reason, EXCLUDED.max_priority_fee_per_gas, EXCLUDED.max_fee_per_gas, EXCLUDED.type, EXCLUDED.execution_node_hash) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value, EXCLUDED.earliest_processing_start, EXCLUDED.revert_reason, EXCLUDED.max_priority_fee_per_gas, EXCLUDED.max_fee_per_gas, EXCLUDED.type, EXCLUDED.execution_node_hash, EXCLUDED.wrapped_type, EXCLUDED.wrapped_nonce, EXCLUDED.wrapped_to_address_hash, EXCLUDED.wrapped_gas, EXCLUDED.wrapped_gas_price, EXCLUDED.wrapped_max_priority_fee_per_gas, EXCLUDED.wrapped_max_fee_per_gas, EXCLUDED.wrapped_value, EXCLUDED.wrapped_input, EXCLUDED.wrapped_v, EXCLUDED.wrapped_r, EXCLUDED.wrapped_s, EXCLUDED.wrapped_hash) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           transaction.block_hash,
           transaction.block_number,
           transaction.created_contract_address_hash,
@@ -169,7 +182,20 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           transaction.max_priority_fee_per_gas,
           transaction.max_fee_per_gas,
           transaction.type,
-          transaction.execution_node_hash
+          transaction.execution_node_hash,
+          transaction.wrapped_type,
+          transaction.wrapped_nonce,
+          transaction.wrapped_to_address_hash,
+          transaction.wrapped_gas,
+          transaction.wrapped_gas_price,
+          transaction.wrapped_max_priority_fee_per_gas,
+          transaction.wrapped_max_fee_per_gas,
+          transaction.wrapped_value,
+          transaction.wrapped_input,
+          transaction.wrapped_v,
+          transaction.wrapped_r,
+          transaction.wrapped_s,
+          transaction.wrapped_hash
         )
     )
   end

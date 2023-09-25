@@ -43,6 +43,7 @@ defmodule EthereumJSONRPC.Transaction do
    * `"maxFeePerGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote max fee per unit of gas used. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"type"` - `t:EthereumJSONRPC.quantity/0` denotes transaction type. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"executionNode"` - `t:EthereumJSONRPC.address/0` of execution node (used by Suave).
+   * `"wrapped"` - map of wrapped transaction data (used by Suave).
   """
   @type t :: %{
           String.t() =>
@@ -68,7 +69,20 @@ defmodule EthereumJSONRPC.Transaction do
           max_priority_fee_per_gas: non_neg_integer(),
           max_fee_per_gas: non_neg_integer(),
           type: non_neg_integer(),
-          execution_node_hash: EthereumJSONRPC.address()
+          execution_node_hash: EthereumJSONRPC.address(),
+          wrapped_type: non_neg_integer(),
+          wrapped_nonce: non_neg_integer(),
+          wrapped_to_address_hash: EthereumJSONRPC.address(),
+          wrapped_gas: non_neg_integer(),
+          wrapped_gas_price: non_neg_integer(),
+          wrapped_max_priority_fee_per_gas: non_neg_integer(),
+          wrapped_max_fee_per_gas: non_neg_integer(),
+          wrapped_value: non_neg_integer(),
+          wrapped_input: String.t(),
+          wrapped_v: non_neg_integer(),
+          wrapped_r: non_neg_integer(),
+          wrapped_s: non_neg_integer(),
+          wrapped_hash: EthereumJSONRPC.hash()
         }
 
   @doc """
@@ -174,7 +188,8 @@ defmodule EthereumJSONRPC.Transaction do
           "type" => type,
           "maxPriorityFeePerGas" => max_priority_fee_per_gas,
           "maxFeePerGas" => max_fee_per_gas,
-          "executionNode" => execution_node_hash
+          "executionNode" => execution_node_hash,
+          "wrapped" => wrapped
         } = transaction
       ) do
     result = %{
@@ -196,7 +211,20 @@ defmodule EthereumJSONRPC.Transaction do
       type: type,
       max_priority_fee_per_gas: max_priority_fee_per_gas,
       max_fee_per_gas: max_fee_per_gas,
-      execution_node_hash: execution_node_hash
+      execution_node_hash: execution_node_hash,
+      wrapped_type: quantity_to_integer(Map.get(wrapped, "type")),
+      wrapped_nonce: quantity_to_integer(Map.get(wrapped, "nonce")),
+      wrapped_to_address_hash: Map.get(wrapped, "to"),
+      wrapped_gas: quantity_to_integer(Map.get(wrapped, "gas")),
+      wrapped_gas_price: quantity_to_integer(Map.get(wrapped, "gasPrice")),
+      wrapped_max_priority_fee_per_gas: quantity_to_integer(Map.get(wrapped, "maxPriorityFeePerGas")),
+      wrapped_max_fee_per_gas: quantity_to_integer(Map.get(wrapped, "maxFeePerGas")),
+      wrapped_value: quantity_to_integer(Map.get(wrapped, "value")),
+      wrapped_input: Map.get(wrapped, "input"),
+      wrapped_v: quantity_to_integer(Map.get(wrapped, "v")),
+      wrapped_r: quantity_to_integer(Map.get(wrapped, "r")),
+      wrapped_s: quantity_to_integer(Map.get(wrapped, "s")),
+      wrapped_hash: Map.get(wrapped, "hash")
     }
 
     if transaction["creates"] do
@@ -322,7 +350,8 @@ defmodule EthereumJSONRPC.Transaction do
           "v" => v,
           "value" => value,
           "type" => type,
-          "executionNode" => execution_node_hash
+          "executionNode" => execution_node_hash,
+          "wrapped" => wrapped
         } = transaction
       ) do
     result = %{
@@ -342,7 +371,20 @@ defmodule EthereumJSONRPC.Transaction do
       value: value,
       transaction_index: index,
       type: type,
-      execution_node_hash: execution_node_hash
+      execution_node_hash: execution_node_hash,
+      wrapped_type: quantity_to_integer(Map.get(wrapped, "type")),
+      wrapped_nonce: quantity_to_integer(Map.get(wrapped, "nonce")),
+      wrapped_to_address_hash: Map.get(wrapped, "to"),
+      wrapped_gas: quantity_to_integer(Map.get(wrapped, "gas")),
+      wrapped_gas_price: quantity_to_integer(Map.get(wrapped, "gasPrice")),
+      wrapped_max_priority_fee_per_gas: quantity_to_integer(Map.get(wrapped, "maxPriorityFeePerGas")),
+      wrapped_max_fee_per_gas: quantity_to_integer(Map.get(wrapped, "maxFeePerGas")),
+      wrapped_value: quantity_to_integer(Map.get(wrapped, "value")),
+      wrapped_input: Map.get(wrapped, "input"),
+      wrapped_v: quantity_to_integer(Map.get(wrapped, "v")),
+      wrapped_r: quantity_to_integer(Map.get(wrapped, "r")),
+      wrapped_s: quantity_to_integer(Map.get(wrapped, "s")),
+      wrapped_hash: Map.get(wrapped, "hash")
     }
 
     if transaction["creates"] do
@@ -546,7 +588,7 @@ defmodule EthereumJSONRPC.Transaction do
   #
   # "txType": to avoid FunctionClauseError when indexing Wanchain
   defp entry_to_elixir({key, value})
-       when key in ~w(blockHash condition creates from hash input jsonrpc publicKey raw to txType executionNode),
+       when key in ~w(blockHash condition creates from hash input jsonrpc publicKey raw to txType executionNode wrapped),
        do: {key, value}
 
   # specific to Nethermind client

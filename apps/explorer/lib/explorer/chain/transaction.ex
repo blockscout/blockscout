@@ -35,7 +35,7 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.SmartContract.SigProviderInterface
 
   @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
-                     error gas_price gas_used index created_contract_code_indexed_at status to_address_hash revert_reason type has_error_in_internal_txs execution_node_hash)a
+                     error gas_price gas_used index created_contract_code_indexed_at status to_address_hash revert_reason type has_error_in_internal_txs execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
 
   @required_attrs ~w(from_address_hash gas hash input nonce r s v value)a
 
@@ -142,6 +142,20 @@ defmodule Explorer.Chain.Transaction do
    * `has_error_in_internal_txs` - shows if the internal transactions related to transaction have errors
    * `execution_node` - execution node address (used by Suave)
    * `execution_node_hash` - foreign key of `execution_node` (used by Suave)
+   * `wrapped_type` - transaction type from the `wrapped` field (used by Suave)
+   * `wrapped_nonce` - nonce from the `wrapped` field (used by Suave)
+   * `wrapped_to_address` - target address from the `wrapped` field (used by Suave)
+   * `wrapped_to_address_hash` - `wrapped_to_address` foreign key (used by Suave)
+   * `wrapped_gas` - gas from the `wrapped` field (used by Suave)
+   * `wrapped_gas_price` - gas_price from the `wrapped` field (used by Suave)
+   * `wrapped_max_priority_fee_per_gas` - max_priority_fee_per_gas from the `wrapped` field (used by Suave)
+   * `wrapped_max_fee_per_gas` - max_fee_per_gas from the `wrapped` field (used by Suave)
+   * `wrapped_value` - value from the `wrapped` field (used by Suave)
+   * `wrapped_input` - data from the `wrapped` field (used by Suave)
+   * `wrapped_v` - V field of the signature from the `wrapped` field (used by Suave)
+   * `wrapped_r` - R field of the signature from the `wrapped` field (used by Suave)
+   * `wrapped_s` - S field of the signature from the `wrapped` field (used by Suave)
+   * `wrapped_hash` - hash from the `wrapped` field (used by Suave)
   """
   @type t :: %__MODULE__{
           block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
@@ -179,7 +193,21 @@ defmodule Explorer.Chain.Transaction do
           type: non_neg_integer() | nil,
           has_error_in_internal_txs: boolean(),
           execution_node: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-          execution_node_hash: Hash.Address.t() | nil
+          execution_node_hash: Hash.Address.t() | nil,
+          wrapped_type: non_neg_integer() | nil,
+          wrapped_nonce: non_neg_integer() | nil,
+          wrapped_to_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
+          wrapped_to_address_hash: Hash.Address.t() | nil,
+          wrapped_gas: Gas.t() | nil,
+          wrapped_gas_price: wei_per_gas | nil,
+          wrapped_max_priority_fee_per_gas: wei_per_gas | nil,
+          wrapped_max_fee_per_gas: wei_per_gas | nil,
+          wrapped_value: Wei.t() | nil,
+          wrapped_input: Data.t() | nil,
+          wrapped_v: v() | nil,
+          wrapped_r: r() | nil,
+          wrapped_s: s() | nil,
+          wrapped_hash: Hash.t() | nil
         }
 
   @derive {Poison.Encoder,
@@ -297,6 +325,27 @@ defmodule Explorer.Chain.Transaction do
       :execution_node,
       Address,
       foreign_key: :execution_node_hash,
+      references: :hash,
+      type: Hash.Address
+    )
+
+    field(:wrapped_type, :integer)
+    field(:wrapped_nonce, :integer)
+    field(:wrapped_gas, :decimal)
+    field(:wrapped_gas_price, Wei)
+    field(:wrapped_max_priority_fee_per_gas, Wei)
+    field(:wrapped_max_fee_per_gas, Wei)
+    field(:wrapped_value, Wei)
+    field(:wrapped_input, Data)
+    field(:wrapped_v, :decimal)
+    field(:wrapped_r, :decimal)
+    field(:wrapped_s, :decimal)
+    field(:wrapped_hash, Hash.Full)
+
+    belongs_to(
+      :wrapped_to_address,
+      Address,
+      foreign_key: :wrapped_to_address_hash,
       references: :hash,
       type: Hash.Address
     )
