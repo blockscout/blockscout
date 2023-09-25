@@ -9,6 +9,7 @@
 ### Fixes
 
 - [#8515](https://github.com/blockscout/blockscout/pull/8515) - Fix `:error.types/0 is undefined` warning
+- [#8513](https://github.com/blockscout/blockscout/pull/8513) - Don't override transaction status
 
 ### Chore
 
