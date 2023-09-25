@@ -4,7 +4,12 @@
 
 ### Features
 
+- [#8180](https://github.com/blockscout/blockscout/pull/8180) - Deposits and Withdrawals for Polygon Edge
+- [#7996](https://github.com/blockscout/blockscout/pull/7996) - Add CoinBalance fetcher init query limit
+
 ### Fixes
+
+- [#8513](https://github.com/blockscout/blockscout/pull/8513) - Don't override transaction status
 
 ### Chore
 
