@@ -5,6 +5,7 @@
 ### Features
 
 - [#8544](https://github.com/blockscout/blockscout/pull/8544) - Fix `nil` `"structLogs"`
+- [#8542](https://github.com/blockscout/blockscout/pull/8542) - Add tracing for rootstock
 - [#8561](https://github.com/blockscout/blockscout/pull/8561), [#8564](https://github.com/blockscout/blockscout/pull/8564) - Get historical market cap data from CoinGecko
 - [#8386](https://github.com/blockscout/blockscout/pull/8386) - Add `owner_address_hash` to the `token_instances`
 - [#8530](https://github.com/blockscout/blockscout/pull/8530) - Add `block_type` to search results

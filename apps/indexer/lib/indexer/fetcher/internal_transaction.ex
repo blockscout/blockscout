@@ -111,7 +111,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
     json_rpc_named_arguments
     |> Keyword.fetch!(:variant)
     |> case do
-      variant when variant in [EthereumJSONRPC.Nethermind, EthereumJSONRPC.Erigon, EthereumJSONRPC.Besu] ->
+      variant
+      when variant in [EthereumJSONRPC.Nethermind, EthereumJSONRPC.Erigon, EthereumJSONRPC.Besu, EthereumJSONRPC.RSK] ->
         EthereumJSONRPC.fetch_block_internal_transactions(filtered_unique_numbers, json_rpc_named_arguments)
 
       _ ->

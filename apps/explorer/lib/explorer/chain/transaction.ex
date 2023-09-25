@@ -1004,24 +1004,24 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Get rootstock REMASC address if env is set and valid, nil otherwise.
+  Returns true if the transaction is a Rootstock REMASC transaction.
   """
-  @spec rootstock_remasc_address_hash :: nil | Explorer.Chain.Hash.t()
-  def rootstock_remasc_address_hash do
+  @spec is_rootstock_remasc_transaction(Explorer.Chain.Transaction.t()) :: boolean
+  def is_rootstock_remasc_transaction(%__MODULE__{to_address_hash: to_address_hash}) do
     case Hash.Address.cast(Application.get_env(:explorer, __MODULE__)[:rootstock_remasc_address]) do
-      {:ok, address} -> address
-      _ -> nil
+      {:ok, address} -> address == to_address_hash
+      _ -> false
     end
   end
 
   @doc """
-  Get rootstock bridge address if env is set and valid, nil otherwise.
+  Returns true if the transaction is a Rootstock bridge transaction.
   """
-  @spec rootstock_bridge_address_hash :: nil | Explorer.Chain.Hash.t()
-  def rootstock_bridge_address_hash do
+  @spec is_rootstock_bridge_transaction(Explorer.Chain.Transaction.t()) :: boolean
+  def is_rootstock_bridge_transaction(%__MODULE__{to_address_hash: to_address_hash}) do
     case Hash.Address.cast(Application.get_env(:explorer, __MODULE__)[:rootstock_bridge_address]) do
-      {:ok, address} -> address
-      _ -> nil
+      {:ok, address} -> address == to_address_hash
+      _ -> false
     end
   end
 end

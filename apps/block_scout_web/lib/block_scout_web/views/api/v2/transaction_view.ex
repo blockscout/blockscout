@@ -640,9 +640,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     tx_types(tx, types, :rootstock_remasc)
   end
 
-  defp tx_types(%Transaction{to_address_hash: to_address_hash} = tx, types, :rootstock_remasc) do
+  defp tx_types(tx, types, :rootstock_remasc) do
     types =
-      if to_address_hash && to_address_hash == Transaction.rootstock_remasc_address_hash() do
+      if Transaction.is_rootstock_remasc_transaction(tx) do
         [:rootstock_remasc | types]
       else
         types
@@ -651,8 +651,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     tx_types(tx, types, :rootstock_bridge)
   end
 
-  defp tx_types(%Transaction{to_address_hash: to_address_hash}, types, :rootstock_bridge) do
-    if to_address_hash && to_address_hash == Transaction.rootstock_bridge_address_hash() do
+  defp tx_types(tx, types, :rootstock_bridge) do
+    if Transaction.is_rootstock_bridge_transaction(tx) do
       [:rootstock_bridge | types]
     else
       types
