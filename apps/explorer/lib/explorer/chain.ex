@@ -567,7 +567,7 @@ defmodule Explorer.Chain do
         select: log,
         inner_join: block in Block,
         on: block.hash == log.block_hash,
-        where: block.consensus
+        where: block.consensus == true
       )
 
     preloaded_query =
@@ -4391,6 +4391,9 @@ defmodule Explorer.Chain do
     |> Repo.stream_reduce(initial, reducer)
   end
 
+  @doc """
+    Finds all token instances (pairs of contract_address_hash and token_id) which was met in token transfers but has no corresponding entry in token_instances table
+  """
   @spec stream_not_inserted_token_instances(
           initial :: accumulator,
           reducer :: (entry :: map(), accumulator -> accumulator)
@@ -4438,6 +4441,9 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(distinct_query, initial, reducer)
   end
 
+  @doc """
+    Finds all token instances where metadata never tried to fetch
+  """
   @spec stream_token_instances_with_unfetched_metadata(
           initial :: accumulator,
           reducer :: (entry :: map(), accumulator -> accumulator)
@@ -4731,14 +4737,14 @@ defmodule Explorer.Chain do
         set: [
           metadata: fragment("EXCLUDED.metadata"),
           error: fragment("EXCLUDED.error"),
-          owner_updated_at_block: fragment("?", token_instance.owner_updated_at_block),
-          owner_updated_at_log_index: fragment("?", token_instance.owner_updated_at_log_index),
-          owner_address_hash: fragment("?", token_instance.owner_address_hash),
+          owner_updated_at_block: token_instance.owner_updated_at_block,
+          owner_updated_at_log_index: token_instance.owner_updated_at_log_index,
+          owner_address_hash: token_instance.owner_address_hash,
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token_instance.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_instance.updated_at)
         ]
       ],
-      where: fragment("? IS NULL", token_instance.metadata)
+      where: is_nil(token_instance.metadata)
     )
   end
 

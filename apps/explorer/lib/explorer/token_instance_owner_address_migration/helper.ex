@@ -9,9 +9,9 @@ defmodule Explorer.TokenInstanceOwnerAddressMigration.Helper do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Token.Instance
-  alias Explorer.Chain.TokenTransfer
+  alias Explorer.Chain.{SmartContract, TokenTransfer}
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(SmartContract.burn_address_hash_string())
   @burn_address_hash burn_address_hash
 
   @spec filtered_token_instances_query(non_neg_integer()) :: Ecto.Query.t()
