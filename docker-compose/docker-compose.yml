@@ -15,8 +15,9 @@ services:
     depends_on:
       - db
       - redis_db
-    image: blockscout/blockscout:${DOCKER_TAG:-latest}
-    pull_policy: always
+    extends:
+      file: ./services/docker-compose-backend.yml
+      service: backend
     build:
       context: ..
       dockerfile: ./docker/Dockerfile
@@ -29,26 +30,14 @@ services:
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
         ADMIN_PANEL_ENABLED: ""
         RELEASE_VERSION: 5.2.3
-    restart: always
-    stop_grace_period: 5m
-    container_name: 'backend'
     links:
       - db:database
-    command: sh -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
-    extra_hosts:
-      - 'host.docker.internal:host-gateway'
-    env_file:
-      -  ./envs/common-blockscout.env
     environment:
         ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
         ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545/
         ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
         DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
         CHAIN_ID: '1337'
-    ports:
-      - 4000:4000
-    volumes:
-      - ./logs/:/app/logs/
 
   visualizer:
     extends:
