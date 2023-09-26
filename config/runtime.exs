@@ -387,7 +387,9 @@ config :explorer, Explorer.Account,
     sender: System.get_env("ACCOUNT_SENDGRID_SENDER"),
     template: System.get_env("ACCOUNT_SENDGRID_TEMPLATE")
   ],
-  resend_interval: ConfigHelper.parse_time_env_var("ACCOUNT_VERIFICATION_EMAIL_RESEND_INTERVAL", "5m")
+  resend_interval: ConfigHelper.parse_time_env_var("ACCOUNT_VERIFICATION_EMAIL_RESEND_INTERVAL", "5m"),
+  private_tags_limit: ConfigHelper.parse_integer_env_var("ACCOUNT_PRIVATE_TAGS_LIMIT", 2000),
+  watchlist_addresses_limit: ConfigHelper.parse_integer_env_var("ACCOUNT_WATCHLIST_ADDRESSES_LIMIT", 15)
 
 config :explorer, :token_id_migration,
   first_block: ConfigHelper.parse_integer_env_var("TOKEN_ID_MIGRATION_FIRST_BLOCK", 0),

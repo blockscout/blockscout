@@ -9,12 +9,10 @@ defmodule Explorer.Account.TagAddress do
 
   alias Ecto.Changeset
   alias Explorer.Account.Identity
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Hash}
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
-
-  @max_tag_address_per_account 15
 
   schema "account_tag_addresses" do
     field(:address_hash_hash, Cloak.Ecto.SHA256)
@@ -70,12 +68,14 @@ defmodule Explorer.Account.TagAddress do
   end
 
   def tag_address_count_constraint(%Changeset{changes: %{identity_id: identity_id}} = tag_address) do
+    max_tags_count = get_max_tags_count()
+
     if identity_id
        |> tags_address_by_identity_id_query()
-       |> limit(@max_tag_address_per_account)
-       |> Repo.account_repo().aggregate(:count, :id) >= @max_tag_address_per_account do
+       |> limit(^max_tags_count)
+       |> Repo.account_repo().aggregate(:count, :id) >= max_tags_count do
       tag_address
-      |> add_error(:name, "Max #{@max_tag_address_per_account} tags per account")
+      |> add_error(:name, "Max #{max_tags_count} tags per account")
     else
       tag_address
     end
@@ -86,18 +86,35 @@ defmodule Explorer.Account.TagAddress do
   def tags_address_by_identity_id_query(id) when not is_nil(id) do
     __MODULE__
     |> where([tag], tag.identity_id == ^id)
-    |> order_by([tag], desc: tag.id)
   end
 
   def tags_address_by_identity_id_query(_), do: nil
 
-  def get_tags_address_by_identity_id(id) when not is_nil(id) do
+  @doc """
+    Query paginated private address tags by identity id
+  """
+  @spec get_tags_address_by_identity_id(integer(), [Chain.paging_options()]) :: [__MODULE__]
+  def get_tags_address_by_identity_id(id, options \\ [])
+
+  def get_tags_address_by_identity_id(id, options) when not is_nil(id) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
     id
     |> tags_address_by_identity_id_query()
+    |> order_by([tag], desc: tag.id)
+    |> page_address_tags(paging_options)
+    |> limit(^paging_options.page_size)
     |> Repo.account_repo().all()
   end
 
-  def get_tags_address_by_identity_id(_), do: nil
+  def get_tags_address_by_identity_id(_, _), do: []
+
+  defp page_address_tags(query, %PagingOptions{key: {id}}) do
+    query
+    |> where([tag], tag.id < ^id)
+  end
+
+  defp page_address_tags(query, _), do: query
 
   def tag_address_by_address_hash_and_identity_id_query(address_hash, identity_id)
       when not is_nil(address_hash) and not is_nil(identity_id) do
@@ -152,5 +169,5 @@ defmodule Explorer.Account.TagAddress do
     end
   end
 
-  def get_max_tags_count, do: @max_tag_address_per_account
+  def get_max_tags_count, do: Application.get_env(:explorer, Explorer.Account)[:private_tags_limit]
 end

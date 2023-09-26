@@ -165,7 +165,7 @@ defmodule Explorer.Chain do
   @type necessity_by_association :: %{association => necessity}
 
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
-  @typep paging_options :: {:paging_options, PagingOptions.t()}
+  @type paging_options :: {:paging_options, PagingOptions.t()}
   @typep balance_by_day :: %{date: String.t(), value: Wei.t()}
   @type api? :: {:api?, true | false}
 
