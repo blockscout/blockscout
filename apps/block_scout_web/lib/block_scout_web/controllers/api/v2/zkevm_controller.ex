@@ -28,16 +28,19 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
   """
   @spec batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batch(conn, %{"batch_number" => batch_number} = _params) do
-    {:ok, batch} =
-      Reader.batch(
-        batch_number,
-        necessity_by_association: @batch_necessity_by_association,
-        api?: true
-      )
+    case Reader.batch(
+           batch_number,
+           necessity_by_association: @batch_necessity_by_association,
+           api?: true
+         ) do
+      {:ok, batch} ->
+        conn
+        |> put_status(200)
+        |> render(:zkevm_batch, %{batch: batch})
 
-    conn
-    |> put_status(200)
-    |> render(:zkevm_batch, %{batch: batch})
+      {:error, :not_found} = res ->
+        res
+    end
   end
 
   @doc """
