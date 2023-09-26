@@ -6,8 +6,8 @@
 lib/ethereum_jsonrpc/rolling_window.ex:171
 lib/explorer/smart_contract/solidity/publisher_worker.ex:1
 lib/explorer/smart_contract/vyper/publisher_worker.ex:1
-lib/explorer/smart_contract/solidity/publisher_worker.ex:6
-lib/explorer/smart_contract/vyper/publisher_worker.ex:6
+lib/explorer/smart_contract/solidity/publisher_worker.ex:8
+lib/explorer/smart_contract/vyper/publisher_worker.ex:8
 lib/block_scout_web/router.ex:1
 lib/block_scout_web/schema/types.ex:31
 lib/phoenix/router.ex:324
@@ -15,3 +15,8 @@ lib/phoenix/router.ex:402
 lib/explorer/smart_contract/reader.ex:435
 lib/explorer/exchange_rates/source.ex:139
 lib/explorer/exchange_rates/source.ex:142
+lib/indexer/fetcher/polygon_edge.ex:737
+lib/indexer/fetcher/polygon_edge/deposit_execute.ex:140
+lib/indexer/fetcher/polygon_edge/deposit_execute.ex:184
+lib/indexer/fetcher/polygon_edge/withdrawal.ex:160
+lib/indexer/fetcher/polygon_edge/withdrawal.ex:204

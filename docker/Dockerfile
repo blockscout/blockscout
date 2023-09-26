@@ -2,21 +2,9 @@ FROM bitwalker/alpine-elixir-phoenix:1.14 AS builder
 
 WORKDIR /app
 
-RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file qemu-x86_64
+ENV MIX_ENV="prod"
 
-ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc \
-    GLIBC_VERSION=2.34-r0 \
-    PORT=4000 \
-    MIX_ENV="prod" \
-    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
-
-RUN set -ex && \
-    apk --update add libstdc++ curl ca-certificates && \
-    for pkg in glibc-${GLIBC_VERSION} glibc-bin-${GLIBC_VERSION}; \
-        do curl -sSL ${GLIBC_REPO}/releases/download/${GLIBC_VERSION}/${pkg}.apk -o /tmp/${pkg}.apk; done && \
-    apk add --allow-untrusted /tmp/*.apk && \
-    rm -v /tmp/*.apk && \
-    /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib
+RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file libstdc++ curl ca-certificates
 
 ARG CACHE_EXCHANGE_RATES_PERIOD
 ARG API_V1_READ_METHODS_DISABLED
@@ -38,11 +26,16 @@ ADD apps/explorer/mix.exs ./apps/explorer/
 ADD apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
 ADD apps/indexer/mix.exs ./apps/indexer/
 
+ENV MIX_HOME=/opt/mix
+RUN mix local.hex --force
 RUN mix do deps.get, local.rebar --force, deps.compile
 
-ADD . .
+ADD apps ./apps
+ADD config ./config
+ADD rel ./rel
+ADD *.exs ./
 
-COPY . .
+RUN apk add --update nodejs npm
 
 # Run forderground build and phoenix digest
 RUN mix compile && npm install npm@latest
@@ -52,10 +45,9 @@ RUN cd apps/block_scout_web/assets/ && \
     npm install && \
     npm run deploy && \
     cd /app/apps/explorer/ && \
-    npm install && \
-    apk update && \
-    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
+    npm install
 
+RUN export "CFLAGS=-I/usr/local/include -L/usr/local/lib" && cd deps/ex_secp256k1 && mix deps.get && mix compile
 RUN mix phx.digest
 
 RUN mkdir -p /opt/release \
@@ -70,7 +62,7 @@ ENV RELEASE_VERSION=${RELEASE_VERSION}
 ARG BLOCKSCOUT_VERSION
 ENV BLOCKSCOUT_VERSION=${BLOCKSCOUT_VERSION}
 
-RUN apk --no-cache --update add jq
+RUN apk --no-cache --update add jq curl
 
 WORKDIR /app
 

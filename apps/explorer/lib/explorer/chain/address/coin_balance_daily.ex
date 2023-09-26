@@ -69,7 +69,6 @@ defmodule Explorer.Chain.Address.CoinBalanceDaily do
     balance
     |> cast(params, @allowed_fields)
     |> validate_required(@required_fields)
-    |> foreign_key_constraint(:address_hash)
     |> unique_constraint(:day, name: :address_coin_balances_daily_address_hash_day_index)
   end
 end

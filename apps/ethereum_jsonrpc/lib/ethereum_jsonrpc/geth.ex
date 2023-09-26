@@ -269,13 +269,17 @@ defmodule EthereumJSONRPC.Geth do
   defp parse_call_tracer_calls([], acc, _trace_address, _inner?), do: acc
   defp parse_call_tracer_calls({%{"type" => 0}, _}, acc, _trace_address, _inner?), do: acc
 
+  defp parse_call_tracer_calls({%{"type" => "STOP"}, _}, [last | acc], _trace_address, _inner?) do
+    [Map.put(last, "error", "execution stopped") | acc]
+  end
+
   defp parse_call_tracer_calls(
          {%{"type" => type, "from" => from} = call, index},
          acc,
          trace_address,
          inner?
        )
-       when type in ~w(CALL CALLCODE DELEGATECALL STATICCALL CREATE CREATE2 SELFDESTRUCT REWARD) do
+       when type in ~w(CALL CALLCODE DELEGATECALL STATICCALL CREATE CREATE2 SELFDESTRUCT REVERT STOP) do
     new_trace_address = [index | trace_address]
 
     formatted_call =

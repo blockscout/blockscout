@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.AddressChannel do
   """
   use BlockScoutWeb, :channel
 
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
   alias BlockScoutWeb.API.V2.AddressView, as: AddressViewAPI
   alias BlockScoutWeb.API.V2.SmartContractView, as: SmartContractViewAPI
   alias BlockScoutWeb.API.V2.TransactionView, as: TransactionViewAPI
@@ -28,11 +30,13 @@ defmodule BlockScoutWeb.AddressChannel do
     "transaction",
     "verification_result",
     "token_transfer",
-    "pending_transaction"
+    "pending_transaction",
+    "address_current_token_balances"
   ])
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
+  @current_token_balances_limit 50
 
   def join("addresses:" <> address_hash, _params, socket) do
     {:ok, %{}, assign(socket, :address_hash, address_hash)}
@@ -224,6 +228,34 @@ defmodule BlockScoutWeb.AddressChannel do
     do: handle_transaction(data, socket, "pending_transaction")
 
   def handle_out("pending_transaction", data, socket), do: handle_transaction(data, socket, "transaction")
+
+  def handle_out(
+        "address_current_token_balances",
+        %{address_current_token_balances: address_current_token_balances},
+        %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
+      ) do
+    push_current_token_balances(socket, address_current_token_balances, "erc_20", "ERC-20")
+    push_current_token_balances(socket, address_current_token_balances, "erc_721", "ERC-721")
+    push_current_token_balances(socket, address_current_token_balances, "erc_1155", "ERC-1155")
+
+    {:noreply, socket}
+  end
+
+  def handle_out("address_current_token_balances", _, socket) do
+    {:noreply, socket}
+  end
+
+  defp push_current_token_balances(socket, address_current_token_balances, event_postfix, token_type) do
+    filtered_ctbs = address_current_token_balances |> Enum.filter(fn ctb -> ctb.token_type == token_type end)
+
+    push(socket, "updated_token_balances_" <> event_postfix, %{
+      token_balances:
+        AddressViewAPI.render("token_balances.json", %{
+          token_balances: Enum.take(filtered_ctbs, @current_token_balances_limit)
+        }),
+      overflow: Enum.count(filtered_ctbs) > @current_token_balances_limit
+    })
+  end
 
   def push_current_coin_balance(
         %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket,
