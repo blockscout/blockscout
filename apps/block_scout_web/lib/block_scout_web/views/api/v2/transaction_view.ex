@@ -436,7 +436,18 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         Map.put(extended_result, "zkevm_status", zkevm_status(extended_result))
 
       "suave" ->
-        Map.put(result, "allowed_peekers", suave_parse_allowed_peekers(transaction.logs))
+        result
+        |> Map.put("allowed_peekers", suave_parse_allowed_peekers(transaction.logs))
+        |> Map.put(
+          "execution_node",
+          Helper.address_with_info(
+            single_tx? && conn,
+            transaction.execution_node,
+            transaction.execution_node_hash,
+            single_tx?,
+            watchlist_names
+          )
+        )
 
       _ ->
         result
