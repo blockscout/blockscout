@@ -122,6 +122,10 @@ defmodule Explorer.Account.WatchlistAddress do
 
   def watchlist_addresses_by_watchlist_id_query(_), do: nil
 
+  @doc """
+    Query paginated watchlist addresses by watchlist id
+  """
+  @spec get_watchlist_addresses_by_watchlist_id(integer(), [Chain.paging_options()]) :: [__MODULE__]
   def get_watchlist_addresses_by_watchlist_id(watchlist_id, options \\ [])
 
   def get_watchlist_addresses_by_watchlist_id(watchlist_id, options) when not is_nil(watchlist_id) do
@@ -137,14 +141,12 @@ defmodule Explorer.Account.WatchlistAddress do
 
   def get_watchlist_addresses_by_watchlist_id(_, _), do: []
 
-  def page_watchlist_address(query, %PagingOptions{key: {id}}) do
+  defp page_watchlist_address(query, %PagingOptions{key: {id}}) do
     query
     |> where([wla], wla.id < ^id)
   end
 
-  def page_watchlist_address(query, _), do: query
-
-  def page_address_tags(query, _), do: query
+  defp page_watchlist_address(query, _), do: query
 
   def watchlist_address_by_id_and_watchlist_id_query(watchlist_address_id, watchlist_id)
       when not is_nil(watchlist_address_id) and not is_nil(watchlist_id) do
