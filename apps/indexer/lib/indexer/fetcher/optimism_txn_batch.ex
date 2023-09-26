@@ -43,9 +43,14 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
   @impl GenServer
   def init(args) do
+    json_rpc_named_arguments_l2 = args[:json_rpc_named_arguments]
+    {:ok, %{}, {:continue, json_rpc_named_arguments_l2}}
+  end
+
+  @impl GenServer
+  def handle_continue(json_rpc_named_arguments_l2, state) do
     Logger.metadata(fetcher: @fetcher_name)
 
-    json_rpc_named_arguments_l2 = args[:json_rpc_named_arguments]
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
@@ -73,7 +78,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
       Process.send(self(), :continue, [])
 
-      {:ok,
+      {:noreply,
        %{
          batch_inbox: String.downcase(env[:batch_inbox]),
          batch_submitter: String.downcase(env[:batch_submitter]),
@@ -90,49 +95,49 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     else
       {:start_block_l1_undefined, true} ->
         # the process shouldn't start if the start block is not defined
-        :ignore
+        {:stop, :normal, state}
 
       {:reorg_monitor_started, false} ->
         Logger.error("Cannot start this process as reorg monitor in Indexer.Fetcher.Optimism is not started.")
-        :ignore
+        {:stop, :normal, state}
 
       {:rpc_l1_undefined, true} ->
         Logger.error("L1 RPC URL is not defined.")
-        :ignore
+        {:stop, :normal, state}
 
       {:batch_inbox_valid, false} ->
         Logger.error("Batch Inbox address is invalid or not defined.")
-        :ignore
+        {:stop, :normal, state}
 
       {:batch_submitter_valid, false} ->
         Logger.error("Batch Submitter address is invalid or not defined.")
-        :ignore
+        {:stop, :normal, state}
 
       {:start_block_l1_valid, false} ->
         Logger.error("Invalid L1 Start Block value. Please, check the value and op_transaction_batches table.")
-        :ignore
+        {:stop, :normal, state}
 
       {:chunk_size_valid, false} ->
         Logger.error("Invalid blocks chunk size value.")
-        :ignore
+        {:stop, :normal, state}
 
       {:error, error_data} ->
         Logger.error(
           "Cannot get last safe block or block timestamp by its number due to RPC error: #{inspect(error_data)}"
         )
 
-        :ignore
+        {:stop, :normal, state}
 
       {:l1_tx_not_found, true} ->
         Logger.error(
           "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check op_transaction_batches table."
         )
 
-        :ignore
+        {:stop, :normal, state}
 
       _ ->
         Logger.error("Batch Start Block is invalid or zero.")
-        :ignore
+        {:stop, :normal, state}
     end
   end
 

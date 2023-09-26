@@ -43,12 +43,17 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
 
   @impl GenServer
   def init(_args) do
+    {:ok, %{}, {:continue, :ok}}
+  end
+
+  @impl GenServer
+  def handle_continue(:ok, _state) do
     Logger.metadata(fetcher: @fetcher_name)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
     optimism_l1_portal = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_portal]
 
-    Optimism.init(env, optimism_l1_portal, __MODULE__)
+    Optimism.init_continue(env, optimism_l1_portal, __MODULE__)
   end
 
   @impl GenServer
