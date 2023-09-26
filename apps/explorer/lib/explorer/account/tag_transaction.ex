@@ -89,6 +89,10 @@ defmodule Explorer.Account.TagTransaction do
 
   def tags_transaction_by_identity_id_query(_), do: nil
 
+  @doc """
+    Query paginated private transaction tags by identity id
+  """
+  @spec get_tags_transaction_by_identity_id(integer(), [Chain.paging_options()]) :: [__MODULE__]
   def get_tags_transaction_by_identity_id(id, options \\ [])
 
   def get_tags_transaction_by_identity_id(id, options) when not is_nil(id) do
@@ -104,12 +108,12 @@ defmodule Explorer.Account.TagTransaction do
 
   def get_tags_transaction_by_identity_id(_, _), do: []
 
-  def page_transaction_tags(query, %PagingOptions{key: {id}}) do
+  defp page_transaction_tags(query, %PagingOptions{key: {id}}) do
     query
     |> where([tag], tag.id < ^id)
   end
 
-  def page_transaction_tags(query, _), do: query
+  defp page_transaction_tags(query, _), do: query
 
   def tag_transaction_by_transaction_hash_and_identity_id_query(tx_hash, identity_id)
       when not is_nil(tx_hash) and not is_nil(identity_id) do

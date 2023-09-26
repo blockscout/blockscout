@@ -90,6 +90,10 @@ defmodule Explorer.Account.TagAddress do
 
   def tags_address_by_identity_id_query(_), do: nil
 
+  @doc """
+    Query paginated private address tags by identity id
+  """
+  @spec get_tags_address_by_identity_id(integer(), [Chain.paging_options()]) :: [__MODULE__]
   def get_tags_address_by_identity_id(id, options \\ [])
 
   def get_tags_address_by_identity_id(id, options) when not is_nil(id) do
@@ -105,12 +109,12 @@ defmodule Explorer.Account.TagAddress do
 
   def get_tags_address_by_identity_id(_, _), do: []
 
-  def page_address_tags(query, %PagingOptions{key: {id}}) do
+  defp page_address_tags(query, %PagingOptions{key: {id}}) do
     query
     |> where([tag], tag.id < ^id)
   end
 
-  def page_address_tags(query, _), do: query
+  defp page_address_tags(query, _), do: query
 
   def tag_address_by_address_hash_and_identity_id_query(address_hash, identity_id)
       when not is_nil(address_hash) and not is_nil(identity_id) do
