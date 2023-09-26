@@ -22,11 +22,11 @@ body:
     attributes:
       label: Type of the installation
       description: How the application has been deployed.
-    options:
-        - Docker-compose
-        - Manual from the source code
-        - Helm charts
-        - Docker
+      options:
+          - Docker-compose
+          - Manual from the source code
+          - Helm charts
+          - Docker
     validations:
       required: true
 
@@ -35,15 +35,15 @@ body:
     attributes:
       label: Type of the JSON RPC archive node
       description: Which type of archive node is used.
-    options:
-        - Erigon
-        - Geth
-        - Nethermind
-        - Reth
-        - PolygonEdge
-        - Besu
-        - OpenEthereum
-        - Other
+      options:
+          - Erigon
+          - Geth
+          - Nethermind
+          - Reth
+          - PolygonEdge
+          - Besu
+          - OpenEthereum
+          - Other
     validations:
       required: true
 
@@ -52,10 +52,10 @@ body:
     attributes:
       label: Type of the chain
       description: Type of the chain.
-    options:
-        - L1
-        - L2
-        - Other
+      options:
+          - L1
+          - L2
+          - Other
 
   - type: input
     id: link
