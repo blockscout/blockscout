@@ -733,8 +733,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       token_instance in Instance,
       update: [
         set: [
-          metadata: fragment("?", token_instance.metadata),
-          error: fragment("?", token_instance.error),
+          metadata: token_instance.metadata,
+          error: token_instance.error,
           owner_updated_at_block: fragment("EXCLUDED.owner_updated_at_block"),
           owner_updated_at_log_index: fragment("EXCLUDED.owner_updated_at_log_index"),
           owner_address_hash: fragment("EXCLUDED.owner_address_hash"),

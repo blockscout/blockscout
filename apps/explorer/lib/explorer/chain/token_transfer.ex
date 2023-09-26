@@ -365,7 +365,7 @@ defmodule Explorer.Chain.TokenTransfer do
     from(token_transfer in __MODULE__,
       inner_join: block in Block,
       on: token_transfer.block_hash == block.hash,
-      where: block.consensus
+      where: block.consensus == true
     )
   end
 end
