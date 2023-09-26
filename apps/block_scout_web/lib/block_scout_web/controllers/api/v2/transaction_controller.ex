@@ -72,13 +72,20 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       Map.put(@transaction_necessity_by_association, :transaction_actions, :optional)
 
     necessity_by_association =
-      if Application.get_env(:explorer, :chain_type) == "polygon_zkevm" do
-        necessity_by_association_with_actions
-        |> Map.put(:zkevm_batch, :optional)
-        |> Map.put(:zkevm_sequence_transaction, :optional)
-        |> Map.put(:zkevm_verify_transaction, :optional)
-      else
-        necessity_by_association_with_actions
+      case Application.get_env(:explorer, :chain_type) do
+        "polygon_zkevm" ->
+          necessity_by_association_with_actions
+          |> Map.put(:zkevm_batch, :optional)
+          |> Map.put(:zkevm_sequence_transaction, :optional)
+          |> Map.put(:zkevm_verify_transaction, :optional)
+
+        "suave" ->
+          necessity_by_association_with_actions
+          |> Map.put(:logs, :optional)
+          |> Map.put([execution_node: :names], :optional)
+          |> Map.put([wrapped_to_address: :names], :optional)
+
+        _ -> necessity_by_association_with_actions
       end
 
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
