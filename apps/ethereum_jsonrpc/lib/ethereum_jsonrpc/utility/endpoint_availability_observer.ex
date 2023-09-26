@@ -5,6 +5,8 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
 
   use GenServer
 
+  require Logger
+
   alias EthereumJSONRPC.Utility.EndpointAvailabilityChecker
 
   @max_error_count 3
@@ -60,6 +62,7 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
 
         current_count + 1 >= @max_error_count ->
           EndpointAvailabilityChecker.add_endpoint(put_in(json_rpc_named_arguments[:transport_options][:url], url))
+          Logger.warning("URL #{inspect(url)} is unavailable, switching to fallback url")
           %{state | error_counts: Map.delete(error_counts, url), unavailable_endpoints: [url | unavailable_endpoints]}
 
         true ->

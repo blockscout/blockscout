@@ -38,11 +38,16 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   @impl GenServer
   def init(_args) do
+    {:ok, %{}, {:continue, :ok}}
+  end
+
+  @impl GenServer
+  def handle_continue(:ok, _state) do
     Logger.metadata(fetcher: @fetcher_name)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
 
-    Optimism.init(env, env[:output_oracle], __MODULE__)
+    Optimism.init_continue(env, env[:output_oracle], __MODULE__)
   end
 
   @impl GenServer
