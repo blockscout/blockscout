@@ -86,8 +86,8 @@ defmodule Explorer.Chain.Import.Runner.TokenInstances do
       token_instance in TokenInstance,
       update: [
         set: [
-          metadata: fragment("?", token_instance.metadata),
-          error: fragment("?", token_instance.error),
+          metadata: token_instance.metadata,
+          error: token_instance.error,
           owner_updated_at_block: fragment("EXCLUDED.owner_updated_at_block"),
           owner_updated_at_log_index: fragment("EXCLUDED.owner_updated_at_log_index"),
           owner_address_hash: fragment("EXCLUDED.owner_address_hash"),
@@ -100,8 +100,7 @@ defmodule Explorer.Chain.Import.Runner.TokenInstances do
           (fragment("EXCLUDED.owner_updated_at_block > ?", token_instance.owner_updated_at_block) or
              (fragment("EXCLUDED.owner_updated_at_block = ?", token_instance.owner_updated_at_block) and
                 fragment("EXCLUDED.owner_updated_at_log_index >= ?", token_instance.owner_updated_at_log_index)) or
-             fragment("? IS NULL", token_instance.owner_updated_at_block) or
-             fragment("? IS NULL", token_instance.owner_address_hash))
+             is_nil(token_instance.owner_updated_at_block) or is_nil(token_instance.owner_address_hash))
     )
   end
 end
