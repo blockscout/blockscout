@@ -1,4 +1,4 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
 contact_links:
   - name: Feature Request
     url: https://blockscout.canny.io/feature-requests
