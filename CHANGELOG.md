@@ -4,9 +4,21 @@
 
 ### Features
 
+- [#8180](https://github.com/blockscout/blockscout/pull/8180) - Deposits and Withdrawals for Polygon Edge
+- [#7996](https://github.com/blockscout/blockscout/pull/7996) - Add CoinBalance fetcher init query limit
+
 ### Fixes
 
+- [#8515](https://github.com/blockscout/blockscout/pull/8515) - Fix `:error.types/0 is undefined` warning
+- [#7959](https://github.com/blockscout/blockscout/pull/7959) - Fix empty batch transfers handling
+- [#8513](https://github.com/blockscout/blockscout/pull/8513) - Don't override transaction status
+
 ### Chore
+
+- [#8536](https://github.com/blockscout/blockscout/pull/8536), [#8537](https://github.com/blockscout/blockscout/pull/8537), [#8540](https://github.com/blockscout/blockscout/pull/8540) - New issue template
+- [#8529](https://github.com/blockscout/blockscout/pull/8529) - Move PolygonEdge-related migration to the corresponding ecto repository
+- [#8504](https://github.com/blockscout/blockscout/pull/8504) - Deploy new UI through Makefile
+- [#8501](https://github.com/blockscout/blockscout/pull/8501) - Conceal secondary ports in docker compose setup
 
 ## 5.2.3-beta
 
