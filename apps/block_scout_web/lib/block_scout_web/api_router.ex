@@ -100,6 +100,7 @@ defmodule BlockScoutWeb.ApiRouter do
       end
     end
 
+    # TODO: Complete migration to the new endpoints once frontend will support new format
     scope "/migration" do
       get("/user/watchlist", UserController, :watchlist)
       get("/user/tags/address", UserController, :tags_address)
