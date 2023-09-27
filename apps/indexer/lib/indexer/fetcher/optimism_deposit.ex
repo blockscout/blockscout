@@ -58,6 +58,11 @@ defmodule Indexer.Fetcher.OptimismDeposit do
 
   @impl GenServer
   def init(_args) do
+    {:ok, %{}, {:continue, :ok}}
+  end
+
+  @impl GenServer
+  def handle_continue(:ok, state) do
     Logger.metadata(fetcher: @fetcher_name)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
@@ -87,7 +92,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         Process.send(self(), :fetch, [])
       end
 
-      {:ok,
+      {:noreply,
        %__MODULE__{
          start_block: start_block,
          from_block: start_block,
@@ -99,37 +104,37 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     else
       {:start_block_l1_undefined, true} ->
         # the process shouldn't start if the start block is not defined
-        :ignore
+        {:stop, :normal, state}
 
       {:start_block_l1_valid, false} ->
         Logger.error("Invalid L1 Start Block value. Please, check the value and op_deposits table.")
-        :ignore
+        {:stop, :normal, state}
 
       {:rpc_l1_undefined, true} ->
         Logger.error("L1 RPC URL is not defined.")
-        :ignore
+        {:stop, :normal, state}
 
       {:optimism_portal_valid, false} ->
         Logger.error("OptimismPortal contract address is invalid or undefined.")
-        :ignore
+        {:stop, :normal, state}
 
       {:error, error_data} ->
         Logger.error(
           "Cannot get last L1 transaction from RPC by its hash or last safe block due to the RPC error: #{inspect(error_data)}"
         )
 
-        :ignore
+        {:stop, :normal, state}
 
       {:l1_tx_not_found, true} ->
         Logger.error(
           "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check op_deposits table."
         )
 
-        :ignore
+        {:stop, :normal, state}
 
       _ ->
         Logger.error("Optimism deposits L1 Start Block is invalid or zero.")
-        :ignore
+        {:stop, :normal, state}
     end
   end
 
