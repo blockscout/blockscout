@@ -18,5 +18,7 @@ defmodule Explorer.Repo.Suave.Migrations.AddSuaveTransactionFields do
       add(:wrapped_s, :numeric, precision: 100, null: true)
       add(:wrapped_hash, :bytea, null: true)
     end
+
+    create(index(:transactions, :execution_node_hash))
   end
 end
