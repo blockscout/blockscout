@@ -1,4 +1,4 @@
-<h1 align="center">BlockScout</h1>
+<h1 align="center">DOScan powered by BlockScout</h1>
 <p align="center">Blockchain Explorer for inspecting and analyzing EVM Chains.</p>
 <div align="center">
 

@@ -66,7 +66,7 @@ defmodule Indexer.Transform.AddressTokenBalancesTest do
                ])
     end
 
-    test "does not set params when the to_address_hash is the burn address for the Token ERC-721" do
+    test "does set params when the to_address_hash is the burn address for the Token ERC-721" do
       block_number = 1
       from_address_hash = "0x5b8410f67eb8040bb1cd1e8a4ff9d5f6ce678a15"
       to_address_hash = "0x0000000000000000000000000000000000000000"
@@ -77,12 +77,22 @@ defmodule Indexer.Transform.AddressTokenBalancesTest do
         from_address_hash: from_address_hash,
         to_address_hash: to_address_hash,
         token_contract_address_hash: token_contract_address_hash,
-        token_type: "ERC-721"
+        token_type: "ERC-721",
+        token_ids: [1]
       }
 
       params_set = AddressTokenBalances.params_set(%{token_transfers_params: [token_transfer_params]})
 
-      assert MapSet.size(params_set) == 0
+      assert params_set ==
+               MapSet.new([
+                 %{
+                   address_hash: "0x5b8410f67eb8040bb1cd1e8a4ff9d5f6ce678a15",
+                   block_number: 1,
+                   token_contract_address_hash: "0xe18035bf8712672935fdb4e5e431b1a0183d2dfc",
+                   token_id: 1,
+                   token_type: "ERC-721"
+                 }
+               ])
     end
   end
 end
