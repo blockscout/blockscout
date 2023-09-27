@@ -75,10 +75,9 @@ jobs:
 
       - run: mix compile
 
-      # Ensure NIF is compiled for libsecp256k1
       - run:
           command: make
-          working_directory: "deps/libsecp256k1"
+          working_directory: "deps/ex_secp256k1"
 
       # `deps` needs to be cached with `_build` because `_build` will symlink into `deps`
 

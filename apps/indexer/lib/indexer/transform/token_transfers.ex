@@ -5,12 +5,12 @@ defmodule Indexer.Transform.TokenTransfers do
 
   require Logger
 
-  alias ABI.TypeDecoder
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  import Explorer.Helper, only: [decode_data: 2]
+
   alias Explorer.Repo
   alias Explorer.Chain.{Token, TokenTransfer}
   alias Indexer.Fetcher.TokenTotalSupplyUpdater
-
-  @burn_address "0x0000000000000000000000000000000000000000"
 
   @doc """
   Returns a list of token transfers given a list of logs.
@@ -51,7 +51,8 @@ defmodule Indexer.Transform.TokenTransfers do
 
     token_transfers
     |> Enum.filter(fn token_transfer ->
-      token_transfer.to_address_hash == @burn_address || token_transfer.from_address_hash == @burn_address
+      token_transfer.to_address_hash == burn_address_hash_string() ||
+        token_transfer.from_address_hash == burn_address_hash_string()
     end)
     |> Enum.map(fn token_transfer ->
       token_transfer.token_contract_address_hash
@@ -124,17 +125,23 @@ defmodule Indexer.Transform.TokenTransfers do
   end
 
   defp do_parse(log, %{tokens: tokens, token_transfers: token_transfers} = acc, type \\ :erc20_erc721) do
-    {token, token_transfer} =
+    parse_result =
       if type != :erc1155 do
         parse_params(log)
       else
         parse_erc1155_params(log)
       end
 
-    %{
-      tokens: [token | tokens],
-      token_transfers: [token_transfer | token_transfers]
-    }
+    case parse_result do
+      {token, token_transfer} ->
+        %{
+          tokens: [token | tokens],
+          token_transfers: [token_transfer | token_transfers]
+        }
+
+      nil ->
+        acc
+    end
   rescue
     e in [FunctionClauseError, MatchError] ->
       Logger.error(fn ->
@@ -177,9 +184,9 @@ defmodule Indexer.Transform.TokenTransfers do
 
     {from_address_hash, to_address_hash} =
       if log.first_topic == TokenTransfer.weth_deposit_signature() do
-        {@burn_address, truncate_address_hash(log.second_topic)}
+        {burn_address_hash_string(), truncate_address_hash(log.second_topic)}
       else
-        {truncate_address_hash(log.second_topic), @burn_address}
+        {truncate_address_hash(log.second_topic), burn_address_hash_string()}
       end
 
     token_transfer = %{
@@ -270,25 +277,29 @@ defmodule Indexer.Transform.TokenTransfers do
       ) do
     [token_ids, values] = decode_data(data, [{:array, {:uint, 256}}, {:array, {:uint, 256}}])
 
-    token_transfer = %{
-      block_number: log.block_number,
-      block_hash: log.block_hash,
-      log_index: log.index,
-      from_address_hash: truncate_address_hash(third_topic),
-      to_address_hash: truncate_address_hash(fourth_topic),
-      token_contract_address_hash: log.address_hash,
-      transaction_hash: log.transaction_hash,
-      token_type: "ERC-1155",
-      token_ids: token_ids,
-      amounts: values
-    }
+    if token_ids == [] || values == [] do
+      nil
+    else
+      token_transfer = %{
+        block_number: log.block_number,
+        block_hash: log.block_hash,
+        log_index: log.index,
+        from_address_hash: truncate_address_hash(third_topic),
+        to_address_hash: truncate_address_hash(fourth_topic),
+        token_contract_address_hash: log.address_hash,
+        transaction_hash: log.transaction_hash,
+        token_type: "ERC-1155",
+        token_ids: token_ids,
+        amounts: values
+      }
 
-    token = %{
-      contract_address_hash: log.address_hash,
-      type: "ERC-1155"
-    }
+      token = %{
+        contract_address_hash: log.address_hash,
+        type: "ERC-1155"
+      }
 
-    {token, token_transfer}
+      {token, token_transfer}
+    end
   end
 
   def parse_erc1155_params(%{third_topic: third_topic, fourth_topic: fourth_topic, data: data} = log) do
@@ -315,7 +326,7 @@ defmodule Indexer.Transform.TokenTransfers do
     {token, token_transfer}
   end
 
-  defp truncate_address_hash(nil), do: "0x0000000000000000000000000000000000000000"
+  defp truncate_address_hash(nil), do: burn_address_hash_string()
 
   defp truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
     "0x#{truncated_hash}"
@@ -323,15 +334,5 @@ defmodule Indexer.Transform.TokenTransfers do
 
   defp encode_address_hash(binary) do
     "0x" <> Base.encode16(binary, case: :lower)
-  end
-
-  defp decode_data("0x", types) do
-    for _ <- types, do: nil
-  end
-
-  defp decode_data("0x" <> encoded_data, types) do
-    encoded_data
-    |> Base.decode16!(case: :mixed)
-    |> TypeDecoder.decode_raw(types)
   end
 end

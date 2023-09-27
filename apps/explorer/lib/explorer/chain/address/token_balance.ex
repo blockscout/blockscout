@@ -9,6 +9,8 @@ defmodule Explorer.Chain.Address.TokenBalance do
 
   use Explorer.Schema
 
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
   alias Explorer.Chain
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.{Address, Block, Hash, Token}
@@ -65,12 +67,10 @@ defmodule Explorer.Chain.Address.TokenBalance do
     token_balance
     |> cast(attrs, @allowed_fields)
     |> validate_required(@required_fields)
-    |> foreign_key_constraint(:address_hash)
-    |> foreign_key_constraint(:token_contract_address_hash)
     |> unique_constraint(:block_number, name: :token_balances_address_hash_block_number_index)
   end
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
 
   @doc """

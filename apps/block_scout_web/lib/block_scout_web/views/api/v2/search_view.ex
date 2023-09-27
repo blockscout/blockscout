@@ -1,11 +1,16 @@
 defmodule BlockScoutWeb.API.V2.SearchView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.Endpoint
-  alias Explorer.Chain.{Address, Block, Transaction}
+  alias BlockScoutWeb.{BlockView, Endpoint}
+  alias Explorer.Chain
+  alias Explorer.Chain.{Address, Block, Hash, Transaction}
 
   def render("search_results.json", %{search_results: search_results, next_page_params: next_page_params}) do
     %{"items" => Enum.map(search_results, &prepare_search_result/1), "next_page_params" => next_page_params}
+  end
+
+  def render("search_results.json", %{search_results: search_results}) do
+    Enum.map(search_results, &prepare_search_result/1)
   end
 
   def render("search_results.json", %{result: {:ok, result}}) do
@@ -30,7 +35,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "exchange_rate" => search_result.exchange_rate && to_string(search_result.exchange_rate),
       "total_supply" => search_result.total_supply,
       "circulating_market_cap" =>
-        search_result.circulating_market_cap && to_string(search_result.circulating_market_cap)
+        search_result.circulating_market_cap && to_string(search_result.circulating_market_cap),
+      "is_verified_via_admin_panel" => search_result.is_verified_via_admin_panel
     }
   end
 
@@ -48,12 +54,21 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   def prepare_search_result(%{type: "block"} = search_result) do
     block_hash = hash_to_string(search_result.block_hash)
 
+    {:ok, block} =
+      Chain.hash_to_block(hash(search_result.block_hash),
+        necessity_by_association: %{
+          :nephews => :optional
+        },
+        api?: true
+      )
+
     %{
       "type" => search_result.type,
       "block_number" => search_result.block_number,
       "block_hash" => block_hash,
       "url" => block_path(Endpoint, :show, block_hash),
-      "timestamp" => search_result.timestamp
+      "timestamp" => search_result.timestamp,
+      "block_type" => block |> BlockView.block_type() |> String.downcase()
     }
   end
 
@@ -68,7 +83,16 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     }
   end
 
+  defp hash_to_string(%Hash{bytes: bytes}), do: hash_to_string(bytes)
   defp hash_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
+
+  defp hash(%Hash{} = hash), do: hash
+
+  defp hash(bytes),
+    do: %Hash{
+      byte_count: 32,
+      bytes: bytes
+    }
 
   defp redirect_search_results(%Address{} = item) do
     %{"type" => "address", "parameter" => Address.checksum(item.hash)}

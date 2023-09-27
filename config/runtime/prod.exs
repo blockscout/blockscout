@@ -7,13 +7,15 @@ alias Explorer.Repo.ConfigHelper, as: ExplorerConfigHelper
 ### BlockScout Web ###
 ######################
 
+port = ExplorerConfigHelper.get_port()
+
 config :block_scout_web, BlockScoutWeb.Endpoint,
   secret_key_base: System.get_env("SECRET_KEY_BASE"),
   check_origin: System.get_env("CHECK_ORIGIN", "false") == "true" || false,
-  http: [port: System.get_env("PORT")],
+  http: [port: port],
   url: [
     scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "https",
-    port: System.get_env("PORT"),
+    port: port,
     host: System.get_env("BLOCKSCOUT_HOST") || "localhost"
   ]
 
@@ -51,6 +53,12 @@ config :explorer, Explorer.Repo.Replica1,
 config :explorer, Explorer.Repo.Account,
   url: ExplorerConfigHelper.get_account_db_url(),
   pool_size: ConfigHelper.parse_integer_env_var("ACCOUNT_POOL_SIZE", 50),
+  ssl: ExplorerConfigHelper.ssl_enabled?()
+
+# Configures PolygonEdge database
+config :explorer, Explorer.Repo.PolygonEdge,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: ConfigHelper.parse_integer_env_var("POLYGON_EDGE_POOL_SIZE", 50),
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
 variant = Variant.get()

@@ -218,7 +218,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
           address_hash: address.hash,
           block_number: 2,
           token_contract_address_hash: token.contract_address_hash,
-          value: Decimal.new(200)
+          value: Decimal.new(200),
+          value_fetched_at: DateTime.utc_now()
         },
         options
       )
@@ -300,7 +301,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                    address_hash: address_hash,
                    token_contract_address_hash: token_contract_address_hash,
                    block_number: block_number,
-                   value: value
+                   value: value,
+                   value_fetched_at: DateTime.utc_now()
                  },
                  options
                )
@@ -344,7 +346,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                    address_hash: address_hash,
                    token_contract_address_hash: token_contract_address_hash,
                    block_number: block_number,
-                   value: value
+                   value: value,
+                   value_fetched_at: DateTime.utc_now()
                  },
                  options
                )
@@ -404,13 +407,15 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                      address_hash: non_holder_becomes_holder_address_hash,
                      token_contract_address_hash: token_contract_address_hash,
                      block_number: block_number,
-                     value: non_holder_becomes_holder_value
+                     value: non_holder_becomes_holder_value,
+                     value_fetched_at: DateTime.utc_now()
                    },
                    %{
                      address_hash: holder_becomes_non_holder_address_hash,
                      token_contract_address_hash: token_contract_address_hash,
                      block_number: block_number,
-                     value: holder_becomes_non_holder_value
+                     value: holder_becomes_non_holder_value,
+                     value_fetched_at: DateTime.utc_now()
                    }
                  ],
                  options

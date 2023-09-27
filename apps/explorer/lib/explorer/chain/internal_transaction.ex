@@ -444,8 +444,6 @@ defmodule Explorer.Chain.InternalTransaction do
     |> validate_call_error_or_result()
     |> check_constraint(:call_type, message: ~S|can't be blank when type is 'call'|, name: :call_has_call_type)
     |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_call_type)
-    |> foreign_key_constraint(:from_address_hash)
-    |> foreign_key_constraint(:to_address_hash)
     |> foreign_key_constraint(:transaction_hash)
     |> unique_constraint(:index)
   end
@@ -460,8 +458,6 @@ defmodule Explorer.Chain.InternalTransaction do
     |> validate_required(@create_required_fields)
     |> validate_create_error_or_result()
     |> check_constraint(:init, message: ~S|can't be blank when type is 'create'|, name: :create_has_init)
-    |> foreign_key_constraint(:created_contract_address_hash)
-    |> foreign_key_constraint(:from_address_hash)
     |> foreign_key_constraint(:transaction_hash)
     |> unique_constraint(:index)
   end
@@ -474,8 +470,17 @@ defmodule Explorer.Chain.InternalTransaction do
     changeset
     |> cast(attrs, @selfdestruct_allowed_fields)
     |> validate_required(@selfdestruct_required_fields)
-    |> foreign_key_constraint(:from_address_hash)
-    |> foreign_key_constraint(:to_address_hash)
+    |> unique_constraint(:index)
+  end
+
+  @stop_optional_fields ~w(from_address_hash gas gas_used error)a
+  @stop_required_fields ~w(block_number transaction_hash transaction_index index type value trace_address)a
+  @stop_allowed_fields @stop_optional_fields ++ @stop_required_fields
+
+  defp type_changeset(changeset, attrs, :stop) do
+    changeset
+    |> cast(attrs, @stop_allowed_fields)
+    |> validate_required(@stop_required_fields)
     |> unique_constraint(:index)
   end
 
