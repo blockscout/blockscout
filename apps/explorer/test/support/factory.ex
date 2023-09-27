@@ -863,6 +863,12 @@ defmodule Explorer.Factory do
     }
   end
 
+  def log_index_factory do
+    %{
+      log_index: sequence("token_id", & &1)
+    }
+  end
+
   def token_balance_factory do
     %TokenBalance{
       address: build(:address),
