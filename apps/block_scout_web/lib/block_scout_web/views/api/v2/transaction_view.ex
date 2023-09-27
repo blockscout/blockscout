@@ -498,11 +498,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "gas_limit" => transaction.wrapped_gas,
       "gas_price" => transaction.wrapped_gas_price,
       "fee" =>
-        Chain.fee(
-          %Transaction{gas: transaction.wrapped_gas, gas_price: transaction.wrapped_gas_price, gas_used: nil},
-          :wei
-        )
-        |> format_fee(),
+        format_fee(
+          Chain.fee(
+            %Transaction{gas: transaction.wrapped_gas, gas_price: transaction.wrapped_gas_price, gas_used: nil},
+            :wei
+          )
+        ),
       "max_priority_fee_per_gas" => transaction.wrapped_max_priority_fee_per_gas,
       "max_fee_per_gas" => transaction.wrapped_max_fee_per_gas,
       "value" => transaction.wrapped_value,

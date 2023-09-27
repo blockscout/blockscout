@@ -850,6 +850,22 @@ defmodule Explorer.Chain do
         )).()
   end
 
+  @spec execution_node_to_transactions(Hash.Address.t(), [paging_options | necessity_by_association_option | api?()]) ::
+          [Transaction.t()]
+  def execution_node_to_transactions(execution_node_hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    options
+    |> Keyword.get(:paging_options, @default_paging_options)
+    |> fetch_transactions_in_descending_order_by_block_and_index()
+    |> where(execution_node_hash: ^execution_node_hash)
+    |> join_associations(necessity_by_association)
+    |> put_has_token_transfers_to_tx(false)
+    |> (& &1).()
+    |> select_repo(options).all()
+    |> (&Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_necessity_by_association, options) end)).()
+  end
+
   @spec block_to_withdrawals(
           Hash.Full.t(),
           [paging_options | necessity_by_association_option]
@@ -3993,6 +4009,12 @@ defmodule Explorer.Chain do
   defp fetch_transactions_in_ascending_order_by_index(paging_options) do
     Transaction
     |> order_by([transaction], asc: transaction.index)
+    |> handle_block_paging_options(paging_options)
+  end
+
+  defp fetch_transactions_in_descending_order_by_block_and_index(paging_options) do
+    Transaction
+    |> order_by([transaction], desc: transaction.block_number, asc: transaction.index)
     |> handle_block_paging_options(paging_options)
   end
 
