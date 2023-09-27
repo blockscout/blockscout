@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.CSPHeader do
         img-src 'self' * data: https://*.google-analytics.com https://*.googletagmanager.com;\
         media-src 'self' * data:;\
         font-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.gstatic.com data:;\
-        frame-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://datastudio.google.com/;\
+        frame-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://datastudio.google.com/ https://lookerstudio.google.com/;\
       "
     })
   end
