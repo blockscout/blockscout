@@ -6409,42 +6409,4 @@ defmodule Explorer.Chain do
   def default_paging_options do
     @default_paging_options
   end
-
-  def zkevm_batches(options \\ []) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-
-    base_query =
-      from(tb in TransactionBatch,
-        order_by: [desc: tb.number]
-      )
-
-    query =
-      if Keyword.get(options, :confirmed?, false) do
-        base_query
-        |> join_associations(necessity_by_association)
-        |> where([tb], not is_nil(tb.sequence_id) and tb.sequence_id > 0)
-        |> limit(10)
-      else
-        paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-        base_query
-        |> join_associations(necessity_by_association)
-        |> page_zkevm_batches(paging_options)
-        |> limit(^paging_options.page_size)
-      end
-
-    select_repo(options).all(query)
-  end
-
-  def zkevm_batch_transactions(batch_number, options \\ []) do
-    query = from(bts in BatchTransaction, where: bts.batch_number == ^batch_number)
-
-    select_repo(options).all(query)
-  end
-
-  defp page_zkevm_batches(query, %PagingOptions{key: nil}), do: query
-
-  defp page_zkevm_batches(query, %PagingOptions{key: {number}}) do
-    from(tb in query, where: tb.number < ^number)
-  end
 end

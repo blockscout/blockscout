@@ -408,6 +408,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "has_error_in_internal_txs" => transaction.has_error_in_internal_txs
     }
 
+    chain_type_fields(result, transaction, single_tx?, conn)
+  end
+
+  defp chain_type_fields(result, transaction, single_tx?, conn) do
     case single_tx? && Application.get_env(:explorer, :chain_type) do
       "polygon_edge" ->
         result
@@ -423,7 +427,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
         Map.put(extended_result, "zkevm_status", zkevm_status(extended_result))
 
-      _ -> result
+      _ ->
+        result
     end
   end
 

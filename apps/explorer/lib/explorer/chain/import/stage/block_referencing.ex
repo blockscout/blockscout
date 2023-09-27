@@ -30,6 +30,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
             Runner.PolygonEdge.Withdrawals,
             Runner.PolygonEdge.WithdrawalExits
           ]
+
       "polygon_zkevm" ->
         @default_runners ++
           [
@@ -37,7 +38,9 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
             Runner.Zkevm.TransactionBatches,
             Runner.Zkevm.BatchTransactions
           ]
-      _ -> @default_runners
+
+      _ ->
+        @default_runners
     end
   end
 
