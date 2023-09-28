@@ -502,6 +502,10 @@ defmodule BlockScoutWeb.Chain do
     %{"index" => index}
   end
 
+  defp paging_params({%Token{} = token, _}) do
+    paging_params(token)
+  end
+
   # clause for search results pagination
   defp paging_params(%{
          address_hash: address_hash,
