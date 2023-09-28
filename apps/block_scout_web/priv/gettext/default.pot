@@ -142,7 +142,7 @@ msgstr ""
 msgid "API keys"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:124
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:112
 #, elixir-autogen, elixir-format
 msgid "APIs"
 msgstr ""
@@ -1201,7 +1201,7 @@ msgstr ""
 msgid "Error: Could not determine contract creator."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:138
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:126
 #, elixir-autogen, elixir-format
 msgid "Eth RPC"
 msgstr ""
@@ -1365,7 +1365,7 @@ msgstr ""
 msgid "Go to"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:128
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:116
 #, elixir-autogen, elixir-format
 msgid "GraphQL"
 msgstr ""
@@ -2030,7 +2030,7 @@ msgstr ""
 msgid "Query"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:133
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:121
 #, elixir-autogen, elixir-format
 msgid "RPC"
 msgstr ""
@@ -3381,11 +3381,6 @@ msgstr ""
 msgid "Amount of locked CELO that has been activated to vote for validator(s)"
 msgstr ""
 
-#: lib/block_scout_web/templates/makerdojo/index.html.eex:13
-#, elixir-autogen, elixir-format
-msgid "Attestations"
-msgstr ""
-
 #: lib/block_scout_web/templates/page_not_found/index.html.eex:9
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:30
 #, elixir-autogen, elixir-format
@@ -3443,7 +3438,7 @@ msgstr ""
 msgid "Community Fund"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:172
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:160
 #, elixir-autogen, elixir-format
 msgid "Connect"
 msgstr ""
@@ -3521,12 +3516,12 @@ msgstr ""
 msgid "Fees sent to Community Fund"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:213
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:201
 #, elixir-autogen, elixir-format
 msgid "Finance Tools"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:221
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:209
 #, elixir-autogen, elixir-format
 msgid "Gas Tracker"
 msgstr ""
@@ -3561,12 +3556,12 @@ msgstr ""
 msgid "It could still be in the TX Pool of a different node, waiting to be broadcasted."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:178
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:166
 #, elixir-autogen, elixir-format
 msgid "Learn"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:186
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:174
 #, elixir-autogen, elixir-format
 msgid "Learn, Borrow, Earn"
 msgstr ""
@@ -3581,11 +3576,6 @@ msgstr ""
 msgid "Locked CELO Balance"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:111
-#, elixir-autogen, elixir-format
-msgid "MakerDojo"
-msgstr ""
-
 #: lib/block_scout_web/templates/stats/index.html.eex:22
 #, elixir-autogen, elixir-format
 msgid "Mento"
@@ -3596,12 +3586,7 @@ msgstr ""
 msgid "Mento Reserve"
 msgstr ""
 
-#: lib/block_scout_web/templates/makerdojo/index.html.eex:23
-#, elixir-autogen, elixir-format
-msgid "Moola"
-msgstr ""
-
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:151
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:139
 #, elixir-autogen, elixir-format
 msgid "More"
 msgstr ""
@@ -3611,7 +3596,7 @@ msgstr ""
 msgid "More epoch transactions have come in"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:193
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:181
 #, elixir-autogen, elixir-format
 msgid "NFT"
 msgstr ""
@@ -3651,7 +3636,7 @@ msgstr ""
 msgid "Reserve bolster"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:205
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:193
 #, elixir-autogen, elixir-format
 msgid "Resources"
 msgstr ""
@@ -3696,7 +3681,7 @@ msgstr ""
 msgid "Source code matches deployed contracts except the metadata hash"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:199
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:187
 #, elixir-autogen, elixir-format
 msgid "Spend"
 msgstr ""
@@ -3706,7 +3691,7 @@ msgstr ""
 msgid "Stats"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:157
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:145
 #, elixir-autogen, elixir-format
 msgid "Swap"
 msgstr ""
@@ -3770,11 +3755,6 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:246
 #, elixir-autogen, elixir-format
 msgid "Total amount of epoch rewards this address has received, all time."
-msgstr ""
-
-#: lib/block_scout_web/templates/makerdojo/index.html.eex:18
-#, elixir-autogen, elixir-format
-msgid "Uniswap"
 msgstr ""
 
 #: lib/block_scout_web/templates/block/_tile.html.eex:50
@@ -3876,14 +3856,9 @@ msgstr ""
 msgid "Voting rewards accumulated over time."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:164
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:152
 #, elixir-autogen, elixir-format
 msgid "Wallet"
-msgstr ""
-
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:106
-#, elixir-autogen, elixir-format
-msgid "cLabs"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:250
