@@ -33,7 +33,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
-  alias Indexer.Fetcher.CoinBalance
+  alias Indexer.Fetcher.{CoinBalance, CoinBalanceDailyUpdater}
+  alias Indexer.Fetcher.PolygonEdge.{DepositExecute, Withdrawal}
   alias Indexer.Prometheus
   alias Indexer.Transform.Addresses
   alias Timex.Duration
@@ -194,7 +195,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
         block_fetcher,
         %{
           address_coin_balances: %{params: address_coin_balances_params},
-          address_coin_balances_daily: %{params: address_coin_balances_daily_params},
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           addresses: %{params: addresses_params},
           block_rewards: block_rewards
@@ -211,8 +211,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
             balances(block_fetcher, %{
               address_hash_to_block_number: address_hash_to_block_number,
               addresses_params: addresses_params,
-              balances_params: address_coin_balances_params,
-              balances_daily_params: address_coin_balances_daily_params
+              balances_params: address_coin_balances_params
             })},
          {block_reward_errors, chain_import_block_rewards} = Map.pop(block_rewards, :errors),
          chain_import_options =
@@ -221,8 +220,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> put_in([:addresses, :params], balances_addresses_params)
            |> put_in([:blocks, :params, Access.all(), :consensus], true)
            |> put_in([:block_rewards], chain_import_block_rewards)
-           |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
-           |> put_in([Access.key(:address_coin_balances_daily, %{}), :params], balances_daily_params),
+           |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params),
+         CoinBalanceDailyUpdater.add_daily_balances_params(balances_daily_params),
          {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
       async_import_remaining_block_data(
         imported,
@@ -287,6 +286,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Indexer.Logger.metadata(
       fn ->
         if reorg? do
+          # we need to remove all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables previously written starting from reorg block number
+          remove_polygon_edge_assets_by_number(block_number_to_fetch)
+
           # give previous fetch attempt (for same block number) a chance to finish
           # before fetching again, to reduce block consensus mistakes
           :timer.sleep(@reorg_delay)
@@ -297,6 +299,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
       fetcher: :block_realtime,
       block_number: block_number_to_fetch
     )
+  end
+
+  defp remove_polygon_edge_assets_by_number(block_number_to_fetch) do
+    if Application.get_env(:explorer, :chain_type) == "polygon_edge" do
+      Withdrawal.remove(block_number_to_fetch)
+      DepositExecute.remove(block_number_to_fetch)
+    end
   end
 
   @decorate span(tracer: Tracer)

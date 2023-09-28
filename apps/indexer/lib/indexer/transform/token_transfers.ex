@@ -6,8 +6,8 @@ defmodule Indexer.Transform.TokenTransfers do
   require Logger
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  import Explorer.Helper, only: [decode_data: 2]
 
-  alias ABI.TypeDecoder
   alias Explorer.Repo
   alias Explorer.Chain.{Token, TokenTransfer}
   alias Indexer.Fetcher.TokenTotalSupplyUpdater
@@ -125,17 +125,23 @@ defmodule Indexer.Transform.TokenTransfers do
   end
 
   defp do_parse(log, %{tokens: tokens, token_transfers: token_transfers} = acc, type \\ :erc20_erc721) do
-    {token, token_transfer} =
+    parse_result =
       if type != :erc1155 do
         parse_params(log)
       else
         parse_erc1155_params(log)
       end
 
-    %{
-      tokens: [token | tokens],
-      token_transfers: [token_transfer | token_transfers]
-    }
+    case parse_result do
+      {token, token_transfer} ->
+        %{
+          tokens: [token | tokens],
+          token_transfers: [token_transfer | token_transfers]
+        }
+
+      nil ->
+        acc
+    end
   rescue
     e in [FunctionClauseError, MatchError] ->
       Logger.error(fn ->
@@ -271,25 +277,29 @@ defmodule Indexer.Transform.TokenTransfers do
       ) do
     [token_ids, values] = decode_data(data, [{:array, {:uint, 256}}, {:array, {:uint, 256}}])
 
-    token_transfer = %{
-      block_number: log.block_number,
-      block_hash: log.block_hash,
-      log_index: log.index,
-      from_address_hash: truncate_address_hash(third_topic),
-      to_address_hash: truncate_address_hash(fourth_topic),
-      token_contract_address_hash: log.address_hash,
-      transaction_hash: log.transaction_hash,
-      token_type: "ERC-1155",
-      token_ids: token_ids,
-      amounts: values
-    }
+    if token_ids == [] || values == [] do
+      nil
+    else
+      token_transfer = %{
+        block_number: log.block_number,
+        block_hash: log.block_hash,
+        log_index: log.index,
+        from_address_hash: truncate_address_hash(third_topic),
+        to_address_hash: truncate_address_hash(fourth_topic),
+        token_contract_address_hash: log.address_hash,
+        transaction_hash: log.transaction_hash,
+        token_type: "ERC-1155",
+        token_ids: token_ids,
+        amounts: values
+      }
 
-    token = %{
-      contract_address_hash: log.address_hash,
-      type: "ERC-1155"
-    }
+      token = %{
+        contract_address_hash: log.address_hash,
+        type: "ERC-1155"
+      }
 
-    {token, token_transfer}
+      {token, token_transfer}
+    end
   end
 
   def parse_erc1155_params(%{third_topic: third_topic, fourth_topic: fourth_topic, data: data} = log) do
@@ -324,15 +334,5 @@ defmodule Indexer.Transform.TokenTransfers do
 
   defp encode_address_hash(binary) do
     "0x" <> Base.encode16(binary, case: :lower)
-  end
-
-  defp decode_data("0x", types) do
-    for _ <- types, do: nil
-  end
-
-  defp decode_data("0x" <> encoded_data, types) do
-    encoded_data
-    |> Base.decode16!(case: :mixed)
-    |> TypeDecoder.decode_raw(types)
   end
 end
