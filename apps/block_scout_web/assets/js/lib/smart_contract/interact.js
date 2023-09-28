@@ -230,6 +230,7 @@ const sanctionedAddresses = [
   '0xf7b31119c2682c88d88d455dbb9d5932c65cf1be',
   '0xfd8610d20aa15b7b2e3be39b396a1bc3516c7144',
   '0xffbac21a641dcfe4552920138d90f3638b3c9fba',
+  '0x9c2bc757b66f24d60f016b6237f8cdd414a879fa',
 
   // address for testing
   '0x0143008e904feea7140c831585025bc174eb2f15'
