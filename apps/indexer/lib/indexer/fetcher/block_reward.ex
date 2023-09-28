@@ -20,7 +20,7 @@ defmodule Indexer.Fetcher.BlockReward do
   alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.BlockReward.Supervisor, as: BlockRewardSupervisor
-  alias Indexer.Fetcher.CoinBalance
+  alias Indexer.Fetcher.{CoinBalance, CoinBalanceDailyUpdater}
   alias Indexer.Transform.{AddressCoinBalances, AddressCoinBalancesDaily, Addresses}
 
   @behaviour BufferedTask
@@ -292,10 +292,11 @@ defmodule Indexer.Fetcher.BlockReward do
     address_coin_balances_daily_params_set =
       AddressCoinBalancesDaily.params_set(address_coin_balances_params_with_block_timestamp_set)
 
+    CoinBalanceDailyUpdater.add_daily_balances_params(address_coin_balances_daily_params_set)
+
     Chain.import(%{
       addresses: %{params: addresses_params},
       address_coin_balances: %{params: address_coin_balances_params_set},
-      address_coin_balances_daily: %{params: address_coin_balances_daily_params_set},
       block_rewards: %{params: block_rewards_params}
     })
   end
