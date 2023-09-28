@@ -188,7 +188,6 @@ defmodule Indexer.Block.Fetcher do
          basic_import_options = %{
            addresses: %{params: addresses},
            address_coin_balances: %{params: coin_balances_params_set},
-           address_coin_balances_daily: %{params: coin_balances_params_daily_set},
            address_token_balances: %{params: address_token_balances},
            address_current_token_balances: %{
              params: address_token_balances |> MapSet.to_list() |> TokenBalances.to_address_current_token_balances()
