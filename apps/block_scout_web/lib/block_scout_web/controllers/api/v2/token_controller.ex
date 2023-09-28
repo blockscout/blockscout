@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.TransactionView
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.BridgedToken
   alias Indexer.Fetcher.TokenTotalSupplyOnDemand
 
@@ -35,9 +35,17 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
       TokenTotalSupplyOnDemand.trigger_fetch(address_hash)
 
-      conn
-      |> put_status(200)
-      |> render(:token, %{token: token})
+      if token.bridged do
+        bridged_token = Repo.get_by(BridgedToken, home_token_contract_address_hash: address_hash)
+
+        conn
+        |> put_status(200)
+        |> render(:bridged_token, %{token: {token, bridged_token}})
+      else
+        conn
+        |> put_status(200)
+        |> render(:token, %{token: token})
+      end
     end
   end
 
