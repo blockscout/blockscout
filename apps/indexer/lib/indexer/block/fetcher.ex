@@ -172,12 +172,6 @@ defmodule Indexer.Block.Fetcher do
              transactions_params: transactions_with_receipts
            }
            |> AddressCoinBalances.params_set(),
-         coin_balances_params_daily_set =
-           %{
-             coin_balances_params: coin_balances_params_set,
-             blocks: blocks
-           }
-           |> AddressCoinBalancesDaily.params_set(),
          beneficiaries_with_gas_payment =
            beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_receipts),
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
