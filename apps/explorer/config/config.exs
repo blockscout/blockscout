@@ -110,6 +110,8 @@ config :explorer, Explorer.Counters.BlockPriorityFeeCounter,
 
 config :explorer, Explorer.TokenTransferTokenIdMigration.Supervisor, enabled: true
 
+config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: true
+
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: true

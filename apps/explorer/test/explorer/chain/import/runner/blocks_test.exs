@@ -368,6 +368,166 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
       assert %{block_number: ^number, block_hash: ^hash} = Repo.one(PendingBlockOperation)
     end
+
+    test "change instance owner if was token transfer in older blocks",
+         %{consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number}, options: options} do
+      block_number = block_number + 2
+      consensus_block = insert(:block, %{hash: block_hash, number: block_number})
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(consensus_block)
+
+      token_address = insert(:contract_address)
+      insert(:token, contract_address: token_address, type: "ERC-721")
+      id = Decimal.new(1)
+
+      tt =
+        insert(:token_transfer,
+          token_ids: [id],
+          transaction: transaction,
+          token_contract_address: token_address,
+          block_number: block_number,
+          block: consensus_block,
+          log_index: 123
+        )
+
+      %{hash: hash_1} = params_for(:block, consensus: true, miner_hash: miner_hash)
+      consensus_block_1 = insert(:block, %{hash: hash_1, number: block_number - 1})
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(consensus_block_1)
+
+      for _ <- 0..10 do
+        insert(:token_transfer,
+          token_ids: [id],
+          transaction: transaction,
+          token_contract_address: tt.token_contract_address,
+          block_number: consensus_block_1.number,
+          block: consensus_block_1
+        )
+      end
+
+      tt_1 =
+        insert(:token_transfer,
+          token_ids: [id],
+          transaction: transaction,
+          token_contract_address: tt.token_contract_address,
+          block_number: consensus_block_1.number,
+          block: consensus_block_1
+        )
+
+      %{hash: hash_2} = params_for(:block, consensus: true, miner_hash: miner_hash)
+      consensus_block_2 = insert(:block, %{hash: hash_2, number: block_number - 2})
+
+      for _ <- 0..10 do
+        tx =
+          :transaction
+          |> insert()
+          |> with_block(consensus_block_2)
+
+        insert(:token_transfer,
+          token_ids: [id],
+          transaction: tx,
+          token_contract_address: tt.token_contract_address,
+          block_number: consensus_block_2.number,
+          block: consensus_block_2
+        )
+      end
+
+      instance =
+        insert(:token_instance,
+          token_contract_address_hash: token_address.hash,
+          token_id: id,
+          owner_updated_at_block: tt.block_number,
+          owner_updated_at_log_index: tt.log_index,
+          owner_address_hash: insert(:address).hash
+        )
+
+      block_params =
+        params_for(:block, hash: block_hash, miner_hash: miner_hash, number: block_number, consensus: false)
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
+      changes_list = [block_changes]
+      error = instance.error
+      block_number = tt_1.block_number
+      log_index = tt_1.log_index
+      owner_address_hash = tt_1.to_address_hash
+      token_address_hash = token_address.hash
+
+      assert {:ok,
+              %{
+                update_token_instances_owner: [
+                  %Explorer.Chain.Token.Instance{
+                    token_id: ^id,
+                    error: ^error,
+                    owner_updated_at_block: ^block_number,
+                    owner_updated_at_log_index: ^log_index,
+                    owner_address_hash: ^owner_address_hash,
+                    token_contract_address_hash: ^token_address_hash
+                  }
+                ]
+              }} = Multi.new() |> Blocks.run(changes_list, options) |> Repo.transaction()
+    end
+
+    test "change instance owner if there was no more token transfers",
+         %{consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number}, options: options} do
+      block_number = block_number + 1
+      consensus_block = insert(:block, %{hash: block_hash, number: block_number})
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(consensus_block)
+
+      token_address = insert(:contract_address)
+      insert(:token, contract_address: token_address, type: "ERC-721")
+      id = Decimal.new(1)
+
+      tt =
+        insert(:token_transfer,
+          token_ids: [id],
+          transaction: transaction,
+          token_contract_address: token_address,
+          block_number: block_number,
+          block: consensus_block
+        )
+
+      instance =
+        insert(:token_instance,
+          token_contract_address_hash: token_address.hash,
+          token_id: id,
+          owner_updated_at_block: tt.block_number,
+          owner_updated_at_log_index: tt.log_index,
+          owner_address_hash: insert(:address).hash
+        )
+
+      block_params =
+        params_for(:block, hash: block_hash, miner_hash: miner_hash, number: block_number, consensus: false)
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
+      changes_list = [block_changes]
+      error = instance.error
+      owner_address_hash = tt.from_address_hash
+      token_address_hash = token_address.hash
+
+      assert {:ok,
+              %{
+                update_token_instances_owner: [
+                  %Explorer.Chain.Token.Instance{
+                    token_id: ^id,
+                    error: ^error,
+                    owner_updated_at_block: -1,
+                    owner_updated_at_log_index: -1,
+                    owner_address_hash: ^owner_address_hash,
+                    token_contract_address_hash: ^token_address_hash
+                  }
+                ]
+              }} = Multi.new() |> Blocks.run(changes_list, options) |> Repo.transaction()
+    end
   end
 
   describe "lose_consensus/5" do
