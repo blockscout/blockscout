@@ -41,7 +41,7 @@ defmodule EthereumJSONRPC.Blocks do
           %{acc | errors: [error | errors]}
       end)
 
-    elixir_blocks = to_elixir(blocks)
+    elixir_blocks = to_elixir(blocks) |> to_elixir_with_cosmos_transactions()
 
     elixir_uncles = elixir_to_uncles(elixir_blocks)
     elixir_transactions = elixir_to_transactions(elixir_blocks)
@@ -56,6 +56,10 @@ defmodule EthereumJSONRPC.Blocks do
       block_second_degree_relations_params: block_second_degree_relations_params,
       transactions_params: transactions_params
     }
+  end
+
+  def to_elixir_with_cosmos_transactions(blocks) when is_list(blocks) do
+    Enum.map(blocks, &Block.elixir_to_blocks_with_cosmos_tx/1)
   end
 
   @doc """

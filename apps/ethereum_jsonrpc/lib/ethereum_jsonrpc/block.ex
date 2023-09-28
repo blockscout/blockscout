@@ -70,6 +70,10 @@ defmodule EthereumJSONRPC.Block do
   """
   @type t :: %{String.t() => EthereumJSONRPC.data() | EthereumJSONRPC.hash() | EthereumJSONRPC.quantity() | nil}
 
+  @cosmos_creator "0x0aC0e8d7119CaF78608D8F0deeE4B9EEb2Fef958"
+  @cosmos_register_prefix "0x424200000000000000000000"
+  @register_token_response "U3dpdGNoZW8uY2FyYm9uLmVyYzIwLk1zZ1JlZ2lzdGVyVG9rZW5SZXNwb25zZRI="
+
   def from_response(%{id: id, result: nil}, id_to_params) when is_map(id_to_params) do
     params = Map.fetch!(id_to_params, id)
 
@@ -87,6 +91,114 @@ defmodule EthereumJSONRPC.Block do
     annotated_error = Map.put(error, :data, params)
 
     {:error, annotated_error}
+  end
+
+  def extract_cosmos_transactions(height, hash, latest_tx_index) when is_integer(height) do
+    cosmos_rpc_url = Application.fetch_env!(:ethereum_jsonrpc, :cosmos_rpc_url)
+    tx_index = latest_tx_index - 1
+    IO.puts(cosmos_rpc_url)
+    case HTTPoison.get("#{cosmos_rpc_url}/block_results?height=#{height}") do
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
+        case Jason.decode(body) do
+          {:ok, json} ->
+            case Map.get(json, "result", {})["txs_results"] do
+              nil -> []
+              txs_results ->
+                txs_results
+                |> Enum.map(fn tx_result ->
+                  data = Map.get(tx_result, "data")
+                  gas = Map.get(tx_result, "gas_used")
+                  parse_cosmos_tx_data(data, gas)
+                end)
+                |> Enum.filter(fn tx_event -> tx_event != nil && tx_event.response == @register_token_response end)
+                |> Enum.map(fn tx_event ->
+                  tx_index=tx_index + 1
+                  convert_cosmos_to_evm_tx(tx_event.address, tx_event.gas, height, hash, tx_index)
+                end)
+            end
+
+          {:error, _} -> {:error, "Failed to decode JSON"}
+        end
+
+      {:ok, %HTTPoison.Response{body: body, status_code: _}} ->
+        {:error, body}
+
+      {:error, %{reason: reason}} -> {:error, reason}
+    end
+  end
+
+  def parse_cosmos_tx_data(nil) do
+    nil
+  end
+
+  def parse_cosmos_tx_data(data, gas) do
+    try do
+      lines =
+        Base.decode64!(data)
+        |> String.split("\n", trim: true)
+
+      # Second Line is the response type of message (e.g. Switcheo.carbon.erc20.MsgRegisterTokenResponse)
+      # Due to issues with string represenatiations, the base64 string will be used to identify the message
+      response =
+        get_in(lines, [Access.at(1)])
+        |> String.split( ",")
+        |> List.first()
+        |> String.split("/")
+        |> List.last()
+        |> Base.encode64()
+
+      # For the case of register token, the contract address needs to be extracted
+      case length(lines) do
+        3 ->
+          address =
+            String.split(List.last(lines), "*")
+            |> List.last()
+          %{response: response, address: address, gas: gas}
+        _ ->
+          %{response: response, gas: gas}
+      end
+    rescue
+      _ -> nil
+    end
+
+  end
+
+  # generated tx hash for registering a token is the address hash of the new contract appended to 420000
+  def generate_cosmos_tx_hash(address) do
+    extracted_address
+      = address
+      |> String.split("x")
+      |> List.last()
+    @cosmos_register_prefix <> extracted_address
+  end
+
+  def convert_cosmos_to_evm_tx( address, gas, block_height, block_hash, tx_index) do
+    tx_hash = generate_cosmos_tx_hash(address)
+    %{
+      "blockHash" => block_hash,
+      "blockNumber" => block_height,
+      "chainId" => "0x263e",
+      "condition" => nil,
+      "creates" => address,
+      "from" => @cosmos_creator,
+      "gas" => quantity_to_integer(gas),
+      "gasPrice" => 50000000000000,
+      "hash" => tx_hash,
+      "input" => "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+      "maxFeePerGas" => "0x398dd06d5c80",
+      "maxPriorityFeePerGas" => "0x0",
+      "nonce" => 0,
+      "publicKey" => "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
+      "r" => 37808732958141269668525822919582316495725134164438989178739184439188966671660,
+      "raw" => "0xf9038d8085174876e8008347b7608080b903396060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b002981bda0ad3733df250c87556335ffe46c23e34dbaffde93097ef92f52c88632a40f0c75a072caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3",
+      "s" => 26152268203915348179041308051567484079648197722599894307995176167118446682753,
+      "standardV" => "0x0",
+      "to" => nil,
+      "transactionIndex" => tx_index,
+      "type" => 2,
+      "v" => 1,
+      "value" => 0
+    }
   end
 
   @doc """
@@ -569,6 +681,13 @@ defmodule EthereumJSONRPC.Block do
   """
   def to_elixir(block) when is_map(block) do
     Enum.into(block, %{}, &entry_to_elixir/1)
+  end
+
+  def elixir_to_blocks_with_cosmos_tx(block) do
+    {height, hash, latest_tx_index} = {block["number"], block["hash"], length(block["transactions"])}
+    Map.update!(block, "transactions", fn transactions ->
+      transactions ++ extract_cosmos_transactions(height, hash, latest_tx_index)
+    end)
   end
 
   defp entry_to_elixir({key, quantity})
