@@ -73,8 +73,8 @@ defmodule BlockScoutWeb.LayoutView do
     params = [
       template: "bug_report.yml",
       labels: "triage",
-      "backend-version": "Elixir #{version()} Erlang/OTP #{System.otp_release()}",
-      "elixir-version": System.version(),
+      "backend-version": version(),
+      "elixir-version": "Elixir #{System.version()} Erlang/OTP #{System.otp_release()}",
       "os-version": "#{os_family} #{os_name}",
       "archive-node-type": Variant.get(),
       "additional-information": "The issue happened at #{subnetwork_title()} Blockscout instance"
