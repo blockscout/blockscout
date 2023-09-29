@@ -43,7 +43,7 @@ defmodule Explorer.Market.History.Source.Price.CryptoCompare do
   end
 
   @spec date(unix_timestamp()) :: Date.t()
-  defp date(unix_timestamp) do
+  def date(unix_timestamp) do
     unix_timestamp
     |> DateTime.from_unix!()
     |> DateTime.to_date()
