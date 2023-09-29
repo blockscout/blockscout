@@ -210,22 +210,31 @@ defmodule EthereumJSONRPC.Transaction do
       transaction_index: index,
       type: type,
       max_priority_fee_per_gas: max_priority_fee_per_gas,
-      max_fee_per_gas: max_fee_per_gas,
-      execution_node_hash: execution_node_hash,
-      wrapped_type: quantity_to_integer(Map.get(wrapped, "type")),
-      wrapped_nonce: quantity_to_integer(Map.get(wrapped, "nonce")),
-      wrapped_to_address_hash: Map.get(wrapped, "to"),
-      wrapped_gas: quantity_to_integer(Map.get(wrapped, "gas")),
-      wrapped_gas_price: quantity_to_integer(Map.get(wrapped, "gasPrice")),
-      wrapped_max_priority_fee_per_gas: quantity_to_integer(Map.get(wrapped, "maxPriorityFeePerGas")),
-      wrapped_max_fee_per_gas: quantity_to_integer(Map.get(wrapped, "maxFeePerGas")),
-      wrapped_value: quantity_to_integer(Map.get(wrapped, "value")),
-      wrapped_input: Map.get(wrapped, "input"),
-      wrapped_v: quantity_to_integer(Map.get(wrapped, "v")),
-      wrapped_r: quantity_to_integer(Map.get(wrapped, "r")),
-      wrapped_s: quantity_to_integer(Map.get(wrapped, "s")),
-      wrapped_hash: Map.get(wrapped, "hash")
+      max_fee_per_gas: max_fee_per_gas
     }
+
+    # credo:disable-for-next-line
+    result =
+      if Application.get_env(:explorer, :chain_type) == "suave" do
+        Map.merge(result, %{
+          execution_node_hash: execution_node_hash,
+          wrapped_type: quantity_to_integer(Map.get(wrapped, "type")),
+          wrapped_nonce: quantity_to_integer(Map.get(wrapped, "nonce")),
+          wrapped_to_address_hash: Map.get(wrapped, "to"),
+          wrapped_gas: quantity_to_integer(Map.get(wrapped, "gas")),
+          wrapped_gas_price: quantity_to_integer(Map.get(wrapped, "gasPrice")),
+          wrapped_max_priority_fee_per_gas: quantity_to_integer(Map.get(wrapped, "maxPriorityFeePerGas")),
+          wrapped_max_fee_per_gas: quantity_to_integer(Map.get(wrapped, "maxFeePerGas")),
+          wrapped_value: quantity_to_integer(Map.get(wrapped, "value")),
+          wrapped_input: Map.get(wrapped, "input"),
+          wrapped_v: quantity_to_integer(Map.get(wrapped, "v")),
+          wrapped_r: quantity_to_integer(Map.get(wrapped, "r")),
+          wrapped_s: quantity_to_integer(Map.get(wrapped, "s")),
+          wrapped_hash: Map.get(wrapped, "hash")
+        })
+      else
+        result
+      end
 
     if transaction["creates"] do
       Map.put(result, :created_contract_address_hash, transaction["creates"])
@@ -370,22 +379,31 @@ defmodule EthereumJSONRPC.Transaction do
       v: v,
       value: value,
       transaction_index: index,
-      type: type,
-      execution_node_hash: execution_node_hash,
-      wrapped_type: quantity_to_integer(Map.get(wrapped, "type")),
-      wrapped_nonce: quantity_to_integer(Map.get(wrapped, "nonce")),
-      wrapped_to_address_hash: Map.get(wrapped, "to"),
-      wrapped_gas: quantity_to_integer(Map.get(wrapped, "gas")),
-      wrapped_gas_price: quantity_to_integer(Map.get(wrapped, "gasPrice")),
-      wrapped_max_priority_fee_per_gas: quantity_to_integer(Map.get(wrapped, "maxPriorityFeePerGas")),
-      wrapped_max_fee_per_gas: quantity_to_integer(Map.get(wrapped, "maxFeePerGas")),
-      wrapped_value: quantity_to_integer(Map.get(wrapped, "value")),
-      wrapped_input: Map.get(wrapped, "input"),
-      wrapped_v: quantity_to_integer(Map.get(wrapped, "v")),
-      wrapped_r: quantity_to_integer(Map.get(wrapped, "r")),
-      wrapped_s: quantity_to_integer(Map.get(wrapped, "s")),
-      wrapped_hash: Map.get(wrapped, "hash")
+      type: type
     }
+
+    # credo:disable-for-next-line
+    result =
+      if Application.get_env(:explorer, :chain_type) == "suave" do
+        Map.merge(result, %{
+          execution_node_hash: execution_node_hash,
+          wrapped_type: quantity_to_integer(Map.get(wrapped, "type")),
+          wrapped_nonce: quantity_to_integer(Map.get(wrapped, "nonce")),
+          wrapped_to_address_hash: Map.get(wrapped, "to"),
+          wrapped_gas: quantity_to_integer(Map.get(wrapped, "gas")),
+          wrapped_gas_price: quantity_to_integer(Map.get(wrapped, "gasPrice")),
+          wrapped_max_priority_fee_per_gas: quantity_to_integer(Map.get(wrapped, "maxPriorityFeePerGas")),
+          wrapped_max_fee_per_gas: quantity_to_integer(Map.get(wrapped, "maxFeePerGas")),
+          wrapped_value: quantity_to_integer(Map.get(wrapped, "value")),
+          wrapped_input: Map.get(wrapped, "input"),
+          wrapped_v: quantity_to_integer(Map.get(wrapped, "v")),
+          wrapped_r: quantity_to_integer(Map.get(wrapped, "r")),
+          wrapped_s: quantity_to_integer(Map.get(wrapped, "s")),
+          wrapped_hash: Map.get(wrapped, "hash")
+        })
+      else
+        result
+      end
 
     if transaction["creates"] do
       Map.put(result, :created_contract_address_hash, transaction["creates"])
