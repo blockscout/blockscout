@@ -108,6 +108,16 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
     if id, do: "#{base_url()}/coins/#{id}", else: nil
   end
 
+  @spec history_url(non_neg_integer()) :: String.t()
+  def history_url(previous_days) do
+    query_params = %{
+      "days" => previous_days,
+      "vs_currency" => "usd"
+    }
+
+    "#{source_url()}/market_chart?#{URI.encode_query(query_params)}"
+  end
+
   @impl Source
   def source_url(:coins_list) do
     "#{base_url()}/coins/list?include_platform=true"

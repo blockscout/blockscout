@@ -65,7 +65,7 @@ defmodule Explorer.Market.History.CatalogerTest do
   test "handle_info with successful tasks (price and market cap)" do
     Application.put_env(:explorer, Cataloger, history_fetch_interval: 1)
     record_price = %{date: ~D[2018-04-01], closing_price: Decimal.new(10), opening_price: Decimal.new(5)}
-    record_market_cap = %{date: ~D[2018-04-01], market_cap: Decimal.new(100_500)}
+    record_market_caps = [%{date: ~D[2018-04-01], market_cap: Decimal.new(100_500)}]
 
     state = %{
       price_records: [
@@ -74,10 +74,10 @@ defmodule Explorer.Market.History.CatalogerTest do
     }
 
     assert {:noreply, state} == Cataloger.handle_info({nil, {:price_history, {1, 0, {:ok, [record_price]}}}}, state)
-    assert_receive :fetch_market_cap_history
+    assert_receive {:fetch_market_cap_history, 365}
 
     assert {:noreply, state} ==
-             Cataloger.handle_info({nil, {:market_cap_history, {0, {:ok, record_market_cap}}}}, state)
+             Cataloger.handle_info({nil, {:market_cap_history, {0, 3, {:ok, record_market_caps}}}}, state)
 
     assert Repo.get_by(MarketHistory, date: record_price.date)
   end
@@ -94,10 +94,10 @@ defmodule Explorer.Market.History.CatalogerTest do
     }
 
     assert {:noreply, state} == Cataloger.handle_info({nil, {:price_history, {1, 0, {:ok, [record_price]}}}}, state)
-    assert_receive :fetch_market_cap_history
+    assert_receive {:fetch_market_cap_history, 365}
 
     assert {:noreply, state} ==
-             Cataloger.handle_info({nil, {:market_cap_history, {0, {:ok, record_market_cap}}}}, state)
+             Cataloger.handle_info({nil, {:market_cap_history, {0, 3, {:ok, record_market_cap}}}}, state)
 
     assert record = Repo.get_by(MarketHistory, date: record_price.date)
     assert record.market_cap == nil
