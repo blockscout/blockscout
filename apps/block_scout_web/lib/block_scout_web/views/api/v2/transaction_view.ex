@@ -460,62 +460,66 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   defp suave_fields(transaction, result, single_tx?, conn, watchlist_names) do
-    {[wrapped_decoded_input], _, _} =
-      decode_transactions(
-        [
-          %Transaction{
-            to_address: transaction.wrapped_to_address,
-            input: transaction.wrapped_input,
-            hash: transaction.wrapped_hash
-          }
-        ],
-        false
-      )
+    if is_nil(transaction.execution_node_hash) do
+      result
+    else
+      {[wrapped_decoded_input], _, _} =
+        decode_transactions(
+          [
+            %Transaction{
+              to_address: transaction.wrapped_to_address,
+              input: transaction.wrapped_input,
+              hash: transaction.wrapped_hash
+            }
+          ],
+          false
+        )
 
-    result
-    |> Map.put("allowed_peekers", suave_parse_allowed_peekers(transaction.logs))
-    |> Map.put(
-      "execution_node",
-      Helper.address_with_info(
-        single_tx? && conn,
-        transaction.execution_node,
-        transaction.execution_node_hash,
-        single_tx?,
-        watchlist_names
-      )
-    )
-    |> Map.put("wrapped", %{
-      "type" => transaction.wrapped_type,
-      "nonce" => transaction.wrapped_nonce,
-      "to" =>
+      result
+      |> Map.put("allowed_peekers", suave_parse_allowed_peekers(transaction.logs))
+      |> Map.put(
+        "execution_node",
         Helper.address_with_info(
           single_tx? && conn,
-          transaction.wrapped_to_address,
-          transaction.wrapped_to_address_hash,
+          transaction.execution_node,
+          transaction.execution_node_hash,
           single_tx?,
           watchlist_names
-        ),
-      "gas_limit" => transaction.wrapped_gas,
-      "gas_price" => transaction.wrapped_gas_price,
-      "fee" =>
-        format_fee(
-          Chain.fee(
-            %Transaction{gas: transaction.wrapped_gas, gas_price: transaction.wrapped_gas_price, gas_used: nil},
-            :wei
-          )
-        ),
-      "max_priority_fee_per_gas" => transaction.wrapped_max_priority_fee_per_gas,
-      "max_fee_per_gas" => transaction.wrapped_max_fee_per_gas,
-      "value" => transaction.wrapped_value,
-      "hash" => transaction.wrapped_hash,
-      "method" =>
-        method_name(
-          %Transaction{to_address: transaction.wrapped_to_address, input: transaction.wrapped_input},
-          wrapped_decoded_input
-        ),
-      "decoded_input" => decoded_input(wrapped_decoded_input),
-      "raw_input" => transaction.wrapped_input
-    })
+        )
+      )
+      |> Map.put("wrapped", %{
+        "type" => transaction.wrapped_type,
+        "nonce" => transaction.wrapped_nonce,
+        "to" =>
+          Helper.address_with_info(
+            single_tx? && conn,
+            transaction.wrapped_to_address,
+            transaction.wrapped_to_address_hash,
+            single_tx?,
+            watchlist_names
+          ),
+        "gas_limit" => transaction.wrapped_gas,
+        "gas_price" => transaction.wrapped_gas_price,
+        "fee" =>
+          format_fee(
+            Chain.fee(
+              %Transaction{gas: transaction.wrapped_gas, gas_price: transaction.wrapped_gas_price, gas_used: nil},
+              :wei
+            )
+          ),
+        "max_priority_fee_per_gas" => transaction.wrapped_max_priority_fee_per_gas,
+        "max_fee_per_gas" => transaction.wrapped_max_fee_per_gas,
+        "value" => transaction.wrapped_value,
+        "hash" => transaction.wrapped_hash,
+        "method" =>
+          method_name(
+            %Transaction{to_address: transaction.wrapped_to_address, input: transaction.wrapped_input},
+            wrapped_decoded_input
+          ),
+        "decoded_input" => decoded_input(wrapped_decoded_input),
+        "raw_input" => transaction.wrapped_input
+      })
+    end
   end
 
   defp suave_parse_allowed_peekers(logs) do
