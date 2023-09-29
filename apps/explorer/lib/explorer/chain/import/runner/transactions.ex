@@ -107,8 +107,8 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     )
   end
 
-  if System.get_env("CHAIN_TYPE") == "suave" do
-    defp default_on_conflict do
+  defp default_on_conflict do
+    if System.get_env("CHAIN_TYPE") == "suave" do
       from(
         transaction in Transaction,
         update: [
@@ -199,9 +199,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
             transaction.wrapped_hash
           )
       )
-    end
-  else
-    defp default_on_conflict do
+    else
       from(
         transaction in Transaction,
         update: [
