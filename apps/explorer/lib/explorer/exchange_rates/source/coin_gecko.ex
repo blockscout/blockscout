@@ -88,6 +88,16 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   @impl Source
   def format_data(_), do: []
 
+  @spec history_url(non_neg_integer()) :: String.t()
+  def history_url(previous_days) do
+    query_params = %{
+      "days" => previous_days,
+      "vs_currency" => "usd"
+    }
+
+    "#{source_url()}/market_chart?#{URI.encode_query(query_params)}"
+  end
+
   @impl Source
   def source_url do
     explicit_coin_id = config(:coin_id)

@@ -35,8 +35,8 @@ defmodule Explorer.Market.History.Cataloger do
   end
 
   @impl GenServer
-  def handle_info(:fetch_market_cap_history, state) do
-    fetch_market_cap_history()
+  def handle_info({:fetch_market_cap_history, day_count}, state) do
+    fetch_market_cap_history(day_count)
 
     {:noreply, state}
   end
@@ -44,7 +44,7 @@ defmodule Explorer.Market.History.Cataloger do
   @impl GenServer
   # Record fetch successful.
   def handle_info({_ref, {:price_history, {_, _, {:ok, records}}}}, state) do
-    Process.send(self(), :fetch_market_cap_history, [])
+    Process.send(self(), {:fetch_market_cap_history, 365}, [])
     state = state |> Map.put_new(:price_records, records)
 
     {:noreply, state |> Map.put_new(:price_records, state)}
@@ -52,14 +52,14 @@ defmodule Explorer.Market.History.Cataloger do
 
   @impl GenServer
   # Record fetch successful.
-  def handle_info({_ref, {:market_cap_history, {_, {:ok, nil}}}}, state) do
+  def handle_info({_ref, {:market_cap_history, {_, _, {:ok, nil}}}}, state) do
     market_cap_history(state.price_records, state)
   end
 
   @impl GenServer
   # Record fetch successful.
-  def handle_info({_ref, {:market_cap_history, {_, {:ok, market_cap_record}}}}, state) do
-    records = compile_records(state.price_records, market_cap_record)
+  def handle_info({_ref, {:market_cap_history, {_, _, {:ok, market_cap_records}}}}, state) do
+    records = compile_records(state.price_records, market_cap_records)
     market_cap_history(records, state)
   end
 
@@ -75,10 +75,10 @@ defmodule Explorer.Market.History.Cataloger do
 
   # Failed to get records. Try again.
   @impl GenServer
-  def handle_info({_ref, {:market_cap_history, {failed_attempts, :error}}}, state) do
+  def handle_info({_ref, {:market_cap_history, {day_count, failed_attempts, :error}}}, state) do
     Logger.warn(fn -> "Failed to fetch market cap history. Trying again." end)
 
-    fetch_market_cap_history(failed_attempts + 1)
+    fetch_market_cap_history(day_count, failed_attempts + 1)
 
     {:noreply, state}
   end
@@ -145,38 +145,23 @@ defmodule Explorer.Market.History.Cataloger do
   end
 
   @spec fetch_market_cap_history(non_neg_integer()) :: Task.t()
-  defp fetch_market_cap_history(failed_attempts \\ 0) do
+  defp fetch_market_cap_history(day_count, failed_attempts \\ 0) do
     Task.Supervisor.async_nolink(Explorer.MarketTaskSupervisor, fn ->
       Process.sleep(HistoryProcess.delay(failed_attempts))
 
       if failed_attempts < @market_cap_failed_attempts do
-        {:market_cap_history, {failed_attempts, source_market_cap().fetch_market_cap()}}
+        {:market_cap_history, {day_count, failed_attempts, source_market_cap().fetch_market_cap(day_count)}}
       else
-        {:market_cap_history, {failed_attempts, {:ok, nil}}}
+        {:market_cap_history, {day_count, failed_attempts, {:ok, nil}}}
       end
     end)
   end
 
-  defp compile_records(price_records, market_cap_record) do
-    if market_cap_record do
-      if Enum.empty?(price_records) do
-        [market_cap_record]
-      else
-        today_index =
-          Enum.find_index(price_records, fn price ->
-            price.date == market_cap_record.date
-          end)
-
-        today =
-          price_records
-          |> Enum.at(today_index)
-          |> Map.put(:market_cap, market_cap_record.market_cap)
-
-        price_records
-        |> List.replace_at(today_index, today)
-      end
-    else
-      price_records
-    end
+  defp compile_records(price_records, market_cap_records) do
+    price_records
+    |> Enum.zip(market_cap_records)
+    |> Enum.map(fn {price_map, market_cap_map} ->
+      Map.merge(price_map, market_cap_map)
+    end)
   end
 end
