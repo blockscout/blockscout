@@ -322,7 +322,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string})
-    when is_binary(inserted_at_string) and is_binary(hash_string) do
+      when is_binary(inserted_at_string) and is_binary(hash_string) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
          {:ok, hash} <- string_to_transaction_hash(hash_string) do
       [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_tx: true}]
