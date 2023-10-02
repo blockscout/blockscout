@@ -99,6 +99,7 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  @spec next_page_params(any, any, any, any) :: nil | map
   def next_page_params(next_page, list, params, is_ctb_with_fiat_value \\ false)
 
   def next_page_params([], _list, _params, _), do: nil
@@ -114,12 +115,8 @@ defmodule BlockScoutWeb.Chain do
 
     items_count =
       if is_binary(current_items_count_string) do
-        if current_items_count_string do
-          {current_items_count, _} = Integer.parse(current_items_count_string)
-          current_items_count + Enum.count(list)
-        else
-          Enum.count(list)
-        end
+        {current_items_count, _} = Integer.parse(current_items_count_string)
+        current_items_count + Enum.count(list)
       else
         Enum.count(list)
       end
@@ -127,6 +124,8 @@ defmodule BlockScoutWeb.Chain do
     Map.put(next_page_params, "items_count", items_count)
   end
 
+  @spec paging_options(any) ::
+          [{:paging_options, Explorer.PagingOptions.t()}, ...] | Explorer.PagingOptions.t()
   def paging_options(%{"hash" => hash_string, "fetched_coin_balance" => fetched_coin_balance_string})
       when is_binary(hash_string) and is_binary(fetched_coin_balance_string) do
     with {coin_balance, ""} <- Integer.parse(fetched_coin_balance_string),
@@ -146,7 +145,10 @@ defmodule BlockScoutWeb.Chain do
         "name" => name_string,
         "inserted_at" => inserted_at_string,
         "item_type" => item_type_string
-      }) do
+      })
+      when is_binary(address_hash_string) and is_binary(tx_hash_string) and is_binary(block_hash_string) and
+             is_binary(holder_count_string) and is_binary(name_string) and is_binary(inserted_at_string) and
+             is_binary(item_type_string) do
     [
       paging_options: %{
         @default_paging_options
