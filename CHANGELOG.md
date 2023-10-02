@@ -12,6 +12,7 @@
 
 ### Fixes
 
+- [#8572](https://github.com/blockscout/blockscout/pull/8572) - Refactor docker-compose config
 - [#8552](https://github.com/blockscout/blockscout/pull/8552) - Add CHAIN_TYPE build arg to Dockerfile
 - [#8515](https://github.com/blockscout/blockscout/pull/8515) - Fix `:error.types/0 is undefined` warning
 - [#7959](https://github.com/blockscout/blockscout/pull/7959) - Fix empty batch transfers handling
