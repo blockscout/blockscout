@@ -1,38 +1,38 @@
-<h1 align="center">BlockScout</h1>
+<h1 align="center">Blockscout</h1>
 <p align="center">Blockchain Explorer for inspecting and analyzing EVM Chains.</p>
 <div align="center">
 
-[![Blockscout](https://github.com/blockscout/blockscout/workflows/Blockscout/badge.svg?branch=master)](https://github.com/blockscout/blockscout/actions)
-[![](https://dcbadge.vercel.app/api/server/blockscout?style=flat)](https://discord.gg/blockscout)
+[![Blockscout](https://github.com/Blockscout/Blockscout/workflows/Blockscout/badge.svg?branch=master)](https://github.com/Blockscout/Blockscout/actions)
+[![](https://dcbadge.vercel.app/api/server/Blockscout?style=flat)](https://discord.gg/Blockscout)
 
 </div>
 
 
-BlockScout provides a comprehensive, easy-to-use interface for users to view, confirm, and inspect transactions on EVM (Ethereum Virtual Machine) blockchains. This includes Ethereum Mainnet, Ethereum Classic, Optimism, Gnosis Chain and many other **Ethereum testnets, private networks, L2s and sidechains**.
+Blockscout provides a comprehensive, easy-to-use interface for users to view, confirm, and inspect transactions on EVM (Ethereum Virtual Machine) blockchains. This includes Ethereum Mainnet, Ethereum Classic, Optimism, Gnosis Chain and many other **Ethereum testnets, private networks, L2s and sidechains**.
 
-See our [project documentation](https://docs.blockscout.com/) for detailed information and setup instructions.
+See our [project documentation](https://docs.Blockscout.com/) for detailed information and setup instructions.
 
-For questions, comments and feature requests see the [discussions section](https://github.com/blockscout/blockscout/discussions) or via [Discord](https://discord.com/invite/blockscout).
+For questions, comments and feature requests see the [discussions section](https://github.com/Blockscout/Blockscout/discussions) or via [Discord](https://discord.com/invite/Blockscout).
 
-## About BlockScout
+## About Blockscout
 
-BlockScout allows users to search transactions, view accounts and balances, verify and interact with smart contracts and view and interact with applications on the Ethereum network including many forks, sidechains, L2s and testnets.
+Blockscout allows users to search transactions, view accounts and balances, verify and interact with smart contracts and view and interact with applications on the Ethereum network including many forks, sidechains, L2s and testnets.
 
 Blockscout is an open-source alternative to centralized, closed source block explorers such as Etherscan, Etherchain and others.  As Ethereum sidechains and L2s continue to proliferate in both private and public settings, transparent, open-source tools are needed to analyze and validate all transactions.
 
 ## Supported Projects
 
-BlockScout currently supports several hundred chains and rollups throughout the greater blockchain ecosystem. Ethereum, Cosmos, Polkadot, Avalanche, Near and many others include Blockscout integrations. [A comprehensive list is available here](https://docs.blockscout.com/about/projects). If your project is not listed, please submit a PR or [contact the team in Discord](https://discord.com/invite/blockscout).
+Blockscout currently supports several hundred chains and rollups throughout the greater blockchain ecosystem. Ethereum, Cosmos, Polkadot, Avalanche, Near and many others include Blockscout integrations. [A comprehensive list is available here](https://docs.Blockscout.com/about/projects). If your project is not listed, please submit a PR or [contact the team in Discord](https://discord.com/invite/Blockscout).
 
 ## Getting Started
 
-See the [project documentation](https://docs.blockscout.com/) for instructions:
+See the [project documentation](https://docs.Blockscout.com/) for instructions:
 
-- [Requirements](https://docs.blockscout.com/for-developers/information-and-settings/requirements)
-- [Ansible deployment](https://docs.blockscout.com/for-developers/ansible-deployment)
-- [Manual deployment](https://docs.blockscout.com/for-developers/manual-deployment)
-- [ENV variables](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
-- [Configuration options](https://docs.blockscout.com/for-developers/configuration-options)
+- [Requirements](https://docs.Blockscout.com/for-developers/information-and-settings/requirements)
+- [Ansible deployment](https://docs.Blockscout.com/for-developers/ansible-deployment)
+- [Manual deployment](https://docs.Blockscout.com/for-developers/manual-deployment)
+- [ENV variables](https://docs.Blockscout.com/for-developers/information-and-settings/env-variables)
+- [Configuration options](https://docs.Blockscout.com/for-developers/configuration-options)
 
 ## Acknowledgements
 
