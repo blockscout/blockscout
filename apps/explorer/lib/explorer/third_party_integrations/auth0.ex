@@ -1,6 +1,6 @@
 defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   @moduledoc """
-    Module for fetching jwt auth0 Management API (https://auth0.com/docs/api/management/v2) jwt
+    Module for fetching jwt Auth0 Management API (https://auth0.com/docs/api/management/v2) jwt
   """
   @redis_key "auth0"
 
@@ -9,7 +9,10 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     Firstly it tries to access cached token and if there is no cached one, token will be requested from Auth0
   """
   @spec get_m2m_jwt() :: nil | String.t()
-  def get_m2m_jwt, do: get_m2m_jwt_inner(Redix.command(:redix, ["GET", @redis_key]))
+  def get_m2m_jwt do
+    chain_id = Application.get_env(:block_scout_web, :chain_id)
+    get_m2m_jwt_inner(Redix.command(:redix, ["GET", "#{chain_id}_#{@redis_key}"]))
+  end
 
   def get_m2m_jwt_inner({:ok, token}) when not is_nil(token), do: token
 
