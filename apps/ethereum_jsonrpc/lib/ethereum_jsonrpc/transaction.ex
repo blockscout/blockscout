@@ -169,6 +169,7 @@ defmodule EthereumJSONRPC.Transaction do
   """
   @spec elixir_to_params(elixir) :: params
 
+  # this is for Suave chain (handles `executionNode` and `wrapped` fields along with EIP-1559 fields)
   def elixir_to_params(
         %{
           "blockHash" => block_hash,
@@ -342,6 +343,7 @@ defmodule EthereumJSONRPC.Transaction do
     end
   end
 
+  # this is for Suave chain (handles `executionNode` and `wrapped` fields without EIP-1559 fields)
   def elixir_to_params(
         %{
           "blockHash" => block_hash,
