@@ -124,7 +124,8 @@ defmodule Explorer.Application do
       configure(Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand),
       configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand),
       configure(Explorer.TokenInstanceOwnerAddressMigration.Supervisor),
-      sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
+      sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand),
+      configure(Explorer.Chain.Cache.RootstockLockedBTC)
     ]
     |> List.flatten()
   end

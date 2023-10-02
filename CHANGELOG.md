@@ -7,6 +7,7 @@
 - [#8472](https://github.com/blockscout/blockscout/pull/8472) - Integrate `/api/v2/bytecodes/sources:search-all` of `eth_bytecode_db`
 - [#8589](https://github.com/blockscout/blockscout/pull/8589) - DefiLlama TVL source
 - [#8544](https://github.com/blockscout/blockscout/pull/8544) - Fix `nil` `"structLogs"`
+- [#8583](https://github.com/blockscout/blockscout/pull/8583) - Add stats widget for rootstock
 - [#8542](https://github.com/blockscout/blockscout/pull/8542) - Add tracing for rootstock
 - [#8561](https://github.com/blockscout/blockscout/pull/8561), [#8564](https://github.com/blockscout/blockscout/pull/8564) - Get historical market cap data from CoinGecko
 - [#8543](https://github.com/blockscout/blockscout/pull/8543) - Fix polygon tracer

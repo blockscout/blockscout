@@ -102,7 +102,7 @@ defmodule EthereumJSONRPC.Geth do
             "enableMemory" => true,
             "disableStack" => false,
             "disableStorage" => true,
-            "enableReturnData" => true
+            "enableReturnData" => false
           }
 
         true ->
