@@ -24,8 +24,9 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   margin-bottom: 3rem;
   overflow: hidden;
   padding: 0;
+  display: flex;
   position: relative;
-  height: 264px;
+  height: 400px;
   @include media-breakpoint-down(sm) {
       height: auto;
   }
@@ -39,6 +40,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   justify-content: space-between;
   position: relative;
   z-index: 9;
+  padding-bottom: 20px;
 
   @include media-breakpoint-between(lg, xl) {
     height: 249px;

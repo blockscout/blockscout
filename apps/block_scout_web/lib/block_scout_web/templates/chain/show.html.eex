@@ -1,5 +1,9 @@
 <div class='dashboard-banner-container' data-page="chain-details">
   <div class="container">
+    <div class="search-bar-container">
+      <%= render BlockScoutWeb.LayoutView, "_search.html", conn: @conn, id: "main-search-autocomplete", additional_classes: ["mobile-search-hide"] %>
+      <%= render BlockScoutWeb.LayoutView, "_search.html", conn: @conn, id: "main-search-autocomplete-mobile", additional_classes: ["mobile-search-show"] %>
+      </div>
     <div class="dashboard-banner">
       <!-- Graph and legend -->
       <div class="dashboard-banner-network-graph">
@@ -164,6 +168,7 @@
         </div>
       </div>
     </div>
+   
   </div>
 </div>
 <section class="container">
@@ -224,28 +229,5 @@
       </div>
     </div>
   </div>
-
   <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
-
-  <div class="card card-chain-transactions">
-    <div class="card-body">
-      <%= link(gettext("View All Transactions"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %>
-      <h2 class="card-title lg-card-title"><%= gettext "Transactions" %></h2>
-      <div data-selector="channel-batching-message" style="display: none;">
-        <div data-selector="reload-transactions-button" class="alert alert-info">
-          <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
-        </div>
-      </div>
-      <span data-selector="transactions-list" data-transactions-path="<%= @transactions_path %>">
-        <button data-selector="error-message" class="alert alert-danger col-12 text-left" style="display: none;">
-          <span class="alert-link">
-            <%= gettext "Something went wrong, click to retry." %>
-          </span>
-        </button>
-        <div hidden data-selector="loading-message">
-          <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
-        </div>
-      </span>
-    </div>
-  </div>
 </section>
