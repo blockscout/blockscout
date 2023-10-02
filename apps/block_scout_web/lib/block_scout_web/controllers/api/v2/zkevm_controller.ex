@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
   @batch_necessity_by_association %{
     :sequence_transaction => :optional,
     :verify_transaction => :optional,
-    :l2_transactions => :required
+    :l2_transactions => :optional
   }
 
   @batches_necessity_by_association %{
