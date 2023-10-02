@@ -1,10 +1,15 @@
-version: '3.8'
+version: '3.9'
 
 services:
   redis_db:
     extends:
       file: ./services/docker-compose-redis.yml
       service: redis_db
+
+  db-init:
+    extends:
+      file: ./services/docker-compose-db.yml
+      service: db-init
 
   db:
     extends:
@@ -23,9 +28,6 @@ services:
     environment:
         ETHEREUM_JSONRPC_VARIANT: 'geth'
         BLOCK_TRANSFORMER: 'clique'
-        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545/
-        DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
 
   visualizer:
     extends:
@@ -43,6 +45,11 @@ services:
     extends:
       file: ./services/docker-compose-frontend.yml
       service: frontend
+
+  stats-db-init:
+    extends:
+      file: ./services/docker-compose-stats.yml
+      service: stats-db-init
 
   stats-db:
     depends_on:
