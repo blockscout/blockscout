@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.Plug.RedisCookie do
   require Logger
   @behaviour Plug.Session.Store
 
+  import Explorer.ThirdPartyIntegrations.Auth0, only: [cookie_key: 1]
+
   alias Plug.Crypto
   alias Plug.Crypto.{KeyGenerator, MessageEncryptor, MessageVerifier}
 
@@ -226,15 +228,5 @@ defmodule BlockScoutWeb.Plug.RedisCookie do
     :sha256
     |> :crypto.hash(cookie)
     |> Base.encode16()
-  end
-
-  defp cookie_key(hash) do
-    chain_id = Application.get_env(:block_scout_web, :chain_id)
-
-    if chain_id do
-      chain_id <> "_" <> hash
-    else
-      hash
-    end
   end
 end
