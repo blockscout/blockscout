@@ -1,7 +1,7 @@
 defmodule ConfigHelper do
   import Bitwise
   alias Explorer.ExchangeRates.Source
-  alias Explorer.Market.History.Source.{MarketCap, Price}
+  alias Explorer.Market.History.Source.{MarketCap, Price, TVL}
   alias Indexer.Transform.Blocks
 
   def repos do
@@ -110,6 +110,14 @@ defmodule ConfigHelper do
       "coin_gecko" -> MarketCap.CoinGecko
       "coin_market_cap" -> MarketCap.CoinMarketCap
       _ -> MarketCap.CoinGecko
+    end
+  end
+
+  @spec exchange_rates_tvl_source() :: TVL.DefiLlama
+  def exchange_rates_tvl_source do
+    case System.get_env("EXCHANGE_RATES_TVL_SOURCE") do
+      "defillama" -> TVL.DefiLlama
+      _ -> TVL.DefiLlama
     end
   end
 
