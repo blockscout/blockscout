@@ -526,6 +526,7 @@
         "lastmod",
         "qitmeer",
         "meer",
+        "DefiLlama"
     ],
     "enableFiletypes": [
         "dotenv",

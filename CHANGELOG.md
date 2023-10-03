@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#8589](https://github.com/blockscout/blockscout/pull/8589) - DefiLlama TVL source
 - [#8544](https://github.com/blockscout/blockscout/pull/8544) - Fix `nil` `"structLogs"`
 - [#8561](https://github.com/blockscout/blockscout/pull/8561), [#8564](https://github.com/blockscout/blockscout/pull/8564) - Get historical market cap data from CoinGecko
 - [#8386](https://github.com/blockscout/blockscout/pull/8386) - Add `owner_address_hash` to the `token_instances`

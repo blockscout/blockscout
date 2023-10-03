@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.Chain.MarketHistoryChartController do
 
       day
       |> Map.put(:market_cap, market_cap)
-      |> Map.take([:closing_price, :market_cap, :date])
+      |> Map.take([:closing_price, :market_cap, :tvl, :date])
     end)
     |> Jason.encode()
     |> case do
