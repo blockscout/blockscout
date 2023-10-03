@@ -143,11 +143,15 @@ defmodule EthereumJSONRPC.Geth do
           else: Tracer
 
       responses
-      |> Enum.map(fn %{id: id, result: %{"structLogs" => _} = result} ->
-        debug_trace_transaction_response_to_internal_transactions_params(
-          %{id: id, result: tracer.replay(result, Map.fetch!(receipts_map, id), Map.fetch!(txs_map, id))},
-          id_to_params
-        )
+      |> Enum.map(fn
+        %{result: %{"structLogs" => nil}} ->
+          []
+
+        %{id: id, result: %{"structLogs" => _} = result} ->
+          debug_trace_transaction_response_to_internal_transactions_params(
+            %{id: id, result: tracer.replay(result, Map.fetch!(receipts_map, id), Map.fetch!(txs_map, id))},
+            id_to_params
+          )
       end)
       |> reduce_internal_transactions_params()
       |> fetch_missing_data(json_rpc_named_arguments)

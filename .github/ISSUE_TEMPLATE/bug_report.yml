@@ -30,32 +30,21 @@ body:
     validations:
       required: true
 
-  - type: dropdown
+  - type: input
     id: archive-node-type
     attributes:
       label: Type of the JSON RPC archive node
       description: Which type of archive node is used.
-      options:
-          - Erigon
-          - Geth
-          - Nethermind
-          - Reth
-          - PolygonEdge
-          - Besu
-          - OpenEthereum
-          - Other
+      placeholder: "Erigon/Geth/Nethermind/Reth/PolygonEdge/Besu/OpenEthereum/..."
     validations:
       required: true
 
-  - type: dropdown
+  - type: input
     id: chain-type
     attributes:
       label: Type of the chain
       description: Type of the chain.
-      options:
-          - L1
-          - L2
-          - Other
+      placeholder: L1/L2/... 
 
   - type: input
     id: link
@@ -96,16 +85,12 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: operating-system
+  - type: input
+    id: os-version
     attributes:
       label: Operating system
       description: The operating system this issue occurred with.
-      options:
-        - macOS
-        - Windows
-        - Linux
-        - Other
+      placeholder: Linux/macOS/Windows
 
   - type: textarea
     id: additional-information

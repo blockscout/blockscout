@@ -11,7 +11,6 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
   @ipfs_protocol "ipfs://"
-  @ipfs_link "https://ipfs.io/ipfs/"
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
@@ -19,6 +18,15 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   @max_error_length 255
 
   @ignored_hosts ["localhost", "127.0.0.1", "0.0.0.0", "", nil]
+
+  defp ipfs_link do
+    link =
+      :indexer
+      |> Application.get_env(:ipfs_gateway_url)
+      |> String.trim_trailing("/")
+
+    link <> "/"
+  end
 
   def query_contract(contract_address_hash, contract_functions, abi) do
     Reader.query_contract(contract_address_hash, abi, contract_functions, false)
@@ -54,7 +62,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   # CIDv0 IPFS links # https://docs.ipfs.tech/concepts/content-addressing/#version-0-v0
   defp fetch_json_from_uri({:ok, ["Qm" <> _ = result]}, hex_token_id) do
     if String.length(result) == 46 do
-      fetch_json_from_uri({:ok, [@ipfs_link <> result]}, hex_token_id)
+      fetch_json_from_uri({:ok, [ipfs_link() <> result]}, hex_token_id)
     else
       Logger.debug(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
 
@@ -141,7 +149,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   end
 
   defp fetch_from_ipfs(ipfs_uid, hex_token_id) do
-    ipfs_url = @ipfs_link <> ipfs_uid
+    ipfs_url = ipfs_link() <> ipfs_uid
     fetch_metadata_inner(ipfs_url, hex_token_id)
   end
 

@@ -28,7 +28,7 @@ defmodule Indexer.Fetcher.TokenInstance.Sanitize do
   @impl BufferedTask
   def init(initial_acc, reducer, _) do
     {:ok, acc} =
-      Chain.stream_unfetched_token_instances(initial_acc, fn data, acc ->
+      Chain.stream_token_instances_with_unfetched_metadata(initial_acc, fn data, acc ->
         reducer.(data, acc)
       end)
 
@@ -39,7 +39,7 @@ defmodule Indexer.Fetcher.TokenInstance.Sanitize do
   def run(token_instances, _) when is_list(token_instances) do
     token_instances
     |> Enum.filter(fn %{contract_address_hash: hash, token_id: token_id} ->
-      not Chain.token_instance_exists?(token_id, hash)
+      Chain.token_instance_with_unfetched_metadata?(token_id, hash)
     end)
     |> batch_fetch_instances()
 

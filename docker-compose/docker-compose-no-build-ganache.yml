@@ -1,10 +1,15 @@
-version: '3.8'
+version: '3.9'
 
 services:
   redis_db:
     extends:
       file: ./services/docker-compose-redis.yml
       service: redis_db
+
+  db-init:
+    extends:
+      file: ./services/docker-compose-db.yml
+      service: db-init
 
   db:
     extends:
@@ -22,11 +27,9 @@ services:
       - db:database
     environment:
         ETHEREUM_JSONRPC_VARIANT: 'ganache'
-        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
         ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
         INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
         INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
-        DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
         CHAIN_ID: '1337'
 
   visualizer:
@@ -45,6 +48,11 @@ services:
     extends:
       file: ./services/docker-compose-frontend.yml
       service: frontend
+
+  stats-db-init:
+    extends:
+      file: ./services/docker-compose-stats.yml
+      service: stats-db-init
 
   stats-db:
     depends_on:
