@@ -57,6 +57,9 @@ defmodule EthereumJSONRPC.TraceBlock do
           |> List.flatten()
 
         {:ok, traces}
+
+      %{} ->
+        {:ok, []}
     end
   end
 
