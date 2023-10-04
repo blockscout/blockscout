@@ -414,8 +414,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, _address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true, false)} do
-      {validations, transactions, token_transfers, token_balances, logs, withdrawals, internal_txs, coin_balances} =
-        Counters.address_limited_counters(address_hash_string, @api_true)
+      {validations, transactions, token_transfers, token_balances, logs, withdrawals, internal_txs} =
+        Counters.address_limited_counters(address_hash, @api_true)
 
       conn
       |> put_status(200)
@@ -426,8 +426,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         token_balances_count: token_balances,
         logs_count: logs,
         withdrawals_count: withdrawals,
-        internal_txs_count: internal_txs,
-        coin_balances_count: coin_balances
+        internal_txs_count: internal_txs
       })
     end
   end

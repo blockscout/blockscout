@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#8512](https://github.com/blockscout/blockscout/pull/8512) - Add caching and improve `/tabs-counters` performance
 - [#8472](https://github.com/blockscout/blockscout/pull/8472) - Integrate `/api/v2/bytecodes/sources:search-all` of `eth_bytecode_db`
 - [#8589](https://github.com/blockscout/blockscout/pull/8589) - DefiLlama TVL source
 - [#8544](https://github.com/blockscout/blockscout/pull/8544) - Fix `nil` `"structLogs"`
