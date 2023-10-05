@@ -134,7 +134,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
     conn
     |> put_status(200)
-    |> render(:transactions, %{transactions: transactions})
+    |> render(:transactions, %{transactions: transactions, items: true})
   end
 
   @doc """

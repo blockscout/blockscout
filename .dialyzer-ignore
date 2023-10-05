@@ -20,6 +20,6 @@ lib/indexer/fetcher/polygon_edge/deposit_execute.ex:140
 lib/indexer/fetcher/polygon_edge/deposit_execute.ex:184
 lib/indexer/fetcher/polygon_edge/withdrawal.ex:160
 lib/indexer/fetcher/polygon_edge/withdrawal.ex:204
-lib/indexer/fetcher/zkevm/transaction_batch.ex:115
-lib/indexer/fetcher/zkevm/transaction_batch.ex:155
-lib/indexer/fetcher/zkevm/transaction_batch.ex:251
+lib/indexer/fetcher/zkevm/transaction_batch.ex:116
+lib/indexer/fetcher/zkevm/transaction_batch.ex:156
+lib/indexer/fetcher/zkevm/transaction_batch.ex:252

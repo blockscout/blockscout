@@ -11,6 +11,7 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
   import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, quantity_to_integer: 1]
 
   alias Explorer.Chain
+  alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Zkevm.Reader
 
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
@@ -254,6 +255,13 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
         zkevm_batch_transactions: %{params: l2_txs_to_import},
         timeout: :infinity
       })
+
+    confirmed_batches =
+      Enum.filter(batches_to_import, fn batch -> not is_nil(batch.sequence_id) and batch.sequence_id > 0 end)
+
+    if not Enum.empty?(confirmed_batches) do
+      Publisher.broadcast([{:zkevm_confirmed_batches, confirmed_batches}], :realtime)
+    end
   end
 
   defp fetch_latest_batch_numbers(json_rpc_named_arguments) do

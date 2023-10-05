@@ -71,6 +71,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
+  def render("transactions.json", %{transactions: transactions, items: true, conn: conn}) do
+    %{
+      "items" => render("transactions.json", %{transactions: transactions, conn: conn})
+    }
+  end
+
   def render("transactions.json", %{transactions: transactions, conn: conn}) do
     block_height = Chain.block_height(@api_true)
     {decoded_transactions, _, _} = decode_transactions(transactions, true)
