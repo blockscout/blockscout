@@ -1,0 +1,58 @@
+version: '3.9'
+
+services:
+  db-init:
+    extends:
+      file: ./docker-compose/services/docker-compose-db.yml
+      service: db-init
+
+  db:
+    extends:
+      file: ./docker-compose/services/docker-compose-db.yml
+      service: db
+
+  blockscout:
+    image: blockscout-all-in-one
+    container_name: blockscout-all-in-one
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      MICROSERVICE_SC_VERIFIER_ENABLED: true
+      MICROSERVICE_SC_VERIFIER_URL: https://eth-bytecode-db.services.blockscout.com/
+      MICROSERVICE_VISUALIZE_SOL2UML_ENABLED: true
+      MICROSERVICE_VISUALIZE_SOL2UML_URL: https://visualizer.services.blockscout.com/
+      API_V2_ENABLED: true
+      INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: true
+      INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: true
+      DATABASE_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@db:5432/blockscout
+      ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545
+      ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545
+      ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545
+      CHAIN_TYPE: suave
+      ECTO_USE_SSL: false
+      POOL_SIZE: 30
+      DISABLE_EXCHANGE_RATES: true
+      CHAIN_ID: 1697177118855
+      NEXT_PUBLIC_APP_HOST: localhost
+      NEXT_PUBLIC_NETWORK_NAME: test
+      NEXT_PUBLIC_NETWORK_ID: 1697177118855
+      NEXT_PUBLIC_API_HOST: localhost
+      NEXT_PUBLIC_API_PORT: 4000
+      NEXT_PUBLIC_API_PROTOCOL: http
+      NEXT_PUBLIC_VISUALIZE_API_HOST: https://visualizer.services.blockscout.com/
+      NEXT_PUBLIC_IS_TESTNET: true
+      NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL: ws
+      NEXT_PUBLIC_API_SPEC_URL: https://raw.githubusercontent.com/blockscout/blockscout-api-v2-swagger/main/swagger.yaml
+      # NEXT_PUBLIC_STATS_API_HOST: http://localhost:8051
+      # STATS__SERVER__HTTP__ADDR: 0.0.0.0:8051
+      # STATS__BLOCKSCOUT_DB_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@db:5432/blockscout
+      # STATS__DB_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@db:5432/stats
+    ports:
+      - 80:80
+      - 4000:4000
+      - 3000:3000
+      - 8080:8080
+      - 8081:8081
+      - 8050:8050
+      - 8051:8051
