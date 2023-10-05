@@ -19,6 +19,7 @@
 - [#8515](https://github.com/blockscout/blockscout/pull/8515) - Fix `:error.types/0 is undefined` warning
 - [#7959](https://github.com/blockscout/blockscout/pull/7959) - Fix empty batch transfers handling
 - [#8513](https://github.com/blockscout/blockscout/pull/8513) - Don't override transaction status
+- [#8594](https://github.com/blockscout/blockscout/pull/8594) - Fix TokenBalance fetcher retry logic
 
 ### Chore
 
