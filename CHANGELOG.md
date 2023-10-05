@@ -23,7 +23,7 @@
 ### Chore
 
 - [#8584](https://github.com/blockscout/blockscout/pull/8584) - Store chain together with cookie hash in Redis
-- [#8579](https://github.com/blockscout/blockscout/pull/8579) - IPFS gateway URL runtime env variable
+- [#8579](https://github.com/blockscout/blockscout/pull/8579), [#8590](https://github.com/blockscout/blockscout/pull/8590) - IPFS gateway URL runtime env variable
 - [#8573](https://github.com/blockscout/blockscout/pull/8573) - Update Nginx to proxy all frontend paths
 - [#8290](https://github.com/blockscout/blockscout/pull/8290) - Update Chromedriver version
 - [#8536](https://github.com/blockscout/blockscout/pull/8536), [#8537](https://github.com/blockscout/blockscout/pull/8537), [#8540](https://github.com/blockscout/blockscout/pull/8540), [#8557](https://github.com/blockscout/blockscout/pull/8557) - New issue template
