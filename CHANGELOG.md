@@ -19,9 +19,11 @@
 - [#8515](https://github.com/blockscout/blockscout/pull/8515) - Fix `:error.types/0 is undefined` warning
 - [#7959](https://github.com/blockscout/blockscout/pull/7959) - Fix empty batch transfers handling
 - [#8513](https://github.com/blockscout/blockscout/pull/8513) - Don't override transaction status
+- [#8594](https://github.com/blockscout/blockscout/pull/8594) - Fix TokenBalance fetcher retry logic
 
 ### Chore
 
+- [#8584](https://github.com/blockscout/blockscout/pull/8584) - Store chain together with cookie hash in Redis
 - [#8579](https://github.com/blockscout/blockscout/pull/8579) - IPFS gateway URL runtime env variable
 - [#8573](https://github.com/blockscout/blockscout/pull/8573) - Update Nginx to proxy all frontend paths
 - [#8290](https://github.com/blockscout/blockscout/pull/8290) - Update Chromedriver version
