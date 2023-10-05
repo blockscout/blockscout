@@ -1,0 +1,22 @@
+version: '3.9'
+
+services:
+  blockscout:
+    image: blockscout-all-in-one
+    container_name: blockscout-all-in-one
+    privileged: true
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    command:
+      - /bin/sh
+      - -c
+      - |
+        docker &> /dev/null &
+        make start
+    ports:
+      - 80:80
+      - 4000:4000
+      - 3000:3000
+      - 8080:8080
+      - 8081:8081
