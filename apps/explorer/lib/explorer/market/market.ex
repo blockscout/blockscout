@@ -51,7 +51,7 @@ defmodule Explorer.Market do
   """
   @spec get_coin_exchange_rate() :: Token.t() | nil
   def get_coin_exchange_rate do
-    get_exchange_rate(Explorer.coin()) || get_native_coin_exchange_rate_from_db() || Token.null()
+    get_native_coin_exchange_rate_from_cache() || get_native_coin_exchange_rate_from_db() || Token.null()
   end
 
   @doc false
@@ -69,8 +69,11 @@ defmodule Explorer.Market do
     Repo.insert_all(MarketHistory, records_without_zeroes, on_conflict: :nothing, conflict_target: [:date])
   end
 
-  @spec get_exchange_rate(String.t()) :: Token.t() | nil
-  defp get_exchange_rate(symbol) do
-    ExchangeRates.lookup(symbol)
+  @spec get_native_coin_exchange_rate_from_cache :: Token.t() | nil
+  defp get_native_coin_exchange_rate_from_cache do
+    case ExchangeRates.list() do
+      [native_coin] -> native_coin
+      _ -> nil
+    end
   end
 end
