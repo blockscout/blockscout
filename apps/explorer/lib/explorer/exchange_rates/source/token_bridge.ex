@@ -13,14 +13,9 @@ defmodule Explorer.ExchangeRates.Source.TokenBridge do
 
   @impl Source
   def format_data(data) do
-    data = secondary_source().format_data(data)
+    [original_token] = secondary_source().format_data(data)
 
-    token_data =
-      data
-      |> Enum.find(fn token -> token.symbol == Explorer.coin() end)
-      |> build_struct
-
-    [token_data]
+    [build_struct(original_token)]
   end
 
   @impl Source
