@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#8609](https://github.com/blockscout/blockscout/pull/8609) - Change logs format to JSON; Add endpoint url to the block_scout_web logging
 - [#8386](https://github.com/blockscout/blockscout/pull/8386) - Add `owner_address_hash` to the `token_instances`
 - [#8530](https://github.com/blockscout/blockscout/pull/8530) - Add `block_type` to search results
 - [#8528](https://github.com/blockscout/blockscout/pull/8528) - Account: add pagination + envs for limits
