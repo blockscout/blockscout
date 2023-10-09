@@ -1,4 +1,5 @@
-name: Blockscout
+name: Blockscout CI/CD
+run-name: Blockscout CI/CD for ${{ github.ref_name }}
 
 on:
   push:
@@ -7,6 +8,10 @@ on:
   pull_request:
     branches:
       - master
+
+concurrency: 
+  group: blockscout-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   MIX_ENV: test
@@ -20,7 +25,9 @@ env:
 jobs:
   build-and-cache:
     name: Build and Cache deps
-    runs-on: [self-hosted, blockscout]
+    runs-on: ['self-hosted', 'org', '8-cpu']
+    container:
+      image: us-west1-docker.pkg.dev/devopsre/actions-runner-controller/blockscout:latest
     steps:
       - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
