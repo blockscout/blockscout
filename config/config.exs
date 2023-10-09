@@ -16,7 +16,7 @@ config :phoenix, :json_library, Jason
 config :logger,
   backends: [
     # all applications and all levels
-    :console,
+    # :console,
     # all applications, but only errors
     {LoggerFileBackend, :error},
     # only :ecto, but all levels
@@ -38,8 +38,17 @@ config :logger,
     {LoggerFileBackend, :api},
     {LoggerFileBackend, :block_import_timings},
     {LoggerFileBackend, :account},
-    {LoggerFileBackend, :api_v2}
+    {LoggerFileBackend, :api_v2},
+    LoggerJSON
   ]
+
+config :logger_json, :backend,
+  metadata:
+    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
+  block_number step count error_count shrunk import_id transaction_id duration status unit endpoint)a,
+  json_encoder: Jason,
+  formatter: LoggerJSON.Formatters.BasicLogger,
+  level: :info
 
 config :logger, :console,
   # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend

@@ -4,6 +4,8 @@ import Config
 
 config :logger, :console, level: :info
 
+config :logger, LoggerJSON, level: :info
+
 config :logger, :ecto,
   level: :info,
   path: Path.absname("logs/prod/ecto.log"),
