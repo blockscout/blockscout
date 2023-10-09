@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#8609](https://github.com/blockscout/blockscout/pull/8609) - Change logs format to JSON; Add endpoint url to the block_scout_web logging
+
 ### Fixes
 
 ### Chore
