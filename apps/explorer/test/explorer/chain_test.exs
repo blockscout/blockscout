@@ -4242,14 +4242,18 @@ defmodule Explorer.ChainTest do
       assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
 
       assert {:ok, %SmartContract{}} =
-               Chain.update_smart_contract(%{address_hash: address.hash, partially_verified: false})
+               Chain.update_smart_contract(%{
+                 address_hash: address.hash,
+                 partially_verified: false,
+                 contract_source_code: "new code"
+               })
 
       sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
       assert sc_after_call.name == Map.get(valid_attrs, :name)
       assert sc_after_call.partially_verified == false
       assert sc_after_call.compiler_version == Map.get(valid_attrs, :compiler_version)
       assert sc_after_call.optimization == Map.get(valid_attrs, :optimization)
-      assert sc_after_call.contract_source_code == Map.get(valid_attrs, :contract_source_code)
+      assert sc_after_call.contract_source_code == "new code"
     end
 
     test "check nothing changed", %{valid_attrs: valid_attrs, address: address} do
