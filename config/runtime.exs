@@ -178,6 +178,7 @@ config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
 
 disable_indexer? = ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
 disable_webapp? = ConfigHelper.parse_bool_env_var("DISABLE_WEBAPP")
+disable_exchange_rates? = ConfigHelper.parse_bool_env_var("DISABLE_EXCHANGE_RATES")
 
 checksum_function = System.get_env("CHECKSUM_FUNCTION")
 exchange_rates_coin = System.get_env("EXCHANGE_RATES_COIN")
@@ -273,7 +274,7 @@ config :explorer, Explorer.Counters.AddressTokenTransfersCounter,
 
 config :explorer, Explorer.ExchangeRates,
   store: :ets,
-  enabled: !ConfigHelper.parse_bool_env_var("DISABLE_EXCHANGE_RATES"),
+  enabled: !disable_exchange_rates?,
   fetch_btc_value: ConfigHelper.parse_bool_env_var("EXCHANGE_RATES_FETCH_BTC_VALUE")
 
 config :explorer, Explorer.ExchangeRates.Source,
@@ -296,7 +297,7 @@ config :explorer, Explorer.ExchangeRates.TokenExchangeRates,
   refetch_interval: ConfigHelper.parse_time_env_var("TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL", "1h"),
   max_batch_size: ConfigHelper.parse_integer_env_var("TOKEN_EXCHANGE_RATE_MAX_BATCH_SIZE", 150)
 
-config :explorer, Explorer.Market.History.Cataloger, enabled: !disable_indexer?
+config :explorer, Explorer.Market.History.Cataloger, enabled: !disable_indexer? && !disable_exchange_rates?
 
 config :explorer, Explorer.Chain.Transaction.History.Historian,
   enabled: ConfigHelper.parse_bool_env_var("TXS_STATS_ENABLED", "true"),

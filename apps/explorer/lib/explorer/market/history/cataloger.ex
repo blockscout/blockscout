@@ -22,9 +22,13 @@ defmodule Explorer.Market.History.Cataloger do
 
   @impl GenServer
   def init(:ok) do
-    send(self(), {:fetch_price_history, 365})
+    if Application.get_env(:explorer, __MODULE__)[:enabled] do
+      send(self(), {:fetch_price_history, 365})
 
-    {:ok, %{}}
+      {:ok, %{}}
+    else
+      :ignore
+    end
   end
 
   @impl GenServer
