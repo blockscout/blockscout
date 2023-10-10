@@ -198,7 +198,13 @@ defmodule EthereumJSONRPC do
         params_list
       end
 
-    id_to_params = id_to_params(filtered_params)
+    filtered_params_in_range =
+      filtered_params
+      |> Enum.filter(fn
+        %{block_quantity: block_quantity} -> block_number_in_range(block_quantity)
+      end)
+
+    id_to_params = id_to_params(filtered_params_in_range)
 
     with {:ok, responses} <-
            id_to_params
@@ -348,11 +354,12 @@ defmodule EthereumJSONRPC do
   end
 
   def block_numbers_in_range(block_numbers) do
-    min_block = first_block_to_fetch(:trace_first_block)
+    min_block = Application.get_env(:indexer, :trace_first_block)
+    max_block = Application.get_env(:indexer, :trace_last_block)
 
     block_numbers
     |> Enum.filter(fn block_number ->
-      block_number >= min_block
+      block_number >= min_block && if max_block, do: block_number <= max_block, else: true
     end)
   end
 
@@ -445,6 +452,20 @@ defmodule EthereumJSONRPC do
       {:error, reason} ->
         maybe_inc_error_count(corrected_transport_options[:url], named_arguments, transport)
         {:error, reason}
+    end
+  end
+
+  @spec block_number_in_range(quantity) :: boolean()
+  defp block_number_in_range(block_quantity) do
+    min_block = Application.get_env(:indexer, :trace_first_block)
+    max_block = Application.get_env(:indexer, :trace_last_block)
+    block_number = quantity_to_integer(block_quantity)
+
+    if !block_number ||
+         (block_number && block_number >= min_block && if(max_block, do: block_number <= max_block, else: true)) do
+      true
+    else
+      false
     end
   end
 
@@ -562,13 +583,4 @@ defmodule EthereumJSONRPC do
 
   defp chunk_requests(requests, nil), do: requests
   defp chunk_requests(requests, chunk_size), do: Enum.chunk_every(requests, chunk_size)
-
-  def first_block_to_fetch(config) do
-    string_value = Application.get_env(:indexer, config)
-
-    case Integer.parse(string_value) do
-      {integer, ""} -> integer
-      _ -> 0
-    end
-  end
 end

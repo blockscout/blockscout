@@ -182,27 +182,19 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   end
 
   defp first_block do
-    string_value = Application.get_env(:indexer, :first_block)
+    first_block_from_config = Application.get_env(:indexer, :first_block)
 
-    case Integer.parse(string_value) do
-      {integer, ""} ->
-        integer
+    min_missing_block_number =
+      "min_missing_block_number"
+      |> Chain.get_last_fetched_counter()
+      |> Decimal.to_integer()
 
-      _ ->
-        min_missing_block_number =
-          "min_missing_block_number"
-          |> Chain.get_last_fetched_counter()
-          |> Decimal.to_integer()
-
-        min_missing_block_number
-    end
+    max(first_block_from_config, min_missing_block_number)
   end
 
   defp last_block do
-    case Integer.parse(Application.get_env(:indexer, :last_block)) do
-      {block, ""} -> block + 1
-      _ -> fetch_max_block_number()
-    end
+    last_block = Application.get_env(:indexer, :last_block)
+    if last_block, do: last_block + 1, else: fetch_max_block_number()
   end
 
   defp fetch_max_block_number do
@@ -221,9 +213,12 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   end
 
   defp continue_future_updating?(max_fetched_block_number) do
-    case Integer.parse(Application.get_env(:indexer, :last_block)) do
-      {block, ""} -> max_fetched_block_number < block
-      _ -> true
+    last_block = Application.get_env(:indexer, :last_block)
+
+    if last_block do
+      max_fetched_block_number < last_block
+    else
+      true
     end
   end
 

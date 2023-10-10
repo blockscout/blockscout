@@ -60,11 +60,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     hashes = Enum.map(changes_list, & &1.hash)
 
-    minimal_block_height = trace_minimal_block_height()
+    minimal_block_height = Application.get_env(:indexer, :trace_first_block)
+    maximal_block_height = Application.get_env(:indexer, :trace_last_block)
 
     items_for_pending_ops =
       changes_list
-      |> filter_by_min_height(&(&1.number >= minimal_block_height))
+      |> filter_by_height_range(
+        &(&1.number >= minimal_block_height &&
+            if(maximal_block_height, do: &1.number <= maximal_block_height, else: true))
+      )
       |> Enum.filter(& &1.consensus)
       |> Enum.map(&{&1.number, &1.hash})
 
@@ -74,7 +78,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     run_func = fn repo ->
       {:ok, nonconsensus_items} = lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
 
-      {:ok, filter_by_min_height(nonconsensus_items, fn {number, _hash} -> number >= minimal_block_height end)}
+      {:ok, filter_by_height_range(nonconsensus_items, fn {number, _hash} -> number >= minimal_block_height end)}
     end
 
     multi
@@ -412,10 +416,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     }
 
     lose_consensus(ExplorerRepo, [], block_numbers, [], opts)
-  end
-
-  defp trace_minimal_block_height do
-    EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
   end
 
   defp new_pending_operations(repo, nonconsensus_items, items, %{
@@ -893,10 +893,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     where(invalid_neighbors_query, [block], block.consensus)
   end
 
-  defp filter_by_min_height(blocks, filter_func) do
-    minimal_block_height = trace_minimal_block_height()
+  defp filter_by_height_range(blocks, filter_func) do
+    minimal_block_height = Application.get_env(:indexer, :trace_first_block)
+    maximal_block_height = Application.get_env(:indexer, :trace_last_block)
 
-    if minimal_block_height > 0 do
+    if minimal_block_height > 0 || maximal_block_height do
       Enum.filter(blocks, &filter_func.(&1))
     else
       blocks

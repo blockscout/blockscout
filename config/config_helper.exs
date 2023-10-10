@@ -45,6 +45,17 @@ defmodule ConfigHelper do
     end
   end
 
+  @spec parse_integer_or_nil_env_var(String.t()) :: non_neg_integer() | nil
+  def parse_integer_or_nil_env_var(env_var) do
+    env_var
+    |> System.get_env("")
+    |> Integer.parse()
+    |> case do
+      {integer, _} -> integer
+      _ -> nil
+    end
+  end
+
   @spec parse_time_env_var(String.t(), String.t() | nil) :: non_neg_integer()
   def parse_time_env_var(env_var, default_value) do
     case env_var |> safe_get_env(default_value) |> String.downcase() |> Integer.parse() do

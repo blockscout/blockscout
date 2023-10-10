@@ -1151,7 +1151,7 @@ defmodule Explorer.Chain do
            select_repo(options).aggregate(Transaction, :min, :block_number) do
       min_block_number =
         min_block_number
-        |> Decimal.max(EthereumJSONRPC.first_block_to_fetch(:trace_first_block))
+        |> Decimal.max(Application.get_env(:indexer, :trace_first_block))
         |> Decimal.to_integer()
 
       query =
@@ -1778,15 +1778,18 @@ defmodule Explorer.Chain do
     if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
       %{min: min_saved_block_number, max: max_saved_block_number} = BlockNumber.get_all()
 
-      min_blockchain_block_number = min_block_number_from_config(:first_block)
+      min_blockchain_block_number = Application.get_env(:indexer, :first_block)
 
       case {min_saved_block_number, max_saved_block_number} do
         {0, 0} ->
           Decimal.new(0)
 
         _ ->
-          BlockCache.estimated_count()
-          |> Decimal.div(max_saved_block_number - min_blockchain_block_number + 1)
+          divisor = max_saved_block_number - min_blockchain_block_number + 1
+
+          ratio = get_ratio(BlockCache.estimated_count(), divisor)
+
+          ratio
           |> (&if(
                 greater_or_equal_0_99(&1) &&
                   min_saved_block_number <= min_blockchain_block_number,
@@ -1807,7 +1810,7 @@ defmodule Explorer.Chain do
       %{max: max_saved_block_number} = BlockNumber.get_all()
       pbo_count = PendingBlockOperationCache.estimated_count()
 
-      min_blockchain_trace_block_number = min_block_number_from_config(:trace_first_block)
+      min_blockchain_trace_block_number = Application.get_env(:indexer, :trace_first_block)
 
       case max_saved_block_number do
         0 ->
@@ -1815,10 +1818,11 @@ defmodule Explorer.Chain do
 
         _ ->
           full_blocks_range = max_saved_block_number - min_blockchain_trace_block_number + 1
-          processed_int_txs_for_blocks_count = full_blocks_range - pbo_count
+          processed_int_txs_for_blocks_count = max(0, full_blocks_range - pbo_count)
 
-          processed_int_txs_for_blocks_count
-          |> Decimal.div(full_blocks_range)
+          ratio = get_ratio(processed_int_txs_for_blocks_count, full_blocks_range)
+
+          ratio
           |> (&if(
                 greater_or_equal_0_99(&1),
                 do: Decimal.new(1),
@@ -1831,18 +1835,17 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec get_ratio(non_neg_integer(), non_neg_integer()) :: Decimal.t()
+  defp get_ratio(dividend, divisor) do
+    if divisor > 0,
+      do: dividend |> Decimal.div(divisor),
+      else: Decimal.new(1)
+  end
+
   @spec greater_or_equal_0_99(Decimal.t()) :: boolean()
   defp greater_or_equal_0_99(value) do
     Decimal.compare(value, Decimal.from_float(0.99)) == :gt ||
       Decimal.compare(value, Decimal.from_float(0.99)) == :eq
-  end
-
-  @spec min_block_number_from_config(atom()) :: integer()
-  defp min_block_number_from_config(block_type) do
-    case Integer.parse(Application.get_env(:indexer, block_type)) do
-      {block_number, _} -> block_number
-      _ -> 0
-    end
   end
 
   @spec format_indexed_ratio(Decimal.t()) :: Decimal.t()

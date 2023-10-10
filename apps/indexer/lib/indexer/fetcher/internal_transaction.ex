@@ -158,7 +158,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   defp drop_genesis(block_numbers, json_rpc_named_arguments) do
-    first_block = EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
+    first_block = Application.get_env(:indexer, :trace_first_block)
 
     if first_block in block_numbers do
       case EthereumJSONRPC.fetch_blocks_by_numbers([first_block], json_rpc_named_arguments) do
