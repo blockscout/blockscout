@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#8472](https://github.com/blockscout/blockscout/pull/8472) - Integrate `/api/v2/bytecodes/sources:search-all` of `eth_bytecode_db`
 - [#8544](https://github.com/blockscout/blockscout/pull/8544) - Fix `nil` `"structLogs"`
 - [#8561](https://github.com/blockscout/blockscout/pull/8561), [#8564](https://github.com/blockscout/blockscout/pull/8564) - Get historical market cap data from CoinGecko
 - [#8386](https://github.com/blockscout/blockscout/pull/8386) - Add `owner_address_hash` to the `token_instances`
@@ -13,6 +14,7 @@
 
 ### Fixes
 
+- [#8614](https://github.com/blockscout/blockscout/pull/8614) - Disable market history cataloger fetcher when exchange rates are disabled
 - [#8572](https://github.com/blockscout/blockscout/pull/8572) - Refactor docker-compose config
 - [#8552](https://github.com/blockscout/blockscout/pull/8552) - Add CHAIN_TYPE build arg to Dockerfile
 - [#8550](https://github.com/blockscout/blockscout/pull/8550) - Sanitize paging params
@@ -24,7 +26,7 @@
 ### Chore
 
 - [#8584](https://github.com/blockscout/blockscout/pull/8584) - Store chain together with cookie hash in Redis
-- [#8579](https://github.com/blockscout/blockscout/pull/8579) - IPFS gateway URL runtime env variable
+- [#8579](https://github.com/blockscout/blockscout/pull/8579), [#8590](https://github.com/blockscout/blockscout/pull/8590) - IPFS gateway URL runtime env variable
 - [#8573](https://github.com/blockscout/blockscout/pull/8573) - Update Nginx to proxy all frontend paths
 - [#8290](https://github.com/blockscout/blockscout/pull/8290) - Update Chromedriver version
 - [#8536](https://github.com/blockscout/blockscout/pull/8536), [#8537](https://github.com/blockscout/blockscout/pull/8537), [#8540](https://github.com/blockscout/blockscout/pull/8540), [#8557](https://github.com/blockscout/blockscout/pull/8557) - New issue template

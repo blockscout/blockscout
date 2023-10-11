@@ -145,7 +145,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           "sourceFiles" => sources,
           "compilerSettings" => compiler_settings_string,
           "matchType" => match_type
-        },
+        } = source,
         address_hash,
         is_standard_json?,
         save_file_path?,
@@ -177,6 +177,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("compiler_settings", if(is_standard_json?, do: compiler_settings))
       |> Map.put("partially_verified", match_type == "PARTIAL")
       |> Map.put("verified_via_eth_bytecode_db", automatically_verified?)
+      |> Map.put("verified_via_sourcify", source["sourcify?"])
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
   end
