@@ -12,6 +12,7 @@ defmodule Explorer.Market.History.CatalogerTest do
 
   setup do
     Application.put_env(:explorer, Cataloger, source: TestSource)
+    Application.put_env(:explorer, Cataloger, enabled: true)
     :ok
   end
 

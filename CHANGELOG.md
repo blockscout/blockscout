@@ -14,6 +14,7 @@
 
 ### Fixes
 
+- [#8614](https://github.com/blockscout/blockscout/pull/8614) - Disable market history cataloger fetcher when exchange rates are disabled
 - [#8572](https://github.com/blockscout/blockscout/pull/8572) - Refactor docker-compose config
 - [#8552](https://github.com/blockscout/blockscout/pull/8552) - Add CHAIN_TYPE build arg to Dockerfile
 - [#8550](https://github.com/blockscout/blockscout/pull/8550) - Sanitize paging params
