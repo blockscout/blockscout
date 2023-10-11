@@ -6389,14 +6389,6 @@ defmodule Explorer.Chain do
     limit(query, ^token_balances_fetcher_limit)
   end
 
-  defp add_coin_balances_fetcher_limit(query, false), do: query
-
-  defp add_coin_balances_fetcher_limit(query, true) do
-    coin_balances_fetcher_limit = Application.get_env(:indexer, :coin_balances_fetcher_init_limit)
-
-    limit(query, ^coin_balances_fetcher_limit)
-  end
-
   def put_has_token_transfers_to_tx(query, true), do: query
 
   def put_has_token_transfers_to_tx(query, false) do
