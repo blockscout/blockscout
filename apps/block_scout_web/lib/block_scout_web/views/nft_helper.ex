@@ -81,6 +81,7 @@ defmodule BlockScoutWeb.NFTHelper do
 
   defp ipfs_link(image_url, prefix) do
     ipfs_uid = String.slice(image_url, String.length(prefix)..-1)
+
     "https://ipfs.io/ipfs/" <> ipfs_uid
   end
 end

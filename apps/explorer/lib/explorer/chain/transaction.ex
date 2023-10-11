@@ -756,12 +756,12 @@ defmodule Explorer.Chain.Transaction do
   end
 
   defp find_and_decode(abi, data, hash) do
-    result =
-      abi
-      |> ABI.parse_specification()
-      |> ABI.find_and_decode(data)
-
-    {:ok, result}
+    with {%FunctionSelector{}, _mapping} = result <-
+           abi
+           |> ABI.parse_specification()
+           |> ABI.find_and_decode(data) do
+      {:ok, result}
+    end
   rescue
     e ->
       Logger.warn(fn ->
