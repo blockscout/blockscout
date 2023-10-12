@@ -3,8 +3,30 @@ defmodule Explorer.SmartContract.EthBytecodeDBInterface do
     Adapter for interaction with https://github.com/blockscout/blockscout-rs/tree/main/eth-bytecode-db
   """
 
-  def search_contract(%{"bytecode" => _, "bytecodeType" => _} = body) do
-    http_post_request(bytecode_search_sources_url(), body)
+  def search_contract(%{"bytecode" => _, "bytecodeType" => _} = body, address_hash) do
+    if chain_id = Application.get_env(:block_scout_web, :chain_id) do
+      http_post_request(
+        bytecode_search_all_sources_url(),
+        Map.merge(body, %{
+          "chain" => to_string(chain_id),
+          "address" => to_string(address_hash)
+        })
+      )
+    else
+      http_post_request(bytecode_search_sources_url(), body)
+    end
+  end
+
+  def process_verifier_response(%{"sourcifySources" => [src | _]}) do
+    {:ok, Map.put(src, "sourcify?", true)}
+  end
+
+  def process_verifier_response(%{"ethBytecodeDbSources" => [src | _]}) do
+    {:ok, src}
+  end
+
+  def process_verifier_response(%{"ethBytecodeDbSources" => [], "sourcifySources" => []}) do
+    {:error, :no_matched_sources}
   end
 
   def process_verifier_response(%{"sources" => [src | _]}) do
@@ -15,7 +37,23 @@ defmodule Explorer.SmartContract.EthBytecodeDBInterface do
     {:ok, nil}
   end
 
-  def bytecode_search_sources_url, do: "#{base_api_url()}" <> "/bytecodes/sources:search"
+  def bytecode_search_sources_url do
+    # workaround because of https://github.com/PSPDFKit-labs/bypass/issues/122
+    if Mix.env() == :test do
+      "#{base_api_url()}" <> "/bytecodes/sources_search"
+    else
+      "#{base_api_url()}" <> "/bytecodes/sources:search"
+    end
+  end
+
+  def bytecode_search_all_sources_url do
+    # workaround because of https://github.com/PSPDFKit-labs/bypass/issues/122
+    if Mix.env() == :test do
+      "#{base_api_url()}" <> "/bytecodes/sources_search_all"
+    else
+      "#{base_api_url()}" <> "/bytecodes/sources:search-all"
+    end
+  end
 
   use Explorer.SmartContract.RustVerifierInterfaceBehaviour
 end

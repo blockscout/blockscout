@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 
 services:
   smart-contract-verifier:
@@ -9,5 +9,3 @@ services:
     container_name: 'smart-contract-verifier'
     env_file:
       -  ../envs/common-smart-contract-verifier.env
-    ports:
-      - 8150:8050

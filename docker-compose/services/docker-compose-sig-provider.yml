@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 
 services:
   sig-provider:
@@ -7,5 +7,3 @@ services:
     platform: linux/amd64
     restart: always
     container_name: 'sig-provider'
-    ports:
-      - 8151:8050
