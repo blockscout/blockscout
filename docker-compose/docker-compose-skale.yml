@@ -57,6 +57,7 @@ services:
       CHAIN_SPEC_PATH: "/opt/app/config.json"
       COIN: "ETH"
       SECRET_KEY_BASE: "RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
+      CHAIN_ID: ${CHAIN_ID}
     ports:
       - ${PORT}:4000
     volumes:
