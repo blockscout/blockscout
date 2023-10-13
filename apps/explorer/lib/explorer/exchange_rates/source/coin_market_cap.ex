@@ -40,6 +40,7 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
         id: id,
         last_updated: last_updated,
         market_cap_usd: to_decimal(market_cap_data_usd),
+        tvl_usd: nil,
         name: token_properties["name"],
         symbol: String.upcase(token_properties["symbol"]),
         usd_value: current_price,

@@ -54,6 +54,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         "gas_prices" => gas_prices,
         "static_gas_price" => gas_price,
         "market_cap" => Helper.market_cap(market_cap_type, exchange_rate),
+        "tvl" => exchange_rate.tvl_usd,
         "network_utilization_percentage" => network_utilization_percentage()
       }
     )
