@@ -3,10 +3,10 @@
 
 <%= cond do %>
   <% near_network == "mainnet" -> %>
-    <%= link hash, to: "https://explorer.near.org/transactions/#{hash}", target: "_blank", rel: "nofollow noopener noreferrer", class: assigns[:class] %>
+    <%= link hash, to: "https://nearblocks.io/txns/#{hash}", target: "_blank", rel: "nofollow noopener noreferrer", class: assigns[:class] %>
 
   <% near_network == "testnet" -> %>
-    <%= link hash, to: "https://explorer.testnet.near.org/transactions/#{hash}", target: "_blank", rel: "nofollow noopener noreferrer", class: assigns[:class] %>
+    <%= link hash, to: "https://testnet.nearblocks.io/txns/#{hash}", target: "_blank", rel: "nofollow noopener noreferrer", class: assigns[:class] %>
 
   <% true -> %>
     <%= hash %>

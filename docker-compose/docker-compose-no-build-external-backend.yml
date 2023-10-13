@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 
 services:
   redis_db:
@@ -6,15 +6,15 @@ services:
       file: ./services/docker-compose-redis.yml
       service: redis_db
 
+  db-init:
+    extends:
+      file: ./services/docker-compose-db.yml
+      service: db-init
+
   db:
     extends:
       file: ./services/docker-compose-db.yml
       service: db
-
-  smart-contract-verifier:
-    extends:
-      file: ./services/docker-compose-smart-contract-verifier.yml
-      service: smart-contract-verifier
 
   visualizer:
     extends:
@@ -30,6 +30,11 @@ services:
     extends:
       file: ./services/docker-compose-frontend.yml
       service: frontend
+
+  stats-db-init:
+    extends:
+      file: ./services/docker-compose-stats.yml
+      service: stats-db-init
 
   stats-db:
     extends:

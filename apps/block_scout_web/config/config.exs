@@ -5,10 +5,14 @@
 # is restricted to this project.
 import Config
 
+[__DIR__ | ~w(.. .. .. config config_helper.exs)]
+|> Path.join()
+|> Code.eval_file()
+
 # General application configuration
 config :block_scout_web,
   namespace: BlockScoutWeb,
-  ecto_repos: [Explorer.Repo, Explorer.Repo.Account],
+  ecto_repos: ConfigHelper.repos(),
   cookie_domain: System.get_env("SESSION_COOKIE_DOMAIN"),
   # 604800 seconds, 1 week
   session_cookie_ttl: 60 * 60 * 24 * 7,

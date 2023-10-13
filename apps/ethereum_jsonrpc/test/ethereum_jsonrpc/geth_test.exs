@@ -434,6 +434,52 @@ defmodule EthereumJSONRPC.GethTest do
       assert call_tracer_internal_txs ==
                Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
     end
+
+    test "successfully handle single stop opcode from call_tracer", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      transaction_hash = "0xb342cafc6ac552c3be2090561453204c8784caf025ac8267320834e4cd163d96"
+      block_number = 3_287_375
+      transaction_index = 13
+
+      transaction_params = %{
+        block_number: block_number,
+        transaction_index: transaction_index,
+        hash_data: transaction_hash
+      }
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn
+        [%{id: id, params: [^transaction_hash, %{"tracer" => "callTracer"}]}], _ ->
+          {:ok,
+           [
+             %{
+               id: id,
+               result: %{
+                 "type" => "STOP",
+                 "from" => "0x0000000000000000000000000000000000000000",
+                 "value" => "0x0",
+                 "gas" => "0x0",
+                 "gasUsed" => "0x5842"
+               }
+             }
+           ]}
+      end)
+
+      assert {:ok,
+              [
+                %{
+                  block_number: 3_287_375,
+                  error: "execution stopped",
+                  from_address_hash: "0x0000000000000000000000000000000000000000",
+                  input: "0x",
+                  trace_address: [],
+                  transaction_hash: "0xb342cafc6ac552c3be2090561453204c8784caf025ac8267320834e4cd163d96",
+                  transaction_index: 13,
+                  type: "stop",
+                  value: 0
+                }
+              ]} = Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
+    end
   end
 
   describe "fetch_block_internal_transactions/1" do

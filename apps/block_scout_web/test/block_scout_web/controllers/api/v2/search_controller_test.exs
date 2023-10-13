@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       item = Enum.at(response["items"], 0)
 
       assert item["type"] == "block"
+      assert item["block_type"] == "block"
       assert item["block_number"] == block.number
       assert item["block_hash"] == to_string(block.hash)
       assert item["url"] =~ to_string(block.hash)
@@ -45,6 +46,38 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["block_hash"] == to_string(block.hash)
       assert item["url"] =~ to_string(block.hash)
       assert item["timestamp"] == block.timestamp |> to_string() |> String.replace(" ", "T")
+    end
+
+    test "search reorg", %{conn: conn} do
+      block = insert(:block, consensus: false)
+
+      request = get(conn, "/api/v2/search?q=#{block.hash}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+
+      item = Enum.at(response["items"], 0)
+
+      assert item["type"] == "block"
+      assert item["block_type"] == "reorg"
+      assert item["block_number"] == block.number
+      assert item["block_hash"] == to_string(block.hash)
+      assert item["url"] =~ to_string(block.hash)
+
+      request = get(conn, "/api/v2/search?q=#{block.number}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+
+      item = Enum.at(response["items"], 0)
+
+      assert item["type"] == "block"
+      assert item["block_type"] == "reorg"
+      assert item["block_number"] == block.number
+      assert item["block_hash"] == to_string(block.hash)
+      assert item["url"] =~ to_string(block.hash)
     end
 
     test "search address", %{conn: conn} do
@@ -326,6 +359,9 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       assert block_hashes == blocks |> Enum.reverse() |> Enum.map(fn block -> to_string(block.hash) end) ||
                block_hashes == blocks |> Enum.map(fn block -> to_string(block.hash) end)
+
+      assert response |> Enum.filter(fn x -> x["block_type"] == "block" end) |> Enum.count() == 1
+      assert response |> Enum.filter(fn x -> x["block_type"] == "reorg" end) |> Enum.count() == 1
     end
 
     test "returns empty list and don't crash", %{conn: conn} do

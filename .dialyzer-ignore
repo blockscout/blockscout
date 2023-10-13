@@ -15,3 +15,8 @@ lib/phoenix/router.ex:402
 lib/explorer/smart_contract/reader.ex:435
 lib/explorer/exchange_rates/source.ex:139
 lib/explorer/exchange_rates/source.ex:142
+lib/indexer/fetcher/polygon_edge.ex:737
+lib/indexer/fetcher/polygon_edge/deposit_execute.ex:140
+lib/indexer/fetcher/polygon_edge/deposit_execute.ex:184
+lib/indexer/fetcher/polygon_edge/withdrawal.ex:160
+lib/indexer/fetcher/polygon_edge/withdrawal.ex:204
