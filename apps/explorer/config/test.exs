@@ -12,8 +12,7 @@ config :explorer, Explorer.Repo,
   ownership_timeout: :timer.minutes(7),
   timeout: :timer.seconds(60),
   queue_target: 1000,
-  migration_lock: nil,
-  log: false
+  migration_lock: nil
 
 # Configure API database
 config :explorer, Explorer.Repo.Replica1,
@@ -27,8 +26,7 @@ config :explorer, Explorer.Repo.Replica1,
   enable_caching_implementation_data_of_proxy: true,
   avg_block_time_as_ttl_cached_implementation_data_of_proxy: false,
   fallback_ttl_cached_implementation_data_of_proxy: :timer.seconds(20),
-  implementation_data_fetching_timeout: :timer.seconds(20),
-  log: false
+  implementation_data_fetching_timeout: :timer.seconds(20)
 
 # Configure API database
 config :explorer, Explorer.Repo.Account,
