@@ -153,7 +153,7 @@ defmodule Explorer.Chain.Token.Instance do
 
     __MODULE__
     |> where([ti], ti.owner_address_hash == ^address_hash)
-    |> order_by([ti], asc: ti.token_contract_address_hash, asc: ti.token_id)
+    |> order_by([ti], asc: ti.token_contract_address_hash, desc: ti.token_id)
     |> limit(^paging_options.page_size)
     |> page_erc_721_token_instances(paging_options)
     |> Chain.join_associations(necessity_by_association)
@@ -178,7 +178,7 @@ defmodule Explorer.Chain.Token.Instance do
           ctb.address_hash == ^address_hash
     )
     |> where([ctb: ctb], ctb.value > 0 and ctb.token_type == "ERC-1155")
-    |> order_by([ti], asc: ti.token_contract_address_hash, asc: ti.token_id)
+    |> order_by([ti], asc: ti.token_contract_address_hash, desc: ti.token_id)
     |> limit(^paging_options.page_size)
     |> page_erc_1155_token_instances(paging_options)
     |> select_merge([ctb: ctb], %{current_token_balance: ctb})
@@ -197,7 +197,7 @@ defmodule Explorer.Chain.Token.Instance do
     |> where(
       [ti],
       ti.token_contract_address_hash > ^contract_address_hash or
-        (ti.token_contract_address_hash == ^contract_address_hash and ti.token_id > ^token_id)
+        (ti.token_contract_address_hash == ^contract_address_hash and ti.token_id < ^token_id)
     )
   end
 
@@ -313,7 +313,7 @@ defmodule Explorer.Chain.Token.Instance do
         [ti],
         ti.token_contract_address_hash == ^token_contract_address_hash and ti.owner_address_hash == ^address_hash
       )
-      |> order_by([ti], asc: ti.token_id)
+      |> order_by([ti], desc: ti.token_id)
       |> limit(^@preloaded_nfts_limit)
       |> Chain.select_repo(options).all()
 
@@ -325,7 +325,7 @@ defmodule Explorer.Chain.Token.Instance do
          address_hash,
          options
        ) do
-    token_ids = token_ids |> Enum.sort() |> Enum.take(@preloaded_nfts_limit)
+    token_ids = token_ids |> Enum.sort(:desc) |> Enum.take(@preloaded_nfts_limit)
 
     instances =
       Instance
@@ -339,7 +339,7 @@ defmodule Explorer.Chain.Token.Instance do
       |> limit(^@preloaded_nfts_limit)
       |> select_merge([ctb: ctb], %{current_token_balance: ctb})
       |> Chain.select_repo(options).all()
-      |> Enum.sort_by(& &1.token_id)
+      |> Enum.sort_by(& &1.token_id, :desc)
 
     Map.put(collection, :preloaded_token_instances, instances)
   end
@@ -356,5 +356,37 @@ defmodule Explorer.Chain.Token.Instance do
         token_type: token_type
       }) do
     %{"token_contract_address_hash" => token_contract_address_hash, "token_type" => token_type}
+  end
+
+  def token_instances_by_holder_address_hash(token, holder_address_hash, options \\ [])
+
+  def token_instances_by_holder_address_hash(%Token{type: "ERC-721"} = token, holder_address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    token.contract_address_hash
+    |> address_to_unique_token_instances()
+    |> where([ti], ti.owner_address_hash == ^holder_address_hash)
+    |> limit(^paging_options.page_size)
+    |> page_token_instance(paging_options)
+    |> Chain.select_repo(options).all()
+  end
+
+  def token_instances_by_holder_address_hash(%Token{} = token, holder_address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    __MODULE__
+    |> where([ti], ti.token_contract_address_hash == ^token.contract_address_hash)
+    |> join(:inner, [ti], ctb in CurrentTokenBalance,
+      as: :ctb,
+      on:
+        ctb.token_contract_address_hash == ti.token_contract_address_hash and ctb.token_id == ti.token_id and
+          ctb.address_hash == ^holder_address_hash
+    )
+    |> where([ctb: ctb], ctb.value > 0)
+    |> order_by([ti], desc: ti.token_id)
+    |> limit(^paging_options.page_size)
+    |> page_token_instance(paging_options)
+    |> select_merge([ctb: ctb], %{current_token_balance: ctb})
+    |> Chain.select_repo(options).all()
   end
 end

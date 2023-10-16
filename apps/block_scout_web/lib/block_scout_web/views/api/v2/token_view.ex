@@ -101,6 +101,18 @@ defmodule BlockScoutWeb.API.V2.TokenView do
 
   def is_unique?(false, _instance, _token), do: nil
 
+  def is_unique?(
+        not_ignore?,
+        %Instance{current_token_balance: %CurrentTokenBalance{value: %Decimal{} = value}} = instance,
+        token
+      ) do
+    if Decimal.compare(value, 1) == :gt do
+      false
+    else
+      is_unique?(not_ignore?, %Instance{instance | current_token_balance: nil}, token)
+    end
+  end
+
   def is_unique?(_not_ignore?, %Instance{current_token_balance: %CurrentTokenBalance{value: value}}, _token)
       when value > 1,
       do: false

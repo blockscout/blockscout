@@ -923,6 +923,24 @@ defmodule Explorer.Factory do
         token_type: token_type,
         address: address,
         token_id: token_id,
+        token_contract_address_hash: token_contract_address_hash,
+        value: value
+      }) do
+    %CurrentTokenBalance{
+      address: address,
+      token_contract_address_hash: token_contract_address_hash,
+      block_number: block_number(),
+      value: value,
+      value_fetched_at: DateTime.utc_now(),
+      token_id: token_id,
+      token_type: token_type
+    }
+  end
+
+  def address_current_token_balance_with_token_id_and_fixed_token_type_factory(%{
+        token_type: token_type,
+        address: address,
+        token_id: token_id,
         token_contract_address_hash: token_contract_address_hash
       }) do
     %CurrentTokenBalance{
