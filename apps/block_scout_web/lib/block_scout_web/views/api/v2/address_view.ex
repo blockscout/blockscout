@@ -55,8 +55,12 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     }
   end
 
-  def render("nft_list.json", %{nfts: nfts, next_page_params: next_page_params}) do
-    %{"items" => Enum.map(nfts, &prepare_nft(&1)), "next_page_params" => next_page_params}
+  def render("nft_list.json", %{token_instances: token_instances, token: token, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(token_instances, &prepare_nft(&1, token, true)), "next_page_params" => next_page_params}
+  end
+
+  def render("nft_list.json", %{token_instances: token_instances, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(token_instances, &prepare_nft(&1)), "next_page_params" => next_page_params}
   end
 
   def render("nft_collections.json", %{collections: nft_collections, next_page_params: next_page_params}) do
@@ -167,13 +171,15 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   end
 
   defp prepare_nft(nft) do
-    Map.merge(
-      %{"token_type" => nft_type(nft), "value" => value(nft.token.type, nft)},
-      TokenView.prepare_token_instance(nft, nft.token, false)
-    )
+    prepare_nft(nft, nft.token, false)
   end
 
-  defp nft_type(%Instance{token: %Token{type: token_type}}), do: token_type
+  defp prepare_nft(nft, token, need_uniqueness?) do
+    Map.merge(
+      %{"token_type" => token.type, "value" => value(token.type, nft)},
+      TokenView.prepare_token_instance(nft, token, need_uniqueness?)
+    )
+  end
 
   defp prepare_nft_collection(collection) do
     %{

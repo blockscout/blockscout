@@ -438,7 +438,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       conn
       |> put_status(200)
-      |> render(:nft_list, %{nfts: nfts, next_page_params: next_page_params})
+      |> render(:nft_list, %{token_instances: nfts, next_page_params: next_page_params})
     end
   end
 
