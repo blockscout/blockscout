@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.{Address, SmartContract, Token}
+  alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.Token.Instance
 
   @api_true [api?: true]
