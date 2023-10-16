@@ -4,15 +4,20 @@ on:
   push:
     branches:
       - master
-      - production-optimism-stg
+      - production-core-stg
       - production-eth-stg-experimental
       - production-eth-goerli-stg
-      - production-xdai-stg
-      - production-core-stg
-      - production-sokol-stg
-      - production-rsk-stg
-      - production-lukso-stg
+      - production-eth-sepolia-stg
+      - production-fuse-stg
+      - production-optimism-stg
       - production-immutable-stg
+      - production-iota-stg
+      - production-lukso-stg
+      - production-rsk-stg
+      - production-sokol-stg
+      - production-suave-stg
+      - production-xdai-stg
+      - production-zkevm-stg
       - production-zksync-stg
       - staging-l2
   pull_request:
