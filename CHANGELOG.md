@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#8634](https://github.com/blockscout/blockscout/pull/8634) - API v2: NFT for address
+
 ### Fixes
 
 ### Chore
