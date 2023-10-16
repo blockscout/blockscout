@@ -4116,7 +4116,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
+  def join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
     end)
