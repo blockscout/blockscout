@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
           :standard
       end
 
-    exchange_rate = Market.get_coin_exchange_rate()
+    exchange_rate_from_db = Market.get_native_coin_exchange_rate_from_db()
 
     transaction_stats = Helper.get_transaction_stats()
 
@@ -47,14 +47,14 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         "total_addresses" => @api_true |> Counters.address_estimated_count() |> to_string(),
         "total_transactions" => TransactionCache.estimated_count() |> to_string(),
         "average_block_time" => AverageBlockTime.average_block_time() |> Duration.to_milliseconds(),
-        "coin_price" => exchange_rate.usd_value,
+        "coin_price" => exchange_rate_from_db.usd_value,
         "total_gas_used" => GasUsage.total() |> to_string(),
         "transactions_today" => Enum.at(transaction_stats, 0).number_of_transactions |> to_string(),
         "gas_used_today" => Enum.at(transaction_stats, 0).gas_used,
         "gas_prices" => gas_prices,
         "static_gas_price" => gas_price,
-        "market_cap" => Helper.market_cap(market_cap_type, exchange_rate),
-        "tvl" => exchange_rate.tvl_usd,
+        "market_cap" => Helper.market_cap(market_cap_type, exchange_rate_from_db),
+        "tvl" => exchange_rate_from_db.tvl_usd,
         "network_utilization_percentage" => network_utilization_percentage()
       }
     )
