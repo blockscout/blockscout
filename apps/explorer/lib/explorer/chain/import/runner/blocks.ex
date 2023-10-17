@@ -422,29 +422,25 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          timeout: timeout,
          timestamps: timestamps
        }) do
-    if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
-      {:ok, []}
-    else
-      sorted_pending_ops =
-        items
-        |> MapSet.new()
-        |> MapSet.difference(MapSet.new(nonconsensus_items))
-        |> Enum.sort()
-        |> Enum.map(fn {number, hash} ->
-          %{block_hash: hash, block_number: number}
-        end)
+    sorted_pending_ops =
+      items
+      |> MapSet.new()
+      |> MapSet.difference(MapSet.new(nonconsensus_items))
+      |> Enum.sort()
+      |> Enum.map(fn {number, hash} ->
+        %{block_hash: hash, block_number: number}
+      end)
 
-      Import.insert_changes_list(
-        repo,
-        sorted_pending_ops,
-        conflict_target: :block_hash,
-        on_conflict: :nothing,
-        for: PendingBlockOperation,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
-    end
+    Import.insert_changes_list(
+      repo,
+      sorted_pending_ops,
+      conflict_target: :block_hash,
+      on_conflict: :nothing,
+      for: PendingBlockOperation,
+      returning: true,
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 
   defp delete_address_token_balances(_, [], _), do: {:ok, []}

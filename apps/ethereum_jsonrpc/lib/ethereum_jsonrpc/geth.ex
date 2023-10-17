@@ -93,20 +93,20 @@ defmodule EthereumJSONRPC.Geth do
       Application.get_env(:ethereum_jsonrpc, __MODULE__)[:debug_trace_transaction_timeout]
 
     tracer =
-      case Application.get_env(:ethereum_jsonrpc, __MODULE__)[:tracer] do
-        "js" ->
+      cond do
+        tracer_type() == "js" ->
           %{"tracer" => @tracer}
 
-        "call_tracer" ->
-          %{"tracer" => "callTracer"}
-
-        _ ->
+        tracer_type() in ~w(opcode polygon_edge) ->
           %{
             "enableMemory" => true,
             "disableStack" => false,
             "disableStorage" => true,
             "enableReturnData" => false
           }
+
+        true ->
+          %{"tracer" => "callTracer"}
       end
 
     request(%{
@@ -122,6 +122,12 @@ defmodule EthereumJSONRPC.Geth do
          json_rpc_named_arguments
        )
        when is_map(id_to_params) do
+    if tracer_type() not in ["opcode", "polygon_edge"] do
+      Logger.warning(
+        "structLogs found in debug_traceTransaction response, you should probably change your INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE env value"
+      )
+    end
+
     with {:ok, receipts} <-
            id_to_params
            |> Enum.map(fn {id, %{hash_data: hash_data}} ->
@@ -361,5 +367,9 @@ defmodule EthereumJSONRPC.Geth do
 
   defp finalize_internal_transactions_params({:error, acc_reasons}) do
     {:error, Enum.reverse(acc_reasons)}
+  end
+
+  defp tracer_type do
+    Application.get_env(:ethereum_jsonrpc, __MODULE__)[:tracer]
   end
 end

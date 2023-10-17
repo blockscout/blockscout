@@ -386,7 +386,7 @@ defmodule EthereumJSONRPC do
   @doc """
   Assigns an id to each set of params in `params_list` for batch request-response correlation
   """
-  @spec id_to_params([params]) :: %{id => params} when id: non_neg_integer(), params: map()
+  @spec id_to_params([params]) :: %{id => params} when id: non_neg_integer(), params: any()
   def id_to_params(params_list) do
     params_list
     |> Stream.with_index()
