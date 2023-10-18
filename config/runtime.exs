@@ -280,7 +280,8 @@ config :explorer, Explorer.ExchangeRates,
 config :explorer, Explorer.ExchangeRates.Source,
   source: ConfigHelper.exchange_rates_source(),
   price_source: ConfigHelper.exchange_rates_price_source(),
-  market_cap_source: ConfigHelper.exchange_rates_market_cap_source()
+  market_cap_source: ConfigHelper.exchange_rates_market_cap_source(),
+  tvl_source: ConfigHelper.exchange_rates_tvl_source()
 
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
   api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY"),
@@ -290,6 +291,8 @@ config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
   platform: System.get_env("EXCHANGE_RATES_COINGECKO_PLATFORM_ID"),
   api_key: System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),
   coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID")
+
+config :explorer, Explorer.ExchangeRates.Source.DefiLlama, coin_id: System.get_env("EXCHANGE_RATES_DEFILLAMA_COIN_ID")
 
 config :explorer, Explorer.ExchangeRates.TokenExchangeRates,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_EXCHANGE_RATE", "true"),
