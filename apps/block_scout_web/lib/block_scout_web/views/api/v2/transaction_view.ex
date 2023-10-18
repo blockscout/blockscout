@@ -416,7 +416,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "has_error_in_internal_txs" => transaction.has_error_in_internal_txs
     }
 
-    chain_type_fields(result, transaction, single_tx?, conn, watchlist_names)
+    result
+    |> chain_type_fields(transaction, single_tx?, conn, watchlist_names)
+    |> maybe_put_stability_fee(transaction)
   end
 
   defp chain_type_fields(result, transaction, single_tx?, conn, watchlist_names) do
@@ -882,4 +884,91 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       _ -> {nil, nil}
     end
   end
+
+  @transaction_fee_event_signature "0x99e7b0ba56da2819c37c047f0511fd2bf6c9b4e27b4a979a19d6da0f74be8155"
+  @transaction_fee_event_abi [
+    %{
+      "anonymous" => false,
+      "inputs" => [
+        %{
+          "indexed" => false,
+          "internalType" => "address",
+          "name" => "token",
+          "type" => "address"
+        },
+        %{
+          "indexed" => false,
+          "internalType" => "uint256",
+          "name" => "totalFee",
+          "type" => "uint256"
+        },
+        %{
+          "indexed" => false,
+          "internalType" => "address",
+          "name" => "validator",
+          "type" => "address"
+        },
+        %{
+          "indexed" => false,
+          "internalType" => "uint256",
+          "name" => "validatorFee",
+          "type" => "uint256"
+        },
+        %{
+          "indexed" => false,
+          "internalType" => "address",
+          "name" => "dapp",
+          "type" => "address"
+        },
+        %{
+          "indexed" => false,
+          "internalType" => "uint256",
+          "name" => "dappFee",
+          "type" => "uint256"
+        }
+      ],
+      "name" => "TransactionFee",
+      "type" => "event"
+    }
+  ]
+
+  defp maybe_put_stability_fee(body, transaction) do
+    with "stability" <- Application.get_env(:explorer, :chain_type),
+         fee_log when not is_nil(fee_log) <-
+           Log.fetch_log_by_tx_hash_and_first_topic(transaction.hash, @transaction_fee_event_signature, @api_true) do
+      {:ok, _selector, mapping} = Log.find_and_decode(@transaction_fee_event_abi, fee_log, transaction)
+
+      [
+        {"token", "address", false, token_address_hash},
+        {"totalFee", "uint256", false, total_fee},
+        {"validator", "address", false, validator_address_hash},
+        {"validatorFee", "uint256", false, validator_fee},
+        {"dapp", "address", false, dapp_address_hash},
+        {"dappFee", "uint256", false, dapp_fee}
+      ] = mapping
+
+      token_contract_address_hash = bytes_to_address_hash(token_address_hash)
+
+      stability_fee = %{
+        "token" =>
+          TokenView.render("token.json", %{
+            token: Token.get_by_contract_address_hash(token_contract_address_hash, @api_true),
+            contract_address_hash: token_contract_address_hash
+          }),
+        "validator_address" => Helper.address_with_info(nil, nil, bytes_to_address_hash(validator_address_hash), false),
+        "dapp_address" => Helper.address_with_info(nil, nil, bytes_to_address_hash(dapp_address_hash), false),
+        "total_fee" => to_string(total_fee),
+        "dapp_fee" => to_string(dapp_fee),
+        "validator_fee" => to_string(validator_fee)
+      }
+
+      body
+      |> Map.put("stability_fee", stability_fee)
+    else
+      _ ->
+        body
+    end
+  end
+
+  defp bytes_to_address_hash(bytes), do: %Hash{byte_count: 20, bytes: bytes}
 end
