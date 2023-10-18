@@ -17,6 +17,7 @@
 
 ### Fixes
 
+- [#8649](https://github.com/blockscout/blockscout/pull/8649) - Set max 30sec JSON RPC poll frequency for realtime fetcher when WS is disabled
 - [#8614](https://github.com/blockscout/blockscout/pull/8614) - Disable market history cataloger fetcher when exchange rates are disabled
 - [#8572](https://github.com/blockscout/blockscout/pull/8572) - Refactor docker-compose config
 - [#8552](https://github.com/blockscout/blockscout/pull/8552) - Add CHAIN_TYPE build arg to Dockerfile
