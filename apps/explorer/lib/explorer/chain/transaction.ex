@@ -197,7 +197,9 @@ defmodule Explorer.Chain.Transaction do
               max_priority_fee_per_gas: wei_per_gas | nil,
               max_fee_per_gas: wei_per_gas | nil,
               type: non_neg_integer() | nil,
-              has_error_in_internal_txs: boolean()
+              has_error_in_internal_txs: boolean(),
+              transaction_fee_log: any(),
+              transaction_fee_token: any()
             },
             suave
           )
@@ -289,6 +291,10 @@ defmodule Explorer.Chain.Transaction do
     field(:type, :integer)
     field(:has_error_in_internal_txs, :boolean)
     field(:has_token_transfers, :boolean, virtual: true)
+
+    # stability virtual fields
+    field(:transaction_fee_log, :any, virtual: true)
+    field(:transaction_fee_token, :any, virtual: true)
 
     # A transient field for deriving old block hash during transaction upserts.
     # Used to force refetch of a block in case a transaction is re-collated

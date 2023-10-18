@@ -37,6 +37,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{
       "items" =>
         transactions
+        |> maybe_prepare_stability_fees()
         |> Enum.zip(decoded_transactions)
         |> Enum.map(fn {tx, decoded_input} ->
           prepare_transaction(tx, conn, false, block_height, watchlist_names, decoded_input)
@@ -54,6 +55,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     {decoded_transactions, _, _} = decode_transactions(transactions, true)
 
     transactions
+    |> maybe_prepare_stability_fees()
     |> Enum.zip(decoded_transactions)
     |> Enum.map(fn {tx, decoded_input} ->
       prepare_transaction(tx, conn, false, block_height, watchlist_names, decoded_input)
@@ -67,6 +69,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{
       "items" =>
         transactions
+        |> maybe_prepare_stability_fees()
         |> Enum.zip(decoded_transactions)
         |> Enum.map(fn {tx, decoded_input} -> prepare_transaction(tx, conn, false, block_height, decoded_input) end),
       "next_page_params" => next_page_params
@@ -84,6 +87,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     {decoded_transactions, _, _} = decode_transactions(transactions, true)
 
     transactions
+    |> maybe_prepare_stability_fees()
     |> Enum.zip(decoded_transactions)
     |> Enum.map(fn {tx, decoded_input} -> prepare_transaction(tx, conn, false, block_height, decoded_input) end)
   end
@@ -91,7 +95,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def render("transaction.json", %{transaction: transaction, conn: conn}) do
     block_height = Chain.block_height(@api_true)
     {[decoded_input], _, _} = decode_transactions([transaction], false)
-    prepare_transaction(transaction, conn, true, block_height, decoded_input)
+    prepare_transaction(transaction |> maybe_prepare_stability_fees(), conn, true, block_height, decoded_input)
   end
 
   def render("raw_trace.json", %{internal_transactions: internal_transactions}) do
@@ -934,26 +938,19 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp maybe_put_stability_fee(body, transaction) do
     with "stability" <- Application.get_env(:explorer, :chain_type),
-         fee_log when not is_nil(fee_log) <-
-           Log.fetch_log_by_tx_hash_and_first_topic(transaction.hash, @transaction_fee_event_signature, @api_true) do
-      {:ok, _selector, mapping} = Log.find_and_decode(@transaction_fee_event_abi, fee_log, transaction)
-
-      [
-        {"token", "address", false, token_address_hash},
-        {"totalFee", "uint256", false, total_fee},
-        {"validator", "address", false, validator_address_hash},
-        {"validatorFee", "uint256", false, validator_fee},
-        {"dapp", "address", false, dapp_address_hash},
-        {"dappFee", "uint256", false, dapp_fee}
-      ] = mapping
-
-      token_contract_address_hash = bytes_to_address_hash(token_address_hash)
-
+         [
+           {"token", "address", false, token_address_hash},
+           {"totalFee", "uint256", false, total_fee},
+           {"validator", "address", false, validator_address_hash},
+           {"validatorFee", "uint256", false, validator_fee},
+           {"dapp", "address", false, dapp_address_hash},
+           {"dappFee", "uint256", false, dapp_fee}
+         ] <- transaction.transaction_fee_log do
       stability_fee = %{
         "token" =>
           TokenView.render("token.json", %{
-            token: Token.get_by_contract_address_hash(token_contract_address_hash, @api_true),
-            contract_address_hash: token_contract_address_hash
+            token: transaction.transaction_fee_token,
+            contract_address_hash: bytes_to_address_hash(token_address_hash)
           }),
         "validator_address" => Helper.address_with_info(nil, nil, bytes_to_address_hash(validator_address_hash), false),
         "dapp_address" => Helper.address_with_info(nil, nil, bytes_to_address_hash(dapp_address_hash), false),
@@ -971,4 +968,48 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   defp bytes_to_address_hash(bytes), do: %Hash{byte_count: 20, bytes: bytes}
+
+  defp maybe_prepare_stability_fees(transactions) do
+    if Application.get_env(:explorer, :chain_type) == "stability" do
+      maybe_prepare_stability_fees_inner(transactions)
+    else
+      transactions
+    end
+  end
+
+  defp maybe_prepare_stability_fees_inner(transactions) when is_list(transactions) do
+    {transactions, _tokens_acc} =
+      Enum.map_reduce(transactions, %{}, fn transaction, tokens_acc ->
+        case Log.fetch_log_by_tx_hash_and_first_topic(transaction.hash, @transaction_fee_event_signature, @api_true) do
+          fee_log when not is_nil(fee_log) ->
+            {:ok, _selector, mapping} = Log.find_and_decode(@transaction_fee_event_abi, fee_log, transaction)
+
+            [{"token", "address", false, token_address_hash}, _, _, _, _, _] = mapping
+
+            {token, new_tokens_acc} = check_tokens_acc(bytes_to_address_hash(token_address_hash), tokens_acc)
+
+            {%Transaction{transaction | transaction_fee_log: mapping, transaction_fee_token: token}, new_tokens_acc}
+
+          _ ->
+            {transaction, tokens_acc}
+        end
+      end)
+
+    transactions
+  end
+
+  defp maybe_prepare_stability_fees_inner(transaction) do
+    [transaction] = maybe_prepare_stability_fees_inner([transaction])
+    transaction
+  end
+
+  defp check_tokens_acc(token_address_hash, tokens_acc) do
+    if Map.has_key?(tokens_acc, token_address_hash) do
+      {tokens_acc[token_address_hash], tokens_acc}
+    else
+      token = Token.get_by_contract_address_hash(token_address_hash, @api_true)
+
+      {token, Map.put(tokens_acc, token_address_hash, token)}
+    end
+  end
 end
