@@ -341,7 +341,7 @@ defmodule Explorer.Chain.Address.Counters do
         end
       end)
 
-    start = Time.utc_now()
+    start = System.monotonic_time()
 
     validations_count_task =
       configure_task(
@@ -362,9 +362,10 @@ defmodule Explorer.Chain.Address.Counters do
           |> limit(@counters_limit)
           |> select_repo(options).all()
 
-        Logger.info(
-          "Time consumed for transactions_from_count_task for #{address_hash} is #{Time.diff(Time.utc_now(), start, :millisecond)}ms"
-        )
+        stop = System.monotonic_time()
+        diff = System.convert_time_unit(stop - start, :native, :millisecond)
+
+        Logger.info("Time consumed for transactions_from_count_task for #{address_hash} is #{diff}ms")
 
         AddressesTabsCounters.save_txs_counter_progress(address_hash, %{txs_types: [:txs_from], txs_from: result})
         AddressesTabsCounters.drop_task(:txs_from, address_hash)
@@ -382,9 +383,10 @@ defmodule Explorer.Chain.Address.Counters do
           |> limit(@counters_limit)
           |> select_repo(options).all()
 
-        Logger.info(
-          "Time consumed for transactions_to_count_task for #{address_hash} is #{Time.diff(Time.utc_now(), start, :millisecond)}ms"
-        )
+        stop = System.monotonic_time()
+        diff = System.convert_time_unit(stop - start, :native, :millisecond)
+
+        Logger.info("Time consumed for transactions_to_count_task for #{address_hash} is #{diff}ms")
 
         AddressesTabsCounters.save_txs_counter_progress(address_hash, %{txs_types: [:txs_to], txs_to: result})
         AddressesTabsCounters.drop_task(:txs_to, address_hash)
@@ -402,9 +404,10 @@ defmodule Explorer.Chain.Address.Counters do
           |> limit(@counters_limit)
           |> select_repo(options).all()
 
-        Logger.info(
-          "Time consumed for transactions_created_contract_count_task for #{address_hash} is #{Time.diff(Time.utc_now(), start, :millisecond)}ms"
-        )
+        stop = System.monotonic_time()
+        diff = System.convert_time_unit(stop - start, :native, :millisecond)
+
+        Logger.info("Time consumed for transactions_created_contract_count_task for #{address_hash} is #{diff}ms")
 
         AddressesTabsCounters.save_txs_counter_progress(address_hash, %{
           txs_types: [:txs_contract],
@@ -525,7 +528,7 @@ defmodule Explorer.Chain.Address.Counters do
 
   defp configure_task(counter_type, cache, query, address_hash, options) do
     address_hash = to_string(address_hash)
-    start = Time.utc_now()
+    start = System.monotonic_time()
 
     run_or_ignore(cache[counter_type], counter_type, address_hash, fn ->
       result =
@@ -533,9 +536,10 @@ defmodule Explorer.Chain.Address.Counters do
         |> limit(@counters_limit)
         |> select_repo(options).aggregate(:count)
 
-      Logger.info(
-        "Time consumed for #{counter_type} counter task for #{address_hash} is #{Time.diff(Time.utc_now(), start, :millisecond)}ms"
-      )
+      stop = System.monotonic_time()
+      diff = System.convert_time_unit(stop - start, :native, :millisecond)
+
+      Logger.info("Time consumed for #{counter_type} counter task for #{address_hash} is #{diff}ms")
 
       AddressesTabsCounters.set_counter(counter_type, address_hash, result)
       AddressesTabsCounters.drop_task(counter_type, address_hash)
