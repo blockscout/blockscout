@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   alias Ecto.Changeset
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, PendingBlockOperation, Transaction}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Import.Runner.Blocks
 
   @interval :timer.seconds(10)
@@ -133,13 +134,16 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
       {:error, %{exception: postgrex_error}}
   end
 
+  @head_offset 1000
   defp consensus_blocks_with_nil_is_empty_query(limit) do
+    safe_block_number = BlockNumber.get_max() - @head_offset
+
     from(block in Block,
       where: is_nil(block.is_empty),
+      where: block.number <= ^safe_block_number,
       where: block.consensus == true,
       order_by: [asc: block.hash],
-      limit: ^limit,
-      offset: 1000
+      limit: ^limit
     )
   end
 
