@@ -41,9 +41,11 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
   @impl GenServer
   def init(opts) when is_list(opts) do
+    interval = Application.get_env(:indexer, __MODULE__)[:interval]
+
     state = %__MODULE__{
       json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
-      interval: opts[:interval] || @interval
+      interval: interval || @interval
     }
 
     Process.send_after(self(), :sanitize_empty_blocks, state.interval)
