@@ -22,6 +22,7 @@
 - [#8661](https://github.com/blockscout/blockscout/pull/8661) - arm64-compatible docker image
 - [#8649](https://github.com/blockscout/blockscout/pull/8649) - Set max 30sec JSON RPC poll frequency for realtime fetcher when WS is disabled
 - [#8614](https://github.com/blockscout/blockscout/pull/8614) - Disable market history cataloger fetcher when exchange rates are disabled
+- [#8613](https://github.com/blockscout/blockscout/pull/8613) - Refactor parsing of FIRST_BLOCK, LAST_BLOCK, TRACE_FIRST_BLOCK, TRACE_LAST_BLOCK env variables
 - [#8572](https://github.com/blockscout/blockscout/pull/8572) - Refactor docker-compose config
 - [#8552](https://github.com/blockscout/blockscout/pull/8552) - Add CHAIN_TYPE build arg to Dockerfile
 - [#8550](https://github.com/blockscout/blockscout/pull/8550) - Sanitize paging params

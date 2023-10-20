@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
 
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query, only: [from: 2, where: 3]
 
   @behaviour Runner
 
@@ -691,7 +691,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) do
-    minimal_block = EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
+    minimal_block = Application.get_env(:indexer, :trace_first_block)
+    maximal_block = Application.get_env(:indexer, :trace_last_block)
 
     if Enum.count(invalid_block_numbers) > 0 do
       update_query =
@@ -703,6 +704,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
           update: [set: [consensus: false]]
         )
+
+      update_query =
+        if maximal_block, do: update_query |> where([block], block.number < ^maximal_block), else: update_query
 
       try do
         {_num, result} = repo.update_all(update_query, [])
