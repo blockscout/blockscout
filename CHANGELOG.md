@@ -4,6 +4,18 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+</details>
+
+## 5.3.0-beta
+
+### Features
+
 - [#8512](https://github.com/blockscout/blockscout/pull/8512) - Add caching and improve `/tabs-counters` performance
 - [#8472](https://github.com/blockscout/blockscout/pull/8472) - Integrate `/api/v2/bytecodes/sources:search-all` of `eth_bytecode_db`
 - [#8589](https://github.com/blockscout/blockscout/pull/8589) - DefiLlama TVL source
@@ -44,6 +56,41 @@
 - [#8529](https://github.com/blockscout/blockscout/pull/8529) - Move PolygonEdge-related migration to the corresponding ecto repository
 - [#8504](https://github.com/blockscout/blockscout/pull/8504) - Deploy new UI through Makefile
 - [#8501](https://github.com/blockscout/blockscout/pull/8501) - Conceal secondary ports in docker compose setup
+
+<details>
+  <summary>Dependencies version bumps</summary>
+- [#8508](https://github.com/blockscout/blockscout/pull/8508) - https://github.com/blockscout/blockscout/pull/8508
+- [#8509](https://github.com/blockscout/blockscout/pull/8509) - https://github.com/blockscout/blockscout/pull/8509
+- [#8511](https://github.com/blockscout/blockscout/pull/8511) - https://github.com/blockscout/blockscout/pull/8511
+- [#8532](https://github.com/blockscout/blockscout/pull/8532) - https://github.com/blockscout/blockscout/pull/8532
+- [#8533](https://github.com/blockscout/blockscout/pull/8533) - https://github.com/blockscout/blockscout/pull/8533
+- [#8531](https://github.com/blockscout/blockscout/pull/8531) - https://github.com/blockscout/blockscout/pull/8531
+- [#8534](https://github.com/blockscout/blockscout/pull/8534) - https://github.com/blockscout/blockscout/pull/8534
+- [#8546](https://github.com/blockscout/blockscout/pull/8546) - https://github.com/blockscout/blockscout/pull/8546
+- [#8553](https://github.com/blockscout/blockscout/pull/8553) - https://github.com/blockscout/blockscout/pull/8553
+- [#8554](https://github.com/blockscout/blockscout/pull/8554) - https://github.com/blockscout/blockscout/pull/8554
+- [#8547](https://github.com/blockscout/blockscout/pull/8547) - https://github.com/blockscout/blockscout/pull/8547
+- [#8567](https://github.com/blockscout/blockscout/pull/8567) - https://github.com/blockscout/blockscout/pull/8567
+- [#8566](https://github.com/blockscout/blockscout/pull/8566) - https://github.com/blockscout/blockscout/pull/8566
+- [#7575](https://github.com/blockscout/blockscout/pull/7575) - https://github.com/blockscout/blockscout/pull/7575
+- [#8569](https://github.com/blockscout/blockscout/pull/8569) - https://github.com/blockscout/blockscout/pull/8569
+- [#8570](https://github.com/blockscout/blockscout/pull/8570) - https://github.com/blockscout/blockscout/pull/8570
+- [#8581](https://github.com/blockscout/blockscout/pull/8581) - https://github.com/blockscout/blockscout/pull/8581
+- [#8607](https://github.com/blockscout/blockscout/pull/8607) - https://github.com/blockscout/blockscout/pull/8607
+- [#8606](https://github.com/blockscout/blockscout/pull/8606) - https://github.com/blockscout/blockscout/pull/8606
+- [#8605](https://github.com/blockscout/blockscout/pull/8605) - https://github.com/blockscout/blockscout/pull/8605
+- [#8608](https://github.com/blockscout/blockscout/pull/8608) - https://github.com/blockscout/blockscout/pull/8608
+- [#8510](https://github.com/blockscout/blockscout/pull/8510) - https://github.com/blockscout/blockscout/pull/8510
+- [#8637](https://github.com/blockscout/blockscout/pull/8637) - https://github.com/blockscout/blockscout/pull/8637
+- [#8639](https://github.com/blockscout/blockscout/pull/8639) - https://github.com/blockscout/blockscout/pull/8639
+- [#8643](https://github.com/blockscout/blockscout/pull/8643) - https://github.com/blockscout/blockscout/pull/8643
+- [#8641](https://github.com/blockscout/blockscout/pull/8641) - https://github.com/blockscout/blockscout/pull/8641
+- [#8646](https://github.com/blockscout/blockscout/pull/8646) - https://github.com/blockscout/blockscout/pull/8646
+- [#8636](https://github.com/blockscout/blockscout/pull/8636) - https://github.com/blockscout/blockscout/pull/8636
+- [#8645](https://github.com/blockscout/blockscout/pull/8645) - https://github.com/blockscout/blockscout/pull/8645
+- [#8638](https://github.com/blockscout/blockscout/pull/8638) - https://github.com/blockscout/blockscout/pull/8638
+- [#8640](https://github.com/blockscout/blockscout/pull/8640) - https://github.com/blockscout/blockscout/pull/8640
+</details>
 
 ## 5.2.3-beta
 
