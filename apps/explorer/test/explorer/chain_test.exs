@@ -1478,7 +1478,7 @@ defmodule Explorer.ChainTest do
       Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Block.child_id())
 
       on_exit(fn ->
-        Application.put_env(:indexer, :first_block, "")
+        Application.put_env(:indexer, :first_block, 0)
       end)
     end
 
@@ -1508,7 +1508,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "returns 1.0 if fully indexed blocks starting from given FIRST_BLOCK" do
-      Application.put_env(:indexer, :first_block, "5")
+      Application.put_env(:indexer, :first_block, 5)
 
       for index <- 5..9 do
         insert(:block, number: index, consensus: true)
@@ -1527,7 +1527,7 @@ defmodule Explorer.ChainTest do
       Supervisor.restart_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
 
       on_exit(fn ->
-        Application.put_env(:indexer, :trace_first_block, "")
+        Application.put_env(:indexer, :trace_first_block, 0)
         Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
       end)
     end
@@ -1559,7 +1559,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "returns 1.0 if fully indexed blocks with internal transactions starting from given TRACE_FIRST_BLOCK" do
-      Application.put_env(:indexer, :trace_first_block, "5")
+      Application.put_env(:indexer, :trace_first_block, 5)
 
       for index <- 5..9 do
         insert(:block, number: index)
@@ -4242,14 +4242,18 @@ defmodule Explorer.ChainTest do
       assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
 
       assert {:ok, %SmartContract{}} =
-               Chain.update_smart_contract(%{address_hash: address.hash, partially_verified: false})
+               Chain.update_smart_contract(%{
+                 address_hash: address.hash,
+                 partially_verified: false,
+                 contract_source_code: "new code"
+               })
 
       sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
       assert sc_after_call.name == Map.get(valid_attrs, :name)
       assert sc_after_call.partially_verified == false
       assert sc_after_call.compiler_version == Map.get(valid_attrs, :compiler_version)
       assert sc_after_call.optimization == Map.get(valid_attrs, :optimization)
-      assert sc_after_call.contract_source_code == Map.get(valid_attrs, :contract_source_code)
+      assert sc_after_call.contract_source_code == "new code"
     end
 
     test "check nothing changed", %{valid_attrs: valid_attrs, address: address} do

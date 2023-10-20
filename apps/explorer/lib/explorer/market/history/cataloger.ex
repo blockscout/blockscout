@@ -19,12 +19,17 @@ defmodule Explorer.Market.History.Cataloger do
 
   @price_failed_attempts 10
   @market_cap_failed_attempts 3
+  @tvl_failed_attempts 3
 
   @impl GenServer
   def init(:ok) do
-    send(self(), {:fetch_price_history, 365})
+    if Application.get_env(:explorer, __MODULE__)[:enabled] do
+      send(self(), {:fetch_price_history, 365})
 
-    {:ok, %{}}
+      {:ok, %{}}
+    else
+      :ignore
+    end
   end
 
   @impl GenServer
@@ -35,31 +40,60 @@ defmodule Explorer.Market.History.Cataloger do
   end
 
   @impl GenServer
+  # Record fetch successful.
+  def handle_info({_ref, {:price_history, {_, _, {:ok, records}}}}, state) do
+    Process.send(self(), {:fetch_market_cap_history, 365}, [])
+    state = state |> Map.put_new(:price_records, records)
+
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_info({:fetch_market_cap_history, day_count}, state) do
     fetch_market_cap_history(day_count)
+    state = state |> Map.put_new(:price_records, [])
 
     {:noreply, state}
   end
 
   @impl GenServer
   # Record fetch successful.
-  def handle_info({_ref, {:price_history, {_, _, {:ok, records}}}}, state) do
-    Process.send(self(), {:fetch_market_cap_history, 365}, [])
-    state = state |> Map.put_new(:price_records, records)
-
-    {:noreply, state |> Map.put_new(:price_records, state)}
-  end
-
-  @impl GenServer
-  # Record fetch successful.
   def handle_info({_ref, {:market_cap_history, {_, _, {:ok, nil}}}}, state) do
-    market_cap_history(state.price_records, state)
+    Process.send(self(), {:fetch_tvl_history, 365}, [])
+    state = state |> Map.put_new(:market_cap_records, [])
+
+    {:noreply, state}
   end
 
   @impl GenServer
   # Record fetch successful.
   def handle_info({_ref, {:market_cap_history, {_, _, {:ok, market_cap_records}}}}, state) do
-    records = compile_records(state.price_records, market_cap_records)
+    Process.send(self(), {:fetch_tvl_history, 365}, [])
+    state = state |> Map.put_new(:market_cap_records, market_cap_records)
+
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_info({:fetch_tvl_history, day_count}, state) do
+    fetch_tvl_history(day_count)
+
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  # Record fetch successful.
+  def handle_info({_ref, {:tvl_history, {_, _, {:ok, nil}}}}, state) do
+    state = state |> Map.put_new(:tvl_records, [])
+    records = compile_records(state)
+    market_cap_history(records, state)
+  end
+
+  @impl GenServer
+  # Record fetch successful.
+  def handle_info({_ref, {:tvl_history, {_, _, {:ok, tvl_records}}}}, state) do
+    state = state |> Map.put_new(:tvl_records, tvl_records)
+    records = compile_records(state)
     market_cap_history(records, state)
   end
 
@@ -79,6 +113,16 @@ defmodule Explorer.Market.History.Cataloger do
     Logger.warn(fn -> "Failed to fetch market cap history. Trying again." end)
 
     fetch_market_cap_history(day_count, failed_attempts + 1)
+
+    {:noreply, state}
+  end
+
+  # Failed to get records. Try again.
+  @impl GenServer
+  def handle_info({_ref, {:tvl_history, {day_count, failed_attempts, :error}}}, state) do
+    Logger.warn(fn -> "Failed to fetch market cap history. Trying again." end)
+
+    fetch_tvl_history(day_count, failed_attempts + 1)
 
     {:noreply, state}
   end
@@ -131,6 +175,15 @@ defmodule Explorer.Market.History.Cataloger do
     )
   end
 
+  @spec source_tvl() :: module()
+  defp source_tvl do
+    config_or_default(
+      :tvl_source,
+      Explorer.ExchangeRates.Source,
+      Explorer.Market.History.Source.TVL.DefiLlama
+    )
+  end
+
   @spec fetch_price_history(non_neg_integer(), non_neg_integer()) :: Task.t()
   defp fetch_price_history(day_count, failed_attempts \\ 0) do
     Task.Supervisor.async_nolink(Explorer.MarketTaskSupervisor, fn ->
@@ -157,11 +210,31 @@ defmodule Explorer.Market.History.Cataloger do
     end)
   end
 
-  defp compile_records(price_records, market_cap_records) do
-    price_records
-    |> Enum.zip(market_cap_records)
-    |> Enum.map(fn {price_map, market_cap_map} ->
-      Map.merge(price_map, market_cap_map)
+  @spec fetch_tvl_history(non_neg_integer()) :: Task.t()
+  defp fetch_tvl_history(day_count, failed_attempts \\ 0) do
+    Task.Supervisor.async_nolink(Explorer.MarketTaskSupervisor, fn ->
+      Process.sleep(HistoryProcess.delay(failed_attempts))
+
+      if failed_attempts < @tvl_failed_attempts do
+        {:tvl_history, {day_count, failed_attempts, source_tvl().fetch_tvl(day_count)}}
+      else
+        {:tvl_history, {day_count, failed_attempts, {:ok, nil}}}
+      end
+    end)
+  end
+
+  defp compile_records(state) do
+    price_records = state.price_records
+    market_cap_records = state.market_cap_records
+    tvl_records = state.tvl_records
+
+    all_records = price_records ++ market_cap_records ++ tvl_records
+
+    all_records
+    |> Enum.group_by(fn %{date: date} -> date end)
+    |> Map.values()
+    |> Enum.map(fn a ->
+      Enum.reduce(a, %{}, fn x, acc -> Map.merge(x, acc) end)
     end)
   end
 end

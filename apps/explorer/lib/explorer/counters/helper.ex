@@ -16,13 +16,13 @@ defmodule Explorer.Counters.Helper do
     DateTime.to_unix(utc_now, :millisecond)
   end
 
-  def fetch_from_cache(key, cache_name) do
+  def fetch_from_cache(key, cache_name, default \\ 0) do
     case :ets.lookup(cache_name, key) do
       [{_, value}] ->
         value
 
       [] ->
-        0
+        default
     end
   end
 

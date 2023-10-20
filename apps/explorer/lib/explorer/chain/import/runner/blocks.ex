@@ -60,11 +60,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     hashes = Enum.map(changes_list, & &1.hash)
 
-    minimal_block_height = trace_minimal_block_height()
-
     items_for_pending_ops =
       changes_list
-      |> filter_by_min_height(&(&1.number >= minimal_block_height))
+      |> filter_by_height_range(&is_block_in_range?(&1.number))
       |> Enum.filter(& &1.consensus)
       |> Enum.map(&{&1.number, &1.hash})
 
@@ -74,7 +72,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     run_func = fn repo ->
       {:ok, nonconsensus_items} = lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
 
-      {:ok, filter_by_min_height(nonconsensus_items, fn {number, _hash} -> number >= minimal_block_height end)}
+      {:ok, filter_by_height_range(nonconsensus_items, fn {number, _hash} -> is_block_in_range?(number) end)}
     end
 
     multi
@@ -215,6 +213,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   @impl Runner
   def timeout, do: @timeout
+
+  defp is_block_in_range?(number) do
+    minimal_block_height = Application.get_env(:indexer, :trace_first_block)
+    maximal_block_height = Application.get_env(:indexer, :trace_last_block)
+    number >= minimal_block_height && if(maximal_block_height, do: number <= maximal_block_height, else: true)
+  end
 
   defp fork_transactions(%{
          repo: repo,
@@ -414,37 +418,29 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     lose_consensus(ExplorerRepo, [], block_numbers, [], opts)
   end
 
-  defp trace_minimal_block_height do
-    EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
-  end
-
   defp new_pending_operations(repo, nonconsensus_items, items, %{
          timeout: timeout,
          timestamps: timestamps
        }) do
-    if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
-      {:ok, []}
-    else
-      sorted_pending_ops =
-        items
-        |> MapSet.new()
-        |> MapSet.difference(MapSet.new(nonconsensus_items))
-        |> Enum.sort()
-        |> Enum.map(fn {number, hash} ->
-          %{block_hash: hash, block_number: number}
-        end)
+    sorted_pending_ops =
+      items
+      |> MapSet.new()
+      |> MapSet.difference(MapSet.new(nonconsensus_items))
+      |> Enum.sort()
+      |> Enum.map(fn {number, hash} ->
+        %{block_hash: hash, block_number: number}
+      end)
 
-      Import.insert_changes_list(
-        repo,
-        sorted_pending_ops,
-        conflict_target: :block_hash,
-        on_conflict: :nothing,
-        for: PendingBlockOperation,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
-    end
+    Import.insert_changes_list(
+      repo,
+      sorted_pending_ops,
+      conflict_target: :block_hash,
+      on_conflict: :nothing,
+      for: PendingBlockOperation,
+      returning: true,
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 
   defp delete_address_token_balances(_, [], _), do: {:ok, []}
@@ -893,10 +889,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     where(invalid_neighbors_query, [block], block.consensus)
   end
 
-  defp filter_by_min_height(blocks, filter_func) do
-    minimal_block_height = trace_minimal_block_height()
+  defp filter_by_height_range(blocks, filter_func) do
+    minimal_block_height = Application.get_env(:indexer, :trace_first_block)
+    maximal_block_height = Application.get_env(:indexer, :trace_last_block)
 
-    if minimal_block_height > 0 do
+    if minimal_block_height > 0 || maximal_block_height do
       Enum.filter(blocks, &filter_func.(&1))
     else
       blocks

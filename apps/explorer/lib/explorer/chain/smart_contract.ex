@@ -953,4 +953,16 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   defp abi_decode_address_output(_), do: nil
+
+  @spec select_partially_verified_by_address_hash(binary() | Hash.t(), keyword) :: boolean() | nil
+  def select_partially_verified_by_address_hash(address_hash, options \\ []) do
+    query =
+      from(
+        smart_contract in __MODULE__,
+        where: smart_contract.address_hash == ^address_hash,
+        select: smart_contract.partially_verified
+      )
+
+    Chain.select_repo(options).one(query)
+  end
 end

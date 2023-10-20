@@ -82,11 +82,6 @@ defmodule BlockScoutWeb.NFTHelper do
   defp ipfs_link(image_url, prefix) do
     ipfs_uid = String.slice(image_url, String.length(prefix)..-1)
 
-    ipfs_gateway_url =
-      :indexer
-      |> Application.get_env(:ipfs_gateway_url)
-      |> String.trim_trailing("/")
-
-    ipfs_gateway_url <> "/" <> ipfs_uid
+    "https://ipfs.io/ipfs/" <> ipfs_uid
   end
 end
