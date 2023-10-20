@@ -9,6 +9,7 @@ defmodule Explorer.Application do
 
   alias Explorer.Chain.Cache.{
     Accounts,
+    AddressesTabsCounters,
     AddressSum,
     AddressSumMinusBurnt,
     Block,
@@ -77,6 +78,7 @@ defmodule Explorer.Application do
       Transactions,
       TransactionsApiV2,
       Uncles,
+      AddressesTabsCounters,
       con_cache_child_spec(MarketHistoryCache.cache_name()),
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
       {Redix, redix_opts()},

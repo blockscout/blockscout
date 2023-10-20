@@ -434,6 +434,9 @@ config :explorer, Explorer.Chain.Transaction,
   rootstock_remasc_address: System.get_env("ROOTSTOCK_REMASC_ADDRESS"),
   rootstock_bridge_address: System.get_env("ROOTSTOCK_BRIDGE_ADDRESS")
 
+config :explorer, Explorer.Chain.Cache.AddressesTabsCounters,
+  ttl: ConfigHelper.parse_time_env_var("ADDRESSES_TABS_COUNTERS_TTL", "10m")
+
 ###############
 ### Indexer ###
 ###############
