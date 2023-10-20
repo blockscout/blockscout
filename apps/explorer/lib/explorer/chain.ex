@@ -4136,6 +4136,10 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec join_associations(atom() | Ecto.Query.t(), map) :: Ecto.Query.t()
+  @doc """
+    Function to preload entities associated with selected in provided query items
+  """
   def join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)

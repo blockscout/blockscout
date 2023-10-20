@@ -110,6 +110,7 @@ defmodule Explorer.Chain.Token.Instance do
   def token_instance_query(token_id, token_contract_address),
     do: from(i in Instance, where: i.token_contract_address_hash == ^token_contract_address and i.token_id == ^token_id)
 
+  @spec nft_list(binary() | Hash.Address.t(), keyword()) :: [Instance.t()]
   def nft_list(address_hash, options \\ [])
 
   def nft_list(address_hash, options) when is_list(options) do
@@ -147,6 +148,7 @@ defmodule Explorer.Chain.Token.Instance do
   @doc """
     In this function used fact that only ERC-721 instances has NOT NULL owner_address_hash.
   """
+  @spec erc_721_token_instances_by_owner_address_hash(binary() | Hash.Address.t(), keyword) :: [Instance.t()]
   def erc_721_token_instances_by_owner_address_hash(address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
@@ -166,6 +168,7 @@ defmodule Explorer.Chain.Token.Instance do
 
   defp page_erc_721_token_instances(query, _), do: query
 
+  @spec erc_1155_token_instances_by_address_hash(binary() | Hash.Address.t(), keyword) :: [Instance.t()]
   def erc_1155_token_instances_by_address_hash(address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
@@ -201,6 +204,10 @@ defmodule Explorer.Chain.Token.Instance do
     )
   end
 
+  @doc """
+    Function to be used in BlockScoutWeb.Chain.next_page_params/4
+  """
+  @spec nft_list_next_page_params(Explorer.Chain.Token.Instance.t()) :: %{binary() => any}
   def nft_list_next_page_params(%__MODULE__{
         current_token_balance: %CurrentTokenBalance{},
         token_contract_address_hash: token_contract_address_hash,
@@ -218,6 +225,7 @@ defmodule Explorer.Chain.Token.Instance do
 
   @preloaded_nfts_limit 15
 
+  @spec nft_collections(binary() | Hash.Address.t(), keyword) :: list
   def nft_collections(address_hash, options \\ [])
 
   def nft_collections(address_hash, options) when is_list(options) do
@@ -252,6 +260,7 @@ defmodule Explorer.Chain.Token.Instance do
     end
   end
 
+  @spec erc_721_collections_by_address_hash(binary() | Hash.Address.t(), keyword) :: [CurrentTokenBalance.t()]
   def erc_721_collections_by_address_hash(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
@@ -272,6 +281,13 @@ defmodule Explorer.Chain.Token.Instance do
 
   defp page_erc_721_nft_collections(query, _), do: query
 
+  @spec erc_1155_collections_by_address_hash(binary() | Hash.Address.t(), keyword) :: [
+          %{
+            token_contract_address_hash: Hash.Address.t(),
+            distinct_token_instances_count: integer(),
+            token_ids: [integer()]
+          }
+        ]
   def erc_1155_collections_by_address_hash(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
@@ -344,6 +360,12 @@ defmodule Explorer.Chain.Token.Instance do
     Map.put(collection, :preloaded_token_instances, instances)
   end
 
+  @doc """
+    Function to be used in BlockScoutWeb.Chain.next_page_params/4
+  """
+  @spec nft_collections_next_page_params(%{:token_contract_address_hash => any, optional(any) => any}) :: %{
+          binary() => any
+        }
   def nft_collections_next_page_params(%{
         token_contract_address_hash: token_contract_address_hash,
         token: %Token{type: token_type}
@@ -358,6 +380,7 @@ defmodule Explorer.Chain.Token.Instance do
     %{"token_contract_address_hash" => token_contract_address_hash, "token_type" => token_type}
   end
 
+  @spec token_instances_by_holder_address_hash(Token.t(), binary() | Hash.Address.t(), keyword) :: [Instance.t()]
   def token_instances_by_holder_address_hash(token, holder_address_hash, options \\ [])
 
   def token_instances_by_holder_address_hash(%Token{type: "ERC-721"} = token, holder_address_hash, options) do

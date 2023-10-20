@@ -34,6 +34,7 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def paging_options(_params, _filter), do: [paging_options: @default_paging_options]
 
+  @spec token_transfers_types_options(map()) :: [{:token_type, list}]
   def token_transfers_types_options(%{"type" => filters}) do
     [
       token_type: filters_to_list(filters, @allowed_token_transfer_type_labels)
@@ -42,6 +43,9 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def token_transfers_types_options(_), do: [token_type: []]
 
+  @doc """
+    Parse 'type' query parameter from request option map
+  """
   @spec nft_token_types_options(map()) :: [{:token_type, list}]
   def nft_token_types_options(%{"type" => filters}) do
     [

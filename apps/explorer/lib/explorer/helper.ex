@@ -40,6 +40,13 @@ defmodule Explorer.Helper do
     end
   end
 
+  @doc """
+    Function to preload a `struct` for each element of the `list`.
+    You should specify a primary key for a `struct` in `references_field`,
+    and the list element's foreign key in `foreign_key_field`.
+    Results will be placed to `preload_field`
+  """
+  @spec custom_preload(list(map()), keyword(), atom(), atom(), atom(), atom()) :: list()
   def custom_preload(list, options, struct, foreign_key_field, references_field, preload_field) do
     to_fetch_from_db = list |> Enum.map(& &1[foreign_key_field]) |> Enum.uniq()
 
