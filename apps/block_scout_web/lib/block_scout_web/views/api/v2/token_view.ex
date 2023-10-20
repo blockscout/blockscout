@@ -72,6 +72,9 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     }
   end
 
+  @doc """
+    Internal json rendering function
+  """
   def prepare_token_instance(instance, token, need_uniqueness_and_owner? \\ true) do
     is_unique = is_unique?(need_uniqueness_and_owner?, instance, token)
 
@@ -99,13 +102,13 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   defp token_instance_owner(_is_unique, instance),
     do: instance.owner && Helper.address_with_info(nil, instance.owner, instance.owner.hash, false)
 
-  def is_unique?(false, _instance, _token), do: nil
+  defp is_unique?(false, _instance, _token), do: nil
 
-  def is_unique?(
-        not_ignore?,
-        %Instance{current_token_balance: %CurrentTokenBalance{value: %Decimal{} = value}} = instance,
-        token
-      ) do
+  defp is_unique?(
+         not_ignore?,
+         %Instance{current_token_balance: %CurrentTokenBalance{value: %Decimal{} = value}} = instance,
+         token
+       ) do
     if Decimal.compare(value, 1) == :gt do
       false
     else
@@ -113,11 +116,11 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     end
   end
 
-  def is_unique?(_not_ignore?, %Instance{current_token_balance: %CurrentTokenBalance{value: value}}, _token)
-      when value > 1,
-      do: false
+  defp is_unique?(_not_ignore?, %Instance{current_token_balance: %CurrentTokenBalance{value: value}}, _token)
+       when value > 1,
+       do: false
 
-  def is_unique?(_, instance, token),
+  defp is_unique?(_, instance, token),
     do:
       not (token.type == "ERC-1155") or
         Chain.token_id_1155_is_unique?(token.contract_address_hash, instance.token_id, @api_true)

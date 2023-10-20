@@ -99,7 +99,7 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  @spec next_page_params(any, any, any, any) :: nil | map
+  @spec next_page_params(any, list(), map(), (any -> map())) :: nil | map
   def next_page_params(next_page, list, params, paging_function \\ &paging_params/1)
 
   def next_page_params([], _list, _params, _), do: nil
@@ -565,6 +565,7 @@ defmodule BlockScoutWeb.Chain do
     %{"id" => msg_id}
   end
 
+  @spec paging_params_with_fiat_value(CurrentTokenBalance.t()) :: %{binary() => any}
   def paging_params_with_fiat_value(%CurrentTokenBalance{id: id, value: value} = ctb) do
     %{"fiat_value" => ctb.fiat_value, "value" => value, "id" => id}
   end
