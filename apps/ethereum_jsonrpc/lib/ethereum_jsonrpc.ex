@@ -201,7 +201,7 @@ defmodule EthereumJSONRPC do
     filtered_params_in_range =
       filtered_params
       |> Enum.filter(fn
-        %{block_quantity: block_quantity} -> block_number_in_range(block_quantity)
+        %{block_quantity: block_quantity} -> is_block_number_in_range?(block_quantity)
       end)
 
     id_to_params = id_to_params(filtered_params_in_range)
@@ -240,7 +240,7 @@ defmodule EthereumJSONRPC do
   @spec fetch_beneficiaries([block_number], json_rpc_named_arguments) ::
           {:ok, FetchedBeneficiaries.t()} | {:error, reason :: term} | :ignore
   def fetch_beneficiaries(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
-    filtered_block_numbers = block_numbers_in_range(block_numbers)
+    filtered_block_numbers = are_block_numbers_in_range?(block_numbers)
 
     Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_beneficiaries(
       filtered_block_numbers,
@@ -345,7 +345,7 @@ defmodule EthereumJSONRPC do
   Fetches internal transactions for entire blocks from variant API.
   """
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
-    filtered_block_numbers = block_numbers_in_range(block_numbers)
+    filtered_block_numbers = are_block_numbers_in_range?(block_numbers)
 
     Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_block_internal_transactions(
       filtered_block_numbers,
@@ -353,7 +353,7 @@ defmodule EthereumJSONRPC do
     )
   end
 
-  def block_numbers_in_range(block_numbers) do
+  def are_block_numbers_in_range?(block_numbers) do
     min_block = Application.get_env(:indexer, :trace_first_block)
     max_block = Application.get_env(:indexer, :trace_last_block)
 
@@ -455,8 +455,8 @@ defmodule EthereumJSONRPC do
     end
   end
 
-  @spec block_number_in_range(quantity) :: boolean()
-  defp block_number_in_range(block_quantity) do
+  @spec is_block_number_in_range?(quantity) :: boolean()
+  defp is_block_number_in_range?(block_quantity) do
     min_block = Application.get_env(:indexer, :trace_first_block)
     max_block = Application.get_env(:indexer, :trace_last_block)
     block_number = quantity_to_integer(block_quantity)

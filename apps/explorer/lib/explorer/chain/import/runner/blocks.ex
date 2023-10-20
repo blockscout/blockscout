@@ -60,15 +60,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     hashes = Enum.map(changes_list, & &1.hash)
 
-    minimal_block_height = Application.get_env(:indexer, :trace_first_block)
-    maximal_block_height = Application.get_env(:indexer, :trace_last_block)
-
     items_for_pending_ops =
       changes_list
-      |> filter_by_height_range(
-        &(&1.number >= minimal_block_height &&
-            if(maximal_block_height, do: &1.number <= maximal_block_height, else: true))
-      )
+      |> filter_by_height_range(&is_block_in_range?(&1.number))
       |> Enum.filter(& &1.consensus)
       |> Enum.map(&{&1.number, &1.hash})
 
@@ -78,7 +72,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     run_func = fn repo ->
       {:ok, nonconsensus_items} = lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
 
-      {:ok, filter_by_height_range(nonconsensus_items, fn {number, _hash} -> number >= minimal_block_height end)}
+      {:ok, filter_by_height_range(nonconsensus_items, fn {number, _hash} -> is_block_in_range?(number) end)}
     end
 
     multi
@@ -219,6 +213,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   @impl Runner
   def timeout, do: @timeout
+
+  defp is_block_in_range?(number) do
+    minimal_block_height = Application.get_env(:indexer, :trace_first_block)
+    maximal_block_height = Application.get_env(:indexer, :trace_last_block)
+    number >= minimal_block_height && if(maximal_block_height, do: number <= maximal_block_height, else: true)
+  end
 
   defp fork_transactions(%{
          repo: repo,

@@ -5828,7 +5828,7 @@ defmodule Explorer.Chain do
     if transaction_index == 0 do
       0
     else
-      filtered_block_numbers = EthereumJSONRPC.block_numbers_in_range([block_number])
+      filtered_block_numbers = EthereumJSONRPC.are_block_numbers_in_range?([block_number])
       {:ok, traces} = fetch_block_internal_transactions(filtered_block_numbers, json_rpc_named_arguments)
 
       sorted_traces =
