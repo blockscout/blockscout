@@ -36,8 +36,8 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
     end
 
     test "FIRST_BLOCK and LAST_BLOCK envs" do
-      Application.put_env(:indexer, :first_block, "100")
-      Application.put_env(:indexer, :last_block, "200")
+      Application.put_env(:indexer, :first_block, 100)
+      Application.put_env(:indexer, :last_block, 200)
 
       insert(:missing_block_range, from_number: 250, to_number: 220)
       insert(:missing_block_range, from_number: 220, to_number: 190)

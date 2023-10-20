@@ -44,6 +44,7 @@ defmodule Explorer.ExchangeRates.Source.TokenBridge do
       id: original_token.id,
       last_updated: original_token.last_updated,
       market_cap_usd: market_cap_usd(Chain.circulating_supply(), original_token),
+      tvl_usd: nil,
       name: original_token.name,
       symbol: original_token.symbol,
       usd_value: original_token.usd_value,

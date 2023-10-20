@@ -11,7 +11,7 @@ import Config
 
 # General application configuration
 config :explorer,
-  ecto_repos: [Explorer.Repo, Explorer.Repo.Account],
+  ecto_repos: ConfigHelper.repos(),
   token_functions_reader_max_retries: 3,
   # for not fully indexed blockchains
   decode_not_a_contract_calls: ConfigHelper.parse_bool_env_var("DECODE_NOT_A_CONTRACT_CALLS")
@@ -127,6 +127,8 @@ config :explorer, Explorer.Counters.Bridge,
   update_interval_in_seconds: bridge_market_cap_update_interval || 30 * 60
 
 config :explorer, Explorer.TokenTransferTokenIdMigration.Supervisor, enabled: true
+
+config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: true
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 

@@ -12,6 +12,7 @@ defmodule Explorer.Market.History.CatalogerTest do
 
   setup do
     Application.put_env(:explorer, Cataloger, source: TestSource)
+    Application.put_env(:explorer, Cataloger, enabled: true)
     :ok
   end
 
@@ -62,45 +63,100 @@ defmodule Explorer.Market.History.CatalogerTest do
     assert_receive {_ref, {:price_history, {1, 0, {:ok, ^records}}}}
   end
 
-  test "handle_info with successful tasks (price and market cap)" do
+  test "handle_info with successful tasks (price, market cap and tvl)" do
     Application.put_env(:explorer, Cataloger, history_fetch_interval: 1)
-    record_price = %{date: ~D[2018-04-01], closing_price: Decimal.new(10), opening_price: Decimal.new(5)}
-    record_market_cap = %{date: ~D[2018-04-01], market_cap: Decimal.new(100_500)}
+
+    price_records = [
+      %{date: ~D[2018-04-01], closing_price: Decimal.new(10), opening_price: Decimal.new(5)},
+      %{date: ~D[2018-04-02], closing_price: Decimal.new(6), opening_price: Decimal.new(2)}
+    ]
+
+    market_cap_records = [%{date: ~D[2018-04-01], market_cap: Decimal.new(100_500)}]
+    tvl_records = [%{date: ~D[2018-04-01], tvl: Decimal.new(200_500)}]
 
     state = %{
-      price_records: [
-        record_price
-      ]
+      price_records: price_records
     }
 
-    assert {:noreply, state} == Cataloger.handle_info({nil, {:price_history, {1, 0, {:ok, [record_price]}}}}, state)
-    assert_receive :fetch_market_cap_history
+    state2 = Map.put(state, :market_cap_records, market_cap_records)
 
-    assert {:noreply, state} ==
-             Cataloger.handle_info({nil, {:market_cap_history, {0, {:ok, record_market_cap}}}}, state)
+    state3 = Map.put(state2, :tvl_records, tvl_records)
 
-    assert Repo.get_by(MarketHistory, date: record_price.date)
+    assert {:noreply, state} == Cataloger.handle_info({nil, {:price_history, {1, 0, {:ok, price_records}}}}, state)
+    assert_receive {:fetch_market_cap_history, 365}
+
+    assert {:noreply, state2} ==
+             Cataloger.handle_info({nil, {:market_cap_history, {0, 3, {:ok, market_cap_records}}}}, state)
+
+    assert {:noreply, state3} ==
+             Cataloger.handle_info({nil, {:tvl_history, {0, 3, {:ok, tvl_records}}}}, state2)
+
+    assert record2 = Repo.get_by(MarketHistory, date: Enum.at(price_records, 1).date)
+    assert record1 = Repo.get_by(MarketHistory, date: Enum.at(price_records, 0).date)
+    assert record2.closing_price == Decimal.new(6)
+    assert record2.market_cap == nil
+    assert record2.tvl == nil
+    assert record1.closing_price == Decimal.new(10)
+    assert record1.market_cap == Decimal.new(100_500)
+    assert record1.tvl == Decimal.new(200_500)
+  end
+
+  test "handle_info with successful tasks (price and market cap)" do
+    Application.put_env(:explorer, Cataloger, history_fetch_interval: 1)
+    price_records = [%{date: ~D[2018-04-01], closing_price: Decimal.new(10), opening_price: Decimal.new(5)}]
+    market_cap_records = [%{date: ~D[2018-04-01], market_cap: Decimal.new(100_500)}]
+    tvl_records = []
+
+    state = %{
+      price_records: price_records
+    }
+
+    state2 = Map.put(state, :market_cap_records, market_cap_records)
+
+    state3 = Map.put(state2, :tvl_records, [])
+
+    assert {:noreply, state} == Cataloger.handle_info({nil, {:price_history, {1, 0, {:ok, price_records}}}}, state)
+    assert_receive {:fetch_market_cap_history, 365}
+
+    assert {:noreply, state2} ==
+             Cataloger.handle_info({nil, {:market_cap_history, {0, 3, {:ok, market_cap_records}}}}, state)
+
+    assert {:noreply, state3} ==
+             Cataloger.handle_info({nil, {:tvl_history, {0, 3, {:ok, tvl_records}}}}, state2)
+
+    assert record = Repo.get_by(MarketHistory, date: Enum.at(price_records, 0).date)
+    assert record.opening_price == Decimal.new(5)
+    assert record.market_cap == Decimal.new(100_500)
+    assert record.tvl == nil
   end
 
   test "handle_info with successful price task" do
     Application.put_env(:explorer, Cataloger, history_fetch_interval: 1)
-    record_price = %{date: ~D[2018-04-01], closing_price: Decimal.new(10), opening_price: Decimal.new(5)}
-    record_market_cap = nil
+    price_records = [%{date: ~D[2018-04-01], closing_price: Decimal.new(10), opening_price: Decimal.new(5)}]
+    market_cap_records = []
+    tvl_records = []
 
     state = %{
-      price_records: [
-        record_price
-      ]
+      price_records: price_records
     }
 
-    assert {:noreply, state} == Cataloger.handle_info({nil, {:price_history, {1, 0, {:ok, [record_price]}}}}, state)
-    assert_receive :fetch_market_cap_history
+    state2 = Map.put(state, :market_cap_records, market_cap_records)
 
-    assert {:noreply, state} ==
-             Cataloger.handle_info({nil, {:market_cap_history, {0, {:ok, record_market_cap}}}}, state)
+    state3 = Map.put(state2, :tvl_records, tvl_records)
 
-    assert record = Repo.get_by(MarketHistory, date: record_price.date)
+    assert {:noreply, state} == Cataloger.handle_info({nil, {:price_history, {1, 0, {:ok, price_records}}}}, state)
+    assert_receive {:fetch_market_cap_history, 365}
+
+    assert {:noreply, state2} ==
+             Cataloger.handle_info({nil, {:market_cap_history, {0, 3, {:ok, market_cap_records}}}}, state)
+
+    assert {:noreply, state3} ==
+             Cataloger.handle_info({nil, {:tvl_history, {0, 3, {:ok, tvl_records}}}}, state2)
+
+    assert record = Repo.get_by(MarketHistory, date: Enum.at(price_records, 0).date)
+    assert record.closing_price == Decimal.new(10)
     assert record.market_cap == nil
+    assert record.tvl == nil
   end
 
   test "handle info for DOWN message" do

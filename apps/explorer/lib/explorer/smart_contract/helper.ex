@@ -115,10 +115,16 @@ defmodule Explorer.SmartContract.Helper do
   end
 
   def cast_libraries(map) do
-    map
-    |> Map.values()
-    |> Enum.reduce(%{}, fn map, acc -> Map.merge(acc, map) end)
+    map |> Map.values() |> List.first() |> cast_libraries(map)
   end
+
+  def cast_libraries(value, map) when is_map(value),
+    do:
+      map
+      |> Map.values()
+      |> Enum.reduce(%{}, fn map, acc -> Map.merge(acc, map) end)
+
+  def cast_libraries(_value, map), do: map
 
   def contract_creation_input(address_hash) do
     case Chain.smart_contract_creation_tx_bytecode(address_hash) do

@@ -35,7 +35,7 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
   def run(token_instances, _) when is_list(token_instances) do
     token_instances
     |> Enum.filter(fn %{contract_address_hash: hash, token_id: token_id} ->
-      not Chain.token_instance_exists?(token_id, hash)
+      Chain.token_instance_with_unfetched_metadata?(token_id, hash)
     end)
     |> batch_fetch_instances()
 

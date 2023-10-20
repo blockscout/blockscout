@@ -27,6 +27,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
       id: "test",
       last_updated: DateTime.utc_now(),
       market_cap_usd: Decimal.new("1000000.0"),
+      tvl_usd: Decimal.new("2000000.0"),
       name: "test",
       symbol: Explorer.coin(),
       usd_value: Decimal.new("2.5"),

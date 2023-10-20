@@ -14,7 +14,21 @@ defmodule Explorer.ReleaseTasks do
     :ecto_sql
   ]
 
-  @repos Application.compile_env(:blockscout, :ecto_repos, [Explorer.Repo, Explorer.Repo.Account])
+  def repos do
+    base_repos_list = [
+      Explorer.Repo,
+      Explorer.Repo.Account
+    ]
+
+    repos_list =
+      if System.get_env("CHAIN_TYPE") == "polygon_edge" do
+        [Explorer.Repo.PolygonEdge | base_repos_list]
+      else
+        base_repos_list
+      end
+
+    Application.get_env(:explorer, :ecto_repos, repos_list)
+  end
 
   def create_and_migrate do
     start_services()
@@ -26,7 +40,7 @@ defmodule Explorer.ReleaseTasks do
   end
 
   def create do
-    Enum.each(@repos, &create_db_for/1)
+    Enum.each(repos(), &create_db_for/1)
   end
 
   def migrate(_argv) do
@@ -56,7 +70,7 @@ defmodule Explorer.ReleaseTasks do
     IO.puts("Starting repos..")
 
     # Switch pool_size to 2 for ecto > 3.0
-    Enum.each(@repos, & &1.start_link(pool_size: 2))
+    Enum.each(repos(), & &1.start_link(pool_size: 2))
   end
 
   defp stop_services do
@@ -75,7 +89,7 @@ defmodule Explorer.ReleaseTasks do
   end
 
   defp run_migrations do
-    Enum.each(@repos, &run_migrations_for/1)
+    Enum.each(repos(), &run_migrations_for/1)
   end
 
   defp run_migrations_for(repo) do
@@ -86,7 +100,7 @@ defmodule Explorer.ReleaseTasks do
   end
 
   defp run_seeds do
-    Enum.each(@repos, &run_seeds_for/1)
+    Enum.each(repos(), &run_seeds_for/1)
   end
 
   # sobelow_skip ["RCE.CodeModule"]

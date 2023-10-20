@@ -23,13 +23,13 @@ defmodule Explorer.Counters.Helper do
     end
   end
 
-  def fetch_from_cache(key, cache_name) do
+  def fetch_from_cache(key, cache_name, default \\ 0) do
     case :ets.lookup(cache_name, key) do
       [{_, value}] ->
         value
 
       [] ->
-        0
+        default
     end
   end
 

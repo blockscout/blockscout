@@ -183,30 +183,6 @@ defmodule Explorer.ChainTest do
       assert result.token_contract_address_hash == token.contract_address_hash
     end
 
-    test "replaces existing token instance record" do
-      token = insert(:token)
-
-      params = %{
-        token_id: 1,
-        token_contract_address_hash: token.contract_address_hash,
-        metadata: %{uri: "http://example.com"}
-      }
-
-      {:ok, _} = Chain.upsert_token_instance(params)
-
-      params1 = %{
-        token_id: 1,
-        token_contract_address_hash: token.contract_address_hash,
-        metadata: %{uri: "http://example1.com"}
-      }
-
-      {:ok, result} = Chain.upsert_token_instance(params1)
-
-      assert result.token_id == Decimal.new(1)
-      assert result.metadata == params1.metadata
-      assert result.token_contract_address_hash == token.contract_address_hash
-    end
-
     test "fails to import with invalid params" do
       params = %{
         token_id: 1,
@@ -243,7 +219,8 @@ defmodule Explorer.ChainTest do
       insert(:token_instance,
         token_id: 1,
         token_contract_address_hash: token.contract_address_hash,
-        error: "no uri"
+        error: "no uri",
+        metadata: nil
       )
 
       params = %{
@@ -1501,7 +1478,7 @@ defmodule Explorer.ChainTest do
       Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Block.child_id())
 
       on_exit(fn ->
-        Application.put_env(:indexer, :first_block, "")
+        Application.put_env(:indexer, :first_block, 0)
       end)
     end
 
@@ -1531,7 +1508,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "returns 1.0 if fully indexed blocks starting from given FIRST_BLOCK" do
-      Application.put_env(:indexer, :first_block, "5")
+      Application.put_env(:indexer, :first_block, 5)
 
       for index <- 5..9 do
         insert(:block, number: index, consensus: true)
@@ -1550,7 +1527,7 @@ defmodule Explorer.ChainTest do
       Supervisor.restart_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
 
       on_exit(fn ->
-        Application.put_env(:indexer, :trace_first_block, "")
+        Application.put_env(:indexer, :trace_first_block, 0)
         Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
       end)
     end
@@ -1582,7 +1559,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "returns 1.0 if fully indexed blocks with internal transactions starting from given TRACE_FIRST_BLOCK" do
-      Application.put_env(:indexer, :trace_first_block, "5")
+      Application.put_env(:indexer, :trace_first_block, 5)
 
       for index <- 5..9 do
         insert(:block, number: index)
@@ -4265,14 +4242,18 @@ defmodule Explorer.ChainTest do
       assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
 
       assert {:ok, %SmartContract{}} =
-               Chain.update_smart_contract(%{address_hash: address.hash, partially_verified: false})
+               Chain.update_smart_contract(%{
+                 address_hash: address.hash,
+                 partially_verified: false,
+                 contract_source_code: "new code"
+               })
 
       sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
       assert sc_after_call.name == Map.get(valid_attrs, :name)
       assert sc_after_call.partially_verified == false
       assert sc_after_call.compiler_version == Map.get(valid_attrs, :compiler_version)
       assert sc_after_call.optimization == Map.get(valid_attrs, :optimization)
-      assert sc_after_call.contract_source_code == Map.get(valid_attrs, :contract_source_code)
+      assert sc_after_call.contract_source_code == "new code"
     end
 
     test "check nothing changed", %{valid_attrs: valid_attrs, address: address} do
@@ -4903,7 +4884,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "stream_unfetched_token_instances/2" do
+  describe "stream_not_inserted_token_instances/2" do
     test "reduces with given reducer and accumulator for ERC-721 token" do
       token_contract_address = insert(:contract_address)
       token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
@@ -4924,7 +4905,7 @@ defmodule Explorer.ChainTest do
           token_ids: [11]
         )
 
-      assert {:ok, [result]} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
+      assert {:ok, [result]} = Chain.stream_not_inserted_token_instances([], &[&1 | &2])
       assert result.token_id == List.first(token_transfer.token_ids)
       assert result.contract_address_hash == token_transfer.token_contract_address_hash
     end
@@ -4948,7 +4929,7 @@ defmodule Explorer.ChainTest do
         token_ids: nil
       )
 
-      assert {:ok, []} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
+      assert {:ok, []} = Chain.stream_not_inserted_token_instances([], &[&1 | &2])
     end
 
     test "do not fetch records with token instances" do
@@ -4976,7 +4957,7 @@ defmodule Explorer.ChainTest do
         token_contract_address_hash: token_transfer.token_contract_address_hash
       )
 
-      assert {:ok, []} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
+      assert {:ok, []} = Chain.stream_not_inserted_token_instances([], &[&1 | &2])
     end
   end
 

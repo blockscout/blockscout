@@ -115,7 +115,10 @@ const appJs =
                 esModule: false,
               },
             }, {
-              loader: 'css-loader'
+              loader: 'css-loader',
+              options: {
+                esModule: false,
+              },
             }, {
               loader: 'postcss-loader'
             }, {
