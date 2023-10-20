@@ -69,7 +69,8 @@ defmodule Indexer.Fetcher.CoinBalance do
           address_fields
           |> entry()
           |> reducer.(acc)
-        end
+        end,
+        true
       )
 
     final
@@ -82,9 +83,12 @@ defmodule Indexer.Fetcher.CoinBalance do
     # `{address, block}`, so take unique params only
     unique_entries = Enum.uniq(entries)
 
+    min_block = Application.get_env(:indexer, :trace_first_block)
+    max_block = Application.get_env(:indexer, :trace_last_block)
+
     unique_filtered_entries =
       Enum.filter(unique_entries, fn {_hash, block_number} ->
-        block_number >= EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
+        block_number >= min_block && if max_block, do: block_number <= max_block, else: true
       end)
 
     unique_entry_count = Enum.count(unique_filtered_entries)

@@ -13,6 +13,8 @@ ExUnit.start()
 
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Account, :auto)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonEdge, :auto)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.RSK, :auto)
 
 Mox.defmock(Explorer.ExchangeRates.Source.TestSource, for: Explorer.ExchangeRates.Source)
 Mox.defmock(Explorer.Market.History.Source.Price.TestSource, for: Explorer.Market.History.Source.Price)

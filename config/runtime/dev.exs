@@ -69,6 +69,20 @@ config :explorer, Explorer.Repo.Account,
   url: ExplorerConfigHelper.get_account_db_url(),
   pool_size: ConfigHelper.parse_integer_env_var("ACCOUNT_POOL_SIZE", 10)
 
+# Configure PolygonEdge database
+config :explorer, Explorer.Repo.PolygonEdge,
+  database: database,
+  hostname: hostname,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: ConfigHelper.parse_integer_env_var("POLYGON_EDGE_POOL_SIZE", 10)
+
+# Configure Rootstock database
+config :explorer, Explorer.Repo.RSK,
+  database: database,
+  hostname: hostname,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: pool_size
+
 variant = Variant.get()
 
 Code.require_file("#{variant}.exs", "apps/explorer/config/dev")

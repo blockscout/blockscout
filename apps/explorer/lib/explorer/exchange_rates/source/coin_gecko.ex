@@ -35,6 +35,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
         id: id,
         last_updated: last_updated,
         market_cap_usd: to_decimal(market_cap_data_usd),
+        tvl_usd: nil,
         name: json_data["name"],
         symbol: String.upcase(json_data["symbol"]),
         usd_value: current_price,
@@ -87,6 +88,16 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
   @impl Source
   def format_data(_), do: []
+
+  @spec history_url(non_neg_integer()) :: String.t()
+  def history_url(previous_days) do
+    query_params = %{
+      "days" => previous_days,
+      "vs_currency" => "usd"
+    }
+
+    "#{source_url()}/market_chart?#{URI.encode_query(query_params)}"
+  end
 
   @impl Source
   def source_url do
@@ -174,22 +185,16 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   def coin_id(symbol) do
-    id_mapping = token_symbol_to_id_mapping_to_get_price(symbol)
+    url = "#{base_url()}/coins/list"
 
-    if id_mapping do
-      {:ok, id_mapping}
-    else
-      url = "#{base_url()}/coins/list"
+    symbol_downcase = String.downcase(symbol)
 
-      symbol_downcase = String.downcase(symbol)
+    case Source.http_request(url, headers()) do
+      {:ok, data} ->
+        get_symbol_data(data, symbol_downcase)
 
-      case Source.http_request(url, headers()) do
-        {:ok, data} ->
-          get_symbol_data(data, symbol_downcase)
-
-        resp ->
-          resp
-      end
+      _ ->
+        {:ok, symbol_downcase}
     end
   end
 
@@ -298,13 +303,5 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   @spec config(atom()) :: term
   defp config(key) do
     Application.get_env(:explorer, __MODULE__, [])[key]
-  end
-
-  defp token_symbol_to_id_mapping_to_get_price(symbol) do
-    case symbol do
-      "UNI" -> "uniswap"
-      "SURF" -> "surf-finance"
-      _symbol -> nil
-    end
   end
 end

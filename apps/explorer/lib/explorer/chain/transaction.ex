@@ -781,12 +781,12 @@ defmodule Explorer.Chain.Transaction do
   end
 
   defp find_and_decode(abi, data, hash) do
-    result =
-      abi
-      |> ABI.parse_specification()
-      |> ABI.find_and_decode(data)
-
-    {:ok, result}
+    with {%FunctionSelector{}, _mapping} = result <-
+           abi
+           |> ABI.parse_specification()
+           |> ABI.find_and_decode(data) do
+      {:ok, result}
+    end
   rescue
     e ->
       Logger.warn(fn ->
@@ -1026,5 +1026,27 @@ defmodule Explorer.Chain.Transaction do
       order_by: [desc: :block_number],
       limit: 1
     )
+  end
+
+  @doc """
+  Returns true if the transaction is a Rootstock REMASC transaction.
+  """
+  @spec is_rootstock_remasc_transaction(Explorer.Chain.Transaction.t()) :: boolean
+  def is_rootstock_remasc_transaction(%__MODULE__{to_address_hash: to_address_hash}) do
+    case Hash.Address.cast(Application.get_env(:explorer, __MODULE__)[:rootstock_remasc_address]) do
+      {:ok, address} -> address == to_address_hash
+      _ -> false
+    end
+  end
+
+  @doc """
+  Returns true if the transaction is a Rootstock bridge transaction.
+  """
+  @spec is_rootstock_bridge_transaction(Explorer.Chain.Transaction.t()) :: boolean
+  def is_rootstock_bridge_transaction(%__MODULE__{to_address_hash: to_address_hash}) do
+    case Hash.Address.cast(Application.get_env(:explorer, __MODULE__)[:rootstock_bridge_address]) do
+      {:ok, address} -> address == to_address_hash
+      _ -> false
+    end
   end
 end

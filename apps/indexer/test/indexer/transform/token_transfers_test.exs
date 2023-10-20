@@ -263,6 +263,28 @@ defmodule Indexer.Transform.TokenTransfersTest do
              }
     end
 
+    test "parses erc1155 batch token transfer with empty ids/values" do
+      log = %{
+        address_hash: "0x598AF04C88122FA4D1e08C5da3244C39F10D4F14",
+        block_number: 9_065_059,
+        data:
+          "0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        first_topic: "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb",
+        secon_topic: "0x81D0caF80E9bFfD9bF9c641ab964feB9ef69069e",
+        third_topic: "0x598AF04C88122FA4D1e08C5da3244C39F10D4F14",
+        fourth_topic: "0x0000000000000000000000000000000000000000",
+        index: 6,
+        transaction_hash: "0xa6ad6588edb4abd8ca45f30d2f026ba20b68a3002a5870dbd30cc3752568483b",
+        block_hash: "0x61b720e40f8c521edd77a52cabce556c18b18b198f78e361f310003386ff1f02",
+        type: "mined"
+      }
+
+      assert TokenTransfers.parse([log]) == %{
+               token_transfers: [],
+               tokens: []
+             }
+    end
+
     test "logs error with unrecognized token transfer format" do
       log = %{
         address_hash: "0x58Ab73CB79c8275628E0213742a85B163fE0A9Fb",

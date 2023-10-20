@@ -169,6 +169,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
         id: "test",
         last_updated: DateTime.utc_now(),
         market_cap_usd: Decimal.new("1000000.0"),
+        tvl_usd: Decimal.new("2000000.0"),
         name: "test",
         symbol: symbol,
         usd_value: Decimal.new("1.0"),

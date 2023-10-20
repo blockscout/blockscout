@@ -1,8 +1,18 @@
 defmodule ConfigHelper do
   import Bitwise
   alias Explorer.ExchangeRates.Source
-  alias Explorer.Market.History.Source.{MarketCap, Price}
+  alias Explorer.Market.History.Source.{MarketCap, Price, TVL}
   alias Indexer.Transform.Blocks
+
+  def repos do
+    base_repos = [Explorer.Repo, Explorer.Repo.Account]
+
+    case System.get_env("CHAIN_TYPE") do
+      "polygon_edge" -> base_repos ++ [Explorer.Repo.PolygonEdge]
+      "rsk" -> base_repos ++ [Explorer.Repo.RSK]
+      _ -> base_repos
+    end
+  end
 
   @spec hackney_options() :: any()
   def hackney_options() do
@@ -26,7 +36,7 @@ defmodule ConfigHelper do
     |> :timer.seconds()
   end
 
-  @spec parse_integer_env_var(String.t(), String.t()) :: non_neg_integer()
+  @spec parse_integer_env_var(String.t(), integer()) :: non_neg_integer()
   def parse_integer_env_var(env_var, default_value) do
     env_var
     |> safe_get_env(to_string(default_value))
@@ -34,6 +44,17 @@ defmodule ConfigHelper do
     |> case do
       {integer, _} -> integer
       _ -> 0
+    end
+  end
+
+  @spec parse_integer_or_nil_env_var(String.t()) :: non_neg_integer() | nil
+  def parse_integer_or_nil_env_var(env_var) do
+    env_var
+    |> System.get_env("")
+    |> Integer.parse()
+    |> case do
+      {integer, _} -> integer
+      _ -> nil
     end
   end
 
@@ -102,6 +123,14 @@ defmodule ConfigHelper do
       "coin_gecko" -> MarketCap.CoinGecko
       "coin_market_cap" -> MarketCap.CoinMarketCap
       _ -> MarketCap.CoinGecko
+    end
+  end
+
+  @spec exchange_rates_tvl_source() :: TVL.DefiLlama
+  def exchange_rates_tvl_source do
+    case System.get_env("EXCHANGE_RATES_TVL_SOURCE") do
+      "defillama" -> TVL.DefiLlama
+      _ -> TVL.DefiLlama
     end
   end
 

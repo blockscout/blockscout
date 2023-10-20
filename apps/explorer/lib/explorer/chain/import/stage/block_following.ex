@@ -15,7 +15,8 @@ defmodule Explorer.Chain.Import.Stage.BlockFollowing do
     do: [
       Runner.Block.SecondDegreeRelations,
       Runner.Block.Rewards,
-      Runner.Address.CurrentTokenBalances
+      Runner.Address.CurrentTokenBalances,
+      Runner.TokenInstances
     ]
 
   @impl Stage

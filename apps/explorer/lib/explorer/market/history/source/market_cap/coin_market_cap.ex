@@ -12,7 +12,7 @@ defmodule Explorer.Market.History.Source.MarketCap.CoinMarketCap do
   @behaviour SourceMarketCap
 
   @impl SourceMarketCap
-  def fetch_market_cap do
+  def fetch_market_cap(_previous_days) do
     url = ExchangeRatesSourceCoinMarketCap.source_url()
 
     if url do
@@ -46,9 +46,11 @@ defmodule Explorer.Market.History.Source.MarketCap.CoinMarketCap do
 
     market_cap_data_usd = ExchangeRatesSourceCoinMarketCap.get_market_cap_data_usd(token_properties)
 
-    %{
-      market_cap: to_decimal(market_cap_data_usd),
-      date: last_updated
-    }
+    [
+      %{
+        market_cap: to_decimal(market_cap_data_usd),
+        date: last_updated
+      }
+    ]
   end
 end

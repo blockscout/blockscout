@@ -9,6 +9,7 @@ defmodule Explorer.Application do
 
   alias Explorer.Chain.Cache.{
     Accounts,
+    AddressesTabsCounters,
     AddressSum,
     AddressSumMinusBurnt,
     Block,
@@ -48,12 +49,17 @@ defmodule Explorer.Application do
       Explorer.Repo,
       Explorer.Repo.Replica1,
       Explorer.Repo.Account,
+      Explorer.Repo.PolygonEdge,
+      Explorer.Repo.RSK,
       Explorer.Vault,
       Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor}, id: Explorer.HistoryTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.GenesisDataTaskSupervisor}, id: GenesisDataTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.LookUpSmartContractSourcesTaskSupervisor},
+        id: LookUpSmartContractSourcesTaskSupervisor
+      ),
       Explorer.SmartContract.SolcDownloader,
       Explorer.SmartContract.VyperDownloader,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
@@ -74,6 +80,7 @@ defmodule Explorer.Application do
       Transactions,
       TransactionsApiV2,
       Uncles,
+      AddressesTabsCounters,
       con_cache_child_spec(MarketHistoryCache.cache_name()),
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
       {Redix, redix_opts()},
@@ -120,7 +127,9 @@ defmodule Explorer.Application do
       configure(TokenTransferTokenIdMigration.Supervisor),
       configure(Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand),
       configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand),
-      sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
+      configure(Explorer.TokenInstanceOwnerAddressMigration.Supervisor),
+      sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand),
+      configure(Explorer.Chain.Cache.RootstockLockedBTC)
     ]
     |> List.flatten()
   end
@@ -138,9 +147,7 @@ defmodule Explorer.Application do
   end
 
   defp sc_microservice_configure(process) do
-    config = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, [])
-
-    if config[:enabled] && config[:type] == "eth_bytecode_db" do
+    if Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)[:eth_bytecode_db?] do
       process
     else
       []

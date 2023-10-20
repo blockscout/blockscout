@@ -116,6 +116,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
           id: "poa-network",
           last_updated: ~U[2019-08-21 08:36:49.371Z],
           market_cap_usd: Decimal.new("2962791"),
+          tvl_usd: nil,
           name: "POA Network",
           symbol: "POA",
           usd_value: Decimal.new("0.01345698"),
@@ -195,26 +196,6 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
       end)
 
       assert CoinGecko.coin_id() == {:ok, "callisto"}
-    end
-
-    test "returns redirect on fetching", %{bypass: bypass} do
-      Application.put_env(:explorer, :coin, "DAI")
-
-      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
-        Conn.resp(conn, 302, "Request redirected...")
-      end)
-
-      assert CoinGecko.coin_id() == {:error, "Source redirected"}
-    end
-
-    test "returns error on fetching", %{bypass: bypass} do
-      Application.put_env(:explorer, :coin, "DAI")
-
-      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
-        Conn.resp(conn, 503, "Internal server error...")
-      end)
-
-      assert CoinGecko.coin_id() == {:error, "Internal server error..."}
     end
   end
 end

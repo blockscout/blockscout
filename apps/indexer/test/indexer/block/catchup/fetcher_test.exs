@@ -38,7 +38,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
   describe "import/1" do
     setup do
       configuration = Application.get_env(:indexer, :last_block)
-      Application.put_env(:indexer, :last_block, "0")
+      Application.put_env(:indexer, :last_block, 0)
 
       on_exit(fn ->
         Application.put_env(:indexer, :last_block, configuration)

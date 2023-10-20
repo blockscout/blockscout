@@ -34,6 +34,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
   alias Indexer.Fetcher.{CoinBalance, OptimismWithdrawal}
+  alias Indexer.Fetcher.PolygonEdge.{DepositExecute, Withdrawal}
   alias Indexer.Prometheus
   alias Indexer.Transform.Addresses
   alias Timex.Duration
@@ -179,7 +180,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     polling_period =
       case AverageBlockTime.average_block_time() do
         {:error, :disabled} -> 2_000
-        block_time -> round(Duration.to_milliseconds(block_time) / 2)
+        block_time -> min(round(Duration.to_milliseconds(block_time) / 2), 30_000)
       end
 
     safe_polling_period = max(polling_period, @minimum_safe_polling_period)
@@ -290,6 +291,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
           # we need to remove all rows from `op_withdrawals` table previously written starting from reorg block number
           OptimismWithdrawal.remove(block_number_to_fetch)
 
+          # we need to remove all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables previously written starting from reorg block number
+          remove_polygon_edge_assets_by_number(block_number_to_fetch)
+
           # give previous fetch attempt (for same block number) a chance to finish
           # before fetching again, to reduce block consensus mistakes
           :timer.sleep(@reorg_delay)
@@ -300,6 +304,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
       fetcher: :block_realtime,
       block_number: block_number_to_fetch
     )
+  end
+
+  defp remove_polygon_edge_assets_by_number(block_number_to_fetch) do
+    if Application.get_env(:explorer, :chain_type) == "polygon_edge" do
+      Withdrawal.remove(block_number_to_fetch)
+      DepositExecute.remove(block_number_to_fetch)
+    end
   end
 
   @decorate span(tracer: Tracer)
