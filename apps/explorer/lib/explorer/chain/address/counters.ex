@@ -245,7 +245,7 @@ defmodule Explorer.Chain.Address.Counters do
     end
   end
 
-  def address_hash_to_internal_txs_limited_count_query(address_hash) do
+  defp address_hash_to_internal_txs_limited_count_query(address_hash) do
     query_to_address_hash_wrapped =
       InternalTransaction
       |> InternalTransaction.where_nonpending_block()
@@ -570,6 +570,15 @@ defmodule Explorer.Chain.Address.Counters do
     end)
   end
 
+  @doc """
+    Returns all possible transactions type
+  """
+  @spec txs_types :: list(atom)
   def txs_types, do: @txs_types
+
+  @doc """
+    Returns max counter value
+  """
+  @spec counters_limit :: integer()
   def counters_limit, do: @counters_limit
 end

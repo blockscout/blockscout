@@ -27,18 +27,22 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
     :ok
   end
 
+  @spec set_task(atom, String.t()) :: true
   def set_task(counter_type, address_hash) do
     :ets.insert(@cache_name, {task_cache_key(address_hash, counter_type), true})
   end
 
+  @spec drop_task(atom, String.t()) :: true
   def drop_task(counter_type, address_hash) do
     :ets.delete(@cache_name, task_cache_key(address_hash, counter_type))
   end
 
+  @spec get_task(atom, String.t()) :: true | nil
   def get_task(counter_type, address_hash) do
     address_hash |> task_cache_key(counter_type) |> fetch_from_cache(@cache_name, nil)
   end
 
+  @spec ignore_txs(atom, String.t()) :: :ignore | :ok
   def ignore_txs(:txs, address_hash), do: GenServer.cast(__MODULE__, {:ignore_txs, address_hash})
   def ignore_txs(_counter_type, _address_hash), do: :ignore
 
@@ -103,10 +107,10 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
   defp is_ignored?({:updated, datetime}), do: is_up_to_date?(datetime, ttl())
   defp is_ignored?(_), do: false
 
-  def check_staleness(nil), do: nil
-  def check_staleness({datetime, counter}) when counter > 50, do: {datetime, counter, :limit_value}
+  defp check_staleness(nil), do: nil
+  defp check_staleness({datetime, counter}) when counter > 50, do: {datetime, counter, :limit_value}
 
-  def check_staleness({datetime, counter}) do
+  defp check_staleness({datetime, counter}) do
     status =
       if is_up_to_date?(datetime, ttl()) do
         :up_to_date
