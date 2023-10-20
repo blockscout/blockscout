@@ -1670,6 +1670,239 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
   end
 
+  describe "/addresses/{address_hash}/tabs-counters" do
+    test "get 404 on non existing address", %{conn: conn} do
+      address = build(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/addresses/0x/tabs-counters")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get counters with 0s", %{conn: conn} do
+      address = insert(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
+
+      assert %{
+               "validations_count" => 0,
+               "transactions_count" => 0,
+               "token_transfers_count" => 0,
+               "token_balances_count" => 0,
+               "logs_count" => 0,
+               "withdrawals_count" => 0,
+               "internal_txs_count" => 0
+             } = json_response(request, 200)
+    end
+
+    test "get counters and check that cache works", %{conn: conn} do
+      address = insert(:address, withdrawals: insert_list(60, :withdrawal))
+
+      insert(:transaction, from_address: address) |> with_block()
+      insert(:transaction, to_address: address) |> with_block()
+      another_tx = insert(:transaction) |> with_block()
+
+      insert(:token_transfer,
+        from_address: address,
+        transaction: another_tx,
+        block: another_tx.block,
+        block_number: another_tx.block_number
+      )
+
+      insert(:token_transfer,
+        to_address: address,
+        transaction: another_tx,
+        block: another_tx.block,
+        block_number: another_tx.block_number
+      )
+
+      insert(:block, miner: address)
+
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      for x <- 1..2 do
+        insert(:internal_transaction,
+          transaction: tx,
+          index: x,
+          block_number: tx.block_number,
+          transaction_index: tx.index,
+          block_hash: tx.block_hash,
+          block_index: x,
+          from_address: address
+        )
+      end
+
+      for _ <- 0..60 do
+        insert(:address_current_token_balance_with_token_id, address: address)
+      end
+
+      for x <- 0..60 do
+        tx =
+          :transaction
+          |> insert()
+          |> with_block()
+
+        insert(:log,
+          transaction: tx,
+          index: x,
+          block: tx.block,
+          block_number: tx.block_number,
+          address: address
+        )
+      end
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
+
+      assert %{
+               "validations_count" => 1,
+               "transactions_count" => 2,
+               "token_transfers_count" => 2,
+               "token_balances_count" => 51,
+               "logs_count" => 51,
+               "withdrawals_count" => 51,
+               "internal_txs_count" => 2
+             } = json_response(request, 200)
+
+      for x <- 3..4 do
+        insert(:internal_transaction,
+          transaction: tx,
+          index: x,
+          block_number: tx.block_number,
+          transaction_index: tx.index,
+          block_hash: tx.block_hash,
+          block_index: x,
+          from_address: address
+        )
+      end
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
+
+      assert %{
+               "validations_count" => 1,
+               "transactions_count" => 2,
+               "token_transfers_count" => 2,
+               "token_balances_count" => 51,
+               "logs_count" => 51,
+               "withdrawals_count" => 51,
+               "internal_txs_count" => 2
+             } = json_response(request, 200)
+    end
+
+    test "check counters cache ttl", %{conn: conn} do
+      address = insert(:address, withdrawals: insert_list(60, :withdrawal))
+
+      insert(:transaction, from_address: address) |> with_block()
+      insert(:transaction, to_address: address) |> with_block()
+      another_tx = insert(:transaction) |> with_block()
+
+      insert(:token_transfer,
+        from_address: address,
+        transaction: another_tx,
+        block: another_tx.block,
+        block_number: another_tx.block_number
+      )
+
+      insert(:token_transfer,
+        to_address: address,
+        transaction: another_tx,
+        block: another_tx.block,
+        block_number: another_tx.block_number
+      )
+
+      insert(:block, miner: address)
+
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      for x <- 1..2 do
+        insert(:internal_transaction,
+          transaction: tx,
+          index: x,
+          block_number: tx.block_number,
+          transaction_index: tx.index,
+          block_hash: tx.block_hash,
+          block_index: x,
+          from_address: address
+        )
+      end
+
+      for _ <- 0..60 do
+        insert(:address_current_token_balance_with_token_id, address: address)
+      end
+
+      for x <- 0..60 do
+        tx =
+          :transaction
+          |> insert()
+          |> with_block()
+
+        insert(:log,
+          transaction: tx,
+          index: x,
+          block: tx.block,
+          block_number: tx.block_number,
+          address: address
+        )
+      end
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
+
+      assert %{
+               "validations_count" => 1,
+               "transactions_count" => 2,
+               "token_transfers_count" => 2,
+               "token_balances_count" => 51,
+               "logs_count" => 51,
+               "withdrawals_count" => 51,
+               "internal_txs_count" => 2
+             } = json_response(request, 200)
+
+      old_env = Application.get_env(:explorer, Explorer.Chain.Cache.AddressesTabsCounters)
+      Application.put_env(:explorer, Explorer.Chain.Cache.AddressesTabsCounters, ttl: 200)
+      :timer.sleep(200)
+
+      for x <- 3..4 do
+        insert(:internal_transaction,
+          transaction: tx,
+          index: x,
+          block_number: tx.block_number,
+          transaction_index: tx.index,
+          block_hash: tx.block_hash,
+          block_index: x,
+          from_address: address
+        )
+      end
+
+      insert(:transaction, from_address: address) |> with_block()
+      insert(:transaction, to_address: address) |> with_block()
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
+
+      assert %{
+               "validations_count" => 1,
+               "transactions_count" => 4,
+               "token_transfers_count" => 2,
+               "token_balances_count" => 51,
+               "logs_count" => 51,
+               "withdrawals_count" => 51,
+               "internal_txs_count" => 4
+             } = json_response(request, 200)
+
+      Application.put_env(:explorer, Explorer.Chain.Cache.AddressesTabsCounters, old_env)
+    end
+  end
+
   defp compare_item(%Address{} = address, json) do
     assert Address.checksum(address.hash) == json["hash"]
     assert to_string(address.nonce + 1) == json["tx_count"]

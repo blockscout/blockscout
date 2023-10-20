@@ -116,6 +116,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
           id: "poa-network",
           last_updated: ~U[2019-08-21 08:36:49.371Z],
           market_cap_usd: Decimal.new("2962791"),
+          tvl_usd: nil,
           name: "POA Network",
           symbol: "POA",
           usd_value: Decimal.new("0.01345698"),

@@ -4,23 +4,47 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+</details>
+
+## 5.3.0-beta
+
+### Features
+
+- [#8512](https://github.com/blockscout/blockscout/pull/8512) - Add caching and improve `/tabs-counters` performance
 - [#8472](https://github.com/blockscout/blockscout/pull/8472) - Integrate `/api/v2/bytecodes/sources:search-all` of `eth_bytecode_db`
+- [#8589](https://github.com/blockscout/blockscout/pull/8589) - DefiLlama TVL source
 - [#8544](https://github.com/blockscout/blockscout/pull/8544) - Fix `nil` `"structLogs"`
+- [#8583](https://github.com/blockscout/blockscout/pull/8583) - Add stats widget for rootstock
+- [#8542](https://github.com/blockscout/blockscout/pull/8542) - Add tracing for rootstock
 - [#8561](https://github.com/blockscout/blockscout/pull/8561), [#8564](https://github.com/blockscout/blockscout/pull/8564) - Get historical market cap data from CoinGecko
+- [#8543](https://github.com/blockscout/blockscout/pull/8543) - Fix polygon tracer
 - [#8386](https://github.com/blockscout/blockscout/pull/8386) - Add `owner_address_hash` to the `token_instances`
 - [#8530](https://github.com/blockscout/blockscout/pull/8530) - Add `block_type` to search results
 - [#8180](https://github.com/blockscout/blockscout/pull/8180) - Deposits and Withdrawals for Polygon Edge
 - [#7996](https://github.com/blockscout/blockscout/pull/7996) - Add CoinBalance fetcher init query limit
+- [#8658](https://github.com/blockscout/blockscout/pull/8658) - Remove block consensus on import fail
+- [#8575](https://github.com/blockscout/blockscout/pull/8575) - Filter token transfers on coin balances updates
 
 ### Fixes
 
+- [#8661](https://github.com/blockscout/blockscout/pull/8661) - arm64-compatible docker image
+- [#8649](https://github.com/blockscout/blockscout/pull/8649) - Set max 30sec JSON RPC poll frequency for realtime fetcher when WS is disabled
 - [#8614](https://github.com/blockscout/blockscout/pull/8614) - Disable market history cataloger fetcher when exchange rates are disabled
+- [#8613](https://github.com/blockscout/blockscout/pull/8613) - Refactor parsing of FIRST_BLOCK, LAST_BLOCK, TRACE_FIRST_BLOCK, TRACE_LAST_BLOCK env variables
 - [#8572](https://github.com/blockscout/blockscout/pull/8572) - Refactor docker-compose config
 - [#8552](https://github.com/blockscout/blockscout/pull/8552) - Add CHAIN_TYPE build arg to Dockerfile
 - [#8550](https://github.com/blockscout/blockscout/pull/8550) - Sanitize paging params
 - [#8515](https://github.com/blockscout/blockscout/pull/8515) - Fix `:error.types/0 is undefined` warning
 - [#7959](https://github.com/blockscout/blockscout/pull/7959) - Fix empty batch transfers handling
 - [#8513](https://github.com/blockscout/blockscout/pull/8513) - Don't override transaction status
+- [#8620](https://github.com/blockscout/blockscout/pull/8620) - Fix the display of icons
+- [#8594](https://github.com/blockscout/blockscout/pull/8594) - Fix TokenBalance fetcher retry logic
 
 ### Chore
 
@@ -32,6 +56,41 @@
 - [#8529](https://github.com/blockscout/blockscout/pull/8529) - Move PolygonEdge-related migration to the corresponding ecto repository
 - [#8504](https://github.com/blockscout/blockscout/pull/8504) - Deploy new UI through Makefile
 - [#8501](https://github.com/blockscout/blockscout/pull/8501) - Conceal secondary ports in docker compose setup
+
+<details>
+  <summary>Dependencies version bumps</summary>
+- [#8508](https://github.com/blockscout/blockscout/pull/8508) - https://github.com/blockscout/blockscout/pull/8508
+- [#8509](https://github.com/blockscout/blockscout/pull/8509) - https://github.com/blockscout/blockscout/pull/8509
+- [#8511](https://github.com/blockscout/blockscout/pull/8511) - https://github.com/blockscout/blockscout/pull/8511
+- [#8532](https://github.com/blockscout/blockscout/pull/8532) - https://github.com/blockscout/blockscout/pull/8532
+- [#8533](https://github.com/blockscout/blockscout/pull/8533) - https://github.com/blockscout/blockscout/pull/8533
+- [#8531](https://github.com/blockscout/blockscout/pull/8531) - https://github.com/blockscout/blockscout/pull/8531
+- [#8534](https://github.com/blockscout/blockscout/pull/8534) - https://github.com/blockscout/blockscout/pull/8534
+- [#8546](https://github.com/blockscout/blockscout/pull/8546) - https://github.com/blockscout/blockscout/pull/8546
+- [#8553](https://github.com/blockscout/blockscout/pull/8553) - https://github.com/blockscout/blockscout/pull/8553
+- [#8554](https://github.com/blockscout/blockscout/pull/8554) - https://github.com/blockscout/blockscout/pull/8554
+- [#8547](https://github.com/blockscout/blockscout/pull/8547) - https://github.com/blockscout/blockscout/pull/8547
+- [#8567](https://github.com/blockscout/blockscout/pull/8567) - https://github.com/blockscout/blockscout/pull/8567
+- [#8566](https://github.com/blockscout/blockscout/pull/8566) - https://github.com/blockscout/blockscout/pull/8566
+- [#7575](https://github.com/blockscout/blockscout/pull/7575) - https://github.com/blockscout/blockscout/pull/7575
+- [#8569](https://github.com/blockscout/blockscout/pull/8569) - https://github.com/blockscout/blockscout/pull/8569
+- [#8570](https://github.com/blockscout/blockscout/pull/8570) - https://github.com/blockscout/blockscout/pull/8570
+- [#8581](https://github.com/blockscout/blockscout/pull/8581) - https://github.com/blockscout/blockscout/pull/8581
+- [#8607](https://github.com/blockscout/blockscout/pull/8607) - https://github.com/blockscout/blockscout/pull/8607
+- [#8606](https://github.com/blockscout/blockscout/pull/8606) - https://github.com/blockscout/blockscout/pull/8606
+- [#8605](https://github.com/blockscout/blockscout/pull/8605) - https://github.com/blockscout/blockscout/pull/8605
+- [#8608](https://github.com/blockscout/blockscout/pull/8608) - https://github.com/blockscout/blockscout/pull/8608
+- [#8510](https://github.com/blockscout/blockscout/pull/8510) - https://github.com/blockscout/blockscout/pull/8510
+- [#8637](https://github.com/blockscout/blockscout/pull/8637) - https://github.com/blockscout/blockscout/pull/8637
+- [#8639](https://github.com/blockscout/blockscout/pull/8639) - https://github.com/blockscout/blockscout/pull/8639
+- [#8643](https://github.com/blockscout/blockscout/pull/8643) - https://github.com/blockscout/blockscout/pull/8643
+- [#8641](https://github.com/blockscout/blockscout/pull/8641) - https://github.com/blockscout/blockscout/pull/8641
+- [#8646](https://github.com/blockscout/blockscout/pull/8646) - https://github.com/blockscout/blockscout/pull/8646
+- [#8636](https://github.com/blockscout/blockscout/pull/8636) - https://github.com/blockscout/blockscout/pull/8636
+- [#8645](https://github.com/blockscout/blockscout/pull/8645) - https://github.com/blockscout/blockscout/pull/8645
+- [#8638](https://github.com/blockscout/blockscout/pull/8638) - https://github.com/blockscout/blockscout/pull/8638
+- [#8640](https://github.com/blockscout/blockscout/pull/8640) - https://github.com/blockscout/blockscout/pull/8640
+</details>
 
 ## 5.2.3-beta
 

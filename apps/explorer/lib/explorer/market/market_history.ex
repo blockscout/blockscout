@@ -10,6 +10,7 @@ defmodule Explorer.Market.MarketHistory do
     field(:date, :date)
     field(:opening_price, :decimal)
     field(:market_cap, :decimal)
+    field(:tvl, :decimal)
   end
 
   @typedoc """
@@ -19,11 +20,13 @@ defmodule Explorer.Market.MarketHistory do
    * `:date` - The date in UTC.
    * `:opening_price` - Opening price in USD.
    * `:market_cap` - Market cap in USD.
+   * `:market_cap` - TVL in USD.
   """
   @type t :: %__MODULE__{
           closing_price: Decimal.t(),
           date: Date.t(),
           opening_price: Decimal.t(),
-          market_cap: Decimal.t()
+          market_cap: Decimal.t(),
+          tvl: Decimal.t()
         }
 end
