@@ -408,7 +408,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "has_error_in_internal_txs" => transaction.has_error_in_internal_txs
     }
 
-    result =
+    final_result =
       if Application.get_env(:explorer, :chain_type) == "polygon_edge" && single_tx? do
         result
         |> Map.put("polygon_edge_deposit", polygon_edge_deposit(transaction.hash, conn))
@@ -417,7 +417,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         result
       end
 
-    result
+    final_result
     |> add_optional_transaction_field(transaction, :l1_fee)
     |> add_optional_transaction_field(transaction, :l1_fee_scalar)
     |> add_optional_transaction_field(transaction, :l1_gas_price)
