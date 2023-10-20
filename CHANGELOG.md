@@ -17,6 +17,7 @@
 - [#8180](https://github.com/blockscout/blockscout/pull/8180) - Deposits and Withdrawals for Polygon Edge
 - [#7996](https://github.com/blockscout/blockscout/pull/7996) - Add CoinBalance fetcher init query limit
 - [#8658](https://github.com/blockscout/blockscout/pull/8658) - Remove block consensus on import fail
+- [#8575](https://github.com/blockscout/blockscout/pull/8575) - Filter token transfers on coin balances updates
 
 ### Fixes
 
