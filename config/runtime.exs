@@ -246,6 +246,11 @@ config :explorer, Explorer.Chain.Cache.GasPriceOracle,
   average_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_AVERAGE_PERCENTILE", 60),
   fast_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_FAST_PERCENTILE", 90)
 
+config :explorer, Explorer.Chain.Cache.RootstockLockedBTC,
+  enabled: System.get_env("ETHEREUM_JSONRPC_VARIANT") == "rsk",
+  global_ttl: ConfigHelper.parse_time_env_var("ROOTSTOCK_LOCKED_BTC_CACHE_PERIOD", "10m"),
+  locking_cap: ConfigHelper.parse_integer_env_var("ROOTSTOCK_LOCKING_CAP", 21_000_000)
+
 config :explorer, Explorer.Counters.AddressTransactionsGasUsageCounter,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_PERIOD", "30m")
 
@@ -425,6 +430,13 @@ config :explorer, Explorer.TokenInstanceOwnerAddressMigration,
   concurrency: ConfigHelper.parse_integer_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_CONCURRENCY", 5),
   batch_size: ConfigHelper.parse_integer_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_BATCH_SIZE", 50)
 
+config :explorer, Explorer.Chain.Transaction,
+  rootstock_remasc_address: System.get_env("ROOTSTOCK_REMASC_ADDRESS"),
+  rootstock_bridge_address: System.get_env("ROOTSTOCK_BRIDGE_ADDRESS")
+
+config :explorer, Explorer.Chain.Cache.AddressesTabsCounters,
+  ttl: ConfigHelper.parse_time_env_var("ADDRESSES_TABS_COUNTERS_TTL", "10m")
+
 ###############
 ### Indexer ###
 ###############
@@ -433,10 +445,10 @@ config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
   metadata_updater_milliseconds_interval: ConfigHelper.parse_time_env_var("TOKEN_METADATA_UPDATE_INTERVAL", "48h"),
   block_ranges: System.get_env("BLOCK_RANGES"),
-  first_block: System.get_env("FIRST_BLOCK") || "",
-  last_block: System.get_env("LAST_BLOCK") || "",
-  trace_first_block: System.get_env("TRACE_FIRST_BLOCK") || "",
-  trace_last_block: System.get_env("TRACE_LAST_BLOCK") || "",
+  first_block: ConfigHelper.parse_integer_env_var("FIRST_BLOCK", 0),
+  last_block: ConfigHelper.parse_integer_or_nil_env_var("LAST_BLOCK"),
+  trace_first_block: ConfigHelper.parse_integer_env_var("TRACE_FIRST_BLOCK", 0),
+  trace_last_block: ConfigHelper.parse_integer_or_nil_env_var("TRACE_LAST_BLOCK"),
   fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block"),
   memory_limit: ConfigHelper.indexer_memory_limit(),
   receipts_batch_size: ConfigHelper.parse_integer_env_var("INDEXER_RECEIPTS_BATCH_SIZE", 250),
@@ -520,7 +532,8 @@ config :indexer, Indexer.Fetcher.TokenInstance.LegacySanitize.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_LEGACY_SANITIZE_FETCHER", "true")
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE", 100)
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE", 100),
+  interval: ConfigHelper.parse_time_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_INTERVAL", "10s")
 
 config :indexer, Indexer.Block.Realtime.Fetcher,
   max_gap: ConfigHelper.parse_integer_env_var("INDEXER_REALTIME_FETCHER_MAX_GAP", 1000)

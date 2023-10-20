@@ -110,6 +110,7 @@ defmodule Indexer.Transform.AddressCoinBalancesTest do
         |> Factory.params_for()
         |> Map.put(:block_number, block_number)
         |> Map.put(:address_hash, address_hash)
+        |> Map.put(:first_topic, nil)
 
       params_set = AddressCoinBalances.params_set(%{logs_params: [log_params]})
 
@@ -129,6 +130,7 @@ defmodule Indexer.Transform.AddressCoinBalancesTest do
         |> Factory.params_for()
         |> Map.put(:block_number, nil)
         |> Map.put(:address_hash, address_hash)
+        |> Map.put(:first_topic, nil)
         |> Map.put(:type, "pending")
 
       log_params2 =
@@ -136,6 +138,7 @@ defmodule Indexer.Transform.AddressCoinBalancesTest do
         |> Factory.params_for()
         |> Map.put(:block_number, block_number)
         |> Map.put(:address_hash, address_hash)
+        |> Map.put(:first_topic, nil)
 
       params_set = AddressCoinBalances.params_set(%{logs_params: [log_params1, log_params2]})
 

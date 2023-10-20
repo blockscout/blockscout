@@ -14,6 +14,8 @@ config :explorer, Explorer.Repo.Account, timeout: :timer.seconds(80)
 
 config :explorer, Explorer.Repo.PolygonEdge, timeout: :timer.seconds(80)
 
+config :explorer, Explorer.Repo.RSK, timeout: :timer.seconds(80)
+
 config :explorer, Explorer.Tracer, env: "dev", disabled?: true
 
 config :logger, :explorer,

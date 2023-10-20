@@ -8,14 +8,14 @@ name: Publish Docker image for specific chain branches
 on:
   push:
     branches:
-      - production-immutable-stg
+      - production-fuse-stg
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: 5.3.0
-      DOCKER_CHAIN_NAME: immutable
+      DOCKER_CHAIN_NAME: fuse
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
       
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}

@@ -1478,7 +1478,7 @@ defmodule Explorer.ChainTest do
       Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Block.child_id())
 
       on_exit(fn ->
-        Application.put_env(:indexer, :first_block, "")
+        Application.put_env(:indexer, :first_block, 0)
       end)
     end
 
@@ -1508,7 +1508,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "returns 1.0 if fully indexed blocks starting from given FIRST_BLOCK" do
-      Application.put_env(:indexer, :first_block, "5")
+      Application.put_env(:indexer, :first_block, 5)
 
       for index <- 5..9 do
         insert(:block, number: index, consensus: true)
@@ -1527,7 +1527,7 @@ defmodule Explorer.ChainTest do
       Supervisor.restart_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
 
       on_exit(fn ->
-        Application.put_env(:indexer, :trace_first_block, "")
+        Application.put_env(:indexer, :trace_first_block, 0)
         Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
       end)
     end
@@ -1559,7 +1559,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "returns 1.0 if fully indexed blocks with internal transactions starting from given TRACE_FIRST_BLOCK" do
-      Application.put_env(:indexer, :trace_first_block, "5")
+      Application.put_env(:indexer, :trace_first_block, 5)
 
       for index <- 5..9 do
         insert(:block, number: index)

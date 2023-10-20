@@ -35,6 +35,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
         id: id,
         last_updated: last_updated,
         market_cap_usd: to_decimal(market_cap_data_usd),
+        tvl_usd: nil,
         name: json_data["name"],
         symbol: String.upcase(json_data["symbol"]),
         usd_value: current_price,
