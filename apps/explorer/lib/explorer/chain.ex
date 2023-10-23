@@ -2062,7 +2062,7 @@ defmodule Explorer.Chain do
       from(a in Address,
         where: a.fetched_coin_balance > ^0,
         order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-        preload: [:names],
+        preload: [:names, :smart_contract],
         select: {a, fragment("coalesce(1 + ?, 0)", a.nonce)}
       )
 

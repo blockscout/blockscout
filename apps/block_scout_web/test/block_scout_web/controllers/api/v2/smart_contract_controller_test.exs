@@ -2375,6 +2375,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
       compare_item(smart_contract, sc)
+      assert sc["address"]["is_verified"] == true
+      assert sc["address"]["is_contract"] == true
     end
 
     test "check pagination", %{conn: conn} do
