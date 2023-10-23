@@ -3,6 +3,8 @@ import Config
 # DO NOT make it `:debug` or all Ecto logs will be shown for indexer
 config :logger, :console, level: :info
 
+config :logger_json, :backend, level: :none
+
 config :logger, :ecto,
   level: :debug,
   path: Path.absname("logs/dev/ecto.log")
