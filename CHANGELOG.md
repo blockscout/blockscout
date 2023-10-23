@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#8673](https://github.com/blockscout/blockscout/pull/8673) - Add a window for balances fetching from non-archive node
+
 ### Fixes
 
 ### Chore
