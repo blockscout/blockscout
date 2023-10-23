@@ -4,7 +4,7 @@ import Config
 
 config :logger, :console, level: :warn
 
-config :logger, LoggerJSON, level: :none
+config :logger_json, :backend, level: :none
 
 config :logger, :ecto,
   level: :warn,
