@@ -9,9 +9,6 @@ defmodule BlockScoutWeb.ZkevmConfirmedBatchChannel do
   intercept(["new_zkevm_confirmed_batch"])
 
   def join("zkevm_batches:new_zkevm_confirmed_batch", _params, socket) do
-    require Logger
-    Logger.warn("zkevm_batches:new_zkevm_confirmed_batch")
-
     {:ok, %{}, socket}
   end
 

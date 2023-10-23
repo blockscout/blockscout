@@ -7,20 +7,25 @@ defmodule BlockScoutWeb.API.V2.ZkevmView do
   @spec render(binary(), map()) :: map() | non_neg_integer()
   def render("zkevm_batch.json", %{batch: batch}) do
     sequence_tx_hash =
-      if not is_nil(batch.sequence_transaction) do
+      if Map.has_key?(batch, :sequence_transaction) and not is_nil(batch.sequence_transaction) do
         batch.sequence_transaction.hash
       end
 
     verify_tx_hash =
-      if not is_nil(batch.verify_transaction) do
+      if Map.has_key?(batch, :verify_transaction) and not is_nil(batch.verify_transaction) do
         batch.verify_transaction.hash
+      end
+
+    l2_transactions =
+      if Map.has_key?(batch, :l2_transactions) do
+        Enum.map(batch.l2_transactions, fn tx -> tx.hash end)
       end
 
     %{
       "number" => batch.number,
       "status" => batch_status(batch),
       "timestamp" => batch.timestamp,
-      "transactions" => Enum.map(batch.l2_transactions, fn tx -> tx.hash end),
+      "transactions" => l2_transactions,
       "global_exit_root" => batch.global_exit_root,
       "acc_input_hash" => batch.acc_input_hash,
       "sequence_tx_hash" => sequence_tx_hash,
