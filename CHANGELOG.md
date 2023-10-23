@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#8685](https://github.com/blockscout/blockscout/pull/8685) - Fix db pool size exceeds Postgres max connections
+
 ### Chore
 
 <details>
