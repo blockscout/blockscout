@@ -5,6 +5,7 @@
 ### Features
 
 - [#8528](https://github.com/blockscout/blockscout/pull/8528) - Account: add pagination + envs for limits
+- [#8634](https://github.com/blockscout/blockscout/pull/8634) - API v2: NFT for address
 
 ### Fixes
 
