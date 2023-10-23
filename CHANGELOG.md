@@ -61,37 +61,37 @@
 
 <details>
   <summary>Dependencies version bumps</summary>
-- [#8508](https://github.com/blockscout/blockscout/pull/8508) - https://github.com/blockscout/blockscout/pull/8508
-- [#8509](https://github.com/blockscout/blockscout/pull/8509) - https://github.com/blockscout/blockscout/pull/8509
-- [#8511](https://github.com/blockscout/blockscout/pull/8511) - https://github.com/blockscout/blockscout/pull/8511
-- [#8532](https://github.com/blockscout/blockscout/pull/8532) - https://github.com/blockscout/blockscout/pull/8532
-- [#8533](https://github.com/blockscout/blockscout/pull/8533) - https://github.com/blockscout/blockscout/pull/8533
-- [#8531](https://github.com/blockscout/blockscout/pull/8531) - https://github.com/blockscout/blockscout/pull/8531
-- [#8534](https://github.com/blockscout/blockscout/pull/8534) - https://github.com/blockscout/blockscout/pull/8534
-- [#8546](https://github.com/blockscout/blockscout/pull/8546) - https://github.com/blockscout/blockscout/pull/8546
-- [#8553](https://github.com/blockscout/blockscout/pull/8553) - https://github.com/blockscout/blockscout/pull/8553
+- [#8508](https://github.com/blockscout/blockscout/pull/8508) - Bump sass from 1.67.0 to 1.68.0 in /apps/block_scout_web/assets
+- [#8509](https://github.com/blockscout/blockscout/pull/8509) - Bump autoprefixer from 10.4.15 to 10.4.16 in /apps/block_scout_web/assets
+- [#8511](https://github.com/blockscout/blockscout/pull/8511) - Bump mox from 1.0.2 to 1.1.0
+- [#8532](https://github.com/blockscout/blockscout/pull/8532) - Bump eslint from 8.49.0 to 8.50.0 in /apps/block_scout_web/assets
+- [#8533](https://github.com/blockscout/blockscout/pull/8533) - Bump sweetalert2 from 11.7.28 to 11.7.29 in /apps/block_scout_web/assets
+- [#8531](https://github.com/blockscout/blockscout/pull/8531) - Bump ex_cldr_units from 3.16.2 to 3.16.3
+- [#8534](https://github.com/blockscout/blockscout/pull/8534) - Bump @babel/core from 7.22.20 to 7.23.0 in /apps/block_scout_web/assets
+- [#8546](https://github.com/blockscout/blockscout/pull/8546) - Bump sweetalert2 from 11.7.29 to 11.7.31 in /apps/block_scout_web/assets
+- [#8553](https://github.com/blockscout/blockscout/pull/8553) - Bump @amplitude/analytics-browser from 2.3.1 to 2.3.2 in /apps/block_scout_web/assets
 - [#8554](https://github.com/blockscout/blockscout/pull/8554) - https://github.com/blockscout/blockscout/pull/8554
-- [#8547](https://github.com/blockscout/blockscout/pull/8547) - https://github.com/blockscout/blockscout/pull/8547
-- [#8567](https://github.com/blockscout/blockscout/pull/8567) - https://github.com/blockscout/blockscout/pull/8567
-- [#8566](https://github.com/blockscout/blockscout/pull/8566) - https://github.com/blockscout/blockscout/pull/8566
-- [#7575](https://github.com/blockscout/blockscout/pull/7575) - https://github.com/blockscout/blockscout/pull/7575
-- [#8569](https://github.com/blockscout/blockscout/pull/8569) - https://github.com/blockscout/blockscout/pull/8569
-- [#8570](https://github.com/blockscout/blockscout/pull/8570) - https://github.com/blockscout/blockscout/pull/8570
-- [#8581](https://github.com/blockscout/blockscout/pull/8581) - https://github.com/blockscout/blockscout/pull/8581
-- [#8607](https://github.com/blockscout/blockscout/pull/8607) - https://github.com/blockscout/blockscout/pull/8607
-- [#8606](https://github.com/blockscout/blockscout/pull/8606) - https://github.com/blockscout/blockscout/pull/8606
-- [#8605](https://github.com/blockscout/blockscout/pull/8605) - https://github.com/blockscout/blockscout/pull/8605
-- [#8608](https://github.com/blockscout/blockscout/pull/8608) - https://github.com/blockscout/blockscout/pull/8608
-- [#8510](https://github.com/blockscout/blockscout/pull/8510) - https://github.com/blockscout/blockscout/pull/8510
-- [#8637](https://github.com/blockscout/blockscout/pull/8637) - https://github.com/blockscout/blockscout/pull/8637
-- [#8639](https://github.com/blockscout/blockscout/pull/8639) - https://github.com/blockscout/blockscout/pull/8639
-- [#8643](https://github.com/blockscout/blockscout/pull/8643) - https://github.com/blockscout/blockscout/pull/8643
-- [#8641](https://github.com/blockscout/blockscout/pull/8641) - https://github.com/blockscout/blockscout/pull/8641
-- [#8646](https://github.com/blockscout/blockscout/pull/8646) - https://github.com/blockscout/blockscout/pull/8646
-- [#8636](https://github.com/blockscout/blockscout/pull/8636) - https://github.com/blockscout/blockscout/pull/8636
-- [#8645](https://github.com/blockscout/blockscout/pull/8645) - https://github.com/blockscout/blockscout/pull/8645
-- [#8638](https://github.com/blockscout/blockscout/pull/8638) - https://github.com/blockscout/blockscout/pull/8638
-- [#8640](https://github.com/blockscout/blockscout/pull/8640) - https://github.com/blockscout/blockscout/pull/8640
+- [#8547](https://github.com/blockscout/blockscout/pull/8547) - Bump briefly from 678a376 to 51dfe7f
+- [#8567](https://github.com/blockscout/blockscout/pull/8567) - Bump photoswipe from 5.4.1 to 5.4.2 in /apps/block_scout_web/assets
+- [#8566](https://github.com/blockscout/blockscout/pull/8566) - Bump postcss from 8.4.30 to 8.4.31 in /apps/block_scout_web/assets
+- [#7575](https://github.com/blockscout/blockscout/pull/7575) - Bump css-loader from 5.2.7 to 6.8.1 in /apps/block_scout_web/assets
+- [#8569](https://github.com/blockscout/blockscout/pull/8569) - Bump web3 from 1.10.0 to 1.10.2 in /apps/block_scout_web/assets
+- [#8570](https://github.com/blockscout/blockscout/pull/8570) - Bump core-js from 3.32.2 to 3.33.0 in /apps/block_scout_web/assets
+- [#8581](https://github.com/blockscout/blockscout/pull/8581) - Bump credo from 1.7.0 to 1.7.1
+- [#8607](https://github.com/blockscout/blockscout/pull/8607) - Bump sass from 1.68.0 to 1.69.0 in /apps/block_scout_web/assets
+- [#8606](https://github.com/blockscout/blockscout/pull/8606) - Bump highlight.js from 11.8.0 to 11.9.0 in /apps/block_scout_web/assets
+- [#8605](https://github.com/blockscout/blockscout/pull/8605) - Bump eslint from 8.50.0 to 8.51.0 in /apps/block_scout_web/assets
+- [#8608](https://github.com/blockscout/blockscout/pull/8608) - Bump sweetalert2 from 11.7.31 to 11.7.32 in /apps/block_scout_web/assets
+- [#8510](https://github.com/blockscout/blockscout/pull/8510) - Bump hackney from 1.18.1 to 1.19.1
+- [#8637](https://github.com/blockscout/blockscout/pull/8637) - Bump @babel/preset-env from 7.22.20 to 7.23.2 in /apps/block_scout_web/assets
+- [#8639](https://github.com/blockscout/blockscout/pull/8639) - Bump sass from 1.69.0 to 1.69.3 in /apps/block_scout_web/assets
+- [#8643](https://github.com/blockscout/blockscout/pull/8643) - Bump floki from 0.34.3 to 0.35.0
+- [#8641](https://github.com/blockscout/blockscout/pull/8641) - Bump ex_cldr from 2.37.2 to 2.37.4
+- [#8646](https://github.com/blockscout/blockscout/pull/8646) - Bump @babel/traverse from 7.23.0 to 7.23.2 in /apps/block_scout_web/assets
+- [#8636](https://github.com/blockscout/blockscout/pull/8636) - Bump @babel/core from 7.23.0 to 7.23.2 in /apps/block_scout_web/assets
+- [#8645](https://github.com/blockscout/blockscout/pull/8645) - Bump ex_doc from 0.30.6 to 0.30.7
+- [#8638](https://github.com/blockscout/blockscout/pull/8638) - Bump webpack from 5.88.2 to 5.89.0 in /apps/block_scout_web/assets
+- [#8640](https://github.com/blockscout/blockscout/pull/8640) - Bump hackney from 1.19.1 to 1.20.1
 </details>
 
 ## 5.2.3-beta
