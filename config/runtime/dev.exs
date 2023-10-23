@@ -103,7 +103,6 @@ config :explorer, Explorer.Repo.Suave,
   url: ExplorerConfigHelper.get_suave_db_url(),
   pool_size: ConfigHelper.parse_integer_env_var("SUAVE_POOL_SIZE", 10)
 
-
 variant = Variant.get()
 
 Code.require_file("#{variant}.exs", "apps/explorer/config/dev")
