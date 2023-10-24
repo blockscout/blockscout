@@ -150,7 +150,8 @@ config :ueberauth, Ueberauth, logout_url: "https://#{System.get_env("ACCOUNT_AUT
 config :ethereum_jsonrpc,
   rpc_transport: if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http", do: :http, else: :ipc),
   ipc_path: System.get_env("IPC_PATH"),
-  disable_archive_balances?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES")
+  disable_archive_balances?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES"),
+  archive_balances_window: ConfigHelper.parse_integer_env_var("ETHEREUM_JSONRPC_ARCHIVE_BALANCES_WINDOW", 200)
 
 config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
   headers:
