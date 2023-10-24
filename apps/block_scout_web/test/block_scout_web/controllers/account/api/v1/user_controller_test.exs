@@ -87,12 +87,12 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       assert response =
                conn
-               |> get("/api/account/v1/migration/user/tags/address")
+               |> get("/api/account/v2/user/tags/address")
                |> json_response(200)
 
       response_1 =
         conn
-        |> get("/api/account/v1/migration/user/tags/address", response["next_page_params"])
+        |> get("/api/account/v2/user/tags/address", response["next_page_params"])
         |> json_response(200)
 
       check_paginated_response(response, response_1, tags_address)
@@ -319,12 +319,12 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       assert response =
                conn
-               |> get("/api/account/v1/migration/user/tags/transaction")
+               |> get("/api/account/v2/user/tags/transaction")
                |> json_response(200)
 
       response_1 =
         conn
-        |> get("/api/account/v1/migration/user/tags/transaction", response["next_page_params"])
+        |> get("/api/account/v2/user/tags/transaction", response["next_page_params"])
         |> json_response(200)
 
       check_paginated_response(response, response_1, tags_address)
@@ -549,12 +549,12 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       assert response =
                conn
-               |> get("/api/account/v1/migration/user/watchlist")
+               |> get("/api/account/v2/user/watchlist")
                |> json_response(200)
 
       response_1 =
         conn
-        |> get("/api/account/v1/migration/user/watchlist", response["next_page_params"] |> dbg())
+        |> get("/api/account/v2/user/watchlist", response["next_page_params"] |> dbg())
         |> json_response(200)
 
       check_paginated_response(response, response_1, tags_address)
