@@ -46,6 +46,7 @@ defmodule Explorer.Application do
     # Children to start in all environments
     base_children = [
       Explorer.Repo,
+      Explorer.Repo.Replica1,
       Explorer.Vault,
       Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor}, id: Explorer.HistoryTaskSupervisor),
@@ -128,7 +129,7 @@ defmodule Explorer.Application do
       ]
       |> List.flatten()
 
-    repos_by_chain_type() ++ account_repo() ++ replica_repo() ++ configurable_children_set
+    repos_by_chain_type() ++ account_repo() ++ configurable_children_set
   end
 
   defp repos_by_chain_type do
@@ -142,14 +143,6 @@ defmodule Explorer.Application do
   defp account_repo do
     if System.get_env("ACCOUNT_DATABASE_URL") || Mix.env() == :test do
       [Explorer.Repo.Account]
-    else
-      []
-    end
-  end
-
-  defp replica_repo do
-    if System.get_env("DATABASE_READ_ONLY_API_URL") do
-      [Explorer.Repo.Replica1]
     else
       []
     end
