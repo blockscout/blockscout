@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.TransactionStateView
   alias Ecto.Association.NotLoaded
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Log, Token, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.PolygonEdge.Reader
   alias Explorer.Chain.Transaction.StateChange
@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Timex.Duration
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+  import Explorer.Chain.Transaction, only: [maybe_prepare_stability_fees: 1, bytes_to_address_hash: 1]
   import Explorer.Helper, only: [decode_data: 2]
 
   @api_true [api?: true]
@@ -889,53 +890,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  @transaction_fee_event_signature "0x99e7b0ba56da2819c37c047f0511fd2bf6c9b4e27b4a979a19d6da0f74be8155"
-  @transaction_fee_event_abi [
-    %{
-      "anonymous" => false,
-      "inputs" => [
-        %{
-          "indexed" => false,
-          "internalType" => "address",
-          "name" => "token",
-          "type" => "address"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "uint256",
-          "name" => "totalFee",
-          "type" => "uint256"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "address",
-          "name" => "validator",
-          "type" => "address"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "uint256",
-          "name" => "validatorFee",
-          "type" => "uint256"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "address",
-          "name" => "dapp",
-          "type" => "address"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "uint256",
-          "name" => "dappFee",
-          "type" => "uint256"
-        }
-      ],
-      "name" => "TransactionFee",
-      "type" => "event"
-    }
-  ]
-
   defp maybe_put_stability_fee(body, transaction) do
     with "stability" <- Application.get_env(:explorer, :chain_type),
          [
@@ -964,52 +918,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     else
       _ ->
         body
-    end
-  end
-
-  defp bytes_to_address_hash(bytes), do: %Hash{byte_count: 20, bytes: bytes}
-
-  defp maybe_prepare_stability_fees(transactions) do
-    if Application.get_env(:explorer, :chain_type) == "stability" do
-      maybe_prepare_stability_fees_inner(transactions)
-    else
-      transactions
-    end
-  end
-
-  defp maybe_prepare_stability_fees_inner(transactions) when is_list(transactions) do
-    {transactions, _tokens_acc} =
-      Enum.map_reduce(transactions, %{}, fn transaction, tokens_acc ->
-        case Log.fetch_log_by_tx_hash_and_first_topic(transaction.hash, @transaction_fee_event_signature, @api_true) do
-          fee_log when not is_nil(fee_log) ->
-            {:ok, _selector, mapping} = Log.find_and_decode(@transaction_fee_event_abi, fee_log, transaction)
-
-            [{"token", "address", false, token_address_hash}, _, _, _, _, _] = mapping
-
-            {token, new_tokens_acc} = check_tokens_acc(bytes_to_address_hash(token_address_hash), tokens_acc)
-
-            {%Transaction{transaction | transaction_fee_log: mapping, transaction_fee_token: token}, new_tokens_acc}
-
-          _ ->
-            {transaction, tokens_acc}
-        end
-      end)
-
-    transactions
-  end
-
-  defp maybe_prepare_stability_fees_inner(transaction) do
-    [transaction] = maybe_prepare_stability_fees_inner([transaction])
-    transaction
-  end
-
-  defp check_tokens_acc(token_address_hash, tokens_acc) do
-    if Map.has_key?(tokens_acc, token_address_hash) do
-      {tokens_acc[token_address_hash], tokens_acc}
-    else
-      token = Token.get_by_contract_address_hash(token_address_hash, @api_true)
-
-      {token, Map.put(tokens_acc, token_address_hash, token)}
     end
   end
 end

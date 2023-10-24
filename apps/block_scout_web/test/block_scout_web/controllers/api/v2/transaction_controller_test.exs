@@ -955,11 +955,19 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   describe "stability fees" do
-    test "check stability fees", %{conn: conn} do
+    setup %{conn: conn} do
       old_env = Application.get_env(:explorer, :chain_type)
 
       Application.put_env(:explorer, :chain_type, "stability")
 
+      on_exit(fn ->
+        Application.put_env(:explorer, :chain_type, old_env)
+      end)
+
+      %{conn: conn}
+    end
+
+    test "check stability fees", %{conn: conn} do
       tx = insert(:transaction) |> with_block()
 
       log =
@@ -1020,15 +1028,9 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  }
                ]
              } = json_response(request, 200)
-
-      Application.put_env(:explorer, :chain_type, old_env)
     end
 
     test "check stability if token absent in DB", %{conn: conn} do
-      old_env = Application.get_env(:explorer, :chain_type)
-
-      Application.put_env(:explorer, :chain_type, "stability")
-
       tx = insert(:transaction) |> with_block()
 
       log =
@@ -1088,8 +1090,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  }
                ]
              } = json_response(request, 200)
-
-      Application.put_env(:explorer, :chain_type, old_env)
     end
   end
 
