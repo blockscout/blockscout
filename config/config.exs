@@ -45,7 +45,7 @@ config :logger,
 config :logger_json, :backend,
   metadata:
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
-  block_number step count error_count shrunk import_id transaction_id duration status unit endpoint)a,
+  block_number step count error_count shrunk import_id transaction_id duration status unit endpoint method)a,
   json_encoder: Jason,
   formatter: LoggerJSON.Formatters.BasicLogger
 

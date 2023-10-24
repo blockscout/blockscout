@@ -30,10 +30,10 @@ defmodule BlockScoutWeb.Plug.Logger do
       Logger.log(
         level,
         fn ->
-          [connection_type(conn), ?\s, status, " in ", formatted_diff(diff), " on ", endpoint(conn)]
+          [connection_type(conn), ?\s, status, " in ", formatted_diff(diff), " on ", conn.method, ?\s, endpoint(conn)]
         end,
         Keyword.merge(
-          [duration: diff, status: status, unit: "microsecond", endpoint: endpoint(conn)],
+          [duration: diff, status: status, unit: "microsecond", endpoint: endpoint(conn), method: conn.method],
           opts
         )
       )
