@@ -32,6 +32,7 @@ defmodule Explorer.Market do
       %Token{
         usd_value: Map.get(today, :closing_price),
         market_cap_usd: Map.get(today, :market_cap),
+        tvl_usd: Map.get(today, :tvl),
         available_supply: nil,
         total_supply: nil,
         btc_value: nil,

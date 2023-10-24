@@ -294,7 +294,7 @@ interface IERC721Enumerable is IERC721 {
  *
  * Use this as follows (registryAddress is the address of the ENS registry to use):
  * -----
- * // This hex value is caclulated by namehash('addr.reverse')
+ * // This hex value is calculated by namehash('addr.reverse')
  * bytes32 public constant ENS_ADDR_REVERSE_NODE = 0x91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2;
  * function registerReverseENS(address registryAddress, string memory calldata) external {
  *     require(registryAddress != address(0), "need a valid registry");
