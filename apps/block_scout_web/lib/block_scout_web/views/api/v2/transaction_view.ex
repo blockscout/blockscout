@@ -405,7 +405,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "method" => method_name(transaction, decoded_input),
       "tx_types" => tx_types(transaction),
       "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_tx? && conn)),
-      "has_error_in_internal_txs" => transaction.has_error_in_internal_txs
+      "has_error_in_internal_txs" => transaction.has_error_in_internal_txs,
+      "near_receipt_hash" => transaction.near_receipt_hash,
+      "near_transaction_hash" => transaction.near_transaction_hash
     }
 
     if Application.get_env(:explorer, :chain_type) == "polygon_edge" && single_tx? do
