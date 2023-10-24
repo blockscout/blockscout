@@ -27,10 +27,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
 ### Explorer ###
 ################
 
-pool_size =
-  if System.get_env("DATABASE_READ_ONLY_API_URL"),
-    do: ConfigHelper.parse_integer_env_var("POOL_SIZE", 50),
-    else: ConfigHelper.parse_integer_env_var("POOL_SIZE", 40)
+pool_size = ConfigHelper.parse_integer_env_var("POOL_SIZE", 50)
 
 # Configures the database
 config :explorer, Explorer.Repo,
@@ -38,15 +35,10 @@ config :explorer, Explorer.Repo,
   pool_size: pool_size,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
-pool_size_api =
-  if System.get_env("DATABASE_READ_ONLY_API_URL"),
-    do: ConfigHelper.parse_integer_env_var("POOL_SIZE_API", 50),
-    else: ConfigHelper.parse_integer_env_var("POOL_SIZE_API", 10)
-
 # Configures API the database
 config :explorer, Explorer.Repo.Replica1,
   url: ExplorerConfigHelper.get_api_db_url(),
-  pool_size: pool_size_api,
+  pool_size: ConfigHelper.parse_integer_env_var("POOL_SIZE_API", 50),
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
 # Configures Account database
@@ -58,13 +50,17 @@ config :explorer, Explorer.Repo.Account,
 # Configures PolygonEdge database
 config :explorer, Explorer.Repo.PolygonEdge,
   url: System.get_env("DATABASE_URL"),
-  pool_size: ConfigHelper.parse_integer_env_var("POLYGON_EDGE_POOL_SIZE", 50),
+  # actually this repo is not started, and its pool size remains unused.
+  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+  pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
 # Configures Rootstock database
 config :explorer, Explorer.Repo.RSK,
   url: System.get_env("DATABASE_URL"),
-  pool_size: pool_size,
+  # actually this repo is not started, and its pool size remains unused.
+  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+  pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
 variant = Variant.get()
