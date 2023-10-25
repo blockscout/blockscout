@@ -101,7 +101,7 @@ config :explorer, Explorer.Repo.Suave,
   database: database,
   hostname: hostname,
   url: ExplorerConfigHelper.get_suave_db_url(),
-  pool_size: ConfigHelper.parse_integer_env_var("SUAVE_POOL_SIZE", 10)
+  pool_size: 1
 
 variant = Variant.get()
 

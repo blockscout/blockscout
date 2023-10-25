@@ -74,7 +74,7 @@ config :explorer, Explorer.Repo.RSK,
 # Configures Suave database
 config :explorer, Explorer.Repo.Suave,
   url: ExplorerConfigHelper.get_suave_db_url(),
-  pool_size: ConfigHelper.parse_integer_env_var("SUAVE_POOL_SIZE", 50),
+  pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
 variant = Variant.get()
