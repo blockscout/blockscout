@@ -55,11 +55,25 @@ config :explorer, Explorer.Repo.PolygonEdge,
   pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
+# Configures PolygonZkevm database
+config :explorer, Explorer.Repo.PolygonZkevm,
+  url: System.get_env("DATABASE_URL"),
+  # actually this repo is not started, and its pool size remains unused.
+  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+  pool_size: 1,
+  ssl: ExplorerConfigHelper.ssl_enabled?()
+
 # Configures Rootstock database
 config :explorer, Explorer.Repo.RSK,
   url: System.get_env("DATABASE_URL"),
   # actually this repo is not started, and its pool size remains unused.
   # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+  pool_size: 1,
+  ssl: ExplorerConfigHelper.ssl_enabled?()
+
+# Configures Suave database
+config :explorer, Explorer.Repo.Suave,
+  url: ExplorerConfigHelper.get_suave_db_url(),
   pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 

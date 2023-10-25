@@ -78,6 +78,15 @@ config :explorer, Explorer.Repo.PolygonEdge,
   # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
   pool_size: 1
 
+# Configure PolygonZkevm database
+config :explorer, Explorer.Repo.PolygonZkevm,
+  database: database,
+  hostname: hostname,
+  url: System.get_env("DATABASE_URL"),
+  # actually this repo is not started, and its pool size remains unused.
+  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+  pool_size: 1
+
 # Configure Rootstock database
 config :explorer, Explorer.Repo.RSK,
   database: database,
@@ -85,6 +94,13 @@ config :explorer, Explorer.Repo.RSK,
   url: System.get_env("DATABASE_URL"),
   # actually this repo is not started, and its pool size remains unused.
   # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+  pool_size: 1
+
+# Configure Suave database
+config :explorer, Explorer.Repo.Suave,
+  database: database,
+  hostname: hostname,
+  url: ExplorerConfigHelper.get_suave_db_url(),
   pool_size: 1
 
 variant = Variant.get()

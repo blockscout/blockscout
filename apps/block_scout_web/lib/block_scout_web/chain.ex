@@ -38,6 +38,7 @@ defmodule BlockScoutWeb.Chain do
     Withdrawal
   }
 
+  alias Explorer.Chain.Zkevm.TransactionBatch
   alias Explorer.PagingOptions
 
   defimpl Poison.Encoder, for: Decimal do
@@ -122,6 +123,10 @@ defmodule BlockScoutWeb.Chain do
     Map.put(next_page_params, "items_count", items_count)
   end
 
+  @doc """
+    Makes Explorer.PagingOptions map. Overloaded by different params in the input map
+    for different modules using this function.
+  """
   @spec paging_options(any) ::
           [{:paging_options, Explorer.PagingOptions.t()}, ...] | Explorer.PagingOptions.t()
   def paging_options(%{"hash" => hash_string, "fetched_coin_balance" => fetched_coin_balance_string})
@@ -298,6 +303,20 @@ defmodule BlockScoutWeb.Chain do
 
   def paging_options(%{"index" => index}) when is_integer(index) do
     [paging_options: %{@default_paging_options | key: {index}}]
+  end
+
+  def paging_options(%{"number" => number_string}) when is_binary(number_string) do
+    case Integer.parse(number_string) do
+      {number, ""} ->
+        [paging_options: %{@default_paging_options | key: {number}}]
+
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{"number" => number}) when is_integer(number) do
+    [paging_options: %{@default_paging_options | key: {number}}]
   end
 
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string})
@@ -540,6 +559,11 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%Withdrawal{index: index}) do
     %{"index" => index}
+  end
+
+  # clause for zkEVM batches pagination
+  defp paging_params(%TransactionBatch{number: number}) do
+    %{"number" => number}
   end
 
   # clause for search results pagination
