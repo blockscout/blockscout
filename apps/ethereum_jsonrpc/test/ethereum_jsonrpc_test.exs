@@ -994,26 +994,72 @@ defmodule EthereumJSONRPCSyncTest do
       on_exit(fn -> Application.put_all_env([{:indexer, initial_env}]) end)
     end
 
-    test "ignores all request with block_quantity != latest when env ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES is true",
+    test "ignores all request with block_quantity != latest or lower than window when env ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES is true",
          %{
            json_rpc_named_arguments: json_rpc_named_arguments
          } do
       hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
       expected_fetched_balance = 1
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
-                                                     %{
-                                                       id: 0,
-                                                       jsonrpc: "2.0",
-                                                       method: "eth_getBalance",
-                                                       params: [^hash, "latest"]
-                                                     }
-                                                   ],
-                                                   _options ->
-        {:ok, [%{id: 0, result: EthereumJSONRPC.integer_to_quantity(expected_fetched_balance)}]}
+      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
+        [
+          %{
+            id: 0,
+            jsonrpc: "2.0",
+            method: "eth_getBalance",
+            params: [^hash, "0x4"]
+          },
+          %{
+            id: 1,
+            jsonrpc: "2.0",
+            method: "eth_getBalance",
+            params: [^hash, "latest"]
+          }
+        ],
+        _options ->
+          {:ok,
+           [
+             %{id: 0, result: EthereumJSONRPC.integer_to_quantity(expected_fetched_balance)},
+             %{id: 1, result: EthereumJSONRPC.integer_to_quantity(expected_fetched_balance)}
+           ]}
+
+        [
+          %{
+            id: id,
+            method: "eth_getBlockByNumber"
+          }
+        ],
+        _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               result: %{
+                 "difficulty" => "0x0",
+                 "gasLimit" => "0x0",
+                 "gasUsed" => "0x0",
+                 "hash" => "0x29c850324e357f3c0c836d79860c5af55f7b651e5d7ee253c1af1b14908af49c",
+                 "extraData" => "0x0",
+                 "logsBloom" => "0x0",
+                 "miner" => "0x0",
+                 "number" => "0x4",
+                 "parentHash" => "0x0",
+                 "receiptsRoot" => "0x0",
+                 "size" => "0x0",
+                 "sha3Uncles" => "0x0",
+                 "stateRoot" => "0x0",
+                 "timestamp" => "0x0",
+                 "totalDifficulty" => "0x0",
+                 "transactions" => ["0xa2e81bb56b55ba3dab2daf76501b50dfaad240cccb905dbf89d65c7a84a4a48e"],
+                 "transactionsRoot" => "0x0",
+                 "uncles" => []
+               }
+             }
+           ]}
       end)
 
       Application.put_env(:ethereum_jsonrpc, :disable_archive_balances?, "true")
+      Application.put_env(:ethereum_jsonrpc, :archive_balances_window, 1)
 
       assert EthereumJSONRPC.fetch_balances(
                [
@@ -1031,6 +1077,11 @@ defmodule EthereumJSONRPCSyncTest do
                     %{
                       address_hash: hash,
                       block_number: nil,
+                      value: expected_fetched_balance
+                    },
+                    %{
+                      address_hash: hash,
+                      block_number: 4,
                       value: expected_fetched_balance
                     }
                   ]

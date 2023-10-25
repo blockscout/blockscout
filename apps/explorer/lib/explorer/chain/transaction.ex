@@ -31,6 +31,7 @@ defmodule Explorer.Chain.Transaction do
   }
 
   alias Explorer.Chain.Transaction.{Fork, Status}
+  alias Explorer.Chain.Zkevm.BatchTransaction
   alias Explorer.SmartContract.SigProviderInterface
 
   @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
@@ -274,6 +275,11 @@ defmodule Explorer.Chain.Transaction do
     )
 
     has_many(:uncles, through: [:forks, :uncle])
+
+    has_one(:zkevm_batch_transaction, BatchTransaction, foreign_key: :hash)
+    has_one(:zkevm_batch, through: [:zkevm_batch_transaction, :batch])
+    has_one(:zkevm_sequence_transaction, through: [:zkevm_batch, :sequence_transaction])
+    has_one(:zkevm_verify_transaction, through: [:zkevm_batch, :verify_transaction])
 
     belongs_to(
       :created_contract_address,

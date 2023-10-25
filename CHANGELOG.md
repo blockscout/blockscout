@@ -4,7 +4,15 @@
 
 ### Features
 
+- [#8673](https://github.com/blockscout/blockscout/pull/8673) - Add a window for balances fetching from non-archive node
+- [#8528](https://github.com/blockscout/blockscout/pull/8528) - Account: add pagination + envs for limits
+- [#7584](https://github.com/blockscout/blockscout/pull/7584) - Add Polygon zkEVM batches fetcher
+
 ### Fixes
+
+- [#8695](https://github.com/blockscout/blockscout/pull/8695) - Don't override internal transaction error if it's present already
+- [#8685](https://github.com/blockscout/blockscout/pull/8685) - Fix db pool size exceeds Postgres max connections
+- [#8678](https://github.com/blockscout/blockscout/pull/8678) - Fix `is_verified` for `/addresses` and `/smart-contracts`
 
 ### Chore
 

@@ -257,7 +257,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     token = smart_contract.address.token
 
     %{
-      "address" => Helper.address_with_info(nil, smart_contract.address, smart_contract.address.hash, false),
+      "address" =>
+        Helper.address_with_info(
+          nil,
+          %Address{smart_contract.address | smart_contract: smart_contract},
+          smart_contract.address.hash,
+          false
+        ),
       "compiler_version" => smart_contract.compiler_version,
       "optimization_enabled" => smart_contract.optimization,
       "tx_count" => smart_contract.address.transactions_count,

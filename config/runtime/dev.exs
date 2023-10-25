@@ -75,14 +75,27 @@ config :explorer, Explorer.Repo.PolygonEdge,
   database: database,
   hostname: hostname,
   url: System.get_env("DATABASE_URL"),
-  pool_size: ConfigHelper.parse_integer_env_var("POLYGON_EDGE_POOL_SIZE", 10)
+  # actually this repo is not started, and its pool size remains unused.
+  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+  pool_size: 1
+
+# Configure PolygonZkevm database
+config :explorer, Explorer.Repo.PolygonZkevm,
+  database: database,
+  hostname: hostname,
+  url: System.get_env("DATABASE_URL"),
+  # actually this repo is not started, and its pool size remains unused.
+  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+  pool_size: 1
 
 # Configure Rootstock database
 config :explorer, Explorer.Repo.RSK,
   database: database,
   hostname: hostname,
   url: System.get_env("DATABASE_URL"),
-  pool_size: pool_size
+  # actually this repo is not started, and its pool size remains unused.
+  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+  pool_size: 1
 
 variant = Variant.get()
 

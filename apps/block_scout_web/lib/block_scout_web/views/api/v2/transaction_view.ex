@@ -71,6 +71,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
+  def render("transactions.json", %{transactions: transactions, items: true, conn: conn}) do
+    %{
+      "items" => render("transactions.json", %{transactions: transactions, conn: conn})
+    }
+  end
+
   def render("transactions.json", %{transactions: transactions, conn: conn}) do
     block_height = Chain.block_height(@api_true)
     {decoded_transactions, _, _} = decode_transactions(transactions, true)
@@ -408,12 +414,43 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "has_error_in_internal_txs" => transaction.has_error_in_internal_txs
     }
 
-    if Application.get_env(:explorer, :chain_type) == "polygon_edge" && single_tx? do
-      result
-      |> Map.put("polygon_edge_deposit", polygon_edge_deposit(transaction.hash, conn))
-      |> Map.put("polygon_edge_withdrawal", polygon_edge_withdrawal(transaction.hash, conn))
+    chain_type_fields(result, transaction, single_tx?, conn)
+  end
+
+  defp chain_type_fields(result, transaction, single_tx?, conn) do
+    case single_tx? && Application.get_env(:explorer, :chain_type) do
+      "polygon_edge" ->
+        result
+        |> Map.put("polygon_edge_deposit", polygon_edge_deposit(transaction.hash, conn))
+        |> Map.put("polygon_edge_withdrawal", polygon_edge_withdrawal(transaction.hash, conn))
+
+      "polygon_zkevm" ->
+        extended_result =
+          result
+          |> add_optional_transaction_field(transaction, "zkevm_batch_number", :zkevm_batch, :number)
+          |> add_optional_transaction_field(transaction, "zkevm_sequence_hash", :zkevm_sequence_transaction, :hash)
+          |> add_optional_transaction_field(transaction, "zkevm_verify_hash", :zkevm_verify_transaction, :hash)
+
+        Map.put(extended_result, "zkevm_status", zkevm_status(extended_result))
+
+      _ ->
+        result
+    end
+  end
+
+  defp add_optional_transaction_field(result, transaction, field_name, assoc_name, assoc_field) do
+    case Map.get(transaction, assoc_name) do
+      nil -> result
+      %Ecto.Association.NotLoaded{} -> result
+      item -> Map.put(result, field_name, Map.get(item, assoc_field))
+    end
+  end
+
+  defp zkevm_status(result_map) do
+    if is_nil(Map.get(result_map, "zkevm_sequence_hash")) do
+      "Confirmed by Sequencer"
     else
-      result
+      "L1 Confirmed"
     end
   end
 

@@ -47,9 +47,6 @@ defmodule Explorer.Application do
     base_children = [
       Explorer.Repo,
       Explorer.Repo.Replica1,
-      Explorer.Repo.Account,
-      Explorer.Repo.PolygonEdge,
-      Explorer.Repo.RSK,
       Explorer.Vault,
       Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor}, id: Explorer.HistoryTaskSupervisor),
@@ -93,45 +90,64 @@ defmodule Explorer.Application do
   end
 
   defp configurable_children do
-    [
-      configure(Explorer.ExchangeRates),
-      configure(Explorer.ExchangeRates.TokenExchangeRates),
-      configure(Explorer.ChainSpec.GenesisData),
-      configure(Explorer.Market.History.Cataloger),
-      configure(Explorer.Chain.Cache.TokenExchangeRate),
-      configure(Explorer.Chain.Cache.ContractsCounter),
-      configure(Explorer.Chain.Cache.NewContractsCounter),
-      configure(Explorer.Chain.Cache.VerifiedContractsCounter),
-      configure(Explorer.Chain.Cache.NewVerifiedContractsCounter),
-      configure(Explorer.Chain.Cache.TransactionActionTokensData),
-      configure(Explorer.Chain.Cache.TransactionActionUniswapPools),
-      configure(Explorer.Chain.Cache.WithdrawalsSum),
-      configure(Explorer.Chain.Transaction.History.Historian),
-      configure(Explorer.Chain.Events.Listener),
-      configure(Explorer.Counters.AddressesWithBalanceCounter),
-      configure(Explorer.Counters.AddressesCounter),
-      configure(Explorer.Counters.AddressTransactionsCounter),
-      configure(Explorer.Counters.AddressTokenTransfersCounter),
-      configure(Explorer.Counters.AddressTransactionsGasUsageCounter),
-      configure(Explorer.Counters.AddressTokenUsdSum),
-      configure(Explorer.Counters.TokenHoldersCounter),
-      configure(Explorer.Counters.TokenTransfersCounter),
-      configure(Explorer.Counters.BlockBurnedFeeCounter),
-      configure(Explorer.Counters.BlockPriorityFeeCounter),
-      configure(Explorer.Counters.AverageBlockTime),
-      configure(Explorer.Counters.Bridge),
-      configure(Explorer.Validator.MetadataProcessor),
-      configure(Explorer.Staking.ContractState),
-      configure(Explorer.Tags.AddressTag.Cataloger),
-      configure(MinMissingBlockNumber),
-      configure(TokenTransferTokenIdMigration.Supervisor),
-      configure(Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand),
-      configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand),
-      configure(Explorer.TokenInstanceOwnerAddressMigration.Supervisor),
-      sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand),
-      configure(Explorer.Chain.Cache.RootstockLockedBTC)
-    ]
-    |> List.flatten()
+    configurable_children_set =
+      [
+        configure(Explorer.ExchangeRates),
+        configure(Explorer.ExchangeRates.TokenExchangeRates),
+        configure(Explorer.ChainSpec.GenesisData),
+        configure(Explorer.Market.History.Cataloger),
+        configure(Explorer.Chain.Cache.TokenExchangeRate),
+        configure(Explorer.Chain.Cache.ContractsCounter),
+        configure(Explorer.Chain.Cache.NewContractsCounter),
+        configure(Explorer.Chain.Cache.VerifiedContractsCounter),
+        configure(Explorer.Chain.Cache.NewVerifiedContractsCounter),
+        configure(Explorer.Chain.Cache.TransactionActionTokensData),
+        configure(Explorer.Chain.Cache.TransactionActionUniswapPools),
+        configure(Explorer.Chain.Cache.WithdrawalsSum),
+        configure(Explorer.Chain.Transaction.History.Historian),
+        configure(Explorer.Chain.Events.Listener),
+        configure(Explorer.Counters.AddressesWithBalanceCounter),
+        configure(Explorer.Counters.AddressesCounter),
+        configure(Explorer.Counters.AddressTransactionsCounter),
+        configure(Explorer.Counters.AddressTokenTransfersCounter),
+        configure(Explorer.Counters.AddressTransactionsGasUsageCounter),
+        configure(Explorer.Counters.AddressTokenUsdSum),
+        configure(Explorer.Counters.TokenHoldersCounter),
+        configure(Explorer.Counters.TokenTransfersCounter),
+        configure(Explorer.Counters.BlockBurnedFeeCounter),
+        configure(Explorer.Counters.BlockPriorityFeeCounter),
+        configure(Explorer.Counters.AverageBlockTime),
+        configure(Explorer.Counters.Bridge),
+        configure(Explorer.Validator.MetadataProcessor),
+        configure(Explorer.Staking.ContractState),
+        configure(Explorer.Tags.AddressTag.Cataloger),
+        configure(MinMissingBlockNumber),
+        configure(TokenTransferTokenIdMigration.Supervisor),
+        configure(Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand),
+        configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand),
+        configure(Explorer.TokenInstanceOwnerAddressMigration.Supervisor),
+        sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand),
+        configure(Explorer.Chain.Cache.RootstockLockedBTC)
+      ]
+      |> List.flatten()
+
+    repos_by_chain_type() ++ account_repo() ++ configurable_children_set
+  end
+
+  defp repos_by_chain_type do
+    if Mix.env() == :test do
+      [Explorer.Repo.PolygonEdge, Explorer.Repo.PolygonZkevm, Explorer.Repo.RSK]
+    else
+      []
+    end
+  end
+
+  defp account_repo do
+    if System.get_env("ACCOUNT_DATABASE_URL") || Mix.env() == :test do
+      [Explorer.Repo.Account]
+    else
+      []
+    end
   end
 
   defp should_start?(process) do

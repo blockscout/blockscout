@@ -171,7 +171,7 @@ defmodule Explorer.Chain do
   @type necessity_by_association :: %{association => necessity}
 
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
-  @typep paging_options :: {:paging_options, PagingOptions.t()}
+  @type paging_options :: {:paging_options, PagingOptions.t()}
   @typep balance_by_day :: %{date: String.t(), value: Wei.t()}
   @type api? :: {:api?, true | false}
 
@@ -1749,7 +1749,7 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
   """
-  @spec hashes_to_transactions([Hash.Full.t()], [necessity_by_association_option]) :: [Transaction.t()] | []
+  @spec hashes_to_transactions([Hash.Full.t()], [necessity_by_association_option | api?]) :: [Transaction.t()] | []
   def hashes_to_transactions(hashes, options \\ []) when is_list(hashes) and is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -1757,7 +1757,7 @@ defmodule Explorer.Chain do
     |> where([transaction], transaction.hash in ^hashes)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
-    |> Repo.all()
+    |> select_repo(options).all()
   end
 
   @doc """
@@ -2068,7 +2068,7 @@ defmodule Explorer.Chain do
       from(a in Address,
         where: a.fetched_coin_balance > ^0,
         order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-        preload: [:names],
+        preload: [:names, :smart_contract],
         select: {a, fragment("coalesce(1 + ?, 0)", a.nonce)}
       )
 
@@ -4250,7 +4250,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
+  def join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
     end)
