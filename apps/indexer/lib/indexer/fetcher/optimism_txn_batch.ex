@@ -477,7 +477,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
               batches,
               sequences,
               {last_channel_id, current_channel_id},
-              incomplete_frame_sequence_acc
+              {incomplete_frame_sequence_acc, json_rpc_named_arguments_l2}
             )
 
           {:channel_id_valid, false} ->
@@ -514,12 +514,35 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          batches,
          sequences,
          {last_channel_id, current_channel_id},
-         incomplete_frame_sequence
+         {incomplete_frame_sequence, json_rpc_named_arguments_l2}
        ) do
     cond do
-      frame.number == 0 ->
+      frame.number == 0 && frame.is_last ->
         # the new frame rewrites the previous frame sequence
-        # todo: handle last frame (when frame.is_last == true)
+        clear_future_frames()
+
+        {batches_parsed, seq} =
+          get_new_batches_and_sequence(
+            frame.data,
+            sequences,
+            [tx.hash],
+            l1_timestamp,
+            json_rpc_named_arguments_l2,
+            false
+          )
+
+        if batches_parsed != :error do
+          {:cont,
+           {:ok, batches ++ batches_parsed, [seq | sequences], empty_incomplete_frame_sequence(), frame.channel_id,
+            <<>>}}
+        else
+          {:halt,
+           {:error,
+            "Invalid RLP in a frame. Tx hash of the frame: #{tx.hash}. Compressed frame data: 0x#{Base.encode16(frame.data, case: :lower)}"}}
+        end
+
+      frame.number == 0 && !frame.is_last ->
+        # the new frame rewrites the previous frame sequence
         clear_future_frames()
 
         {:cont,
