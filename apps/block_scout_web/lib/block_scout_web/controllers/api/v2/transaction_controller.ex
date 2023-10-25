@@ -91,7 +91,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           |> Map.put([execution_node: :names], :optional)
           |> Map.put([wrapped_to_address: :names], :optional)
 
-        _ -> necessity_by_association_with_actions
+        _ ->
+          necessity_by_association_with_actions
       end
 
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
