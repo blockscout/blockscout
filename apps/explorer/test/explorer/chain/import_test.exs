@@ -350,6 +350,19 @@ defmodule Explorer.Chain.ImportTest do
               }} = Import.all(@import_data)
     end
 
+    test "block consensus removed if there was an exception in further steps" do
+      not_existing_block_hash = "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471db"
+
+      incorrect_data =
+        update_in(@import_data, [:transactions, :params], fn params ->
+          [params |> Enum.at(0) |> Map.put(:block_hash, not_existing_block_hash)]
+        end)
+
+      assert_raise(Postgrex.Error, fn -> Import.all(incorrect_data) end)
+      assert [] = Repo.all(Transaction)
+      assert %{consensus: false} = Repo.one(Block)
+    end
+
     test "inserts a token_balance" do
       params = %{
         addresses: %{
