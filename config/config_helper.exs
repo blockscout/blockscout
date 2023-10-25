@@ -9,6 +9,7 @@ defmodule ConfigHelper do
 
     case System.get_env("CHAIN_TYPE") do
       "polygon_edge" -> base_repos ++ [Explorer.Repo.PolygonEdge]
+      "polygon_zkevm" -> base_repos ++ [Explorer.Repo.PolygonZkevm]
       "rsk" -> base_repos ++ [Explorer.Repo.RSK]
       _ -> base_repos
     end

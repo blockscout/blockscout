@@ -1743,7 +1743,7 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
   """
-  @spec hashes_to_transactions([Hash.Full.t()], [necessity_by_association_option]) :: [Transaction.t()] | []
+  @spec hashes_to_transactions([Hash.Full.t()], [necessity_by_association_option | api?]) :: [Transaction.t()] | []
   def hashes_to_transactions(hashes, options \\ []) when is_list(hashes) and is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -1751,7 +1751,7 @@ defmodule Explorer.Chain do
     |> where([transaction], transaction.hash in ^hashes)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
-    |> Repo.all()
+    |> select_repo(options).all()
   end
 
   @doc """
@@ -4116,7 +4116,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
+  def join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
     end)
