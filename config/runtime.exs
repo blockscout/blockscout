@@ -308,6 +308,8 @@ config :explorer, Explorer.ExchangeRates.TokenExchangeRates,
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: !disable_indexer? && !disable_exchange_rates?
 
+config :explorer, Explorer.Chain.Transaction, suave_bid_contracts: System.get_env("SUAVE_BID_CONTRACTS", "")
+
 config :explorer, Explorer.Chain.Transaction.History.Historian,
   enabled: ConfigHelper.parse_bool_env_var("TXS_STATS_ENABLED", "true"),
   init_lag_milliseconds: ConfigHelper.parse_time_env_var("TXS_HISTORIAN_INIT_LAG", "0"),

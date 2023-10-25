@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.TransactionStateView
   alias Ecto.Association.NotLoaded
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.PolygonEdge.Reader
   alias Explorer.Chain.Transaction.StateChange
@@ -16,8 +16,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Timex.Duration
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+  import Explorer.Helper, only: [decode_data: 2]
 
   @api_true [api?: true]
+  @suave_bid_event "0x83481d5b04dea534715acad673a8177a46fc93882760f36bdc16ccac439d504e"
 
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
@@ -414,10 +416,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "has_error_in_internal_txs" => transaction.has_error_in_internal_txs
     }
 
-    chain_type_fields(result, transaction, single_tx?, conn)
+    chain_type_fields(result, transaction, single_tx?, conn, watchlist_names)
   end
 
-  defp chain_type_fields(result, transaction, single_tx?, conn) do
+  defp chain_type_fields(result, transaction, single_tx?, conn, watchlist_names) do
     case single_tx? && Application.get_env(:explorer, :chain_type) do
       "polygon_edge" ->
         result
@@ -432,6 +434,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           |> add_optional_transaction_field(transaction, "zkevm_verify_hash", :zkevm_verify_transaction, :hash)
 
         Map.put(extended_result, "zkevm_status", zkevm_status(extended_result))
+
+      "suave" ->
+        suave_fields(transaction, result, single_tx?, conn, watchlist_names)
 
       _ ->
         result
@@ -452,6 +457,97 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     else
       "L1 Confirmed"
     end
+  end
+
+  defp suave_fields(transaction, result, single_tx?, conn, watchlist_names) do
+    if is_nil(transaction.execution_node_hash) do
+      result
+    else
+      {[wrapped_decoded_input], _, _} =
+        decode_transactions(
+          [
+            %Transaction{
+              to_address: transaction.wrapped_to_address,
+              input: transaction.wrapped_input,
+              hash: transaction.wrapped_hash
+            }
+          ],
+          false
+        )
+
+      result
+      |> Map.put("allowed_peekers", suave_parse_allowed_peekers(transaction.logs))
+      |> Map.put(
+        "execution_node",
+        Helper.address_with_info(
+          single_tx? && conn,
+          transaction.execution_node,
+          transaction.execution_node_hash,
+          single_tx?,
+          watchlist_names
+        )
+      )
+      |> Map.put("wrapped", %{
+        "type" => transaction.wrapped_type,
+        "nonce" => transaction.wrapped_nonce,
+        "to" =>
+          Helper.address_with_info(
+            single_tx? && conn,
+            transaction.wrapped_to_address,
+            transaction.wrapped_to_address_hash,
+            single_tx?,
+            watchlist_names
+          ),
+        "gas_limit" => transaction.wrapped_gas,
+        "gas_price" => transaction.wrapped_gas_price,
+        "fee" =>
+          format_fee(
+            Chain.fee(
+              %Transaction{gas: transaction.wrapped_gas, gas_price: transaction.wrapped_gas_price, gas_used: nil},
+              :wei
+            )
+          ),
+        "max_priority_fee_per_gas" => transaction.wrapped_max_priority_fee_per_gas,
+        "max_fee_per_gas" => transaction.wrapped_max_fee_per_gas,
+        "value" => transaction.wrapped_value,
+        "hash" => transaction.wrapped_hash,
+        "method" =>
+          method_name(
+            %Transaction{to_address: transaction.wrapped_to_address, input: transaction.wrapped_input},
+            wrapped_decoded_input
+          ),
+        "decoded_input" => decoded_input(wrapped_decoded_input),
+        "raw_input" => transaction.wrapped_input
+      })
+    end
+  end
+
+  defp suave_parse_allowed_peekers(logs) do
+    suave_bid_contracts =
+      Application.get_all_env(:explorer)[Transaction][:suave_bid_contracts]
+      |> String.split(",")
+      |> Enum.map(fn sbc -> String.downcase(String.trim(sbc)) end)
+
+    bid_event =
+      Enum.find(logs, fn log ->
+        sanitize_log_first_topic(log.first_topic) == @suave_bid_event &&
+          Enum.member?(suave_bid_contracts, String.downcase(Hash.to_string(log.address_hash)))
+      end)
+
+    if is_nil(bid_event) do
+      []
+    else
+      [_bid_id, _decryption_condition, allowed_peekers] =
+        decode_data(bid_event.data, [{:bytes, 16}, {:uint, 64}, {:array, :address}])
+
+      Enum.map(allowed_peekers, fn peeker ->
+        "0x" <> Base.encode16(peeker, case: :lower)
+      end)
+    end
+  end
+
+  defp sanitize_log_first_topic(first_topic) do
+    if is_nil(first_topic), do: "", else: String.downcase(first_topic)
   end
 
   def token_transfers(_, _conn, false), do: nil
