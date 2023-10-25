@@ -165,7 +165,7 @@ defmodule Explorer.Chain do
   @type necessity_by_association :: %{association => necessity}
 
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
-  @typep paging_options :: {:paging_options, PagingOptions.t()}
+  @type paging_options :: {:paging_options, PagingOptions.t()}
   @typep balance_by_day :: %{date: String.t(), value: Wei.t()}
   @type api? :: {:api?, true | false}
 
@@ -848,6 +848,22 @@ defmodule Explorer.Chain do
           else:
             Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_necessity_by_association, options) end)
         )).()
+  end
+
+  @spec execution_node_to_transactions(Hash.Address.t(), [paging_options | necessity_by_association_option | api?()]) ::
+          [Transaction.t()]
+  def execution_node_to_transactions(execution_node_hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    options
+    |> Keyword.get(:paging_options, @default_paging_options)
+    |> fetch_transactions_in_descending_order_by_block_and_index()
+    |> where(execution_node_hash: ^execution_node_hash)
+    |> join_associations(necessity_by_association)
+    |> put_has_token_transfers_to_tx(false)
+    |> (& &1).()
+    |> select_repo(options).all()
+    |> (&Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_necessity_by_association, options) end)).()
   end
 
   @spec block_to_withdrawals(
@@ -1743,7 +1759,7 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
   """
-  @spec hashes_to_transactions([Hash.Full.t()], [necessity_by_association_option]) :: [Transaction.t()] | []
+  @spec hashes_to_transactions([Hash.Full.t()], [necessity_by_association_option | api?]) :: [Transaction.t()] | []
   def hashes_to_transactions(hashes, options \\ []) when is_list(hashes) and is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -1751,7 +1767,7 @@ defmodule Explorer.Chain do
     |> where([transaction], transaction.hash in ^hashes)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
-    |> Repo.all()
+    |> select_repo(options).all()
   end
 
   @doc """
@@ -2062,7 +2078,7 @@ defmodule Explorer.Chain do
       from(a in Address,
         where: a.fetched_coin_balance > ^0,
         order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-        preload: [:names],
+        preload: [:names, :smart_contract],
         select: {a, fragment("coalesce(1 + ?, 0)", a.nonce)}
       )
 
@@ -3407,12 +3423,7 @@ defmodule Explorer.Chain do
   The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in
   `unit`.
   """
-  @spec value(InternalTransaction.t(), :wei) :: Wei.wei()
-  @spec value(InternalTransaction.t(), :gwei) :: Wei.gwei()
-  @spec value(InternalTransaction.t(), :ether) :: Wei.ether()
-  @spec value(Transaction.t(), :wei) :: Wei.wei()
-  @spec value(Transaction.t(), :gwei) :: Wei.gwei()
-  @spec value(Transaction.t(), :ether) :: Wei.ether()
+  @spec value(InternalTransaction.t() | Transaction.t(), :wei | :gwei | :ether) :: Wei.wei() | Wei.gwei() | Wei.ether()
   def value(%type{value: value}, unit) when type in [InternalTransaction, Transaction] do
     Wei.to(value, unit)
   end
@@ -3996,6 +4007,12 @@ defmodule Explorer.Chain do
     |> handle_block_paging_options(paging_options)
   end
 
+  defp fetch_transactions_in_descending_order_by_block_and_index(paging_options) do
+    Transaction
+    |> order_by([transaction], desc: transaction.block_number, asc: transaction.index)
+    |> handle_block_paging_options(paging_options)
+  end
+
   defp for_parent_transaction(query, %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash) do
     from(
       child in query,
@@ -4116,7 +4133,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
+  def join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
     end)
