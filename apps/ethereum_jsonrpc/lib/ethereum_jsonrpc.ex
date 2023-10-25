@@ -189,9 +189,13 @@ defmodule EthereumJSONRPC do
       when is_list(params_list) and is_list(json_rpc_named_arguments) do
     filtered_params =
       if Application.get_env(:ethereum_jsonrpc, :disable_archive_balances?) do
+        {:ok, max_block_number} = fetch_block_number_by_tag("latest", json_rpc_named_arguments)
+        window = Application.get_env(:ethereum_jsonrpc, :archive_balances_window)
+
         params_list
         |> Enum.filter(fn
           %{block_quantity: "latest"} -> true
+          %{block_quantity: block_quantity} -> quantity_to_integer(block_quantity) > max_block_number - window
           _ -> false
         end)
       else

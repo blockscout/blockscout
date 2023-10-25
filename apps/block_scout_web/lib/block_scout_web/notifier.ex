@@ -114,6 +114,16 @@ defmodule BlockScoutWeb.Notifier do
     end)
   end
 
+  def handle_event({:chain_event, :zkevm_confirmed_batches, :realtime, batches}) do
+    batches
+    |> Enum.sort_by(& &1.number, :asc)
+    |> Enum.each(fn confirmed_batch ->
+      Endpoint.broadcast("zkevm_batches:new_zkevm_confirmed_batch", "new_zkevm_confirmed_batch", %{
+        batch: confirmed_batch
+      })
+    end)
+  end
+
   def handle_event({:chain_event, :exchange_rate}) do
     exchange_rate = Market.get_coin_exchange_rate()
 

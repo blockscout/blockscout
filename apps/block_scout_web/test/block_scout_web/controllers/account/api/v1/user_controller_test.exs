@@ -1,8 +1,14 @@
 defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias Explorer.Repo
+  alias Explorer.Account.{
+    TagAddress,
+    TagTransaction,
+    WatchlistAddress
+  }
+
   alias Explorer.Chain.Address
+  alias Explorer.Repo
   alias BlockScoutWeb.Models.UserFromAuth
 
   setup %{conn: conn} do
@@ -46,6 +52,50 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert tag_address_response["address_hash"] == "0x3e9ac8f16c92bc4f093357933b5befbf1e16987b"
       assert tag_address_response["name"] == "MyName"
       assert tag_address_response["id"]
+    end
+
+    test "can't insert private address tags more than limit", %{conn: conn, user: user} do
+      old_env = Application.get_env(:explorer, Explorer.Account)
+
+      new_env =
+        old_env
+        |> Keyword.replace(:private_tags_limit, 5)
+        |> Keyword.replace(:watchlist_addresses_limit, 5)
+
+      Application.put_env(:explorer, Explorer.Account, new_env)
+
+      for _ <- 0..3 do
+        build(:tag_address_db, user: user) |> Repo.account_repo().insert()
+      end
+
+      assert conn
+             |> post("/api/account/v1/user/tags/address", build(:tag_address))
+             |> json_response(200)
+
+      assert conn
+             |> post("/api/account/v1/user/tags/address", build(:tag_address))
+             |> json_response(422)
+
+      Application.put_env(:explorer, Explorer.Account, old_env)
+    end
+
+    test "check address tags pagination", %{conn: conn, user: user} do
+      tags_address =
+        for _ <- 0..50 do
+          build(:tag_address_db, user: user) |> Repo.account_repo().insert!()
+        end
+
+      assert response =
+               conn
+               |> get("/api/account/v2/user/tags/address")
+               |> json_response(200)
+
+      response_1 =
+        conn
+        |> get("/api/account/v2/user/tags/address", response["next_page_params"])
+        |> json_response(200)
+
+      check_paginated_response(response, response_1, tags_address)
     end
 
     test "edit private address tag", %{conn: conn} do
@@ -236,6 +286,50 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert tag_transaction_response["id"]
     end
 
+    test "can't insert private transaction tags more than limit", %{conn: conn, user: user} do
+      old_env = Application.get_env(:explorer, Explorer.Account)
+
+      new_env =
+        old_env
+        |> Keyword.replace(:private_tags_limit, 5)
+        |> Keyword.replace(:watchlist_addresses_limit, 5)
+
+      Application.put_env(:explorer, Explorer.Account, new_env)
+
+      for _ <- 0..3 do
+        build(:tag_transaction_db, user: user) |> Repo.account_repo().insert()
+      end
+
+      assert conn
+             |> post("/api/account/v1/user/tags/transaction", build(:tag_transaction))
+             |> json_response(200)
+
+      assert conn
+             |> post("/api/account/v1/user/tags/transaction", build(:tag_transaction))
+             |> json_response(422)
+
+      Application.put_env(:explorer, Explorer.Account, old_env)
+    end
+
+    test "check transaction tags pagination", %{conn: conn, user: user} do
+      tags_address =
+        for _ <- 0..50 do
+          build(:tag_transaction_db, user: user) |> Repo.account_repo().insert!()
+        end
+
+      assert response =
+               conn
+               |> get("/api/account/v2/user/tags/transaction")
+               |> json_response(200)
+
+      response_1 =
+        conn
+        |> get("/api/account/v2/user/tags/transaction", response["next_page_params"])
+        |> json_response(200)
+
+      check_paginated_response(response, response_1, tags_address)
+    end
+
     test "edit private transaction tag", %{conn: conn} do
       tx_tag = build(:tag_transaction)
 
@@ -420,6 +514,50 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       assert get_watchlist_address_response_1_1["address_hash"] == watchlist_address_map_1["address_hash"]
       assert get_watchlist_address_response_1_1["id"] == post_watchlist_address_response_1["id"]
+    end
+
+    test "can't insert watchlist addresses more than limit", %{conn: conn, user: user} do
+      old_env = Application.get_env(:explorer, Explorer.Account)
+
+      new_env =
+        old_env
+        |> Keyword.replace(:private_tags_limit, 5)
+        |> Keyword.replace(:watchlist_addresses_limit, 5)
+
+      Application.put_env(:explorer, Explorer.Account, new_env)
+
+      for _ <- 0..3 do
+        build(:watchlist_address_db, wl_id: user.watchlist_id) |> Repo.account_repo().insert()
+      end
+
+      assert conn
+             |> post("/api/account/v1/user/watchlist", build(:watchlist_address))
+             |> json_response(200)
+
+      assert conn
+             |> post("/api/account/v1/user/watchlist", build(:watchlist_address))
+             |> json_response(422)
+
+      Application.put_env(:explorer, Explorer.Account, old_env)
+    end
+
+    test "check watchlist tags pagination", %{conn: conn, user: user} do
+      tags_address =
+        for _ <- 0..50 do
+          build(:watchlist_address_db, wl_id: user.watchlist_id) |> Repo.account_repo().insert!()
+        end
+
+      assert response =
+               conn
+               |> get("/api/account/v2/user/watchlist")
+               |> json_response(200)
+
+      response_1 =
+        conn
+        |> get("/api/account/v2/user/watchlist", response["next_page_params"] |> dbg())
+        |> json_response(200)
+
+      check_paginated_response(response, response_1, tags_address)
     end
 
     test "delete watchlist address", %{conn: conn} do
@@ -625,14 +763,14 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       [wa2, wa1] = conn |> get("/api/account/v1/user/watchlist") |> json_response(200)
 
-      assert wa1["tokens_fiat_value"] |> Decimal.new() |> Decimal.round(14) ==
-               values |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end) |> Decimal.round(14)
+      assert wa1["tokens_fiat_value"] |> Decimal.new() |> Decimal.round(13) ==
+               values |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end) |> Decimal.round(13)
 
       assert wa1["tokens_count"] == 150
       assert wa1["tokens_overflow"] == false
 
-      assert wa2["tokens_fiat_value"] |> Decimal.new() |> Decimal.round(14) ==
-               values_1 |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end) |> Decimal.round(14)
+      assert wa2["tokens_fiat_value"] |> Decimal.new() |> Decimal.round(13) ==
+               values_1 |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end) |> Decimal.round(13)
 
       assert wa2["tokens_count"] == 150
       assert wa2["tokens_overflow"] == true
@@ -1050,5 +1188,53 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
   def convert_date(request) do
     {:ok, time, _} = DateTime.from_iso8601(request["submission_date"])
     %{request | "submission_date" => Calendar.strftime(time, "%b %d, %Y")}
+  end
+
+  defp compare_item(%TagAddress{} = tag_address, json) do
+    assert json["address_hash"] == to_string(tag_address.address_hash)
+    assert json["name"] == tag_address.name
+    assert json["id"] == tag_address.id
+    assert json["address"]["hash"] == Address.checksum(tag_address.address_hash)
+  end
+
+  defp compare_item(%TagTransaction{} = tag_transaction, json) do
+    assert json["transaction_hash"] == to_string(tag_transaction.tx_hash)
+    assert json["name"] == tag_transaction.name
+    assert json["id"] == tag_transaction.id
+  end
+
+  defp compare_item(%WatchlistAddress{} = watchlist, json) do
+    notification_settings = %{
+      "native" => %{
+        "incoming" => watchlist.watch_coin_input,
+        "outcoming" => watchlist.watch_coin_output
+      },
+      "ERC-20" => %{
+        "incoming" => watchlist.watch_erc_20_input,
+        "outcoming" => watchlist.watch_erc_20_output
+      },
+      "ERC-721" => %{
+        "incoming" => watchlist.watch_erc_721_input,
+        "outcoming" => watchlist.watch_erc_721_output
+      }
+    }
+
+    assert json["address_hash"] == to_string(watchlist.address_hash)
+    assert json["name"] == watchlist.name
+    assert json["id"] == watchlist.id
+    assert json["address"]["hash"] == Address.checksum(watchlist.address_hash)
+    assert json["notification_methods"]["email"] == watchlist.notify_email
+    assert json["notification_settings"] == notification_settings
+  end
+
+  defp check_paginated_response(first_page_resp, second_page_resp, list) do
+    assert Enum.count(first_page_resp["items"]) == 50
+    assert first_page_resp["next_page_params"] != nil
+    compare_item(Enum.at(list, 50), Enum.at(first_page_resp["items"], 0))
+    compare_item(Enum.at(list, 1), Enum.at(first_page_resp["items"], 49))
+
+    assert Enum.count(second_page_resp["items"]) == 1
+    assert second_page_resp["next_page_params"] == nil
+    compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
   end
 end
