@@ -75,8 +75,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       if Application.get_env(:explorer, :chain_type) == "polygon_zkevm" do
         necessity_by_association_with_actions
         |> Map.put(:zkevm_batch, :optional)
-        |> Map.put(:zkevm_sequence_txn, :optional)
-        |> Map.put(:zkevm_verify_txn, :optional)
+        |> Map.put(:zkevm_sequence_transaction, :optional)
+        |> Map.put(:zkevm_verify_transaction, :optional)
       else
         necessity_by_association_with_actions
       end

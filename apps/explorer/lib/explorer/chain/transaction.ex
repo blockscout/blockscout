@@ -278,8 +278,8 @@ defmodule Explorer.Chain.Transaction do
 
     has_one(:zkevm_batch_transaction, BatchTransaction, foreign_key: :hash)
     has_one(:zkevm_batch, through: [:zkevm_batch_transaction, :batch])
-    has_one(:zkevm_sequence_txn, through: [:zkevm_batch, :sequence_transaction])
-    has_one(:zkevm_verify_txn, through: [:zkevm_batch, :verify_transaction])
+    has_one(:zkevm_sequence_transaction, through: [:zkevm_batch, :sequence_transaction])
+    has_one(:zkevm_verify_transaction, through: [:zkevm_batch, :verify_transaction])
 
     belongs_to(
       :created_contract_address,

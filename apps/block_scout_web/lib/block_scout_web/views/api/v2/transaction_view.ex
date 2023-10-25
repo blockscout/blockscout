@@ -428,8 +428,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         extended_result =
           result
           |> add_optional_transaction_field(transaction, "zkevm_batch_number", :zkevm_batch, :number)
-          |> add_optional_transaction_field(transaction, "zkevm_sequence_hash", :zkevm_sequence_txn, :hash)
-          |> add_optional_transaction_field(transaction, "zkevm_verify_hash", :zkevm_verify_txn, :hash)
+          |> add_optional_transaction_field(transaction, "zkevm_sequence_hash", :zkevm_sequence_transaction, :hash)
+          |> add_optional_transaction_field(transaction, "zkevm_verify_hash", :zkevm_verify_transaction, :hash)
 
         Map.put(extended_result, "zkevm_status", zkevm_status(extended_result))
 
