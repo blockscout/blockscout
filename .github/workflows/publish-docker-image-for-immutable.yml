@@ -45,6 +45,9 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:latest, blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             API_V1_READ_METHODS_DISABLED=false

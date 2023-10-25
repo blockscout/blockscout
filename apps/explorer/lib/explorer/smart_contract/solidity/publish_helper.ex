@@ -152,12 +152,12 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
       LookUpSmartContractSourcesOnDemand.trigger_fetch(%Address{hash: address_hash_string}, nil)
     else
       if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
-        {:error, :sourcify_disabled}
-      else
         check_by_address_in_sourcify(
           SmartContract.select_partially_verified_by_address_hash(address_hash_string),
           address_hash_string
         )
+      else
+        {:error, :sourcify_disabled}
       end
     end
   end

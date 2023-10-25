@@ -1668,6 +1668,17 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       compare_item(address, address_json)
     end
+
+    test "check smart contract preload", %{conn: conn} do
+      smart_contract = insert(:smart_contract, address_hash: insert(:contract_address, fetched_coin_balance: 1).hash)
+
+      request = get(conn, "/api/v2/addresses")
+      assert %{"items" => [address]} = json_response(request, 200)
+
+      assert String.downcase(address["hash"]) == to_string(smart_contract.address_hash)
+      assert address["is_contract"] == true
+      assert address["is_verified"] == true
+    end
   end
 
   describe "/addresses/{address_hash}/tabs-counters" do
