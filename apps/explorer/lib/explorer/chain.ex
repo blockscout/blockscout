@@ -4975,7 +4975,7 @@ defmodule Explorer.Chain do
           Transaction
           |> where(
             [tx],
-            tx.block_number == ^balance.block_number and tx.value > ^0 and
+            tx.block_number == ^balance.block_number and (tx.value > ^0 or (tx.gas_price > ^0 and tx.gas_used > ^0)) and
               (tx.to_address_hash == ^balance.address_hash or tx.from_address_hash == ^balance.address_hash)
           )
           |> select([tx], tx.hash)
