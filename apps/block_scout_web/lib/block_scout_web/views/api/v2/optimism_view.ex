@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, OptimismOutputRoot, OptimismWithdrawalEvent, Transaction}
+  alias Explorer.Chain.{Block, OptimismOutputRoot, OptimismWithdrawal, OptimismWithdrawalEvent, Transaction}
   alias Explorer.Chain.Cache.OptimismFinalizationPeriod
 
   @default_challenge_period 604_800
@@ -148,6 +148,31 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
   def render("optimism_items_count.json", %{count: count}) do
     count
+  end
+
+  def withdrawal_transaction_status(l2_transaction_hash) do
+    w =
+      Repo.replica().one(
+        from(w in OptimismWithdrawal,
+          where: w.l2_transaction_hash == ^l2_transaction_hash,
+          left_join: l2_block in Block,
+          on: w.l2_block_number == l2_block.number,
+          left_join: we in OptimismWithdrawalEvent,
+          on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
+          select: %{
+            hash: w.hash,
+            l2_timestamp: l2_block.timestamp,
+            l1_transaction_hash: we.l1_transaction_hash
+          }
+        )
+      )
+
+    if is_nil(w) do
+      {"Unknown", nil}
+    else
+      {status, _} = withdrawal_status(w)
+      {status, w.l1_transaction_hash}
+    end
   end
 
   defp withdrawal_status(w) when is_nil(w.l1_transaction_hash) do

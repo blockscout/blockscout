@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.TransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
+  alias BlockScoutWeb.API.V2.{ApiView, Helper, OptimismView, TokenView}
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
   alias BlockScoutWeb.Tokens.Helper, as: TokensHelper
@@ -426,6 +426,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> add_optional_transaction_field(transaction, :l1_fee_scalar)
     |> add_optional_transaction_field(transaction, :l1_gas_price)
     |> add_optional_transaction_field(transaction, :l1_gas_used)
+    |> add_optimism_fields(transaction.hash, single_tx?)
     |> chain_type_fields(transaction, single_tx?, conn, watchlist_names)
     |> maybe_put_stability_fee(transaction)
   end
@@ -566,6 +567,18 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp sanitize_log_first_topic(first_topic) do
     if is_nil(first_topic), do: "", else: String.downcase(first_topic)
+  end
+
+  defp add_optimism_fields(result, transaction_hash, single_tx?) do
+    if single_tx? do
+      {op_withdrawal_status, op_l1_transaction_hash} = OptimismView.withdrawal_transaction_status(transaction_hash)
+
+      result
+      |> Map.put("op_withdrawal_status", op_withdrawal_status)
+      |> Map.put("op_l1_transaction_hash", op_l1_transaction_hash)
+    else
+      result
+    end
   end
 
   def token_transfers(_, _conn, false), do: nil
