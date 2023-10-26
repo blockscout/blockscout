@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.TransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.V2.{ApiView, Helper, OptimismView, TokenView}
+  alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
   alias BlockScoutWeb.Tokens.Helper, as: TokensHelper
@@ -571,7 +571,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp add_optimism_fields(result, transaction_hash, single_tx?) do
     if single_tx? do
-      {op_withdrawal_status, op_l1_transaction_hash} = OptimismView.withdrawal_transaction_status(transaction_hash)
+      {op_withdrawal_status, op_l1_transaction_hash} = Chain.optimism_withdrawal_transaction_status(transaction_hash)
 
       result
       |> Map.put("op_withdrawal_status", op_withdrawal_status)

@@ -5,10 +5,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, OptimismOutputRoot, OptimismWithdrawal, OptimismWithdrawalEvent, Transaction}
-  alias Explorer.Chain.Cache.OptimismFinalizationPeriod
-
-  @default_challenge_period 604_800
+  alias Explorer.Chain.{Block, Transaction}
 
   def render("optimism_txn_batches.json", %{
         batches: batches,
@@ -128,7 +125,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
               _ -> {nil, nil}
             end
 
-          {status, challenge_period_end} = withdrawal_status(w)
+          {status, challenge_period_end} = Chain.optimism_withdrawal_status(w)
 
           %{
             "msg_nonce_raw" => Decimal.to_string(w.msg_nonce, :normal),
@@ -148,74 +145,5 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
   def render("optimism_items_count.json", %{count: count}) do
     count
-  end
-
-  def withdrawal_transaction_status(l2_transaction_hash) do
-    w =
-      Repo.replica().one(
-        from(w in OptimismWithdrawal,
-          where: w.l2_transaction_hash == ^l2_transaction_hash,
-          left_join: l2_block in Block,
-          on: w.l2_block_number == l2_block.number,
-          left_join: we in OptimismWithdrawalEvent,
-          on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
-          select: %{
-            hash: w.hash,
-            l2_timestamp: l2_block.timestamp,
-            l1_transaction_hash: we.l1_transaction_hash
-          }
-        )
-      )
-
-    if is_nil(w) do
-      {"Unknown", nil}
-    else
-      {status, _} = withdrawal_status(w)
-      {status, w.l1_transaction_hash}
-    end
-  end
-
-  defp withdrawal_status(w) when is_nil(w.l1_transaction_hash) do
-    l1_timestamp =
-      Repo.replica().one(
-        from(
-          we in OptimismWithdrawalEvent,
-          select: we.l1_timestamp,
-          where: we.withdrawal_hash == ^w.hash and we.l1_event_type == :WithdrawalProven
-        )
-      )
-
-    if is_nil(l1_timestamp) do
-      last_root_timestamp =
-        Repo.replica().one(
-          from(root in OptimismOutputRoot,
-            select: root.l1_timestamp,
-            order_by: [desc: root.l2_output_index],
-            limit: 1
-          )
-        ) || 0
-
-      if w.l2_timestamp > last_root_timestamp do
-        {"Waiting for state root", nil}
-      else
-        {"Ready to prove", nil}
-      end
-    else
-      challenge_period =
-        case OptimismFinalizationPeriod.get_period() do
-          nil -> @default_challenge_period
-          period -> period
-        end
-
-      if DateTime.compare(l1_timestamp, DateTime.add(DateTime.utc_now(), -challenge_period, :second)) == :lt do
-        {"Ready for relay", nil}
-      else
-        {"In challenge period", DateTime.add(l1_timestamp, challenge_period, :second)}
-      end
-    end
-  end
-
-  defp withdrawal_status(_w) do
-    {"Relayed", nil}
   end
 end
