@@ -43,7 +43,7 @@ defmodule EthereumJSONRPC.Transaction do
    * `"maxFeePerGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote max fee per unit of gas used. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"type"` - `t:EthereumJSONRPC.quantity/0` denotes transaction type. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"executionNode"` - `t:EthereumJSONRPC.address/0` of execution node (used by Suave).
-   * `"wrapped"` - map of wrapped transaction data (used by Suave).
+   * `"requestRecord"` - map of wrapped transaction data (used by Suave).
   """
   @type t :: %{
           String.t() =>
@@ -169,7 +169,7 @@ defmodule EthereumJSONRPC.Transaction do
   """
   @spec elixir_to_params(elixir) :: params
 
-  # this is for Suave chain (handles `executionNode` and `wrapped` fields along with EIP-1559 fields)
+  # this is for Suave chain (handles `executionNode` and `requestRecord` fields along with EIP-1559 fields)
   def elixir_to_params(
         %{
           "blockHash" => block_hash,
@@ -190,7 +190,7 @@ defmodule EthereumJSONRPC.Transaction do
           "maxPriorityFeePerGas" => max_priority_fee_per_gas,
           "maxFeePerGas" => max_fee_per_gas,
           "executionNode" => execution_node_hash,
-          "wrapped" => wrapped
+          "requestRecord" => wrapped
         } = transaction
       ) do
     result = %{
@@ -343,7 +343,7 @@ defmodule EthereumJSONRPC.Transaction do
     end
   end
 
-  # this is for Suave chain (handles `executionNode` and `wrapped` fields without EIP-1559 fields)
+  # this is for Suave chain (handles `executionNode` and `requestRecord` fields without EIP-1559 fields)
   def elixir_to_params(
         %{
           "blockHash" => block_hash,
@@ -362,7 +362,7 @@ defmodule EthereumJSONRPC.Transaction do
           "value" => value,
           "type" => type,
           "executionNode" => execution_node_hash,
-          "wrapped" => wrapped
+          "requestRecord" => wrapped
         } = transaction
       ) do
     result = %{
@@ -608,7 +608,7 @@ defmodule EthereumJSONRPC.Transaction do
   #
   # "txType": to avoid FunctionClauseError when indexing Wanchain
   defp entry_to_elixir({key, value})
-       when key in ~w(blockHash condition creates from hash input jsonrpc publicKey raw to txType executionNode wrapped),
+       when key in ~w(blockHash condition creates from hash input jsonrpc publicKey raw to txType executionNode requestRecord),
        do: {key, value}
 
   # specific to Nethermind client
