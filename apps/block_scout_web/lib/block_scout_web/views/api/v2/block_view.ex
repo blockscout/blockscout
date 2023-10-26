@@ -85,13 +85,21 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   end
 
   def gas_target(block) do
-    elasticity_multiplier = Application.get_env(:explorer, :elasticity_multiplier)
-    ratio = Decimal.div(block.gas_used, Decimal.div(block.gas_limit, elasticity_multiplier))
-    ratio |> Decimal.sub(1) |> Decimal.mult(100) |> Decimal.to_float()
+    if Decimal.compare(block.gas_limit, 0) == :gt do
+      elasticity_multiplier = Application.get_env(:explorer, :elasticity_multiplier)
+      ratio = Decimal.div(block.gas_used, Decimal.div(block.gas_limit, elasticity_multiplier))
+      ratio |> Decimal.sub(1) |> Decimal.mult(100) |> Decimal.to_float()
+    else
+      Decimal.new(0)
+    end
   end
 
   def gas_used_percentage(block) do
-    block.gas_used |> Decimal.div(block.gas_limit) |> Decimal.mult(100) |> Decimal.to_float()
+    if Decimal.compare(block.gas_limit, 0) == :gt do
+      block.gas_used |> Decimal.div(block.gas_limit) |> Decimal.mult(100) |> Decimal.to_float()
+    else
+      Decimal.new(0)
+    end
   end
 
   def burnt_fees_percentage(_, %Decimal{coef: 0}), do: nil

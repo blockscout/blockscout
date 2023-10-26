@@ -28,6 +28,8 @@ defmodule Explorer.Repo.ConfigHelper do
 
   def get_account_db_url, do: System.get_env("ACCOUNT_DATABASE_URL") || System.get_env("DATABASE_URL")
 
+  def get_suave_db_url, do: System.get_env("SUAVE_DATABASE_URL") || System.get_env("DATABASE_URL")
+
   def get_api_db_url, do: System.get_env("DATABASE_READ_ONLY_API_URL") || System.get_env("DATABASE_URL")
 
   def ssl_enabled?, do: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true")

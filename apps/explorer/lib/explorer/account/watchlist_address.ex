@@ -10,12 +10,10 @@ defmodule Explorer.Account.WatchlistAddress do
   alias Ecto.Changeset
   alias Explorer.Account.Notifier.ForbiddenAddress
   alias Explorer.Account.Watchlist
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Wei}
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
-
-  @max_watchlist_addresses_per_account 10
 
   schema "account_watchlist_addresses" do
     field(:address_hash_hash, Cloak.Ecto.SHA256)
@@ -79,12 +77,14 @@ defmodule Explorer.Account.WatchlistAddress do
   end
 
   def watchlist_address_count_constraint(%Changeset{changes: %{watchlist_id: watchlist_id}} = watchlist_address) do
+    max_watchlist_addresses_count = get_max_watchlist_addresses_count()
+
     if watchlist_id
        |> watchlist_addresses_by_watchlist_id_query()
-       |> limit(@max_watchlist_addresses_per_account)
-       |> Repo.account_repo().aggregate(:count, :id) >= @max_watchlist_addresses_per_account do
+       |> limit(^max_watchlist_addresses_count)
+       |> Repo.account_repo().aggregate(:count, :id) >= max_watchlist_addresses_count do
       watchlist_address
-      |> add_error(:name, "Max #{@max_watchlist_addresses_per_account} watch list addresses per account")
+      |> add_error(:name, "Max #{max_watchlist_addresses_count} watch list addresses per account")
     else
       watchlist_address
     end
@@ -121,6 +121,32 @@ defmodule Explorer.Account.WatchlistAddress do
   end
 
   def watchlist_addresses_by_watchlist_id_query(_), do: nil
+
+  @doc """
+    Query paginated watchlist addresses by watchlist id
+  """
+  @spec get_watchlist_addresses_by_watchlist_id(integer(), [Chain.paging_options()]) :: [__MODULE__]
+  def get_watchlist_addresses_by_watchlist_id(watchlist_id, options \\ [])
+
+  def get_watchlist_addresses_by_watchlist_id(watchlist_id, options) when not is_nil(watchlist_id) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    watchlist_id
+    |> watchlist_addresses_by_watchlist_id_query()
+    |> order_by([wla], desc: wla.id)
+    |> page_watchlist_address(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.account_repo().all()
+  end
+
+  def get_watchlist_addresses_by_watchlist_id(_, _), do: []
+
+  defp page_watchlist_address(query, %PagingOptions{key: {id}}) do
+    query
+    |> where([wla], wla.id < ^id)
+  end
+
+  defp page_watchlist_address(query, _), do: query
 
   def watchlist_address_by_id_and_watchlist_id_query(watchlist_address_id, watchlist_id)
       when not is_nil(watchlist_address_id) and not is_nil(watchlist_id) do
@@ -160,7 +186,8 @@ defmodule Explorer.Account.WatchlistAddress do
     end
   end
 
-  def get_max_watchlist_addresses_count, do: @max_watchlist_addresses_per_account
+  def get_max_watchlist_addresses_count,
+    do: Application.get_env(:explorer, Explorer.Account)[:watchlist_addresses_limit]
 
   def preload_address_fetched_coin_balance(%Watchlist{watchlist_addresses: watchlist_addresses} = watchlist) do
     w_addresses =
