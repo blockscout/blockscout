@@ -23,8 +23,8 @@ defmodule Explorer.Chain.Token do
   import Ecto.{Changeset, Query}
 
   alias Ecto.Changeset
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, Hash, Token}
-  alias Explorer.PagingOptions
   alias Explorer.SmartContract.Helper
 
   @typedoc """
@@ -332,5 +332,9 @@ defmodule Explorer.Chain.Token do
 
   defp page_tokens_by_column(%{contract_address_hash: contract_address_hash}, :contract_address_hash, :asc, nil) do
     dynamic([t], t.contract_address_hash > ^contract_address_hash)
+  end
+
+  def get_by_contract_address_hash(hash, options) do
+    Chain.select_repo(options).get_by(__MODULE__, contract_address_hash: hash)
   end
 end
