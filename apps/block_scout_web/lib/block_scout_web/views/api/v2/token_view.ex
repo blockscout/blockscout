@@ -11,8 +11,19 @@ defmodule BlockScoutWeb.API.V2.TokenView do
 
   @api_true [api?: true]
 
-  def render("token.json", %{token: nil}) do
-    nil
+  def render("token.json", %{token: nil, contract_address_hash: contract_address_hash}) do
+    %{
+      "address" => Address.checksum(contract_address_hash),
+      "symbol" => nil,
+      "name" => nil,
+      "decimals" => nil,
+      "type" => nil,
+      "holders" => nil,
+      "exchange_rate" => nil,
+      "total_supply" => nil,
+      "icon_url" => nil,
+      "circulating_market_cap" => nil
+    }
   end
 
   def render("token.json", %{token: token}) do
