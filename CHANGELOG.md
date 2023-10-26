@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#8717](https://github.com/blockscout/blockscout/pull/8717) - Save GasPriceOracle old prices as a fallback
 - [#8696](https://github.com/blockscout/blockscout/pull/8696) - Support tokenSymbol and tokenName in `/api/v2/import/token-info`
 - [#8673](https://github.com/blockscout/blockscout/pull/8673) - Add a window for balances fetching from non-archive node
 - [#8651](https://github.com/blockscout/blockscout/pull/8651) - Add `stability_fee` for CHAIN_TYPE=stability
