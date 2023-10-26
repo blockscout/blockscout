@@ -22,6 +22,8 @@
 
 ### Chore
 
+- [#8715](https://github.com/blockscout/blockscout/pull/8715) - Rename `wrapped` field to `requestRecord` for Suave
+
 <details>
   <summary>Dependencies version bumps</summary>
 </details>
