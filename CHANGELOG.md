@@ -40,6 +40,7 @@
 
 <details>
   <summary>Dependencies version bumps</summary>
+
 - [#8683](https://github.com/blockscout/blockscout/pull/8683) - Bump ex_abi from 0.6.2 to 0.6.3
 - [#8689](https://github.com/blockscout/blockscout/pull/8689) - Bump ex_abi from 0.6.2 to 0.6.3
 - [#8682](https://github.com/blockscout/blockscout/pull/8682) - Bump core-js from 3.33.0 to 3.33.1 in /apps/block_scout_web/assets
@@ -50,6 +51,7 @@
 - [#8687](https://github.com/blockscout/blockscout/pull/8687) - Bump floki from 0.35.0 to 0.35.1
 - [#8693](https://github.com/blockscout/blockscout/pull/8693) - Bump redix from 1.2.3 to 1.3.0
 - [#8688](https://github.com/blockscout/blockscout/pull/8688) - Bump ex_doc from 0.30.7 to 0.30.9
+
 </details>
 
 ## 5.3.0-beta
@@ -99,6 +101,7 @@
 
 <details>
   <summary>Dependencies version bumps</summary>
+
 - [#8508](https://github.com/blockscout/blockscout/pull/8508) - Bump sass from 1.67.0 to 1.68.0 in /apps/block_scout_web/assets
 - [#8509](https://github.com/blockscout/blockscout/pull/8509) - Bump autoprefixer from 10.4.15 to 10.4.16 in /apps/block_scout_web/assets
 - [#8511](https://github.com/blockscout/blockscout/pull/8511) - Bump mox from 1.0.2 to 1.1.0
@@ -130,6 +133,7 @@
 - [#8645](https://github.com/blockscout/blockscout/pull/8645) - Bump ex_doc from 0.30.6 to 0.30.7
 - [#8638](https://github.com/blockscout/blockscout/pull/8638) - Bump webpack from 5.88.2 to 5.89.0 in /apps/block_scout_web/assets
 - [#8640](https://github.com/blockscout/blockscout/pull/8640) - Bump hackney from 1.19.1 to 1.20.1
+
 </details>
 
 ## 5.2.3-beta
@@ -173,6 +177,7 @@
 
 <details>
   <summary>Dependencies version bumps</summary>
+
 - [#8244](https://github.com/blockscout/blockscout/pull/8244) - Bump core-js from 3.32.0 to 3.32.1 in /apps/block_scout_web/assets
 - [#8243](https://github.com/blockscout/blockscout/pull/8243) - Bump sass from 1.65.1 to 1.66.0 in /apps/block_scout_web/assets
 - [#8259](https://github.com/blockscout/blockscout/pull/8259) - Bump sweetalert2 from 11.7.23 to 11.7.27 in /apps/block_scout_web/assets
@@ -233,6 +238,7 @@
 - [#8480](https://github.com/blockscout/blockscout/pull/8480) - Bump @babel/core from 7.22.19 to 7.22.20 in /apps/block_scout_web/assets
 - [#8482](https://github.com/blockscout/blockscout/pull/8482) - Bump viewerjs from 1.11.5 to 1.11.6 in /apps/block_scout_web/assets
 - [#8489](https://github.com/blockscout/blockscout/pull/8489) - Bump postcss from 8.4.29 to 8.4.30 in /apps/block_scout_web/assets
+
 </details>
 
 ## 5.2.2-beta
