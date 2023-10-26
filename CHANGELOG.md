@@ -26,6 +26,7 @@
 
 ### Fixes
 
+- [#8724](https://github.com/blockscout/blockscout/pull/8724) - Fix flaky account notifier test
 - [#8714](https://github.com/blockscout/blockscout/pull/8714) - Fix sourcify check 
 - [#8708](https://github.com/blockscout/blockscout/pull/8708) - CoinBalanceHistory tab: show also tx with gasPrice & gasUsed > 0
 - [#8706](https://github.com/blockscout/blockscout/pull/8706) - Add address name updating on contract re-verification
