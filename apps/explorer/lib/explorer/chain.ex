@@ -856,6 +856,22 @@ defmodule Explorer.Chain do
         )).()
   end
 
+  @spec execution_node_to_transactions(Hash.Address.t(), [paging_options | necessity_by_association_option | api?()]) ::
+          [Transaction.t()]
+  def execution_node_to_transactions(execution_node_hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    options
+    |> Keyword.get(:paging_options, @default_paging_options)
+    |> fetch_transactions_in_descending_order_by_block_and_index()
+    |> where(execution_node_hash: ^execution_node_hash)
+    |> join_associations(necessity_by_association)
+    |> put_has_token_transfers_to_tx(false)
+    |> (& &1).()
+    |> select_repo(options).all()
+    |> (&Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_necessity_by_association, options) end)).()
+  end
+
   @spec block_to_withdrawals(
           Hash.Full.t(),
           [paging_options | necessity_by_association_option]
@@ -3541,12 +3557,7 @@ defmodule Explorer.Chain do
   The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in
   `unit`.
   """
-  @spec value(InternalTransaction.t(), :wei) :: Wei.wei()
-  @spec value(InternalTransaction.t(), :gwei) :: Wei.gwei()
-  @spec value(InternalTransaction.t(), :ether) :: Wei.ether()
-  @spec value(Transaction.t(), :wei) :: Wei.wei()
-  @spec value(Transaction.t(), :gwei) :: Wei.gwei()
-  @spec value(Transaction.t(), :ether) :: Wei.ether()
+  @spec value(InternalTransaction.t() | Transaction.t(), :wei | :gwei | :ether) :: Wei.wei() | Wei.gwei() | Wei.ether()
   def value(%type{value: value}, unit) when type in [InternalTransaction, Transaction] do
     Wei.to(value, unit)
   end
@@ -3806,6 +3817,7 @@ defmodule Explorer.Chain do
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     insert_contract_query =
       Multi.new()
+      |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
       |> Multi.update(:smart_contract, smart_contract_changeset)
 
     insert_contract_query_with_additional_sources =
@@ -3818,6 +3830,8 @@ defmodule Explorer.Chain do
     insert_result =
       insert_contract_query_with_additional_sources
       |> Repo.transaction()
+
+    create_address_name(Repo, Changeset.get_field(smart_contract_changeset, :name), address_hash)
 
     case insert_result do
       {:ok, %{smart_contract: smart_contract}} ->
@@ -4127,6 +4141,12 @@ defmodule Explorer.Chain do
   defp fetch_transactions_in_ascending_order_by_index(paging_options) do
     Transaction
     |> order_by([transaction], asc: transaction.index)
+    |> handle_block_paging_options(paging_options)
+  end
+
+  defp fetch_transactions_in_descending_order_by_block_and_index(paging_options) do
+    Transaction
+    |> order_by([transaction], desc: transaction.block_number, asc: transaction.index)
     |> handle_block_paging_options(paging_options)
   end
 
@@ -5954,7 +5974,7 @@ defmodule Explorer.Chain do
           Transaction
           |> where(
             [tx],
-            tx.block_number == ^balance.block_number and tx.value > ^0 and
+            tx.block_number == ^balance.block_number and (tx.value > ^0 or (tx.gas_price > ^0 and tx.gas_used > ^0)) and
               (tx.to_address_hash == ^balance.address_hash or tx.from_address_hash == ^balance.address_hash)
           )
           |> select([tx], tx.hash)

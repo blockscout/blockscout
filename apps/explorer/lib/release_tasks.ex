@@ -24,6 +24,7 @@ defmodule Explorer.ReleaseTasks do
       case System.get_env("CHAIN_TYPE") do
         "polygon_edge" -> [Explorer.Repo.PolygonEdge | base_repos_list]
         "polygon_zkevm" -> [Explorer.Repo.PolygonZkevm | base_repos_list]
+        "suave" -> [Explorer.Repo.Suave | base_repos_list]
         _ -> base_repos_list
       end
 

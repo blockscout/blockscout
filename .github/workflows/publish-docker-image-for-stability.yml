@@ -8,20 +8,26 @@ name: Publish Docker image for specific chain branches
 on:
   push:
     branches:
-      - production-rsk-stg
+      - production-stability-stg
+env:
+  OTP_VERSION: '25.2.1'
+  ELIXIR_VERSION: '1.14.5'
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: 5.3.1
-      DOCKER_CHAIN_NAME: rsk
+      DOCKER_CHAIN_NAME: stability
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -52,4 +58,4 @@ jobs:
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=rsk
+            CHAIN_TYPE=stability

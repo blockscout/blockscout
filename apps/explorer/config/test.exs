@@ -38,7 +38,7 @@ config :explorer, Explorer.Repo.Account,
   timeout: :timer.seconds(60),
   queue_target: 1000
 
-for repo <- [Explorer.Repo.PolygonEdge, Explorer.Repo.PolygonZkevm, Explorer.Repo.RSK] do
+for repo <- [Explorer.Repo.PolygonEdge, Explorer.Repo.PolygonZkevm, Explorer.Repo.RSK, Explorer.Repo.Suave] do
   config :explorer, repo,
     database: "explorer_test",
     hostname: "localhost",

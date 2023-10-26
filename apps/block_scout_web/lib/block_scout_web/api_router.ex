@@ -205,6 +205,10 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/zkevm-batch/:batch_number", V2.TransactionController, :zkevm_batch)
       end
 
+      if System.get_env("CHAIN_TYPE") == "suave" do
+        get("/execution-node/:execution_node_hash_param", V2.TransactionController, :execution_node)
+      end
+
       get("/:transaction_hash_param", V2.TransactionController, :transaction)
       get("/:transaction_hash_param/token-transfers", V2.TransactionController, :token_transfers)
       get("/:transaction_hash_param/internal-transactions", V2.TransactionController, :internal_transactions)
