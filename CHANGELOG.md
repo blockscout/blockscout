@@ -41,7 +41,7 @@
 <details>
   <summary>Dependencies version bumps</summary>
 
-- [#8683](https://github.com/blockscout/blockscout/pull/8683) - Bump ex_abi from 0.6.2 to 0.6.3
+- [#8683](https://github.com/blockscout/blockscout/pull/8683) - Bump eslint from 8.51.0 to 8.52.0 in /apps/block_scout_web/assets
 - [#8689](https://github.com/blockscout/blockscout/pull/8689) - Bump ex_abi from 0.6.2 to 0.6.3
 - [#8682](https://github.com/blockscout/blockscout/pull/8682) - Bump core-js from 3.33.0 to 3.33.1 in /apps/block_scout_web/assets
 - [#8680](https://github.com/blockscout/blockscout/pull/8680) - Bump web3 from 1.10.2 to 1.10.3 in /apps/block_scout_web/assets
