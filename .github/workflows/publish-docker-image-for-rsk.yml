@@ -36,7 +36,7 @@ jobs:
         run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
       
       - name: Build and push Docker image
-        uses: docker/build-push-action@5
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile

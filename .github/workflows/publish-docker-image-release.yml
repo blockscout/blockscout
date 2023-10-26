@@ -111,7 +111,7 @@ jobs:
             CHAIN_TYPE=suave
 
       - name: Build and push Docker image for Rootstock
-        uses: docker/build-push-action@5
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
