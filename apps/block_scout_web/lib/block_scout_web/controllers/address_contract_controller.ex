@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.AddressContractController do
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         _ <- PublishHelper.check_and_verify(address_hash_string),
+         _ <- PublishHelper.sourcify_check(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
       render(
         conn,

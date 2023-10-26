@@ -3683,6 +3683,7 @@ defmodule Explorer.Chain do
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     insert_contract_query =
       Multi.new()
+      |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
       |> Multi.update(:smart_contract, smart_contract_changeset)
 
     insert_contract_query_with_additional_sources =
@@ -3695,6 +3696,8 @@ defmodule Explorer.Chain do
     insert_result =
       insert_contract_query_with_additional_sources
       |> Repo.transaction()
+
+    create_address_name(Repo, Changeset.get_field(smart_contract_changeset, :name), address_hash)
 
     case insert_result do
       {:ok, %{smart_contract: smart_contract}} ->
