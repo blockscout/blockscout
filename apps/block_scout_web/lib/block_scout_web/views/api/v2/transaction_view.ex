@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Timex.Duration
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+  import Explorer.Chain.Transaction, only: [maybe_prepare_stability_fees: 1, bytes_to_address_hash: 1]
   import Explorer.Helper, only: [decode_data: 2]
 
   @api_true [api?: true]
@@ -37,6 +38,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{
       "items" =>
         transactions
+        |> maybe_prepare_stability_fees()
         |> Enum.zip(decoded_transactions)
         |> Enum.map(fn {tx, decoded_input} ->
           prepare_transaction(tx, conn, false, block_height, watchlist_names, decoded_input)
@@ -54,6 +56,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     {decoded_transactions, _, _} = decode_transactions(transactions, true)
 
     transactions
+    |> maybe_prepare_stability_fees()
     |> Enum.zip(decoded_transactions)
     |> Enum.map(fn {tx, decoded_input} ->
       prepare_transaction(tx, conn, false, block_height, watchlist_names, decoded_input)
@@ -67,6 +70,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{
       "items" =>
         transactions
+        |> maybe_prepare_stability_fees()
         |> Enum.zip(decoded_transactions)
         |> Enum.map(fn {tx, decoded_input} -> prepare_transaction(tx, conn, false, block_height, decoded_input) end),
       "next_page_params" => next_page_params
@@ -84,6 +88,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     {decoded_transactions, _, _} = decode_transactions(transactions, true)
 
     transactions
+    |> maybe_prepare_stability_fees()
     |> Enum.zip(decoded_transactions)
     |> Enum.map(fn {tx, decoded_input} -> prepare_transaction(tx, conn, false, block_height, decoded_input) end)
   end
@@ -91,7 +96,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def render("transaction.json", %{transaction: transaction, conn: conn}) do
     block_height = Chain.block_height(@api_true)
     {[decoded_input], _, _} = decode_transactions([transaction], false)
-    prepare_transaction(transaction, conn, true, block_height, decoded_input)
+    prepare_transaction(transaction |> maybe_prepare_stability_fees(), conn, true, block_height, decoded_input)
   end
 
   def render("raw_trace.json", %{internal_transactions: internal_transactions}) do
@@ -416,7 +421,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "has_error_in_internal_txs" => transaction.has_error_in_internal_txs
     }
 
-    chain_type_fields(result, transaction, single_tx?, conn, watchlist_names)
+    result
+    |> chain_type_fields(transaction, single_tx?, conn, watchlist_names)
+    |> maybe_put_stability_fee(transaction)
   end
 
   defp chain_type_fields(result, transaction, single_tx?, conn, watchlist_names) do
@@ -880,6 +887,37 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       {address, address.hash}
     else
       _ -> {nil, nil}
+    end
+  end
+
+  defp maybe_put_stability_fee(body, transaction) do
+    with "stability" <- Application.get_env(:explorer, :chain_type),
+         [
+           {"token", "address", false, token_address_hash},
+           {"totalFee", "uint256", false, total_fee},
+           {"validator", "address", false, validator_address_hash},
+           {"validatorFee", "uint256", false, validator_fee},
+           {"dapp", "address", false, dapp_address_hash},
+           {"dappFee", "uint256", false, dapp_fee}
+         ] <- transaction.transaction_fee_log do
+      stability_fee = %{
+        "token" =>
+          TokenView.render("token.json", %{
+            token: transaction.transaction_fee_token,
+            contract_address_hash: bytes_to_address_hash(token_address_hash)
+          }),
+        "validator_address" => Helper.address_with_info(nil, nil, bytes_to_address_hash(validator_address_hash), false),
+        "dapp_address" => Helper.address_with_info(nil, nil, bytes_to_address_hash(dapp_address_hash), false),
+        "total_fee" => to_string(total_fee),
+        "dapp_fee" => to_string(dapp_fee),
+        "validator_fee" => to_string(validator_fee)
+      }
+
+      body
+      |> Map.put("stability_fee", stability_fee)
+    else
+      _ ->
+        body
     end
   end
 end
