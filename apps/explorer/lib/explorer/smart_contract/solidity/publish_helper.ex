@@ -162,6 +162,22 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
     end
   end
 
+  def sourcify_check(address_hash_string) do
+    cond do
+      Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)[:eth_bytecode_db?] ->
+        {:error, :eth_bytecode_db_enabled}
+
+      Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] ->
+        check_by_address_in_sourcify(
+          SmartContract.select_partially_verified_by_address_hash(address_hash_string),
+          address_hash_string
+        )
+
+      true ->
+        {:error, :sourcify_disabled}
+    end
+  end
+
   defp check_by_address_in_sourcify(false, _address_hash_string) do
     {:ok, :already_fully_verified}
   end
