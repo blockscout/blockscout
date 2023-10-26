@@ -4,6 +4,18 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+</details>
+
+## 5.3.1-beta
+
+### Features
+
 - [#8717](https://github.com/blockscout/blockscout/pull/8717) - Save GasPriceOracle old prices as a fallback
 - [#8696](https://github.com/blockscout/blockscout/pull/8696) - Support tokenSymbol and tokenName in `/api/v2/import/token-info`
 - [#8673](https://github.com/blockscout/blockscout/pull/8673) - Add a window for balances fetching from non-archive node
@@ -28,6 +40,16 @@
 
 <details>
   <summary>Dependencies version bumps</summary>
+- [#8683](https://github.com/blockscout/blockscout/pull/8683) - Bump ex_abi from 0.6.2 to 0.6.3
+- [#8689](https://github.com/blockscout/blockscout/pull/8689) - Bump ex_abi from 0.6.2 to 0.6.3
+- [#8682](https://github.com/blockscout/blockscout/pull/8682) - Bump core-js from 3.33.0 to 3.33.1 in /apps/block_scout_web/assets
+- [#8680](https://github.com/blockscout/blockscout/pull/8680) - Bump web3 from 1.10.2 to 1.10.3 in /apps/block_scout_web/assets
+- [#8681](https://github.com/blockscout/blockscout/pull/8681) - Bump eslint-plugin-import from 2.28.1 to 2.29.0 in /apps/block_scout_web/assets
+- [#8684](https://github.com/blockscout/blockscout/pull/8684) - Bump @amplitude/analytics-browser from 2.3.2 to 2.3.3 in /apps/block_scout_web/assets
+- [#8679](https://github.com/blockscout/blockscout/pull/8679) - Bump sass from 1.69.3 to 1.69.4 in /apps/block_scout_web/assets
+- [#8687](https://github.com/blockscout/blockscout/pull/8687) - Bump floki from 0.35.0 to 0.35.1
+- [#8693](https://github.com/blockscout/blockscout/pull/8693) - Bump redix from 1.2.3 to 1.3.0
+- [#8688](https://github.com/blockscout/blockscout/pull/8688) - Bump ex_doc from 0.30.7 to 0.30.9
 </details>
 
 ## 5.3.0-beta
