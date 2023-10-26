@@ -22,6 +22,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
   use Explorer.Chain.MapCache,
     name: :gas_price,
     key: :gas_prices,
+    key: :old_gas_prices,
     key: :async_task,
     global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl],
     ttl_check_interval: :timer.seconds(1),
@@ -171,7 +172,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
     # See next `handle_fallback` definition
     get_async_task()
 
-    {:return, nil}
+    {:return, get_old_gas_prices()}
   end
 
   defp handle_fallback(:async_task) do
@@ -182,7 +183,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
         try do
           result = get_average_gas_price(num_of_blocks(), safelow(), average(), fast())
 
-          set_all(result)
+          set_gas_prices(result)
         rescue
           e ->
             Logger.debug([
@@ -197,9 +198,14 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
     {:update, task}
   end
 
+  defp handle_fallback(_), do: {:return, nil}
+
   # By setting this as a `callback` an async task will be started each time the
   # `gas_prices` expires (unless there is one already running)
-  defp async_task_on_deletion({:delete, _, :gas_prices}), do: get_async_task()
+  defp async_task_on_deletion({:delete, _, :gas_prices}) do
+    set_old_gas_prices(get_gas_prices())
+    get_async_task()
+  end
 
   defp async_task_on_deletion(_data), do: nil
 end
