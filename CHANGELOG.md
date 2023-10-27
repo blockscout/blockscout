@@ -10,6 +10,8 @@
 
 ### Chore
 
+- [#8702](https://github.com/blockscout/blockscout/pull/8702) - Add OP withdrawal status to transaction page in API
+
 <details>
   <summary>Dependencies version bumps</summary>
 

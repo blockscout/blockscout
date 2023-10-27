@@ -78,6 +78,7 @@ defmodule Explorer.Chain do
     ContractsCounter,
     NewContractsCounter,
     NewVerifiedContractsCounter,
+    OptimismFinalizationPeriod,
     Transactions,
     Uncles,
     VerifiedContractsCounter,
