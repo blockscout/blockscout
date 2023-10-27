@@ -8,6 +8,8 @@
 
 ### Chore
 
+- [#8728](https://github.com/blockscout/blockscout/pull/8728) - Remove repos_list (default value for ecto repos) from Explorer.ReleaseTasks
+
 <details>
   <summary>Dependencies version bumps</summary>
 </details>
