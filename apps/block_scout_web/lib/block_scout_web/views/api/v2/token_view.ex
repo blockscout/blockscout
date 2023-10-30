@@ -26,6 +26,10 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     }
   end
 
+  def render("token.json", %{token: nil}) do
+    nil
+  end
+
   def render("token.json", %{token: token}) do
     %{
       "address" => Address.checksum(token.contract_address_hash),
