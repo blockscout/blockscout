@@ -98,7 +98,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:number, "~> 1.0.1"},
       {:phoenix, "== 1.5.14"},
       {:phoenix_ecto, "~> 4.1"},
-      {:phoenix_html, "== 3.0.4"},
+      {:phoenix_html, "== 3.3.3"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
       {:phoenix_pubsub, "~> 2.0"},
       {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
