@@ -9,6 +9,7 @@
 ### Chore
 
 - [#8702](https://github.com/blockscout/blockscout/pull/8702) - Add OP withdrawal status to transaction page in API
+- [#8739](https://github.com/blockscout/blockscout/pull/8739) - Add delay to Indexer.Fetcher.OptimismTxnBatch module initialization
 
 <details>
   <summary>Dependencies version bumps</summary>
