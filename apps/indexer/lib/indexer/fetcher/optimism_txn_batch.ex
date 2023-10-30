@@ -43,14 +43,19 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
   @impl GenServer
   def init(args) do
-    json_rpc_named_arguments_l2 = args[:json_rpc_named_arguments]
-    {:ok, %{}, {:continue, json_rpc_named_arguments_l2}}
+    {:ok, %{json_rpc_named_arguments_l2: args[:json_rpc_named_arguments]}, {:continue, nil}}
   end
 
   @impl GenServer
-  def handle_continue(json_rpc_named_arguments_l2, state) do
+  def handle_continue(_, state) do
     Logger.metadata(fetcher: @fetcher_name)
+    # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
+    Process.send_after(self(), :init_with_sleep, 2000)
+    {:noreply, state}
+  end
 
+  @impl GenServer
+  def handle_info(:init_with_sleep, %{json_rpc_named_arguments_l2: json_rpc_named_arguments_l2} = state) do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
