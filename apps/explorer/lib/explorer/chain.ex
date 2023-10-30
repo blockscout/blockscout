@@ -3484,6 +3484,47 @@ defmodule Explorer.Chain do
     end
   end
 
+  def smart_contract_creation_tx_with_bytecode(address_hash) do
+    creation_tx_query =
+      from(
+        tx in Transaction,
+        left_join: a in Address,
+        on: tx.created_contract_address_hash == a.hash,
+        where: tx.created_contract_address_hash == ^address_hash,
+        where: tx.status == ^1
+      )
+
+    tx =
+      creation_tx_query
+      |> Repo.one()
+
+    if tx do
+      with %{init: input, created_contract_code: created_contract_code} <- tx do
+        %{init: Data.to_string(input), created_contract_code: Data.to_string(created_contract_code), tx: tx}
+      end
+    else
+      creation_int_tx_query =
+        from(
+          itx in InternalTransaction,
+          join: t in assoc(itx, :transaction),
+          where: itx.created_contract_address_hash == ^address_hash,
+          where: t.status == ^1
+        )
+
+      internal_tx = creation_int_tx_query |> Repo.one()
+
+      case internal_tx do
+        %{init: init, created_contract_code: created_contract_code} ->
+          init_str = Data.to_string(init)
+          created_contract_code_str = Data.to_string(created_contract_code)
+          %{init: init_str, created_contract_code: created_contract_code_str, internal_tx: internal_tx}
+
+        _ ->
+          nil
+      end
+    end
+  end
+
   @doc """
   Checks if an address is a contract
   """

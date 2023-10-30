@@ -135,4 +135,45 @@ defmodule Explorer.SmartContract.Helper do
         nil
     end
   end
+
+  def fetch_data_for_verification(address_hash) do
+    deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
+
+    metadata = %{
+      "contractAddress" => address_hash,
+      "runtimeCode" => deployed_bytecode,
+      "chainId" => Application.get_env(:block_scout_web, :chain_id)
+    }
+
+    case Chain.smart_contract_creation_tx_with_bytecode(address_hash) do
+      %{init: init, created_contract_code: _, tx: tx} ->
+        {init, deployed_bytecode, tx |> tx_to_metadata(init) |> Map.merge(metadata)}
+
+      %{init: init, created_contract_code: _, internal_tx: internal_tx} ->
+        {init, deployed_bytecode, internal_tx |> internal_tx_to_metadata(init) |> Map.merge(metadata)}
+
+      _ ->
+        {nil, deployed_bytecode, metadata}
+    end
+  end
+
+  defp tx_to_metadata(tx, init) do
+    %{
+      "blockNumber" => tx.block_number,
+      "transactionHash" => tx.hash,
+      "transactionIndex" => tx.index,
+      "deployer" => tx.from_address_hash,
+      "creationCode" => init
+    }
+  end
+
+  defp internal_tx_to_metadata(internal_tx, init) do
+    %{
+      "blockNumber" => internal_tx.block_number,
+      "transactionHash" => internal_tx.transaction_hash,
+      "transactionIndex" => internal_tx.transaction_index,
+      "deployer" => internal_tx.from_address_hash,
+      "creationCode" => init
+    }
+  end
 end
