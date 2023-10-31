@@ -5715,7 +5715,7 @@ defmodule Explorer.Chain do
       |> Enum.find(fn item ->
         case item do
           {"inputs", inputs} ->
-            master_copy_input?(inputs)
+            master_copy_input?(inputs) || singleton_input?(inputs)
 
           _ ->
             false
@@ -5727,6 +5727,13 @@ defmodule Explorer.Chain do
     inputs
     |> Enum.find(fn input ->
       Map.get(input, "name") == "_masterCopy"
+    end)
+  end
+
+  defp singleton_input?(inputs) do
+    inputs
+    |> Enum.find(fn input ->
+      Map.get(input, "name") == "_singleton"
     end)
   end
 
