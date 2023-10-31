@@ -81,6 +81,7 @@ defmodule Explorer.Chain do
     ContractsCounter,
     NewContractsCounter,
     NewVerifiedContractsCounter,
+    OptimismFinalizationPeriod,
     Transactions,
     Uncles,
     VerifiedContractsCounter,
@@ -2203,6 +2204,84 @@ defmodule Explorer.Chain do
     |> page_optimism_withdrawals(paging_options)
     |> limit(^paging_options.page_size)
     |> select_repo(options).all()
+  end
+
+  @doc """
+    Gets withdrawal status for Optimism Withdrawal transaction.
+    Returns the status and the corresponding L1 transaction hash if the status is `Relayed`.
+  """
+  @spec optimism_withdrawal_transaction_status(Hash.t()) :: {String.t(), Hash.t() | nil}
+  def optimism_withdrawal_transaction_status(l2_transaction_hash) do
+    w =
+      Repo.replica().one(
+        from(w in OptimismWithdrawal,
+          where: w.l2_transaction_hash == ^l2_transaction_hash,
+          left_join: l2_block in Block,
+          on: w.l2_block_number == l2_block.number,
+          left_join: we in OptimismWithdrawalEvent,
+          on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
+          select: %{
+            hash: w.hash,
+            l2_timestamp: l2_block.timestamp,
+            l1_transaction_hash: we.l1_transaction_hash
+          }
+        )
+      )
+
+    if is_nil(w) do
+      {"Unknown", nil}
+    else
+      {status, _} = optimism_withdrawal_status(w)
+      {status, w.l1_transaction_hash}
+    end
+  end
+
+  @doc """
+    Gets Optimism Withdrawal status and remaining time to unlock (when the status is `In challenge period`).
+  """
+  @spec optimism_withdrawal_status(map()) :: {String.t(), DateTime.t() | nil}
+  def optimism_withdrawal_status(w) when is_nil(w.l1_transaction_hash) do
+    l1_timestamp =
+      Repo.replica().one(
+        from(
+          we in OptimismWithdrawalEvent,
+          select: we.l1_timestamp,
+          where: we.withdrawal_hash == ^w.hash and we.l1_event_type == :WithdrawalProven
+        )
+      )
+
+    if is_nil(l1_timestamp) do
+      last_root_timestamp =
+        Repo.replica().one(
+          from(root in OptimismOutputRoot,
+            select: root.l1_timestamp,
+            order_by: [desc: root.l2_output_index],
+            limit: 1
+          )
+        ) || 0
+
+      if w.l2_timestamp > last_root_timestamp do
+        {"Waiting for state root", nil}
+      else
+        {"Ready to prove", nil}
+      end
+    else
+      challenge_period =
+        case OptimismFinalizationPeriod.get_period() do
+          nil -> 604_800
+          period -> period
+        end
+
+      if DateTime.compare(l1_timestamp, DateTime.add(DateTime.utc_now(), -challenge_period, :second)) == :lt do
+        {"Ready for relay", nil}
+      else
+        {"In challenge period", DateTime.add(l1_timestamp, challenge_period, :second)}
+      end
+    end
+  end
+
+  def optimism_withdrawal_status(_w) do
+    {"Relayed", nil}
   end
 
   @doc """
