@@ -433,7 +433,8 @@ config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber,
 
 config :explorer, Explorer.TokenInstanceOwnerAddressMigration,
   concurrency: ConfigHelper.parse_integer_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_CONCURRENCY", 5),
-  batch_size: ConfigHelper.parse_integer_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_BATCH_SIZE", 50)
+  batch_size: ConfigHelper.parse_integer_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_BATCH_SIZE", 50),
+  enabled: ConfigHelper.parse_bool_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_ENABLED")
 
 config :explorer, Explorer.Chain.Transaction,
   rootstock_remasc_address: System.get_env("ROOTSTOCK_REMASC_ADDRESS"),
