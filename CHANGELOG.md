@@ -34,7 +34,7 @@
 - [#8708](https://github.com/blockscout/blockscout/pull/8708) - CoinBalanceHistory tab: show also tx with gasPrice & gasUsed > 0
 - [#8706](https://github.com/blockscout/blockscout/pull/8706) - Add address name updating on contract re-verification
 - [#8705](https://github.com/blockscout/blockscout/pull/8705) - Fix sourcify enabled flag
-- [#8695](https://github.com/blockscout/blockscout/pull/8695) - Don't override internal transaction error if it's present already
+- [#8695](https://github.com/blockscout/blockscout/pull/8695), [#8755](https://github.com/blockscout/blockscout/pull/8755) - Don't override internal transaction error if it's present already
 - [#8685](https://github.com/blockscout/blockscout/pull/8685) - Fix db pool size exceeds Postgres max connections
 - [#8678](https://github.com/blockscout/blockscout/pull/8678) - Fix `is_verified` for `/addresses` and `/smart-contracts`
 

@@ -306,7 +306,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
         |> Map.delete(:created_contract_code)
         |> Map.delete(:gas_used)
         |> Map.delete(:output)
-        |> Map.put_new(:error, failed_parent[:error])
+        |> Map.put(:error, internal_transaction_param[:error] || failed_parent[:error])
       else
         internal_transaction_param
       end
