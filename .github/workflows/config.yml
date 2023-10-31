@@ -23,6 +23,7 @@ on:
   pull_request:
     branches:
       - master
+      - production-optimism-stg
 
 env:
   MIX_ENV: test
