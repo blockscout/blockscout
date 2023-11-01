@@ -7,6 +7,8 @@ defmodule Explorer.Market do
   alias Explorer.Market.{MarketHistory, MarketHistoryCache}
   alias Explorer.{ExchangeRates, Repo}
 
+  import Ecto.Query, only: [from: 2]
+
   @doc """
   Retrieves the history for the recent specified amount of days.
 
@@ -67,7 +69,73 @@ defmodule Explorer.Market do
       # Enforce MarketHistory ShareLocks order (see docs: sharelocks.md)
       |> Enum.sort_by(& &1.date)
 
-    Repo.insert_all(MarketHistory, records_without_zeroes, on_conflict: :nothing, conflict_target: [:date])
+    Repo.insert_all(MarketHistory, records_without_zeroes,
+      on_conflict: market_history_on_conflict(),
+      conflict_target: [:date]
+    )
+  end
+
+  defp market_history_on_conflict do
+    from(
+      market_history in MarketHistory,
+      update: [
+        set: [
+          opening_price:
+            fragment(
+              """
+              CASE WHEN (? IS NULL OR ? = 0) AND EXCLUDED.opening_price IS NOT NULL AND EXCLUDED.opening_price > 0
+              THEN EXCLUDED.opening_price
+              ELSE ?
+              END
+              """,
+              market_history.opening_price,
+              market_history.opening_price,
+              market_history.opening_price
+            ),
+          closing_price:
+            fragment(
+              """
+              CASE WHEN (? IS NULL OR ? = 0) AND EXCLUDED.closing_price IS NOT NULL AND EXCLUDED.closing_price > 0
+              THEN EXCLUDED.closing_price
+              ELSE ?
+              END
+              """,
+              market_history.closing_price,
+              market_history.closing_price,
+              market_history.closing_price
+            ),
+          market_cap:
+            fragment(
+              """
+              CASE WHEN (? IS NULL OR ? = 0) AND EXCLUDED.market_cap IS NOT NULL AND EXCLUDED.market_cap > 0
+              THEN EXCLUDED.market_cap
+              ELSE ?
+              END
+              """,
+              market_history.market_cap,
+              market_history.market_cap,
+              market_history.market_cap
+            ),
+          tvl:
+            fragment(
+              """
+              CASE WHEN (? IS NULL OR ? = 0) AND EXCLUDED.tvl IS NOT NULL AND EXCLUDED.tvl > 0
+              THEN EXCLUDED.tvl
+              ELSE ?
+              END
+              """,
+              market_history.tvl,
+              market_history.tvl,
+              market_history.tvl
+            )
+        ]
+      ],
+      where:
+        is_nil(market_history.tvl) or market_history.tvl == 0 or is_nil(market_history.market_cap) or
+          market_history.market_cap == 0 or is_nil(market_history.opening_price) or
+          market_history.opening_price == 0 or is_nil(market_history.closing_price) or
+          market_history.closing_price == 0
+    )
   end
 
   @spec get_exchange_rate(String.t()) :: Token.t() | nil

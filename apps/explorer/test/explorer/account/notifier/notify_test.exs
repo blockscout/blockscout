@@ -55,7 +55,7 @@ defmodule Explorer.Account.Notifier.NotifyTest do
     test "when address appears in watchlist" do
       wa =
         %WatchlistAddress{address_hash: address_hash} =
-        build(:account_watchlist_address)
+        build(:account_watchlist_address, watch_coin_input: true)
         |> Repo.account_repo().insert!()
 
       _watchlist_address = Repo.preload(wa, watchlist: :identity)
