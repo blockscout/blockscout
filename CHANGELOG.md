@@ -5,6 +5,7 @@
 ### Features
 
 - [#8795](https://github.com/blockscout/blockscout/pull/8795) - Disable catchup indexer by env
+- [#8750](https://github.com/blockscout/blockscout/pull/8750) - Support new eth-bytecode-db request metadata fields
 
 ### Fixes
 

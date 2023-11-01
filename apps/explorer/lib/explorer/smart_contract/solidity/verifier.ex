@@ -12,8 +12,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     only: [
       cast_libraries: 1,
       fetch_data_for_verification: 1,
-      prepare_bytecode_for_microservice: 3,
-      contract_creation_input: 1
+      prepare_bytecode_for_microservice: 3
     ]
 
   alias ABI.{FunctionSelector, TypeDecoder}

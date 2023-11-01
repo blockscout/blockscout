@@ -9,7 +9,6 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
   """
   require Logger
 
-  alias Explorer.Chain
   alias Explorer.SmartContract.Vyper.CodeCompiler
   alias Explorer.SmartContract.RustVerifierInterface
 
