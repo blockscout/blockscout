@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- [#8765](https://github.com/blockscout/blockscout/pull/8765) - Fix for tvl update in market history when row already exists
 - [#8759](https://github.com/blockscout/blockscout/pull/8759) - Gnosis safe proxy via singleton input
 - [#8752](https://github.com/blockscout/blockscout/pull/8752) - Add `TOKEN_INSTANCE_OWNER_MIGRATION_ENABLED` env
 - [#8724](https://github.com/blockscout/blockscout/pull/8724) - Fix flaky account notifier test
