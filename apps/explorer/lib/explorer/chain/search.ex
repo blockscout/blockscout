@@ -34,7 +34,7 @@ defmodule Explorer.Chain.Search do
 
     case prepare_search_term(string) do
       {:some, term} ->
-        tokens_query = search_token_query(term)
+        tokens_query = search_token_query(string, term) |> dbg()
         contracts_query = search_contract_query(term)
         labels_query = search_label_query(term)
         tx_query = search_tx_query(string)
@@ -86,7 +86,7 @@ defmodule Explorer.Chain.Search do
           ordered_query
           |> page_search_results(paging_options)
 
-        search_results = select_repo(options).all(paginated_ordered_query)
+        search_results = select_repo(options).all(paginated_ordered_query) |> dbg()
 
         search_results
         |> Enum.map(fn result ->
@@ -114,8 +114,8 @@ defmodule Explorer.Chain.Search do
     case prepare_search_term(search_query) do
       {:some, term} ->
         tokens_result =
-          term
-          |> search_token_query()
+          search_query
+          |> search_token_query(term)
           |> order_by([token],
             desc_nulls_last: token.circulating_market_cap,
             desc_nulls_last: token.fiat_value,
@@ -238,32 +238,62 @@ defmodule Explorer.Chain.Search do
     )
   end
 
-  defp search_token_query(term) do
-    from(token in Token,
-      left_join: smart_contract in SmartContract,
-      on: token.contract_address_hash == smart_contract.address_hash,
-      where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term),
-      select: %{
-        address_hash: token.contract_address_hash,
-        tx_hash: fragment("CAST(NULL AS bytea)"),
-        block_hash: fragment("CAST(NULL AS bytea)"),
-        type: "token",
-        name: token.name,
-        symbol: token.symbol,
-        holder_count: token.holder_count,
-        inserted_at: token.inserted_at,
-        block_number: 0,
-        icon_url: token.icon_url,
-        token_type: token.type,
-        timestamp: fragment("NULL::timestamp without time zone"),
-        verified: not is_nil(smart_contract),
-        exchange_rate: token.fiat_value,
-        total_supply: token.total_supply,
-        circulating_market_cap: token.circulating_market_cap,
-        priority: 0,
-        is_verified_via_admin_panel: token.is_verified_via_admin_panel
-      }
-    )
+  defp search_token_query(string, term) do
+    case Chain.string_to_address_hash(string) |> dbg() do
+      {:ok, address_hash} ->
+        from(token in Token,
+          left_join: smart_contract in SmartContract,
+          on: token.contract_address_hash == smart_contract.address_hash,
+          where: token.contract_address_hash == ^address_hash,
+          select: %{
+            address_hash: token.contract_address_hash,
+            tx_hash: fragment("CAST(NULL AS bytea)"),
+            block_hash: fragment("CAST(NULL AS bytea)"),
+            type: "token",
+            name: token.name,
+            symbol: token.symbol,
+            holder_count: token.holder_count,
+            inserted_at: token.inserted_at,
+            block_number: 0,
+            icon_url: token.icon_url,
+            token_type: token.type,
+            timestamp: fragment("NULL::timestamp without time zone"),
+            verified: not is_nil(smart_contract),
+            exchange_rate: token.fiat_value,
+            total_supply: token.total_supply,
+            circulating_market_cap: token.circulating_market_cap,
+            priority: 0,
+            is_verified_via_admin_panel: token.is_verified_via_admin_panel
+          }
+        )
+
+      _ ->
+        from(token in Token,
+        left_join: smart_contract in SmartContract,
+        on: token.contract_address_hash == smart_contract.address_hash,
+        where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term),
+        select: %{
+          address_hash: token.contract_address_hash,
+          tx_hash: fragment("CAST(NULL AS bytea)"),
+          block_hash: fragment("CAST(NULL AS bytea)"),
+          type: "token",
+          name: token.name,
+          symbol: token.symbol,
+          holder_count: token.holder_count,
+          inserted_at: token.inserted_at,
+          block_number: 0,
+          icon_url: token.icon_url,
+          token_type: token.type,
+          timestamp: fragment("NULL::timestamp without time zone"),
+          verified: not is_nil(smart_contract),
+          exchange_rate: token.fiat_value,
+          total_supply: token.total_supply,
+          circulating_market_cap: token.circulating_market_cap,
+          priority: 0,
+          is_verified_via_admin_panel: token.is_verified_via_admin_panel
+        }
+      )
+    end
   end
 
   defp search_contract_query(term) do
