@@ -11,7 +11,7 @@ defmodule Explorer.Etherscan.Blocks do
     ]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address.CoinBalance, Block, Hash, Wei}
+  alias Explorer.Chain.{Address, Address.CoinBalance, Block, Hash, Wei}
 
   @doc """
   Returns the balance of the given address and block combination.
@@ -39,12 +39,16 @@ defmodule Explorer.Etherscan.Blocks do
   end
 
   def get_balance_as_of_block(address, :latest) do
-    case Chain.max_consensus_block_number() do
-      {:ok, latest_block_number} ->
-        get_balance_as_of_block(address, latest_block_number)
+    latest_coin_balance_query =
+      from(
+        a in Address,
+        select: a.fetched_coin_balance,
+        where: a.hash == ^address
+      )
 
-      {:error, :not_found} ->
-        {:error, :not_found}
+    case Repo.replica().one(latest_coin_balance_query) do
+      nil -> {:error, :not_found}
+      coin_balance -> {:ok, coin_balance}
     end
   end
 
