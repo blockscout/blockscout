@@ -14,7 +14,7 @@ defmodule Explorer.TokenInstanceOwnerAddressMigration.Worker do
   alias Explorer.Repo
   alias Explorer.TokenInstanceOwnerAddressMigration.Helper
 
-  def start_link(concurrency: concurrency, batch_size: batch_size) do
+  def start_link(concurrency: concurrency, batch_size: batch_size, enabled: _) do
     GenServer.start_link(__MODULE__, %{concurrency: concurrency, batch_size: batch_size}, name: __MODULE__)
   end
 
