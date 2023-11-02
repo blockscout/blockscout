@@ -21,6 +21,7 @@ defmodule Explorer.Chain.Search do
   alias Explorer.Chain.{
     Address,
     Block,
+    DenormalizationHelper,
     SmartContract,
     Token,
     Transaction
@@ -356,38 +357,72 @@ defmodule Explorer.Chain.Search do
   end
 
   defp search_tx_query(term) do
-    case Chain.string_to_transaction_hash(term) do
-      {:ok, tx_hash} ->
-        transaction_search_fields = %{
-          address_hash: dynamic([_, _], type(^nil, :binary)),
-          tx_hash: dynamic([transaction, _], transaction.hash),
-          block_hash: dynamic([_, _], type(^nil, :binary)),
-          type: "transaction",
-          name: nil,
-          symbol: nil,
-          holder_count: nil,
-          inserted_at: dynamic([transaction, _], transaction.inserted_at),
-          block_number: 0,
-          icon_url: nil,
-          token_type: nil,
-          timestamp: dynamic([_, block], block.timestamp),
-          verified: nil,
-          exchange_rate: nil,
-          total_supply: nil,
-          circulating_market_cap: nil,
-          priority: 0,
-          is_verified_via_admin_panel: nil
-        }
+    if DenormalizationHelper.denormalization_finished?() do
+      case Chain.string_to_transaction_hash(term) do
+        {:ok, tx_hash} ->
+          transaction_search_fields = %{
+            address_hash: dynamic([_], type(^nil, :binary)),
+            tx_hash: dynamic([transaction], transaction.hash),
+            block_hash: dynamic([_], type(^nil, :binary)),
+            type: "transaction",
+            name: nil,
+            symbol: nil,
+            holder_count: nil,
+            inserted_at: dynamic([transaction], transaction.inserted_at),
+            block_number: 0,
+            icon_url: nil,
+            token_type: nil,
+            timestamp: dynamic([transaction], transaction.block_timestamp),
+            verified: nil,
+            exchange_rate: nil,
+            total_supply: nil,
+            circulating_market_cap: nil,
+            priority: 0,
+            is_verified_via_admin_panel: nil
+          }
 
-        from(transaction in Transaction,
-          left_join: block in Block,
-          on: transaction.block_hash == block.hash,
-          where: transaction.hash == ^tx_hash,
-          select: ^transaction_search_fields
-        )
+          from(transaction in Transaction,
+            where: transaction.hash == ^tx_hash,
+            select: ^transaction_search_fields
+          )
 
-      _ ->
-        nil
+        _ ->
+          nil
+      end
+    else
+      case Chain.string_to_transaction_hash(term) do
+        {:ok, tx_hash} ->
+          transaction_search_fields = %{
+            address_hash: dynamic([_, _], type(^nil, :binary)),
+            tx_hash: dynamic([transaction, _], transaction.hash),
+            block_hash: dynamic([_, _], type(^nil, :binary)),
+            type: "transaction",
+            name: nil,
+            symbol: nil,
+            holder_count: nil,
+            inserted_at: dynamic([transaction, _], transaction.inserted_at),
+            block_number: 0,
+            icon_url: nil,
+            token_type: nil,
+            timestamp: dynamic([_, block], block.timestamp),
+            verified: nil,
+            exchange_rate: nil,
+            total_supply: nil,
+            circulating_market_cap: nil,
+            priority: 0,
+            is_verified_via_admin_panel: nil
+          }
+
+          from(transaction in Transaction,
+            left_join: block in Block,
+            on: transaction.block_hash == block.hash,
+            where: transaction.hash == ^tx_hash,
+            select: ^transaction_search_fields
+          )
+
+        _ ->
+          nil
+      end
     end
   end
 
