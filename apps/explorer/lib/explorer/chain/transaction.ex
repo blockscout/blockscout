@@ -19,6 +19,7 @@ defmodule Explorer.Chain.Transaction do
     Block,
     ContractMethod,
     Data,
+    DenormalizationHelper,
     Gas,
     Hash,
     InternalTransaction,
@@ -552,6 +553,11 @@ defmodule Explorer.Chain.Transaction do
     |> unique_constraint(:hash)
   end
 
+  def block_timestamp(%{block_number: nil, inserted_at: time}), do: time
+  def block_timestamp(%{block_timestamp: time}) when not is_nil(time), do: time
+  def block_timestamp(%{block: %{timestamp: time}}), do: time
+  def block_timestamp(_), do: nil
+
   def preload_token_transfers(query, address_hash) do
     token_transfers_query =
       from(
@@ -1020,11 +1026,12 @@ defmodule Explorer.Chain.Transaction do
   """
   def transactions_with_token_transfers(address_hash, token_hash) do
     query = transactions_with_token_transfers_query(address_hash, token_hash)
+    preloads = DenormalizationHelper.extend_block_preload([:from_address, :to_address, :created_contract_address])
 
     from(
       t in subquery(query),
       order_by: [desc: t.block_number, desc: t.index],
-      preload: [:from_address, :to_address, :created_contract_address]
+      preload: ^preloads
     )
   end
 
@@ -1041,11 +1048,12 @@ defmodule Explorer.Chain.Transaction do
 
   def transactions_with_token_transfers_direction(direction, address_hash) do
     query = transactions_with_token_transfers_query_direction(direction, address_hash)
+    preloads = DenormalizationHelper.extend_block_preload([:from_address, :to_address, :created_contract_address])
 
     from(
       t in subquery(query),
       order_by: [desc: t.block_number, desc: t.index],
-      preload: [:from_address, :to_address, :created_contract_address]
+      preload: ^preloads
     )
   end
 

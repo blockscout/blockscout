@@ -28,7 +28,7 @@ defmodule Explorer.Chain.TokenTransfer do
   import Ecto.Query, only: [from: 2, limit: 2, where: 3, join: 5, order_by: 3, preload: 3]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, Hash, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, TokenTransfer, Transaction}
   alias Explorer.Chain.Token.Instance
   alias Explorer.{PagingOptions, Repo}
 
@@ -161,12 +161,13 @@ defmodule Explorer.Chain.TokenTransfer do
   @spec fetch_token_transfers_from_token_hash(Hash.t(), [paging_options | api?]) :: []
   def fetch_token_transfers_from_token_hash(token_address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
 
     query =
       from(
         tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number),
-        preload: [:transaction, :token, :from_address, :to_address],
+        preload: ^preloads,
         order_by: [desc: tt.block_number, desc: tt.log_index]
       )
 
@@ -179,6 +180,7 @@ defmodule Explorer.Chain.TokenTransfer do
   @spec fetch_token_transfers_from_token_hash_and_token_id(Hash.t(), non_neg_integer(), [paging_options | api?]) :: []
   def fetch_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
 
     query =
       from(
@@ -186,7 +188,7 @@ defmodule Explorer.Chain.TokenTransfer do
         where: tt.token_contract_address_hash == ^token_address_hash,
         where: fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)),
         where: not is_nil(tt.block_number),
-        preload: [:transaction, :token, :from_address, :to_address],
+        preload: ^preloads,
         order_by: [desc: tt.block_number, desc: tt.log_index]
       )
 

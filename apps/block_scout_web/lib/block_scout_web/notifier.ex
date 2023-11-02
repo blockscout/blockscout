@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.Notifier do
 
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.{Address, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, DenormalizationHelper, InternalTransaction, Transaction}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.{AverageBlockTime, Helper}
@@ -171,7 +171,9 @@ defmodule BlockScoutWeb.Notifier do
       all_token_transfers
       |> Enum.map(
         &(&1
-          |> Repo.preload([:from_address, :to_address, :token, transaction: :block]))
+          |> Repo.preload(
+            DenormalizationHelper.extend_transaction_preload([:from_address, :to_address, :token, :transaction])
+          ))
       )
 
     transfers_by_token = Enum.group_by(all_token_transfers_full, fn tt -> to_string(tt.token_contract_address_hash) end)
@@ -191,7 +193,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :transactions, :realtime, transactions}) do
-    preloads = [created_contract_address: :names, from_address: :names, to_address: :names]
+    preloads = [:block, created_contract_address: :names, from_address: :names, to_address: :names]
 
     transactions
     |> Enum.map(

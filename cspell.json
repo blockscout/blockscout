@@ -126,6 +126,8 @@
         "DELEGATECALL",
         "delegators",
         "demonitor",
+        "denormalization",
+        "Denormalization",
         "Denormalized",
         "descr",
         "describedby",
