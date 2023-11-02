@@ -706,7 +706,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         )
 
       update_block_query =
-        if maximal_block, do: update_block_query |> where([block], block.number < ^maximal_block), else: update_block_query
+        if maximal_block,
+          do: update_block_query |> where([block], block.number < ^maximal_block),
+          else: update_block_query
 
       update_transaction_query =
         from(
@@ -718,7 +720,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         )
 
       update_transaction_query =
-        if maximal_block, do: update_transaction_query |> where([transaction], transaction.block_number < ^maximal_block), else: update_transaction_query
+        if maximal_block,
+          do: update_transaction_query |> where([transaction], transaction.block_number < ^maximal_block),
+          else: update_transaction_query
 
       try do
         {_num, result} = repo.update_all(update_block_query, [])

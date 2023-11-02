@@ -74,6 +74,7 @@ defmodule BlockScoutWeb.WebsocketV2Test do
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             block_number: 37,
+            block_timestamp: Timex.parse!("2017-12-15T21:06:30.000000Z", "{ISO:Extended:Z}"),
             cumulative_gas_used: 50450,
             from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
             gas: 4_700_000,
@@ -96,6 +97,7 @@ defmodule BlockScoutWeb.WebsocketV2Test do
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             block_number: 37,
+            block_timestamp: Timex.parse!("2017-12-15T21:06:30.000000Z", "{ISO:Extended:Z}"),
             cumulative_gas_used: 50450,
             from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
             gas: 4_700_000,
