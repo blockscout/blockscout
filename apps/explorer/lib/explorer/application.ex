@@ -12,6 +12,7 @@ defmodule Explorer.Application do
     AddressesTabsCounters,
     AddressSum,
     AddressSumMinusBurnt,
+    BackgroundMigrations,
     Block,
     BlockNumber,
     Blocks,
@@ -63,6 +64,7 @@ defmodule Explorer.Application do
       Accounts,
       AddressSum,
       AddressSumMinusBurnt,
+      BackgroundMigrations,
       Block,
       BlockNumber,
       Blocks,
@@ -125,7 +127,8 @@ defmodule Explorer.Application do
         configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand),
         configure(Explorer.TokenInstanceOwnerAddressMigration.Supervisor),
         sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand),
-        configure(Explorer.Chain.Cache.RootstockLockedBTC)
+        configure(Explorer.Chain.Cache.RootstockLockedBTC),
+        configure(Explorer.TransactionsDenormalizationMigrator)
       ]
       |> List.flatten()
 
