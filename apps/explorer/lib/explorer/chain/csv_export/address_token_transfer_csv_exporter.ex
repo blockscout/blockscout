@@ -12,7 +12,7 @@ defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
     ]
 
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Hash, TokenTransfer}
+  alias Explorer.Chain.{Address, Hash, TokenTransfer, Transaction}
   alias Explorer.Chain.CSVExport.Helper
 
   @paging_options %PagingOptions{page_size: Helper.limit(), asc_order: true}
@@ -68,7 +68,7 @@ defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
         [
           to_string(token_transfer.transaction_hash),
           token_transfer.transaction.block_number,
-          token_transfer.transaction.block.timestamp,
+          Transaction.block_timestamp(token_transfer.transaction),
           Address.checksum(token_transfer.from_address_hash),
           Address.checksum(token_transfer.to_address_hash),
           Address.checksum(token_transfer.token_contract_address_hash),
