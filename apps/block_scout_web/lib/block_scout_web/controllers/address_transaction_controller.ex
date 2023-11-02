@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
     AddressTransactionCsvExporter
   }
 
-  alias Explorer.Chain.{Transaction, Wei}
+  alias Explorer.Chain.{DenormalizationHelper, Transaction, Wei}
 
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
@@ -49,6 +49,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       options =
         @transaction_necessity_by_association
+        |> DenormalizationHelper.extend_block_necessity(:optional)
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
