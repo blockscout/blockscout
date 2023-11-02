@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.RecentTransactionsController do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{DenormalizationHelper, Hash}
   alias Phoenix.View
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
@@ -13,16 +13,22 @@ defmodule BlockScoutWeb.RecentTransactionsController do
   def index(conn, _params) do
     if ajax?(conn) do
       recent_transactions =
-        Chain.recent_collated_transactions(true,
-          necessity_by_association: %{
-            [created_contract_address: :names] => :optional,
-            [from_address: :names] => :optional,
-            [to_address: :names] => :optional,
-            [created_contract_address: :smart_contract] => :optional,
-            [from_address: :smart_contract] => :optional,
-            [to_address: :smart_contract] => :optional
-          },
-          paging_options: %PagingOptions{page_size: 5}
+        Chain.recent_collated_transactions(
+          true,
+          DenormalizationHelper.extend_block_necessity(
+            [
+              necessity_by_association: %{
+                [created_contract_address: :names] => :optional,
+                [from_address: :names] => :optional,
+                [to_address: :names] => :optional,
+                [created_contract_address: :smart_contract] => :optional,
+                [from_address: :smart_contract] => :optional,
+                [to_address: :smart_contract] => :optional
+              },
+              paging_options: %PagingOptions{page_size: 5}
+            ],
+            :required
+          )
         )
 
       transactions =

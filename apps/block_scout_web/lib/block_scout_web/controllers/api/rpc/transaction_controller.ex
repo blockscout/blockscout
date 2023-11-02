@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias Explorer.Chain
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{DenormalizationHelper, Transaction}
 
   @api_true [api?: true]
 
@@ -75,7 +75,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   end
 
   defp transaction_from_hash(transaction_hash) do
-    case Chain.hash_to_transaction(transaction_hash) do
+    case Chain.hash_to_transaction(transaction_hash, DenormalizationHelper.extend_block_necessity([], :required)) do
       {:error, :not_found} -> {:transaction, :error}
       {:ok, transaction} -> {:transaction, {:ok, transaction}}
     end

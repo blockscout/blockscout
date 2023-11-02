@@ -26,6 +26,7 @@ defmodule BlockScoutWeb.TransactionController do
 
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
+  alias Explorer.Chain.DenormalizationHelper
   alias Phoenix.View
 
   @necessity_by_association %{
@@ -54,6 +55,7 @@ defmodule BlockScoutWeb.TransactionController do
   def index(conn, %{"type" => "JSON"} = params) do
     options =
       @default_options
+      |> DenormalizationHelper.extend_block_necessity(:required)
       |> Keyword.merge(paging_options(params))
 
     full_options =
@@ -151,10 +153,7 @@ defmodule BlockScoutWeb.TransactionController do
          :ok <- Chain.check_transaction_exists(transaction_hash) do
       if Chain.transaction_has_token_transfers?(transaction_hash) do
         with {:ok, transaction} <-
-               Chain.hash_to_transaction(
-                 transaction_hash,
-                 necessity_by_association: @necessity_by_association
-               ),
+               Chain.hash_to_transaction(transaction_hash, necessity_by_association: @necessity_by_association),
              {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
              {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
           render(
@@ -189,10 +188,7 @@ defmodule BlockScoutWeb.TransactionController do
         end
       else
         with {:ok, transaction} <-
-               Chain.hash_to_transaction(
-                 transaction_hash,
-                 necessity_by_association: @necessity_by_association
-               ),
+               Chain.hash_to_transaction(transaction_hash, necessity_by_association: @necessity_by_association),
              {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
              {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
           render(
