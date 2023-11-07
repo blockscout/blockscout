@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#8795](https://github.com/blockscout/blockscout/pull/8795) - Disable catchup indexer by env
+
 ### Fixes
 
 - [#8765](https://github.com/blockscout/blockscout/pull/8765) - Fix for tvl update in market history when row already exists
