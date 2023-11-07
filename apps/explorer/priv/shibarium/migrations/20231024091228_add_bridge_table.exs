@@ -18,7 +18,9 @@ defmodule Explorer.Repo.Shibarium.Migrations.AddBridgeTable do
       add(:erc1155_ids, {:array, :numeric}, precision: 78, scale: 0, null: true)
       add(:erc1155_amounts, {:array, :decimal}, null: true)
       add(:l1_transaction_hash, :bytea, null: true)
+      add(:l1_block_number, :bigint, null: true)
       add(:l2_transaction_hash, :bytea, null: true)
+      add(:l2_block_number, :bigint, null: true)
       add(:operation_hash, :bytea, null: false, primary_key: true)
       add(:operation_type, :shibarium_bridge_op_type, null: false, primary_key: true)
       add(:token_type, :shibarium_bridge_token_type, null: false)
@@ -26,6 +28,8 @@ defmodule Explorer.Repo.Shibarium.Migrations.AddBridgeTable do
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
+    create(index(:shibarium_bridge, :l1_block_number))
+    create(index(:shibarium_bridge, :l2_block_number))
     create(index(:shibarium_bridge, :timestamp))
   end
 end

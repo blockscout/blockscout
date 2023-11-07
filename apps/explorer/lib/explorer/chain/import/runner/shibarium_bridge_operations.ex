@@ -91,7 +91,9 @@ defmodule Explorer.Chain.Import.Runner.ShibariumBridgeOperations do
           erc1155_ids: fragment("EXCLUDED.erc1155_ids"),
           erc1155_amounts: fragment("EXCLUDED.erc1155_amounts"),
           l1_transaction_hash: fragment("EXCLUDED.l1_transaction_hash"),
+          l1_block_number: fragment("EXCLUDED.l1_block_number"),
           l2_transaction_hash: fragment("EXCLUDED.l2_transaction_hash"),
+          l2_block_number: fragment("EXCLUDED.l2_block_number"),
           token_type: fragment("EXCLUDED.token_type"),
           timestamp: fragment("EXCLUDED.timestamp"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", operation.inserted_at),
@@ -100,13 +102,15 @@ defmodule Explorer.Chain.Import.Runner.ShibariumBridgeOperations do
       ],
       where:
         fragment(
-          "(EXCLUDED.user, EXCLUDED.amount_or_id, EXCLUDED.erc1155_ids, EXCLUDED.erc1155_amounts, EXCLUDED.l1_transaction_hash, EXCLUDED.l2_transaction_hash, EXCLUDED.token_type, EXCLUDED.timestamp) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.user, EXCLUDED.amount_or_id, EXCLUDED.erc1155_ids, EXCLUDED.erc1155_amounts, EXCLUDED.l1_transaction_hash, EXCLUDED.l1_block_number, EXCLUDED.l2_transaction_hash, EXCLUDED.l2_block_number, EXCLUDED.token_type, EXCLUDED.timestamp) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           operation.user,
           operation.amount_or_id,
           operation.erc1155_ids,
           operation.erc1155_amounts,
           operation.l1_transaction_hash,
+          operation.l1_block_number,
           operation.l2_transaction_hash,
+          operation.l2_block_number,
           operation.token_type,
           operation.timestamp
         )

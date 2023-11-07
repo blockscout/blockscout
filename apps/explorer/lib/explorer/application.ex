@@ -138,7 +138,13 @@ defmodule Explorer.Application do
 
   defp repos_by_chain_type do
     if Mix.env() == :test do
-      [Explorer.Repo.PolygonEdge, Explorer.Repo.PolygonZkevm, Explorer.Repo.RSK, Explorer.Repo.Shibarium, Explorer.Repo.Suave]
+      [
+        Explorer.Repo.PolygonEdge,
+        Explorer.Repo.PolygonZkevm,
+        Explorer.Repo.RSK,
+        Explorer.Repo.Shibarium,
+        Explorer.Repo.Suave
+      ]
     else
       []
     end
