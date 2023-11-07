@@ -1,4 +1,4 @@
-defmodule Explorer.Token.MetadataRetrieverTest do
+defmodule Explorer.Token.InstanceMetadataRetrieverTest do
   use EthereumJSONRPC.Case
 
   alias Indexer.Fetcher.TokenInstance.MetadataRetriever
