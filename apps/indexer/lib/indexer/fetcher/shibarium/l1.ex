@@ -12,29 +12,56 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
   import EthereumJSONRPC, only: [
     fetch_block_number_by_tag: 2,
+    integer_to_quantity: 1,
     json_rpc: 2,
     quantity_to_integer: 1,
     request: 1
   ]
 
-  import Explorer.Helper, only: [parse_integer: 1]
+  import Explorer.Helper, only: [parse_integer: 1, decode_data: 2]
 
   alias EthereumJSONRPC.Block.ByNumber
-  alias Indexer.{BoundQueue, Helper}
+  alias EthereumJSONRPC.Blocks
   alias Explorer.Chain.Shibarium.Bridge
-  # alias EthereumJSONRPC.Blocks
-  alias Explorer.Repo
-  # alias Explorer.Chain.OptimismWithdrawalEvent
-  # alias Indexer.Fetcher.Optimism
+  alias Explorer.{Chain, Repo}
+  alias Indexer.{BoundQueue, Helper}
 
-  @fetcher_name :shibarium_bridge_l1
   @block_check_interval_range_size 100
+  @eth_get_logs_range_size 1000
+  @fetcher_name :shibarium_bridge_l1
 
-  # 32-byte signature of the event WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to)
-  # @withdrawal_proven_event "0x67a6208cfcc0801d50f6cbe764733f4fddf66ac0b04442061a8a8c0cb6b63f62"
+  # 32-byte signature of the event NewDepositBlock(address indexed owner, address indexed token, uint256 amountOrNFTId, uint256 depositBlockId)
+  @new_deposit_block_event "0x1dadc8d0683c6f9824e885935c1bec6f76816730dcec148dda8cf25a7b9f797b"
 
-  # 32-byte signature of the event WithdrawalFinalized(bytes32 indexed withdrawalHash, bool success)
-  # @withdrawal_finalized_event "0xdb5c7652857aa163daadd670e116628fb42e869d8ac4251ef8971d9e5727df1b"
+  # 32-byte signature of the event LockedEther(address indexed depositor, address indexed depositReceiver, uint256 amount)
+  @locked_ether_event "0x3e799b2d61372379e767ef8f04d65089179b7a6f63f9be3065806456c7309f1b"
+
+  # 32-byte signature of the event LockedERC20(address indexed depositor, address indexed depositReceiver, address indexed rootToken, uint256 amount)
+  @locked_erc20_event "0x9b217a401a5ddf7c4d474074aff9958a18d48690d77cc2151c4706aa7348b401"
+
+  # 32-byte signature of the event LockedERC721(address indexed depositor, address indexed depositReceiver, address indexed rootToken, uint256 tokenId)
+  @locked_erc721_event "0x8357472e13612a8c3d6f3e9d71fbba8a78ab77dbdcc7fcf3b7b645585f0bbbfc"
+
+  # 32-byte signature of the event LockedERC721Batch(address indexed depositor, address indexed depositReceiver, address indexed rootToken, uint256[] tokenIds)
+  @locked_erc721_batch_event "0x5345c2beb0e49c805f42bb70c4ec5c3c3d9680ce45b8f4529c028d5f3e0f7a0d"
+
+  # 32-byte signature of the event LockedBatchERC1155(address indexed depositor, address indexed depositReceiver, address indexed rootToken, uint256[] ids, uint256[] amounts)
+  @locked_batch_erc1155_event "0x5a921678b5779e4471b77219741a417a6ad6ec5d89fa5c8ce8cd7bd2d9f34186"
+
+  # 32-byte signature of the event Withdraw(uint256 indexed exitId, address indexed user, address indexed token, uint256 amount)
+  @withdraw_event "0xfeb2000dca3e617cd6f3a8bbb63014bb54a124aac6ccbf73ee7229b4cd01f120"
+
+  # 32-byte signature of the event ExitedEther(address indexed exitor, uint256 amount)
+  @exited_ether_event "0x0fc0eed41f72d3da77d0f53b9594fc7073acd15ee9d7c536819a70a67c57ef3c"
+
+  # 32-byte signature of the event Transfer(address indexed from, address indexed to, uint256 value)
+  @transfer_event "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+
+  # 32-byte signature of the event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value)
+  @transfer_single_event "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62"
+
+  # 32-byte signature of the event TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values)
+  @transfer_batch_event "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -68,6 +95,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
          {:deposit_manager_address_is_valid, true} <- {:deposit_manager_address_is_valid, Helper.is_address_correct?(env[:deposit_manager_proxy])},
          {:ether_predicate_address_is_valid, true} <- {:ether_predicate_address_is_valid, Helper.is_address_correct?(env[:ether_predicate_proxy])},
          {:erc20_predicate_address_is_valid, true} <- {:erc20_predicate_address_is_valid, Helper.is_address_correct?(env[:erc20_predicate_proxy])},
+         {:erc721_predicate_address_is_valid, true} <- {:erc721_predicate_address_is_valid, is_nil(env[:erc721_predicate_proxy]) or Helper.is_address_correct?(env[:erc721_predicate_proxy])},
+         {:erc1155_predicate_address_is_valid, true} <- {:erc1155_predicate_address_is_valid, is_nil(env[:erc1155_predicate_proxy]) or Helper.is_address_correct?(env[:erc1155_predicate_proxy])},
          {:withdraw_manager_address_is_valid, true} <- {:withdraw_manager_address_is_valid, Helper.is_address_correct?(env[:withdraw_manager_proxy])},
          start_block = parse_integer(env[:start_block]),
          false <- is_nil(start_block),
@@ -87,6 +116,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
          deposit_manager_proxy: env[:deposit_manager_proxy],
          ether_predicate_proxy: env[:ether_predicate_proxy],
          erc20_predicate_proxy: env[:erc20_predicate_proxy],
+         erc721_predicate_proxy: env[:erc721_predicate_proxy],
+         erc1155_predicate_proxy: env[:erc1155_predicate_proxy],
          withdraw_manager_proxy: env[:withdraw_manager_proxy],
          block_check_interval: block_check_interval,
          start_block: max(start_block, last_l1_block_number),
@@ -113,6 +144,14 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
       {:erc20_predicate_address_is_valid, false} ->
         Logger.error("ERC20PredicateProxy contract address is invalid or not defined.")
+        {:stop, :normal, %{}}
+
+      {:erc721_predicate_address_is_valid, false} ->
+        Logger.error("ERC721PredicateProxy contract address is invalid.")
+        {:stop, :normal, %{}}
+
+      {:erc1155_predicate_address_is_valid, false} ->
+        Logger.error("ERC1155PredicateProxy contract address is invalid.")
         {:stop, :normal, %{}}
 
       {:withdraw_manager_address_is_valid, false} ->
@@ -160,6 +199,137 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     Process.send_after(self(), :reorg_monitor, block_check_interval)
 
     {:noreply, %{state | reorg_monitor_prev_latest: latest}}
+  end
+
+  @impl GenServer
+  def handle_info(
+        :continue,
+        %{
+          deposit_manager_proxy: deposit_manager_proxy,
+          ether_predicate_proxy: ether_predicate_proxy,
+          erc20_predicate_proxy: erc20_predicate_proxy,
+          erc721_predicate_proxy: erc721_predicate_proxy,
+          erc1155_predicate_proxy: erc1155_predicate_proxy,
+          withdraw_manager_proxy: withdraw_manager_proxy,
+          block_check_interval: block_check_interval,
+          start_block: start_block,
+          end_block: end_block,
+          json_rpc_named_arguments: json_rpc_named_arguments
+        } = state
+      ) do
+    time_before = Timex.now()
+
+    chunks_number = ceil((end_block - start_block + 1) / @eth_get_logs_range_size)
+    chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
+
+    last_written_block =
+      chunk_range
+      |> Enum.reduce_while(start_block - 1, fn current_chunk, _ ->
+        chunk_start = start_block + @eth_get_logs_range_size * current_chunk
+        chunk_end = min(chunk_start + @eth_get_logs_range_size - 1, end_block)
+
+        if chunk_end >= chunk_start do
+          log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+
+          {:ok, known_tokens_result} =
+            get_logs(
+              chunk_start,
+              chunk_end,
+              [deposit_manager_proxy, ether_predicate_proxy, erc20_predicate_proxy, withdraw_manager_proxy],
+              [@new_deposit_block_event, @locked_ether_event, @locked_erc20_event, @locked_erc721_event, @locked_erc721_batch_event, @locked_batch_erc1155_event, @withdraw_event, @exited_ether_event],
+              json_rpc_named_arguments
+            )
+
+          contract_addresses =
+            if is_nil(erc721_predicate_proxy) do
+              [erc20_predicate_proxy]
+            else
+              [erc20_predicate_proxy, erc721_predicate_proxy]
+            end
+
+          {:ok, unknown_erc20_erc721_tokens_result} =
+            get_logs(
+              chunk_start,
+              chunk_end,
+              nil,
+              [
+                @transfer_event,
+                contract_addresses
+              ],
+              json_rpc_named_arguments
+            )
+
+          {:ok, unknown_erc1155_tokens_result} =
+            if is_nil(erc1155_predicate_proxy) do
+              {:ok, []}
+            else
+              get_logs(
+                chunk_start,
+                chunk_end,
+                nil,
+                [
+                  [@transfer_single_event, @transfer_batch_event],
+                  nil,
+                  erc1155_predicate_proxy
+                ],
+                json_rpc_named_arguments
+              )
+            end
+
+          result = known_tokens_result ++ unknown_erc20_erc721_tokens_result ++ unknown_erc1155_tokens_result
+
+          operations = prepare_operations(result, json_rpc_named_arguments)
+
+          {:ok, _} =
+            Chain.import(%{
+              shibarium_bridge_operations: %{params: operations},
+              timeout: :infinity
+            })
+
+          log_blocks_chunk_handling(
+            chunk_start,
+            chunk_end,
+            start_block,
+            end_block,
+            "#{Enum.count(operations)} L1 event(s)",
+            "L1"
+          )
+        end
+
+        reorg_block = reorg_block_pop()
+
+        if !is_nil(reorg_block) && reorg_block > 0 do
+          {deleted_count, _} =
+            Repo.delete_all(from(sb in Bridge, where: sb.l1_block_number >= ^reorg_block and is_nil(sb.l2_transaction_hash)))
+
+          {updated_count1, _} =
+            Repo.update_all(from(sb in Bridge, where: sb.l1_block_number >= ^reorg_block and not is_nil(sb.l2_transaction_hash) and sb.operation_type == "deposit"), set: [timestamp: nil])
+
+          {updated_count2, _} =
+            Repo.update_all(from(sb in Bridge, where: sb.l1_block_number >= ^reorg_block and not is_nil(sb.l2_transaction_hash)), set: [l1_transaction_hash: nil, l1_block_number: nil])
+
+          log_affected_rows_count(reorg_block, deleted_count, max(updated_count1, updated_count2))
+
+          {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
+        else
+          {:cont, chunk_end}
+        end
+      end)
+
+    new_start_block = last_written_block + 1
+    {:ok, new_end_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+
+    delay =
+      if new_end_block == last_written_block do
+        # there is no new block, so wait for some time to let the chain issue the new block
+        max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0)
+      else
+        0
+      end
+
+    Process.send_after(self(), :continue, delay)
+
+    {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
   end
 
   @impl GenServer
@@ -216,6 +386,29 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     repeated_call(func, args, error_message, retries)
   end
 
+  defp get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, retries \\ 100_000_000) do
+    processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
+    processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
+
+    req =
+      request(%{
+        id: 0,
+        method: "eth_getLogs",
+        params: [
+          %{
+            :fromBlock => processed_from_block,
+            :toBlock => processed_to_block,
+            :address => address,
+            :topics => topics
+          }
+        ]
+      })
+
+    error_message = &"Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(&1)}"
+
+    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
+  end
+
   defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
 
   defp get_transaction_by_hash(hash, _json_rpc_named_arguments, _retries_left) when is_nil(hash), do: {:ok, nil}
@@ -246,6 +439,57 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
         ]
       ]
     ]
+  end
+
+  defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, items_count, layer) do
+    is_start = is_nil(items_count)
+
+    {type, found} =
+      if is_start do
+        {"Start", ""}
+      else
+        {"Finish", " Found #{items_count}."}
+      end
+
+    target_range =
+      if chunk_start != start_block or chunk_end != end_block do
+        progress =
+          if is_start do
+            ""
+          else
+            percentage =
+              (chunk_end - start_block + 1)
+              |> Decimal.div(end_block - start_block + 1)
+              |> Decimal.mult(100)
+              |> Decimal.round(2)
+              |> Decimal.to_string()
+
+            " Progress: #{percentage}%"
+          end
+
+        " Target range: #{start_block}..#{end_block}.#{progress}"
+      else
+        ""
+      end
+
+    if chunk_start == chunk_end do
+      Logger.info("#{type} handling #{layer} block ##{chunk_start}.#{found}#{target_range}")
+    else
+      Logger.info("#{type} handling #{layer} block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
+    end
+  end
+
+  defp reorg_block_pop do
+    table_name = reorg_table_name(@fetcher_name)
+
+    case BoundQueue.pop_front(reorg_queue_get(table_name)) do
+      {:ok, {block_number, updated_queue}} ->
+        :ets.insert(table_name, {:queue, updated_queue})
+        block_number
+
+      {:error, :empty} ->
+        nil
+    end
   end
 
   defp reorg_block_push(block_number) do
@@ -296,205 +540,129 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     end
   end
 
-  # def init_continue(env, contract_address, caller) do
-  #   {contract_name, table_name, start_block_note} =
-  #     if caller == Indexer.Fetcher.OptimismWithdrawalEvent do
-  #       {"Optimism Portal", "op_withdrawal_events", "Withdrawals L1"}
-  #     else
-  #       {"Output Oracle", "op_output_roots", "Output Roots"}
-  #     end
+  defp log_affected_rows_count(reorg_block, deleted_count, updated_count) do
+    if deleted_count > 0 or updated_count > 0 do
+      Logger.warning(
+        "As L1 reorg was detected, some rows with l1_block_number >= #{reorg_block} were affected (removed or updated) in the shibarium_bridge table. Number of removed rows: #{deleted_count}. Number of updated rows: >= #{updated_count}."
+      )
+    end
+  end
 
-  #   with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
-  #        optimism_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc],
-  #        {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-  #        {:contract_is_valid, true} <- {:contract_is_valid, Helper.is_address_correct?(contract_address)},
-  #        start_block_l1 = parse_integer(env[:start_block_l1]),
-  #        false <- is_nil(start_block_l1),
-  #        true <- start_block_l1 > 0,
-  #        {last_l1_block_number, last_l1_transaction_hash} <- caller.get_last_l1_item(),
-  #        {:start_block_l1_valid, true} <-
-  #          {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
-  #        json_rpc_named_arguments = json_rpc_named_arguments(optimism_l1_rpc),
-  #        {:ok, last_l1_tx} <- get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
-  #        {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
-  #        {:ok, block_check_interval, last_safe_block} <- get_block_check_interval(json_rpc_named_arguments) do
-  #     start_block = max(start_block_l1, last_l1_block_number)
+  defp is_deposit(topic0) do
+    Enum.member?([@new_deposit_block_event, @locked_ether_event, @locked_erc20_event, @locked_erc721_event, @locked_erc721_batch_event, @locked_batch_erc1155_event], topic0)
+  end
 
-  #     Subscriber.to(:optimism_reorg_block, :realtime)
+  defp filter_deposit_events(events) do
+    Enum.filter(events, fn event ->
+      topic0 = Enum.at(event["topics"], 0)
+      is_deposit(topic0)
+    end)
+  end
 
-  #     Process.send(self(), :continue, [])
+  defp prepare_operations(events, json_rpc_named_arguments) do
+    timestamps =
+      events
+      |> filter_deposit_events()
+      |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+      |> Enum.reduce(%{}, fn block, acc ->
+        block_number = quantity_to_integer(Map.get(block, "number"))
+        {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
+        Map.put(acc, block_number, timestamp)
+      end)
 
-  #     {:noreply,
-  #      %{
-  #        contract_address: contract_address,
-  #        block_check_interval: block_check_interval,
-  #        start_block: start_block,
-  #        end_block: last_safe_block,
-  #        json_rpc_named_arguments: json_rpc_named_arguments
-  #      }}
-  #   else
-  #     {:start_block_l1_undefined, true} ->
-  #       # the process shouldn't start if the start block is not defined
-  #       {:stop, :normal, %{}}
+    events
+    |> Enum.map(fn event ->
+      topic0 = Enum.at(event["topics"], 0)
 
-  #     {:rpc_l1_undefined, true} ->
-  #       Logger.error("L1 RPC URL is not defined.")
-  #       {:stop, :normal, %{}}
+      user =
+        cond do
+          Enum.member?([@new_deposit_block_event, @exited_ether_event], topic0) ->
+            truncate_address_hash(Enum.at(event["topics"], 1))
 
-  #     {:contract_is_valid, false} ->
-  #       Logger.error("#{contract_name} contract address is invalid or not defined.")
-  #       {:stop, :normal, %{}}
+          Enum.member?([@locked_ether_event, @locked_erc20_event, @locked_erc721_event, @locked_erc721_batch_event, @locked_batch_erc1155_event, @withdraw_event, @transfer_event], topic0) ->
+            truncate_address_hash(Enum.at(event["topics"], 2))
 
-  #     {:start_block_l1_valid, false} ->
-  #       Logger.error("Invalid L1 Start Block value. Please, check the value and #{table_name} table.")
-  #       {:stop, :normal, %{}}
+          Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) ->
+            truncate_address_hash(Enum.at(event["topics"], 3))
+        end
 
-  #     {:error, error_data} ->
-  #       Logger.error(
-  #         "Cannot get last L1 transaction from RPC by its hash, last safe block, or block timestamp by its number due to RPC error: #{inspect(error_data)}"
-  #       )
+      {amounts_or_ids, operation_id} =
+        cond do
+          Enum.member?([@new_deposit_block_event], topic0) ->
+            [amount_or_nft_id, deposit_block_id] = decode_data(event["data"], [{:uint, 256}, {:uint, 256}])
+            {[amount_or_nft_id], deposit_block_id}
 
-  #       {:stop, :normal, %{}}
+          Enum.member?([@locked_ether_event, @locked_erc20_event, @locked_erc721_event, @withdraw_event, @exited_ether_event, @transfer_event], topic0) ->
+            {decode_data(event["data"], [{:uint, 256}]), 0}
 
-  #     {:l1_tx_not_found, true} ->
-  #       Logger.error(
-  #         "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check #{table_name} table."
-  #       )
+          Enum.member?([@locked_erc721_batch_event], topic0) ->
+            [ids] = decode_data(event["data"], [{:array, {:uint, 256}}])
+            {ids, 0}
 
-  #       {:stop, :normal, %{}}
+          true ->
+            {[nil], 0}
+        end
 
-  #     _ ->
-  #       Logger.error("#{start_block_note} Start Block is invalid or zero.")
-  #       {:stop, :normal, %{}}
-  #   end
-  # end
+      {erc1155_ids, erc1155_amounts} =
+        cond do
+          Enum.member?([@locked_batch_erc1155_event, @transfer_batch_event], topic0) ->
+            [ids, amounts] = decode_data(event["data"], [{:array, {:uint, 256}}, {:array, {:uint, 256}}])
+            {ids, amounts}
 
-  # @impl GenServer
-  # def handle_info(
-  #       :continue,
-  #       %{
-  #         contract_address: optimism_portal,
-  #         block_check_interval: block_check_interval,
-  #         start_block: start_block,
-  #         end_block: end_block,
-  #         json_rpc_named_arguments: json_rpc_named_arguments
-  #       } = state
-  #     ) do
-  #   time_before = Timex.now()
+          Enum.member?([@transfer_single_event], topic0) ->
+            [id, amount] = decode_data(event["data"], [{:uint, 256}, {:uint, 256}])
+            {[id], [amount]}
 
-  #   chunks_number = ceil((end_block - start_block + 1) / Optimism.get_logs_range_size())
-  #   chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
+          true -> {[], []}
+        end
 
-  #   last_written_block =
-  #     chunk_range
-  #     |> Enum.reduce_while(start_block - 1, fn current_chunk, _ ->
-  #       chunk_start = start_block + Optimism.get_logs_range_size() * current_chunk
-  #       chunk_end = min(chunk_start + Optimism.get_logs_range_size() - 1, end_block)
+      l1_block_number = quantity_to_integer(event["blockNumber"])
 
-  #       if chunk_end >= chunk_start do
-  #         Optimism.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+      {operation_type, timestamp} =
+        if is_deposit(topic0) do
+          {"deposit", Map.get(timestamps, l1_block_number)}
+        else
+          {"withdrawal", nil}
+        end
 
-  #         {:ok, result} =
-  #           Optimism.get_logs(
-  #             chunk_start,
-  #             chunk_end,
-  #             optimism_portal,
-  #             [@withdrawal_proven_event, @withdrawal_finalized_event],
-  #             json_rpc_named_arguments,
-  #             100_000_000
-  #           )
+      token_type =
+        cond do
+          Enum.member?([@new_deposit_block_event, @withdraw_event], topic0) ->
+            "bone"
 
-  #         withdrawal_events = prepare_events(result, json_rpc_named_arguments)
+          Enum.member?([@locked_ether_event, @exited_ether_event], topic0) ->
+            "eth"
 
-  #         {:ok, _} =
-  #           Chain.import(%{
-  #             optimism_withdrawal_events: %{params: withdrawal_events},
-  #             timeout: :infinity
-  #           })
+          true ->
+            "other"
+        end
 
-  #         Optimism.log_blocks_chunk_handling(
-  #           chunk_start,
-  #           chunk_end,
-  #           start_block,
-  #           end_block,
-  #           "#{Enum.count(withdrawal_events)} WithdrawalProven/WithdrawalFinalized event(s)",
-  #           "L1"
-  #         )
-  #       end
+      Enum.map(amounts_or_ids, fn amount_or_id ->
+        operation_encoded = ABI.encode("(address,uint256,uint256[],uint256[],uint256)", [user, amount_or_id, erc1155_ids, erc1155_amounts, operation_id])
+        operation_hash = "0x" <> Base.encode16(operation_encoded, case: :lower)
 
-  #       reorg_block = Optimism.reorg_block_pop(@fetcher_name)
+        operation =
+          %{
+            user: user,
+            amount_or_id: amount_or_id,
+            erc1155_ids: (if Enum.empty?(erc1155_ids), do: nil, else: erc1155_ids),
+            erc1155_amounts: (if Enum.empty?(erc1155_amounts), do: nil, else: erc1155_amounts),
+            l1_transaction_hash: event["transactionHash"],
+            l1_block_number: l1_block_number,
+            operation_hash: operation_hash,
+            operation_type: operation_type,
+            token_type: token_type
+          }
 
-  #       if !is_nil(reorg_block) && reorg_block > 0 do
-  #         {deleted_count, _} =
-  #           Repo.delete_all(from(we in OptimismWithdrawalEvent, where: we.l1_block_number >= ^reorg_block))
-
-  #         log_deleted_rows_count(reorg_block, deleted_count)
-
-  #         {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
-  #       else
-  #         {:cont, chunk_end}
-  #       end
-  #     end)
-
-  #   new_start_block = last_written_block + 1
-  #   {:ok, new_end_block} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-
-  #   delay =
-  #     if new_end_block == last_written_block do
-  #       # there is no new block, so wait for some time to let the chain issue the new block
-  #       max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0)
-  #     else
-  #       0
-  #     end
-
-  #   Process.send_after(self(), :continue, delay)
-
-  #   {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
-  # end
-
-  # @impl GenServer
-  # def handle_info({:chain_event, :optimism_reorg_block, :realtime, block_number}, state) do
-  #   Optimism.reorg_block_push(@fetcher_name, block_number)
-  #   {:noreply, state}
-  # end
-
-  # defp log_deleted_rows_count(reorg_block, count) do
-  #   if count > 0 do
-  #     Logger.warning(
-  #       "As L1 reorg was detected, all rows with l1_block_number >= #{reorg_block} were removed from the op_withdrawal_events table. Number of removed rows: #{count}."
-  #     )
-  #   end
-  # end
-
-  # defp prepare_events(events, json_rpc_named_arguments) do
-  #   timestamps =
-  #     events
-  #     |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
-  #     |> Enum.reduce(%{}, fn block, acc ->
-  #       block_number = quantity_to_integer(Map.get(block, "number"))
-  #       {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
-  #       Map.put(acc, block_number, timestamp)
-  #     end)
-
-  #   Enum.map(events, fn event ->
-  #     l1_event_type =
-  #       if Enum.at(event["topics"], 0) == @withdrawal_proven_event do
-  #         "WithdrawalProven"
-  #       else
-  #         "WithdrawalFinalized"
-  #       end
-
-  #     l1_block_number = quantity_to_integer(event["blockNumber"])
-
-  #     %{
-  #       withdrawal_hash: Enum.at(event["topics"], 1),
-  #       l1_event_type: l1_event_type,
-  #       l1_timestamp: Map.get(timestamps, l1_block_number),
-  #       l1_transaction_hash: event["transactionHash"],
-  #       l1_block_number: l1_block_number
-  #     }
-  #   end)
-  # end
+        if is_nil(timestamp) do
+          operation
+        else
+          Map.put(operation, :timestamp, timestamp)
+        end
+      end)
+    end)
+    |> List.flatten()
+  end
 
   defp get_last_l1_item do
     query =
@@ -509,22 +677,26 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     |> Kernel.||({0, nil})
   end
 
-  # defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
-  #   request =
-  #     events
-  #     |> Enum.reduce(%{}, fn event, acc ->
-  #       Map.put(acc, event["blockNumber"], 0)
-  #     end)
-  #     |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
-  #     |> Stream.with_index()
-  #     |> Enum.into(%{}, fn {params, id} -> {id, params} end)
-  #     |> Blocks.requests(&ByNumber.request(&1, false, false))
+  defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
+    request =
+      events
+      |> Enum.reduce(%{}, fn event, acc ->
+        Map.put(acc, event["blockNumber"], 0)
+      end)
+      |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
+      |> Stream.with_index()
+      |> Enum.into(%{}, fn {params, id} -> {id, params} end)
+      |> Blocks.requests(&ByNumber.request(&1, false, false))
 
-  #   error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
+    error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
 
-  #   case Optimism.repeated_request(request, error_message, json_rpc_named_arguments, retries) do
-  #     {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
-  #     {:error, _} -> []
-  #   end
-  # end
+    case repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
+      {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
+      {:error, _} -> []
+    end
+  end
+
+  defp truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
+    "0x#{truncated_hash}"
+  end
 end
