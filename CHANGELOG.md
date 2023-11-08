@@ -79,6 +79,7 @@
 - [#7996](https://github.com/blockscout/blockscout/pull/7996) - Add CoinBalance fetcher init query limit
 - [#8658](https://github.com/blockscout/blockscout/pull/8658) - Remove block consensus on import fail
 - [#8575](https://github.com/blockscout/blockscout/pull/8575) - Filter token transfers on coin balances updates
+- [#8558](https://github.com/blockscout/blockscout/pull/8558) - Add CoinBalanceDailyUpdater
 
 ### Fixes
 
