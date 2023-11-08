@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#8795](https://github.com/blockscout/blockscout/pull/8795) - Disable catchup indexer by env
+
 ### Fixes
 
 - [#8784](https://github.com/blockscout/blockscout/pull/8784) - Fix Indexer.Transform.Addresses for non-Suave setup
