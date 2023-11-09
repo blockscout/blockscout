@@ -38,7 +38,10 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
           updated_at: DateTime.t(),
           value: Decimal.t() | nil,
           token_id: non_neg_integer() | nil,
-          token_type: String.t()
+          token_type: String.t(),
+          distinct_token_instances_count: non_neg_integer(),
+          token_ids: list(Decimal.t()),
+          preloaded_token_instances: list()
         }
 
   schema "address_current_token_balances" do
