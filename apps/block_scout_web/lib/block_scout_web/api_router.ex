@@ -181,6 +181,7 @@ defmodule BlockScoutWeb.ApiRouter do
     pipe_through(:api_v2_no_session)
 
     post("/token-info", V2.ImportController, :import_token_info)
+    get("/smart-contracts/:address_hash_param", V2.ImportController, :try_to_search_contract)
   end
 
   scope "/v2", as: :api_v2 do

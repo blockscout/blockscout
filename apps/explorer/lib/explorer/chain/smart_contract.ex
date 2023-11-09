@@ -16,7 +16,7 @@ defmodule Explorer.Chain.SmartContract do
   alias EthereumJSONRPC.Contract
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, ContractMethod, DecompiledSmartContract, Hash}
+  alias Explorer.Chain.{Address, ContractMethod, Data, DecompiledSmartContract, Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.SmartContract.ExternalLibrary
   alias Explorer.SmartContract.Reader
   alias Timex.Duration
@@ -964,5 +964,49 @@ defmodule Explorer.Chain.SmartContract do
       )
 
     Chain.select_repo(options).one(query)
+  end
+
+  @doc """
+    Extracts creation bytecode (`init`) and transaction (`tx`) or
+      internal transaction (`internal_tx`) where the contract was created.
+  """
+  @spec creation_tx_with_bytecode(binary() | Hash.t()) ::
+          %{init: binary(), tx: Transaction.t()} | %{init: binary(), internal_tx: InternalTransaction.t()} | nil
+  def creation_tx_with_bytecode(address_hash) do
+    creation_tx_query =
+      from(
+        tx in Transaction,
+        where: tx.created_contract_address_hash == ^address_hash,
+        where: tx.status == ^1
+      )
+
+    tx =
+      creation_tx_query
+      |> Repo.one()
+
+    if tx do
+      with %{input: input} <- tx do
+        %{init: Data.to_string(input), tx: tx}
+      end
+    else
+      creation_int_tx_query =
+        from(
+          itx in InternalTransaction,
+          join: t in assoc(itx, :transaction),
+          where: itx.created_contract_address_hash == ^address_hash,
+          where: t.status == ^1
+        )
+
+      internal_tx = creation_int_tx_query |> Repo.one()
+
+      case internal_tx do
+        %{init: init} ->
+          init_str = Data.to_string(init)
+          %{init: init_str, internal_tx: internal_tx}
+
+        _ ->
+          nil
+      end
+    end
   end
 end

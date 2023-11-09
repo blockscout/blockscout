@@ -4,6 +4,7 @@ defmodule Explorer.SmartContract.Helper do
   """
 
   alias Explorer.Chain
+  alias Explorer.Chain.{Hash, SmartContract}
   alias Phoenix.HTML
 
   def queriable_method?(method) do
@@ -134,5 +135,62 @@ defmodule Explorer.SmartContract.Helper do
       _ ->
         nil
     end
+  end
+
+  @doc """
+    Returns a tuple: `{creation_bytecode, deployed_bytecode, metadata}` where `metadata` is a map:
+      {
+        "blockNumber": "string",
+        "chainId": "string",
+        "contractAddress": "string",
+        "creationCode": "string",
+        "deployer": "string",
+        "runtimeCode": "string",
+        "transactionHash": "string",
+        "transactionIndex": "string"
+      }
+
+    Metadata will be sent to a verifier microservice
+  """
+  @spec fetch_data_for_verification(binary() | Hash.t()) :: {binary() | nil, binary(), map()}
+  def fetch_data_for_verification(address_hash) do
+    deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
+
+    metadata = %{
+      "contractAddress" => to_string(address_hash),
+      "runtimeCode" => to_string(deployed_bytecode),
+      "chainId" => Application.get_env(:block_scout_web, :chain_id)
+    }
+
+    case SmartContract.creation_tx_with_bytecode(address_hash) do
+      %{init: init, tx: tx} ->
+        {init, deployed_bytecode, tx |> tx_to_metadata(init) |> Map.merge(metadata)}
+
+      %{init: init, internal_tx: internal_tx} ->
+        {init, deployed_bytecode, internal_tx |> internal_tx_to_metadata(init) |> Map.merge(metadata)}
+
+      _ ->
+        {nil, deployed_bytecode, metadata}
+    end
+  end
+
+  defp tx_to_metadata(tx, init) do
+    %{
+      "blockNumber" => to_string(tx.block_number),
+      "transactionHash" => to_string(tx.hash),
+      "transactionIndex" => to_string(tx.index),
+      "deployer" => to_string(tx.from_address_hash),
+      "creationCode" => to_string(init)
+    }
+  end
+
+  defp internal_tx_to_metadata(internal_tx, init) do
+    %{
+      "blockNumber" => to_string(internal_tx.block_number),
+      "transactionHash" => to_string(internal_tx.transaction_hash),
+      "transactionIndex" => to_string(internal_tx.transaction_index),
+      "deployer" => to_string(internal_tx.from_address_hash),
+      "creationCode" => to_string(init)
+    }
   end
 end
