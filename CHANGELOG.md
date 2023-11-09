@@ -7,6 +7,7 @@
 - [#8795](https://github.com/blockscout/blockscout/pull/8795) - Disable catchup indexer by env
 - [#8768](https://github.com/blockscout/blockscout/pull/8768) - Add possibility to search tokens by address hash
 - [#8750](https://github.com/blockscout/blockscout/pull/8750) - Support new eth-bytecode-db request metadata fields
+- [#8634](https://github.com/blockscout/blockscout/pull/8634) - API v2: NFT for address
 - [#8609](https://github.com/blockscout/blockscout/pull/8609) - Change logs format to JSON; Add endpoint url to the block_scout_web logging
 
 ### Fixes

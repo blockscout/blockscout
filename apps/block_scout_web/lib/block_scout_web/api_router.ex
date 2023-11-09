@@ -240,6 +240,8 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash_param/coin-balance-history", V2.AddressController, :coin_balance_history)
       get("/:address_hash_param/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
       get("/:address_hash_param/withdrawals", V2.AddressController, :withdrawals)
+      get("/:address_hash_param/nft", V2.AddressController, :nft_list)
+      get("/:address_hash_param/nft/collections", V2.AddressController, :nft_collections)
     end
 
     scope "/tokens" do
