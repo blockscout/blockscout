@@ -20,6 +20,7 @@
 
 ### Chore
 
+- [#8802](https://github.com/blockscout/blockscout/pull/8802) - Enable API v2 by default
 - [#8728](https://github.com/blockscout/blockscout/pull/8728) - Remove repos_list (default value for ecto repos) from Explorer.ReleaseTasks
 
 <details>

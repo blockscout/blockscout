@@ -132,7 +132,7 @@ config :block_scout_web, :chart,
 config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
   coin_balance_history_days: ConfigHelper.parse_integer_env_var("COIN_BALANCE_HISTORY_DAYS", 10)
 
-config :block_scout_web, BlockScoutWeb.API.V2, enabled: ConfigHelper.parse_bool_env_var("API_V2_ENABLED")
+config :block_scout_web, BlockScoutWeb.API.V2, enabled: ConfigHelper.parse_bool_env_var("API_V2_ENABLED", "true")
 
 # Configures Ueberauth's Auth0 auth provider
 config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
