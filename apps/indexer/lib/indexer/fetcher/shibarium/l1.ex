@@ -10,13 +10,14 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
   import Ecto.Query
 
-  import EthereumJSONRPC, only: [
-    fetch_block_number_by_tag: 2,
-    integer_to_quantity: 1,
-    json_rpc: 2,
-    quantity_to_integer: 1,
-    request: 1
-  ]
+  import EthereumJSONRPC,
+    only: [
+      fetch_block_number_by_tag: 2,
+      integer_to_quantity: 1,
+      json_rpc: 2,
+      quantity_to_integer: 1,
+      request: 1
+    ]
 
   import Explorer.Helper, only: [parse_integer: 1, decode_data: 2]
 
@@ -92,12 +93,20 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
          rpc = env[:rpc],
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
-         {:deposit_manager_address_is_valid, true} <- {:deposit_manager_address_is_valid, Helper.is_address_correct?(env[:deposit_manager_proxy])},
-         {:ether_predicate_address_is_valid, true} <- {:ether_predicate_address_is_valid, Helper.is_address_correct?(env[:ether_predicate_proxy])},
-         {:erc20_predicate_address_is_valid, true} <- {:erc20_predicate_address_is_valid, Helper.is_address_correct?(env[:erc20_predicate_proxy])},
-         {:erc721_predicate_address_is_valid, true} <- {:erc721_predicate_address_is_valid, is_nil(env[:erc721_predicate_proxy]) or Helper.is_address_correct?(env[:erc721_predicate_proxy])},
-         {:erc1155_predicate_address_is_valid, true} <- {:erc1155_predicate_address_is_valid, is_nil(env[:erc1155_predicate_proxy]) or Helper.is_address_correct?(env[:erc1155_predicate_proxy])},
-         {:withdraw_manager_address_is_valid, true} <- {:withdraw_manager_address_is_valid, Helper.is_address_correct?(env[:withdraw_manager_proxy])},
+         {:deposit_manager_address_is_valid, true} <-
+           {:deposit_manager_address_is_valid, Helper.is_address_correct?(env[:deposit_manager_proxy])},
+         {:ether_predicate_address_is_valid, true} <-
+           {:ether_predicate_address_is_valid, Helper.is_address_correct?(env[:ether_predicate_proxy])},
+         {:erc20_predicate_address_is_valid, true} <-
+           {:erc20_predicate_address_is_valid, Helper.is_address_correct?(env[:erc20_predicate_proxy])},
+         {:erc721_predicate_address_is_valid, true} <-
+           {:erc721_predicate_address_is_valid,
+            is_nil(env[:erc721_predicate_proxy]) or Helper.is_address_correct?(env[:erc721_predicate_proxy])},
+         {:erc1155_predicate_address_is_valid, true} <-
+           {:erc1155_predicate_address_is_valid,
+            is_nil(env[:erc1155_predicate_proxy]) or Helper.is_address_correct?(env[:erc1155_predicate_proxy])},
+         {:withdraw_manager_address_is_valid, true} <-
+           {:withdraw_manager_address_is_valid, Helper.is_address_correct?(env[:withdraw_manager_proxy])},
          start_block = parse_integer(env[:start_block]),
          false <- is_nil(start_block),
          true <- start_block > 0,
@@ -166,12 +175,14 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
         Logger.error(
           "Cannot get last L1 transaction from RPC by its hash, latest block, or block timestamp by its number due to RPC error: #{inspect(error_data)}"
         )
+
         {:stop, :normal, %{}}
 
       {:l1_tx_not_found, true} ->
         Logger.error(
           "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check shibarium_bridge table."
         )
+
         {:stop, :normal, %{}}
 
       _ ->
@@ -236,7 +247,16 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
               chunk_start,
               chunk_end,
               [deposit_manager_proxy, ether_predicate_proxy, erc20_predicate_proxy, withdraw_manager_proxy],
-              [@new_deposit_block_event, @locked_ether_event, @locked_erc20_event, @locked_erc721_event, @locked_erc721_batch_event, @locked_batch_erc1155_event, @withdraw_event, @exited_ether_event],
+              [
+                @new_deposit_block_event,
+                @locked_ether_event,
+                @locked_erc20_event,
+                @locked_erc721_event,
+                @locked_erc721_batch_event,
+                @locked_batch_erc1155_event,
+                @withdraw_event,
+                @exited_ether_event
+              ],
               json_rpc_named_arguments
             )
 
@@ -300,13 +320,25 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           {deleted_count, _} =
-            Repo.delete_all(from(sb in Bridge, where: sb.l1_block_number >= ^reorg_block and is_nil(sb.l2_transaction_hash)))
+            Repo.delete_all(
+              from(sb in Bridge, where: sb.l1_block_number >= ^reorg_block and is_nil(sb.l2_transaction_hash))
+            )
 
           {updated_count1, _} =
-            Repo.update_all(from(sb in Bridge, where: sb.l1_block_number >= ^reorg_block and not is_nil(sb.l2_transaction_hash) and sb.operation_type == "deposit"), set: [timestamp: nil])
+            Repo.update_all(
+              from(sb in Bridge,
+                where:
+                  sb.l1_block_number >= ^reorg_block and not is_nil(sb.l2_transaction_hash) and
+                    sb.operation_type == "deposit"
+              ),
+              set: [timestamp: nil]
+            )
 
           {updated_count2, _} =
-            Repo.update_all(from(sb in Bridge, where: sb.l1_block_number >= ^reorg_block and not is_nil(sb.l2_transaction_hash)), set: [l1_transaction_hash: nil, l1_block_number: nil])
+            Repo.update_all(
+              from(sb in Bridge, where: sb.l1_block_number >= ^reorg_block and not is_nil(sb.l2_transaction_hash)),
+              set: [l1_transaction_hash: nil, l1_block_number: nil]
+            )
 
           log_affected_rows_count(reorg_block, deleted_count, max(updated_count1, updated_count2))
 
@@ -549,7 +581,17 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
   end
 
   defp is_deposit(topic0) do
-    Enum.member?([@new_deposit_block_event, @locked_ether_event, @locked_erc20_event, @locked_erc721_event, @locked_erc721_batch_event, @locked_batch_erc1155_event], topic0)
+    Enum.member?(
+      [
+        @new_deposit_block_event,
+        @locked_ether_event,
+        @locked_erc20_event,
+        @locked_erc721_event,
+        @locked_erc721_batch_event,
+        @locked_batch_erc1155_event
+      ],
+      topic0
+    )
   end
 
   defp filter_deposit_events(events) do
@@ -579,7 +621,18 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
           Enum.member?([@new_deposit_block_event, @exited_ether_event], topic0) ->
             truncate_address_hash(Enum.at(event["topics"], 1))
 
-          Enum.member?([@locked_ether_event, @locked_erc20_event, @locked_erc721_event, @locked_erc721_batch_event, @locked_batch_erc1155_event, @withdraw_event, @transfer_event], topic0) ->
+          Enum.member?(
+            [
+              @locked_ether_event,
+              @locked_erc20_event,
+              @locked_erc721_event,
+              @locked_erc721_batch_event,
+              @locked_batch_erc1155_event,
+              @withdraw_event,
+              @transfer_event
+            ],
+            topic0
+          ) ->
             truncate_address_hash(Enum.at(event["topics"], 2))
 
           Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) ->
@@ -592,7 +645,17 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
             [amount_or_nft_id, deposit_block_id] = decode_data(event["data"], [{:uint, 256}, {:uint, 256}])
             {[amount_or_nft_id], deposit_block_id}
 
-          Enum.member?([@locked_ether_event, @locked_erc20_event, @locked_erc721_event, @withdraw_event, @exited_ether_event, @transfer_event], topic0) ->
+          Enum.member?(
+            [
+              @locked_ether_event,
+              @locked_erc20_event,
+              @locked_erc721_event,
+              @withdraw_event,
+              @exited_ether_event,
+              @transfer_event
+            ],
+            topic0
+          ) ->
             {decode_data(event["data"], [{:uint, 256}]), 0}
 
           Enum.member?([@locked_erc721_batch_event], topic0) ->
@@ -613,7 +676,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
             [id, amount] = decode_data(event["data"], [{:uint, 256}, {:uint, 256}])
             {[id], [amount]}
 
-          true -> {[], []}
+          true ->
+            {[], []}
         end
 
       l1_block_number = quantity_to_integer(event["blockNumber"])
@@ -638,21 +702,28 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
         end
 
       Enum.map(amounts_or_ids, fn amount_or_id ->
-        operation_encoded = ABI.encode("(address,uint256,uint256[],uint256[],uint256)", [user, amount_or_id, erc1155_ids, erc1155_amounts, operation_id])
+        operation_encoded =
+          ABI.encode("(address,uint256,uint256[],uint256[],uint256)", [
+            user,
+            amount_or_id,
+            erc1155_ids,
+            erc1155_amounts,
+            operation_id
+          ])
+
         operation_hash = "0x" <> Base.encode16(operation_encoded, case: :lower)
 
-        operation =
-          %{
-            user: user,
-            amount_or_id: amount_or_id,
-            erc1155_ids: (if Enum.empty?(erc1155_ids), do: nil, else: erc1155_ids),
-            erc1155_amounts: (if Enum.empty?(erc1155_amounts), do: nil, else: erc1155_amounts),
-            l1_transaction_hash: event["transactionHash"],
-            l1_block_number: l1_block_number,
-            operation_hash: operation_hash,
-            operation_type: operation_type,
-            token_type: token_type
-          }
+        operation = %{
+          user: user,
+          amount_or_id: amount_or_id,
+          erc1155_ids: if(Enum.empty?(erc1155_ids), do: nil, else: erc1155_ids),
+          erc1155_amounts: if(Enum.empty?(erc1155_amounts), do: nil, else: erc1155_amounts),
+          l1_transaction_hash: event["transactionHash"],
+          l1_block_number: l1_block_number,
+          operation_hash: operation_hash,
+          operation_type: operation_type,
+          token_type: token_type
+        }
 
         if is_nil(timestamp) do
           operation
