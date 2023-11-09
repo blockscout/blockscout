@@ -3,7 +3,11 @@ defmodule BlockScoutWeb.API.V2.ImportController do
 
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Token
+  alias Explorer.Chain.{Data, Token}
+  alias Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand
+  alias Explorer.SmartContract.EthBytecodeDBInterface
+
+  import Explorer.SmartContract.Helper, only: [prepare_bytecode_for_microservice: 3, contract_creation_input: 1]
 
   require Logger
   @api_true [api?: true]
@@ -48,6 +52,47 @@ defmodule BlockScoutWeb.API.V2.ImportController do
     end
   end
 
+  @doc """
+    Function to handle request at:
+      `/api/v2/smart-contracts/{address_hash_param}`
+
+    Needed to try to import unverified smart contracts via eth-bytecode-db (`/api/v2/bytecodes/sources:search` method).
+    Protected by `x-api-key` header.
+  """
+  @spec try_to_search_contract(Plug.Conn.t(), map()) ::
+          {:already_verified, nil | Explorer.Chain.SmartContract.t()}
+          | {:api_key, nil | binary()}
+          | {:format, :error}
+          | {:not_found, {:error, :not_found}}
+          | {:sensitive_endpoints_api_key, any()}
+          | Plug.Conn.t()
+  def try_to_search_contract(conn, %{"address_hash_param" => address_hash_string}) do
+    with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
+           {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
+         {:api_key, ^api_key} <- {:api_key, get_api_key_header(conn)},
+         {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true, false)},
+         {:already_verified, smart_contract} when is_nil(smart_contract) <-
+           {:already_verified, Chain.address_hash_to_smart_contract(address_hash, @api_true)} do
+      creation_tx_input = contract_creation_input(address.hash)
+
+      with {:ok, %{"sourceType" => type} = source} <-
+             %{}
+             |> prepare_bytecode_for_microservice(creation_tx_input, Data.to_string(address.contract_code))
+             |> EthBytecodeDBInterface.search_contract_in_eth_bytecode_internal_db(),
+           {:ok, _} <- LookUpSmartContractSourcesOnDemand.process_contract_source(type, source, address.hash) do
+        conn
+        |> put_view(ApiView)
+        |> render(:message, %{message: "Success"})
+      else
+        _ ->
+          conn
+          |> put_view(ApiView)
+          |> render(:message, %{message: "Contract was not imported"})
+      end
+    end
+  end
+
   defp valid_url?(url) when is_binary(url) do
     uri = URI.parse(url)
     uri.scheme != nil && uri.host =~ "."
@@ -74,4 +119,14 @@ defmodule BlockScoutWeb.API.V2.ImportController do
   end
 
   defp put_token_string_field(changeset, _token_symbol, _field), do: changeset
+
+  defp get_api_key_header(conn) do
+    case get_req_header(conn, "x-api-key") do
+      [api_key] ->
+        api_key
+
+      _ ->
+        nil
+    end
+  end
 end

@@ -130,7 +130,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @restricted_access})
   end
 
-  def call(conn, {:already_verified, true}) do
+  def call(conn, {:already_verified, _}) do
     Logger.error(fn ->
       ["#{@verification_failed}: #{@already_verified}"]
     end)

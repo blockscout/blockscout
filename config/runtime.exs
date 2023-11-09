@@ -379,7 +379,8 @@ config :explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
   service_url: System.get_env("MICROSERVICE_SC_VERIFIER_URL") || "https://eth-bytecode-db.services.blockscout.com/",
   enabled: enabled?,
   type: type,
-  eth_bytecode_db?: enabled? && type == "eth_bytecode_db"
+  eth_bytecode_db?: enabled? && type == "eth_bytecode_db",
+  api_key: System.get_env("MICROSERVICE_SC_VERIFIER_API_KEY")
 
 config :explorer, Explorer.Visualize.Sol2uml,
   service_url: System.get_env("MICROSERVICE_VISUALIZE_SOL2UML_URL"),
