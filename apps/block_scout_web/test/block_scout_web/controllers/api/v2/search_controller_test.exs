@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
   alias Explorer.Chain.{Address, Block}
   alias Explorer.Repo
+  alias Explorer.Tags.AddressTag
 
   setup do
     insert(:block)
@@ -250,6 +251,26 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["name"] == tag.tag.display_name
       assert item["url"] =~ Address.checksum(tag.address.hash)
       assert item["is_smart_contract_verified"] == tag.address.verified
+    end
+
+    test "check that simultaneous search of ", %{conn: conn} do
+      block = insert(:block)
+
+      insert(:smart_contract, name: to_string(block.number))
+      insert(:token, name: to_string(block.number))
+
+      insert(:address_to_tag,
+        tag: %AddressTag{
+          label: "qwerty",
+          display_name: to_string(block.number)
+        }
+      )
+
+      request = get(conn, "/api/v2/search?q=#{block.number}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 4
+      assert response["next_page_params"] == nil
     end
   end
 
