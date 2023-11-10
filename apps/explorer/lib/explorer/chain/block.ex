@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
-                  |> (&(case Application.compile_env(:explorer, :chain_type) == "rsk" do
+                  |> (&(case Application.compile_env(:explorer, :chain_type) do
                           "rsk" ->
                             &1 ++
                               ~w(minimum_gas_price bitcoin_merged_mining_header bitcoin_merged_mining_coinbase_transaction bitcoin_merged_mining_merkle_proof hash_for_merged_mining)a

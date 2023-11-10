@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.AddRootstockFieldsToBlocks do
+defmodule Explorer.Repo.RSK.Migrations.AddRootstockFieldsToBlocks do
   use Ecto.Migration
 
   def change do

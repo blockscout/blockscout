@@ -55,11 +55,11 @@ defmodule Indexer.Fetcher.RootstockData do
 
     state = %__MODULE__{
       blocks_to_fetch: nil,
-      interval: Application.get_env(:indexer, __MODULE__)[:interval] || @interval,
+      interval: opts[:interval] || Application.get_env(:indexer, __MODULE__)[:interval],
       json_rpc_named_arguments: json_rpc_named_arguments,
-      batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @batch_size,
-      max_concurrency: Application.get_env(:indexer, __MODULE__)[:max_concurrency] || @concurrency,
-      db_batch_size: Application.get_env(:indexer, __MODULE__)[:db_batch_size] || @db_batch_size
+      batch_size: opts[:batch_size] || Application.get_env(:indexer, __MODULE__)[:batch_size],
+      max_concurrency: opts[:max_concurrency] || Application.get_env(:indexer, __MODULE__)[:max_concurrency],
+      db_batch_size: opts[:db_batch_size] || Application.get_env(:indexer, __MODULE__)[:db_batch_size]
     }
 
     Process.send_after(self(), :fetch_rootstock_data, state.interval)
