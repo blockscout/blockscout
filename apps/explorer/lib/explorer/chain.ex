@@ -55,6 +55,7 @@ defmodule Explorer.Chain do
     Import,
     InternalTransaction,
     Log,
+    NullRoundHeight,
     PendingBlockOperation,
     Search,
     SmartContract,
@@ -1810,7 +1811,7 @@ defmodule Explorer.Chain do
           Decimal.new(0)
 
         _ ->
-          divisor = max_saved_block_number - min_blockchain_block_number + 1
+          divisor = max_saved_block_number - min_blockchain_block_number - NullRoundHeight.total() + 1
 
           ratio = get_ratio(BlockCache.estimated_count(), divisor)
 
@@ -1842,7 +1843,7 @@ defmodule Explorer.Chain do
           Decimal.new(0)
 
         _ ->
-          full_blocks_range = max_saved_block_number - min_blockchain_trace_block_number + 1
+          full_blocks_range = max_saved_block_number - min_blockchain_trace_block_number - NullRoundHeight.total() + 1
           processed_int_txs_for_blocks_count = max(0, full_blocks_range - pbo_count)
 
           ratio = get_ratio(processed_int_txs_for_blocks_count, full_blocks_range)
@@ -2691,6 +2692,7 @@ defmodule Explorer.Chain do
               FROM generate_series((?)::integer, (?)::integer) AS b1(number)
               WHERE NOT EXISTS
                 (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus)
+              AND NOT EXISTS (SELECT 1 FROM null_round_heights nrh where nrh.height=b1.number)
               ORDER BY b1.number DESC
             )
             """,
@@ -2839,13 +2841,13 @@ defmodule Explorer.Chain do
              DateTime.compare(timestamp, given_timestamp) == :eq do
           number
         else
-          number - 1
+          NullRoundHeight.previous_block_number(number)
         end
 
       :after ->
         if DateTime.compare(timestamp, given_timestamp) == :lt ||
              DateTime.compare(timestamp, given_timestamp) == :eq do
-          number + 1
+          NullRoundHeight.next_block_number(number)
         else
           number
         end

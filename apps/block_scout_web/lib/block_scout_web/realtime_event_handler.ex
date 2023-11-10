@@ -7,7 +7,6 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
 
   alias BlockScoutWeb.Notifier
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Counters.Helper
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
@@ -15,7 +14,6 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
 
   @impl true
   def init([]) do
-    Helper.create_cache_table(:last_broadcasted_block)
     Subscriber.to(:address_coin_balances, :realtime)
     Subscriber.to(:addresses, :realtime)
     Subscriber.to(:block_rewards, :realtime)

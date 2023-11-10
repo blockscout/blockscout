@@ -13,6 +13,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     Address,
     Block,
     Import,
+    NullRoundHeight,
     PendingBlockOperation,
     Token,
     Token.Instance,
@@ -875,11 +876,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
                                                 number: number
                                               },
                                               acc ->
+        previous_block_number = NullRoundHeight.previous_block_number(number)
+        next_block_number = NullRoundHeight.next_block_number(number)
+
         if consensus do
           from(
             block in acc,
-            or_where: block.number == ^(number - 1) and block.hash != ^parent_hash,
-            or_where: block.number == ^(number + 1) and block.parent_hash != ^hash
+            or_where: block.number == ^previous_block_number and block.hash != ^parent_hash,
+            or_where: block.number == ^next_block_number and block.parent_hash != ^hash
           )
         else
           acc
