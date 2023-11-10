@@ -38,6 +38,9 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
             Runner.Zkevm.BatchTransactions
           ]
 
+      "shibarium" ->
+        @default_runners ++ [Runner.ShibariumBridgeOperations]
+
       _ ->
         @default_runners
     end

@@ -37,10 +37,10 @@ defmodule Explorer.Chain.Shibarium.Bridge do
           amount_or_id: Decimal.t() | nil,
           erc1155_ids: [non_neg_integer()] | nil,
           erc1155_amounts: [Decimal.t()] | nil,
-          l1_transaction_hash: Hash.t() | nil,
+          l1_transaction_hash: Hash.t(),
           l1_block_number: non_neg_integer() | nil,
           l2_transaction: %Ecto.Association.NotLoaded{} | Transaction.t() | nil,
-          l2_transaction_hash: Hash.t() | nil,
+          l2_transaction_hash: Hash.t(),
           l2_block_number: non_neg_integer() | nil,
           operation_hash: Hash.t(),
           operation_type: String.t(),
@@ -56,12 +56,19 @@ defmodule Explorer.Chain.Shibarium.Bridge do
     field(:amount_or_id, :decimal)
     field(:erc1155_ids, {:array, :decimal})
     field(:erc1155_amounts, {:array, :decimal})
-    field(:l1_transaction_hash, Hash.Full)
-    field(:l1_block_number, :integer)
-    belongs_to(:l2_transaction, Transaction, foreign_key: :l2_transaction_hash, references: :hash, type: Hash.Full)
-    field(:l2_block_number, :integer)
     field(:operation_hash, Hash.Full, primary_key: true)
-    field(:operation_type, Ecto.Enum, values: [:deposit, :withdrawal], primary_key: true)
+    field(:operation_type, Ecto.Enum, values: [:deposit, :withdrawal])
+    field(:l1_transaction_hash, Hash.Full, primary_key: true)
+    field(:l1_block_number, :integer)
+
+    belongs_to(:l2_transaction, Transaction,
+      foreign_key: :l2_transaction_hash,
+      references: :hash,
+      type: Hash.Full,
+      primary_key: true
+    )
+
+    field(:l2_block_number, :integer)
     field(:token_type, Ecto.Enum, values: [:bone, :eth, :other])
     field(:timestamp, :utc_datetime_usec)
 
@@ -73,7 +80,6 @@ defmodule Explorer.Chain.Shibarium.Bridge do
     module
     |> cast(attrs, @allowed_attrs)
     |> validate_required(@required_attrs)
-    |> unique_constraint(:operation_hash)
-    |> unique_constraint(:operation_type)
+    |> unique_constraint([:operation_hash, :l1_transaction_hash, :l2_transaction_hash])
   end
 end

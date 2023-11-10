@@ -30,6 +30,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
   @block_check_interval_range_size 100
   @eth_get_logs_range_size 1000
   @fetcher_name :shibarium_bridge_l1
+  @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   # 32-byte signature of the event NewDepositBlock(address indexed owner, address indexed token, uint256 amountOrNFTId, uint256 depositBlockId)
   @new_deposit_block_event "0x1dadc8d0683c6f9824e885935c1bec6f76816730dcec148dda8cf25a7b9f797b"
@@ -248,23 +249,25 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
               chunk_end,
               [deposit_manager_proxy, ether_predicate_proxy, erc20_predicate_proxy, withdraw_manager_proxy],
               [
-                @new_deposit_block_event,
-                @locked_ether_event,
-                @locked_erc20_event,
-                @locked_erc721_event,
-                @locked_erc721_batch_event,
-                @locked_batch_erc1155_event,
-                @withdraw_event,
-                @exited_ether_event
+                [
+                  @new_deposit_block_event,
+                  @locked_ether_event,
+                  @locked_erc20_event,
+                  @locked_erc721_event,
+                  @locked_erc721_batch_event,
+                  @locked_batch_erc1155_event,
+                  @withdraw_event,
+                  @exited_ether_event
+                ]
               ],
               json_rpc_named_arguments
             )
 
           contract_addresses =
             if is_nil(erc721_predicate_proxy) do
-              [erc20_predicate_proxy]
+              [pad_address_hash(erc20_predicate_proxy)]
             else
-              [erc20_predicate_proxy, erc721_predicate_proxy]
+              [pad_address_hash(erc20_predicate_proxy), pad_address_hash(erc721_predicate_proxy)]
             end
 
           {:ok, unknown_erc20_erc721_tokens_result} =
@@ -290,7 +293,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
                 [
                   [@transfer_single_event, @transfer_batch_event],
                   nil,
-                  erc1155_predicate_proxy
+                  pad_address_hash(erc1155_predicate_proxy)
                 ],
                 json_rpc_named_arguments
               )
@@ -300,9 +303,45 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
           operations = prepare_operations(result, json_rpc_named_arguments)
 
+          insert =
+            operations
+            |> Enum.reduce([], fn op, acc ->
+              query =
+                from(sb in Bridge,
+                  where:
+                    sb.operation_hash == ^op.operation_hash and sb.operation_type == ^op.operation_type and
+                      sb.l2_transaction_hash != ^@empty_hash and sb.l1_transaction_hash == ^@empty_hash,
+                  order_by: [asc: sb.l2_block_number],
+                  limit: 1
+                )
+
+              {updated_count, _} =
+                Repo.update_all(
+                  from(b in Bridge,
+                    join: s in subquery(query),
+                    on:
+                      b.operation_hash == s.operation_hash and b.l1_transaction_hash == s.l1_transaction_hash and
+                        b.l2_transaction_hash == s.l2_transaction_hash
+                  ),
+                  set:
+                    [l1_transaction_hash: op.l1_transaction_hash, l1_block_number: op.l1_block_number] ++
+                      if(op.operation_type == "deposit", do: [timestamp: op.timestamp], else: [])
+                )
+
+              if updated_count == 0 do
+                acc ++ [op]
+              else
+                acc
+              end
+            end)
+            |> Enum.reduce(%{}, fn item, acc ->
+              Map.put(acc, {item.operation_hash, item.l1_transaction_hash, item.l2_transaction_hash}, item)
+            end)
+            |> Map.values()
+
           {:ok, _} =
             Chain.import(%{
-              shibarium_bridge_operations: %{params: operations},
+              shibarium_bridge_operations: %{params: insert},
               timeout: :infinity
             })
 
@@ -311,7 +350,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
             chunk_end,
             start_block,
             end_block,
-            "#{Enum.count(operations)} L1 event(s)",
+            "#{Enum.count(operations)} L1 operation(s)",
             "L1"
           )
         end
@@ -702,16 +741,27 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
         end
 
       Enum.map(amounts_or_ids, fn amount_or_id ->
+        user_binary =
+          user
+          |> String.trim_leading("0x")
+          |> Base.decode16!(case: :mixed)
+
         operation_encoded =
           ABI.encode("(address,uint256,uint256[],uint256[],uint256)", [
-            user,
-            amount_or_id,
-            erc1155_ids,
-            erc1155_amounts,
-            operation_id
+            {
+              user_binary,
+              amount_or_id,
+              erc1155_ids,
+              erc1155_amounts,
+              operation_id
+            }
           ])
 
-        operation_hash = "0x" <> Base.encode16(operation_encoded, case: :lower)
+        operation_hash =
+          "0x" <>
+            (operation_encoded
+             |> ExKeccak.hash_256()
+             |> Base.encode16(case: :lower))
 
         operation = %{
           user: user,
@@ -720,6 +770,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
           erc1155_amounts: if(Enum.empty?(erc1155_amounts), do: nil, else: erc1155_amounts),
           l1_transaction_hash: event["transactionHash"],
           l1_block_number: l1_block_number,
+          l2_transaction_hash: @empty_hash,
           operation_hash: operation_hash,
           operation_type: operation_type,
           token_type: token_type
@@ -739,6 +790,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     query =
       from(sb in Bridge,
         select: {sb.l1_block_number, sb.l1_transaction_hash},
+        where: not is_nil(sb.l1_block_number),
         order_by: [desc: sb.l1_block_number],
         limit: 1
       )
@@ -769,5 +821,12 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
   defp truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
     "0x#{truncated_hash}"
+  end
+
+  defp pad_address_hash(address) do
+    "0x" <>
+      (address
+       |> String.trim_leading("0x")
+       |> String.pad_leading(64, "0"))
   end
 end
