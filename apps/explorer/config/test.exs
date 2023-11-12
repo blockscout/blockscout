@@ -36,7 +36,8 @@ config :explorer, Explorer.Repo.Account,
   # Default of `5_000` was too low for `BlockFetcher` test
   ownership_timeout: :timer.minutes(1),
   timeout: :timer.seconds(60),
-  queue_target: 1000
+  queue_target: 1000,
+  log: false
 
 for repo <- [Explorer.Repo.PolygonEdge, Explorer.Repo.PolygonZkevm, Explorer.Repo.RSK, Explorer.Repo.Suave] do
   config :explorer, repo,
@@ -46,7 +47,8 @@ for repo <- [Explorer.Repo.PolygonEdge, Explorer.Repo.PolygonZkevm, Explorer.Rep
     # Default of `5_000` was too low for `BlockFetcher` test
     ownership_timeout: :timer.minutes(1),
     timeout: :timer.seconds(60),
-    queue_target: 1000
+    queue_target: 1000,
+    log: false
 end
 
 config :logger, :explorer,

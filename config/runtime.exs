@@ -132,7 +132,7 @@ config :block_scout_web, :chart,
 config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
   coin_balance_history_days: ConfigHelper.parse_integer_env_var("COIN_BALANCE_HISTORY_DAYS", 10)
 
-config :block_scout_web, BlockScoutWeb.API.V2, enabled: ConfigHelper.parse_bool_env_var("API_V2_ENABLED")
+config :block_scout_web, BlockScoutWeb.API.V2, enabled: ConfigHelper.parse_bool_env_var("API_V2_ENABLED", "true")
 
 # Configures Ueberauth's Auth0 auth provider
 config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
@@ -379,7 +379,8 @@ config :explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
   service_url: System.get_env("MICROSERVICE_SC_VERIFIER_URL") || "https://eth-bytecode-db.services.blockscout.com/",
   enabled: enabled?,
   type: type,
-  eth_bytecode_db?: enabled? && type == "eth_bytecode_db"
+  eth_bytecode_db?: enabled? && type == "eth_bytecode_db",
+  api_key: System.get_env("MICROSERVICE_SC_VERIFIER_API_KEY")
 
 config :explorer, Explorer.Visualize.Sol2uml,
   service_url: System.get_env("MICROSERVICE_VISUALIZE_SOL2UML_URL"),
@@ -524,6 +525,8 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
 
 config :indexer, Indexer.Block.Realtime.Supervisor,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_REALTIME_INDEXER")
+
+config :indexer, Indexer.Block.Catchup.Supervisor, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_CATCHUP_INDEXER")
 
 config :indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_REALTIME_FETCHER")

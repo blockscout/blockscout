@@ -181,6 +181,7 @@ defmodule BlockScoutWeb.ApiRouter do
     pipe_through(:api_v2_no_session)
 
     post("/token-info", V2.ImportController, :import_token_info)
+    get("/smart-contracts/:address_hash_param", V2.ImportController, :try_to_search_contract)
   end
 
   scope "/v2", as: :api_v2 do
@@ -239,6 +240,8 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash_param/coin-balance-history", V2.AddressController, :coin_balance_history)
       get("/:address_hash_param/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
       get("/:address_hash_param/withdrawals", V2.AddressController, :withdrawals)
+      get("/:address_hash_param/nft", V2.AddressController, :nft_list)
+      get("/:address_hash_param/nft/collections", V2.AddressController, :nft_collections)
     end
 
     scope "/tokens" do
