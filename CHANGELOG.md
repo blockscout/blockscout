@@ -11,6 +11,7 @@
 
 ### Fixes
 
+- [#8811](https://github.com/blockscout/blockscout/pull/8811) - Consider consensus block only when retrieving OP withdrawal transaction status
 - [#8784](https://github.com/blockscout/blockscout/pull/8784) - Fix Indexer.Transform.Addresses for non-Suave setup
 - [#8770](https://github.com/blockscout/blockscout/pull/8770) - Fix for eth_getbalance API v1 endpoint when requesting latest tag
 - [#8765](https://github.com/blockscout/blockscout/pull/8765) - Fix for tvl update in market history when row already exists

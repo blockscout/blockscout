@@ -2217,7 +2217,7 @@ defmodule Explorer.Chain do
         from(w in OptimismWithdrawal,
           where: w.l2_transaction_hash == ^l2_transaction_hash,
           left_join: l2_block in Block,
-          on: w.l2_block_number == l2_block.number,
+          on: w.l2_block_number == l2_block.number and l2_block.consensus == true,
           left_join: we in OptimismWithdrawalEvent,
           on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
           select: %{
