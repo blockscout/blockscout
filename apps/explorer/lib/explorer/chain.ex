@@ -4108,13 +4108,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec address_hash_to_smart_contract(Hash.Address.t()) :: SmartContract.t() | nil
-  def address_hash_to_one_smart_contract(hash) do
-    SmartContract
-    |> where([sc], sc.address_hash == ^hash)
-    |> Repo.one()
-  end
-
   @spec address_hash_to_smart_contract_without_twin(Hash.Address.t(), [api?]) :: SmartContract.t() | nil
   def address_hash_to_smart_contract_without_twin(address_hash, options) do
     query =
@@ -4332,6 +4325,10 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec join_associations(atom() | Ecto.Query.t(), map) :: Ecto.Query.t()
+  @doc """
+    Function to preload entities associated with selected in provided query items
+  """
   def join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
