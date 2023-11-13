@@ -5,6 +5,7 @@
 ### Features
 
 - [#8848](https://github.com/blockscout/blockscout/pull/8848) - Add MainPageRealtimeEventHandler
+- [#8821](https://github.com/blockscout/blockscout/pull/8821) - Add new events to addresses channel: `eth_bytecode_db_lookup_started` and `smart_contract_was_not_verified`
 - [#8795](https://github.com/blockscout/blockscout/pull/8795) - Disable catchup indexer by env
 - [#8768](https://github.com/blockscout/blockscout/pull/8768) - Add possibility to search tokens by address hash
 - [#8750](https://github.com/blockscout/blockscout/pull/8750) - Support new eth-bytecode-db request metadata fields
