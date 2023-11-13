@@ -1861,7 +1861,8 @@ defmodule Explorer.Chain do
             hash: w.hash,
             l2_timestamp: l2_block.timestamp,
             l1_transaction_hash: we.l1_transaction_hash
-          }
+          },
+          limit: 1
         )
       )
 
