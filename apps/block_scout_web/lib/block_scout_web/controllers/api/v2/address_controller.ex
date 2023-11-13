@@ -16,7 +16,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
-  alias Explorer.{Chain, Market}
+  alias Explorer.{Chain, Market, Repo}
+  alias Explorer.Chain.Address
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Token.Instance
   alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
@@ -46,13 +47,16 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   @address_options [
     necessity_by_association: %{
-      :contracts_creation_internal_transaction => :optional,
       :names => :optional,
-      :smart_contract => :optional,
-      :token => :optional,
-      :contracts_creation_transaction => :optional
+      :token => :optional
     },
     api?: true
+  ]
+
+  @contract_address_preloads [
+    :smart_contract,
+    :contracts_creation_internal_transaction,
+    :contracts_creation_transaction
   ]
 
   @nft_necessity_by_association [
@@ -66,12 +70,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   def address(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with {:ok, _address_hash, address} <- validate_address(address_hash_string, params, @address_options) do
-      CoinBalanceOnDemand.trigger_fetch(address)
+    with {:ok, _address_hash, address} <- validate_address(address_hash_string, params, @address_options),
+         fully_preloaded_address <- maybe_preload_smart_contract_associations(address) do
+      CoinBalanceOnDemand.trigger_fetch(fully_preloaded_address)
 
       conn
       |> put_status(200)
-      |> render(:address, %{address: address})
+      |> render(:address, %{address: fully_preloaded_address})
     end
   end
 
@@ -477,4 +482,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       {:ok, address_hash, address}
     end
   end
+
+  defp maybe_preload_smart_contract_associations(%Address{contract_code: nil} = address), do: address
+
+  defp maybe_preload_smart_contract_associations(%Address{contract_code: _} = address),
+    do: Repo.replica().preload(address, @contract_address_preloads)
 end
