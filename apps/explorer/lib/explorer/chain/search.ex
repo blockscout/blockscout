@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Search do
   """
   import Ecto.Query,
     only: [
+      dynamic: 2,
       from: 2,
       limit: 2,
       order_by: 3,
@@ -34,7 +35,7 @@ defmodule Explorer.Chain.Search do
 
     case prepare_search_term(string) do
       {:some, term} ->
-        tokens_query = search_token_query(term)
+        tokens_query = search_token_query(string, term)
         contracts_query = search_contract_query(term)
         labels_query = search_label_query(term)
         tx_query = search_tx_query(string)
@@ -114,8 +115,8 @@ defmodule Explorer.Chain.Search do
     case prepare_search_term(search_query) do
       {:some, term} ->
         tokens_result =
-          term
-          |> search_token_query()
+          search_query
+          |> search_token_query(term)
           |> order_by([token],
             desc_nulls_last: token.circulating_market_cap,
             desc_nulls_last: token.fiat_value,
@@ -204,6 +205,27 @@ defmodule Explorer.Chain.Search do
   end
 
   defp search_label_query(term) do
+    label_search_fields = %{
+      address_hash: dynamic([att, _, _], att.address_hash),
+      tx_hash: dynamic([_, _, _], type(^nil, :binary)),
+      block_hash: dynamic([_, _, _], type(^nil, :binary)),
+      type: "label",
+      name: dynamic([_, at, _], at.display_name),
+      symbol: nil,
+      holder_count: nil,
+      inserted_at: dynamic([att, _, _], att.inserted_at),
+      block_number: 0,
+      icon_url: nil,
+      token_type: nil,
+      timestamp: dynamic([_, _, _], type(^nil, :utc_datetime_usec)),
+      verified: dynamic([_, _, smart_contract], not is_nil(smart_contract)),
+      exchange_rate: nil,
+      total_supply: nil,
+      circulating_market_cap: nil,
+      priority: 1,
+      is_verified_via_admin_panel: nil
+    }
+
     inner_query =
       from(tag in AddressTag,
         where: fragment("to_tsvector('english', ?) @@ to_tsquery(?)", tag.display_name, ^term),
@@ -215,88 +237,105 @@ defmodule Explorer.Chain.Search do
       on: att.tag_id == at.id,
       left_join: smart_contract in SmartContract,
       on: att.address_hash == smart_contract.address_hash,
-      select: %{
-        address_hash: att.address_hash,
-        tx_hash: fragment("CAST(NULL AS bytea)"),
-        block_hash: fragment("CAST(NULL AS bytea)"),
-        type: "label",
-        name: at.display_name,
-        symbol: ^nil,
-        holder_count: ^nil,
-        inserted_at: att.inserted_at,
-        block_number: 0,
-        icon_url: nil,
-        token_type: nil,
-        timestamp: fragment("NULL::timestamp without time zone"),
-        verified: not is_nil(smart_contract),
-        exchange_rate: nil,
-        total_supply: nil,
-        circulating_market_cap: nil,
-        priority: 1,
-        is_verified_via_admin_panel: nil
-      }
+      select: ^label_search_fields
     )
   end
 
-  defp search_token_query(term) do
-    from(token in Token,
-      left_join: smart_contract in SmartContract,
-      on: token.contract_address_hash == smart_contract.address_hash,
-      where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term),
-      select: %{
-        address_hash: token.contract_address_hash,
-        tx_hash: fragment("CAST(NULL AS bytea)"),
-        block_hash: fragment("CAST(NULL AS bytea)"),
-        type: "token",
-        name: token.name,
-        symbol: token.symbol,
-        holder_count: token.holder_count,
-        inserted_at: token.inserted_at,
-        block_number: 0,
-        icon_url: token.icon_url,
-        token_type: token.type,
-        timestamp: fragment("NULL::timestamp without time zone"),
-        verified: not is_nil(smart_contract),
-        exchange_rate: token.fiat_value,
-        total_supply: token.total_supply,
-        circulating_market_cap: token.circulating_market_cap,
-        priority: 0,
-        is_verified_via_admin_panel: token.is_verified_via_admin_panel
-      }
-    )
+  defp search_token_query(string, term) do
+    token_search_fields = %{
+      address_hash: dynamic([token, _], token.contract_address_hash),
+      tx_hash: dynamic([_, _], type(^nil, :binary)),
+      block_hash: dynamic([_, _], type(^nil, :binary)),
+      type: "token",
+      name: dynamic([token, _], token.name),
+      symbol: dynamic([token, _], token.symbol),
+      holder_count: dynamic([token, _], token.holder_count),
+      inserted_at: dynamic([token, _], token.inserted_at),
+      block_number: 0,
+      icon_url: dynamic([token, _], token.icon_url),
+      token_type: dynamic([token, _], token.type),
+      timestamp: dynamic([_, _], type(^nil, :utc_datetime_usec)),
+      verified: dynamic([_, smart_contract], not is_nil(smart_contract)),
+      exchange_rate: dynamic([token, _], token.fiat_value),
+      total_supply: dynamic([token, _], token.total_supply),
+      circulating_market_cap: dynamic([token, _], token.circulating_market_cap),
+      priority: 0,
+      is_verified_via_admin_panel: dynamic([token, _], token.is_verified_via_admin_panel)
+    }
+
+    case Chain.string_to_address_hash(string) do
+      {:ok, address_hash} ->
+        from(token in Token,
+          left_join: smart_contract in SmartContract,
+          on: token.contract_address_hash == smart_contract.address_hash,
+          where: token.contract_address_hash == ^address_hash,
+          select: ^token_search_fields
+        )
+
+      _ ->
+        from(token in Token,
+          left_join: smart_contract in SmartContract,
+          on: token.contract_address_hash == smart_contract.address_hash,
+          where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term),
+          select: ^token_search_fields
+        )
+    end
   end
 
   defp search_contract_query(term) do
+    contract_search_fields = %{
+      address_hash: dynamic([smart_contract, _], smart_contract.address_hash),
+      tx_hash: dynamic([_, _], type(^nil, :binary)),
+      block_hash: dynamic([_, _], type(^nil, :binary)),
+      type: "contract",
+      name: dynamic([smart_contract, _], smart_contract.name),
+      symbol: nil,
+      holder_count: nil,
+      inserted_at: dynamic([_, address], address.inserted_at),
+      block_number: 0,
+      icon_url: nil,
+      token_type: nil,
+      timestamp: dynamic([_, _], type(^nil, :utc_datetime_usec)),
+      verified: true,
+      exchange_rate: nil,
+      total_supply: nil,
+      circulating_market_cap: nil,
+      priority: 0,
+      is_verified_via_admin_panel: nil
+    }
+
     from(smart_contract in SmartContract,
       left_join: address in Address,
       on: smart_contract.address_hash == address.hash,
       where: fragment("to_tsvector('english', ?) @@ to_tsquery(?)", smart_contract.name, ^term),
-      select: %{
-        address_hash: smart_contract.address_hash,
-        tx_hash: fragment("CAST(NULL AS bytea)"),
-        block_hash: fragment("CAST(NULL AS bytea)"),
-        type: "contract",
-        name: smart_contract.name,
-        symbol: ^nil,
-        holder_count: ^nil,
-        inserted_at: address.inserted_at,
-        block_number: 0,
-        icon_url: nil,
-        token_type: nil,
-        timestamp: fragment("NULL::timestamp without time zone"),
-        verified: true,
-        exchange_rate: nil,
-        total_supply: nil,
-        circulating_market_cap: nil,
-        priority: 0,
-        is_verified_via_admin_panel: nil
-      }
+      select: ^contract_search_fields
     )
   end
 
   defp search_address_query(term) do
     case Chain.string_to_address_hash(term) do
       {:ok, address_hash} ->
+        address_search_fields = %{
+          address_hash: dynamic([address, _], address.hash),
+          block_hash: dynamic([_, _], type(^nil, :binary)),
+          tx_hash: dynamic([_, _], type(^nil, :binary)),
+          type: "address",
+          name: dynamic([_, address_name], address_name.name),
+          symbol: nil,
+          holder_count: nil,
+          inserted_at: dynamic([address, _], address.inserted_at),
+          block_number: 0,
+          icon_url: nil,
+          token_type: nil,
+          timestamp: dynamic([_, _], type(^nil, :utc_datetime_usec)),
+          verified: dynamic([address, _], address.verified),
+          exchange_rate: nil,
+          total_supply: nil,
+          circulating_market_cap: nil,
+          priority: 0,
+          is_verified_via_admin_panel: nil
+        }
+
         from(address in Address,
           left_join:
             address_name in subquery(
@@ -308,26 +347,7 @@ defmodule Explorer.Chain.Search do
             ),
           on: address.hash == address_name.address_hash,
           where: address.hash == ^address_hash,
-          select: %{
-            address_hash: address.hash,
-            tx_hash: fragment("CAST(NULL AS bytea)"),
-            block_hash: fragment("CAST(NULL AS bytea)"),
-            type: "address",
-            name: address_name.name,
-            symbol: ^nil,
-            holder_count: ^nil,
-            inserted_at: address.inserted_at,
-            block_number: 0,
-            icon_url: nil,
-            token_type: nil,
-            timestamp: fragment("NULL::timestamp without time zone"),
-            verified: address.verified,
-            exchange_rate: nil,
-            total_supply: nil,
-            circulating_market_cap: nil,
-            priority: 0,
-            is_verified_via_admin_panel: nil
-          }
+          select: ^address_search_fields
         )
 
       _ ->
@@ -338,30 +358,32 @@ defmodule Explorer.Chain.Search do
   defp search_tx_query(term) do
     case Chain.string_to_transaction_hash(term) do
       {:ok, tx_hash} ->
+        transaction_search_fields = %{
+          address_hash: dynamic([_, _], type(^nil, :binary)),
+          tx_hash: dynamic([transaction, _], transaction.hash),
+          block_hash: dynamic([_, _], type(^nil, :binary)),
+          type: "transaction",
+          name: nil,
+          symbol: nil,
+          holder_count: nil,
+          inserted_at: dynamic([transaction, _], transaction.inserted_at),
+          block_number: 0,
+          icon_url: nil,
+          token_type: nil,
+          timestamp: dynamic([_, block], block.timestamp),
+          verified: nil,
+          exchange_rate: nil,
+          total_supply: nil,
+          circulating_market_cap: nil,
+          priority: 0,
+          is_verified_via_admin_panel: nil
+        }
+
         from(transaction in Transaction,
           left_join: block in Block,
           on: transaction.block_hash == block.hash,
           where: transaction.hash == ^tx_hash,
-          select: %{
-            address_hash: fragment("CAST(NULL AS bytea)"),
-            tx_hash: transaction.hash,
-            block_hash: fragment("CAST(NULL AS bytea)"),
-            type: "transaction",
-            name: ^nil,
-            symbol: ^nil,
-            holder_count: ^nil,
-            inserted_at: transaction.inserted_at,
-            block_number: 0,
-            icon_url: nil,
-            token_type: nil,
-            timestamp: block.timestamp,
-            verified: nil,
-            exchange_rate: nil,
-            total_supply: nil,
-            circulating_market_cap: nil,
-            priority: 0,
-            is_verified_via_admin_panel: nil
-          }
+          select: ^transaction_search_fields
         )
 
       _ ->
@@ -370,30 +392,32 @@ defmodule Explorer.Chain.Search do
   end
 
   defp search_block_query(term) do
+    block_search_fields = %{
+      address_hash: dynamic([_], type(^nil, :binary)),
+      tx_hash: dynamic([_], type(^nil, :binary)),
+      block_hash: dynamic([block], block.hash),
+      type: "block",
+      name: nil,
+      symbol: nil,
+      holder_count: nil,
+      inserted_at: dynamic([block], block.inserted_at),
+      block_number: dynamic([block], block.number),
+      icon_url: nil,
+      token_type: nil,
+      timestamp: dynamic([block], block.timestamp),
+      verified: nil,
+      exchange_rate: nil,
+      total_supply: nil,
+      circulating_market_cap: nil,
+      priority: 0,
+      is_verified_via_admin_panel: nil
+    }
+
     case Chain.string_to_block_hash(term) do
       {:ok, block_hash} ->
         from(block in Block,
           where: block.hash == ^block_hash,
-          select: %{
-            address_hash: fragment("CAST(NULL AS bytea)"),
-            tx_hash: fragment("CAST(NULL AS bytea)"),
-            block_hash: block.hash,
-            type: "block",
-            name: ^nil,
-            symbol: ^nil,
-            holder_count: ^nil,
-            inserted_at: block.inserted_at,
-            block_number: block.number,
-            icon_url: nil,
-            token_type: nil,
-            timestamp: block.timestamp,
-            verified: nil,
-            exchange_rate: nil,
-            total_supply: nil,
-            circulating_market_cap: nil,
-            priority: 0,
-            is_verified_via_admin_panel: nil
-          }
+          select: ^block_search_fields
         )
 
       _ ->
@@ -401,26 +425,7 @@ defmodule Explorer.Chain.Search do
           {block_number, ""} ->
             from(block in Block,
               where: block.number == ^block_number,
-              select: %{
-                address_hash: fragment("CAST(NULL AS bytea)"),
-                tx_hash: fragment("CAST(NULL AS bytea)"),
-                block_hash: block.hash,
-                type: "block",
-                name: ^nil,
-                symbol: ^nil,
-                holder_count: ^nil,
-                inserted_at: block.inserted_at,
-                block_number: block.number,
-                icon_url: nil,
-                token_type: nil,
-                timestamp: block.timestamp,
-                verified: nil,
-                exchange_rate: nil,
-                total_supply: nil,
-                circulating_market_cap: nil,
-                priority: 0,
-                is_verified_via_admin_panel: nil
-              }
+              select: ^block_search_fields
             )
 
           _ ->

@@ -4,14 +4,25 @@
 
 ### Features
 
+- [#8795](https://github.com/blockscout/blockscout/pull/8795) - Disable catchup indexer by env
+- [#8768](https://github.com/blockscout/blockscout/pull/8768) - Add possibility to search tokens by address hash
+- [#8750](https://github.com/blockscout/blockscout/pull/8750) - Support new eth-bytecode-db request metadata fields
+- [#8634](https://github.com/blockscout/blockscout/pull/8634) - API v2: NFT for address
+- [#8609](https://github.com/blockscout/blockscout/pull/8609) - Change logs format to JSON; Add endpoint url to the block_scout_web logging
+
 ### Fixes
 
+- [#8812](https://github.com/blockscout/blockscout/pull/8812) - Update existing tokens type if got transfer with higher type priority
+- [#8784](https://github.com/blockscout/blockscout/pull/8784) - Fix Indexer.Transform.Addresses for non-Suave setup
+- [#8770](https://github.com/blockscout/blockscout/pull/8770) - Fix for eth_getbalance API v1 endpoint when requesting latest tag
+- [#8765](https://github.com/blockscout/blockscout/pull/8765) - Fix for tvl update in market history when row already exists
 - [#8759](https://github.com/blockscout/blockscout/pull/8759) - Gnosis safe proxy via singleton input
 - [#8752](https://github.com/blockscout/blockscout/pull/8752) - Add `TOKEN_INSTANCE_OWNER_MIGRATION_ENABLED` env
 - [#8724](https://github.com/blockscout/blockscout/pull/8724) - Fix flaky account notifier test
 
 ### Chore
 
+- [#8802](https://github.com/blockscout/blockscout/pull/8802) - Enable API v2 by default
 - [#8728](https://github.com/blockscout/blockscout/pull/8728) - Remove repos_list (default value for ecto repos) from Explorer.ReleaseTasks
 
 <details>
