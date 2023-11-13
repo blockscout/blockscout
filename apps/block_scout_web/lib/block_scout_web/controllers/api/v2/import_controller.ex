@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
 
   @doc """
     Function to handle request at:
-      `/api/v2/smart-contracts/{address_hash_param}`
+      `/api/v2/import/smart-contracts/{address_hash_param}`
 
     Needed to try to import unverified smart contracts via eth-bytecode-db (`/api/v2/bytecodes/sources:search` method).
     Protected by `x-api-key` header.
@@ -73,7 +73,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true, false)},
          {:already_verified, smart_contract} when is_nil(smart_contract) <-
-           {:already_verified, Chain.address_hash_to_smart_contract(address_hash, @api_true)} do
+           {:already_verified, Chain.address_hash_to_smart_contract_without_twin(address_hash, @api_true)} do
       creation_tx_input = contract_creation_input(address.hash)
 
       with {:ok, %{"sourceType" => type} = source} <-
