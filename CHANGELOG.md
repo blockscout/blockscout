@@ -9,6 +9,7 @@
 - [#8750](https://github.com/blockscout/blockscout/pull/8750) - Support new eth-bytecode-db request metadata fields
 - [#8634](https://github.com/blockscout/blockscout/pull/8634) - API v2: NFT for address
 - [#8609](https://github.com/blockscout/blockscout/pull/8609) - Change logs format to JSON; Add endpoint url to the block_scout_web logging
+- [#8558](https://github.com/blockscout/blockscout/pull/8558) - Add CoinBalanceDailyUpdater
 
 ### Fixes
 
