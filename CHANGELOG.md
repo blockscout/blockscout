@@ -10,6 +10,7 @@
 
 - [#9062](https://github.com/blockscout/blockscout/pull/9062) - Fix blockscout-ens integration
 - [#9061](https://github.com/blockscout/blockscout/pull/9061) - Arbitrum allow tx receipt gasUsedForL1 field
+- [#8812](https://github.com/blockscout/blockscout/pull/8812) - Update existing tokens type if got transfer with higher type priority
 
 ### Chore
 
