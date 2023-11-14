@@ -95,7 +95,9 @@ defmodule Indexer.Transform.Addresses do
       ],
       [
         %{from: :block_number, to: :fetched_coin_balance_block_number},
-        %{from: :to_address_hash, to: :hash},
+        %{from: :to_address_hash, to: :hash}
+      ],
+      [
         %{from: :execution_node_hash, to: :hash},
         %{from: :wrapped_to_address_hash, to: :hash}
       ]

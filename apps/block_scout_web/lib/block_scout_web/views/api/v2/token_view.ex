@@ -1,8 +1,13 @@
 defmodule BlockScoutWeb.API.V2.TokenView do
+  use BlockScoutWeb, :view
+
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.NFTHelper
+  alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.Address
+  alias Explorer.Chain.Address.CurrentTokenBalance
+  alias Explorer.Chain.Token.Instance
 
   @api_true [api?: true]
 
@@ -19,6 +24,10 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "icon_url" => nil,
       "circulating_market_cap" => nil
     }
+  end
+
+  def render("token.json", %{token: nil}) do
+    nil
   end
 
   def render("token.json", %{token: token}) do
@@ -78,16 +87,16 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     }
   end
 
-  def prepare_token_instance(instance, token) do
-    is_unique =
-      not (token.type == "ERC-1155") or
-        Chain.token_id_1155_is_unique?(token.contract_address_hash, instance.token_id, @api_true)
+  @doc """
+    Internal json rendering function
+  """
+  def prepare_token_instance(instance, token, need_uniqueness_and_owner? \\ true) do
+    is_unique = is_unique?(need_uniqueness_and_owner?, instance, token)
 
     %{
       "id" => instance.token_id,
       "metadata" => instance.metadata,
-      "owner" =>
-        if(is_unique, do: instance.owner && Helper.address_with_info(nil, instance.owner, instance.owner.hash, false)),
+      "owner" => token_instance_owner(is_unique, instance),
       "token" => render("token.json", %{token: token}),
       "external_app_url" => NFTHelper.external_url(instance),
       "animation_url" => instance.metadata && NFTHelper.retrieve_image(instance.metadata["animation_url"]),
@@ -95,6 +104,41 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "is_unique" => is_unique
     }
   end
+
+  defp token_instance_owner(false, _instance), do: nil
+  defp token_instance_owner(nil, _instance), do: nil
+
+  defp token_instance_owner(_is_unique, %Instance{owner: %NotLoaded{}} = instance),
+    do: Helper.address_with_info(nil, nil, instance.owner_address_hash, false)
+
+  defp token_instance_owner(_is_unique, %Instance{owner: nil} = instance),
+    do: Helper.address_with_info(nil, nil, instance.owner_address_hash, false)
+
+  defp token_instance_owner(_is_unique, instance),
+    do: instance.owner && Helper.address_with_info(nil, instance.owner, instance.owner.hash, false)
+
+  defp is_unique?(false, _instance, _token), do: nil
+
+  defp is_unique?(
+         not_ignore?,
+         %Instance{current_token_balance: %CurrentTokenBalance{value: %Decimal{} = value}} = instance,
+         token
+       ) do
+    if Decimal.compare(value, 1) == :gt do
+      false
+    else
+      is_unique?(not_ignore?, %Instance{instance | current_token_balance: nil}, token)
+    end
+  end
+
+  defp is_unique?(_not_ignore?, %Instance{current_token_balance: %CurrentTokenBalance{value: value}}, _token)
+       when value > 1,
+       do: false
+
+  defp is_unique?(_, instance, token),
+    do:
+      not (token.type == "ERC-1155") or
+        Chain.token_id_1155_is_unique?(token.contract_address_hash, instance.token_id, @api_true)
 
   defp prepare_holders_count(nil), do: nil
   defp prepare_holders_count(count) when count < 0, do: prepare_holders_count(0)

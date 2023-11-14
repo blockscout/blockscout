@@ -258,7 +258,7 @@ defmodule BlockScoutWeb.AddressView do
     Enum.any?(address.smart_contract.abi || [], &is_read_function?(&1))
   end
 
-  def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
+  def smart_contract_with_read_only_functions?(%Address{smart_contract: _}), do: false
 
   def is_read_function?(function), do: Helper.queriable_method?(function) || Helper.read_with_wallet_method?(function)
 
@@ -268,7 +268,7 @@ defmodule BlockScoutWeb.AddressView do
     SmartContract.proxy_contract?(smart_contract, options)
   end
 
-  def smart_contract_is_proxy?(%Address{smart_contract: nil}, _), do: false
+  def smart_contract_is_proxy?(%Address{smart_contract: _}, _), do: false
 
   def smart_contract_with_write_functions?(%Address{smart_contract: %SmartContract{}} = address) do
     !contract_interaction_disabled?() &&
@@ -278,7 +278,7 @@ defmodule BlockScoutWeb.AddressView do
       )
   end
 
-  def smart_contract_with_write_functions?(%Address{smart_contract: nil}), do: false
+  def smart_contract_with_write_functions?(%Address{smart_contract: _}), do: false
 
   def has_decompiled_code?(address) do
     address.has_decompiled_code? ||

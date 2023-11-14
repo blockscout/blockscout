@@ -61,7 +61,7 @@ defmodule Explorer.Mixfile do
       {:mime, "~> 2.0"},
       {:bcrypt_elixir, "~> 3.0"},
       # benchmark optimizations
-      {:benchee, "~> 1.1.0", only: :test},
+      {:benchee, "~> 1.2.0", only: :test},
       # CSV output for benchee
       {:benchee_csv, "~> 1.0.0", only: :test},
       {:bypass, "~> 2.1", only: :test},
@@ -117,7 +117,8 @@ defmodule Explorer.Mixfile do
       {:cbor, "~> 1.0"},
       {:cloak_ecto, "~> 1.2.0"},
       {:redix, "~> 1.1"},
-      {:hammer_backend_redis, "~> 6.1"}
+      {:hammer_backend_redis, "~> 6.1"},
+      {:logger_json, "~> 5.1"}
     ]
   end
 

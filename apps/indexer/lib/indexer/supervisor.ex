@@ -21,6 +21,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.{
     BlockReward,
     CoinBalance,
+    CoinBalanceDailyUpdater,
     ContractCode,
     EmptyBlocksSanitizer,
     InternalTransaction,
@@ -142,6 +143,7 @@ defmodule Indexer.Supervisor do
         {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {TokenTotalSupplyUpdater, [[]]},
+        {CoinBalanceDailyUpdater, [[]]},
 
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},
@@ -157,11 +159,13 @@ defmodule Indexer.Supervisor do
           %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
           [name: BlockRealtime.Supervisor]
         ]),
-        {BlockCatchup.Supervisor,
-         [
-           %{block_fetcher: block_fetcher, block_interval: block_interval, memory_monitor: memory_monitor},
-           [name: BlockCatchup.Supervisor]
-         ]},
+        configure(
+          BlockCatchup.Supervisor,
+          [
+            %{block_fetcher: block_fetcher, block_interval: block_interval, memory_monitor: memory_monitor},
+            [name: BlockCatchup.Supervisor]
+          ]
+        ),
         {Withdrawal.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]}
       ]
       |> List.flatten()

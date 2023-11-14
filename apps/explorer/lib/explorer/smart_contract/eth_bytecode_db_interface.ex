@@ -17,6 +17,15 @@ defmodule Explorer.SmartContract.EthBytecodeDBInterface do
     end
   end
 
+  @doc """
+    Function to search smart contracts in eth-bytecode-db, similar to `search_contract/2` but
+      this function uses only `/api/v2/bytecodes/sources:search` method
+  """
+  @spec search_contract_in_eth_bytecode_internal_db(map()) :: {:error, any} | {:ok, any}
+  def search_contract_in_eth_bytecode_internal_db(%{"bytecode" => _, "bytecodeType" => _} = body) do
+    http_post_request(bytecode_search_sources_url(), body)
+  end
+
   def process_verifier_response(%{"sourcifySources" => [src | _]}) do
     {:ok, Map.put(src, "sourcify?", true)}
   end
