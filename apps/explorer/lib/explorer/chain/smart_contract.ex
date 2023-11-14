@@ -42,6 +42,7 @@ defmodule Explorer.Chain.SmartContract do
   @burn_address_hash_string_32 "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   defguard is_burn_signature(term) when term in ["0x", "0x0", @burn_address_hash_string_32]
+  defguard is_burn_signature_or_nil(term) when is_burn_signature(term) or term == nil
   defguard is_burn_signature_extended(term) when is_burn_signature(term) or term == @burn_address_hash_string
 
   @doc """

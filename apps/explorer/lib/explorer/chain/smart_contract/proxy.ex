@@ -13,6 +13,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       string_to_address_hash: 1
     ]
 
+  import Explorer.Chain.SmartContract, only: [is_burn_signature_or_nil: 1]
+
   # supported signatures:
   # 5c60da1b = keccak256(implementation())
   @implementation_signature "5c60da1b"
@@ -21,12 +23,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   # aaf10f42 = keccak256(getAddress(bytes32))
   @get_address_signature "21f8a721"
 
-  @burn_address_hash_string_32 "0x0000000000000000000000000000000000000000000000000000000000000000"
-
   @typep api? :: {:api?, true | false}
-
-  defguard is_burn_signature(term) when term in ["0x", "0x0", @burn_address_hash_string_32]
-  defguard is_burn_signature_or_nil(term) when is_burn_signature(term) or term == nil
 
   @doc """
   Fetches into DB proxy contract implementation's address and name from different proxy patterns

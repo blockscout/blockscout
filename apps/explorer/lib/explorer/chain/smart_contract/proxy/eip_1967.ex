@@ -7,14 +7,11 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Basic
 
+  import Explorer.Chain.SmartContract, only: [is_burn_signature_or_nil: 1]
+
   # supported signatures:
   # 5c60da1b = keccak256(implementation())
   @implementation_signature "5c60da1b"
-
-  @burn_address_hash_string_32 "0x0000000000000000000000000000000000000000000000000000000000000000"
-
-  defguard is_burn_signature(term) when term in ["0x", "0x0", @burn_address_hash_string_32]
-  defguard is_burn_signature_or_nil(term) when is_burn_signature(term) or term == nil
 
   @storage_slot_logic_contract_address "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
 

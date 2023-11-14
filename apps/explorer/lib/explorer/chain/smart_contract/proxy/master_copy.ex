@@ -7,9 +7,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.MasterCopy do
   alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
 
-  @burn_address_hash_string_32 "0x0000000000000000000000000000000000000000000000000000000000000000"
-
-  defguard is_burn_signature(term) when term in ["0x", "0x0", @burn_address_hash_string_32]
+  import Explorer.Chain.SmartContract, only: [is_burn_signature: 1]
 
   @doc """
   Gets implementation address for proxy contract from master-copy pattern
