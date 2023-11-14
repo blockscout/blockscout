@@ -571,11 +571,18 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp add_optimism_fields(result, transaction_hash, single_tx?) do
     if single_tx? do
-      {op_withdrawal_status, op_l1_transaction_hash} = Chain.optimism_withdrawal_transaction_status(transaction_hash)
+      withdrawals =
+        transaction_hash
+        |> Chain.optimism_withdrawal_transaction_statuses()
+        |> Enum.map(fn {nonce, status, l1_transaction_hash} ->
+          %{
+            "nonce" => nonce,
+            "status" => status,
+            "l1_transaction_hash" => l1_transaction_hash
+          }
+        end)
 
-      result
-      |> Map.put("op_withdrawal_status", op_withdrawal_status)
-      |> Map.put("op_l1_transaction_hash", op_l1_transaction_hash)
+      Map.put(result, "op_withdrawals", withdrawals)
     else
       result
     end
