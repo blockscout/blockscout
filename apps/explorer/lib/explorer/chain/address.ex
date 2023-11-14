@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Address do
   use Explorer.Schema
 
   alias Ecto.Changeset
+  alias Explorer.Chain
 
   alias Explorer.Chain.{
     Address,
@@ -251,6 +252,16 @@ defmodule Explorer.Chain.Address do
         nil
     end)
   end
+
+  @doc """
+    Preloads provided contracts associations if address has contract_code which is not nil
+  """
+  @spec maybe_preload_smart_contract_associations(Address.t(), list, list) :: Address.t()
+  def maybe_preload_smart_contract_associations(%Address{contract_code: nil} = address, _associations, _options),
+    do: address
+
+  def maybe_preload_smart_contract_associations(%Address{contract_code: _} = address, associations, options),
+    do: Chain.select_repo(options).preload(address, associations)
 
   @doc """
   Counts all the addresses where the `fetched_coin_balance` is > 0.
