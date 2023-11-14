@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
-  alias Explorer.{Chain, Market, Repo}
+  alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Token.Instance
@@ -71,7 +71,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   def address(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, _address_hash, address} <- validate_address(address_hash_string, params, @address_options),
-         fully_preloaded_address <- maybe_preload_smart_contract_associations(address) do
+         fully_preloaded_address <-
+           Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true) do
       CoinBalanceOnDemand.trigger_fetch(fully_preloaded_address)
 
       conn
@@ -482,9 +483,4 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       {:ok, address_hash, address}
     end
   end
-
-  defp maybe_preload_smart_contract_associations(%Address{contract_code: nil} = address), do: address
-
-  defp maybe_preload_smart_contract_associations(%Address{contract_code: _} = address),
-    do: Repo.replica().preload(address, @contract_address_preloads)
 end
