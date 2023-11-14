@@ -94,9 +94,20 @@ defmodule EthereumJSONRPC.HTTP do
     case length(batch) do
       # it can't be made any smaller
       1 ->
+        old_truncate = Application.get_env(:logger, :truncate)
+        Logger.configure(truncate: :infinity)
+
         Logger.error(fn ->
-          "413 Request Entity Too Large returned from single request batch.  Cannot shrink batch further."
+          [
+            "413 Request Entity Too Large returned from single request batch. Cannot shrink batch further. ",
+            "The actual batched request was ",
+            "#{inspect(batch)}. ",
+            "The actual response of the method was ",
+            "#{inspect(response)}."
+          ]
         end)
+
+        Logger.configure(truncate: old_truncate)
 
         {:error, response}
 
