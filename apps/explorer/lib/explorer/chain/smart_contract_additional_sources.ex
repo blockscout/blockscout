@@ -64,7 +64,7 @@ defmodule Explorer.Chain.SmartContractAdditionalSource do
   @doc """
   Returns all additional sources for the given smart-contract address hash
   """
-  @spec get_contract_additional_sources(SmartContract.t(), Keyword.t()) :: [__MODULE__.t()]
+  @spec get_contract_additional_sources(SmartContract.t() | nil, Keyword.t()) :: [__MODULE__.t()]
   def get_contract_additional_sources(smart_contract, options) do
     if smart_contract do
       all_additional_sources_query =

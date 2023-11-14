@@ -23,6 +23,7 @@ defmodule Explorer.Chain.SmartContract do
     DecompiledSmartContract,
     Hash,
     InternalTransaction,
+    SmartContract,
     SmartContractAdditionalSource,
     Transaction
   }
@@ -243,7 +244,7 @@ defmodule Explorer.Chain.SmartContract do
   * `verified_via_eth_bytecode_db` - whether contract automatically verified via eth-bytecode-db or not.
   """
 
-  @type t :: %Explorer.Chain.SmartContract{
+  @type t :: %SmartContract{
           name: String.t(),
           compiler_version: String.t(),
           optimization: boolean,
@@ -683,7 +684,7 @@ defmodule Explorer.Chain.SmartContract do
   @doc """
   Composes address object for smart-contract
   """
-  @spec compose_smart_contract(map(), Explorer.Chain.Hash.t(), any()) :: map()
+  @spec compose_smart_contract(map(), Hash.t(), any()) :: map()
   def compose_smart_contract(address_result, hash, options) do
     address_verified_twin_contract =
       EIP1167.get_implementation_address(hash, options) ||
@@ -709,6 +710,10 @@ defmodule Explorer.Chain.SmartContract do
   Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
   which were verified previously, returns a single t:SmartContract.t/0
   """
+  @spec get_address_verified_twin_contract(Hash.t() | String.t(), any()) :: %{
+          :verified_contract => any(),
+          :additional_sources => SmartContractAdditionalSource.t() | nil
+        }
   def get_address_verified_twin_contract(hash, options \\ [])
 
   def get_address_verified_twin_contract(hash, options) when is_binary(hash) do
@@ -718,7 +723,7 @@ defmodule Explorer.Chain.SmartContract do
     end
   end
 
-  def get_address_verified_twin_contract(%Explorer.Chain.Hash{} = address_hash, options) do
+  def get_address_verified_twin_contract(%Hash{} = address_hash, options) do
     with target_address <- Chain.select_repo(options).get(Address, address_hash),
          false <- is_nil(target_address) do
       verified_contract_twin = get_verified_twin_contract(target_address, options)
@@ -736,7 +741,11 @@ defmodule Explorer.Chain.SmartContract do
     end
   end
 
-  def get_verified_twin_contract(%Explorer.Chain.Address{} = target_address, options \\ []) do
+  @doc """
+  Returns verified smart-contract with the same bytecode of the given smart-contract
+  """
+  @spec get_verified_twin_contract(Address.t(), any()) :: SmartContract.t() | nil
+  def get_verified_twin_contract(%Address{} = target_address, options \\ []) do
     case target_address do
       %{contract_code: %Chain.Data{bytes: contract_code_bytes}} ->
         target_address_hash = target_address.hash
@@ -760,6 +769,10 @@ defmodule Explorer.Chain.SmartContract do
     end
   end
 
+  @doc """
+  Returns address or smart_contract object with parsed constructor_arguments
+  """
+  @spec check_and_update_constructor_args(any()) :: any()
   def check_and_update_constructor_args(
         %__MODULE__{address_hash: address_hash, constructor_arguments: nil, verified_via_sourcify: true} =
           smart_contract
@@ -793,7 +806,7 @@ defmodule Explorer.Chain.SmartContract do
   @doc """
   Adds verified metadata from bytecode twin smart-contract to the given smart-contract
   """
-  @spec add_twin_info_to_contract(map(), Chain.Hash.t(), Chain.Hash.t()) :: map()
+  @spec add_twin_info_to_contract(map(), Chain.Hash.t(), Chain.Hash.t() | nil) :: map()
   def add_twin_info_to_contract(address_result, address_verified_twin_contract, _hash)
       when is_nil(address_verified_twin_contract),
       do: address_result
@@ -817,7 +830,7 @@ defmodule Explorer.Chain.SmartContract do
   As part of inserting a new smart contract, an additional record is inserted for
   naming the address for reference.
   """
-  @spec create_smart_contract(map()) :: {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_smart_contract(map(), list(), list()) :: {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
   def create_smart_contract(attrs \\ %{}, external_libraries \\ [], secondary_sources \\ []) do
     new_contract = %__MODULE__{}
 
@@ -886,7 +899,7 @@ defmodule Explorer.Chain.SmartContract do
   Used in cases when you need to update row in DB contains SmartContract, e.g. in case of changing
   status `partially verified` to `fully verified` (re-verify).
   """
-  @spec update_smart_contract(map()) :: {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_smart_contract(map(), list(), list()) :: {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
   def update_smart_contract(attrs \\ %{}, external_libraries \\ [], secondary_sources \\ []) do
     address_hash = Map.get(attrs, :address_hash)
 
@@ -992,7 +1005,7 @@ defmodule Explorer.Chain.SmartContract do
 
   Returns `true` if found and `false` otherwise.
   """
-  @spec verified_with_full_match?(any()) :: boolean()
+  @spec verified_with_full_match?(Hash.Address.t() | String.t()) :: boolean()
   def verified_with_full_match?(address_hash, options \\ [])
 
   def verified_with_full_match?(address_hash_str, options) when is_binary(address_hash_str) do
@@ -1015,7 +1028,7 @@ defmodule Explorer.Chain.SmartContract do
 
   Returns `true` if found and `false` otherwise.
   """
-  @spec verified?(any()) :: boolean()
+  @spec verified?(Hash.Address.t() | String.t()) :: boolean()
   def verified?(address_hash_str) when is_binary(address_hash_str) do
     case Chain.string_to_address_hash(address_hash_str) do
       {:ok, address_hash} ->
@@ -1046,7 +1059,7 @@ defmodule Explorer.Chain.SmartContract do
   @doc """
   Gets smart-contract ABI from the DB for the given address hash of smart-contract
   """
-  @spec get_smart_contract_abi(any(), any()) :: any()
+  @spec get_smart_contract_abi(String.t(), any()) :: any()
   def get_smart_contract_abi(address_hash_string, options \\ [])
 
   def get_smart_contract_abi(address_hash_string, options)
