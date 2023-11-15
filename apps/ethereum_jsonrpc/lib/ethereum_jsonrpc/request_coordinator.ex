@@ -85,7 +85,7 @@ defmodule EthereumJSONRPC.RequestCoordinator do
           trace_request(request, fn ->
             request
             |> transport.json_rpc(transport_options)
-            |> handle_transport_response()
+            |> handle_transport_response(request_method(request))
           end)
 
         :error ->
@@ -110,19 +110,29 @@ defmodule EthereumJSONRPC.RequestCoordinator do
 
   defp trace_request(_, fun), do: fun.()
 
-  defp handle_transport_response({:error, {error_type, _}} = error) when error_type in [:bad_gateway, :bad_response] do
+  defp request_method([request | _]), do: request_method(request)
+  defp request_method(%{method: method}), do: method
+  defp request_method(_), do: nil
+
+  defp handle_transport_response(response, "eth_call") do
+    inc_throttle_table()
+    response
+  end
+
+  defp handle_transport_response({:error, {error_type, _}} = error, _method)
+       when error_type in [:bad_gateway, :bad_response] do
     RollingWindow.inc(table(), @error_key)
     inc_throttle_table()
     error
   end
 
-  defp handle_transport_response({:error, :timeout} = error) do
+  defp handle_transport_response({:error, :timeout} = error, _method) do
     RollingWindow.inc(table(), @error_key)
     inc_throttle_table()
     error
   end
 
-  defp handle_transport_response(response) do
+  defp handle_transport_response(response, _method) do
     inc_throttle_table()
     response
   end
