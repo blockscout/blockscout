@@ -27,26 +27,18 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   def get_implementation_address_hash_string(proxy_address_hash) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    logic_contract_address_hash_string =
+    implementation_address_hash_string =
       Proxy.get_implementation_from_storage(
         proxy_address_hash,
         @storage_slot_logic_contract_address,
         json_rpc_named_arguments
-      )
-
-    beacon_contract_address_hash_string =
-      fetch_beacon_proxy_implementation(proxy_address_hash, json_rpc_named_arguments)
-
-    openzeppelin_style_contract_address_hash_string =
-      Proxy.get_implementation_from_storage(
-        proxy_address_hash,
-        @storage_slot_openzeppelin_contract_address,
-        json_rpc_named_arguments
-      )
-
-    implementation_address_hash_string =
-      logic_contract_address_hash_string || beacon_contract_address_hash_string ||
-        openzeppelin_style_contract_address_hash_string
+      ) ||
+        fetch_beacon_proxy_implementation(proxy_address_hash, json_rpc_named_arguments) ||
+        Proxy.get_implementation_from_storage(
+          proxy_address_hash,
+          @storage_slot_openzeppelin_contract_address,
+          json_rpc_named_arguments
+        )
 
     Proxy.abi_decode_address_output(implementation_address_hash_string)
   end

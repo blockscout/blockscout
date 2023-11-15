@@ -63,7 +63,10 @@ defmodule Explorer.Chain.Address.Name do
         lock: "FOR NO KEY UPDATE"
       )
 
-    repo.update_all(query, set: [primary: false])
+    repo.update_all(
+      from(n in __MODULE__, join: s in subquery(query), on: n.address_hash == s.address_hash and n.name == s.name),
+      set: [primary: false]
+    )
 
     {:ok, []}
   end
