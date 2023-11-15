@@ -27,6 +27,7 @@
 
 - [#8832](https://github.com/blockscout/blockscout/pull/8832) - Log more details in regards 413 error
 - [#8802](https://github.com/blockscout/blockscout/pull/8802) - Enable API v2 by default
+- [#8742](https://github.com/blockscout/blockscout/pull/8742) - Merge rsk branch into the master branch
 - [#8728](https://github.com/blockscout/blockscout/pull/8728) - Remove repos_list (default value for ecto repos) from Explorer.ReleaseTasks
 
 <details>

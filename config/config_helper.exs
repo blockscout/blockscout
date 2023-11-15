@@ -179,4 +179,7 @@ defmodule ConfigHelper do
   rescue
     err -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(err)}"
   end
+
+  @spec chain_type() :: String.t()
+  def chain_type, do: System.get_env("CHAIN_TYPE") || "ethereum"
 end
