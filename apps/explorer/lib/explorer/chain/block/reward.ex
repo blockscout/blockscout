@@ -5,8 +5,6 @@ defmodule Explorer.Chain.Block.Reward do
 
   use Explorer.Schema
 
-  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
-
   alias Explorer.Application.Constants
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Block.Reward.AddressType
@@ -15,6 +13,8 @@ defmodule Explorer.Chain.Block.Reward do
   alias Explorer.SmartContract.Reader
 
   @required_attrs ~w(address_hash address_type block_hash reward)a
+
+  @burn_address_hash_string "0x0000000000000000000000000000000000000000"
 
   @get_payout_by_mining_abi %{
     "type" => "function",
@@ -250,6 +250,10 @@ defmodule Explorer.Chain.Block.Reward do
       %{^method_id => {:ok, [result]}} -> result
       _ -> burn_address_hash_string()
     end
+  end
+
+  defp burn_address_hash_string do
+    @burn_address_hash_string
   end
 
   defp join_associations(query) do

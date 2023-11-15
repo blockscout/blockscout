@@ -83,7 +83,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         []
       end
 
-    if Chain.smart_contract_fully_verified?(address_hash) do
+    if SmartContract.verified_with_full_match?(address_hash) do
       render(conn, :error, error: @verified)
     else
       case Sourcify.check_by_address(address_hash) do
@@ -114,7 +114,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         } = params
       ) do
     with {:check_verified_status, false} <-
-           {:check_verified_status, Chain.smart_contract_fully_verified?(address_hash)},
+           {:check_verified_status, SmartContract.verified_with_full_match?(address_hash)},
          {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_hash),
          {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_params(params)},
          uid <- VerificationStatus.generate_uid(address_hash) do
@@ -457,7 +457,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     _ = PublishHelper.check_and_verify(Hash.to_string(address_hash))
 
     result =
-      case Chain.address_hash_to_smart_contract(address_hash) do
+      case SmartContract.address_hash_to_smart_contract(address_hash) do
         nil ->
           :not_found
 

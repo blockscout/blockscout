@@ -201,6 +201,18 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
                               _options ->
         {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
       end)
+      |> expect(:json_rpc, fn %{
+                                id: 0,
+                                method: "eth_getStorageAt",
+                                params: [
+                                  _,
+                                  "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
+                                  "latest"
+                                ]
+                              },
+                              _options ->
+        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+      end)
       |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
         {:ok, "100"}
       end)

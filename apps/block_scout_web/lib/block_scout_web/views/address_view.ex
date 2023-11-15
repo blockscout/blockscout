@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.AddressView do
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Log, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
 
@@ -199,7 +200,7 @@ defmodule BlockScoutWeb.AddressView do
 
   def primary_name(%Address{names: _} = address) do
     with false <- is_nil(address.contract_code),
-         twin <- Chain.get_verified_twin_contract(address),
+         twin <- SmartContract.get_verified_twin_contract(address),
          false <- is_nil(twin) do
       twin.name
     else
@@ -264,8 +265,8 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_is_proxy?(address, options \\ [])
 
-  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}, options) do
-    SmartContract.proxy_contract?(smart_contract, options)
+  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}, _options) do
+    Proxy.proxy_contract?(smart_contract)
   end
 
   def smart_contract_is_proxy?(%Address{smart_contract: _}, _), do: false
@@ -456,7 +457,7 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def smart_contract_is_gnosis_safe_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
-    address.smart_contract.name == "GnosisSafeProxy" && Chain.gnosis_safe_contract?(address.smart_contract.abi)
+    address.smart_contract.name == "GnosisSafeProxy" && Proxy.gnosis_safe_contract?(address.smart_contract.abi)
   end
 
   def smart_contract_is_gnosis_safe_proxy?(_address), do: false
