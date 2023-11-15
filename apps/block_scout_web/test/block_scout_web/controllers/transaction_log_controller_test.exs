@@ -1,8 +1,6 @@
 defmodule BlockScoutWeb.TransactionLogControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import Mox
-
   import BlockScoutWeb.WebRouter.Helpers, only: [transaction_log_path: 3]
 
   alias Explorer.Chain.Address
