@@ -1068,7 +1068,7 @@ defmodule Explorer.Chain.SmartContract do
     with {:ok, implementation_address_hash} <- Chain.string_to_address_hash(address_hash_string),
          implementation_smart_contract =
            implementation_address_hash
-           |> __MODULE__.address_hash_to_smart_contract(options),
+           |> address_hash_to_smart_contract(options),
          false <- is_nil(implementation_smart_contract) do
       implementation_smart_contract
       |> Map.get(:abi)

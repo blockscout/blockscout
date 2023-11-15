@@ -63,10 +63,7 @@ defmodule Explorer.Chain.Address.Name do
         lock: "FOR NO KEY UPDATE"
       )
 
-    repo.update_all(
-      from(n in __MODULE__, join: s in subquery(query), on: n.address_hash == s.address_hash and n.name == s.name),
-      set: [primary: false]
-    )
+    repo.update_all(query, set: [primary: false])
 
     {:ok, []}
   end
@@ -84,7 +81,7 @@ defmodule Explorer.Chain.Address.Name do
     }
 
     %__MODULE__{}
-    |> __MODULE__.changeset(params)
+    |> changeset(params)
     |> repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
   end
 

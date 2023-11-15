@@ -265,8 +265,8 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_is_proxy?(address, options \\ [])
 
-  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}, _options) do
-    Proxy.proxy_contract?(smart_contract)
+  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}, options) do
+    Proxy.proxy_contract?(smart_contract, options)
   end
 
   def smart_contract_is_proxy?(%Address{smart_contract: _}, _), do: false

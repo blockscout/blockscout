@@ -58,15 +58,15 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @doc """
   Checks if smart-contract is proxy. Returns true/false.
   """
-  @spec proxy_contract?(SmartContract.t()) :: boolean()
-  def proxy_contract?(smart_contract) do
+  @spec proxy_contract?(SmartContract.t(), any()) :: boolean()
+  def proxy_contract?(smart_contract, options \\ []) do
     {:ok, burn_address_hash} = string_to_address_hash(SmartContract.burn_address_hash_string())
 
     if smart_contract.implementation_address_hash &&
          smart_contract.implementation_address_hash.bytes !== burn_address_hash.bytes do
       true
     else
-      {implementation_address_hash_string, _} = SmartContract.get_implementation_address_hash(smart_contract, [])
+      {implementation_address_hash_string, _} = SmartContract.get_implementation_address_hash(smart_contract, options)
 
       with false <- is_nil(implementation_address_hash_string),
            {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
@@ -174,21 +174,21 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
     cond do
       implementation_method_abi ->
-        Basic.get_implementation_address(@implementation_signature, proxy_address_hash, proxy_abi)
+        Basic.get_implementation_address_hash_string(@implementation_signature, proxy_address_hash, proxy_abi)
 
       get_implementation_method_abi ->
-        Basic.get_implementation_address(@get_implementation_signature, proxy_address_hash, proxy_abi)
+        Basic.get_implementation_address_hash_string(@get_implementation_signature, proxy_address_hash, proxy_abi)
 
       master_copy_method_abi ->
-        MasterCopy.get_implementation_address(proxy_address_hash)
+        MasterCopy.get_implementation_address_hash_string(proxy_address_hash)
 
       get_address_method_abi ->
-        EIP930.get_implementation_address(@get_address_signature, proxy_address_hash, proxy_abi)
+        EIP930.get_implementation_address_hash_string(@get_address_signature, proxy_address_hash, proxy_abi)
 
       true ->
-        EIP1967.get_implementation_address(proxy_address_hash) ||
+        EIP1967.get_implementation_address_hash_string(proxy_address_hash) ||
           EIP1167.get_implementation_address(proxy_address_hash) ||
-          EIP1822.get_implementation_address(proxy_address_hash)
+          EIP1822.get_implementation_address_hash_string(proxy_address_hash)
     end
   end
 

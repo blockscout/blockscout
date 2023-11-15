@@ -4,16 +4,16 @@ defmodule Explorer.Chain.SmartContract.Proxy.MasterCopy do
   """
 
   alias EthereumJSONRPC.Contract
-  alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.SmartContract.Proxy
 
   import Explorer.Chain.SmartContract, only: [is_burn_signature: 1]
 
   @doc """
-  Gets implementation address for proxy contract from master-copy pattern
+  Gets implementation address hash string for proxy contract from master-copy pattern
   """
-  @spec get_implementation_address(Hash.Address.t()) :: SmartContract.t() | nil
-  def get_implementation_address(proxy_address_hash) do
+  @spec get_implementation_address_hash_string(Hash.Address.t()) :: nil | binary
+  def get_implementation_address_hash_string(proxy_address_hash) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
     master_copy_storage_pointer = "0x0"

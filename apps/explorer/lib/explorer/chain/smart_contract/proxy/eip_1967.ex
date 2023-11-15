@@ -3,7 +3,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   Module for fetching proxy implementation from https://eips.ethereum.org/EIPS/eip-1967 (Proxy Storage Slots)
   """
   alias EthereumJSONRPC.Contract
-  alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Basic
 
@@ -21,10 +21,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   @storage_slot_openzeppelin_contract_address "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3"
 
   @doc """
-  Get implementation address following EIP-1967
+  Get implementation address hash string following EIP-1967
   """
-  @spec get_implementation_address(Hash.Address.t()) :: SmartContract.t() | nil
-  def get_implementation_address(proxy_address_hash) do
+  @spec get_implementation_address_hash_string(Hash.Address.t()) :: nil | binary
+  def get_implementation_address_hash_string(proxy_address_hash) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
     logic_contract_address_hash_string =
@@ -80,7 +80,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
       {:ok, beacon_contract_address} ->
         case beacon_contract_address
              |> Proxy.abi_decode_address_output()
-             |> Basic.get_implementation_address(
+             |> Basic.get_implementation_address_hash_string(
                @implementation_signature,
                implementation_method_abi
              ) do

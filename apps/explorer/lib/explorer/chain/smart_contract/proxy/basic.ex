@@ -3,13 +3,14 @@ defmodule Explorer.Chain.SmartContract.Proxy.Basic do
   Module for fetching proxy implementation from specific smart-contract getter
   """
 
+  alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.Reader
 
   @doc """
-  Gets implementation if proxy contract from getter.
+  Gets implementation hash string of proxy contract from getter.
   """
-  @spec get_implementation_address(any(), binary(), any()) :: nil | binary()
-  def get_implementation_address(signature, proxy_address_hash, abi) do
+  @spec get_implementation_address_hash_string(binary, binary, SmartContract.abi()) :: nil | binary
+  def get_implementation_address_hash_string(signature, proxy_address_hash, abi) do
     implementation_address =
       case Reader.query_contract(
              proxy_address_hash,

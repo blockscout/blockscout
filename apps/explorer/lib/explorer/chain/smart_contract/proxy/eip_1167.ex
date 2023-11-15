@@ -5,6 +5,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, SmartContract}
+  alias Explorer.Chain.SmartContract.Proxy
 
   import Ecto.Query, only: [from: 2]
 
@@ -30,6 +31,16 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
             nil
         end
     end
+  end
+
+  @doc """
+  Get implementation address hash string following EIP-1167
+  """
+  @spec get_implementation_address_hash_string(Hash.Address.t(), Keyword.t()) :: SmartContract.t() | nil
+  def get_implementation_address_hash_string(address_hash, options \\ []) do
+    get_implementation_address(address_hash, options)
+
+    Proxy.abi_decode_address_output(address_hash)
   end
 
   defp get_proxy_eip_1167(contract_bytecode, options) do
