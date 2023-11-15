@@ -1082,6 +1082,17 @@ defmodule Explorer.Chain.SmartContract do
     []
   end
 
+  @doc """
+  Gets smart-contract by address hash
+  """
+  @spec get_smart_contract_query(Hash.Address.t() | binary) :: Ecto.Query.t()
+  def get_smart_contract_query(address_hash) do
+    from(
+      smart_contract in __MODULE__,
+      where: smart_contract.address_hash == ^address_hash
+    )
+  end
+
   defp upsert_contract_methods(%Changeset{changes: %{abi: abi}} = changeset) do
     ContractMethod.upsert_from_abi(abi, get_field(changeset, :address_hash))
 
@@ -1224,13 +1235,6 @@ defmodule Explorer.Chain.SmartContract do
       {1, _} -> {:ok, []}
       _ -> {:error, "There was an error annotating that the address has been verified."}
     end
-  end
-
-  defp get_smart_contract_query(address_hash) do
-    from(
-      smart_contract in __MODULE__,
-      where: smart_contract.address_hash == ^address_hash
-    )
   end
 
   defp check_verified_with_full_match(address_hash, options) do

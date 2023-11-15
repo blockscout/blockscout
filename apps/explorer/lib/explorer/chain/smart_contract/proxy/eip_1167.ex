@@ -7,8 +7,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
   alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
 
-  import Ecto.Query, only: [from: 2]
-
   @doc """
   Get implementation address following EIP-1167
   """
@@ -56,13 +54,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
   defp implementation_to_smart_contract(nil, _options), do: nil
 
   defp implementation_to_smart_contract(address_hash, options) do
-    query =
-      from(
-        smart_contract in SmartContract,
-        where: smart_contract.address_hash == ^address_hash
-      )
-
-    query
+    address_hash
+    |> SmartContract.get_smart_contract_query()
     |> Chain.select_repo(options).one(timeout: 10_000)
   end
 end
