@@ -490,12 +490,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                 jsonrpc: "2.0",
                 method: "eth_getBalance",
                 params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
-              },
-              %{
-                id: 3,
-                jsonrpc: "2.0",
-                method: "eth_getBalance",
-                params: ["0x698bf6943bab687b2756394624aa183f434f65da", "0x3C365F"]
               }
             ]
           ],
@@ -978,12 +972,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                 jsonrpc: "2.0",
                 method: "eth_getBalance",
                 params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
-              },
-              %{
-                id: 3,
-                jsonrpc: "2.0",
-                method: "eth_getBalance",
-                params: ["0x698bf6943bab687b2756394624aa183f434f65da", "0x3C365F"]
               }
             ]
           ],

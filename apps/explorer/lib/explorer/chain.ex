@@ -2207,34 +2207,39 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-    Gets withdrawal status for Optimism Withdrawal transaction.
-    Returns the status and the corresponding L1 transaction hash if the status is `Relayed`.
+    Gets withdrawal statuses for Optimism Withdrawal transaction.
+    For each withdrawal associated with this transaction,
+    returns the status and the corresponding L1 transaction hash if the status is `Relayed`.
   """
-  @spec optimism_withdrawal_transaction_status(Hash.t()) :: {String.t(), Hash.t() | nil}
-  def optimism_withdrawal_transaction_status(l2_transaction_hash) do
-    w =
-      Repo.replica().one(
-        from(w in OptimismWithdrawal,
-          where: w.l2_transaction_hash == ^l2_transaction_hash,
-          left_join: l2_block in Block,
-          on: w.l2_block_number == l2_block.number and l2_block.consensus == true,
-          left_join: we in OptimismWithdrawalEvent,
-          on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
-          select: %{
-            hash: w.hash,
-            l2_timestamp: l2_block.timestamp,
-            l1_transaction_hash: we.l1_transaction_hash
-          },
-          limit: 1
-        )
+  @spec optimism_withdrawal_transaction_statuses(Hash.t()) :: [{non_neg_integer(), String.t(), Hash.t() | nil}]
+  def optimism_withdrawal_transaction_statuses(l2_transaction_hash) do
+    query =
+      from(w in OptimismWithdrawal,
+        where: w.l2_transaction_hash == ^l2_transaction_hash,
+        left_join: l2_block in Block,
+        on: w.l2_block_number == l2_block.number and l2_block.consensus == true,
+        left_join: we in OptimismWithdrawalEvent,
+        on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
+        select: %{
+          hash: w.hash,
+          l2_timestamp: l2_block.timestamp,
+          l1_transaction_hash: we.l1_transaction_hash,
+          msg_nonce: w.msg_nonce
+        }
       )
 
-    if is_nil(w) do
-      {"Unknown", nil}
-    else
+    query
+    |> Repo.replica().all()
+    |> Enum.map(fn w ->
+      msg_nonce =
+        Bitwise.band(
+          Decimal.to_integer(w.msg_nonce),
+          0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+        )
+
       {status, _} = optimism_withdrawal_status(w)
-      {status, w.l1_transaction_hash}
-    end
+      {msg_nonce, status, w.l1_transaction_hash}
+    end)
   end
 
   @doc """
@@ -4371,61 +4376,6 @@ defmodule Explorer.Chain do
 
   defp page_optimism_withdrawals(query, %PagingOptions{key: {nonce}}) do
     from(w in query, where: w.msg_nonce < ^nonce)
-  end
-
-  defp page_tokens(query, %PagingOptions{key: nil}), do: query
-
-  defp page_tokens(query, %PagingOptions{key: {circulating_market_cap, holder_count, name, contract_address_hash}}) do
-    from(token in query,
-      where: ^page_tokens_circulating_market_cap(circulating_market_cap, holder_count, name, contract_address_hash)
-    )
-  end
-
-  defp page_tokens_circulating_market_cap(nil, holder_count, name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.circulating_market_cap) and ^page_tokens_holder_count(holder_count, name, contract_address_hash)
-    )
-  end
-
-  defp page_tokens_circulating_market_cap(circulating_market_cap, holder_count, name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.circulating_market_cap) or t.circulating_market_cap < ^circulating_market_cap or
-        (t.circulating_market_cap == ^circulating_market_cap and
-           ^page_tokens_holder_count(holder_count, name, contract_address_hash))
-    )
-  end
-
-  defp page_tokens_holder_count(nil, name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.holder_count) and ^page_tokens_name(name, contract_address_hash)
-    )
-  end
-
-  defp page_tokens_holder_count(holder_count, name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.holder_count) or t.holder_count < ^holder_count or
-        (t.holder_count == ^holder_count and ^page_tokens_name(name, contract_address_hash))
-    )
-  end
-
-  defp page_tokens_name(nil, contract_address_hash) do
-    dynamic([t], is_nil(t.name) and ^page_tokens_contract_address_hash(contract_address_hash))
-  end
-
-  defp page_tokens_name(name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.name) or
-        (t.name > ^name or (t.name == ^name and ^page_tokens_contract_address_hash(contract_address_hash)))
-    )
-  end
-
-  defp page_tokens_contract_address_hash(contract_address_hash) do
-    dynamic([t], t.contract_address_hash > ^contract_address_hash)
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
