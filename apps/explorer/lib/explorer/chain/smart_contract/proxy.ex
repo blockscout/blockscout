@@ -34,21 +34,12 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       when not is_nil(proxy_address_hash) and not is_nil(proxy_abi) do
     implementation_address_hash_string = get_implementation_address_hash_string(proxy_address_hash, proxy_abi)
 
-    {:ok, burn_address_hash} = string_to_address_hash(SmartContract.burn_address_hash_string())
-
-    with false <- is_nil(implementation_address_hash_string),
-         {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
-         false <- implementation_address_hash.bytes == burn_address_hash.bytes do
-      SmartContract.save_implementation_data(
-        implementation_address_hash_string,
-        proxy_address_hash,
-        metadata_from_verified_twin,
-        options
-      )
-    else
-      _ ->
-        {nil, nil}
-    end
+    SmartContract.save_implementation_data(
+      implementation_address_hash_string,
+      proxy_address_hash,
+      metadata_from_verified_twin,
+      options
+    )
   end
 
   def fetch_implementation_address_hash(_, _, _, _) do
