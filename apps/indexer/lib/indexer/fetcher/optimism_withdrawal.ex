@@ -260,7 +260,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
           min(chunk_start + Optimism.get_logs_range_size() - 1, l2_block_end)
         end
 
-      Optimism.log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, "L2")
+      Helper.log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, "L2")
 
       withdrawals_count =
         find_and_save_withdrawals(
@@ -271,7 +271,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
           json_rpc_named_arguments
         )
 
-      Optimism.log_blocks_chunk_handling(
+      Helper.log_blocks_chunk_handling(
         chunk_start,
         chunk_end,
         l2_block_start,

@@ -268,7 +268,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
         chunk_end = min(chunk_start + eth_get_logs_range_size - 1, end_block)
 
         if chunk_end >= chunk_start do
-          log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+          Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
 
           {:ok, result} =
             get_logs(
@@ -285,7 +285,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
             |> calling_module.prepare_events(json_rpc_named_arguments)
             |> import_events(calling_module)
 
-          log_blocks_chunk_handling(
+          Helper.log_blocks_chunk_handling(
             chunk_start,
             chunk_end,
             start_block,
@@ -356,7 +356,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
           min(chunk_start + eth_get_logs_range_size - 1, l2_block_end)
         end
 
-      log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, "L2")
+      Helper.log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, "L2")
 
       count =
         calling_module.find_and_save_entities(
@@ -374,7 +374,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
           "L2StateSynced"
         end
 
-      log_blocks_chunk_handling(
+      Helper.log_blocks_chunk_handling(
         chunk_start,
         chunk_end,
         l2_block_start,
@@ -694,44 +694,6 @@ defmodule Indexer.Fetcher.PolygonEdge do
 
   defp l2_block_number_by_msg_id(id, table) do
     Repo.one(from(item in table, select: item.l2_block_number, where: item.msg_id == ^id))
-  end
-
-  defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, items_count, layer) do
-    is_start = is_nil(items_count)
-
-    {type, found} =
-      if is_start do
-        {"Start", ""}
-      else
-        {"Finish", " Found #{items_count}."}
-      end
-
-    target_range =
-      if chunk_start != start_block or chunk_end != end_block do
-        progress =
-          if is_start do
-            ""
-          else
-            percentage =
-              (chunk_end - start_block + 1)
-              |> Decimal.div(end_block - start_block + 1)
-              |> Decimal.mult(100)
-              |> Decimal.round(2)
-              |> Decimal.to_string()
-
-            " Progress: #{percentage}%"
-          end
-
-        " Target range: #{start_block}..#{end_block}.#{progress}"
-      else
-        ""
-      end
-
-    if chunk_start == chunk_end do
-      Logger.info("#{type} handling #{layer} block ##{chunk_start}.#{found}#{target_range}")
-    else
-      Logger.info("#{type} handling #{layer} block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
-    end
   end
 
   defp import_events(events, calling_module) do
