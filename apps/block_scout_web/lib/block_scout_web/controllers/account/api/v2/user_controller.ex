@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Account.Api.V1.UserController do
+defmodule BlockScoutWeb.Account.Api.V2.UserController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   alias Explorer.{Chain, Market, PagingOptions, Repo}
   alias Plug.CSRFProtection
 
-  action_fallback(BlockScoutWeb.Account.Api.V1.FallbackController)
+  action_fallback(BlockScoutWeb.Account.Api.V2.FallbackController)
 
   @ok_message "OK"
   @token_balances_amount 150

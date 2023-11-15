@@ -26,6 +26,7 @@
 
 ### Chore
 
+- [#8843](https://github.com/blockscout/blockscout/pull/8843) - Remove /api/account/v1 path
 - [#8832](https://github.com/blockscout/blockscout/pull/8832) - Log more details in regards 413 error
 - [#8807](https://github.com/blockscout/blockscout/pull/8807) - Smart-contract proxy detection refactoring
 - [#8802](https://github.com/blockscout/blockscout/pull/8802) - Enable API v2 by default

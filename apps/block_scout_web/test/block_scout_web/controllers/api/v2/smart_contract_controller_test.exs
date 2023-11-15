@@ -1698,7 +1698,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       conn
       |> post(
-        "/api/account/v1/user/custom_abis",
+        "/api/account/v2/user/custom_abis",
         custom_abi
       )
 
@@ -1750,7 +1750,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       conn
       |> post(
-        "/api/account/v1/user/custom_abis",
+        "/api/account/v2/user/custom_abis",
         custom_abi
       )
 
@@ -1817,7 +1817,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       conn
       |> post(
-        "/api/account/v1/user/custom_abis",
+        "/api/account/v2/user/custom_abis",
         custom_abi
       )
 
