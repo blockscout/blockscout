@@ -8,6 +8,8 @@ defmodule Explorer.Chain.TransactionTest do
 
   doctest Transaction
 
+  setup :verify_on_exit!
+
   describe "changeset/2" do
     test "with valid attributes" do
       assert %Changeset{valid?: true} =

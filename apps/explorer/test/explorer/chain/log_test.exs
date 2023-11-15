@@ -11,6 +11,8 @@ defmodule Explorer.Chain.LogTest do
 
   doctest Log
 
+  setup :verify_on_exit!
+
   describe "changeset/2" do
     test "accepts valid attributes" do
       params =

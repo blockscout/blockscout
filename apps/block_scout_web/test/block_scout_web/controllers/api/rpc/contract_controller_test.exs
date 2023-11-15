@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
   import Mox
 
+  setup :verify_on_exit!
+
   def prepare_contracts do
     insert(:contract_address)
     {:ok, dt_1, _} = DateTime.from_iso8601("2022-09-20 10:00:00Z")

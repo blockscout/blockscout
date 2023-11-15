@@ -8,6 +8,8 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
   alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
 
+  setup :verify_on_exit!
+
   describe "GET index/2" do
     test "with invalid transaction hash", %{conn: conn} do
       conn = get(conn, transaction_log_path(conn, :index, "invalid_transaction_string"))

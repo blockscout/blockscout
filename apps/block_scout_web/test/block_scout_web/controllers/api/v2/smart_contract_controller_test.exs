@@ -11,6 +11,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
   setup :set_mox_from_context
 
+  setup :verify_on_exit!
+
   describe "/smart-contracts/{address_hash}" do
     test "get 404 on non existing SC", %{conn: conn} do
       address = build(:address)

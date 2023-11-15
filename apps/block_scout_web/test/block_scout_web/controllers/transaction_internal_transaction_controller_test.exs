@@ -8,6 +8,8 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
   alias Explorer.Chain.InternalTransaction
   alias Explorer.ExchangeRates.Token
 
+  setup :verify_on_exit!
+
   describe "GET index/3" do
     test "with missing transaction", %{conn: conn} do
       hash = transaction_hash()

@@ -10,6 +10,8 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
 
   setup :set_mox_global
 
+  setup :verify_on_exit!
+
   setup do
     block =
       insert(:block, %{

@@ -27,6 +27,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   setup :set_mox_global
 
+  setup :verify_on_exit!
+
   describe "/addresses/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
       address = build(:address)

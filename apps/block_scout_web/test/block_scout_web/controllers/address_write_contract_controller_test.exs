@@ -9,6 +9,8 @@ defmodule BlockScoutWeb.AddressWriteContractControllerTest do
 
   import Mox
 
+  setup :verify_on_exit!
+
   describe "GET index/3" do
     setup :set_mox_global
 

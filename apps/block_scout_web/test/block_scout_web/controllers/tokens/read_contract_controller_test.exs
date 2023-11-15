@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.Tokens.ContractControllerTest do
 
   import Mox
 
+  setup :verify_on_exit!
+
   describe "GET index/3" do
     test "with invalid address hash", %{conn: conn} do
       conn = get(conn, token_read_contract_path(BlockScoutWeb.Endpoint, :index, "invalid_address"))

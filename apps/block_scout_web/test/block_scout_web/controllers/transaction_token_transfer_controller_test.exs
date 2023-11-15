@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
 
   alias Explorer.ExchangeRates.Token
 
+  setup :verify_on_exit!
+
   describe "GET index/3" do
     test "load token transfers", %{conn: conn} do
       EthereumJSONRPC.Mox
