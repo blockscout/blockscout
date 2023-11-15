@@ -187,7 +187,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
       true ->
         EIP1967.get_implementation_address_hash_string(proxy_address_hash) ||
-          EIP1167.get_implementation_address(proxy_address_hash) ||
+          EIP1167.get_implementation_address_hash_string(proxy_address_hash) ||
           EIP1822.get_implementation_address_hash_string(proxy_address_hash)
     end
   end

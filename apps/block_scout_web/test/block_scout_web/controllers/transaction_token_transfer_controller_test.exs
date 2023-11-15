@@ -11,11 +11,6 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
 
   describe "GET index/3" do
     test "load token transfers", %{conn: conn} do
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
-        {:ok, "100"}
-      end)
-
       transaction = insert(:transaction)
       token_transfer = insert(:token_transfer, transaction: transaction)
 
@@ -73,11 +68,6 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
-        {:ok, "100"}
-      end)
-
       transaction = insert(:transaction)
 
       conn = get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash))
@@ -214,9 +204,6 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
                               },
                               _options ->
         {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-      end)
-      |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
-        {:ok, "100"}
       end)
 
       transaction = insert(:transaction_to_verified_contract)

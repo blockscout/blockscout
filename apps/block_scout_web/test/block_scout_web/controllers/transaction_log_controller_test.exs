@@ -8,8 +8,6 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
   alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
 
-  setup :verify_on_exit!
-
   describe "GET index/2" do
     test "with invalid transaction hash", %{conn: conn} do
       conn = get(conn, transaction_log_path(conn, :index, "invalid_transaction_string"))
@@ -159,11 +157,6 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
   end
 
   test "includes USD exchange rate value for address in assigns", %{conn: conn} do
-    EthereumJSONRPC.Mox
-    |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
-      {:ok, "100"}
-    end)
-
     transaction = insert(:transaction)
 
     conn = get(conn, transaction_log_path(BlockScoutWeb.Endpoint, :index, transaction.hash))
@@ -172,11 +165,6 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
   end
 
   test "loads for transactions that created a contract", %{conn: conn} do
-    EthereumJSONRPC.Mox
-    |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
-      {:ok, "100"}
-    end)
-
     contract_address = insert(:contract_address)
 
     transaction =

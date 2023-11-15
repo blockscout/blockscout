@@ -1922,8 +1922,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
       end)
 
-      request_zero_implementations()
-
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
@@ -2034,8 +2032,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
       end)
 
-      request_zero_implementations()
-
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
@@ -2121,8 +2117,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
       end)
 
-      request_zero_implementations()
-
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
@@ -2192,8 +2186,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
       end)
 
-      request_zero_implementations()
-
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
@@ -2261,8 +2253,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                                                 _options ->
         {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
       end)
-
-      request_zero_implementations()
 
       expect(
         EthereumJSONRPC.Mox,
@@ -2355,8 +2345,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                                                 _options ->
         {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
       end)
-
-      request_zero_implementations()
 
       contract = insert(:smart_contract)
 
@@ -2482,6 +2470,18 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                               method: "eth_getStorageAt",
                               params: [
                                 _,
+                                "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
                                 "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
                                 "latest"
                               ]
@@ -2499,7 +2499,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                               ]
                             },
                             _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000001"}
     end)
   end
 end

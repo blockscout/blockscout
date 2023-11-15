@@ -44,8 +44,6 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
     "uncles" => []
   }
 
-  setup :verify_on_exit!
-
   describe "get_average_gas_price/4" do
     test "returns nil percentile values if no blocks in the DB" do
       expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options -> {:ok, [%{id: id, result: @block}]} end)

@@ -122,8 +122,6 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
       )
 
       blockchain_get_implementation_mock()
-      blockchain_get_implementation_mock_empty()
-      blockchain_get_implementation_mock_empty()
 
       path =
         smart_contract_path(BlockScoutWeb.Endpoint, :index,
@@ -161,8 +159,6 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
       )
 
       blockchain_get_implementation_mock_2()
-      blockchain_get_implementation_mock_empty()
-      blockchain_get_implementation_mock_empty()
 
       path =
         smart_contract_path(BlockScoutWeb.Endpoint, :index,
@@ -280,32 +276,32 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
   end
 
   defp blockchain_get_implementation_mock do
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn %{id: _, method: _, params: [_, _, _]}, _options ->
-        {:ok, "0xcebb2CCCFe291F0c442841cBE9C1D06EED61Ca02"}
-      end
-    )
-  end
-
-  defp blockchain_get_implementation_mock_empty do
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn %{id: _, method: _, params: [_, _, _]}, _options ->
-        {:ok, "0x"}
-      end
-    )
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                id: 0,
+                                                method: "eth_getStorageAt",
+                                                params: [
+                                                  _,
+                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                  "latest"
+                                                ]
+                                              },
+                                              _options ->
+      {:ok, "0xcebb2CCCFe291F0c442841cBE9C1D06EED61Ca02"}
+    end)
   end
 
   defp blockchain_get_implementation_mock_2 do
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn %{id: _, method: _, params: [_, _, _]}, _options ->
-        {:ok, "0x000000000000000000000000cebb2CCCFe291F0c442841cBE9C1D06EED61Ca02"}
-      end
-    )
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                id: 0,
+                                                method: "eth_getStorageAt",
+                                                params: [
+                                                  _,
+                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                  "latest"
+                                                ]
+                                              },
+                                              _options ->
+      {:ok, "0x000000000000000000000000cebb2CCCFe291F0c442841cBE9C1D06EED61Ca02"}
+    end)
   end
 end

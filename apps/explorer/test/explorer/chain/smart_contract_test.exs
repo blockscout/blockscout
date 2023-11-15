@@ -85,7 +85,7 @@ defmodule Explorer.Chain.SmartContractTest do
                                                   ]
                                                 },
                                                 _options ->
-        {:ok, string_implementation_address_hash}
+        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
       end)
       |> expect(:json_rpc, fn %{
                                 id: 0,
@@ -109,7 +109,7 @@ defmodule Explorer.Chain.SmartContractTest do
                                 ]
                               },
                               _options ->
-        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+        {:ok, string_implementation_address_hash}
       end)
 
       assert {^string_implementation_address_hash, "proxy"} =
@@ -358,7 +358,7 @@ defmodule Explorer.Chain.SmartContractTest do
                                                 ]
                                               },
                                               _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000001"}
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
     end)
     |> expect(:json_rpc, fn %{
                               id: 0,
@@ -382,7 +382,7 @@ defmodule Explorer.Chain.SmartContractTest do
                               ]
                             },
                             _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000001"}
     end)
   end
 
@@ -903,7 +903,7 @@ defmodule Explorer.Chain.SmartContractTest do
                                                 ]
                                               },
                                               _options ->
-      {:ok, string_implementation_address_hash}
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
     end)
     |> expect(:json_rpc, fn %{
                               id: 0,
@@ -927,7 +927,7 @@ defmodule Explorer.Chain.SmartContractTest do
                               ]
                             },
                             _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+      {:ok, string_implementation_address_hash}
     end)
   end
 end
