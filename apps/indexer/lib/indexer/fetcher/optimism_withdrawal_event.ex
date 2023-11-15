@@ -17,6 +17,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.OptimismWithdrawalEvent
   alias Indexer.Fetcher.Optimism
+  alias Indexer.Helper
 
   @fetcher_name :optimism_withdrawal_events
 
@@ -80,7 +81,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
         chunk_end = min(chunk_start + Optimism.get_logs_range_size() - 1, end_block)
 
         if chunk_end >= chunk_start do
-          Optimism.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+          Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
 
           {:ok, result} =
             Optimism.get_logs(
@@ -100,7 +101,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
               timeout: :infinity
             })
 
-          Optimism.log_blocks_chunk_handling(
+          Helper.log_blocks_chunk_handling(
             chunk_start,
             chunk_end,
             start_block,

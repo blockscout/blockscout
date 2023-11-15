@@ -178,7 +178,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
           {new_incomplete_frame_sequence, new_last_channel_id, new_current_channel_id} =
             if chunk_end >= chunk_start do
-              Optimism.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+              Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
 
               {:ok, batches, sequences, new_incomplete_frame_sequence, new_last_channel_id, new_current_channel_id} =
                 get_txn_batches(
@@ -201,7 +201,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
                   timeout: :infinity
                 })
 
-              Optimism.log_blocks_chunk_handling(
+              Helper.log_blocks_chunk_handling(
                 chunk_start,
                 chunk_end,
                 start_block,

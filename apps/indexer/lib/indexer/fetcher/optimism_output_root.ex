@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
   alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.OptimismOutputRoot
   alias Indexer.Fetcher.Optimism
+  alias Indexer.Helper, as: IndexerHelper
 
   @fetcher_name :optimism_output_roots
 
@@ -74,7 +75,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         chunk_end = min(chunk_start + Optimism.get_logs_range_size() - 1, end_block)
 
         if chunk_end >= chunk_start do
-          Optimism.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+          IndexerHelper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
 
           {:ok, result} =
             Optimism.get_logs(
@@ -94,7 +95,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
               timeout: :infinity
             })
 
-          Optimism.log_blocks_chunk_handling(
+          IndexerHelper.log_blocks_chunk_handling(
             chunk_start,
             chunk_end,
             start_block,
