@@ -4378,61 +4378,6 @@ defmodule Explorer.Chain do
     from(w in query, where: w.msg_nonce < ^nonce)
   end
 
-  defp page_tokens(query, %PagingOptions{key: nil}), do: query
-
-  defp page_tokens(query, %PagingOptions{key: {circulating_market_cap, holder_count, name, contract_address_hash}}) do
-    from(token in query,
-      where: ^page_tokens_circulating_market_cap(circulating_market_cap, holder_count, name, contract_address_hash)
-    )
-  end
-
-  defp page_tokens_circulating_market_cap(nil, holder_count, name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.circulating_market_cap) and ^page_tokens_holder_count(holder_count, name, contract_address_hash)
-    )
-  end
-
-  defp page_tokens_circulating_market_cap(circulating_market_cap, holder_count, name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.circulating_market_cap) or t.circulating_market_cap < ^circulating_market_cap or
-        (t.circulating_market_cap == ^circulating_market_cap and
-           ^page_tokens_holder_count(holder_count, name, contract_address_hash))
-    )
-  end
-
-  defp page_tokens_holder_count(nil, name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.holder_count) and ^page_tokens_name(name, contract_address_hash)
-    )
-  end
-
-  defp page_tokens_holder_count(holder_count, name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.holder_count) or t.holder_count < ^holder_count or
-        (t.holder_count == ^holder_count and ^page_tokens_name(name, contract_address_hash))
-    )
-  end
-
-  defp page_tokens_name(nil, contract_address_hash) do
-    dynamic([t], is_nil(t.name) and ^page_tokens_contract_address_hash(contract_address_hash))
-  end
-
-  defp page_tokens_name(name, contract_address_hash) do
-    dynamic(
-      [t],
-      is_nil(t.name) or
-        (t.name > ^name or (t.name == ^name and ^page_tokens_contract_address_hash(contract_address_hash)))
-    )
-  end
-
-  defp page_tokens_contract_address_hash(contract_address_hash) do
-    dynamic([t], t.contract_address_hash > ^contract_address_hash)
-  end
-
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
 
   defp page_blocks(query, %PagingOptions{key: {block_number}}) do
