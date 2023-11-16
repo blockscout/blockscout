@@ -22,18 +22,11 @@ defmodule Explorer.Chain.UserOperation do
   * `block_number` - the block number, where user operation happened.
   * `block_hash` - the block hash, where user operation happened.
   """
-
-  @type t :: %Explorer.Chain.UserOperation{
-          hash: Hash.Full.t(),
-          block_number: Explorer.Chain.Block.block_number() | nil,
-          block_hash: Hash.Full.t()
-        }
-
   @primary_key false
-  schema "user_operations" do
-    field(:hash, Hash.Full, primary_key: true)
-    field(:block_number, :integer)
-    field(:block_hash, Hash.Full)
+  typed_schema "user_operations" do
+    field(:hash, Hash.Full, primary_key: true, null: false)
+    field(:block_number, :integer, null: false)
+    field(:block_hash, Hash.Full, null: false)
 
     timestamps()
   end

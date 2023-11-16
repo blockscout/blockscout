@@ -10,25 +10,18 @@ defmodule Explorer.Chain.SmartContract.Proxy.VerificationStatus do
   alias Explorer.Chain.Hash
   alias Explorer.{Chain, Repo}
 
+  @typep status :: integer() | atom()
+
   @typedoc """
   * `contract_address_hash` - address of the contract which was tried to verify
   * `status` - submission status: :pending | :pass | :fail
   * `uid` - unique verification identifier
   """
-
-  @type t :: %__MODULE__{
-          uid: String.t(),
-          contract_address_hash: Hash.Address.t(),
-          status: non_neg_integer() | atom()
-        }
-
-  @typep status :: integer() | atom()
-
   @primary_key false
-  schema "proxy_smart_contract_verification_statuses" do
-    field(:uid, :string, primary_key: true)
-    field(:status, Ecto.Enum, values: [pending: 0, pass: 1, fail: 2])
-    field(:contract_address_hash, Hash.Address)
+  typed_schema "proxy_smart_contract_verification_statuses" do
+    field(:uid, :string, primary_key: true, null: false)
+    field(:status, Ecto.Enum, values: [pending: 0, pass: 1, fail: 2], null: false)
+    field(:contract_address_hash, Hash.Address, null: false)
 
     timestamps()
   end
