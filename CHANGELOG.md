@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#8848](https://github.com/blockscout/blockscout/pull/8848) - Add MainPageRealtimeEventHandler
 - [#8795](https://github.com/blockscout/blockscout/pull/8795) - Disable catchup indexer by env
 - [#8768](https://github.com/blockscout/blockscout/pull/8768) - Add possibility to search tokens by address hash
 - [#8750](https://github.com/blockscout/blockscout/pull/8750) - Support new eth-bytecode-db request metadata fields
@@ -29,6 +30,7 @@
 
 - [#8832](https://github.com/blockscout/blockscout/pull/8832) - Log more details in regards 413 error
 - [#8802](https://github.com/blockscout/blockscout/pull/8802) - Enable API v2 by default
+- [#8742](https://github.com/blockscout/blockscout/pull/8742) - Merge rsk branch into the master branch
 - [#8728](https://github.com/blockscout/blockscout/pull/8728) - Remove repos_list (default value for ecto repos) from Explorer.ReleaseTasks
 - [#8702](https://github.com/blockscout/blockscout/pull/8702) - Add OP withdrawal status to transaction page in API
 - [#8740](https://github.com/blockscout/blockscout/pull/8740) - Add delay to Indexer.Fetcher.OptimismTxnBatch module initialization
