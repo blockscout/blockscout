@@ -6,6 +6,8 @@ defmodule BlockScoutWeb.SmartContractView do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Transaction}
   alias Explorer.Chain.Hash.Address, as: HashAddress
+  alias Explorer.Chain.SmartContract
+  alias Explorer.Chain.SmartContract.Proxy.EIP1167
   alias Explorer.SmartContract.Helper
 
   require Logger
@@ -210,7 +212,7 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def decode_revert_reason(to_address, revert_reason, options \\ []) do
-    smart_contract = Chain.address_hash_to_smart_contract(to_address, options)
+    smart_contract = SmartContract.address_hash_to_smart_contract(to_address, options)
 
     Transaction.decoded_revert_reason(
       %Transaction{to_address: %{smart_contract: smart_contract}, hash: to_address},
