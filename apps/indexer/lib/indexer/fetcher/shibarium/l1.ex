@@ -86,9 +86,15 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
   end
 
   @impl GenServer
-  def handle_continue(:ok, _state) do
+  def handle_continue(_, state) do
     Logger.metadata(fetcher: @fetcher_name)
+    # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
+    Process.send_after(self(), :init_with_delay, 2000)
+    {:noreply, state}
+  end
 
+  @impl GenServer
+  def handle_info(:init_with_delay, _state) do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},

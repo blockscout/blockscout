@@ -693,6 +693,20 @@ config :indexer, Indexer.Fetcher.Shibarium.L1,
   erc1155_predicate_proxy: System.get_env("INDEXER_SHIBARIUM_L1_ERC1155_PREDICATE_CONTRACT"),
   withdraw_manager_proxy: System.get_env("INDEXER_SHIBARIUM_L1_WITHDRAW_MANAGER_CONTRACT")
 
+config :indexer, Indexer.Fetcher.Shibarium.L2,
+  start_block: System.get_env("INDEXER_SHIBARIUM_L2_START_BLOCK"),
+  child_chain: System.get_env("INDEXER_SHIBARIUM_L2_CHILD_CHAIN_CONTRACT"),
+  weth: System.get_env("INDEXER_SHIBARIUM_L2_WETH_CONTRACT"),
+  bone_withdraw: System.get_env("INDEXER_SHIBARIUM_L2_BONE_WITHDRAW_CONTRACT")
+
+config :indexer, Indexer.Fetcher.Shibarium.L1.Supervisor,
+  enabled:
+    System.get_env("CHAIN_TYPE", "ethereum") == "shibarium"
+
+config :indexer, Indexer.Fetcher.Shibarium.L2.Supervisor,
+  enabled:
+    System.get_env("CHAIN_TYPE", "ethereum") == "shibarium"
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
