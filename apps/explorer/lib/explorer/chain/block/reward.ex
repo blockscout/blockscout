@@ -10,11 +10,10 @@ defmodule Explorer.Chain.Block.Reward do
   alias Explorer.Chain.Block.Reward.AddressType
   alias Explorer.Chain.{Address, Block, Hash, Validator, Wei}
   alias Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand
+  alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.Reader
 
   @required_attrs ~w(address_hash address_type block_hash reward)a
-
-  @burn_address_hash_string "0x0000000000000000000000000000000000000000"
 
   @get_payout_by_mining_abi %{
     "type" => "function",
@@ -218,7 +217,7 @@ defmodule Explorer.Chain.Block.Reward do
       payout_key_hash =
         call_contract(keys_manager_contract_address, @get_payout_by_mining_abi, get_payout_by_mining_params)
 
-      if payout_key_hash == burn_address_hash_string() do
+      if payout_key_hash == SmartContract.burn_address_hash_string() do
         mining_key
       else
         choose_key(payout_key_hash, mining_key)
@@ -248,12 +247,8 @@ defmodule Explorer.Chain.Block.Reward do
 
     case Reader.query_contract(address, abi, params, false) do
       %{^method_id => {:ok, [result]}} -> result
-      _ -> burn_address_hash_string()
+      _ -> SmartContract.burn_address_hash_string()
     end
-  end
-
-  defp burn_address_hash_string do
-    @burn_address_hash_string
   end
 
   defp join_associations(query) do
