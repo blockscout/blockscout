@@ -21,6 +21,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.{
     BlockReward,
     CoinBalance,
+    CoinBalanceDailyUpdater,
     ContractCode,
     EmptyBlocksSanitizer,
     InternalTransaction,
@@ -28,6 +29,7 @@ defmodule Indexer.Supervisor do
     PendingTransaction,
     PolygonEdge,
     ReplacedTransaction,
+    RootstockData,
     Token,
     TokenBalance,
     TokenTotalSupplyUpdater,
@@ -142,6 +144,7 @@ defmodule Indexer.Supervisor do
         {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {TokenTotalSupplyUpdater, [[]]},
+        {CoinBalanceDailyUpdater, [[]]},
 
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},
@@ -151,6 +154,7 @@ defmodule Indexer.Supervisor do
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {PendingOpsCleaner, [[], []]},
         {PendingBlockOperationsSanitizer, [[]]},
+        {RootstockData.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
 
         # Block fetchers
         configure(BlockRealtime.Supervisor, [

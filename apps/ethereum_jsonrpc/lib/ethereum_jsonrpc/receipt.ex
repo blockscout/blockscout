@@ -315,7 +315,7 @@ defmodule EthereumJSONRPC.Receipt do
   end
 
   # Optimism specific transaction receipt fields
-  defp entry_to_elixir({key, _}) when key in ~w(depositNonce) do
+  defp entry_to_elixir({key, _}) when key in ~w(depositNonce depositReceiptVersion) do
     :ignore
   end
 
