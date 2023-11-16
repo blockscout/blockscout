@@ -15,6 +15,7 @@
 ### Fixes
 
 - [#8836](https://github.com/blockscout/blockscout/pull/8836) - Safe token update
+- [#8831](https://github.com/blockscout/blockscout/pull/8831) - Return all OP Withdrawals bound to L2 transaction
 - [#8822](https://github.com/blockscout/blockscout/pull/8822) - Hotfix for optimism_withdrawal_transaction_status function
 - [#8814](https://github.com/blockscout/blockscout/pull/8814) - Improve performance for EOA addresses in `/api/v2/addresses/{address_hash}`
 - [#8813](https://github.com/blockscout/blockscout/pull/8813) - Force verify twin contracts on `/api/v2/import/smart-contracts/{address_hash}`
