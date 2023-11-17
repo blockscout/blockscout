@@ -19,6 +19,8 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
 
   import Explorer.Helper, only: [decode_data: 2, parse_integer: 1]
 
+  alias EthereumJSONRPC.Block.ByNumber
+  alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Shibarium.Bridge
   alias Indexer.Helper
@@ -221,6 +223,25 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     end
   end
 
+  defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
+    request =
+      events
+      |> Enum.reduce(%{}, fn event, acc ->
+        Map.put(acc, event["blockNumber"], 0)
+      end)
+      |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
+      |> Stream.with_index()
+      |> Enum.into(%{}, fn {params, id} -> {id, params} end)
+      |> Blocks.requests(&ByNumber.request(&1, false, false))
+
+    error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
+
+    case repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
+      {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
+      {:error, _} -> []
+    end
+  end
+
   defp get_last_l2_item do
     query =
       from(sb in Bridge,
@@ -236,7 +257,89 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   end
 
   defp get_logs_all({chunk_start, chunk_end}, child_chain, weth, bone_withdraw, json_rpc_named_arguments) do
-    # todo
+    {:ok, known_tokens_result} =
+      get_logs(
+        chunk_start,
+        chunk_end,
+        [child_chain, weth, bone_withdraw],
+        [
+          [
+            @log_fee_transfer_event,
+            @token_deposited_event,
+            @transfer_event,
+            @withdraw_event
+          ]
+        ],
+        json_rpc_named_arguments
+      )
+
+    {:ok, unknown_erc20_erc721_tokens_deposit_result} =
+      get_logs(
+        chunk_start,
+        chunk_end,
+        nil,
+        [
+          @transfer_event,
+          @empty_hash
+        ],
+        json_rpc_named_arguments
+      )
+
+    {:ok, unknown_erc1155_tokens_deposit_result} =
+      get_logs(
+        chunk_start,
+        chunk_end,
+        nil,
+        [
+          [@transfer_single_event, @transfer_batch_event],
+          nil,
+          @empty_hash
+        ],
+        json_rpc_named_arguments
+      )
+
+    # filter these Transfer* events by having TokenDeposited event (emitted by ChildChain contract) in the same transaction
+    tokens_deposit_result = Enum.filter(unknown_erc20_erc721_tokens_deposit_result ++ unknown_erc1155_tokens_deposit_result, fn event ->
+      Enum.any?(known_tokens_result, fn e ->
+        Enum.at(e["topics"], 0) == @token_deposited_event and String.downcase(e["address"]) == String.downcase(child_chain) and e["transactionHash"] == event["transactionHash"]
+      end)
+    end)
+
+    {:ok, unknown_erc20_erc721_tokens_withdraw_result} =
+      get_logs(
+        chunk_start,
+        chunk_end,
+        nil,
+        [
+          @transfer_event,
+          nil,
+          @empty_hash
+        ],
+        json_rpc_named_arguments
+      )
+
+    {:ok, unknown_erc1155_tokens_withdraw_result} =
+      get_logs(
+        chunk_start,
+        chunk_end,
+        nil,
+        [
+          [@transfer_single_event, @transfer_batch_event],
+          nil,
+          nil,
+          @empty_hash
+        ],
+        json_rpc_named_arguments
+      )
+
+    # filter these Transfer* events by having LogFeeTransfer event (emitted by BoneWithdraw contract) in the same transaction
+    tokens_withdraw_result = Enum.filter(unknown_erc20_erc721_tokens_withdraw_result ++ unknown_erc1155_tokens_withdraw_result, fn event ->
+      Enum.any?(known_tokens_result, fn e ->
+        Enum.at(e["topics"], 0) == @log_fee_transfer_event and String.downcase(e["address"]) == String.downcase(bone_withdraw) and e["transactionHash"] == event["transactionHash"]
+      end)
+    end)
+
+    known_tokens_result ++ tokens_deposit_result ++ tokens_withdraw_result
   end
 
   defp get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, retries \\ 100_000_000) do
@@ -279,6 +382,22 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
+  defp is_withdrawal(event) do
+    topic0 = Enum.at(event["topics"], 0)
+    topic2 = Enum.at(event["topics"], 2)
+    topic3 = Enum.at(event["topics"], 3)
+
+    cond do
+      topic0 == @withdraw_event -> true
+
+      topic0 == @transfer_event and topic2 == @empty_hash -> true
+
+      Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and topic3 == @empty_hash -> true
+
+      true -> false
+    end
+  end
+
   defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, items_count, layer) do
     is_start = is_nil(items_count)
 
@@ -315,6 +434,20 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     else
       Logger.info("#{type} handling #{layer} block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
     end
+  end
+
+  defp prepare_operations(events, json_rpc_named_arguments) do
+    timestamps =
+      events
+      |> Enum.filter(&is_withdrawal(&1))
+      |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+      |> Enum.reduce(%{}, fn block, acc ->
+        block_number = quantity_to_integer(Map.get(block, "number"))
+        {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
+        Map.put(acc, block_number, timestamp)
+      end)
+
+    # todo
   end
 
   defp repeated_call(func, args, error_message, retries_left) do
