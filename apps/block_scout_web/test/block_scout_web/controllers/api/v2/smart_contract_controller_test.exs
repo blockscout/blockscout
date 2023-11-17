@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase, async: false
   use BlockScoutWeb.ChannelCase, async: false
 
   import Mox
@@ -308,6 +308,16 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   end
 
   describe "/smart-contracts/{address_hash} <> eth_bytecode_db" do
+    setup do
+      old_interval_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
+
+      :ok
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_interval_env)
+      end)
+    end
+
     test "automatically verify contract", %{conn: conn} do
       {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
       old_chain_id = Application.get_env(:block_scout_web, :chain_id)
@@ -321,7 +331,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
         service_url: "http://localhost:#{bypass.port}",
-        enabled: true
+        enabled: true,
+        type: "eth_bytecode_db",
+        eth_bytecode_db?: true
       )
 
       address = insert(:contract_address)
@@ -345,6 +357,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       end)
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "eth_bytecode_db_lookup_started",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{},
@@ -391,7 +410,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
         service_url: "http://localhost:#{bypass.port}",
-        enabled: true
+        enabled: true,
+        type: "eth_bytecode_db",
+        eth_bytecode_db?: true
       )
 
       address = insert(:contract_address)
@@ -415,6 +436,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       end)
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "eth_bytecode_db_lookup_started",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{},
@@ -508,7 +536,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
         service_url: "http://localhost:#{bypass.port}",
-        enabled: true
+        enabled: true,
+        type: "eth_bytecode_db",
+        eth_bytecode_db?: true
       )
 
       address = insert(:contract_address)
@@ -532,6 +562,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       end)
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "eth_bytecode_db_lookup_started",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{},
@@ -582,7 +619,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
         service_url: "http://localhost:#{bypass.port}",
-        enabled: true
+        enabled: true,
+        type: "eth_bytecode_db",
+        eth_bytecode_db?: true
       )
 
       address = insert(:contract_address)
@@ -606,6 +645,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       end)
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "eth_bytecode_db_lookup_started",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{},
@@ -673,6 +719,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       bypass = Bypass.open()
       address = insert(:contract_address)
+      topic = "addresses:#{address.hash}"
+
+      {:ok, _reply, _socket} =
+        BlockScoutWeb.UserSocketV2
+        |> socket("no_id", %{})
+        |> subscribe_and_join(topic)
 
       insert(:transaction,
         created_contract_address_hash: address.hash,
@@ -685,7 +737,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
         service_url: "http://localhost:#{bypass.port}",
-        enabled: true
+        enabled: true,
+        type: "eth_bytecode_db",
+        eth_bytecode_db?: true
       )
 
       old_interval_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
@@ -698,6 +752,20 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "eth_bytecode_db_lookup_started",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "smart_contract_was_not_verified",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
       :timer.sleep(10)
 
       Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search", fn conn ->
@@ -706,6 +774,20 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "eth_bytecode_db_lookup_started",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "smart_contract_was_not_verified",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
       :timer.sleep(10)
 
       Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search", fn conn ->
@@ -713,12 +795,47 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       end)
 
       _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "eth_bytecode_db_lookup_started",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "smart_contract_was_not_verified",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
 
       :timer.sleep(10)
 
       Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, fetch_interval: 10000)
 
       _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+      refute_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "eth_bytecode_db_lookup_started",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
+      refute_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "smart_contract_was_not_verified",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
+      refute_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "smart_contract_was_verified",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
 
       Application.put_env(:block_scout_web, :chain_id, old_chain_id)
       Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_interval_env)
