@@ -3091,6 +3091,7 @@ msgid "Transaction type, introduced in EIP-2718."
 msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:7
+#: lib/block_scout_web/templates/address/_tile.html.eex:31
 #: lib/block_scout_web/templates/address/overview.html.eex:186
 #: lib/block_scout_web/templates/address/overview.html.eex:192
 #: lib/block_scout_web/templates/address/overview.html.eex:200
@@ -3107,11 +3108,6 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:101
 #, elixir-autogen, elixir-format
 msgid "Transactions and address of creation."
-msgstr ""
-
-#: lib/block_scout_web/templates/address/_tile.html.eex:31
-#, elixir-autogen, elixir-format
-msgid "Transactions sent"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:213

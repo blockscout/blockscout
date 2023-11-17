@@ -68,7 +68,6 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Block.{EmissionReward, Reward}
 
   alias Explorer.Chain.Cache.{
-    Accounts,
     BlockNumber,
     Blocks,
     ContractsCounter,
@@ -1987,64 +1986,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Lists the top `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance and address hash.
-
-  """
-  @spec list_top_addresses :: [{Address.t(), non_neg_integer()}]
-  def list_top_addresses(options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    if is_nil(paging_options.key) do
-      paging_options.page_size
-      |> Accounts.take_enough()
-      |> case do
-        nil ->
-          get_addresses(options)
-
-        accounts ->
-          Enum.map(
-            accounts,
-            &{&1,
-             if is_nil(&1.nonce) do
-               0
-             else
-               &1.nonce + 1
-             end}
-          )
-      end
-    else
-      fetch_top_addresses(options)
-    end
-  end
-
-  defp get_addresses(options) do
-    accounts_with_n = fetch_top_addresses(options)
-
-    accounts_with_n
-    |> Enum.map(fn {address, _n} -> address end)
-    |> Accounts.update()
-
-    accounts_with_n
-  end
-
-  defp fetch_top_addresses(options) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    base_query =
-      from(a in Address,
-        where: a.fetched_coin_balance > ^0,
-        order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-        preload: [:names, :smart_contract],
-        select: {a, fragment("coalesce(1 + ?, 0)", a.nonce)}
-      )
-
-    base_query
-    |> page_addresses(paging_options)
-    |> limit(^paging_options.page_size)
-    |> select_repo(options).all()
-  end
-
-  @doc """
   Lists the top `t:Explorer.Chain.Token.t/0`'s'.
 
   """
@@ -3687,16 +3628,6 @@ defmodule Explorer.Chain do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
     end)
-  end
-
-  defp page_addresses(query, %PagingOptions{key: nil}), do: query
-
-  defp page_addresses(query, %PagingOptions{key: {coin_balance, hash}}) do
-    from(address in query,
-      where:
-        (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
-          address.fetched_coin_balance < ^coin_balance
-    )
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
