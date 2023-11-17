@@ -22,7 +22,6 @@
 
       <div id="recaptcha" class=mb-3></div>
       <button
-        <%= if Application.get_env(:block_scout_web, :recaptcha)[:v2_client_key], do: "disabled", else: "" %>
         id="export-csv-button"
         class="button button-primary"
         style="padding: 10px 25px;"
