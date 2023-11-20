@@ -1,11 +1,11 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: Pre-release main
 
 on:
+  workflow_dispatch:
+    inputs:
+      number:
+        type: number
+        required: true
   release:
     types: [published]
 
@@ -46,7 +46,7 @@ jobs:
           push: true
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
           cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha
+          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha${{ inputs.number }}
           platforms: |
             linux/amd64
             linux/arm64/v8
