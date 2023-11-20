@@ -3,9 +3,10 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Publish Docker image for specific chain branches
+name: ETH Publish Docker image
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - production-eth-stg-experimental
