@@ -18,7 +18,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.3.1
+      RELEASE_VERSION: 5.3.2
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -46,7 +46,7 @@ jobs:
           push: true
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
           cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}
+          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha
           platforms: |
             linux/amd64
             linux/arm64/v8

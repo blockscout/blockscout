@@ -4,6 +4,14 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+## 5.3.2-beta
+
+### Features
+
 - [#8848](https://github.com/blockscout/blockscout/pull/8848) - Add MainPageRealtimeEventHandler
 - [#8821](https://github.com/blockscout/blockscout/pull/8821) - Add new events to addresses channel: `eth_bytecode_db_lookup_started` and `smart_contract_was_not_verified`
 - [#8795](https://github.com/blockscout/blockscout/pull/8795) - Disable catchup indexer by env
@@ -37,6 +45,26 @@
 
 <details>
   <summary>Dependencies version bumps</summary>
+
+- [#8727](https://github.com/blockscout/blockscout/pull/8727) - Bump browserify-sign from 4.2.1 to 4.2.2 in /apps/block_scout_web/assets
+- [#8748](https://github.com/blockscout/blockscout/pull/8748) - Bump sweetalert2 from 11.7.32 to 11.9.0 in /apps/block_scout_web/assets
+- [#8747](https://github.com/blockscout/blockscout/pull/8747) - Bump core-js from 3.33.1 to 3.33.2 in /apps/block_scout_web/assets
+- [#8743](https://github.com/blockscout/blockscout/pull/8743) - Bump solc from 0.8.21 to 0.8.22 in /apps/explorer
+- [#8745](https://github.com/blockscout/blockscout/pull/8745) - Bump tesla from 1.7.0 to 1.8.0
+- [#8749](https://github.com/blockscout/blockscout/pull/8749) - Bump sass from 1.69.4 to 1.69.5 in /apps/block_scout_web/assets
+- [#8744](https://github.com/blockscout/blockscout/pull/8744) - Bump phoenix_ecto from 4.4.2 to 4.4.3
+- [#8746](https://github.com/blockscout/blockscout/pull/8746) - Bump floki from 0.35.1 to 0.35.2
+- [#8793](https://github.com/blockscout/blockscout/pull/8793) - Bump eslint from 8.52.0 to 8.53.0 in /apps/block_scout_web/assets
+- [#8792](https://github.com/blockscout/blockscout/pull/8792) - Bump cldr_utils from 2.24.1 to 2.24.2
+- [#8787](https://github.com/blockscout/blockscout/pull/8787) - Bump ex_cldr_numbers from 2.32.2 to 2.32.3
+- [#8790](https://github.com/blockscout/blockscout/pull/8790) - Bump ex_abi from 0.6.3 to 0.6.4
+- [#8788](https://github.com/blockscout/blockscout/pull/8788) - Bump ex_cldr_units from 3.16.3 to 3.16.4
+- [#8827](https://github.com/blockscout/blockscout/pull/8827) - Bump @babel/core from 7.23.2 to 7.23.3 in /apps/block_scout_web/assets
+- [#8823](https://github.com/blockscout/blockscout/pull/8823) - Bump benchee from 1.1.0 to 1.2.0
+- [#8826](https://github.com/blockscout/blockscout/pull/8826) - Bump luxon from 3.4.3 to 3.4.4 in /apps/block_scout_web/assets
+- [#8824](https://github.com/blockscout/blockscout/pull/8824) - Bump httpoison from 2.1.0 to 2.2.0
+- [#8828](https://github.com/blockscout/blockscout/pull/8828) - Bump @babel/preset-env from 7.23.2 to 7.23.3 in /apps/block_scout_web/assets
+- [#8825](https://github.com/blockscout/blockscout/pull/8825) - Bump solc from 0.8.22 to 0.8.23 in /apps/explorer
 </details>
 
 ## 5.3.1-beta
