@@ -6,7 +6,6 @@
 name: Release additional
 
 on:
-  workflow_dispatch:
   release:
     types: [published]
 

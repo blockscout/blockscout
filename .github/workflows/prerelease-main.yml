@@ -6,8 +6,6 @@ on:
       number:
         type: number
         required: true
-  release:
-    types: [published]
 
 env:
   OTP_VERSION: '25.2.1'
@@ -46,7 +44,7 @@ jobs:
           push: true
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
           cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha${{ inputs.number }}
+          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
           platforms: |
             linux/amd64
             linux/arm64/v8
