@@ -11,6 +11,14 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
+                  |> (&(case Application.compile_env(:explorer, :chain_type) do
+                          "rsk" ->
+                            &1 ++
+                              ~w(minimum_gas_price bitcoin_merged_mining_header bitcoin_merged_mining_coinbase_transaction bitcoin_merged_mining_merkle_proof hash_for_merged_mining)a
+
+                          _ ->
+                            &1
+                        end)).()
 
   @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
@@ -25,6 +33,20 @@ defmodule Explorer.Chain.Block do
   Number of the block in the chain.
   """
   @type block_number :: non_neg_integer()
+
+  if Application.compile_env(:explorer, :chain_type) == "rsk" do
+    @rootstock_fields quote(
+                        do: [
+                          bitcoin_merged_mining_header: binary(),
+                          bitcoin_merged_mining_coinbase_transaction: binary(),
+                          bitcoin_merged_mining_merkle_proof: binary(),
+                          hash_for_merged_mining: binary(),
+                          minimum_gas_price: Decimal.t()
+                        ]
+                      )
+  else
+    @rootstock_fields quote(do: [])
+  end
 
   @typedoc """
    * `consensus`
@@ -47,8 +69,18 @@ defmodule Explorer.Chain.Block do
    * `total_difficulty` - the total `difficulty` of the chain until this block.
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
    * `base_fee_per_gas` - Minimum fee required per unit of gas. Fee adjusts based on network congestion.
+  #{if Application.compile_env(:explorer, :chain_type) == "rsk" do
+    """
+     * `bitcoin_merged_mining_header` - Bitcoin merged mining header on Rootstock chains.
+     * `bitcoin_merged_mining_coinbase_transaction` - Bitcoin merged mining coinbase transaction on Rootstock chains.
+     * `bitcoin_merged_mining_merkle_proof` - Bitcoin merged mining merkle proof on Rootstock chains.
+     * `hash_for_merged_mining` - Hash for merged mining on Rootstock chains.
+     * `minimum_gas_price` - Minimum block gas price on Rootstock chains.
+    """
+  end}
   """
   @type t :: %__MODULE__{
+          unquote_splicing(@rootstock_fields),
           consensus: boolean(),
           difficulty: difficulty(),
           gas_limit: Gas.t(),
@@ -82,6 +114,14 @@ defmodule Explorer.Chain.Block do
     field(:refetch_needed, :boolean)
     field(:base_fee_per_gas, Wei)
     field(:is_empty, :boolean)
+
+    if Application.compile_env(:explorer, :chain_type) == "rsk" do
+      field(:bitcoin_merged_mining_header, :binary)
+      field(:bitcoin_merged_mining_coinbase_transaction, :binary)
+      field(:bitcoin_merged_mining_merkle_proof, :binary)
+      field(:hash_for_merged_mining, :binary)
+      field(:minimum_gas_price, :decimal)
+    end
 
     timestamps()
 
@@ -159,4 +199,24 @@ defmodule Explorer.Chain.Block do
   end
 
   def block_type_filter(query, "Uncle"), do: where(query, [block], block.consensus == false)
+
+  @doc """
+  Returns query that fetches up to `limit` of consensus blocks
+  that are missing rootstock data ordered by number desc.
+  """
+  @spec blocks_without_rootstock_data_query(non_neg_integer()) :: Ecto.Query.t()
+  def blocks_without_rootstock_data_query(limit) do
+    from(
+      block in __MODULE__,
+      where:
+        is_nil(block.minimum_gas_price) or
+          is_nil(block.bitcoin_merged_mining_header) or
+          is_nil(block.bitcoin_merged_mining_coinbase_transaction) or
+          is_nil(block.bitcoin_merged_mining_merkle_proof) or
+          is_nil(block.hash_for_merged_mining),
+      where: block.consensus == true,
+      limit: ^limit,
+      order_by: [desc: block.number]
+    )
+  end
 end

@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   def methods_read(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         smart_contract <- Chain.address_hash_to_smart_contract(address_hash, @api_true),
+         smart_contract <- SmartContract.address_hash_to_smart_contract(address_hash, @api_true),
          {:not_found, false} <- {:not_found, is_nil(smart_contract)} do
       read_only_functions_from_abi = Reader.read_only_functions(smart_contract, address_hash, params["from"])
 
@@ -90,7 +90,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
            {:contract_interaction_disabled, AddressView.contract_interaction_disabled?()},
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         smart_contract <- Chain.address_hash_to_smart_contract(address_hash, @api_true),
+         smart_contract <- SmartContract.address_hash_to_smart_contract(address_hash, @api_true),
          {:not_found, false} <- {:not_found, is_nil(smart_contract)} do
       conn
       |> put_status(200)

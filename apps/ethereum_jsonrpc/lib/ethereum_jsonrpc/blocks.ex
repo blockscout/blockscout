@@ -116,7 +116,17 @@ defmodule EthereumJSONRPC.Blocks do
           timestamp: Timex.parse!("1970-01-01T00:00:00Z", "{ISO:Extended:Z}"),
           total_difficulty: 131072,
           transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-          uncles: ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"],
+          uncles: ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"],\
+  #{if Application.compile_env(:explorer, :chain_type) == "rsk" do
+    """
+
+            bitcoin_merged_mining_coinbase_transaction: nil,
+            bitcoin_merged_mining_header: nil,
+            bitcoin_merged_mining_merkle_proof: nil,
+            hash_for_merged_mining: nil,
+            minimum_gas_price: nil,\
+    """
+  end}
           withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
         }
       ]

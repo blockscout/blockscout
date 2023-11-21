@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ConnCase
+  use EthereumJSONRPC.Case, async: false
 
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.{Chain, Repo}
@@ -23,6 +24,11 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   alias Explorer.Chain.Address.CurrentTokenBalance
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
+  import Mox
+
+  setup :set_mox_global
+
+  setup :verify_on_exit!
 
   describe "/addresses/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -45,7 +51,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       correct_response = %{
         "hash" => Address.checksum(address.hash),
         "is_contract" => false,
-        "is_verified" => false,
+        "is_verified" => nil,
         "name" => nil,
         "private_tags" => [],
         "public_tags" => [],
@@ -78,6 +84,47 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{String.downcase(to_string(address.hash))}")
       assert ^correct_response = json_response(request, 200)
+    end
+
+    test "get contract info", %{conn: conn} do
+      smart_contract = insert(:smart_contract)
+
+      tx =
+        insert(:transaction,
+          to_address_hash: nil,
+          to_address: nil,
+          created_contract_address_hash: smart_contract.address_hash,
+          created_contract_address: smart_contract.address
+        )
+
+      insert(:address_name,
+        address: smart_contract.address,
+        primary: true,
+        name: smart_contract.name,
+        address_hash: smart_contract.address_hash
+      )
+
+      name = smart_contract.name
+      from = Address.checksum(tx.from_address_hash)
+      tx_hash = to_string(tx.hash)
+      address_hash = Address.checksum(smart_contract.address_hash)
+
+      get_eip1967_implementation_non_zero_address()
+
+      request = get(conn, "/api/v2/addresses/#{Address.checksum(smart_contract.address_hash)}")
+
+      assert %{
+               "hash" => ^address_hash,
+               "is_contract" => true,
+               "is_verified" => true,
+               "name" => ^name,
+               "private_tags" => [],
+               "public_tags" => [],
+               "watchlist_names" => [],
+               "creator_address_hash" => ^from,
+               "creation_tx_hash" => ^tx_hash,
+               "implementation_address" => "0x0000000000000000000000000000000000000001"
+             } = json_response(request, 200)
     end
 
     test "get watchlist id", %{conn: conn} do
@@ -1822,7 +1869,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
 
     test "check nil", %{conn: conn} do
-      address = insert(:address, nonce: 1, fetched_coin_balance: 1)
+      address = insert(:address, transactions_count: 2, fetched_coin_balance: 1)
 
       request = get(conn, "/api/v2/addresses")
 
@@ -2591,7 +2638,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   defp compare_item(%Address{} = address, json) do
     assert Address.checksum(address.hash) == json["hash"]
-    assert to_string(address.nonce + 1) == json["tx_count"]
+    assert to_string(address.transactions_count) == json["tx_count"]
   end
 
   defp compare_item(%Transaction{} = transaction, json) do
@@ -2783,4 +2830,43 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   end
 
   def check_total(_, _, _), do: true
+
+  def get_eip1967_implementation_non_zero_address do
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                id: 0,
+                                                method: "eth_getStorageAt",
+                                                params: [
+                                                  _,
+                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                  "latest"
+                                                ]
+                                              },
+                                              _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000001"}
+    end)
+  end
 end

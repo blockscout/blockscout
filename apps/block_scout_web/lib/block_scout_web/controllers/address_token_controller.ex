@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.AddressTokenController do
       {tokens, next_page} = split_list_by_page(token_balances_plus_one)
 
       next_page_path =
-        case next_page_params(next_page, tokens, params, &paging_params_with_fiat_value/1) do
+        case next_page_params(next_page, tokens, params, &BlockScoutWeb.Chain.paging_params_with_fiat_value/1) do
           nil ->
             nil
 

@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   alias Explorer.{Chain, CustomContractsHelper}
   alias Explorer.Chain.{Address, SmartContract, Token}
+  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.{Helper, Writer}
 
   alias BlockScoutWeb.{AccessHelper, CurrencyHelper, LayoutView}
@@ -53,11 +54,13 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   def smart_contract_with_read_only_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
 
-  def smart_contract_is_proxy?(%Token{contract_address: %Address{smart_contract: %SmartContract{} = smart_contract}}) do
-    SmartContract.proxy_contract?(smart_contract)
+  def token_smart_contract_is_proxy?(%Token{
+        contract_address: %Address{smart_contract: %SmartContract{} = smart_contract}
+      }) do
+    Proxy.proxy_contract?(smart_contract)
   end
 
-  def smart_contract_is_proxy?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
+  def token_smart_contract_is_proxy?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
 
   def smart_contract_with_write_functions?(%Token{
         contract_address: %Address{smart_contract: %SmartContract{}} = address

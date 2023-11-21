@@ -25,7 +25,8 @@ defmodule Explorer.Chain.Token.Instance do
           error: String.t(),
           owner_address_hash: Hash.Address.t(),
           owner_updated_at_block: Block.block_number(),
-          owner_updated_at_log_index: non_neg_integer()
+          owner_updated_at_log_index: non_neg_integer(),
+          current_token_balance: any()
         }
 
   @primary_key false

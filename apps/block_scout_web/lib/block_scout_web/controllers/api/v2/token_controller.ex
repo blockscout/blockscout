@@ -90,13 +90,14 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   def instances(
         conn,
-        %{"address_hash_param" => address_hash_string, "holder_address_hash" => holder_address_hash} = params
+        %{"address_hash_param" => address_hash_string, "holder_address_hash" => holder_address_hash_string} = params
       ) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
          {:not_found, false} <- {:not_found, Chain.is_erc_20_token?(token)},
-         {:format, {:ok, holder_address_hash}} <- {:format, Chain.string_to_address_hash(holder_address_hash)} do
+         {:format, {:ok, holder_address_hash}} <- {:format, Chain.string_to_address_hash(holder_address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(holder_address_hash_string, params) do
       holder_address = Repo.get_by(Address, hash: holder_address_hash)
 
       results_plus_one =

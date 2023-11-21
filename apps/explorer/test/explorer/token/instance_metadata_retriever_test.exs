@@ -1,4 +1,4 @@
-defmodule Explorer.Token.MetadataRetrieverTest do
+defmodule Explorer.Token.InstanceMetadataRetrieverTest do
   use EthereumJSONRPC.Case
 
   alias Indexer.Fetcher.TokenInstance.MetadataRetriever
@@ -342,7 +342,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
         {:error,
          "(3) execution reverted: Nonexistent token (0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000114e6f6e6578697374656e7420746f6b656e000000000000000000000000000000)"}
 
-      assert {:ok, %{error: "VM execution error"}} == MetadataRetriever.fetch_json(data)
+      assert {:error, "VM execution error"} == MetadataRetriever.fetch_json(data)
     end
 
     test "Process CIDv0 IPFS links" do

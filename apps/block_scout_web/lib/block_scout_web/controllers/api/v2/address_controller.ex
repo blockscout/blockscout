@@ -23,6 +23,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Token.Instance
   alias Explorer.Chain.Transaction
@@ -53,13 +54,16 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   @address_options [
     necessity_by_association: %{
-      :contracts_creation_internal_transaction => :optional,
       :names => :optional,
-      :smart_contract => :optional,
-      :token => :optional,
-      :contracts_creation_transaction => :optional
+      :token => :optional
     },
     api?: true
+  ]
+
+  @contract_address_preloads [
+    :smart_contract,
+    :contracts_creation_internal_transaction,
+    :contracts_creation_transaction
   ]
 
   @nft_necessity_by_association [
@@ -73,12 +77,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   def address(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with {:ok, _address_hash, address} <- validate_address(address_hash_string, params, @address_options) do
-      CoinBalanceOnDemand.trigger_fetch(address)
+    with {:ok, _address_hash, address} <- validate_address(address_hash_string, params, @address_options),
+         fully_preloaded_address <-
+           Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true) do
+      CoinBalanceOnDemand.trigger_fetch(fully_preloaded_address)
 
       conn
       |> put_status(200)
-      |> render(:address, %{address: address})
+      |> render(:address, %{address: fully_preloaded_address})
     end
   end
 
@@ -362,7 +368,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> next_page_params(
           tokens,
           delete_parameters_from_next_page_params(params),
-          &paging_params_with_fiat_value/1
+          &BlockScoutWeb.Chain.paging_params_with_fiat_value/1
         )
 
       conn
@@ -391,7 +397,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       params
       |> paging_options()
       |> Keyword.merge(@api_true)
-      |> Chain.list_top_addresses()
+      |> Address.list_top_addresses()
       |> split_list_by_page()
 
     next_page_params = next_page_params(next_page, addresses, params)
