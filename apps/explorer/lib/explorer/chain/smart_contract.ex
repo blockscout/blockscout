@@ -55,8 +55,6 @@ defmodule Explorer.Chain.SmartContract do
 
   @default_sorting [desc: :id]
 
-  @typep api? :: {:api?, true | false}
-
   @typedoc """
   The name of a parameter to a function or event.
   """

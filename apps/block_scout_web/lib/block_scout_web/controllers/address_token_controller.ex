@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.AddressTokenController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
-    only: [next_page_params: 4, paging_options: 1, split_list_by_page: 1, paging_params_with_fiat_value: 1]
+    only: [next_page_params: 4, paging_options: 1, split_list_by_page: 1]
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
