@@ -1363,7 +1363,8 @@ defmodule Explorer.EtherscanTest do
 
       options = %{
         start_block: second_block.number,
-        end_block: third_block.number
+        end_block: third_block.number,
+        page_size: 2
       }
 
       found_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options)

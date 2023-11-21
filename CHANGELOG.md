@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#8868](https://github.com/blockscout/blockscout/pull/8868) - Apply block filters before pagination in token transfers list query
+
 ### Chore
 
 ## 5.3.2-beta

@@ -464,6 +464,8 @@ defmodule Explorer.Etherscan do
 
     tt_specific_token_query =
       tt_query
+      |> where_token_transfers_start_block_match(options)
+      |> where_token_transfers_end_block_match(options)
       |> where_contract_address_match(contract_address_hash)
 
     wrapped_query =
@@ -501,8 +503,6 @@ defmodule Explorer.Etherscan do
       )
 
     wrapped_query
-    |> where_start_block_match(options)
-    |> where_end_block_match(options)
     |> Repo.replica().all()
   end
 
@@ -534,6 +534,18 @@ defmodule Explorer.Etherscan do
 
   defp where_contract_address_match(query, contract_address_hash) do
     where(query, [tt, _], tt.token_contract_address_hash == ^contract_address_hash)
+  end
+
+  defp where_token_transfers_start_block_match(query, %{start_block: nil}), do: query
+
+  defp where_token_transfers_start_block_match(query, %{start_block: start_block}) do
+    where(query, [tt, _], tt.block_number >= ^start_block)
+  end
+
+  defp where_token_transfers_end_block_match(query, %{end_block: nil}), do: query
+
+  defp where_token_transfers_end_block_match(query, %{end_block: end_block}) do
+    where(query, [tt, _], tt.block_number <= ^end_block)
   end
 
   defp offset(options), do: (options.page_number - 1) * options.page_size
