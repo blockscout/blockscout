@@ -23,6 +23,7 @@
 
 ### Fixes
 
+- [#8869](https://github.com/blockscout/blockscout/pull/8869) - Limit TokenBalance fetcher timeout
 - [#8855](https://github.com/blockscout/blockscout/pull/8855) - All transactions count at top addresses page
 - [#8836](https://github.com/blockscout/blockscout/pull/8836) - Safe token update
 - [#8814](https://github.com/blockscout/blockscout/pull/8814) - Improve performance for EOA addresses in `/api/v2/addresses/{address_hash}`
