@@ -31,6 +31,7 @@ defmodule Explorer.Chain.Transaction do
     Wei
   }
 
+  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.Transaction.{Fork, Status}
   alias Explorer.Chain.Zkevm.BatchTransaction
   alias Explorer.SmartContract.SigProviderInterface
@@ -792,7 +793,7 @@ defmodule Explorer.Chain.Transaction do
     if !is_nil(address_hash) && Map.has_key?(full_abi_acc, address_hash) do
       {full_abi_acc[address_hash], full_abi_acc}
     else
-      full_abi = Chain.combine_proxy_implementation_abi(smart_contract, options)
+      full_abi = Proxy.combine_proxy_implementation_abi(smart_contract, options)
 
       {full_abi, Map.put(full_abi_acc, address_hash, full_abi)}
     end

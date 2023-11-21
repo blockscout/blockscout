@@ -11,6 +11,8 @@ defmodule Explorer.ChainSpec.Geth.ImporterTest do
 
   setup :set_mox_global
 
+  setup :verify_on_exit!
+
   @geth_genesis "#{File.cwd!()}/test/support/fixture/chain_spec/qdai_genesis.json"
                 |> File.read!()
                 |> Jason.decode!()

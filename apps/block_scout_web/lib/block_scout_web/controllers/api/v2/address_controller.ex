@@ -383,7 +383,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       params
       |> paging_options()
       |> Keyword.merge(@api_true)
-      |> Chain.list_top_addresses()
+      |> Address.list_top_addresses()
       |> split_list_by_page()
 
     next_page_params = next_page_params(next_page, addresses, params)
