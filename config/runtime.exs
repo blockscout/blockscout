@@ -700,12 +700,10 @@ config :indexer, Indexer.Fetcher.Shibarium.L2,
   bone_withdraw: System.get_env("INDEXER_SHIBARIUM_L2_BONE_WITHDRAW_CONTRACT")
 
 config :indexer, Indexer.Fetcher.Shibarium.L1.Supervisor,
-  enabled:
-    System.get_env("CHAIN_TYPE", "ethereum") == "shibarium"
+  enabled: System.get_env("CHAIN_TYPE", "ethereum") == "shibarium"
 
 config :indexer, Indexer.Fetcher.Shibarium.L2.Supervisor,
-  enabled:
-    System.get_env("CHAIN_TYPE", "ethereum") == "shibarium"
+  enabled: System.get_env("CHAIN_TYPE", "ethereum") == "shibarium"
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 

@@ -137,7 +137,9 @@ defmodule Indexer.Supervisor do
          [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]},
         {Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(Indexer.Fetcher.Shibarium.L1.Supervisor, [[memory_monitor: memory_monitor]]),
-        configure(Indexer.Fetcher.Shibarium.L2.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.Shibarium.L2.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
         configure(TransactionBatch.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),

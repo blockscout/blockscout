@@ -10,13 +10,14 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
 
   import Ecto.Query
 
-  import EthereumJSONRPC, only: [
-    fetch_block_number_by_tag: 2,
-    integer_to_quantity: 1,
-    json_rpc: 2,
-    quantity_to_integer: 1,
-    request: 1
-  ]
+  import EthereumJSONRPC,
+    only: [
+      fetch_block_number_by_tag: 2,
+      integer_to_quantity: 1,
+      json_rpc: 2,
+      quantity_to_integer: 1,
+      request: 1
+    ]
 
   import Explorer.Helper, only: [decode_data: 2, parse_integer: 1]
 
@@ -26,7 +27,8 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   alias Explorer.Chain.Shibarium.Bridge
   alias Indexer.Helper
 
-  @eth_get_logs_range_size 1000
+  @burn_address "0x0000000000000000000000000000000000000000"
+  @eth_get_logs_range_size 100
   @fetcher_name :shibarium_bridge_l2
   @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
@@ -82,9 +84,11 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
-         {:child_chain_address_is_valid, true} <- {:child_chain_address_is_valid, Helper.is_address_correct?(env[:child_chain])},
+         {:child_chain_address_is_valid, true} <-
+           {:child_chain_address_is_valid, Helper.is_address_correct?(env[:child_chain])},
          {:weth_address_is_valid, true} <- {:weth_address_is_valid, Helper.is_address_correct?(env[:weth])},
-         {:bone_withdraw_address_is_valid, true} <- {:bone_withdraw_address_is_valid, Helper.is_address_correct?(env[:bone_withdraw])},
+         {:bone_withdraw_address_is_valid, true} <-
+           {:bone_withdraw_address_is_valid, Helper.is_address_correct?(env[:bone_withdraw])},
          start_block = parse_integer(env[:start_block]),
          false <- is_nil(start_block),
          true <- start_block > 0,
@@ -128,7 +132,9 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
         {:stop, :normal, state}
 
       {:error, error_data} ->
-        Logger.error("Cannot get last L2 transaction by its hash or latest block from RPC due to RPC error: #{inspect(error_data)}")
+        Logger.error(
+          "Cannot get last L2 transaction by its hash or latest block from RPC due to RPC error: #{inspect(error_data)}"
+        )
 
         {:stop, :normal, state}
 
@@ -168,7 +174,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       operations =
         {chunk_start, chunk_end}
         |> get_logs_all(child_chain, weth, bone_withdraw, json_rpc_named_arguments)
-        |> prepare_operations(weth, json_rpc_named_arguments)
+        |> prepare_operations(weth)
 
       {:ok, _} =
         Chain.import(%{
@@ -256,6 +262,13 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       |> String.trim_leading("0x")
       |> Base.decode16!(case: :mixed)
 
+    amount_or_id =
+      if is_nil(amount_or_id) and not Enum.empty?(erc1155_ids) do
+        0
+      else
+        amount_or_id
+      end
+
     operation_encoded =
       ABI.encode("(address,uint256,uint256[],uint256[],uint256)", [
         {
@@ -278,16 +291,13 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     repeated_call(&fetch_block_number_by_tag/2, [tag, json_rpc_named_arguments], error_message, retries)
   end
 
-  defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
+  defp get_blocks_by_range(chunk_start, chunk_end, json_rpc_named_arguments, retries) do
     request =
-      events
-      |> Enum.reduce(%{}, fn event, acc ->
-        Map.put(acc, event["blockNumber"], 0)
-      end)
-      |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
+      chunk_start..chunk_end
+      |> Stream.map(fn block_number -> %{number: block_number} end)
       |> Stream.with_index()
       |> Enum.into(%{}, fn {params, id} -> {id, params} end)
-      |> Blocks.requests(&ByNumber.request(&1, false, false))
+      |> Blocks.requests(&ByNumber.request(&1))
 
     error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
 
@@ -316,11 +326,13 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       get_logs(
         chunk_start,
         chunk_end,
-        [child_chain, weth, bone_withdraw],
+        [
+          weth,
+          bone_withdraw
+        ],
         [
           [
             @log_fee_transfer_event,
-            @token_deposited_event,
             @transfer_event,
             @withdraw_event
           ]
@@ -328,37 +340,8 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
         json_rpc_named_arguments
       )
 
-    {:ok, unknown_erc20_erc721_tokens_deposit_result} =
-      get_logs(
-        chunk_start,
-        chunk_end,
-        nil,
-        [
-          @transfer_event,
-          @empty_hash
-        ],
-        json_rpc_named_arguments
-      )
-
-    {:ok, unknown_erc1155_tokens_deposit_result} =
-      get_logs(
-        chunk_start,
-        chunk_end,
-        nil,
-        [
-          [@transfer_single_event, @transfer_batch_event],
-          nil,
-          @empty_hash
-        ],
-        json_rpc_named_arguments
-      )
-
-    # filter these Transfer* events by having TokenDeposited event (emitted by ChildChain contract) in the same transaction
-    tokens_deposit_result = Enum.filter(unknown_erc20_erc721_tokens_deposit_result ++ unknown_erc1155_tokens_deposit_result, fn event ->
-      Enum.any?(known_tokens_result, fn e ->
-        Enum.at(e["topics"], 0) == @token_deposited_event and String.downcase(e["address"]) == child_chain and e["transactionHash"] == event["transactionHash"]
-      end)
-    end)
+    {tokens_deposit_result, blocks} =
+      get_deposit_logs_from_receipts(chunk_start, chunk_end, child_chain, json_rpc_named_arguments)
 
     {:ok, unknown_erc20_erc721_tokens_withdraw_result} =
       get_logs(
@@ -388,13 +371,55 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       )
 
     # filter these Transfer* events by having LogFeeTransfer event (emitted by BoneWithdraw contract) in the same transaction
-    tokens_withdraw_result = Enum.filter(unknown_erc20_erc721_tokens_withdraw_result ++ unknown_erc1155_tokens_withdraw_result, fn event ->
-      Enum.any?(known_tokens_result, fn e ->
-        Enum.at(e["topics"], 0) == @log_fee_transfer_event and String.downcase(e["address"]) == bone_withdraw and e["transactionHash"] == event["transactionHash"]
+    tokens_withdraw_result =
+      Enum.filter(unknown_erc20_erc721_tokens_withdraw_result ++ unknown_erc1155_tokens_withdraw_result, fn event ->
+        Enum.any?(known_tokens_result, fn e ->
+          Enum.at(e["topics"], 0) == @log_fee_transfer_event and String.downcase(e["address"]) == bone_withdraw and
+            e["transactionHash"] == event["transactionHash"]
+        end)
       end)
-    end)
 
-    known_tokens_result ++ tokens_deposit_result ++ tokens_withdraw_result
+    # remove LogFeeTransfer event (and excess Transfer events) from the list
+    known_tokens_final_result =
+      Enum.filter(known_tokens_result, fn event ->
+        Enum.at(event["topics"], 0) != @log_fee_transfer_event and
+          (Enum.at(event["topics"], 0) != @transfer_event or Enum.at(event["topics"], 1) == @empty_hash or
+             Enum.at(event["topics"], 2) == @empty_hash)
+      end)
+
+    {known_tokens_final_result ++ tokens_deposit_result ++ tokens_withdraw_result, blocks}
+  end
+
+  defp get_deposit_logs_from_receipts(chunk_start, chunk_end, child_chain, json_rpc_named_arguments) do
+    blocks = get_blocks_by_range(chunk_start, chunk_end, json_rpc_named_arguments, 100_000_000)
+
+    logs =
+      blocks
+      |> Enum.reduce([], fn block, acc ->
+        hashes =
+          block
+          |> Map.get("transactions", [])
+          |> Enum.filter(fn t -> Map.get(t, "from") == @burn_address end)
+          |> Enum.map(fn t -> Map.get(t, "hash") end)
+
+        acc ++ hashes
+      end)
+      |> Enum.chunk_every(@eth_get_logs_range_size)
+      |> Enum.reduce([], fn hashes, acc ->
+        acc ++ get_receipt_logs(hashes, json_rpc_named_arguments, 100_000_000)
+      end)
+      |> Enum.filter(fn event ->
+        address = String.downcase(event["address"])
+        topic0 = Enum.at(event["topics"], 0)
+        topic1 = Enum.at(event["topics"], 1)
+        topic2 = Enum.at(event["topics"], 2)
+
+        (topic0 == @token_deposited_event and address == child_chain) or
+          (topic0 == @transfer_event and topic1 == @empty_hash) or
+          (Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and topic2 == @empty_hash)
+      end)
+
+    {logs, blocks}
   end
 
   defp get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, retries \\ 100_000_000) do
@@ -427,7 +452,13 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
         {[amount], deposit_count}
 
       topic0 == @transfer_event ->
-        {decode_data(event["data"], [{:uint, 256}]), 0}
+        indexed_token_id = Enum.at(event["topics"], 3)
+
+        if is_nil(indexed_token_id) do
+          {decode_data(event["data"], [{:uint, 256}]), 0}
+        else
+          {[quantity_to_integer(indexed_token_id)], 0}
+        end
 
       topic0 == @withdraw_event ->
         [amount, _arg3, _arg4] = decode_data(event["data"], [{:uint, 256}, {:uint, 256}, {:uint, 256}])
@@ -453,6 +484,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     end
   end
 
+  # credo:disable-for-next-line /Complexity/
   defp get_op_user(topic0, event) do
     cond do
       topic0 == @transfer_event and Enum.at(event["topics"], 2) == @empty_hash ->
@@ -464,15 +496,38 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       topic0 == @withdraw_event ->
         truncate_address_hash(Enum.at(event["topics"], 2))
 
-      Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and Enum.at(event["topics"], 3) == @empty_hash ->
+      Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and
+          Enum.at(event["topics"], 3) == @empty_hash ->
         truncate_address_hash(Enum.at(event["topics"], 2))
 
-      Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and Enum.at(event["topics"], 2) == @empty_hash ->
+      Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and
+          Enum.at(event["topics"], 2) == @empty_hash ->
         truncate_address_hash(Enum.at(event["topics"], 3))
 
       topic0 == @token_deposited_event ->
         truncate_address_hash(Enum.at(event["topics"], 3))
     end
+  end
+
+  defp get_receipt_logs(tx_hashes, json_rpc_named_arguments, retries) do
+    reqs =
+      tx_hashes
+      |> Enum.with_index()
+      |> Enum.map(fn {hash, id} ->
+        request(%{
+          id: id,
+          method: "eth_getTransactionReceipt",
+          params: [hash]
+        })
+      end)
+
+    error_message = &"eth_getTransactionReceipt failed. Error: #{inspect(&1)}"
+
+    {:ok, receipts} = repeated_call(&json_rpc/2, [reqs, json_rpc_named_arguments], error_message, retries)
+
+    receipts
+    |> Enum.map(fn receipt -> Map.get(receipt.result, "logs") end)
+    |> List.flatten()
   end
 
   defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
@@ -499,11 +554,8 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
 
     cond do
       topic0 == @withdraw_event -> true
-
       topic0 == @transfer_event and topic2 == @empty_hash -> true
-
       Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and topic3 == @empty_hash -> true
-
       true -> false
     end
   end
@@ -562,11 +614,9 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     |> Map.values()
   end
 
-  defp prepare_operations(events, weth, json_rpc_named_arguments) do
+  defp prepare_operations({events, blocks}, weth) do
     timestamps =
-      events
-      |> Enum.filter(&is_withdrawal(&1))
-      |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+      blocks
       |> Enum.reduce(%{}, fn block, acc ->
         block_number = quantity_to_integer(Map.get(block, "number"))
         {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))

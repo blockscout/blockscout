@@ -341,6 +341,13 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
       |> String.trim_leading("0x")
       |> Base.decode16!(case: :mixed)
 
+    amount_or_id =
+      if is_nil(amount_or_id) and not Enum.empty?(erc1155_ids) do
+        0
+      else
+        amount_or_id
+      end
+
     operation_encoded =
       ABI.encode("(address,uint256,uint256[],uint256[],uint256)", [
         {
@@ -564,9 +571,18 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
   defp get_op_amounts(topic0, event) do
     cond do
-      Enum.member?([@new_deposit_block_event], topic0) ->
+      topic0 == @new_deposit_block_event ->
         [amount_or_nft_id, deposit_block_id] = decode_data(event["data"], [{:uint, 256}, {:uint, 256}])
         {[amount_or_nft_id], deposit_block_id}
+
+      topic0 == @transfer_event ->
+        indexed_token_id = Enum.at(event["topics"], 3)
+
+        if is_nil(indexed_token_id) do
+          {decode_data(event["data"], [{:uint, 256}]), 0}
+        else
+          {[quantity_to_integer(indexed_token_id)], 0}
+        end
 
       Enum.member?(
         [
@@ -574,14 +590,13 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
           @locked_erc20_event,
           @locked_erc721_event,
           @withdraw_event,
-          @exited_ether_event,
-          @transfer_event
+          @exited_ether_event
         ],
         topic0
       ) ->
         {decode_data(event["data"], [{:uint, 256}]), 0}
 
-      Enum.member?([@locked_erc721_batch_event], topic0) ->
+      topic0 == @locked_erc721_batch_event ->
         [ids] = decode_data(event["data"], [{:array, {:uint, 256}}])
         {ids, 0}
 
