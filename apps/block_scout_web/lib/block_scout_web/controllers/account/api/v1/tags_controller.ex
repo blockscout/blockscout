@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Account.Api.V2.TagsController do
+defmodule BlockScoutWeb.Account.Api.V1.TagsController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
