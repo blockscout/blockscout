@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Account.Api.V2.EmailController do
+defmodule BlockScoutWeb.Account.Api.V1.EmailController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.Models.UserFromAuth

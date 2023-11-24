@@ -25,6 +25,7 @@
 
 ### Fixes
 
+- [#8869](https://github.com/blockscout/blockscout/pull/8869) - Limit TokenBalance fetcher timeout
 - [#8855](https://github.com/blockscout/blockscout/pull/8855) - All transactions count at top addresses page
 - [#8836](https://github.com/blockscout/blockscout/pull/8836) - Safe token update
 - [#8814](https://github.com/blockscout/blockscout/pull/8814) - Improve performance for EOA addresses in `/api/v2/addresses/{address_hash}`
@@ -38,7 +39,6 @@
 
 ### Chore
 
-- [#8843](https://github.com/blockscout/blockscout/pull/8843) - Remove /api/account/v1 path
 - [#8832](https://github.com/blockscout/blockscout/pull/8832) - Log more details in regards 413 error
 - [#8807](https://github.com/blockscout/blockscout/pull/8807) - Smart-contract proxy detection refactoring
 - [#8802](https://github.com/blockscout/blockscout/pull/8802) - Enable API v2 by default
