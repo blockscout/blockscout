@@ -340,39 +340,17 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
         json_rpc_named_arguments
       )
 
-    {tokens_deposit_result, blocks} =
-      get_deposit_logs_from_receipts(chunk_start, chunk_end, child_chain, json_rpc_named_arguments)
+    blocks = get_blocks_by_range(chunk_start, chunk_end, json_rpc_named_arguments, 100_000_000)
 
-    {:ok, unknown_erc20_erc721_tokens_withdraw_result} =
-      get_logs(
-        chunk_start,
-        chunk_end,
-        nil,
-        [
-          @transfer_event,
-          nil,
-          @empty_hash
-        ],
-        json_rpc_named_arguments
-      )
+    tokens_deposit_result =
+      blocks
+      |> get_deposit_logs_from_receipts(child_chain, json_rpc_named_arguments)
 
-    {:ok, unknown_erc1155_tokens_withdraw_result} =
-      get_logs(
-        chunk_start,
-        chunk_end,
-        nil,
-        [
-          [@transfer_single_event, @transfer_batch_event],
-          nil,
-          nil,
-          @empty_hash
-        ],
-        json_rpc_named_arguments
-      )
-
-    # filter these Transfer* events by having LogFeeTransfer event (emitted by BoneWithdraw contract) in the same transaction
     tokens_withdraw_result =
-      Enum.filter(unknown_erc20_erc721_tokens_withdraw_result ++ unknown_erc1155_tokens_withdraw_result, fn event ->
+      blocks
+      |> get_withdrawal_logs_from_receipts(weth, json_rpc_named_arguments)
+      |> Enum.filter(fn event ->
+        # filter withdrawal Transfer* events by having LogFeeTransfer event (emitted by BoneWithdraw contract) in the same transaction
         Enum.any?(known_tokens_result, fn e ->
           Enum.at(e["topics"], 0) == @log_fee_transfer_event and String.downcase(e["address"]) == bone_withdraw and
             e["transactionHash"] == event["transactionHash"]
@@ -384,42 +362,72 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       Enum.filter(known_tokens_result, fn event ->
         Enum.at(event["topics"], 0) != @log_fee_transfer_event and
           (Enum.at(event["topics"], 0) != @transfer_event or Enum.at(event["topics"], 1) == @empty_hash or
-             Enum.at(event["topics"], 2) == @empty_hash)
+             Enum.at(event["topics"], 2) == @empty_hash) and
+          (Enum.at(event["topics"], 0) != @transfer_event or Enum.at(event["topics"], 1) != @empty_hash or
+             String.downcase(event["address"]) != weth)
       end)
 
     {known_tokens_final_result ++ tokens_deposit_result ++ tokens_withdraw_result, blocks}
   end
 
-  defp get_deposit_logs_from_receipts(chunk_start, chunk_end, child_chain, json_rpc_named_arguments) do
-    blocks = get_blocks_by_range(chunk_start, chunk_end, json_rpc_named_arguments, 100_000_000)
+  defp get_deposit_logs_from_receipts(blocks, child_chain, json_rpc_named_arguments) do
+    blocks
+    |> Enum.reduce([], fn block, acc ->
+      hashes =
+        block
+        |> Map.get("transactions", [])
+        |> Enum.filter(fn t -> Map.get(t, "from") == @burn_address end)
+        |> Enum.map(fn t -> Map.get(t, "hash") end)
 
-    logs =
-      blocks
-      |> Enum.reduce([], fn block, acc ->
-        hashes =
-          block
-          |> Map.get("transactions", [])
-          |> Enum.filter(fn t -> Map.get(t, "from") == @burn_address end)
-          |> Enum.map(fn t -> Map.get(t, "hash") end)
+      acc ++ hashes
+    end)
+    |> Enum.chunk_every(@eth_get_logs_range_size)
+    |> Enum.reduce([], fn hashes, acc ->
+      acc ++ get_receipt_logs(hashes, json_rpc_named_arguments, 100_000_000)
+    end)
+    |> Enum.filter(fn event ->
+      address = String.downcase(event["address"])
+      topic0 = Enum.at(event["topics"], 0)
+      topic1 = Enum.at(event["topics"], 1)
+      topic2 = Enum.at(event["topics"], 2)
+      topic3 = Enum.at(event["topics"], 3)
 
-        acc ++ hashes
-      end)
-      |> Enum.chunk_every(@eth_get_logs_range_size)
-      |> Enum.reduce([], fn hashes, acc ->
-        acc ++ get_receipt_logs(hashes, json_rpc_named_arguments, 100_000_000)
-      end)
-      |> Enum.filter(fn event ->
-        address = String.downcase(event["address"])
-        topic0 = Enum.at(event["topics"], 0)
-        topic1 = Enum.at(event["topics"], 1)
-        topic2 = Enum.at(event["topics"], 2)
+      (topic0 == @token_deposited_event and address == child_chain) or
+        (topic0 == @transfer_event and topic1 == @empty_hash and topic2 != @empty_hash) or
+        (Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and topic2 == @empty_hash and
+           topic3 != @empty_hash)
+    end)
+  end
 
-        (topic0 == @token_deposited_event and address == child_chain) or
-          (topic0 == @transfer_event and topic1 == @empty_hash) or
-          (Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and topic2 == @empty_hash)
-      end)
+  defp get_withdrawal_logs_from_receipts(blocks, weth, json_rpc_named_arguments) do
+    blocks
+    |> Enum.reduce([], fn block, acc ->
+      hashes =
+        block
+        |> Map.get("transactions", [])
+        |> Enum.filter(fn t ->
+          # filter by `withdraw(uint256 amount)` signature
+          String.downcase(String.slice(Map.get(t, "input", ""), 0..9)) == "0x2e1a7d4d"
+        end)
+        |> Enum.map(fn t -> Map.get(t, "hash") end)
 
-    {logs, blocks}
+      acc ++ hashes
+    end)
+    |> Enum.chunk_every(@eth_get_logs_range_size)
+    |> Enum.reduce([], fn hashes, acc ->
+      acc ++ get_receipt_logs(hashes, json_rpc_named_arguments, 100_000_000)
+    end)
+    |> Enum.filter(fn event ->
+      address = String.downcase(event["address"])
+      topic0 = Enum.at(event["topics"], 0)
+      topic1 = Enum.at(event["topics"], 1)
+      topic2 = Enum.at(event["topics"], 2)
+      topic3 = Enum.at(event["topics"], 3)
+
+      (topic0 == @transfer_event and topic1 != @empty_hash and topic2 == @empty_hash and address != weth) or
+        (Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and topic2 != @empty_hash and
+           topic3 == @empty_hash)
+    end)
   end
 
   defp get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, retries \\ 100_000_000) do
@@ -471,11 +479,11 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
 
   defp get_op_erc1155_data(topic0, event) do
     cond do
-      Enum.member?([@transfer_single_event], topic0) ->
+      topic0 == @transfer_single_event ->
         [id, amount] = decode_data(event["data"], [{:uint, 256}, {:uint, 256}])
         {[id], [amount]}
 
-      Enum.member?([@transfer_batch_event], topic0) ->
+      topic0 == @transfer_batch_event ->
         [ids, amounts] = decode_data(event["data"], [{:array, {:uint, 256}}, {:array, {:uint, 256}}])
         {ids, amounts}
 
@@ -628,45 +636,50 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       topic0 = Enum.at(event["topics"], 0)
 
       user = get_op_user(topic0, event)
-      {amounts_or_ids, operation_id} = get_op_amounts(topic0, event)
-      {erc1155_ids, erc1155_amounts} = get_op_erc1155_data(topic0, event)
 
-      l2_block_number = quantity_to_integer(event["blockNumber"])
+      if user == @burn_address do
+        []
+      else
+        {amounts_or_ids, operation_id} = get_op_amounts(topic0, event)
+        {erc1155_ids, erc1155_amounts} = get_op_erc1155_data(topic0, event)
 
-      {operation_type, timestamp} =
-        if is_withdrawal(event) do
-          {"withdrawal", Map.get(timestamps, l2_block_number)}
-        else
-          {"deposit", nil}
-        end
+        l2_block_number = quantity_to_integer(event["blockNumber"])
 
-      token_type =
-        cond do
-          Enum.member?([@token_deposited_event, @withdraw_event], topic0) ->
-            "bone"
+        {operation_type, timestamp} =
+          if is_withdrawal(event) do
+            {"withdrawal", Map.get(timestamps, l2_block_number)}
+          else
+            {"deposit", nil}
+          end
 
-          Enum.member?([@transfer_event], topic0) and String.downcase(event["address"]) == weth ->
-            "eth"
+        token_type =
+          cond do
+            Enum.member?([@token_deposited_event, @withdraw_event], topic0) ->
+              "bone"
 
-          true ->
-            "other"
-        end
+            topic0 == @transfer_event and String.downcase(event["address"]) == weth ->
+              "eth"
 
-      Enum.map(amounts_or_ids, fn amount_or_id ->
-        %{
-          user: user,
-          amount_or_id: amount_or_id,
-          erc1155_ids: if(Enum.empty?(erc1155_ids), do: nil, else: erc1155_ids),
-          erc1155_amounts: if(Enum.empty?(erc1155_amounts), do: nil, else: erc1155_amounts),
-          l2_transaction_hash: event["transactionHash"],
-          l2_block_number: l2_block_number,
-          l1_transaction_hash: @empty_hash,
-          operation_hash: calc_operation_hash(user, amount_or_id, erc1155_ids, erc1155_amounts, operation_id),
-          operation_type: operation_type,
-          token_type: token_type,
-          timestamp: timestamp
-        }
-      end)
+            true ->
+              "other"
+          end
+
+        Enum.map(amounts_or_ids, fn amount_or_id ->
+          %{
+            user: user,
+            amount_or_id: amount_or_id,
+            erc1155_ids: if(Enum.empty?(erc1155_ids), do: nil, else: erc1155_ids),
+            erc1155_amounts: if(Enum.empty?(erc1155_amounts), do: nil, else: erc1155_amounts),
+            l2_transaction_hash: event["transactionHash"],
+            l2_block_number: l2_block_number,
+            l1_transaction_hash: @empty_hash,
+            operation_hash: calc_operation_hash(user, amount_or_id, erc1155_ids, erc1155_amounts, operation_id),
+            operation_type: operation_type,
+            token_type: token_type,
+            timestamp: timestamp
+          }
+        end)
+      end
     end)
     |> List.flatten()
   end
