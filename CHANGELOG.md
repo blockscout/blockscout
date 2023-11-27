@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#8891](https://github.com/blockscout/blockscout/pull/8891) - Fix average block time
+
 ### Chore
 
 ## 5.3.2-beta
