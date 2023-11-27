@@ -23,6 +23,8 @@ on:
     paths-ignore:
       - 'CHANGELOG.md'
       - '**/README.md'
+      - 'docker/*'
+      - 'docker-compose/*'
   pull_request:
     branches:
       - master
