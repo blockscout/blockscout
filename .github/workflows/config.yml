@@ -20,6 +20,9 @@ on:
       - production-zkevm-stg
       - production-zksync-stg
       - staging-l2
+    paths-ignore:
+      - 'CHANGELOG.md'
+      - '**/README.md'
   pull_request:
     branches:
       - master
