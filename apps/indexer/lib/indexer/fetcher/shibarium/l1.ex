@@ -95,10 +95,10 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
   @impl GenServer
   def handle_info(:wait_for_l2, state) do
-    if !is_nil(Process.whereis(Indexer.Fetcher.Shibarium.L2)) do
-      Process.send_after(self(), :wait_for_l2, 2000)
-    else
+    if is_nil(Process.whereis(Indexer.Fetcher.Shibarium.L2)) do
       Process.send(self(), :init_with_delay, [])
+    else
+      Process.send_after(self(), :wait_for_l2, 2000)
     end
 
     {:noreply, state}

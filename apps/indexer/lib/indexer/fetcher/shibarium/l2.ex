@@ -22,7 +22,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   import Explorer.Helper, only: [decode_data: 2, parse_integer: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
-  alias EthereumJSONRPC.Blocks
+  alias EthereumJSONRPC.{Blocks, Logs, Receipt}
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Shibarium.Bridge
   alias Indexer.Helper
@@ -172,7 +172,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L2")
 
       operations =
-        {chunk_start, chunk_end}
+        chunk_start..chunk_end
         |> get_logs_all(child_chain, weth, bone_withdraw, json_rpc_named_arguments)
         |> prepare_operations(weth)
 
@@ -291,9 +291,9 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     repeated_call(&fetch_block_number_by_tag/2, [tag, json_rpc_named_arguments], error_message, retries)
   end
 
-  defp get_blocks_by_range(chunk_start, chunk_end, json_rpc_named_arguments, retries) do
+  defp get_blocks_by_range(range, json_rpc_named_arguments, retries) do
     request =
-      chunk_start..chunk_end
+      range
       |> Stream.map(fn block_number -> %{number: block_number} end)
       |> Stream.with_index()
       |> Enum.into(%{}, fn {params, id} -> {id, params} end)
@@ -321,11 +321,15 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     |> Kernel.||({0, nil})
   end
 
-  defp get_logs_all({chunk_start, chunk_end}, child_chain, weth, bone_withdraw, json_rpc_named_arguments) do
-    {:ok, known_tokens_result} =
+  defp get_logs_all(block_range, child_chain, weth, bone_withdraw, json_rpc_named_arguments) do
+    blocks = get_blocks_by_range(block_range, json_rpc_named_arguments, 100_000_000)
+
+    from_block..to_block = block_range
+
+    {:ok, get_logs_result} =
       get_logs(
-        chunk_start,
-        chunk_end,
+        from_block,
+        to_block,
         [
           weth,
           bone_withdraw
@@ -340,7 +344,9 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
         json_rpc_named_arguments
       )
 
-    blocks = get_blocks_by_range(chunk_start, chunk_end, json_rpc_named_arguments, 100_000_000)
+    known_tokens_result =
+      get_logs_result
+      |> Logs.elixir_to_params()
 
     tokens_deposit_result =
       blocks
@@ -352,19 +358,19 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       |> Enum.filter(fn event ->
         # filter withdrawal Transfer* events by having LogFeeTransfer event (emitted by BoneWithdraw contract) in the same transaction
         Enum.any?(known_tokens_result, fn e ->
-          Enum.at(e["topics"], 0) == @log_fee_transfer_event and String.downcase(e["address"]) == bone_withdraw and
-            e["transactionHash"] == event["transactionHash"]
+          e.first_topic == @log_fee_transfer_event and String.downcase(e.address_hash) == bone_withdraw and
+            e.transaction_hash == event.transaction_hash
         end)
       end)
 
     # remove LogFeeTransfer event (and excess Transfer events) from the list
     known_tokens_final_result =
-      Enum.filter(known_tokens_result, fn event ->
-        Enum.at(event["topics"], 0) != @log_fee_transfer_event and
-          (Enum.at(event["topics"], 0) != @transfer_event or Enum.at(event["topics"], 1) == @empty_hash or
-             Enum.at(event["topics"], 2) == @empty_hash) and
-          (Enum.at(event["topics"], 0) != @transfer_event or Enum.at(event["topics"], 1) != @empty_hash or
-             String.downcase(event["address"]) != weth)
+      known_tokens_result
+      |> Enum.filter(fn event ->
+        event.first_topic != @log_fee_transfer_event and
+          (event.first_topic != @transfer_event or event.second_topic == @empty_hash or event.third_topic == @empty_hash) and
+          (event.first_topic != @transfer_event or event.second_topic != @empty_hash or
+             String.downcase(event.address_hash) != weth)
       end)
 
     {known_tokens_final_result ++ tokens_deposit_result ++ tokens_withdraw_result, blocks}
@@ -386,16 +392,12 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       acc ++ get_receipt_logs(hashes, json_rpc_named_arguments, 100_000_000)
     end)
     |> Enum.filter(fn event ->
-      address = String.downcase(event["address"])
-      topic0 = Enum.at(event["topics"], 0)
-      topic1 = Enum.at(event["topics"], 1)
-      topic2 = Enum.at(event["topics"], 2)
-      topic3 = Enum.at(event["topics"], 3)
+      address = String.downcase(event.address_hash)
 
-      (topic0 == @token_deposited_event and address == child_chain) or
-        (topic0 == @transfer_event and topic1 == @empty_hash and topic2 != @empty_hash) or
-        (Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and topic2 == @empty_hash and
-           topic3 != @empty_hash)
+      (event.first_topic == @token_deposited_event and address == child_chain) or
+        (event.first_topic == @transfer_event and event.second_topic == @empty_hash and event.third_topic != @empty_hash) or
+        (Enum.member?([@transfer_single_event, @transfer_batch_event], event.first_topic) and
+           event.third_topic == @empty_hash and event.fourth_topic != @empty_hash)
     end)
   end
 
@@ -418,15 +420,12 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       acc ++ get_receipt_logs(hashes, json_rpc_named_arguments, 100_000_000)
     end)
     |> Enum.filter(fn event ->
-      address = String.downcase(event["address"])
-      topic0 = Enum.at(event["topics"], 0)
-      topic1 = Enum.at(event["topics"], 1)
-      topic2 = Enum.at(event["topics"], 2)
-      topic3 = Enum.at(event["topics"], 3)
+      address = String.downcase(event.address_hash)
 
-      (topic0 == @transfer_event and topic1 != @empty_hash and topic2 == @empty_hash and address != weth) or
-        (Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and topic2 != @empty_hash and
-           topic3 == @empty_hash)
+      (event.first_topic == @transfer_event and event.second_topic != @empty_hash and event.third_topic == @empty_hash and
+         address != weth) or
+        (Enum.member?([@transfer_single_event, @transfer_batch_event], event.first_topic) and
+           event.third_topic != @empty_hash and event.fourth_topic == @empty_hash)
     end)
   end
 
@@ -453,23 +452,23 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
-  defp get_op_amounts(topic0, event) do
+  defp get_op_amounts(event) do
     cond do
-      topic0 == @token_deposited_event ->
-        [amount, deposit_count] = decode_data(event["data"], [{:uint, 256}, {:uint, 256}])
+      event.first_topic == @token_deposited_event ->
+        [amount, deposit_count] = decode_data(event.data, [{:uint, 256}, {:uint, 256}])
         {[amount], deposit_count}
 
-      topic0 == @transfer_event ->
-        indexed_token_id = Enum.at(event["topics"], 3)
+      event.first_topic == @transfer_event ->
+        indexed_token_id = event.fourth_topic
 
         if is_nil(indexed_token_id) do
-          {decode_data(event["data"], [{:uint, 256}]), 0}
+          {decode_data(event.data, [{:uint, 256}]), 0}
         else
           {[quantity_to_integer(indexed_token_id)], 0}
         end
 
-      topic0 == @withdraw_event ->
-        [amount, _arg3, _arg4] = decode_data(event["data"], [{:uint, 256}, {:uint, 256}, {:uint, 256}])
+      event.first_topic == @withdraw_event ->
+        [amount, _arg3, _arg4] = decode_data(event.data, [{:uint, 256}, {:uint, 256}, {:uint, 256}])
         {[amount], 0}
 
       true ->
@@ -477,14 +476,14 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     end
   end
 
-  defp get_op_erc1155_data(topic0, event) do
+  defp get_op_erc1155_data(event) do
     cond do
-      topic0 == @transfer_single_event ->
-        [id, amount] = decode_data(event["data"], [{:uint, 256}, {:uint, 256}])
+      event.first_topic == @transfer_single_event ->
+        [id, amount] = decode_data(event.data, [{:uint, 256}, {:uint, 256}])
         {[id], [amount]}
 
-      topic0 == @transfer_batch_event ->
-        [ids, amounts] = decode_data(event["data"], [{:array, {:uint, 256}}, {:array, {:uint, 256}}])
+      event.first_topic == @transfer_batch_event ->
+        [ids, amounts] = decode_data(event.data, [{:array, {:uint, 256}}, {:array, {:uint, 256}}])
         {ids, amounts}
 
       true ->
@@ -493,27 +492,27 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   end
 
   # credo:disable-for-next-line /Complexity/
-  defp get_op_user(topic0, event) do
+  defp get_op_user(event) do
     cond do
-      topic0 == @transfer_event and Enum.at(event["topics"], 2) == @empty_hash ->
-        truncate_address_hash(Enum.at(event["topics"], 1))
+      event.first_topic == @transfer_event and event.third_topic == @empty_hash ->
+        truncate_address_hash(event.second_topic)
 
-      topic0 == @transfer_event and Enum.at(event["topics"], 1) == @empty_hash ->
-        truncate_address_hash(Enum.at(event["topics"], 2))
+      event.first_topic == @transfer_event and event.second_topic == @empty_hash ->
+        truncate_address_hash(event.third_topic)
 
-      topic0 == @withdraw_event ->
-        truncate_address_hash(Enum.at(event["topics"], 2))
+      event.first_topic == @withdraw_event ->
+        truncate_address_hash(event.third_topic)
 
-      Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and
-          Enum.at(event["topics"], 3) == @empty_hash ->
-        truncate_address_hash(Enum.at(event["topics"], 2))
+      Enum.member?([@transfer_single_event, @transfer_batch_event], event.first_topic) and
+          event.fourth_topic == @empty_hash ->
+        truncate_address_hash(event.third_topic)
 
-      Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and
-          Enum.at(event["topics"], 2) == @empty_hash ->
-        truncate_address_hash(Enum.at(event["topics"], 3))
+      Enum.member?([@transfer_single_event, @transfer_batch_event], event.first_topic) and
+          event.third_topic == @empty_hash ->
+        truncate_address_hash(event.fourth_topic)
 
-      topic0 == @token_deposited_event ->
-        truncate_address_hash(Enum.at(event["topics"], 3))
+      event.first_topic == @token_deposited_event ->
+        truncate_address_hash(event.fourth_topic)
     end
   end
 
@@ -534,8 +533,9 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     {:ok, receipts} = repeated_call(&json_rpc/2, [reqs, json_rpc_named_arguments], error_message, retries)
 
     receipts
-    |> Enum.map(fn receipt -> Map.get(receipt.result, "logs") end)
+    |> Enum.map(&Receipt.elixir_to_logs(&1.result))
     |> List.flatten()
+    |> Logs.elixir_to_params()
   end
 
   defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
@@ -556,15 +556,19 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   end
 
   defp is_withdrawal(event) do
-    topic0 = Enum.at(event["topics"], 0)
-    topic2 = Enum.at(event["topics"], 2)
-    topic3 = Enum.at(event["topics"], 3)
-
     cond do
-      topic0 == @withdraw_event -> true
-      topic0 == @transfer_event and topic2 == @empty_hash -> true
-      Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) and topic3 == @empty_hash -> true
-      true -> false
+      event.first_topic == @withdraw_event ->
+        true
+
+      event.first_topic == @transfer_event and event.third_topic == @empty_hash ->
+        true
+
+      Enum.member?([@transfer_single_event, @transfer_batch_event], event.first_topic) and
+          event.fourth_topic == @empty_hash ->
+        true
+
+      true ->
+        false
     end
   end
 
@@ -622,6 +626,52 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     |> Map.values()
   end
 
+  defp prepare_operation(user, event, timestamps, weth) do
+    if user == @burn_address do
+      []
+    else
+      {amounts_or_ids, operation_id} = get_op_amounts(event)
+      {erc1155_ids, erc1155_amounts} = get_op_erc1155_data(event)
+
+      l2_block_number = quantity_to_integer(event.block_number)
+
+      {operation_type, timestamp} =
+        if is_withdrawal(event) do
+          {"withdrawal", Map.get(timestamps, l2_block_number)}
+        else
+          {"deposit", nil}
+        end
+
+      token_type =
+        cond do
+          Enum.member?([@token_deposited_event, @withdraw_event], event.first_topic) ->
+            "bone"
+
+          event.first_topic == @transfer_event and String.downcase(event.address_hash) == weth ->
+            "eth"
+
+          true ->
+            "other"
+        end
+
+      Enum.map(amounts_or_ids, fn amount_or_id ->
+        %{
+          user: user,
+          amount_or_id: amount_or_id,
+          erc1155_ids: if(Enum.empty?(erc1155_ids), do: nil, else: erc1155_ids),
+          erc1155_amounts: if(Enum.empty?(erc1155_amounts), do: nil, else: erc1155_amounts),
+          l2_transaction_hash: event.transaction_hash,
+          l2_block_number: l2_block_number,
+          l1_transaction_hash: @empty_hash,
+          operation_hash: calc_operation_hash(user, amount_or_id, erc1155_ids, erc1155_amounts, operation_id),
+          operation_type: operation_type,
+          token_type: token_type,
+          timestamp: timestamp
+        }
+      end)
+    end
+  end
+
   defp prepare_operations({events, blocks}, weth) do
     timestamps =
       blocks
@@ -633,53 +683,9 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
 
     events
     |> Enum.map(fn event ->
-      topic0 = Enum.at(event["topics"], 0)
-
-      user = get_op_user(topic0, event)
-
-      if user == @burn_address do
-        []
-      else
-        {amounts_or_ids, operation_id} = get_op_amounts(topic0, event)
-        {erc1155_ids, erc1155_amounts} = get_op_erc1155_data(topic0, event)
-
-        l2_block_number = quantity_to_integer(event["blockNumber"])
-
-        {operation_type, timestamp} =
-          if is_withdrawal(event) do
-            {"withdrawal", Map.get(timestamps, l2_block_number)}
-          else
-            {"deposit", nil}
-          end
-
-        token_type =
-          cond do
-            Enum.member?([@token_deposited_event, @withdraw_event], topic0) ->
-              "bone"
-
-            topic0 == @transfer_event and String.downcase(event["address"]) == weth ->
-              "eth"
-
-            true ->
-              "other"
-          end
-
-        Enum.map(amounts_or_ids, fn amount_or_id ->
-          %{
-            user: user,
-            amount_or_id: amount_or_id,
-            erc1155_ids: if(Enum.empty?(erc1155_ids), do: nil, else: erc1155_ids),
-            erc1155_amounts: if(Enum.empty?(erc1155_amounts), do: nil, else: erc1155_amounts),
-            l2_transaction_hash: event["transactionHash"],
-            l2_block_number: l2_block_number,
-            l1_transaction_hash: @empty_hash,
-            operation_hash: calc_operation_hash(user, amount_or_id, erc1155_ids, erc1155_amounts, operation_id),
-            operation_type: operation_type,
-            token_type: token_type,
-            timestamp: timestamp
-          }
-        end)
-      end
+      event
+      |> get_op_user()
+      |> prepare_operation(event, timestamps, weth)
     end)
     |> List.flatten()
   end
