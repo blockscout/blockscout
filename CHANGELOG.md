@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- [#8891](https://github.com/blockscout/blockscout/pull/8891) - Fix average block time
 - [#8882](https://github.com/blockscout/blockscout/pull/8882) - Change order of proxy contracts patterns detection: existing popular EIPs to the top of the list
 
 ### Chore
