@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Log do
 
   alias ABI.{Event, FunctionSelector}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Transaction}
+  alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Log, Transaction}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.SigProviderInterface
 
@@ -121,34 +121,55 @@ defmodule Explorer.Chain.Log do
   @doc """
   Decode transaction log data.
   """
-
+  @spec decode(Log.t(), Transaction.t(), any(), boolean, map(), map()) ::
+          {{:ok, String.t(), String.t(), map()}
+           | {:error, atom()}
+           | {:error, atom(), list()}
+           | {{:error, :contract_not_verified, list()}, any()}, map()}
   def decode(log, transaction, options, skip_sig_provider?, contracts_acc \\ %{}, events_acc \\ %{}) do
-    case check_cache(contracts_acc, log.address_hash, options) do
-      {nil, contracts_acc} ->
-        {result, events_acc} = find_candidates(log, transaction, options, events_acc)
-        {result, contracts_acc, events_acc}
+    with full_abi <- check_cache(contracts_acc, log.address_hash, options),
+         {:no_abi, false} <- {:no_abi, is_nil(full_abi)},
+         {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction.hash),
+         identifier <- Base.encode16(selector.method_id, case: :lower),
+         text <- function_call(selector.function, mapping) do
+      {{:ok, identifier, text, mapping}, events_acc}
+    else
+      {:error, _} = error ->
+        handle_method_decode_error(error, log, transaction, options, skip_sig_provider?, events_acc)
 
-      {full_abi, contracts_acc} ->
-        with {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction),
-             identifier <- Base.encode16(selector.method_id, case: :lower),
-             text <- function_call(selector.function, mapping) do
-          {{:ok, identifier, text, mapping}, contracts_acc, events_acc}
-        else
-          {:error, :could_not_decode} ->
-            case find_candidates(log, transaction, options, events_acc) do
-              {{:error, :contract_not_verified, []}, events_acc} ->
-                {decode_event_via_sig_provider(log, transaction, false, skip_sig_provider?), contracts_acc, events_acc}
+      {:no_abi, true} ->
+        handle_method_decode_error(
+          {:error, :could_not_decode},
+          log,
+          transaction,
+          options,
+          skip_sig_provider?,
+          events_acc
+        )
+    end
+  end
 
-              {{:error, :contract_not_verified, candidates}, events_acc} ->
-                {{:error, :contract_verified, candidates}, contracts_acc, events_acc}
+  defp handle_method_decode_error(error, log, transaction, options, skip_sig_provider?, events_acc) do
+    case error do
+      {:error, :could_not_decode} ->
+        case find_method_candidates(log, transaction, options, events_acc) do
+          {{:error, :contract_not_verified, []}, events_acc} ->
+            {decode_event_via_sig_provider(log, transaction, false, options, events_acc, skip_sig_provider?),
+             events_acc}
 
-              {_, events_acc} ->
-                {decode_event_via_sig_provider(log, transaction, false, skip_sig_provider?), contracts_acc, events_acc}
-            end
+          {{:error, :contract_not_verified, candidates}, events_acc} ->
+            {{:error, :contract_not_verified, candidates}, events_acc}
 
-          {:error, reason} ->
-            {{:error, reason}, contracts_acc, events_acc}
+          {_, events_acc} ->
+            {decode_event_via_sig_provider(log, transaction, false, options, events_acc, skip_sig_provider?),
+             events_acc}
         end
+
+      {:error, :no_matching_function} ->
+        {decode_event_via_sig_provider(log, transaction, false, options, events_acc, skip_sig_provider?), events_acc}
+
+      {:error, reason} ->
+        {{:error, reason}, events_acc}
     end
   end
 
@@ -162,49 +183,42 @@ defmodule Explorer.Chain.Log do
       |> Keyword.merge(options)
 
     if !is_nil(address_hash) && Map.has_key?(acc, address_hash) do
-      {acc[address_hash], acc}
+      acc[address_hash]
     else
       case Chain.find_contract_address(address_hash, address_options, false) do
         {:ok, %{smart_contract: smart_contract}} ->
-          full_abi = Proxy.combine_proxy_implementation_abi(smart_contract, options)
-          {full_abi, Map.put(acc, address_hash, full_abi)}
+          Proxy.combine_proxy_implementation_abi(smart_contract, options)
 
         _ ->
-          {nil, Map.put(acc, address_hash, nil)}
+          nil
       end
     end
   end
 
-  defp find_candidates(log, transaction, options, events_acc) do
-    case log.first_topic do
-      "0x" <> hex_part ->
-        case Integer.parse(hex_part, 16) do
-          {number, ""} ->
-            <<method_id::binary-size(4), _rest::binary>> = :binary.encode_unsigned(number)
-            check_events_cache(events_acc, method_id, log, transaction, options)
+  defp find_method_candidates(log, transaction, options, events_acc) do
+    with "0x" <> hex_part <- log.first_topic,
+         {number, ""} <- Integer.parse(hex_part, 16) do
+      <<method_id::binary-size(4), _rest::binary>> = :binary.encode_unsigned(number)
 
-          _ ->
-            {{:error, :could_not_decode}, events_acc}
-        end
-
-      _ ->
-        {{:error, :could_not_decode}, events_acc}
+      if Map.has_key?(events_acc, method_id) do
+        {events_acc[method_id], events_acc}
+      else
+        result = find_method_candidates_from_db(method_id, log, transaction, options, events_acc)
+        {result, Map.put(events_acc, method_id, result)}
+      end
+    else
+      _ -> {{:error, :could_not_decode}, events_acc}
     end
   end
 
-  defp find_candidates_query(method_id, log, transaction, options) do
-    candidates_query =
-      from(
-        contract_method in ContractMethod,
-        where: contract_method.identifier == ^method_id,
-        limit: 3
-      )
+  defp find_method_candidates_from_db(method_id, log, transaction, options, events_acc) do
+    candidates_query = ContractMethod.find_contract_method_query(method_id, 3)
 
     candidates =
       candidates_query
       |> Chain.select_repo(options).all()
       |> Enum.flat_map(fn contract_method ->
-        case find_and_decode([contract_method.abi], log, transaction) do
+        case find_and_decode([contract_method.abi], log, transaction.hash) do
           {:ok, selector, mapping} ->
             identifier = Base.encode16(selector.method_id, case: :lower)
             text = function_call(selector.function, mapping)
@@ -218,21 +232,15 @@ defmodule Explorer.Chain.Log do
       |> Enum.take(1)
 
     {:error, :contract_not_verified,
-     if(candidates == [], do: decode_event_via_sig_provider(log, transaction, true), else: candidates)}
+     if(candidates == [],
+       do: decode_event_via_sig_provider(log, transaction, true, options, events_acc),
+       else: candidates
+     )}
   end
 
-  defp check_events_cache(events_acc, method_id, log, transaction, options) do
-    if Map.has_key?(events_acc, method_id) do
-      {events_acc[method_id], events_acc}
-    else
-      result = find_candidates_query(method_id, log, transaction, options)
-      {result, Map.put(events_acc, method_id, result)}
-    end
-  end
-
-  @spec find_and_decode([map()], __MODULE__.t(), Transaction.t()) ::
+  @spec find_and_decode([map()], __MODULE__.t(), Hash.t()) ::
           {:error, any} | {:ok, ABI.FunctionSelector.t(), any}
-  def find_and_decode(abi, log, transaction) do
+  def find_and_decode(abi, log, transaction_hash) do
     with {%FunctionSelector{} = selector, mapping} <-
            abi
            |> ABI.parse_specification(include_events?: true)
@@ -249,8 +257,8 @@ defmodule Explorer.Chain.Log do
     e ->
       Logger.warn(fn ->
         [
-          "Could not decode input data for log from transaction: ",
-          Hash.to_iodata(transaction.hash),
+          "Could not decode input data for log from transaction hash: ",
+          Hash.to_iodata(transaction_hash),
           Exception.format(:error, e, __STACKTRACE__)
         ]
       end)
@@ -262,12 +270,7 @@ defmodule Explorer.Chain.Log do
     text =
       mapping
       |> Stream.map(fn {name, type, indexed?, _value} ->
-        indexed_keyword =
-          if indexed? do
-            ["indexed "]
-          else
-            []
-          end
+        indexed_keyword = if indexed?, do: ["indexed "], else: []
 
         [type, " ", indexed_keyword, name]
       end)
@@ -276,7 +279,14 @@ defmodule Explorer.Chain.Log do
     IO.iodata_to_binary([name, "(", text, ")"])
   end
 
-  defp decode_event_via_sig_provider(log, transaction, only_candidates?, skip_sig_provider? \\ false) do
+  defp decode_event_via_sig_provider(
+         log,
+         transaction,
+         only_candidates?,
+         options,
+         events_acc,
+         skip_sig_provider? \\ false
+       ) do
     with true <- SigProviderInterface.enabled?(),
          false <- skip_sig_provider?,
          {:ok, result} <-
@@ -292,7 +302,7 @@ defmodule Explorer.Chain.Log do
          true <- is_list(result),
          false <- Enum.empty?(result),
          abi <- [result |> List.first() |> Map.put("type", "event")],
-         {:ok, selector, mapping} <- find_and_decode(abi, log, transaction),
+         {:ok, selector, mapping} <- find_and_decode(abi, log, transaction.hash),
          identifier <- Base.encode16(selector.method_id, case: :lower),
          text <- function_call(selector.function, mapping) do
       if only_candidates? do
@@ -305,7 +315,16 @@ defmodule Explorer.Chain.Log do
         if only_candidates? do
           []
         else
-          {:error, :could_not_decode}
+          case find_method_candidates(log, transaction, options, events_acc) do
+            {{:error, :contract_not_verified, []}, _} ->
+              {:error, :could_not_decode}
+
+            {{:error, :contract_not_verified, candidates}, _} ->
+              {:error, :contract_not_verified, candidates}
+
+            {_, _} ->
+              {:error, :could_not_decode}
+          end
         end
     end
   end

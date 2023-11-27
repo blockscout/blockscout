@@ -498,7 +498,7 @@ defmodule BlockScoutWeb.AddressView do
   def contract_interaction_disabled?, do: Application.get_env(:block_scout_web, :contract)[:disable_interaction]
 
   def decode(log, transaction) do
-    {result, _contracts_acc, _events_acc} = Log.decode(log, transaction, [], true)
+    {result, _events_acc} = Log.decode(log, transaction, [], true)
     result
   end
 end

@@ -60,7 +60,7 @@ defmodule Explorer.Chain.LogTest do
 
       log = insert(:log, transaction: transaction)
 
-      assert {{:error, :could_not_decode}, _, _} = Log.decode(log, transaction, [], false)
+      assert {{:error, :could_not_decode}, _} = Log.decode(log, transaction, [], false)
     end
 
     test "that a contract call transaction that has a verified contract returns the decoded input data" do
@@ -116,7 +116,7 @@ defmodule Explorer.Chain.LogTest do
                      152, 206, 227, 92, 181, 213, 23, 242, 210, 150, 162>>}},
                  {"_number", "uint256", false, 0},
                  {"_belly", "bool", true, true}
-               ]}, _, _} = Log.decode(log, transaction, [], false)
+               ]}, _} = Log.decode(log, transaction, [], false)
     end
 
     test "finds decoding candidates" do
@@ -171,7 +171,7 @@ defmodule Explorer.Chain.LogTest do
                     {"_number", "uint256", false, 0},
                     {"_belly", "bool", true, true}
                   ]}
-               ]}, _, _} = Log.decode(log, transaction, [], false)
+               ]}, _} = Log.decode(log, transaction, [], false)
     end
   end
 

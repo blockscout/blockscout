@@ -774,12 +774,7 @@ defmodule Explorer.Chain.Transaction do
     if Map.has_key?(methods_acc, method_id) do
       {methods_acc[method_id], methods_acc}
     else
-      candidates_query =
-        from(
-          contract_method in ContractMethod,
-          where: contract_method.identifier == ^method_id,
-          limit: 1
-        )
+      candidates_query = ContractMethod.find_contract_method_query(method_id, 1)
 
       result =
         candidates_query
@@ -1181,7 +1176,7 @@ defmodule Explorer.Chain.Transaction do
       Enum.map_reduce(transactions, %{}, fn transaction, tokens_acc ->
         case Log.fetch_log_by_tx_hash_and_first_topic(transaction.hash, @transaction_fee_event_signature, @api_true) do
           fee_log when not is_nil(fee_log) ->
-            {:ok, _selector, mapping} = Log.find_and_decode(@transaction_fee_event_abi, fee_log, transaction)
+            {:ok, _selector, mapping} = Log.find_and_decode(@transaction_fee_event_abi, fee_log, transaction.hash)
 
             [{"token", "address", false, token_address_hash}, _, _, _, _, _] = mapping
 
