@@ -1,6 +1,6 @@
-defmodule Explorer.Counters.BlockBurnedFeeCounter do
+defmodule Explorer.Counters.BlockBurntFeeCounter do
   @moduledoc """
-  Caches Block Burned Fee counter.
+  Caches Block Burnt Fee counter.
   """
   use GenServer
 
@@ -9,7 +9,7 @@ defmodule Explorer.Counters.BlockBurnedFeeCounter do
 
   @cache_name :block_burnt_fee_counter
 
-  config = Application.compile_env(:explorer, Explorer.Counters.BlockBurnedFeeCounter)
+  config = Application.compile_env(:explorer, __MODULE__)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()

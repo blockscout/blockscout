@@ -224,7 +224,7 @@ defmodule Explorer.Chain.Block do
   @doc """
   Calculates transaction fees (gas price * gas used) for the list of transactions (from a single block)
   """
-  @spec transaction_fees(list()) :: Decimal.t()
+  @spec transaction_fees([Transaction.t()]) :: Decimal.t()
   def transaction_fees(transactions) do
     Enum.reduce(transactions, Decimal.new(0), fn %{gas_used: gas_used, gas_price: gas_price}, acc ->
       if gas_price do
@@ -245,7 +245,7 @@ defmodule Explorer.Chain.Block do
   @doc """
   Calculates burnt fees for the list of transactions (from a single block)
   """
-  @spec burnt_fees(list(), Wei.t()) :: Wei.t() | nil
+  @spec burnt_fees(list(), Wei.t() | nil) :: Wei.t() | nil
   def burnt_fees(transactions, base_fee_per_gas) do
     total_gas_used =
       transactions
@@ -255,14 +255,18 @@ defmodule Explorer.Chain.Block do
         |> Decimal.add(acc)
       end)
 
-    base_fee_per_gas && Wei.mult(base_fee_per_gas_to_wei(base_fee_per_gas), total_gas_used)
+    if is_nil(base_fee_per_gas) do
+      nil
+    else
+      Wei.mult(base_fee_per_gas_to_wei(base_fee_per_gas), total_gas_used)
+    end
   end
 
   defp base_fee_per_gas_to_wei(%Wei{} = wei), do: wei
   defp base_fee_per_gas_to_wei(base_fee_per_gas), do: %Wei{value: Decimal.new(base_fee_per_gas)}
 
   @uncle_reward_coef 1 / 32
-  @spec block_reward_by_parts(Block.t(), list()) :: %{
+  @spec block_reward_by_parts(Block.t(), [Transaction.t()]) :: %{
           block_number: block_number(),
           block_hash: Hash.Full.t(),
           miner_hash: Hash.Address.t(),

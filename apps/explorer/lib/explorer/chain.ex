@@ -877,7 +877,7 @@ defmodule Explorer.Chain do
       {:actual, Decimal.new(4)}
 
   """
-  @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t()}
+  @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t() | nil}
   def fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
 
   def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
@@ -3452,7 +3452,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  The current total number of coins minted minus verifiably burned coins.
+  The current total number of coins minted minus verifiably burnt coins.
   """
   @spec total_supply :: non_neg_integer() | nil
   def total_supply do
