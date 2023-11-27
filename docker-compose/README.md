@@ -37,6 +37,8 @@ and 4 containers for microservices (written in Rust):
 
 The repo contains built-in configs for different JSON RPC clients without need to build the image.
 
+**Note**: in all below examples, you can use `docker compose` instead of `docker-compose`, if compose v2 plugin is installed in Docker.
+
 - Erigon: `docker-compose -f docker-compose-no-build-erigon.yml up -d`
 - Geth (suitable for Reth as well): `docker-compose -f docker-compose-no-build-geth.yml up -d`
 - Geth Clique: `docker-compose -f docker-compose-no-build-geth-clique-consensus.yml up -d`
