@@ -439,10 +439,10 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
       :json_rpc,
       fn [
            %{
-             id: _id,
+             id: id,
              method: "eth_call",
              params: [
-               %{data: "0x5c60da1b", to: "0x000000000000000000000000" <> beacon_contract_address_hash_string},
+               %{data: "0x5c60da1b", to: "0x000000000000000000000000" <> ^beacon_contract_address_hash_string},
                "latest"
              ]
            }
@@ -452,7 +452,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
           :ok,
           [
             %{
-              id: _id,
+              id: id,
               jsonrpc: "2.0",
               result: "0x000000000000000000000000" <> implementation_contract_address_hash_string
             }

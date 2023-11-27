@@ -156,24 +156,9 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   end
 
   defp get_implementation_address_hash_string(proxy_address_hash, proxy_abi) do
-    get_implementation_address_hash_string_eip1967(
+    get_implementation_address_hash_string_eip1167(
       proxy_address_hash,
       proxy_abi
-    )
-  end
-
-  @doc """
-  Returns EIP-1967 implementation address or tries next proxy pattern
-  """
-  @spec get_implementation_address_hash_string_eip1967(Hash.Address.t(), any()) :: String.t() | nil
-  def get_implementation_address_hash_string_eip1967(proxy_address_hash, proxy_abi) do
-    get_implementation_address_hash_string_by_module(
-      EIP1967,
-      :get_implementation_address_hash_string_eip1167,
-      [
-        proxy_address_hash,
-        proxy_abi
-      ]
     )
   end
 
@@ -184,6 +169,21 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   def get_implementation_address_hash_string_eip1167(proxy_address_hash, proxy_abi) do
     get_implementation_address_hash_string_by_module(
       EIP1167,
+      :get_implementation_address_hash_string_eip1967,
+      [
+        proxy_address_hash,
+        proxy_abi
+      ]
+    )
+  end
+
+  @doc """
+  Returns EIP-1967 implementation address or tries next proxy pattern
+  """
+  @spec get_implementation_address_hash_string_eip1967(Hash.Address.t(), any()) :: String.t() | nil
+  def get_implementation_address_hash_string_eip1967(proxy_address_hash, proxy_abi) do
+    get_implementation_address_hash_string_by_module(
+      EIP1967,
       :get_implementation_address_hash_string_eip1822,
       [
         proxy_address_hash,
