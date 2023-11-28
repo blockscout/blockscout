@@ -6,8 +6,6 @@
 
 ### Fixes
 
-- [#8891](https://github.com/blockscout/blockscout/pull/8891) - Fix average block time
-
 ### Chore
 
 ## 5.3.2-beta
@@ -25,6 +23,7 @@
 
 ### Fixes
 
+- [#8891](https://github.com/blockscout/blockscout/pull/8891) - Fix average block time
 - [#8869](https://github.com/blockscout/blockscout/pull/8869) - Limit TokenBalance fetcher timeout
 - [#8855](https://github.com/blockscout/blockscout/pull/8855) - All transactions count at top addresses page
 - [#8836](https://github.com/blockscout/blockscout/pull/8836) - Safe token update
@@ -67,6 +66,7 @@
 - [#8824](https://github.com/blockscout/blockscout/pull/8824) - Bump httpoison from 2.1.0 to 2.2.0
 - [#8828](https://github.com/blockscout/blockscout/pull/8828) - Bump @babel/preset-env from 7.23.2 to 7.23.3 in /apps/block_scout_web/assets
 - [#8825](https://github.com/blockscout/blockscout/pull/8825) - Bump solc from 0.8.22 to 0.8.23 in /apps/explorer
+
 </details>
 
 ## 5.3.1-beta
