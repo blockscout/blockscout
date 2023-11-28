@@ -3581,7 +3581,7 @@ msgstr ""
 msgid "fallback"
 msgstr ""
 
-#: lib/block_scout_web/views/address_contract_view.ex:28
+#: lib/block_scout_web/views/address_contract_view.ex:30
 #, elixir-autogen, elixir-format
 msgid "false"
 msgstr ""
@@ -3637,7 +3637,7 @@ msgstr ""
 msgid "string"
 msgstr ""
 
-#: lib/block_scout_web/views/address_contract_view.ex:27
+#: lib/block_scout_web/views/address_contract_view.ex:29
 #, elixir-autogen, elixir-format
 msgid "true"
 msgstr ""
