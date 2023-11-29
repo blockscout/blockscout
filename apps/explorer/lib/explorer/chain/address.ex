@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Address do
 
   use Explorer.Schema
 
+  alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
   alias Explorer.{Chain, PagingOptions}
 
@@ -331,6 +332,15 @@ defmodule Explorer.Chain.Address do
       fetch_top_addresses(options)
     end
   end
+
+  @doc """
+  Checks if given address is smart-contract
+  """
+  @spec is_smart_contract(any()) :: boolean() | nil
+  def is_smart_contract(%__MODULE__{contract_code: nil}), do: false
+  def is_smart_contract(%__MODULE__{contract_code: _}), do: true
+  def is_smart_contract(%NotLoaded{}), do: nil
+  def is_smart_contract(_), do: false
 
   defp get_addresses(options) do
     accounts_with_n = fetch_top_addresses(options)

@@ -51,7 +51,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
   defp address_with_info(%Address{} = address, _address_hash) do
     %{
       "hash" => Address.checksum(address),
-      "is_contract" => is_smart_contract(address),
+      "is_contract" => Address.is_smart_contract(address),
       "name" => address_name(address),
       "implementation_name" => implementation_name(address),
       "is_verified" => is_verified(address)
@@ -93,11 +93,6 @@ defmodule BlockScoutWeb.API.V2.Helper do
     do: implementation_name
 
   def implementation_name(_), do: nil
-
-  def is_smart_contract(%Address{contract_code: nil}), do: false
-  def is_smart_contract(%Address{contract_code: _}), do: true
-  def is_smart_contract(%NotLoaded{}), do: nil
-  def is_smart_contract(_), do: false
 
   def is_verified(%Address{smart_contract: nil}), do: false
   def is_verified(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false

@@ -2,15 +2,15 @@
 
 ## Current
 
-- [#8924](https://github.com/blockscout/blockscout/pull/8924) - Delete invalid current token balances in OnDemand fetcher
-
 ### Features
 
+- [#8908](https://github.com/blockscout/blockscout/pull/8908) - Solidityscan report API endpoint
 - [#8900](https://github.com/blockscout/blockscout/pull/8900) - Add Compound proxy contract pattern
 - [#8611](https://github.com/blockscout/blockscout/pull/8611) - Implement sorting of smart contracts, address transactions
 
 ### Fixes
 
+- [#8924](https://github.com/blockscout/blockscout/pull/8924) - Delete invalid current token balances in OnDemand fetcher
 - [#8922](https://github.com/blockscout/blockscout/pull/8922) - Allow call type to be in lowercase
 - [#8917](https://github.com/blockscout/blockscout/pull/8917) - Proxy detection hotfix in API v2
 - [#8915](https://github.com/blockscout/blockscout/pull/8915) - smart-contract: delete embeds_many relation on replace
