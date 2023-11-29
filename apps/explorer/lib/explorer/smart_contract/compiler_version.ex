@@ -41,7 +41,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
           {:ok, format_data(body, :solc)}
 
         {:ok, %{status_code: _status_code, body: body}} ->
-          {:error, decode_json(body)["error"]}
+          {:error, Helper.decode_json(body)["error"]}
 
         {:error, %{reason: reason}} ->
           {:error, reason}
@@ -60,7 +60,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
           {:ok, format_data(body, :vyper)}
 
         {:ok, %{status_code: _status_code, body: body}} ->
-          {:error, decode_json(body)["error"]}
+          {:error, Helper.decode_json(body)["error"]}
 
         {:error, %{reason: reason}} ->
           {:error, reason}
@@ -138,10 +138,6 @@ defmodule Explorer.SmartContract.CompilerVersion do
           |> Map.fetch!("tag_name")
         end)
     end
-  end
-
-  defp decode_json(json) do
-    Jason.decode!(json)
   end
 
   @spec source_url(:solc | :vyper) :: String.t()

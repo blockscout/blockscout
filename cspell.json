@@ -538,7 +538,8 @@
         "lastmod",
         "qitmeer",
         "meer",
-        "DefiLlama"
+        "DefiLlama",
+        "SOLIDITYSCAN"
     ],
     "enableFiletypes": [
         "dotenv",

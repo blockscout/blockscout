@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#8908](https://github.com/blockscout/blockscout/pull/8908) - Solidityscan report API endpoint
+
 ### Fixes
 
 ### Chore
