@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.SmartContract.Proxy.EIP1167
   alias Explorer.Visualize.Sol2uml
 
   require Logger
@@ -134,12 +135,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   # credo:disable-for-next-line
   def prepare_smart_contract(%Address{smart_contract: %SmartContract{} = smart_contract} = address) do
-    minimal_proxy_template = Chain.get_minimal_proxy_template(address.hash, @api_true)
-    twin = Chain.get_address_verified_twin_contract(address.hash, @api_true)
+    minimal_proxy_template = EIP1167.get_implementation_address(address.hash, @api_true)
+    twin = SmartContract.get_address_verified_twin_contract(address.hash, @api_true)
     metadata_for_verification = minimal_proxy_template || twin.verified_contract
     smart_contract_verified = AddressView.smart_contract_verified?(address)
     additional_sources_from_twin = twin.additional_sources
-    fully_verified = Chain.smart_contract_fully_verified?(address.hash, @api_true)
+    fully_verified = SmartContract.verified_with_full_match?(address.hash, @api_true)
 
     additional_sources =
       if smart_contract_verified, do: address.smart_contract_additional_sources, else: additional_sources_from_twin

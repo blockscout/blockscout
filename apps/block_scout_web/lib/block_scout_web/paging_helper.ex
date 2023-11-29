@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.PagingHelper do
   @allowed_filter_labels ["validated", "pending"]
   @allowed_type_labels ["coin_transfer", "contract_call", "contract_creation", "token_transfer", "token_creation"]
   @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155"]
+  @allowed_nft_token_type_labels ["ERC-721", "ERC-1155"]
 
   def paging_options(%{"block_number" => block_number_string, "index" => index_string}, [:validated | _]) do
     with {block_number, ""} <- Integer.parse(block_number_string),
@@ -33,13 +34,28 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def paging_options(_params, _filter), do: [paging_options: @default_paging_options]
 
+  @spec token_transfers_types_options(map()) :: [{:token_type, list}]
   def token_transfers_types_options(%{"type" => filters}) do
     [
-      token_type: filters |> String.upcase() |> parse_filter(@allowed_token_transfer_type_labels)
+      token_type: filters_to_list(filters, @allowed_token_transfer_type_labels)
     ]
   end
 
   def token_transfers_types_options(_), do: [token_type: []]
+
+  @doc """
+    Parse 'type' query parameter from request option map
+  """
+  @spec nft_token_types_options(map()) :: [{:token_type, list}]
+  def nft_token_types_options(%{"type" => filters}) do
+    [
+      token_type: filters_to_list(filters, @allowed_nft_token_type_labels)
+    ]
+  end
+
+  def nft_token_types_options(_), do: [token_type: []]
+
+  defp filters_to_list(filters, allowed), do: filters |> String.upcase() |> parse_filter(allowed)
 
   # sobelow_skip ["DOS.StringToAtom"]
   def filter_options(%{"filter" => filter}, fallback) do

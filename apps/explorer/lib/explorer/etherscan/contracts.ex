@@ -11,8 +11,10 @@ defmodule Explorer.Etherscan.Contracts do
       where: 3
     ]
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
   alias Explorer.Chain.{Address, Hash, SmartContract}
+  alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.EIP1167
 
   @spec address_hash_to_address_with_source_code(Hash.Address.t()) :: Address.t() | nil
   def address_hash_to_address_with_source_code(address_hash) do
@@ -38,8 +40,8 @@ defmodule Explorer.Etherscan.Contracts do
             }
           else
             address_verified_twin_contract =
-              Chain.get_minimal_proxy_template(address_hash) ||
-                Chain.get_address_verified_twin_contract(address_hash).verified_contract
+              EIP1167.get_implementation_address(address_hash) ||
+                SmartContract.get_address_verified_twin_contract(address_hash).verified_contract
 
             compose_address_with_smart_contract(
               address_with_smart_contract,
@@ -67,7 +69,7 @@ defmodule Explorer.Etherscan.Contracts do
 
   def append_proxy_info(%Address{smart_contract: smart_contract} = address) when not is_nil(smart_contract) do
     updated_smart_contract =
-      if SmartContract.proxy_contract?(smart_contract) do
+      if Proxy.proxy_contract?(smart_contract) do
         smart_contract
         |> Map.put(:is_proxy, true)
         |> Map.put(

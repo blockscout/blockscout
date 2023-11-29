@@ -28,6 +28,8 @@ defmodule Indexer.Fetcher.TokenBalance do
   @default_max_batch_size 100
   @default_max_concurrency 10
 
+  @timeout :timer.minutes(10)
+
   @max_retries 3
 
   @spec async_fetch([
@@ -156,7 +158,7 @@ defmodule Indexer.Fetcher.TokenBalance do
       address_current_token_balances: %{
         params: TokenBalances.to_address_current_token_balances(formatted_token_balances_params)
       },
-      timeout: :infinity
+      timeout: @timeout
     }
 
     case Chain.import(import_params) do

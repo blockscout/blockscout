@@ -1,10 +1,10 @@
 defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
   use BlockScoutWeb.ConnCase
   alias Explorer.Chain.SmartContract
-  alias Explorer.Chain
-  # alias Explorer.{Chain, Factory}
 
   import Mox
+
+  setup :verify_on_exit!
 
   def prepare_contracts do
     insert(:contract_address)
@@ -649,7 +649,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         %SmartContract.ExternalLibrary{:address_hash => "0x283539e1b1daf24cdd58a3e934d55062ea663c3f", :name => "Test2"}
       ]
 
-      {:ok, %SmartContract{} = contract} = Chain.create_smart_contract(valid_attrs, external_libraries)
+      {:ok, %SmartContract{} = contract} = SmartContract.create_smart_contract(valid_attrs, external_libraries)
 
       params = %{
         "module" => "contract",
@@ -771,7 +771,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     #     |> get("/api", params)
     #     |> json_response(200)
 
-    #   verified_contract = Chain.address_hash_to_smart_contract(contract_address.hash)
+    #   verified_contract = SmartContract.address_hash_to_smart_contract(contract_address.hash)
 
     #   expected_result = %{
     #     "Address" => to_string(contract_address.hash),
@@ -844,7 +844,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
     #   result = response["result"]
 
-    #   verified_contract = Chain.address_hash_to_smart_contract(contract_address.hash)
+    #   verified_contract = SmartContract.address_hash_to_smart_contract(contract_address.hash)
 
     #   assert result["Address"] == to_string(contract_address.hash)
 
@@ -961,6 +961,18 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                               params: [
                                 _,
                                 "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
                                 "latest"
                               ]
                             },

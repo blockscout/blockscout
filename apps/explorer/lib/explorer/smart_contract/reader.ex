@@ -7,8 +7,8 @@ defmodule Explorer.SmartContract.Reader do
   """
 
   alias EthereumJSONRPC.{Contract, Encoder}
-  alias Explorer.Chain
   alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.Helper
 
   @typedoc """
@@ -92,7 +92,7 @@ defmodule Explorer.SmartContract.Reader do
 
   defp prepare_abi(nil, address_hash) do
     address_hash
-    |> Chain.address_hash_to_smart_contract()
+    |> SmartContract.address_hash_to_smart_contract()
     |> Map.get(:abi)
   end
 
@@ -222,7 +222,7 @@ defmodule Explorer.SmartContract.Reader do
   def read_only_functions(nil, _, _), do: []
 
   def read_only_functions_proxy(contract_address_hash, implementation_address_hash_string, from, options \\ []) do
-    implementation_abi = Chain.get_implementation_abi(implementation_address_hash_string, options)
+    implementation_abi = SmartContract.get_smart_contract_abi(implementation_address_hash_string, options)
 
     case implementation_abi do
       nil ->
@@ -238,7 +238,7 @@ defmodule Explorer.SmartContract.Reader do
   """
   @spec read_functions_required_wallet_proxy(String.t()) :: [%{}]
   def read_functions_required_wallet_proxy(implementation_address_hash_string) do
-    implementation_abi = Chain.get_implementation_abi(implementation_address_hash_string)
+    implementation_abi = SmartContract.get_smart_contract_abi(implementation_address_hash_string)
 
     case implementation_abi do
       nil ->
@@ -572,10 +572,10 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   defp get_abi(contract_address_hash, type, options) do
-    contract = Chain.address_hash_to_smart_contract(contract_address_hash, options)
+    contract = SmartContract.address_hash_to_smart_contract(contract_address_hash, options)
 
     if type == :proxy do
-      Chain.get_implementation_abi_from_proxy(contract, options)
+      Proxy.get_implementation_abi_from_proxy(contract, options)
     else
       contract.abi
     end

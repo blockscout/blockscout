@@ -101,16 +101,13 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  @spec next_page_params(any, any, any, any) :: nil | map
-  def next_page_params(next_page, list, params, is_ctb_with_fiat_value \\ false)
+  @spec next_page_params(any, list(), map(), (any -> map())) :: nil | map
+  def next_page_params(next_page, list, params, paging_function \\ &paging_params/1)
 
   def next_page_params([], _list, _params, _), do: nil
 
-  def next_page_params(_, list, params, is_ctb_with_fiat_value) do
-    paging_params =
-      if is_ctb_with_fiat_value,
-        do: paging_params_with_fiat_value(List.last(list)),
-        else: paging_params(List.last(list))
+  def next_page_params(_, list, params, paging_function) do
+    paging_params = paging_function.(List.last(list))
 
     next_page_params = Map.merge(params, paging_params)
     current_items_count_string = Map.get(next_page_params, "items_count")
@@ -382,6 +379,18 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {id}}]
   end
 
+  def paging_options(%{
+        "token_contract_address_hash" => token_contract_address_hash,
+        "token_id" => token_id,
+        "token_type" => token_type
+      }) do
+    [paging_options: %{@default_paging_options | key: {token_contract_address_hash, token_id, token_type}}]
+  end
+
+  def paging_options(%{"token_contract_address_hash" => token_contract_address_hash, "token_type" => token_type}) do
+    [paging_options: %{@default_paging_options | key: {token_contract_address_hash, token_type}}]
+  end
+
   def paging_options(_params), do: [paging_options: @default_paging_options]
 
   def put_key_value_to_paging_options([paging_options: paging_options], key, value) do
@@ -593,7 +602,8 @@ defmodule BlockScoutWeb.Chain do
     %{"id" => msg_id}
   end
 
-  defp paging_params_with_fiat_value(%CurrentTokenBalance{id: id, value: value} = ctb) do
+  @spec paging_params_with_fiat_value(CurrentTokenBalance.t()) :: %{binary() => any}
+  def paging_params_with_fiat_value(%CurrentTokenBalance{id: id, value: value} = ctb) do
     %{"fiat_value" => ctb.fiat_value, "value" => value, "id" => id}
   end
 

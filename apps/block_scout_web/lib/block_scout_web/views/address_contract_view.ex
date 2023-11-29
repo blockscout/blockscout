@@ -6,6 +6,8 @@ defmodule BlockScoutWeb.AddressContractView do
   alias ABI.FunctionSelector
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Data, InternalTransaction, Transaction}
+  alias Explorer.Chain.SmartContract
+  alias Explorer.Chain.SmartContract.Proxy.EIP1167
 
   def render("scripts.html", %{conn: conn}) do
     render_scripts(conn, "address_contract/code_highlighting.js")
