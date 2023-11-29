@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#8908](https://github.com/blockscout/blockscout/pull/8908) - Solidityscan report API endpoint
 - [#8611](https://github.com/blockscout/blockscout/pull/8611) - Implement sorting of smart contracts, address transactions
 
 ### Fixes

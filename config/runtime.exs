@@ -368,6 +368,10 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   chain_id: System.get_env("CHAIN_ID"),
   repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://repo.sourcify.dev/contracts"
 
+config :explorer, Explorer.ThirdPartyIntegrations.SolidityScan,
+  chain_id: System.get_env("SOLIDITYSCAN_CHAIN_ID"),
+  api_key: System.get_env("SOLIDITYSCAN_API_TOKEN")
+
 enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED")
 # or "eth_bytecode_db"
 type = System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")

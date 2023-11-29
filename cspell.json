@@ -534,7 +534,18 @@
         "zindex",
         "zipcode",
         "zkbob",
-        "zkevm"
+        "zkevm",
+        "erts",
+        "Asfpp",
+        "Nerg",
+        "secp",
+        "qwertyuioiuytrewertyuioiuytrertyuio",
+        "urlset",
+        "lastmod",
+        "qitmeer",
+        "meer",
+        "DefiLlama",
+        "SOLIDITYSCAN"
     ],
     "enableFiletypes": [
         "dotenv",

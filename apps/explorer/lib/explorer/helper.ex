@@ -58,4 +58,14 @@ defmodule Explorer.Helper do
 
     Enum.map(list, fn el -> Map.put(el, preload_field, associated_elements[el[foreign_key_field]]) end)
   end
+
+  @doc """
+  Decode json with rescue
+  """
+  @spec decode_json(any()) :: any()
+  def decode_json(data) do
+    Jason.decode!(data)
+  rescue
+    _ -> data
+  end
 end
