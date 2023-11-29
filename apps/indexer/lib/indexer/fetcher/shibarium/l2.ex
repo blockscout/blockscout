@@ -201,6 +201,28 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     {:noreply, state}
   end
 
+  def filter_deposit_events(events, child_chain) do
+    Enum.filter(events, fn event ->
+      address = String.downcase(event.address_hash)
+
+      (event.first_topic == @token_deposited_event and address == child_chain) or
+        (event.first_topic == @transfer_event and event.second_topic == @empty_hash and event.third_topic != @empty_hash) or
+        (Enum.member?([@transfer_single_event, @transfer_batch_event], event.first_topic) and
+           event.third_topic == @empty_hash and event.fourth_topic != @empty_hash)
+    end)
+  end
+
+  def filter_withdrawal_events(events, bone_withdraw) do
+    Enum.filter(events, fn event ->
+      address = String.downcase(event.address_hash)
+
+      (event.first_topic == @withdraw_event and address == bone_withdraw) or
+        (event.first_topic == @transfer_event and event.second_topic != @empty_hash and event.third_topic == @empty_hash) or
+        (Enum.member?([@transfer_single_event, @transfer_batch_event], event.first_topic) and
+           event.third_topic != @empty_hash and event.fourth_topic == @empty_hash)
+    end)
+  end
+
   def log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, items_count, layer) do
     is_start = is_nil(items_count)
 
@@ -292,26 +314,6 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
         "As L2 reorg was detected, some rows with l2_block_number >= #{reorg_block} were affected (removed or updated) in the shibarium_bridge table. Number of removed rows: #{deleted_count}. Number of updated rows: >= #{updated_count}."
       )
     end
-  end
-
-  def token_deposited_event_signature do
-    @token_deposited_event
-  end
-
-  def transfer_event_signature do
-    @transfer_event
-  end
-
-  def transfer_single_event_signature do
-    @transfer_single_event
-  end
-
-  def transfer_batch_event_signature do
-    @transfer_batch_event
-  end
-
-  def withdraw_event_signature do
-    @withdraw_event
   end
 
   def withdraw_method_signature do
@@ -412,9 +414,9 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   defp get_logs_all(block_range, child_chain, bone_withdraw, json_rpc_named_arguments) do
     blocks = get_blocks_by_range(block_range, json_rpc_named_arguments, 100_000_000)
 
-    tokens_deposit_result = get_deposit_logs_from_receipts(blocks, child_chain, json_rpc_named_arguments)
+    deposit_logs = get_deposit_logs_from_receipts(blocks, child_chain, json_rpc_named_arguments)
 
-    tokens_withdraw_result = get_withdrawal_logs_from_receipts(blocks, bone_withdraw, json_rpc_named_arguments)
+    withdrawal_logs = get_withdrawal_logs_from_receipts(blocks, bone_withdraw, json_rpc_named_arguments)
 
     timestamps =
       blocks
@@ -433,7 +435,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
         Map.put(acc, block_number, timestamp)
       end)
 
-    {tokens_deposit_result ++ tokens_withdraw_result, timestamps}
+    {deposit_logs ++ withdrawal_logs, timestamps}
   end
 
   defp get_deposit_logs_from_receipts(blocks, child_chain, json_rpc_named_arguments) do
@@ -451,14 +453,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     |> Enum.reduce([], fn hashes, acc ->
       acc ++ get_receipt_logs(hashes, json_rpc_named_arguments, 100_000_000)
     end)
-    |> Enum.filter(fn event ->
-      address = String.downcase(event.address_hash)
-
-      (event.first_topic == @token_deposited_event and address == child_chain) or
-        (event.first_topic == @transfer_event and event.second_topic == @empty_hash and event.third_topic != @empty_hash) or
-        (Enum.member?([@transfer_single_event, @transfer_batch_event], event.first_topic) and
-           event.third_topic == @empty_hash and event.fourth_topic != @empty_hash)
-    end)
+    |> filter_deposit_events(child_chain)
   end
 
   defp get_withdrawal_logs_from_receipts(blocks, bone_withdraw, json_rpc_named_arguments) do
@@ -479,14 +474,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     |> Enum.reduce([], fn hashes, acc ->
       acc ++ get_receipt_logs(hashes, json_rpc_named_arguments, 100_000_000)
     end)
-    |> Enum.filter(fn event ->
-      address = String.downcase(event.address_hash)
-
-      (event.first_topic == @withdraw_event and address == bone_withdraw) or
-        (event.first_topic == @transfer_event and event.second_topic != @empty_hash and event.third_topic == @empty_hash) or
-        (Enum.member?([@transfer_single_event, @transfer_batch_event], event.first_topic) and
-           event.third_topic != @empty_hash and event.fourth_topic == @empty_hash)
-    end)
+    |> filter_withdrawal_events(bone_withdraw)
   end
 
   defp get_op_amounts(event) do

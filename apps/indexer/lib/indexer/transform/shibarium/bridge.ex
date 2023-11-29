@@ -7,20 +7,10 @@ defmodule Indexer.Transform.Shibarium.Bridge do
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
-  import Indexer.Fetcher.Shibarium.L2,
-    only: [
-      token_deposited_event_signature: 0,
-      transfer_event_signature: 0,
-      transfer_single_event_signature: 0,
-      transfer_batch_event_signature: 0,
-      withdraw_event_signature: 0,
-      withdraw_method_signature: 0
-    ]
+  import Indexer.Fetcher.Shibarium.L2, only: [withdraw_method_signature: 0]
 
   alias Indexer.Fetcher.Shibarium.L2
   alias Indexer.Helper
-
-  @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   @doc """
   Returns a list of operations given a list of blocks and their transactions.
@@ -54,18 +44,10 @@ defmodule Indexer.Transform.Shibarium.Bridge do
           |> Enum.filter(fn tx -> tx.from_address_hash == burn_address_hash_string() end)
           |> Enum.map(fn tx -> tx.hash end)
 
-        tokens_deposit_result =
+        deposit_events =
           logs
           |> Enum.filter(&Enum.member?(deposit_transaction_hashes, &1.transaction_hash))
-          |> Enum.filter(fn event ->
-            address = String.downcase(event.address_hash)
-
-            (event.first_topic == token_deposited_event_signature() and address == child_chain) or
-              (event.first_topic == transfer_event_signature() and event.second_topic == @empty_hash and
-                 event.third_topic != @empty_hash) or
-              (Enum.member?([transfer_single_event_signature(), transfer_batch_event_signature()], event.first_topic) and
-                 event.third_topic == @empty_hash and event.fourth_topic != @empty_hash)
-          end)
+          |> L2.filter_deposit_events(child_chain)
 
         withdrawal_transaction_hashes =
           transactions_with_receipts
@@ -75,20 +57,12 @@ defmodule Indexer.Transform.Shibarium.Bridge do
           end)
           |> Enum.map(fn tx -> tx.hash end)
 
-        tokens_withdraw_result =
+        withdrawal_events =
           logs
           |> Enum.filter(&Enum.member?(withdrawal_transaction_hashes, &1.transaction_hash))
-          |> Enum.filter(fn event ->
-            address = String.downcase(event.address_hash)
+          |> L2.filter_withdrawal_events(bone_withdraw)
 
-            (event.first_topic == withdraw_event_signature() and address == bone_withdraw) or
-              (event.first_topic == transfer_event_signature() and event.second_topic != @empty_hash and
-                 event.third_topic == @empty_hash) or
-              (Enum.member?([transfer_single_event_signature(), transfer_batch_event_signature()], event.first_topic) and
-                 event.third_topic != @empty_hash and event.fourth_topic == @empty_hash)
-          end)
-
-        events = tokens_deposit_result ++ tokens_withdraw_result
+        events = deposit_events ++ withdrawal_events
         timestamps = Enum.reduce(blocks, %{}, fn block, acc -> Map.put(acc, block.number, block.timestamp) end)
 
         operations = L2.prepare_operations({events, timestamps}, weth)
