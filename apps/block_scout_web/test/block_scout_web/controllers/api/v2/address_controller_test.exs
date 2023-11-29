@@ -27,6 +27,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   setup :set_mox_global
 
+  setup :verify_on_exit!
+
   describe "/addresses/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
       address = build(:address)
@@ -1706,7 +1708,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
 
     test "check nil", %{conn: conn} do
-      address = insert(:address, nonce: 1, fetched_coin_balance: 1)
+      address = insert(:address, transactions_count: 2, fetched_coin_balance: 1)
 
       request = get(conn, "/api/v2/addresses")
 
@@ -2475,7 +2477,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   defp compare_item(%Address{} = address, json) do
     assert Address.checksum(address.hash) == json["hash"]
-    assert to_string(address.nonce + 1) == json["tx_count"]
+    assert to_string(address.transactions_count) == json["tx_count"]
   end
 
   defp compare_item(%Transaction{} = transaction, json) do
@@ -2679,6 +2681,30 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                                                 ]
                                               },
                                               _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                "latest"
+                              ]
+                            },
+                            _options ->
       {:ok, "0x0000000000000000000000000000000000000000000000000000000000000001"}
     end)
   end

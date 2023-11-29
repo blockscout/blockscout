@@ -3,9 +3,10 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Publish Docker image for specific chain branches
+name: Zksync publish Docker image
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - production-zksync-stg
@@ -14,7 +15,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.3.1
+      RELEASE_VERSION: 5.3.2
       DOCKER_CHAIN_NAME: zksync
     steps:
       - name: Check out the repo

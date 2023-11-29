@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Chain
+  alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.SmartContract.Vyper.PublisherWorker, as: VyperPublisherWorker
@@ -282,7 +283,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:already_verified, false} <-
-           {:already_verified, Chain.smart_contract_fully_verified?(address_hash, @api_true)} do
+           {:already_verified, SmartContract.verified_with_full_match?(address_hash, @api_true)} do
       :validated
     end
   end

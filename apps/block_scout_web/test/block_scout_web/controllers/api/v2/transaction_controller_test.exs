@@ -970,7 +970,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     test "check stability fees", %{conn: conn} do
       tx = insert(:transaction) |> with_block()
 
-      log =
+      _log =
         insert(:log,
           transaction: tx,
           index: 1,
@@ -1033,7 +1033,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     test "check stability if token absent in DB", %{conn: conn} do
       tx = insert(:transaction) |> with_block()
 
-      log =
+      _log =
         insert(:log,
           transaction: tx,
           index: 1,

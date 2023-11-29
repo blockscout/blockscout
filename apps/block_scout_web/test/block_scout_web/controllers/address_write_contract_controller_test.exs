@@ -9,6 +9,8 @@ defmodule BlockScoutWeb.AddressWriteContractControllerTest do
 
   import Mox
 
+  setup :verify_on_exit!
+
   describe "GET index/3" do
     setup :set_mox_global
 
@@ -53,7 +55,7 @@ defmodule BlockScoutWeb.AddressWriteContractControllerTest do
 
       insert(:smart_contract, address_hash: contract_address.hash, contract_code_md5: "123")
 
-      get_eip1967_implementation()
+      request_zero_implementations()
 
       conn =
         get(conn, address_write_contract_path(BlockScoutWeb.Endpoint, :index, Address.checksum(contract_address.hash)))
@@ -84,7 +86,7 @@ defmodule BlockScoutWeb.AddressWriteContractControllerTest do
     end
   end
 
-  def get_eip1967_implementation do
+  def request_zero_implementations do
     EthereumJSONRPC.Mox
     |> expect(:json_rpc, fn %{
                               id: 0,
@@ -116,6 +118,18 @@ defmodule BlockScoutWeb.AddressWriteContractControllerTest do
                               params: [
                                 _,
                                 "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
                                 "latest"
                               ]
                             },
