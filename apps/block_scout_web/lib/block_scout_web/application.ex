@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.Application do
   alias BlockScoutWeb.API.APILogger
   alias BlockScoutWeb.Counters.{BlocksIndexedCounter, InternalTransactionsIndexedCounter}
   alias BlockScoutWeb.{Endpoint, Prometheus}
-  alias BlockScoutWeb.{RealtimeEventHandler, StakingEventHandler}
+  alias BlockScoutWeb.{MainPageRealtimeEventHandler, RealtimeEventHandler, StakingEventHandler}
 
   def start(_type, _args) do
     import Supervisor
@@ -34,6 +34,7 @@ defmodule BlockScoutWeb.Application do
       {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
       child_spec(Endpoint, []),
       {Absinthe.Subscription, Endpoint},
+      {MainPageRealtimeEventHandler, name: MainPageRealtimeEventHandler},
       {RealtimeEventHandler, name: RealtimeEventHandler},
       {StakingEventHandler, name: StakingEventHandler},
       {BlocksIndexedCounter, name: BlocksIndexedCounter},

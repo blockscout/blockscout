@@ -26,7 +26,6 @@ defmodule Explorer.Chain do
     ]
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, fetch_block_internal_transactions: 2]
-  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   require Logger
 
@@ -60,7 +59,6 @@ defmodule Explorer.Chain do
     PendingBlockOperation,
     Search,
     SmartContract,
-    SmartContractAdditionalSource,
     StakingPool,
     StakingPoolsDelegator,
     Token,
@@ -74,7 +72,6 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Block.{EmissionReward, Reward}
 
   alias Explorer.Chain.Cache.{
-    Accounts,
     BlockNumber,
     Blocks,
     ContractsCounter,
@@ -92,12 +89,11 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
+  alias Explorer.Chain.SmartContract.Proxy.EIP1167
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.SmartContract.Helper
   alias Explorer.Staking.ContractState
-  alias Explorer.SmartContract.Solidity.Verifier
 
   alias Dataloader.Ecto, as: DataloaderEcto
 
@@ -1071,6 +1067,33 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp set_address_decompiled(repo, address_hash) do
+    query =
+      from(
+        address in Address,
+        where: address.hash == ^address_hash
+      )
+
+    case repo.update_all(query, set: [decompiled: true]) do
+      {1, _} -> {:ok, []}
+      _ -> {:error, "There was an error annotating that the address has been decompiled."}
+    end
+  end
+
+  @spec verified_contracts_top(non_neg_integer()) :: [Hash.Address.t()]
+  def verified_contracts_top(limit) do
+    query =
+      from(contract in SmartContract,
+        inner_join: address in Address,
+        on: contract.address_hash == address.hash,
+        order_by: [desc: address.transactions_count],
+        limit: ^limit,
+        select: contract.address_hash
+      )
+
+    Repo.all(query)
+  end
+
   @doc """
   Converts the `Explorer.Chain.Data.t:t/0` to `iodata` representation that can be written to users efficiently.
 
@@ -1295,7 +1318,7 @@ defmodule Explorer.Chain do
           if smart_contract do
             address_result
           else
-            compose_smart_contract(address_result, hash, options)
+            SmartContract.compose_smart_contract(address_result, hash, options)
           end
 
         _ ->
@@ -1306,27 +1329,6 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
-    end
-  end
-
-  defp compose_smart_contract(address_result, hash, options) do
-    address_verified_twin_contract =
-      get_minimal_proxy_template(hash, options) ||
-        get_address_verified_twin_contract(hash, options).verified_contract
-
-    if address_verified_twin_contract do
-      address_verified_twin_contract_updated =
-        address_verified_twin_contract
-        |> Map.put(:address_hash, hash)
-        |> Map.put(:metadata_from_verified_twin, true)
-        |> Map.put(:implementation_address_hash, nil)
-        |> Map.put(:implementation_name, nil)
-        |> Map.put(:implementation_fetched_at, nil)
-
-      address_result
-      |> Map.put(:smart_contract, address_verified_twin_contract_updated)
-    else
-      address_result
     end
   end
 
@@ -1487,15 +1489,15 @@ defmodule Explorer.Chain do
           if smart_contract do
             CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, smart_contract)
-            check_and_update_constructor_args(address_result)
+            SmartContract.check_and_update_constructor_args(address_result)
           else
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
 
             address_verified_twin_contract =
-              get_minimal_proxy_template(hash, options) ||
-                get_address_verified_twin_contract(hash, options).verified_contract
+              EIP1167.get_implementation_address(hash, options) ||
+                SmartContract.get_address_verified_twin_contract(hash, options).verified_contract
 
-            add_twin_info_to_contract(address_result, address_verified_twin_contract, hash)
+            SmartContract.add_twin_info_to_contract(address_result, address_verified_twin_contract, hash)
           end
 
         _ ->
@@ -1508,53 +1510,6 @@ defmodule Explorer.Chain do
       nil -> {:error, :not_found}
       address -> {:ok, address}
     end
-  end
-
-  defp check_and_update_constructor_args(
-         %SmartContract{address_hash: address_hash, constructor_arguments: nil, verified_via_sourcify: true} =
-           smart_contract
-       ) do
-    if args = Verifier.parse_constructor_arguments_for_sourcify_contract(address_hash, smart_contract.abi) do
-      smart_contract |> SmartContract.changeset(%{constructor_arguments: args}) |> Repo.update()
-      %SmartContract{smart_contract | constructor_arguments: args}
-    else
-      smart_contract
-    end
-  end
-
-  defp check_and_update_constructor_args(
-         %Address{
-           hash: address_hash,
-           contract_code: deployed_bytecode,
-           smart_contract: %SmartContract{constructor_arguments: nil, verified_via_sourcify: true} = smart_contract
-         } = address
-       ) do
-    if args =
-         Verifier.parse_constructor_arguments_for_sourcify_contract(address_hash, smart_contract.abi, deployed_bytecode) do
-      smart_contract |> SmartContract.changeset(%{constructor_arguments: args}) |> Repo.update()
-      %Address{address | smart_contract: %SmartContract{smart_contract | constructor_arguments: args}}
-    else
-      address
-    end
-  end
-
-  defp check_and_update_constructor_args(other), do: other
-
-  defp add_twin_info_to_contract(address_result, address_verified_twin_contract, _hash)
-       when is_nil(address_verified_twin_contract),
-       do: address_result
-
-  defp add_twin_info_to_contract(address_result, address_verified_twin_contract, hash) do
-    address_verified_twin_contract_updated =
-      address_verified_twin_contract
-      |> Map.put(:address_hash, hash)
-      |> Map.put(:metadata_from_verified_twin, true)
-      |> Map.put(:implementation_address_hash, nil)
-      |> Map.put(:implementation_name, nil)
-      |> Map.put(:implementation_fetched_at, nil)
-
-    address_result
-    |> Map.put(:smart_contract, address_verified_twin_contract_updated)
   end
 
   @spec find_decompiled_contract_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}
@@ -2034,64 +1989,6 @@ defmodule Explorer.Chain do
     query
     |> Repo.all()
     |> Enum.into(%{})
-  end
-
-  @doc """
-  Lists the top `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance and address hash.
-
-  """
-  @spec list_top_addresses :: [{Address.t(), non_neg_integer()}]
-  def list_top_addresses(options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    if is_nil(paging_options.key) do
-      paging_options.page_size
-      |> Accounts.take_enough()
-      |> case do
-        nil ->
-          get_addresses(options)
-
-        accounts ->
-          Enum.map(
-            accounts,
-            &{&1,
-             if is_nil(&1.nonce) do
-               0
-             else
-               &1.nonce + 1
-             end}
-          )
-      end
-    else
-      fetch_top_addresses(options)
-    end
-  end
-
-  defp get_addresses(options) do
-    accounts_with_n = fetch_top_addresses(options)
-
-    accounts_with_n
-    |> Enum.map(fn {address, _n} -> address end)
-    |> Accounts.update()
-
-    accounts_with_n
-  end
-
-  defp fetch_top_addresses(options) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    base_query =
-      from(a in Address,
-        where: a.fetched_coin_balance > ^0,
-        order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-        preload: [:names, :smart_contract],
-        select: {a, fragment("coalesce(1 + ?, 0)", a.nonce)}
-      )
-
-    base_query
-    |> page_addresses(paging_options)
-    |> limit(^paging_options.page_size)
-    |> select_repo(options).all()
   end
 
   @doc """
@@ -3483,7 +3380,7 @@ defmodule Explorer.Chain do
       )
 
     revert_reason =
-      case EthereumJSONRPC.json_rpc(req, json_rpc_named_arguments) do
+      case json_rpc(req, json_rpc_named_arguments) do
         {:error, %{data: data}} ->
           data
 
@@ -3703,419 +3600,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  @doc """
-  Inserts a `t:SmartContract.t/0`.
-
-  As part of inserting a new smart contract, an additional record is inserted for
-  naming the address for reference.
-  """
-  @spec create_smart_contract(map()) :: {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t()}
-  def create_smart_contract(attrs \\ %{}, external_libraries \\ [], secondary_sources \\ []) do
-    new_contract = %SmartContract{}
-
-    attrs =
-      attrs
-      |> Helper.add_contract_code_md5()
-
-    smart_contract_changeset =
-      new_contract
-      |> SmartContract.changeset(attrs)
-      |> Changeset.put_change(:external_libraries, external_libraries)
-
-    new_contract_additional_source = %SmartContractAdditionalSource{}
-
-    smart_contract_additional_sources_changesets =
-      if secondary_sources do
-        secondary_sources
-        |> Enum.map(fn changeset ->
-          new_contract_additional_source
-          |> SmartContractAdditionalSource.changeset(changeset)
-        end)
-      else
-        []
-      end
-
-    address_hash = Changeset.get_field(smart_contract_changeset, :address_hash)
-
-    # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    insert_contract_query =
-      Multi.new()
-      |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
-      |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
-      |> Multi.insert(:smart_contract, smart_contract_changeset)
-
-    insert_contract_query_with_additional_sources =
-      smart_contract_additional_sources_changesets
-      |> Enum.with_index()
-      |> Enum.reduce(insert_contract_query, fn {changeset, index}, multi ->
-        Multi.insert(multi, "smart_contract_additional_source_#{Integer.to_string(index)}", changeset)
-      end)
-
-    insert_result =
-      insert_contract_query_with_additional_sources
-      |> Repo.transaction()
-
-    create_address_name(Repo, Changeset.get_field(smart_contract_changeset, :name), address_hash)
-
-    case insert_result do
-      {:ok, %{smart_contract: smart_contract}} ->
-        {:ok, smart_contract}
-
-      {:error, :smart_contract, changeset, _} ->
-        {:error, changeset}
-
-      {:error, :set_address_verified, message, _} ->
-        {:error, message}
-    end
-  end
-
-  @doc """
-  Updates a `t:SmartContract.t/0`.
-
-  Has the similar logic as create_smart_contract/1.
-  Used in cases when you need to update row in DB contains SmartContract, e.g. in case of changing
-  status `partially verified` to `fully verified` (re-verify).
-  """
-  @spec update_smart_contract(map()) :: {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t()}
-  def update_smart_contract(attrs \\ %{}, external_libraries \\ [], secondary_sources \\ []) do
-    address_hash = Map.get(attrs, :address_hash)
-
-    query =
-      from(
-        smart_contract in SmartContract,
-        where: smart_contract.address_hash == ^address_hash
-      )
-
-    query_sources =
-      from(
-        source in SmartContractAdditionalSource,
-        where: source.address_hash == ^address_hash
-      )
-
-    _delete_sources = Repo.delete_all(query_sources)
-
-    smart_contract = Repo.one(query)
-
-    smart_contract_changeset =
-      smart_contract
-      |> SmartContract.changeset(attrs)
-      |> Changeset.put_change(:external_libraries, external_libraries)
-
-    new_contract_additional_source = %SmartContractAdditionalSource{}
-
-    smart_contract_additional_sources_changesets =
-      if secondary_sources do
-        secondary_sources
-        |> Enum.map(fn changeset ->
-          new_contract_additional_source
-          |> SmartContractAdditionalSource.changeset(changeset)
-        end)
-      else
-        []
-      end
-
-    # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    insert_contract_query =
-      Multi.new()
-      |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
-      |> Multi.update(:smart_contract, smart_contract_changeset)
-
-    insert_contract_query_with_additional_sources =
-      smart_contract_additional_sources_changesets
-      |> Enum.with_index()
-      |> Enum.reduce(insert_contract_query, fn {changeset, index}, multi ->
-        Multi.insert(multi, "smart_contract_additional_source_#{Integer.to_string(index)}", changeset)
-      end)
-
-    insert_result =
-      insert_contract_query_with_additional_sources
-      |> Repo.transaction()
-
-    create_address_name(Repo, Changeset.get_field(smart_contract_changeset, :name), address_hash)
-
-    case insert_result do
-      {:ok, %{smart_contract: smart_contract}} ->
-        {:ok, smart_contract}
-
-      {:error, :smart_contract, changeset, _} ->
-        {:error, changeset}
-
-      {:error, :set_address_verified, message, _} ->
-        {:error, message}
-    end
-  end
-
-  defp set_address_verified(repo, address_hash) do
-    query =
-      from(
-        address in Address,
-        where: address.hash == ^address_hash
-      )
-
-    case repo.update_all(query, set: [verified: true]) do
-      {1, _} -> {:ok, []}
-      _ -> {:error, "There was an error annotating that the address has been verified."}
-    end
-  end
-
-  defp set_address_decompiled(repo, address_hash) do
-    query =
-      from(
-        address in Address,
-        where: address.hash == ^address_hash
-      )
-
-    case repo.update_all(query, set: [decompiled: true]) do
-      {1, _} -> {:ok, []}
-      _ -> {:error, "There was an error annotating that the address has been decompiled."}
-    end
-  end
-
-  defp clear_primary_address_names(repo, address_hash) do
-    query =
-      from(
-        address_name in Address.Name,
-        where: address_name.address_hash == ^address_hash,
-        # Enforce Name ShareLocks order (see docs: sharelocks.md)
-        order_by: [asc: :address_hash, asc: :name],
-        lock: "FOR NO KEY UPDATE"
-      )
-
-    repo.update_all(
-      from(n in Address.Name, join: s in subquery(query), on: n.address_hash == s.address_hash and n.name == s.name),
-      set: [primary: false]
-    )
-
-    {:ok, []}
-  end
-
-  defp create_address_name(repo, name, address_hash) do
-    params = %{
-      address_hash: address_hash,
-      name: name,
-      primary: true
-    }
-
-    %Address.Name{}
-    |> Address.Name.changeset(params)
-    |> repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
-  end
-
-  def get_verified_twin_contract(%Explorer.Chain.Address{} = target_address, options \\ []) do
-    case target_address do
-      %{contract_code: %Chain.Data{bytes: contract_code_bytes}} ->
-        target_address_hash = target_address.hash
-
-        contract_code_md5 = Helper.contract_code_md5(contract_code_bytes)
-
-        verified_contract_twin_query =
-          from(
-            smart_contract in SmartContract,
-            where: smart_contract.contract_code_md5 == ^contract_code_md5,
-            where: smart_contract.address_hash != ^target_address_hash,
-            select: smart_contract,
-            limit: 1
-          )
-
-        verified_contract_twin_query
-        |> select_repo(options).one(timeout: 10_000)
-
-      _ ->
-        nil
-    end
-  end
-
-  @doc """
-  Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
-  which were verified previously, returns a single t:SmartContract.t/0
-  """
-  def get_address_verified_twin_contract(hash, options \\ [])
-
-  def get_address_verified_twin_contract(hash, options) when is_binary(hash) do
-    case string_to_address_hash(hash) do
-      {:ok, address_hash} -> get_address_verified_twin_contract(address_hash, options)
-      _ -> %{:verified_contract => nil, :additional_sources => nil}
-    end
-  end
-
-  def get_address_verified_twin_contract(%Explorer.Chain.Hash{} = address_hash, options) do
-    with target_address <- select_repo(options).get(Address, address_hash),
-         false <- is_nil(target_address) do
-      verified_contract_twin = get_verified_twin_contract(target_address, options)
-
-      verified_contract_twin_additional_sources = get_contract_additional_sources(verified_contract_twin, options)
-
-      %{
-        :verified_contract => check_and_update_constructor_args(verified_contract_twin),
-        :additional_sources => verified_contract_twin_additional_sources
-      }
-    else
-      _ ->
-        %{:verified_contract => nil, :additional_sources => nil}
-    end
-  end
-
-  def get_minimal_proxy_template(address_hash, options \\ []) do
-    minimal_proxy_template =
-      case select_repo(options).get(Address, address_hash) do
-        nil ->
-          nil
-
-        target_address ->
-          contract_code = target_address.contract_code
-
-          case contract_code do
-            %Chain.Data{bytes: contract_code_bytes} ->
-              contract_bytecode = Base.encode16(contract_code_bytes, case: :lower)
-
-              get_minimal_proxy_from_template_code(contract_bytecode, options)
-
-            _ ->
-              nil
-          end
-      end
-
-    minimal_proxy_template
-  end
-
-  defp get_minimal_proxy_from_template_code(contract_bytecode, options) do
-    case contract_bytecode do
-      "363d3d373d3d3d363d73" <> <<template_address::binary-size(40)>> <> _ ->
-        template_address = "0x" <> template_address
-
-        query =
-          from(
-            smart_contract in SmartContract,
-            where: smart_contract.address_hash == ^template_address,
-            select: smart_contract
-          )
-
-        template =
-          query
-          |> select_repo(options).one(timeout: 10_000)
-
-        template
-
-      _ ->
-        nil
-    end
-  end
-
-  defp get_contract_additional_sources(verified_contract_twin, options) do
-    if verified_contract_twin do
-      verified_contract_twin_additional_sources_query =
-        from(
-          s in SmartContractAdditionalSource,
-          where: s.address_hash == ^verified_contract_twin.address_hash
-        )
-
-      verified_contract_twin_additional_sources_query
-      |> select_repo(options).all()
-    else
-      []
-    end
-  end
-
-  @spec address_hash_to_smart_contract(Hash.Address.t(), [api?]) :: SmartContract.t() | nil
-  def address_hash_to_smart_contract(address_hash, options \\ []) do
-    query =
-      from(
-        smart_contract in SmartContract,
-        where: smart_contract.address_hash == ^address_hash
-      )
-
-    current_smart_contract = select_repo(options).one(query)
-
-    if current_smart_contract do
-      current_smart_contract
-    else
-      address_verified_twin_contract =
-        get_minimal_proxy_template(address_hash, options) ||
-          get_address_verified_twin_contract(address_hash, options).verified_contract
-
-      if address_verified_twin_contract do
-        address_verified_twin_contract
-        |> Map.put(:address_hash, address_hash)
-        |> Map.put(:metadata_from_verified_twin, true)
-        |> Map.put(:implementation_address_hash, nil)
-        |> Map.put(:implementation_name, nil)
-        |> Map.put(:implementation_fetched_at, nil)
-      else
-        current_smart_contract
-      end
-    end
-  end
-
-  @spec address_hash_to_smart_contract(Hash.Address.t()) :: SmartContract.t() | nil
-  def address_hash_to_one_smart_contract(hash) do
-    SmartContract
-    |> where([sc], sc.address_hash == ^hash)
-    |> Repo.one()
-  end
-
-  @spec address_hash_to_smart_contract_without_twin(Hash.Address.t(), [api?]) :: SmartContract.t() | nil
-  def address_hash_to_smart_contract_without_twin(address_hash, options) do
-    query =
-      from(
-        smart_contract in SmartContract,
-        where: smart_contract.address_hash == ^address_hash
-      )
-
-    select_repo(options).one(query)
-  end
-
-  def smart_contract_fully_verified?(address_hash, options \\ [])
-
-  def smart_contract_fully_verified?(address_hash_str, options) when is_binary(address_hash_str) do
-    case string_to_address_hash(address_hash_str) do
-      {:ok, address_hash} ->
-        check_fully_verified(address_hash, options)
-
-      _ ->
-        false
-    end
-  end
-
-  def smart_contract_fully_verified?(address_hash, options) do
-    check_fully_verified(address_hash, options)
-  end
-
-  defp check_fully_verified(address_hash, options) do
-    query =
-      from(
-        smart_contract in SmartContract,
-        where: smart_contract.address_hash == ^address_hash
-      )
-
-    result = select_repo(options).one(query)
-
-    if result, do: !result.partially_verified, else: false
-  end
-
-  def smart_contract_verified?(address_hash_str) when is_binary(address_hash_str) do
-    case string_to_address_hash(address_hash_str) do
-      {:ok, address_hash} ->
-        check_verified(address_hash)
-
-      _ ->
-        false
-    end
-  end
-
-  def smart_contract_verified?(address_hash) do
-    check_verified(address_hash)
-  end
-
-  defp check_verified(address_hash) do
-    query =
-      from(
-        smart_contract in SmartContract,
-        where: smart_contract.address_hash == ^address_hash
-      )
-
-    if Repo.one(query), do: true, else: false
-  end
-
   defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil, with_pending? \\ false) do
     Transaction
     |> order_for_transactions(with_pending?)
@@ -4270,20 +3754,14 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec join_associations(atom() | Ecto.Query.t(), map) :: Ecto.Query.t()
+  @doc """
+    Function to preload entities associated with selected in provided query items
+  """
   def join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
     end)
-  end
-
-  defp page_addresses(query, %PagingOptions{key: nil}), do: query
-
-  defp page_addresses(query, %PagingOptions{key: {coin_balance, hash}}) do
-    from(address in query,
-      where:
-        (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
-          address.fetched_coin_balance < ^coin_balance
-    )
   end
 
   defp page_gas_usage(query, %PagingOptions{key: nil}), do: query
@@ -6654,36 +6132,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Checks if it exists a verified `t:Explorer.Chain.SmartContract.t/0` for the
-  `t:Explorer.Chain.Address.t/0` with the provided `hash`.
-
-  Returns `:ok` if found and `:not_found` otherwise.
-  """
-  @spec check_verified_smart_contract_exists(Hash.Address.t()) :: :ok | :not_found
-  def check_verified_smart_contract_exists(address_hash) do
-    address_hash
-    |> verified_smart_contract_exists?()
-    |> boolean_to_check_result()
-  end
-
-  @doc """
-  Checks if it exists a verified `t:Explorer.Chain.SmartContract.t/0` for the
-  `t:Explorer.Chain.Address.t/0` with the provided `hash`.
-
-  Returns `true` if found and `false` otherwise.
-  """
-  @spec verified_smart_contract_exists?(Hash.Address.t()) :: boolean()
-  def verified_smart_contract_exists?(address_hash) do
-    query =
-      from(
-        smart_contract in SmartContract,
-        where: smart_contract.address_hash == ^address_hash
-      )
-
-    Repo.exists?(query)
-  end
-
-  @doc """
   Checks if a `t:Explorer.Chain.Transaction.t/0` with the given `hash` exists.
 
   Returns `:ok` if found
@@ -6854,9 +6302,9 @@ defmodule Explorer.Chain do
     Repo.exists?(query)
   end
 
-  defp boolean_to_check_result(true), do: :ok
+  def boolean_to_check_result(true), do: :ok
 
-  defp boolean_to_check_result(false), do: :not_found
+  def boolean_to_check_result(false), do: :not_found
 
   @doc """
   Fetches the first trace from the Nethermind trace URL.
@@ -6873,95 +6321,6 @@ defmodule Explorer.Chain do
         :ignore
     end
   end
-
-  def combine_proxy_implementation_abi(smart_contract, options \\ [])
-
-  def combine_proxy_implementation_abi(%SmartContract{abi: abi} = smart_contract, options) when not is_nil(abi) do
-    implementation_abi = get_implementation_abi_from_proxy(smart_contract, options)
-
-    if Enum.empty?(implementation_abi), do: abi, else: implementation_abi ++ abi
-  end
-
-  def combine_proxy_implementation_abi(_, _) do
-    []
-  end
-
-  def gnosis_safe_contract?(abi) when not is_nil(abi) do
-    implementation_method_abi =
-      abi
-      |> Enum.find(fn method ->
-        master_copy_pattern?(method)
-      end)
-
-    if implementation_method_abi, do: true, else: false
-  end
-
-  def gnosis_safe_contract?(abi) when is_nil(abi), do: false
-
-  def master_copy_pattern?(method) do
-    Map.get(method, "type") == "constructor" &&
-      method
-      |> Enum.find(fn item ->
-        case item do
-          {"inputs", inputs} ->
-            master_copy_input?(inputs) || singleton_input?(inputs)
-
-          _ ->
-            false
-        end
-      end)
-  end
-
-  defp master_copy_input?(inputs) do
-    inputs
-    |> Enum.find(fn input ->
-      Map.get(input, "name") == "_masterCopy"
-    end)
-  end
-
-  defp singleton_input?(inputs) do
-    inputs
-    |> Enum.find(fn input ->
-      Map.get(input, "name") == "_singleton"
-    end)
-  end
-
-  def get_implementation_abi(implementation_address_hash_string, options \\ [])
-
-  def get_implementation_abi(implementation_address_hash_string, options)
-      when not is_nil(implementation_address_hash_string) do
-    case Chain.string_to_address_hash(implementation_address_hash_string) do
-      {:ok, implementation_address_hash} ->
-        implementation_smart_contract =
-          implementation_address_hash
-          |> address_hash_to_smart_contract(options)
-
-        if implementation_smart_contract do
-          implementation_smart_contract
-          |> Map.get(:abi)
-        else
-          []
-        end
-
-      _ ->
-        []
-    end
-  end
-
-  def get_implementation_abi(implementation_address_hash_string, _) when is_nil(implementation_address_hash_string) do
-    []
-  end
-
-  def get_implementation_abi_from_proxy(
-        %SmartContract{address_hash: proxy_address_hash, abi: abi} = smart_contract,
-        options
-      )
-      when not is_nil(proxy_address_hash) and not is_nil(abi) do
-    {implementation_address_hash_string, _name} = SmartContract.get_implementation_address_hash(smart_contract, options)
-    get_implementation_abi(implementation_address_hash_string)
-  end
-
-  def get_implementation_abi_from_proxy(_, _), do: []
 
   defp format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments) do
     {:ok, to_address_hash} =
@@ -7283,7 +6642,7 @@ defmodule Explorer.Chain do
   @spec get_token_transfer_type(TokenTransfer.t()) ::
           :token_burning | :token_minting | :token_spawning | :token_transfer
   def get_token_transfer_type(transfer) do
-    {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
+    {:ok, burn_address_hash} = Chain.string_to_address_hash(SmartContract.burn_address_hash_string())
 
     cond do
       transfer.to_address_hash == burn_address_hash && transfer.from_address_hash !== burn_address_hash ->
@@ -7814,20 +7173,6 @@ defmodule Explorer.Chain do
           )
       }
     )
-  end
-
-  @spec verified_contracts_top(non_neg_integer()) :: [Hash.Address.t()]
-  def verified_contracts_top(limit) do
-    query =
-      from(contract in SmartContract,
-        inner_join: address in Address,
-        on: contract.address_hash == address.hash,
-        order_by: [desc: address.transactions_count],
-        limit: ^limit,
-        select: contract.address_hash
-      )
-
-    Repo.all(query)
   end
 
   @spec default_paging_options() :: map()

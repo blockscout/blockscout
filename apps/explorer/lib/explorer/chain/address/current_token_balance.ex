@@ -38,7 +38,10 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
           updated_at: DateTime.t(),
           value: Decimal.t() | nil,
           token_id: non_neg_integer() | nil,
-          token_type: String.t()
+          token_type: String.t(),
+          distinct_token_instances_count: non_neg_integer(),
+          token_ids: list(Decimal.t()),
+          preloaded_token_instances: list()
         }
 
   schema "address_current_token_balances" do
@@ -49,6 +52,9 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     field(:token_id, :decimal)
     field(:token_type, :string)
     field(:fiat_value, :decimal, virtual: true)
+    field(:distinct_token_instances_count, :integer, virtual: true)
+    field(:token_ids, {:array, :decimal}, virtual: true)
+    field(:preloaded_token_instances, {:array, :any}, virtual: true)
 
     # A transient field for deriving token holder count deltas during address_current_token_balances upserts
     field(:old_value, :decimal)

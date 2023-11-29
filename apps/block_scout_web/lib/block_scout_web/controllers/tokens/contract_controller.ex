@@ -6,13 +6,13 @@ defmodule BlockScoutWeb.Tokens.ContractController do
 
   alias BlockScoutWeb.{AccessHelper, TabHelper}
   alias Explorer.Chain
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, SmartContract}
 
   def index(conn, %{"token_id" => address_hash_string} = params) do
     options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         :ok <- Chain.check_verified_smart_contract_exists(address_hash),
+         :ok <- SmartContract.check_verified_smart_contract_exists(address_hash),
          {:ok, token} <- Chain.token_from_address_hash(address_hash, options),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       %{type: type, action: action} =

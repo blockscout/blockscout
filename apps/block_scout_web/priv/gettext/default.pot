@@ -283,7 +283,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20
 #: lib/block_scout_web/templates/transaction_state/index.html.eex:34
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:60
-#: lib/block_scout_web/views/address_view.ex:122
+#: lib/block_scout_web/views/address_view.ex:123
 #, elixir-autogen, elixir-format
 msgid "Address"
 msgstr ""
@@ -578,7 +578,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:62
 #: lib/block_scout_web/templates/address/overview.html.eex:344
 #: lib/block_scout_web/templates/address_validation/index.html.eex:11
-#: lib/block_scout_web/views/address_view.ex:414
+#: lib/block_scout_web/views/address_view.ex:415
 #, elixir-autogen, elixir-format
 msgid "Blocks Validated"
 msgstr ""
@@ -724,13 +724,13 @@ msgstr ""
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:187
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:126
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:149
-#: lib/block_scout_web/views/address_view.ex:407
+#: lib/block_scout_web/views/address_view.ex:408
 #, elixir-autogen, elixir-format
 msgid "Code"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:48
-#: lib/block_scout_web/views/address_view.ex:413
+#: lib/block_scout_web/views/address_view.ex:414
 #, elixir-autogen, elixir-format
 msgid "Coin Balance History"
 msgstr ""
@@ -834,14 +834,14 @@ msgstr ""
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:18
 #: lib/block_scout_web/templates/account/custom_abi/index.html.eex:29
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_contract_address_field.html.eex:3
-#: lib/block_scout_web/views/address_view.ex:120
+#: lib/block_scout_web/views/address_view.ex:121
 #, elixir-autogen, elixir-format
 msgid "Contract Address"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:16
-#: lib/block_scout_web/views/address_view.ex:60
-#: lib/block_scout_web/views/address_view.ex:94
+#: lib/block_scout_web/views/address_view.ex:61
+#: lib/block_scout_web/views/address_view.ex:95
 #, elixir-autogen
 msgid "Contract Address Pending"
 msgstr ""
@@ -1132,7 +1132,7 @@ msgstr ""
 msgid "Decoded"
 msgstr ""
 
-#: lib/block_scout_web/views/address_view.ex:408
+#: lib/block_scout_web/views/address_view.ex:409
 #, elixir-autogen, elixir-format
 msgid "Decompiled Code"
 msgstr ""
@@ -1638,7 +1638,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:17
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:11
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:6
-#: lib/block_scout_web/views/address_view.ex:404
+#: lib/block_scout_web/views/address_view.ex:405
 #: lib/block_scout_web/views/transaction_view.ex:533
 #, elixir-autogen, elixir-format
 msgid "Internal Transactions"
@@ -1651,7 +1651,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:16
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:19
-#: lib/block_scout_web/views/tokens/overview_view.ex:54
+#: lib/block_scout_web/views/tokens/overview_view.ex:55
 #, elixir-autogen, elixir-format
 msgid "Inventory"
 msgstr ""
@@ -1754,7 +1754,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/index.html.eex:10
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:17
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:8
-#: lib/block_scout_web/views/address_view.ex:415
+#: lib/block_scout_web/views/address_view.ex:416
 #: lib/block_scout_web/views/transaction_view.ex:534
 #, elixir-autogen, elixir-format
 msgid "Logs"
@@ -1772,7 +1772,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/layout/app.html.eex:99
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:192
-#: lib/block_scout_web/views/address_view.ex:160
+#: lib/block_scout_web/views/address_view.ex:161
 #, elixir-autogen, elixir-format
 msgid "Market Cap"
 msgstr ""
@@ -2256,15 +2256,15 @@ msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:95
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:27
-#: lib/block_scout_web/views/address_view.ex:409
-#: lib/block_scout_web/views/tokens/overview_view.ex:53
+#: lib/block_scout_web/views/address_view.ex:410
+#: lib/block_scout_web/views/tokens/overview_view.ex:54
 #, elixir-autogen, elixir-format
 msgid "Read Contract"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:102
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:41
-#: lib/block_scout_web/views/address_view.ex:410
+#: lib/block_scout_web/views/address_view.ex:411
 #, elixir-autogen, elixir-format
 msgid "Read Proxy"
 msgstr ""
@@ -2941,7 +2941,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/instance/holder/index.html.eex:16
 #: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:17
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:11
-#: lib/block_scout_web/views/tokens/overview_view.ex:52
+#: lib/block_scout_web/views/tokens/overview_view.ex:53
 #, elixir-autogen, elixir-format
 msgid "Token Holders"
 msgstr ""
@@ -2974,9 +2974,9 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:15
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
-#: lib/block_scout_web/views/address_view.ex:406
+#: lib/block_scout_web/views/address_view.ex:407
 #: lib/block_scout_web/views/tokens/instance/overview_view.ex:114
-#: lib/block_scout_web/views/tokens/overview_view.ex:51
+#: lib/block_scout_web/views/tokens/overview_view.ex:52
 #: lib/block_scout_web/views/transaction_view.ex:532
 #, elixir-autogen, elixir-format
 msgid "Token Transfers"
@@ -2994,7 +2994,7 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:86
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:123
 #: lib/block_scout_web/templates/tokens/index.html.eex:10
-#: lib/block_scout_web/views/address_view.ex:403
+#: lib/block_scout_web/views/address_view.ex:404
 #, elixir-autogen, elixir-format
 msgid "Tokens"
 msgstr ""
@@ -3145,6 +3145,7 @@ msgid "Transaction type, introduced in EIP-2718."
 msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:13
+#: lib/block_scout_web/templates/address/_tile.html.eex:31
 #: lib/block_scout_web/templates/address/overview.html.eex:255
 #: lib/block_scout_web/templates/address/overview.html.eex:261
 #: lib/block_scout_web/templates/address/overview.html.eex:269
@@ -3153,7 +3154,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block/overview.html.eex:80
 #: lib/block_scout_web/templates/chain/show.html.eex:243
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:50
-#: lib/block_scout_web/views/address_view.ex:405
+#: lib/block_scout_web/views/address_view.ex:406
 #, elixir-autogen, elixir-format
 msgid "Transactions"
 msgstr ""
@@ -3161,11 +3162,6 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:170
 #, elixir-autogen, elixir-format
 msgid "Transactions and address of creation."
-msgstr ""
-
-#: lib/block_scout_web/templates/address/_tile.html.eex:31
-#, elixir-autogen, elixir-format
-msgid "Transactions sent"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:282
@@ -3501,14 +3497,14 @@ msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:109
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:34
-#: lib/block_scout_web/views/address_view.ex:411
+#: lib/block_scout_web/views/address_view.ex:412
 #, elixir-autogen, elixir-format
 msgid "Write Contract"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:116
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:48
-#: lib/block_scout_web/views/address_view.ex:412
+#: lib/block_scout_web/views/address_view.ex:413
 #, elixir-autogen, elixir-format
 msgid "Write Proxy"
 msgstr ""
@@ -3660,7 +3656,7 @@ msgstr ""
 msgid "fallback"
 msgstr ""
 
-#: lib/block_scout_web/views/address_contract_view.ex:26
+#: lib/block_scout_web/views/address_contract_view.ex:28
 #, elixir-autogen, elixir-format
 msgid "false"
 msgstr ""
@@ -3726,7 +3722,7 @@ msgstr ""
 msgid "string"
 msgstr ""
 
-#: lib/block_scout_web/views/address_contract_view.ex:25
+#: lib/block_scout_web/views/address_contract_view.ex:27
 #, elixir-autogen, elixir-format
 msgid "true"
 msgstr ""

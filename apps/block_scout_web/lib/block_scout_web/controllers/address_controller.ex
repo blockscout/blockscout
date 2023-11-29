@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.AddressController do
 
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.{Address, Wei}
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.AddressController do
     addresses =
       params
       |> paging_options()
-      |> Chain.list_top_addresses()
+      |> Address.list_top_addresses()
 
     {addresses_page, next_page} = split_list_by_page(addresses)
 

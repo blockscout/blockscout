@@ -8,6 +8,8 @@ defmodule Explorer.Chain.TransactionTest do
 
   doctest Transaction
 
+  setup :verify_on_exit!
+
   describe "changeset/2" do
     test "with valid attributes" do
       assert %Changeset{valid?: true} =
@@ -265,7 +267,7 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert()
         |> Repo.preload(to_address: :smart_contract)
 
-      get_eip1967_implementation()
+      request_zero_implementations()
 
       assert {{:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]}, _, _} =
                Transaction.decoded_input_data(transaction, [])
@@ -288,7 +290,7 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert(to_address: contract.address, input: "0x" <> input_data)
         |> Repo.preload(to_address: :smart_contract)
 
-      get_eip1967_implementation()
+      request_zero_implementations()
 
       assert {{:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}, _, _} =
                Transaction.decoded_input_data(transaction, [])
@@ -309,7 +311,8 @@ defmodule Explorer.Chain.TransactionTest do
     end
   end
 
-  def get_eip1967_implementation do
+  # EIP-1967 + EIP-1822
+  defp request_zero_implementations do
     EthereumJSONRPC.Mox
     |> expect(:json_rpc, fn %{
                               id: 0,
@@ -341,6 +344,18 @@ defmodule Explorer.Chain.TransactionTest do
                               params: [
                                 _,
                                 "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
                                 "latest"
                               ]
                             },

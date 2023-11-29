@@ -7,7 +7,6 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
 
   require Logger
 
-  alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.CompilerVersion
   alias Explorer.SmartContract.Vyper.Verifier
@@ -124,7 +123,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
     Logger.info("Publish successfully verified Vyper smart-contract #{address_hash} into the DB")
     attrs = address_hash |> attributes(params, abi)
 
-    Chain.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    SmartContract.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
   end
 
   defp unverified_smart_contract(address_hash, params, error, error_message, verification_with_files? \\ false) do

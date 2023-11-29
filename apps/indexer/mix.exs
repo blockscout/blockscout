@@ -14,7 +14,7 @@ defmodule Indexer.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "5.3.1"
+      version: "5.3.2"
     ]
   end
 
@@ -55,7 +55,8 @@ defmodule Indexer.MixProject do
       # Tracing
       {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog
-      {:spandex_datadog, "~> 1.0"}
+      {:spandex_datadog, "~> 1.0"},
+      {:logger_json, "~> 5.1"}
     ]
   end
 
