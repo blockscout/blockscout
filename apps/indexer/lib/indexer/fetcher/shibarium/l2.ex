@@ -13,11 +13,12 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   import EthereumJSONRPC,
     only: [
       fetch_block_number_by_tag: 2,
-      integer_to_quantity: 1,
       json_rpc: 2,
       quantity_to_integer: 1,
       request: 1
     ]
+
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   import Explorer.Helper, only: [decode_data: 2, parse_integer: 1]
 
@@ -27,7 +28,6 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   alias Explorer.Chain.Shibarium.Bridge
   alias Indexer.Helper
 
-  @burn_address "0x0000000000000000000000000000000000000000"
   @eth_get_logs_range_size 100
   @fetcher_name :shibarium_bridge_l2
   @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
@@ -47,8 +47,8 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   # 32-byte signature of the event Withdraw(address indexed rootToken, address indexed from, uint256 amount, uint256, uint256)
   @withdraw_event "0xebff2602b3f468259e1e99f613fed6691f3a6526effe6ef3e768ba7ae7a36c4f"
 
-  # 32-byte signature of the event LogFeeTransfer(address indexed, address indexed, address indexed, uint256, uint256, uint256, uint256, uint256)
-  @log_fee_transfer_event "0x4dfe1bbbcf077ddc3e01291eea2d5c70c2b422b415d95645b9adcfd678cb1d63"
+  # 4-byte signature of the method withdraw(uint256 amount)
+  @withdraw_method "0x2e1a7d4d"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -173,7 +173,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
 
       operations =
         chunk_start..chunk_end
-        |> get_logs_all(child_chain, weth, bone_withdraw, json_rpc_named_arguments)
+        |> get_logs_all(child_chain, bone_withdraw, json_rpc_named_arguments)
         |> prepare_operations(weth)
 
       {:ok, _} =
@@ -199,6 +199,70 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
+  end
+
+  def log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, items_count, layer) do
+    is_start = is_nil(items_count)
+
+    {type, found} =
+      if is_start do
+        {"Start", ""}
+      else
+        {"Finish", " Found #{items_count}."}
+      end
+
+    target_range =
+      if chunk_start != start_block or chunk_end != end_block do
+        progress =
+          if is_start do
+            ""
+          else
+            percentage =
+              (chunk_end - start_block + 1)
+              |> Decimal.div(end_block - start_block + 1)
+              |> Decimal.mult(100)
+              |> Decimal.round(2)
+              |> Decimal.to_string()
+
+            " Progress: #{percentage}%"
+          end
+
+        " Target range: #{start_block}..#{end_block}.#{progress}"
+      else
+        ""
+      end
+
+    if chunk_start == chunk_end do
+      Logger.info("#{type} handling #{layer} block ##{chunk_start}.#{found}#{target_range}")
+    else
+      Logger.info("#{type} handling #{layer} block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
+    end
+  end
+
+  def prepare_insert_items(operations) do
+    operations
+    |> Enum.reduce([], fn op, acc ->
+      if bind_existing_operation_in_db(op) == 0 do
+        [op | acc]
+      else
+        acc
+      end
+    end)
+    |> Enum.reverse()
+    |> Enum.reduce(%{}, fn item, acc ->
+      Map.put(acc, {item.operation_hash, item.l1_transaction_hash, item.l2_transaction_hash}, item)
+    end)
+    |> Map.values()
+  end
+
+  def prepare_operations({events, timestamps}, weth) do
+    events
+    |> Enum.map(fn event ->
+      event
+      |> get_op_user()
+      |> prepare_operation(event, timestamps, weth)
+    end)
+    |> List.flatten()
   end
 
   def reorg_handle(reorg_block) do
@@ -228,6 +292,30 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
         "As L2 reorg was detected, some rows with l2_block_number >= #{reorg_block} were affected (removed or updated) in the shibarium_bridge table. Number of removed rows: #{deleted_count}. Number of updated rows: >= #{updated_count}."
       )
     end
+  end
+
+  def token_deposited_event_signature do
+    @token_deposited_event
+  end
+
+  def transfer_event_signature do
+    @transfer_event
+  end
+
+  def transfer_single_event_signature do
+    @transfer_single_event
+  end
+
+  def transfer_batch_event_signature do
+    @transfer_batch_event
+  end
+
+  def withdraw_event_signature do
+    @withdraw_event
+  end
+
+  def withdraw_method_signature do
+    @withdraw_method
   end
 
   defp bind_existing_operation_in_db(op) do
@@ -321,59 +409,31 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     |> Kernel.||({0, nil})
   end
 
-  defp get_logs_all(block_range, child_chain, weth, bone_withdraw, json_rpc_named_arguments) do
+  defp get_logs_all(block_range, child_chain, bone_withdraw, json_rpc_named_arguments) do
     blocks = get_blocks_by_range(block_range, json_rpc_named_arguments, 100_000_000)
 
-    from_block..to_block = block_range
+    tokens_deposit_result = get_deposit_logs_from_receipts(blocks, child_chain, json_rpc_named_arguments)
 
-    {:ok, get_logs_result} =
-      get_logs(
-        from_block,
-        to_block,
-        [
-          weth,
-          bone_withdraw
-        ],
-        [
-          [
-            @log_fee_transfer_event,
-            @transfer_event,
-            @withdraw_event
-          ]
-        ],
-        json_rpc_named_arguments
-      )
+    tokens_withdraw_result = get_withdrawal_logs_from_receipts(blocks, bone_withdraw, json_rpc_named_arguments)
 
-    known_tokens_result =
-      get_logs_result
-      |> Logs.elixir_to_params()
-
-    tokens_deposit_result =
+    timestamps =
       blocks
-      |> get_deposit_logs_from_receipts(child_chain, json_rpc_named_arguments)
+      |> Enum.reduce(%{}, fn block, acc ->
+        block_number =
+          block
+          |> Map.get("number")
+          |> quantity_to_integer()
 
-    tokens_withdraw_result =
-      blocks
-      |> get_withdrawal_logs_from_receipts(weth, json_rpc_named_arguments)
-      |> Enum.filter(fn event ->
-        # filter withdrawal Transfer* events by having LogFeeTransfer event (emitted by BoneWithdraw contract) in the same transaction
-        Enum.any?(known_tokens_result, fn e ->
-          e.first_topic == @log_fee_transfer_event and String.downcase(e.address_hash) == bone_withdraw and
-            e.transaction_hash == event.transaction_hash
-        end)
+        {:ok, timestamp} =
+          block
+          |> Map.get("timestamp")
+          |> quantity_to_integer()
+          |> DateTime.from_unix()
+
+        Map.put(acc, block_number, timestamp)
       end)
 
-    # remove LogFeeTransfer event (and excess Transfer events) from the list
-    known_tokens_final_result =
-      known_tokens_result
-      |> Enum.filter(fn event ->
-        event.first_topic != @log_fee_transfer_event and
-          (event.first_topic != @transfer_event or event.second_topic == @empty_hash or event.third_topic == @empty_hash) and
-          (event.first_topic != @transfer_event or event.second_topic != @empty_hash or
-             String.downcase(event.address_hash) != weth)
-      end)
-
-    {known_tokens_final_result ++ tokens_deposit_result ++ tokens_withdraw_result, blocks}
+    {tokens_deposit_result ++ tokens_withdraw_result, timestamps}
   end
 
   defp get_deposit_logs_from_receipts(blocks, child_chain, json_rpc_named_arguments) do
@@ -382,7 +442,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       hashes =
         block
         |> Map.get("transactions", [])
-        |> Enum.filter(fn t -> Map.get(t, "from") == @burn_address end)
+        |> Enum.filter(fn t -> Map.get(t, "from") == burn_address_hash_string() end)
         |> Enum.map(fn t -> Map.get(t, "hash") end)
 
       acc ++ hashes
@@ -401,7 +461,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     end)
   end
 
-  defp get_withdrawal_logs_from_receipts(blocks, weth, json_rpc_named_arguments) do
+  defp get_withdrawal_logs_from_receipts(blocks, bone_withdraw, json_rpc_named_arguments) do
     blocks
     |> Enum.reduce([], fn block, acc ->
       hashes =
@@ -409,7 +469,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
         |> Map.get("transactions", [])
         |> Enum.filter(fn t ->
           # filter by `withdraw(uint256 amount)` signature
-          String.downcase(String.slice(Map.get(t, "input", ""), 0..9)) == "0x2e1a7d4d"
+          String.downcase(String.slice(Map.get(t, "input", ""), 0..9)) == @withdraw_method
         end)
         |> Enum.map(fn t -> Map.get(t, "hash") end)
 
@@ -422,34 +482,11 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     |> Enum.filter(fn event ->
       address = String.downcase(event.address_hash)
 
-      (event.first_topic == @transfer_event and event.second_topic != @empty_hash and event.third_topic == @empty_hash and
-         address != weth) or
+      (event.first_topic == @withdraw_event and address == bone_withdraw) or
+        (event.first_topic == @transfer_event and event.second_topic != @empty_hash and event.third_topic == @empty_hash) or
         (Enum.member?([@transfer_single_event, @transfer_batch_event], event.first_topic) and
            event.third_topic != @empty_hash and event.fourth_topic == @empty_hash)
     end)
-  end
-
-  defp get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, retries \\ 100_000_000) do
-    processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
-    processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
-
-    req =
-      request(%{
-        id: 0,
-        method: "eth_getLogs",
-        params: [
-          %{
-            :fromBlock => processed_from_block,
-            :toBlock => processed_to_block,
-            :address => address,
-            :topics => topics
-          }
-        ]
-      })
-
-    error_message = &"Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(&1)}"
-
-    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
   defp get_op_amounts(event) do
@@ -572,62 +609,8 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     end
   end
 
-  defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, items_count, layer) do
-    is_start = is_nil(items_count)
-
-    {type, found} =
-      if is_start do
-        {"Start", ""}
-      else
-        {"Finish", " Found #{items_count}."}
-      end
-
-    target_range =
-      if chunk_start != start_block or chunk_end != end_block do
-        progress =
-          if is_start do
-            ""
-          else
-            percentage =
-              (chunk_end - start_block + 1)
-              |> Decimal.div(end_block - start_block + 1)
-              |> Decimal.mult(100)
-              |> Decimal.round(2)
-              |> Decimal.to_string()
-
-            " Progress: #{percentage}%"
-          end
-
-        " Target range: #{start_block}..#{end_block}.#{progress}"
-      else
-        ""
-      end
-
-    if chunk_start == chunk_end do
-      Logger.info("#{type} handling #{layer} block ##{chunk_start}.#{found}#{target_range}")
-    else
-      Logger.info("#{type} handling #{layer} block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
-    end
-  end
-
-  defp prepare_insert_items(operations) do
-    operations
-    |> Enum.reduce([], fn op, acc ->
-      if bind_existing_operation_in_db(op) == 0 do
-        [op | acc]
-      else
-        acc
-      end
-    end)
-    |> Enum.reverse()
-    |> Enum.reduce(%{}, fn item, acc ->
-      Map.put(acc, {item.operation_hash, item.l1_transaction_hash, item.l2_transaction_hash}, item)
-    end)
-    |> Map.values()
-  end
-
   defp prepare_operation(user, event, timestamps, weth) do
-    if user == @burn_address do
+    if user == burn_address_hash_string() do
       []
     else
       {amounts_or_ids, operation_id} = get_op_amounts(event)
@@ -670,24 +653,6 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
         }
       end)
     end
-  end
-
-  defp prepare_operations({events, blocks}, weth) do
-    timestamps =
-      blocks
-      |> Enum.reduce(%{}, fn block, acc ->
-        block_number = quantity_to_integer(Map.get(block, "number"))
-        {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
-        Map.put(acc, block_number, timestamp)
-      end)
-
-    events
-    |> Enum.map(fn event ->
-      event
-      |> get_op_user()
-      |> prepare_operation(event, timestamps, weth)
-    end)
-    |> List.flatten()
   end
 
   defp repeated_call(func, args, error_message, retries_left) do

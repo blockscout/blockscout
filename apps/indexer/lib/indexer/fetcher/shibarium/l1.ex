@@ -272,19 +272,9 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
             )
             |> prepare_operations(json_rpc_named_arguments)
 
-          insert_items = prepare_insert_items(operations)
-
-          # Enum.each(insert_items, fn op ->
-          #   if op.operation_hash == "0x33289b76a00e6382d59374e0e93590c2f0a9eff47b34758c6bc6fd2928e076ba" do
-          #     Logger.warn("inserting L1:")
-          #     Logger.warn("l1_transaction_hash = #{op.l1_transaction_hash}")
-          #     Logger.warn("l2_transaction_hash = #{op.l2_transaction_hash}")
-          #   end
-          # end)
-
           {:ok, _} =
             Chain.import(%{
-              shibarium_bridge_operations: %{params: insert_items},
+              shibarium_bridge_operations: %{params: prepare_insert_items(operations)},
               timeout: :infinity
             })
 
@@ -352,10 +342,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
           [l1_transaction_hash: op.l1_transaction_hash, l1_block_number: op.l1_block_number] ++
             if(op.operation_type == "deposit", do: [timestamp: op.timestamp], else: [])
       )
-
-    # if op.operation_hash == "0x33289b76a00e6382d59374e0e93590c2f0a9eff47b34758c6bc6fd2928e076ba" do
-    #  Logger.warn("updated_count L1 = #{updated_count}")
-    # end
 
     updated_count
   end
