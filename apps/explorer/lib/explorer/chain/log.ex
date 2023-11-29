@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Log do
   alias ABI.{Event, FunctionSelector}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Transaction}
+  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.SigProviderInterface
 
   @required_attrs ~w(address_hash data block_hash index transaction_hash)a
@@ -165,7 +166,7 @@ defmodule Explorer.Chain.Log do
     else
       case Chain.find_contract_address(address_hash, address_options, false) do
         {:ok, %{smart_contract: smart_contract}} ->
-          full_abi = Chain.combine_proxy_implementation_abi(smart_contract, options)
+          full_abi = Proxy.combine_proxy_implementation_abi(smart_contract, options)
           {full_abi, Map.put(acc, address_hash, full_abi)}
 
         _ ->

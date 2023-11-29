@@ -1580,7 +1580,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:16
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:19
-#: lib/block_scout_web/views/tokens/overview_view.ex:42
+#: lib/block_scout_web/views/tokens/overview_view.ex:43
 #, elixir-autogen, elixir-format
 msgid "Inventory"
 msgstr ""
@@ -2820,7 +2820,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/instance/holder/index.html.eex:16
 #: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:17
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:11
-#: lib/block_scout_web/views/tokens/overview_view.ex:40
+#: lib/block_scout_web/views/tokens/overview_view.ex:41
 #, elixir-autogen, elixir-format
 msgid "Token Holders"
 msgstr ""

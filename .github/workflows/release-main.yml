@@ -3,7 +3,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Publish Docker image
+name: Release main
 
 on:
   release:
@@ -18,7 +18,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.3.1
+      RELEASE_VERSION: 5.3.2
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4

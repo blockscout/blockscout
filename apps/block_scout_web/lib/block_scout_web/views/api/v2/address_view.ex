@@ -67,10 +67,14 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     %{"items" => Enum.map(nft_collections, &prepare_nft_collection(&1)), "next_page_params" => next_page_params}
   end
 
-  def prepare_address({address, nonce}) do
+  @spec prepare_address(
+          {atom() | %{:fetched_coin_balance => any(), :hash => any(), optional(any()) => any()}, any()}
+          | Explorer.Chain.Address.t()
+        ) :: %{optional(:coin_balance) => any(), optional(:tx_count) => binary(), optional(<<_::32, _::_*8>>) => any()}
+  def prepare_address({address, tx_count}) do
     nil
     |> Helper.address_with_info(address, address.hash, true)
-    |> Map.put(:tx_count, to_string(nonce))
+    |> Map.put(:tx_count, to_string(tx_count))
     |> Map.put(:coin_balance, if(address.fetched_coin_balance, do: address.fetched_coin_balance.value))
   end
 

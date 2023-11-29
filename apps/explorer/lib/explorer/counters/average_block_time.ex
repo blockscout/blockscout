@@ -84,7 +84,7 @@ defmodule Explorer.Counters.AverageBlockTime do
 
     timestamps =
       timestamps_row
-      |> Enum.sort_by(fn {_, timestamp} -> timestamp end, &>=/2)
+      |> Enum.sort_by(fn {_, timestamp} -> timestamp end, &Timex.after?/2)
       |> Enum.map(fn {number, timestamp} ->
         {number, DateTime.to_unix(timestamp, :millisecond)}
       end)
@@ -125,7 +125,7 @@ defmodule Explorer.Counters.AverageBlockTime do
   defp compose_durations(durations, block_number, last_block_number, last_timestamp, timestamp) do
     block_numbers_range = last_block_number - block_number
 
-    if block_numbers_range == 0 do
+    if block_numbers_range <= 0 do
       {durations, block_number, timestamp}
     else
       duration = (last_timestamp - timestamp) / block_numbers_range

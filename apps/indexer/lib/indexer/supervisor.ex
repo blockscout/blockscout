@@ -29,6 +29,7 @@ defmodule Indexer.Supervisor do
     PendingTransaction,
     PolygonEdge,
     ReplacedTransaction,
+    RootstockData,
     Token,
     TokenBalance,
     TokenTotalSupplyUpdater,
@@ -153,6 +154,7 @@ defmodule Indexer.Supervisor do
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {PendingOpsCleaner, [[], []]},
         {PendingBlockOperationsSanitizer, [[]]},
+        {RootstockData.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
 
         # Block fetchers
         configure(BlockRealtime.Supervisor, [

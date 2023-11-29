@@ -4,7 +4,6 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   alias BlockScoutWeb.AddressView
   alias BlockScoutWeb.API.RPC.RPCView
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain
   alias Explorer.Chain.{Address, DecompiledSmartContract, SmartContract}
 
   defguardp is_empty_string(input) when input == "" or input == nil
@@ -168,7 +167,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   end
 
   defp insert_additional_sources(output, address) do
-    additional_sources_from_twin = Chain.get_address_verified_twin_contract(address.hash).additional_sources
+    additional_sources_from_twin = SmartContract.get_address_verified_twin_contract(address.hash).additional_sources
 
     additional_sources =
       if AddressView.smart_contract_verified?(address),

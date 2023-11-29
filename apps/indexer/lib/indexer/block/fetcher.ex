@@ -33,7 +33,6 @@ defmodule Indexer.Block.Fetcher do
 
   alias Indexer.Transform.{
     AddressCoinBalances,
-    AddressCoinBalancesDaily,
     Addresses,
     AddressTokenBalances,
     MintTransfers,
