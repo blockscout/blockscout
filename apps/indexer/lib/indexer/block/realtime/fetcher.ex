@@ -35,6 +35,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Indexer.Block.Realtime.TaskSupervisor
   alias Indexer.Fetcher.{CoinBalance, CoinBalanceDailyUpdater}
   alias Indexer.Fetcher.PolygonEdge.{DepositExecute, Withdrawal}
+  alias Indexer.Fetcher.Shibarium.L2, as: ShibariumBridgeL2
   alias Indexer.Prometheus
   alias Indexer.Transform.Addresses
   alias Timex.Duration
@@ -311,7 +312,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp remove_shibarium_assets_by_number(block_number_to_fetch) do
     if Application.get_env(:explorer, :chain_type) == "shibarium" do
-      Indexer.Fetcher.Shibarium.L2.reorg_handle(block_number_to_fetch)
+      ShibariumBridgeL2.reorg_handle(block_number_to_fetch)
     end
   end
 

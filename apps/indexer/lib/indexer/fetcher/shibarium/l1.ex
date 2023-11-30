@@ -12,7 +12,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
   import EthereumJSONRPC,
     only: [
-      fetch_block_number_by_tag: 2,
       integer_to_quantity: 1,
       json_rpc: 2,
       quantity_to_integer: 1,
@@ -20,6 +19,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     ]
 
   import Explorer.Helper, only: [parse_integer: 1, decode_data: 2]
+
+  import Indexer.Fetcher.Shibarium.Helper, only: [calc_operation_hash: 5, prepare_insert_items: 2]
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
@@ -112,19 +113,19 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
          rpc = env[:rpc],
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
          {:deposit_manager_address_is_valid, true} <-
-           {:deposit_manager_address_is_valid, Helper.is_address_correct?(env[:deposit_manager_proxy])},
+           {:deposit_manager_address_is_valid, Helper.address_correct?(env[:deposit_manager_proxy])},
          {:ether_predicate_address_is_valid, true} <-
-           {:ether_predicate_address_is_valid, Helper.is_address_correct?(env[:ether_predicate_proxy])},
+           {:ether_predicate_address_is_valid, Helper.address_correct?(env[:ether_predicate_proxy])},
          {:erc20_predicate_address_is_valid, true} <-
-           {:erc20_predicate_address_is_valid, Helper.is_address_correct?(env[:erc20_predicate_proxy])},
+           {:erc20_predicate_address_is_valid, Helper.address_correct?(env[:erc20_predicate_proxy])},
          {:erc721_predicate_address_is_valid, true} <-
            {:erc721_predicate_address_is_valid,
-            is_nil(env[:erc721_predicate_proxy]) or Helper.is_address_correct?(env[:erc721_predicate_proxy])},
+            is_nil(env[:erc721_predicate_proxy]) or Helper.address_correct?(env[:erc721_predicate_proxy])},
          {:erc1155_predicate_address_is_valid, true} <-
            {:erc1155_predicate_address_is_valid,
-            is_nil(env[:erc1155_predicate_proxy]) or Helper.is_address_correct?(env[:erc1155_predicate_proxy])},
+            is_nil(env[:erc1155_predicate_proxy]) or Helper.address_correct?(env[:erc1155_predicate_proxy])},
          {:withdraw_manager_address_is_valid, true} <-
-           {:withdraw_manager_address_is_valid, Helper.is_address_correct?(env[:withdraw_manager_proxy])},
+           {:withdraw_manager_address_is_valid, Helper.address_correct?(env[:withdraw_manager_proxy])},
          start_block = parse_integer(env[:start_block]),
          false <- is_nil(start_block),
          true <- start_block > 0,
@@ -132,7 +133,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
          {:start_block_valid, true} <-
            {:start_block_valid, start_block <= last_l1_block_number || last_l1_block_number == 0},
          json_rpc_named_arguments = json_rpc_named_arguments(rpc),
-         {:ok, last_l1_tx} <- get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+         {:ok, last_l1_tx} <- Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
          {:ok, block_check_interval, latest_block} <- get_block_check_interval(json_rpc_named_arguments),
          {:start_block_valid, true} <- {:start_block_valid, start_block <= latest_block} do
@@ -219,7 +220,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
           reorg_monitor_prev_latest: prev_latest
         } = state
       ) do
-    {:ok, latest} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+    {:ok, latest} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
 
     if latest < prev_latest do
       Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
@@ -257,7 +258,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
         chunk_end = List.last(current_chunk)
 
         if chunk_start <= chunk_end do
-          log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+          Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
 
           operations =
             {chunk_start, chunk_end}
@@ -274,11 +275,11 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
           {:ok, _} =
             Chain.import(%{
-              shibarium_bridge_operations: %{params: prepare_insert_items(operations)},
+              shibarium_bridge_operations: %{params: prepare_insert_items(operations, __MODULE__)},
               timeout: :infinity
             })
 
-          log_blocks_chunk_handling(
+          Helper.log_blocks_chunk_handling(
             chunk_start,
             chunk_end,
             start_block,
@@ -299,7 +300,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
       end)
 
     new_start_block = last_written_block + 1
-    {:ok, new_end_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+    {:ok, new_end_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
 
     delay =
       if new_end_block == last_written_block do
@@ -320,62 +321,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     {:noreply, state}
   end
 
-  defp bind_existing_operation_in_db(op) do
-    query =
-      from(sb in Bridge,
-        where:
-          sb.operation_hash == ^op.operation_hash and sb.operation_type == ^op.operation_type and
-            sb.l2_transaction_hash != ^@empty_hash and sb.l1_transaction_hash == ^@empty_hash,
-        order_by: [asc: sb.l2_block_number],
-        limit: 1
-      )
-
-    {updated_count, _} =
-      Repo.update_all(
-        from(b in Bridge,
-          join: s in subquery(query),
-          on:
-            b.operation_hash == s.operation_hash and b.l1_transaction_hash == s.l1_transaction_hash and
-              b.l2_transaction_hash == s.l2_transaction_hash
-        ),
-        set:
-          [l1_transaction_hash: op.l1_transaction_hash, l1_block_number: op.l1_block_number] ++
-            if(op.operation_type == "deposit", do: [timestamp: op.timestamp], else: [])
-      )
-
-    updated_count
-  end
-
-  defp calc_operation_hash(user, amount_or_id, erc1155_ids, erc1155_amounts, operation_id) do
-    user_binary =
-      user
-      |> String.trim_leading("0x")
-      |> Base.decode16!(case: :mixed)
-
-    amount_or_id =
-      if is_nil(amount_or_id) and not Enum.empty?(erc1155_ids) do
-        0
-      else
-        amount_or_id
-      end
-
-    operation_encoded =
-      ABI.encode("(address,uint256,uint256[],uint256[],uint256)", [
-        {
-          user_binary,
-          amount_or_id,
-          erc1155_ids,
-          erc1155_amounts,
-          operation_id
-        }
-      ])
-
-    "0x" <>
-      (operation_encoded
-       |> ExKeccak.hash_256()
-       |> Base.encode16(case: :lower))
-  end
-
   defp filter_deposit_events(events) do
     Enum.filter(events, fn event ->
       topic0 = Enum.at(event["topics"], 0)
@@ -384,10 +329,11 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
   end
 
   defp get_block_check_interval(json_rpc_named_arguments) do
-    with {:ok, latest_block} <- get_block_number_by_tag("latest", json_rpc_named_arguments),
+    with {:ok, latest_block} <- Helper.get_block_number_by_tag("latest", json_rpc_named_arguments),
          first_block = max(latest_block - @block_check_interval_range_size, 1),
-         {:ok, first_block_timestamp} <- get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
-         {:ok, last_safe_block_timestamp} <- get_block_timestamp_by_number(latest_block, json_rpc_named_arguments) do
+         {:ok, first_block_timestamp} <- Helper.get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
+         {:ok, last_safe_block_timestamp} <-
+           Helper.get_block_timestamp_by_number(latest_block, json_rpc_named_arguments) do
       block_check_interval =
         ceil((last_safe_block_timestamp - first_block_timestamp) / (latest_block - first_block) * 1000 / 2)
 
@@ -397,38 +343,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
       {:error, error} ->
         {:error, "Failed to calculate block check interval due to #{inspect(error)}"}
     end
-  end
-
-  defp get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ 3) do
-    error_message = &"Cannot fetch #{tag} block number. Error: #{inspect(&1)}"
-    repeated_call(&fetch_block_number_by_tag/2, [tag, json_rpc_named_arguments], error_message, retries)
-  end
-
-  defp get_block_timestamp_by_number_inner(number, json_rpc_named_arguments) do
-    result =
-      %{id: 0, number: number}
-      |> ByNumber.request(false)
-      |> json_rpc(json_rpc_named_arguments)
-
-    with {:ok, block} <- result,
-         false <- is_nil(block),
-         timestamp <- Map.get(block, "timestamp"),
-         false <- is_nil(timestamp) do
-      {:ok, quantity_to_integer(timestamp)}
-    else
-      {:error, message} ->
-        {:error, message}
-
-      true ->
-        {:error, "RPC returned nil."}
-    end
-  end
-
-  defp get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ 3) do
-    func = &get_block_timestamp_by_number_inner/2
-    args = [number, json_rpc_named_arguments]
-    error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"
-    repeated_call(func, args, error_message, retries)
   end
 
   defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
@@ -444,7 +358,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
     error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
 
-    case repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
+    case Helper.repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
       {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
       {:error, _} -> []
     end
@@ -484,7 +398,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
     error_message = &"Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(&1)}"
 
-    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
+    Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
   defp get_logs_all(
@@ -631,23 +545,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     end
   end
 
-  defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
-
-  defp get_transaction_by_hash(hash, _json_rpc_named_arguments, _retries_left) when is_nil(hash), do: {:ok, nil}
-
-  defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries) do
-    req =
-      request(%{
-        id: 0,
-        method: "eth_getTransactionByHash",
-        params: [hash]
-      })
-
-    error_message = &"eth_getTransactionByHash failed. Error: #{inspect(&1)}"
-
-    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
-  end
-
   defp is_deposit(topic0) do
     Enum.member?(
       [
@@ -675,60 +572,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
         ]
       ]
     ]
-  end
-
-  defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, items_count, layer) do
-    is_start = is_nil(items_count)
-
-    {type, found} =
-      if is_start do
-        {"Start", ""}
-      else
-        {"Finish", " Found #{items_count}."}
-      end
-
-    target_range =
-      if chunk_start != start_block or chunk_end != end_block do
-        progress =
-          if is_start do
-            ""
-          else
-            percentage =
-              (chunk_end - start_block + 1)
-              |> Decimal.div(end_block - start_block + 1)
-              |> Decimal.mult(100)
-              |> Decimal.round(2)
-              |> Decimal.to_string()
-
-            " Progress: #{percentage}%"
-          end
-
-        " Target range: #{start_block}..#{end_block}.#{progress}"
-      else
-        ""
-      end
-
-    if chunk_start == chunk_end do
-      Logger.info("#{type} handling #{layer} block ##{chunk_start}.#{found}#{target_range}")
-    else
-      Logger.info("#{type} handling #{layer} block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
-    end
-  end
-
-  defp prepare_insert_items(operations) do
-    operations
-    |> Enum.reduce([], fn op, acc ->
-      if bind_existing_operation_in_db(op) == 0 do
-        [op | acc]
-      else
-        acc
-      end
-    end)
-    |> Enum.reverse()
-    |> Enum.reduce(%{}, fn item, acc ->
-      Map.put(acc, {item.operation_hash, item.l1_transaction_hash, item.l2_transaction_hash}, item)
-    end)
-    |> Map.values()
   end
 
   defp prepare_operations(events, json_rpc_named_arguments) do
@@ -870,24 +713,5 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
   defp reorg_table_name(fetcher_name) do
     :"#{fetcher_name}#{:_reorgs}"
-  end
-
-  defp repeated_call(func, args, error_message, retries_left) do
-    case apply(func, args) do
-      {:ok, _} = res ->
-        res
-
-      {:error, message} = err ->
-        retries_left = retries_left - 1
-
-        if retries_left <= 0 do
-          Logger.error(error_message.(message))
-          err
-        else
-          Logger.error("#{error_message.(message)} Retrying...")
-          :timer.sleep(3000)
-          repeated_call(func, args, error_message, retries_left)
-        end
-    end
   end
 end

@@ -11,11 +11,10 @@ defmodule Indexer.Fetcher.PolygonEdge do
   import Ecto.Query
 
   import EthereumJSONRPC,
-    only: [fetch_block_number_by_tag: 2, json_rpc: 2, integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
+    only: [json_rpc: 2, integer_to_quantity: 1, request: 1]
 
   import Explorer.Helper, only: [parse_integer: 1]
 
-  alias EthereumJSONRPC.Block.ByNumber
   alias Explorer.Chain.Events.Publisher
   alias Explorer.{Chain, Repo}
   alias Indexer.{BoundQueue, Helper}
@@ -92,7 +91,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
          json_rpc_named_arguments = json_rpc_named_arguments(polygon_edge_l1_rpc),
          {:ok, last_l1_tx} <-
-           get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments, 100_000_000),
+           Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments, 100_000_000),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
          {:ok, block_check_interval, last_safe_block} <-
            get_block_check_interval(json_rpc_named_arguments) do
@@ -172,7 +171,8 @@ defmodule Indexer.Fetcher.PolygonEdge do
          {:start_block_l2_valid, true} <-
            {:start_block_l2_valid,
             (start_block_l2 <= last_l2_block_number || last_l2_block_number == 0) && start_block_l2 <= safe_block},
-         {:ok, last_l2_tx} <- get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments, 100_000_000),
+         {:ok, last_l2_tx} <-
+           Helper.get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments, 100_000_000),
          {:l2_tx_not_found, false} <- {:l2_tx_not_found, !is_nil(last_l2_transaction_hash) && is_nil(last_l2_tx)} do
       Process.send(pid, :continue, [])
 
@@ -226,7 +226,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
           prev_latest: prev_latest
         } = state
       ) do
-    {:ok, latest} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+    {:ok, latest} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
 
     if latest < prev_latest do
       Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
@@ -268,7 +268,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
         chunk_end = min(chunk_start + eth_get_logs_range_size - 1, end_block)
 
         if chunk_end >= chunk_start do
-          log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+          Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
 
           {:ok, result} =
             get_logs(
@@ -285,7 +285,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
             |> calling_module.prepare_events(json_rpc_named_arguments)
             |> import_events(calling_module)
 
-          log_blocks_chunk_handling(
+          Helper.log_blocks_chunk_handling(
             chunk_start,
             chunk_end,
             start_block,
@@ -306,7 +306,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
       end)
 
     new_start_block = last_written_block + 1
-    {:ok, new_end_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+    {:ok, new_end_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
 
     delay =
       if new_end_block == last_written_block do
@@ -356,7 +356,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
           min(chunk_start + eth_get_logs_range_size - 1, l2_block_end)
         end
 
-      log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, "L2")
+      Helper.log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, "L2")
 
       count =
         calling_module.find_and_save_entities(
@@ -374,7 +374,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
           "L2StateSynced"
         end
 
-      log_blocks_chunk_handling(
+      Helper.log_blocks_chunk_handling(
         chunk_start,
         chunk_end,
         l2_block_start,
@@ -546,9 +546,9 @@ defmodule Indexer.Fetcher.PolygonEdge do
     first_block = max(last_safe_block - @block_check_interval_range_size, 1)
 
     with {:ok, first_block_timestamp} <-
-           get_block_timestamp_by_number(first_block, json_rpc_named_arguments, 100_000_000),
+           Helper.get_block_timestamp_by_number(first_block, json_rpc_named_arguments, 100_000_000),
          {:ok, last_safe_block_timestamp} <-
-           get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, 100_000_000) do
+           Helper.get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, 100_000_000) do
       block_check_interval =
         ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
@@ -560,46 +560,13 @@ defmodule Indexer.Fetcher.PolygonEdge do
     end
   end
 
-  @spec get_block_number_by_tag(binary(), list(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
-  def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ 3) do
-    error_message = &"Cannot fetch #{tag} block number. Error: #{inspect(&1)}"
-    repeated_call(&fetch_block_number_by_tag/2, [tag, json_rpc_named_arguments], error_message, retries)
-  end
-
-  defp get_block_timestamp_by_number_inner(number, json_rpc_named_arguments) do
-    result =
-      %{id: 0, number: number}
-      |> ByNumber.request(false)
-      |> json_rpc(json_rpc_named_arguments)
-
-    with {:ok, block} <- result,
-         false <- is_nil(block),
-         timestamp <- Map.get(block, "timestamp"),
-         false <- is_nil(timestamp) do
-      {:ok, quantity_to_integer(timestamp)}
-    else
-      {:error, message} ->
-        {:error, message}
-
-      true ->
-        {:error, "RPC returned nil."}
-    end
-  end
-
-  defp get_block_timestamp_by_number(number, json_rpc_named_arguments, retries) do
-    func = &get_block_timestamp_by_number_inner/2
-    args = [number, json_rpc_named_arguments]
-    error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"
-    repeated_call(func, args, error_message, retries)
-  end
-
   defp get_safe_block(json_rpc_named_arguments) do
-    case get_block_number_by_tag("safe", json_rpc_named_arguments) do
+    case Helper.get_block_number_by_tag("safe", json_rpc_named_arguments) do
       {:ok, safe_block} ->
         {safe_block, false}
 
       {:error, :not_found} ->
-        {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+        {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
         {latest_block, true}
     end
   end
@@ -632,22 +599,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
 
     error_message = &"Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(&1)}"
 
-    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
-  end
-
-  defp get_transaction_by_hash(hash, _json_rpc_named_arguments, _retries_left) when is_nil(hash), do: {:ok, nil}
-
-  defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries) do
-    req =
-      request(%{
-        id: 0,
-        method: "eth_getTransactionByHash",
-        params: [hash]
-      })
-
-    error_message = &"eth_getTransactionByHash failed. Error: #{inspect(&1)}"
-
-    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
+    Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
   defp get_last_l1_item(table) do
@@ -696,44 +648,6 @@ defmodule Indexer.Fetcher.PolygonEdge do
     Repo.one(from(item in table, select: item.l2_block_number, where: item.msg_id == ^id))
   end
 
-  defp log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, items_count, layer) do
-    is_start = is_nil(items_count)
-
-    {type, found} =
-      if is_start do
-        {"Start", ""}
-      else
-        {"Finish", " Found #{items_count}."}
-      end
-
-    target_range =
-      if chunk_start != start_block or chunk_end != end_block do
-        progress =
-          if is_start do
-            ""
-          else
-            percentage =
-              (chunk_end - start_block + 1)
-              |> Decimal.div(end_block - start_block + 1)
-              |> Decimal.mult(100)
-              |> Decimal.round(2)
-              |> Decimal.to_string()
-
-            " Progress: #{percentage}%"
-          end
-
-        " Target range: #{start_block}..#{end_block}.#{progress}"
-      else
-        ""
-      end
-
-    if chunk_start == chunk_end do
-      Logger.info("#{type} handling #{layer} block ##{chunk_start}.#{found}#{target_range}")
-    else
-      Logger.info("#{type} handling #{layer} block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
-    end
-  end
-
   defp import_events(events, calling_module) do
     {import_data, event_name} =
       if calling_module == Deposit do
@@ -755,28 +669,9 @@ defmodule Indexer.Fetcher.PolygonEdge do
     end
   end
 
-  defp repeated_call(func, args, error_message, retries_left) do
-    case apply(func, args) do
-      {:ok, _} = res ->
-        res
-
-      {:error, message} = err ->
-        retries_left = retries_left - 1
-
-        if retries_left <= 0 do
-          Logger.error(error_message.(message))
-          err
-        else
-          Logger.error("#{error_message.(message)} Retrying...")
-          :timer.sleep(3000)
-          repeated_call(func, args, error_message, retries_left)
-        end
-    end
-  end
-
   @spec repeated_request(list(), any(), list(), non_neg_integer()) :: {:ok, any()} | {:error, atom()}
   def repeated_request(req, error_message, json_rpc_named_arguments, retries) do
-    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
+    Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
   defp reorg_block_pop(fetcher_name) do

@@ -12,7 +12,6 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
 
   import EthereumJSONRPC,
     only: [
-      fetch_block_number_by_tag: 2,
       json_rpc: 2,
       quantity_to_integer: 1,
       request: 1
@@ -21,6 +20,8 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   import Explorer.Helper, only: [decode_data: 2, parse_integer: 1]
+
+  import Indexer.Fetcher.Shibarium.Helper, only: [calc_operation_hash: 5, prepare_insert_items: 2]
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.{Blocks, Logs, Receipt}
@@ -85,19 +86,19 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
 
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
          {:child_chain_address_is_valid, true} <-
-           {:child_chain_address_is_valid, Helper.is_address_correct?(env[:child_chain])},
-         {:weth_address_is_valid, true} <- {:weth_address_is_valid, Helper.is_address_correct?(env[:weth])},
+           {:child_chain_address_is_valid, Helper.address_correct?(env[:child_chain])},
+         {:weth_address_is_valid, true} <- {:weth_address_is_valid, Helper.address_correct?(env[:weth])},
          {:bone_withdraw_address_is_valid, true} <-
-           {:bone_withdraw_address_is_valid, Helper.is_address_correct?(env[:bone_withdraw])},
+           {:bone_withdraw_address_is_valid, Helper.address_correct?(env[:bone_withdraw])},
          start_block = parse_integer(env[:start_block]),
          false <- is_nil(start_block),
          true <- start_block > 0,
          {last_l2_block_number, last_l2_transaction_hash} <- get_last_l2_item(),
-         {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments),
+         {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments),
          {:start_block_valid, true} <-
            {:start_block_valid,
             (start_block <= last_l2_block_number || last_l2_block_number == 0) && start_block <= latest_block},
-         {:ok, last_l2_tx} <- get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments),
+         {:ok, last_l2_tx} <- Helper.get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments),
          {:l2_tx_not_found, false} <- {:l2_tx_not_found, !is_nil(last_l2_transaction_hash) && is_nil(last_l2_tx)} do
       Process.send(self(), :continue, [])
 
@@ -169,7 +170,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       chunk_start = List.first(current_chunk)
       chunk_end = List.last(current_chunk)
 
-      log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L2")
+      Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L2")
 
       operations =
         chunk_start..chunk_end
@@ -178,11 +179,11 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
 
       {:ok, _} =
         Chain.import(%{
-          shibarium_bridge_operations: %{params: prepare_insert_items(operations)},
+          shibarium_bridge_operations: %{params: prepare_insert_items(operations, __MODULE__)},
           timeout: :infinity
         })
 
-      log_blocks_chunk_handling(
+      Helper.log_blocks_chunk_handling(
         chunk_start,
         chunk_end,
         start_block,
@@ -221,60 +222,6 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
         (Enum.member?([@transfer_single_event, @transfer_batch_event], event.first_topic) and
            event.third_topic != @empty_hash and event.fourth_topic == @empty_hash)
     end)
-  end
-
-  def log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, items_count, layer) do
-    is_start = is_nil(items_count)
-
-    {type, found} =
-      if is_start do
-        {"Start", ""}
-      else
-        {"Finish", " Found #{items_count}."}
-      end
-
-    target_range =
-      if chunk_start != start_block or chunk_end != end_block do
-        progress =
-          if is_start do
-            ""
-          else
-            percentage =
-              (chunk_end - start_block + 1)
-              |> Decimal.div(end_block - start_block + 1)
-              |> Decimal.mult(100)
-              |> Decimal.round(2)
-              |> Decimal.to_string()
-
-            " Progress: #{percentage}%"
-          end
-
-        " Target range: #{start_block}..#{end_block}.#{progress}"
-      else
-        ""
-      end
-
-    if chunk_start == chunk_end do
-      Logger.info("#{type} handling #{layer} block ##{chunk_start}.#{found}#{target_range}")
-    else
-      Logger.info("#{type} handling #{layer} block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
-    end
-  end
-
-  def prepare_insert_items(operations) do
-    operations
-    |> Enum.reduce([], fn op, acc ->
-      if bind_existing_operation_in_db(op) == 0 do
-        [op | acc]
-      else
-        acc
-      end
-    end)
-    |> Enum.reverse()
-    |> Enum.reduce(%{}, fn item, acc ->
-      Map.put(acc, {item.operation_hash, item.l1_transaction_hash, item.l2_transaction_hash}, item)
-    end)
-    |> Map.values()
   end
 
   def prepare_operations({events, timestamps}, weth) do
@@ -320,67 +267,6 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     @withdraw_method
   end
 
-  defp bind_existing_operation_in_db(op) do
-    query =
-      from(sb in Bridge,
-        where:
-          sb.operation_hash == ^op.operation_hash and sb.operation_type == ^op.operation_type and
-            sb.l1_transaction_hash != ^@empty_hash and sb.l2_transaction_hash == ^@empty_hash,
-        order_by: [asc: sb.l1_block_number],
-        limit: 1
-      )
-
-    {updated_count, _} =
-      Repo.update_all(
-        from(b in Bridge,
-          join: s in subquery(query),
-          on:
-            b.operation_hash == s.operation_hash and b.l1_transaction_hash == s.l1_transaction_hash and
-              b.l2_transaction_hash == s.l2_transaction_hash
-        ),
-        set:
-          [l2_transaction_hash: op.l2_transaction_hash, l2_block_number: op.l2_block_number] ++
-            if(op.operation_type == "withdrawal", do: [timestamp: op.timestamp], else: [])
-      )
-
-    updated_count
-  end
-
-  defp calc_operation_hash(user, amount_or_id, erc1155_ids, erc1155_amounts, operation_id) do
-    user_binary =
-      user
-      |> String.trim_leading("0x")
-      |> Base.decode16!(case: :mixed)
-
-    amount_or_id =
-      if is_nil(amount_or_id) and not Enum.empty?(erc1155_ids) do
-        0
-      else
-        amount_or_id
-      end
-
-    operation_encoded =
-      ABI.encode("(address,uint256,uint256[],uint256[],uint256)", [
-        {
-          user_binary,
-          amount_or_id,
-          erc1155_ids,
-          erc1155_amounts,
-          operation_id
-        }
-      ])
-
-    "0x" <>
-      (operation_encoded
-       |> ExKeccak.hash_256()
-       |> Base.encode16(case: :lower))
-  end
-
-  defp get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ 3) do
-    error_message = &"Cannot fetch #{tag} block number. Error: #{inspect(&1)}"
-    repeated_call(&fetch_block_number_by_tag/2, [tag, json_rpc_named_arguments], error_message, retries)
-  end
-
   defp get_blocks_by_range(range, json_rpc_named_arguments, retries) do
     request =
       range
@@ -391,7 +277,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
 
     error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
 
-    case repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
+    case Helper.repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
       {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
       {:error, _} -> []
     end
@@ -555,29 +441,12 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
 
     error_message = &"eth_getTransactionReceipt failed. Error: #{inspect(&1)}"
 
-    {:ok, receipts} = repeated_call(&json_rpc/2, [reqs, json_rpc_named_arguments], error_message, retries)
+    {:ok, receipts} = Helper.repeated_call(&json_rpc/2, [reqs, json_rpc_named_arguments], error_message, retries)
 
     receipts
     |> Enum.map(&Receipt.elixir_to_logs(&1.result))
     |> List.flatten()
     |> Logs.elixir_to_params()
-  end
-
-  defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
-
-  defp get_transaction_by_hash(hash, _json_rpc_named_arguments, _retries_left) when is_nil(hash), do: {:ok, nil}
-
-  defp get_transaction_by_hash(hash, json_rpc_named_arguments, retries) do
-    req =
-      request(%{
-        id: 0,
-        method: "eth_getTransactionByHash",
-        params: [hash]
-      })
-
-    error_message = &"eth_getTransactionByHash failed. Error: #{inspect(&1)}"
-
-    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
   defp is_withdrawal(event) do
@@ -640,25 +509,6 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
           timestamp: timestamp
         }
       end)
-    end
-  end
-
-  defp repeated_call(func, args, error_message, retries_left) do
-    case apply(func, args) do
-      {:ok, _} = res ->
-        res
-
-      {:error, message} = err ->
-        retries_left = retries_left - 1
-
-        if retries_left <= 0 do
-          Logger.error(error_message.(message))
-          err
-        else
-          Logger.error("#{error_message.(message)} Retrying...")
-          :timer.sleep(3000)
-          repeated_call(func, args, error_message, retries_left)
-        end
     end
   end
 
