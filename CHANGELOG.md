@@ -8,6 +8,8 @@
 
 ### Chore
 
+- [#8911](https://github.com/blockscout/blockscout/pull/8911) - Set client_connection_check_interval for main Postgres DB in docker-compose setup
+
 ## 5.3.2-beta
 
 ### Features
