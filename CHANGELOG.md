@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#8917](https://github.com/blockscout/blockscout/pull/8917) - Proxy detection hotfix in API v2
+
 ### Chore
 
 ## 5.3.2-beta
