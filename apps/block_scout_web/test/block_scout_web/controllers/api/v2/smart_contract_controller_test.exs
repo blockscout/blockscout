@@ -2026,18 +2026,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       target_contract = insert(:smart_contract, abi: abi)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                                  id: 0,
-                                                  method: "eth_getStorageAt",
-                                                  params: [
-                                                    _,
-                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                                    "latest"
-                                                  ]
-                                                },
-                                                _options ->
-        {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
-      end)
+      mock_logic_storage_pointer_request(target_contract.address_hash)
 
       expect(
         EthereumJSONRPC.Mox,
@@ -2136,18 +2125,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       target_contract = insert(:smart_contract, abi: abi)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                                  id: 0,
-                                                  method: "eth_getStorageAt",
-                                                  params: [
-                                                    _,
-                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                                    "latest"
-                                                  ]
-                                                },
-                                                _options ->
-        {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
-      end)
+      mock_logic_storage_pointer_request(target_contract.address_hash)
 
       expect(
         EthereumJSONRPC.Mox,
@@ -2221,18 +2199,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       target_contract = insert(:smart_contract, abi: abi)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                                  id: 0,
-                                                  method: "eth_getStorageAt",
-                                                  params: [
-                                                    _,
-                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                                    "latest"
-                                                  ]
-                                                },
-                                                _options ->
-        {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
-      end)
+      mock_logic_storage_pointer_request(target_contract.address_hash)
 
       expect(
         EthereumJSONRPC.Mox,
@@ -2290,18 +2257,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       target_contract = insert(:smart_contract, abi: abi)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                                  id: 0,
-                                                  method: "eth_getStorageAt",
-                                                  params: [
-                                                    _,
-                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                                    "latest"
-                                                  ]
-                                                },
-                                                _options ->
-        {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
-      end)
+      mock_logic_storage_pointer_request(target_contract.address_hash)
 
       expect(
         EthereumJSONRPC.Mox,
@@ -2358,18 +2314,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       target_contract = insert(:smart_contract, abi: abi)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                                  id: 0,
-                                                  method: "eth_getStorageAt",
-                                                  params: [
-                                                    _,
-                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                                    "latest"
-                                                  ]
-                                                },
-                                                _options ->
-        {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
-      end)
+      mock_logic_storage_pointer_request(target_contract.address_hash)
 
       expect(
         EthereumJSONRPC.Mox,
@@ -2450,18 +2395,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       target_contract = insert(:smart_contract, abi: abi)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                                  id: 0,
-                                                  method: "eth_getStorageAt",
-                                                  params: [
-                                                    _,
-                                                    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                                    "latest"
-                                                  ]
-                                                },
-                                                _options ->
-        {:ok, "0x000000000000000000000000#{target_contract.address_hash |> to_string() |> String.replace("0x", "")}"}
-      end)
+      mock_logic_storage_pointer_request(target_contract.address_hash)
 
       contract = insert(:smart_contract)
 
@@ -2578,5 +2512,20 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       true ->
         "solidity"
     end
+  end
+
+  defp mock_logic_storage_pointer_request(address_hash) do
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                id: 0,
+                                                method: "eth_getStorageAt",
+                                                params: [
+                                                  _,
+                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                  "latest"
+                                                ]
+                                              },
+                                              _options ->
+      {:ok, "0x000000000000000000000000#{address_hash |> to_string() |> String.replace("0x", "")}"}
+    end)
   end
 end
