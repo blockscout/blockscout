@@ -649,11 +649,17 @@ defmodule Indexer.Fetcher.PolygonEdge do
   end
 
   defp import_events(events, calling_module) do
+    # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
     {import_data, event_name} =
-      if calling_module == Deposit do
-        {%{polygon_edge_deposits: %{params: events}, timeout: :infinity}, "StateSynced"}
-      else
-        {%{polygon_edge_withdrawal_exits: %{params: events}, timeout: :infinity}, "ExitProcessed"}
+      case System.get_env("CHAIN_TYPE") == "polygon_edge" && calling_module do
+        Deposit ->
+          {%{polygon_edge_deposits: %{params: events}, timeout: :infinity}, "StateSynced"}
+
+        WithdrawalExit ->
+          {%{polygon_edge_withdrawal_exits: %{params: events}, timeout: :infinity}, "ExitProcessed"}
+
+        _ ->
+          {%{}, ""}
       end
 
     {:ok, _} = Chain.import(import_data)

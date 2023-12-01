@@ -70,7 +70,7 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
               limit: 1
             ),
             [l1_transaction_hash: op.l1_transaction_hash, l1_block_number: op.l1_block_number] ++
-              if(op.operation_type == "deposit", do: [timestamp: op.timestamp], else: [])
+              if(op.operation_type == :deposit, do: [timestamp: op.timestamp], else: [])
           }
 
         Indexer.Fetcher.Shibarium.L2 ->
@@ -83,7 +83,7 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
               limit: 1
             ),
             [l2_transaction_hash: op.l2_transaction_hash, l2_block_number: op.l2_block_number] ++
-              if(op.operation_type == "withdrawal", do: [timestamp: op.timestamp], else: [])
+              if(op.operation_type == :withdrawal, do: [timestamp: op.timestamp], else: [])
           }
 
         _ ->

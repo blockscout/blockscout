@@ -30,6 +30,5 @@ defmodule Explorer.Repo.Shibarium.Migrations.AddBridgeTable do
 
     create(index(:shibarium_bridge, :l1_block_number))
     create(index(:shibarium_bridge, :l2_block_number))
-    create(index(:shibarium_bridge, :timestamp))
   end
 end

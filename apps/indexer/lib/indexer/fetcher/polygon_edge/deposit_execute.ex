@@ -192,11 +192,18 @@ defmodule Indexer.Fetcher.PolygonEdge.DepositExecute do
         end)
       end
 
-    {:ok, _} =
-      Chain.import(%{
-        polygon_edge_deposit_executes: %{params: executes},
-        timeout: :infinity
-      })
+    # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
+    import_options =
+      if System.get_env("CHAIN_TYPE") == "polygon_edge" do
+        %{
+          polygon_edge_deposit_executes: %{params: executes},
+          timeout: :infinity
+        }
+      else
+        %{}
+      end
+
+    {:ok, _} = Chain.import(import_options)
 
     Enum.count(executes)
   end
