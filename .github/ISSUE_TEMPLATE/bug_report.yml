@@ -24,8 +24,8 @@ body:
       description: How the application has been deployed.
       options:
           - Docker-compose
+          - Helm charts (k8s)
           - Manual from the source code
-          - Helm charts
           - Docker
     validations:
       required: true
