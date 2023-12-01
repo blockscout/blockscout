@@ -11,6 +11,7 @@
 
 ### Fixes
 
+- [#8922](https://github.com/blockscout/blockscout/pull/8922) - Allow call type to be in lowercase
 - [#8917](https://github.com/blockscout/blockscout/pull/8917) - Proxy detection hotfix in API v2
 - [#8915](https://github.com/blockscout/blockscout/pull/8915) - smart-contract: delete embeds_many relation on replace
 - [#8906](https://github.com/blockscout/blockscout/pull/8906) - Fix abi encoded string argument
