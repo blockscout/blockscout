@@ -31,6 +31,8 @@ services:
         INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
         INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
         CHAIN_ID: '1337'
+    ports:
+    - 4000:4000
 
   visualizer:
     extends:
