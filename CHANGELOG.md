@@ -6,6 +6,8 @@
 
 ### Features
 
+- [#8900](https://github.com/blockscout/blockscout/pull/8900) - Add Compound proxy contract pattern
+
 ### Fixes
 
 - [#8917](https://github.com/blockscout/blockscout/pull/8917) - Proxy detection hotfix in API v2

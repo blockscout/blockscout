@@ -20,6 +20,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @implementation_signature "5c60da1b"
   # aaf10f42 = keccak256(getImplementation())
   @get_implementation_signature "aaf10f42"
+  # bb82aa5e = keccak256(comptrollerImplementation()) Compound protocol proxy pattern
+  @comptroller_implementation_signature "bb82aa5e"
   # aaf10f42 = keccak256(getAddress(bytes32))
   @get_address_signature "21f8a721"
 
@@ -220,6 +222,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
     get_implementation_method_abi = get_naive_implementation_abi(proxy_abi, "getImplementation")
 
+    comptroller_implementation_method_abi = get_naive_implementation_abi(proxy_abi, "comptrollerImplementation")
+
     master_copy_method_abi = get_master_copy_pattern(proxy_abi)
 
     get_address_method_abi = get_naive_implementation_abi(proxy_abi, "getAddress")
@@ -233,6 +237,13 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
       master_copy_method_abi ->
         MasterCopy.get_implementation_address_hash_string(proxy_address_hash)
+
+      comptroller_implementation_method_abi ->
+        Basic.get_implementation_address_hash_string(
+          @comptroller_implementation_signature,
+          proxy_address_hash,
+          proxy_abi
+        )
 
       get_address_method_abi ->
         EIP930.get_implementation_address_hash_string(@get_address_signature, proxy_address_hash, proxy_abi)

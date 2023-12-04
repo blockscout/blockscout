@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.AddressContractView do
   use BlockScoutWeb, :view
 
+  require Logger
+
   import Explorer.Helper, only: [decode_data: 2]
 
   alias ABI.FunctionSelector
@@ -132,6 +134,12 @@ defmodule BlockScoutWeb.AddressContractView do
     chain_id = Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:chain_id]
     repo_url = Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:repo_url]
     match = if partial_match, do: "/partial_match/", else: "/full_match/"
-    repo_url <> match <> chain_id <> "/" <> checksummed_hash <> "/"
+
+    if chain_id do
+      repo_url <> match <> chain_id <> "/" <> checksummed_hash <> "/"
+    else
+      Logger.warning("chain_id is nil. Please set CHAIN_ID env variable.")
+      nil
+    end
   end
 end
