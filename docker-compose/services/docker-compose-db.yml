@@ -19,7 +19,7 @@ services:
     user: 2000:2000
     restart: always
     container_name: 'db'
-    command: postgres -c 'max_connections=200'
+    command: postgres -c 'max_connections=200' -c 'client_connection_check_interval=60000'
     environment:
         POSTGRES_DB: 'blockscout'
         POSTGRES_USER: 'blockscout'
