@@ -2,6 +2,8 @@
 
 ## Current
 
+- [#8924](https://github.com/blockscout/blockscout/pull/8924) - Delete invalid current token balances in OnDemand fetcher
+
 ### Features
 
 ### Fixes
