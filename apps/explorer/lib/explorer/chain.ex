@@ -1781,63 +1781,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Lists the top `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance and address hash.
-  """
-  @spec list_top_addresses :: [{Address.t(), non_neg_integer()}]
-  def list_top_addresses(options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    if is_nil(paging_options.key) do
-      paging_options.page_size
-      |> Accounts.take_enough()
-      |> case do
-        nil ->
-          get_addresses(options)
-
-        accounts ->
-          Enum.map(
-            accounts,
-            &{&1,
-             if is_nil(&1.nonce) do
-               0
-             else
-               &1.nonce + 1
-             end}
-          )
-      end
-    else
-      fetch_top_addresses(options)
-    end
-  end
-
-  defp get_addresses(options) do
-    accounts_with_n = fetch_top_addresses(options)
-
-    accounts_with_n
-    |> Enum.map(fn {address, _n} -> address end)
-    |> Accounts.update()
-
-    accounts_with_n
-  end
-
-  defp fetch_top_addresses(options) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    base_query =
-      from(a in Address,
-        where: a.fetched_coin_balance > ^0,
-        order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-        preload: [:names, :smart_contract],
-        select: {a, fragment("coalesce(1 + ?, 0)", a.nonce)}
-      )
-
-    base_query
-    |> page_addresses(paging_options)
-    |> limit(^paging_options.page_size)
-    |> select_repo(options).all()
-  end
-
-  @doc """
   Calls `reducer` on a stream of `t:Explorer.Chain.Block.t/0` without `t:Explorer.Chain.Block.Reward.t/0`.
   """
   def stream_blocks_without_rewards(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
@@ -3277,28 +3220,6 @@ defmodule Explorer.Chain do
       true ->
         ""
     end
-  end
-
-  defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil, with_pending? \\ false) do
-    Transaction
-    |> order_for_transactions(with_pending?)
-    |> where_block_number_in_period(from_block, to_block)
-    |> handle_paging_options(paging_options)
-  end
-
-  defp order_for_transactions(query, true) do
-    query
-    |> order_by([transaction],
-      desc: transaction.block_number,
-      desc: transaction.index,
-      desc: transaction.inserted_at,
-      asc: transaction.hash
-    )
-  end
-
-  defp order_for_transactions(query, _) do
-    query
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
   end
 
   defp fetch_transactions_in_ascending_order_by_index(paging_options) do
