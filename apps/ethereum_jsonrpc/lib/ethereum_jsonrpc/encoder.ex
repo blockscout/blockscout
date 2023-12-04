@@ -33,10 +33,10 @@ defmodule EthereumJSONRPC.Encoder do
     end)
   end
 
-  defp parse_args(<<"0x", hexadecimal_digits::binary>>, _type), do: Base.decode16!(hexadecimal_digits, case: :mixed)
-
   defp parse_args(<<hexadecimal_digits::binary>>, type) when type in [:string, "string"],
     do: hexadecimal_digits |> Base.encode16() |> try_to_decode()
+
+  defp parse_args(<<"0x", hexadecimal_digits::binary>>, _type), do: Base.decode16!(hexadecimal_digits, case: :mixed)
 
   defp parse_args(<<hexadecimal_digits::binary>>, _type), do: try_to_decode(hexadecimal_digits)
 
