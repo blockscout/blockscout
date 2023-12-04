@@ -633,11 +633,13 @@ config :indexer, Indexer.Fetcher.PolygonEdge.Supervisor, enabled: ConfigHelper.c
 
 config :indexer, Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_edge"
 
-config :indexer, Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_edge"
+config :indexer, Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor,
+  enabled: ConfigHelper.chain_type() == "polygon_edge"
 
 config :indexer, Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_edge"
 
-config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_edge"
+config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor,
+  enabled: ConfigHelper.chain_type() == "polygon_edge"
 
 config :indexer, Indexer.Fetcher.PolygonEdge,
   polygon_edge_l1_rpc: System.get_env("INDEXER_POLYGON_EDGE_L1_RPC"),
@@ -665,7 +667,8 @@ config :indexer, Indexer.Fetcher.Zkevm.TransactionBatch,
   recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_ZKEVM_BATCHES_RECHECK_INTERVAL", 60)
 
 config :indexer, Indexer.Fetcher.Zkevm.TransactionBatch.Supervisor,
-  enabled: ConfigHelper.chain_type() == "polygon_zkevm" && ConfigHelper.parse_bool_env_var("INDEXER_ZKEVM_BATCHES_ENABLED")
+  enabled:
+    ConfigHelper.chain_type() == "polygon_zkevm" && ConfigHelper.parse_bool_env_var("INDEXER_ZKEVM_BATCHES_ENABLED")
 
 config :indexer, Indexer.Fetcher.RootstockData.Supervisor,
   disabled?:
