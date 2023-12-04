@@ -497,8 +497,16 @@ defmodule BlockScoutWeb.AddressView do
 
   def contract_interaction_disabled?, do: Application.get_env(:block_scout_web, :contract)[:disable_interaction]
 
+  @doc """
+    Decodes given log
+  """
+  @spec decode(Log.t(), Transaction.t()) ::
+          {:ok, String.t(), String.t(), map()}
+          | {:error, atom()}
+          | {:error, atom(), list()}
+          | {{:error, :contract_not_verified, list()}, any()}
   def decode(log, transaction) do
-    {result, _events_acc} = Log.decode(log, transaction, [], true)
+    {result, _contracts_acc, _events_acc} = Log.decode(log, transaction, [], true)
     result
   end
 end

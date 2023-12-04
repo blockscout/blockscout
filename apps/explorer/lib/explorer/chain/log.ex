@@ -125,17 +125,17 @@ defmodule Explorer.Chain.Log do
           {{:ok, String.t(), String.t(), map()}
            | {:error, atom()}
            | {:error, atom(), list()}
-           | {{:error, :contract_not_verified, list()}, any()}, map()}
+           | {{:error, :contract_not_verified, list()}, any()}, map(), map()}
   def decode(log, transaction, options, skip_sig_provider?, contracts_acc \\ %{}, events_acc \\ %{}) do
-    with full_abi <- check_cache(contracts_acc, log.address_hash, options),
+    with {full_abi, contracts_acc} <- check_cache(contracts_acc, log.address_hash, options),
          {:no_abi, false} <- {:no_abi, is_nil(full_abi)},
          {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction.hash),
          identifier <- Base.encode16(selector.method_id, case: :lower),
          text <- function_call(selector.function, mapping) do
-      {{:ok, identifier, text, mapping}, events_acc}
+      {{:ok, identifier, text, mapping}, contracts_acc, events_acc}
     else
       {:error, _} = error ->
-        handle_method_decode_error(error, log, transaction, options, skip_sig_provider?, events_acc)
+        handle_method_decode_error(error, log, transaction, options, skip_sig_provider?, contracts_acc, events_acc)
 
       {:no_abi, true} ->
         handle_method_decode_error(
@@ -144,32 +144,34 @@ defmodule Explorer.Chain.Log do
           transaction,
           options,
           skip_sig_provider?,
+          contracts_acc,
           events_acc
         )
     end
   end
 
-  defp handle_method_decode_error(error, log, transaction, options, skip_sig_provider?, events_acc) do
+  defp handle_method_decode_error(error, log, transaction, options, skip_sig_provider?, contracts_acc, events_acc) do
     case error do
       {:error, :could_not_decode} ->
         case find_method_candidates(log, transaction, options, events_acc) do
           {{:error, :contract_not_verified, []}, events_acc} ->
             {decode_event_via_sig_provider(log, transaction, false, options, events_acc, skip_sig_provider?),
-             events_acc}
+             contracts_acc, events_acc}
 
           {{:error, :contract_not_verified, candidates}, events_acc} ->
-            {{:error, :contract_not_verified, candidates}, events_acc}
+            {{:error, :contract_not_verified, candidates}, contracts_acc, events_acc}
 
           {_, events_acc} ->
             {decode_event_via_sig_provider(log, transaction, false, options, events_acc, skip_sig_provider?),
-             events_acc}
+             contracts_acc, events_acc}
         end
 
       {:error, :no_matching_function} ->
-        {decode_event_via_sig_provider(log, transaction, false, options, events_acc, skip_sig_provider?), events_acc}
+        {decode_event_via_sig_provider(log, transaction, false, options, events_acc, skip_sig_provider?), contracts_acc,
+         events_acc}
 
       {:error, reason} ->
-        {{:error, reason}, events_acc}
+        {{:error, reason}, contracts_acc, events_acc}
     end
   end
 
@@ -183,14 +185,15 @@ defmodule Explorer.Chain.Log do
       |> Keyword.merge(options)
 
     if !is_nil(address_hash) && Map.has_key?(acc, address_hash) do
-      acc[address_hash]
+      {acc[address_hash], acc}
     else
       case Chain.find_contract_address(address_hash, address_options, false) do
         {:ok, %{smart_contract: smart_contract}} ->
-          Proxy.combine_proxy_implementation_abi(smart_contract, options)
+          full_abi = Proxy.combine_proxy_implementation_abi(smart_contract, options)
+          {full_abi, Map.put(acc, address_hash, full_abi)}
 
         _ ->
-          nil
+          {nil, Map.put(acc, address_hash, nil)}
       end
     end
   end

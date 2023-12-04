@@ -184,10 +184,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  def decode_logs(logs, skip_sig_provider?) do
+  defp decode_logs(logs, skip_sig_provider?) do
     {result, _, _} =
       Enum.reduce(logs, {[], %{}, %{}}, fn log, {results, contracts_acc, events_acc} ->
-        {result, events_acc} =
+        {result, contracts_acc, events_acc} =
           Log.decode(
             log,
             %Transaction{hash: log.transaction_hash},
