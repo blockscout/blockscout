@@ -43,6 +43,22 @@ defmodule EthereumJSONRPC.EncoderTest do
                "0xa07a712d000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000183635363466353632336532613966303030316362376665650000000000000000"
     end
 
+    test "generates the correct encoding with string started with 0x" do
+      function_selector = %ABI.FunctionSelector{
+        function: "isNewsletterCoverFullyClaimed",
+        input_names: ["newsletterId"],
+        inputs_indexed: nil,
+        return_names: [""],
+        returns: [:bool],
+        state_mutability: :view,
+        type: :function,
+        types: [:string]
+      }
+
+      assert Encoder.encode_function_call(function_selector, ["0x123"]) ==
+               "0xa07a712d000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000053078313233000000000000000000000000000000000000000000000000000000"
+    end
+
     test "generates the correct encoding with addresses arguments" do
       function_selector = %ABI.FunctionSelector{
         function: "tokens",
