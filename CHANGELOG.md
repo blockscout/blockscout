@@ -7,6 +7,7 @@
 ### Features
 
 - [#8900](https://github.com/blockscout/blockscout/pull/8900) - Add Compound proxy contract pattern
+- [#8611](https://github.com/blockscout/blockscout/pull/8611) - Implement sorting of smart contracts, address transactions
 
 ### Fixes
 
@@ -29,7 +30,6 @@
 - [#8768](https://github.com/blockscout/blockscout/pull/8768) - Add possibility to search tokens by address hash
 - [#8750](https://github.com/blockscout/blockscout/pull/8750) - Support new eth-bytecode-db request metadata fields
 - [#8634](https://github.com/blockscout/blockscout/pull/8634) - API v2: NFT for address
-- [#8611](https://github.com/blockscout/blockscout/pull/8611) - Implement sorting of smart contracts, address transactions
 - [#8609](https://github.com/blockscout/blockscout/pull/8609) - Change logs format to JSON; Add endpoint url to the block_scout_web logging
 - [#8558](https://github.com/blockscout/blockscout/pull/8558) - Add CoinBalanceDailyUpdater
 
