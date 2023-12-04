@@ -31,33 +31,24 @@ defmodule Explorer.SmartContract.CompilerVersion do
   end
 
   defp fetch_solc_versions do
-    if RustVerifierInterface.enabled?() do
-      RustVerifierInterface.get_versions_list()
-    else
-      headers = [{"Content-Type", "application/json"}]
-
-      case HTTPoison.get(source_url(:solc), headers) do
-        {:ok, %{status_code: 200, body: body}} ->
-          {:ok, format_data(body, :solc)}
-
-        {:ok, %{status_code: _status_code, body: body}} ->
-          {:error, Helper.decode_json(body)["error"]}
-
-        {:error, %{reason: reason}} ->
-          {:error, reason}
-      end
-    end
+    RustVerifierInterface.get_versions_list()
+    |> fetch_compiler_versions(:solc)
   end
 
   defp fetch_vyper_versions do
+    RustVerifierInterface.vyper_get_versions_list()
+    |> fetch_compiler_versions(:vyper)
+  end
+
+  defp fetch_compiler_versions(compiler_list, compiler_type) do
     if RustVerifierInterface.enabled?() do
-      RustVerifierInterface.vyper_get_versions_list()
+      compiler_list
     else
       headers = [{"Content-Type", "application/json"}]
 
-      case HTTPoison.get(source_url(:vyper), headers) do
+      case HTTPoison.get(source_url(compiler_type), headers) do
         {:ok, %{status_code: 200, body: body}} ->
-          {:ok, format_data(body, :vyper)}
+          {:ok, format_data(body, compiler_type)}
 
         {:ok, %{status_code: _status_code, body: body}} ->
           {:error, Helper.decode_json(body)["error"]}

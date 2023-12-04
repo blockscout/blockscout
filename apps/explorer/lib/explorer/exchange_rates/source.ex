@@ -142,16 +142,7 @@ defmodule Explorer.ExchangeRates.Source do
   defp parse_http_success_response(body) do
     body_json = Helper.decode_json(body)
 
-    cond do
-      is_map(body_json) ->
-        {:ok, body_json}
-
-      is_list(body_json) ->
-        {:ok, body_json}
-
-      true ->
-        {:ok, body}
-    end
+    {:ok, body_json}
   end
 
   defp parse_http_error_response(body) do
