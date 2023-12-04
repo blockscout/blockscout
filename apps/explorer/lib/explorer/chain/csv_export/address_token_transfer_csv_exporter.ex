@@ -12,7 +12,7 @@ defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
     ]
 
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Hash, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, DenormalizationHelper, Hash, TokenTransfer, Transaction}
   alias Explorer.Chain.CSVExport.Helper
 
   @paging_options %PagingOptions{page_size: Helper.limit(), asc_order: true}
@@ -118,7 +118,7 @@ defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
 
     query
     |> handle_token_transfer_paging_options(paging_options)
-    |> preload(transaction: :block)
+    |> preload(^DenormalizationHelper.extend_transaction_preload([:transaction]))
     |> preload(:token)
     |> Repo.all()
   end
