@@ -196,40 +196,15 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   """
   @spec solidityscan_report(Plug.Conn.t(), map() | :atom) :: any()
   def solidityscan_report(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+    with {:format_address, {:ok, address_hash}} <- {:format_address, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:ok, address} <- Chain.hash_to_address(address_hash),
+         {:address, {:ok, address}} <- {:address, Chain.hash_to_address(address_hash)},
          {:is_smart_contract, true} <- {:is_smart_contract, Address.is_smart_contract(address)},
          response = SolidityScan.solidityscan_request(address_hash_string),
          {:is_empty_response, false} <- {:is_empty_response, is_nil(response)} do
       conn
       |> put_status(200)
       |> json(response)
-    else
-      {:format, :error} ->
-        conn
-        |> put_status(400)
-        |> json(%{status: "error", message: "Invalid address hash"})
-
-      {:restricted_access, true} ->
-        conn
-        |> put_status(403)
-        |> json(%{status: "error", message: "Access restricted"})
-
-      {:error, :not_found} ->
-        conn
-        |> put_status(404)
-        |> json(%{status: "error", message: "Address not found"})
-
-      {:is_smart_contract, false} ->
-        conn
-        |> put_status(404)
-        |> json(%{status: "error", message: "Smart-contract not found"})
-
-      {:is_empty_response, true} ->
-        conn
-        |> put_status(500)
-        |> json(%{status: "error", message: "Empty response"})
     end
   end
 

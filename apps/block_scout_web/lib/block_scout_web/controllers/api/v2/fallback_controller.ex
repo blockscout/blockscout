@@ -23,6 +23,9 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   @unauthorized "Unauthorized"
   @not_configured_api_key "API key not configured on the server"
   @wrong_api_key "Wrong API key"
+  @address_not_found "Address not found"
+  @address_is_not_smart_contract "Address is not smart-contract"
+  @empty_response "Empty response"
 
   def call(conn, {:format, _params}) do
     Logger.error(fn ->
@@ -231,5 +234,26 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> put_status(:unauthorized)
     |> put_view(ApiView)
     |> render(:message, %{message: @wrong_api_key})
+  end
+
+  def call(conn, {:address, {:error, :not_found}}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @address_not_found})
+  end
+
+  def call(conn, {:is_smart_contract, false}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @address_is_not_smart_contract})
+  end
+
+  def call(conn, {:is_empty_response, true}) do
+    conn
+    |> put_status(500)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @empty_response})
   end
 end
