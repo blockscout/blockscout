@@ -279,7 +279,8 @@ defmodule EthereumJSONRPC.Geth do
   defp parse_call_tracer_calls([], acc, _trace_address, _inner?), do: acc
   defp parse_call_tracer_calls({%{"type" => 0}, _}, acc, _trace_address, _inner?), do: acc
 
-  defp parse_call_tracer_calls({%{"type" => "STOP"}, _}, [last | acc], _trace_address, _inner?) do
+  defp parse_call_tracer_calls({%{"type" => type}, _}, [last | acc], _trace_address, _inner?)
+       when type in ["STOP", "stop"] do
     [Map.put(last, "error", "execution stopped") | acc]
   end
 
