@@ -152,26 +152,17 @@ defmodule Explorer.Chain.Log do
 
   defp handle_method_decode_error(error, log, transaction, options, skip_sig_provider?, contracts_acc, events_acc) do
     case error do
-      {:error, :could_not_decode} ->
-        case find_method_candidates(log, transaction, options, events_acc) do
+      {:error, _reason} ->
+        case find_method_candidates(log, transaction, options, events_acc, skip_sig_provider?) do
           {{:error, :contract_not_verified, []}, events_acc} ->
-            {decode_event_via_sig_provider(log, transaction, false, options, events_acc, skip_sig_provider?),
-             contracts_acc, events_acc}
+            {decode_event_via_sig_provider(log, transaction, false, skip_sig_provider?), contracts_acc, events_acc}
 
           {{:error, :contract_not_verified, candidates}, events_acc} ->
             {{:error, :contract_not_verified, candidates}, contracts_acc, events_acc}
 
           {_, events_acc} ->
-            {decode_event_via_sig_provider(log, transaction, false, options, events_acc, skip_sig_provider?),
-             contracts_acc, events_acc}
+            {decode_event_via_sig_provider(log, transaction, false, skip_sig_provider?), contracts_acc, events_acc}
         end
-
-      {:error, :no_matching_function} ->
-        {decode_event_via_sig_provider(log, transaction, false, options, events_acc, skip_sig_provider?), contracts_acc,
-         events_acc}
-
-      {:error, reason} ->
-        {{:error, reason}, contracts_acc, events_acc}
     end
   end
 
@@ -198,7 +189,7 @@ defmodule Explorer.Chain.Log do
     end
   end
 
-  defp find_method_candidates(log, transaction, options, events_acc, skip_sig_provider \\ false) do
+  defp find_method_candidates(log, transaction, options, events_acc, skip_sig_provider?) do
     with "0x" <> hex_part <- log.first_topic,
          {number, ""} <- Integer.parse(hex_part, 16) do
       <<method_id::binary-size(4), _rest::binary>> = :binary.encode_unsigned(number)
@@ -206,7 +197,7 @@ defmodule Explorer.Chain.Log do
       if Map.has_key?(events_acc, method_id) do
         {events_acc[method_id], events_acc}
       else
-        result = find_method_candidates_from_db(method_id, log, transaction, options, events_acc, skip_sig_provider)
+        result = find_method_candidates_from_db(method_id, log, transaction, options, skip_sig_provider?)
         {result, Map.put(events_acc, method_id, result)}
       end
     else
@@ -214,7 +205,7 @@ defmodule Explorer.Chain.Log do
     end
   end
 
-  defp find_method_candidates_from_db(method_id, log, transaction, options, events_acc, skip_sig_provider \\ false) do
+  defp find_method_candidates_from_db(method_id, log, transaction, options, skip_sig_provider?) do
     candidates_query = ContractMethod.find_contract_method_query(method_id, 3)
 
     candidates =
@@ -237,9 +228,9 @@ defmodule Explorer.Chain.Log do
     {:error, :contract_not_verified,
      if(candidates == [],
        do:
-         if(skip_sig_provider,
+         if(skip_sig_provider?,
            do: [],
-           else: decode_event_via_sig_provider(log, transaction, true, options, events_acc)
+           else: decode_event_via_sig_provider(log, transaction, true)
          ),
        else: candidates
      )}
@@ -290,8 +281,6 @@ defmodule Explorer.Chain.Log do
          log,
          transaction,
          only_candidates?,
-         options,
-         events_acc,
          skip_sig_provider? \\ false
        ) do
     with true <- SigProviderInterface.enabled?(),
@@ -322,18 +311,7 @@ defmodule Explorer.Chain.Log do
         if only_candidates? do
           []
         else
-          skip_sig_provider = true
-
-          case find_method_candidates(log, transaction, options, events_acc, skip_sig_provider) do
-            {{:error, :contract_not_verified, []}, _} ->
-              {:error, :could_not_decode}
-
-            {{:error, :contract_not_verified, candidates}, _} ->
-              {:error, :contract_not_verified, candidates}
-
-            {_, _} ->
-              {:error, :could_not_decode}
-          end
+          {:error, :could_not_decode}
         end
     end
   end
