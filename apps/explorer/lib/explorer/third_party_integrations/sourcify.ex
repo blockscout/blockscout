@@ -297,7 +297,11 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     if is_map(body_json) do
       {:error, body_json["error"]}
     else
-      {:error, body}
+      if is_nil(body) do
+        {:error, "invalid http error json response"}
+      else
+        {:error, body}
+      end
     end
   end
 
