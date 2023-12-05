@@ -194,7 +194,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   @doc """
   /api/v2/smart-contracts/${address_hash_string}/solidityscan-report logic
   """
-  @spec solidityscan_report(Plug.Conn.t(), map() | :atom) :: any()
+    @spec solidityscan_report(Plug.Conn.t(), map()) ::
+          {:address, {:error, :not_found}}
+          | {:format_address, :error}
+          | {:is_empty_response, true}
+          | {:is_smart_contract, false | nil}
+          | {:restricted_access, true}
+          | Plug.Conn.t()
   def solidityscan_report(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format_address, {:ok, address_hash}} <- {:format_address, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
