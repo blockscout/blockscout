@@ -291,19 +291,22 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     end
   end
 
+  @invalid_json_response "invalid http error json response"
   defp parse_http_error_response(body) do
     body_json = ExplorerHelper.decode_json(body)
 
     if is_map(body_json) do
-      {:error, body_json["error"]}
+      error = body_json["error"]
+
+      parse_http_error_response_internal(error)
     else
-      if is_nil(body) do
-        {:error, "invalid http error json response"}
-      else
-        {:error, body}
-      end
+      parse_http_error_response_internal(body)
     end
   end
+
+  defp parse_http_error_response_internal(nil), do: {:error, @invalid_json_response}
+
+  defp parse_http_error_response_internal(data), do: {:error, data}
 
   def parse_params_from_sourcify(address_hash_string, verification_metadata) do
     filtered_files =
