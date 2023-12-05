@@ -31,18 +31,16 @@ defmodule Explorer.SmartContract.CompilerVersion do
   end
 
   defp fetch_solc_versions do
-    RustVerifierInterface.get_versions_list()
-    |> fetch_compiler_versions(:solc)
+    fetch_compiler_versions(&RustVerifierInterface.get_versions_list/0, :solc)
   end
 
   defp fetch_vyper_versions do
-    RustVerifierInterface.vyper_get_versions_list()
-    |> fetch_compiler_versions(:vyper)
+    fetch_compiler_versions(&RustVerifierInterface.vyper_get_versions_list/0, :vyper)
   end
 
-  defp fetch_compiler_versions(compiler_list, compiler_type) do
+  defp fetch_compiler_versions(compiler_list_fn, compiler_type) do
     if RustVerifierInterface.enabled?() do
-      compiler_list
+      compiler_list_fn.()
     else
       headers = [{"Content-Type", "application/json"}]
 

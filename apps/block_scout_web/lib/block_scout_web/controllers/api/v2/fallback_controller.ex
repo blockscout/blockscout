@@ -243,7 +243,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @address_not_found})
   end
 
-  def call(conn, {:is_smart_contract, false}) do
+  def call(conn, {:is_smart_contract, result}) when is_nil(result) or result == false do
     conn
     |> put_status(:not_found)
     |> put_view(ApiView)

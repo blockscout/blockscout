@@ -194,7 +194,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   @doc """
   /api/v2/smart-contracts/${address_hash_string}/solidityscan-report logic
   """
-    @spec solidityscan_report(Plug.Conn.t(), map()) ::
+  @spec solidityscan_report(Plug.Conn.t(), map()) ::
           {:address, {:error, :not_found}}
           | {:format_address, :error}
           | {:is_empty_response, true}

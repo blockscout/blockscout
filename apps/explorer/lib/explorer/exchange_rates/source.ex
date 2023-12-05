@@ -130,12 +130,6 @@ defmodule Explorer.ExchangeRates.Source do
 
       {:error, %Error{reason: reason}} ->
         {:error, reason}
-
-      {:error, :nxdomain} ->
-        {:error, "Source is not responsive"}
-
-      {:error, _} ->
-        {:error, "Source unknown response"}
     end
   end
 
