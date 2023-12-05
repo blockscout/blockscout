@@ -20,6 +20,7 @@
 - [#8634](https://github.com/blockscout/blockscout/pull/8634) - API v2: NFT for address
 - [#8609](https://github.com/blockscout/blockscout/pull/8609) - Change logs format to JSON; Add endpoint url to the block_scout_web logging
 - [#8558](https://github.com/blockscout/blockscout/pull/8558) - Add CoinBalanceDailyUpdater
+- [#8925](https://github.com/blockscout/blockscout/pull/8925) - Add Port 4000 For external frontend docker-compose
 
 ### Fixes
 
