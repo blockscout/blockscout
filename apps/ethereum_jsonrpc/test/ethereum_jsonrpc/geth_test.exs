@@ -12,9 +12,9 @@ defmodule EthereumJSONRPC.GethTest do
   describe "fetch_internal_transactions/2" do
     # Infura Mainnet does not support debug_traceTransaction, so this cannot be tested expect in Mox
     setup do
-      EthereumJSONRPC.Case.Geth.Mox.setup()
       initial_env = Application.get_all_env(:ethereum_jsonrpc)
       on_exit(fn -> Application.put_all_env([{:ethereum_jsonrpc, initial_env}]) end)
+      EthereumJSONRPC.Case.Geth.Mox.setup()
     end
 
     setup :verify_on_exit!
@@ -26,7 +26,7 @@ defmodule EthereumJSONRPC.GethTest do
       transaction_hash = "0x32b17f27ddb546eab3c4c33f31eb22c1cb992d4ccc50dae26922805b717efe5c"
       tracer = File.read!("priv/js/ethereum_jsonrpc/geth/debug_traceTransaction/tracer.js")
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, params: [^transaction_hash, %{tracer: ^tracer}]}], _ ->
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, params: [^transaction_hash, %{"tracer" => ^tracer}]}], _ ->
         {:ok,
          [
            %{
@@ -49,7 +49,7 @@ defmodule EthereumJSONRPC.GethTest do
          ]}
       end)
 
-      Application.put_env(:ethereum_jsonrpc, Geth, tracer: "js")
+      Application.put_env(:ethereum_jsonrpc, Geth, tracer: "js", debug_trace_transaction_timeout: "5s")
 
       assert {:ok,
               [
@@ -98,7 +98,7 @@ defmodule EthereumJSONRPC.GethTest do
       tracer = File.read!("priv/js/ethereum_jsonrpc/geth/debug_traceTransaction/tracer.js")
 
       expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn
-        [%{id: id, params: [^transaction_hash, %{tracer: "callTracer"}]}], _ ->
+        [%{id: id, params: [^transaction_hash, %{"tracer" => "callTracer"}]}], _ ->
           {:ok,
            [
              %{
@@ -222,7 +222,7 @@ defmodule EthereumJSONRPC.GethTest do
       end)
 
       expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn
-        [%{id: id, params: [^transaction_hash, %{tracer: ^tracer}]}], _ ->
+        [%{id: id, params: [^transaction_hash, %{"tracer" => ^tracer}]}], _ ->
           {:ok,
            [
              %{
@@ -361,7 +361,7 @@ defmodule EthereumJSONRPC.GethTest do
 
       call_tracer_internal_txs = Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
 
-      Application.put_env(:ethereum_jsonrpc, Geth, tracer: "js")
+      Application.put_env(:ethereum_jsonrpc, Geth, tracer: "js", debug_trace_transaction_timeout: "5s")
 
       assert call_tracer_internal_txs ==
                Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
@@ -383,7 +383,7 @@ defmodule EthereumJSONRPC.GethTest do
       tracer = File.read!("priv/js/ethereum_jsonrpc/geth/debug_traceTransaction/tracer.js")
 
       expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn
-        [%{id: id, params: [^transaction_hash, %{tracer: "callTracer"}]}], _ ->
+        [%{id: id, params: [^transaction_hash, %{"tracer" => "callTracer"}]}], _ ->
           {:ok,
            [
              %{
@@ -405,7 +405,7 @@ defmodule EthereumJSONRPC.GethTest do
       end)
 
       expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn
-        [%{id: id, params: [^transaction_hash, %{tracer: ^tracer}]}], _ ->
+        [%{id: id, params: [^transaction_hash, %{"tracer" => ^tracer}]}], _ ->
           {:ok,
            [
              %{
@@ -431,7 +431,7 @@ defmodule EthereumJSONRPC.GethTest do
 
       call_tracer_internal_txs = Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
 
-      Application.put_env(:ethereum_jsonrpc, Geth, tracer: "js")
+      Application.put_env(:ethereum_jsonrpc, Geth, tracer: "js", debug_trace_transaction_timeout: "5s")
 
       assert call_tracer_internal_txs ==
                Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
@@ -481,6 +481,70 @@ defmodule EthereumJSONRPC.GethTest do
                   value: 0
                 }
               ]} = Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
+    end
+
+    test "uppercase type parsing result is the same as lowercase", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      transaction_hash = "0xb342cafc6ac552c3be2090561453204c8784caf025ac8267320834e4cd163d96"
+      block_number = 3_287_375
+      transaction_index = 13
+
+      transaction_params = %{
+        block_number: block_number,
+        transaction_index: transaction_index,
+        hash_data: transaction_hash
+      }
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn
+        [%{id: id, params: [^transaction_hash, %{"tracer" => "callTracer"}]}], _ ->
+          {:ok,
+           [
+             %{
+               id: id,
+               result: %{
+                 "type" => "CREATE",
+                 "from" => "0x117b358218da5a4f647072ddb50ded038ed63d17",
+                 "to" => "0x205a6b72ce16736c9d87172568a9c0cb9304de0d",
+                 "value" => "0x0",
+                 "gas" => "0x106f5",
+                 "gasUsed" => "0x106f5",
+                 "input" =>
+                   "0x608060405234801561001057600080fd5b50610150806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c80632e64cec11461003b5780636057361d14610059575b600080fd5b610043610075565b60405161005091906100d9565b60405180910390f35b610073600480360381019061006e919061009d565b61007e565b005b60008054905090565b8060008190555050565b60008135905061009781610103565b92915050565b6000602082840312156100b3576100b26100fe565b5b60006100c184828501610088565b91505092915050565b6100d3816100f4565b82525050565b60006020820190506100ee60008301846100ca565b92915050565b6000819050919050565b600080fd5b61010c816100f4565b811461011757600080fd5b5056fea26469706673582212209a159a4f3847890f10bfb87871a61eba91c5dbf5ee3cf6398207e292eee22a1664736f6c63430008070033",
+                 "output" =>
+                   "0x608060405234801561001057600080fd5b50600436106100365760003560e01c80632e64cec11461003b5780636057361d14610059575b600080fd5b610043610075565b60405161005091906100d9565b60405180910390f35b610073600480360381019061006e919061009d565b61007e565b005b60008054905090565b8060008190555050565b60008135905061009781610103565b92915050565b6000602082840312156100b3576100b26100fe565b5b60006100c184828501610088565b91505092915050565b6100d3816100f4565b82525050565b60006020820190506100ee60008301846100ca565b92915050565b6000819050919050565b600080fd5b61010c816100f4565b811461011757600080fd5b5056fea26469706673582212209a159a4f3847890f10bfb87871a61eba91c5dbf5ee3cf6398207e292eee22a1664736f6c63430008070033"
+               }
+             }
+           ]}
+      end)
+
+      uppercase_result = Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn
+        [%{id: id, params: [^transaction_hash, %{"tracer" => "callTracer"}]}], _ ->
+          {:ok,
+           [
+             %{
+               id: id,
+               result: %{
+                 "type" => "create",
+                 "from" => "0x117b358218da5a4f647072ddb50ded038ed63d17",
+                 "to" => "0x205a6b72ce16736c9d87172568a9c0cb9304de0d",
+                 "value" => "0x0",
+                 "gas" => "0x106f5",
+                 "gasUsed" => "0x106f5",
+                 "input" =>
+                   "0x608060405234801561001057600080fd5b50610150806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c80632e64cec11461003b5780636057361d14610059575b600080fd5b610043610075565b60405161005091906100d9565b60405180910390f35b610073600480360381019061006e919061009d565b61007e565b005b60008054905090565b8060008190555050565b60008135905061009781610103565b92915050565b6000602082840312156100b3576100b26100fe565b5b60006100c184828501610088565b91505092915050565b6100d3816100f4565b82525050565b60006020820190506100ee60008301846100ca565b92915050565b6000819050919050565b600080fd5b61010c816100f4565b811461011757600080fd5b5056fea26469706673582212209a159a4f3847890f10bfb87871a61eba91c5dbf5ee3cf6398207e292eee22a1664736f6c63430008070033",
+                 "output" =>
+                   "0x608060405234801561001057600080fd5b50600436106100365760003560e01c80632e64cec11461003b5780636057361d14610059575b600080fd5b610043610075565b60405161005091906100d9565b60405180910390f35b610073600480360381019061006e919061009d565b61007e565b005b60008054905090565b8060008190555050565b60008135905061009781610103565b92915050565b6000602082840312156100b3576100b26100fe565b5b60006100c184828501610088565b91505092915050565b6100d3816100f4565b82525050565b60006020820190506100ee60008301846100ca565b92915050565b6000819050919050565b600080fd5b61010c816100f4565b811461011757600080fd5b5056fea26469706673582212209a159a4f3847890f10bfb87871a61eba91c5dbf5ee3cf6398207e292eee22a1664736f6c63430008070033"
+               }
+             }
+           ]}
+      end)
+
+      lowercase_result = Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
+
+      assert uppercase_result == lowercase_result
     end
   end
 
