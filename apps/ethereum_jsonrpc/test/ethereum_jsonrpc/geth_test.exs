@@ -5,8 +5,6 @@ defmodule EthereumJSONRPC.GethTest do
 
   alias EthereumJSONRPC.Geth
 
-  @moduletag :no_nethermind
-
   setup :verify_on_exit!
 
   describe "fetch_internal_transactions/2" do
@@ -359,6 +357,8 @@ defmodule EthereumJSONRPC.GethTest do
            ]}
       end)
 
+      Application.put_env(:ethereum_jsonrpc, Geth, tracer: "call_tracer", debug_trace_transaction_timeout: "5s")
+
       call_tracer_internal_txs = Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
 
       Application.put_env(:ethereum_jsonrpc, Geth, tracer: "js", debug_trace_transaction_timeout: "5s")
@@ -429,6 +429,8 @@ defmodule EthereumJSONRPC.GethTest do
            ]}
       end)
 
+      Application.put_env(:ethereum_jsonrpc, Geth, tracer: "call_tracer", debug_trace_transaction_timeout: "5s")
+
       call_tracer_internal_txs = Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
 
       Application.put_env(:ethereum_jsonrpc, Geth, tracer: "js", debug_trace_transaction_timeout: "5s")
@@ -466,6 +468,8 @@ defmodule EthereumJSONRPC.GethTest do
              }
            ]}
       end)
+
+      Application.put_env(:ethereum_jsonrpc, Geth, tracer: "call_tracer", debug_trace_transaction_timeout: "5s")
 
       assert {:ok,
               [
@@ -517,6 +521,8 @@ defmodule EthereumJSONRPC.GethTest do
              }
            ]}
       end)
+
+      Application.put_env(:ethereum_jsonrpc, Geth, tracer: "call_tracer", debug_trace_transaction_timeout: "5s")
 
       uppercase_result = Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
 
