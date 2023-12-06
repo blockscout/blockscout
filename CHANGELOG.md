@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#8955](https://github.com/blockscout/blockscout/pull/8955) - Remove daily balances updating from BlockReward fetcher
+
 ### Chore
 
 <details>
