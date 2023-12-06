@@ -58,4 +58,38 @@ defmodule Explorer.Helper do
 
     Enum.map(list, fn el -> Map.put(el, preload_field, associated_elements[el[foreign_key_field]]) end)
   end
+
+  @doc """
+  Decode json
+  """
+  @spec decode_json(any()) :: map() | list() | nil
+  def decode_json(nil), do: nil
+
+  def decode_json(data) do
+    if String.valid?(data) do
+      safe_decode_json(data)
+    else
+      data
+      |> :unicode.characters_to_binary(:latin1)
+      |> safe_decode_json()
+    end
+  end
+
+  defp safe_decode_json(data) do
+    case Jason.decode(data) do
+      {:ok, decoded} -> decoded
+      _ -> %{error: data}
+    end
+  end
+
+  @doc """
+    Tries to decode binary to json, return either decoded object, or initial binary
+  """
+  @spec maybe_decode(binary) :: any
+  def maybe_decode(data) do
+    case safe_decode_json(data) do
+      %{error: _} -> data
+      decoded -> decoded
+    end
+  end
 end

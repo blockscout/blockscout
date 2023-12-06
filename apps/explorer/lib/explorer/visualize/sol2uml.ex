@@ -2,7 +2,7 @@ defmodule Explorer.Visualize.Sol2uml do
   @moduledoc """
     Adapter for sol2uml visualizer with https://github.com/blockscout/blockscout-rs/blob/main/visualizer
   """
-  alias Explorer.Utility.RustService
+  alias Explorer.Utility.Microservice
   alias HTTPoison.Response
   require Logger
 
@@ -61,7 +61,7 @@ defmodule Explorer.Visualize.Sol2uml do
   def base_api_url, do: "#{base_url()}" <> "/api/v1"
 
   def base_url do
-    RustService.base_url(__MODULE__)
+    Microservice.base_url(__MODULE__)
   end
 
   def enabled?, do: Application.get_env(:explorer, __MODULE__)[:enabled]

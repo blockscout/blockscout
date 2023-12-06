@@ -23,6 +23,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   @unauthorized "Unauthorized"
   @not_configured_api_key "API key not configured on the server"
   @wrong_api_key "Wrong API key"
+  @tx_interpreter_service_disabled "Transaction Interpretation Service is not enabled"
 
   def call(conn, {:format, _params}) do
     Logger.error(fn ->
@@ -231,5 +232,12 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> put_status(:unauthorized)
     |> put_view(ApiView)
     |> render(:message, %{message: @wrong_api_key})
+  end
+
+  def call(conn, {:tx_interpreter_enabled, false}) do
+    conn
+    |> put_status(404)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @tx_interpreter_service_disabled})
   end
 end
