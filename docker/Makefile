@@ -16,19 +16,19 @@ STABLE_TAG := $(RELEASE_VERSION)
 
 start:
 	@echo "==> Starting blockscout db"
-	@docker-compose -f ../docker-compose/services/docker-compose-db.yml up -d
+	@docker-compose -f ../docker-compose/services/db.yml up -d
 	@echo "==> Starting blockscout backend"
-	@docker-compose -f ../docker-compose/services/docker-compose-backend.yml up -d
+	@docker-compose -f ../docker-compose/services/backend.yml up -d
 	@echo "==> Starting stats microservice"
-	@docker-compose -f ../docker-compose/services/docker-compose-stats.yml up -d
+	@docker-compose -f ../docker-compose/services/stats.yml up -d
 	@echo "==> Starting visualizer microservice"
-	@docker-compose -f ../docker-compose/services/docker-compose-visualizer.yml up -d
+	@docker-compose -f ../docker-compose/services/visualizer.yml up -d
 	@echo "==> Starting sig-provider microservice"
-	@docker-compose -f ../docker-compose/services/docker-compose-sig-provider.yml up -d
+	@docker-compose -f ../docker-compose/services/sig-provider.yml up -d
 	@echo "==> Starting blockscout frontend"
-	@docker-compose -f ../docker-compose/services/docker-compose-frontend.yml up -d
+	@docker-compose -f ../docker-compose/services/frontend.yml up -d
 	@echo "==> Starting Nginx proxy"
-	@docker-compose -f ../docker-compose/services/docker-compose-nginx.yml up -d
+	@docker-compose -f ../docker-compose/services/nginx.yml up -d
 
 BS_BACKEND_STARTED := $(shell docker ps --no-trunc --filter name=^/${BACKEND_CONTAINER_NAME}$  | grep ${BACKEND_CONTAINER_NAME})
 BS_FRONTEND_STARTED := $(shell docker ps --no-trunc --filter name=^/${FRONTEND_CONTAINER_NAME}$  | grep ${FRONTEND_CONTAINER_NAME})
