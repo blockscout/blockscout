@@ -54,7 +54,6 @@
 - [#8940](https://github.com/blockscout/blockscout/pull/8940) - Bump photoswipe from 5.4.2 to 5.4.3 in /apps/block_scout_web/assets
 - [#8938](https://github.com/blockscout/blockscout/pull/8938) - Bump @babel/preset-env from 7.23.3 to 7.23.5 in /apps/block_scout_web/assets
 - [#8935](https://github.com/blockscout/blockscout/pull/8935) - Bump @amplitude/analytics-browser from 2.3.5 to 2.3.6 in /apps/block_scout_web/assets
-- [#8941](https://github.com/blockscout/blockscout/pull/8941) - Bump ueberauth from 0.10.5 to 0.10.6
 - [#8937](https://github.com/blockscout/blockscout/pull/8937) - Bump redux from 4.2.1 to 5.0.0 in /apps/block_scout_web/assets
 - [#8942](https://github.com/blockscout/blockscout/pull/8942) - Bump gettext from 0.23.1 to 0.24.0
 - [#8934](https://github.com/blockscout/blockscout/pull/8934) - Bump @fortawesome/fontawesome-free from 6.4.2 to 6.5.1 in /apps/block_scout_web/assets
