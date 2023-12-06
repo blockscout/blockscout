@@ -165,11 +165,6 @@ defmodule BlockScoutWeb.ApiRouter do
       end
     end
 
-    scope "/migration" do
-      get("/user/watchlist", UserController, :watchlist)
-      get("/user/tags/address", UserController, :tags_address)
-      get("/user/tags/transaction", UserController, :tags_transaction)
-    end
   end
 
   scope "/account/v2" do
