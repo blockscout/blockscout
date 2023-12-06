@@ -8,6 +8,8 @@
 
 ### Chore
 
+- [#8956](https://github.com/blockscout/blockscout/pull/8956) - Refine docker-compose config structure
+
 <details>
   <summary>Dependencies version bumps</summary>
 </details>
