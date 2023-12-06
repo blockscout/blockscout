@@ -52,7 +52,7 @@ defmodule Explorer.TokenInstanceOwnerAddressMigration.Helper do
           )
 
         token_transfer =
-          Repo.one(token_transfer_query) ||
+          Repo.one(token_transfer_query, timeout: :timer.minutes(1)) ||
             %{to_address_hash: @burn_address_hash, block_number: -1, log_index: -1}
 
         %{
