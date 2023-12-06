@@ -1049,7 +1049,7 @@ msgstr ""
 msgid "Daily Transactions"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:101
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:98
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:7
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:23
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:121
@@ -2962,7 +2962,7 @@ msgstr ""
 msgid "Topic"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:71
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:68
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:91
 #, elixir-autogen, elixir-format
 msgid "Topics"

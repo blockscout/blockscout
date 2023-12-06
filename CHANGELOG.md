@@ -15,6 +15,7 @@
 - [#8917](https://github.com/blockscout/blockscout/pull/8917) - Proxy detection hotfix in API v2
 - [#8915](https://github.com/blockscout/blockscout/pull/8915) - smart-contract: delete embeds_many relation on replace
 - [#8906](https://github.com/blockscout/blockscout/pull/8906) - Fix abi encoded string argument
+- [#8898](https://github.com/blockscout/blockscout/pull/8898) - Enhance method decoding by candidates from DB
 - [#8882](https://github.com/blockscout/blockscout/pull/8882) - Change order of proxy contracts patterns detection: existing popular EIPs to the top of the list
 - [#8707](https://github.com/blockscout/blockscout/pull/8707) - Fix native coin exchange rate with `EXCHANGE_RATES_COINGECKO_COIN_ID`
 

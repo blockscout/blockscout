@@ -24,5 +24,5 @@ lib/indexer/fetcher/zkevm/transaction_batch.ex:252
 lib/block_scout_web/views/api/v2/transaction_view.ex:431
 lib/block_scout_web/views/api/v2/transaction_view.ex:472
 lib/explorer/chain/transaction.ex:167
-lib/explorer/chain/transaction.ex:1457
-lib/explorer/chain/transaction.ex:1458
+lib/explorer/chain/transaction.ex:1452
+lib/explorer/chain/transaction.ex:1453

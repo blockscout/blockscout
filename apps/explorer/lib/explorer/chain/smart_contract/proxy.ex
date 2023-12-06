@@ -267,6 +267,10 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     end)
   end
 
+  @doc """
+  Returns combined ABI from proxy and implementation smart-contracts
+  """
+  @spec combine_proxy_implementation_abi(any(), any()) :: SmartContract.abi()
   def combine_proxy_implementation_abi(smart_contract, options \\ [])
 
   def combine_proxy_implementation_abi(%SmartContract{abi: abi} = smart_contract, options) when not is_nil(abi) do
