@@ -774,12 +774,7 @@ defmodule Explorer.Chain.Transaction do
     if Map.has_key?(methods_acc, method_id) do
       {methods_acc[method_id], methods_acc}
     else
-      candidates_query =
-        from(
-          contract_method in ContractMethod,
-          where: contract_method.identifier == ^method_id,
-          limit: 1
-        )
+      candidates_query = ContractMethod.find_contract_method_query(method_id, 1)
 
       result =
         candidates_query
@@ -1181,7 +1176,7 @@ defmodule Explorer.Chain.Transaction do
       Enum.map_reduce(transactions, %{}, fn transaction, tokens_acc ->
         case Log.fetch_log_by_tx_hash_and_first_topic(transaction.hash, @transaction_fee_event_signature, @api_true) do
           fee_log when not is_nil(fee_log) ->
-            {:ok, _selector, mapping} = Log.find_and_decode(@transaction_fee_event_abi, fee_log, transaction)
+            {:ok, _selector, mapping} = Log.find_and_decode(@transaction_fee_event_abi, fee_log, transaction.hash)
 
             [{"token", "address", false, token_address_hash}, _, _, _, _, _] = mapping
 
@@ -1322,7 +1317,7 @@ defmodule Explorer.Chain.Transaction do
     direction = Keyword.get(options, :direction)
 
     options
-    |> address_to_transactions_tasks_query()
+    |> address_to_transactions_tasks_query(true)
     |> not_pending_transactions()
     |> select([t], t.block_number)
     |> matching_address_queries_list(direction, address_hash)
@@ -1448,10 +1443,19 @@ defmodule Explorer.Chain.Transaction do
 
   defp compare_custom_sorting([{:dynamic, :fee, order, _dynamic_fee}]) do
     fn a, b ->
-      case Decimal.compare(a |> Chain.fee(:wei) |> elem(1), b |> Chain.fee(:wei) |> elem(1)) do
+      nil_case =
+        case order do
+          :desc_nulls_last -> Decimal.new("-inf")
+          :asc_nulls_first -> Decimal.new("inf")
+        end
+
+      a_fee = a |> Chain.fee(:wei) |> elem(1) || nil_case
+      b_fee = b |> Chain.fee(:wei) |> elem(1) || nil_case
+
+      case Decimal.compare(a_fee, b_fee) do
         :eq -> compare_default_sorting(a, b)
-        :gt -> order == :desc
-        :lt -> order == :asc
+        :gt -> order == :desc_nulls_last
+        :lt -> order == :asc_nulls_first
       end
     end
   end
@@ -1463,7 +1467,7 @@ defmodule Explorer.Chain.Transaction do
       compare(a.block_number, b.block_number),
       compare(a.index, b.index),
       DateTime.compare(a.inserted_at, b.inserted_at),
-      compare(to_string(a.hash), to_string(b.hash))
+      compare(Hash.to_integer(a.hash), Hash.to_integer(b.hash))
     } do
       {:lt, _, _, _} -> false
       {:eq, :lt, _, _} -> false

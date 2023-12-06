@@ -28,12 +28,13 @@ defmodule Explorer.SortingHelper do
   """
   @spec apply_sorting(Ecto.Query.t(), sorting_params, sorting_params) :: Ecto.Query.t()
   def apply_sorting(query, sorting, default_sorting) when is_list(sorting) and is_list(default_sorting) do
-    sorting |> sorting_with_defaults(default_sorting) |> apply_as(query)
+    sorting |> merge_sorting_params_with_defaults(default_sorting) |> sorting_params_to_order_by(query)
   end
 
-  defp sorting_with_defaults([], default_sorting) when is_list(default_sorting), do: default_sorting
+  defp merge_sorting_params_with_defaults([], default_sorting) when is_list(default_sorting), do: default_sorting
 
-  defp sorting_with_defaults(sorting, default_sorting) when is_list(sorting) and is_list(default_sorting) do
+  defp merge_sorting_params_with_defaults(sorting, default_sorting)
+       when is_list(sorting) and is_list(default_sorting) do
     (sorting ++ default_sorting)
     |> Enum.uniq_by(fn
       {_, field} -> field
@@ -42,12 +43,12 @@ defmodule Explorer.SortingHelper do
     end)
   end
 
-  defp apply_as(sorting, query) do
-    sorting
+  defp sorting_params_to_order_by(sorting_params, query) do
+    sorting_params
     |> Enum.reduce(query, fn
       {:dynamic, _key_name, order, dynamic}, query -> query |> order_by(^[{order, dynamic}])
       {order, column, binding}, query -> query |> order_by([{^order, field(as(^binding), ^column)}])
-      no_binding, query -> query |> order_by(^[no_binding])
+      {order, column}, query -> query |> order_by(^[{order, column}])
     end)
   end
 
@@ -59,7 +60,7 @@ defmodule Explorer.SortingHelper do
   def page_with_sorting(query, %PagingOptions{key: key, page_size: page_size}, sorting, default_sorting)
       when not is_nil(key) do
     sorting
-    |> sorting_with_defaults(default_sorting)
+    |> merge_sorting_params_with_defaults(default_sorting)
     |> do_page_with_sorting()
     |> case do
       nil -> query
@@ -91,193 +92,69 @@ defmodule Explorer.SortingHelper do
 
   defp do_page_with_sorting([]), do: nil
 
-  # we could use here some function like
-  # defp apply_column({column, binding}) do
-  #   dynamic([t], field(as(^binding), ^column))
-  # end
-  #
-  # defp apply_column(column) do
-  #   dynamic([t], field(t, ^column))
-  # end
-  # but ecto does not support dynamic fields like that,
-  # related issue: https://github.com/elixir-ecto/ecto/issues/4186
-  # possible solution is to define macro that will generate case and replace some placeholder value in
-  # dynamic based on which case clause we get, but now it seems like overengineering
-  defp page_by_column(key, {:dynamic, key_name, dynamic}, :desc_nulls_last, next_column) do
-    case key[key_name] do
-      nil ->
-        dynamic([t], is_nil(^dynamic) and ^apply_next_column(next_column, key))
+  for {key_name, pattern, ecto_value} <- [
+        {quote(do: key_name), quote(do: {:dynamic, key_name, dynamic}), quote(do: ^dynamic)},
+        {quote(do: column), quote(do: {column, binding}), quote(do: field(as(^binding), ^column))},
+        {quote(do: column), quote(do: column), quote(do: field(t, ^column))}
+      ] do
+    defp page_by_column(key, unquote(pattern), :desc_nulls_last, next_column) do
+      case key[unquote(key_name)] do
+        nil ->
+          dynamic([t], is_nil(unquote(ecto_value)) and ^apply_next_column(next_column, key))
 
-      value ->
-        dynamic(
-          [t],
-          is_nil(^dynamic) or ^dynamic < ^value or
-            (^dynamic == ^value and ^apply_next_column(next_column, key))
-        )
+        value ->
+          dynamic(
+            [t],
+            is_nil(unquote(ecto_value)) or unquote(ecto_value) < ^value or
+              (unquote(ecto_value) == ^value and ^apply_next_column(next_column, key))
+          )
+      end
     end
-  end
 
-  defp page_by_column(key, {:dynamic, key_name, dynamic}, :asc_nulls_first, next_column) do
-    case key[key_name] do
-      nil ->
-        dynamic([t], not is_nil(^dynamic) or ^apply_next_column(next_column, key))
+    defp page_by_column(key, unquote(pattern), :asc_nulls_first, next_column) do
+      case key[unquote(key_name)] do
+        nil ->
+          dynamic([t], not is_nil(unquote(ecto_value)) or ^apply_next_column(next_column, key))
 
-      value ->
-        dynamic(
-          [t],
-          not is_nil(^dynamic) and
-            (^dynamic > ^value or
-               (^dynamic == ^value and ^apply_next_column(next_column, key)))
-        )
+        value ->
+          dynamic(
+            [t],
+            not is_nil(unquote(ecto_value)) and
+              (unquote(ecto_value) > ^value or
+                 (unquote(ecto_value) == ^value and ^apply_next_column(next_column, key)))
+          )
+      end
     end
-  end
 
-  defp page_by_column(key, {:dynamic, key_name, dynamic}, order, next_column) when order in ~w(asc asc_nulls_last)a do
-    case key[key_name] do
-      nil ->
-        dynamic([t], is_nil(^dynamic) and ^apply_next_column(next_column, key))
+    defp page_by_column(key, unquote(pattern), order, next_column) when order in ~w(asc asc_nulls_last)a do
+      case key[unquote(key_name)] do
+        nil ->
+          dynamic([t], is_nil(unquote(ecto_value)) and ^apply_next_column(next_column, key))
 
-      value ->
-        dynamic(
-          [t],
-          is_nil(^dynamic) or
-            (^dynamic > ^value or
-               (^dynamic == ^value and ^apply_next_column(next_column, key)))
-        )
+        value ->
+          dynamic(
+            [t],
+            is_nil(unquote(ecto_value)) or
+              (unquote(ecto_value) > ^value or
+                 (unquote(ecto_value) == ^value and ^apply_next_column(next_column, key)))
+          )
+      end
     end
-  end
 
-  defp page_by_column(key, {:dynamic, key_name, dynamic}, order, next_column)
-       when order in ~w(desc desc_nulls_first)a do
-    case key[key_name] do
-      nil ->
-        dynamic([t], not is_nil(^dynamic) or ^apply_next_column(next_column, key))
+    defp page_by_column(key, unquote(pattern), order, next_column)
+         when order in ~w(desc desc_nulls_first)a do
+      case key[unquote(key_name)] do
+        nil ->
+          dynamic([t], not is_nil(unquote(ecto_value)) or ^apply_next_column(next_column, key))
 
-      value ->
-        dynamic(
-          [t],
-          not is_nil(^dynamic) and
-            (^dynamic < ^value or
-               (^dynamic == ^value and ^apply_next_column(next_column, key)))
-        )
-    end
-  end
-
-  defp page_by_column(key, {column, binding}, :desc_nulls_last, next_column) do
-    case key[column] do
-      nil ->
-        dynamic([t], is_nil(field(as(^binding), ^column)) and ^apply_next_column(next_column, key))
-
-      value ->
-        dynamic(
-          [t],
-          is_nil(field(as(^binding), ^column)) or field(as(^binding), ^column) < ^value or
-            (field(as(^binding), ^column) == ^value and ^apply_next_column(next_column, key))
-        )
-    end
-  end
-
-  defp page_by_column(key, {column, binding}, :asc_nulls_first, next_column) do
-    case key[column] do
-      nil ->
-        dynamic([t], not is_nil(field(as(^binding), ^column)) or ^apply_next_column(next_column, key))
-
-      value ->
-        dynamic(
-          [t],
-          not is_nil(field(as(^binding), ^column)) and
-            (field(as(^binding), ^column) > ^value or
-               (field(as(^binding), ^column) == ^value and ^apply_next_column(next_column, key)))
-        )
-    end
-  end
-
-  defp page_by_column(key, {column, binding}, order, next_column) when order in ~w(asc asc_nulls_last)a do
-    case key[column] do
-      nil ->
-        dynamic([t], is_nil(field(as(^binding), ^column)) and ^apply_next_column(next_column, key))
-
-      value ->
-        dynamic(
-          [t],
-          is_nil(field(as(^binding), ^column)) or
-            (field(as(^binding), ^column) > ^value or
-               (field(as(^binding), ^column) == ^value and ^apply_next_column(next_column, key)))
-        )
-    end
-  end
-
-  defp page_by_column(key, {column, binding}, order, next_column) when order in ~w(desc desc_nulls_first)a do
-    case key[column] do
-      nil ->
-        apply_next_column(next_column, key)
-
-      value ->
-        dynamic(
-          [t],
-          not is_nil(field(as(^binding), ^column)) and
-            (field(as(^binding), ^column) < ^value or
-               (field(as(^binding), ^column) == ^value and ^apply_next_column(next_column, key)))
-        )
-    end
-  end
-
-  defp page_by_column(key, column, :desc_nulls_last, next_column) do
-    case key[column] do
-      nil ->
-        dynamic([t], is_nil(field(t, ^column)) and ^apply_next_column(next_column, key))
-
-      value ->
-        dynamic(
-          [t],
-          is_nil(field(t, ^column)) or field(t, ^column) < ^value or
-            (field(t, ^column) == ^value and ^apply_next_column(next_column, key))
-        )
-    end
-  end
-
-  defp page_by_column(key, column, :asc_nulls_first, next_column) do
-    case key[column] do
-      nil ->
-        apply_next_column(next_column, key)
-
-      value ->
-        dynamic(
-          [t],
-          not is_nil(field(t, ^column)) and
-            (field(t, ^column) > ^value or
-               (field(t, ^column) == ^value and ^apply_next_column(next_column, key)))
-        )
-    end
-  end
-
-  defp page_by_column(key, column, order, next_column) when order in ~w(asc asc_nulls_last)a do
-    case key[column] do
-      nil ->
-        dynamic([t], is_nil(field(t, ^column)) and ^apply_next_column(next_column, key))
-
-      value ->
-        dynamic(
-          [t],
-          is_nil(field(t, ^column)) or
-            (field(t, ^column) > ^value or
-               (field(t, ^column) == ^value and ^apply_next_column(next_column, key)))
-        )
-    end
-  end
-
-  defp page_by_column(key, column, order, next_column) when order in ~w(desc desc_nulls_first)a do
-    case key[column] do
-      nil ->
-        dynamic([t], not is_nil(field(t, ^column)) or ^apply_next_column(next_column, key))
-
-      value ->
-        dynamic(
-          [t],
-          not is_nil(field(t, ^column)) and
-            (field(t, ^column) < ^value or
-               (field(t, ^column) == ^value and ^apply_next_column(next_column, key)))
-        )
+        value ->
+          dynamic(
+            [t],
+            not is_nil(unquote(ecto_value)) and
+              (unquote(ecto_value) < ^value or
+                 (unquote(ecto_value) == ^value and ^apply_next_column(next_column, key)))
+          )
+      end
     end
   end
 

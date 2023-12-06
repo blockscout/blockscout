@@ -60,12 +60,25 @@ defmodule Explorer.Helper do
   end
 
   @doc """
-  Decode json with rescue
+  Decode json
   """
-  @spec decode_json(any()) :: any()
+  @spec decode_json(any()) :: map() | list() | nil
+  def decode_json(nil), do: nil
+
   def decode_json(data) do
-    Jason.decode!(data)
-  rescue
-    _ -> data
+    if String.valid?(data) do
+      safe_decode_json(data)
+    else
+      data
+      |> :unicode.characters_to_binary(:latin1)
+      |> safe_decode_json()
+    end
+  end
+
+  defp safe_decode_json(data) do
+    case Jason.decode(data) do
+      {:ok, decoded} -> decoded
+      _ -> %{error: data}
+    end
   end
 end

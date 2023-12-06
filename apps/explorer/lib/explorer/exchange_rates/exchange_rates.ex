@@ -84,9 +84,11 @@ defmodule Explorer.ExchangeRates do
   @doc """
   Lists exchange rates for the tracked tickers.
   """
-  @spec list :: [Token.t()]
+  @spec list :: [Token.t()] | nil
   def list do
-    list_from_store(store())
+    if enabled?() do
+      list_from_store(store())
+    end
   end
 
   @doc """

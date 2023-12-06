@@ -29,6 +29,7 @@ defmodule Explorer.Chain.Token do
 
   @default_sorting [
     desc_nulls_last: :circulating_market_cap,
+    desc_nulls_last: :fiat_value,
     desc_nulls_last: :holder_count,
     asc: :name,
     asc: :contract_address_hash

@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Transaction}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Token.Instance
   alias Explorer.Chain.Transaction
@@ -368,7 +368,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> next_page_params(
           tokens,
           delete_parameters_from_next_page_params(params),
-          &BlockScoutWeb.Chain.paging_params_with_fiat_value/1
+          &paging_params_with_fiat_value/1
         )
 
       conn

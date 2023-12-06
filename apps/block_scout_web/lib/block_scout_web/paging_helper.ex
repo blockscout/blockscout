@@ -226,7 +226,10 @@ defmodule BlockScoutWeb.PagingHelper do
 
   defp do_address_transaction_sorting("value", "asc"), do: [asc: :value]
   defp do_address_transaction_sorting("value", "desc"), do: [desc: :value]
-  defp do_address_transaction_sorting("fee", "asc"), do: [{:dynamic, :fee, :asc, Transaction.dynamic_fee()}]
-  defp do_address_transaction_sorting("fee", "desc"), do: [{:dynamic, :fee, :desc, Transaction.dynamic_fee()}]
+  defp do_address_transaction_sorting("fee", "asc"), do: [{:dynamic, :fee, :asc_nulls_first, Transaction.dynamic_fee()}]
+
+  defp do_address_transaction_sorting("fee", "desc"),
+    do: [{:dynamic, :fee, :desc_nulls_last, Transaction.dynamic_fee()}]
+
   defp do_address_transaction_sorting(_, _), do: []
 end

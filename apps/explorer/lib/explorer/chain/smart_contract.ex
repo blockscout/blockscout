@@ -280,7 +280,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:constructor_arguments, :string)
     field(:evm_version, :string)
     field(:optimization_runs, :integer)
-    embeds_many(:external_libraries, ExternalLibrary)
+    embeds_many(:external_libraries, ExternalLibrary, on_replace: :delete)
     field(:abi, {:array, :map})
     field(:verified_via_sourcify, :boolean)
     field(:partially_verified, :boolean)
@@ -1260,7 +1260,7 @@ defmodule Explorer.Chain.SmartContract do
     filter = Keyword.get(options, :filter, nil)
     search_string = Keyword.get(options, :search, nil)
 
-    query = from(contract in __MODULE__, select: contract)
+    query = from(contract in __MODULE__)
 
     query
     |> filter_contracts(filter)

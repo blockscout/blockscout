@@ -1781,45 +1781,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Lists the top `t:Explorer.Chain.Token.t/0`'s'.
-
-  """
-  @spec list_top_tokens(String.t()) :: [{Token.t(), non_neg_integer()}]
-  def list_top_tokens(filter, options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    token_type = Keyword.get(options, :token_type, nil)
-    sorting = Keyword.get(options, :sorting, [])
-
-    fetch_top_tokens(filter, paging_options, token_type, sorting, options)
-  end
-
-  defp fetch_top_tokens(filter, paging_options, token_type, sorting, options) do
-    base_query = Token.base_token_query(token_type, sorting)
-
-    base_query_with_paging =
-      base_query
-      |> Token.page_tokens(paging_options, sorting)
-      |> limit(^paging_options.page_size)
-
-    query =
-      if filter && filter !== "" do
-        case Search.prepare_search_term(filter) do
-          {:some, filter_term} ->
-            base_query_with_paging
-            |> where(fragment("to_tsvector('english', symbol || ' ' || name) @@ to_tsquery(?)", ^filter_term))
-
-          _ ->
-            base_query_with_paging
-        end
-      else
-        base_query_with_paging
-      end
-
-    query
-    |> select_repo(options).all()
-  end
-
-  @doc """
   Calls `reducer` on a stream of `t:Explorer.Chain.Block.t/0` without `t:Explorer.Chain.Block.Reward.t/0`.
   """
   def stream_blocks_without_rewards(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
@@ -3259,11 +3220,6 @@ defmodule Explorer.Chain do
       true ->
         ""
     end
-  end
-
-  defp order_for_transactions(query, _) do
-    query
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
   end
 
   defp fetch_transactions_in_ascending_order_by_index(paging_options) do
@@ -5414,20 +5370,6 @@ defmodule Explorer.Chain do
     coin_balances_fetcher_limit = Application.get_env(:indexer, :coin_balances_fetcher_init_limit)
 
     limit(query, ^coin_balances_fetcher_limit)
-  end
-
-  def put_has_token_transfers_to_tx(query, true), do: query
-
-  def put_has_token_transfers_to_tx(query, false) do
-    from(tx in query,
-      select_merge: %{
-        has_token_transfers:
-          fragment(
-            "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
-            tx.hash
-          )
-      }
-    )
   end
 
   @spec default_paging_options() :: map()
