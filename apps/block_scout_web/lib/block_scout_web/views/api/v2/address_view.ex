@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.Token.Instance
 
   @api_true [api?: true]
 
@@ -54,10 +55,26 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     }
   end
 
-  def prepare_address({address, nonce}) do
+  def render("nft_list.json", %{token_instances: token_instances, token: token, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(token_instances, &prepare_nft(&1, token, true)), "next_page_params" => next_page_params}
+  end
+
+  def render("nft_list.json", %{token_instances: token_instances, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(token_instances, &prepare_nft(&1)), "next_page_params" => next_page_params}
+  end
+
+  def render("nft_collections.json", %{collections: nft_collections, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(nft_collections, &prepare_nft_collection(&1)), "next_page_params" => next_page_params}
+  end
+
+  @spec prepare_address(
+          {atom() | %{:fetched_coin_balance => any(), :hash => any(), optional(any()) => any()}, any()}
+          | Explorer.Chain.Address.t()
+        ) :: %{optional(:coin_balance) => any(), optional(:tx_count) => binary(), optional(<<_::32, _::_*8>>) => any()}
+  def prepare_address({address, tx_count}) do
     nil
     |> Helper.address_with_info(address, address.hash, true)
-    |> Map.put(:tx_count, to_string(nonce))
+    |> Map.put(:tx_count, to_string(tx_count))
     |> Map.put(:coin_balance, if(address.fetched_coin_balance, do: address.fetched_coin_balance.value))
   end
 
@@ -123,7 +140,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
             fetch_and_render_token_instance(
               token_balance.token_id,
               token_balance.token,
-              token_balance.address_hash
+              token_balance.address_hash,
+              token_balance
             )
         )
     }
@@ -156,7 +174,44 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     end
   end
 
-  def fetch_and_render_token_instance(token_id, token, address_hash) do
+  defp prepare_nft(nft) do
+    prepare_nft(nft, nft.token, false)
+  end
+
+  defp prepare_nft(nft, token, need_uniqueness?) do
+    Map.merge(
+      %{"token_type" => token.type, "value" => value(token.type, nft)},
+      TokenView.prepare_token_instance(nft, token, need_uniqueness?)
+    )
+  end
+
+  defp prepare_nft_collection(collection) do
+    %{
+      "token" => TokenView.render("token.json", token: collection.token),
+      "amount" => string_or_null(collection.distinct_token_instances_count || collection.value),
+      "token_instances" =>
+        Enum.map(collection.preloaded_token_instances, fn instance ->
+          prepare_nft_for_collection(collection.token.type, instance)
+        end)
+    }
+  end
+
+  defp prepare_nft_for_collection(token_type, instance) do
+    Map.merge(
+      %{"token_type" => token_type, "value" => value(token_type, instance)},
+      TokenView.prepare_token_instance(instance, nil, false)
+    )
+  end
+
+  defp value("ERC-721", _), do: "1"
+  defp value(_, nft), do: nft.current_token_balance && to_string(nft.current_token_balance.value)
+
+  defp string_or_null(nil), do: nil
+  defp string_or_null(other), do: to_string(other)
+
+  # TODO think about this approach mb refactor or mark deprecated for example.
+  # Suggested solution: batch preload
+  def fetch_and_render_token_instance(token_id, token, address_hash, token_balance) do
     token_instance =
       case Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(
              token_id,
@@ -164,10 +219,13 @@ defmodule BlockScoutWeb.API.V2.AddressView do
              @api_true
            ) do
         # `%{hash: address_hash}` will match with `address_with_info(_, address_hash)` clause in `BlockScoutWeb.API.V2.Helper`
-        {:ok, token_instance} -> %{token_instance | owner: %{hash: address_hash}}
-        {:error, :not_found} -> %{token_id: token_id, metadata: nil, owner: %{hash: address_hash}}
+        {:ok, token_instance} -> %Instance{token_instance | owner: %{hash: address_hash}}
+        {:error, :not_found} -> %Instance{token_id: token_id, metadata: nil, owner: %{hash: address_hash}}
       end
 
-    TokenView.render("token_instance.json", %{token_instance: token_instance, token: token})
+    TokenView.render("token_instance.json", %{
+      token_instance: %Instance{token_instance | current_token_balance: token_balance},
+      token: token
+    })
   end
 end

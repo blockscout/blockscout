@@ -554,7 +554,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       response_1 =
         conn
-        |> get("/api/account/v2/user/watchlist", response["next_page_params"] |> dbg())
+        |> get("/api/account/v2/user/watchlist", response["next_page_params"])
         |> json_response(200)
 
       check_paginated_response(response, response_1, tags_address)

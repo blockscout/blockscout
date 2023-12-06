@@ -3,9 +3,10 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Publish Docker image for specific chain branches
+name: SUAVE Publish Docker image
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - production-suave-stg
@@ -17,7 +18,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.3.0
+      RELEASE_VERSION: 5.3.2
       DOCKER_CHAIN_NAME: suave
     steps:
       - name: Check out the repo
@@ -47,7 +48,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:latest, blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
+          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
           platforms: |
             linux/amd64
             linux/arm64/v8

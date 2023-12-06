@@ -4,8 +4,6 @@ import Config
 |> Path.join()
 |> Code.eval_file()
 
-chain_type = System.get_env("CHAIN_TYPE") || "ethereum"
-
 ######################
 ### BlockScout Web ###
 ######################
@@ -133,7 +131,7 @@ config :block_scout_web, :chart,
 config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
   coin_balance_history_days: ConfigHelper.parse_integer_env_var("COIN_BALANCE_HISTORY_DAYS", 10)
 
-config :block_scout_web, BlockScoutWeb.API.V2, enabled: ConfigHelper.parse_bool_env_var("API_V2_ENABLED")
+config :block_scout_web, BlockScoutWeb.API.V2, enabled: ConfigHelper.parse_bool_env_var("API_V2_ENABLED", "true")
 
 # Configures Ueberauth's Auth0 auth provider
 config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
@@ -163,7 +161,7 @@ config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
   debug_trace_transaction_timeout: System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s"),
   tracer:
-    if(chain_type == "polygon_edge",
+    if(ConfigHelper.chain_type() == "polygon_edge",
       do: "polygon_edge",
       else: System.get_env("INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE", "call_tracer")
     )
@@ -186,7 +184,6 @@ checksum_function = System.get_env("CHECKSUM_FUNCTION")
 exchange_rates_coin = System.get_env("EXCHANGE_RATES_COIN")
 
 config :explorer,
-  chain_type: chain_type,
   coin: System.get_env("COIN") || exchange_rates_coin || "ETH",
   coin_name: System.get_env("COIN_NAME") || exchange_rates_coin || "ETH",
   allowed_solidity_evm_versions:
@@ -380,7 +377,8 @@ config :explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
   service_url: System.get_env("MICROSERVICE_SC_VERIFIER_URL") || "https://eth-bytecode-db.services.blockscout.com/",
   enabled: enabled?,
   type: type,
-  eth_bytecode_db?: enabled? && type == "eth_bytecode_db"
+  eth_bytecode_db?: enabled? && type == "eth_bytecode_db",
+  api_key: System.get_env("MICROSERVICE_SC_VERIFIER_API_KEY")
 
 config :explorer, Explorer.Visualize.Sol2uml,
   service_url: System.get_env("MICROSERVICE_VISUALIZE_SOL2UML_URL"),
@@ -434,7 +432,8 @@ config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber,
 
 config :explorer, Explorer.TokenInstanceOwnerAddressMigration,
   concurrency: ConfigHelper.parse_integer_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_CONCURRENCY", 5),
-  batch_size: ConfigHelper.parse_integer_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_BATCH_SIZE", 50)
+  batch_size: ConfigHelper.parse_integer_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_BATCH_SIZE", 50),
+  enabled: ConfigHelper.parse_bool_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_ENABLED")
 
 config :explorer, Explorer.Chain.Transaction,
   rootstock_remasc_address: System.get_env("ROOTSTOCK_REMASC_ADDRESS"),
@@ -525,6 +524,8 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
 config :indexer, Indexer.Block.Realtime.Supervisor,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_REALTIME_INDEXER")
 
+config :indexer, Indexer.Block.Catchup.Supervisor, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_CATCHUP_INDEXER")
+
 config :indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_REALTIME_FETCHER")
 
@@ -587,15 +588,19 @@ config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
 
 config :indexer, Indexer.Fetcher.Withdrawal, first_block: System.get_env("WITHDRAWALS_FIRST_BLOCK")
 
-config :indexer, Indexer.Fetcher.PolygonEdge.Supervisor, disabled?: !(chain_type == "polygon_edge")
+config :indexer, Indexer.Fetcher.PolygonEdge.Supervisor, disabled?: !(ConfigHelper.chain_type() == "polygon_edge")
 
-config :indexer, Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, disabled?: !(chain_type == "polygon_edge")
+config :indexer, Indexer.Fetcher.PolygonEdge.Deposit.Supervisor,
+  disabled?: !(ConfigHelper.chain_type() == "polygon_edge")
 
-config :indexer, Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor, disabled?: !(chain_type == "polygon_edge")
+config :indexer, Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor,
+  disabled?: !(ConfigHelper.chain_type() == "polygon_edge")
 
-config :indexer, Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor, disabled?: !(chain_type == "polygon_edge")
+config :indexer, Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor,
+  disabled?: !(ConfigHelper.chain_type() == "polygon_edge")
 
-config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor, disabled?: !(chain_type == "polygon_edge")
+config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor,
+  disabled?: !(ConfigHelper.chain_type() == "polygon_edge")
 
 config :indexer, Indexer.Fetcher.PolygonEdge,
   polygon_edge_l1_rpc: System.get_env("INDEXER_POLYGON_EDGE_L1_RPC"),
@@ -626,6 +631,16 @@ config :indexer, Indexer.Fetcher.Zkevm.TransactionBatch.Supervisor,
   enabled:
     System.get_env("CHAIN_TYPE", "ethereum") == "polygon_zkevm" &&
       ConfigHelper.parse_bool_env_var("INDEXER_ZKEVM_BATCHES_ENABLED")
+
+config :indexer, Indexer.Fetcher.RootstockData.Supervisor,
+  disabled?:
+    ConfigHelper.chain_type() != "rsk" || ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ROOTSTOCK_DATA_FETCHER")
+
+config :indexer, Indexer.Fetcher.RootstockData,
+  interval: ConfigHelper.parse_time_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_INTERVAL", "3s"),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_BATCH_SIZE", 10),
+  max_concurrency: ConfigHelper.parse_integer_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_CONCURRENCY", 5),
+  db_batch_size: ConfigHelper.parse_integer_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_DB_BATCH_SIZE", 300)
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
