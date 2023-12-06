@@ -5,16 +5,23 @@ services:
     extends:
       file: ./services/visualizer.yml
       service: visualizer
+    ports:
+      - 8081:8050
 
   sig-provider:
     extends:
       file: ./services/sig-provider.yml
       service: sig-provider
+    ports:
+      - 8083:8050
+    
 
   sc-verifier:
     extends:
       file: ./services/smart-contract-verifier.yml
       service: smart-contract-verifier
+    ports:
+      - 8082:8050
 
   stats-db-init:
     extends:
@@ -32,3 +39,5 @@ services:
     extends:
       file: ./services/stats.yml
       service: stats
+    ports:
+      - 8080:8050
