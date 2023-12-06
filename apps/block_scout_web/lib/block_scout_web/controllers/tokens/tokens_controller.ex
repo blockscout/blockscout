@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.TokensController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
   alias BlockScoutWeb.{Controller, TokensView}
-  alias Explorer.Chain
+  alias Explorer.Chain.Token
   alias Phoenix.View
 
   def index(conn, %{"type" => "JSON"} = params) do
@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.TokensController do
       params
       |> paging_options()
 
-    tokens = Chain.list_top_tokens(filter, paging_params)
+    tokens = Token.list_top(filter, paging_params)
 
     {tokens_page, next_page} = split_list_by_page(tokens)
 

@@ -77,7 +77,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
 
       {:ok, beacon_contract_address} ->
         case @implementation_signature
-             |> Proxy.abi_decode_address_output()
              |> Basic.get_implementation_address_hash_string(
                beacon_contract_address,
                implementation_method_abi

@@ -15,7 +15,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.3.2
+      RELEASE_VERSION: 5.3.3
       DOCKER_CHAIN_NAME: optimism
     steps:
       - name: Check out the repo
