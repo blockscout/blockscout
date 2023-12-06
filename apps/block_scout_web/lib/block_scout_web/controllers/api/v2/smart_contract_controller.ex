@@ -12,9 +12,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   alias BlockScoutWeb.{AccessHelper, AddressView}
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
-  alias Explorer.Chain.SmartContract
+  alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.SmartContract.{Reader, Writer}
   alias Explorer.SmartContract.Solidity.PublishHelper
+  alias Explorer.ThirdPartyIntegrations.SolidityScan
 
   @smart_contract_address_options [
     necessity_by_association: %{
@@ -187,6 +188,29 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       conn
       |> put_status(200)
       |> render(:function_response, %{output: output, names: names, contract_address_hash: address_hash})
+    end
+  end
+
+  @doc """
+  /api/v2/smart-contracts/${address_hash_string}/solidityscan-report logic
+  """
+  @spec solidityscan_report(Plug.Conn.t(), map()) ::
+          {:address, {:error, :not_found}}
+          | {:format_address, :error}
+          | {:is_empty_response, true}
+          | {:is_smart_contract, false | nil}
+          | {:restricted_access, true}
+          | Plug.Conn.t()
+  def solidityscan_report(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format_address, {:ok, address_hash}} <- {:format_address, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         {:address, {:ok, address}} <- {:address, Chain.hash_to_address(address_hash)},
+         {:is_smart_contract, true} <- {:is_smart_contract, Address.is_smart_contract(address)},
+         response = SolidityScan.solidityscan_request(address_hash_string),
+         {:is_empty_response, false} <- {:is_empty_response, is_nil(response)} do
+      conn
+      |> put_status(200)
+      |> json(response)
     end
   end
 
