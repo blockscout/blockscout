@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
 
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
   alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.{Accounts, Blocks}
@@ -100,7 +101,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     filtered_unique_numbers =
       unique_numbers
-      |> EthereumJSONRPC.are_block_numbers_in_range?()
+      |> RangesHelper.filter_traceable_block_numbers()
       |> drop_genesis(json_rpc_named_arguments)
 
     filtered_unique_numbers_count = Enum.count(filtered_unique_numbers)

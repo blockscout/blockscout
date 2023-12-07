@@ -5,6 +5,7 @@
 ### Features
 
 - [#8972](https://github.com/blockscout/blockscout/pull/8972) - BENS integration
+- [#8960](https://github.com/blockscout/blockscout/pull/8960) - TRACE_BLOCK_RANGES env var
 - [#8957](https://github.com/blockscout/blockscout/pull/8957) - Add Tx Interpreter Service integration
 
 ### Fixes

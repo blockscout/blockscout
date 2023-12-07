@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi, Repo}
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain.{Block, Hash, Import, InternalTransaction, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import.Runner
@@ -15,7 +16,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
 
-  import Ecto.Query, only: [from: 2, where: 3]
+  import Ecto.Query
 
   @behaviour Runner
 
@@ -691,22 +692,16 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) do
-    minimal_block = Application.get_env(:indexer, :trace_first_block)
-    maximal_block = Application.get_env(:indexer, :trace_last_block)
-
     if Enum.count(invalid_block_numbers) > 0 do
       update_query =
         from(
           block in Block,
           where: block.number in ^invalid_block_numbers and block.consensus == true,
-          where: block.number > ^minimal_block,
+          where: ^traceable_blocks_dynamic_query(),
           select: block.hash,
           # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
           update: [set: [consensus: false]]
         )
-
-      update_query =
-        if maximal_block, do: update_query |> where([block], block.number < ^maximal_block), else: update_query
 
       try do
         {_num, result} = repo.update_all(update_query, [])
@@ -752,6 +747,28 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     rescue
       postgrex_error in Postgrex.Error ->
         {:error, %{exception: postgrex_error, pending_hashes: valid_block_hashes}}
+    end
+  end
+
+  defp traceable_blocks_dynamic_query do
+    case Application.get_env(:indexer, :trace_block_ranges) do
+      nil ->
+        min_block = Application.get_env(:indexer, :trace_first_block)
+        max_block = Application.get_env(:indexer, :trace_last_block)
+
+        filter_by_min_dynamic = dynamic([block], block.number > ^min_block)
+
+        if max_block,
+          do: dynamic([block], ^filter_by_min_dynamic and block.number < ^max_block),
+          else: filter_by_min_dynamic
+
+      block_ranges ->
+        parsed_ranges = RangesHelper.parse_block_ranges(block_ranges)
+
+        Enum.reduce(parsed_ranges, dynamic([_], false), fn
+          _from.._to = range, acc -> dynamic([block], ^acc or block.number in ^range)
+          num_to_latest, acc -> dynamic([block], ^acc or block.number >= ^num_to_latest)
+        end)
     end
   end
 end
