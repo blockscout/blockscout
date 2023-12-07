@@ -5,8 +5,6 @@ services:
     extends:
       file: ./services/visualizer.yml
       service: visualizer
-    ports:
-      - 8081:8050
 
   sig-provider:
     extends:
@@ -39,5 +37,13 @@ services:
     extends:
       file: ./services/stats.yml
       service: stats
-    ports:
-      - 8080:8050
+
+  proxy:
+    depends_on:
+      - visualizer
+      - stats
+    extends:
+      file: ./services/nginx.yml
+      service: proxy
+    volumes:
+      - "./proxy/microservices.conf.template:/etc/nginx/templates/default.conf.template"
