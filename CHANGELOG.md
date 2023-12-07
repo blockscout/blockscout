@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#8959](https://github.com/blockscout/blockscout/pull/8959) - Skip failed instances in Token Instance Owner migrator
+
 ### Chore
 
 <details>
