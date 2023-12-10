@@ -20,6 +20,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   import BlockScoutWeb.PagingHelper,
     only: [delete_parameters_from_next_page_params: 1, token_transfers_types_options: 1, tokens_sorting: 1]
 
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @api_true [api?: true]
@@ -67,7 +69,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:token_transfers, %{token_transfers: token_transfers, next_page_params: next_page_params})
+      |> render(:token_transfers, %{
+        token_transfers: token_transfers |> maybe_preload_ens(),
+        next_page_params: next_page_params
+      })
     end
   end
 
@@ -84,7 +89,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
       conn
       |> put_status(200)
-      |> render(:token_balances, %{token_balances: token_balances, next_page_params: next_page_params, token: token})
+      |> render(:token_balances, %{
+        token_balances: token_balances |> maybe_preload_ens(),
+        next_page_params: next_page_params,
+        token: token
+      })
     end
   end
 
@@ -190,7 +199,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:token_transfers, %{token_transfers: token_transfers, next_page_params: next_page_params})
+      |> render(:token_transfers, %{
+        token_transfers: token_transfers |> maybe_preload_ens(),
+        next_page_params: next_page_params
+      })
     end
   end
 
@@ -217,7 +229,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
       conn
       |> put_status(200)
-      |> render(:token_balances, %{token_balances: token_holders, next_page_params: next_page_params, token: token})
+      |> render(:token_balances, %{
+        token_balances: token_holders |> maybe_preload_ens(),
+        next_page_params: next_page_params,
+        token: token
+      })
     end
   end
 

@@ -12,4 +12,13 @@ defmodule Explorer.Utility.Microservice do
       url
     end
   end
+
+  @spec check_enabled(atom) :: :ok | {:error, :disabled}
+  def check_enabled(module) do
+    if Application.get_env(:explorer, module)[:enabled] do
+      :ok
+    else
+      {:error, :disabled}
+    end
+  end
 end

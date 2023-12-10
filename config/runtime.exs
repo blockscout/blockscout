@@ -451,6 +451,10 @@ config :explorer, Explorer.Chain.Transaction,
 config :explorer, Explorer.Chain.Cache.AddressesTabsCounters,
   ttl: ConfigHelper.parse_time_env_var("ADDRESSES_TABS_COUNTERS_TTL", "10m")
 
+config :explorer, Explorer.MicroserviceInterfaces.BENS,
+  service_url: System.get_env("MICROSERVICE_BENS_URL"),
+  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_BENS_ENABLED")
+
 ###############
 ### Indexer ###
 ###############

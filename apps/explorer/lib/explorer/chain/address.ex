@@ -47,7 +47,8 @@ defmodule Explorer.Chain.Address do
     contract has been verified
    * `names` - names known for the address
    * `inserted_at` - when this address was inserted
-   * `updated_at` when this address was last updated
+   * `updated_at` - when this address was last updated
+   * `ens_domain_name` - virtual field for ENS domain name passing
 
    `fetched_coin_balance` and `fetched_coin_balance_block_number` may be updated when a new coin_balance row is fetched.
     They may also be updated when the balance is fetched via the on demand fetcher.
@@ -64,7 +65,8 @@ defmodule Explorer.Chain.Address do
           nonce: non_neg_integer() | nil,
           transactions_count: non_neg_integer() | nil,
           token_transfers_count: non_neg_integer() | nil,
-          gas_used: non_neg_integer() | nil
+          gas_used: non_neg_integer() | nil,
+          ens_domain_name: String.t()
         }
 
   @derive {Poison.Encoder,
@@ -104,6 +106,7 @@ defmodule Explorer.Chain.Address do
     field(:transactions_count, :integer)
     field(:token_transfers_count, :integer)
     field(:gas_used, :integer)
+    field(:ens_domain_name, :string, virtual: true)
 
     has_one(:smart_contract, SmartContract)
     has_one(:token, Token, foreign_key: :contract_address_hash)
