@@ -4,21 +4,21 @@ on:
   push:
     branches:
       - master
-      - production-core-stg
-      - production-eth-stg-experimental
-      - production-eth-goerli-stg
-      - production-eth-sepolia-stg
-      - production-fuse-stg
+      - production-core
+      - production-eth-experimental
+      - production-eth-goerli
+      - production-eth-sepolia
+      - production-fuse
       - production-optimism
-      - production-immutable-stg
-      - production-iota-stg
-      - production-lukso-stg
-      - production-rsk-stg
-      - production-sokol-stg
-      - production-suave-stg
-      - production-xdai-stg
-      - production-zkevm-stg
-      - production-zksync-stg
+      - production-immutable
+      - production-iota
+      - production-lukso
+      - production-rsk
+      - production-sokol
+      - production-suave
+      - production-xdai
+      - production-zkevm
+      - production-zksync
       - staging-l2
     paths-ignore:
       - 'CHANGELOG.md'

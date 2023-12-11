@@ -127,15 +127,15 @@ jobs:
   #   runs-on: ubuntu-latest
   #   env:
   #     BRANCHES: |
-  #       production-core-stg
-  #       production-sokol-stg
-  #       production-eth-stg-experimental
-  #       production-eth-goerli-stg
-  #       production-lukso-stg
-  #       production-xdai-stg
-  #       production-polygon-supernets-stg
-  #       production-rsk-stg
-  #       production-immutable-stg
+  #       production-core
+  #       production-sokol
+  #       production-eth-experimental
+  #       production-eth-goerli
+  #       production-lukso
+  #       production-xdai
+  #       production-polygon-supernets
+  #       production-rsk
+  #       production-immutable
   #   steps:
   #   - uses: actions/checkout@v4
   #   - name: Set Git config
