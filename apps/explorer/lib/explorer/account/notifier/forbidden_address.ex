@@ -5,15 +5,15 @@ defmodule Explorer.Account.Notifier.ForbiddenAddress do
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
+  alias Explorer.Chain.Address
+
   @blacklist [
     burn_address_hash_string(),
     "0x000000000000000000000000000000000000dEaD"
   ]
 
-  alias Explorer.{AccessHelper, Repo}
-  alias Explorer.Chain.Address
+  alias Explorer.AccessHelper
 
-  import Ecto.Query, only: [from: 2]
   import Explorer.Chain, only: [string_to_address_hash: 1, hash_to_address: 1]
 
   def check(address_string) when is_bitstring(address_string) do

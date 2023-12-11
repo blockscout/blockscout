@@ -413,19 +413,9 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   chain_id: System.get_env("CHAIN_ID"),
   repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://repo.sourcify.dev/contracts"
 
-config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
-  table_url: System.get_env("PUBLIC_TAGS_AIRTABLE_URL"),
-  api_key: System.get_env("PUBLIC_TAGS_AIRTABLE_API_KEY")
-
-config :explorer, Explorer.Mailer,
-  adapter: Bamboo.SendGridAdapter,
-  api_key: System.get_env("SENDGRID_API_KEY")
-
-config :explorer, Explorer.Account,
-  sendgrid: [
-    sender: System.get_env("SENDGRID_SENDER"),
-    template: System.get_env("SENDGRID_TEMPLATE")
-  ]
+config :explorer, Explorer.ThirdPartyIntegrations.SolidityScan,
+  chain_id: System.get_env("SOLIDITYSCAN_CHAIN_ID"),
+  api_key: System.get_env("SOLIDITYSCAN_API_TOKEN")
 
 enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED")
 # or "eth_bytecode_db"

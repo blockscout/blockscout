@@ -4,6 +4,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   """
   use Tesla
 
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.{Helper, RustVerifierInterface}
   alias HTTPoison.{Error, Response}
   alias Tesla.Multipart
@@ -223,7 +224,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp parse_verify_http_response(body) do
-    body_json = decode_json(body)
+    body_json = ExplorerHelper.decode_json(body)
 
     case body_json do
       # Success status from native Sourcify server
@@ -246,7 +247,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp parse_check_by_address_http_response(body) do
-    body_json = decode_json(body)
+    body_json = ExplorerHelper.decode_json(body)
 
     case body_json do
       [%{"status" => "perfect"}] ->
@@ -264,11 +265,11 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp parse_get_metadata_http_response(body) do
-    body_json = decode_json(body)
+    body_json = ExplorerHelper.decode_json(body)
 
     case body_json do
       %{"message" => message, "errors" => errors} ->
-        {:error, "#{message}: #{decode_json(errors)}"}
+        {:error, "#{message}: #{ExplorerHelper.decode_json(errors)}"}
 
       metadata ->
         {:ok, metadata}
@@ -276,11 +277,11 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp parse_get_metadata_any_http_response(body) do
-    body_json = decode_json(body)
+    body_json = ExplorerHelper.decode_json(body)
 
     case body_json do
       %{"message" => message, "errors" => errors} ->
-        {:error, "#{message}: #{decode_json(errors)}"}
+        {:error, "#{message}: #{ExplorerHelper.decode_json(errors)}"}
 
       %{"status" => status, "files" => metadata} ->
         {:ok, status, metadata}
@@ -290,15 +291,22 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     end
   end
 
+  @invalid_json_response "invalid http error json response"
   defp parse_http_error_response(body) do
-    body_json = decode_json(body)
+    body_json = ExplorerHelper.decode_json(body)
 
     if is_map(body_json) do
-      {:error, body_json["error"]}
+      error = body_json["error"]
+
+      parse_http_error_response_internal(error)
     else
-      {:error, body}
+      parse_http_error_response_internal(body)
     end
   end
+
+  defp parse_http_error_response_internal(nil), do: {:error, @invalid_json_response}
+
+  defp parse_http_error_response_internal(data), do: {:error, data}
 
   def parse_params_from_sourcify(address_hash_string, verification_metadata) do
     filtered_files =
@@ -350,7 +358,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
 
   defp parse_json_from_sourcify_for_insertion(verification_metadata_json) do
     %{"name" => _, "content" => content} = verification_metadata_json
-    content_json = decode_json(content)
+    content_json = ExplorerHelper.decode_json(content)
     compiler_version = "v" <> (content_json |> Map.get("compiler") |> Map.get("version"))
     abi = content_json |> Map.get("output") |> Map.get("abi")
     settings = Map.get(content_json, "settings")
@@ -399,12 +407,6 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   defp extract_primary_source_code(content, params) do
     params
     |> Map.put("contract_source_code", content)
-  end
-
-  def decode_json(data) do
-    Jason.decode!(data)
-  rescue
-    _ -> data
   end
 
   defp config(module, key) do

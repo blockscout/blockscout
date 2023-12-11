@@ -4,8 +4,16 @@ defmodule BlockScoutWeb.BridgedTokensController do
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.{BridgedTokensView, Controller}
-  alias Explorer.Chain
+  alias Explorer.Chain.BridgedToken
   alias Phoenix.View
+
+  import BlockScoutWeb.PagingHelper,
+    only: [
+      chain_ids_filter_options: 1,
+      tokens_sorting: 1
+    ]
+
+  @api_false [api?: false]
 
   def show(conn, %{"type" => "JSON", "id" => "eth"} = params) do
     get_items(conn, params, :eth)
@@ -71,12 +79,14 @@ defmodule BlockScoutWeb.BridgedTokensController do
         nil
       end
 
-    paging_params =
+    options =
       params
       |> paging_options()
+      |> Keyword.merge(chain_ids_filter_options(params))
+      |> Keyword.merge(tokens_sorting(params))
+      |> Keyword.merge(@api_false)
 
-    from_api = false
-    tokens = Chain.list_top_bridged_tokens(destination, filter, from_api, paging_params)
+    tokens = filter |> BridgedToken.list_top_bridged_tokens(options)
 
     {tokens_page, next_page} = split_list_by_page(tokens)
 

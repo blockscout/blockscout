@@ -3,8 +3,20 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
 
   alias BlockScoutWeb.API.RPC.Helper
   alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain.BridgedToken
 
-  @default_page_size 50
+  import BlockScoutWeb.PagingHelper,
+    only: [
+      chain_ids_filter_options: 1,
+      tokens_sorting: 1
+    ]
+
+  import BlockScoutWeb.Chain,
+    only: [
+      paging_options: 1
+    ]
+
+  @api_true [api?: true]
 
   def gettoken(conn, params) do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
@@ -53,44 +65,19 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
   end
 
   def bridgedtokenlist(conn, params) do
-    chainid = params |> Map.get("chainid")
-    destination = translate_chain_id_to_destination(chainid)
+    options =
+      params
+      |> paging_options()
+      |> Keyword.merge(chain_ids_filter_options(params))
+      |> Keyword.merge(tokens_sorting(params))
+      |> Keyword.merge(@api_true)
 
-    params_with_paging_options = Helper.put_pagination_options(%{}, params)
-
-    page_number =
-      if Map.has_key?(params_with_paging_options, :page_number), do: params_with_paging_options.page_number, else: 1
-
-    page_size =
-      if Map.has_key?(params_with_paging_options, :page_size),
-        do: params_with_paging_options.page_size,
-        else: @default_page_size
-
-    options = [
-      paging_options: %PagingOptions{
-        key: nil,
-        page_number: page_number,
-        page_size: page_size
-      }
-    ]
-
-    from_api = true
-    bridged_tokens = Chain.list_top_bridged_tokens(destination, nil, from_api, options)
+    bridged_tokens = "" |> BridgedToken.list_top_bridged_tokens(options)
     render(conn, "bridgedtokenlist.json", %{bridged_tokens: bridged_tokens})
   end
 
   defp fetch_contractaddress(params) do
     {:contractaddress_param, Map.fetch(params, "contractaddress")}
-  end
-
-  defp translate_chain_id_to_destination(destination) do
-    case destination do
-      "1" -> :eth
-      "42" -> :kovan
-      "56" -> :bsc
-      "99" -> :poa
-      wrong_chain_id -> wrong_chain_id
-    end
   end
 
   defp to_address_hash(address_hash_string) do

@@ -1097,7 +1097,7 @@ msgstr ""
 msgid "Daily Transactions"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:101
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:98
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:7
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:23
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:121
@@ -3029,7 +3029,7 @@ msgstr ""
 msgid "Topic"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:71
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:68
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:91
 #, elixir-autogen
 msgid "Topics"
@@ -3656,7 +3656,7 @@ msgstr ""
 msgid "fallback"
 msgstr ""
 
-#: lib/block_scout_web/views/address_contract_view.ex:28
+#: lib/block_scout_web/views/address_contract_view.ex:30
 #, elixir-autogen, elixir-format
 msgid "false"
 msgstr ""
@@ -3722,7 +3722,7 @@ msgstr ""
 msgid "string"
 msgstr ""
 
-#: lib/block_scout_web/views/address_contract_view.ex:27
+#: lib/block_scout_web/views/address_contract_view.ex:29
 #, elixir-autogen, elixir-format
 msgid "true"
 msgstr ""
