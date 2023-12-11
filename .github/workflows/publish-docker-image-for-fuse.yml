@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - production-fuse-stg
+      - production-fuse
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
