@@ -9,7 +9,7 @@ on:
       - production-eth-goerli-stg
       - production-eth-sepolia-stg
       - production-fuse-stg
-      - production-optimism-stg
+      - production-optimism
       - production-immutable-stg
       - production-iota-stg
       - production-lukso-stg
@@ -28,7 +28,7 @@ on:
   pull_request:
     branches:
       - master
-      - production-optimism-stg
+      - production-optimism
 
 env:
   MIX_ENV: test
