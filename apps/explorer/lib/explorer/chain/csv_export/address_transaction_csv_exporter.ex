@@ -10,7 +10,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
 
   alias Explorer.{Chain, Market, PagingOptions, Repo}
   alias Explorer.Market.MarketHistory
-  alias Explorer.Chain.{Address, Transaction, Wei}
+  alias Explorer.Chain.{Address, Hash, Transaction, Wei}
   alias Explorer.Chain.CSVExport.Helper
 
   @necessity_by_association [
@@ -21,7 +21,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
 
   @paging_options %PagingOptions{page_size: Helper.limit()}
 
-  @spec export(Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
+  @spec export(Hash.Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
   def export(address_hash, from_period, to_period, filter_type \\ nil, filter_value \\ nil) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
     exchange_rate = Market.get_coin_exchange_rate()
@@ -44,7 +44,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
             else: &1
           )).()
 
-    Chain.address_to_transactions_without_rewards(address_hash, options)
+    Transaction.address_to_transactions_without_rewards(address_hash, options)
   end
 
   defp to_csv_format(transactions, address_hash, exchange_rate) do

@@ -35,7 +35,7 @@
     </url>
   <% end %>
 
-  <% tokens = Chain.list_top_tokens(nil, params) %>
+  <% tokens = Token.list_top(nil, params) %>
   <%= for token <- tokens do %>
     <url>
       <loc><%= host %>/token/<%= to_string(token.contract_address_hash) %></loc>

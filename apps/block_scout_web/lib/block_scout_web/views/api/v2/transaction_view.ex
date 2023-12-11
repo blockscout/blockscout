@@ -184,7 +184,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  def decode_logs(logs, skip_sig_provider?) do
+  defp decode_logs(logs, skip_sig_provider?) do
     {result, _, _} =
       Enum.reduce(logs, {[], %{}, %{}}, fn log, {results, contracts_acc, events_acc} ->
         {result, contracts_acc, events_acc} =
@@ -648,7 +648,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp format_decoded_input(_), do: nil
 
   defp format_decoded_log_input({:error, :could_not_decode}), do: nil
-  defp format_decoded_log_input({:error, :no_matching_function}), do: nil
   defp format_decoded_log_input({:ok, _method_id, _text, _mapping} = decoded), do: decoded
   defp format_decoded_log_input({:error, _, candidates}), do: Enum.at(candidates, 0)
 
@@ -707,7 +706,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
          _,
          skip_sc_check?
        ) do
-    if skip_sc_check? || Helper.is_smart_contract(to_address) do
+    if skip_sc_check? || Address.is_smart_contract(to_address) do
       "0x" <> Base.encode16(method_id, case: :lower)
     else
       nil
@@ -760,7 +759,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp tx_types(%Transaction{to_address: to_address} = tx, types, :contract_call) do
     types =
-      if Helper.is_smart_contract(to_address) do
+      if Address.is_smart_contract(to_address) do
         [:contract_call | types]
       else
         types

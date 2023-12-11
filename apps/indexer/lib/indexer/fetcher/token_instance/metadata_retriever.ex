@@ -5,6 +5,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
 
   require Logger
 
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Reader
   alias HTTPoison.{Error, Response}
 
@@ -130,7 +131,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   end
 
   defp fetch_json_from_uri({:ok, [json]}, hex_token_id) do
-    {:ok, json} = decode_json(json)
+    json = ExplorerHelper.decode_json(json)
 
     check_type(json, hex_token_id)
   rescue
@@ -222,7 +223,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
 
       check_type(json, nil)
     else
-      {:ok, json} = decode_json(body)
+      json = ExplorerHelper.decode_json(body)
 
       check_type(json, hex_token_id)
     end
@@ -243,16 +244,6 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
 
   defp is_video?(content_type) do
     content_type && String.starts_with?(content_type, "video/")
-  end
-
-  defp decode_json(body) do
-    if String.valid?(body) do
-      Jason.decode(body)
-    else
-      body
-      |> :unicode.characters_to_binary(:latin1)
-      |> Jason.decode()
-    end
   end
 
   defp check_type(json, nil) when is_map(json) do

@@ -80,11 +80,20 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
   def prepare_address(address, conn \\ nil) do
     base_info = Helper.address_with_info(conn, address, address.hash, true)
-    is_proxy = AddressView.smart_contract_is_proxy?(address, @api_true)
+
+    {:ok, address_with_smart_contract} =
+      Chain.hash_to_address(
+        address.hash,
+        [necessity_by_association: %{:smart_contract => :optional}],
+        false
+      )
+
+    is_proxy = AddressView.smart_contract_is_proxy?(address_with_smart_contract, @api_true)
 
     {implementation_address, implementation_name} =
       with true <- is_proxy,
-           {address, name} <- SmartContract.get_implementation_address_hash(address.smart_contract, @api_true),
+           {address, name} <-
+             SmartContract.get_implementation_address_hash(address_with_smart_contract.smart_contract, @api_true),
            false <- is_nil(address),
            {:ok, address_hash} <- Chain.string_to_address_hash(address),
            checksummed_address <- Address.checksum(address_hash) do
@@ -118,7 +127,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "has_methods_read" => AddressView.smart_contract_with_read_only_functions?(address),
       "has_methods_write" => AddressView.smart_contract_with_write_functions?(address),
       "has_methods_read_proxy" => is_proxy,
-      "has_methods_write_proxy" => AddressView.smart_contract_with_write_functions?(address) && is_proxy,
+      "has_methods_write_proxy" =>
+        AddressView.smart_contract_with_write_functions?(address_with_smart_contract) && is_proxy,
       "has_decompiled_code" => AddressView.has_decompiled_code?(address),
       "has_validated_blocks" => Counters.check_if_validated_blocks_at_address(address.hash, @api_true),
       "has_logs" => Counters.check_if_logs_at_address(address.hash, @api_true),
