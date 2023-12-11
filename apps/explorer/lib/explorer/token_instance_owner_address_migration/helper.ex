@@ -34,38 +34,45 @@ defmodule Explorer.TokenInstanceOwnerAddressMigration.Helper do
           | {:error, any, any, map}
   def fetch_and_insert(batch) do
     changes =
-      Enum.map(batch, fn %{token_id: token_id, token_contract_address_hash: token_contract_address_hash} ->
-        token_transfer_query =
-          from(tt in TokenTransfer.only_consensus_transfers_query(),
-            where:
-              tt.token_contract_address_hash == ^token_contract_address_hash and
-                fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^token_id),
-            order_by: [desc: tt.block_number, desc: tt.log_index],
-            limit: 1,
-            select: %{
-              token_contract_address_hash: tt.token_contract_address_hash,
-              token_ids: tt.token_ids,
-              to_address_hash: tt.to_address_hash,
-              block_number: tt.block_number,
-              log_index: tt.log_index
-            }
-          )
-
-        token_transfer =
-          Repo.one(token_transfer_query, timeout: :timer.minutes(1)) ||
-            %{to_address_hash: @burn_address_hash, block_number: -1, log_index: -1}
-
-        %{
-          token_contract_address_hash: token_contract_address_hash,
-          token_id: token_id,
-          token_type: "ERC-721",
-          owner_address_hash: token_transfer.to_address_hash,
-          owner_updated_at_block: token_transfer.block_number,
-          owner_updated_at_log_index: token_transfer.log_index
-        }
-      end)
+      batch
+      |> Enum.map(&process_instance/1)
+      |> Enum.reject(&is_nil/1)
 
     Chain.import(%{token_instances: %{params: changes}})
+  end
+
+  defp process_instance(%{token_id: token_id, token_contract_address_hash: token_contract_address_hash}) do
+    token_transfer_query =
+      from(tt in TokenTransfer.only_consensus_transfers_query(),
+        where:
+          tt.token_contract_address_hash == ^token_contract_address_hash and
+            fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^token_id),
+        order_by: [desc: tt.block_number, desc: tt.log_index],
+        limit: 1,
+        select: %{
+          token_contract_address_hash: tt.token_contract_address_hash,
+          token_ids: tt.token_ids,
+          to_address_hash: tt.to_address_hash,
+          block_number: tt.block_number,
+          log_index: tt.log_index
+        }
+      )
+
+    token_transfer =
+      Repo.one(token_transfer_query, timeout: :timer.minutes(5)) ||
+        %{to_address_hash: @burn_address_hash, block_number: -1, log_index: -1}
+
+    %{
+      token_contract_address_hash: token_contract_address_hash,
+      token_id: token_id,
+      token_type: "ERC-721",
+      owner_address_hash: token_transfer.to_address_hash,
+      owner_updated_at_block: token_transfer.block_number,
+      owner_updated_at_log_index: token_transfer.log_index
+    }
+  rescue
+    DBConnection.ConnectionError ->
+      nil
   end
 
   @spec unfilled_token_instances_exists? :: boolean
