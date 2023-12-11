@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - production-eth-sepolia-stg
+      - production-eth-sepolia
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
