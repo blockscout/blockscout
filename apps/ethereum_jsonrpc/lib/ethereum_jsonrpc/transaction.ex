@@ -621,6 +621,16 @@ defmodule EthereumJSONRPC.Transaction do
     {key, quantity_to_integer(quantity)}
   end
 
+  # to be merged with the clause above ^
+  defp entry_to_elixir({"maxFeePerBlobGas", _value}) do
+    {nil, nil}
+  end
+
+  # EIP-4844 specific field with value of type of list of hashes
+  defp entry_to_elixir({"blobVersionedHashes", _value}) do
+    {nil, nil}
+  end
+
   # as always ganache has it's own vision on JSON RPC standard
   defp entry_to_elixir({key, nil}) when key in ~w(r s v) do
     {key, 0}
