@@ -15,30 +15,14 @@
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "bridged", additional_classes: ["bridge", "ml-1"] %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "Rinkeby", additional_classes: ["destination-rinkeby", "ml-1"] %>
 <% end %>
-<% dark_forest_addresses_list_dao = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses_dao) %>
-<%= if Enum.member?(dark_forest_addresses_list_dao, String.downcase(to_string(assigns[:address_hash] && @address_hash))) do %>
-  <%= render BlockScoutWeb.FormView, "_tag.html", text: "☠️🪐", additional_classes: ["df", "df-dao", "ml-1"] %>
-<% end %>
 <%= for common_tag <- @tags.common_tags do %>
-  <%= if common_tag.label =~ "dark forest" do %>
-    <%= render BlockScoutWeb.FormView, "_tag.html", text: common_tag.display_name, additional_classes: ["df", "ml-1"] %>
-  <% else %>
-    <%= render BlockScoutWeb.FormView, "_tag.html", text: common_tag.display_name, additional_classes: [tag_name_to_label(common_tag.label), "ml-1"] %>
-  <% end %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: common_tag.display_name, additional_classes: [tag_name_to_label(common_tag.label), "ml-1"] %>
 <% end %>
 <%= for personal_tag <- @tags.personal_tags do %>
   <%= if personal_tag.address_hash do %>
-    <%= if personal_tag.label =~ "dark forest" do %>
-      <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tag.display_name, additional_classes: ["df", "ml-1"] %>
-    <% else %>
-      <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tag.display_name, additional_classes: [tag_name_to_label(personal_tag.label), "ml-1"] %>
-    <% end %>
+    <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tag.display_name, additional_classes: [tag_name_to_label(personal_tag.label), "ml-1"] %>
   <% end %>
 <% end %>
 <%= for watchlist_name <- @tags.watchlist_names do %>
-  <%= if watchlist_name.label =~ "dark forest" do %>
-    <%= render BlockScoutWeb.FormView, "_tag.html", text: watchlist_name.display_name, additional_classes: ["df", "ml-1"] %>
-  <% else %>
-    <%= render BlockScoutWeb.FormView, "_tag.html", text: watchlist_name.display_name, additional_classes: [tag_name_to_label(watchlist_name.label), "ml-1"] %>
-  <% end %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: watchlist_name.display_name, additional_classes: [tag_name_to_label(watchlist_name.label), "ml-1"] %>
 <% end %>

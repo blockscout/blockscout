@@ -1,7 +1,3 @@
-<% circles_addresses_list = CustomContractsHelper.get_custom_addresses_list(:circles_addresses) %>
-<% address_hash_str = "0x" <> Base.encode16(@token.contract_address_hash.bytes, case: :lower) %>
-<% {:ok, created_from_address} = if @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
-<% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <section class="address-overview" data-page="token-details" data-page-address-hash="<%= @token.contract_address_hash %>">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row js-ad-dependant-mb-2 js-ad-dependant-mb-5-reverse">
@@ -17,14 +13,6 @@
                 <img src="/images/icons/bricks.png" height="18px"  width="18px" class="reddit-token" />
               <% end %>
               <%= cond do %>
-                <% Enum.member?(circles_addresses_list, address_hash_str) -> %>
-                  <div class="custom-dapp-header-container">
-                    <img class="custom-address-icon"/>
-                  </div>
-                <% Enum.member?(circles_addresses_list, created_from_address_hash) -> %>
-                  <div class="custom-dapp-header-container">
-                    <img class="custom-address-icon"/>
-                  </div>
                 <% true -> %>
                   <%= nil %>
               <% end %>
@@ -154,7 +142,7 @@
             <dd class="col-sm-8 col-md-8 col-lg-9">
               <%= link(
                   @token.contract_address_hash,
-                  to: AccessHelper.get_path(@conn, :address_path, :show, 
+                  to: AccessHelper.get_path(@conn, :address_path, :show,
                   Address.checksum(@token.contract_address_hash)),
                   "data-test": "token_contract_address",
                   class: "contract-address"
@@ -206,7 +194,7 @@
                   <span data-selector="token-price" data-usd-value="<%= @token.fiat_value %>"></span>
                 </dd>
               </dl>
-            <% end %>  
+            <% end %>
           <% end %>
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">

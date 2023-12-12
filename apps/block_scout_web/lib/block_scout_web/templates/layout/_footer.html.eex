@@ -35,9 +35,6 @@
               <div class="footer-social-icon-container fontawesome-icon telegram"></div>
             </a>
           <% end %>
-          <a href="https://duneanalytics.com/maxaleks/xdai-staking" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Staking") %>'>
-            <div class="footer-social-icon-container fontawesome-icon bar-chart"></div>
-          </a>
         </div>
       </div>
 
@@ -51,8 +48,6 @@
           <%= if Application.get_env(:block_scout_web, :footer)[:forum_link_enabled] && Application.get_env(:block_scout_web, :footer)[:forum_link] do %>
             <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:forum_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Forum") %></a></li>
           <% end %>
-          <li><a href="https://duneanalytics.com/maxaleks/xdai-staking" rel="noreferrer" class="footer-link"><%= gettext("Staking stats") %></a></li>
-          <li><a href="https://duneanalytics.com/maxaleks/xDai-Usage" rel="noreferrer" class="footer-link"><%= gettext("Gnosis Chain Usage stats") %></a></li>
           <%= render BlockScoutWeb.LayoutView, "_add_chain_to_mm.html" %>
         </ul>
       </div>

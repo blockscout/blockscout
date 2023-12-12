@@ -1,4 +1,3 @@
-<% staking_enabled_in_menu = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled_in_menu] %>
 <% apps_menu = Application.get_env(:block_scout_web, :apps_menu) %>
 <% other_nets = dropdown_other_nets() %>
 <% test_nets = test_nets(dropdown_nets()) %>
@@ -85,7 +84,7 @@
                 </span>
                 <%= gettext("Tokens") %>
               </a>
-              <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown"> 
+              <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
                 <%= link(
                       gettext("All"),
                       class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
@@ -122,7 +121,7 @@
                 </span>
                 <%= gettext("Tokens") %>
               </a>
-              <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown"> 
+              <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
                 <%= link(
                       gettext("All"),
                       class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
@@ -148,56 +147,28 @@
             <div class="dropdown-menu dropdown-menu-apps large" aria-labeledby="navbarAppsDropdown">
               <div class="row" style="padding: 10px;">
                 <div class="col-xs-12 col-md-3 col-lg-3">
-                  <h3 class="apps-menu-header pl-2"><b><%= gettext("Apps") %></b></h3>
-                  <%= if staking_enabled_in_menu do %>
-                    <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
-                      <%= gettext("Staking on Gnosis Chain") %>
-                    </a>
-                  <% end %>
-                  <a class="dropdown-item" href="https://easy-staking.xdaichain.com/">
-                      <%= gettext("Staking on Ethereum") %>
-                  </a>
-                  <a class="dropdown-item" href="https://duneanalytics.com/maxaleks/xdai-staking">
-                      <%= gettext("Staking stats") %>
-                  </a>
-                  <a class="dropdown-item" href="https://duneanalytics.com/maxaleks/xDai-Usage">
-                      <%= gettext("Gnosis Chain Usage stats") %>
-                  </a>
-                  <hr class="menu-hr" />
-                  <%= for %{url: url, title: title} = app <- apps_list() do %>
-                    <%= if Map.has_key?(app, :embedded?) && app.embedded? do %>
-                      <a href="<%= url %>" class="dropdown-item" target="_self"><%= title %></a>
-                    <% else %>
-                      <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
-                    <% end %>
-                  <% end %>
-                  <hr class="menu-hr" />
-                  <a href="https://airtable.com/shr7veBkE77k5p86b" class="dropdown-item" target="_blank"><%= gettext("Add Your App") %></a>
-                </div>
-
-                <div class="col-xs-12 col-md-3 col-lg-3">
                   <% bridges = bridges_list() %>
                   <% other_bridges = other_bridges_list() %>
                   <%= unless Enum.empty?(bridges) do %>
                     <h3 class="apps-menu-header pl-2"><b><%= gettext("Bridges") %></b></h3>
-                    <%= for %{url: url, title: title} <- bridges do %> 
+                    <%= for %{url: url, title: title} <- bridges do %>
                       <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                     <% end %>
                     <hr class="menu-hr" />
-                    <%= for %{url: url, title: title} <- other_bridges do %> 
+                    <%= for %{url: url, title: title} <- other_bridges do %>
                       <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                     <% end %>
                   <% end %>
                 </div>
                 <div class="col-xs-12 col-md-3 col-lg-3">
                   <h3 class="apps-menu-header pl-2"><b><%= gettext("Ecosystem") %></b></h3>
-                  <%= for %{url: url, title: title} <- defi_list() do %> 
+                  <%= for %{url: url, title: title} <- defi_list() do %>
                         <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                   <% end %>
                 </div>
                 <div class="col-xs-12 col-md-3 col-lg-3">
                   <h3 class="apps-menu-header pl-2"><b><%= gettext("NFT") %></b></h3>
-                  <%= for %{url: url, title: title} <- nft_list() do %> 
+                  <%= for %{url: url, title: title} <- nft_list() do %>
                         <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                   <% end %>
                   <hr class="menu-hr" />
@@ -214,24 +185,24 @@
             </span>
             <%= subnetwork_title() %>
           </a>
-          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown"> 
+          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
             <%= if Enum.count(main_nets) > 0 do %>
-              <a class="dropdown-item header division">Mainnets</a> 
-              <%= for %{url: url, title: title} <- main_nets do %>  
+              <a class="dropdown-item header division">Mainnets</a>
+              <%= for %{url: url, title: title} <- main_nets do %>
                 <a class="dropdown-item" href="<%= url %>"><%= title %></a>
               <% end %>
             <% end %>
             <%= if Enum.count(test_nets) > 0 do %>
-              <a class="dropdown-item header division">Testnets</a> 
-              <%= for %{url: url, title: title} <- test_nets do %> 
+              <a class="dropdown-item header division">Testnets</a>
+              <%= for %{url: url, title: title} <- test_nets do %>
                 <a class="dropdown-item" href="<%= url %>"><%= title %></a>
               <% end %>
             <% end %>
             <%= if Enum.count(other_nets) > 0 do %>
-              <a class="dropdown-item header division">Other Networks</a> 
-              <%= for %{url: url, title: title} <- other_nets do %>  
+              <a class="dropdown-item header division">Other Networks</a>
+              <%= for %{url: url, title: title} <- other_nets do %>
                 <a class="dropdown-item" href="<%= url %>"><%= title %></a>
-              <% end %> 
+              <% end %>
             <% end %>
           </div>
         </li>

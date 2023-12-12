@@ -44,8 +44,6 @@ defmodule Explorer.Factory do
     TokenTransfer,
     Token.Instance,
     Transaction,
-    StakingPool,
-    StakingPoolsDelegator,
     Withdrawal
   }
 

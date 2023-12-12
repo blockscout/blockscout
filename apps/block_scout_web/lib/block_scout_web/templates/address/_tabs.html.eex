@@ -1,12 +1,3 @@
-<% dark_forest_addresses_list_0_4 = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses) %>
-<% dark_forest_addresses_list_0_5 = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses_v_0_5) %>
-<% dark_forest_addresses_list_0_6 = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses_v_0_6) %>
-<% dark_forest_addresses_list_0_6_r2 = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses_v_0_6_r2) %>
-<% dark_forest_addresses_list_0_6_r3 = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses_v_0_6_r3) %>
-<% dark_forest_addresses_list_0_6_r4 = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses_v_0_6_r4) %>
-<% dark_forest_addresses_list_0_6_r5 = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses_v_0_6_r5) %>
-<% dark_forest_addresses_list_dao = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses_dao) %>
-<% dark_forest_addresses_list = dark_forest_addresses_list_0_4 ++ dark_forest_addresses_list_0_5 ++ dark_forest_addresses_list_0_6 ++ dark_forest_addresses_list_0_6_r2 ++ dark_forest_addresses_list_0_6_r3 ++ dark_forest_addresses_list_0_6_r4 ++ dark_forest_addresses_list_0_6_r5 ++ dark_forest_addresses_list_dao %>
 <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
 <div id="address-tabs" class="card-tabs js-card-tabs">
   <%= link(
@@ -71,14 +62,7 @@
         class: "card-tab #{tab_status("contracts", @conn.request_path)}") do %>
         <%= gettext("Code") %>
       <%= if smart_contract_verified?(@address) do %>
-        <%= cond do %>
-          <% Enum.member?(dark_forest_addresses_list, current_address) -> %>
-            <i class="check_dark_forest_icon">
-              <%= render BlockScoutWeb.IconsView, "_check_dark_forest_icon.html" %>
-            </i>
-          <% true -> %>
-            <i class="fa-regular fa-check-circle"></i>
-        <% end %>
+        <i class="fa-regular fa-check-circle"></i>
       <% end %>
     <% end %>
   <% end %>

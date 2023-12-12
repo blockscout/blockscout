@@ -31,15 +31,6 @@ config :block_scout_web,
   poa_omni_bridge_mediator: System.get_env("POA_OMNI_BRIDGE_MEDIATOR"),
   amb_bridge_mediators: System.get_env("AMB_BRIDGE_MEDIATORS"),
   foreign_json_rpc: System.get_env("FOREIGN_JSON_RPC", ""),
-  dark_forest_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST"),
-  dark_forest_addresses_v_0_5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_5"),
-  dark_forest_addresses_v_0_6: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6"),
-  dark_forest_addresses_v_0_6_r2: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6_R2"),
-  dark_forest_addresses_v_0_6_r3: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6_R3"),
-  dark_forest_addresses_v_0_6_r4: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6_R4"),
-  dark_forest_addresses_v_0_6_r5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6_R5"),
-  dark_forest_addresses_dao: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_DAO"),
-  circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES"),
   gas_price: System.get_env("GAS_PRICE"),
   test_tokens_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN"),
   gts_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_GTGS_TOKEN"),
@@ -90,11 +81,7 @@ config :block_scout_web, BlockScoutWeb.Chain,
   logo: System.get_env("LOGO"),
   logo_text: System.get_env("LOGO_TEXT"),
   has_emission_funds: false,
-  staking_enabled: not is_nil(System.get_env("POS_STAKING_CONTRACT")),
-  staking_enabled_in_menu: System.get_env("ENABLE_POS_STAKING_IN_MENU", "false") == "true",
-  show_staking_warning: System.get_env("SHOW_STAKING_WARNING", "false") == "true",
   show_maintenance_alert: ConfigHelper.parse_bool_env_var("SHOW_MAINTENANCE_ALERT"),
-  staking_pool_list_refresh_interval: 5,
   enable_testnet_label: ConfigHelper.parse_bool_env_var("SHOW_TESTNET_LABEL"),
   testnet_label_text: System.get_env("TESTNET_LABEL_TEXT", "Testnet")
 
@@ -356,18 +343,6 @@ config :explorer, Explorer.Chain.Block.Reward,
   validators_contract_address: System.get_env("VALIDATORS_CONTRACT"),
   keys_manager_contract_address: System.get_env("KEYS_MANAGER_CONTRACT")
 
-pos_staking_contract = System.get_env("POS_STAKING_CONTRACT")
-
-if pos_staking_contract do
-  config :explorer, Explorer.Staking.ContractState,
-    enabled: true,
-    staking_contract_address: pos_staking_contract,
-    eth_subscribe_max_delay: System.get_env("POS_ETH_SUBSCRIBE_MAX_DELAY", "60"),
-    eth_blocknumber_pull_interval: System.get_env("POS_ETH_BLOCKNUMBER_PULL_INTERVAL", "500")
-else
-  config :explorer, Explorer.Staking.ContractState, enabled: false
-end
-
 case System.get_env("SUPPLY_MODULE") do
   "TokenBridge" ->
     config :explorer, supply: Explorer.Chain.Supply.TokenBridge
@@ -556,12 +531,8 @@ config :indexer, Indexer.Fetcher.CoinBalanceOnDemand,
   threshold: ConfigHelper.parse_time_env_var("COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD", "1h"),
   fallback_threshold_in_blocks: 500
 
-if System.get_env("POS_STAKING_CONTRACT") do
-  config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
-else
-  config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
-    disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BLOCK_REWARD_FETCHER")
-end
+config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BLOCK_REWARD_FETCHER")
 
 config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER")
