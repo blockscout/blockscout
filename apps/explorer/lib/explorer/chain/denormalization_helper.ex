@@ -1,5 +1,7 @@
 defmodule Explorer.Chain.DenormalizationHelper do
-  @moduledoc false
+  @moduledoc """
+  Helper functions for dynamic logic based on denormalization migration completeness
+  """
 
   alias Explorer.Chain.Cache.BackgroundMigrations
 
