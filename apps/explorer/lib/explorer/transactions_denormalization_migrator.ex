@@ -10,9 +10,10 @@ defmodule Explorer.TransactionsDenormalizationMigrator do
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.Transaction
   alias Explorer.Repo
+  alias Explorer.Utility.MigrationStatus
 
   @default_batch_size 500
-  @default_concurrency 4 * System.schedulers_online()
+  @migration_name "denormalization"
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
@@ -25,8 +26,15 @@ defmodule Explorer.TransactionsDenormalizationMigrator do
 
   @impl true
   def init(_) do
-    schedule_batch_migration()
-    {:ok, %{}}
+    case MigrationStatus.get_status(@migration_name) do
+      "completed" ->
+        :ignore
+
+      _ ->
+        MigrationStatus.set_status(@migration_name, "started")
+        schedule_batch_migration()
+        {:ok, %{}}
+    end
   end
 
   @impl true
@@ -34,6 +42,7 @@ defmodule Explorer.TransactionsDenormalizationMigrator do
     case last_unprocessed_transaction_hashes() do
       [] ->
         BackgroundMigrations.set_denormalization_finished(true)
+        MigrationStatus.set_status(@migration_name, "completed")
         {:stop, :normal, state}
 
       hashes ->
@@ -54,7 +63,6 @@ defmodule Explorer.TransactionsDenormalizationMigrator do
     limit = batch_size() * concurrency()
 
     unprocessed_transactions_query()
-    |> order_by(desc: :inserted_at)
     |> select([t], t.hash)
     |> limit(^limit)
     |> Repo.all()
@@ -86,6 +94,8 @@ defmodule Explorer.TransactionsDenormalizationMigrator do
   end
 
   defp concurrency do
-    Application.get_env(:explorer, __MODULE__)[:batch_size] || @default_concurrency
+    default = 4 * System.schedulers_online()
+
+    Application.get_env(:explorer, __MODULE__)[:concurrency] || default
   end
 end
