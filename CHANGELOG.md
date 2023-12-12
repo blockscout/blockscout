@@ -4,8 +4,6 @@
 
 ### Features
 
-- [#8966](https://github.com/blockscout/blockscout/pull/8966) - Add `ACCOUNT_WATCHLIST_NOTIFICATIONS_LIMIT_FOR_30_DAYS`
-
 ### Fixes
 
 ### Chore
@@ -187,7 +185,6 @@
 - [#7996](https://github.com/blockscout/blockscout/pull/7996) - Add CoinBalance fetcher init query limit
 - [#8658](https://github.com/blockscout/blockscout/pull/8658) - Remove block consensus on import fail
 - [#8575](https://github.com/blockscout/blockscout/pull/8575) - Filter token transfers on coin balances updates
-- [#8558](https://github.com/blockscout/blockscout/pull/8558) - Add CoinBalanceDailyUpdater
 
 ### Fixes
 
@@ -1697,7 +1694,6 @@
 - [#5171](https://github.com/blockscout/blockscout/pull/5171) - Replace lodash NPM package with tiny lodash modules
 - [#5170](https://github.com/blockscout/blockscout/pull/5170) - Token price row name fix
 - [#5153](https://github.com/blockscout/blockscout/pull/5153) - Discord link instead of Gitter
-- [#5152](https://github.com/blockscout/blockscout/pull/5152) - Create backfiller paths for sources of contracts verified through Sourcify
 - [#5142](https://github.com/blockscout/blockscout/pull/5142) - Updated some outdated npm packages
 - [#5140](https://github.com/blockscout/blockscout/pull/5140) - Babel minor and core-js major updates
 - [#5139](https://github.com/blockscout/blockscout/pull/5139) - Eslint major update
@@ -1716,7 +1712,6 @@
 
 - [#5085](https://github.com/blockscout/blockscout/pull/5085) - Fix wallet style
 - [#5088](https://github.com/blockscout/blockscout/pull/5088) - Store address transactions/token transfers in the DB
-- [#5085](https://github.com/blockscout/blockscout/pull/5085) - Fix wallet style
 - [#5071](https://github.com/blockscout/blockscout/pull/5071) - Fix write page contract tuple input
 - [#5066](https://github.com/blockscout/blockscout/pull/5066) - Fix read contract page bug
 - [#5034](https://github.com/blockscout/blockscout/pull/5034) - Fix broken functions input at transaction page
@@ -1741,7 +1736,6 @@
 - [#5004](https://github.com/blockscout/blockscout/pull/5004) - Add ability to set up a separate DB endpoint for the API endpoints
 - [#4989](https://github.com/blockscout/blockscout/pull/4989), [#4991](https://github.com/blockscout/blockscout/pull/4991) - Bridged tokens list API endpoint
 - [#4931](https://github.com/blockscout/blockscout/pull/4931) - Web3 modal with Wallet Connect for Write contract page and Staking Dapp
-- [#4908](https://github.com/blockscout/blockscout/pull/4908) - Add verification via standard JSON input
 
 ### Fixes
 
@@ -1818,7 +1812,6 @@
 - [#4764](https://github.com/blockscout/blockscout/pull/4764) - Add cleaning of substrings of `require` messages from parsed constructor arguments
 - [#4778](https://github.com/blockscout/blockscout/pull/4778) - Migrate :optimization_runs field type: `int4 -> int8` in `smart_contracts` table
 - [#4768](https://github.com/blockscout/blockscout/pull/4768) - Block Details page: handle zero division
-- [#4764](https://github.com/blockscout/blockscout/pull/4764) - Add cleaning of substrings of `require` messages from parsed constructor arguments
 - [#4751](https://github.com/blockscout/blockscout/pull/4751) - Change text and link for `trade STAKE` button
 - [#4746](https://github.com/blockscout/blockscout/pull/4746) - Fix comparison of decimal value
 - [#4711](https://github.com/blockscout/blockscout/pull/4711) - Add trimming to the contract functions inputs
@@ -1843,7 +1836,6 @@
 - [#4586](https://github.com/blockscout/blockscout/pull/4586) - Fix floating tooltips on the token transfer family blocks
 - [#4587](https://github.com/blockscout/blockscout/pull/4587) - Enable navbar menu on Search results page
 - [#4582](https://github.com/blockscout/blockscout/pull/4582) - Fix NaN input on write contract page
-- [#4546](https://github.com/blockscout/blockscout/pull/4546) - Indexer performance update: async get block rewards
 
 ### Chore
 
@@ -2007,7 +1999,6 @@
 - [#3792](https://github.com/blockscout/blockscout/pull/3792) - Cancel pending transaction
 - [#3786](https://github.com/blockscout/blockscout/pull/3786) - Read contract: enable methods with StateMutability: pure
 - [#3758](https://github.com/blockscout/blockscout/pull/3758) - Add pool metadata display/change to Staking DApp
-- [#3757](https://github.com/blockscout/blockscout/pull/3757) - tx page facelifting
 - [#3750](https://github.com/blockscout/blockscout/pull/3750) - getblocknobytime block module API endpoint
 
 ### Fixes

@@ -56,9 +56,6 @@
         <link rel="preload" href="<%= static_path(@conn, "/js/chain.js") %>" as="script">
         <link rel="preload" href="<%= static_path(@conn, "/js/chart-loader.js") %>" as="script">
         <link rel="preload" href="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>" as="script">
-      <% Elixir.BlockScoutWeb.StakesView -> %>
-        <link rel="stylesheet" href="<%= static_path(@conn, "/css/staking.css") %>">
-        <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
       <% Elixir.BlockScoutWeb.TransactionView -> %>
         <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
         <link rel="stylesheet" href="<%= static_path(@conn, "/css/custom-scrollbar-styles.css") %>">

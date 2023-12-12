@@ -162,15 +162,4 @@ defmodule Explorer.Chain.BridgedToken do
 
   defp apply_chain_ids_filter(query, chain_ids) when is_list(chain_ids),
     do: from(bt in query, where: bt.foreign_chain_id in ^chain_ids)
-
-  defp translate_destination_to_chain_id(destination) do
-    case destination do
-      :eth -> 1
-      :kovan -> 42
-      :bsc -> 56
-      :poa -> 99
-      nil -> nil
-      _ -> :undefined
-    end
-  end
 end
