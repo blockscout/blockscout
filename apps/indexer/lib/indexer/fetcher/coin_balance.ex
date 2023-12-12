@@ -20,7 +20,7 @@ defmodule Indexer.Fetcher.CoinBalance do
 
   @behaviour BufferedTask
 
-  @default_max_batch_size 300
+  @default_max_batch_size 500
   @default_max_concurrency 4
 
   def batch_size, do: defaults()[:max_batch_size]
