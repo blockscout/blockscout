@@ -88,9 +88,7 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeOperations do
           # Don't update `index` as it is part of the composite primary key and used for the conflict target
           l1_transaction_hash: fragment("EXCLUDED.l1_transaction_hash"),
           l2_transaction_hash: fragment("EXCLUDED.l2_transaction_hash"),
-          l1_token_address: fragment("EXCLUDED.l1_token_address"),
-          l1_token_decimals: fragment("EXCLUDED.l1_token_decimals"),
-          l1_token_symbol: fragment("EXCLUDED.l1_token_symbol"),
+          l1_token_id: fragment("EXCLUDED.l1_token_id"),
           amount: fragment("EXCLUDED.amount"),
           block_number: fragment("EXCLUDED.block_number"),
           block_timestamp: fragment("EXCLUDED.block_timestamp"),
@@ -100,12 +98,10 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeOperations do
       ],
       where:
         fragment(
-          "(EXCLUDED.l1_transaction_hash, EXCLUDED.l2_transaction_hash, EXCLUDED.l1_token_address, EXCLUDED.l1_token_decimals, EXCLUDED.l1_token_symbol, EXCLUDED.amount, EXCLUDED.block_number, EXCLUDED.block_timestamp) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.l1_transaction_hash, EXCLUDED.l2_transaction_hash, EXCLUDED.l1_token_id, EXCLUDED.amount, EXCLUDED.block_number, EXCLUDED.block_timestamp) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
           op.l1_transaction_hash,
           op.l2_transaction_hash,
-          op.l1_token_address,
-          op.l1_token_decimals,
-          op.l1_token_symbol,
+          op.l1_token_id,
           op.amount,
           op.block_number,
           op.block_timestamp

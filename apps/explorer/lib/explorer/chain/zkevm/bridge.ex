@@ -4,8 +4,9 @@ defmodule Explorer.Chain.Zkevm.Bridge do
   use Explorer.Schema
 
   alias Explorer.Chain.{Block, Hash}
+  alias Explorer.Chain.Zkevm.BridgeL1Token
 
-  @optional_attrs ~w(l1_transaction_hash l2_transaction_hash l1_token_address l1_token_decimals l1_token_symbol block_number block_timestamp)a
+  @optional_attrs ~w(l1_transaction_hash l2_transaction_hash l1_token_id block_number block_timestamp)a
 
   @required_attrs ~w(type index amount)a
 
@@ -14,9 +15,8 @@ defmodule Explorer.Chain.Zkevm.Bridge do
           index: non_neg_integer(),
           l1_transaction_hash: Hash.t() | nil,
           l2_transaction_hash: Hash.t() | nil,
-          l1_token_address: Hash.Address.t() | nil,
-          l1_token_decimals: non_neg_integer() | nil,
-          l1_token_symbol: String.t() | nil,
+          l1_token: %Ecto.Association.NotLoaded{} | BridgeL1Token.t() | nil,
+          l1_token_id: non_neg_integer() | nil,
           amount: Decimal.t(),
           block_number: Block.block_number() | nil,
           block_timestamp: DateTime.t() | nil
@@ -28,9 +28,7 @@ defmodule Explorer.Chain.Zkevm.Bridge do
     field(:index, :integer, primary_key: true)
     field(:l1_transaction_hash, Hash.Full)
     field(:l2_transaction_hash, Hash.Full)
-    field(:l1_token_address, Hash.Address)
-    field(:l1_token_decimals, :integer)
-    field(:l1_token_symbol, :string)
+    belongs_to(:l1_token, BridgeL1Token, foreign_key: :l1_token_id, references: :id, type: :integer)
     field(:amount, :decimal)
     field(:block_number, :integer)
     field(:block_timestamp, :utc_datetime_usec)
@@ -47,5 +45,6 @@ defmodule Explorer.Chain.Zkevm.Bridge do
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
     |> unique_constraint([:type, :index])
+    |> foreign_key_constraint(:l1_token_id)
   end
 end

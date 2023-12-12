@@ -28,7 +28,9 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   @polygon_zkevm_runners [
     Runner.Zkevm.LifecycleTransactions,
     Runner.Zkevm.TransactionBatches,
-    Runner.Zkevm.BatchTransactions
+    Runner.Zkevm.BatchTransactions,
+    Runner.Zkevm.BridgeL1Tokens,
+    Runner.Zkevm.BridgeOperations
   ]
 
   @shibarium_runners [
