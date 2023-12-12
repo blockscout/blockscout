@@ -539,13 +539,17 @@ defmodule Explorer.Chain do
         )
       end
 
-    query
-    |> Repo.all()
-    |> (&if(Enum.count(&1) > 0,
-          do: &1,
-          else: Enum.zip([block_hashes, for(_ <- 1..Enum.count(block_hashes), do: %Wei{value: Decimal.new(0)})])
-        )).()
-    |> Enum.into(%{})
+    initial_gas_payments =
+      block_hashes
+      |> Enum.map(&{&1, %Wei{value: Decimal.new(0)}})
+      |> Enum.into(%{})
+
+    existing_data =
+      query
+      |> Repo.all()
+      |> Enum.into(%{})
+
+    Map.merge(initial_gas_payments, existing_data)
   end
 
   def timestamp_by_block_hash(block_hashes) when is_list(block_hashes) do

@@ -237,11 +237,10 @@ defmodule EthereumJSONRPC.Transaction do
         result
       end
 
-    if transaction["creates"] do
-      Map.put(result, :created_contract_address_hash, transaction["creates"])
-    else
-      result
-    end
+    put_if_present(transaction, result, [
+      {"creates", :created_contract_address_hash},
+      {"block_timestamp", :block_timestamp}
+    ])
   end
 
   def elixir_to_params(
@@ -286,11 +285,10 @@ defmodule EthereumJSONRPC.Transaction do
       max_fee_per_gas: max_fee_per_gas
     }
 
-    if transaction["creates"] do
-      Map.put(result, :created_contract_address_hash, transaction["creates"])
-    else
-      result
-    end
+    put_if_present(transaction, result, [
+      {"creates", :created_contract_address_hash},
+      {"block_timestamp", :block_timestamp}
+    ])
   end
 
   # txpool_content method on Erigon node returns tx data
@@ -336,11 +334,10 @@ defmodule EthereumJSONRPC.Transaction do
       max_fee_per_gas: max_fee_per_gas
     }
 
-    if transaction["creates"] do
-      Map.put(result, :created_contract_address_hash, transaction["creates"])
-    else
-      result
-    end
+    put_if_present(transaction, result, [
+      {"creates", :created_contract_address_hash},
+      {"block_timestamp", :block_timestamp}
+    ])
   end
 
   # this is for Suave chain (handles `executionNode` and `requestRecord` fields without EIP-1559 fields)
@@ -407,11 +404,10 @@ defmodule EthereumJSONRPC.Transaction do
         result
       end
 
-    if transaction["creates"] do
-      Map.put(result, :created_contract_address_hash, transaction["creates"])
-    else
-      result
-    end
+    put_if_present(transaction, result, [
+      {"creates", :created_contract_address_hash},
+      {"block_timestamp", :block_timestamp}
+    ])
   end
 
   def elixir_to_params(
@@ -452,11 +448,10 @@ defmodule EthereumJSONRPC.Transaction do
       type: type
     }
 
-    if transaction["creates"] do
-      Map.put(result, :created_contract_address_hash, transaction["creates"])
-    else
-      result
-    end
+    put_if_present(transaction, result, [
+      {"creates", :created_contract_address_hash},
+      {"block_timestamp", :block_timestamp}
+    ])
   end
 
   def elixir_to_params(
@@ -495,11 +490,10 @@ defmodule EthereumJSONRPC.Transaction do
       transaction_index: index
     }
 
-    if transaction["creates"] do
-      Map.put(result, :created_contract_address_hash, transaction["creates"])
-    else
-      result
-    end
+    put_if_present(transaction, result, [
+      {"creates", :created_contract_address_hash},
+      {"block_timestamp", :block_timestamp}
+    ])
   end
 
   @doc """
@@ -580,11 +574,14 @@ defmodule EthereumJSONRPC.Transaction do
     }
 
   """
-  def to_elixir(transaction) when is_map(transaction) do
-    Enum.into(transaction, %{}, &entry_to_elixir/1)
+  def to_elixir(transaction, block_timestamp \\ nil)
+
+  def to_elixir(transaction, block_timestamp) when is_map(transaction) do
+    initial = (block_timestamp && %{"block_timestamp" => block_timestamp}) || %{}
+    Enum.into(transaction, initial, &entry_to_elixir/1)
   end
 
-  def to_elixir(transaction) when is_binary(transaction) do
+  def to_elixir(transaction, _block_timestamp) when is_binary(transaction) do
     nil
   end
 
@@ -657,5 +654,17 @@ defmodule EthereumJSONRPC.Transaction do
 
   defp entry_to_elixir(_) do
     {nil, nil}
+  end
+
+  defp put_if_present(transaction, result, keys) do
+    Enum.reduce(keys, result, fn {from_key, to_key}, acc ->
+      value = transaction[from_key]
+
+      if value do
+        Map.put(acc, to_key, value)
+      else
+        acc
+      end
+    end)
   end
 end
