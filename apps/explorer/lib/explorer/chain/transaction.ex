@@ -553,10 +553,10 @@ defmodule Explorer.Chain.Transaction do
     |> unique_constraint(:hash)
   end
 
+  @spec block_timestamp(t()) :: DateTime.t()
   def block_timestamp(%{block_number: nil, inserted_at: time}), do: time
   def block_timestamp(%{block_timestamp: time}) when not is_nil(time), do: time
   def block_timestamp(%{block: %{timestamp: time}}), do: time
-  def block_timestamp(_), do: nil
 
   def preload_token_transfers(query, address_hash) do
     token_transfers_query =
