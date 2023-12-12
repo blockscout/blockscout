@@ -284,11 +284,6 @@ defmodule Explorer.Chain.Address.Counters do
         address_to_validation_count(address.hash, options)
       end)
 
-    # crc_total_worth_task =
-    #   Task.async(fn ->
-    #     crc_total_worth(address)
-    #   end)
-
     Task.start_link(fn ->
       transaction_count(address)
     end)
@@ -301,10 +296,6 @@ defmodule Explorer.Chain.Address.Counters do
       gas_usage_count(address)
     end)
 
-    # [
-    #   validation_count_task,
-    #   crc_total_worth_task
-    # ]
     [validation_count_task]
     |> Task.yield_many(:infinity)
     |> Enum.map(fn {_task, res} ->

@@ -113,7 +113,6 @@ defmodule ConfigHelper do
   @spec exchange_rates_source() :: Source.CoinGecko | Source.CoinMarketCap
   def exchange_rates_source do
     case System.get_env("EXCHANGE_RATES_MARKET_CAP_SOURCE") do
-      "token_bridge" -> Explorer.ExchangeRates.Source.TokenBridge
       "coin_gecko" -> Source.CoinGecko
       "coin_market_cap" -> Source.CoinMarketCap
       _ -> Source.CoinGecko

@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.ChainController do
   # alias Explorer.Chain.Cache.GasUsage
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
   alias Explorer.Chain.Search
-  alias Explorer.Chain.Supply.{RSK, TokenBridge}
+  alias Explorer.Chain.Supply.RSK
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Market
   alias Phoenix.View
@@ -27,9 +27,6 @@ defmodule BlockScoutWeb.ChainController do
       case Application.get_env(:explorer, :supply) do
         RSK ->
           RSK
-
-        TokenBridge ->
-          TokenBridge
 
         _ ->
           :standard

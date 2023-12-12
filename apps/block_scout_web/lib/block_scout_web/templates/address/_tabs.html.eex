@@ -1,4 +1,3 @@
-<% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
 <div id="address-tabs" class="card-tabs js-card-tabs">
   <%= link(
         gettext("Transactions"),

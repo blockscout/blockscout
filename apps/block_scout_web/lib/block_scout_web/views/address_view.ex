@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.AddressView do
 
   alias BlockScoutWeb.{AccessHelper, LayoutView}
   alias Explorer.Account.CustomABI
-  alias Explorer.{Chain, CustomContractsHelper, Repo}
+  alias Explorer.{Chain, Repo}
 
   alias Explorer.Chain.{
     Address,

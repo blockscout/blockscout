@@ -238,10 +238,6 @@ config :explorer, Explorer.Chain.Cache.AddressSum, global_ttl: address_sum_globa
 
 config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt, global_ttl: address_sum_global_ttl
 
-config :explorer, Explorer.Counters.Bridge,
-  enabled: if(System.get_env("SUPPLY_MODULE") === "TokenBridge", do: true, else: false),
-  disable_lp_tokens_in_market_cap: System.get_env("DISABLE_LP_TOKENS_IN_MARKET_CAP") == "true"
-
 config :explorer, Explorer.Chain.Cache.GasUsage,
   global_ttl: ConfigHelper.parse_time_env_var("CACHE_TOTAL_GAS_USAGE_PERIOD", "2h")
 
@@ -344,9 +340,6 @@ config :explorer, Explorer.Chain.Block.Reward,
   keys_manager_contract_address: System.get_env("KEYS_MANAGER_CONTRACT")
 
 case System.get_env("SUPPLY_MODULE") do
-  "TokenBridge" ->
-    config :explorer, supply: Explorer.Chain.Supply.TokenBridge
-
   "rsk" ->
     config :explorer, supply: Explorer.Chain.Supply.RSK
 

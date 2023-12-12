@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.LayoutView do
 
   alias EthereumJSONRPC.Variant
   alias Explorer.EnvVarTranslator
-  alias Explorer.{Chain, CustomContractsHelper}
+  alias Explorer.Chain
   alias Poison.Parser
 
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1]

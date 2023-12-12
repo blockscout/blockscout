@@ -6,12 +6,6 @@
         <div class="card-body fs-14" style="line-height: 31px;" token-page data-async-counters="<%= @counters_path %>">
           <h1 class="card-title d-flex" style="justify-content: space-between; margin-bottom: 0.75rem">
             <div style="line-height: 30px;">
-              <%= if Chain.moon_token?(@token.contract_address_hash) do %>
-                <img src="/images/icons/moon.png" height="18px"  width="18px" class="reddit-token" />
-              <% end %>
-              <%= if Chain.bricks_token?(@token.contract_address_hash) do %>
-                <img src="/images/icons/bricks.png" height="18px"  width="18px" class="reddit-token" />
-              <% end %>
               <%= cond do %>
                 <% true -> %>
                   <%= nil %>

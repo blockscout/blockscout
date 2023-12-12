@@ -5719,21 +5719,6 @@ defmodule Explorer.Chain do
     |> select_repo(options).one()
   end
 
-  def moon_token?(contract_address) do
-    reddit_token?(contract_address, :moon_token_addresses)
-  end
-
-  def bricks_token?(contract_address) do
-    reddit_token?(contract_address, :bricks_token_addresses)
-  end
-
-  defp reddit_token?(contract_address, _env_var) when is_nil(contract_address), do: false
-
-  defp reddit_token?(contract_address, env_var) when not is_nil(contract_address) do
-    token_addresses_string = Application.get_env(:block_scout_web, env_var)
-    compare_address_hash_and_strings(contract_address, token_addresses_string)
-  end
-
   def compare_address_hash_and_strings(address_hash, addresses_string) do
     contract_address_lower = Base.encode16(address_hash.bytes, case: :lower)
 
@@ -5810,24 +5795,6 @@ defmodule Explorer.Chain do
       99 -> "POA"
       _ -> ""
     end
-  end
-
-  @spec is_active_validator?(Address.t()) :: boolean()
-  def is_active_validator?(address_hash) do
-    now = Timex.now()
-
-    one_hour_before =
-      now
-      |> Timex.shift(hours: -1)
-
-    query =
-      from(
-        b in Block,
-        where: b.miner_hash == ^address_hash,
-        where: b.inserted_at >= ^one_hour_before
-      )
-
-    Repo.exists?(query)
   end
 
   @spec amb_eth_tx?(Address.t()) :: boolean()

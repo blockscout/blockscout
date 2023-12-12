@@ -1,0 +1,23 @@
+@import "./mixins";
+
+// Bootstrap Core CSS
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/mixins";
+
+@import "theme/variables";
+
+@import "components/stakes_variables";
+@import "components/stakes/copy_icon";
+@import "components/stakes/stakes";
+@import "components/stakes/progress_from_to";
+@import "components/stakes/stakes_empty_content";
+@import "components/stakes/stakes_btn_remove_pool";
+@import "components/modal_variables";
+@import "components/stakes/stakes_progress";
+@import "components/stakes/modal_stake";
+@import "components/stakes/modal_become_candidate";
+@import "components/stakes/modal_claim_reward";
+@import "components/stakes/modal_validator_info";
+@import "components/stakes/modal_delegators_info";
+@import "components/stakes/modal_bottom_disclaimer";
+@import "components/stakes/stakes-btn-close-alert";
