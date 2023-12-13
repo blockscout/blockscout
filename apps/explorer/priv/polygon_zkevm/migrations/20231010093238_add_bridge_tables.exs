@@ -3,7 +3,7 @@ defmodule Explorer.Repo.PolygonZkevm.Migrations.AddBridgeTables do
 
   def change do
     create table(:zkevm_bridge_l1_tokens, primary_key: false) do
-      add(:id, :identity, primary_key: true, start_value: 1, increment: 1)
+      add(:id, :identity, primary_key: true, start_value: 0, increment: 1)
       add(:address, :bytea, null: false)
       add(:decimals, :smallint, null: true, default: nil)
       add(:symbol, :string, size: 16, null: true, default: nil)
