@@ -10,9 +10,9 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, quantity_to_integer: 1]
 
-  # alias Explorer.Chain
+  alias Explorer.Chain
   # alias Explorer.Chain.Events.Publisher
-  # alias Explorer.Chain.Zkevm.Reader
+  alias Explorer.Chain.ZkSync.Reader
 
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
 
@@ -164,12 +164,8 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
               ]
               |> Enum.reduce(l1_txs, fn l1_tx, acc ->
                 if l1_tx.hash != @zero_hash do
-                  Map.update(acc, Base.decode16!(l1_tx.hash, case: :mixed), %{timestamp: l1_tx.ts}, fn cur_val ->
-                    if l1_tx.ts != cur_val.timestamp do
-                      log_warning("Ambigious timestamp of L1 tx #{l1_tx.hash}: already stored #{cur_val.timestamp} and new one #{l1_tx.ts}} from the batch #{batch_number}")
-                    end
-                    %{timestamp: l1_tx.ts}
-                  end)
+                  decoded_hash = Base.decode16!(l1_tx.hash, case: :mixed)
+                  Map.put(acc, decoded_hash, %{hash: decoded_hash, timestamp: l1_tx.ts})
                 else
                   acc
                 end
@@ -195,21 +191,31 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
         {batches_with_blockranges, l1_txs, a + 1}
       end)
 
-    # Get IDs for each found L1 tx
-    # hash_to_id =
-    #   l1_tx_hashes
-    #   |> Reader.lifecycle_transactions()
-    #   |> Enum.reduce(%{}, fn {hash, id}, acc ->
-    #     Map.put(acc, hash.bytes, id)
-    #   end)
-    {l1_txs, _} =
+    # Get indices for l1 transactions previously handled
+    l1_txs =
       Map.keys(l1_txs)
-      |> Enum.reduce({l1_txs, 0}, fn hash, {m, a} = _acc ->
-        {_, m} = Map.get_and_update!(m, hash, fn l1_tx ->
-          {l1_tx, Map.put(l1_tx, :id, a)}
+      |> Reader.lifecycle_transactions()
+      |> Enum.reduce(l1_txs, fn {hash, id}, txs ->
+        {_, txs} = Map.get_and_update!(txs, hash.bytes, fn l1_tx ->
+          {l1_tx, Map.put(l1_tx, :id, id)}
         end)
-        {m, a + 1}
+        txs
       end)
+
+    # Provide indices for new L1 transactions
+    l1_tx_next_id = Reader.next_id()
+    { l1_txs, _ } =
+      Map.keys(l1_txs)
+      |> Enum.reduce({l1_txs, l1_tx_next_id}, fn hash, {txs, next_id} = _acc ->
+        tx = Map.get(txs, hash)
+        id = Map.get(tx, :id)
+        if is_nil(id) do
+          {Map.put(txs, hash, Map.put(tx, :id, next_id)), next_id + 1}
+        else
+          {txs, next_id}
+        end
+      end)
+
     {updated_batches, l1_txs}
   end
 
@@ -289,6 +295,12 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
     { l2_blocks_to_import, l2_txs_to_import } =
       get_l2_blocks_and_transactions(batches_to_import, config)
     log_info("Linked #{length(l2_blocks_to_import)} L2 blocks and #{length(l2_txs_to_import)} L2 transactions")
+
+    {:ok, _} =
+      Chain.import(%{
+        zksync_lifecycle_transactions: %{params: Map.values(l1_txs)},
+        timeout: :infinity
+      })
 
     # fetch_and_save_batches(chunk_start, chunk_end, json_rpc_named_arguments)
     end_batch_number
