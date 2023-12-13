@@ -31,6 +31,7 @@
 ### Chore
 
 - [#9014](https://github.com/blockscout/blockscout/pull/9014) - Decrease amount of NFT in address collection: 15 -> 9
+- [#9000](https://github.com/blockscout/blockscout/pull/9000) - Change log topic type in the DB to bytea
 - [#8994](https://github.com/blockscout/blockscout/pull/8994) - Refactor transactions event preloads
 
 <details>
