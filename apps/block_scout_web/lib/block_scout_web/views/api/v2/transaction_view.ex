@@ -720,15 +720,17 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   @spec tx_types(
           Explorer.Chain.Transaction.t(),
-          list,
-          :coin_transfer
-          | :contract_call
-          | :contract_creation
-          | :rootstock_bridge
-          | :rootstock_remasc
-          | :token_creation
-          | :token_transfer
-        ) :: list
+          [tx_type],
+          tx_type
+        ) :: [tx_type]
+        when tx_type:
+               :coin_transfer
+               | :contract_call
+               | :contract_creation
+               | :rootstock_bridge
+               | :rootstock_remasc
+               | :token_creation
+               | :token_transfer
   def tx_types(tx, types \\ [], stage \\ :token_transfer)
 
   def tx_types(%Transaction{token_transfers: token_transfers} = tx, types, :token_transfer) do

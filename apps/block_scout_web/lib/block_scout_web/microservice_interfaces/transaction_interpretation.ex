@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   @api_true api?: true
   @items_limit 50
 
-  @spec interpret(any) :: {:error, :disabled | binary} | {:ok, any}
+  @spec interpret(Transaction.t()) :: {:error, :disabled | binary} | {:ok, any}
   def interpret(transaction) do
     if enabled?() do
       url = interpret_url()
@@ -64,7 +64,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   end
 
   defp prepare_request_body(transaction) do
-    preloaded_transaction =
+    transaction =
       Chain.select_repo(@api_true).preload(transaction, [
         :transaction_actions,
         to_address: [:names, :smart_contract],
@@ -79,13 +79,12 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     %{
       data: %{
-        to:
-          Helper.address_with_info(nil, preloaded_transaction.to_address, preloaded_transaction.to_address_hash, true),
+        to: Helper.address_with_info(nil, transaction.to_address, transaction.to_address_hash, true),
         from:
           Helper.address_with_info(
             nil,
-            preloaded_transaction.from_address,
-            preloaded_transaction.from_address_hash,
+            transaction.from_address,
+            transaction.from_address_hash,
             true
           ),
         hash: transaction.hash,
@@ -97,7 +96,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         tx_types: TransactionView.tx_types(transaction),
         raw_input: transaction.input,
         decoded_input: decoded_input_data,
-        token_transfers: prepare_token_transfers(preloaded_transaction, decoded_input)
+        token_transfers: prepare_token_transfers(transaction, decoded_input)
       },
       logs_data: %{items: prepare_logs(transaction)}
     }
