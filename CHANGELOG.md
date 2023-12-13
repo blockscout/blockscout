@@ -1,5 +1,15 @@
 # ChangeLog
 
+## 6.0.0-dev
+
+### Features
+
+### Fixes
+
+### Chore
+
+- [#8996](https://github.com/blockscout/blockscout/pull/8996) - Refine token transfers token ids index
+
 ## Current
 
 ### Features
