@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#8997](https://github.com/blockscout/blockscout/pull/8997) - Isolate throttable error count by request method
 - [#8972](https://github.com/blockscout/blockscout/pull/8972) - BENS integration
 - [#8957](https://github.com/blockscout/blockscout/pull/8957) - Add Tx Interpreter Service integration
 
