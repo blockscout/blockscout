@@ -72,45 +72,26 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
          rpc = env[:rpc],
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
-         {:deposit_manager_address_is_valid, true} <-
-           {:deposit_manager_address_is_valid, Helper.is_address_correct?(env[:deposit_manager_proxy])},
-         {:ether_predicate_address_is_valid, true} <-
-           {:ether_predicate_address_is_valid, Helper.is_address_correct?(env[:ether_predicate_proxy])},
-         {:erc20_predicate_address_is_valid, true} <-
-           {:erc20_predicate_address_is_valid, Helper.is_address_correct?(env[:erc20_predicate_proxy])},
-         {:erc721_predicate_address_is_valid, true} <-
-           {:erc721_predicate_address_is_valid,
-            is_nil(env[:erc721_predicate_proxy]) or Helper.is_address_correct?(env[:erc721_predicate_proxy])},
-         {:erc1155_predicate_address_is_valid, true} <-
-           {:erc1155_predicate_address_is_valid,
-            is_nil(env[:erc1155_predicate_proxy]) or Helper.is_address_correct?(env[:erc1155_predicate_proxy])},
-         {:withdraw_manager_address_is_valid, true} <-
-           {:withdraw_manager_address_is_valid, Helper.is_address_correct?(env[:withdraw_manager_proxy])},
+         {:bridge_contract_address_is_valid, true} <- {:bridge_contract_address_is_valid, Helper.is_address_correct?(env[:bridge_contract])},
          start_block = parse_integer(env[:start_block]),
          false <- is_nil(start_block),
          true <- start_block > 0,
          {last_l1_block_number, last_l1_transaction_hash} <- get_last_l1_item(),
-         {:start_block_valid, true} <-
-           {:start_block_valid, start_block <= last_l1_block_number || last_l1_block_number == 0},
          json_rpc_named_arguments = json_rpc_named_arguments(rpc),
+         {:ok, block_check_interval, safe_block, safe_block_is_latest} <- get_block_check_interval(json_rpc_named_arguments),
+         {:start_block_valid, true} <- {:start_block_valid, (start_block <= last_l1_block_number || last_l1_block_number == 0) && start_block <= safe_block},
          {:ok, last_l1_tx} <- Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
-         {:ok, block_check_interval, latest_block} <- get_block_check_interval(json_rpc_named_arguments),
-         {:start_block_valid, true} <- {:start_block_valid, start_block <= latest_block} do
+         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)} do
       Process.send(self(), :reorg_monitor, [])
       Process.send(self(), :continue, [])
 
       {:noreply,
        %{
-         deposit_manager_proxy: env[:deposit_manager_proxy],
-         ether_predicate_proxy: env[:ether_predicate_proxy],
-         erc20_predicate_proxy: env[:erc20_predicate_proxy],
-         erc721_predicate_proxy: env[:erc721_predicate_proxy],
-         erc1155_predicate_proxy: env[:erc1155_predicate_proxy],
-         withdraw_manager_proxy: env[:withdraw_manager_proxy],
+         bridge_contract: env[:bridge_contract],
          block_check_interval: block_check_interval,
          start_block: max(start_block, last_l1_block_number),
-         end_block: latest_block,
+         safe_block: safe_block,
+         safe_block_is_latest: safe_block_is_latest,
          json_rpc_named_arguments: json_rpc_named_arguments,
          reorg_monitor_prev_latest: 0
        }}
@@ -123,28 +104,8 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
         Logger.error("L1 RPC URL is not defined.")
         {:stop, :normal, %{}}
 
-      {:deposit_manager_address_is_valid, false} ->
-        Logger.error("DepositManagerProxy contract address is invalid or not defined.")
-        {:stop, :normal, %{}}
-
-      {:ether_predicate_address_is_valid, false} ->
-        Logger.error("EtherPredicateProxy contract address is invalid or not defined.")
-        {:stop, :normal, %{}}
-
-      {:erc20_predicate_address_is_valid, false} ->
-        Logger.error("ERC20PredicateProxy contract address is invalid or not defined.")
-        {:stop, :normal, %{}}
-
-      {:erc721_predicate_address_is_valid, false} ->
-        Logger.error("ERC721PredicateProxy contract address is invalid.")
-        {:stop, :normal, %{}}
-
-      {:erc1155_predicate_address_is_valid, false} ->
-        Logger.error("ERC1155PredicateProxy contract address is invalid.")
-        {:stop, :normal, %{}}
-
-      {:withdraw_manager_address_is_valid, false} ->
-        Logger.error("WithdrawManagerProxy contract address is invalid or not defined.")
+      {:bridge_contract_address_is_valid, false} ->
+        Logger.error("PolygonZkEVMBridge contract address is invalid or not defined.")
         {:stop, :normal, %{}}
 
       {:start_block_valid, false} ->
@@ -160,7 +121,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
       {:l1_tx_not_found, true} ->
         Logger.error(
-          "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check shibarium_bridge table."
+          "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check zkevm_bridge table."
         )
 
         {:stop, :normal, %{}}
@@ -288,16 +249,16 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
   end
 
   defp get_block_check_interval(json_rpc_named_arguments) do
-    with {:ok, latest_block} <- Helper.get_block_number_by_tag("latest", json_rpc_named_arguments),
-         first_block = max(latest_block - @block_check_interval_range_size, 1),
-         {:ok, first_block_timestamp} <- Helper.get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
-         {:ok, last_safe_block_timestamp} <-
-           Helper.get_block_timestamp_by_number(latest_block, json_rpc_named_arguments) do
-      block_check_interval =
-        ceil((last_safe_block_timestamp - first_block_timestamp) / (latest_block - first_block) * 1000 / 2)
+    {last_safe_block, safe_block_is_latest} = get_safe_block(json_rpc_named_arguments)
+
+    first_block = max(latest_block - @block_check_interval_range_size, 1)
+
+    with {:ok, first_block_timestamp} <- Helper.get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
+         {:ok, last_safe_block_timestamp} <- Helper.get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
+      block_check_interval = ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
       Logger.info("Block check interval is calculated as #{block_check_interval} ms.")
-      {:ok, block_check_interval, latest_block}
+      {:ok, block_check_interval, last_safe_block, safe_block_is_latest}
     else
       {:error, error} ->
         {:error, "Failed to calculate block check interval due to #{inspect(error)}"}
@@ -528,6 +489,17 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
       ],
       topic0
     )
+  end
+
+  defp get_safe_block(json_rpc_named_arguments) do
+    case Helper.get_block_number_by_tag("safe", json_rpc_named_arguments) do
+      {:ok, safe_block} ->
+        {safe_block, false}
+
+      {:error, :not_found} ->
+        {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+        {latest_block, true}
+    end
   end
 
   defp json_rpc_named_arguments(rpc_url) do

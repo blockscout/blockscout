@@ -44,8 +44,6 @@ defmodule Indexer.Supervisor do
     Withdrawal
   }
 
-  alias Indexer.Fetcher.Zkevm.TransactionBatch
-
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,
     UncatalogedTokenTransfers,
@@ -147,7 +145,11 @@ defmodule Indexer.Supervisor do
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
         configure(Indexer.Fetcher.Shibarium.L1.Supervisor, [[memory_monitor: memory_monitor]]),
-        configure(TransactionBatch.Supervisor, [
+        configure(Indexer.Fetcher.Zkevm.BridgeL1.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.Zkevm.BridgeL2.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(Indexer.Fetcher.Zkevm.TransactionBatch.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
         {Indexer.Fetcher.Beacon.Blob.Supervisor, [[memory_monitor: memory_monitor]]},
