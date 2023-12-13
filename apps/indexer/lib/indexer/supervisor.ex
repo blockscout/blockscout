@@ -39,7 +39,8 @@ defmodule Indexer.Supervisor do
     Withdrawal
   }
 
-  alias Indexer.Fetcher.Zkevm.TransactionBatch
+  alias Indexer.Fetcher.Zkevm.TransactionBatch, as: ZkevmTransactionBatch
+  alias Indexer.Fetcher.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
 
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,
@@ -136,7 +137,11 @@ defmodule Indexer.Supervisor do
         {Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor,
          [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]},
         {Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor, [[memory_monitor: memory_monitor]]},
-        configure(TransactionBatch.Supervisor, [
+
+        configure(ZkevmTransactionBatch.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(ZkSyncTransactionBatch.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
 
