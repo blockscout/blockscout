@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
   alias BlockScoutWeb.Models.TransactionStateHelper
-  alias Explorer.{Chain, Helper}
+  alias Explorer.Chain
   alias Explorer.Chain.Zkevm.Reader
   alias Indexer.Fetcher.FirstTraceOnDemand
 
@@ -366,7 +366,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
          {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params) do
       response =
         case TransactionInterpretationService.interpret(transaction) do
-          {:ok, response} -> Helper.maybe_decode(response)
+          {:ok, response} -> response
+          {:error, %Jason.DecodeError{}} -> %{error: "Error while tx interpreter response decoding"}
           {:error, error} -> %{error: error}
         end
 
