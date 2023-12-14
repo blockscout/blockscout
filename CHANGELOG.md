@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#8955](https://github.com/blockscout/blockscout/pull/8955) - Remove daily balances updating from BlockReward fetcher
+
 ### Chore
 
 - [#8991](https://github.com/blockscout/blockscout/pull/8991) - Manage DB queue target via runtime env var
