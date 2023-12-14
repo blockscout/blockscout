@@ -22,8 +22,10 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.Zkevm.{Bridge, BridgeL1Token}
   alias Explorer.{Chain, Repo}
+  alias Explorer.SmartContract.Reader
   alias Indexer.{BoundQueue, Helper}
 
   @block_check_interval_range_size 100
@@ -36,6 +38,27 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
   # 32-byte signature of the event ClaimEvent(uint32 index, uint32 originNetwork, address originAddress, address destinationAddress, uint256 amount)
   @claim_event "0x25308c93ceeed162da955b3f7ce3e3f93606579e40fb92029faa9efe27545983"
+
+  @erc20_abi [
+    %{
+      "constant" => true,
+      "inputs" => [],
+      "name" => "symbol",
+      "outputs" => [%{"name" => "", "type" => "string"}],
+      "payable" => false,
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "constant" => true,
+      "inputs" => [],
+      "name" => "decimals",
+      "outputs" => [%{"name" => "", "type" => "uint8"}],
+      "payable" => false,
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ]
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -76,9 +99,9 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
          start_block = parse_integer(env[:start_block]),
          false <- is_nil(start_block),
          true <- start_block > 0,
-         {last_l1_block_number, last_l1_transaction_hash} <- get_last_l1_item(),
+         {last_l1_block_number, last_l1_transaction_hash} = get_last_l1_item(),
          json_rpc_named_arguments = json_rpc_named_arguments(rpc),
-         {:ok, block_check_interval, safe_block, safe_block_is_latest} <- get_block_check_interval(json_rpc_named_arguments),
+         {:ok, block_check_interval, safe_block} <- get_block_check_interval(json_rpc_named_arguments),
          {:start_block_valid, true} <- {:start_block_valid, (start_block <= last_l1_block_number || last_l1_block_number == 0) && start_block <= safe_block},
          {:ok, last_l1_tx} <- Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)} do
@@ -87,13 +110,12 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
       {:noreply,
        %{
-         bridge_contract: env[:bridge_contract],
          block_check_interval: block_check_interval,
-         start_block: max(start_block, last_l1_block_number),
-         safe_block: safe_block,
-         safe_block_is_latest: safe_block_is_latest,
+         bridge_contract: env[:bridge_contract],
          json_rpc_named_arguments: json_rpc_named_arguments,
-         reorg_monitor_prev_latest: 0
+         reorg_monitor_prev_latest: 0,
+         safe_block: safe_block,
+         start_block: max(start_block, last_l1_block_number)
        }}
     else
       {:start_block_undefined, true} ->
@@ -109,7 +131,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
         {:stop, :normal, %{}}
 
       {:start_block_valid, false} ->
-        Logger.error("Invalid L1 Start Block value. Please, check the value and shibarium_bridge table.")
+        Logger.error("Invalid L1 Start Block value. Please, check the value and zkevm_bridge table.")
         {:stop, :normal, %{}}
 
       {:error, error_data} ->
@@ -157,15 +179,10 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
   def handle_info(
         :continue,
         %{
-          deposit_manager_proxy: deposit_manager_proxy,
-          ether_predicate_proxy: ether_predicate_proxy,
-          erc20_predicate_proxy: erc20_predicate_proxy,
-          erc721_predicate_proxy: erc721_predicate_proxy,
-          erc1155_predicate_proxy: erc1155_predicate_proxy,
-          withdraw_manager_proxy: withdraw_manager_proxy,
+          bridge_contract: bridge_contract,
           block_check_interval: block_check_interval,
           start_block: start_block,
-          end_block: end_block,
+          safe_block: end_block,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
@@ -183,21 +200,13 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
           operations =
             {chunk_start, chunk_end}
-            |> get_logs_all(
-              deposit_manager_proxy,
-              ether_predicate_proxy,
-              erc20_predicate_proxy,
-              erc721_predicate_proxy,
-              erc1155_predicate_proxy,
-              withdraw_manager_proxy,
-              json_rpc_named_arguments
-            )
+            |> get_logs_all(bridge_contract, json_rpc_named_arguments)
             |> prepare_operations(json_rpc_named_arguments)
 
-          {:ok, _} =
-            operations
-            |> get_import_options()
-            |> Chain.import()
+          {:ok, _} = Chain.import(%{
+            zkevm_bridge_operations: %{params: operations},
+            timeout: :infinity
+          })
 
           Helper.log_blocks_chunk_handling(
             chunk_start,
@@ -241,24 +250,22 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
     {:noreply, state}
   end
 
-  defp filter_deposit_events(events) do
-    Enum.filter(events, fn event ->
-      topic0 = Enum.at(event["topics"], 0)
-      is_deposit(topic0)
-    end)
-  end
+  defp atomized_key("symbol"), do: :symbol
+  defp atomized_key("decimals"), do: :decimals
+  defp atomized_key("95d89b41"), do: :symbol
+  defp atomized_key("313ce567"), do: :decimals
 
   defp get_block_check_interval(json_rpc_named_arguments) do
-    {last_safe_block, safe_block_is_latest} = get_safe_block(json_rpc_named_arguments)
+    {last_safe_block, _} = get_safe_block(json_rpc_named_arguments)
 
-    first_block = max(latest_block - @block_check_interval_range_size, 1)
+    first_block = max(last_safe_block - @block_check_interval_range_size, 1)
 
-    with {:ok, first_block_timestamp} <- Helper.get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
-         {:ok, last_safe_block_timestamp} <- Helper.get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
+    with {:ok, first_block_timestamp} <- Helper.get_block_timestamp_by_number(first_block, json_rpc_named_arguments, 100_000_000),
+         {:ok, last_safe_block_timestamp} <- Helper.get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, 100_000_000) do
       block_check_interval = ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
       Logger.info("Block check interval is calculated as #{block_check_interval} ms.")
-      {:ok, block_check_interval, last_safe_block, safe_block_is_latest}
+      {:ok, block_check_interval, last_safe_block}
     else
       {:error, error} ->
         {:error, "Failed to calculate block check interval due to #{inspect(error)}"}
@@ -284,24 +291,12 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
     end
   end
 
-  defp get_import_options(operations) do
-    # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
-    if System.get_env("CHAIN_TYPE") == "shibarium" do
-      %{
-        shibarium_bridge_operations: %{params: prepare_insert_items(operations, __MODULE__)},
-        timeout: :infinity
-      }
-    else
-      %{}
-    end
-  end
-
   defp get_last_l1_item do
     query =
-      from(sb in Bridge,
-        select: {sb.l1_block_number, sb.l1_transaction_hash},
-        where: not is_nil(sb.l1_block_number),
-        order_by: [desc: sb.l1_block_number],
+      from(b in Bridge,
+        select: {b.l1_block_number, b.l1_transaction_hash},
+        where: b.type == :deposit and not is_nil(b.block_number),
+        order_by: [desc: b.index],
         limit: 1
       )
 
@@ -333,162 +328,17 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
     Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
-  defp get_logs_all(
-         {chunk_start, chunk_end},
-         deposit_manager_proxy,
-         ether_predicate_proxy,
-         erc20_predicate_proxy,
-         erc721_predicate_proxy,
-         erc1155_predicate_proxy,
-         withdraw_manager_proxy,
-         json_rpc_named_arguments
-       ) do
-    {:ok, known_tokens_result} =
+  defp get_logs_all({chunk_start, chunk_end}, bridge_contract, json_rpc_named_arguments) do
+    {:ok, result} =
       get_logs(
         chunk_start,
         chunk_end,
-        [deposit_manager_proxy, ether_predicate_proxy, erc20_predicate_proxy, withdraw_manager_proxy],
-        [
-          [
-            @new_deposit_block_event,
-            @locked_ether_event,
-            @locked_erc20_event,
-            @locked_erc721_event,
-            @locked_erc721_batch_event,
-            @locked_batch_erc1155_event,
-            @withdraw_event,
-            @exited_ether_event
-          ]
-        ],
+        bridge_contract,
+        [[@bridge_event, @claim_event]],
         json_rpc_named_arguments
       )
 
-    contract_addresses =
-      if is_nil(erc721_predicate_proxy) do
-        [pad_address_hash(erc20_predicate_proxy)]
-      else
-        [pad_address_hash(erc20_predicate_proxy), pad_address_hash(erc721_predicate_proxy)]
-      end
-
-    {:ok, unknown_erc20_erc721_tokens_result} =
-      get_logs(
-        chunk_start,
-        chunk_end,
-        nil,
-        [
-          @transfer_event,
-          contract_addresses
-        ],
-        json_rpc_named_arguments
-      )
-
-    {:ok, unknown_erc1155_tokens_result} =
-      if is_nil(erc1155_predicate_proxy) do
-        {:ok, []}
-      else
-        get_logs(
-          chunk_start,
-          chunk_end,
-          nil,
-          [
-            [@transfer_single_event, @transfer_batch_event],
-            nil,
-            pad_address_hash(erc1155_predicate_proxy)
-          ],
-          json_rpc_named_arguments
-        )
-      end
-
-    known_tokens_result ++ unknown_erc20_erc721_tokens_result ++ unknown_erc1155_tokens_result
-  end
-
-  defp get_op_user(topic0, event) do
-    cond do
-      Enum.member?([@new_deposit_block_event, @exited_ether_event], topic0) ->
-        truncate_address_hash(Enum.at(event["topics"], 1))
-
-      Enum.member?(
-        [
-          @locked_ether_event,
-          @locked_erc20_event,
-          @locked_erc721_event,
-          @locked_erc721_batch_event,
-          @locked_batch_erc1155_event,
-          @withdraw_event,
-          @transfer_event
-        ],
-        topic0
-      ) ->
-        truncate_address_hash(Enum.at(event["topics"], 2))
-
-      Enum.member?([@transfer_single_event, @transfer_batch_event], topic0) ->
-        truncate_address_hash(Enum.at(event["topics"], 3))
-    end
-  end
-
-  defp get_op_amounts(topic0, event) do
-    cond do
-      topic0 == @new_deposit_block_event ->
-        [amount_or_nft_id, deposit_block_id] = decode_data(event["data"], [{:uint, 256}, {:uint, 256}])
-        {[amount_or_nft_id], deposit_block_id}
-
-      topic0 == @transfer_event ->
-        indexed_token_id = Enum.at(event["topics"], 3)
-
-        if is_nil(indexed_token_id) do
-          {decode_data(event["data"], [{:uint, 256}]), 0}
-        else
-          {[quantity_to_integer(indexed_token_id)], 0}
-        end
-
-      Enum.member?(
-        [
-          @locked_ether_event,
-          @locked_erc20_event,
-          @locked_erc721_event,
-          @withdraw_event,
-          @exited_ether_event
-        ],
-        topic0
-      ) ->
-        {decode_data(event["data"], [{:uint, 256}]), 0}
-
-      topic0 == @locked_erc721_batch_event ->
-        [ids] = decode_data(event["data"], [{:array, {:uint, 256}}])
-        {ids, 0}
-
-      true ->
-        {[nil], 0}
-    end
-  end
-
-  defp get_op_erc1155_data(topic0, event) do
-    cond do
-      Enum.member?([@locked_batch_erc1155_event, @transfer_batch_event], topic0) ->
-        [ids, amounts] = decode_data(event["data"], [{:array, {:uint, 256}}, {:array, {:uint, 256}}])
-        {ids, amounts}
-
-      Enum.member?([@transfer_single_event], topic0) ->
-        [id, amount] = decode_data(event["data"], [{:uint, 256}, {:uint, 256}])
-        {[id], [amount]}
-
-      true ->
-        {[], []}
-    end
-  end
-
-  defp is_deposit(topic0) do
-    Enum.member?(
-      [
-        @new_deposit_block_event,
-        @locked_ether_event,
-        @locked_erc20_event,
-        @locked_erc721_event,
-        @locked_erc721_batch_event,
-        @locked_batch_erc1155_event
-      ],
-      topic0
-    )
+    result
   end
 
   defp get_safe_block(json_rpc_named_arguments) do
@@ -500,6 +350,101 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
         {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
         {latest_block, true}
     end
+  end
+
+  defp get_token_data(token_addresses) do
+    # first, we're trying to read token data from the DB.
+    # if tokens are not in the DB, read them through RPC.
+    token_addresses
+    |> get_token_data_from_db()
+    |> get_token_data_from_rpc()
+  end
+
+  defp get_token_data_from_db(token_addresses) do
+    # try to read token symbols and decimals from the database
+    query =
+      from(
+        t in BridgeL1Token,
+        where: t.address in ^token_addresses,
+        select: {t.address, t.decimals, t.symbol}
+      )
+
+    token_data =
+      query
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn {address, decimals, symbol}, acc ->
+        token_address = String.downcase(Hash.to_string(address))
+        Map.put(acc, token_address, %{symbol: symbol, decimals: decimals})
+      end)
+
+    token_addresses_for_rpc =
+      token_addresses
+      |> Enum.reject(fn address ->
+        Map.has_key?(token_data, String.downcase(address))
+      end)
+
+    {token_data, token_addresses_for_rpc}
+  end
+
+  defp get_token_data_from_rpc({token_data, token_addresses}) do
+    {requests, responses} = get_token_data_request_symbol_decimals(token_addresses)
+
+    requests
+    |> Enum.zip(responses)
+    |> Enum.reduce(token_data, fn {request, {status, response} = _resp}, token_data_acc ->
+      if status == :ok do
+        response = parse_response(response)
+
+        address = String.downcase(request.contract_address)
+
+        new_data = get_new_data(token_data_acc[address] || %{}, request, response)
+
+        Map.put(token_data_acc, address, new_data)
+      else
+        token_data_acc
+      end
+    end)
+  end
+
+  defp parse_response(response) do
+    case response do
+      [item] -> item
+      items -> items
+    end
+  end
+
+  defp get_new_data(data, request, response) do
+    if atomized_key(request.method_id) == :symbol do
+      %{data | symbol: response}
+    else
+      %{data | decimals: response}
+    end
+  end
+
+  defp get_token_data_request_symbol_decimals(token_addresses) do
+    requests =
+      token_addresses
+      |> Enum.map(fn address ->
+        # we will call symbol() and decimals() public getters
+        Enum.map(["95d89b41", "313ce567"], fn method_id ->
+          %{
+            contract_address: address,
+            method_id: method_id,
+            args: []
+          }
+        end)
+      end)
+      |> List.flatten()
+
+    {responses, error_messages} = read_contracts_with_retries(requests, @erc20_abi, 3)
+
+    if !Enum.empty?(error_messages) or Enum.count(requests) != Enum.count(responses) do
+      Logger.warning(
+        "Cannot read symbol and decimals of an ERC-20 token contract. Error messages: #{Enum.join(error_messages, ", ")}. Addresses: #{Enum.join(token_addresses, ", ")}"
+      )
+    end
+
+    {requests, responses}
   end
 
   defp json_rpc_named_arguments(rpc_url) do
@@ -518,9 +463,12 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
   end
 
   defp prepare_operations(events, json_rpc_named_arguments) do
-    timestamps =
+    deposit_events =
       events
-      |> filter_deposit_events()
+      |> Enum.filter(fn event -> Enum.at(event["topics"], 0) == @bridge_event end)
+
+    timestamps =
+      deposit_events
       |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
       |> Enum.reduce(%{}, fn block, acc ->
         block_number = quantity_to_integer(Map.get(block, "number"))
@@ -528,63 +476,89 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
         Map.put(acc, block_number, timestamp)
       end)
 
+    token_data =
+      deposit_events
+      |> Enum.reduce(%{}, fn event, acc ->
+        [leaf_type, _origin_network, origin_address, _destination_network, _destination_address, _amount, _metadata, _deposit_count] = decode_data(event["data"], [{:uint, 8}, {:uint, 32}, :address, {:uint, 32}, :address, {:uint, 256}, :bytes, {:uint, 32}])
+
+        if leaf_type != 1 do
+          Map.put(acc, origin_address, true)
+        else
+          acc
+        end
+      end)
+      |> Map.values()
+      |> get_token_data()
+
     events
     |> Enum.map(fn event ->
       topic0 = Enum.at(event["topics"], 0)
 
-      user = get_op_user(topic0, event)
-      {amounts_or_ids, operation_id} = get_op_amounts(topic0, event)
-      {erc1155_ids, erc1155_amounts} = get_op_erc1155_data(topic0, event)
+      # user = get_op_user(topic0, event)
+      # {amounts_or_ids, operation_id} = get_op_amounts(topic0, event)
+      # {erc1155_ids, erc1155_amounts} = get_op_erc1155_data(topic0, event)
 
-      l1_block_number = quantity_to_integer(event["blockNumber"])
+      # l1_block_number = quantity_to_integer(event["blockNumber"])
 
-      {operation_type, timestamp} =
-        if is_deposit(topic0) do
-          {:deposit, Map.get(timestamps, l1_block_number)}
-        else
-          {:withdrawal, nil}
-        end
+      # {operation_type, timestamp} =
+      #   if is_deposit(topic0) do
+      #     {:deposit, Map.get(timestamps, l1_block_number)}
+      #   else
+      #     {:withdrawal, nil}
+      #   end
 
-      token_type =
-        cond do
-          Enum.member?([@new_deposit_block_event, @withdraw_event], topic0) ->
-            "bone"
+      # token_type =
+      #   cond do
+      #     Enum.member?([@new_deposit_block_event, @withdraw_event], topic0) ->
+      #       "bone"
 
-          Enum.member?([@locked_ether_event, @exited_ether_event], topic0) ->
-            "eth"
+      #     Enum.member?([@locked_ether_event, @exited_ether_event], topic0) ->
+      #       "eth"
 
-          true ->
-            "other"
-        end
+      #     true ->
+      #       "other"
+      #   end
 
-      Enum.map(amounts_or_ids, fn amount_or_id ->
-        %{
-          user: user,
-          amount_or_id: amount_or_id,
-          erc1155_ids: if(Enum.empty?(erc1155_ids), do: nil, else: erc1155_ids),
-          erc1155_amounts: if(Enum.empty?(erc1155_amounts), do: nil, else: erc1155_amounts),
-          l1_transaction_hash: event["transactionHash"],
-          l1_block_number: l1_block_number,
-          l2_transaction_hash: @empty_hash,
-          operation_hash: calc_operation_hash(user, amount_or_id, erc1155_ids, erc1155_amounts, operation_id),
-          operation_type: operation_type,
-          token_type: token_type,
-          timestamp: timestamp
-        }
-      end)
+      #   %{
+      #     user: user,
+      #     amount_or_id: amount_or_id,
+      #     erc1155_ids: if(Enum.empty?(erc1155_ids), do: nil, else: erc1155_ids),
+      #     erc1155_amounts: if(Enum.empty?(erc1155_amounts), do: nil, else: erc1155_amounts),
+      #     l1_transaction_hash: event["transactionHash"],
+      #     l1_block_number: l1_block_number,
+      #     l2_transaction_hash: @empty_hash,
+      #     operation_hash: calc_operation_hash(user, amount_or_id, erc1155_ids, erc1155_amounts, operation_id),
+      #     operation_type: operation_type,
+      #     token_type: token_type,
+      #     timestamp: timestamp
+      #   }
     end)
-    |> List.flatten()
   end
 
-  defp pad_address_hash(address) do
-    "0x" <>
-      (address
-       |> String.trim_leading("0x")
-       |> String.pad_leading(64, "0"))
-  end
+  defp read_contracts_with_retries(requests, abi, retries_left) when retries_left > 0 do
+    responses = Reader.query_contracts(requests, abi)
 
-  defp truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
-    "0x#{truncated_hash}"
+    error_messages =
+      Enum.reduce(responses, [], fn {status, error_message}, acc ->
+        acc ++
+          if status == :error do
+            [error_message]
+          else
+            []
+          end
+      end)
+
+    if Enum.empty?(error_messages) do
+      {responses, []}
+    else
+      retries_left = retries_left - 1
+
+      if retries_left == 0 do
+        {responses, Enum.uniq(error_messages)}
+      else
+        read_contracts_with_retries(requests, abi, retries_left)
+      end
+    end
   end
 
   defp reorg_block_pop do
@@ -608,29 +582,11 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
   defp reorg_handle(reorg_block) do
     {deleted_count, _} =
-      Repo.delete_all(from(sb in Bridge, where: sb.l1_block_number >= ^reorg_block and is_nil(sb.l2_transaction_hash)))
+      Repo.delete_all(from(b in Bridge, where: b.type == :deposit and b.l1_block_number >= ^reorg_block))
 
-    {updated_count1, _} =
-      Repo.update_all(
-        from(sb in Bridge,
-          where:
-            sb.l1_block_number >= ^reorg_block and not is_nil(sb.l2_transaction_hash) and
-              sb.operation_type == :deposit
-        ),
-        set: [timestamp: nil]
-      )
-
-    {updated_count2, _} =
-      Repo.update_all(
-        from(sb in Bridge, where: sb.l1_block_number >= ^reorg_block and not is_nil(sb.l2_transaction_hash)),
-        set: [l1_transaction_hash: nil, l1_block_number: nil]
-      )
-
-    updated_count = max(updated_count1, updated_count2)
-
-    if deleted_count > 0 or updated_count > 0 do
+    if deleted_count > 0 do
       Logger.warning(
-        "As L1 reorg was detected, some rows with l1_block_number >= #{reorg_block} were affected (removed or updated) in the shibarium_bridge table. Number of removed rows: #{deleted_count}. Number of updated rows: >= #{updated_count}."
+        "As L1 reorg was detected, some deposits with block_number >= #{reorg_block} were removed from zkevm_bridge table. Number of removed rows: #{deleted_count}."
       )
     end
   end
