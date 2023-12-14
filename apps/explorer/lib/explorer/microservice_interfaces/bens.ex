@@ -175,6 +175,9 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   @spec preload_ens_info_to_search_result(list) :: list
   def preload_ens_info_to_search_result(list) do
     Enum.map(list, fn
+      %{type: "address", ens_info: ens_info} = search_result when not is_nil(ens_info) ->
+        search_result
+
       %{type: "address"} = search_result ->
         ens_info = search_result[:address_hash] |> address_lookup() |> parse_lookup_response()
         Map.put(search_result, :ens_info, ens_info)
@@ -184,7 +187,8 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     end)
   end
 
-  @spec ens_domain_name_lookup(binary()) :: nil | %{address_hash: binary(), expiry_date: any(), name: any()}
+  @spec ens_domain_name_lookup(binary()) ::
+          nil | %{address_hash: binary(), expiry_date: any(), name: any(), names_count: integer()}
   def ens_domain_name_lookup(domain) do
     domain |> ens_domain_lookup() |> parse_lookup_response()
   end

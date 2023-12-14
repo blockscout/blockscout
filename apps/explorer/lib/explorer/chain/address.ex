@@ -161,6 +161,11 @@ defmodule Explorer.Chain.Address do
     checksum(hash, iodata?)
   end
 
+  def checksum(hash_string, iodata?) when is_binary(hash_string) do
+    {:ok, hash} = Chain.string_to_address_hash(hash_string)
+    checksum(hash, iodata?)
+  end
+
   def checksum(hash, iodata?) do
     checksum_formatted =
       case Application.get_env(:explorer, :checksum_function) || :eth do

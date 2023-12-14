@@ -13,6 +13,9 @@ defmodule Explorer.Utility.Microservice do
     end
   end
 
+  @doc """
+    Returns :ok if Application.get_env(:explorer, module)[:enabled] is true (module is enabled)
+  """
   @spec check_enabled(atom) :: :ok | {:error, :disabled}
   def check_enabled(module) do
     if Application.get_env(:explorer, module)[:enabled] do
