@@ -57,6 +57,7 @@
 
 - [#9094](https://github.com/blockscout/blockscout/pull/9094) - Improve exchange rates logging
 - [#9014](https://github.com/blockscout/blockscout/pull/9014) - Decrease amount of NFT in address collection: 15 -> 9
+- [#9009](https://github.com/blockscout/blockscout/pull/9009) - Index for block refetch_needed
 - [#8994](https://github.com/blockscout/blockscout/pull/8994) - Refactor transactions event preloads
 
 <details>
