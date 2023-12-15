@@ -162,6 +162,17 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     transaction_with_ens
   end
 
+  @spec maybe_preload_ens_to_address(Address.t()) :: Address.t()
+  def maybe_preload_ens_to_address(address) do
+    maybe_preload_ens(address, &preload_ens_to_address/1)
+  end
+
+  @spec preload_ens_to_address(Address.t()) :: Address.t()
+  def preload_ens_to_address(address) do
+    [address_with_ens] = preload_ens_to_list([address])
+    address_with_ens
+  end
+
   @doc """
     Preload ENS names to list of entities
   """
@@ -273,6 +284,14 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     [to_string(address_hash)]
   end
 
+  defp item_to_address_hash_strings({%Address{} = address, _}) do
+    item_to_address_hash_strings(address)
+  end
+
+  defp item_to_address_hash_strings(%Address{hash: hash}) do
+    [to_string(hash)]
+  end
+
   defp put_ens_names(names, items) do
     Enum.map(items, &put_ens_name_to_item(&1, names))
   end
@@ -340,6 +359,14 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
       current_token_balance
       | address: alter_address(current_token_balance.address, address_hash, names)
     }
+  end
+
+  defp put_ens_name_to_item({%Address{} = address, count}, names) do
+    {put_ens_name_to_item(address, names), count}
+  end
+
+  defp put_ens_name_to_item(%Address{} = address, names) do
+    alter_address(address, address.hash, names)
   end
 
   defp alter_address(_, nil, _names) do

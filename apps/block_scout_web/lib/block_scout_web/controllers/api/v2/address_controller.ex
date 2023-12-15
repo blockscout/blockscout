@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       nft_token_types_options: 1
     ]
 
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_to_address: 1]
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
@@ -85,7 +85,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       conn
       |> put_status(200)
-      |> render(:address, %{address: fully_preloaded_address})
+      |> render(:address, %{address: fully_preloaded_address |> maybe_preload_ens_to_address()})
     end
   end
 
@@ -415,7 +415,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     conn
     |> put_status(200)
     |> render(:addresses, %{
-      addresses: addresses,
+      addresses: addresses |> maybe_preload_ens(),
       next_page_params: next_page_params,
       exchange_rate: exchange_rate,
       total_supply: total_supply
