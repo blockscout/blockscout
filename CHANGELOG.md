@@ -32,6 +32,7 @@
 ### Chore
 
 - [#9014](https://github.com/blockscout/blockscout/pull/9014) - Decrease amount of NFT in address collection: 15 -> 9
+- [#9005](https://github.com/blockscout/blockscout/pull/9005) - Drop unused token_id column from token_transfers table and indexes based on this column
 - [#8994](https://github.com/blockscout/blockscout/pull/8994) - Refactor transactions event preloads
 
 <details>
