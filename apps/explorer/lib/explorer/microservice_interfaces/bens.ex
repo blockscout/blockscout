@@ -59,7 +59,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
         "resolvedTo" => true,
         "ownedBy" => false,
         "onlyActive" => true,
-        "order" => "DESC"
+        "order" => "ASC"
       }
 
       http_post_request(address_lookup_url(), body)
@@ -137,17 +137,29 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   @doc """
     Preload ENS info to list of entities if enabled?()
   """
-  @spec maybe_preload_ens([supported_types]) :: [supported_types]
-  def maybe_preload_ens(entity_list, function \\ &preload_ens_to_list/1) do
+  @spec maybe_preload_ens([supported_types] | supported_types) :: [supported_types] | supported_types
+  def maybe_preload_ens(argument, function \\ &preload_ens_to_list/1) do
     if enabled?() do
-      function.(entity_list)
+      function.(argument)
     else
-      entity_list
+      argument
     end
   end
 
-  def maybe_preload_ens_info_to_search_result(list) do
-    maybe_preload_ens(list, &preload_ens_info_to_search_result/1)
+  @spec maybe_preload_ens_info_to_search_results(list()) :: list()
+  def maybe_preload_ens_info_to_search_results(list) do
+    maybe_preload_ens(list, &preload_ens_info_to_search_results/1)
+  end
+
+  @spec maybe_preload_ens_to_transaction(Transaction.t()) :: Transaction.t()
+  def maybe_preload_ens_to_transaction(transaction) do
+    maybe_preload_ens(transaction, &preload_ens_to_transaction/1)
+  end
+
+  @spec preload_ens_to_transaction(Transaction.t()) :: Transaction.t()
+  def preload_ens_to_transaction(transaction) do
+    [transaction_with_ens] = preload_ens_to_list([transaction])
+    transaction_with_ens
   end
 
   @doc """
@@ -172,8 +184,8 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   @doc """
     Preload ENS info to search result, using address_lookup/1
   """
-  @spec preload_ens_info_to_search_result(list) :: list
-  def preload_ens_info_to_search_result(list) do
+  @spec preload_ens_info_to_search_results(list) :: list
+  def preload_ens_info_to_search_results(list) do
     Enum.map(list, fn
       %{type: "address", ens_info: ens_info} = search_result when not is_nil(ens_info) ->
         search_result

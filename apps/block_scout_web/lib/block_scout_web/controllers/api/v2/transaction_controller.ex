@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       type_filter_options: 1
     ]
 
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_to_transaction: 1]
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
@@ -106,7 +106,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
            Chain.preload_token_transfers(transaction, @token_transfers_in_tx_necessity_by_association, @api_true, false) do
       conn
       |> put_status(200)
-      |> render(:transaction, %{transaction: preloaded})
+      |> render(:transaction, %{transaction: preloaded |> maybe_preload_ens_to_transaction()})
     end
   end
 
