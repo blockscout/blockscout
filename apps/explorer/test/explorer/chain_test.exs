@@ -3179,21 +3179,25 @@ defmodule Explorer.ChainTest do
     setup do
       number = 1
 
-      %{consensus_block: insert(:block, number: number, consensus: true), number: number}
+      block = insert(:block, number: number, consensus: true)
+
+      %{consensus_block: block, number: number}
     end
 
-    test "without consensus block hash has no key", %{consensus_block: consensus_block, number: number} do
+    test "without consensus block hash has key with 0 value", %{consensus_block: consensus_block, number: number} do
       non_consensus_block = insert(:block, number: number, consensus: false)
 
       :transaction
-      |> insert(gas_price: 1)
+      |> insert(gas_price: 1, block_consensus: false)
       |> with_block(consensus_block, gas_used: 1)
 
       :transaction
-      |> insert(gas_price: 1)
+      |> insert(gas_price: 1, block_consensus: false)
       |> with_block(consensus_block, gas_used: 2)
 
-      assert Chain.gas_payment_by_block_hash([non_consensus_block.hash]) == %{}
+      assert Chain.gas_payment_by_block_hash([non_consensus_block.hash]) == %{
+               non_consensus_block.hash => %Wei{value: Decimal.new(0)}
+             }
     end
 
     test "with consensus block hash without transactions has key with 0 value", %{

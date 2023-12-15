@@ -44,6 +44,7 @@
 
 - [#8956](https://github.com/blockscout/blockscout/pull/8956) - Refine docker-compose config structure
 - [#8911](https://github.com/blockscout/blockscout/pull/8911) - Set client_connection_check_interval for main Postgres DB in docker-compose setup
+- [#5322](https://github.com/blockscout/blockscout/pull/5322) - DB denormalization: block consensus and timestamp in transaction table
 
 <details>
   <summary>Dependencies version bumps</summary>
