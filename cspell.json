@@ -545,7 +545,8 @@
         "qitmeer",
         "meer",
         "DefiLlama",
-        "SOLIDITYSCAN"
+        "SOLIDITYSCAN",
+        "fkey"
     ],
     "enableFiletypes": [
         "dotenv",

@@ -9,7 +9,11 @@
 
 ### Fixes
 
+- [#8955](https://github.com/blockscout/blockscout/pull/8955) - Remove daily balances updating from BlockReward fetcher
+
 ### Chore
+
+- [#8991](https://github.com/blockscout/blockscout/pull/8991) - Manage DB queue target via runtime env var
 
 <details>
   <summary>Dependencies version bumps</summary>
@@ -19,12 +23,14 @@
 
 ### Features
 
+- [#8966](https://github.com/blockscout/blockscout/pull/8966) - Add `ACCOUNT_WATCHLIST_NOTIFICATIONS_LIMIT_FOR_30_DAYS`
 - [#8908](https://github.com/blockscout/blockscout/pull/8908) - Solidityscan report API endpoint
 - [#8900](https://github.com/blockscout/blockscout/pull/8900) - Add Compound proxy contract pattern
 - [#8611](https://github.com/blockscout/blockscout/pull/8611) - Implement sorting of smart contracts, address transactions
 
 ### Fixes
 
+- [#8959](https://github.com/blockscout/blockscout/pull/8959) - Skip failed instances in Token Instance Owner migrator
 - [#8924](https://github.com/blockscout/blockscout/pull/8924) - Delete invalid current token balances in OnDemand fetcher
 - [#8922](https://github.com/blockscout/blockscout/pull/8922) - Allow call type to be in lowercase
 - [#8917](https://github.com/blockscout/blockscout/pull/8917) - Proxy detection hotfix in API v2
@@ -36,6 +42,7 @@
 
 ### Chore
 
+- [#8956](https://github.com/blockscout/blockscout/pull/8956) - Refine docker-compose config structure
 - [#8911](https://github.com/blockscout/blockscout/pull/8911) - Set client_connection_check_interval for main Postgres DB in docker-compose setup
 
 <details>
