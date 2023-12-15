@@ -9,6 +9,7 @@ defmodule Explorer.Utility.MigrationStatus do
   @primary_key false
   schema "migrations_status" do
     field(:migration_name, :string)
+    # ["started", "completed"]
     field(:status, :string)
 
     timestamps()

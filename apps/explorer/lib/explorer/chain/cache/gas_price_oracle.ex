@@ -14,6 +14,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
   alias Explorer.Chain.{
     Block,
+    DenormalizationHelper,
+    Transaction,
     Wei
   }
 
@@ -73,77 +75,150 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       end
 
     fee_query =
-      from(
-        block in Block,
-        left_join: transaction in assoc(block, :transactions),
-        where: block.consensus == true,
-        where: transaction.status == ^1,
-        where: transaction.gas_price > ^0,
-        where: transaction.block_number > ^from_block,
-        group_by: transaction.block_number,
-        order_by: [desc: transaction.block_number],
-        select: %{
-          block_number: transaction.block_number,
-          slow_gas_price:
-            fragment(
-              "percentile_disc(? :: real) within group ( order by ? )",
-              ^safelow_percentile_fraction,
-              transaction.gas_price
-            ),
-          average_gas_price:
-            fragment(
-              "percentile_disc(? :: real) within group ( order by ? )",
-              ^average_percentile_fraction,
-              transaction.gas_price
-            ),
-          fast_gas_price:
-            fragment(
-              "percentile_disc(? :: real) within group ( order by ? )",
-              ^fast_percentile_fraction,
-              transaction.gas_price
-            ),
-          slow_priority_fee_per_gas:
-            fragment(
-              "percentile_disc(? :: real) within group ( order by ? )",
-              ^safelow_percentile_fraction,
-              transaction.max_priority_fee_per_gas
-            ),
-          average_priority_fee_per_gas:
-            fragment(
-              "percentile_disc(? :: real) within group ( order by ? )",
-              ^average_percentile_fraction,
-              transaction.max_priority_fee_per_gas
-            ),
-          fast_priority_fee_per_gas:
-            fragment(
-              "percentile_disc(? :: real) within group ( order by ? )",
-              ^fast_percentile_fraction,
-              transaction.max_priority_fee_per_gas
-            ),
-          slow_time:
-            fragment(
-              "percentile_disc(? :: real) within group ( order by coalesce(extract(milliseconds from (?)::interval), ?) desc )",
-              ^safelow_percentile_fraction,
-              block.timestamp - transaction.earliest_processing_start,
-              ^average_block_time
-            ),
-          average_time:
-            fragment(
-              "percentile_disc(? :: real) within group ( order by coalesce(extract(milliseconds from (?)::interval), ?) desc )",
-              ^average_percentile_fraction,
-              block.timestamp - transaction.earliest_processing_start,
-              ^average_block_time
-            ),
-          fast_time:
-            fragment(
-              "percentile_disc(? :: real) within group ( order by coalesce(extract(milliseconds from (?)::interval), ?) desc )",
-              ^fast_percentile_fraction,
-              block.timestamp - transaction.earliest_processing_start,
-              ^average_block_time
-            )
-        },
-        limit: ^num_of_blocks
-      )
+      if DenormalizationHelper.denormalization_finished?() do
+        from(
+          transaction in Transaction,
+          where: transaction.block_consensus == true,
+          where: transaction.status == ^1,
+          where: transaction.gas_price > ^0,
+          where: transaction.block_number > ^from_block,
+          group_by: transaction.block_number,
+          order_by: [desc: transaction.block_number],
+          select: %{
+            block_number: transaction.block_number,
+            slow_gas_price:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by ? )",
+                ^safelow_percentile_fraction,
+                transaction.gas_price
+              ),
+            average_gas_price:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by ? )",
+                ^average_percentile_fraction,
+                transaction.gas_price
+              ),
+            fast_gas_price:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by ? )",
+                ^fast_percentile_fraction,
+                transaction.gas_price
+              ),
+            slow_priority_fee_per_gas:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by ? )",
+                ^safelow_percentile_fraction,
+                transaction.max_priority_fee_per_gas
+              ),
+            average_priority_fee_per_gas:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by ? )",
+                ^average_percentile_fraction,
+                transaction.max_priority_fee_per_gas
+              ),
+            fast_priority_fee_per_gas:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by ? )",
+                ^fast_percentile_fraction,
+                transaction.max_priority_fee_per_gas
+              ),
+            slow_time:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by coalesce(extract(milliseconds from (?)::interval), ?) desc )",
+                ^safelow_percentile_fraction,
+                transaction.block_timestamp - transaction.earliest_processing_start,
+                ^average_block_time
+              ),
+            average_time:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by coalesce(extract(milliseconds from (?)::interval), ?) desc )",
+                ^average_percentile_fraction,
+                transaction.block_timestamp - transaction.earliest_processing_start,
+                ^average_block_time
+              ),
+            fast_time:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by coalesce(extract(milliseconds from (?)::interval), ?) desc )",
+                ^fast_percentile_fraction,
+                transaction.block_timestamp - transaction.earliest_processing_start,
+                ^average_block_time
+              )
+          },
+          limit: ^num_of_blocks
+        )
+      else
+        from(
+          block in Block,
+          left_join: transaction in assoc(block, :transactions),
+          where: block.consensus == true,
+          where: transaction.status == ^1,
+          where: transaction.gas_price > ^0,
+          where: transaction.block_number > ^from_block,
+          group_by: transaction.block_number,
+          order_by: [desc: transaction.block_number],
+          select: %{
+            block_number: transaction.block_number,
+            slow_gas_price:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by ? )",
+                ^safelow_percentile_fraction,
+                transaction.gas_price
+              ),
+            average_gas_price:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by ? )",
+                ^average_percentile_fraction,
+                transaction.gas_price
+              ),
+            fast_gas_price:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by ? )",
+                ^fast_percentile_fraction,
+                transaction.gas_price
+              ),
+            slow_priority_fee_per_gas:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by ? )",
+                ^safelow_percentile_fraction,
+                transaction.max_priority_fee_per_gas
+              ),
+            average_priority_fee_per_gas:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by ? )",
+                ^average_percentile_fraction,
+                transaction.max_priority_fee_per_gas
+              ),
+            fast_priority_fee_per_gas:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by ? )",
+                ^fast_percentile_fraction,
+                transaction.max_priority_fee_per_gas
+              ),
+            slow_time:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by coalesce(extract(milliseconds from (?)::interval), ?) desc )",
+                ^safelow_percentile_fraction,
+                block.timestamp - transaction.earliest_processing_start,
+                ^average_block_time
+              ),
+            average_time:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by coalesce(extract(milliseconds from (?)::interval), ?) desc )",
+                ^average_percentile_fraction,
+                block.timestamp - transaction.earliest_processing_start,
+                ^average_block_time
+              ),
+            fast_time:
+              fragment(
+                "percentile_disc(? :: real) within group ( order by coalesce(extract(milliseconds from (?)::interval), ?) desc )",
+                ^fast_percentile_fraction,
+                block.timestamp - transaction.earliest_processing_start,
+                ^average_block_time
+              )
+          },
+          limit: ^num_of_blocks
+        )
+      end
 
     new_acc = fee_query |> Repo.all(timeout: :infinity) |> merge_gas_prices(acc, num_of_blocks)
 

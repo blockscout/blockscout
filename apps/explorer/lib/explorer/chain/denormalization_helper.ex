@@ -5,6 +5,7 @@ defmodule Explorer.Chain.DenormalizationHelper do
 
   alias Explorer.Chain.Cache.BackgroundMigrations
 
+  @spec extend_block_necessity(keyword(), :optional | :required) :: keyword()
   def extend_block_necessity(opts, necessity \\ :optional) do
     if denormalization_finished?() do
       opts
@@ -13,6 +14,7 @@ defmodule Explorer.Chain.DenormalizationHelper do
     end
   end
 
+  @spec extend_transaction_block_necessity(keyword(), :optional | :required) :: keyword()
   def extend_transaction_block_necessity(opts, necessity \\ :optional) do
     if denormalization_finished?() do
       opts
@@ -26,6 +28,7 @@ defmodule Explorer.Chain.DenormalizationHelper do
     end
   end
 
+  @spec extend_transaction_preload(list()) :: list()
   def extend_transaction_preload(preloads) do
     if denormalization_finished?() do
       preloads
@@ -34,6 +37,7 @@ defmodule Explorer.Chain.DenormalizationHelper do
     end
   end
 
+  @spec extend_block_preload(list()) :: list()
   def extend_block_preload(preloads) do
     if denormalization_finished?() do
       preloads
