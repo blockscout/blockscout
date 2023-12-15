@@ -32,6 +32,7 @@
 ### Chore
 
 - [#9014](https://github.com/blockscout/blockscout/pull/9014) - Decrease amount of NFT in address collection: 15 -> 9
+- [#9007](https://github.com/blockscout/blockscout/pull/9007) - Drop logs type index
 - [#8994](https://github.com/blockscout/blockscout/pull/8994) - Refactor transactions event preloads
 
 <details>
