@@ -353,15 +353,26 @@ defmodule Explorer.Chain do
     to_block = to_block(options)
 
     base =
-      from(log in Log,
-        order_by: [desc: log.block_number, desc: log.index],
-        where: log.address_hash == ^address_hash,
-        limit: ^paging_options.page_size,
-        select: log,
-        inner_join: block in Block,
-        on: block.hash == log.block_hash,
-        where: block.consensus == true
-      )
+      if DenormalizationHelper.denormalization_finished?() do
+        from(log in Log,
+          order_by: [desc: log.block_number, desc: log.index],
+          where: log.address_hash == ^address_hash,
+          limit: ^paging_options.page_size,
+          select: log,
+          inner_join: transaction in assoc(log, :transaction),
+          where: transaction.block_consensus == true
+        )
+      else
+        from(log in Log,
+          order_by: [desc: log.block_number, desc: log.index],
+          where: log.address_hash == ^address_hash,
+          limit: ^paging_options.page_size,
+          select: log,
+          inner_join: block in Block,
+          on: block.hash == log.block_hash,
+          where: block.consensus == true
+        )
+      end
 
     preloaded_query =
       if csv_export? do
