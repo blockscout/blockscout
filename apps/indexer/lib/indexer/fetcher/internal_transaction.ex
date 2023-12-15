@@ -363,7 +363,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   defp invalidate_block_from_error(_error_data), do: :ok
 
-  defp defaults do
+  def defaults do
     [
       poll: false,
       flush_interval: :timer.seconds(3),
