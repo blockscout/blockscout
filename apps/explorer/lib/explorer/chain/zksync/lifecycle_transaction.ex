@@ -4,7 +4,7 @@ defmodule Explorer.Chain.ZkSync.LifecycleTransaction do
   use Explorer.Schema
 
   alias Explorer.Chain.Hash
-  # alias Explorer.Chain.Zkevm.TransactionBatch
+  alias Explorer.Chain.ZkSync.TransactionBatch
 
   @required_attrs ~w(id hash timestamp)a
 
@@ -18,8 +18,9 @@ defmodule Explorer.Chain.ZkSync.LifecycleTransaction do
     field(:hash, Hash.Full)
     field(:timestamp, :utc_datetime_usec)
 
-    # has_many(:sequenced_batches, TransactionBatch, foreign_key: :sequence_id)
-    # has_many(:verified_batches, TransactionBatch, foreign_key: :verify_id)
+    has_many(:committed_batches, TransactionBatch, foreign_key: :commit_id)
+    has_many(:proven_batches, TransactionBatch, foreign_key: :prove_id)
+    has_many(:executed_batches, TransactionBatch, foreign_key: :execute_id)
 
     timestamps()
   end

@@ -42,7 +42,8 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       "zksync" ->
         @default_runners ++
           [
-            Runner.ZkSync.LifecycleTransactions
+            Runner.ZkSync.LifecycleTransactions,
+            Runner.ZkSync.TransactionBatches
           ]
 
       _ ->
