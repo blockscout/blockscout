@@ -30,6 +30,10 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     end
   end
 
+  def get_request_body(transaction) do
+    prepare_request_body(transaction)
+  end
+
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 

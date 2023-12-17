@@ -352,10 +352,18 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     end
   end
 
+  def summary(conn, %{"transaction_hash_param" => transaction_hash_string, "just_request_body" => "true"} = params) do
+    with {:tx_interpreter_enabled, true} <- {:tx_interpreter_enabled, TransactionInterpretationService.enabled?()},
+         {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params) do
+      conn
+      |> json(TransactionInterpretationService.get_request_body(transaction))
+    end
+  end
+
   @doc """
     Function to handle GET requests to `/api/v2/transactions/:transaction_hash_param/summary` endpoint.
   """
-  @spec summary(any, map) ::
+  @spec summary(Plug.Conn.t(), map()) ::
           {:format, :error}
           | {:not_found, {:error, :not_found}}
           | {:restricted_access, true}
