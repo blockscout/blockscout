@@ -413,4 +413,32 @@ defmodule Explorer.Chain.Token.Instance do
     |> select_merge([ctb: ctb], %{current_token_balance: ctb})
     |> Chain.select_repo(options).all()
   end
+
+  @doc """
+    Finds token instances (pairs of contract_address_hash and token_id) which was met in token transfers but has no corresponding entry in token_instances table
+  """
+  @spec not_inserted_token_instances_query(integer()) :: Ecto.Query.t()
+  def not_inserted_token_instances_query(limit) do
+    token_transfers_query =
+      TokenTransfer
+      |> where([token_transfer], not is_nil(token_transfer.token_ids) and token_transfer.token_ids != ^[])
+      |> select([token_transfer], %{
+        token_contract_address_hash: token_transfer.token_contract_address_hash,
+        token_id: fragment("unnest(?)", token_transfer.token_ids)
+      })
+
+    token_transfers_query
+    |> subquery()
+    |> join(:left, [token_transfer], token_instance in __MODULE__,
+      on:
+        token_instance.token_contract_address_hash == token_transfer.token_contract_address_hash and
+          token_instance.token_id == token_transfer.token_id
+    )
+    |> where([token_transfer, token_instance], is_nil(token_instance.token_id))
+    |> select([token_transfer, token_instance], %{
+      contract_address_hash: token_transfer.token_contract_address_hash,
+      token_id: token_transfer.token_id
+    })
+    |> limit(^limit)
+  end
 end

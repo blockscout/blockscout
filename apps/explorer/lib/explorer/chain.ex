@@ -3555,56 +3555,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-    Finds all token instances (pairs of contract_address_hash and token_id) which was met in token transfers but has no corresponding entry in token_instances table
-  """
-  @spec stream_not_inserted_token_instances(
-          initial :: accumulator,
-          reducer :: (entry :: map(), accumulator -> accumulator)
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_not_inserted_token_instances(initial, reducer) when is_function(reducer, 2) do
-    nft_tokens =
-      from(
-        token in Token,
-        where: token.type == ^"ERC-721" or token.type == ^"ERC-1155",
-        select: token.contract_address_hash
-      )
-
-    token_ids_query =
-      from(
-        token_transfer in TokenTransfer,
-        select: %{
-          token_contract_address_hash: token_transfer.token_contract_address_hash,
-          token_id: fragment("unnest(?)", token_transfer.token_ids)
-        }
-      )
-
-    query =
-      from(
-        transfer in subquery(token_ids_query),
-        inner_join: token in subquery(nft_tokens),
-        on: token.contract_address_hash == transfer.token_contract_address_hash,
-        left_join: instance in Instance,
-        on:
-          transfer.token_contract_address_hash == instance.token_contract_address_hash and
-            transfer.token_id == instance.token_id,
-        where: is_nil(instance.token_id),
-        select: %{
-          contract_address_hash: transfer.token_contract_address_hash,
-          token_id: transfer.token_id
-        }
-      )
-
-    distinct_query =
-      from(
-        q in subquery(query),
-        distinct: [q.contract_address_hash, q.token_id]
-      )
-
-    Repo.stream_reduce(distinct_query, initial, reducer)
-  end
-
-  @doc """
     Finds all token instances where metadata never tried to fetch
   """
   @spec stream_token_instances_with_unfetched_metadata(
