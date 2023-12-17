@@ -184,6 +184,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
+  @doc """
+    Decodes list of logs
+  """
   @spec decode_logs([Log.t()], boolean) :: [tuple]
   def decode_logs(logs, skip_sig_provider?) do
     {result, _, _} =
@@ -576,6 +579,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def transaction_actions(%NotLoaded{}), do: []
 
+  @doc """
+    Renders transaction actions
+  """
   def transaction_actions(actions) do
     render("transaction_actions.json", %{actions: actions})
   end
@@ -618,6 +624,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
+  @doc """
+    Prepares decoded tx info
+  """
+  @spec decoded_input(any()) :: map() | nil
   def decoded_input(decoded_input) do
     case decoded_input do
       {:ok, method_id, text, mapping} ->
@@ -696,6 +706,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> Timex.diff(right, :milliseconds)
   end
 
+  @doc """
+    Return method name used in tx
+  """
+  @spec method_name(Transaction.t(), any(), boolean()) :: binary() | nil
   def method_name(_, _, skip_sc_check? \\ false)
 
   def method_name(_, {:ok, _method_id, text, _mapping}, _) do
@@ -718,6 +732,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     nil
   end
 
+  @doc """
+    Returns array of token types for tx.
+  """
   @spec tx_types(
           Explorer.Chain.Transaction.t(),
           [tx_type],
