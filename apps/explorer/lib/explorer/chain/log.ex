@@ -190,10 +190,10 @@ defmodule Explorer.Chain.Log do
   end
 
   defp find_method_candidates(log, transaction, options, events_acc, skip_sig_provider?) do
-    with false <- is_nil(log.first_topic),
-         hex_part <- Base.encode16(log.first_topic.bytes, case: :lower),
-         {number, ""} <- Integer.parse(hex_part, 16) do
-      <<method_id::binary-size(4), _rest::binary>> = :binary.encode_unsigned(number)
+    if is_nil(log.first_topic) do
+      {{:error, :could_not_decode}, events_acc}
+    else
+      <<method_id::binary-size(4), _rest::binary>> = log.first_topic.bytes
 
       if Map.has_key?(events_acc, method_id) do
         {events_acc[method_id], events_acc}
@@ -201,9 +201,6 @@ defmodule Explorer.Chain.Log do
         result = find_method_candidates_from_db(method_id, log, transaction, options, skip_sig_provider?)
         {result, Map.put(events_acc, method_id, result)}
       end
-    else
-      _ ->
-        {{:error, :could_not_decode}, events_acc}
     end
   end
 
