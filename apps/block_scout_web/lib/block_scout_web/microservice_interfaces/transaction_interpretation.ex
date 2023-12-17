@@ -148,7 +148,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     |> Enum.map(fn {log, decoded_log} -> TransactionView.prepare_log(log, transaction.hash, decoded_log, true) end)
   end
 
-  defp preload_tokens({:ok, %{"success" => true, "data" => %{"summaries" => summaries}}}) do
+  defp preload_tokens({:ok, %{"success" => true, "data" => %{"summaries" => summaries} = data}}) do
     summaries_updated =
       Enum.map(summaries, fn %{"summary_template_variables" => summary_template_variables} = summary ->
         summary_template_variables_preloaded =
@@ -159,7 +159,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         Map.put(summary, "summary_template_variables", summary_template_variables_preloaded)
       end)
 
-    {:ok, %{"success" => true, "data" => %{"summaries" => summaries_updated}}}
+    {:ok, %{"success" => true, "data" => Map.put(data, "summaries", summaries_updated)}}
   end
 
   defp preload_tokens(error), do: error
