@@ -7,12 +7,12 @@ defmodule Explorer.Chain.Log do
 
   alias ABI.{Event, FunctionSelector}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Log, Transaction}
+  alias Explorer.Chain.{Address, Block, ContractMethod, Data, LogFirstTopic, Hash, Log, Transaction}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.SigProviderInterface
 
   @required_attrs ~w(address_hash data block_hash index transaction_hash)a
-  @optional_attrs ~w(first_topic second_topic third_topic fourth_topic block_number)a
+  @optional_attrs ~w(first_topic first_topic_id second_topic third_topic fourth_topic type block_number)a
 
   @typedoc """
    * `address` - address of contract that generate the event
@@ -21,6 +21,7 @@ defmodule Explorer.Chain.Log do
    * `address_hash` - foreign key for `address`
    * `data` - non-indexed log parameters.
    * `first_topic` - `topics[0]`
+   * `first_topic_id` - id of LogFirstTopic
    * `second_topic` - `topics[1]`
    * `third_topic` - `topics[2]`
    * `fourth_topic` - `topics[3]`
@@ -34,10 +35,11 @@ defmodule Explorer.Chain.Log do
           block_hash: Hash.Full.t(),
           block_number: non_neg_integer() | nil,
           data: Data.t(),
-          first_topic: Hash.Full.t(),
-          second_topic: Hash.Full.t(),
-          third_topic: Hash.Full.t(),
-          fourth_topic: Hash.Full.t(),
+          first_topic: Hash.Full.t() | nil,
+          first_topic_id: non_neg_integer() | nil,
+          second_topic: Hash.Full.t() | nil,
+          third_topic: Hash.Full.t() | nil,
+          fourth_topic: Hash.Full.t() | nil,
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
           index: non_neg_integer()
@@ -69,6 +71,13 @@ defmodule Explorer.Chain.Log do
       primary_key: true,
       references: :hash,
       type: Hash.Full
+    )
+
+    belongs_to(:log_first_topic, LogFirstTopic,
+      foreign_key: :first_topic_id,
+      primary_key: true,
+      references: :id,
+      type: :integer
     )
   end
 

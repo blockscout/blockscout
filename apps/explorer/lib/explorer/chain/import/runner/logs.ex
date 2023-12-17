@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, Log}
+  alias Explorer.Chain.{Import, Log, LogFirstTopic}
   alias Explorer.Prometheus.Instrumenter
 
   import Ecto.Query, only: [from: 2]
@@ -64,8 +64,43 @@ defmodule Explorer.Chain.Import.Runner.Logs do
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
+    first_topic_changes_list =
+      changes_list
+      |> Enum.map(&%{:hash => &1.first_topic})
+      |> Enum.uniq()
+
+    {:ok, _} =
+      Import.insert_changes_list(
+        repo,
+        first_topic_changes_list,
+        conflict_target: [:hash],
+        on_conflict: :nothing,
+        for: LogFirstTopic,
+        returning: true,
+        timeout: timeout,
+        timestamps: timestamps
+      )
+
+    first_topic_hashes =
+      first_topic_changes_list
+      |> Enum.map(& &1.hash)
+      |> Enum.uniq()
+
+    first_topic_ids_hashes = LogFirstTopic.get_first_topic_ids_by_hashes(first_topic_hashes)
+
+    changes_list_with_first_topic_id =
+      Enum.map(changes_list, fn item ->
+        {first_topic_id, _} =
+          Enum.find(first_topic_ids_hashes, fn {_, hash} ->
+            hash == item.first_topic
+          end)
+
+        Map.put(item, :first_topic_id, first_topic_id)
+      end)
+
     # Enforce Log ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.index})
+    ordered_changes_list =
+      Enum.sort_by(changes_list_with_first_topic_id, &{&1.transaction_hash, &1.block_hash, &1.index})
 
     {:ok, _} =
       Import.insert_changes_list(
