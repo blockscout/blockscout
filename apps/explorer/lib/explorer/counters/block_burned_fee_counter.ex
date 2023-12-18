@@ -7,7 +7,7 @@ defmodule Explorer.Counters.BlockBurnedFeeCounter do
   alias Explorer.Chain
   alias Explorer.Counters.Helper
 
-  @cache_name :block_burned_fee_counter
+  @cache_name :block_burnt_fee_counter
 
   config = Application.compile_env(:explorer, Explorer.Counters.BlockBurnedFeeCounter)
   @enable_consolidation Keyword.get(config, :enable_consolidation)

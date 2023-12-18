@@ -8,7 +8,8 @@ defmodule Explorer.Chain.Block do
   use Explorer.Schema
 
   alias Explorer.Chain.{Address, Block, Gas, Hash, PendingBlockOperation, Transaction, Wei, Withdrawal}
-  alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
+  alias Explorer.Chain.Block.{EmissionReward, Reward, SecondDegreeRelation}
+  alias Explorer.Repo
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
                   |> (&(case Application.compile_env(:explorer, :chain_type) do
@@ -218,5 +219,86 @@ defmodule Explorer.Chain.Block do
       limit: ^limit,
       order_by: [desc: block.number]
     )
+  end
+
+  @doc """
+  Calculates transaction fees (gas price * gas used) for the list of transactions (from a single block)
+  """
+  @spec transaction_fees(list()) :: Decimal.t()
+  def transaction_fees(transactions) do
+    Enum.reduce(transactions, Decimal.new(0), fn %{gas_used: gas_used, gas_price: gas_price}, acc ->
+      if gas_price do
+        gas_used
+        |> Decimal.new()
+        |> Decimal.mult(gas_price_to_decimal(gas_price))
+        |> Decimal.add(acc)
+      else
+        acc
+      end
+    end)
+  end
+
+  defp gas_price_to_decimal(nil), do: nil
+  defp gas_price_to_decimal(%Wei{} = wei), do: wei.value
+  defp gas_price_to_decimal(gas_price), do: Decimal.new(gas_price)
+
+  @doc """
+  Calculates burnt fees for the list of transactions (from a single block)
+  """
+  @spec burnt_fees(list(), Wei.t()) :: Wei.t() | nil
+  def burnt_fees(transactions, base_fee_per_gas) do
+    total_gas_used =
+      transactions
+      |> Enum.reduce(Decimal.new(0), fn %{gas_used: gas_used}, acc ->
+        gas_used
+        |> Decimal.new()
+        |> Decimal.add(acc)
+      end)
+
+    base_fee_per_gas && Wei.mult(base_fee_per_gas_to_wei(base_fee_per_gas), total_gas_used)
+  end
+
+  defp base_fee_per_gas_to_wei(%Wei{} = wei), do: wei
+  defp base_fee_per_gas_to_wei(base_fee_per_gas), do: %Wei{value: Decimal.new(base_fee_per_gas)}
+
+  @uncle_reward_coef 1 / 32
+  @spec block_reward_by_parts(Block.t(), list()) :: %{
+          block_number: block_number(),
+          block_hash: Hash.Full.t(),
+          miner_hash: Hash.Address.t(),
+          static_reward: any(),
+          transaction_fees: any(),
+          burnt_fees: Wei.t() | nil,
+          uncle_reward: Wei.t() | nil | false
+        }
+  def block_reward_by_parts(block, transactions) do
+    %{hash: block_hash, number: block_number} = block
+    base_fee_per_gas = Map.get(block, :base_fee_per_gas)
+
+    transaction_fees = transaction_fees(transactions)
+
+    static_reward =
+      Repo.one(
+        from(
+          er in EmissionReward,
+          where: fragment("int8range(?, ?) <@ ?", ^block_number, ^(block_number + 1), er.block_range),
+          select: er.reward
+        )
+      ) || %Wei{value: Decimal.new(0)}
+
+    has_uncles? = is_list(block.uncles) and not Enum.empty?(block.uncles)
+
+    burnt_fees = burnt_fees(transactions, base_fee_per_gas)
+    uncle_reward = (has_uncles? && Wei.mult(static_reward, Decimal.from_float(@uncle_reward_coef))) || nil
+
+    %{
+      block_number: block_number,
+      block_hash: block_hash,
+      miner_hash: block.miner_hash,
+      static_reward: static_reward,
+      transaction_fees: %Wei{value: transaction_fees},
+      burnt_fees: burnt_fees || %Wei{value: Decimal.new(0)},
+      uncle_reward: uncle_reward || %Wei{value: Decimal.new(0)}
+    }
   end
 end

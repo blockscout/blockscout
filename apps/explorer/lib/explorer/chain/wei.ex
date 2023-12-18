@@ -139,6 +139,11 @@ defmodule Explorer.Chain.Wei do
       %Explorer.Chain.Wei{value: Decimal.new(1_123)}
   """
   @spec sum(Wei.t(), Wei.t()) :: Wei.t()
+  def sum(%Wei{value: wei_1}, %Wei{value: nil}) do
+    wei_1
+    |> from(:wei)
+  end
+
   def sum(%Wei{value: wei_1}, %Wei{value: wei_2}) do
     wei_1
     |> Decimal.add(wei_2)
@@ -207,6 +212,10 @@ defmodule Explorer.Chain.Wei do
   """
 
   @spec from(ether(), :ether) :: t()
+  def from(nil, :ether), do: nil
+  def from(nil, :wei), do: nil
+  def from(nil, :gwei), do: nil
+
   def from(%Decimal{} = ether, :ether) do
     %__MODULE__{value: Decimal.mult(ether, @wei_per_ether)}
   end

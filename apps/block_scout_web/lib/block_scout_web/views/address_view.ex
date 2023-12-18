@@ -334,6 +334,8 @@ defmodule BlockScoutWeb.AddressView do
     end
   end
 
+  defp matching_address_check(nil, nil, _contract?, _truncate), do: nil
+
   defp matching_address_check(%Address{hash: hash} = current_address, %Address{hash: hash}, contract?, truncate) do
     [
       view_module: __MODULE__,
