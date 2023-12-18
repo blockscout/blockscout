@@ -27,6 +27,6 @@ defmodule Explorer.Migrator.MigrationStatus do
   def set_status(migration_name, status) do
     %{migration_name: migration_name, status: status}
     |> changeset()
-    |> Repo.insert(on_conflict: :replace_all, conflict_target: :migration_name)
+    |> Repo.insert(on_conflict: {:replace_all_except, [:inserted_at]}, conflict_target: :migration_name)
   end
 end
