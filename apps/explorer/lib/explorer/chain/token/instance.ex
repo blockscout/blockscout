@@ -224,7 +224,7 @@ defmodule Explorer.Chain.Token.Instance do
     %{"token_contract_address_hash" => token_contract_address_hash, "token_id" => token_id, "token_type" => "ERC-721"}
   end
 
-  @preloaded_nfts_limit 15
+  @preloaded_nfts_limit 9
 
   @spec nft_collections(binary() | Hash.Address.t(), keyword) :: list
   def nft_collections(address_hash, options \\ [])
