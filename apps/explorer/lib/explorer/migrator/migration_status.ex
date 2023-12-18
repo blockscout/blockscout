@@ -1,4 +1,4 @@
-defmodule Explorer.Utility.MigrationStatus do
+defmodule Explorer.Migrator.MigrationStatus do
   @moduledoc """
   Module is responsible for keeping the current status of background migrations.
   """
