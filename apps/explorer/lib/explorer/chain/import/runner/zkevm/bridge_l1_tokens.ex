@@ -62,7 +62,7 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeL1Tokens do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce BridgeL1Token ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.id})
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.address})
 
     {:ok, inserted} =
       Import.insert_changes_list(

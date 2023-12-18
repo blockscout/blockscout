@@ -738,7 +738,7 @@ config :indexer, Indexer.Fetcher.Zkevm.BridgeL1.Supervisor, enabled: ConfigHelpe
 
 config :indexer, Indexer.Fetcher.Zkevm.BridgeL2,
   start_block: System.get_env("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_START_BLOCK"),
-  bridge_contract: System.get_env("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_CONTRACT"),
+  bridge_contract: System.get_env("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_CONTRACT")
 
 config :indexer, Indexer.Fetcher.Zkevm.BridgeL2.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_zkevm"
 

@@ -18,6 +18,8 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
       request: 1
     ]
 
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
   import Explorer.Helper, only: [parse_integer: 1, decode_data: 2]
 
   alias EthereumJSONRPC.Block.ByNumber
@@ -31,7 +33,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
   @block_check_interval_range_size 100
   @eth_get_logs_range_size 1000
   @fetcher_name :zkevm_bridge_l1
-  @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
+  # @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   # 32-byte signature of the event BridgeEvent(uint8 leafType, uint32 originNetwork, address originAddress, uint32 destinationNetwork, address destinationAddress, uint256 amount, bytes metadata, uint32 depositCount)
   @bridge_event "0x501781209a1f8899323b96b4ef08b168df93e0a90c673d1e4cce39366cb62f9b"
@@ -95,7 +97,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
          rpc = env[:rpc],
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
-         {:bridge_contract_address_is_valid, true} <- {:bridge_contract_address_is_valid, Helper.is_address_correct?(env[:bridge_contract])},
+         {:bridge_contract_address_is_valid, true} <- {:bridge_contract_address_is_valid, Helper.address_correct?(env[:bridge_contract])},
          start_block = parse_integer(env[:start_block]),
          false <- is_nil(start_block),
          true <- start_block > 0,
@@ -294,7 +296,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
   defp get_last_l1_item do
     query =
       from(b in Bridge,
-        select: {b.l1_block_number, b.l1_transaction_hash},
+        select: {b.block_number, b.l1_transaction_hash},
         where: b.type == :deposit and not is_nil(b.block_number),
         order_by: [desc: b.index],
         limit: 1
@@ -352,12 +354,12 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
     end
   end
 
-  defp get_token_data(token_addresses) do
+  defp get_token_data(token_addresses, json_rpc_named_arguments) do
     # first, we're trying to read token data from the DB.
     # if tokens are not in the DB, read them through RPC.
     token_addresses
     |> get_token_data_from_db()
-    |> get_token_data_from_rpc()
+    |> get_token_data_from_rpc(json_rpc_named_arguments)
   end
 
   defp get_token_data_from_db(token_addresses) do
@@ -386,8 +388,8 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
     {token_data, token_addresses_for_rpc}
   end
 
-  defp get_token_data_from_rpc({token_data, token_addresses}) do
-    {requests, responses} = get_token_data_request_symbol_decimals(token_addresses)
+  defp get_token_data_from_rpc({token_data, token_addresses}, json_rpc_named_arguments) do
+    {requests, responses} = get_token_data_request_symbol_decimals(token_addresses, json_rpc_named_arguments)
 
     requests
     |> Enum.zip(responses)
@@ -415,13 +417,13 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
   defp get_new_data(data, request, response) do
     if atomized_key(request.method_id) == :symbol do
-      %{data | symbol: response}
+      Map.put(data, :symbol, response)
     else
-      %{data | decimals: response}
+      Map.put(data, :decimals, response)
     end
   end
 
-  defp get_token_data_request_symbol_decimals(token_addresses) do
+  defp get_token_data_request_symbol_decimals(token_addresses, json_rpc_named_arguments) do
     requests =
       token_addresses
       |> Enum.map(fn address ->
@@ -436,7 +438,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
       end)
       |> List.flatten()
 
-    {responses, error_messages} = read_contracts_with_retries(requests, @erc20_abi, 3)
+    {responses, error_messages} = read_contracts_with_retries(requests, @erc20_abi, json_rpc_named_arguments, 3)
 
     if !Enum.empty?(error_messages) or Enum.count(requests) != Enum.count(responses) do
       Logger.warning(
@@ -476,67 +478,87 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
         Map.put(acc, block_number, timestamp)
       end)
 
+    bridge_event_params = [{:uint, 8}, {:uint, 32}, :address, {:uint, 32}, :address, {:uint, 256}, :bytes, {:uint, 32}]
+    claim_event_params = [{:uint, 32}, {:uint, 32}, :address, :address, {:uint, 256}]
+
     token_data =
       deposit_events
       |> Enum.reduce(%{}, fn event, acc ->
-        [leaf_type, _origin_network, origin_address, _destination_network, _destination_address, _amount, _metadata, _deposit_count] = decode_data(event["data"], [{:uint, 8}, {:uint, 32}, :address, {:uint, 32}, :address, {:uint, 256}, :bytes, {:uint, 32}])
+        [leaf_type, _origin_network, origin_address, _destination_network, _destination_address, _amount, _metadata, _deposit_count] = decode_data(event["data"], bridge_event_params)
 
-        if leaf_type != 1 do
+        origin_address = "0x" <> Base.encode16(origin_address, case: :lower)
+
+        if leaf_type != 1 and origin_address != burn_address_hash_string() do
           Map.put(acc, origin_address, true)
         else
           acc
         end
       end)
-      |> Map.values()
-      |> get_token_data()
+      |> Map.keys()
+      |> get_token_data(json_rpc_named_arguments)
+
+    tokens =
+      token_data
+      |> Enum.map(fn {address, data} ->
+        Map.put(data, :address, address)
+      end)
+
+    # todo: select known tokens from zkevm_bridge_l1_tokens table
+
+    Logger.warn("tokens: #{inspect(tokens)}")
+
+    # todo: insert only unknown tokens
+    {:ok, tokens_inserted} = Chain.import(%{
+      zkevm_bridge_l1_tokens: %{params: tokens},
+      timeout: :infinity
+    })
+
+    # todo: select remaining tokens from zkevm_bridge_l1_tokens table if they are not in `tokens_inserted`
+
+    Logger.warn("tokens_inserted: #{inspect(tokens_inserted)}")
 
     events
     |> Enum.map(fn event ->
-      topic0 = Enum.at(event["topics"], 0)
+      {type, index, amount, block_number, block_timestamp} =
+        if Enum.at(event["topics"], 0) == @bridge_event do
+          [_leaf_type, _origin_network, _origin_address, _destination_network, _destination_address, amount, _metadata, deposit_count] = decode_data(event["data"], bridge_event_params)
 
-      # user = get_op_user(topic0, event)
-      # {amounts_or_ids, operation_id} = get_op_amounts(topic0, event)
-      # {erc1155_ids, erc1155_amounts} = get_op_erc1155_data(topic0, event)
+          block_number = quantity_to_integer(event["blockNumber"])
+          block_timestamp = Map.get(timestamps, block_number)
 
-      # l1_block_number = quantity_to_integer(event["blockNumber"])
+          {:deposit, deposit_count, amount, block_number, block_timestamp}
+        else
+          [index, _origin_network, _origin_address, _destination_address, amount] = decode_data(event["data"], claim_event_params)
+          
+          {:withdrawal, index, amount, nil, nil}
+        end
 
-      # {operation_type, timestamp} =
-      #   if is_deposit(topic0) do
-      #     {:deposit, Map.get(timestamps, l1_block_number)}
-      #   else
-      #     {:withdrawal, nil}
-      #   end
+      result =
+        %{
+          type: type,
+          index: index,
+          l1_transaction_hash: event["transactionHash"],
+          # l1_token_id: ...,
+          amount: amount
+        }
 
-      # token_type =
-      #   cond do
-      #     Enum.member?([@new_deposit_block_event, @withdraw_event], topic0) ->
-      #       "bone"
+      result =
+        if not is_nil(block_number) do
+          Map.put(result, :block_number, block_number)
+        else
+          result
+        end
 
-      #     Enum.member?([@locked_ether_event, @exited_ether_event], topic0) ->
-      #       "eth"
-
-      #     true ->
-      #       "other"
-      #   end
-
-      #   %{
-      #     user: user,
-      #     amount_or_id: amount_or_id,
-      #     erc1155_ids: if(Enum.empty?(erc1155_ids), do: nil, else: erc1155_ids),
-      #     erc1155_amounts: if(Enum.empty?(erc1155_amounts), do: nil, else: erc1155_amounts),
-      #     l1_transaction_hash: event["transactionHash"],
-      #     l1_block_number: l1_block_number,
-      #     l2_transaction_hash: @empty_hash,
-      #     operation_hash: calc_operation_hash(user, amount_or_id, erc1155_ids, erc1155_amounts, operation_id),
-      #     operation_type: operation_type,
-      #     token_type: token_type,
-      #     timestamp: timestamp
-      #   }
+      if not is_nil(block_timestamp) do
+        Map.put(result, :block_timestamp, block_timestamp)
+      else
+        result
+      end
     end)
   end
 
-  defp read_contracts_with_retries(requests, abi, retries_left) when retries_left > 0 do
-    responses = Reader.query_contracts(requests, abi)
+  defp read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left) when retries_left > 0 do
+    responses = Reader.query_contracts(requests, abi, json_rpc_named_arguments: json_rpc_named_arguments)
 
     error_messages =
       Enum.reduce(responses, [], fn {status, error_message}, acc ->
@@ -556,7 +578,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
       if retries_left == 0 do
         {responses, Enum.uniq(error_messages)}
       else
-        read_contracts_with_retries(requests, abi, retries_left)
+        read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left)
       end
     end
   end
