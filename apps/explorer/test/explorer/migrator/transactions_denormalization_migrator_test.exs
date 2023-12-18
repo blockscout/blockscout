@@ -1,8 +1,9 @@
-defmodule Explorer.TransactionsDenormalizationMigratorTest do
+defmodule Explorer.Migrator.TransactionsDenormalizationTest do
   use Explorer.DataCase, async: false
 
   alias Explorer.Chain.Transaction
-  alias Explorer.{Repo, TransactionsDenormalizationMigrator}
+  alias Explorer.Migrator.TransactionsDenormalization
+  alias Explorer.Repo
 
   describe "Migrate transactions" do
     test "Set block_consensus and block_timestamp for not processed transactions" do
@@ -19,7 +20,7 @@ defmodule Explorer.TransactionsDenormalizationMigratorTest do
         assert not is_nil(timestamp)
       end)
 
-      TransactionsDenormalizationMigrator.start_link([])
+      TransactionsDenormalization.start_link([])
       Process.sleep(100)
 
       Transaction

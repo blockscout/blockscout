@@ -128,7 +128,7 @@ defmodule Explorer.Application do
         configure(Explorer.TokenInstanceOwnerAddressMigration.Supervisor),
         sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand),
         configure(Explorer.Chain.Cache.RootstockLockedBTC),
-        configure(Explorer.TransactionsDenormalizationMigrator)
+        configure(Explorer.Migrator.TransactionsDenormalization)
       ]
       |> List.flatten()
 
