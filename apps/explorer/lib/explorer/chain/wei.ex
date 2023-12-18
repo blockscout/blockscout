@@ -155,6 +155,7 @@ defmodule Explorer.Chain.Wei do
     |> from(:wei)
   end
 
+  @spec sub(Wei.t(), Wei.t()) :: Wei.t() | nil
   @doc """
   Subtracts two Wei values.
 
@@ -165,6 +166,8 @@ defmodule Explorer.Chain.Wei do
       iex> Explorer.Chain.Wei.sub(first, second)
       %Explorer.Chain.Wei{value: Decimal.new(123)}
   """
+  def sub(_, nil), do: nil
+
   def sub(%Wei{value: wei_1}, %Wei{value: wei_2}) do
     wei_1
     |> Decimal.sub(wei_2)
@@ -263,17 +266,22 @@ defmodule Explorer.Chain.Wei do
 
   """
 
-  @spec to(t(), :ether) :: ether()
+  @spec to(t(), :ether) :: ether() | nil
+  def to(nil, :ether), do: nil
+
   def to(%__MODULE__{value: wei}, :ether) do
     Decimal.div(wei, @wei_per_ether)
   end
 
-  @spec to(t(), :gwei) :: gwei()
+  @spec to(t(), :gwei) :: gwei() | nil
+  def to(nil, :gwei), do: nil
+
   def to(%__MODULE__{value: wei}, :gwei) do
     Decimal.div(wei, @wei_per_gwei)
   end
 
-  @spec to(t(), :wei) :: wei()
+  @spec to(t(), :wei) :: wei() | nil
+  def to(nil, :wei), do: nil
   def to(%__MODULE__{value: wei}, :wei), do: wei
 end
 
