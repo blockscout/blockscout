@@ -3721,12 +3721,9 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Token.t/0` has no associated record for that association,
       then the `t:Token.t/0` will not be included in the list.
   """
-  @spec token_from_address_hash(Hash.Address.t(), [necessity_by_association_option | api?]) ::
+  @spec token_from_address_hash(Hash.Address.t() | String.t(), [necessity_by_association_option | api?]) ::
           {:ok, Token.t()} | {:error, :not_found}
-  def token_from_address_hash(
-        %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
-        options \\ []
-      ) do
+  def token_from_address_hash(hash, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     query =
