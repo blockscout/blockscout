@@ -456,7 +456,7 @@ config :explorer, Explorer.MicroserviceInterfaces.BENS,
   service_url: System.get_env("MICROSERVICE_BENS_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_BENS_ENABLED")
 
-config :explorer, Explorer.TransactionsDenormalizationMigrator,
+config :explorer, Explorer.Migrator.TransactionsDenormalization,
   batch_size: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_BATCH_SIZE", 500),
   concurrency: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_CONCURRENCY", 10)
 

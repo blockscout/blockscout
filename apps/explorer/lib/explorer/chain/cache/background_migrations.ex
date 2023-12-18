@@ -11,11 +11,11 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
 
   @dialyzer :no_match
 
-  alias Explorer.TransactionsDenormalizationMigrator
+  alias Explorer.Migrator.TransactionsDenormalization
 
   defp handle_fallback(:denormalization_finished) do
     Task.start(fn ->
-      set_denormalization_finished(TransactionsDenormalizationMigrator.migration_finished?())
+      set_denormalization_finished(TransactionsDenormalization.migration_finished?())
     end)
 
     {:return, false}
