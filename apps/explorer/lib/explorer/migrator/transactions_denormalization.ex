@@ -65,7 +65,7 @@ defmodule Explorer.Migrator.TransactionsDenormalization do
     unprocessed_transactions_query()
     |> select([t], t.hash)
     |> limit(^limit)
-    |> Repo.all()
+    |> Repo.all(timeout: :infinity)
   end
 
   defp unprocessed_transactions_query do
