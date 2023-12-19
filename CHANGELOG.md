@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#8957](https://github.com/blockscout/blockscout/pull/8957) - Add Tx Interpreter Service integration
 - [#8908](https://github.com/blockscout/blockscout/pull/8908) - Solidityscan report API endpoint
 - [#8611](https://github.com/blockscout/blockscout/pull/8611) - Implement sorting of smart contracts, address transactions
 
@@ -13,6 +14,7 @@
 
 ### Chore
 
+- [#9014](https://github.com/blockscout/blockscout/pull/9014) - Decrease amount of NFT in address collection: 15 -> 9
 - [#8991](https://github.com/blockscout/blockscout/pull/8991) - Manage DB queue target via runtime env var
 
 <details>

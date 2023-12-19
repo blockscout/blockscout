@@ -132,6 +132,10 @@ config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
 
 config :block_scout_web, BlockScoutWeb.API.V2, enabled: ConfigHelper.parse_bool_env_var("API_V2_ENABLED", "true")
 
+config :block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
+  service_url: System.get_env("MICROSERVICE_TRANSACTION_INTERPRETATION_URL"),
+  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_TRANSACTION_INTERPRETATION_ENABLED")
+
 # Configures Ueberauth's Auth0 auth provider
 config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
   domain: System.get_env("ACCOUNT_AUTH0_DOMAIN"),
@@ -447,7 +451,7 @@ config :explorer, Explorer.Chain.Transaction,
 config :explorer, Explorer.Chain.Cache.AddressesTabsCounters,
   ttl: ConfigHelper.parse_time_env_var("ADDRESSES_TABS_COUNTERS_TTL", "10m")
 
-config :explorer, Explorer.TransactionsDenormalizationMigrator,
+config :explorer, Explorer.Migrator.TransactionsDenormalization,
   batch_size: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_BATCH_SIZE", 500),
   concurrency: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_CONCURRENCY", 10)
 

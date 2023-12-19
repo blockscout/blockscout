@@ -1,4 +1,4 @@
-defmodule Explorer.Utility.MigrationStatus do
+defmodule Explorer.Migrator.MigrationStatus do
   @moduledoc """
   Module is responsible for keeping the current status of background migrations.
   """
@@ -27,6 +27,6 @@ defmodule Explorer.Utility.MigrationStatus do
   def set_status(migration_name, status) do
     %{migration_name: migration_name, status: status}
     |> changeset()
-    |> Repo.insert(on_conflict: :replace_all, conflict_target: :migration_name)
+    |> Repo.insert(on_conflict: {:replace_all_except, [:inserted_at]}, conflict_target: :migration_name)
   end
 end

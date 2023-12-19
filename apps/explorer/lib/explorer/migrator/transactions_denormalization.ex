@@ -1,4 +1,4 @@
-defmodule Explorer.TransactionsDenormalizationMigrator do
+defmodule Explorer.Migrator.TransactionsDenormalization do
   @moduledoc """
   Migrates all transactions to have set block_consensus and block_timestamp
   """
@@ -9,8 +9,8 @@ defmodule Explorer.TransactionsDenormalizationMigrator do
 
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.Transaction
+  alias Explorer.Migrator.MigrationStatus
   alias Explorer.Repo
-  alias Explorer.Utility.MigrationStatus
 
   @default_batch_size 500
   @migration_name "denormalization"
@@ -65,7 +65,7 @@ defmodule Explorer.TransactionsDenormalizationMigrator do
     unprocessed_transactions_query()
     |> select([t], t.hash)
     |> limit(^limit)
-    |> Repo.all()
+    |> Repo.all(timeout: :infinity)
   end
 
   defp unprocessed_transactions_query do
