@@ -342,10 +342,34 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   end
 
   defp default_on_conflict_nil_token_type do
-    default_on_conflict("nil")
+    default_on_conflict(nil)
   end
 
-  defp default_on_conflict(type) do
+  defp default_on_conflict(type) when type == "ERC-20" do
+    from(
+      current_token_balance in CurrentTokenBalance,
+      update: [
+        set: [
+          block_number: fragment("EXCLUDED.block_number"),
+          value: fragment("EXCLUDED.value"),
+          value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
+          old_value: current_token_balance.value,
+          token_type: fragment("EXCLUDED.token_type"),
+          inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", current_token_balance.inserted_at),
+          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", current_token_balance.updated_at)
+        ]
+      ],
+      where:
+        fragment("? = ?", ^type, ^type) and fragment("EXCLUDED.value_fetched_at IS NOT NULL") and
+          (fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
+             (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
+                fragment("EXCLUDED.value IS NOT NULL") and
+                (is_nil(current_token_balance.value_fetched_at) or
+                   fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at))))
+    )
+  end
+
+  defp default_on_conflict(type) when type == "ERC-721" do
     from(
       current_token_balance in CurrentTokenBalance,
       update: [
@@ -366,6 +390,55 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
                 fragment("EXCLUDED.value IS NOT NULL") and
                 (is_nil(current_token_balance.value_fetched_at) or
                    fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at))))
+    )
+  end
+
+  defp default_on_conflict(type) when type == "ERC-1155" do
+    from(
+      current_token_balance in CurrentTokenBalance,
+      update: [
+        set: [
+          block_number: fragment("EXCLUDED.block_number"),
+          value: fragment("EXCLUDED.value"),
+          value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
+          old_value: current_token_balance.value,
+          token_type: fragment("EXCLUDED.token_type"),
+          inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", current_token_balance.inserted_at),
+          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", current_token_balance.updated_at)
+        ]
+      ],
+      where:
+        fragment("EXCLUDED.value_fetched_at IS NOT NULL") and
+          (fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
+             (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
+                fragment("EXCLUDED.value IS NOT NULL") and
+                (is_nil(current_token_balance.value_fetched_at) or
+                   fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at)))) and
+          fragment("? = ?", ^type, ^type)
+    )
+  end
+
+  defp default_on_conflict(type) when is_nil(type) do
+    from(
+      current_token_balance in CurrentTokenBalance,
+      update: [
+        set: [
+          block_number: fragment("EXCLUDED.block_number"),
+          value: fragment("EXCLUDED.value"),
+          value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
+          old_value: current_token_balance.value,
+          token_type: fragment("EXCLUDED.token_type"),
+          inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", current_token_balance.inserted_at),
+          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", current_token_balance.updated_at)
+        ]
+      ],
+      where:
+        (fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
+           (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
+              fragment("EXCLUDED.value IS NOT NULL") and
+              (is_nil(current_token_balance.value_fetched_at) or
+                 fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at)))) and
+          fragment("EXCLUDED.value_fetched_at IS NOT NULL") and fragment("? = ?", ^type, ^type)
     )
   end
 
