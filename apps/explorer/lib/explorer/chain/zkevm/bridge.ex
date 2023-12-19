@@ -3,10 +3,10 @@ defmodule Explorer.Chain.Zkevm.Bridge do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Block, Hash}
+  alias Explorer.Chain.{Block, Hash, Token}
   alias Explorer.Chain.Zkevm.BridgeL1Token
 
-  @optional_attrs ~w(l1_transaction_hash l2_transaction_hash l1_token_id block_number block_timestamp)a
+  @optional_attrs ~w(l1_transaction_hash l2_transaction_hash l1_token_id l2_token_address block_number block_timestamp)a
 
   @required_attrs ~w(type index amount)a
 
@@ -17,6 +17,8 @@ defmodule Explorer.Chain.Zkevm.Bridge do
           l2_transaction_hash: Hash.t() | nil,
           l1_token: %Ecto.Association.NotLoaded{} | BridgeL1Token.t() | nil,
           l1_token_id: non_neg_integer() | nil,
+          l2_token: %Ecto.Association.NotLoaded{} | Token.t() | nil,
+          l2_token_address: Hash.Address.t() | nil,
           amount: Decimal.t(),
           block_number: Block.block_number() | nil,
           block_timestamp: DateTime.t() | nil
@@ -29,6 +31,7 @@ defmodule Explorer.Chain.Zkevm.Bridge do
     field(:l1_transaction_hash, Hash.Full)
     field(:l2_transaction_hash, Hash.Full)
     belongs_to(:l1_token, BridgeL1Token, foreign_key: :l1_token_id, references: :id, type: :integer)
+    belongs_to(:l2_token, Token, foreign_key: :l2_token_address, references: :contract_address_hash, type: Hash.Address)
     field(:amount, :decimal)
     field(:block_number, :integer)
     field(:block_timestamp, :utc_datetime_usec)

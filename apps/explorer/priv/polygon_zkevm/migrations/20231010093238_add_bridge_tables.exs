@@ -29,6 +29,7 @@ defmodule Explorer.Repo.PolygonZkevm.Migrations.AddBridgeTables do
         null: true
       )
 
+      add(:l2_token_address, :bytea, null: true, default: nil)
       add(:amount, :numeric, precision: 100, null: false)
       add(:block_number, :bigint, null: true, default: nil)
       add(:block_timestamp, :"timestamp without time zone", null: true, default: nil)

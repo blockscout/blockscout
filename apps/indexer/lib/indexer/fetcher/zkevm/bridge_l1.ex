@@ -3,8 +3,6 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
   Fills zkevm_bridge DB table.
   """
 
-  # todo: handle case with L2 address of token in origin_address field
-
   use GenServer
   use Indexer.Fetcher
 
@@ -493,7 +491,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
       |> Enum.reduce(%MapSet{}, fn event, acc ->
         [
           leaf_type,
-          _origin_network,
+          origin_network,
           origin_address,
           _destination_network,
           _destination_address,
@@ -502,13 +500,9 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
           _deposit_count
         ] = decode_data(event["data"], bridge_event_params)
 
-        case token_address_by_origin_address(origin_address, leaf_type) do
-          nil -> acc
-          token_address ->
-            #if token_address == "0x4f9a0e7fd2bf6067db6994cf12e4495df938e6e9" do
-            #  Logger.warn("event = #{inspect(event)}")
-            #end
-            MapSet.put(acc, token_address)
+        case token_address_by_origin_address(origin_address, origin_network, leaf_type) do
+          {nil, _} -> acc
+          {token_address, nil} -> MapSet.put(acc, token_address)
         end
       end)
       |> MapSet.to_list()
@@ -534,6 +528,9 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
     tokens_inserted = Map.get(inserts, :insert_zkevm_bridge_l1_tokens, [])
 
+    # we need to query uninserted tokens separately from DB as they
+    # could be inserted by BridgeL2 module at the same time (a race condition).
+    # this is an unlikely case but we handle it here as well
     tokens_uninserted =
       tokens_to_insert
       |> Enum.reject(fn token ->
@@ -554,11 +551,11 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
     events
     |> Enum.map(fn event ->
-      {type, index, l1_token_id, amount, block_number, block_timestamp} =
+      {type, index, l1_token_id, l2_token_address, amount, block_number, block_timestamp} =
         if Enum.at(event["topics"], 0) == @bridge_event do
           [
             leaf_type,
-            _origin_network,
+            origin_network,
             origin_address,
             _destination_network,
             _destination_address,
@@ -567,18 +564,19 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
             deposit_count
           ] = decode_data(event["data"], bridge_event_params)
 
-          token_address = token_address_by_origin_address(origin_address, leaf_type)
+          {l1_token_address, l2_token_address} =
+            token_address_by_origin_address(origin_address, origin_network, leaf_type)
 
-          l1_token_id = Map.get(address_to_id, token_address)
+          l1_token_id = Map.get(address_to_id, l1_token_address)
           block_number = quantity_to_integer(event["blockNumber"])
           block_timestamp = Map.get(timestamps, block_number)
 
-          {:deposit, deposit_count, l1_token_id, amount, block_number, block_timestamp}
+          {:deposit, deposit_count, l1_token_id, l2_token_address, amount, block_number, block_timestamp}
         else
           [index, _origin_network, _origin_address, _destination_address, amount] =
             decode_data(event["data"], claim_event_params)
 
-          {:withdrawal, index, nil, amount, nil, nil}
+          {:withdrawal, index, nil, nil, amount, nil, nil}
         end
 
       result = %{
@@ -591,6 +589,13 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
       result =
         if not is_nil(l1_token_id) do
           Map.put(result, :l1_token_id, l1_token_id)
+        else
+          result
+        end
+
+      result =
+        if not is_nil(l2_token_address) do
+          Map.put(result, :l2_token_address, l2_token_address)
         else
           result
         end
@@ -690,13 +695,19 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
     :"#{fetcher_name}#{:_reorgs}"
   end
 
-  defp token_address_by_origin_address(origin_address, leaf_type) do
-    with true <- leaf_type != 1,
+  defp token_address_by_origin_address(origin_address, origin_network, leaf_type) do
+    with true <- leaf_type != 1 and origin_network <= 1,
          token_address = "0x" <> Base.encode16(origin_address, case: :lower),
          true <- token_address != burn_address_hash_string() do
-      token_address
+      if origin_network == 0 do
+        # this is L1 address
+        {token_address, nil}
+      else
+        # this is L2 address
+        {nil, token_address}
+      end
     else
-      _ -> nil
+      _ -> {nil, nil}
     end
   end
 end
