@@ -36,9 +36,11 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
   # 32-byte signature of the event BridgeEvent(uint8 leafType, uint32 originNetwork, address originAddress, uint32 destinationNetwork, address destinationAddress, uint256 amount, bytes metadata, uint32 depositCount)
   @bridge_event "0x501781209a1f8899323b96b4ef08b168df93e0a90c673d1e4cce39366cb62f9b"
+  @bridge_event_params [{:uint, 8}, {:uint, 32}, :address, {:uint, 32}, :address, {:uint, 256}, :bytes, {:uint, 32}]
 
   # 32-byte signature of the event ClaimEvent(uint32 index, uint32 originNetwork, address originAddress, address destinationAddress, uint256 amount)
   @claim_event "0x25308c93ceeed162da955b3f7ce3e3f93606579e40fb92029faa9efe27545983"
+  @claim_event_params [{:uint, 32}, {:uint, 32}, :address, :address, {:uint, 256}]
 
   @erc20_abi [
     %{
@@ -206,11 +208,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
             |> get_logs_all(bridge_contract, json_rpc_named_arguments)
             |> prepare_operations(json_rpc_named_arguments)
 
-          {:ok, _} =
-            Chain.import(%{
-              zkevm_bridge_operations: %{params: operations},
-              timeout: :infinity
-            })
+          import_operations(operations)
 
           Helper.log_blocks_chunk_handling(
             chunk_start,
@@ -258,6 +256,19 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
   defp atomized_key("decimals"), do: :decimals
   defp atomized_key("95d89b41"), do: :symbol
   defp atomized_key("313ce567"), do: :decimals
+
+  defp blocks_to_timestamps(deposit_events, json_rpc_named_arguments) do
+    deposit_events
+    |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+    |> Enum.reduce(%{}, fn block, acc ->
+      block_number = quantity_to_integer(Map.get(block, "number"))
+      {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
+      Map.put(acc, block_number, timestamp)
+    end)
+  end
+
+  defp extend_result(result, _key, value) when is_nil(value), do: result
+  defp extend_result(result, key, value) when is_atom(key), do: Map.put(result, key, value)
 
   defp get_block_check_interval(json_rpc_named_arguments) do
     {last_safe_block, _} = get_safe_block(json_rpc_named_arguments)
@@ -454,6 +465,21 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
     {requests, responses}
   end
 
+  defp import_operations(operations) do
+    # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
+    import_options =
+      if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
+        %{
+          zkevm_bridge_operations: %{params: operations},
+          timeout: :infinity
+        }
+      else
+        %{}
+      end
+
+    {:ok, _} = Chain.import(import_options)
+  end
+
   defp json_rpc_named_arguments(rpc_url) do
     [
       transport: EthereumJSONRPC.HTTP,
@@ -470,87 +496,13 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
   end
 
   defp prepare_operations(events, json_rpc_named_arguments) do
-    deposit_events =
-      events
-      |> Enum.filter(fn event -> Enum.at(event["topics"], 0) == @bridge_event end)
+    deposit_events = Enum.filter(events, fn event -> Enum.at(event["topics"], 0) == @bridge_event end)
 
-    timestamps =
-      deposit_events
-      |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
-      |> Enum.reduce(%{}, fn block, acc ->
-        block_number = quantity_to_integer(Map.get(block, "number"))
-        {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
-        Map.put(acc, block_number, timestamp)
-      end)
+    block_to_timestamp = blocks_to_timestamps(deposit_events, json_rpc_named_arguments)
 
-    bridge_event_params = [{:uint, 8}, {:uint, 32}, :address, {:uint, 32}, :address, {:uint, 256}, :bytes, {:uint, 32}]
-    claim_event_params = [{:uint, 32}, {:uint, 32}, :address, :address, {:uint, 256}]
+    token_address_to_id = token_addresses_to_ids(deposit_events, json_rpc_named_arguments)
 
-    token_data =
-      deposit_events
-      |> Enum.reduce(%MapSet{}, fn event, acc ->
-        [
-          leaf_type,
-          origin_network,
-          origin_address,
-          _destination_network,
-          _destination_address,
-          _amount,
-          _metadata,
-          _deposit_count
-        ] = decode_data(event["data"], bridge_event_params)
-
-        case token_address_by_origin_address(origin_address, origin_network, leaf_type) do
-          {nil, _} -> acc
-          {token_address, nil} -> MapSet.put(acc, token_address)
-        end
-      end)
-      |> MapSet.to_list()
-      |> get_token_data(json_rpc_named_arguments)
-
-    token_addresses = Map.keys(token_data)
-
-    tokens_existing =
-      from(t in BridgeL1Token, select: {t.address, t.id}, where: t.address in ^token_addresses)
-      |> Repo.all(timeout: :infinity)
-      |> Enum.reduce(%{}, fn {address, id}, acc -> Map.put(acc, Hash.to_string(address), id) end)
-
-    tokens_to_insert =
-      token_data
-      |> Enum.reject(fn {address, _} -> Map.has_key?(tokens_existing, address) end)
-      |> Enum.map(fn {address, data} -> Map.put(data, :address, address) end)
-
-    {:ok, inserts} =
-      Chain.import(%{
-        zkevm_bridge_l1_tokens: %{params: tokens_to_insert},
-        timeout: :infinity
-      })
-
-    tokens_inserted = Map.get(inserts, :insert_zkevm_bridge_l1_tokens, [])
-
-    # we need to query uninserted tokens separately from DB as they
-    # could be inserted by BridgeL2 module at the same time (a race condition).
-    # this is an unlikely case but we handle it here as well
-    tokens_uninserted =
-      tokens_to_insert
-      |> Enum.reject(fn token ->
-        Enum.any?(tokens_inserted, fn inserted -> token.address == Hash.to_string(inserted.address) end)
-      end)
-      |> Enum.map(& &1.address)
-
-    tokens_inserted_outside =
-      from(t in BridgeL1Token, select: {t.address, t.id}, where: t.address in ^tokens_uninserted)
-      |> Repo.all(timeout: :infinity)
-      |> Enum.reduce(%{}, fn {address, id}, acc -> Map.put(acc, Hash.to_string(address), id) end)
-
-    address_to_id =
-      tokens_inserted
-      |> Enum.reduce(%{}, fn t, acc -> Map.put(acc, Hash.to_string(t.address), t.id) end)
-      |> Map.merge(tokens_existing)
-      |> Map.merge(tokens_inserted_outside)
-
-    events
-    |> Enum.map(fn event ->
+    Enum.map(events, fn event ->
       {type, index, l1_token_id, l2_token_address, amount, block_number, block_timestamp} =
         if Enum.at(event["topics"], 0) == @bridge_event do
           [
@@ -562,19 +514,19 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
             amount,
             _metadata,
             deposit_count
-          ] = decode_data(event["data"], bridge_event_params)
+          ] = decode_data(event["data"], @bridge_event_params)
 
           {l1_token_address, l2_token_address} =
             token_address_by_origin_address(origin_address, origin_network, leaf_type)
 
-          l1_token_id = Map.get(address_to_id, l1_token_address)
+          l1_token_id = Map.get(token_address_to_id, l1_token_address)
           block_number = quantity_to_integer(event["blockNumber"])
-          block_timestamp = Map.get(timestamps, block_number)
+          block_timestamp = Map.get(block_to_timestamp, block_number)
 
           {:deposit, deposit_count, l1_token_id, l2_token_address, amount, block_number, block_timestamp}
         else
           [index, _origin_network, _origin_address, _destination_address, amount] =
-            decode_data(event["data"], claim_event_params)
+            decode_data(event["data"], @claim_event_params)
 
           {:withdrawal, index, nil, nil, amount, nil, nil}
         end
@@ -586,32 +538,11 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
         amount: amount
       }
 
-      result =
-        if not is_nil(l1_token_id) do
-          Map.put(result, :l1_token_id, l1_token_id)
-        else
-          result
-        end
-
-      result =
-        if not is_nil(l2_token_address) do
-          Map.put(result, :l2_token_address, l2_token_address)
-        else
-          result
-        end
-
-      result =
-        if not is_nil(block_number) do
-          Map.put(result, :block_number, block_number)
-        else
-          result
-        end
-
-      if not is_nil(block_timestamp) do
-        Map.put(result, :block_timestamp, block_timestamp)
-      else
-        result
-      end
+      result
+      |> extend_result(:l1_token_id, l1_token_id)
+      |> extend_result(:l2_token_address, l2_token_address)
+      |> extend_result(:block_number, block_number)
+      |> extend_result(:block_timestamp, block_timestamp)
     end)
   end
 
@@ -709,5 +640,79 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
     else
       _ -> {nil, nil}
     end
+  end
+
+  defp token_addresses_to_ids(deposit_events, json_rpc_named_arguments) do
+    token_data =
+      deposit_events
+      |> Enum.reduce(%MapSet{}, fn event, acc ->
+        [
+          leaf_type,
+          origin_network,
+          origin_address,
+          _destination_network,
+          _destination_address,
+          _amount,
+          _metadata,
+          _deposit_count
+        ] = decode_data(event["data"], @bridge_event_params)
+
+        case token_address_by_origin_address(origin_address, origin_network, leaf_type) do
+          {nil, _} -> acc
+          {token_address, nil} -> MapSet.put(acc, token_address)
+        end
+      end)
+      |> MapSet.to_list()
+      |> get_token_data(json_rpc_named_arguments)
+
+    tokens_existing =
+      token_data
+      |> Map.keys()
+      |> token_addresses_to_ids_from_db()
+
+    tokens_to_insert =
+      token_data
+      |> Enum.reject(fn {address, _} -> Map.has_key?(tokens_existing, address) end)
+      |> Enum.map(fn {address, data} -> Map.put(data, :address, address) end)
+
+    # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
+    import_options =
+      if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
+        %{
+          zkevm_bridge_l1_tokens: %{params: tokens_to_insert},
+          timeout: :infinity
+        }
+      else
+        %{}
+      end
+
+    {:ok, inserts} = Chain.import(import_options)
+
+    tokens_inserted = Map.get(inserts, :insert_zkevm_bridge_l1_tokens, [])
+
+    # we need to query uninserted tokens separately from DB as they
+    # could be inserted by BridgeL2 module at the same time (a race condition).
+    # this is an unlikely case but we handle it here as well
+    tokens_uninserted =
+      tokens_to_insert
+      |> Enum.reject(fn token ->
+        Enum.any?(tokens_inserted, fn inserted -> token.address == Hash.to_string(inserted.address) end)
+      end)
+      |> Enum.map(& &1.address)
+
+    tokens_inserted_outside = token_addresses_to_ids_from_db(tokens_uninserted)
+
+    tokens_inserted
+    |> Enum.reduce(%{}, fn t, acc -> Map.put(acc, Hash.to_string(t.address), t.id) end)
+    |> Map.merge(tokens_existing)
+    |> Map.merge(tokens_inserted_outside)
+  end
+
+  defp token_addresses_to_ids_from_db(addresses) do
+    query = from(t in BridgeL1Token, select: {t.address, t.id}, where: t.address in ^addresses)
+
+    query
+    |> Repo.all(timeout: :infinity)
+    |> Enum.reduce(%{}, fn {address, id}, acc -> Map.put(acc, Hash.to_string(address), id) end)
   end
 end
