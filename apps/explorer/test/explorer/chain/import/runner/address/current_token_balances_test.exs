@@ -37,7 +37,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                     address_hash: ^address_hash,
                     block_number: ^block_number,
                     token_contract_address_hash: ^token_contract_address_hash,
-                    value: ^value
+                    value: ^value,
+                    token_type: "ERC-20"
                   }
                 ],
                 address_current_token_balances_update_token_holder_counts: [
@@ -52,7 +53,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                    address_hash: address_hash,
                    block_number: block_number,
                    token_contract_address_hash: token_contract_address_hash,
-                   value: value
+                   value: value,
+                   token_type: "ERC-20"
                  },
                  options
                )
@@ -76,12 +78,12 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
       value_2 = Decimal.new(222)
       token_id_2 = Decimal.new(2)
 
-      token_erc_20 = insert(:token, holder_count: 0)
+      token_erc_20 = insert(:token, holder_count: 0, type: "ERC-20")
       token_erc_20_contract_address_hash = token_erc_20.contract_address_hash
       value_3 = Decimal.new(333)
       token_id_3 = nil
 
-      token_erc_721 = insert(:token, holder_count: 0)
+      token_erc_721 = insert(:token, holder_count: 0, type: "ERC-721")
       token_erc_721_contract_address_hash = token_erc_721.contract_address_hash
       value_4 = Decimal.new(1)
       token_id_4 = Decimal.new(1)
@@ -97,20 +99,6 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                   %Explorer.Chain.Address.CurrentTokenBalance{
                     address_hash: ^address_hash,
                     block_number: ^block_number,
-                    token_contract_address_hash: ^token_contract_address_hash,
-                    value: ^value_1,
-                    token_id: ^token_id_1
-                  },
-                  %Explorer.Chain.Address.CurrentTokenBalance{
-                    address_hash: ^address_hash,
-                    block_number: ^block_number,
-                    token_contract_address_hash: ^token_contract_address_hash,
-                    value: ^value_2,
-                    token_id: ^token_id_2
-                  },
-                  %Explorer.Chain.Address.CurrentTokenBalance{
-                    address_hash: ^address_hash,
-                    block_number: ^block_number,
                     token_contract_address_hash: ^token_erc_20_contract_address_hash,
                     value: ^value_3,
                     token_id: ^token_id_3
@@ -121,6 +109,20 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                     token_contract_address_hash: ^token_erc_721_contract_address_hash,
                     value: ^value_5,
                     token_id: nil
+                  },
+                  %Explorer.Chain.Address.CurrentTokenBalance{
+                    address_hash: ^address_hash,
+                    block_number: ^block_number,
+                    token_contract_address_hash: ^token_contract_address_hash,
+                    value: ^value_1,
+                    token_id: ^token_id_1
+                  },
+                  %Explorer.Chain.Address.CurrentTokenBalance{
+                    address_hash: ^address_hash,
+                    block_number: ^block_number,
+                    token_contract_address_hash: ^token_contract_address_hash,
+                    value: ^value_2,
+                    token_id: ^token_id_2
                   }
                 ],
                 address_current_token_balances_update_token_holder_counts: [
@@ -210,7 +212,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
         address: address,
         block_number: 1,
         token_contract_address_hash: token.contract_address_hash,
-        value: 100
+        value: 100,
+        token_type: "ERC-20"
       )
 
       run_changes(
@@ -219,7 +222,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
           block_number: 2,
           token_contract_address_hash: token.contract_address_hash,
           value: Decimal.new(200),
-          value_fetched_at: DateTime.utc_now()
+          value_fetched_at: DateTime.utc_now(),
+          token_type: "ERC-20"
         },
         options
       )
@@ -240,7 +244,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
         address: address,
         block_number: 2,
         token_contract_address_hash: token_contract_address_hash,
-        value: 200
+        value: 200,
+        token_type: "ERC-20"
       )
 
       update_holder_count!(token_contract_address_hash, 1)
@@ -251,7 +256,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                    address_hash: address_hash,
                    token_contract_address_hash: token_contract_address_hash,
                    block_number: 1,
-                   value: Decimal.new(100)
+                   value: Decimal.new(100),
+                   token_type: "ERC-20"
                  },
                  options
                )
@@ -273,7 +279,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
         address: address,
         token_contract_address_hash: token_contract_address_hash,
         block_number: previous_block_number,
-        value: 0
+        value: 0,
+        token_type: "ERC-20"
       })
 
       block_number = previous_block_number + 1
@@ -286,7 +293,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                     address_hash: ^address_hash,
                     block_number: ^block_number,
                     token_contract_address_hash: ^token_contract_address_hash,
-                    value: ^value
+                    value: ^value,
+                    token_type: "ERC-20"
                   }
                 ],
                 address_current_token_balances_update_token_holder_counts: [
@@ -302,7 +310,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                    token_contract_address_hash: token_contract_address_hash,
                    block_number: block_number,
                    value: value,
-                   value_fetched_at: DateTime.utc_now()
+                   value_fetched_at: DateTime.utc_now(),
+                   token_type: "ERC-20"
                  },
                  options
                )
@@ -319,7 +328,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
         address: address,
         token_contract_address_hash: token_contract_address_hash,
         block_number: previous_block_number,
-        value: 1
+        value: 1,
+        token_type: "ERC-20"
       })
 
       update_holder_count!(token_contract_address_hash, 1)
@@ -334,7 +344,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                     address_hash: ^address_hash,
                     block_number: ^block_number,
                     token_contract_address_hash: ^token_contract_address_hash,
-                    value: ^value
+                    value: ^value,
+                    token_type: "ERC-20"
                   }
                 ],
                 address_current_token_balances_update_token_holder_counts: [
@@ -347,7 +358,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                    token_contract_address_hash: token_contract_address_hash,
                    block_number: block_number,
                    value: value,
-                   value_fetched_at: DateTime.utc_now()
+                   value_fetched_at: DateTime.utc_now(),
+                   token_type: "ERC-20"
                  },
                  options
                )
@@ -365,7 +377,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
         address: non_holder_becomes_holder_address,
         token_contract_address_hash: token_contract_address_hash,
         block_number: previous_block_number,
-        value: 0
+        value: 0,
+        token_type: "ERC-20"
       })
 
       %Address{hash: holder_becomes_non_holder_address_hash} = holder_becomes_non_holder_address = insert(:address)
@@ -374,7 +387,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
         address: holder_becomes_non_holder_address,
         token_contract_address_hash: token_contract_address_hash,
         block_number: previous_block_number,
-        value: 1
+        value: 1,
+        token_type: "ERC-20"
       })
 
       update_holder_count!(token_contract_address_hash, 1)
@@ -408,14 +422,16 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                      token_contract_address_hash: token_contract_address_hash,
                      block_number: block_number,
                      value: non_holder_becomes_holder_value,
-                     value_fetched_at: DateTime.utc_now()
+                     value_fetched_at: DateTime.utc_now(),
+                     token_type: "ERC-20"
                    },
                    %{
                      address_hash: holder_becomes_non_holder_address_hash,
                      token_contract_address_hash: token_contract_address_hash,
                      block_number: block_number,
                      value: holder_becomes_non_holder_value,
-                     value_fetched_at: DateTime.utc_now()
+                     value_fetched_at: DateTime.utc_now(),
+                     token_type: "ERC-20"
                    }
                  ],
                  options

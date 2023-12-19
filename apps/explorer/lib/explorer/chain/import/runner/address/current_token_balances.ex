@@ -237,13 +237,32 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           {Map.get(balance, :block_number), Map.get(balance, :value_fetched_at)}
         end)
       end)
+
+    erc_20_ordered_changes_list =
+      ordered_changes_list
+      |> Enum.filter(&(&1.token_type == "ERC-20"))
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash})
+
+    erc_721_ordered_changes_list =
+      ordered_changes_list
+      |> Enum.filter(&(&1.token_type == "ERC-721"))
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
 
-    {:ok, inserted_changes_list} =
-      if Enum.count(ordered_changes_list) > 0 do
+    erc_1155_ordered_changes_list =
+      ordered_changes_list
+      |> Enum.filter(&(&1.token_type == "ERC-1155"))
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
+
+    nil_token_type_ordered_changes_list =
+      ordered_changes_list
+      |> Enum.filter(&is_nil(&1.token_type))
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
+
+    {:ok, inserted_erc_20_changes_list} =
+      if Enum.count(erc_20_ordered_changes_list) > 0 do
         Import.insert_changes_list(
           repo,
-          ordered_changes_list,
+          erc_20_ordered_changes_list,
           conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>},
           on_conflict: on_conflict,
           for: CurrentTokenBalance,
@@ -255,7 +274,56 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         {:ok, []}
       end
 
-    inserted_changes_list
+    {:ok, inserted_erc_721_changes_list} =
+      if Enum.count(erc_721_ordered_changes_list) > 0 do
+        Import.insert_changes_list(
+          repo,
+          erc_721_ordered_changes_list,
+          conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>},
+          on_conflict: on_conflict,
+          for: CurrentTokenBalance,
+          returning: true,
+          timeout: timeout,
+          timestamps: timestamps
+        )
+      else
+        {:ok, []}
+      end
+
+    {:ok, inserted_erc_1155_changes_list} =
+      if Enum.count(erc_1155_ordered_changes_list) > 0 do
+        Import.insert_changes_list(
+          repo,
+          erc_1155_ordered_changes_list,
+          conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>},
+          on_conflict: on_conflict,
+          for: CurrentTokenBalance,
+          returning: true,
+          timeout: timeout,
+          timestamps: timestamps
+        )
+      else
+        {:ok, []}
+      end
+
+    {:ok, inserted_nil_token_type_changes_list} =
+      if Enum.count(nil_token_type_ordered_changes_list) > 0 do
+        Import.insert_changes_list(
+          repo,
+          nil_token_type_ordered_changes_list,
+          conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>},
+          on_conflict: on_conflict,
+          for: CurrentTokenBalance,
+          returning: true,
+          timeout: timeout,
+          timestamps: timestamps
+        )
+      else
+        {:ok, []}
+      end
+
+    inserted_erc_20_changes_list ++
+      inserted_erc_721_changes_list ++ inserted_erc_1155_changes_list ++ inserted_nil_token_type_changes_list
   end
 
   defp default_on_conflict do
