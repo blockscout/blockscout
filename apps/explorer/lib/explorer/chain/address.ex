@@ -66,7 +66,7 @@ defmodule Explorer.Chain.Address do
           transactions_count: non_neg_integer() | nil,
           token_transfers_count: non_neg_integer() | nil,
           gas_used: non_neg_integer() | nil,
-          ens_domain_name: String.t()
+          ens_domain_name: String.t() | nil
         }
 
   @derive {Poison.Encoder,

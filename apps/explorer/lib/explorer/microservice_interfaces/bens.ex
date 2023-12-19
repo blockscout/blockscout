@@ -37,7 +37,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   @doc """
     Batch request for ENS names via {{baseUrl}}/api/v1/:chainId/addresses:batch-resolve-names
   """
-  @spec ens_names_batch_request([String.t()]) :: {:error, :disabled | String.t() | Jason.DecodeError.t()} | {:ok, any}
+  @spec ens_names_batch_request([binary()]) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def ens_names_batch_request(addresses) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       body = %{
@@ -51,7 +51,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   @doc """
     Request for ENS name via {{baseUrl}}/api/v1/:chainId/addresses:lookup
   """
-  @spec address_lookup(binary()) :: {:error, :disabled | String.t() | Jason.DecodeError.t()} | {:ok, any}
+  @spec address_lookup(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def address_lookup(address) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       body = %{
@@ -69,7 +69,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   @doc """
     Lookup for ENS domain name via {{baseUrl}}/api/v1/:chainId/domains:lookup
   """
-  @spec ens_domain_lookup(binary()) :: {:error, :disabled | String.t() | Jason.DecodeError.t()} | {:ok, any}
+  @spec ens_domain_lookup(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def ens_domain_lookup(domain) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       body = %{
@@ -180,7 +180,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   def preload_ens_to_list(items) do
     address_hash_strings =
       Enum.reduce(items, [], fn item, acc ->
-        acc ++ item_to_address_hash_strings(item)
+        item_to_address_hash_strings(item) ++ acc
       end)
 
     case ens_names_batch_request(address_hash_strings) do
