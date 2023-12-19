@@ -375,6 +375,7 @@ defmodule Explorer.Chain.TokenTransfer do
   Returns a list of block numbers token transfer `t:Log.t/0`s that don't have an
   associated `t:TokenTransfer.t/0` record.
   """
+  @spec uncataloged_token_transfer_block_numbers :: {:ok, [non_neg_integer()]}
   def uncataloged_token_transfer_block_numbers do
     query =
       from(l in Log,
