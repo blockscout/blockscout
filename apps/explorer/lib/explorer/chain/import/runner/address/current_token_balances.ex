@@ -213,7 +213,9 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   end
 
   def insert_changes_list_with_and_without_token_id(changes_list, repo, timestamps, timeout, options) do
-    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+    on_conflict_erc_20 = Map.get_lazy(options, :on_conflict, &default_on_conflict_erc_20/0)
+    on_conflict_erc_721 = Map.get_lazy(options, :on_conflict, &default_on_conflict_erc_721/0)
+    on_conflict_erc_1155 = Map.get_lazy(options, :on_conflict, &default_on_conflict_erc_1155/0)
 
     # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list =
@@ -237,15 +239,29 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           {Map.get(balance, :block_number), Map.get(balance, :value_fetched_at)}
         end)
       end)
+
+    erc_20_ordered_changes_list =
+      ordered_changes_list
+      |> Enum.filter(&(&1.token_type == "ERC-20"))
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash})
+
+    erc_721_ordered_changes_list =
+      ordered_changes_list
+      |> Enum.filter(&(&1.token_type == "ERC-721"))
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
 
-    {:ok, inserted_changes_list} =
-      if Enum.count(ordered_changes_list) > 0 do
+    erc_1155_ordered_changes_list =
+      ordered_changes_list
+      |> Enum.filter(&(&1.token_type == "ERC-1155"))
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
+
+    {:ok, inserted_erc_20_changes_list} =
+      if Enum.count(erc_20_ordered_changes_list) > 0 do
         Import.insert_changes_list(
           repo,
-          ordered_changes_list,
+          erc_20_ordered_changes_list,
           conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>},
-          on_conflict: on_conflict,
+          on_conflict: on_conflict_erc_20,
           for: CurrentTokenBalance,
           returning: true,
           timeout: timeout,
@@ -255,10 +271,54 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         {:ok, []}
       end
 
-    inserted_changes_list
+    {:ok, inserted_erc_721_changes_list} =
+      if Enum.count(erc_721_ordered_changes_list) > 0 do
+        Import.insert_changes_list(
+          repo,
+          erc_721_ordered_changes_list,
+          conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>},
+          on_conflict: on_conflict_erc_721,
+          for: CurrentTokenBalance,
+          returning: true,
+          timeout: timeout,
+          timestamps: timestamps
+        )
+      else
+        {:ok, []}
+      end
+
+    {:ok, inserted_erc_1155_changes_list} =
+      if Enum.count(erc_1155_ordered_changes_list) > 0 do
+        Import.insert_changes_list(
+          repo,
+          erc_1155_ordered_changes_list,
+          conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>},
+          on_conflict: on_conflict_erc_1155,
+          for: CurrentTokenBalance,
+          returning: true,
+          timeout: timeout,
+          timestamps: timestamps
+        )
+      else
+        {:ok, []}
+      end
+
+    inserted_erc_20_changes_list ++ inserted_erc_721_changes_list ++ inserted_erc_1155_changes_list
   end
 
-  defp default_on_conflict do
+  defp default_on_conflict_erc_20 do
+    default_on_conflict("ERC-20")
+  end
+
+  defp default_on_conflict_erc_721 do
+    default_on_conflict("ERC-721")
+  end
+
+  defp default_on_conflict_erc_1155 do
+    default_on_conflict("ERC-1155")
+  end
+
+  defp default_on_conflict(type) do
     from(
       current_token_balance in CurrentTokenBalance,
       update: [
@@ -273,7 +333,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         ]
       ],
       where:
-        fragment("EXCLUDED.value_fetched_at IS NOT NULL") and
+        fragment("EXCLUDED.value_fetched_at IS NOT NULL") and fragment("? = ?", ^type, ^type) and
           (fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
              (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
                 fragment("EXCLUDED.value IS NOT NULL") and
