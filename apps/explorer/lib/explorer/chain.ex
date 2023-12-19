@@ -512,65 +512,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  def txn_fees(transactions) do
-    Enum.reduce(transactions, Decimal.new(0), fn %{gas_used: gas_used, gas_price: gas_price}, acc ->
-      gas_used
-      |> Decimal.new()
-      |> Decimal.mult(gas_price_to_decimal(gas_price))
-      |> Decimal.add(acc)
-    end)
-  end
-
-  defp gas_price_to_decimal(%Wei{} = wei), do: wei.value
-  defp gas_price_to_decimal(gas_price), do: Decimal.new(gas_price)
-
-  def burned_fees(transactions, base_fee_per_gas) do
-    burned_fee_counter =
-      transactions
-      |> Enum.reduce(Decimal.new(0), fn %{gas_used: gas_used}, acc ->
-        gas_used
-        |> Decimal.new()
-        |> Decimal.add(acc)
-      end)
-
-    base_fee_per_gas && Wei.mult(base_fee_per_gas_to_wei(base_fee_per_gas), burned_fee_counter)
-  end
-
-  defp base_fee_per_gas_to_wei(%Wei{} = wei), do: wei
-  defp base_fee_per_gas_to_wei(base_fee_per_gas), do: %Wei{value: Decimal.new(base_fee_per_gas)}
-
-  @uncle_reward_coef 1 / 32
-  def block_reward_by_parts(block, transactions) do
-    %{hash: block_hash, number: block_number} = block
-    base_fee_per_gas = Map.get(block, :base_fee_per_gas)
-
-    txn_fees = txn_fees(transactions)
-
-    static_reward =
-      Repo.one(
-        from(
-          er in EmissionReward,
-          where: fragment("int8range(?, ?) <@ ?", ^block_number, ^(block_number + 1), er.block_range),
-          select: er.reward
-        )
-      ) || %Wei{value: Decimal.new(0)}
-
-    has_uncles? = is_list(block.uncles) and not Enum.empty?(block.uncles)
-
-    burned_fees = burned_fees(transactions, base_fee_per_gas)
-    uncle_reward = (has_uncles? && Wei.mult(static_reward, Decimal.from_float(@uncle_reward_coef))) || nil
-
-    %{
-      block_number: block_number,
-      block_hash: block_hash,
-      miner_hash: block.miner_hash,
-      static_reward: static_reward,
-      txn_fees: %Wei{value: txn_fees},
-      burned_fees: burned_fees || %Wei{value: Decimal.new(0)},
-      uncle_reward: uncle_reward || %Wei{value: Decimal.new(0)}
-    }
-  end
-
   @doc """
   The `t:Explorer.Chain.Wei.t/0` paid to the miners of the `t:Explorer.Chain.Block.t/0`s with `hash`
   `Explorer.Chain.Hash.Full.t/0` by the signers of the transactions in those blocks to cover the gas fee
@@ -939,7 +880,9 @@ defmodule Explorer.Chain do
       {:actual, Decimal.new(4)}
 
   """
-  @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t()}
+  @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t() | nil}
+  def fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
+
   def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
     fee =
       gas_price
@@ -948,6 +891,8 @@ defmodule Explorer.Chain do
 
     {:maximum, fee}
   end
+
+  def fee(%Transaction{gas_price: nil, gas_used: _gas_used}, _unit), do: {:actual, nil}
 
   def fee(%Transaction{gas_price: gas_price, gas_used: gas_used}, unit) do
     fee =
@@ -3522,7 +3467,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  The current total number of coins minted minus verifiably burned coins.
+  The current total number of coins minted minus verifiably burnt coins.
   """
   @spec total_supply :: non_neg_integer() | nil
   def total_supply do
@@ -3567,56 +3512,6 @@ defmodule Explorer.Chain do
     query
     |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
-  end
-
-  @doc """
-    Finds all token instances (pairs of contract_address_hash and token_id) which was met in token transfers but has no corresponding entry in token_instances table
-  """
-  @spec stream_not_inserted_token_instances(
-          initial :: accumulator,
-          reducer :: (entry :: map(), accumulator -> accumulator)
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_not_inserted_token_instances(initial, reducer) when is_function(reducer, 2) do
-    nft_tokens =
-      from(
-        token in Token,
-        where: token.type == ^"ERC-721" or token.type == ^"ERC-1155",
-        select: token.contract_address_hash
-      )
-
-    token_ids_query =
-      from(
-        token_transfer in TokenTransfer,
-        select: %{
-          token_contract_address_hash: token_transfer.token_contract_address_hash,
-          token_id: fragment("unnest(?)", token_transfer.token_ids)
-        }
-      )
-
-    query =
-      from(
-        transfer in subquery(token_ids_query),
-        inner_join: token in subquery(nft_tokens),
-        on: token.contract_address_hash == transfer.token_contract_address_hash,
-        left_join: instance in Instance,
-        on:
-          transfer.token_contract_address_hash == instance.token_contract_address_hash and
-            transfer.token_id == instance.token_id,
-        where: is_nil(instance.token_id),
-        select: %{
-          contract_address_hash: transfer.token_contract_address_hash,
-          token_id: transfer.token_id
-        }
-      )
-
-    distinct_query =
-      from(
-        q in subquery(query),
-        distinct: [q.contract_address_hash, q.token_id]
-      )
-
-    Repo.stream_reduce(distinct_query, initial, reducer)
   end
 
   @doc """

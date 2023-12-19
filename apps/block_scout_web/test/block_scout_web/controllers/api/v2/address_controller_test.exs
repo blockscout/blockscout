@@ -26,6 +26,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
 
+  @instances_amount_in_collection 9
+
   setup :set_mox_global
 
   setup :verify_on_exit!
@@ -2742,10 +2744,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     token_name = token.name
     amount = to_string(ctb.distinct_token_instances_count || ctb.value)
 
-    assert Enum.count(json["token_instances"]) == 15
+    assert Enum.count(json["token_instances"]) == @instances_amount_in_collection
 
     token_instances
-    |> Enum.take(15)
+    |> Enum.take(@instances_amount_in_collection)
     |> Enum.with_index()
     |> Enum.each(fn {instance, index} ->
       compare_token_instance_in_collection(instance, Enum.at(json["token_instances"], index))
@@ -2763,10 +2765,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     token_name = token.name
     amount = to_string(amount)
 
-    assert Enum.count(json["token_instances"]) == 15
+    assert Enum.count(json["token_instances"]) == @instances_amount_in_collection
 
     token_instances
-    |> Enum.take(15)
+    |> Enum.take(@instances_amount_in_collection)
     |> Enum.with_index()
     |> Enum.each(fn {instance, index} ->
       compare_token_instance_in_collection(instance, Enum.at(json["token_instances"], index))
