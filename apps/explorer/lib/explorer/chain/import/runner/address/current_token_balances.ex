@@ -216,6 +216,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     on_conflict_erc_20 = Map.get_lazy(options, :on_conflict, &default_on_conflict_erc_20/0)
     on_conflict_erc_721 = Map.get_lazy(options, :on_conflict, &default_on_conflict_erc_721/0)
     on_conflict_erc_1155 = Map.get_lazy(options, :on_conflict, &default_on_conflict_erc_1155/0)
+    on_conflict_nil_token_type = Map.get_lazy(options, :on_conflict, &default_on_conflict_nil_token_type/0)
 
     # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list =
@@ -253,6 +254,11 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     erc_1155_ordered_changes_list =
       ordered_changes_list
       |> Enum.filter(&(&1.token_type == "ERC-1155"))
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
+
+    nil_token_type_ordered_changes_list =
+      ordered_changes_list
+      |> Enum.filter(&is_nil(&1.token_type))
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
 
     {:ok, inserted_erc_20_changes_list} =
@@ -303,7 +309,24 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         {:ok, []}
       end
 
-    inserted_erc_20_changes_list ++ inserted_erc_721_changes_list ++ inserted_erc_1155_changes_list
+    {:ok, inserted_nil_token_type_changes_list} =
+      if Enum.count(nil_token_type_ordered_changes_list) > 0 do
+        Import.insert_changes_list(
+          repo,
+          nil_token_type_ordered_changes_list,
+          conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>},
+          on_conflict: on_conflict_nil_token_type,
+          for: CurrentTokenBalance,
+          returning: true,
+          timeout: timeout,
+          timestamps: timestamps
+        )
+      else
+        {:ok, []}
+      end
+
+    inserted_erc_20_changes_list ++
+      inserted_erc_721_changes_list ++ inserted_erc_1155_changes_list ++ inserted_nil_token_type_changes_list
   end
 
   defp default_on_conflict_erc_20 do
@@ -316,6 +339,10 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
   defp default_on_conflict_erc_1155 do
     default_on_conflict("ERC-1155")
+  end
+
+  defp default_on_conflict_nil_token_type do
+    default_on_conflict("nil")
   end
 
   defp default_on_conflict(type) do
