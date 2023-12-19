@@ -41,6 +41,7 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Fetcher.Zkevm.TransactionBatch, as: ZkevmTransactionBatch
   alias Indexer.Fetcher.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
+  alias Indexer.Fetcher.ZkSync.BatchesStatusTracker, as: ZkSyncBatchesStatusTracker
 
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,
@@ -142,6 +143,9 @@ defmodule Indexer.Supervisor do
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
         configure(ZkSyncTransactionBatch.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(ZkSyncBatchesStatusTracker.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
 

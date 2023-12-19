@@ -23,6 +23,19 @@ defmodule Explorer.Chain.ZkSync.Reader do
     Chain
   }
 
+  def batch(number, options) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    TransactionBatch
+    |> where(number: ^number)
+    |> Chain.join_associations(necessity_by_association)
+    |> select_repo(options).one()
+    |> case do
+      nil -> {:error, :not_found}
+      batch -> {:ok, batch}
+    end
+  end
+
   def batches(start_number, end_number, options) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -32,17 +45,64 @@ defmodule Explorer.Chain.ZkSync.Reader do
     |> select_repo(options).all()
   end
 
+  def batches(numbers, options) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    from(tb in TransactionBatch, order_by: [desc: tb.number])
+    |> where([tb], tb.number in ^numbers)
+    |> Chain.join_associations(necessity_by_association)
+    |> select_repo(options).all()
+  end
+
   @doc """
-    Gets the number of the latest batch with execute_id.
+    Gets the number of the earliest batch where commit_id is nil.
     Returns nil if not found
   """
-  @spec last_executed_batch_number() :: non_neg_integer() | nil
-  def last_executed_batch_number do
+  @spec earliest_sealed_batch_number() :: non_neg_integer() | nil
+  def earliest_sealed_batch_number do
     query =
       from(tb in TransactionBatch,
         select: tb.number,
-        where: not is_nil(tb.execute_id),
-        order_by: [desc: tb.number],
+        where: is_nil(tb.commit_id),
+        order_by: [asc: tb.number],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||(nil)
+  end
+
+  @doc """
+    Gets the number of the earliest batch where prove_id is nil.
+    Returns nil if not found
+  """
+  @spec earliest_unproven_batch_number() :: non_neg_integer() | nil
+  def earliest_unproven_batch_number do
+    query =
+      from(tb in TransactionBatch,
+        select: tb.number,
+        where: is_nil(tb.prove_id),
+        order_by: [asc: tb.number],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||(nil)
+  end
+
+  @doc """
+    Gets the number of the earliest batch where execute_id is nil.
+    Returns nil if not found
+  """
+  @spec earliest_unexecuted_batch_number() :: non_neg_integer() | nil
+  def earliest_unexecuted_batch_number do
+    query =
+      from(tb in TransactionBatch,
+        select: tb.number,
+        where: is_nil(tb.execute_id),
+        order_by: [asc: tb.number],
         limit: 1
       )
 
@@ -61,6 +121,24 @@ defmodule Explorer.Chain.ZkSync.Reader do
       from(tb in TransactionBatch,
         select: tb.number,
         order_by: [asc: tb.number],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||(nil)
+  end
+
+  @doc """
+    Gets the number of the latest batch.
+    Returns nil if not found
+  """
+  @spec latest_available_batch_number() :: non_neg_integer() | nil
+  def latest_available_batch_number do
+    query =
+      from(tb in TransactionBatch,
+        select: tb.number,
+        order_by: [desc: tb.number],
         limit: 1
       )
 

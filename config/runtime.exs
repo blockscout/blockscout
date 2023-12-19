@@ -633,9 +633,17 @@ config :indexer, Indexer.Fetcher.Zkevm.TransactionBatch.Supervisor,
 
 config :indexer, Indexer.Fetcher.ZkSync.TransactionBatch,
   chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_ZKSYNC_BATCHES_CHUNK_SIZE", 1),
-  recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_ZKSYNC_BATCHES_RECHECK_INTERVAL", 60)
+  batches_max_range: ConfigHelper.parse_integer_env_var("INDEXER_ZKSYNC_NEW_BATCHES_MAX_RANGE", 50),
+  recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_ZKSYNC_NEW_BATCHES_RECHECK_INTERVAL", 60)
 
 config :indexer, Indexer.Fetcher.ZkSync.TransactionBatch.Supervisor,
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_ZKSYNC_BATCHES_ENABLED")
+
+config :indexer, Indexer.Fetcher.ZkSync.BatchesStatusTracker,
+  zksync_l1_rpc: System.get_env("INDEXER_ZKSYNC_L1_RPC"),
+  recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_ZKSYNC_BATCHES_STATUS_RECHECK_INTERVAL", 60)
+
+config :indexer, Indexer.Fetcher.ZkSync.BatchesStatusTracker.Supervisor,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_ZKSYNC_BATCHES_ENABLED")
 
 config :indexer, Indexer.Fetcher.RootstockData.Supervisor,

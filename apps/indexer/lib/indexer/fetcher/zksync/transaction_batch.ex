@@ -39,12 +39,14 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
     config = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkSync.TransactionBatch]
     chunk_size = config[:chunk_size]
     recheck_interval = config[:recheck_interval]
+    batches_max_range = config[:batches_max_range]
 
     Process.send(self(), :init, [])
 
     {:ok,
      %{
        chunk_size: chunk_size,
+       batches_max_range: batches_max_range,
        json_rpc_named_arguments: args[:json_rpc_named_arguments],
        latest_handled_batch_number: 0,
        recheck_interval: recheck_interval
@@ -56,21 +58,15 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
         :init,
         %{json_rpc_named_arguments: json_rpc_named_arguments} = state
       ) do
-    latest_handled_batch_number = Reader.last_executed_batch_number()
 
     latest_handled_batch_number =
-      if is_nil(latest_handled_batch_number) do
-        log_info("No lastest executed batch found in DB")
-        latest_handled_batch_number = Reader.oldest_available_batch_number()
-        if is_nil(latest_handled_batch_number) do
-          log_info("No batches found in DB")
-          # fetch_latest_sealed_batch_number(json_rpc_named_arguments) - 1
-          fetch_latest_sealed_batch_number(json_rpc_named_arguments) - 20
-        else
+      cond do
+        latest_handled_batch_number = Reader.latest_available_batch_number() ->
           latest_handled_batch_number - 1
-        end
-      else
-        latest_handled_batch_number
+
+        true ->
+          log_info("No batches found in DB")
+          fetch_latest_sealed_batch_number(json_rpc_named_arguments) - 1
       end
 
     Process.send_after(self(), :continue, 2000)
@@ -88,6 +84,7 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
         :continue,
         %{
           chunk_size: chunk_size,
+          batches_max_range: batches_max_range,
           json_rpc_named_arguments: json_rpc_named_arguments,
           latest_handled_batch_number: latest_handled_batch_number,
           recheck_interval: recheck_interval
@@ -100,20 +97,19 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
     {new_state, handle_duration} =
       if latest_handled_batch_number < latest_sealed_batch_number do
         start_batch_number = latest_handled_batch_number + 1
-        end_batch_number = latest_sealed_batch_number
+        end_batch_number = min(latest_sealed_batch_number, latest_handled_batch_number + batches_max_range)
 
         log_info("Handling the batch range #{start_batch_number}..#{end_batch_number}")
 
-        {handle_duration, latest_handled_batch_number} =
+        {handle_duration, _} =
           :timer.tc(fn ->
-            # handle_batch_range(start_batch_number, end_batch_number, %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: chunk_size})
-            handle_batch_range(start_batch_number, end_batch_number, %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: 50})
+            handle_batch_range(start_batch_number, end_batch_number, %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: chunk_size})
           end)
 
         {
           %{
             state
-            | latest_handled_batch_number: latest_handled_batch_number
+            | latest_handled_batch_number: end_batch_number
           },
           div(handle_duration, 1000)
         }
@@ -153,88 +149,40 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
     end)
   end
 
-  defp extract_l1_tx_and_get_block_ranges(batches, %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: chunk_size} = _config) do
+  defp get_block_ranges(batches, %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: chunk_size} = _config) do
     keys = Map.keys(batches)
     batches_list_length = length(keys)
     # The main goal of this reduce to get blocks ranges for every batch
     # by combining zks_getL1BatchBlockRange requests in chunks
-    # But for optimization purposes the same loop is used to collect
-    # batch changing L1 transactions. These two operations can be divided
-    # in two separate reduces later to simplify sustainability
-    {updated_batches, l1_txs, _} =
+    {updated_batches, _} =
       keys
       |> Enum.chunk_every(chunk_size)
-      |> Enum.reduce({batches, %{}, 0}, fn batches_chunk, {batches_with_blockranges, l1_txs, a} = _acc ->
+      |> Enum.reduce({batches, 0}, fn batches_chunk, {batches_with_blockranges, a} = _acc ->
         log_details_updates_chunk_handling(batches_chunk, a * chunk_size, batches_list_length)
-
-        {requests, l1_txs} =
-          batches_chunk
-          |> Enum.reduce({[], l1_txs}, fn batch_number, {requests, l1_txs} = _acc ->
-            batch = Map.get(batches, batch_number)
-            # Prepare requests list to get blocks ranges
-            requests =
-              # Assumes that batches in DB already has the block range set
-              case is_nil(batch.start_block) or is_nil(batch.end_block) do
-                true ->
-                  [ EthereumJSONRPC.request(%{
-                    id: batch_number,
-                    method: "zks_getL1BatchBlockRange",
-                    params: [batch_number]
-                  }) | requests ]
-                false ->
-                  requests
-              end
-
-            # Collect L1 transactions changing batches status
-            l1_txs =
-              [%{hash: batch.commit_tx_hash, ts: batch.commit_timestamp},
-               %{hash: batch.prove_tx_hash, ts: batch.prove_timestamp},
-               %{hash: batch.executed_tx_hash, ts: batch.executed_timestamp}
-              ]
-              |> Enum.reduce(l1_txs, fn l1_tx, acc ->
-                if l1_tx.hash != @zero_hash_binary do
-                  Map.put(acc, l1_tx.hash, %{hash: l1_tx.hash, timestamp: l1_tx.ts})
-                else
-                  acc
-                end
-              end)
-
-            {requests, l1_txs}
-          end)
 
         # Execute requests list and extend the batches details with blocks ranges
         batches_with_blockranges =
-          request_block_ranges_by_rpc(requests, batches_with_blockranges, json_rpc_named_arguments)
+          batches_chunk
+          |> Enum.reduce([], fn batch_number, requests ->
+            batch = Map.get(batches, batch_number)
+            # Prepare requests list to get blocks ranges
+            case is_nil(batch.start_block) or is_nil(batch.end_block) do
+              true ->
+                [ EthereumJSONRPC.request(%{
+                  id: batch_number,
+                  method: "zks_getL1BatchBlockRange",
+                  params: [batch_number]
+                }) | requests ]
+              false ->
+                requests
+            end
+          end)
+          |> request_block_ranges_by_rpc(batches_with_blockranges, json_rpc_named_arguments)
 
-        {batches_with_blockranges, l1_txs, a + 1}
+        {batches_with_blockranges, a + 1}
       end)
 
-    # Get indices for l1 transactions previously handled
-    l1_txs =
-      Map.keys(l1_txs)
-      |> Reader.lifecycle_transactions()
-      |> Enum.reduce(l1_txs, fn {hash, id}, txs ->
-        {_, txs} = Map.get_and_update!(txs, hash.bytes, fn l1_tx ->
-          {l1_tx, Map.put(l1_tx, :id, id)}
-        end)
-        txs
-      end)
-
-    # Provide indices for new L1 transactions
-    l1_tx_next_id = Reader.next_id()
-    { l1_txs, _ } =
-      Map.keys(l1_txs)
-      |> Enum.reduce({l1_txs, l1_tx_next_id}, fn hash, {txs, next_id} = _acc ->
-        tx = Map.get(txs, hash)
-        id = Map.get(tx, :id)
-        if is_nil(id) do
-          {Map.put(txs, hash, Map.put(tx, :id, next_id)), next_id + 1}
-        else
-          {txs, next_id}
-        end
-      end)
-
-    {updated_batches, l1_txs}
+    updated_batches
   end
 
   defp get_l2_blocks_and_transactions(batches, %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: chunk_size} = _config) do
@@ -289,122 +237,29 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
     {Map.values(blocks), l2_txs_to_import}
   end
 
-  defp is_transactions_of_batch_changed(batch_db, batch_json, tx_type) do
-    tx_hash_json =
-      case tx_type do
-        :commit_tx -> batch_json.commit_tx_hash
-        :prove_tx -> batch_json.prove_tx_hash
-        :execute_tx -> batch_json.executed_tx_hash
-      end
-    tx_hash_db =
-      case tx_type do
-        :commit_tx -> batch_db.commit_transaction
-        :prove_tx -> batch_db.prove_transaction
-        :execute_tx -> batch_db.execute_transaction
-      end
-    tx_hash_db =
-      if is_nil(tx_hash_db) do
-        @zero_hash_binary
-      else
-        tx_hash_db.hash.bytes
-      end
-    tx_hash_json != tx_hash_db
-  end
-
   defp handle_batch_range(start_batch_number, end_batch_number, config) do
-    batches_details = collect_batches_details(start_batch_number, end_batch_number, config)
-    log_info("Collected details for #{length(Map.keys(batches_details))} batches")
+    batches_to_import = collect_batches_details(start_batch_number, end_batch_number, config)
+    log_info("Collected details for #{length(Map.keys(batches_to_import))} batches")
 
-    batches_to_import =
-      Reader.batches(
-        start_batch_number,
-        end_batch_number,
-        necessity_by_association: %{
-          :commit_transaction => :optional,
-          :prove_transaction => :optional,
-          :execute_transaction => :optional
-        }
-      )
-      |> Enum.reduce(batches_details, fn batch_from_db, changed_batches ->
-        received_batch = Map.get(batches_details, batch_from_db.number)
-        if is_transactions_of_batch_changed(batch_from_db, received_batch, :commit_tx) &&
-           is_transactions_of_batch_changed(batch_from_db, received_batch, :prove_tx) &&
-           is_transactions_of_batch_changed(batch_from_db, received_batch, :execute_tx) do
-          Map.delete(changed_batches, batch_from_db.number)
-        else
-          received_batch =
-            Map.merge(
-              received_batch,
-              %{
-                start_block: batch_from_db.start_block,
-                end_block: batch_from_db.end_block
-              }
-            )
-          Map.put(changed_batches, batch_from_db.number, received_batch)
-        end
-      end)
-    IO.inspect(batches_to_import)
-
-    # Receive all indexed batches from start_batch_number to end_batch_number
-    # Make sure that all L1 tx ids are extended with L1 tx hashes
-
-    # Transform batches_details to a map which does not contain batches with
-    # commit_tx_hash, commit_timestamp, prove_tx_hash, prove_timestamp,
-    # executed_tx_hash and executed_timestamp unchanged
-    # Makes sure that the new field "l1_updated" contains one of the following:
-    # :commit, :commit_prove, :commit_execute, :prove, :prove_execute
-    # :execute, :commit_prove_execute
-    # depending on the life cycle update
-    # start_block and end_block must be copied from the the indexed batches
-
-    {batches_to_import, l1_txs} =
-      extract_l1_tx_and_get_block_ranges(batches_to_import, config)
-    log_info("Collected #{length(Map.keys(l1_txs))} L1 hashes")
+    batches_to_import = get_block_ranges(batches_to_import, config)
 
     { l2_blocks_to_import, l2_txs_to_import } =
       get_l2_blocks_and_transactions(batches_to_import, config)
     log_info("Linked #{length(l2_blocks_to_import)} L2 blocks and #{length(l2_txs_to_import)} L2 transactions")
 
-    {batches_list_to_import, latest_finalized} =
+    batches_list_to_import =
       Map.keys(batches_to_import)
-      |> Enum.reduce({[], 0}, fn batch_number, {batches_list, latest_finalized} ->
+      |> Enum.reduce([], fn batch_number, batches_list ->
         batch = Map.get(batches_to_import, batch_number)
-        latest_finalized =
-          if (batch.executed_tx_hash != @zero_hash_binary) and (batch_number > latest_finalized) do
-            batch_number
-          else
-            latest_finalized
-          end
-        {
-          [ batch
-            |> Map.put(:commit_id, get_l1_tx_id_by_hash(l1_txs, batch.commit_tx_hash))
-            |> Map.put(:prove_id, get_l1_tx_id_by_hash(l1_txs, batch.prove_tx_hash))
-            |> Map.put(:execute_id, get_l1_tx_id_by_hash(l1_txs, batch.executed_tx_hash))
-            |> Map.drop([:commit_tx_hash, :commit_timestamp, :prove_tx_hash, :prove_timestamp, :executed_tx_hash, :executed_timestamp]) | batches_list ],
-          latest_finalized
-        }
+        [ batch
+          |> Map.drop([:commit_tx_hash, :commit_timestamp, :prove_tx_hash, :prove_timestamp, :executed_tx_hash, :executed_timestamp]) | batches_list ]
       end)
 
     {:ok, _} =
       Chain.import(%{
-        zksync_lifecycle_transactions: %{params: Map.values(l1_txs)},
         zksync_transaction_batches: %{params: batches_list_to_import},
         timeout: :infinity
       })
-
-    # fetch_and_save_batches(chunk_start, chunk_end, json_rpc_named_arguments)
-    if latest_finalized > 0 do
-      latest_finalized
-    else
-      start_batch_number - 1
-    end
-  end
-
-  defp get_l1_tx_id_by_hash(l1_txs, hash) do
-    l1_txs
-    |> Map.get(hash)
-    |> Kernel.||(%{id: nil})
-    |> Map.get(:id)
   end
 
   defp fetch_latest_sealed_batch_number(json_rpc_named_arguments) do
