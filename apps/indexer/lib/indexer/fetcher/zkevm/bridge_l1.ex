@@ -3,6 +3,8 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
   Fills zkevm_bridge DB table.
   """
 
+  # todo: handle case with L2 address of token in origin_address field
+
   use GenServer
   use Indexer.Fetcher
 
@@ -33,7 +35,6 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
   @block_check_interval_range_size 100
   @eth_get_logs_range_size 1000
   @fetcher_name :zkevm_bridge_l1
-  # @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   # 32-byte signature of the event BridgeEvent(uint8 leafType, uint32 originNetwork, address originAddress, uint32 destinationNetwork, address destinationAddress, uint256 amount, bytes metadata, uint32 depositCount)
   @bridge_event "0x501781209a1f8899323b96b4ef08b168df93e0a90c673d1e4cce39366cb62f9b"
@@ -104,7 +105,9 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
          {last_l1_block_number, last_l1_transaction_hash} = get_last_l1_item(),
          json_rpc_named_arguments = json_rpc_named_arguments(rpc),
          {:ok, block_check_interval, safe_block} <- get_block_check_interval(json_rpc_named_arguments),
-         {:start_block_valid, true} <- {:start_block_valid, (start_block <= last_l1_block_number || last_l1_block_number == 0) && start_block <= safe_block},
+         {:start_block_valid, true} <-
+           {:start_block_valid,
+            (start_block <= last_l1_block_number || last_l1_block_number == 0) && start_block <= safe_block},
          {:ok, last_l1_tx} <- Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)} do
       Process.send(self(), :reorg_monitor, [])
@@ -116,7 +119,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
          bridge_contract: env[:bridge_contract],
          json_rpc_named_arguments: json_rpc_named_arguments,
          reorg_monitor_prev_latest: 0,
-         safe_block: safe_block,
+         end_block: safe_block,
          start_block: max(start_block, last_l1_block_number)
        }}
     else
@@ -184,7 +187,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
           bridge_contract: bridge_contract,
           block_check_interval: block_check_interval,
           start_block: start_block,
-          safe_block: end_block,
+          end_block: end_block,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
@@ -205,10 +208,11 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
             |> get_logs_all(bridge_contract, json_rpc_named_arguments)
             |> prepare_operations(json_rpc_named_arguments)
 
-          {:ok, _} = Chain.import(%{
-            zkevm_bridge_operations: %{params: operations},
-            timeout: :infinity
-          })
+          {:ok, _} =
+            Chain.import(%{
+              zkevm_bridge_operations: %{params: operations},
+              timeout: :infinity
+            })
 
           Helper.log_blocks_chunk_handling(
             chunk_start,
@@ -262,9 +266,12 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
     first_block = max(last_safe_block - @block_check_interval_range_size, 1)
 
-    with {:ok, first_block_timestamp} <- Helper.get_block_timestamp_by_number(first_block, json_rpc_named_arguments, 100_000_000),
-         {:ok, last_safe_block_timestamp} <- Helper.get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, 100_000_000) do
-      block_check_interval = ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
+    with {:ok, first_block_timestamp} <-
+           Helper.get_block_timestamp_by_number(first_block, json_rpc_named_arguments, 100_000_000),
+         {:ok, last_safe_block_timestamp} <-
+           Helper.get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, 100_000_000) do
+      block_check_interval =
+        ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
       Logger.info("Block check interval is calculated as #{block_check_interval} ms.")
       {:ok, block_check_interval, last_safe_block}
@@ -483,64 +490,110 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
     token_data =
       deposit_events
-      |> Enum.reduce(%{}, fn event, acc ->
-        [leaf_type, _origin_network, origin_address, _destination_network, _destination_address, _amount, _metadata, _deposit_count] = decode_data(event["data"], bridge_event_params)
+      |> Enum.reduce(%MapSet{}, fn event, acc ->
+        [
+          leaf_type,
+          _origin_network,
+          origin_address,
+          _destination_network,
+          _destination_address,
+          _amount,
+          _metadata,
+          _deposit_count
+        ] = decode_data(event["data"], bridge_event_params)
 
-        origin_address = "0x" <> Base.encode16(origin_address, case: :lower)
-
-        if leaf_type != 1 and origin_address != burn_address_hash_string() do
-          Map.put(acc, origin_address, true)
-        else
-          acc
+        case token_address_by_origin_address(origin_address, leaf_type) do
+          nil -> acc
+          token_address ->
+            #if token_address == "0x4f9a0e7fd2bf6067db6994cf12e4495df938e6e9" do
+            #  Logger.warn("event = #{inspect(event)}")
+            #end
+            MapSet.put(acc, token_address)
         end
       end)
-      |> Map.keys()
+      |> MapSet.to_list()
       |> get_token_data(json_rpc_named_arguments)
 
-    tokens =
+    token_addresses = Map.keys(token_data)
+
+    tokens_existing =
+      from(t in BridgeL1Token, select: {t.address, t.id}, where: t.address in ^token_addresses)
+      |> Repo.all(timeout: :infinity)
+      |> Enum.reduce(%{}, fn {address, id}, acc -> Map.put(acc, Hash.to_string(address), id) end)
+
+    tokens_to_insert =
       token_data
-      |> Enum.map(fn {address, data} ->
-        Map.put(data, :address, address)
+      |> Enum.reject(fn {address, _} -> Map.has_key?(tokens_existing, address) end)
+      |> Enum.map(fn {address, data} -> Map.put(data, :address, address) end)
+
+    {:ok, inserts} =
+      Chain.import(%{
+        zkevm_bridge_l1_tokens: %{params: tokens_to_insert},
+        timeout: :infinity
+      })
+
+    tokens_inserted = Map.get(inserts, :insert_zkevm_bridge_l1_tokens, [])
+
+    tokens_uninserted =
+      tokens_to_insert
+      |> Enum.reject(fn token ->
+        Enum.any?(tokens_inserted, fn inserted -> token.address == Hash.to_string(inserted.address) end)
       end)
+      |> Enum.map(& &1.address)
 
-    # todo: select known tokens from zkevm_bridge_l1_tokens table
+    tokens_inserted_outside =
+      from(t in BridgeL1Token, select: {t.address, t.id}, where: t.address in ^tokens_uninserted)
+      |> Repo.all(timeout: :infinity)
+      |> Enum.reduce(%{}, fn {address, id}, acc -> Map.put(acc, Hash.to_string(address), id) end)
 
-    Logger.warn("tokens: #{inspect(tokens)}")
-
-    # todo: insert only unknown tokens
-    {:ok, tokens_inserted} = Chain.import(%{
-      zkevm_bridge_l1_tokens: %{params: tokens},
-      timeout: :infinity
-    })
-
-    # todo: select remaining tokens from zkevm_bridge_l1_tokens table if they are not in `tokens_inserted`
-
-    Logger.warn("tokens_inserted: #{inspect(tokens_inserted)}")
+    address_to_id =
+      tokens_inserted
+      |> Enum.reduce(%{}, fn t, acc -> Map.put(acc, Hash.to_string(t.address), t.id) end)
+      |> Map.merge(tokens_existing)
+      |> Map.merge(tokens_inserted_outside)
 
     events
     |> Enum.map(fn event ->
-      {type, index, amount, block_number, block_timestamp} =
+      {type, index, l1_token_id, amount, block_number, block_timestamp} =
         if Enum.at(event["topics"], 0) == @bridge_event do
-          [_leaf_type, _origin_network, _origin_address, _destination_network, _destination_address, amount, _metadata, deposit_count] = decode_data(event["data"], bridge_event_params)
+          [
+            leaf_type,
+            _origin_network,
+            origin_address,
+            _destination_network,
+            _destination_address,
+            amount,
+            _metadata,
+            deposit_count
+          ] = decode_data(event["data"], bridge_event_params)
 
+          token_address = token_address_by_origin_address(origin_address, leaf_type)
+
+          l1_token_id = Map.get(address_to_id, token_address)
           block_number = quantity_to_integer(event["blockNumber"])
           block_timestamp = Map.get(timestamps, block_number)
 
-          {:deposit, deposit_count, amount, block_number, block_timestamp}
+          {:deposit, deposit_count, l1_token_id, amount, block_number, block_timestamp}
         else
-          [index, _origin_network, _origin_address, _destination_address, amount] = decode_data(event["data"], claim_event_params)
-          
-          {:withdrawal, index, amount, nil, nil}
+          [index, _origin_network, _origin_address, _destination_address, amount] =
+            decode_data(event["data"], claim_event_params)
+
+          {:withdrawal, index, nil, amount, nil, nil}
         end
 
+      result = %{
+        type: type,
+        index: index,
+        l1_transaction_hash: event["transactionHash"],
+        amount: amount
+      }
+
       result =
-        %{
-          type: type,
-          index: index,
-          l1_transaction_hash: event["transactionHash"],
-          # l1_token_id: ...,
-          amount: amount
-        }
+        if not is_nil(l1_token_id) do
+          Map.put(result, :l1_token_id, l1_token_id)
+        else
+          result
+        end
 
       result =
         if not is_nil(block_number) do
@@ -578,6 +631,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
       if retries_left == 0 do
         {responses, Enum.uniq(error_messages)}
       else
+        :timer.sleep(1000)
         read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left)
       end
     end
@@ -634,5 +688,15 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
   defp reorg_table_name(fetcher_name) do
     :"#{fetcher_name}#{:_reorgs}"
+  end
+
+  defp token_address_by_origin_address(origin_address, leaf_type) do
+    with true <- leaf_type != 1,
+         token_address = "0x" <> Base.encode16(origin_address, case: :lower),
+         true <- token_address != burn_address_hash_string() do
+      token_address
+    else
+      _ -> nil
+    end
   end
 end
