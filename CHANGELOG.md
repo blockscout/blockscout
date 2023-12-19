@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#8972](https://github.com/blockscout/blockscout/pull/8972) - BENS integration
 - [#8957](https://github.com/blockscout/blockscout/pull/8957) - Add Tx Interpreter Service integration
 
 ### Fixes
