@@ -213,10 +213,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   end
 
   def insert_changes_list_with_and_without_token_id(changes_list, repo, timestamps, timeout, options) do
-    on_conflict_erc_20 = Map.get_lazy(options, :on_conflict, &default_on_conflict_erc_20/0)
-    on_conflict_erc_721 = Map.get_lazy(options, :on_conflict, &default_on_conflict_erc_721/0)
-    on_conflict_erc_1155 = Map.get_lazy(options, :on_conflict, &default_on_conflict_erc_1155/0)
-    on_conflict_nil_token_type = Map.get_lazy(options, :on_conflict, &default_on_conflict_nil_token_type/0)
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list =
@@ -267,7 +264,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           repo,
           erc_20_ordered_changes_list,
           conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>},
-          on_conflict: on_conflict_erc_20,
+          on_conflict: on_conflict,
           for: CurrentTokenBalance,
           returning: true,
           timeout: timeout,
@@ -283,7 +280,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           repo,
           erc_721_ordered_changes_list,
           conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>},
-          on_conflict: on_conflict_erc_721,
+          on_conflict: on_conflict,
           for: CurrentTokenBalance,
           returning: true,
           timeout: timeout,
@@ -299,7 +296,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           repo,
           erc_1155_ordered_changes_list,
           conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>},
-          on_conflict: on_conflict_erc_1155,
+          on_conflict: on_conflict,
           for: CurrentTokenBalance,
           returning: true,
           timeout: timeout,
@@ -315,7 +312,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           repo,
           nil_token_type_ordered_changes_list,
           conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>},
-          on_conflict: on_conflict_nil_token_type,
+          on_conflict: on_conflict,
           for: CurrentTokenBalance,
           returning: true,
           timeout: timeout,
@@ -329,71 +326,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       inserted_erc_721_changes_list ++ inserted_erc_1155_changes_list ++ inserted_nil_token_type_changes_list
   end
 
-  defp default_on_conflict_erc_20 do
-    default_on_conflict("ERC-20")
-  end
-
-  defp default_on_conflict_erc_721 do
-    default_on_conflict("ERC-721")
-  end
-
-  defp default_on_conflict_erc_1155 do
-    default_on_conflict("ERC-1155")
-  end
-
-  defp default_on_conflict_nil_token_type do
-    default_on_conflict(nil)
-  end
-
-  defp default_on_conflict(type) when type == "ERC-20" do
-    from(
-      current_token_balance in CurrentTokenBalance,
-      update: [
-        set: [
-          block_number: fragment("EXCLUDED.block_number"),
-          value: fragment("EXCLUDED.value"),
-          value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
-          old_value: current_token_balance.value,
-          token_type: fragment("EXCLUDED.token_type"),
-          inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", current_token_balance.inserted_at),
-          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", current_token_balance.updated_at)
-        ]
-      ],
-      where:
-        fragment("? = ?", ^type, ^type) and fragment("EXCLUDED.value_fetched_at IS NOT NULL") and
-          (fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
-             (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
-                fragment("EXCLUDED.value IS NOT NULL") and
-                (is_nil(current_token_balance.value_fetched_at) or
-                   fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at))))
-    )
-  end
-
-  defp default_on_conflict(type) when type == "ERC-721" do
-    from(
-      current_token_balance in CurrentTokenBalance,
-      update: [
-        set: [
-          block_number: fragment("EXCLUDED.block_number"),
-          value: fragment("EXCLUDED.value"),
-          value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
-          old_value: current_token_balance.value,
-          token_type: fragment("EXCLUDED.token_type"),
-          inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", current_token_balance.inserted_at),
-          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", current_token_balance.updated_at)
-        ]
-      ],
-      where:
-        fragment("EXCLUDED.value_fetched_at IS NOT NULL") and fragment("? = ?", ^type, ^type) and
-          (fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
-             (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
-                fragment("EXCLUDED.value IS NOT NULL") and
-                (is_nil(current_token_balance.value_fetched_at) or
-                   fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at))))
-    )
-  end
-
-  defp default_on_conflict(type) when type == "ERC-1155" do
+  defp default_on_conflict do
     from(
       current_token_balance in CurrentTokenBalance,
       update: [
@@ -413,32 +346,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
              (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
                 fragment("EXCLUDED.value IS NOT NULL") and
                 (is_nil(current_token_balance.value_fetched_at) or
-                   fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at)))) and
-          fragment("? = ?", ^type, ^type)
-    )
-  end
-
-  defp default_on_conflict(type) when is_nil(type) do
-    from(
-      current_token_balance in CurrentTokenBalance,
-      update: [
-        set: [
-          block_number: fragment("EXCLUDED.block_number"),
-          value: fragment("EXCLUDED.value"),
-          value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
-          old_value: current_token_balance.value,
-          token_type: fragment("EXCLUDED.token_type"),
-          inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", current_token_balance.inserted_at),
-          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", current_token_balance.updated_at)
-        ]
-      ],
-      where:
-        (fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
-           (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
-              fragment("EXCLUDED.value IS NOT NULL") and
-              (is_nil(current_token_balance.value_fetched_at) or
-                 fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at)))) and
-          fragment("EXCLUDED.value_fetched_at IS NOT NULL") and fragment("? = ?", ^type, ^type)
+                   fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at))))
     )
   end
 
