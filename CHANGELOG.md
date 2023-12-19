@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#8972](https://github.com/blockscout/blockscout/pull/8972) - BENS integration
 - [#8957](https://github.com/blockscout/blockscout/pull/8957) - Add Tx Interpreter Service integration
 - [#8908](https://github.com/blockscout/blockscout/pull/8908) - Solidityscan report API endpoint
 - [#8611](https://github.com/blockscout/blockscout/pull/8611) - Implement sorting of smart contracts, address transactions
