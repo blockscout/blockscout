@@ -101,7 +101,7 @@ config :explorer, Explorer.Counters.AddressTokenTransfersCounter,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.Counters.BlockBurnedFeeCounter,
+config :explorer, Explorer.Counters.BlockBurntFeeCounter,
   enabled: true,
   enable_consolidation: true
 
