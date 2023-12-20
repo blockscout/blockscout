@@ -202,6 +202,11 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/zkevm/batches/confirmed", V2.ZkevmController, :batches_confirmed)
         get("/zkevm/batches/latest-number", V2.ZkevmController, :batch_latest_number)
       end
+
+      if System.get_env("CHAIN_TYPE") == "zksync" do
+        get("/zksync/batches/confirmed", V2.ZkSyncController, :batches_confirmed)
+        get("/zksync/batches/latest-number", V2.ZkSyncController, :batch_latest_number)
+      end
     end
 
     scope "/stats" do
@@ -232,6 +237,14 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/batches", V2.ZkevmController, :batches)
         get("/batches/count", V2.ZkevmController, :batches_count)
         get("/batches/:batch_number", V2.ZkevmController, :batch)
+      end
+    end
+
+    scope "/zksync" do
+      if System.get_env("CHAIN_TYPE") == "zksync" do
+        get("/batches", V2.ZkSyncController, :batches)
+        get("/batches/count", V2.ZkSyncController, :batches_count)
+        get("/batches/:batch_number", V2.ZkSyncController, :batch)
       end
     end
   end

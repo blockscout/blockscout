@@ -17,13 +17,22 @@ defmodule Explorer.Chain.ZkSync.Reader do
     LifecycleTransaction,
     TransactionBatch
   }
-  # alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.{
-    Repo,
-    Chain
-  }
+  alias Explorer.{Chain, PagingOptions, Repo}
 
-  def batch(number, options) when is_list(options) do
+  def batch(:latest, options) when is_list(options) do
+    TransactionBatch
+    |> order_by(desc: :number)
+    |> limit(1)
+    |> select_repo(options).one()
+    |> case do
+      nil -> {:error, :not_found}
+      batch -> {:ok, batch}
+    end
+  end
+
+  def batch(number, options)
+      when (is_integer(number) or is_binary(number)) and
+           is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     TransactionBatch
@@ -36,7 +45,10 @@ defmodule Explorer.Chain.ZkSync.Reader do
     end
   end
 
-  def batches(start_number, end_number, options) when is_list(options) do
+  def batches(start_number, end_number, options)
+      when is_integer(start_number) and
+           is_integer(end_number) and
+           is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     from(tb in TransactionBatch, order_by: [desc: tb.number])
@@ -45,13 +57,41 @@ defmodule Explorer.Chain.ZkSync.Reader do
     |> select_repo(options).all()
   end
 
-  def batches(numbers, options) when is_list(options) do
+  def batches(numbers, options)
+      when is_list(numbers) and
+           is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     from(tb in TransactionBatch, order_by: [desc: tb.number])
     |> where([tb], tb.number in ^numbers)
     |> Chain.join_associations(necessity_by_association)
     |> select_repo(options).all()
+  end
+
+  def batches(options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    base_query =
+      from(tb in TransactionBatch,
+        order_by: [desc: tb.number]
+      )
+
+    query =
+      if Keyword.get(options, :confirmed?, false) do
+        base_query
+        |> Chain.join_associations(necessity_by_association)
+        |> where([tb], not is_nil(tb.commit_id) and tb.commit_id > 0)
+        |> limit(10)
+      else
+        paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+        base_query
+        |> Chain.join_associations(necessity_by_association)
+        |> page_batches(paging_options)
+        |> limit(^paging_options.page_size)
+      end
+
+    select_repo(options).all(query)
   end
 
   @doc """
@@ -180,6 +220,12 @@ defmodule Explorer.Chain.ZkSync.Reader do
       |> Kernel.||(0)
 
     last_id + 1
+  end
+
+  defp page_batches(query, %PagingOptions{key: nil}), do: query
+
+  defp page_batches(query, %PagingOptions{key: {number}}) do
+    from(tb in query, where: tb.number < ^number)
   end
 
 end
