@@ -3,7 +3,7 @@ defmodule Explorer.Repo.Migrations.AddIndexBlocksRefetchNeeded do
 
   def up do
     execute("""
-    CREATE INDEX consensus_block_hashes_refetch_needed ON blocks((1)) WHERE consensus and refetch_needed;
+    CREATE INDEX consensus_block_hashes_refetch_needed ON blocks(hash) WHERE consensus and refetch_needed;
     """)
   end
 
