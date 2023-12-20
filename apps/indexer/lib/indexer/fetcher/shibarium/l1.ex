@@ -390,8 +390,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
   end
 
   defp get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, retries \\ 100_000_000) do
-    processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
-    processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
+    processed_from_block = integer_to_quantity(from_block)
+    processed_to_block = integer_to_quantity(to_block)
 
     req =
       request(%{

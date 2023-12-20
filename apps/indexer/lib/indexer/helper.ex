@@ -44,12 +44,21 @@ defmodule Indexer.Helper do
     false
   end
 
-  @spec get_block_number_by_tag(binary(), list(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
+  @doc """
+  Fetches block number by its tag (e.g. `latest` or `safe`) using RPC request.
+  Performs a specified number of retries (up to) if the first attempt returns error.
+  """
+  @spec get_block_number_by_tag(binary(), list(), non_neg_integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
   def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ 3) do
     error_message = &"Cannot fetch #{tag} block number. Error: #{inspect(&1)}"
     repeated_call(&fetch_block_number_by_tag/2, [tag, json_rpc_named_arguments], error_message, retries)
   end
 
+  @doc """
+  Fetches transaction data by its hash using RPC request.
+  Performs a specified number of retries (up to) if the first attempt returns error.
+  """
+  @spec get_transaction_by_hash(binary() | nil, list(), non_neg_integer()) :: {:ok, any()} | {:error, any()}
   def get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
 
   def get_transaction_by_hash(hash, _json_rpc_named_arguments, _retries_left) when is_nil(hash), do: {:ok, nil}
@@ -67,6 +76,17 @@ defmodule Indexer.Helper do
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
+  @doc """
+  Prints a log of progress when handling something splitted to block chunks.
+  """
+  @spec log_blocks_chunk_handling(
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          binary() | nil,
+          binary()
+        ) :: :ok
   def log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, items_count, layer) do
     is_start = is_nil(items_count)
 
@@ -105,6 +125,13 @@ defmodule Indexer.Helper do
     end
   end
 
+  @doc """
+  Calls the given function with the given arguments
+  until it returns {:ok, any()} or the given attempts number is reached.
+  Pauses execution between invokes for 3 seconds.
+  """
+  @spec repeated_call((... -> any()), list(), (... -> any()), non_neg_integer()) ::
+          {:ok, any()} | {:error, binary() | atom()}
   def repeated_call(func, args, error_message, retries_left) do
     case apply(func, args) do
       {:ok, _} = res ->
@@ -124,6 +151,12 @@ defmodule Indexer.Helper do
     end
   end
 
+  @doc """
+  Fetches block timestamp by its number using RPC request.
+  Performs a specified number of retries (up to) if the first attempt returns error.
+  """
+  @spec get_block_timestamp_by_number(non_neg_integer(), list(), non_neg_integer()) ::
+          {:ok, non_neg_integer()} | {:error, any()}
   def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ 3) do
     func = &get_block_timestamp_by_number_inner/2
     args = [number, json_rpc_named_arguments]
