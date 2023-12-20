@@ -84,7 +84,7 @@ config :explorer, Explorer.Repo.Suave,
 # Configures Shibarium database
 config :explorer, Explorer.Repo.Shibarium,
   url: System.get_env("DATABASE_URL"),
-  pool_size: ConfigHelper.parse_integer_env_var("SHIBARIUM_POOL_SIZE", 50),
+  pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
 variant = Variant.get()

@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.Runner.ShibariumBridgeOperations do
+defmodule Explorer.Chain.Import.Runner.Shibarium.BridgeOperations do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Shibarium.Bridge.t/0`.
   """

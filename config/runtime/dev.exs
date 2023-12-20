@@ -113,7 +113,7 @@ config :explorer, Explorer.Repo.Shibarium,
   database: database,
   hostname: hostname,
   url: System.get_env("DATABASE_URL"),
-  pool_size: ConfigHelper.parse_integer_env_var("SHIBARIUM_POOL_SIZE", 10)
+  pool_size: 1
 
 variant = Variant.get()
 

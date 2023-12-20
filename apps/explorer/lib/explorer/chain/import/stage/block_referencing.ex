@@ -40,7 +40,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
       "shibarium" ->
         # credo:disable-for-next-line
-        @default_runners ++ [Runner.ShibariumBridgeOperations]
+        @default_runners ++ [Runner.Shibarium.BridgeOperations]
 
       _ ->
         @default_runners
