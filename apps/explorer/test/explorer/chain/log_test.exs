@@ -68,7 +68,7 @@ defmodule Explorer.Chain.LogTest do
         |> insert(to_address: insert(:contract_address))
         |> Repo.preload(to_address: :smart_contract)
 
-      log = insert(:log, transaction: transaction)
+      log = insert(:log, transaction: transaction) |> Repo.preload(:log_first_topic)
 
       assert {{:error, :could_not_decode}, _, _} = Log.decode(log, transaction, [], false)
     end
@@ -105,16 +105,19 @@ defmodule Explorer.Chain.LogTest do
         |> insert(to_address: to_address)
         |> Repo.preload(to_address: :smart_contract)
 
+      log_first_topic = insert(:log_first_topic, hash: topic(topic1), id: 1)
+
       log =
         insert(:log,
           address: to_address,
           transaction: transaction,
-          first_topic: topic(topic1),
+          log_first_topic_id: log_first_topic.id,
           second_topic: topic(topic2),
           third_topic: topic(topic3),
           fourth_topic: nil,
           data: data
         )
+        |> Repo.preload(:log_first_topic)
 
       request_zero_implementations()
 
@@ -160,15 +163,18 @@ defmodule Explorer.Chain.LogTest do
 
       transaction = insert(:transaction)
 
+      log_first_topic = insert(:log_first_topic, hash: topic(topic1), id: 1)
+
       log =
         insert(:log,
           transaction: transaction,
-          first_topic: topic(topic1),
+          log_first_topic_id: log_first_topic.id,
           second_topic: topic(topic2),
           third_topic: topic(topic3),
           fourth_topic: nil,
           data: data
         )
+        |> Repo.preload(:log_first_topic)
 
       assert {{:error, :contract_not_verified,
                [

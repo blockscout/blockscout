@@ -331,6 +331,12 @@ defmodule Explorer.Chain.TokenTransferTest do
       block = insert(:block)
       address = insert(:address)
 
+      log_first_topic =
+        insert(:log_first_topic,
+          hash: topic("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"),
+          id: 1
+        )
+
       log =
         insert(:token_transfer_log,
           transaction:
@@ -342,11 +348,17 @@ defmodule Explorer.Chain.TokenTransferTest do
               index: 0
             ),
           block: block,
-          address_hash: address.hash
+          address_hash: address.hash,
+          log_first_topic_id: log_first_topic.id
         )
 
       block_number = log.block_number
       assert {:ok, [^block_number]} = TokenTransfer.uncataloged_token_transfer_block_numbers()
     end
+  end
+
+  defp topic(topic_hex_string) do
+    {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
+    topic
   end
 end

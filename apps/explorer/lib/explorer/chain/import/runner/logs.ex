@@ -64,15 +64,16 @@ defmodule Explorer.Chain.Import.Runner.Logs do
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    first_topic_changes_list =
+    log_first_topic_changes_list =
       changes_list
+      |> Enum.filter(&(Map.has_key?(&1, :first_topic) && &1.first_topic))
       |> Enum.map(&%{:hash => &1.first_topic})
       |> Enum.uniq()
 
     {:ok, _} =
       Import.insert_changes_list(
         repo,
-        first_topic_changes_list,
+        log_first_topic_changes_list,
         conflict_target: [:hash],
         on_conflict: :nothing,
         for: LogFirstTopic,
@@ -81,26 +82,23 @@ defmodule Explorer.Chain.Import.Runner.Logs do
         timestamps: timestamps
       )
 
-    first_topic_hashes =
-      first_topic_changes_list
+    log_first_topic_hashes =
+      log_first_topic_changes_list
       |> Enum.map(& &1.hash)
       |> Enum.uniq()
 
-    first_topic_ids_hashes = LogFirstTopic.get_first_topic_ids_by_hashes(first_topic_hashes)
+    log_first_topic_ids_hashes = LogFirstTopic.get_log_first_topic_ids_by_hashes(log_first_topic_hashes)
 
-    changes_list_with_first_topic_id =
-      Enum.map(changes_list, fn item ->
-        {first_topic_id, _} =
-          Enum.find(first_topic_ids_hashes, fn {_, hash} ->
-            hash == item.first_topic
-          end)
-
-        Map.put(item, :first_topic_id, first_topic_id)
-      end)
+    changes_list_with_log_first_topic_id =
+      if Enum.count(log_first_topic_ids_hashes) > 0 do
+        put_log_first_topic_id(changes_list, log_first_topic_ids_hashes)
+      else
+        []
+      end
 
     # Enforce Log ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list =
-      Enum.sort_by(changes_list_with_first_topic_id, &{&1.transaction_hash, &1.block_hash, &1.index})
+      Enum.sort_by(changes_list_with_log_first_topic_id, &{&1.transaction_hash, &1.block_hash, &1.index})
 
     {:ok, _} =
       Import.insert_changes_list(
@@ -115,6 +113,17 @@ defmodule Explorer.Chain.Import.Runner.Logs do
       )
   end
 
+  defp put_log_first_topic_id(changes_list, log_first_topic_ids_hashes) do
+    Enum.map(changes_list, fn item ->
+      {log_first_topic_id, _} =
+        Enum.find(log_first_topic_ids_hashes, fn {_, hash} ->
+          hash == item.first_topic
+        end)
+
+      Map.put(item, :log_first_topic_id, log_first_topic_id)
+    end)
+  end
+
   defp default_on_conflict do
     from(
       log in Log,
@@ -123,6 +132,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
           address_hash: fragment("EXCLUDED.address_hash"),
           data: fragment("EXCLUDED.data"),
           first_topic: fragment("EXCLUDED.first_topic"),
+          log_first_topic_id: fragment("EXCLUDED.log_first_topic_id"),
           second_topic: fragment("EXCLUDED.second_topic"),
           third_topic: fragment("EXCLUDED.third_topic"),
           fourth_topic: fragment("EXCLUDED.fourth_topic"),
@@ -134,10 +144,11 @@ defmodule Explorer.Chain.Import.Runner.Logs do
       ],
       where:
         fragment(
-          "(EXCLUDED.address_hash, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.address_hash, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.log_first_topic_id, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
           log.address_hash,
           log.data,
           log.first_topic,
+          log.log_first_topic_id,
           log.second_topic,
           log.third_topic,
           log.fourth_topic

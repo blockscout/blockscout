@@ -6,13 +6,13 @@ defmodule Explorer.Chain.Log do
   require Logger
 
   alias ABI.{Event, FunctionSelector}
-  alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, ContractMethod, Data, LogFirstTopic, Hash, Log, Transaction}
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Log, LogFirstTopic, Transaction}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.SigProviderInterface
 
   @required_attrs ~w(address_hash data block_hash index transaction_hash)a
-  @optional_attrs ~w(first_topic first_topic_id second_topic third_topic fourth_topic type block_number)a
+  @optional_attrs ~w(first_topic log_first_topic_id second_topic third_topic fourth_topic block_number)a
 
   @typedoc """
    * `address` - address of contract that generate the event
@@ -21,7 +21,7 @@ defmodule Explorer.Chain.Log do
    * `address_hash` - foreign key for `address`
    * `data` - non-indexed log parameters.
    * `first_topic` - `topics[0]`
-   * `first_topic_id` - id of LogFirstTopic
+   * `log_first_topic_id` - id of LogFirstTopic
    * `second_topic` - `topics[1]`
    * `third_topic` - `topics[2]`
    * `fourth_topic` - `topics[3]`
@@ -36,7 +36,8 @@ defmodule Explorer.Chain.Log do
           block_number: non_neg_integer() | nil,
           data: Data.t(),
           first_topic: Hash.Full.t() | nil,
-          first_topic_id: non_neg_integer() | nil,
+          log_first_topic: %Ecto.Association.NotLoaded{} | Hash.Full.t() | nil,
+          log_first_topic_id: non_neg_integer() | nil,
           second_topic: Hash.Full.t() | nil,
           third_topic: Hash.Full.t() | nil,
           fourth_topic: Hash.Full.t() | nil,
@@ -74,7 +75,7 @@ defmodule Explorer.Chain.Log do
     )
 
     belongs_to(:log_first_topic, LogFirstTopic,
-      foreign_key: :first_topic_id,
+      foreign_key: :log_first_topic_id,
       primary_key: true,
       references: :id,
       type: :integer
@@ -192,10 +193,10 @@ defmodule Explorer.Chain.Log do
   end
 
   defp find_method_candidates(log, transaction, options, events_acc, skip_sig_provider?) do
-    if is_nil(log.first_topic) do
+    if is_nil(log.log_first_topic) do
       {{:error, :could_not_decode}, events_acc}
     else
-      <<method_id::binary-size(4), _rest::binary>> = log.first_topic.bytes
+      <<method_id::binary-size(4), _rest::binary>> = log.log_first_topic.hash.bytes
 
       if Map.has_key?(events_acc, method_id) do
         {events_acc[method_id], events_acc}
@@ -244,7 +245,7 @@ defmodule Explorer.Chain.Log do
            abi
            |> ABI.parse_specification(include_events?: true)
            |> Event.find_and_decode(
-             log.first_topic && log.first_topic.bytes,
+             log.log_first_topic && log.log_first_topic.hash.bytes,
              log.second_topic && log.second_topic.bytes,
              log.third_topic && log.third_topic.bytes,
              log.fourth_topic && log.fourth_topic.bytes,
@@ -289,7 +290,7 @@ defmodule Explorer.Chain.Log do
          {:ok, result} <-
            SigProviderInterface.decode_event(
              [
-               log.first_topic,
+               log.log_first_topic.hash,
                log.second_topic,
                log.third_topic,
                log.fourth_topic
@@ -327,8 +328,11 @@ defmodule Explorer.Chain.Log do
 
   def fetch_log_by_tx_hash_and_first_topic(tx_hash, first_topic, options \\ []) do
     __MODULE__
-    |> where([l], l.transaction_hash == ^tx_hash and l.first_topic == ^first_topic)
+    |> join(:left, [l], topic in LogFirstTopic, on: l.log_first_topic_id == topic.id)
+    |> where([l, topic], l.transaction_hash == ^tx_hash and topic.hash == ^first_topic)
     |> limit(1)
+    |> select([l, topic], l)
     |> Chain.select_repo(options).one()
+    |> Repo.preload(:log_first_topic)
   end
 end

@@ -43,11 +43,18 @@ defmodule Indexer.Temporary.UncatalogedTokenTransfersTest do
           index: 0
         )
 
+      log_first_topic =
+        insert(:log_first_topic,
+          hash: topic("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"),
+          id: 1
+        )
+
       log =
         insert(:token_transfer_log,
           transaction: transaction,
           address_hash: address.hash,
-          block: block
+          block: block,
+          log_first_topic_id: log_first_topic.id
         )
 
       block_number = log.block_number
@@ -58,6 +65,11 @@ defmodule Indexer.Temporary.UncatalogedTokenTransfersTest do
       assert {:noreply, ^expected_state} = UncatalogedTokenTransfers.handle_info(:scan, state)
       assert_receive :push_front_blocks
     end
+  end
+
+  defp topic(topic_hex_string) do
+    {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
+    topic
   end
 
   describe "handle_info with :push_front_blocks" do

@@ -56,6 +56,7 @@ defmodule Explorer.Chain do
     Import,
     InternalTransaction,
     Log,
+    LogFirstTopic,
     PendingBlockOperation,
     SmartContract,
     Token,
@@ -374,11 +375,15 @@ defmodule Explorer.Chain do
         )
       end
 
+    base_with_first_topic =
+      base
+      |> preload(:log_first_topic)
+
     preloaded_query =
       if csv_export? do
-        base
+        base_with_first_topic
       else
-        base
+        base_with_first_topic
         |> preload(transaction: [:to_address, :from_address])
       end
 
@@ -396,8 +401,10 @@ defmodule Explorer.Chain do
 
   defp filter_topic(base_query, topic) do
     from(log in base_query,
+      left_join: log_first_topic in LogFirstTopic,
+      on: log_first_topic.id == log.log_first_topic_id,
       where:
-        log.first_topic == ^topic or log.second_topic == ^topic or log.third_topic == ^topic or
+        log_first_topic.hash == ^topic or log.second_topic == ^topic or log.third_topic == ^topic or
           log.fourth_topic == ^topic
     )
   end
@@ -2848,6 +2855,7 @@ defmodule Explorer.Chain do
 
     query =
       log_with_transactions
+      |> preload(:log_first_topic)
       |> where([_, transaction], transaction.hash == ^transaction_hash)
       |> page_transaction_logs(paging_options)
       |> limit(^paging_options.page_size)

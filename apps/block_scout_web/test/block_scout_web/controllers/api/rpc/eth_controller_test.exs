@@ -113,13 +113,15 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       transaction = insert(:transaction, from_address: address) |> with_block(block)
 
+      log_first_topic = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+
       insert(:log,
         block: block,
         block_number: block.number,
         address: address,
         transaction: transaction,
         data: "0x010101",
-        first_topic: topic(@first_topic_hex_string_1)
+        log_first_topic_id: log_first_topic.id
       )
 
       params = params(api_params, [%{"address" => to_string(address.hash), "topics" => [@first_topic_hex_string_1]}])
@@ -139,13 +141,16 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       transaction = insert(:transaction, from_address: address) |> with_block(block)
 
+      log_first_topic_1 = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+      log_first_topic_2 = insert(:log_first_topic, hash: topic(@first_topic_hex_string_2), id: 2)
+
       insert(:log,
         address: address,
         block: block,
         block_number: block.number,
         transaction: transaction,
         data: "0x010101",
-        first_topic: topic(@first_topic_hex_string_1)
+        log_first_topic_id: log_first_topic_1.id
       )
 
       insert(:log,
@@ -154,7 +159,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         block_number: block.number,
         transaction: transaction,
         data: "0x020202",
-        first_topic: topic(@first_topic_hex_string_2)
+        log_first_topic_id: log_first_topic_2.id
       )
 
       params =
@@ -179,13 +184,15 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         |> insert(to_address: contract_address)
         |> with_block(block)
 
+      log_first_topic = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+
       inserted_records =
         insert_list(2000, :log,
           block: block,
           block_number: block.number,
           address: contract_address,
           transaction: transaction,
-          first_topic: topic(@first_topic_hex_string_1)
+          log_first_topic_id: log_first_topic.id
         )
 
       params =
@@ -242,11 +249,13 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       transaction = insert(:transaction, from_address: address) |> with_block(block)
 
+      log_first_topic = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+
       insert(:log,
         address: address,
         transaction: transaction,
         data: "0x010101",
-        first_topic: topic(@first_topic_hex_string_1),
+        log_first_topic_id: log_first_topic.id,
         second_topic: topic(@second_topic_hex_string_1),
         block: block,
         block_number: block.number
@@ -257,7 +266,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         address: address,
         transaction: transaction,
         data: "0x020202",
-        first_topic: topic(@first_topic_hex_string_1)
+        log_first_topic_id: log_first_topic.id
       )
 
       params =
@@ -281,11 +290,13 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       transaction = insert(:transaction, from_address: address) |> with_block(block)
 
+      log_first_topic = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+
       insert(:log,
         address: address,
         transaction: transaction,
         data: "0x010101",
-        first_topic: topic(@first_topic_hex_string_1),
+        log_first_topic_id: log_first_topic.id,
         second_topic: topic(@second_topic_hex_string_1),
         block: block,
         block_number: block.number
@@ -295,7 +306,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         address: address,
         transaction: transaction,
         data: "0x020202",
-        first_topic: topic(@first_topic_hex_string_1),
+        log_first_topic_id: log_first_topic.id,
         second_topic: topic(@second_topic_hex_string_2),
         block: block,
         block_number: block.number

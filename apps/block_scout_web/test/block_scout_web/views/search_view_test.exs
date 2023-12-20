@@ -6,7 +6,6 @@ defmodule BlockScoutWeb.SearchViewTest do
     query = "test"
     search_result = "qwerty"
     res = SearchView.highlight_search_result(search_result, query)
-    IO.inspect(res)
 
     assert res == {:safe, search_result}
   end
@@ -15,7 +14,6 @@ defmodule BlockScoutWeb.SearchViewTest do
     query = "test"
     search_result = "qwe1'\"><iframe/onload=console.log(123)>${7*7}{{7*7}}{{'7'*'7'}}"
     res = SearchView.highlight_search_result(search_result, query)
-    IO.inspect(res)
 
     assert res ==
              {:safe,
@@ -26,7 +24,6 @@ defmodule BlockScoutWeb.SearchViewTest do
     query = "qwe"
     search_result = "qwerty"
     res = SearchView.highlight_search_result(search_result, query)
-    IO.inspect(res)
 
     assert res == {:safe, "<mark class='autoComplete_highlight'>qwe</mark>rty"}
   end
@@ -35,7 +32,6 @@ defmodule BlockScoutWeb.SearchViewTest do
     query = "qwe"
     search_result = "qwe1'\"><iframe/onload=console.log(123)>${7*7}{{7*7}}{{'7'*'7'}}"
     res = SearchView.highlight_search_result(search_result, query)
-    IO.inspect(res)
 
     assert res ==
              {:safe,

@@ -28,7 +28,7 @@ defmodule Explorer.Chain.TokenTransfer do
   import Ecto.Query, only: [from: 2, limit: 2, where: 3, join: 5, order_by: 3, preload: 3]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, Log, LogFirstTopic, TokenTransfer, Transaction}
   alias Explorer.Chain.Token.Instance
   alias Explorer.{PagingOptions, Repo}
 
@@ -377,10 +377,12 @@ defmodule Explorer.Chain.TokenTransfer do
     query =
       from(l in Log,
         as: :log,
+        left_join: log_first_topic in LogFirstTopic,
+        on: log_first_topic.id == l.log_first_topic_id,
         where:
-          l.first_topic == ^@constant or
-            l.first_topic == ^@erc1155_single_transfer_signature or
-            l.first_topic == ^@erc1155_batch_transfer_signature,
+          log_first_topic.hash == ^@constant or
+            log_first_topic.hash == ^@erc1155_single_transfer_signature or
+            log_first_topic.hash == ^@erc1155_batch_transfer_signature,
         where:
           not exists(
             from(tf in TokenTransfer,

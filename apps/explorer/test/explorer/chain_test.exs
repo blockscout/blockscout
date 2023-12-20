@@ -327,12 +327,14 @@ defmodule Explorer.ChainTest do
         |> insert(from_address: address)
         |> with_block()
 
+      insert(:log_first_topic, hash: first_topic, id: 1)
+
       insert(:log,
         block: transaction2.block,
         transaction: transaction2,
         index: 2,
         address: address,
-        first_topic: first_topic,
+        log_first_topic_id: 1,
         block_number: transaction2.block_number
       )
 

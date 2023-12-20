@@ -25,7 +25,8 @@ defmodule Indexer.Transform.PolygonEdge.Withdrawals do
 
         logs
         |> Enum.filter(fn log ->
-          !is_nil(log.first_topic) && String.downcase(log.first_topic) == l2_state_synced_event_signature &&
+          !is_nil(log.first_topic) &&
+            String.downcase(log.first_topic) == l2_state_synced_event_signature &&
             String.downcase(Helper.address_hash_to_string(log.address_hash)) == state_sender
         end)
         |> Enum.map(fn log ->

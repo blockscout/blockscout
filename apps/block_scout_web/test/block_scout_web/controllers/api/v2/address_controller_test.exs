@@ -1761,13 +1761,15 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         |> insert()
         |> with_block()
 
+      log_first_topic = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+
       log =
         insert(:log,
           transaction: tx,
           block: tx.block,
           block_number: tx.block_number,
           address: address,
-          first_topic: topic(@first_topic_hex_string_1)
+          log_first_topic_id: log_first_topic.id
         )
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/logs?topic=#{@first_topic_hex_string_1}")

@@ -54,7 +54,7 @@ defmodule Explorer.Chain.CSVExport.AddressLogCsvExporter do
           log.block_hash,
           Address.checksum(log.address_hash),
           to_string(log.data),
-          to_string(log.first_topic),
+          to_string(log.log_first_topic && log.log_first_topic.hash),
           to_string(log.second_topic),
           to_string(log.third_topic),
           to_string(log.fourth_topic)

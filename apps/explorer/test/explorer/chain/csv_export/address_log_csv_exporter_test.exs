@@ -23,6 +23,8 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
         |> insert()
         |> with_block()
 
+      log_first_topic = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+
       log =
         insert(:log,
           address: address,
@@ -31,7 +33,7 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
           block: transaction.block,
           block_number: transaction.block_number,
           data: "0x12",
-          first_topic: topic(@first_topic_hex_string_1),
+          log_first_topic_id: log_first_topic.id,
           second_topic: topic(@second_topic_hex_string_1),
           third_topic: topic(@third_topic_hex_string_1),
           fourth_topic: topic(@fourth_topic_hex_string_1)
@@ -87,7 +89,7 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
       assert result.block_hash == to_string(log.block_hash)
       assert result.address == Address.checksum(log.address.hash)
       assert result.data == to_string(log.data)
-      assert result.first_topic == to_string(log.first_topic)
+      assert result.first_topic == to_string(log_first_topic.hash)
       assert result.second_topic == to_string(log.second_topic)
       assert result.third_topic == to_string(log.third_topic)
       assert result.fourth_topic == to_string(log.fourth_topic)

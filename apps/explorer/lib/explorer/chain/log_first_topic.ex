@@ -5,7 +5,7 @@ defmodule Explorer.Chain.LogFirstTopic do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Hash, Log}
   alias Explorer.Repo
 
   @required_attrs ~w(first_topic)a
@@ -23,6 +23,8 @@ defmodule Explorer.Chain.LogFirstTopic do
     field(:id, :integer)
     field(:hash, Hash.Full)
 
+    has_many(:logs, Log, references: :id)
+
     timestamps()
   end
 
@@ -33,7 +35,7 @@ defmodule Explorer.Chain.LogFirstTopic do
     |> validate_required(@required_attrs)
   end
 
-  def get_first_topic_ids_by_hashes(topic_hashes) do
+  def get_log_first_topic_ids_by_hashes(topic_hashes) do
     query =
       from(log_first_topic in __MODULE__,
         select: {log_first_topic.id, log_first_topic.hash},

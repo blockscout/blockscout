@@ -297,7 +297,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "tx_hash" => get_tx_hash(transaction_or_hash),
       "address" => Helper.address_with_info(nil, log.address, log.address_hash, tags_for_address_needed?),
       "topics" => [
-        log.first_topic,
+        log.log_first_topic && log.log_first_topic.hash,
         log.second_topic,
         log.third_topic,
         log.fourth_topic
@@ -544,7 +544,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     bid_event =
       Enum.find(logs, fn log ->
-        sanitize_log_first_topic(log.first_topic) == @suave_bid_event &&
+        sanitize_log_first_topic(log.log_first_topic.hash) == @suave_bid_event &&
           Enum.member?(suave_bid_contracts, String.downcase(Hash.to_string(log.address_hash)))
       end)
 

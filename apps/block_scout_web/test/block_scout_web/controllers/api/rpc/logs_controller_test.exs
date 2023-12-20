@@ -447,16 +447,19 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
         |> insert()
         |> with_block()
 
+      log_first_topic_1 = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+      log_first_topic_2 = insert(:log_first_topic, hash: topic(@first_topic_hex_string_2), id: 2)
+
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        first_topic: topic(@first_topic_hex_string_1)
+        log_first_topic_id: log_first_topic_1.id
       ]
 
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        first_topic: topic(@first_topic_hex_string_2)
+        log_first_topic_id: log_first_topic_2.id
       ]
 
       log1 = insert(:log, log1_details)
@@ -467,13 +470,13 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
         "action" => "getLogs",
         "fromBlock" => "#{block.number}",
         "toBlock" => "#{block.number}",
-        "topic0" => log1.first_topic
+        "topic0" => log_first_topic_1.hash
       }
 
       expected_result = [
         %{
           "address" => "#{contract_address.hash}",
-          "topics" => get_topics(log1),
+          "topics" => get_topics(log1, log_first_topic_1),
           "data" => "#{log1.data}",
           "blockNumber" => integer_to_hex(transaction.block_number),
           "timeStamp" => datetime_to_hex(block.timestamp),
@@ -505,17 +508,20 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
         |> insert()
         |> with_block()
 
+      log_first_topic_1 = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+      log_first_topic_2 = insert(:log_first_topic, hash: topic(@first_topic_hex_string_2), id: 2)
+
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        first_topic: topic(@first_topic_hex_string_1),
+        log_first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1)
       ]
 
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        first_topic: topic(@first_topic_hex_string_2),
+        log_first_topic_id: log_first_topic_2.id,
         second_topic: topic(@second_topic_hex_string_2)
       ]
 
@@ -527,7 +533,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
         "action" => "getLogs",
         "fromBlock" => "#{block.number}",
         "toBlock" => "#{block.number}",
-        "topic0" => log1.first_topic,
+        "topic0" => log_first_topic_1.hash,
         "topic1" => log1.second_topic,
         "topic0_1_opr" => "and"
       }
@@ -539,7 +545,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
 
       assert [found_log] = response["result"]
       assert found_log["logIndex"] == integer_to_hex(log1.index)
-      assert found_log["topics"] == get_topics(log1)
+      assert found_log["topics"] == get_topics(log1, log_first_topic_1)
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
@@ -547,6 +553,9 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
 
     test "with a topic{x} OR another", %{conn: conn} do
       contract_address = insert(:contract_address)
+
+      log_first_topic_1 = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+      log_first_topic_2 = insert(:log_first_topic, hash: topic(@first_topic_hex_string_2), id: 2)
 
       transaction =
         %Transaction{block: block} =
@@ -557,14 +566,14 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        first_topic: topic(@first_topic_hex_string_1),
+        log_first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1)
       ]
 
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        first_topic: topic(@first_topic_hex_string_2),
+        log_first_topic_id: log_first_topic_2.id,
         second_topic: topic(@second_topic_hex_string_2)
       ]
 
@@ -576,7 +585,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
         "action" => "getLogs",
         "fromBlock" => "#{block.number}",
         "toBlock" => "#{block.number}",
-        "topic0" => log1.first_topic,
+        "topic0" => log_first_topic_1.hash,
         "topic1" => log2.second_topic,
         "topic0_1_opr" => "or"
       }
@@ -596,6 +605,8 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
     test "with all available 'topic{x}'s and 'topic{x}_{x}_opr's", %{conn: conn} do
       contract_address = insert(:contract_address)
 
+      log_first_topic_1 = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+
       transaction =
         %Transaction{block: block} =
         :transaction
@@ -605,7 +616,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        first_topic: topic(@first_topic_hex_string_1),
+        log_first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1),
         third_topic: topic(@third_topic_hex_string_1),
         fourth_topic: topic(@fourth_topic_hex_string_1)
@@ -614,7 +625,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        first_topic: topic(@first_topic_hex_string_1),
+        log_first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1),
         third_topic: topic(@third_topic_hex_string_1),
         fourth_topic: topic(@fourth_topic_hex_string_2)
@@ -628,7 +639,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
         "action" => "getLogs",
         "fromBlock" => "#{block.number}",
         "toBlock" => "#{block.number}",
-        "topic0" => log1.first_topic,
+        "topic0" => log_first_topic_1.hash,
         "topic1" => log1.second_topic,
         "topic2" => log1.third_topic,
         "topic3" => log2.fourth_topic,
@@ -801,14 +812,17 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
     end
   end
 
-  defp get_topics(%Log{
-         first_topic: first_topic,
-         second_topic: second_topic,
-         third_topic: third_topic,
-         fourth_topic: fourth_topic
-       }) do
+  defp get_topics(
+         %Log{
+           first_topic: first_topic,
+           second_topic: second_topic,
+           third_topic: third_topic,
+           fourth_topic: fourth_topic
+         },
+         log_first_topic \\ nil
+       ) do
     [
-      first_topic && Explorer.Chain.Hash.to_string(first_topic),
+      log_first_topic && Explorer.Chain.Hash.to_string(log_first_topic.hash),
       second_topic && Explorer.Chain.Hash.to_string(second_topic),
       third_topic && Explorer.Chain.Hash.to_string(third_topic),
       fourth_topic && Explorer.Chain.Hash.to_string(fourth_topic)

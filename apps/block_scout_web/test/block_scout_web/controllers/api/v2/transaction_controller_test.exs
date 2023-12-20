@@ -977,13 +977,15 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     test "check stability fees", %{conn: conn} do
       tx = insert(:transaction) |> with_block()
 
+      log_first_topic = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+
       _log =
         insert(:log,
           transaction: tx,
           index: 1,
           block: tx.block,
           block_number: tx.block_number,
-          first_topic: topic(@first_topic_hex_string_1),
+          log_first_topic_id: log_first_topic.id,
           data:
             "0x000000000000000000000000dc2b93f3291030f3f7a6d9363ac37757f7ad5c4300000000000000000000000000000000000000000000000000002824369a100000000000000000000000000046b555cb3962bf9533c437cbd04a2f702dfdb999000000000000000000000000000000000000000000000000000014121b4d0800000000000000000000000000faf7a981360c2fab3a5ab7b3d6d8d0cf97a91eb9000000000000000000000000000000000000000000000000000014121b4d0800"
         )
@@ -1040,13 +1042,15 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     test "check stability if token absent in DB", %{conn: conn} do
       tx = insert(:transaction) |> with_block()
 
+      log_first_topic = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+
       _log =
         insert(:log,
           transaction: tx,
           index: 1,
           block: tx.block,
           block_number: tx.block_number,
-          first_topic: topic(@first_topic_hex_string_1),
+          log_first_topic_id: log_first_topic.id,
           data:
             "0x000000000000000000000000dc2b93f3291030f3f7a6d9363ac37757f7ad5c4300000000000000000000000000000000000000000000000000002824369a100000000000000000000000000046b555cb3962bf9533c437cbd04a2f702dfdb999000000000000000000000000000000000000000000000000000014121b4d0800000000000000000000000000faf7a981360c2fab3a5ab7b3d6d8d0cf97a91eb9000000000000000000000000000000000000000000000000000014121b4d0800"
         )

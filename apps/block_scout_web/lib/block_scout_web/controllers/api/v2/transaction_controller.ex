@@ -277,6 +277,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           necessity_by_association: %{
             [address: :names] => :optional,
             [address: :smart_contract] => :optional,
+            :log_first_topic => :optional,
             address: :optional
           }
         ]

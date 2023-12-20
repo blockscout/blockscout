@@ -418,11 +418,13 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
 
       address = insert(:address)
 
+      log_first_topic = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+
       Enum.each(1..100, fn _ ->
         insert(:log,
           address: address,
           transaction: transaction,
-          first_topic: topic(@first_topic_hex_string_1),
+          log_first_topic_id: log_first_topic.id,
           second_topic: topic(@second_topic_hex_string_1),
           block: block,
           block_number: block.number
@@ -495,11 +497,13 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
 
       address = insert(:address)
 
+      log_first_topic = insert(:log_first_topic, hash: topic(@first_topic_hex_string_1), id: 1)
+
       log =
         insert(:log,
           address: address,
           transaction: transaction,
-          first_topic: topic(@first_topic_hex_string_1),
+          log_first_topic_id: log_first_topic.id,
           second_topic: topic(@second_topic_hex_string_1),
           block: block,
           block_number: block.number

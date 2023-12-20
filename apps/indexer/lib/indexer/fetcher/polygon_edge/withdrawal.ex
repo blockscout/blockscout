@@ -17,7 +17,7 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
 
   alias ABI.TypeDecoder
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Log
+  alias Explorer.Chain.{Log, LogFirstTopic}
   alias Explorer.Chain.PolygonEdge.Withdrawal
   alias Indexer.Fetcher.PolygonEdge
 
@@ -174,9 +174,11 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
       if scan_db do
         query =
           from(log in Log,
+            left_join: log_first_topic in LogFirstTopic,
+            on: log_first_topic.id == log.log_first_topic_id,
             select: {log.second_topic, log.data, log.transaction_hash, log.block_number},
             where:
-              log.first_topic == @l2_state_synced_event and log.address_hash == ^state_sender and
+              log_first_topic.hash == @l2_state_synced_event and log.address_hash == ^state_sender and
                 log.block_number >= ^block_start and log.block_number <= ^block_end
           )
 
