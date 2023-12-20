@@ -12,7 +12,7 @@ defmodule Explorer.Repo.Migrations.CreateLogFirstTopicTable do
     create(unique_index(:log_first_topics, [:id]))
 
     alter table(:logs) do
-      add(:first_topic_id, references(:log_first_topics, column: :id, type: :bigserial), null: false)
+      add(:first_topic_id, references(:log_first_topics, column: :id, type: :bigserial), null: true)
     end
   end
 end
