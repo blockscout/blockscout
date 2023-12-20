@@ -3797,14 +3797,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-    Inserts list of token instances via upsert_token_instance/1.
-  """
-  @spec upsert_token_instances_list([map()]) :: list()
-  def upsert_token_instances_list(instances) do
-    Enum.map(instances, &upsert_token_instance/1)
-  end
-
-  @doc """
   Update a new `t:Token.t/0` record.
 
   As part of updating token, an additional record is inserted for
