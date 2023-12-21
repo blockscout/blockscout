@@ -44,7 +44,6 @@ defmodule Explorer.Chain.TokenTransfer do
   * `:to_address_hash` - Address hash foreign key
   * `:token_contract_address` - The `t:Explorer.Chain.Address.t/0` of the token's contract.
   * `:token_contract_address_hash` - Address hash foreign key
-  * `:token_id` - ID of the token (applicable to ERC-721 tokens)
   * `:transaction` - The `t:Explorer.Chain.Transaction.t/0` ledger
   * `:transaction_hash` - Transaction foreign key
   * `:log_index` - Index of the corresponding `t:Explorer.Chain.Log.t/0` in the block.
@@ -61,7 +60,6 @@ defmodule Explorer.Chain.TokenTransfer do
           to_address_hash: Hash.Address.t(),
           token_contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
           token_contract_address_hash: Hash.Address.t(),
-          token_id: non_neg_integer() | nil,
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
           log_index: non_neg_integer(),
@@ -86,7 +84,6 @@ defmodule Explorer.Chain.TokenTransfer do
     field(:amount, :decimal)
     field(:block_number, :integer)
     field(:log_index, :integer, primary_key: true)
-    field(:token_id, :decimal)
     field(:amounts, {:array, :decimal})
     field(:token_ids, {:array, :decimal})
     field(:index_in_batch, :integer, virtual: true)
@@ -129,7 +126,7 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash block_hash)a
-  @optional_attrs ~w(amount token_id amounts token_ids)a
+  @optional_attrs ~w(amount amounts token_ids)a
 
   @doc false
   def changeset(%TokenTransfer{} = struct, params \\ %{}) do

@@ -109,8 +109,6 @@ config :explorer, Explorer.Counters.BlockPriorityFeeCounter,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.TokenTransferTokenIdMigration.Supervisor, enabled: true
-
 config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: true
 
 config :explorer, Explorer.Migrator.TransactionsDenormalization, enabled: true
