@@ -766,6 +766,11 @@ defmodule EthereumJSONRPC.Block do
     {key, quantity_to_integer(quantity)}
   end
 
+  # to be merged with clause above ^
+  defp entry_to_elixir({key, _quantity}, _block) when key in ~w(blobGasUsed excessBlobGas) do
+    {:ignore, :ignore}
+  end
+
   # Size and totalDifficulty may be `nil` for uncle blocks
   defp entry_to_elixir({key, nil}, _block) when key in ~w(size totalDifficulty) do
     {key, nil}
