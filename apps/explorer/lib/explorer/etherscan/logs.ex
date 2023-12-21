@@ -34,8 +34,7 @@ defmodule Explorer.Etherscan.Logs do
     :fourth_topic,
     :index,
     :address_hash,
-    :transaction_hash,
-    :type
+    :transaction_hash
   ]
 
   @default_paging_options %{block_number: nil, log_index: nil}
