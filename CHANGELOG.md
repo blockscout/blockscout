@@ -8,6 +8,7 @@
 
 ### Chore
 
+- [#9009](https://github.com/blockscout/blockscout/pull/9009) - Index for block refetch_needed
 - [#9006](https://github.com/blockscout/blockscout/pull/9006) - Drop unused indexes on address_current_token_balances table
 - [#8996](https://github.com/blockscout/blockscout/pull/8996) - Refine token transfers token ids index
 
