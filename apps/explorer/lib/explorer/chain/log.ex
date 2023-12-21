@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Log do
   alias Explorer.SmartContract.SigProviderInterface
 
   @required_attrs ~w(address_hash data block_hash index transaction_hash)a
-  @optional_attrs ~w(first_topic second_topic third_topic fourth_topic type block_number)a
+  @optional_attrs ~w(first_topic second_topic third_topic fourth_topic block_number)a
 
   @typedoc """
    * `address` - address of contract that generate the event
@@ -27,7 +27,6 @@ defmodule Explorer.Chain.Log do
    * `transaction` - transaction for which `log` is
    * `transaction_hash` - foreign key for `transaction`.
    * `index` - index of the log entry in all logs for the `transaction`
-   * `type` - type of event.  *Nethermind-only*
   """
   @type t :: %__MODULE__{
           address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -41,8 +40,7 @@ defmodule Explorer.Chain.Log do
           fourth_topic: Hash.Full.t(),
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
-          index: non_neg_integer(),
-          type: String.t() | nil
+          index: non_neg_integer()
         }
 
   @primary_key false
@@ -53,7 +51,6 @@ defmodule Explorer.Chain.Log do
     field(:third_topic, Hash.Full)
     field(:fourth_topic, Hash.Full)
     field(:index, :integer, primary_key: true)
-    field(:type, :string)
     field(:block_number, :integer)
 
     timestamps()
@@ -76,8 +73,7 @@ defmodule Explorer.Chain.Log do
   end
 
   @doc """
-  `address_hash` and `transaction_hash` are converted to `t:Explorer.Chain.Hash.t/0`.  The allowed values for `type`
-  are currently unknown, so it is left as a `t:String.t/0`.
+  `address_hash` and `transaction_hash` are converted to `t:Explorer.Chain.Hash.t/0`.
 
       iex> changeset = Explorer.Chain.Log.changeset(
       ...>   %Explorer.Chain.Log{},
@@ -90,8 +86,7 @@ defmodule Explorer.Chain.Log do
       ...>     index: 0,
       ...>     second_topic: nil,
       ...>     third_topic: nil,
-      ...>     transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-      ...>     type: "mined"
+      ...>     transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
       ...>   }
       ...> )
       iex> changeset.valid?
@@ -107,8 +102,6 @@ defmodule Explorer.Chain.Log do
         bytes: <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57, 101, 36,
                  140, 57, 254, 153, 47, 255, 212, 51, 229>>
       }
-      iex> changeset.changes.type
-      "mined"
 
   """
   def changeset(%__MODULE__{} = log, attrs \\ %{}) do
