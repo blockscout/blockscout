@@ -113,6 +113,8 @@ config :explorer, Explorer.TokenTransferTokenIdMigration.Supervisor, enabled: tr
 
 config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: true
 
+config :explorer, Explorer.Migrator.TransactionsDenormalization, enabled: true
+
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: true
