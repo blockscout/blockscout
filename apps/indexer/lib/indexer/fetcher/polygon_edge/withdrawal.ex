@@ -13,6 +13,7 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Explorer.Helper, only: [decode_data: 2]
   import Indexer.Fetcher.PolygonEdge, only: [fill_block_range: 5, get_block_number_by_tag: 3]
+  import Indexer.Helper, only: [log_topic_to_string: 1]
 
   alias ABI.TypeDecoder
   alias Explorer.{Chain, Repo}
@@ -133,6 +134,11 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
 
   @spec event_to_withdrawal(binary(), map(), binary(), binary()) :: map()
   def event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number) do
+    msg_id =
+      second_topic
+      |> log_topic_to_string()
+      |> quantity_to_integer()
+
     [data_bytes] = decode_data(data, [:bytes])
 
     sig = binary_part(data_bytes, 0, 32)
@@ -148,7 +154,7 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
       end
 
     %{
-      msg_id: quantity_to_integer(second_topic),
+      msg_id: msg_id,
       from: from,
       to: to,
       l2_transaction_hash: l2_transaction_hash,
