@@ -11,6 +11,7 @@
 - [#9009](https://github.com/blockscout/blockscout/pull/9009) - Index for block refetch_needed
 - [#9006](https://github.com/blockscout/blockscout/pull/9006) - Drop unused indexes on address_current_token_balances table
 - [#8996](https://github.com/blockscout/blockscout/pull/8996) - Refine token transfers token ids index
+- [#5322](https://github.com/blockscout/blockscout/pull/5322) - DB denormalization: block consensus and timestamp in transaction table
 
 ## Current
 
@@ -101,7 +102,6 @@
 
 - [#8956](https://github.com/blockscout/blockscout/pull/8956) - Refine docker-compose config structure
 - [#8911](https://github.com/blockscout/blockscout/pull/8911) - Set client_connection_check_interval for main Postgres DB in docker-compose setup
-- [#5322](https://github.com/blockscout/blockscout/pull/5322) - DB denormalization: block consensus and timestamp in transaction table
 
 <details>
   <summary>Dependencies version bumps</summary>
