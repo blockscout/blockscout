@@ -285,8 +285,15 @@ defmodule Indexer.Transform.TransactionActions do
     [debt_amount, collateral_amount, _liquidator, _receive_a_token] =
       decode_data(log.data, [{:uint, 256}, {:uint, 256}, :address, :bool])
 
-    debt_address = truncate_address_hash(log.third_topic)
-    collateral_address = truncate_address_hash(log.second_topic)
+    debt_address =
+      log.third_topic
+      |> Helper.log_topic_to_string()
+      |> truncate_address_hash()
+
+    collateral_address =
+      log.second_topic
+      |> Helper.log_topic_to_string()
+      |> truncate_address_hash()
 
     case get_token_data([debt_address, collateral_address]) do
       false ->
@@ -318,7 +325,10 @@ defmodule Indexer.Transform.TransactionActions do
 
   defp aave_handle_event(type, amount, log, address_topic, chain_id)
        when type in ["borrow", "supply", "withdraw", "repay", "flash_loan"] do
-    address = truncate_address_hash(address_topic)
+    address =
+      address_topic
+      |> Helper.log_topic_to_string()
+      |> truncate_address_hash()
 
     case get_token_data([address]) do
       false ->
@@ -345,7 +355,10 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp aave_handle_event(type, log, address_topic, chain_id) when type in ["enable_collateral", "disable_collateral"] do
-    address = truncate_address_hash(address_topic)
+    address =
+      address_topic
+      |> Helper.log_topic_to_string()
+      |> truncate_address_hash()
 
     case get_token_data([address]) do
       false ->
@@ -448,12 +461,23 @@ defmodule Indexer.Transform.TransactionActions do
       |> Enum.reduce(%{}, fn log, acc ->
         if sanitize_first_topic(log.first_topic) == @uniswap_v3_transfer_nft_event do
           # This is Transfer event for NFT
-          from = truncate_address_hash(log.second_topic)
+          from =
+            log.second_topic
+            |> Helper.log_topic_to_string()
+            |> truncate_address_hash()
 
           # credo:disable-for-next-line
           if from == burn_address_hash_string() do
-            to = truncate_address_hash(log.third_topic)
-            [token_id] = decode_data(log.fourth_topic, [{:uint, 256}])
+            to =
+              log.third_topic
+              |> Helper.log_topic_to_string()
+              |> truncate_address_hash()
+
+            [token_id] =
+              log.fourth_topic
+              |> Helper.log_topic_to_string()
+              |> decode_data([{:uint, 256}])
+
             mint_nft_ids = Map.put_new(acc, to, %{ids: [], log_index: log.index})
 
             Map.put(mint_nft_ids, to, %{
@@ -970,7 +994,7 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp sanitize_first_topic(first_topic) do
-    if is_nil(first_topic), do: "", else: String.downcase(first_topic)
+    if is_nil(first_topic), do: "", else: String.downcase(Helper.log_topic_to_string(first_topic))
   end
 
   defp truncate_address_hash(nil), do: burn_address_hash_string()
