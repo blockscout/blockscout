@@ -4399,10 +4399,10 @@ defmodule Explorer.Chain do
       :not_found
 
   """
-  @spec check_address_exists(Hash.Address.t()) :: :ok | :not_found
-  def check_address_exists(address_hash) do
+  @spec check_address_exists(Hash.Address.t(), [api?]) :: :ok | :not_found
+  def check_address_exists(address_hash, options \\ []) do
     address_hash
-    |> address_exists?()
+    |> address_exists?(options)
     |> boolean_to_check_result()
   end
 
@@ -4424,15 +4424,15 @@ defmodule Explorer.Chain do
       false
 
   """
-  @spec address_exists?(Hash.Address.t()) :: boolean()
-  def address_exists?(address_hash) do
+  @spec address_exists?(Hash.Address.t(), [api?]) :: boolean()
+  def address_exists?(address_hash, options \\ []) do
     query =
       from(
         address in Address,
         where: address.hash == ^address_hash
       )
 
-    Repo.exists?(query)
+    select_repo(options).exists?(query)
   end
 
   @doc """

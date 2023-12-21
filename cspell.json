@@ -542,7 +542,22 @@
         "zindex",
         "zipcode",
         "zkbob",
-        "zkevm"
+        "zkevm",
+        "erts",
+        "Asfpp",
+        "Nerg",
+        "secp",
+        "qwertyuioiuytrewertyuioiuytrertyuio",
+        "urlset",
+        "lastmod",
+        "qitmeer",
+        "meer",
+        "DefiLlama",
+        "SOLIDITYSCAN",
+        "fkey",
+        "getcontractcreation",
+        "contractaddresses",
+        "tokennfttx"
     ],
     "enableFiletypes": [
         "dotenv",

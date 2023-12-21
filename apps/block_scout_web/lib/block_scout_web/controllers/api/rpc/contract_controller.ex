@@ -13,12 +13,47 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
+  import BlockScoutWeb.API.V2.AddressController, only: [validate_address: 2]
 
   @smth_went_wrong "Something went wrong while publishing the contract"
   @verified "Smart-contract already verified."
   @invalid_address "Invalid address hash"
   @invalid_args "Invalid args format"
   @address_required "Query parameter address is required"
+  @addresses_required "Query parameter contractaddresses is required"
+
+  @addresses_limit 10
+  @api_true [api?: true]
+
+  @doc """
+    Function to handle getcontractcreation request
+  """
+  @spec getcontractcreation(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def getcontractcreation(conn, %{"contractaddresses" => contract_address_hash_strings} = params) do
+    addresses =
+      contract_address_hash_strings
+      |> String.split(",")
+      |> Enum.take(@addresses_limit)
+      |> Enum.map(fn address_hash_string ->
+        case validate_address(address_hash_string, params) do
+          {:ok, _address_hash, address} ->
+            Address.maybe_preload_smart_contract_associations(
+              address,
+              [:contracts_creation_internal_transaction, :contracts_creation_transaction],
+              @api_true
+            )
+
+          _ ->
+            nil
+        end
+      end)
+
+    render(conn, :getcontractcreation, %{addresses: addresses})
+  end
+
+  def getcontractcreation(conn, _params) do
+    render(conn, :error, error: @addresses_required, data: @addresses_required)
+  end
 
   def verify(conn, %{"addressHash" => address_hash} = params) do
     with {:params, {:ok, fetched_params}} <- {:params, fetch_verify_params(params)},

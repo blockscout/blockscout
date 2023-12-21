@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   alias Explorer.Etherscan.{Addresses, Blocks}
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
+  @api_true [api?: true]
+
   def listaccounts(conn, params) do
     options =
       params
@@ -100,7 +102,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
-         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)},
+         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash, @api_true)},
          {:ok, transactions} <- list_transactions(address_hash, options) do
       render(conn, :txlist, %{transactions: transactions})
     else
@@ -149,7 +151,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     options = optional_params(params)
 
     with {:format, {:ok, address_hash}} <- to_address_hash(address_param),
-         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)},
+         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash, @api_true)},
          {:ok, internal_transactions} <- list_internal_transactions(address_hash, options) do
       render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
     else
@@ -166,8 +168,9 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
-         {:contract_address, {:ok, contract_address_hash}} <- to_contract_address_hash(params["contractaddress"]),
-         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)},
+         {:contract_address, {:ok, contract_address_hash}} <-
+           {:contract_address, to_address_hash_optional(params["contractaddress"])},
+         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash, @api_true)},
          {:ok, token_transfers} <- list_token_transfers(address_hash, contract_address_hash, options) do
       render(conn, :tokentx, %{token_transfers: token_transfers})
     else
@@ -175,6 +178,31 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         render(conn, :error, error: "Query parameter address is required")
 
       {:format, :error} ->
+        render(conn, :error, error: "Invalid address format")
+
+      {:contract_address, :error} ->
+        render(conn, :error, error: "Invalid contract address format")
+
+      {_, :not_found} ->
+        render(conn, :error, error: "No token transfers found", data: [])
+    end
+  end
+
+  def tokennfttx(conn, params) do
+    options = optional_params(params)
+
+    with {:address, {:ok, address_hash}} <- {:address, to_address_hash_optional(params["address"])},
+         {:contract_address, {:ok, contract_address_hash}} <-
+           {:contract_address, to_address_hash_optional(params["contractaddress"])},
+         true <- !is_nil(address_hash) or !is_nil(contract_address_hash),
+         {:ok, token_transfers, max_block_number} <-
+           list_nft_token_transfers(address_hash, contract_address_hash, options) do
+      render(conn, :tokennfttx, %{token_transfers: token_transfers, max_block_number: max_block_number})
+    else
+      false ->
+        render(conn, :error, error: "Query parameter address or contractaddress is required")
+
+      {:address, :error} ->
         render(conn, :error, error: "Invalid address format")
 
       {:contract_address, :error} ->
@@ -205,7 +233,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   def tokenlist(conn, params) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
-         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)},
+         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash, @api_true)},
          {:ok, token_list} <- list_tokens(address_hash) do
       render(conn, :token_list, %{token_list: token_list})
     else
@@ -225,7 +253,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
-         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)},
+         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash, @api_true)},
          {:ok, blocks} <- list_blocks(address_hash, options) do
       render(conn, :getminedblocks, %{blocks: blocks})
     else
@@ -395,11 +423,9 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end)
   end
 
-  defp to_contract_address_hash(nil), do: {:contract_address, {:ok, nil}}
+  defp to_address_hash_optional(nil), do: {:ok, nil}
 
-  defp to_contract_address_hash(address_hash_string) do
-    {:contract_address, Chain.string_to_address_hash(address_hash_string)}
-  end
+  defp to_address_hash_optional(address_hash_string), do: Chain.string_to_address_hash(address_hash_string)
 
   defp to_address_hash(address_hash_string) do
     {:format, Chain.string_to_address_hash(address_hash_string)}
@@ -498,6 +524,29 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     case Etherscan.list_token_transfers(address_hash, contract_address_hash, options) do
       [] -> {:error, :not_found}
       token_transfers -> {:ok, token_transfers}
+    end
+  end
+
+  defp list_nft_token_transfers(nil, contract_address_hash, options) do
+    with {:ok, max_block_number} <- Chain.max_consensus_block_number(),
+         token_transfers when token_transfers != [] <-
+           Etherscan.list_nft_token_transfers_by_token(contract_address_hash, options) do
+      {:ok, token_transfers, max_block_number}
+    else
+      _ ->
+        {:error, :not_found}
+    end
+  end
+
+  defp list_nft_token_transfers(address_hash, contract_address_hash, options) do
+    with {:address, :ok} <- {:address, Chain.check_address_exists(address_hash, @api_true)},
+         {:ok, max_block_number} <- Chain.max_consensus_block_number(),
+         token_transfers when token_transfers != [] <-
+           Etherscan.list_nft_token_transfers(address_hash, contract_address_hash, options) do
+      {:ok, token_transfers, max_block_number}
+    else
+      _ ->
+        {:error, :not_found}
     end
   end
 

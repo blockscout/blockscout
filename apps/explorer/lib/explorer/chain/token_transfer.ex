@@ -25,7 +25,6 @@ defmodule Explorer.Chain.TokenTransfer do
   use Explorer.Schema
 
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2, limit: 2, where: 3, join: 5, order_by: 3, preload: 3]
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, Log, TokenTransfer, Transaction}
@@ -362,9 +361,10 @@ defmodule Explorer.Chain.TokenTransfer do
 
   def only_consensus_transfers_query do
     from(token_transfer in __MODULE__,
-      inner_join: block in Block,
-      on: token_transfer.block_hash == block.hash,
-      where: block.consensus == true
+      inner_join: block in assoc(token_transfer, :block),
+      as: :block,
+      where: block.consensus == true,
+      preload: [block: block]
     )
   end
 
@@ -393,5 +393,12 @@ defmodule Explorer.Chain.TokenTransfer do
       )
 
     Repo.stream_reduce(query, [], &[&1 | &2])
+  end
+
+  def erc_721_token_transfers_query do
+    only_consensus_transfers_query()
+    |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+    |> where([tt, token: token], token.type == "ERC-721")
+    |> preload([tt, token: token], [{:token, token}])
   end
 end
