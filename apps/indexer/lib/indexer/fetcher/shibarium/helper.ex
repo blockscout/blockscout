@@ -10,6 +10,10 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
 
   @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
+  @doc """
+  Calculates Shibarium Bridge operation hash as hash_256(user_address, amount_or_id, erc1155_ids, erc1155_amounts, operation_id).
+  """
+  @spec calc_operation_hash(binary(), non_neg_integer() | nil, list(), list(), non_neg_integer()) :: binary()
   def calc_operation_hash(user, amount_or_id, erc1155_ids, erc1155_amounts, operation_id) do
     user_binary =
       user
@@ -40,6 +44,12 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
        |> Base.encode16(case: :lower))
   end
 
+  @doc """
+  Prepares a list of Shibarium Bridge operations to import them into database.
+  Tries to bind the given operations to the existing ones in DB first.
+  If they don't exist, prepares the insertion list and returns it.
+  """
+  @spec prepare_insert_items(list(), module()) :: list()
   def prepare_insert_items(operations, calling_module) do
     operations
     |> Enum.reduce([], fn op, acc ->

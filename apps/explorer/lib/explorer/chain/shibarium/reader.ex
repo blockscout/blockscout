@@ -12,6 +12,9 @@ defmodule Explorer.Chain.Shibarium.Reader do
   alias Explorer.Chain.Shibarium.Bridge
   alias Explorer.PagingOptions
 
+  @doc """
+  Returns a list of completed Shibarium deposits to display them in UI.
+  """
   @spec deposits(list()) :: list()
   def deposits(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, default_paging_options())
@@ -36,6 +39,9 @@ defmodule Explorer.Chain.Shibarium.Reader do
     |> select_repo(options).all()
   end
 
+  @doc """
+  Returns a total number of completed Shibarium deposits.
+  """
   @spec deposits_count(list()) :: term() | nil
   def deposits_count(options \\ []) do
     query =
@@ -47,6 +53,9 @@ defmodule Explorer.Chain.Shibarium.Reader do
     select_repo(options).aggregate(query, :count, timeout: :infinity)
   end
 
+  @doc """
+  Returns a list of completed Shibarium withdrawals to display them in UI.
+  """
   @spec withdrawals(list()) :: list()
   def withdrawals(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, default_paging_options())
@@ -71,6 +80,9 @@ defmodule Explorer.Chain.Shibarium.Reader do
     |> select_repo(options).all()
   end
 
+  @doc """
+  Returns a total number of completed Shibarium withdrawals.
+  """
   @spec withdrawals_count(list()) :: term() | nil
   def withdrawals_count(options \\ []) do
     query =
