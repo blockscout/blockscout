@@ -39,7 +39,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
       {:ok, %Response{body: body, status_code: 200}} ->
-        body |> Jason.decode() |> preload_tokens()
+        body |> Jason.decode() |> preload_template_variables()
 
       error ->
         old_truncate = Application.get_env(:logger, :truncate)
@@ -148,12 +148,12 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     |> Enum.map(fn {log, decoded_log} -> TransactionView.prepare_log(log, transaction.hash, decoded_log, true) end)
   end
 
-  defp preload_tokens({:ok, %{"success" => true, "data" => %{"summaries" => summaries} = data}}) do
+  defp preload_template_variables({:ok, %{"success" => true, "data" => %{"summaries" => summaries} = data}}) do
     summaries_updated =
       Enum.map(summaries, fn %{"summary_template_variables" => summary_template_variables} = summary ->
         summary_template_variables_preloaded =
           Enum.reduce(summary_template_variables, %{}, fn {key, value}, acc ->
-            Map.put(acc, key, preload_token(value))
+            Map.put(acc, key, preload_template_variable(value))
           end)
 
         Map.put(summary, "summary_template_variables", summary_template_variables_preloaded)
@@ -162,17 +162,46 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     {:ok, %{"success" => true, "data" => Map.put(data, "summaries", summaries_updated)}}
   end
 
-  defp preload_tokens(error), do: error
+  defp preload_template_variables(error), do: error
 
-  defp preload_token(%{"type" => "token", "value" => %{"address" => address_hash_string} = value}),
+  defp preload_template_variable(%{"type" => "token", "value" => %{"address" => address_hash_string} = value}),
     do: %{
       "type" => "token",
       "value" => address_hash_string |> Chain.token_from_address_hash(@api_true) |> token_from_db() |> Map.merge(value)
     }
 
-  defp preload_token(other), do: other
+  defp preload_template_variable(%{"type" => "address", "value" => %{"hash" => address_hash_string} = value}),
+    do: %{
+      "type" => "address",
+      "value" =>
+        address_hash_string
+        |> Chain.hash_to_address(
+          [
+            necessity_by_association: %{
+              :names => :optional,
+              :smart_contract => :optional
+            },
+            api?: true
+          ],
+          false
+        )
+        |> address_from_db()
+        |> Map.merge(value)
+    }
+
+  defp preload_template_variable(other), do: other
 
   defp token_from_db({:error, _}), do: %{}
-
   defp token_from_db({:ok, token}), do: TokenView.render("token.json", %{token: token})
+
+  defp address_from_db({:error, _}), do: %{}
+
+  defp address_from_db({:ok, address}),
+    do:
+      Helper.address_with_info(
+        nil,
+        address,
+        address.hash,
+        true
+      )
 end
