@@ -1373,6 +1373,7 @@ defmodule Explorer.Chain.Transaction do
   defp address_to_transactions_tasks(address_hash, options, old_ui?) do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    old_ui? = old_ui? || is_tuple(Keyword.get(options, :paging_options, Chain.default_paging_options()).key)
 
     options
     |> address_to_transactions_tasks_query(false, old_ui?)
@@ -1603,7 +1604,7 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Adds a `has_token_transfers` field to the query via `select_merge` if second argument is `true` and returns
+  Adds a `has_token_transfers` field to the query via `select_merge` if second argument is `false` and returns
   the query untouched otherwise.
   """
   @spec put_has_token_transfers_to_tx(Ecto.Query.t() | atom, boolean) :: Ecto.Query.t()
