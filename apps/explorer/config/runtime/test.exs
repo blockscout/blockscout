@@ -33,8 +33,6 @@ config :explorer, Explorer.Market.History.Cataloger, enabled: false
 
 config :explorer, Explorer.Tracer, disabled?: false
 
-config :explorer, Explorer.TokenTransferTokenIdMigration.Supervisor, enabled: false
-
 config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: false
 
 config :explorer, Explorer.Migrator.TransactionsDenormalization, enabled: false
