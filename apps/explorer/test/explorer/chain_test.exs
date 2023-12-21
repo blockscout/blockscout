@@ -23,7 +23,6 @@ defmodule Explorer.ChainTest do
     Token,
     TokenTransfer,
     Transaction,
-    SmartContract,
     Wei
   }
 
@@ -37,6 +36,10 @@ defmodule Explorer.ChainTest do
   alias Explorer.Chain.Supply.ProofOfAuthority
   alias Explorer.Counters.AddressesWithBalanceCounter
   alias Explorer.Counters.AddressesCounter
+
+  @first_topic_hex_string "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+  @second_topic_hex_string "0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+  @third_topic_hex_string "0x000000000000000000000000515c09c5bba1ed566b02a5b0599ec5d5d0aee73d"
 
   doctest Explorer.Chain
 
@@ -316,6 +319,9 @@ defmodule Explorer.ChainTest do
         block_number: transaction1.block_number
       )
 
+      first_topic_hex_string = "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
+      {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(first_topic_hex_string)
+
       transaction2 =
         :transaction
         |> insert(from_address: address)
@@ -326,11 +332,11 @@ defmodule Explorer.ChainTest do
         transaction: transaction2,
         index: 2,
         address: address,
-        first_topic: "test",
+        first_topic: first_topic,
         block_number: transaction2.block_number
       )
 
-      [found_log] = Chain.address_to_logs(address_hash, false, topic: "test")
+      [found_log] = Chain.address_to_logs(address_hash, false, topic: first_topic_hex_string)
 
       assert found_log.transaction.hash == transaction2.hash
     end
@@ -343,13 +349,16 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block()
 
+      fourth_topic_hex_string = "0x927abf391899d10d331079a63caffa905efa7075a44a7bbd52b190db4c4308fb"
+      {:ok, fourth_topic} = Explorer.Chain.Hash.Full.cast(fourth_topic_hex_string)
+
       insert(:log,
         block: transaction1.block,
         block_number: transaction1.block_number,
         transaction: transaction1,
         index: 1,
         address: address,
-        fourth_topic: "test"
+        fourth_topic: fourth_topic
       )
 
       transaction2 =
@@ -365,7 +374,7 @@ defmodule Explorer.ChainTest do
         address: address
       )
 
-      [found_log] = Chain.address_to_logs(address_hash, false, topic: "test")
+      [found_log] = Chain.address_to_logs(address_hash, false, topic: fourth_topic_hex_string)
 
       assert found_log.transaction.hash == transaction1.hash
     end
@@ -1238,6 +1247,10 @@ defmodule Explorer.ChainTest do
 
   # Full tests in `test/explorer/import_test.exs`
   describe "import/1" do
+    {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
+    {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
+    {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
+
     @import_data %{
       blocks: %{
         params: [
@@ -1293,9 +1306,9 @@ defmodule Explorer.ChainTest do
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-            first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-            second_topic: "0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-            third_topic: "0x000000000000000000000000515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
+            first_topic: first_topic,
+            second_topic: second_topic,
+            third_topic: third_topic,
             fourth_topic: nil,
             index: 0,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
@@ -1362,6 +1375,9 @@ defmodule Explorer.ChainTest do
     }
 
     test "with valid data" do
+      {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
+      {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
+      {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
       difficulty = Decimal.new(340_282_366_920_938_463_463_374_607_431_768_211_454)
       total_difficulty = Decimal.new(12_590_447_576_074_723_148_144_860_474_975_121_280_509)
       token_transfer_amount = Decimal.new(1_000_000_000_000_000_000)
@@ -1464,9 +1480,9 @@ defmodule Explorer.ChainTest do
                           167, 100, 0, 0>>
                     },
                     index: 0,
-                    first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-                    second_topic: "0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-                    third_topic: "0x000000000000000000000000515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
+                    first_topic: ^first_topic,
+                    second_topic: ^second_topic,
+                    third_topic: ^third_topic,
                     fourth_topic: nil,
                     transaction_hash: %Hash{
                       byte_count: 32,
@@ -4364,30 +4380,6 @@ defmodule Explorer.ChainTest do
         |> Enum.map(& &1.token_id)
 
       assert unique_tokens_ids_paginated == [List.first(second_page.token_ids)]
-    end
-  end
-
-  describe "uncataloged_token_transfer_block_numbers/0" do
-    test "returns a list of block numbers" do
-      block = insert(:block)
-      address = insert(:address)
-
-      log =
-        insert(:token_transfer_log,
-          transaction:
-            insert(:transaction,
-              block_number: block.number,
-              block_hash: block.hash,
-              cumulative_gas_used: 0,
-              gas_used: 0,
-              index: 0
-            ),
-          block: block,
-          address_hash: address.hash
-        )
-
-      block_number = log.block_number
-      assert {:ok, [^block_number]} = Chain.uncataloged_token_transfer_block_numbers()
     end
   end
 

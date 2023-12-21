@@ -28,7 +28,7 @@ defmodule Explorer.Chain.TokenTransfer do
   import Ecto.Query, only: [from: 2, limit: 2, where: 3, join: 5, order_by: 3, preload: 3]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, Log, TokenTransfer, Transaction}
   alias Explorer.Chain.Token.Instance
   alias Explorer.{PagingOptions, Repo}
 
@@ -369,5 +369,32 @@ defmodule Explorer.Chain.TokenTransfer do
       on: token_transfer.block_hash == block.hash,
       where: block.consensus == true
     )
+  end
+
+  @doc """
+  Returns a list of block numbers token transfer `t:Log.t/0`s that don't have an
+  associated `t:TokenTransfer.t/0` record.
+  """
+  @spec uncataloged_token_transfer_block_numbers :: {:ok, [non_neg_integer()]}
+  def uncataloged_token_transfer_block_numbers do
+    query =
+      from(l in Log,
+        as: :log,
+        where:
+          l.first_topic == ^@constant or
+            l.first_topic == ^@erc1155_single_transfer_signature or
+            l.first_topic == ^@erc1155_batch_transfer_signature,
+        where:
+          not exists(
+            from(tf in TokenTransfer,
+              where: tf.transaction_hash == parent_as(:log).transaction_hash,
+              where: tf.log_index == parent_as(:log).index
+            )
+          ),
+        select: l.block_number,
+        distinct: l.block_number
+      )
+
+    Repo.stream_reduce(query, [], &[&1 | &2])
   end
 end
