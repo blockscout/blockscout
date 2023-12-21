@@ -1020,10 +1020,10 @@ defmodule Explorer.Chain do
   Optionally it also accepts a boolean to fetch the `has_decompiled_code?` virtual field or not
 
   """
-  @spec hash_to_address(Hash.Address.t(), [necessity_by_association_option | api?], boolean()) ::
+  @spec hash_to_address(Hash.Address.t() | binary(), [necessity_by_association_option | api?], boolean()) ::
           {:ok, Address.t()} | {:error, :not_found}
   def hash_to_address(
-        %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
+        hash,
         options \\ [
           necessity_by_association: %{
             :contracts_creation_internal_transaction => :optional,
