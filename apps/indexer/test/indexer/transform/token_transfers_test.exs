@@ -19,8 +19,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
             index: 8,
             second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
             third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
-            transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
-            type: "mined"
+            transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5"
           },
           %{
             address_hash: "0x6ea5ec9cb832e60b6b1654f5826e9be638f276a5",
@@ -32,8 +31,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
             index: 0,
             second_topic: "0x00000000000000000000000063b0595bb7a0b7edd0549c9557a0c8aee6da667b",
             third_topic: "0x000000000000000000000000f3089e15d0c23c181d7f98b0878b560bfe193a1d",
-            transaction_hash: "0x8425a9b81a9bd1c64861110c1a453b84719cb0361d6fa0db68abf7611b9a890e",
-            type: "mined"
+            transaction_hash: "0x8425a9b81a9bd1c64861110c1a453b84719cb0361d6fa0db68abf7611b9a890e"
           },
           %{
             address_hash: "0x91932e8c6776fb2b04abb71874a7988747728bb2",
@@ -45,8 +43,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
             index: 1,
             second_topic: "0x0000000000000000000000009851ba177554eb07271ac230a137551e6dd0aa84",
             third_topic: "0x000000000000000000000000dccb72afee70e60b0c1226288fe86c01b953e8ac",
-            transaction_hash: "0x4011d9a930a3da620321589a54dc0ca3b88216b4886c7a7c3aaad1fb17702d35",
-            type: "mined"
+            transaction_hash: "0x4011d9a930a3da620321589a54dc0ca3b88216b4886c7a7c3aaad1fb17702d35"
           },
           %{
             address_hash: "0x0BE9e53fd7EDaC9F859882AfdDa116645287C629",
@@ -58,8 +55,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
             third_topic: nil,
             fourth_topic: nil,
             index: 1,
-            transaction_hash: "0x185889bc91372106ecf114a4e23f4ee615e131ae3e698078bd5d2ed7e3f55a49",
-            type: "mined"
+            transaction_hash: "0x185889bc91372106ecf114a4e23f4ee615e131ae3e698078bd5d2ed7e3f55a49"
           },
           %{
             address_hash: "0x0BE9e53fd7EDaC9F859882AfdDa116645287C629",
@@ -71,8 +67,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
             third_topic: nil,
             fourth_topic: nil,
             index: 1,
-            transaction_hash: "0x07510dbfddbac9064f7d607c2d9a14aa26fa19cdfcd578c0b585ff2395df543f",
-            type: "mined"
+            transaction_hash: "0x07510dbfddbac9064f7d607c2d9a14aa26fa19cdfcd578c0b585ff2395df543f"
           }
         ]
 
@@ -157,8 +152,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         second_topic: nil,
         third_topic: nil,
         transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8",
-        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
-        type: "mined"
+        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca"
       }
 
       expected = %{
@@ -198,8 +192,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         fourth_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
         index: 2,
         transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8",
-        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
-        type: "mined"
+        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca"
       }
 
       assert TokenTransfers.parse([log]) == %{
@@ -240,8 +233,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         fourth_topic: "0x0000000000000000000000006c943470780461b00783ad530a53913bd2c104d3",
         index: 2,
         transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8",
-        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
-        type: "mined"
+        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca"
       }
 
       assert TokenTransfers.parse([log]) == %{
@@ -275,8 +267,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         fourth_topic: "0x0000000000000000000000000000000000000000",
         index: 6,
         transaction_hash: "0xa6ad6588edb4abd8ca45f30d2f026ba20b68a3002a5870dbd30cc3752568483b",
-        block_hash: "0x61b720e40f8c521edd77a52cabce556c18b18b198f78e361f310003386ff1f02",
-        type: "mined"
+        block_hash: "0x61b720e40f8c521edd77a52cabce556c18b18b198f78e361f310003386ff1f02"
       }
 
       assert TokenTransfers.parse([log]) == %{
@@ -296,8 +287,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         index: 2,
         second_topic: nil,
         third_topic: nil,
-        transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8",
-        type: "mined"
+        transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8"
       }
 
       error = capture_log(fn -> %{tokens: [], token_transfers: []} = TokenTransfers.parse([log]) end)
@@ -319,8 +309,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         index: 8,
         second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
         third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
-        transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
-        type: "mined"
+        transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5"
       }
 
       assert %{
@@ -343,8 +332,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
           index: 8,
           second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
           third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
-          transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
-          type: "mined"
+          transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5"
         },
         %{
           address_hash: contract_address_hash,
@@ -357,8 +345,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
           fourth_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
           index: 2,
           transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
-          block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
-          type: "mined"
+          block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca"
         }
       ]
 
