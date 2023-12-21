@@ -28,7 +28,7 @@ defmodule Explorer.Chain.TokenTransfer do
   import Ecto.Query, only: [from: 2, limit: 2, where: 3, join: 5, order_by: 3, preload: 3]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, Log, TokenTransfer, Transaction}
   alias Explorer.Chain.Token.Instance
   alias Explorer.{PagingOptions, Repo}
 
