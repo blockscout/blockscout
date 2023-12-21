@@ -22,9 +22,16 @@ defmodule Explorer.Chain.ImportTest do
 
   @moduletag :capturelog
 
+  @first_topic_hex_string "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+  @second_topic_hex_string "0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+  @third_topic_hex_string "0x000000000000000000000000515c09c5bba1ed566b02a5b0599ec5d5d0aee73d"
+
   doctest Import
 
   describe "all/1" do
+    {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
+    {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
+    {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
     # set :timeout options to cover lines that use the timeout override when available
     @import_data %{
       blocks: %{
@@ -91,9 +98,9 @@ defmodule Explorer.Chain.ImportTest do
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-            first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-            second_topic: "0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-            third_topic: "0x000000000000000000000000515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
+            first_topic: first_topic,
+            second_topic: second_topic,
+            third_topic: third_topic,
             fourth_topic: nil,
             index: 0,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
@@ -165,6 +172,9 @@ defmodule Explorer.Chain.ImportTest do
     }
 
     test "with valid data" do
+      {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
+      {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
+      {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
       difficulty = Decimal.new(340_282_366_920_938_463_463_374_607_431_768_211_454)
       total_difficulty = Decimal.new(12_590_447_576_074_723_148_144_860_474_975_121_280_509)
       token_transfer_amount = Decimal.new(1_000_000_000_000_000_000)
@@ -276,9 +286,9 @@ defmodule Explorer.Chain.ImportTest do
                           167, 100, 0, 0>>
                     },
                     index: 0,
-                    first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-                    second_topic: "0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-                    third_topic: "0x000000000000000000000000515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
+                    first_topic: ^first_topic,
+                    second_topic: ^second_topic,
+                    third_topic: ^third_topic,
                     fourth_topic: nil,
                     transaction_hash: %Hash{
                       byte_count: 32,

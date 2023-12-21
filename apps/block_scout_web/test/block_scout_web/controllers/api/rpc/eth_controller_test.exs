@@ -5,6 +5,12 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
   alias Explorer.Repo
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
+  @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
+  @first_topic_hex_string_2 "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+
+  @second_topic_hex_string_1 "0x00000000000000000000000098a9dc37d3650b5b30d6c12789b3881ee0b70c16"
+  @second_topic_hex_string_2 "0x000000000000000000000000e2680fd7cdbb04e9087a647ad4d023ef6c8fb4e2"
+
   setup do
     mocked_json_rpc_named_arguments = [
       transport: EthereumJSONRPC.Mox,
@@ -26,6 +32,11 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
   end
 
   defp params(api_params, params), do: Map.put(api_params, "params", params)
+
+  defp topic(topic_hex_string) do
+    {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
+    topic
+  end
 
   describe "eth_get_logs" do
     setup do
@@ -108,10 +119,10 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         address: address,
         transaction: transaction,
         data: "0x010101",
-        first_topic: "0x01"
+        first_topic: topic(@first_topic_hex_string_1)
       )
 
-      params = params(api_params, [%{"address" => to_string(address.hash), "topics" => ["0x01"]}])
+      params = params(api_params, [%{"address" => to_string(address.hash), "topics" => [@first_topic_hex_string_1]}])
 
       assert response =
                conn
@@ -134,7 +145,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         block_number: block.number,
         transaction: transaction,
         data: "0x010101",
-        first_topic: "0x01"
+        first_topic: topic(@first_topic_hex_string_1)
       )
 
       insert(:log,
@@ -143,10 +154,13 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         block_number: block.number,
         transaction: transaction,
         data: "0x020202",
-        first_topic: "0x00"
+        first_topic: topic(@first_topic_hex_string_2)
       )
 
-      params = params(api_params, [%{"address" => to_string(address.hash), "topics" => [["0x01", "0x00"]]}])
+      params =
+        params(api_params, [
+          %{"address" => to_string(address.hash), "topics" => [[@first_topic_hex_string_1, @first_topic_hex_string_2]]}
+        ])
 
       assert response =
                conn
@@ -171,10 +185,11 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
           block_number: block.number,
           address: contract_address,
           transaction: transaction,
-          first_topic: "0x01"
+          first_topic: topic(@first_topic_hex_string_1)
         )
 
-      params = params(api_params, [%{"address" => to_string(contract_address), "topics" => [["0x01"]]}])
+      params =
+        params(api_params, [%{"address" => to_string(contract_address), "topics" => [[@first_topic_hex_string_1]]}])
 
       assert response =
                conn
@@ -192,7 +207,11 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       new_params =
         params(api_params, [
-          %{"paging_options" => next_page_params, "address" => to_string(contract_address), "topics" => [["0x01"]]}
+          %{
+            "paging_options" => next_page_params,
+            "address" => to_string(contract_address),
+            "topics" => [[@first_topic_hex_string_1]]
+          }
         ])
 
       assert new_response =
@@ -227,15 +246,24 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         address: address,
         transaction: transaction,
         data: "0x010101",
-        first_topic: "0x01",
-        second_topic: "0x02",
+        first_topic: topic(@first_topic_hex_string_1),
+        second_topic: topic(@second_topic_hex_string_1),
         block: block,
         block_number: block.number
       )
 
-      insert(:log, block: block, address: address, transaction: transaction, data: "0x020202", first_topic: "0x01")
+      insert(:log,
+        block: block,
+        address: address,
+        transaction: transaction,
+        data: "0x020202",
+        first_topic: topic(@first_topic_hex_string_1)
+      )
 
-      params = params(api_params, [%{"address" => to_string(address.hash), "topics" => ["0x01", "0x02"]}])
+      params =
+        params(api_params, [
+          %{"address" => to_string(address.hash), "topics" => [@first_topic_hex_string_1, @second_topic_hex_string_1]}
+        ])
 
       assert response =
                conn
@@ -257,8 +285,8 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         address: address,
         transaction: transaction,
         data: "0x010101",
-        first_topic: "0x01",
-        second_topic: "0x02",
+        first_topic: topic(@first_topic_hex_string_1),
+        second_topic: topic(@second_topic_hex_string_1),
         block: block,
         block_number: block.number
       )
@@ -267,13 +295,19 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         address: address,
         transaction: transaction,
         data: "0x020202",
-        first_topic: "0x01",
-        second_topic: "0x03",
+        first_topic: topic(@first_topic_hex_string_1),
+        second_topic: topic(@second_topic_hex_string_2),
         block: block,
         block_number: block.number
       )
 
-      params = params(api_params, [%{"address" => to_string(address.hash), "topics" => ["0x01", ["0x02", "0x03"]]}])
+      params =
+        params(api_params, [
+          %{
+            "address" => to_string(address.hash),
+            "topics" => [@first_topic_hex_string_1, [@second_topic_hex_string_1, @second_topic_hex_string_2]]
+          }
+        ])
 
       assert response =
                conn
