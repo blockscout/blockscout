@@ -10,6 +10,7 @@
 
 - [#9009](https://github.com/blockscout/blockscout/pull/9009) - Index for block refetch_needed
 - [#9006](https://github.com/blockscout/blockscout/pull/9006) - Drop unused indexes on address_current_token_balances table
+- [#9000](https://github.com/blockscout/blockscout/pull/9000) - Change log topic type in the DB to bytea
 - [#8996](https://github.com/blockscout/blockscout/pull/8996) - Refine token transfers token ids index
 - [#5322](https://github.com/blockscout/blockscout/pull/5322) - DB denormalization: block consensus and timestamp in transaction table
 
@@ -31,7 +32,6 @@
 ### Chore
 
 - [#9014](https://github.com/blockscout/blockscout/pull/9014) - Decrease amount of NFT in address collection: 15 -> 9
-- [#9000](https://github.com/blockscout/blockscout/pull/9000) - Change log topic type in the DB to bytea
 - [#8994](https://github.com/blockscout/blockscout/pull/8994) - Refactor transactions event preloads
 
 <details>
