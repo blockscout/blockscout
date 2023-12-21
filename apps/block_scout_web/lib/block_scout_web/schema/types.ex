@@ -130,7 +130,6 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:amounts, list_of(:decimal))
     field(:block_number, :integer)
     field(:log_index, :integer)
-    field(:token_id, :decimal)
     field(:token_ids, list_of(:decimal))
     field(:from_address_hash, :address_hash)
     field(:to_address_hash, :address_hash)
