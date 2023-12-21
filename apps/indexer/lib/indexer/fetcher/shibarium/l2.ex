@@ -212,32 +212,36 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   def filter_deposit_events(events, child_chain) do
     Enum.filter(events, fn event ->
       address = String.downcase(event.address_hash)
+      first_topic = Helper.log_topic_to_string(event.first_topic)
+      second_topic = Helper.log_topic_to_string(event.second_topic)
+      third_topic = Helper.log_topic_to_string(event.third_topic)
+      fourth_topic = Helper.log_topic_to_string(event.fourth_topic)
 
-      (event.first_topic == @token_deposited_event and address == child_chain) or
-        (event.first_topic == @transfer_event and event.second_topic == @empty_hash and event.third_topic != @empty_hash) or
-        (Enum.member?([@transfer_single_event, @transfer_batch_event], event.first_topic) and
-           event.third_topic == @empty_hash and event.fourth_topic != @empty_hash)
+      (first_topic == @token_deposited_event and address == child_chain) or
+        (first_topic == @transfer_event and second_topic == @empty_hash and third_topic != @empty_hash) or
+        (Enum.member?([@transfer_single_event, @transfer_batch_event], first_topic) and
+           third_topic == @empty_hash and fourth_topic != @empty_hash)
     end)
   end
 
   def filter_withdrawal_events(events, bone_withdraw) do
     Enum.filter(events, fn event ->
       address = String.downcase(event.address_hash)
+      first_topic = Helper.log_topic_to_string(event.first_topic)
+      second_topic = Helper.log_topic_to_string(event.second_topic)
+      third_topic = Helper.log_topic_to_string(event.third_topic)
+      fourth_topic = Helper.log_topic_to_string(event.fourth_topic)
 
-      (event.first_topic == @withdraw_event and address == bone_withdraw) or
-        (event.first_topic == @transfer_event and event.second_topic != @empty_hash and event.third_topic == @empty_hash) or
-        (Enum.member?([@transfer_single_event, @transfer_batch_event], event.first_topic) and
-           event.third_topic != @empty_hash and event.fourth_topic == @empty_hash)
+      (first_topic == @withdraw_event and address == bone_withdraw) or
+        (first_topic == @transfer_event and second_topic != @empty_hash and third_topic == @empty_hash) or
+        (Enum.member?([@transfer_single_event, @transfer_batch_event], first_topic) and
+           third_topic != @empty_hash and fourth_topic == @empty_hash)
     end)
   end
 
   def prepare_operations({events, timestamps}, weth) do
     events
-    |> Enum.map(fn event ->
-      event
-      |> get_op_user()
-      |> prepare_operation(event, timestamps, weth)
-    end)
+    |> Enum.map(&prepare_operation(&1, timestamps, weth))
     |> List.flatten()
   end
 
@@ -473,7 +477,16 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     end
   end
 
-  defp prepare_operation(user, event, timestamps, weth) do
+  defp prepare_operation(event, timestamps, weth) do
+    event =
+      event
+      |> Map.put(:first_topic, Helper.log_topic_to_string(event.first_topic))
+      |> Map.put(:second_topic, Helper.log_topic_to_string(event.second_topic))
+      |> Map.put(:third_topic, Helper.log_topic_to_string(event.third_topic))
+      |> Map.put(:fourth_topic, Helper.log_topic_to_string(event.fourth_topic))
+
+    user = get_op_user(event)
+
     if user == burn_address_hash_string() do
       []
     else
