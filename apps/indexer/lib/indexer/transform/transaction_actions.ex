@@ -289,7 +289,7 @@ defmodule Indexer.Transform.TransactionActions do
       log.third_topic
       |> Helper.log_topic_to_string()
       |> truncate_address_hash()
-    
+
     collateral_address =
       log.second_topic
       |> Helper.log_topic_to_string()
@@ -472,12 +472,12 @@ defmodule Indexer.Transform.TransactionActions do
               log.third_topic
               |> Helper.log_topic_to_string()
               |> truncate_address_hash()
-            
+
             [token_id] =
               log.fourth_topic
               |> Helper.log_topic_to_string()
               |> decode_data([{:uint, 256}])
-            
+
             mint_nft_ids = Map.put_new(acc, to, %{ids: [], log_index: log.index})
 
             Map.put(mint_nft_ids, to, %{
