@@ -11,6 +11,7 @@
 ### Fixes
 
 - [#9013](https://github.com/blockscout/blockscout/pull/9013) - Speed up `Indexer.Fetcher.TokenInstance.LegacySanitize`
+- [#8969](https://github.com/blockscout/blockscout/pull/8969) - Support legacy paging options for address transaction endpoint
 - [#8955](https://github.com/blockscout/blockscout/pull/8955) - Remove daily balances updating from BlockReward fetcher
 - [#8846](https://github.com/blockscout/blockscout/pull/8846) - Handle nil gas_price at address view
 

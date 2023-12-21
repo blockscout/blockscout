@@ -447,6 +447,51 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       check_paginated_response(response, response_2nd_page, txs)
     end
 
+    test "backward compatible with legacy paging params", %{conn: conn} do
+      address = insert(:address)
+      block = insert(:block)
+
+      txs = insert_list(51, :transaction, from_address: address) |> with_block(block)
+
+      [_, tx_before_last | _] = txs
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"block_number" => to_string(block.number), "index" => to_string(tx_before_last.index)}
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, txs)
+    end
+
+    test "backward compatible with legacy paging params for pending transactions", %{conn: conn} do
+      address = insert(:address)
+
+      txs = insert_list(51, :transaction, from_address: address)
+
+      [_, tx_before_last | _] = txs
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
+      assert response = json_response(request, 200)
+
+      request_2nd_page_pending =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"inserted_at" => to_string(tx_before_last.inserted_at), "hash" => to_string(tx_before_last.hash)}
+        )
+
+      assert response_2nd_page_pending = json_response(request_2nd_page_pending, 200)
+
+      check_paginated_response(response, response_2nd_page_pending, txs)
+    end
+
     test "can order and paginate by fee ascending", %{conn: conn} do
       address = insert(:address)
 
