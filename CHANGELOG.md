@@ -9,6 +9,7 @@
 
 ### Fixes
 
+- [#9039](https://github.com/blockscout/blockscout/pull/9039) - Fix tx input decoding in tx summary microservice request
 - [#9013](https://github.com/blockscout/blockscout/pull/9013) - Speed up `Indexer.Fetcher.TokenInstance.LegacySanitize`
 - [#8955](https://github.com/blockscout/blockscout/pull/8955) - Remove daily balances updating from BlockReward fetcher
 - [#8846](https://github.com/blockscout/blockscout/pull/8846) - Handle nil gas_price at address view

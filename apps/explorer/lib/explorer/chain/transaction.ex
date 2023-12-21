@@ -594,6 +594,16 @@ defmodule Explorer.Chain.Transaction do
   end
 
   # Because there is no contract association, we know the contract was not verified
+  @spec decoded_input_data(
+          %{:__struct__ => Ecto.Association.NotLoaded | Explorer.Chain.Transaction, optional(any()) => any()},
+          any(),
+          any(),
+          any(),
+          any()
+        ) ::
+          {{:error | :ok | binary(), any()}
+           | {:error, :contract_not_verified | :contract_verified, list()}
+           | {:ok, binary(), binary(), list()}, any(), any()}
   def decoded_input_data(tx, skip_sig_provider? \\ false, options, full_abi_acc \\ %{}, methods_acc \\ %{})
 
   def decoded_input_data(%__MODULE__{to_address: nil}, _, _, full_abi_acc, methods_acc),
