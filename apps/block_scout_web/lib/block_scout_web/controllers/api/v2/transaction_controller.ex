@@ -26,6 +26,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias BlockScoutWeb.Models.TransactionStateHelper
   alias Explorer.Chain
   alias Explorer.Chain.Zkevm.Reader
+  alias Explorer.Chain.ZkSync.Reader
   alias Indexer.Fetcher.FirstTraceOnDemand
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -84,6 +85,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           |> Map.put(:zkevm_batch, :optional)
           |> Map.put(:zkevm_sequence_transaction, :optional)
           |> Map.put(:zkevm_verify_transaction, :optional)
+
+        "zksync" ->
+          necessity_by_association_with_actions
+          |> Map.put(:zksync_batch, :optional)
+          |> Map.put(:zksync_commit_transaction, :optional)
+          |> Map.put(:zksync_prove_transaction, :optional)
+          |> Map.put(:zksync_execute_transaction, :optional)
 
         "suave" ->
           necessity_by_association_with_actions
@@ -146,6 +154,23 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   """
   @spec zkevm_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def zkevm_batch(conn, %{"batch_number" => batch_number} = _params) do
+    transactions =
+      batch_number
+      |> Reader.batch_transactions(api?: true)
+      |> Enum.map(fn tx -> tx.hash end)
+      |> Chain.hashes_to_transactions(api?: true, necessity_by_association: @transaction_necessity_by_association)
+
+    conn
+    |> put_status(200)
+    |> render(:transactions, %{transactions: transactions, items: true})
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/transactions/zksync-batch/:batch_number` endpoint.
+    It renders the list of L2 transactions bound to the specified batch.
+  """
+  @spec zksync_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def zksync_batch(conn, %{"batch_number" => batch_number} = _params) do
     transactions =
       batch_number
       |> Reader.batch_transactions(api?: true)

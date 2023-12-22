@@ -196,7 +196,7 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
         |> Enum.reduce({blocks, chunked_requests, cur_chunk, cur_chunk_size}, fn blocks_range, {blks, chnkd_rqsts, c_chunk, c_chunk_size} = _acc ->
           blocks_range
           |> Enum.reduce({blks, chnkd_rqsts, c_chunk, c_chunk_size}, fn block_number, {blks, chnkd_rqsts, c_chunk, c_chunk_size} = _acc ->
-            blks = Map.put(blks, block_number, %{batch_number: batch_number, number: block_number})
+            blks = Map.put(blks, block_number, %{batch_number: batch_number})
             c_chunk = [ EthereumJSONRPC.request(%{
               id: block_number,
               method: "eth_getBlockByNumber",
@@ -218,9 +218,9 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
         chunked_requests
       end
 
-    l2_txs_to_import =
+    {blocks, l2_txs_to_import} =
       chunked_requests
-      |> Enum.reduce([], fn requests, l2_txs ->
+      |> Enum.reduce({blocks, []}, fn requests, {blocks, l2_txs} ->
         request_transactions_by_rpc(requests, blocks, l2_txs, json_rpc_named_arguments)
       end)
 
@@ -258,6 +258,8 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
     {:ok, _} =
       Chain.import(%{
         zksync_transaction_batches: %{params: batches_list_to_import},
+        zksync_batch_transactions: %{params: l2_txs_to_import},
+        zksync_batch_blocks: %{params: l2_blocks_to_import},
         timeout: :infinity
       })
   end
@@ -367,8 +369,8 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
     end)
   end
 
-  defp request_transactions_by_rpc([], _, l2_txs, _) do
-    l2_txs
+  defp request_transactions_by_rpc([], l2_blocks, l2_txs, _) do
+    {l2_blocks, l2_txs}
   end
 
   defp request_transactions_by_rpc(requests_list, l2_blocks, l2_txs, json_rpc_named_arguments) do
@@ -378,19 +380,23 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
     {:ok, responses} = repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, 3)
 
     responses
-    |> Enum.reduce(l2_txs, fn resp, l2_txs ->
-        batch_number =
-          Map.get(l2_blocks, resp.id)
-          |> Map.get(:batch_number)
+    |> Enum.reduce({l2_blocks, l2_txs}, fn resp, {l2_blocks, l2_txs} ->
+        {block, l2_blocks} =
+          Map.get_and_update(l2_blocks, resp.id, fn block ->
+            {block, Map.put(block, :hash, Map.get(resp.result, "hash"))}
+          end)
 
-        Map.get(resp.result, "transactions")
-        |> Kernel.||([])
-        |> Enum.reduce(l2_txs, fn l2_tx_hash, l2_txs ->
-          [ %{
-            batch_number: batch_number,
-            hash: l2_tx_hash
-          } | l2_txs ]
-        end)
+        l2_txs =
+          Map.get(resp.result, "transactions")
+          |> Kernel.||([])
+          |> Enum.reduce(l2_txs, fn l2_tx_hash, l2_txs ->
+            [ %{
+              batch_number: block.batch_number,
+              hash: l2_tx_hash
+            } | l2_txs ]
+          end)
+
+        {l2_blocks, l2_txs}
       end)
   end
 

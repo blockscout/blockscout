@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.TransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
+  alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView, ZkSyncView}
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
   alias BlockScoutWeb.Tokens.Helper, as: TokensHelper
@@ -441,6 +441,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           |> add_optional_transaction_field(transaction, "zkevm_verify_hash", :zkevm_verify_transaction, :hash)
 
         Map.put(extended_result, "zkevm_status", zkevm_status(extended_result))
+
+      "zksync" ->
+        result
+        |> ZkSyncView.add_l1_txs_info_and_status(transaction)
+        |> Map.put("batch_number", ZkSyncView.get_batch_number(transaction))
 
       "suave" ->
         suave_fields(transaction, result, single_tx?, conn, watchlist_names)

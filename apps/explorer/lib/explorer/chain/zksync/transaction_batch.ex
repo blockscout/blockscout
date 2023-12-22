@@ -8,8 +8,7 @@ defmodule Explorer.Chain.ZkSync.TransactionBatch do
     Hash,
     Wei
   }
-  # alias Explorer.Chain.ZkSync.{BatchTransaction, LifecycleTransaction}
-  alias Explorer.Chain.ZkSync.LifecycleTransaction
+  alias Explorer.Chain.ZkSync.{BatchTransaction, LifecycleTransaction}
 
   @optional_attrs ~w(commit_id prove_id execute_id)a
 
@@ -62,7 +61,7 @@ defmodule Explorer.Chain.ZkSync.TransactionBatch do
       type: :integer
     )
 
-    # has_many(:l2_transactions, BatchTransaction, foreign_key: :batch_number)
+    has_many(:l2_transactions, BatchTransaction, foreign_key: :batch_number)
 
     timestamps()
   end

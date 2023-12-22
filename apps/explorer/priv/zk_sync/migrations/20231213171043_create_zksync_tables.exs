@@ -42,5 +42,42 @@ defmodule Explorer.Repo.ZkSync.Migrations.CreateZkSyncTables do
 
       timestamps(null: false, type: :utc_datetime_usec)
     end
+
+    create table(:zksync_batch_l2_transactions, primary_key: false) do
+      add(
+        :batch_number,
+        references(:zksync_transaction_batches,
+          column: :number,
+          on_delete: :delete_all,
+          on_update: :update_all,
+          type: :integer
+        ),
+        null: false
+      )
+
+      add(:hash, :bytea, null: false, primary_key: true)
+      timestamps(null: false, type: :utc_datetime_usec)
+    end
+
+    create(index(:zksync_batch_l2_transactions, :batch_number))
+
+    create table(:zksync_batch_l2_blocks, primary_key: false) do
+      add(
+        :batch_number,
+        references(:zksync_transaction_batches,
+          column: :number,
+          on_delete: :delete_all,
+          on_update: :update_all,
+          type: :integer
+        ),
+        null: false
+      )
+
+      add(:hash, :bytea, null: false, primary_key: true)
+      timestamps(null: false, type: :utc_datetime_usec)
+    end
+
+    create(index(:zksync_batch_l2_blocks, :batch_number))
+
   end
 end

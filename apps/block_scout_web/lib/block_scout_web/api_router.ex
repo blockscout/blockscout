@@ -141,6 +141,10 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/zkevm-batch/:batch_number", V2.TransactionController, :zkevm_batch)
       end
 
+      if System.get_env("CHAIN_TYPE") == "zksync" do
+        get("/zksync-batch/:batch_number", V2.TransactionController, :zksync_batch)
+      end
+
       if System.get_env("CHAIN_TYPE") == "suave" do
         get("/execution-node/:execution_node_hash_param", V2.TransactionController, :execution_node)
       end

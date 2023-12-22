@@ -12,8 +12,8 @@ defmodule Explorer.Chain.ZkSync.Reader do
 
   import Explorer.Chain, only: [select_repo: 1]
 
-  # alias Explorer.Chain.Zkevm.{BatchTransaction, LifecycleTransaction, TransactionBatch}
   alias Explorer.Chain.ZkSync.{
+    BatchTransaction,
     LifecycleTransaction,
     TransactionBatch
   }
@@ -90,6 +90,18 @@ defmodule Explorer.Chain.ZkSync.Reader do
         |> page_batches(paging_options)
         |> limit(^paging_options.page_size)
       end
+
+    select_repo(options).all(query)
+  end
+
+  @doc """
+    Reads a list of L2 transaction hashes from `zksync_batch_l2_transactions` table.
+  """
+  @spec batch_transactions(non_neg_integer(), list()) :: list()
+  def batch_transactions(batch_number, options \\ [])
+      when is_integer(batch_number) or
+           is_binary(batch_number) do
+    query = from(batch in BatchTransaction, where: batch.batch_number == ^batch_number)
 
     select_repo(options).all(query)
   end

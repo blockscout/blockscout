@@ -2,10 +2,11 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.BlockView
-  alias BlockScoutWeb.API.V2.{ApiView, Helper}
+  alias BlockScoutWeb.API.V2.{ApiView, Helper, ZkSyncView}
   alias Explorer.Chain
   alias Explorer.Chain.Block
   alias Explorer.Counters.BlockPriorityFeeCounter
+
 
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
@@ -126,6 +127,11 @@ defmodule BlockScoutWeb.API.V2.BlockView do
         |> Map.put("bitcoin_merged_mining_coinbase_transaction", block.bitcoin_merged_mining_coinbase_transaction)
         |> Map.put("bitcoin_merged_mining_merkle_proof", block.bitcoin_merged_mining_merkle_proof)
         |> Map.put("hash_for_merged_mining", block.hash_for_merged_mining)
+
+      "zksync" ->
+        result
+        |> ZkSyncView.add_l1_txs_info_and_status(block)
+        |> Map.put("batch_number", ZkSyncView.get_batch_number(block))
 
       _ ->
         result

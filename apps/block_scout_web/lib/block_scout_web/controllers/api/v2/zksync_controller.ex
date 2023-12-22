@@ -12,17 +12,11 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
-  # @batch_necessity_by_association %{
-  #   :commit_transaction => :optional,
-  #   :prove_transaction => :optional,
-  #   :execute_transaction => :optional,
-  #   :l2_transactions => :optional
-  # }
-
   @batch_necessity_by_association %{
     :commit_transaction => :optional,
     :prove_transaction => :optional,
-    :execute_transaction => :optional
+    :execute_transaction => :optional,
+    :l2_transactions => :optional
   }
 
   @batches_necessity_by_association %{

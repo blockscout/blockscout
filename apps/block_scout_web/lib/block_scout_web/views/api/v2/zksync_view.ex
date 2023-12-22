@@ -1,24 +1,23 @@
 defmodule BlockScoutWeb.API.V2.ZkSyncView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.Block
+  alias Explorer.Chain.ZkSync.TransactionBatch
+
   @doc """
     Function to render GET requests to `/api/v2/zksync/batches/:batch_number` endpoint.
   """
   @spec render(binary(), map()) :: map() | non_neg_integer()
   def render("zksync_batch.json", %{batch: batch}) do
-
-    l1_txs = get_associated_l1_txs(batch)
-
-    # l2_transactions =
-    #   if Map.has_key?(batch, :l2_transactions) do
-    #     Enum.map(batch.l2_transactions, fn tx -> tx.hash end)
-    #   end
+    l2_transactions =
+      if Map.has_key?(batch, :l2_transactions) do
+        Enum.map(batch.l2_transactions, fn tx -> tx.hash end)
+      end
 
     %{
       "number" => batch.number,
-      "status" => batch_status(l1_txs),
       "timestamp" => batch.timestamp,
-      # "transactions" => l2_transactions,
       "root_hash" => batch.root_hash,
       "l1_tx_count" => batch.l1_tx_count,
       "l2_tx_count" => batch.l2_tx_count,
@@ -26,13 +25,9 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
       "l2_fair_gas_price" => batch.l2_fair_gas_price,
       "start_block" => batch.start_block,
       "end_block" => batch.end_block,
-      "commit_transaction_hash" => get_2map_data(l1_txs, :commit_transaction, :hash),
-      "commit_transaction_timestamp" => get_2map_data(l1_txs, :commit_transaction, :ts),
-      "prove_transaction_hash" => get_2map_data(l1_txs, :prove_transaction, :hash),
-      "prove_transaction_timestamp" => get_2map_data(l1_txs, :prove_transaction, :ts),
-      "execute_transaction_hash" => get_2map_data(l1_txs, :execute_transaction, :hash),
-      "execute_transaction_timestamp" => get_2map_data(l1_txs, :execute_transaction, :ts)
+      "transactions" => l2_transactions
     }
+    |> add_l1_txs_info_and_status(batch)
   end
 
   @doc """
@@ -69,54 +64,112 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
     number
   end
 
+  defp render_zksync_batches(batches) do
+    Enum.map(batches, fn batch ->
+      %{
+        "number" => batch.number,
+        "timestamp" => batch.timestamp,
+        "tx_count" => batch.l1_tx_count + batch.l2_tx_count
+      }
+      |> add_l1_txs_info_and_status(batch)
+    end)
+  end
+
+  def get_batch_number(%Transaction{} = transaction) do
+    do_get_batch_number(transaction)
+  end
+
+  def get_batch_number(%Block{} = block) do
+    do_get_batch_number(block)
+  end
+
+  defp do_get_batch_number(zksync_entity) do
+    case Map.get(zksync_entity, :zksync_batch) do
+      nil -> nil
+      %Ecto.Association.NotLoaded{} -> nil
+      value -> value.number
+    end
+  end
+
+  def add_l1_txs_info_and_status(out_json, %Transaction{} = transaction) do
+    do_add_l1_txs_info_and_status(
+      out_json,
+      %{
+        batch_number: get_batch_number(transaction),
+        commit_transaction: transaction.zksync_commit_transaction,
+        prove_transaction: transaction.zksync_prove_transaction,
+        execute_transaction: transaction.zksync_execute_transaction
+      },
+      "zksync_status"
+    )
+  end
+
+  def add_l1_txs_info_and_status(out_json, %Block{} = block) do
+    do_add_l1_txs_info_and_status(
+      out_json,
+      %{
+        batch_number: get_batch_number(block),
+        commit_transaction: block.zksync_commit_transaction,
+        prove_transaction: block.zksync_prove_transaction,
+        execute_transaction: block.zksync_execute_transaction
+      },
+      "zksync_status"
+    )
+  end
+
+  def add_l1_txs_info_and_status(out_json, %TransactionBatch{} = batch) do
+    do_add_l1_txs_info_and_status(out_json, batch, "status")
+  end
+
+  defp do_add_l1_txs_info_and_status(out_json, zksync_item, status_field_name) do
+    l1_txs = get_associated_l1_txs(zksync_item)
+
+    out_json
+    |> Map.merge(%{
+      status_field_name => batch_status(zksync_item),
+      "commit_transaction_hash" => get_2map_data(l1_txs, :commit_transaction, :hash),
+      "commit_transaction_timestamp" => get_2map_data(l1_txs, :commit_transaction, :ts),
+      "prove_transaction_hash" => get_2map_data(l1_txs, :prove_transaction, :hash),
+      "prove_transaction_timestamp" => get_2map_data(l1_txs, :prove_transaction, :ts),
+      "execute_transaction_hash" => get_2map_data(l1_txs, :execute_transaction, :hash),
+      "execute_transaction_timestamp" => get_2map_data(l1_txs, :execute_transaction, :ts)
+    })
+  end
+
   defp get_associated_l1_txs(batch) do
     [:commit_transaction, :prove_transaction, :execute_transaction]
     |> Enum.reduce(%{}, fn key, l1_txs ->
-      with value <- Map.get(batch, key),
-          false <- is_nil(value) do
-        Map.put(l1_txs, key, %{hash: value.hash, ts: value.timestamp})
-      else
-        _ ->
-          Map.put(l1_txs, key, nil)
+      case Map.get(batch, key) do
+        nil -> Map.put(l1_txs, key, nil)
+        %Ecto.Association.NotLoaded{} -> Map.put(l1_txs, key, nil)
+        value -> Map.put(l1_txs, key, %{hash: value.hash, ts: value.timestamp})
       end
     end)
   end
 
-  defp batch_status(l1_txs) do
+  defp batch_status(zksync_item) do
     cond do
-      not is_nil(l1_txs.execute_transaction) -> "Executed"
-      not is_nil(l1_txs.prove_transaction) -> "Validated"
-      not is_nil(l1_txs.commit_transaction) -> "Processed"
-      true -> "Sealed"
+      is_specified(zksync_item.execute_transaction) -> "Executed on L1"
+      is_specified(zksync_item.prove_transaction) -> "Validated on L1"
+      is_specified(zksync_item.commit_transaction) -> "Sent to L1"
+      not Map.has_key?(zksync_item, :batch_number) -> "Sealed on L2" # Batch entity itself has no batch_number
+      not is_nil(zksync_item.batch_number) -> "Sealed on L2"
+      true -> "Processed on L2"
     end
   end
 
-  defp render_zksync_batches(batches) do
-    Enum.map(batches, fn batch ->
-      l1_txs = get_associated_l1_txs(batch)
-
-      %{
-        "number" => batch.number,
-        "status" => batch_status(l1_txs),
-        "timestamp" => batch.timestamp,
-        "tx_count" => batch.l1_tx_count + batch.l2_tx_count,
-        "commit_transaction_hash" => get_2map_data(l1_txs, :commit_transaction, :hash),
-        "commit_transaction_timestamp" => get_2map_data(l1_txs, :commit_transaction, :ts),
-        "prove_transaction_hash" => get_2map_data(l1_txs, :prove_transaction, :hash),
-        "prove_transaction_timestamp" => get_2map_data(l1_txs, :prove_transaction, :ts),
-        "execute_transaction_hash" => get_2map_data(l1_txs, :execute_transaction, :hash),
-        "execute_transaction_timestamp" => get_2map_data(l1_txs, :execute_transaction, :ts)
-      }
-    end)
+  defp is_specified(associated_item) do
+    case associated_item do
+      nil -> false
+      %Ecto.Association.NotLoaded{} -> false
+      _ -> true
+    end
   end
 
   defp get_2map_data(map, key1, key2) do
-    with inner_map <- Map.get(map, key1),
-         false <- is_nil(inner_map) do
-      Map.get(inner_map, key2)
-    else
-      _ ->
-        nil
+    case Map.get(map, key1) do
+      nil -> nil
+      inner_map -> Map.get(inner_map, key2)
     end
   end
 
