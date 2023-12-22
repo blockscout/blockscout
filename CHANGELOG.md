@@ -4,6 +4,19 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+</details>
+
+## 5.4.0-beta
+
+### Features
+
 - [#9018](https://github.com/blockscout/blockscout/pull/9018) - Add SmartContractRealtimeEventHandler
 - [#8997](https://github.com/blockscout/blockscout/pull/8997) - Isolate throttable error count by request method
 - [#8975](https://github.com/blockscout/blockscout/pull/8975) - Add EIP-4844 compatibility (not full support yet)
