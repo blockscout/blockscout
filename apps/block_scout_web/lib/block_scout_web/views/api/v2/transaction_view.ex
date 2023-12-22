@@ -208,12 +208,15 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def decode_transactions(transactions, skip_sig_provider?) do
-    Enum.reduce(transactions, {[], %{}, %{}}, fn transaction, {results, abi_acc, methods_acc} ->
-      {result, abi_acc, methods_acc} =
-        Transaction.decoded_input_data(transaction, skip_sig_provider?, @api_true, abi_acc, methods_acc)
+    {results, abi_acc, methods_acc} =
+      Enum.reduce(transactions, {[], %{}, %{}}, fn transaction, {results, abi_acc, methods_acc} ->
+        {result, abi_acc, methods_acc} =
+          Transaction.decoded_input_data(transaction, skip_sig_provider?, @api_true, abi_acc, methods_acc)
 
-      {Enum.reverse([format_decoded_input(result) | Enum.reverse(results)]), abi_acc, methods_acc}
-    end)
+        {[format_decoded_input(result) | results], abi_acc, methods_acc}
+      end)
+
+    {Enum.reverse(results), abi_acc, methods_acc}
   end
 
   def prepare_token_transfer(token_transfer, _conn, decoded_input) do
@@ -653,10 +656,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp format_status({:error, reason}), do: reason
   defp format_status(status), do: status
 
-  defp format_decoded_input({:error, _, []}), do: nil
-  defp format_decoded_input({:error, _, candidates}), do: Enum.at(candidates, 0)
-  defp format_decoded_input({:ok, _identifier, _text, _mapping} = decoded), do: decoded
-  defp format_decoded_input(_), do: nil
+  @spec format_decoded_input(any()) :: nil | map() | tuple()
+  def format_decoded_input({:error, _, []}), do: nil
+  def format_decoded_input({:error, _, candidates}), do: Enum.at(candidates, 0)
+  def format_decoded_input({:ok, _identifier, _text, _mapping} = decoded), do: decoded
+  def format_decoded_input(_), do: nil
 
   defp format_decoded_log_input({:error, :could_not_decode}), do: nil
   defp format_decoded_log_input({:ok, _method_id, _text, _mapping} = decoded), do: decoded
