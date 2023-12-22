@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Token.Instance do
   use Explorer.Schema
 
   alias Explorer.{Chain, Helper}
-  alias Explorer.Chain.{Address, Block, Hash, Token}
+  alias Explorer.Chain.{Address, Block, Hash, Token, TokenTransfer}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Token.Instance
   alias Explorer.PagingOptions
