@@ -141,6 +141,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       results_plus_one =
         Chain.address_to_unique_tokens(
           token.contract_address_hash,
+          token,
           Keyword.merge(unique_tokens_paging_options(params), @api_true)
         )
 
@@ -163,8 +164,13 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_str)} do
       token_instance =
         case Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, address_hash, @api_true) do
-          {:ok, token_instance} -> token_instance |> Chain.put_owner_to_token_instance(@api_true)
-          {:error, :not_found} -> %{token_id: token_id, metadata: nil, owner: nil}
+          {:ok, token_instance} ->
+            token_instance
+            |> Chain.select_repo(@api_true).preload(:owner)
+            |> Chain.put_owner_to_token_instance(token, @api_true)
+
+          {:error, :not_found} ->
+            %{token_id: token_id, metadata: nil, owner: nil}
         end
 
       conn

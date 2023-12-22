@@ -5,8 +5,10 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   import ExUnit.CaptureLog
   import Mox
 
-  alias Explorer.Chain
-  alias Explorer.Chain.PendingBlockOperation
+  alias Ecto.Multi
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Block, PendingBlockOperation}
+  alias Explorer.Chain.Import.Runner.Blocks
   alias Indexer.Fetcher.{CoinBalance, InternalTransaction, PendingTransaction}
 
   # MUST use global mode because we aren't guaranteed to get PendingTransactionFetcher's pid back fast enough to `allow`
@@ -465,5 +467,40 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       assert %{consensus: false} = Repo.reload(block)
       assert logs =~ "foreign_key_violation on internal transactions import, foreign transactions hashes:"
     end
+  end
+
+  test "doesn't delete pending block operations after block import if no async process was requested", %{
+    json_rpc_named_arguments: json_rpc_named_arguments
+  } do
+    fetcher_options =
+      Keyword.merge([poll: true, json_rpc_named_arguments: json_rpc_named_arguments], InternalTransaction.defaults())
+
+    if fetcher_options[:poll] do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options ->
+        {:ok, [%{id: id, result: []}]}
+      end)
+    end
+
+    InternalTransaction.Supervisor.Case.start_supervised!(fetcher_options)
+
+    %Ecto.Changeset{valid?: true, changes: block_changes} =
+      Block.changeset(%Block{}, params_for(:block, miner_hash: insert(:address).hash, number: 1))
+
+    changes_list = [block_changes]
+    timestamp = DateTime.utc_now()
+    options = %{timestamps: %{inserted_at: timestamp, updated_at: timestamp}}
+
+    assert [] = Repo.all(PendingBlockOperation)
+
+    {:ok, %{blocks: [%{number: block_number, hash: block_hash}]}} =
+      Multi.new()
+      |> Blocks.run(changes_list, options)
+      |> Repo.transaction()
+
+    assert %{block_number: ^block_number, block_hash: ^block_hash} = Repo.one(PendingBlockOperation)
+
+    Process.sleep(4000)
+
+    assert %{block_number: ^block_number, block_hash: ^block_hash} = Repo.one(PendingBlockOperation)
   end
 end

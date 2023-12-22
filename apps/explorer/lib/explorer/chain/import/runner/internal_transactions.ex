@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi, Repo}
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain.{Block, Hash, Import, InternalTransaction, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import.Runner
@@ -15,7 +16,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
 
-  import Ecto.Query, only: [from: 2, where: 3]
+  import Ecto.Query
 
   @behaviour Runner
 
@@ -699,7 +700,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         from(
           block in Block,
           where: block.number in ^invalid_block_numbers and block.consensus == true,
-          where: block.number > ^minimal_block,
+          where: ^traceable_blocks_dynamic_query(),
           select: block.hash,
           # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
           update: [set: [consensus: false]]
@@ -769,6 +770,19 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     rescue
       postgrex_error in Postgrex.Error ->
         {:error, %{exception: postgrex_error, pending_hashes: valid_block_hashes}}
+    end
+  end
+
+  defp traceable_blocks_dynamic_query do
+    if RangesHelper.trace_ranges_present?() do
+      block_ranges = RangesHelper.get_trace_block_ranges()
+
+      Enum.reduce(block_ranges, dynamic([_], false), fn
+        _from.._to = range, acc -> dynamic([block], ^acc or block.number in ^range)
+        num_to_latest, acc -> dynamic([block], ^acc or block.number >= ^num_to_latest)
+      end)
+    else
+      dynamic([_], true)
     end
   end
 end

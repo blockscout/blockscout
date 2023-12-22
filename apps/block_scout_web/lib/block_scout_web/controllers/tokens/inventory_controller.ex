@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
       unique_token_instances =
         Chain.address_to_unique_tokens(
           token.contract_address_hash,
+          token,
           unique_tokens_paging_options(params)
         )
 

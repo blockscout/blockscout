@@ -86,7 +86,7 @@ msgstr ""
 msgid ") may be added for each contract. Click the Add Library button to add an additional one."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:90
+#: lib/block_scout_web/templates/layout/app.html.eex:93
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
@@ -122,7 +122,7 @@ msgstr ""
 msgid "A block producer who successfully included the block onto the blockchain."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:97
+#: lib/block_scout_web/templates/layout/app.html.eex:100
 #, elixir-autogen, elixir-format
 msgid "A confirmation email was sent to"
 msgstr ""
@@ -2082,7 +2082,7 @@ msgid "Play"
 msgstr ""
 
 #: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:22
-#: lib/block_scout_web/templates/layout/app.html.eex:97
+#: lib/block_scout_web/templates/layout/app.html.eex:100
 #, elixir-autogen, elixir-format
 msgid "Please confirm your email address to use the My Account feature."
 msgstr ""
@@ -2262,7 +2262,7 @@ msgstr ""
 msgid "Request to edit a public tag/label"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:97
+#: lib/block_scout_web/templates/layout/app.html.eex:100
 #, elixir-autogen, elixir-format
 msgid "Resend verification email"
 msgstr ""
@@ -3598,7 +3598,7 @@ msgstr ""
 msgid "of"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:97
+#: lib/block_scout_web/templates/layout/app.html.eex:100
 #, elixir-autogen, elixir-format
 msgid "on sign up. Didn’t receive?"
 msgstr ""
