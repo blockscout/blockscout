@@ -8,14 +8,13 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
 
   require Logger
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
 
   alias Explorer.Chain
   # alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.ZkSync.Reader
-
-  @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
-  @zero_hash_binary <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
+  alias Indexer.Fetcher.ZkSync.Helper
+  import Indexer.Fetcher.ZkSync.Helper, only: [log_info: 1]
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -66,7 +65,7 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
 
         true ->
           log_info("No batches found in DB")
-          fetch_latest_sealed_batch_number(json_rpc_named_arguments) - 1
+          Helper.fetch_latest_sealed_batch_number(json_rpc_named_arguments) - 1
       end
 
     Process.send_after(self(), :continue, 2000)
@@ -90,7 +89,7 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
           recheck_interval: recheck_interval
         } = state
       ) do
-    latest_sealed_batch_number = fetch_latest_sealed_batch_number(json_rpc_named_arguments)
+    latest_sealed_batch_number = Helper.fetch_latest_sealed_batch_number(json_rpc_named_arguments)
 
     log_info("Checking for a new batch")
 
@@ -135,7 +134,7 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
       chunk_start = List.first(chunk)
       chunk_end = List.last(chunk)
 
-      log_details_batches_chunk_handling(chunk_start, chunk_end, start_batch_number, end_batch_number)
+      Helper.log_details_batches_chunk_handling(chunk_start, chunk_end, start_batch_number, end_batch_number)
       requests =
         chunk_start..chunk_end
         |> Enum.map(fn batch_number ->
@@ -145,7 +144,13 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
             params: [batch_number]
           })
         end)
-      request_batches_details_by_rpc(requests, details, json_rpc_named_arguments)
+
+      Helper.fetch_batches_details(requests, json_rpc_named_arguments)
+      |> Enum.reduce(
+        details,
+        fn resp, details ->
+          Map.put(details, resp.id, Helper.transform_batch_details_to_map(resp.result))
+        end)
     end)
   end
 
@@ -158,7 +163,7 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
       keys
       |> Enum.chunk_every(chunk_size)
       |> Enum.reduce({batches, 0}, fn batches_chunk, {batches_with_blockranges, a} = _acc ->
-        log_details_updates_chunk_handling(batches_chunk, a * chunk_size, batches_list_length)
+        Helper.log_details_updates_chunk_handling(batches_chunk, a * chunk_size, batches_list_length)
 
         # Execute requests list and extend the batches details with blocks ranges
         batches_with_blockranges =
@@ -177,7 +182,13 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
                 requests
             end
           end)
-          |> request_block_ranges_by_rpc(batches_with_blockranges, json_rpc_named_arguments)
+          |> Helper.fetch_blocks_ranges(json_rpc_named_arguments)
+          |> Enum.reduce(batches_with_blockranges, fn resp, batches_with_blockranges ->
+            Map.update!(batches_with_blockranges, resp.id, fn batch ->
+              [start_block, end_block] = resp.result
+              Map.merge(batch, %{start_block: quantity_to_integer(start_block), end_block: quantity_to_integer(end_block)})
+            end)
+          end)
 
         {batches_with_blockranges, a + 1}
       end)
@@ -221,7 +232,8 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
     {blocks, l2_txs_to_import} =
       chunked_requests
       |> Enum.reduce({blocks, []}, fn requests, {blocks, l2_txs} ->
-        request_transactions_by_rpc(requests, blocks, l2_txs, json_rpc_named_arguments)
+        Helper.fetch_blocks_details(requests, json_rpc_named_arguments)
+        |> extract_block_hash_and_transactions_list(blocks, l2_txs)
       end)
 
     # Check that amount of received transactions for a batch is correct
@@ -264,122 +276,8 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
       })
   end
 
-  defp fetch_latest_sealed_batch_number(json_rpc_named_arguments) do
-    req = EthereumJSONRPC.request(%{id: 0, method: "zks_L1BatchNumber", params: []})
-
-    error_message = &"Cannot call zks_L1BatchNumber. Error: #{inspect(&1)}"
-
-    {:ok, resp} = repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, 3)
-
-    quantity_to_integer(resp)
-  end
-
-  defp repeated_call(func, args, error_message, retries_left) do
-    case apply(func, args) do
-      {:ok, _} = res ->
-        res
-
-      {:error, message} = err ->
-        retries_left = retries_left - 1
-
-        if retries_left <= 0 do
-          Logger.error(error_message.(message))
-          err
-        else
-          Logger.error("#{error_message.(message)} Retrying...")
-          :timer.sleep(3000)
-          repeated_call(func, args, error_message, retries_left)
-        end
-    end
-  end
-
-  defp from_ts_to_datetime(time_ts) do
-    {_, unix_epoch_starts} = DateTime.from_unix(0)
-    case is_nil(time_ts) or time_ts == 0 do
-      true ->
-        unix_epoch_starts
-      false ->
-        case  DateTime.from_unix(time_ts) do
-          {:ok, datetime} ->
-            datetime
-          {:error, _} ->
-            unix_epoch_starts
-        end
-    end
-  end
-
-  defp from_iso8601_to_datetime(time_string) do
-    case is_nil(time_string) do
-      true ->
-        from_ts_to_datetime(0)
-      false ->
-        case DateTime.from_iso8601(time_string) do
-          {:ok, datetime, _} ->
-            datetime
-          {:error, _} ->
-            from_ts_to_datetime(0)
-        end
-    end
-  end
-
-  defp json_txid_to_hash(hash) do
-    case hash do
-      "0x" <> tx_hash -> tx_hash
-      nil -> @zero_hash
-    end
-  end
-
-  defp strhash_to_byteshash(hash) do
-    hash
-    |> json_txid_to_hash()
-    |> Base.decode16!(case: :mixed)
-  end
-
-  defp transform_batch_details_to_map(json_response) do
-    %{
-      "number" => {:number, :ok},
-      "timestamp" => {:timestamp, :ts_to_datetime},
-      "l1TxCount" => {:l1_tx_count, :ok},
-      "l2TxCount" => {:l2_tx_count, :ok},
-      "rootHash" => {:root_hash, :str_to_byteshash},
-      "commitTxHash" => {:commit_tx_hash, :str_to_byteshash},
-      "committedAt" => {:commit_timestamp, :iso8601_to_datetime},
-      "proveTxHash" => {:prove_tx_hash, :str_to_byteshash},
-      "provenAt" => {:prove_timestamp, :iso8601_to_datetime} ,
-      "executeTxHash" => {:executed_tx_hash, :str_to_byteshash},
-      "executedAt" => {:executed_timestamp, :iso8601_to_datetime},
-      "l1GasPrice" => {:l1_gas_price, :ok},
-      "l2FairGasPrice" => {:l2_fair_gas_price, :ok}
-      # :start_block added by request_block_ranges_by_rpc
-      # :end_block added by request_block_ranges_by_rpc
-    }
-    |> Enum.reduce(%{start_block: nil, end_block: nil}, fn {key, {key_atom, transform_type}}, batch_details_map ->
-      value_in_json_response = Map.get(json_response, key)
-      Map.put(
-        batch_details_map,
-        key_atom,
-        case transform_type do
-          :iso8601_to_datetime -> from_iso8601_to_datetime(value_in_json_response)
-          :ts_to_datetime -> from_ts_to_datetime(value_in_json_response)
-          :str_to_txhash -> json_txid_to_hash(value_in_json_response)
-          :str_to_byteshash -> strhash_to_byteshash(value_in_json_response)
-          _ -> value_in_json_response
-        end
-      )
-    end)
-  end
-
-  defp request_transactions_by_rpc([], l2_blocks, l2_txs, _) do
-    {l2_blocks, l2_txs}
-  end
-
-  defp request_transactions_by_rpc(requests_list, l2_blocks, l2_txs, json_rpc_named_arguments) do
-    error_message =
-      &"Cannot call eth_getBlockByNumber. Error: #{inspect(&1)}"
-
-    {:ok, responses} = repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, 3)
-
-    responses
+  defp extract_block_hash_and_transactions_list(json_responses, l2_blocks, l2_txs) do
+    json_responses
     |> Enum.reduce({l2_blocks, l2_txs}, fn resp, {l2_blocks, l2_txs} ->
         {block, l2_blocks} =
           Map.get_and_update(l2_blocks, resp.id, fn block ->
@@ -398,92 +296,6 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
 
         {l2_blocks, l2_txs}
       end)
-  end
-
-  defp request_block_ranges_by_rpc([], batches_details, _) do
-    batches_details
-  end
-
-  defp request_block_ranges_by_rpc(requests_list, batches_details, json_rpc_named_arguments) do
-    error_message =
-      &"Cannot call zks_getL1BatchBlockRange. Error: #{inspect(&1)}"
-
-    {:ok, responses} = repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, 3)
-
-    responses
-    |> Enum.reduce(batches_details, fn resp, batches_details ->
-        Map.update!(batches_details, resp.id, fn batch ->
-          [start_block, end_block] = resp.result
-          Map.merge(batch, %{start_block: quantity_to_integer(start_block), end_block: quantity_to_integer(end_block)})
-        end)
-      end)
-  end
-
-  defp request_batches_details_by_rpc([], batches_details, _) do
-    batches_details
-  end
-
-  defp request_batches_details_by_rpc(requests_list, batches_details, json_rpc_named_arguments) do
-    error_message =
-      &"Cannot call zks_getL1BatchDetails. Error: #{inspect(&1)}"
-
-    {:ok, responses} = repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, 3)
-
-    responses
-    |> Enum.reduce(
-      batches_details,
-      fn resp, batches_details ->
-        Map.put(batches_details, resp.id, transform_batch_details_to_map(resp.result))
-      end)
-  end
-
-  ###############################################################################
-  ##### Logging related functions
-  defp log_warning(msg) do
-    Logger.warning(msg)
-  end
-
-  defp log_info(msg) do
-    Logger.notice(msg)
-  end
-
-  defp log_details_updates_chunk_handling(chunk, current_progress, total) do
-    chunk_length = length(chunk)
-    progress =
-      case chunk_length == total do
-        true ->
-          ""
-        false ->
-          percentage =
-            Decimal.div(current_progress + chunk_length, total)
-            |> Decimal.mult(100)
-            |> Decimal.round(2)
-            |> Decimal.to_string()
-          " Progress: #{percentage}%"
-      end
-    log_info("Collecting block ranges for batches #{Enum.join(chunk, ", ")}.#{progress}")
-  end
-
-  defp log_details_batches_chunk_handling(chunk_start, chunk_end, start_block, end_block) do
-    target_range =
-      if chunk_start != start_block or chunk_end != end_block do
-        percentage =
-          (chunk_end - start_block + 1)
-          |> Decimal.div(end_block - start_block + 1)
-          |> Decimal.mult(100)
-          |> Decimal.round(2)
-          |> Decimal.to_string()
-
-        " Target range: #{start_block}..#{end_block}. Progress: #{percentage}%"
-      else
-        ""
-      end
-
-    if chunk_start == chunk_end do
-      log_info("Collecting details for batch ##{chunk_start}.#{target_range}")
-    else
-      log_info("Collecting details for batch range #{chunk_start}..#{chunk_end}.#{target_range}")
-    end
   end
 
 end
