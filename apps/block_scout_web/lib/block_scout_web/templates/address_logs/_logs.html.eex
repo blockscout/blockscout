@@ -68,10 +68,10 @@
     <dt class="col-md-2"><%= gettext "Topics" %></dt>
     <dd class="col-md-10">
       <div class="raw-transaction-log-topics">
-        <%= unless is_nil(@log.first_topic) do %>
+        <%= unless is_nil(@log.log_first_topic) do %>
           <div class="text-dark">
             <span class="text-dark">[0]</span>
-            <%= @log.first_topic %>
+            <%= @log.log_first_topic.hash %>
           </div>
         <% end %>
         <%= unless is_nil(@log.second_topic) do %>

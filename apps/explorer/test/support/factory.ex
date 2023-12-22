@@ -675,7 +675,6 @@ defmodule Explorer.Factory do
       block: block,
       block_number: block.number,
       data: data(:log_data),
-      first_topic: nil,
       fourth_topic: nil,
       index: sequence("log_index", & &1),
       second_topic: nil,

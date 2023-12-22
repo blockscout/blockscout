@@ -814,7 +814,6 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
 
   defp get_topics(
          %Log{
-           first_topic: first_topic,
            second_topic: second_topic,
            third_topic: third_topic,
            fourth_topic: fourth_topic

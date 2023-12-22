@@ -93,7 +93,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
       if Enum.count(log_first_topic_ids_hashes) > 0 do
         put_log_first_topic_id(changes_list, log_first_topic_ids_hashes)
       else
-        []
+        changes_list
       end
 
     # Enforce Log ShareLocks order (see docs: sharelocks.md)
@@ -131,7 +131,6 @@ defmodule Explorer.Chain.Import.Runner.Logs do
         set: [
           address_hash: fragment("EXCLUDED.address_hash"),
           data: fragment("EXCLUDED.data"),
-          first_topic: fragment("EXCLUDED.first_topic"),
           log_first_topic_id: fragment("EXCLUDED.log_first_topic_id"),
           second_topic: fragment("EXCLUDED.second_topic"),
           third_topic: fragment("EXCLUDED.third_topic"),
@@ -144,10 +143,9 @@ defmodule Explorer.Chain.Import.Runner.Logs do
       ],
       where:
         fragment(
-          "(EXCLUDED.address_hash, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.log_first_topic_id, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.address_hash, EXCLUDED.data, EXCLUDED.log_first_topic_id, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
           log.address_hash,
           log.data,
-          log.first_topic,
           log.log_first_topic_id,
           log.second_topic,
           log.third_topic,

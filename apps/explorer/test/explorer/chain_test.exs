@@ -1245,7 +1245,6 @@ defmodule Explorer.ChainTest do
 
   # Full tests in `test/explorer/import_test.exs`
   describe "import/1" do
-    {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
     {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
     {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
 
@@ -1304,7 +1303,7 @@ defmodule Explorer.ChainTest do
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-            first_topic: first_topic,
+            first_topic_id: 1,
             second_topic: second_topic,
             third_topic: third_topic,
             fourth_topic: nil,
@@ -1372,7 +1371,6 @@ defmodule Explorer.ChainTest do
     }
 
     test "with valid data" do
-      {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
       {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
       {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
       difficulty = Decimal.new(340_282_366_920_938_463_463_374_607_431_768_211_454)
@@ -1477,7 +1475,6 @@ defmodule Explorer.ChainTest do
                           167, 100, 0, 0>>
                     },
                     index: 0,
-                    first_topic: ^first_topic,
                     second_topic: ^second_topic,
                     third_topic: ^third_topic,
                     fourth_topic: nil,
