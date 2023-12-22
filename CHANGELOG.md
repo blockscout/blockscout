@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#9044](https://github.com/blockscout/blockscout/pull/9044) - Expand gas price oracle functionality
+
 ### Fixes
 
 - [#9062](https://github.com/blockscout/blockscout/pull/9062) - Fix blockscout-ens integration
