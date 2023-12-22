@@ -76,7 +76,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         created_contract_address: [:names, :token, :smart_contract]
       ])
 
-    skip_sig_provider? = true
+    skip_sig_provider? = false
     {decoded_input, _abi_acc, _methods_acc} = Transaction.decoded_input_data(transaction, skip_sig_provider?, @api_true)
 
     decoded_input_data = decoded_input |> TransactionView.format_decoded_input() |> TransactionView.decoded_input()
