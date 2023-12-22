@@ -751,24 +751,15 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp traceable_blocks_dynamic_query do
-    case Application.get_env(:indexer, :trace_block_ranges) do
-      nil ->
-        min_block = Application.get_env(:indexer, :trace_first_block)
-        max_block = Application.get_env(:indexer, :trace_last_block)
+    if RangesHelper.trace_ranges_present?() do
+      block_ranges = RangesHelper.get_trace_block_ranges()
 
-        filter_by_min_dynamic = dynamic([block], block.number > ^min_block)
-
-        if max_block,
-          do: dynamic([block], ^filter_by_min_dynamic and block.number < ^max_block),
-          else: filter_by_min_dynamic
-
-      block_ranges ->
-        parsed_ranges = RangesHelper.parse_block_ranges(block_ranges)
-
-        Enum.reduce(parsed_ranges, dynamic([_], false), fn
-          _from.._to = range, acc -> dynamic([block], ^acc or block.number in ^range)
-          num_to_latest, acc -> dynamic([block], ^acc or block.number >= ^num_to_latest)
-        end)
+      Enum.reduce(block_ranges, dynamic([_], false), fn
+        _from.._to = range, acc -> dynamic([block], ^acc or block.number in ^range)
+        num_to_latest, acc -> dynamic([block], ^acc or block.number >= ^num_to_latest)
+      end)
+    else
+      dynamic([_], true)
     end
   end
 end

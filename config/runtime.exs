@@ -459,15 +459,24 @@ config :explorer, Explorer.MicroserviceInterfaces.BENS,
 ### Indexer ###
 ###############
 
+trace_first_block = ConfigHelper.parse_integer_env_var("TRACE_FIRST_BLOCK", 0)
+trace_last_block = ConfigHelper.parse_integer_or_nil_env_var("TRACE_LAST_BLOCK")
+
+trace_block_ranges =
+  case ConfigHelper.safe_get_env("TRACE_BLOCK_RANGES", nil) do
+    "" -> "#{trace_first_block}..#{trace_last_block || "latest"}"
+    ranges -> ranges
+  end
+
 config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
   metadata_updater_milliseconds_interval: ConfigHelper.parse_time_env_var("TOKEN_METADATA_UPDATE_INTERVAL", "48h"),
   block_ranges: System.get_env("BLOCK_RANGES"),
   first_block: ConfigHelper.parse_integer_env_var("FIRST_BLOCK", 0),
   last_block: ConfigHelper.parse_integer_or_nil_env_var("LAST_BLOCK"),
-  trace_block_ranges: System.get_env("TRACE_BLOCK_RANGES"),
-  trace_first_block: ConfigHelper.parse_integer_env_var("TRACE_FIRST_BLOCK", 0),
-  trace_last_block: ConfigHelper.parse_integer_or_nil_env_var("TRACE_LAST_BLOCK"),
+  trace_block_ranges: trace_block_ranges,
+  trace_first_block: trace_first_block,
+  trace_last_block: trace_last_block,
   fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block"),
   memory_limit: ConfigHelper.indexer_memory_limit(),
   receipts_batch_size: ConfigHelper.parse_integer_env_var("INDEXER_RECEIPTS_BATCH_SIZE", 250),

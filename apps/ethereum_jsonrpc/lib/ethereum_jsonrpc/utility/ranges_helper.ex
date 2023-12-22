@@ -4,38 +4,37 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
   Helper for ranges manipulations.
   """
 
+  @default_trace_block_ranges "0..latest"
+
   @spec traceable_block_number?(integer() | nil) :: boolean()
   def traceable_block_number?(block_number) do
-    case Application.get_env(:indexer, :trace_block_ranges) do
-      nil ->
-        min_block = Application.get_env(:indexer, :trace_first_block)
-        max_block = Application.get_env(:indexer, :trace_last_block)
-
-        !block_number || (block_number >= min_block && if(max_block, do: block_number <= max_block, else: true))
-
-      block_ranges ->
-        parsed_ranges = parse_block_ranges(block_ranges)
-
-        number_in_ranges?(block_number, parsed_ranges)
+    if trace_ranges_present?() do
+      number_in_ranges?(block_number, get_trace_block_ranges())
+    else
+      true
     end
   end
 
   @spec filter_traceable_block_numbers([integer()]) :: [integer()]
   def filter_traceable_block_numbers(block_numbers) do
-    case Application.get_env(:indexer, :trace_block_ranges) do
-      nil ->
-        min_block = Application.get_env(:indexer, :trace_first_block)
-        max_block = Application.get_env(:indexer, :trace_last_block)
-
-        Enum.filter(block_numbers, fn block_number ->
-          block_number >= min_block && if max_block, do: block_number <= max_block, else: true
-        end)
-
-      block_ranges ->
-        parsed_ranges = parse_block_ranges(block_ranges)
-
-        Enum.filter(block_numbers, &number_in_ranges?(&1, parsed_ranges))
+    if trace_ranges_present?() do
+      trace_block_ranges = get_trace_block_ranges()
+      Enum.filter(block_numbers, &number_in_ranges?(&1, trace_block_ranges))
+    else
+      block_numbers
     end
+  end
+
+  @spec trace_ranges_present? :: boolean()
+  def trace_ranges_present? do
+    Application.get_env(:indexer, :trace_block_ranges) != @default_trace_block_ranges
+  end
+
+  @spec get_trace_block_ranges :: [Range.t() | integer()]
+  def get_trace_block_ranges do
+    :indexer
+    |> Application.get_env(:trace_block_ranges)
+    |> parse_block_ranges()
   end
 
   @spec parse_block_ranges(binary()) :: [Range.t() | integer()]

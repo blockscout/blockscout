@@ -887,11 +887,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp filter_by_height_range(blocks, filter_func) do
-    trace_block_ranges = Application.get_env(:indexer, :trace_block_ranges)
-    minimal_block_height = Application.get_env(:indexer, :trace_first_block)
-    maximal_block_height = Application.get_env(:indexer, :trace_last_block)
-
-    if trace_block_ranges || minimal_block_height > 0 || maximal_block_height do
+    if RangesHelper.trace_ranges_present?() do
       Enum.filter(blocks, &filter_func.(&1))
     else
       blocks
