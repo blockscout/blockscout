@@ -378,6 +378,11 @@ config :explorer, Explorer.ThirdPartyIntegrations.SolidityScan,
   chain_id: System.get_env("SOLIDITYSCAN_CHAIN_ID"),
   api_key: System.get_env("SOLIDITYSCAN_API_TOKEN")
 
+config :explorer, Explorer.ThirdPartyIntegrations.NovesFi,
+  api_base_url: System.get_env("NOVES_FI_BASE_API_URL"),
+  chain_name: System.get_env("NOVES_FI_CHAIN_NAME"),
+  api_key: System.get_env("NOVES_FI_API_TOKEN")
+
 enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED")
 # or "eth_bytecode_db"
 type = System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")

@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Transaction}
+  alias Explorer.Chain.{Address, Hash, Transaction}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Token.Instance
   alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
@@ -497,7 +497,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
-  defp validate_address(address_hash_string, params, options \\ @api_true) do
+  @doc """
+  Checks if this valid address hash string, and this address is not prohibited address
+  """
+  @spec validate_address(String.t(), any(), list()) :: {:ok, Hash.Address.t(), Address.t()}
+  def validate_address(address_hash_string, params, options \\ @api_true) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, options, false)} do
