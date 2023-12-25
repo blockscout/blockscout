@@ -4,13 +4,35 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+</details>
+
+## 5.4.0-beta
+
+### Features
+
+- [#9018](https://github.com/blockscout/blockscout/pull/9018) - Add SmartContractRealtimeEventHandler
+- [#8997](https://github.com/blockscout/blockscout/pull/8997) - Isolate throttable error count by request method
+- [#8975](https://github.com/blockscout/blockscout/pull/8975) - Add EIP-4844 compatibility (not full support yet)
+- [#8972](https://github.com/blockscout/blockscout/pull/8972) - BENS integration
+- [#8960](https://github.com/blockscout/blockscout/pull/8960) - TRACE_BLOCK_RANGES env var
 - [#8957](https://github.com/blockscout/blockscout/pull/8957) - Add Tx Interpreter Service integration
 
 ### Fixes
 
 - [#9039](https://github.com/blockscout/blockscout/pull/9039) - Fix tx input decoding in tx summary microservice request
 - [#9024](https://github.com/blockscout/blockscout/pull/9024) - Split address current token balances updates by token types
+- [#9035](https://github.com/blockscout/blockscout/pull/9035) - Handle Postgrex errors on NFT import 
+- [#9015](https://github.com/blockscout/blockscout/pull/9015) - Optimize NFT owner preload
 - [#9013](https://github.com/blockscout/blockscout/pull/9013) - Speed up `Indexer.Fetcher.TokenInstance.LegacySanitize`
+- [#8969](https://github.com/blockscout/blockscout/pull/8969) - Support legacy paging options for address transaction endpoint
+- [#8965](https://github.com/blockscout/blockscout/pull/8965) - Set poll: false for internal transactions fetcher
 - [#8955](https://github.com/blockscout/blockscout/pull/8955) - Remove daily balances updating from BlockReward fetcher
 - [#8846](https://github.com/blockscout/blockscout/pull/8846) - Handle nil gas_price at address view
 
@@ -22,6 +44,18 @@
 
 <details>
   <summary>Dependencies version bumps</summary>
+
+- [#8986](https://github.com/blockscout/blockscout/pull/8986) - Bump chart.js from 4.4.0 to 4.4.1 in /apps/block_scout_web/assets
+- [#8982](https://github.com/blockscout/blockscout/pull/8982) - Bump ex_doc from 0.30.9 to 0.31.0
+- [#8987](https://github.com/blockscout/blockscout/pull/8987) - Bump @babel/preset-env from 7.23.5 to 7.23.6 in /apps/block_scout_web/assets
+- [#8984](https://github.com/blockscout/blockscout/pull/8984) - Bump ecto_sql from 3.11.0 to 3.11.1
+- [#8988](https://github.com/blockscout/blockscout/pull/8988) - Bump core-js from 3.33.3 to 3.34.0 in /apps/block_scout_web/assets
+- [#8980](https://github.com/blockscout/blockscout/pull/8980) - Bump exvcr from 0.14.4 to 0.15.0
+- [#8985](https://github.com/blockscout/blockscout/pull/8985) - Bump @babel/core from 7.23.5 to 7.23.6 in /apps/block_scout_web/assets
+- [#9020](https://github.com/blockscout/blockscout/pull/9020) - Bump eslint-plugin-import from 2.29.0 to 2.29.1 in /apps/block_scout_web/assets
+- [#9021](https://github.com/blockscout/blockscout/pull/9021) - Bump eslint from 8.55.0 to 8.56.0 in /apps/block_scout_web/assets
+- [#9019](https://github.com/blockscout/blockscout/pull/9019) - Bump @amplitude/analytics-browser from 2.3.6 to 2.3.7 in /apps/block_scout_web/assets
+
 </details>
 
 ## 5.3.3-beta

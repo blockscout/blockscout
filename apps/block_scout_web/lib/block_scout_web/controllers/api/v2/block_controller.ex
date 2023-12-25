@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     ]
 
   import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1, select_block_type: 1]
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
 
   alias BlockScoutWeb.API.V2.{TransactionView, WithdrawalView}
   alias Explorer.Chain
@@ -81,7 +82,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
     conn
     |> put_status(200)
-    |> render(:blocks, %{blocks: blocks, next_page_params: next_page_params})
+    |> render(:blocks, %{blocks: blocks |> maybe_preload_ens(), next_page_params: next_page_params})
   end
 
   def transactions(conn, %{"block_hash_or_number" => block_hash_or_number} = params) do
@@ -103,7 +104,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:transactions, %{transactions: transactions, next_page_params: next_page_params})
+      |> render(:transactions, %{transactions: transactions |> maybe_preload_ens(), next_page_params: next_page_params})
     end
   end
 
@@ -122,7 +123,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       conn
       |> put_status(200)
       |> put_view(WithdrawalView)
-      |> render(:withdrawals, %{withdrawals: withdrawals, next_page_params: next_page_params})
+      |> render(:withdrawals, %{withdrawals: withdrawals |> maybe_preload_ens(), next_page_params: next_page_params})
     end
   end
 end
