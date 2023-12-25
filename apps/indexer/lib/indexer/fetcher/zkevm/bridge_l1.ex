@@ -64,9 +64,11 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
          {last_l1_block_number, last_l1_transaction_hash} = get_last_l1_item(),
          json_rpc_named_arguments = json_rpc_named_arguments(rpc),
          {:ok, block_check_interval, safe_block} <- get_block_check_interval(json_rpc_named_arguments),
-         {:start_block_valid, true} <-
+         {:start_block_valid, true, _, _} <-
            {:start_block_valid,
-            (start_block <= last_l1_block_number || last_l1_block_number == 0) && start_block <= safe_block},
+            (start_block <= last_l1_block_number || last_l1_block_number == 0) && start_block <= safe_block,
+            last_l1_block_number,
+            safe_block},
          {:ok, last_l1_tx} <- Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)} do
       Process.send(self(), :reorg_monitor, [])
@@ -94,8 +96,10 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
         Logger.error("PolygonZkEVMBridge contract address is invalid or not defined.")
         {:stop, :normal, %{}}
 
-      {:start_block_valid, false} ->
+      {:start_block_valid, false, last_l1_block_number, safe_block} ->
         Logger.error("Invalid L1 Start Block value. Please, check the value and zkevm_bridge table.")
+        Logger.error("last_l1_block_number = #{inspect(last_l1_block_number)}")
+        Logger.error("safe_block = #{inspect(safe_block)}")
         {:stop, :normal, %{}}
 
       {:error, error_data} ->

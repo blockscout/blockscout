@@ -142,16 +142,18 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
 
   @spec prepare_operations(list(), list() | nil, list(), map() | nil) :: list()
   def prepare_operations(events, json_rpc_named_arguments, json_rpc_named_arguments_l1, block_to_timestamp \\ nil) do
-    deposit_events = Enum.filter(events, fn event -> event.first_topic == @bridge_event end)
+    is_l1 = (json_rpc_named_arguments == json_rpc_named_arguments_l1)
+
+    bridge_events = Enum.filter(events, fn event -> event.first_topic == @bridge_event end)
 
     block_to_timestamp =
       if is_nil(block_to_timestamp) do
-        blocks_to_timestamps(deposit_events, json_rpc_named_arguments)
+        blocks_to_timestamps(bridge_events, json_rpc_named_arguments)
       else
         block_to_timestamp
       end
 
-    token_address_to_id = token_addresses_to_ids(deposit_events, json_rpc_named_arguments_l1)
+    token_address_to_id = token_addresses_to_ids(bridge_events, json_rpc_named_arguments_l1)
 
     Enum.map(events, fn event ->
       {type, index, l1_token_id, l2_token_address, amount, block_number, block_timestamp} =
@@ -174,12 +176,26 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
           block_number = quantity_to_integer(event.block_number)
           block_timestamp = Map.get(block_to_timestamp, block_number)
 
-          {:deposit, deposit_count, l1_token_id, l2_token_address, amount, block_number, block_timestamp}
+          type =
+            if is_l1 do
+              :deposit
+            else
+              :withdrawal
+            end
+
+          {type, deposit_count, l1_token_id, l2_token_address, amount, block_number, block_timestamp}
         else
           [index, _origin_network, _origin_address, _destination_address, amount] =
             decode_data(event.data, @claim_event_params)
 
-          {:withdrawal, index, nil, nil, amount, nil, nil}
+          type =
+            if is_l1 do
+              :withdrawal
+            else
+              :deposit
+            end
+
+          {type, index, nil, nil, amount, nil, nil}
         end
 
       result = %{
@@ -189,7 +205,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
       }
 
       transaction_hash_field =
-        if json_rpc_named_arguments == json_rpc_named_arguments_l1 do
+        if is_l1 do
           :l1_transaction_hash
         else
           :l2_transaction_hash
@@ -204,8 +220,8 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     end)
   end
 
-  defp blocks_to_timestamps(deposit_events, json_rpc_named_arguments) do
-    deposit_events
+  defp blocks_to_timestamps(events, json_rpc_named_arguments) do
+    events
     |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
     |> Enum.reduce(%{}, fn block, acc ->
       block_number = quantity_to_integer(Map.get(block, "number"))
@@ -233,9 +249,9 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     end
   end
 
-  defp token_addresses_to_ids(deposit_events, json_rpc_named_arguments) do
+  defp token_addresses_to_ids(events, json_rpc_named_arguments) do
     token_data =
-      deposit_events
+      events
       |> Enum.reduce(%MapSet{}, fn event, acc ->
         [
           leaf_type,
