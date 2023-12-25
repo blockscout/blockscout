@@ -132,6 +132,10 @@ config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
 
 config :block_scout_web, BlockScoutWeb.API.V2, enabled: ConfigHelper.parse_bool_env_var("API_V2_ENABLED", "true")
 
+config :block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
+  service_url: System.get_env("MICROSERVICE_TRANSACTION_INTERPRETATION_URL"),
+  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_TRANSACTION_INTERPRETATION_ENABLED")
+
 # Configures Ueberauth's Auth0 auth provider
 config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
   domain: System.get_env("ACCOUNT_AUTH0_DOMAIN"),
@@ -447,9 +451,22 @@ config :explorer, Explorer.Chain.Transaction,
 config :explorer, Explorer.Chain.Cache.AddressesTabsCounters,
   ttl: ConfigHelper.parse_time_env_var("ADDRESSES_TABS_COUNTERS_TTL", "10m")
 
+config :explorer, Explorer.MicroserviceInterfaces.BENS,
+  service_url: System.get_env("MICROSERVICE_BENS_URL"),
+  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_BENS_ENABLED")
+
 ###############
 ### Indexer ###
 ###############
+
+trace_first_block = ConfigHelper.parse_integer_env_var("TRACE_FIRST_BLOCK", 0)
+trace_last_block = ConfigHelper.parse_integer_or_nil_env_var("TRACE_LAST_BLOCK")
+
+trace_block_ranges =
+  case ConfigHelper.safe_get_env("TRACE_BLOCK_RANGES", nil) do
+    "" -> "#{trace_first_block}..#{trace_last_block || "latest"}"
+    ranges -> ranges
+  end
 
 config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
@@ -457,8 +474,9 @@ config :indexer,
   block_ranges: System.get_env("BLOCK_RANGES"),
   first_block: ConfigHelper.parse_integer_env_var("FIRST_BLOCK", 0),
   last_block: ConfigHelper.parse_integer_or_nil_env_var("LAST_BLOCK"),
-  trace_first_block: ConfigHelper.parse_integer_env_var("TRACE_FIRST_BLOCK", 0),
-  trace_last_block: ConfigHelper.parse_integer_or_nil_env_var("TRACE_LAST_BLOCK"),
+  trace_block_ranges: trace_block_ranges,
+  trace_first_block: trace_first_block,
+  trace_last_block: trace_last_block,
   fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block"),
   memory_limit: ConfigHelper.indexer_memory_limit(),
   receipts_batch_size: ConfigHelper.parse_integer_env_var("INDEXER_RECEIPTS_BATCH_SIZE", 250),
@@ -575,7 +593,7 @@ config :indexer, Indexer.Fetcher.TokenInstance.Sanitize,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_SANITIZE_BATCH_SIZE", 10)
 
 config :indexer, Indexer.Fetcher.TokenInstance.LegacySanitize,
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_LEGACY_SANITIZE_CONCURRENCY", 10),
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_LEGACY_SANITIZE_CONCURRENCY", 2),
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_LEGACY_SANITIZE_BATCH_SIZE", 10)
 
 config :indexer, Indexer.Fetcher.InternalTransaction,
