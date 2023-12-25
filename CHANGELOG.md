@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#9056](https://github.com/blockscout/blockscout/pull/9056) - Noves.fi API proxy
+
 ### Fixes
 
 ### Chore

@@ -300,6 +300,14 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/batches/:batch_number", V2.ZkevmController, :batch)
       end
     end
+
+    scope "/proxy" do
+      scope "/noves-fi" do
+        get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
+        get("/transactions/:transaction_hash_param/describe", V2.Proxy.NovesFiController, :describe_transaction)
+        get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
+      end
+    end
   end
 
   scope "/v1", as: :api_v1 do
