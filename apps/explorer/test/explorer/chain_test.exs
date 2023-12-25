@@ -3133,48 +3133,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "block_reward_by_parts/1" do
-    setup do
-      {:ok, emission_reward: insert(:emission_reward)}
-    end
-
-    test "without uncles", %{emission_reward: %{reward: reward, block_range: range}} do
-      block = build(:block, number: range.from, base_fee_per_gas: 5, uncles: [])
-
-      tx1 = build(:transaction, gas_price: 1, gas_used: 1, block_number: block.number, block_hash: block.hash)
-      tx2 = build(:transaction, gas_price: 1, gas_used: 2, block_number: block.number, block_hash: block.hash)
-
-      tx3 =
-        build(:transaction,
-          gas_price: 1,
-          gas_used: 3,
-          block_number: block.number,
-          block_hash: block.hash,
-          max_priority_fee_per_gas: 1
-        )
-
-      expected_txn_fees = %Wei{value: Decimal.new(6)}
-      expected_burned_fees = %Wei{value: Decimal.new(30)}
-      expected_uncle_reward = %Wei{value: Decimal.new(0)}
-
-      assert %{
-               static_reward: ^reward,
-               txn_fees: ^expected_txn_fees,
-               burned_fees: ^expected_burned_fees,
-               uncle_reward: ^expected_uncle_reward
-             } = Chain.block_reward_by_parts(block, [tx1, tx2, tx3])
-    end
-
-    test "with uncles", %{emission_reward: %{reward: reward, block_range: range}} do
-      block =
-        build(:block, number: range.from, uncles: ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"])
-
-      expected_uncle_reward = Wei.mult(reward, Decimal.from_float(1 / 32))
-
-      assert %{uncle_reward: ^expected_uncle_reward} = Chain.block_reward_by_parts(block, [])
-    end
-  end
-
   describe "gas_payment_by_block_hash/1" do
     setup do
       number = 1
@@ -4066,83 +4024,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "stream_not_inserted_token_instances/2" do
-    test "reduces with given reducer and accumulator for ERC-721 token" do
-      token_contract_address = insert(:contract_address)
-      token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(insert(:block, number: 1))
-
-      token_transfer =
-        insert(
-          :token_transfer,
-          block_number: 1000,
-          to_address: build(:address),
-          transaction: transaction,
-          token_contract_address: token_contract_address,
-          token: token,
-          token_ids: [11]
-        )
-
-      assert {:ok, [result]} = Chain.stream_not_inserted_token_instances([], &[&1 | &2])
-      assert result.token_id == List.first(token_transfer.token_ids)
-      assert result.contract_address_hash == token_transfer.token_contract_address_hash
-    end
-
-    test "does not fetch token transfers without token_ids" do
-      token_contract_address = insert(:contract_address)
-      token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(insert(:block, number: 1))
-
-      insert(
-        :token_transfer,
-        block_number: 1000,
-        to_address: build(:address),
-        transaction: transaction,
-        token_contract_address: token_contract_address,
-        token: token,
-        token_ids: nil
-      )
-
-      assert {:ok, []} = Chain.stream_not_inserted_token_instances([], &[&1 | &2])
-    end
-
-    test "do not fetch records with token instances" do
-      token_contract_address = insert(:contract_address)
-      token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(insert(:block, number: 1))
-
-      token_transfer =
-        insert(
-          :token_transfer,
-          block_number: 1000,
-          to_address: build(:address),
-          transaction: transaction,
-          token_contract_address: token_contract_address,
-          token: token,
-          token_ids: [11]
-        )
-
-      insert(:token_instance,
-        token_id: List.first(token_transfer.token_ids),
-        token_contract_address_hash: token_transfer.token_contract_address_hash
-      )
-
-      assert {:ok, []} = Chain.stream_not_inserted_token_instances([], &[&1 | &2])
-    end
-  end
-
   describe "transaction_has_token_transfers?/1" do
     test "returns true if transaction has token transfers" do
       transaction = insert(:transaction)
@@ -4475,7 +4356,7 @@ defmodule Explorer.ChainTest do
 
       unique_tokens_ids_paginated =
         token_contract_address.hash
-        |> Chain.address_to_unique_tokens(paging_options: paging_options)
+        |> Chain.address_to_unique_tokens(token, paging_options: paging_options)
         |> Enum.map(& &1.token_id)
 
       assert unique_tokens_ids_paginated == [List.first(second_page.token_ids)]

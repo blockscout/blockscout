@@ -191,13 +191,11 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :transactions, :realtime, transactions}) do
-    preloads = [:block, created_contract_address: :names, from_address: :names, to_address: :names]
+    base_preloads = [:block, created_contract_address: :names, from_address: :names, to_address: :names]
+    preloads = if API_V2.enabled?(), do: [:token_transfers | base_preloads], else: base_preloads
 
     transactions
-    |> Enum.map(
-      &(&1
-        |> Repo.preload(if API_V2.enabled?(), do: [:token_transfers | preloads], else: preloads))
-    )
+    |> Repo.preload(preloads)
     |> broadcast_transactions_websocket_v2()
     |> Enum.map(fn tx ->
       # Disable parsing of token transfers from websocket for transaction tab because we display token transfers at a separate tab

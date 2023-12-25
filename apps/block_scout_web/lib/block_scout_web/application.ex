@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.Application do
   alias BlockScoutWeb.API.APILogger
   alias BlockScoutWeb.Counters.{BlocksIndexedCounter, InternalTransactionsIndexedCounter}
   alias BlockScoutWeb.{Endpoint, Prometheus}
-  alias BlockScoutWeb.{MainPageRealtimeEventHandler, RealtimeEventHandler}
+  alias BlockScoutWeb.{MainPageRealtimeEventHandler, RealtimeEventHandler, SmartContractRealtimeEventHandler}
 
   def start(_type, _args) do
     import Supervisor
@@ -36,6 +36,7 @@ defmodule BlockScoutWeb.Application do
       {Absinthe.Subscription, Endpoint},
       {MainPageRealtimeEventHandler, name: MainPageRealtimeEventHandler},
       {RealtimeEventHandler, name: RealtimeEventHandler},
+      {SmartContractRealtimeEventHandler, name: SmartContractRealtimeEventHandler},
       {BlocksIndexedCounter, name: BlocksIndexedCounter},
       {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter}
     ]

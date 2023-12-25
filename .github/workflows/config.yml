@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - v6.0.0-dev
       - production-core
       - production-eth-experimental
       - production-eth-goerli
@@ -28,6 +29,7 @@ on:
   pull_request:
     branches:
       - master
+      - v6.0.0-dev
       - production-optimism
 
 env:
@@ -72,7 +74,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_28-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_32-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-
 
@@ -130,7 +132,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_28-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_32-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
@@ -154,7 +156,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_28-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_32-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
@@ -183,7 +185,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_28-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_32-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
@@ -227,7 +229,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_28-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_32-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
@@ -253,7 +255,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_28-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_32-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
@@ -282,7 +284,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_28-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_32-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
@@ -330,7 +332,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_28-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_32-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
@@ -376,7 +378,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_28-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_32-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
@@ -438,7 +440,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_28-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_32-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
@@ -498,7 +500,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_28-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_32-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
@@ -569,7 +571,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_28-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_32-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
@@ -637,7 +639,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_28-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_32-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 

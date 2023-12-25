@@ -82,7 +82,7 @@ defmodule EthereumJSONRPC.Block do
    * `uncles`: `t:list/0` of
      [uncles](https://bitcoin.stackexchange.com/questions/39329/in-ethereum-what-is-an-uncle-block)
      `t:EthereumJSONRPC.hash/0`.
-   * `"baseFeePerGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote amount of fee burned per unit gas used. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
+   * `"baseFeePerGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote amount of fee burnt per unit gas used. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"withdrawalsRoot"` - `t:EthereumJSONRPC.hash/0` of the root of the withdrawals.
    #{if Application.compile_env(:explorer, :chain_type) == "rsk" do
     """
@@ -764,6 +764,11 @@ defmodule EthereumJSONRPC.Block do
        when key in ~w(difficulty gasLimit gasUsed minimumGasPrice baseFeePerGas number size cumulativeDifficulty totalDifficulty paidFees minimumGasPrice) and
               not is_nil(quantity) do
     {key, quantity_to_integer(quantity)}
+  end
+
+  # to be merged with clause above ^
+  defp entry_to_elixir({key, _quantity}, _block) when key in ~w(blobGasUsed excessBlobGas) do
+    {:ignore, :ignore}
   end
 
   # Size and totalDifficulty may be `nil` for uncle blocks

@@ -81,4 +81,15 @@ defmodule Explorer.Helper do
       _ -> %{error: data}
     end
   end
+
+  @doc """
+    Tries to decode binary to json, return either decoded object, or initial binary
+  """
+  @spec maybe_decode(binary) :: any
+  def maybe_decode(data) do
+    case safe_decode_json(data) do
+      %{error: _} -> data
+      decoded -> decoded
+    end
+  end
 end
