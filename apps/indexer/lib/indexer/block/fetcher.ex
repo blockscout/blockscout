@@ -47,6 +47,7 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Transform.Shibarium.Bridge, as: ShibariumBridge
 
   alias Indexer.Transform.Blocks, as: TransformBlocks
+  alias Indexer.Transform.Zkevm.Bridge, as: ZkevmBridge
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
 
@@ -158,6 +159,11 @@ defmodule Indexer.Block.Fetcher do
              do: ShibariumBridge.parse(blocks, transactions_with_receipts, logs),
              else: []
            ),
+         zkevm_bridge_operations =
+           if(callback_module == Indexer.Block.Realtime.Fetcher,
+             do: ZkevmBridge.parse(blocks, logs),
+             else: []
+           ),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
          addresses =
@@ -170,7 +176,8 @@ defmodule Indexer.Block.Fetcher do
              token_transfers: token_transfers,
              transactions: transactions_with_receipts,
              transaction_actions: transaction_actions,
-             withdrawals: withdrawals_params
+             withdrawals: withdrawals_params,
+             zkevm_bridge_operations: zkevm_bridge_operations
            }),
          coin_balances_params_set =
            %{
@@ -206,16 +213,20 @@ defmodule Indexer.Block.Fetcher do
          },
          import_options =
            (case Application.get_env(:explorer, :chain_type) do
-              "polygon_edge" ->
-                basic_import_options
-                |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
-                |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
-
               "ethereum" ->
                 basic_import_options
                 |> Map.put_new(:beacon_blob_transactions, %{
                   params: transactions_with_receipts |> Enum.filter(&Map.has_key?(&1, :max_fee_per_blob_gas))
                 })
+
+              "polygon_edge" ->
+                basic_import_options
+                |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
+                |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
+
+              "polygon_zkevm" ->
+                basic_import_options
+                |> Map.put_new(:zkevm_bridge_operations, %{params: zkevm_bridge_operations})
 
               "shibarium" ->
                 basic_import_options

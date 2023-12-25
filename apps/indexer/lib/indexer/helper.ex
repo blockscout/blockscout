@@ -257,6 +257,18 @@ defmodule Indexer.Helper do
     end
   end
 
+  @doc """
+  Converts a log topic from Hash.Full representation to string one.
+  """
+  @spec log_topic_to_string(any()) :: binary() | nil
+  def log_topic_to_string(topic) do
+    if is_binary(topic) or is_nil(topic) do
+      topic
+    else
+      Hash.to_string(topic)
+    end
+  end
+
   def repeated_call(func, args, error_message, retries_left) do
     case apply(func, args) do
       {:ok, _} = res ->

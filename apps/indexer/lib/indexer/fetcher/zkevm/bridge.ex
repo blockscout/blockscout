@@ -20,12 +20,13 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
   import Explorer.Helper, only: [decode_data: 2]
 
   alias EthereumJSONRPC.Block.ByNumber
-  alias EthereumJSONRPC.Blocks
+  alias EthereumJSONRPC.{Blocks, Logs}
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Zkevm.BridgeL1Token
   alias Explorer.{Chain, Repo}
   alias Explorer.SmartContract.Reader
   alias Indexer.Helper
+  alias Indexer.Transform.Addresses
 
   # 32-byte signature of the event BridgeEvent(uint8 leafType, uint32 originNetwork, address originAddress, uint32 destinationNetwork, address destinationAddress, uint256 amount, bytes metadata, uint32 depositCount)
   @bridge_event "0x501781209a1f8899323b96b4ef08b168df93e0a90c673d1e4cce39366cb62f9b"
@@ -56,6 +57,14 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     }
   ]
 
+  @spec filter_bridge_events(list(), binary()) :: list()
+  def filter_bridge_events(events, bridge_contract) do
+    Enum.filter(events, fn event ->
+      String.downcase(event.address_hash) == bridge_contract and
+        Enum.member?([@bridge_event, @claim_event], Helper.log_topic_to_string(event.first_topic))
+    end)
+  end
+
   @spec get_logs_all({non_neg_integer(), non_neg_integer()}, binary(), list()) :: list()
   def get_logs_all({chunk_start, chunk_end}, bridge_contract, json_rpc_named_arguments) do
     {:ok, result} =
@@ -67,7 +76,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
         json_rpc_named_arguments
       )
 
-    result
+    Logs.elixir_to_params(result)
   end
 
   defp get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, retries \\ 100_000_000) do
@@ -98,7 +107,13 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
     import_options =
       if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
+        addresses =
+          Addresses.extract_addresses(%{
+            zkevm_bridge_operations: operations
+          })
+
         %{
+          addresses: %{params: addresses, on_conflict: :nothing},
           zkevm_bridge_operations: %{params: operations},
           timeout: :infinity
         }
@@ -125,17 +140,22 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     ]
   end
 
-  @spec prepare_operations(list(), list(), list()) :: list()
-  def prepare_operations(events, json_rpc_named_arguments, json_rpc_named_arguments_l1) do
-    deposit_events = Enum.filter(events, fn event -> Enum.at(event["topics"], 0) == @bridge_event end)
+  @spec prepare_operations(list(), list() | nil, list(), map() | nil) :: list()
+  def prepare_operations(events, json_rpc_named_arguments, json_rpc_named_arguments_l1, block_to_timestamp \\ nil) do
+    deposit_events = Enum.filter(events, fn event -> event.first_topic == @bridge_event end)
 
-    block_to_timestamp = blocks_to_timestamps(deposit_events, json_rpc_named_arguments)
+    block_to_timestamp =
+      if is_nil(block_to_timestamp) do
+        blocks_to_timestamps(deposit_events, json_rpc_named_arguments)
+      else
+        block_to_timestamp
+      end
 
     token_address_to_id = token_addresses_to_ids(deposit_events, json_rpc_named_arguments_l1)
 
     Enum.map(events, fn event ->
       {type, index, l1_token_id, l2_token_address, amount, block_number, block_timestamp} =
-        if Enum.at(event["topics"], 0) == @bridge_event do
+        if event.first_topic == @bridge_event do
           [
             leaf_type,
             origin_network,
@@ -145,19 +165,19 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
             amount,
             _metadata,
             deposit_count
-          ] = decode_data(event["data"], @bridge_event_params)
+          ] = decode_data(event.data, @bridge_event_params)
 
           {l1_token_address, l2_token_address} =
             token_address_by_origin_address(origin_address, origin_network, leaf_type)
 
           l1_token_id = Map.get(token_address_to_id, l1_token_address)
-          block_number = quantity_to_integer(event["blockNumber"])
+          block_number = quantity_to_integer(event.block_number)
           block_timestamp = Map.get(block_to_timestamp, block_number)
 
           {:deposit, deposit_count, l1_token_id, l2_token_address, amount, block_number, block_timestamp}
         else
           [index, _origin_network, _origin_address, _destination_address, amount] =
-            decode_data(event["data"], @claim_event_params)
+            decode_data(event.data, @claim_event_params)
 
           {:withdrawal, index, nil, nil, amount, nil, nil}
         end
@@ -176,7 +196,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
         end
 
       result
-      |> extend_result(transaction_hash_field, event["transactionHash"])
+      |> extend_result(transaction_hash_field, event.transaction_hash)
       |> extend_result(:l1_token_id, l1_token_id)
       |> extend_result(:l2_token_address, l2_token_address)
       |> extend_result(:block_number, block_number)
@@ -198,7 +218,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     request =
       events
       |> Enum.reduce(%{}, fn event, acc ->
-        Map.put(acc, event["blockNumber"], 0)
+        Map.put(acc, event.block_number, 0)
       end)
       |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
       |> Stream.with_index()
@@ -226,7 +246,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
           _amount,
           _metadata,
           _deposit_count
-        ] = decode_data(event["data"], @bridge_event_params)
+        ] = decode_data(event.data, @bridge_event_params)
 
         case token_address_by_origin_address(origin_address, origin_network, leaf_type) do
           {nil, _} -> acc
