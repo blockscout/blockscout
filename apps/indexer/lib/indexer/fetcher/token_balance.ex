@@ -16,12 +16,9 @@ defmodule Indexer.Fetcher.TokenBalance do
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
-  import Ecto.Query
-
   require Logger
 
-  alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Address.CurrentTokenBalance
+  alias Explorer.Chain
   alias Explorer.Chain.Hash
   alias Indexer.{BufferedTask, TokenBalances, Tracer}
   alias Indexer.Fetcher.TokenBalance.Supervisor, as: TokenBalanceSupervisor
@@ -154,15 +151,12 @@ defmodule Indexer.Fetcher.TokenBalance do
   def import_token_balances(token_balances_params) do
     addresses_params = format_and_filter_address_params(token_balances_params)
     formatted_token_balances_params = format_and_filter_token_balance_params(token_balances_params)
-    current_token_balances_params = TokenBalances.to_address_current_token_balances(formatted_token_balances_params)
-    existing_ctb_map = existing_current_token_balances_map(current_token_balances_params)
-    filtered_ctb_params = filter_current_token_balances_params(current_token_balances_params, existing_ctb_map)
 
     import_params = %{
       addresses: %{params: addresses_params},
       address_token_balances: %{params: formatted_token_balances_params},
       address_current_token_balances: %{
-        params: filtered_ctb_params
+        params: TokenBalances.to_address_current_token_balances(formatted_token_balances_params)
       },
       timeout: @timeout
     }
@@ -178,52 +172,6 @@ defmodule Indexer.Fetcher.TokenBalance do
 
         :error
     end
-  end
-
-  defp existing_current_token_balances_map(current_token_balances_params) do
-    current_token_balances_params
-    |> Enum.reduce(from(ctb in CurrentTokenBalance, where: false), &add_to_current_token_balances_query/2)
-    |> select(
-      [ctb],
-      {{ctb.address_hash, ctb.token_contract_address_hash, ctb.token_id},
-       %{block_number: ctb.block_number, value_fetched_at: ctb.value_fetched_at}}
-    )
-    |> Repo.all()
-    |> Map.new()
-  end
-
-  defp add_to_current_token_balances_query(
-         %{address_hash: address_hash, token_contract_address_hash: token_hash, token_id: nil},
-         query
-       )
-       when not is_nil(address_hash) and not is_nil(token_hash) do
-    from(ctb in query,
-      or_where:
-        ctb.address_hash == ^address_hash and ctb.token_contract_address_hash == ^token_hash and is_nil(ctb.token_id)
-    )
-  end
-
-  defp add_to_current_token_balances_query(
-         %{address_hash: address_hash, token_contract_address_hash: token_hash, token_id: token_id},
-         query
-       )
-       when not is_nil(address_hash) and not is_nil(token_hash) do
-    from(ctb in query,
-      or_where:
-        ctb.address_hash == ^address_hash and ctb.token_contract_address_hash == ^token_hash and
-          ctb.token_id == ^Decimal.new(token_id)
-    )
-  end
-
-  defp add_to_current_token_balances_query(_param, query), do: query
-
-  defp filter_current_token_balances_params(current_token_balances_params, existing_balances_map) do
-    Enum.filter(current_token_balances_params, fn param ->
-      existing_balance = existing_balances_map[{param.address_hash, param.token_contract_address_hash, param.token_id}]
-
-      is_nil(existing_balance) or is_nil(existing_balance.value_fetched_at) or
-        param.block_number > existing_balance.block_number
-    end)
   end
 
   defp format_and_filter_address_params(token_balances_params) do
