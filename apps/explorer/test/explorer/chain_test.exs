@@ -4356,7 +4356,7 @@ defmodule Explorer.ChainTest do
 
       unique_tokens_ids_paginated =
         token_contract_address.hash
-        |> Chain.address_to_unique_tokens(paging_options: paging_options)
+        |> Chain.address_to_unique_tokens(token, paging_options: paging_options)
         |> Enum.map(& &1.token_id)
 
       assert unique_tokens_ids_paginated == [List.first(second_page.token_ids)]

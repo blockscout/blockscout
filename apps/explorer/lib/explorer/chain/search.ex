@@ -14,7 +14,7 @@ defmodule Explorer.Chain.Search do
     ]
 
   import Explorer.Chain, only: [select_repo: 1]
-
+  import Explorer.MicroserviceInterfaces.BENS, only: [ens_domain_name_lookup: 1]
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
@@ -33,73 +33,86 @@ defmodule Explorer.Chain.Search do
   def joint_search(paging_options, offset, raw_string, options \\ []) do
     string = String.trim(raw_string)
 
-    case prepare_search_term(string) do
-      {:some, term} ->
-        tokens_query = search_token_query(string, term)
-        contracts_query = search_contract_query(term)
-        labels_query = search_label_query(term)
-        tx_query = search_tx_query(string)
-        address_query = search_address_query(string)
-        block_query = search_block_query(string)
+    ens_task = maybe_run_ens_task(paging_options, raw_string, options)
 
-        basic_query =
-          from(
-            tokens in subquery(tokens_query),
-            union: ^contracts_query,
-            union: ^labels_query
-          )
+    result =
+      case prepare_search_term(string) do
+        {:some, term} ->
+          tokens_query = search_token_query(string, term)
+          contracts_query = search_contract_query(term)
+          labels_query = search_label_query(term)
+          tx_query = search_tx_query(string)
+          address_query = search_address_query(string)
+          block_query = search_block_query(string)
 
-        query =
-          cond do
-            address_query ->
-              basic_query
-              |> union(^address_query)
+          basic_query =
+            from(
+              tokens in subquery(tokens_query),
+              union: ^contracts_query,
+              union: ^labels_query
+            )
 
-            tx_query ->
-              basic_query
-              |> union(^tx_query)
-              |> union(^block_query)
+          query =
+            cond do
+              address_query ->
+                basic_query
+                |> union(^address_query)
 
-            block_query ->
-              basic_query
-              |> union(^block_query)
+              tx_query ->
+                basic_query
+                |> union(^tx_query)
+                |> union(^block_query)
 
-            true ->
-              basic_query
-          end
+              block_query ->
+                basic_query
+                |> union(^block_query)
 
-        ordered_query =
-          from(items in subquery(query),
-            order_by: [
-              desc: items.priority,
-              desc_nulls_last: items.circulating_market_cap,
-              desc_nulls_last: items.exchange_rate,
-              desc_nulls_last: items.is_verified_via_admin_panel,
-              desc_nulls_last: items.holder_count,
-              asc: items.name,
-              desc: items.inserted_at
-            ],
-            limit: ^paging_options.page_size,
-            offset: ^offset
-          )
+              true ->
+                basic_query
+            end
 
-        paginated_ordered_query =
-          ordered_query
-          |> page_search_results(paging_options)
+          ordered_query =
+            from(items in subquery(query),
+              order_by: [
+                desc: items.priority,
+                desc_nulls_last: items.circulating_market_cap,
+                desc_nulls_last: items.exchange_rate,
+                desc_nulls_last: items.is_verified_via_admin_panel,
+                desc_nulls_last: items.holder_count,
+                asc: items.name,
+                desc: items.inserted_at
+              ],
+              limit: ^paging_options.page_size,
+              offset: ^offset
+            )
 
-        search_results = select_repo(options).all(paginated_ordered_query)
+          paginated_ordered_query =
+            ordered_query
+            |> page_search_results(paging_options)
 
-        search_results
-        |> Enum.map(fn result ->
-          result
-          |> compose_result_checksummed_address_hash()
-          |> format_timestamp()
-        end)
+          search_results = select_repo(options).all(paginated_ordered_query)
 
-      _ ->
-        []
-    end
+          search_results
+          |> Enum.map(fn result ->
+            result
+            |> compose_result_checksummed_address_hash()
+            |> format_timestamp()
+          end)
+
+        _ ->
+          []
+      end
+
+    ens_result = (ens_task && await_ens_task(ens_task)) || []
+
+    result ++ ens_result
   end
+
+  defp maybe_run_ens_task(%PagingOptions{key: nil}, query_string, options) do
+    Task.async(fn -> search_ens_name(query_string, options) end)
+  end
+
+  defp maybe_run_ens_task(_, _query_string, _options), do: nil
 
   @doc """
     Search function. Differences from joint_search/4:
@@ -111,6 +124,7 @@ defmodule Explorer.Chain.Search do
   @spec balanced_unpaginated_search(PagingOptions.t(), binary(), [Chain.api?()] | []) :: list
   def balanced_unpaginated_search(paging_options, raw_search_query, options \\ []) do
     search_query = String.trim(raw_search_query)
+    ens_task = Task.async(fn -> search_ens_name(raw_search_query, options) end)
 
     case prepare_search_term(search_query) do
       {:some, term} ->
@@ -167,8 +181,10 @@ defmodule Explorer.Chain.Search do
             []
           end
 
+        ens_result = await_ens_task(ens_task)
+
         non_empty_lists =
-          [tokens_result, contracts_result, labels_result, tx_result, address_result, blocks_result]
+          [tokens_result, contracts_result, labels_result, tx_result, address_result, blocks_result, ens_result]
           |> Enum.filter(fn list -> Enum.count(list) > 0 end)
           |> Enum.sort_by(fn list -> Enum.count(list) end, :asc)
 
@@ -184,6 +200,16 @@ defmodule Explorer.Chain.Search do
           |> compose_result_checksummed_address_hash()
           |> format_timestamp()
         end)
+
+      _ ->
+        []
+    end
+  end
+
+  defp await_ens_task(ens_task) do
+    case Task.yield(ens_task, 5000) || Task.shutdown(ens_task) do
+      {:ok, result} ->
+        result
 
       _ ->
         []
@@ -524,5 +550,50 @@ defmodule Explorer.Chain.Search do
     else
       result
     end
+  end
+
+  defp search_ens_name(search_query, options) do
+    trimmed_query = String.trim(search_query)
+
+    with true <- Regex.match?(~r/\w+\.\w+/, trimmed_query),
+         result when is_map(result) <- ens_domain_name_lookup(search_query) do
+      [
+        result[:address_hash]
+        |> search_address_query()
+        |> select_repo(options).all()
+        |> merge_address_search_result_with_ens_info(result)
+      ]
+    else
+      _ ->
+        []
+    end
+  end
+
+  defp merge_address_search_result_with_ens_info([], ens_info) do
+    %{
+      address_hash: ens_info[:address_hash],
+      block_hash: nil,
+      tx_hash: nil,
+      type: "address",
+      name: nil,
+      symbol: nil,
+      holder_count: nil,
+      inserted_at: nil,
+      block_number: 0,
+      icon_url: nil,
+      token_type: nil,
+      timestamp: nil,
+      verified: false,
+      exchange_rate: nil,
+      total_supply: nil,
+      circulating_market_cap: nil,
+      priority: 0,
+      is_verified_via_admin_panel: nil,
+      ens_info: ens_info
+    }
+  end
+
+  defp merge_address_search_result_with_ens_info([address], ens_info) do
+    Map.put(address |> compose_result_checksummed_address_hash(), :ens_info, ens_info)
   end
 end

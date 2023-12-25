@@ -54,8 +54,15 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "is_contract" => Address.is_smart_contract(address),
       "name" => address_name(address),
       "implementation_name" => implementation_name(address),
-      "is_verified" => is_verified(address)
+      "is_verified" => is_verified(address),
+      "ens_domain_name" => address.ens_domain_name
     }
+  end
+
+  defp address_with_info(%{ens_domain_name: name}, address_hash) do
+    nil
+    |> address_with_info(address_hash)
+    |> Map.put("ens_domain_name", name)
   end
 
   defp address_with_info(%NotLoaded{}, address_hash) do

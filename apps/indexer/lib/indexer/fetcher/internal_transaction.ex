@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
 
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
   alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.{Accounts, Blocks}
@@ -100,7 +101,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     filtered_unique_numbers =
       unique_numbers
-      |> EthereumJSONRPC.are_block_numbers_in_range?()
+      |> RangesHelper.filter_traceable_block_numbers()
       |> drop_genesis(json_rpc_named_arguments)
 
     filtered_unique_numbers_count = Enum.count(filtered_unique_numbers)
@@ -363,8 +364,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   defp invalidate_block_from_error(_error_data), do: :ok
 
-  defp defaults do
+  def defaults do
     [
+      poll: false,
       flush_interval: :timer.seconds(3),
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
       max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,

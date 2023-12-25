@@ -93,7 +93,7 @@ msgstr ""
 msgid ") may be added for each contract. Click the Add Library button to add an additional one."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:275
+#: lib/block_scout_web/templates/layout/app.html.eex:278
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
@@ -3104,7 +3104,7 @@ msgstr ""
 msgid "of"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:282
+#: lib/block_scout_web/templates/layout/app.html.eex:285
 #, elixir-autogen, elixir-format
 msgid "on sign up. Didn’t receive?"
 msgstr ""
@@ -3704,7 +3704,7 @@ msgstr ""
 msgid "to CSV file"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:282
+#: lib/block_scout_web/templates/layout/app.html.eex:285
 #, elixir-autogen, elixir-format
 msgid "A confirmation email was sent to"
 msgstr ""
@@ -3761,12 +3761,12 @@ msgid "New Smart Contract Verification via metadata JSON"
 msgstr ""
 
 #: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:22
-#: lib/block_scout_web/templates/layout/app.html.eex:282
+#: lib/block_scout_web/templates/layout/app.html.eex:285
 #, elixir-autogen, elixir-format
 msgid "Please confirm your email address to use the My Account feature."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:282
+#: lib/block_scout_web/templates/layout/app.html.eex:285
 #, elixir-autogen, elixir-format
 msgid "Resend verification email"
 msgstr ""

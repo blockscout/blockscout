@@ -1008,7 +1008,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert data = json_response(request, 200)
       assert compare_item(instance, data)
-      assert compare_item(transfer.to_address, data["owner"])
+      assert Address.checksum(instance.owner_address_hash) == data["owner"]["hash"]
     end
   end
 

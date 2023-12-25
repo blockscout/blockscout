@@ -306,6 +306,29 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert PendingBlockOperation |> Repo.get(full_block.hash) |> is_nil()
     end
 
+    test "does not remove consensus from non-traceable blocks" do
+      original_config = Application.get_env(:indexer, :trace_block_ranges)
+
+      full_block = insert(:block)
+      transaction_a = insert(:transaction) |> with_block(full_block)
+      transaction_b = insert(:transaction) |> with_block(full_block)
+
+      Application.put_env(:indexer, :trace_block_ranges, "#{full_block.number + 1}..latest")
+
+      insert(:pending_block_operation, block_hash: full_block.hash, block_number: full_block.number)
+
+      transaction_a_changes = make_internal_transaction_changes(transaction_a, 0, nil)
+
+      assert {:ok, _} = run_internal_transactions([transaction_a_changes])
+
+      assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_a.hash) |> Repo.one() |> is_nil()
+      assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_b.hash) |> Repo.one() |> is_nil()
+
+      assert %{consensus: true} = Repo.get(Block, full_block.hash)
+
+      on_exit(fn -> Application.put_env(:indexer, :trace_block_ranges, original_config) end)
+    end
+
     test "successfully imports internal transaction with stop type" do
       block = insert(:block)
       transaction = insert(:transaction) |> with_block(block, status: :ok)

@@ -34,6 +34,7 @@ defmodule Explorer.Chain do
 
   alias EthereumJSONRPC.Contract
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
+  alias EthereumJSONRPC.Utility.RangesHelper
 
   alias Explorer.Account.WatchlistAddress
 
@@ -1020,10 +1021,10 @@ defmodule Explorer.Chain do
   Optionally it also accepts a boolean to fetch the `has_decompiled_code?` virtual field or not
 
   """
-  @spec hash_to_address(Hash.Address.t(), [necessity_by_association_option | api?], boolean()) ::
+  @spec hash_to_address(Hash.Address.t() | binary(), [necessity_by_association_option | api?], boolean()) ::
           {:ok, Address.t()} | {:error, :not_found}
   def hash_to_address(
-        %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
+        hash,
         options \\ [
           necessity_by_association: %{
             :contracts_creation_internal_transaction => :optional,
@@ -4609,14 +4610,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-    Inserts list of token instances via upsert_token_instance/1.
-  """
-  @spec upsert_token_instances_list([map()]) :: list()
-  def upsert_token_instances_list(instances) do
-    Enum.map(instances, &upsert_token_instance/1)
-  end
-
-  @doc """
   Update a new `t:Token.t/0` record.
 
   As part of updating token, an additional record is inserted for
@@ -4973,26 +4966,39 @@ defmodule Explorer.Chain do
     Repo.one!(query, timeout: :infinity)
   end
 
-  @spec address_to_unique_tokens(Hash.Address.t(), [paging_options | api?]) :: [Instance.t()]
-  def address_to_unique_tokens(contract_address_hash, options \\ []) do
+  @spec address_to_unique_tokens(Hash.Address.t(), Token.t(), [paging_options | api?]) :: [Instance.t()]
+  def address_to_unique_tokens(contract_address_hash, token, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     contract_address_hash
     |> Instance.address_to_unique_token_instances()
     |> Instance.page_token_instance(paging_options)
     |> limit(^paging_options.page_size)
+    |> preload([_], [:owner])
     |> select_repo(options).all()
-    |> Enum.map(&put_owner_to_token_instance(&1, options))
+    |> Enum.map(&put_owner_to_token_instance(&1, token, options))
   end
 
-  def put_owner_to_token_instance(%Instance{} = token_instance, options \\ []) do
-    owner =
+  def put_owner_to_token_instance(token_instance, token, options \\ [])
+
+  def put_owner_to_token_instance(%Instance{is_unique: nil} = token_instance, token, options) do
+    put_owner_to_token_instance(Instance.put_is_unique(token_instance, token, options), token, options)
+  end
+
+  def put_owner_to_token_instance(
+        %Instance{owner: nil, is_unique: true} = token_instance,
+        %Token{type: "ERC-1155"},
+        options
+      ) do
+    owner_address_hash =
       token_instance
       |> Instance.owner_query()
       |> select_repo(options).one()
 
-    %{token_instance | owner: owner}
+    %{token_instance | owner: select_repo(options).get_by(Address, hash: owner_address_hash)}
   end
+
+  def put_owner_to_token_instance(%Instance{} = token_instance, _token, _options), do: token_instance
 
   @spec data() :: Dataloader.Ecto.t()
   def data, do: DataloaderEcto.new(Repo)
@@ -5584,7 +5590,7 @@ defmodule Explorer.Chain do
     if transaction_index == 0 do
       0
     else
-      filtered_block_numbers = EthereumJSONRPC.are_block_numbers_in_range?([block_number])
+      filtered_block_numbers = RangesHelper.filter_traceable_block_numbers([block_number])
       {:ok, traces} = fetch_block_internal_transactions(filtered_block_numbers, json_rpc_named_arguments)
 
       sorted_traces =

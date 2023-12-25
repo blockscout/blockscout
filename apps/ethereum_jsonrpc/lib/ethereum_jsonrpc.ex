@@ -39,6 +39,7 @@ defmodule EthereumJSONRPC do
     Subscription,
     Transport,
     Utility.EndpointAvailabilityObserver,
+    Utility.RangesHelper,
     Variant
   }
 
@@ -205,7 +206,8 @@ defmodule EthereumJSONRPC do
     filtered_params_in_range =
       filtered_params
       |> Enum.filter(fn
-        %{block_quantity: block_quantity} -> is_block_number_in_range?(block_quantity)
+        %{block_quantity: block_quantity} ->
+          block_quantity |> quantity_to_integer() |> RangesHelper.traceable_block_number?()
       end)
 
     id_to_params = id_to_params(filtered_params_in_range)
@@ -244,7 +246,7 @@ defmodule EthereumJSONRPC do
   @spec fetch_beneficiaries([block_number], json_rpc_named_arguments) ::
           {:ok, FetchedBeneficiaries.t()} | {:error, reason :: term} | :ignore
   def fetch_beneficiaries(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
-    filtered_block_numbers = are_block_numbers_in_range?(block_numbers)
+    filtered_block_numbers = RangesHelper.filter_traceable_block_numbers(block_numbers)
 
     Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_beneficiaries(
       filtered_block_numbers,
@@ -349,22 +351,12 @@ defmodule EthereumJSONRPC do
   Fetches internal transactions for entire blocks from variant API.
   """
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
-    filtered_block_numbers = are_block_numbers_in_range?(block_numbers)
+    filtered_block_numbers = RangesHelper.filter_traceable_block_numbers(block_numbers)
 
     Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_block_internal_transactions(
       filtered_block_numbers,
       json_rpc_named_arguments
     )
-  end
-
-  def are_block_numbers_in_range?(block_numbers) do
-    min_block = Application.get_env(:indexer, :trace_first_block)
-    max_block = Application.get_env(:indexer, :trace_last_block)
-
-    block_numbers
-    |> Enum.filter(fn block_number ->
-      block_number >= min_block && if max_block, do: block_number <= max_block, else: true
-    end)
   end
 
   @doc """
@@ -456,20 +448,6 @@ defmodule EthereumJSONRPC do
       {:error, reason} ->
         maybe_inc_error_count(corrected_transport_options[:url], named_arguments, transport)
         {:error, reason}
-    end
-  end
-
-  @spec is_block_number_in_range?(quantity) :: boolean()
-  defp is_block_number_in_range?(block_quantity) do
-    min_block = Application.get_env(:indexer, :trace_first_block)
-    max_block = Application.get_env(:indexer, :trace_last_block)
-    block_number = quantity_to_integer(block_quantity)
-
-    if !block_number ||
-         (block_number && block_number >= min_block && if(max_block, do: block_number <= max_block, else: true)) do
-      true
-    else
-      false
     end
   end
 
