@@ -273,7 +273,12 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
          from_address_hash: from_address_hash,
          token_transfers: token_transfers
        }) do
-    token_transfers_addresses = List.flatten(Enum.map(token_transfers, &item_to_address_hash_strings/1))
+    token_transfers_addresses =
+      case token_transfers do
+        %NotLoaded{} -> []
+        _ -> List.flatten(Enum.map(token_transfers, &item_to_address_hash_strings/1))
+      end
+
     [to_string(to_address_hash), to_string(from_address_hash)] ++ token_transfers_addresses
   end
 
@@ -327,12 +332,18 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
          } = tx,
          names
        ) do
+    token_transfers =
+      case tx.token_transfers do
+        %NotLoaded{} -> %NotLoaded{}
+        token_transfers -> Enum.map(token_transfers, &put_ens_name_to_item(&1, names))
+      end
+
     %Transaction{
       tx
       | to_address: alter_address(tx.to_address, to_address_hash, names),
         created_contract_address: alter_address(tx.created_contract_address, created_contract_address_hash, names),
         from_address: alter_address(tx.from_address, from_address_hash, names),
-        token_transfers: Enum.map(tx.token_transfers, &put_ens_name_to_item(&1, names))
+        token_transfers: token_transfers
     }
   end
 
