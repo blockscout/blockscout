@@ -270,9 +270,17 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   defp item_to_address_hash_strings(%Transaction{
          to_address_hash: to_address_hash,
          created_contract_address_hash: nil,
-         from_address_hash: from_address_hash
+         from_address_hash: from_address_hash,
+         token_transfers: token_transfers,
        }) do
-    [to_string(to_address_hash), to_string(from_address_hash)]
+    token_transfers_addresses = List.flatten(Enum.map(token_transfers, &item_to_address_hash_strings/1))
+    Logger.info(fn ->
+      [
+        "aboba",
+        inspect(token_transfers_addresses)
+      ]
+    end)
+    [to_string(to_address_hash), to_string(from_address_hash)] ++ token_transfers_addresses
   end
 
   defp item_to_address_hash_strings(%TokenTransfer{
@@ -329,7 +337,8 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
       tx
       | to_address: alter_address(tx.to_address, to_address_hash, names),
         created_contract_address: alter_address(tx.created_contract_address, created_contract_address_hash, names),
-        from_address: alter_address(tx.from_address, from_address_hash, names)
+        from_address: alter_address(tx.from_address, from_address_hash, names),
+        token_transfers: Enum.map(tx.token_transfers, &put_ens_name_to_item(&1, names))
     }
   end
 
