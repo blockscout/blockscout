@@ -106,7 +106,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     end
   end
 
-  def http_get_request(url, query_params) do
+  defp http_get_request(url, query_params) do
     case HTTPoison.get("#{url}?#{URI.encode_query(query_params)}") do
       {:ok, %Response{body: body, status_code: 200}} ->
         Jason.decode(body)
