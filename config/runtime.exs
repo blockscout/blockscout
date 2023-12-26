@@ -162,6 +162,7 @@ config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
     |> Map.to_list()
 
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
+  block_traceable?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_GETH_TRACE_BY_BLOCK"),
   debug_trace_transaction_timeout: System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s"),
   tracer:
     if(ConfigHelper.chain_type() == "polygon_edge",

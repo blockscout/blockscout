@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#9072](https://github.com/blockscout/blockscout/pull/9072) - Add tracing by block logic for geth
+
 ### Fixes
 
 - [#9109](https://github.com/blockscout/blockscout/pull/9109) - Return current exchange rate in api/v2/stats
