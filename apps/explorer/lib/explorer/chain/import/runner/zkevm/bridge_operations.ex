@@ -86,13 +86,67 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeOperations do
         set: [
           # Don't update `type` as it is part of the composite primary key and used for the conflict target
           # Don't update `index` as it is part of the composite primary key and used for the conflict target
-          l1_transaction_hash: fragment("EXCLUDED.l1_transaction_hash"),
-          l2_transaction_hash: fragment("EXCLUDED.l2_transaction_hash"),
-          l1_token_id: fragment("EXCLUDED.l1_token_id"),
-          l2_token_address: fragment("EXCLUDED.l2_token_address"),
+          l1_transaction_hash: fragment(
+            """
+            CASE WHEN EXCLUDED.l1_transaction_hash IS NOT NULL THEN
+              EXCLUDED.l1_transaction_hash
+            ELSE
+              ?
+            END
+            """,
+            op.l1_transaction_hash
+          ),
+          l2_transaction_hash: fragment(
+            """
+            CASE WHEN EXCLUDED.l2_transaction_hash IS NOT NULL THEN
+              EXCLUDED.l2_transaction_hash
+            ELSE
+              ?
+            END
+            """,
+            op.l2_transaction_hash
+          ),
+          l1_token_id: fragment(
+            """
+            CASE WHEN EXCLUDED.l1_token_id IS NOT NULL THEN
+              EXCLUDED.l1_token_id
+            ELSE
+              ?
+            END
+            """,
+            op.l1_token_id
+          ),
+          l2_token_address: fragment(
+            """
+            CASE WHEN EXCLUDED.l2_token_address IS NOT NULL THEN
+              EXCLUDED.l2_token_address
+            ELSE
+              ?
+            END
+            """,
+            op.l2_token_address
+          ),
           amount: fragment("EXCLUDED.amount"),
-          block_number: fragment("EXCLUDED.block_number"),
-          block_timestamp: fragment("EXCLUDED.block_timestamp"),
+          block_number: fragment(
+            """
+            CASE WHEN EXCLUDED.block_number IS NOT NULL THEN
+              EXCLUDED.block_number
+            ELSE
+              ?
+            END
+            """,
+            op.block_number
+          ),
+          block_timestamp: fragment(
+            """
+            CASE WHEN EXCLUDED.block_timestamp IS NOT NULL THEN
+              EXCLUDED.block_timestamp
+            ELSE
+              ?
+            END
+            """,
+            op.block_timestamp
+          ),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", op.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", op.updated_at)
         ]

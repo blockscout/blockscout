@@ -20,8 +20,8 @@ defmodule Explorer.Repo.PolygonZkevm.Migrations.AddBridgeTables do
     create table(:zkevm_bridge, primary_key: false) do
       add(:type, :zkevm_bridge_op_type, null: false, primary_key: true)
       add(:index, :integer, null: false, primary_key: true)
-      add(:l1_transaction_hash, :bytea, null: true, default: nil)
-      add(:l2_transaction_hash, :bytea, null: true, default: nil)
+      add(:l1_transaction_hash, :bytea, null: true)
+      add(:l2_transaction_hash, :bytea, null: true)
 
       add(
         :l1_token_id,
@@ -29,10 +29,10 @@ defmodule Explorer.Repo.PolygonZkevm.Migrations.AddBridgeTables do
         null: true
       )
 
-      add(:l2_token_address, :bytea, null: true, default: nil)
+      add(:l2_token_address, :bytea, null: true)
       add(:amount, :numeric, precision: 100, null: false)
-      add(:block_number, :bigint, null: true, default: nil)
-      add(:block_timestamp, :"timestamp without time zone", null: true, default: nil)
+      add(:block_number, :bigint, null: true)
+      add(:block_timestamp, :"timestamp without time zone", null: true)
       timestamps(null: false, type: :utc_datetime_usec)
     end
   end
