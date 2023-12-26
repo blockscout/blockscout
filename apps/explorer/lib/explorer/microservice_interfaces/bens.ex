@@ -274,14 +274,6 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
          token_transfers: token_transfers
        }) do
     token_transfers_addresses = List.flatten(Enum.map(token_transfers, &item_to_address_hash_strings/1))
-
-    Logger.info(fn ->
-      [
-        "aboba",
-        inspect(token_transfers_addresses)
-      ]
-    end)
-
     [to_string(to_address_hash), to_string(from_address_hash)] ++ token_transfers_addresses
   end
 
