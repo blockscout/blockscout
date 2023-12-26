@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#9061](https://github.com/blockscout/blockscout/pull/9061) - Arbitrum allow tx receipt gasUsedForL1 field
+
 ### Chore
 
 <details>
