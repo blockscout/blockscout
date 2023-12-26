@@ -107,7 +107,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   end
 
   defp http_get_request(url, query_params) do
-    case HTTPoison.get("#{url}?#{URI.encode_query(query_params)}") do
+    case HTTPoison.get(url, [], params: query_params) do
       {:ok, %Response{body: body, status_code: 200}} ->
         Jason.decode(body)
 
@@ -275,8 +275,11 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
        }) do
     token_transfers_addresses =
       case token_transfers do
-        %NotLoaded{} -> []
-        _ -> List.flatten(Enum.map(token_transfers, &item_to_address_hash_strings/1))
+        token_transfers_list when is_list(token_transfers_list) ->
+          List.flatten(Enum.map(token_transfers_list, &item_to_address_hash_strings/1))
+
+        _ ->
+          []
       end
 
     [to_string(to_address_hash), to_string(from_address_hash)] ++ token_transfers_addresses
@@ -334,8 +337,11 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
        ) do
     token_transfers =
       case tx.token_transfers do
-        %NotLoaded{} -> %NotLoaded{}
-        token_transfers -> Enum.map(token_transfers, &put_ens_name_to_item(&1, names))
+        token_transfers_list when is_list(token_transfers_list) ->
+          Enum.map(token_transfers_list, &put_ens_name_to_item(&1, names))
+
+        other ->
+          other
       end
 
     %Transaction{
