@@ -35,7 +35,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
            | Withdrawal.t()
 
   @doc """
-    Batch request for ENS names via {{baseUrl}}/api/v1/:chainId/addresses:batch-resolve-names
+    Batch request for ENS names via POST {{baseUrl}}/api/v1/:chainId/addresses:batch-resolve-names
   """
   @spec ens_names_batch_request([binary()]) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def ens_names_batch_request(addresses) do
@@ -49,7 +49,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   end
 
   @doc """
-    Request for ENS name via {{baseUrl}}/api/v1/:chainId/addresses:lookup
+    Request for ENS name via GET {{baseUrl}}/api/v1/:chainId/addresses:lookup
   """
   @spec address_lookup(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def address_lookup(address) do
