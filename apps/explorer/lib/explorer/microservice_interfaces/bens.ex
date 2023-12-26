@@ -54,32 +54,32 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   @spec address_lookup(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def address_lookup(address) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
-      body = %{
+      query_params = %{
         "address" => to_string(address),
-        "resolvedTo" => true,
-        "ownedBy" => false,
-        "onlyActive" => true,
+        "resolved_to" => true,
+        "owned_by" => false,
+        "only_active" => true,
         "order" => "ASC"
       }
 
-      http_post_request(address_lookup_url(), body)
+      http_get_request(address_lookup_url(), query_params)
     end
   end
 
   @doc """
-    Lookup for ENS domain name via {{baseUrl}}/api/v1/:chainId/domains:lookup
+    Lookup for ENS domain name via GET {{baseUrl}}/api/v1/:chainId/domains:lookup
   """
   @spec ens_domain_lookup(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def ens_domain_lookup(domain) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
-      body = %{
+      query_params = %{
         "name" => domain,
-        "onlyActive" => true,
+        "only_active" => true,
         "sort" => "registration_date",
         "order" => "DESC"
       }
 
-      http_post_request(domain_lookup_url(), body)
+      http_get_request(domain_lookup_url(), query_params)
     end
   end
 
@@ -97,6 +97,27 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
         Logger.error(fn ->
           [
             "Error while sending request to BENS microservice url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
+            inspect(error, limit: :infinity, printable_limit: :infinity)
+          ]
+        end)
+
+        Logger.configure(truncate: old_truncate)
+        {:error, @request_error_msg}
+    end
+  end
+
+  def http_get_request(url, query_params) do
+    case HTTPoison.get("#{url}?#{URI.encode_query(query_params)}") do
+      {:ok, %Response{body: body, status_code: 200}} ->
+        Jason.decode(body)
+
+      {_, error} ->
+        old_truncate = Application.get_env(:logger, :truncate)
+        Logger.configure(truncate: :infinity)
+
+        Logger.error(fn ->
+          [
+            "Error while sending request to BENS microservice url: #{url}: ",
             inspect(error, limit: :infinity, printable_limit: :infinity)
           ]
         end)
@@ -221,7 +242,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
           %{
             "items" =>
               [
-                %{"name" => name, "expiryDate" => expiry_date, "resolvedAddress" => %{"hash" => address_hash_string}}
+                %{"name" => name, "expiry_date" => expiry_date, "resolved_address" => %{"hash" => address_hash_string}}
                 | _other
               ] = items
           }}
