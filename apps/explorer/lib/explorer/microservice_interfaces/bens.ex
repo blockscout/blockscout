@@ -271,15 +271,17 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
          to_address_hash: to_address_hash,
          created_contract_address_hash: nil,
          from_address_hash: from_address_hash,
-         token_transfers: token_transfers,
+         token_transfers: token_transfers
        }) do
     token_transfers_addresses = List.flatten(Enum.map(token_transfers, &item_to_address_hash_strings/1))
+
     Logger.info(fn ->
       [
         "aboba",
         inspect(token_transfers_addresses)
       ]
     end)
+
     [to_string(to_address_hash), to_string(from_address_hash)] ++ token_transfers_addresses
   end
 
