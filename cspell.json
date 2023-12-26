@@ -557,7 +557,10 @@
         "fkey",
         "getcontractcreation",
         "contractaddresses",
-        "tokennfttx"
+        "tokennfttx",
+        "libraryname",
+        "libraryaddress",
+        "evmversion"
     ],
     "enableFiletypes": [
         "dotenv",

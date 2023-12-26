@@ -172,6 +172,34 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     render(conn, :error, error: "Missing sourceCode or contractaddress fields")
   end
 
+  def verifysourcecode(
+        conn,
+        %{
+          "codeformat" => "solidity-single-file",
+          "contractaddress" => address_hash
+        } = params
+      ) do
+    with {:check_verified_status, false} <-
+           {:check_verified_status, SmartContract.verified_with_full_match?(address_hash)},
+         {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_hash),
+         {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_solidity_single_file_params(params)},
+         external_libraries <- fetch_external_libraries_for_verifysourcecode(params),
+         uid <- VerificationStatus.generate_uid(address_hash) do
+      Que.add(SolidityPublisherWorker, {"flattened_api", fetched_params, external_libraries, uid})
+
+      render(conn, :show, %{result: uid})
+    else
+      {:check_verified_status, true} ->
+        render(conn, :error, error: @verified, data: @verified)
+
+      {:format, :error} ->
+        render(conn, :error, error: @invalid_address, data: @invalid_address)
+
+      {:params, {:error, error}} ->
+        render(conn, :error, error: error, data: error)
+    end
+  end
+
   def checkverifystatus(conn, %{"guid" => guid}) do
     case VerificationStatus.fetch_status(guid) do
       :pending ->
@@ -532,7 +560,19 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> required_param(params, "contractname", "name")
     |> required_param(params, "compilerversion", "compiler_version")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
+  end
+
+  defp fetch_verifysourcecode_solidity_single_file_params(params) do
+    {:ok, %{}}
+    |> required_param(params, "contractaddress", "address_hash")
+    |> required_param(params, "contractname", "name")
+    |> required_param(params, "compilerversion", "compiler_version")
+    |> required_param(params, "optimizationUsed", "optimization")
+    |> required_param(params, "sourceCode", "contract_source_code")
+    |> optional_param(params, "runs", "optimization_runs")
+    |> optional_param(params, "evmversion", "evm_version")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
+    |> prepare_optimization()
   end
 
   defp parse_optimization_runs({:ok, %{"optimization_runs" => runs} = opts}) when is_bitstring(runs) do
@@ -556,10 +596,18 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp parse_optimization_runs(other), do: other
 
   defp fetch_external_libraries(params) do
+    fetch_external_libraries_general(&"library#{&1}Name", &"library#{&1}Address", params)
+  end
+
+  defp fetch_external_libraries_for_verifysourcecode(params) do
+    fetch_external_libraries_general(&"libraryname#{&1}", &"libraryaddress#{&1}", params)
+  end
+
+  defp fetch_external_libraries_general(number_to_library_name, number_to_library_address, params) do
     Enum.reduce(1..Application.get_env(:block_scout_web, :contract)[:verification_max_libraries], %{}, fn number, acc ->
-      case Map.fetch(params, "library#{number}Name") do
+      case Map.fetch(params, number_to_library_name.(number)) do
         {:ok, library_name} ->
-          library_address = Map.get(params, "library#{number}Address")
+          library_address = Map.get(params, number_to_library_address.(number))
 
           acc
           |> Map.put("library#{number}_name", library_name)
@@ -594,4 +642,32 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         {:ok, map}
     end
   end
+
+  defp prepare_optimization({:ok, %{"optimization" => optimization} = params}) do
+    parsed = parse_optimization(optimization)
+
+    case parsed do
+      :error ->
+        {:error, "optimizationUsed has invalid format"}
+
+      _ ->
+        {:ok, Map.put(params, "optimization", parsed)}
+    end
+  end
+
+  defp prepare_optimization(error), do: error
+
+  defp parse_optimization("0"), do: false
+  defp parse_optimization(0), do: false
+
+  defp parse_optimization("1"), do: true
+  defp parse_optimization(1), do: true
+
+  defp parse_optimization("false"), do: false
+  defp parse_optimization(false), do: false
+
+  defp parse_optimization("true"), do: true
+  defp parse_optimization(true), do: true
+
+  defp parse_optimization(_), do: :error
 end
