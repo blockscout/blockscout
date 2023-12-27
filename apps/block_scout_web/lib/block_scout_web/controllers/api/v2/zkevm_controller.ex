@@ -109,4 +109,72 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
       {:error, :not_found} -> 0
     end
   end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/zkevm/deposits` endpoint.
+  """
+  @spec deposits(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def deposits(conn, params) do
+    {deposits, next_page} =
+      params
+      |> paging_options()
+      |> Keyword.put(:api?, true)
+      |> Reader.deposits()
+      |> split_list_by_page()
+
+    next_page_params = next_page_params(next_page, deposits, params)
+
+    conn
+    |> put_status(200)
+    |> render(:polygon_zkevm_bridge_items, %{
+      items: deposits,
+      next_page_params: next_page_params
+    })
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/zkevm/deposits/count` endpoint.
+  """
+  @spec deposits_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def deposits_count(conn, _params) do
+    count = Reader.deposits_count(api?: true)
+
+    conn
+    |> put_status(200)
+    |> render(:polygon_zkevm_bridge_items_count, %{count: count})
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/zkevm/withdrawals` endpoint.
+  """
+  @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def withdrawals(conn, params) do
+    {withdrawals, next_page} =
+      params
+      |> paging_options()
+      |> Keyword.put(:api?, true)
+      |> Reader.withdrawals()
+      |> split_list_by_page()
+
+    next_page_params = next_page_params(next_page, withdrawals, params)
+
+    conn
+    |> put_status(200)
+    |> render(:polygon_zkevm_bridge_items, %{
+      items: withdrawals,
+      next_page_params: next_page_params
+    })
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/zkevm/withdrawals/count` endpoint.
+  """
+  @spec withdrawals_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def withdrawals_count(conn, _params) do
+    count = Reader.withdrawals_count(api?: true)
+
+    conn
+    |> put_status(200)
+    |> render(:polygon_zkevm_bridge_items_count, %{count: count})
+  end
 end

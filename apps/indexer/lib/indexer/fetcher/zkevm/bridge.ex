@@ -142,8 +142,6 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
 
   @spec prepare_operations(list(), list() | nil, list(), map() | nil) :: list()
   def prepare_operations(events, json_rpc_named_arguments, json_rpc_named_arguments_l1, block_to_timestamp \\ nil) do
-    is_l1 = (json_rpc_named_arguments == json_rpc_named_arguments_l1)
-
     bridge_events = Enum.filter(events, fn event -> event.first_topic == @bridge_event end)
 
     block_to_timestamp =
@@ -156,7 +154,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     token_address_to_id = token_addresses_to_ids(bridge_events, json_rpc_named_arguments_l1)
 
     Enum.map(events, fn event ->
-      {type, index, l1_token_id, l2_token_address, amount, block_number, block_timestamp} =
+      {index, l1_token_id, l2_token_address, amount, block_number, block_timestamp} =
         if event.first_topic == @bridge_event do
           [
             leaf_type,
@@ -176,30 +174,18 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
           block_number = quantity_to_integer(event.block_number)
           block_timestamp = Map.get(block_to_timestamp, block_number)
 
-          type =
-            if is_l1 do
-              :deposit
-            else
-              :withdrawal
-            end
-
-          {type, deposit_count, l1_token_id, l2_token_address, amount, block_number, block_timestamp}
+          {deposit_count, l1_token_id, l2_token_address, amount, block_number, block_timestamp}
         else
           [index, _origin_network, _origin_address, _destination_address, amount] =
             decode_data(event.data, @claim_event_params)
 
-          type =
-            if is_l1 do
-              :withdrawal
-            else
-              :deposit
-            end
-
-          {type, index, nil, nil, amount, nil, nil}
+          {index, nil, nil, amount, nil, nil}
         end
 
+      is_l1 = json_rpc_named_arguments == json_rpc_named_arguments_l1
+
       result = %{
-        type: type,
+        type: operation_type(event.first_topic, is_l1),
         index: index,
         amount: amount
       }
@@ -246,6 +232,14 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     case Helper.repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
       {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
       {:error, _} -> []
+    end
+  end
+
+  defp operation_type(first_topic, is_l1) do
+    if first_topic == @bridge_event do
+      if is_l1, do: :deposit, else: :withdrawal
+    else
+      if is_l1, do: :withdrawal, else: :deposit
     end
   end
 

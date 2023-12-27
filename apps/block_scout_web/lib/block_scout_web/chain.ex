@@ -612,7 +612,7 @@ defmodule BlockScoutWeb.Chain do
     }
   end
 
-  defp paging_params(%Withdrawal{index: index}) do
+  defp paging_params(%{index: index}) do
     %{"index" => index}
   end
 

@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Zkevm.Reader do
 
   import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain.Zkevm.{BatchTransaction, LifecycleTransaction, TransactionBatch}
+  alias Explorer.Chain.Zkevm.{BatchTransaction, Bridge, LifecycleTransaction, TransactionBatch}
   alias Explorer.{Chain, PagingOptions, Repo}
 
   @doc """
@@ -141,9 +141,91 @@ defmodule Explorer.Chain.Zkevm.Reader do
     last_id + 1
   end
 
+  @doc """
+  Retrieves a list of Polygon zkEVM deposits (completed and unclaimed)
+  sorted in descending order of the index.
+  """
+  @spec deposits(list()) :: list()
+  def deposits(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    base_query =
+      from(
+        b in Bridge,
+        left_join: t1 in assoc(b, :l1_token),
+        left_join: t2 in assoc(b, :l2_token),
+        where: b.type == :deposit and not is_nil(b.l1_transaction_hash),
+        preload: [l1_token: t1, l2_token: t2],
+        order_by: [desc: b.index]
+      )
+
+    base_query
+    |> page_deposits_or_withdrawals(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
+  end
+
+  @doc """
+  Returns a total number of Polygon zkEVM deposits (completed and unclaimed).
+  """
+  @spec deposits_count(list()) :: term() | nil
+  def deposits_count(options \\ []) do
+    query =
+      from(
+        b in Bridge,
+        where: b.type == :deposit and not is_nil(b.l1_transaction_hash)
+      )
+
+    select_repo(options).aggregate(query, :count, timeout: :infinity)
+  end
+
+  @doc """
+  Retrieves a list of Polygon zkEVM withdrawals (completed and unclaimed)
+  sorted in descending order of the index.
+  """
+  @spec withdrawals(list()) :: list()
+  def withdrawals(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    base_query =
+      from(
+        b in Bridge,
+        left_join: t1 in assoc(b, :l1_token),
+        left_join: t2 in assoc(b, :l2_token),
+        where: b.type == :withdrawal and not is_nil(b.l2_transaction_hash),
+        preload: [l1_token: t1, l2_token: t2],
+        order_by: [desc: b.index]
+      )
+
+    base_query
+    |> page_deposits_or_withdrawals(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
+  end
+
+  @doc """
+  Returns a total number of Polygon zkEVM withdrawals (completed and unclaimed).
+  """
+  @spec withdrawals_count(list()) :: term() | nil
+  def withdrawals_count(options \\ []) do
+    query =
+      from(
+        b in Bridge,
+        where: b.type == :withdrawal and not is_nil(b.l2_transaction_hash)
+      )
+
+    select_repo(options).aggregate(query, :count, timeout: :infinity)
+  end
+
   defp page_batches(query, %PagingOptions{key: nil}), do: query
 
   defp page_batches(query, %PagingOptions{key: {number}}) do
     from(tb in query, where: tb.number < ^number)
+  end
+
+  defp page_deposits_or_withdrawals(query, %PagingOptions{key: nil}), do: query
+
+  defp page_deposits_or_withdrawals(query, %PagingOptions{key: {index}}) do
+    from(b in query, where: b.index < ^index)
   end
 end
