@@ -548,6 +548,8 @@ defmodule Explorer.Etherscan do
 
     tt_specific_token_query =
       tt_query
+      |> where_start_block_match_tt(options)
+      |> where_end_block_match_tt(options)
       |> where_contract_address_match(contract_address_hash)
 
     wrapped_query =
@@ -619,8 +621,6 @@ defmodule Explorer.Etherscan do
       end
 
     wrapped_query
-    |> where_start_transaction_block_match(options)
-    |> where_end_transaction_block_match(options)
     |> Repo.replica().all()
   end
 
