@@ -33,7 +33,7 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
           block: transaction.block,
           block_number: transaction.block_number,
           data: "0x12",
-          log_first_topic_id: log_first_topic.id,
+          first_topic_id: log_first_topic.id,
           second_topic: topic(@second_topic_hex_string_1),
           third_topic: topic(@third_topic_hex_string_1),
           fourth_topic: topic(@fourth_topic_hex_string_1)

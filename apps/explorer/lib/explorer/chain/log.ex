@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Log do
   alias Explorer.SmartContract.SigProviderInterface
 
   @required_attrs ~w(address_hash data block_hash index transaction_hash)a
-  @optional_attrs ~w(log_first_topic_id second_topic third_topic fourth_topic block_number)a
+  @optional_attrs ~w(first_topic_id second_topic third_topic fourth_topic block_number)a
 
   @typedoc """
    * `address` - address of contract that generate the event
@@ -20,7 +20,7 @@ defmodule Explorer.Chain.Log do
    * `block_number` - The block number that the transfer took place.
    * `address_hash` - foreign key for `address`
    * `data` - non-indexed log parameters.
-   * `log_first_topic_id` - id of LogFirstTopic
+   * `first_topic_id` - id of LogFirstTopic
    * `second_topic` - `topics[1]`
    * `third_topic` - `topics[2]`
    * `fourth_topic` - `topics[3]`
@@ -35,7 +35,7 @@ defmodule Explorer.Chain.Log do
           block_number: non_neg_integer() | nil,
           data: Data.t(),
           log_first_topic: %Ecto.Association.NotLoaded{} | Hash.Full.t() | nil,
-          log_first_topic_id: non_neg_integer() | nil,
+          first_topic_id: non_neg_integer() | nil,
           second_topic: Hash.Full.t() | nil,
           third_topic: Hash.Full.t() | nil,
           fourth_topic: Hash.Full.t() | nil,
@@ -72,7 +72,7 @@ defmodule Explorer.Chain.Log do
     )
 
     belongs_to(:log_first_topic, LogFirstTopic,
-      foreign_key: :log_first_topic_id,
+      foreign_key: :first_topic_id,
       primary_key: true,
       references: :id,
       type: :integer
@@ -93,7 +93,7 @@ defmodule Explorer.Chain.Log do
       ...>     second_topic: nil,
       ...>     third_topic: nil,
       ...>     transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-      ...>     log_first_topic_id: 1
+      ...>     first_topic_id: 1
       ...>   }
       ...> )
       iex> changeset.valid?
@@ -325,7 +325,7 @@ defmodule Explorer.Chain.Log do
 
   def fetch_log_by_tx_hash_and_first_topic(tx_hash, first_topic, options \\ []) do
     __MODULE__
-    |> join(:left, [l], topic in LogFirstTopic, on: l.log_first_topic_id == topic.id)
+    |> join(:left, [l], topic in LogFirstTopic, on: l.first_topic_id == topic.id)
     |> where([l, topic], l.transaction_hash == ^tx_hash and topic.hash == ^first_topic)
     |> limit(1)
     |> select([l, topic], l)

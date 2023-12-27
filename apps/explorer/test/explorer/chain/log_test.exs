@@ -112,7 +112,7 @@ defmodule Explorer.Chain.LogTest do
         insert(:log,
           address: to_address,
           transaction: transaction,
-          log_first_topic_id: log_first_topic.id,
+          first_topic_id: log_first_topic.id,
           second_topic: topic(topic2),
           third_topic: topic(topic3),
           fourth_topic: nil,
@@ -169,7 +169,7 @@ defmodule Explorer.Chain.LogTest do
       log =
         insert(:log,
           transaction: transaction,
-          log_first_topic_id: log_first_topic.id,
+          first_topic_id: log_first_topic.id,
           second_topic: topic(topic2),
           third_topic: topic(topic3),
           fourth_topic: nil,

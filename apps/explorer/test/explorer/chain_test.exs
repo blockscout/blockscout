@@ -334,7 +334,7 @@ defmodule Explorer.ChainTest do
         transaction: transaction2,
         index: 2,
         address: address,
-        log_first_topic_id: 1,
+        first_topic_id: 1,
         block_number: transaction2.block_number
       )
 

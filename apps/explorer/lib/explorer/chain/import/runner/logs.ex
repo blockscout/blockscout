@@ -115,12 +115,12 @@ defmodule Explorer.Chain.Import.Runner.Logs do
 
   defp put_log_first_topic_id(changes_list, log_first_topic_ids_hashes) do
     Enum.map(changes_list, fn item ->
-      {log_first_topic_id, _} =
+      {first_topic_id, _} =
         Enum.find(log_first_topic_ids_hashes, fn {_, hash} ->
           hash == item.first_topic
         end)
 
-      Map.put(item, :log_first_topic_id, log_first_topic_id)
+      Map.put(item, :first_topic_id, first_topic_id)
     end)
   end
 
@@ -131,7 +131,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
         set: [
           address_hash: fragment("EXCLUDED.address_hash"),
           data: fragment("EXCLUDED.data"),
-          log_first_topic_id: fragment("EXCLUDED.log_first_topic_id"),
+          first_topic_id: fragment("EXCLUDED.first_topic_id"),
           second_topic: fragment("EXCLUDED.second_topic"),
           third_topic: fragment("EXCLUDED.third_topic"),
           fourth_topic: fragment("EXCLUDED.fourth_topic"),
@@ -143,10 +143,10 @@ defmodule Explorer.Chain.Import.Runner.Logs do
       ],
       where:
         fragment(
-          "(EXCLUDED.address_hash, EXCLUDED.data, EXCLUDED.log_first_topic_id, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.address_hash, EXCLUDED.data, EXCLUDED.first_topic_id, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
           log.address_hash,
           log.data,
-          log.log_first_topic_id,
+          log.first_topic_id,
           log.second_topic,
           log.third_topic,
           log.fourth_topic

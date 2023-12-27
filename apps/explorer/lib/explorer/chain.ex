@@ -402,7 +402,7 @@ defmodule Explorer.Chain do
   defp filter_topic(base_query, topic) do
     from(log in base_query,
       left_join: log_first_topic in LogFirstTopic,
-      on: log_first_topic.id == log.log_first_topic_id,
+      on: log_first_topic.id == log.first_topic_id,
       where:
         log_first_topic.hash == ^topic or log.second_topic == ^topic or log.third_topic == ^topic or
           log.fourth_topic == ^topic

@@ -349,7 +349,7 @@ defmodule Explorer.Chain.TokenTransferTest do
             ),
           block: block,
           address_hash: address.hash,
-          log_first_topic_id: log_first_topic.id
+          first_topic_id: log_first_topic.id
         )
 
       block_number = log.block_number

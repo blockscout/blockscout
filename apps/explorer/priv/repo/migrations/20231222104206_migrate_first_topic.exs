@@ -8,7 +8,7 @@ defmodule Explorer.Repo.Migrations.MigrateFirstTopic do
     """)
 
     execute("""
-      UPDATE logs SET log_first_topic_id = topic.id
+      UPDATE logs SET first_topic_id = topic.id
       FROM logs l LEFT JOIN log_first_topics topic
       ON l.first_topic = topic.hash
       WHERE logs.first_topic = topic.hash;

@@ -424,7 +424,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         insert(:log,
           address: address,
           transaction: transaction,
-          log_first_topic_id: log_first_topic.id,
+          first_topic_id: log_first_topic.id,
           second_topic: topic(@second_topic_hex_string_1),
           block: block,
           block_number: block.number
@@ -503,7 +503,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         insert(:log,
           address: address,
           transaction: transaction,
-          log_first_topic_id: log_first_topic.id,
+          first_topic_id: log_first_topic.id,
           second_topic: topic(@second_topic_hex_string_1),
           block: block,
           block_number: block.number

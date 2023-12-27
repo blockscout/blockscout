@@ -54,7 +54,7 @@ defmodule Indexer.Temporary.UncatalogedTokenTransfersTest do
           transaction: transaction,
           address_hash: address.hash,
           block: block,
-          log_first_topic_id: log_first_topic.id
+          first_topic_id: log_first_topic.id
         )
 
       block_number = log.block_number

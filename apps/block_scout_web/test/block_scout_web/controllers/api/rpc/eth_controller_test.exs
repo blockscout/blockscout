@@ -121,7 +121,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         address: address,
         transaction: transaction,
         data: "0x010101",
-        log_first_topic_id: log_first_topic.id
+        first_topic_id: log_first_topic.id
       )
 
       params = params(api_params, [%{"address" => to_string(address.hash), "topics" => [@first_topic_hex_string_1]}])
@@ -150,7 +150,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         block_number: block.number,
         transaction: transaction,
         data: "0x010101",
-        log_first_topic_id: log_first_topic_1.id
+        first_topic_id: log_first_topic_1.id
       )
 
       insert(:log,
@@ -159,7 +159,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         block_number: block.number,
         transaction: transaction,
         data: "0x020202",
-        log_first_topic_id: log_first_topic_2.id
+        first_topic_id: log_first_topic_2.id
       )
 
       params =
@@ -192,7 +192,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
           block_number: block.number,
           address: contract_address,
           transaction: transaction,
-          log_first_topic_id: log_first_topic.id
+          first_topic_id: log_first_topic.id
         )
 
       params =
@@ -255,7 +255,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         address: address,
         transaction: transaction,
         data: "0x010101",
-        log_first_topic_id: log_first_topic.id,
+        first_topic_id: log_first_topic.id,
         second_topic: topic(@second_topic_hex_string_1),
         block: block,
         block_number: block.number
@@ -266,7 +266,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         address: address,
         transaction: transaction,
         data: "0x020202",
-        log_first_topic_id: log_first_topic.id
+        first_topic_id: log_first_topic.id
       )
 
       params =
@@ -296,7 +296,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         address: address,
         transaction: transaction,
         data: "0x010101",
-        log_first_topic_id: log_first_topic.id,
+        first_topic_id: log_first_topic.id,
         second_topic: topic(@second_topic_hex_string_1),
         block: block,
         block_number: block.number
@@ -306,7 +306,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         address: address,
         transaction: transaction,
         data: "0x020202",
-        log_first_topic_id: log_first_topic.id,
+        first_topic_id: log_first_topic.id,
         second_topic: topic(@second_topic_hex_string_2),
         block: block,
         block_number: block.number

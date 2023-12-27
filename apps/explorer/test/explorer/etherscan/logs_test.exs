@@ -72,7 +72,7 @@ defmodule Explorer.Etherscan.LogsTest do
           address: contract_address,
           block_number: block.number,
           transaction: transaction,
-          log_first_topic_id: log_first_topic.id
+          first_topic_id: log_first_topic.id
         )
         |> Repo.preload(:log_first_topic)
 
@@ -242,13 +242,13 @@ defmodule Explorer.Etherscan.LogsTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id
+        first_topic_id: log_first_topic_1.id
       ]
 
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_2.id
+        first_topic_id: log_first_topic_2.id
       ]
 
       log1 = insert(:log, log1_details)
@@ -280,14 +280,14 @@ defmodule Explorer.Etherscan.LogsTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic.id,
+        first_topic_id: log_first_topic.id,
         second_topic: topic(@second_topic_hex_string_1)
       ]
 
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic.id,
+        first_topic_id: log_first_topic.id,
         second_topic: topic(@second_topic_hex_string_2)
       ]
 
@@ -324,14 +324,14 @@ defmodule Explorer.Etherscan.LogsTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id,
+        first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1)
       ]
 
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_2.id,
+        first_topic_id: log_first_topic_2.id,
         second_topic: topic(@second_topic_hex_string_2)
       ]
 
@@ -366,14 +366,14 @@ defmodule Explorer.Etherscan.LogsTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id,
+        first_topic_id: log_first_topic_1.id,
         block_number: block.number
       ]
 
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_2.id,
+        first_topic_id: log_first_topic_2.id,
         block_number: block.number
       ]
 
@@ -408,7 +408,7 @@ defmodule Explorer.Etherscan.LogsTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id,
+        first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1),
         block_number: block.number
       ]
@@ -416,7 +416,7 @@ defmodule Explorer.Etherscan.LogsTest do
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_2.id,
+        first_topic_id: log_first_topic_2.id,
         second_topic: topic(@second_topic_hex_string_2),
         block_number: block.number
       ]
@@ -455,7 +455,7 @@ defmodule Explorer.Etherscan.LogsTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id,
+        first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1),
         third_topic: topic(@third_topic_hex_string_1),
         block_number: block.number
@@ -464,7 +464,7 @@ defmodule Explorer.Etherscan.LogsTest do
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_2.id,
+        first_topic_id: log_first_topic_2.id,
         second_topic: topic(@second_topic_hex_string_2),
         third_topic: topic(@third_topic_hex_string_2),
         block_number: block.number
@@ -473,7 +473,7 @@ defmodule Explorer.Etherscan.LogsTest do
       log3_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_3.id,
+        first_topic_id: log_first_topic_3.id,
         second_topic: topic(@second_topic_hex_string_3),
         third_topic: topic(@third_topic_hex_string_3),
         block_number: block.number
@@ -519,7 +519,7 @@ defmodule Explorer.Etherscan.LogsTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id,
+        first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1),
         third_topic: topic(@third_topic_hex_string_1),
         block_number: block.number
@@ -528,7 +528,7 @@ defmodule Explorer.Etherscan.LogsTest do
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_2.id,
+        first_topic_id: log_first_topic_2.id,
         second_topic: topic(@second_topic_hex_string_2),
         third_topic: topic(@third_topic_hex_string_2),
         block_number: block.number
@@ -537,7 +537,7 @@ defmodule Explorer.Etherscan.LogsTest do
       log3_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_3.id,
+        first_topic_id: log_first_topic_3.id,
         second_topic: topic(@second_topic_hex_string_3),
         third_topic: topic(@third_topic_hex_string_3),
         block_number: block.number
@@ -586,7 +586,7 @@ defmodule Explorer.Etherscan.LogsTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id,
+        first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1),
         third_topic: topic(@third_topic_hex_string_1),
         block_number: block.number
@@ -595,7 +595,7 @@ defmodule Explorer.Etherscan.LogsTest do
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id,
+        first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_2),
         third_topic: topic(@third_topic_hex_string_1),
         block_number: block.number
@@ -604,7 +604,7 @@ defmodule Explorer.Etherscan.LogsTest do
       log3_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id,
+        first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1),
         third_topic: topic(@third_topic_hex_string_1),
         block_number: block.number
@@ -649,7 +649,7 @@ defmodule Explorer.Etherscan.LogsTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id,
+        first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1),
         block_number: block.number
       ]
@@ -657,7 +657,7 @@ defmodule Explorer.Etherscan.LogsTest do
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_2.id,
+        first_topic_id: log_first_topic_2.id,
         second_topic: topic(@second_topic_hex_string_2),
         third_topic: topic(@third_topic_hex_string_2),
         fourth_topic: topic(@fourth_topic_hex_string_1),
@@ -667,7 +667,7 @@ defmodule Explorer.Etherscan.LogsTest do
       log3_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id,
+        first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1),
         third_topic: topic(@third_topic_hex_string_1),
         fourth_topic: topic(@fourth_topic_hex_string_1),

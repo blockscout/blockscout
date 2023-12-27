@@ -378,7 +378,7 @@ defmodule Explorer.Chain.TokenTransfer do
       from(l in Log,
         as: :log,
         left_join: log_first_topic in LogFirstTopic,
-        on: log_first_topic.id == l.log_first_topic_id,
+        on: log_first_topic.id == l.first_topic_id,
         where:
           log_first_topic.hash == ^@constant or
             log_first_topic.hash == ^@erc1155_single_transfer_signature or

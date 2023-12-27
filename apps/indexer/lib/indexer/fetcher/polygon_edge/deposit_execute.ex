@@ -155,7 +155,7 @@ defmodule Indexer.Fetcher.PolygonEdge.DepositExecute do
         query =
           from(log in Log,
             inner_join: log_first_topic in LogFirstTopic,
-            on: log_first_topic.id == log.log_first_topic_id and log_first_topic.hash == @state_sync_result_event,
+            on: log_first_topic.id == log.first_topic_id and log_first_topic.hash == @state_sync_result_event,
             select: {log.second_topic, log.third_topic, log.transaction_hash, log.block_number},
             where:
               log.address_hash == ^state_receiver and log.block_number >= ^block_start and

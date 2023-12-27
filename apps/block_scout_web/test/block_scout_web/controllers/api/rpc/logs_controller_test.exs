@@ -453,13 +453,13 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id
+        first_topic_id: log_first_topic_1.id
       ]
 
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_2.id
+        first_topic_id: log_first_topic_2.id
       ]
 
       log1 = insert(:log, log1_details)
@@ -514,14 +514,14 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id,
+        first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1)
       ]
 
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_2.id,
+        first_topic_id: log_first_topic_2.id,
         second_topic: topic(@second_topic_hex_string_2)
       ]
 
@@ -566,14 +566,14 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id,
+        first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1)
       ]
 
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_2.id,
+        first_topic_id: log_first_topic_2.id,
         second_topic: topic(@second_topic_hex_string_2)
       ]
 
@@ -616,7 +616,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id,
+        first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1),
         third_topic: topic(@third_topic_hex_string_1),
         fourth_topic: topic(@fourth_topic_hex_string_1)
@@ -625,7 +625,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log2_details = [
         address: contract_address,
         transaction: transaction,
-        log_first_topic_id: log_first_topic_1.id,
+        first_topic_id: log_first_topic_1.id,
         second_topic: topic(@second_topic_hex_string_1),
         third_topic: topic(@third_topic_hex_string_1),
         fourth_topic: topic(@fourth_topic_hex_string_2)

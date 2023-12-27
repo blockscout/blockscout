@@ -90,7 +90,7 @@ defmodule Explorer.Etherscan.Logs do
           join: transaction in Transaction,
           on: log.transaction_hash == transaction.hash,
           left_join: topic in LogFirstTopic,
-          on: log.log_first_topic_id == topic.id,
+          on: log.first_topic_id == topic.id,
           select: map(log, ^@log_fields),
           select_merge: %{
             gas_price: transaction.gas_price,
@@ -152,7 +152,7 @@ defmodule Explorer.Etherscan.Logs do
           join: log in subquery(logs_query),
           on: log.transaction_hash == transaction.hash,
           left_join: topic in LogFirstTopic,
-          on: log.log_first_topic_id == topic.id,
+          on: log.first_topic_id == topic.id,
           where: transaction.block_number >= ^prepared_filter.from_block,
           where: transaction.block_number <= ^prepared_filter.to_block,
           where:
@@ -241,7 +241,7 @@ defmodule Explorer.Etherscan.Logs do
           join: block_transaction_data in subquery(query_with_consensus),
           on: block_transaction_data.transaction_hash == log.transaction_hash,
           left_join: topic in LogFirstTopic,
-          on: log.log_first_topic_id == topic.id,
+          on: log.first_topic_id == topic.id,
           order_by: block_transaction_data.block_number,
           limit: 1000,
           select: block_transaction_data,
@@ -285,7 +285,7 @@ defmodule Explorer.Etherscan.Logs do
       query_with_block_transaction_data =
         from(log in logs_query,
           left_join: topic in LogFirstTopic,
-          on: log.log_first_topic_id == topic.id,
+          on: log.first_topic_id == topic.id,
           join: block_transaction_data in subquery(query_with_consensus),
           on: block_transaction_data.transaction_hash == log.transaction_hash,
           order_by: block_transaction_data.block_number,
@@ -327,7 +327,7 @@ defmodule Explorer.Etherscan.Logs do
 
       [:first_topic] ->
         query
-        |> join(:left, [l], topic in LogFirstTopic, on: l.log_first_topic_id == topic.id)
+        |> join(:left, [l], topic in LogFirstTopic, on: l.first_topic_id == topic.id)
         |> where([l, topic], field(topic, ^:hash) in ^List.wrap(filter[:first_topic]))
 
       [topic] ->
@@ -369,11 +369,11 @@ defmodule Explorer.Etherscan.Logs do
   defp where_single_topic_match(query, filter, topic, logic_operation) when topic == :first_topic do
     if logic_operation == "or" do
       query
-      |> join(:left, [l], topic in LogFirstTopic, on: l.log_first_topic_id == topic.id)
+      |> join(:left, [l], topic in LogFirstTopic, on: l.first_topic_id == topic.id)
       |> or_where([l, topic], field(topic, :hash) == ^filter[topic])
     else
       query
-      |> join(:left, [l], topic in LogFirstTopic, on: l.log_first_topic_id == topic.id)
+      |> join(:left, [l], topic in LogFirstTopic, on: l.first_topic_id == topic.id)
       |> where([l, topic], field(topic, :hash) == ^filter[topic])
     end
   end
@@ -412,7 +412,7 @@ defmodule Explorer.Etherscan.Logs do
         join: log in subquery(logs_query),
         on: log.transaction_hash == internal_transaction.transaction_hash,
         left_join: topic in LogFirstTopic,
-        on: log.log_first_topic_id == topic.id,
+        on: log.first_topic_id == topic.id,
         where: internal_transaction.block_number >= ^prepared_filter.from_block,
         where: internal_transaction.block_number <= ^prepared_filter.to_block,
         select:

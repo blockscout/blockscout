@@ -5,7 +5,7 @@ defmodule Explorer.Chain.LogFirstTopic do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Explorer.Chain.{Hash, Log}
+  alias Explorer.Chain.Hash
   alias Explorer.Repo
 
   @required_attrs ~w(first_topic)a
@@ -22,8 +22,6 @@ defmodule Explorer.Chain.LogFirstTopic do
   schema "log_first_topics" do
     field(:id, :integer)
     field(:hash, Hash.Full)
-
-    has_many(:logs, Log, references: :id)
 
     timestamps()
   end

@@ -1769,7 +1769,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block: tx.block,
           block_number: tx.block_number,
           address: address,
-          log_first_topic_id: log_first_topic.id
+          first_topic_id: log_first_topic.id
         )
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/logs?topic=#{@first_topic_hex_string_1}")
