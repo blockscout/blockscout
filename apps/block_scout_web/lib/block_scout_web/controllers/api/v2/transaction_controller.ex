@@ -39,7 +39,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     [created_contract_address: :token] => :optional,
     [from_address: :names] => :optional,
     [to_address: :names] => :optional,
-    [to_address: :smart_contract] => :optional
+    [to_address: :smart_contract] => :optional,
+    [logs: :log_first_topic] => :optional
   }
 
   @token_transfers_necessity_by_association %{

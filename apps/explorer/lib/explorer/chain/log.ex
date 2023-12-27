@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Log do
   alias Explorer.SmartContract.SigProviderInterface
 
   @required_attrs ~w(address_hash data block_hash index transaction_hash)a
-  @optional_attrs ~w(first_topic_id second_topic third_topic fourth_topic block_number)a
+  @optional_attrs ~w(first_topic_id first_topic second_topic third_topic fourth_topic block_number)a
 
   @typedoc """
    * `address` - address of contract that generate the event
@@ -47,6 +47,7 @@ defmodule Explorer.Chain.Log do
   @primary_key false
   schema "logs" do
     field(:data, Data)
+    field(:first_topic, Hash.Full, virtual: true)
     field(:second_topic, Hash.Full)
     field(:third_topic, Hash.Full)
     field(:fourth_topic, Hash.Full)

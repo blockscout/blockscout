@@ -120,7 +120,9 @@ defmodule Explorer.Chain.Import.Runner.Logs do
           hash == item.first_topic
         end)
 
-      Map.put(item, :first_topic_id, first_topic_id)
+      item
+      |> Map.put(:first_topic_id, first_topic_id)
+      |> Map.drop([:first_topic])
     end)
   end
 
