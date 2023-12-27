@@ -27,6 +27,7 @@ defmodule Explorer.Migrator.AddressCurrentTokenBalanceTokenTypeTest do
       end)
 
       assert MigrationStatus.get_status("ctb_token_type") == "completed"
+      assert BackgroundMigrations.get_ctb_token_type_finished() == true
     end
   end
 end
