@@ -17,7 +17,7 @@ lib/indexer/fetcher/polygon_edge.ex:737
 lib/indexer/fetcher/polygon_edge/deposit_execute.ex:146
 lib/indexer/fetcher/polygon_edge/deposit_execute.ex:192
 lib/indexer/fetcher/polygon_edge/withdrawal.ex:166
-lib/indexer/fetcher/polygon_edge/withdrawal.ex:212
+lib/indexer/fetcher/polygon_edge/withdrawal.ex:211
 lib/indexer/fetcher/zkevm/transaction_batch.ex:116
 lib/indexer/fetcher/zkevm/transaction_batch.ex:156
 lib/indexer/fetcher/zkevm/transaction_batch.ex:252

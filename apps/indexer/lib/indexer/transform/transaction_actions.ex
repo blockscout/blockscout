@@ -194,7 +194,7 @@ defmodule Indexer.Transform.TransactionActions do
           @aave_v3_disable_collateral_event,
           @aave_v3_liquidation_call_event
         ],
-        sanitize_first_topic(log.log_first_topic.hash)
+        sanitize_first_topic(log)
       ) && Helper.address_hash_to_string(log.address_hash, true) == pool_address
     end)
   end
@@ -211,7 +211,7 @@ defmodule Indexer.Transform.TransactionActions do
 
   # credo:disable-for-next-line /Complexity/
   defp aave_handle_action(log, chain_id) do
-    case sanitize_first_topic(log.log_first_topic.hash) do
+    case sanitize_first_topic(log) do
       @aave_v3_borrow_event ->
         # this is Borrow event
         aave_handle_borrow_event(log, chain_id)
@@ -400,7 +400,7 @@ defmodule Indexer.Transform.TransactionActions do
   defp uniswap_filter_logs(logs, uniswap_v3_positions_nft) do
     logs
     |> Enum.filter(fn log ->
-      first_topic = sanitize_first_topic(log.log_first_topic.hash)
+      first_topic = sanitize_first_topic(log)
 
       Enum.member?(
         [
@@ -417,7 +417,7 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp uniswap_handle_action(log, legitimate, chain_id) do
-    first_topic = sanitize_first_topic(log.log_first_topic.hash)
+    first_topic = sanitize_first_topic(log)
 
     with false <- first_topic == @uniswap_v3_transfer_nft_event,
          # check UniswapV3Pool contract is legitimate
@@ -459,7 +459,7 @@ defmodule Indexer.Transform.TransactionActions do
     local_acc =
       tx_logs
       |> Enum.reduce(%{}, fn log, acc ->
-        if sanitize_first_topic(log.log_first_topic.hash) == @uniswap_v3_transfer_nft_event do
+        if sanitize_first_topic(log) == @uniswap_v3_transfer_nft_event do
           # This is Transfer event for NFT
           from =
             log.second_topic
@@ -608,7 +608,7 @@ defmodule Indexer.Transform.TransactionActions do
       |> Enum.reduce(%{}, fn {_tx_hash, tx_logs}, addresses_acc ->
         tx_logs
         |> Enum.filter(fn log ->
-          sanitize_first_topic(log.log_first_topic.hash) != @uniswap_v3_transfer_nft_event
+          sanitize_first_topic(log) != @uniswap_v3_transfer_nft_event
         end)
         |> Enum.reduce(addresses_acc, fn log, acc ->
           pool_address = Helper.address_hash_to_string(log.address_hash, true)
@@ -993,7 +993,8 @@ defmodule Indexer.Transform.TransactionActions do
     end
   end
 
-  defp sanitize_first_topic(first_topic) do
+  defp sanitize_first_topic(log) do
+    first_topic = log.first_topic || (log.log_first_topic && log.log_first_topic.hash)
     if is_nil(first_topic), do: "", else: String.downcase(Helper.log_topic_to_string(first_topic))
   end
 
