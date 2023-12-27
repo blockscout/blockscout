@@ -174,12 +174,11 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
       if scan_db do
         query =
           from(log in Log,
-            left_join: log_first_topic in LogFirstTopic,
-            on: log_first_topic.id == log.first_topic_id,
+            inner_join: log_first_topic in LogFirstTopic,
+            on: log_first_topic.id == log.first_topic_id and log_first_topic.hash == @l2_state_synced_event,
             select: {log.second_topic, log.data, log.transaction_hash, log.block_number},
             where:
-              log_first_topic.hash == @l2_state_synced_event and log.address_hash == ^state_sender and
-                log.block_number >= ^block_start and log.block_number <= ^block_end
+              log.address_hash == ^state_sender and log.block_number >= ^block_start and log.block_number <= ^block_end
           )
 
         query
