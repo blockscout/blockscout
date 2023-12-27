@@ -56,7 +56,7 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
     Process.send(self(), :continue, [])
 
     {:ok,
-     %{
+     %{config: %{
        json_l2_rpc_named_arguments: args[:json_rpc_named_arguments],
        json_l1_rpc_named_arguments: [
          transport: EthereumJSONRPC.HTTP,
@@ -73,31 +73,18 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
        recheck_interval: recheck_interval,
        chunk_size: chunk_size,
        batches_max_range: batches_max_range
-     }}
+     }}}
   end
 
   @impl GenServer
-  def handle_info(
-        :continue,
-        %{
-          json_l2_rpc_named_arguments: json_l2_rpc_named_arguments,
-          json_l1_rpc_named_arguments: json_l1_rpc_named_arguments,
-          recheck_interval: recheck_interval,
-          chunk_size: chunk_size,
-          batches_max_range: batches_max_range
-        } = state
-      ) do
-    {handle_duration, _} =
-      :timer.tc(fn ->
-        update_batches_statuses(%{
-          json_l2_rpc_named_arguments: json_l2_rpc_named_arguments,
-          json_l1_rpc_named_arguments: json_l1_rpc_named_arguments,
-          chunk_size: chunk_size,
-          batches_max_range: batches_max_range
-        })
-      end)
+  def handle_info(:continue, state) do
+    {handle_duration, _} = :timer.tc(&update_batches_statuses/1, [state.config])
 
-    Process.send_after(self(), :continue, max(:timer.seconds(recheck_interval) - div(handle_duration, 1000), 0))
+    Process.send_after(
+      self(),
+      :continue,
+      max(:timer.seconds(state.config.recheck_interval) - div(handle_duration, 1000), 0)
+    )
 
     {:noreply, state}
   end

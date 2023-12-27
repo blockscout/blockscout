@@ -103,9 +103,10 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
         log_info("Handling the batch range #{start_batch_number}..#{end_batch_number}")
 
         {handle_duration, _} =
-          :timer.tc(fn ->
-            handle_batch_range(start_batch_number, end_batch_number, %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: chunk_size})
-          end)
+          :timer.tc(
+            &handle_batch_range/3,
+            [start_batch_number, end_batch_number, %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: chunk_size}]
+          )
 
         {
           %{
