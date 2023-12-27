@@ -108,6 +108,7 @@ defmodule Explorer.Chain.ZkSync.Reader do
 
   @doc """
     Gets the number of the earliest batch where commit_id is nil.
+    The batch #0 is filtered - it does not have commitment transaction linked.
     Returns nil if not found
   """
   @spec earliest_sealed_batch_number() :: non_neg_integer() | nil
@@ -115,7 +116,7 @@ defmodule Explorer.Chain.ZkSync.Reader do
     query =
       from(tb in TransactionBatch,
         select: tb.number,
-        where: is_nil(tb.commit_id),
+        where: is_nil(tb.commit_id) and tb.number > 0,
         order_by: [asc: tb.number],
         limit: 1
       )
@@ -127,6 +128,7 @@ defmodule Explorer.Chain.ZkSync.Reader do
 
   @doc """
     Gets the number of the earliest batch where prove_id is nil.
+    The batch #0 is filtered - it does not have proving transaction linked.
     Returns nil if not found
   """
   @spec earliest_unproven_batch_number() :: non_neg_integer() | nil
@@ -134,7 +136,7 @@ defmodule Explorer.Chain.ZkSync.Reader do
     query =
       from(tb in TransactionBatch,
         select: tb.number,
-        where: is_nil(tb.prove_id),
+        where: is_nil(tb.prove_id) and tb.number > 0,
         order_by: [asc: tb.number],
         limit: 1
       )
@@ -146,6 +148,7 @@ defmodule Explorer.Chain.ZkSync.Reader do
 
   @doc """
     Gets the number of the earliest batch where execute_id is nil.
+    The batch #0 is filtered - it does not have executing transaction linked.
     Returns nil if not found
   """
   @spec earliest_unexecuted_batch_number() :: non_neg_integer() | nil
@@ -153,7 +156,7 @@ defmodule Explorer.Chain.ZkSync.Reader do
     query =
       from(tb in TransactionBatch,
         select: tb.number,
-        where: is_nil(tb.execute_id),
+        where: is_nil(tb.execute_id) and tb.number > 0,
         order_by: [asc: tb.number],
         limit: 1
       )

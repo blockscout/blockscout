@@ -1,6 +1,6 @@
 defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
   @moduledoc """
-  Fills zkevm_transaction_batches DB table.
+    Updates batches statuses and receives historical batches
   """
 
   use GenServer
@@ -8,12 +8,10 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
 
   require Logger
 
-  import EthereumJSONRPC, only: [quantity_to_integer: 1]
-
   alias Explorer.Chain
-  # alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.ZkSync.Reader
   alias Indexer.Fetcher.ZkSync.Helper
+  alias Indexer.Fetcher.ZkSync.TransactionBatch
   import Indexer.Fetcher.ZkSync.Helper, only: [log_info: 1]
 
   alias ABI.{
@@ -26,6 +24,8 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
 
   # keccak256("BlockExecution(uint256,bytes32,bytes32)")
   @block_execution_event "0x2402307311a4d6604e4e7b4c8a15a7e1213edb39c16a31efa70afb06030d3165"
+
+  @json_fields_to_exclude [:commit_tx_hash, :commit_timestamp, :prove_tx_hash, :prove_timestamp, :executed_tx_hash, :executed_timestamp]
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -46,9 +46,12 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
   def init(args) do
     Logger.metadata(fetcher: :zksync_batches_tracker)
 
-    config = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkSync.BatchesStatusTracker]
-    l1_rpc = config[:zksync_l1_rpc]
-    recheck_interval = config[:recheck_interval]
+    config_tracker = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkSync.BatchesStatusTracker]
+    l1_rpc = config_tracker[:zksync_l1_rpc]
+    recheck_interval = config_tracker[:recheck_interval]
+    config_fetcher = Application.get_all_env(:indexer)[Indexer.Fetcher.ZkSync.TransactionBatch]
+    chunk_size = config_fetcher[:chunk_size]
+    batches_max_range = config_fetcher[:batches_max_range]
 
     Process.send(self(), :continue, [])
 
@@ -67,7 +70,9 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
            ]
          ]
        ],
-       recheck_interval: recheck_interval
+       recheck_interval: recheck_interval,
+       chunk_size: chunk_size,
+       batches_max_range: batches_max_range
      }}
   end
 
@@ -77,14 +82,18 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
         %{
           json_l2_rpc_named_arguments: json_l2_rpc_named_arguments,
           json_l1_rpc_named_arguments: json_l1_rpc_named_arguments,
-          recheck_interval: recheck_interval
+          recheck_interval: recheck_interval,
+          chunk_size: chunk_size,
+          batches_max_range: batches_max_range
         } = state
       ) do
     {handle_duration, _} =
       :timer.tc(fn ->
-        track_batches_statuses(%{
+        update_batches_statuses(%{
           json_l2_rpc_named_arguments: json_l2_rpc_named_arguments,
-          json_l1_rpc_named_arguments: json_l1_rpc_named_arguments
+          json_l1_rpc_named_arguments: json_l1_rpc_named_arguments,
+          chunk_size: chunk_size,
+          batches_max_range: batches_max_range
         })
       end)
 
@@ -99,7 +108,7 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
     {:noreply, state}
   end
 
-  defp track_batches_statuses(config) do
+  defp update_batches_statuses(config) do
     {committed_batches, l1_txs} = look_for_committed_batches_and_update(%{}, config)
 
     {proven_batches, l1_txs} = look_for_proven_batches_and_update(l1_txs, config)
@@ -118,12 +127,36 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
         Map.put(updated_batch, :execute_id, executed_batch.execute_id)
       end)
 
+    # In order to avoid conflicts with indexing L1 transactions the process of discovering
+    # historical batches is combined with the process of the batches tracking
+    {historical_batches, l1_txs, l2_blocks_to_import, l2_txs_to_import} =
+      batches_catchup(l1_txs, config)
+
+    batches_to_import = Map.merge(batches_to_import, historical_batches)
+
     {:ok, _} =
       Chain.import(%{
         zksync_lifecycle_transactions: %{params: Map.values(l1_txs)},
         zksync_transaction_batches: %{params: Map.values(batches_to_import)},
+        zksync_batch_transactions: %{params: l2_txs_to_import},
+        zksync_batch_blocks: %{params: l2_blocks_to_import},
         timeout: :infinity
       })
+  end
+
+  defp batches_catchup(current_l1_txs, config) do
+    oldest_batch_number = get_earliest_batch_number()
+    if (not is_nil(oldest_batch_number)) && (oldest_batch_number > 0) do
+      log_info("The oldest batch number is not zero. Historical baches will be fetched.")
+      start_batch_number = max(0, oldest_batch_number - config.batches_max_range)
+      end_batch_number = oldest_batch_number - 1
+
+      start_batch_number..end_batch_number
+      |> Enum.to_list()
+      |> get_full_info_for_batches_list(current_l1_txs, config)
+    else
+      {%{}, current_l1_txs, [], []}
+    end
   end
 
   defp look_for_committed_batches_and_update(current_l1_txs, config) do
@@ -132,16 +165,18 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
       log_info("Checking if the batch #{expected_committed_batch_number} was committed")
       batch_from_rpc = Helper.fetch_batch_details_by_batch_number(expected_committed_batch_number, config.json_l2_rpc_named_arguments)
 
-      {:ok, batch_from_db} = Reader.batch(
-        expected_committed_batch_number,
-        necessity_by_association: %{
-          :commit_transaction => :optional
-        }
-      )
+      committed_batch_found =
+        case Reader.batch(
+          expected_committed_batch_number,
+          necessity_by_association: %{
+            :commit_transaction => :optional
+          }
+        ) do
+          {:ok, batch_from_db} -> is_transactions_of_batch_changed(batch_from_db, batch_from_rpc, :commit_tx)
+          {:error, :not_found} -> true
+        end
 
-      # TODO: handle the case when there is no batch in DB
-
-      if is_transactions_of_batch_changed(batch_from_db, batch_from_rpc, :commit_tx) do
+      if not is_nil(batch_from_rpc.commit_tx_hash) and committed_batch_found do
         log_info("The batch #{expected_committed_batch_number} looks like committed")
         l1_transaction = batch_from_rpc.commit_tx_hash
         l1_txs =
@@ -157,6 +192,7 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
         committed_batches =
           get_committed_batches_from_logs(commit_tx_receipt["logs"])
           |> Reader.batches([])
+          # TODO: handle the case when some batches don't exist in DB
           |> Enum.reduce(%{}, fn batch, committed_batches ->
             Map.put(
               committed_batches,
@@ -180,16 +216,18 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
       log_info("Checking if the batch #{expected_proven_batch_number} was proven")
       batch_from_rpc = Helper.fetch_batch_details_by_batch_number(expected_proven_batch_number, config.json_l2_rpc_named_arguments)
 
-      {:ok, batch_from_db} = Reader.batch(
-        expected_proven_batch_number,
-        necessity_by_association: %{
-          :prove_transaction => :optional
-        }
-      )
+      proven_batch_found =
+        case Reader.batch(
+          expected_proven_batch_number,
+          necessity_by_association: %{
+            :prove_transaction => :optional
+          }
+        ) do
+          {:ok, batch_from_db} -> is_transactions_of_batch_changed(batch_from_db, batch_from_rpc, :prove_tx)
+          {:error, :not_found} -> true
+        end
 
-      # TODO: handle the case when there is no batch in DB
-
-      if is_transactions_of_batch_changed(batch_from_db, batch_from_rpc, :prove_tx) do
+      if not is_nil(batch_from_rpc.prove_tx_hash) and proven_batch_found do
         log_info("The batch #{expected_proven_batch_number} looks like proven")
         l1_transaction = batch_from_rpc.prove_tx_hash
         l1_txs =
@@ -206,6 +244,7 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
           get_proven_batches_from_calldata(prove_tx["input"])
           |> Enum.map(fn batch_info -> elem(batch_info, 0) end)
           |> Reader.batches([])
+          # TODO: handle the case when some batches don't exist in DB
           |> Enum.reduce(%{}, fn batch, proven_batches ->
             Map.put(
               proven_batches,
@@ -229,16 +268,18 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
       log_info("Checking if the batch #{expected_executed_batch_number} was executed")
       batch_from_rpc = Helper.fetch_batch_details_by_batch_number(expected_executed_batch_number, config.json_l2_rpc_named_arguments)
 
-      {:ok, batch_from_db} = Reader.batch(
-        expected_executed_batch_number,
-        necessity_by_association: %{
-          :execute_transaction => :optional
-        }
-      )
+      executed_batch_found =
+        case Reader.batch(
+          expected_executed_batch_number,
+          necessity_by_association: %{
+            :execute_transaction => :optional
+          }
+        ) do
+          {:ok, batch_from_db} -> is_transactions_of_batch_changed(batch_from_db, batch_from_rpc, :execute_tx)
+          {:error, :not_found} -> true
+        end
 
-      # TODO: handle the case when there is no batch in DB
-
-      if is_transactions_of_batch_changed(batch_from_db, batch_from_rpc, :execute_tx) do
+      if not is_nil(batch_from_rpc.executed_tx_hash) and executed_batch_found do
         log_info("The batch #{expected_executed_batch_number} looks like executed")
         l1_transaction = batch_from_rpc.executed_tx_hash
         l1_txs =
@@ -254,6 +295,7 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
         executed_batches =
           get_executed_batches_from_logs(execute_tx_receipt["logs"])
           |> Reader.batches([])
+          # TODO: handle the case when some batches don't exist in DB
           |> Enum.reduce(%{}, fn batch, executed_batches ->
             Map.put(
               executed_batches,
@@ -271,35 +313,58 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
     end
   end
 
-  # batches_to_import =
-  #   Reader.batches(
-  #     start_batch_number,
-  #     end_batch_number,
-  #     necessity_by_association: %{
-  #       :commit_transaction => :optional,
-  #       :prove_transaction => :optional,
-  #       :execute_transaction => :optional
-  #     }
-  #   )
-  #   |> Enum.reduce(batches_details, fn batch_from_db, changed_batches ->
-  #     received_batch = Map.get(batches_details, batch_from_db.number)
-  #     if is_transactions_of_batch_changed(batch_from_db, received_batch, :commit_tx) &&
-  #        is_transactions_of_batch_changed(batch_from_db, received_batch, :prove_tx) &&
-  #        is_transactions_of_batch_changed(batch_from_db, received_batch, :execute_tx) do
-  #       Map.delete(changed_batches, batch_from_db.number)
-  #     else
-  #       received_batch =
-  #         Map.merge(
-  #           received_batch,
-  #           %{
-  #             start_block: batch_from_db.start_block,
-  #             end_block: batch_from_db.end_block
-  #           }
-  #         )
-  #       Map.put(changed_batches, batch_from_db.number, received_batch)
-  #     end
-  #   end)
-  # IO.inspect(batches_to_import)
+  defp get_full_info_for_batches_list(batches_list, current_l1_txs, config) do
+    # Collect batches and linked L2 blocks and transaction
+    {batches_to_import, l2_blocks_to_import, l2_txs_to_import} =
+      TransactionBatch.extract_data_for_batch_range(
+        batches_list,
+        %{
+          json_rpc_named_arguments: config.json_l2_rpc_named_arguments,
+          chunk_size: config.chunk_size
+        }
+      )
+
+    # Collect L1 transactions associated with batches
+    new_l1_txs =
+      collect_l1_transactions(batches_to_import)
+      |> get_indices_for_l1_transactions(current_l1_txs)
+
+    # Update batches with l1 transactions indices and prune unnecessary fields
+    batches_list_to_import =
+      Map.values(batches_to_import)
+      |> Enum.reduce(%{}, fn batch, batches ->
+        batch =
+          batch
+            |> Map.put(:commit_id, get_l1_tx_id_by_hash(new_l1_txs, batch.commit_tx_hash))
+            |> Map.put(:prove_id, get_l1_tx_id_by_hash(new_l1_txs, batch.prove_tx_hash))
+            |> Map.put(:execute_id, get_l1_tx_id_by_hash(new_l1_txs, batch.executed_tx_hash))
+            |> Map.drop(@json_fields_to_exclude)
+        Map.put(batches, batch.number, batch)
+      end)
+
+    {batches_list_to_import, new_l1_txs, l2_blocks_to_import, l2_txs_to_import}
+  end
+
+  defp collect_l1_transactions(batches) do
+    l1_txs = Map.values(batches)
+    |> Enum.reduce(%{}, fn batch, l1_txs ->
+      [%{hash: batch.commit_tx_hash, ts: batch.commit_timestamp},
+        %{hash: batch.prove_tx_hash, ts: batch.prove_timestamp},
+        %{hash: batch.executed_tx_hash, ts: batch.executed_timestamp}
+      ]
+      |> Enum.reduce(l1_txs, fn l1_tx, acc ->
+        if l1_tx.hash != Helper.get_binary_zero_hash() do
+          Map.put(acc, l1_tx.hash, %{hash: l1_tx.hash, timestamp: l1_tx.ts})
+        else
+          acc
+        end
+      end)
+    end)
+
+    log_info("Collected #{length(Map.keys(l1_txs))} L1 hashes")
+
+    l1_txs
+  end
 
   defp get_indices_for_l1_transactions(new_l1_txs, current_l1_txs) do
     # Get indices for l1 transactions previously handled
@@ -313,16 +378,21 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
         txs
       end)
 
-    # Provide indices for new L1 transactions
+    # Choose the next index for the first new transaction taking
+    # into account the indices already used in this iteration of
+    # the l1 transactions table update
     l1_tx_next_id =
       Map.values(current_l1_txs)
       |> Enum.reduce(Reader.next_id(), fn tx, next_id ->
         max(next_id, tx.id + 1)
       end)
 
+    # Assign new indices for the transactions which are not in
+    # the l1 transactions table yet
     { l1_txs, _ } =
       Map.keys(l1_txs)
-      |> Enum.reduce({l1_txs, l1_tx_next_id}, fn hash, {txs, next_id} = _acc ->
+      |> Enum.reduce({Map.merge(l1_txs, current_l1_txs), l1_tx_next_id},
+                     fn hash, {txs, next_id} = _acc ->
         tx = txs[hash]
         id = Map.get(tx, :id)
         if is_nil(id) do
@@ -332,51 +402,45 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
         end
       end)
 
-    current_l1_txs
-    |> Map.merge(l1_txs)
+    l1_txs
+  end
+
+  defp get_l1_tx_id_by_hash(l1_txs, hash) do
+    l1_txs
+    |> Map.get(hash)
+    |> Kernel.||(%{id: nil})
+    |> Map.get(:id)
   end
 
   defp get_earliest_batch_number do
-    with value <- Reader.oldest_available_batch_number(),
-         false <- is_nil(value) do
-      value
-    else
-      true ->
-        log_info("No batches found in DB")
-        nil
+    case Reader.oldest_available_batch_number() do
+      nil -> log_info("No batches found in DB")
+             nil
+      value -> value
     end
   end
 
   defp get_earliest_sealed_batch_number do
-    with value <- Reader.earliest_sealed_batch_number(),
-         false <- is_nil(value) do
-      value
-    else
-      true ->
-        log_info("No committed batches found in DB")
-        get_earliest_batch_number()
+    case Reader.earliest_sealed_batch_number() do
+      nil -> log_info("No committed batches found in DB")
+             get_earliest_batch_number()
+      value -> value
     end
   end
 
   defp get_earliest_unproven_batch_number do
-    with value <- Reader.earliest_unproven_batch_number(),
-         false <- is_nil(value) do
-      value
-    else
-      true ->
-        log_info("No proven batches found in DB")
-        get_earliest_batch_number()
+    case Reader.earliest_unproven_batch_number() do
+      nil -> log_info("No proven batches found in DB")
+             get_earliest_batch_number()
+      value -> value
     end
   end
 
   defp get_earliest_unexecuted_batch_number do
-    with value <- Reader.earliest_unexecuted_batch_number(),
-         false <- is_nil(value) do
-      value
-    else
-      true ->
-        log_info("No executed batches found in DB")
-        get_earliest_batch_number()
+    case Reader.earliest_unexecuted_batch_number() do
+      nil -> log_info("No executed batches found in DB")
+             get_earliest_batch_number()
+      value -> value
     end
   end
 
@@ -468,34 +532,14 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
   end
 
   defp get_committed_batches_from_logs(logs) do
-    executed_batches =
-      logs
-      |> Enum.reduce([], fn log_entity, batches_numbers ->
-        topics = log_entity["topics"]
-        if Enum.at(topics, 0) == @block_commit_event do
-          [ quantity_to_integer(Enum.at(topics, 1)) | batches_numbers]
-        else
-          batches_numbers
-        end
-      end)
+    committed_batches = Helper.filter_logs_and_extract_topic_at(logs, @block_commit_event, 1)
+    log_info("Discovered #{length(committed_batches)} committed batches in the commitment tx")
 
-    log_info("Discovered #{length(executed_batches)} committed batches in the commitment tx")
-
-    executed_batches
+    committed_batches
   end
 
   defp get_executed_batches_from_logs(logs) do
-    executed_batches =
-      logs
-      |> Enum.reduce([], fn log_entity, batches_numbers ->
-        topics = log_entity["topics"]
-        if Enum.at(topics, 0) == @block_execution_event do
-          [ quantity_to_integer(Enum.at(topics, 1)) | batches_numbers]
-        else
-          batches_numbers
-        end
-      end)
-
+    executed_batches = Helper.filter_logs_and_extract_topic_at(logs, @block_execution_event, 1)
     log_info("Discovered #{length(executed_batches)} executed batches in the executing tx")
 
     executed_batches

@@ -1,6 +1,6 @@
 defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
   @moduledoc """
-  Fills zkevm_transaction_batches DB table.
+    Discovers new batches and fills zksync_transaction_batches DB table.
   """
 
   use GenServer
@@ -15,6 +15,8 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
   alias Explorer.Chain.ZkSync.Reader
   alias Indexer.Fetcher.ZkSync.Helper
   import Indexer.Fetcher.ZkSync.Helper, only: [log_info: 1]
+
+  @json_fields_to_exclude [:commit_tx_hash, :commit_timestamp, :prove_tx_hash, :prove_timestamp, :executed_tx_hash, :executed_timestamp]
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -127,31 +129,35 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
     {:noreply, state}
   end
 
-  defp collect_batches_details(start_batch_number, end_batch_number, %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: chunk_size} = _config) do
-    start_batch_number..end_batch_number
-    |> Enum.chunk_every(chunk_size)
-    |> Enum.reduce(%{}, fn chunk, details ->
-      chunk_start = List.first(chunk)
-      chunk_end = List.last(chunk)
+  defp collect_batches_details(batches_list, %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: chunk_size} = _config) do
+    batches_list_length = length(batches_list)
 
-      Helper.log_details_batches_chunk_handling(chunk_start, chunk_end, start_batch_number, end_batch_number)
-      requests =
-        chunk_start..chunk_end
-        |> Enum.map(fn batch_number ->
-          EthereumJSONRPC.request(%{
-            id: batch_number,
-            method: "zks_getL1BatchDetails",
-            params: [batch_number]
-          })
-        end)
+    {batches_details, _} =
+      batches_list
+      |> Enum.chunk_every(chunk_size)
+      |> Enum.reduce({%{}, 0}, fn chunk, {details, a} ->
+        Helper.log_details_chunk_handling("Collecting details", chunk, a * chunk_size, batches_list_length)
+        requests =
+          chunk
+          |> Enum.map(fn batch_number ->
+            EthereumJSONRPC.request(%{
+              id: batch_number,
+              method: "zks_getL1BatchDetails",
+              params: [batch_number]
+            })
+          end)
 
-      Helper.fetch_batches_details(requests, json_rpc_named_arguments)
-      |> Enum.reduce(
-        details,
-        fn resp, details ->
-          Map.put(details, resp.id, Helper.transform_batch_details_to_map(resp.result))
-        end)
-    end)
+        details = Helper.fetch_batches_details(requests, json_rpc_named_arguments)
+        |> Enum.reduce(
+          details,
+          fn resp, details ->
+            Map.put(details, resp.id, Helper.transform_batch_details_to_map(resp.result))
+          end)
+
+        {details, a + 1}
+      end)
+
+    batches_details
   end
 
   defp get_block_ranges(batches, %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: chunk_size} = _config) do
@@ -163,7 +169,7 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
       keys
       |> Enum.chunk_every(chunk_size)
       |> Enum.reduce({batches, 0}, fn batches_chunk, {batches_with_blockranges, a} = _acc ->
-        Helper.log_details_updates_chunk_handling(batches_chunk, a * chunk_size, batches_list_length)
+        Helper.log_details_chunk_handling("Collecting block ranges", batches_chunk, a * chunk_size, batches_list_length)
 
         # Execute requests list and extend the batches details with blocks ranges
         batches_with_blockranges =
@@ -201,7 +207,7 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
       Map.keys(batches)
       |> Enum.reduce({%{}, [], [], 0}, fn batch_number, {blocks, chunked_requests, cur_chunk, cur_chunk_size} = _acc ->
         batch = Map.get(batches, batch_number)
-        log_info("The batch #{batch_number} contains blocks range #{batch.start_block}..#{batch.end_block}")
+        # log_info("The batch #{batch_number} contains blocks range #{batch.start_block}..#{batch.end_block}")
         batch.start_block..batch.end_block
         |> Enum.chunk_every(chunk_size)
         |> Enum.reduce({blocks, chunked_requests, cur_chunk, cur_chunk_size}, fn blocks_range, {blks, chnkd_rqsts, c_chunk, c_chunk_size} = _acc ->
@@ -249,8 +255,23 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
     {Map.values(blocks), l2_txs_to_import}
   end
 
-  defp handle_batch_range(start_batch_number, end_batch_number, config) do
-    batches_to_import = collect_batches_details(start_batch_number, end_batch_number, config)
+  def extract_data_for_batch_range(start_batch_number, end_batch_number, config)
+    when is_integer(start_batch_number) and is_integer(end_batch_number) and
+         is_map(config) do
+    start_batch_number..end_batch_number
+    |> Enum.to_list()
+    |> do_extract_data_for_batch_range(config)
+  end
+
+  def extract_data_for_batch_range(batches_list, config)
+    when is_list(batches_list) and
+         is_map(config) do
+    batches_list
+    |> do_extract_data_for_batch_range(config)
+  end
+
+  defp do_extract_data_for_batch_range(batches_list, config) when is_list(batches_list) do
+    batches_to_import = collect_batches_details(batches_list, config)
     log_info("Collected details for #{length(Map.keys(batches_to_import))} batches")
 
     batches_to_import = get_block_ranges(batches_to_import, config)
@@ -259,12 +280,19 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
       get_l2_blocks_and_transactions(batches_to_import, config)
     log_info("Linked #{length(l2_blocks_to_import)} L2 blocks and #{length(l2_txs_to_import)} L2 transactions")
 
+    {batches_to_import, l2_blocks_to_import, l2_txs_to_import}
+  end
+
+  defp handle_batch_range(start_batch_number, end_batch_number, config) do
+    {batches_to_import, l2_blocks_to_import, l2_txs_to_import} =
+      extract_data_for_batch_range(start_batch_number, end_batch_number, config)
+
     batches_list_to_import =
       Map.keys(batches_to_import)
       |> Enum.reduce([], fn batch_number, batches_list ->
         batch = Map.get(batches_to_import, batch_number)
         [ batch
-          |> Map.drop([:commit_tx_hash, :commit_timestamp, :prove_tx_hash, :prove_timestamp, :executed_tx_hash, :executed_timestamp]) | batches_list ]
+          |> Map.drop(@json_fields_to_exclude) | batches_list ]
       end)
 
     {:ok, _} =

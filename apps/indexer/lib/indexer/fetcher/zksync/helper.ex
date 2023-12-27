@@ -17,6 +17,28 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
     @zero_hash_binary
   end
 
+  def get_2map_data(map, key1, key2) do
+    case Map.get(map, key1) do
+      nil -> nil
+      inner_map -> Map.get(inner_map, key2)
+    end
+  end
+
+  def filter_logs_and_extract_topic_at(logs, topic_0, position)
+    when is_list(logs) and
+         is_binary(topic_0) and
+         is_integer(position) do
+    logs
+    |> Enum.reduce([], fn log_entity, result ->
+      topics = log_entity["topics"]
+      if Enum.at(topics, 0) == topic_0 do
+        [ quantity_to_integer(Enum.at(topics, position)) | result]
+      else
+        result
+      end
+    end)
+  end
+
   defp from_ts_to_datetime(time_ts) do
     {_, unix_epoch_starts} = DateTime.from_unix(0)
     case is_nil(time_ts) or time_ts == 0 do
@@ -233,7 +255,7 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
     Logger.notice(msg)
   end
 
-  def log_details_updates_chunk_handling(chunk, current_progress, total) do
+  def log_details_chunk_handling(prefix, chunk, current_progress, total) do
     chunk_length = length(chunk)
     progress =
       case chunk_length == total do
@@ -247,29 +269,33 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
             |> Decimal.to_string()
           " Progress: #{percentage}%"
       end
-    log_info("Collecting block ranges for batches #{Enum.join(chunk, ", ")}.#{progress}")
+    if chunk_length == 1 do
+      log_info("#{prefix} for batch ##{Enum.at(chunk, 0)}")
+    else
+      log_info("#{prefix} for batches #{Enum.join(shorten_numbers_list(chunk), ", ")}.#{progress}")
+    end
+
   end
 
-  def log_details_batches_chunk_handling(chunk_start, chunk_end, start_block, end_block) do
-    target_range =
-      if chunk_start != start_block or chunk_end != end_block do
-        percentage =
-          (chunk_end - start_block + 1)
-          |> Decimal.div(end_block - start_block + 1)
-          |> Decimal.mult(100)
-          |> Decimal.round(2)
-          |> Decimal.to_string()
-
-        " Target range: #{start_block}..#{end_block}. Progress: #{percentage}%"
-      else
-        ""
-      end
-
-    if chunk_start == chunk_end do
-      log_info("Collecting details for batch ##{chunk_start}.#{target_range}")
-    else
-      log_info("Collecting details for batch range #{chunk_start}..#{chunk_end}.#{target_range}")
+  defp shorten_numbers_list_impl(number, shorten_list, prev_range_start, prev_number) do
+    cond do
+      is_nil(prev_number) -> {[], number, number}
+      prev_number + 1 != number and prev_range_start == prev_number -> {[ "#{prev_range_start}" | shorten_list ], number, number}
+      prev_number + 1 != number -> {[ "#{prev_range_start}..#{prev_number}" | shorten_list ], number, number}
+      true -> {shorten_list, prev_range_start, number}
     end
+  end
+
+  defp shorten_numbers_list(numbers_list) do
+    {shorten_list, _, _} =
+      Enum.sort(numbers_list)
+      |> Enum.reduce({[], nil, nil}, fn number, {shorten_list, prev_range_start, prev_number} ->
+        shorten_numbers_list_impl(number, shorten_list, prev_range_start, prev_number)
+      end)
+      |> then(fn {shorten_list, prev_range_start, prev_number} ->
+        shorten_numbers_list_impl(prev_number, shorten_list, prev_range_start, prev_number)
+      end)
+    Enum.reverse(shorten_list)
   end
 
 end
