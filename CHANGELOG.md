@@ -1,10 +1,28 @@
 # ChangeLog
 
-## 6.0.0-dev
+## Current
 
 ### Features
 
 ### Fixes
+
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+</details>
+
+## 6.0.0-dev
+
+### Features
+
+- [#9044](https://github.com/blockscout/blockscout/pull/9044) - Expand gas price oracle functionality
+
+### Fixes
+
+- [#9062](https://github.com/blockscout/blockscout/pull/9062) - Fix blockscout-ens integration
+- [#9061](https://github.com/blockscout/blockscout/pull/9061) - Arbitrum allow tx receipt gasUsedForL1 field
 
 ### Chore
 
@@ -17,19 +35,6 @@
 - [#9000](https://github.com/blockscout/blockscout/pull/9000) - Change log topic type in the DB to bytea
 - [#8996](https://github.com/blockscout/blockscout/pull/8996) - Refine token transfers token ids index
 - [#5322](https://github.com/blockscout/blockscout/pull/5322) - DB denormalization: block consensus and timestamp in transaction table
-
-## Current
-
-### Features
-
-- [#9044](https://github.com/blockscout/blockscout/pull/9044) - Expand gas price oracle functionality
-
-### Fixes
-
-- [#9062](https://github.com/blockscout/blockscout/pull/9062) - Fix blockscout-ens integration
-- [#9061](https://github.com/blockscout/blockscout/pull/9061) - Arbitrum allow tx receipt gasUsedForL1 field
-
-### Chore
 
 <details>
   <summary>Dependencies version bumps</summary>
@@ -63,6 +68,7 @@
 - [#9094](https://github.com/blockscout/blockscout/pull/9094) - Improve exchange rates logging
 - [#9014](https://github.com/blockscout/blockscout/pull/9014) - Decrease amount of NFT in address collection: 15 -> 9
 - [#8994](https://github.com/blockscout/blockscout/pull/8994) - Refactor transactions event preloads
+- [#8991](https://github.com/blockscout/blockscout/pull/8991) - Manage DB queue target via runtime env var
 
 <details>
   <summary>Dependencies version bumps</summary>
