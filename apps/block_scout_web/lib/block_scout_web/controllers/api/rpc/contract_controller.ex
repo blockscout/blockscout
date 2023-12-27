@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias BlockScoutWeb.API.RPC.{AddressController, Helper}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, SmartContract}
+  alias Explorer.Chain.SmartContract.Proxy.VerificationStatus, as: ProxyVerificationStatus
   alias Explorer.Chain.SmartContract.VerificationStatus
   alias Explorer.Etherscan.Contracts
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
@@ -13,7 +14,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
-  import BlockScoutWeb.API.V2.AddressController, only: [validate_address: 2]
+  import BlockScoutWeb.API.V2.AddressController, only: [validate_address: 2, validate_address: 3]
 
   @smth_went_wrong "Something went wrong while publishing the contract"
   @verified "Smart-contract already verified."
@@ -21,6 +22,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   @invalid_args "Invalid args format"
   @address_required "Query parameter address is required"
   @addresses_required "Query parameter contractaddresses is required"
+  @contract_not_found "Smart-contract not found or is not verified"
+  @restricted_access "Access to this address is restricted"
 
   @addresses_limit 10
   @api_true [api?: true]
@@ -212,6 +215,62 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         render(conn, :show, %{result: "Fail - Unable to verify"})
 
       :unknown_uid ->
+        render(conn, :show, %{result: "Unknown UID"})
+    end
+  end
+
+  def verifyproxycontract(conn, %{"address" => address_hash_string} = params) do
+    with {:ok, address_hash, %Address{smart_contract: smart_contract}} <-
+           validate_address(address_hash_string, params,
+             necessity_by_association: %{:smart_contract => :optional},
+             api?: true
+           ),
+         {:not_found, false} <- {:not_found, is_nil(smart_contract)},
+         {:time_interval, true} <-
+           {:time_interval,
+            SmartContract.check_implementation_refetch_necessity(smart_contract.implementation_fetched_at)},
+         uid <- ProxyVerificationStatus.generate_uid(address_hash) do
+      ProxyVerificationStatus.insert_status(uid, :pending, address_hash)
+
+      SmartContract.get_implementation_address_hash(smart_contract,
+        timeout: 0,
+        uid: uid,
+        callback: &ProxyVerificationStatus.set_proxy_verification_result/2
+      )
+
+      render(conn, :show, %{result: uid})
+    else
+      {:format, :error} ->
+        render(conn, :error, error: @invalid_address)
+
+      {:not_found, _} ->
+        render(conn, :error, error: @contract_not_found)
+
+      {:restricted_access, true} ->
+        render(conn, :error, error: @restricted_access)
+
+      {:time_interval, false} ->
+        render(conn, :error, error: "Only one attempt in #{SmartContract.get_fresh_time_distance()}ms")
+    end
+  end
+
+  def checkproxyverification(conn, %{"guid" => guid}) do
+    submission = ProxyVerificationStatus.fetch_status(guid)
+
+    case submission.status do
+      :pending ->
+        render(conn, :show, %{result: "Verification in progress"})
+
+      :pass ->
+        render(conn, :show, %{
+          result:
+            "Implementation (#{SmartContract.address_hash_to_smart_contract(submission.address_hash).implementation_address_hash}) was verified and saved for proxy (#{submission.address_hash})"
+        })
+
+      :fail ->
+        render(conn, :show, %{result: "Implementation address was not detected for this smart contract"})
+
+      _ ->
         render(conn, :show, %{result: "Unknown UID"})
     end
   end

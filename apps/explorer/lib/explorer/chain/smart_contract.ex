@@ -523,7 +523,7 @@ defmodule Explorer.Chain.SmartContract do
         smart_contract
       end
 
-    get_implementation_address_hash({:updated, updated_smart_contract})
+    get_implementation_address_hash({:updated, updated_smart_contract}, options)
   end
 
   def get_implementation_address_hash(
@@ -541,10 +541,17 @@ defmodule Explorer.Chain.SmartContract do
     if check_implementation_refetch_necessity(implementation_fetched_at) do
       get_implementation_address_hash_task =
         Task.async(fn ->
-          Proxy.fetch_implementation_address_hash(address_hash, abi, metadata_from_verified_twin, options)
+          result = Proxy.fetch_implementation_address_hash(address_hash, abi, metadata_from_verified_twin, options)
+          callback = Keyword.get(options, :callback, nil)
+          uid = Keyword.get(options, :uid)
+
+          callback && callback.(result, uid)
+
+          result
         end)
 
-      timeout = Application.get_env(:explorer, :proxy)[:implementation_data_fetching_timeout]
+      timeout =
+        Keyword.get(options, :timeout, Application.get_env(:explorer, :proxy)[:implementation_data_fetching_timeout])
 
       case Task.yield(get_implementation_address_hash_task, timeout) ||
              Task.ignore(get_implementation_address_hash_task) do
@@ -1179,28 +1186,31 @@ defmodule Explorer.Chain.SmartContract do
   defp db_implementation_data_converter(string) when is_binary(string), do: string
   defp db_implementation_data_converter(other), do: to_string(other)
 
-  defp check_implementation_refetch_necessity(nil), do: true
+  def check_implementation_refetch_necessity(nil), do: true
 
-  defp check_implementation_refetch_necessity(timestamp) do
+  def check_implementation_refetch_necessity(timestamp) do
     if Application.get_env(:explorer, :proxy)[:caching_implementation_data_enabled] do
       now = DateTime.utc_now()
 
-      average_block_time = get_average_block_time_for_implementation_refetch()
-
-      fresh_time_distance =
-        case average_block_time do
-          0 ->
-            Application.get_env(:explorer, :proxy)[:fallback_cached_implementation_data_ttl]
-
-          time ->
-            round(time)
-        end
+      fresh_time_distance = get_fresh_time_distance()
 
       timestamp
       |> DateTime.add(fresh_time_distance, :millisecond)
       |> DateTime.compare(now) != :gt
     else
       true
+    end
+  end
+
+  def get_fresh_time_distance do
+    average_block_time = get_average_block_time_for_implementation_refetch()
+
+    case average_block_time do
+      0 ->
+        Application.get_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy)
+
+      time ->
+        round(time)
     end
   end
 

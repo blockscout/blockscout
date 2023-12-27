@@ -359,12 +359,12 @@ defmodule Explorer.Chain.TokenTransfer do
 
   def filter_by_type(query, _), do: query
 
+  @spec only_consensus_transfers_query() :: Ecto.Query.t()
   def only_consensus_transfers_query do
     from(token_transfer in __MODULE__,
       inner_join: block in assoc(token_transfer, :block),
       as: :block,
-      where: block.consensus == true,
-      preload: [block: block]
+      where: block.consensus == true
     )
   end
 
