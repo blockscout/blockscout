@@ -61,7 +61,7 @@ defmodule Explorer.Mixfile do
       {:mime, "~> 2.0"},
       {:bcrypt_elixir, "~> 3.0"},
       # benchmark optimizations
-      {:benchee, "~> 1.2.0", only: :test},
+      {:benchee, "~> 1.3.0", only: :test},
       # CSV output for benchee
       {:benchee_csv, "~> 1.0.0", only: :test},
       {:bypass, "~> 2.1", only: :test},

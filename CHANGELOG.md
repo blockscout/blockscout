@@ -6,6 +6,9 @@
 
 ### Fixes
 
+- [#9069](https://github.com/blockscout/blockscout/pull/9069) - Fetch realtime coin balances only for addresses for which it has changed
+- [#9062](https://github.com/blockscout/blockscout/pull/9062) - Fix blockscout-ens integration
+- [#9061](https://github.com/blockscout/blockscout/pull/9061) - Arbitrum allow tx receipt gasUsedForL1 field
 - [#9024](https://github.com/blockscout/blockscout/pull/9024) - Split address current token balances updates by token types
 
 ### Chore
