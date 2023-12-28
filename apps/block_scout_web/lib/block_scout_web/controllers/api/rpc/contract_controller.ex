@@ -474,7 +474,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
       _ = PublishHelper.check_and_verify(address_param)
-      address = Contracts.address_hash_to_address_with_source_code(address_hash)
+      address = Contracts.address_hash_to_address_with_source_code(address_hash, false)
 
       render(conn, :getsourcecode, %{
         contract: address || %Address{hash: address_hash, smart_contract: nil}
