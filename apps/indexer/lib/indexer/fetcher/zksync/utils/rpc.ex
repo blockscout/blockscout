@@ -1,10 +1,10 @@
-defmodule Indexer.Fetcher.ZkSync.Helper do
+defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
   @moduledoc """
-    Common functions for Indexer.Fetcher.ZkSync fetchers
+    Common functions to handle RPC calls for Indexer.Fetcher.ZkSync fetchers
   """
-  require Logger
 
   import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
+  import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_error: 1]
 
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
   @zero_hash_binary <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
@@ -17,22 +17,16 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
     @zero_hash_binary
   end
 
-  def get_2map_data(map, key1, key2) do
-    case Map.get(map, key1) do
-      nil -> nil
-      inner_map -> Map.get(inner_map, key2)
-    end
-  end
-
   def filter_logs_and_extract_topic_at(logs, topic_0, position)
-    when is_list(logs) and
-         is_binary(topic_0) and
-         is_integer(position) do
+      when is_list(logs) and
+             is_binary(topic_0) and
+             is_integer(position) do
     logs
     |> Enum.reduce([], fn log_entity, result ->
       topics = log_entity["topics"]
+
       if Enum.at(topics, 0) == topic_0 do
-        [ quantity_to_integer(Enum.at(topics, position)) | result]
+        [quantity_to_integer(Enum.at(topics, position)) | result]
       else
         result
       end
@@ -41,13 +35,16 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
 
   defp from_ts_to_datetime(time_ts) do
     {_, unix_epoch_starts} = DateTime.from_unix(0)
+
     case is_nil(time_ts) or time_ts == 0 do
       true ->
         unix_epoch_starts
+
       false ->
-        case  DateTime.from_unix(time_ts) do
+        case DateTime.from_unix(time_ts) do
           {:ok, datetime} ->
             datetime
+
           {:error, _} ->
             unix_epoch_starts
         end
@@ -58,10 +55,12 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
     case is_nil(time_string) do
       true ->
         from_ts_to_datetime(0)
+
       false ->
         case DateTime.from_iso8601(time_string) do
           {:ok, datetime, _} ->
             datetime
+
           {:error, _} ->
             from_ts_to_datetime(0)
         end
@@ -91,7 +90,7 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
       "commitTxHash" => {:commit_tx_hash, :str_to_byteshash},
       "committedAt" => {:commit_timestamp, :iso8601_to_datetime},
       "proveTxHash" => {:prove_tx_hash, :str_to_byteshash},
-      "provenAt" => {:prove_timestamp, :iso8601_to_datetime} ,
+      "provenAt" => {:prove_timestamp, :iso8601_to_datetime},
       "executeTxHash" => {:executed_tx_hash, :str_to_byteshash},
       "executedAt" => {:executed_timestamp, :iso8601_to_datetime},
       "l1GasPrice" => {:l1_gas_price, :ok},
@@ -101,6 +100,7 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
     }
     |> Enum.reduce(%{start_block: nil, end_block: nil}, fn {key, {key_atom, transform_type}}, batch_details_map ->
       value_in_json_response = Map.get(json_response, key)
+
       Map.put(
         batch_details_map,
         key_atom,
@@ -133,11 +133,12 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
   end
 
   def fetch_batch_details_by_batch_number(batch_number, json_rpc_named_arguments) do
-    req = EthereumJSONRPC.request(%{
-      id: batch_number,
-      method: "zks_getL1BatchDetails",
-      params: [batch_number]
-    })
+    req =
+      EthereumJSONRPC.request(%{
+        id: batch_number,
+        method: "zks_getL1BatchDetails",
+        params: [batch_number]
+      })
 
     error_message = &"Cannot call zks_getL1BatchDetails. Error: #{inspect(&1)}"
 
@@ -146,12 +147,19 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
     transform_batch_details_to_map(resp)
   end
 
-  def fetch_tx_by_hash(hash, json_rpc_named_arguments) do
-    req = EthereumJSONRPC.request(%{
-      id: 0,
-      method: "eth_getTransactionByHash",
-      params: [hash]
-    })
+  def fetch_tx_by_hash(raw_hash, json_rpc_named_arguments) do
+    hash =
+      case raw_hash do
+        "0x" <> _ -> raw_hash
+        _ -> "0x" <> Base.encode16(raw_hash)
+      end
+
+    req =
+      EthereumJSONRPC.request(%{
+        id: 0,
+        method: "eth_getTransactionByHash",
+        params: [hash]
+      })
 
     error_message = &"Cannot call eth_getTransactionByHash for hash #{hash}. Error: #{inspect(&1)}"
 
@@ -160,12 +168,19 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
     resp
   end
 
-  def fetch_tx_receipt_by_hash(hash, json_rpc_named_arguments) do
-    req = EthereumJSONRPC.request(%{
-      id: 0,
-      method: "eth_getTransactionReceipt",
-      params: [hash]
-    })
+  def fetch_tx_receipt_by_hash(raw_hash, json_rpc_named_arguments) do
+    hash =
+      case raw_hash do
+        "0x" <> _ -> raw_hash
+        _ -> "0x" <> Base.encode16(raw_hash)
+      end
+
+    req =
+      EthereumJSONRPC.request(%{
+        id: 0,
+        method: "eth_getTransactionReceipt",
+        params: [hash]
+      })
 
     error_message = &"Cannot call eth_getTransactionReceipt for hash #{hash}. Error: #{inspect(&1)}"
 
@@ -190,8 +205,7 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
 
   def fetch_blocks_details(requests_list, json_rpc_named_arguments)
       when is_list(requests_list) do
-    error_message =
-      &"Cannot call eth_getBlockByNumber. Error: #{inspect(&1)}"
+    error_message = &"Cannot call eth_getBlockByNumber. Error: #{inspect(&1)}"
 
     {:ok, responses} = repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, 3)
 
@@ -204,8 +218,7 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
 
   def fetch_batches_details(requests_list, json_rpc_named_arguments)
       when is_list(requests_list) do
-    error_message =
-      &"Cannot call zks_getL1BatchDetails. Error: #{inspect(&1)}"
+    error_message = &"Cannot call zks_getL1BatchDetails. Error: #{inspect(&1)}"
 
     {:ok, responses} = repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, 3)
 
@@ -218,8 +231,7 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
 
   def fetch_blocks_ranges(requests_list, json_rpc_named_arguments)
       when is_list(requests_list) do
-    error_message =
-      &"Cannot call zks_getL1BatchBlockRange. Error: #{inspect(&1)}"
+    error_message = &"Cannot call zks_getL1BatchBlockRange. Error: #{inspect(&1)}"
 
     {:ok, responses} = repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, 3)
 
@@ -235,67 +247,13 @@ defmodule Indexer.Fetcher.ZkSync.Helper do
         retries_left = retries_left - 1
 
         if retries_left <= 0 do
-          Logger.error(error_message.(message))
+          log_error(error_message.(message))
           err
         else
-          Logger.error("#{error_message.(message)} Retrying...")
+          log_error("#{error_message.(message)} Retrying...")
           :timer.sleep(3000)
           repeated_call(func, args, error_message, retries_left)
         end
     end
   end
-
-  ###############################################################################
-  ##### Logging related functions
-  def log_warning(msg) do
-    Logger.warning(msg)
-  end
-
-  def log_info(msg) do
-    Logger.notice(msg)
-  end
-
-  def log_details_chunk_handling(prefix, chunk, current_progress, total) do
-    chunk_length = length(chunk)
-    progress =
-      case chunk_length == total do
-        true ->
-          ""
-        false ->
-          percentage =
-            Decimal.div(current_progress + chunk_length, total)
-            |> Decimal.mult(100)
-            |> Decimal.round(2)
-            |> Decimal.to_string()
-          " Progress: #{percentage}%"
-      end
-    if chunk_length == 1 do
-      log_info("#{prefix} for batch ##{Enum.at(chunk, 0)}")
-    else
-      log_info("#{prefix} for batches #{Enum.join(shorten_numbers_list(chunk), ", ")}.#{progress}")
-    end
-
-  end
-
-  defp shorten_numbers_list_impl(number, shorten_list, prev_range_start, prev_number) do
-    cond do
-      is_nil(prev_number) -> {[], number, number}
-      prev_number + 1 != number and prev_range_start == prev_number -> {[ "#{prev_range_start}" | shorten_list ], number, number}
-      prev_number + 1 != number -> {[ "#{prev_range_start}..#{prev_number}" | shorten_list ], number, number}
-      true -> {shorten_list, prev_range_start, number}
-    end
-  end
-
-  defp shorten_numbers_list(numbers_list) do
-    {shorten_list, _, _} =
-      Enum.sort(numbers_list)
-      |> Enum.reduce({[], nil, nil}, fn number, {shorten_list, prev_range_start, prev_number} ->
-        shorten_numbers_list_impl(number, shorten_list, prev_range_start, prev_number)
-      end)
-      |> then(fn {shorten_list, prev_range_start, prev_number} ->
-        shorten_numbers_list_impl(prev_number, shorten_list, prev_range_start, prev_number)
-      end)
-    Enum.reverse(shorten_list)
-  end
-
 end
