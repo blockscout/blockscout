@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   @smart_contract_address_options [
     necessity_by_association: %{
       :contracts_creation_internal_transaction => :optional,
-      :smart_contract => :optional,
+      [smart_contract: :smart_contract_additional_sources] => :optional,
       :contracts_creation_transaction => :optional
     },
     api?: true

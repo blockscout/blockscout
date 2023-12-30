@@ -26,9 +26,8 @@ defmodule Explorer.Etherscan.Contracts do
         address ->
           address_with_smart_contract =
             Repo.replica().preload(address, [
-              :smart_contract,
-              :decompiled_smart_contracts,
-              :smart_contract_additional_sources
+              [smart_contract: :smart_contract_additional_sources],
+              :decompiled_smart_contracts
             ])
 
           if address_with_smart_contract.smart_contract do

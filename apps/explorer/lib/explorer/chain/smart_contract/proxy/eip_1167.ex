@@ -3,7 +3,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
   Module for fetching proxy implementation from https://eips.ethereum.org/EIPS/eip-1167 (Minimal Proxy Contract)
   """
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
 
@@ -54,8 +54,14 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
   defp implementation_to_smart_contract(nil, _options), do: nil
 
   defp implementation_to_smart_contract(address_hash, options) do
+    necessity_by_association = %{
+      :smart_contract_additional_sources => :optional
+    }
+
     address_hash
     |> SmartContract.get_smart_contract_query()
+    |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).one(timeout: 10_000)
+    |> Repo.preload([:smart_contract_additional_sources])
   end
 end

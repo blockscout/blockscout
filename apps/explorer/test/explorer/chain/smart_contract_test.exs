@@ -581,9 +581,10 @@ defmodule Explorer.Chain.SmartContractTest do
       secondary_sources: secondary_sources,
       changed_sources: changed_sources
     } do
-      sc_before_call = Repo.get_by(Address, hash: address.hash) |> Repo.preload(:smart_contract_additional_sources)
+      sc_before_call =
+        Repo.get_by(Address, hash: address.hash) |> Repo.preload(smart_contract: :smart_contract_additional_sources)
 
-      assert sc_before_call.smart_contract_additional_sources
+      assert sc_before_call.smart_contract.smart_contract_additional_sources
              |> Enum.with_index()
              |> Enum.all?(fn {el, ind} ->
                {:ok, src} = Enum.fetch(secondary_sources, ind)
@@ -595,9 +596,10 @@ defmodule Explorer.Chain.SmartContractTest do
       assert {:ok, %SmartContract{}} =
                SmartContract.update_smart_contract(%{address_hash: address.hash}, [], changed_sources)
 
-      sc_after_call = Repo.get_by(Address, hash: address.hash) |> Repo.preload(:smart_contract_additional_sources)
+      sc_after_call =
+        Repo.get_by(Address, hash: address.hash) |> Repo.preload(smart_contract: :smart_contract_additional_sources)
 
-      assert sc_after_call.smart_contract_additional_sources
+      assert sc_after_call.smart_contract.smart_contract_additional_sources
              |> Enum.with_index()
              |> Enum.all?(fn {el, ind} ->
                {:ok, src} = Enum.fetch(changed_sources, ind)
