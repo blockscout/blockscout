@@ -36,6 +36,7 @@ defmodule Explorer.Factory do
     Hash,
     InternalTransaction,
     Log,
+    LogFirstTopic,
     PendingBlockOperation,
     SmartContract,
     Token,
@@ -674,13 +675,16 @@ defmodule Explorer.Factory do
       block: block,
       block_number: block.number,
       data: data(:log_data),
-      first_topic: nil,
       fourth_topic: nil,
       index: sequence("log_index", & &1),
       second_topic: nil,
       third_topic: nil,
       transaction: build(:transaction)
     }
+  end
+
+  def log_first_topic_factory do
+    %LogFirstTopic{}
   end
 
   def token_factory do
@@ -710,7 +714,6 @@ defmodule Explorer.Factory do
     transaction = build(:transaction, to_address: token_contract_address, from_address: from_address)
 
     log_params = %{
-      first_topic: TokenTransfer.constant(),
       second_topic: zero_padded_address_hash_string(from_address.hash),
       third_topic: zero_padded_address_hash_string(to_address.hash),
       address_hash: token_contract_address.hash,

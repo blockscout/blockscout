@@ -129,6 +129,7 @@ defmodule Indexer.Fetcher.TransactionAction do
       %{transaction_actions: transaction_actions} =
         query
         |> Repo.all(timeout: :infinity)
+        |> Repo.preload(:log_first_topic)
         |> TransactionActions.parse(protocols)
 
       addresses =

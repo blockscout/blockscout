@@ -86,6 +86,6 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
   end
 
   defp get_topics(log) do
-    [log.first_topic, log.second_topic, log.third_topic, log.fourth_topic]
+    [log.log_first_topic.hash, log.second_topic, log.third_topic, log.fourth_topic]
   end
 end

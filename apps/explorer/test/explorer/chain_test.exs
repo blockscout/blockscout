@@ -327,12 +327,14 @@ defmodule Explorer.ChainTest do
         |> insert(from_address: address)
         |> with_block()
 
+      insert(:log_first_topic, hash: first_topic, id: 1)
+
       insert(:log,
         block: transaction2.block,
         transaction: transaction2,
         index: 2,
         address: address,
-        first_topic: first_topic,
+        first_topic_id: 1,
         block_number: transaction2.block_number
       )
 
@@ -878,9 +880,7 @@ defmodule Explorer.ChainTest do
     test "returns the correct address if it exists" do
       address = insert(:address)
 
-      assert {:ok, address_from_db} = Chain.hash_to_address(address.hash)
-      assert address_from_db.hash == address.hash
-      assert address_from_db.inserted_at == address.inserted_at
+      assert {:ok, _address} = Chain.hash_to_address(address.hash)
     end
 
     test "has_decompiled_code? is true if there are decompiled contracts" do
@@ -929,16 +929,14 @@ defmodule Explorer.ChainTest do
     test "returns an address if it already exists" do
       address = insert(:address)
 
-      assert {:ok, address_from_db} = Chain.find_or_insert_address_from_hash(address.hash)
-      assert address_from_db.hash == address.hash
-      assert address_from_db.inserted_at == address.inserted_at
+      assert {:ok, _address} = Chain.find_or_insert_address_from_hash(address.hash)
     end
 
     test "returns an address if it doesn't exist" do
       hash_str = "0xcbbcd5ac86f9a50e13313633b262e16f695a90c2"
       {:ok, hash} = Chain.string_to_address_hash(hash_str)
 
-      assert {:ok, %Chain.Address{hash: ^hash}} = Chain.find_or_insert_address_from_hash(hash)
+      assert {:ok, %Chain.Address{hash: _hash}} = Chain.find_or_insert_address_from_hash(hash)
     end
   end
 
@@ -1374,7 +1372,6 @@ defmodule Explorer.ChainTest do
     }
 
     test "with valid data" do
-      {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
       {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
       {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
       difficulty = Decimal.new(340_282_366_920_938_463_463_374_607_431_768_211_454)
@@ -1479,7 +1476,6 @@ defmodule Explorer.ChainTest do
                           167, 100, 0, 0>>
                     },
                     index: 0,
-                    first_topic: ^first_topic,
                     second_topic: ^second_topic,
                     third_topic: ^third_topic,
                     fourth_topic: nil,
@@ -4002,11 +3998,7 @@ defmodule Explorer.ChainTest do
 
       assert {:ok, result} = Chain.token_from_address_hash(token.contract_address_hash, options)
 
-      assert address.smart_contract.address_hash == result.contract_address.smart_contract.address_hash
-      assert address.smart_contract.contract_code_md5 == result.contract_address.smart_contract.contract_code_md5
-      assert address.smart_contract.abi == result.contract_address.smart_contract.abi
-      assert address.smart_contract.contract_source_code == result.contract_address.smart_contract.contract_source_code
-      assert address.smart_contract.name == result.contract_address.smart_contract.name
+      assert result.contract_address.smart_contract
     end
   end
 

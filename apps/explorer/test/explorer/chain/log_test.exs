@@ -7,7 +7,7 @@ defmodule Explorer.Chain.LogTest do
   alias Explorer.Chain.{Log, SmartContract}
   alias Explorer.Repo
 
-  @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
+  @second_topic_hex_string_1 "0x00000000000000000000000098a9dc37d3650b5b30d6c12789b3881ee0b70c16"
 
   defp topic(topic_hex_string) do
     {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
@@ -43,7 +43,7 @@ defmodule Explorer.Chain.LogTest do
         params_for(
           :log,
           address_hash: build(:address).hash,
-          first_topic: @first_topic_hex_string_1,
+          second_topic: @second_topic_hex_string_1,
           transaction_hash: build(:transaction).hash,
           block_hash: build(:block).hash
         )
@@ -51,13 +51,13 @@ defmodule Explorer.Chain.LogTest do
       result = Log.changeset(%Log{}, params)
 
       assert result.valid? == true
-      assert result.changes.first_topic == topic(@first_topic_hex_string_1)
+      assert result.changes.second_topic == topic(@second_topic_hex_string_1)
     end
 
     test "assigns optional attributes" do
-      params = Map.put(params_for(:log), :first_topic, topic(@first_topic_hex_string_1))
+      params = Map.put(params_for(:log), :second_topic, topic(@second_topic_hex_string_1))
       changeset = Log.changeset(%Log{}, params)
-      assert changeset.changes.first_topic === topic(@first_topic_hex_string_1)
+      assert changeset.changes.second_topic === topic(@second_topic_hex_string_1)
     end
   end
 
@@ -68,7 +68,7 @@ defmodule Explorer.Chain.LogTest do
         |> insert(to_address: insert(:contract_address))
         |> Repo.preload(to_address: :smart_contract)
 
-      log = insert(:log, transaction: transaction)
+      log = insert(:log, transaction: transaction) |> Repo.preload(:log_first_topic)
 
       assert {{:error, :could_not_decode}, _, _} = Log.decode(log, transaction, [], false)
     end
@@ -105,16 +105,19 @@ defmodule Explorer.Chain.LogTest do
         |> insert(to_address: to_address)
         |> Repo.preload(to_address: :smart_contract)
 
+      log_first_topic = insert(:log_first_topic, hash: topic(topic1), id: 1)
+
       log =
         insert(:log,
           address: to_address,
           transaction: transaction,
-          first_topic: topic(topic1),
+          first_topic_id: log_first_topic.id,
           second_topic: topic(topic2),
           third_topic: topic(topic3),
           fourth_topic: nil,
           data: data
         )
+        |> Repo.preload(:log_first_topic)
 
       request_zero_implementations()
 
@@ -160,15 +163,18 @@ defmodule Explorer.Chain.LogTest do
 
       transaction = insert(:transaction)
 
+      log_first_topic = insert(:log_first_topic, hash: topic(topic1), id: 1)
+
       log =
         insert(:log,
           transaction: transaction,
-          first_topic: topic(topic1),
+          first_topic_id: log_first_topic.id,
           second_topic: topic(topic2),
           third_topic: topic(topic3),
           fourth_topic: nil,
           data: data
         )
+        |> Repo.preload(:log_first_topic)
 
       assert {{:error, :contract_not_verified,
                [

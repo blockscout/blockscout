@@ -26,7 +26,8 @@ defmodule Indexer.Transform.PolygonEdge.DepositExecutes do
 
         logs
         |> Enum.filter(fn log ->
-          !is_nil(log.first_topic) && String.downcase(log.first_topic) == state_sync_result_event_signature &&
+          !is_nil(log.first_topic) &&
+            String.downcase(log.first_topic) == state_sync_result_event_signature &&
             String.downcase(Helper.address_hash_to_string(log.address_hash)) == state_receiver
         end)
         |> Enum.map(fn log ->
