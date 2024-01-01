@@ -75,6 +75,27 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
     end)
   end
 
+  @doc """
+    Extedends the json output with a sub-map contaning information related
+    zksync: batch number and associated L1 transactions and their timestmaps.
+
+    ## Parameters
+    - `out_json`: a map defining output json which will be extended
+    - `entity`: transaction or block structure contaning zksync related data
+
+    ## Returns
+    A map extended with data related zksync rollup
+  """
+  @spec add_zksync_info(map(), %{
+          :__struct__ => Explorer.Chain.Block | Explorer.Chain.Transaction,
+          :zksync_batch => any(),
+          :zksync_commit_transaction => any(),
+          :zksync_execute_transaction => any(),
+          :zksync_prove_transaction => any(),
+          optional(any()) => any()
+        }) :: map()
+  def add_zksync_info(out_json, entity)
+
   def add_zksync_info(out_json, %Transaction{} = transaction) do
     do_add_zksync_info(out_json, transaction)
   end
@@ -86,14 +107,12 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
   defp do_add_zksync_info(out_json, zksync_entity) do
     res =
       %{}
-      |> do_add_l1_txs_info_and_status(
-        %{
-          batch_number: get_batch_number(zksync_entity),
-          commit_transaction: zksync_entity.zksync_commit_transaction,
-          prove_transaction: zksync_entity.zksync_prove_transaction,
-          execute_transaction: zksync_entity.zksync_execute_transaction
-        }
-      )
+      |> do_add_l1_txs_info_and_status(%{
+        batch_number: get_batch_number(zksync_entity),
+        commit_transaction: zksync_entity.zksync_commit_transaction,
+        prove_transaction: zksync_entity.zksync_prove_transaction,
+        execute_transaction: zksync_entity.zksync_execute_transaction
+      })
       |> Map.put("batch_number", get_batch_number(zksync_entity))
 
     Map.put(out_json, "zksync", res)
@@ -107,7 +126,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
     end
   end
 
-  def add_l1_txs_info_and_status(out_json, %TransactionBatch{} = batch) do
+  defp add_l1_txs_info_and_status(out_json, %TransactionBatch{} = batch) do
     do_add_l1_txs_info_and_status(out_json, batch)
   end
 
@@ -126,10 +145,18 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
     })
   end
 
-  defp get_associated_l1_txs(batch) do
+  # Extract transaction hash and timestamp for L1 transactions associated with
+  # a zksync rollup entity: batch, transaction or block.
+  #
+  # ## Parameters
+  # - `zksync_item`: A batch, transaction, or block.
+  #
+  # ## Returns
+  # A map containing nesting maps describing corresponding L1 transactions
+  defp get_associated_l1_txs(zksync_item) do
     [:commit_transaction, :prove_transaction, :execute_transaction]
     |> Enum.reduce(%{}, fn key, l1_txs ->
-      case Map.get(batch, key) do
+      case Map.get(zksync_item, key) do
         nil -> Map.put(l1_txs, key, nil)
         %Ecto.Association.NotLoaded{} -> Map.put(l1_txs, key, nil)
         value -> Map.put(l1_txs, key, %{hash: value.hash, ts: value.timestamp})
@@ -137,17 +164,33 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
     end)
   end
 
+  # Inspects L1 transactions of the batch to determine the batch status.
+  #
+  # ## Parameters
+  # - `zksync_item`: A batch, transaction, or block.
+  #
+  # ## Returns
+  # A string with one of predefined statuses
   defp batch_status(zksync_item) do
     cond do
       is_specified(zksync_item.execute_transaction) -> "Executed on L1"
       is_specified(zksync_item.prove_transaction) -> "Validated on L1"
       is_specified(zksync_item.commit_transaction) -> "Sent to L1"
-      not Map.has_key?(zksync_item, :batch_number) -> "Sealed on L2" # Batch entity itself has no batch_number
+      # Batch entity itself has no batch_number
+      not Map.has_key?(zksync_item, :batch_number) -> "Sealed on L2"
       not is_nil(zksync_item.batch_number) -> "Sealed on L2"
       true -> "Processed on L2"
     end
   end
 
+  # Checks if an item associated with a DB entity has actual value
+  #
+  # ## Parameters
+  # - `associated_item`: an item associated with a DB entity
+  #
+  # ## Returns
+  # - `false`: if the item is nil or not loaded
+  # - `true`: if the item has actual value
   defp is_specified(associated_item) do
     case associated_item do
       nil -> false
@@ -156,11 +199,21 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
     end
   end
 
+  # Gets the value of an element nested in a map using two keys.
+  #
+  # Clarification: Returns `map[key1][key2]`
+  #
+  # ## Parameters
+  # - `map`: The high-level map.
+  # - `key1`: The key of the element in `map`.
+  # - `key2`: The key of the element in the map accessible by `map[key1]`.
+  #
+  # ## Returns
+  # The value of the element, or `nil` if the map accessible by `key1` does not exist.
   defp get_2map_data(map, key1, key2) do
     case Map.get(map, key1) do
       nil -> nil
       inner_map -> Map.get(inner_map, key2)
     end
   end
-
 end

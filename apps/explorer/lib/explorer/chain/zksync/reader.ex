@@ -17,7 +17,23 @@ defmodule Explorer.Chain.ZkSync.Reader do
     LifecycleTransaction,
     TransactionBatch
   }
+
   alias Explorer.{Chain, PagingOptions, Repo}
+
+  @doc """
+    Receives the batch from the `zksync_transaction_batches` table by using its number or the latest batch if `:latest` is used.
+
+    ## Parameters
+    - `number`: could be either the batch number or `:latest` to get the latest available in DB batch
+    - `options`: passed to `Chain.select_repo()`
+
+    ## Returns
+    - `{:ok, Explorer.Chain.ZkSync.TransactionBatch}` if the batch found
+    - `{:error, :not_found}` if there is no batch with such number
+  """
+  @spec batch(:latest | binary() | integer(), keyword()) ::
+          {:error, :not_found} | {:ok, Explorer.Chain.ZkSync.TransactionBatch}
+  def batch(number, options)
 
   def batch(:latest, options) when is_list(options) do
     TransactionBatch
@@ -32,7 +48,7 @@ defmodule Explorer.Chain.ZkSync.Reader do
 
   def batch(number, options)
       when (is_integer(number) or is_binary(number)) and
-           is_list(options) do
+             is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     TransactionBatch
@@ -45,10 +61,23 @@ defmodule Explorer.Chain.ZkSync.Reader do
     end
   end
 
+  @doc """
+    Receives a list of batches from the `zksync_transaction_batches` table within the range of batch numbers
+
+    ## Parameters
+    - `start_number`: The start of the batch numbers range.
+    - `end_number`: The end of the batch numbers range.
+    - `options`: Options passed to `Chain.select_repo()`.
+
+    ## Returns
+    - A list of `Explorer.Chain.ZkSync.TransactionBatch` if at least one batch exists within the range.
+    - An empty list (`[]`) if no batches within the range are found in the database.
+  """
+  @spec batches(integer(), integer(), keyword()) :: [Explorer.Chain.ZkSync.TransactionBatch]
   def batches(start_number, end_number, options)
       when is_integer(start_number) and
-           is_integer(end_number) and
-           is_list(options) do
+             is_integer(end_number) and
+             is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     from(tb in TransactionBatch, order_by: [desc: tb.number])
@@ -57,9 +86,21 @@ defmodule Explorer.Chain.ZkSync.Reader do
     |> select_repo(options).all()
   end
 
+  @doc """
+    Receives a list of batches from the `zksync_transaction_batches` table with the numbers defined in the input list.
+
+    ## Parameters
+    - `numbers`: The list of batch numbers to retrieve from the database.
+    - `options`: Options passed to `Chain.select_repo()`.
+
+    ## Returns
+    - A list of `Explorer.Chain.ZkSync.TransactionBatch` if at least one batch matches the numbers from the list. The output list could be less than the input list.
+    - An empty list (`[]`) if no batches with numbers from the list are found.
+  """
+  @spec batches(maybe_improper_list(integer(), []), keyword()) :: [Explorer.Chain.ZkSync.TransactionBatch]
   def batches(numbers, options)
       when is_list(numbers) and
-           is_list(options) do
+             is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     from(tb in TransactionBatch, order_by: [desc: tb.number])
@@ -68,6 +109,18 @@ defmodule Explorer.Chain.ZkSync.Reader do
     |> select_repo(options).all()
   end
 
+  @doc """
+    Receives a list of batches from the `zksync_transaction_batches` table.
+
+    ## Parameters
+    - `options`: Options passed to `Chain.select_repo()`. (Optional)
+
+    ## Returns
+    - If the option `confirmed?` is set, returns the ten latest committed batches (`Explorer.Chain.ZkSync.TransactionBatch`).
+    - Returns a list of `Explorer.Chain.ZkSync.TransactionBatch` based on the paging options if `confirmed?` is not set.
+  """
+  @spec batches(keyword()) :: [Explorer.Chain.ZkSync.TransactionBatch]
+  @spec batches() :: [Explorer.Chain.ZkSync.TransactionBatch]
   def batches(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -95,21 +148,31 @@ defmodule Explorer.Chain.ZkSync.Reader do
   end
 
   @doc """
-    Reads a list of L2 transaction hashes from `zksync_batch_l2_transactions` table.
+    Receives a list of transactions from the `zksync_batch_l2_transactions` table included in a specific batch.
+
+    ## Parameters
+    - `batch_number`: The number of batch which transactions were included to L1 as part of.
+    - `options`: Options passed to `Chain.select_repo()`. (Optional)
+
+    ## Returns
+    - A list of `Explorer.Chain.ZkSync.BatchTransaction` belonging to the specified batch.
   """
-  @spec batch_transactions(non_neg_integer(), list()) :: list()
+  @spec batch_transactions(non_neg_integer()) :: [Explorer.Chain.ZkSync.BatchTransaction]
+  @spec batch_transactions(non_neg_integer(), keyword()) :: [Explorer.Chain.ZkSync.BatchTransaction]
   def batch_transactions(batch_number, options \\ [])
       when is_integer(batch_number) or
-           is_binary(batch_number) do
+             is_binary(batch_number) do
     query = from(batch in BatchTransaction, where: batch.batch_number == ^batch_number)
 
     select_repo(options).all(query)
   end
 
   @doc """
-    Gets the number of the earliest batch where commit_id is nil.
-    The batch #0 is filtered - it does not have commitment transaction linked.
-    Returns nil if not found
+    Gets the number of the earliest batch in the `zksync_transaction_batches` table where the commitment transaction is not set.
+    Batch #0 is filtered out, as it does not have a linked commitment transaction.
+
+    ## Returns
+    - The number of a batch if it exists, otherwise `nil`. `nil` could mean either no batches imported yet or all imported batches are marked as committed or Batch #0 is the only available batch.
   """
   @spec earliest_sealed_batch_number() :: non_neg_integer() | nil
   def earliest_sealed_batch_number do
@@ -127,9 +190,11 @@ defmodule Explorer.Chain.ZkSync.Reader do
   end
 
   @doc """
-    Gets the number of the earliest batch where prove_id is nil.
-    The batch #0 is filtered - it does not have proving transaction linked.
-    Returns nil if not found
+    Gets the number of the earliest batch in the `zksync_transaction_batches` table where the proving transaction is not set.
+    Batch #0 is filtered out, as it does not have a linked proving transaction.
+
+    ## Returns
+    - The number of a batch if it exists, otherwise `nil`. `nil` could mean either no batches imported yet or all imported batches are marked as proven or Batch #0 is the only available batch.
   """
   @spec earliest_unproven_batch_number() :: non_neg_integer() | nil
   def earliest_unproven_batch_number do
@@ -147,9 +212,11 @@ defmodule Explorer.Chain.ZkSync.Reader do
   end
 
   @doc """
-    Gets the number of the earliest batch where execute_id is nil.
-    The batch #0 is filtered - it does not have executing transaction linked.
-    Returns nil if not found
+    Gets the number of the earliest batch in the `zksync_transaction_batches` table where the executing transaction is not set.
+    Batch #0 is filtered out, as it does not have a linked executing transaction.
+
+    ## Returns
+    - The number of a batch if it exists, otherwise `nil`. `nil` could mean either no batches imported yet or all imported batches are marked as executed or Batch #0 is the only available batch.
   """
   @spec earliest_unexecuted_batch_number() :: non_neg_integer() | nil
   def earliest_unexecuted_batch_number do
@@ -167,8 +234,10 @@ defmodule Explorer.Chain.ZkSync.Reader do
   end
 
   @doc """
-    Gets the number of the oldest batch.
-    Returns nil if not found
+    Gets the number of the oldest batch from the `zksync_transaction_batches` table.
+
+    ## Returns
+    - The number of a batch if it exists, otherwise `nil`. `nil` means that there is no batches imported yet.
   """
   @spec oldest_available_batch_number() :: non_neg_integer() | nil
   def oldest_available_batch_number do
@@ -185,8 +254,10 @@ defmodule Explorer.Chain.ZkSync.Reader do
   end
 
   @doc """
-    Gets the number of the latest batch.
-    Returns nil if not found
+    Gets the number of the youngest (the most recent) imported batch from the `zksync_transaction_batches` table.
+
+    ## Returns
+    - The number of a batch if it exists, otherwise `nil`. `nil` means that there is no batches imported yet.
   """
   @spec latest_available_batch_number() :: non_neg_integer() | nil
   def latest_available_batch_number do
@@ -203,9 +274,15 @@ defmodule Explorer.Chain.ZkSync.Reader do
   end
 
   @doc """
-    Reads a list of L1 transactions by their hashes from `zksync_lifecycle_l1_transactions` table.
+    Reads a list of L1 transactions by their hashes from the `zksync_lifecycle_l1_transactions` table.
+
+    ## Parameters
+    - `l1_tx_hashes`: A list of hashes to retrieve L1 transactions for.
+
+    ## Returns
+    - A list of `Explorer.Chain.ZkSync.LifecycleTransaction` corresponding to the hashes from the input list. The output list may be smaller than the input list.
   """
-  @spec lifecycle_transactions(list()) :: list()
+  @spec lifecycle_transactions(maybe_improper_list(binary(), [])) :: [Explorer.Chain.ZkSync.LifecycleTransaction]
   def lifecycle_transactions(l1_tx_hashes) do
     query =
       from(
@@ -218,7 +295,10 @@ defmodule Explorer.Chain.ZkSync.Reader do
   end
 
   @doc """
-    Determines ID of the future lifecycle transaction by reading `zksync_lifecycle_l1_transactions` table.
+    Determines the next index for the L1 transaction available in the `zksync_lifecycle_l1_transactions` table.
+
+    ## Returns
+    - The next available index. If there are no L1 transactions imported yet, it will return `1`.
   """
   @spec next_id() :: non_neg_integer()
   def next_id do
@@ -242,5 +322,4 @@ defmodule Explorer.Chain.ZkSync.Reader do
   defp page_batches(query, %PagingOptions{key: {number}}) do
     from(tb in query, where: tb.number < ^number)
   end
-
 end

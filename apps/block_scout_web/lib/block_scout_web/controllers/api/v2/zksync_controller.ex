@@ -1,4 +1,5 @@
 defmodule BlockScoutWeb.API.V2.ZkSyncController do
+
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
@@ -58,12 +59,13 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
       |> Reader.batches()
       |> split_list_by_page()
 
-    next_page_params = next_page_params(
-      next_page,
-      batches,
-      params,
-      fn %TransactionBatch{number: number} -> %{"number" => number} end
-    )
+    next_page_params =
+      next_page_params(
+        next_page,
+        batches,
+        params,
+        fn %TransactionBatch{number: number} -> %{"number" => number} end
+      )
 
     conn
     |> put_status(200)
