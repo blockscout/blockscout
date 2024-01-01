@@ -130,8 +130,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
 
       "zksync" ->
         result
-        |> ZkSyncView.add_l1_txs_info_and_status(block)
-        |> Map.put("batch_number", ZkSyncView.get_batch_number(block))
+        |> ZkSyncView.add_zksync_info(block)
 
       _ ->
         result

@@ -444,8 +444,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
       "zksync" ->
         result
-        |> ZkSyncView.add_l1_txs_info_and_status(transaction)
-        |> Map.put("batch_number", ZkSyncView.get_batch_number(transaction))
+        |> ZkSyncView.add_zksync_info(transaction)
 
       "suave" ->
         suave_fields(transaction, result, single_tx?, conn, watchlist_names)

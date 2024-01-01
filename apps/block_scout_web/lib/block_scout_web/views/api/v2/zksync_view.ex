@@ -75,15 +75,31 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
     end)
   end
 
-  def get_batch_number(%Transaction{} = transaction) do
-    do_get_batch_number(transaction)
+  def add_zksync_info(out_json, %Transaction{} = transaction) do
+    do_add_zksync_info(out_json, transaction)
   end
 
-  def get_batch_number(%Block{} = block) do
-    do_get_batch_number(block)
+  def add_zksync_info(out_json, %Block{} = block) do
+    do_add_zksync_info(out_json, block)
   end
 
-  defp do_get_batch_number(zksync_entity) do
+  defp do_add_zksync_info(out_json, zksync_entity) do
+    res =
+      %{}
+      |> do_add_l1_txs_info_and_status(
+        %{
+          batch_number: get_batch_number(zksync_entity),
+          commit_transaction: zksync_entity.zksync_commit_transaction,
+          prove_transaction: zksync_entity.zksync_prove_transaction,
+          execute_transaction: zksync_entity.zksync_execute_transaction
+        }
+      )
+      |> Map.put("batch_number", get_batch_number(zksync_entity))
+
+    Map.put(out_json, "zksync", res)
+  end
+
+  defp get_batch_number(zksync_entity) do
     case Map.get(zksync_entity, :zksync_batch) do
       nil -> nil
       %Ecto.Association.NotLoaded{} -> nil
@@ -91,42 +107,16 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
     end
   end
 
-  def add_l1_txs_info_and_status(out_json, %Transaction{} = transaction) do
-    do_add_l1_txs_info_and_status(
-      out_json,
-      %{
-        batch_number: get_batch_number(transaction),
-        commit_transaction: transaction.zksync_commit_transaction,
-        prove_transaction: transaction.zksync_prove_transaction,
-        execute_transaction: transaction.zksync_execute_transaction
-      },
-      "zksync_status"
-    )
-  end
-
-  def add_l1_txs_info_and_status(out_json, %Block{} = block) do
-    do_add_l1_txs_info_and_status(
-      out_json,
-      %{
-        batch_number: get_batch_number(block),
-        commit_transaction: block.zksync_commit_transaction,
-        prove_transaction: block.zksync_prove_transaction,
-        execute_transaction: block.zksync_execute_transaction
-      },
-      "zksync_status"
-    )
-  end
-
   def add_l1_txs_info_and_status(out_json, %TransactionBatch{} = batch) do
-    do_add_l1_txs_info_and_status(out_json, batch, "status")
+    do_add_l1_txs_info_and_status(out_json, batch)
   end
 
-  defp do_add_l1_txs_info_and_status(out_json, zksync_item, status_field_name) do
+  defp do_add_l1_txs_info_and_status(out_json, zksync_item) do
     l1_txs = get_associated_l1_txs(zksync_item)
 
     out_json
     |> Map.merge(%{
-      status_field_name => batch_status(zksync_item),
+      "status" => batch_status(zksync_item),
       "commit_transaction_hash" => get_2map_data(l1_txs, :commit_transaction, :hash),
       "commit_transaction_timestamp" => get_2map_data(l1_txs, :commit_transaction, :ts),
       "prove_transaction_hash" => get_2map_data(l1_txs, :prove_transaction, :hash),
