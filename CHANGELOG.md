@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#9056](https://github.com/blockscout/blockscout/pull/9056) - Noves.fi API proxy
 - [#9044](https://github.com/blockscout/blockscout/pull/9044) - Expand gas price oracle functionality
 
 ### Fixes

@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
   alias BlockScoutWeb.Models.TransactionStateHelper
   alias Explorer.Chain
+  alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.Chain.Zkevm.Reader
   alias Indexer.Fetcher.FirstTraceOnDemand
 
@@ -388,7 +389,11 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     end
   end
 
-  defp validate_transaction(transaction_hash_string, params, options \\ @api_true) do
+  @doc """
+  Checks if this valid transaction hash string, and this transaction doesn't belong to prohibited address
+  """
+  @spec validate_transaction(String.t(), any(), list()) :: {:ok, Transaction.t(), Hash.t()}
+  def validate_transaction(transaction_hash_string, params, options \\ @api_true) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
            {:not_found, Chain.hash_to_transaction(transaction_hash, options)},
