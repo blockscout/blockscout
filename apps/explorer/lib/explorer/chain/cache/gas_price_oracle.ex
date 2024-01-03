@@ -17,26 +17,60 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
     Wei
   }
 
-  alias Explorer.Repo
+  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.{Market, Repo}
+  alias Timex.Duration
 
   use Explorer.Chain.MapCache,
     name: :gas_price,
     key: :gas_prices,
+    key: :gas_prices_acc,
+    key: :updated_at,
     key: :old_gas_prices,
     key: :async_task,
-    global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl],
+    global_ttl: global_ttl(),
     ttl_check_interval: :timer.seconds(1),
     callback: &async_task_on_deletion(&1)
 
   @doc """
-  Get `safelow`, `average` and `fast` percentile of transactions gas prices among the last `num_of_blocks` blocks
+  Calculates the `slow`, `average`, and `fast` gas price and time percentiles from the last `num_of_blocks` blocks and estimates the fiat price for each percentile.
+  These percentiles correspond to the likelihood of a transaction being picked up by miners depending on the fee offered.
   """
   @spec get_average_gas_price(pos_integer(), pos_integer(), pos_integer(), pos_integer()) ::
-          {:error, any} | {:ok, %{String.t() => nil | float, String.t() => nil | float, String.t() => nil | float}}
+          {{:error, any} | {:ok, %{slow: gas_price, average: gas_price, fast: gas_price}},
+           [
+             %{
+               block_number: non_neg_integer(),
+               slow_gas_price: nil | Decimal.t(),
+               fast_gas_price: nil | Decimal.t(),
+               average_gas_price: nil | Decimal.t(),
+               slow_priority_fee_per_gas: nil | Decimal.t(),
+               average_priority_fee_per_gas: nil | Decimal.t(),
+               fast_priority_fee_per_gas: nil | Decimal.t(),
+               slow_time: nil | Decimal.t(),
+               average_time: nil | Decimal.t(),
+               fast_time: nil | Decimal.t()
+             }
+           ]}
+        when gas_price: nil | %{price: float(), time: float(), fiat_price: Decimal.t()}
   def get_average_gas_price(num_of_blocks, safelow_percentile, average_percentile, fast_percentile) do
     safelow_percentile_fraction = safelow_percentile / 100
     average_percentile_fraction = average_percentile / 100
     fast_percentile_fraction = fast_percentile / 100
+
+    acc = get_gas_prices_acc()
+
+    from_block =
+      case acc do
+        [%{block_number: from_block} | _] -> from_block
+        _ -> -1
+      end
+
+    average_block_time =
+      case AverageBlockTime.average_block_time() do
+        {:error, _} -> nil
+        average_block_time -> average_block_time |> Duration.to_milliseconds()
+      end
 
     fee_query =
       from(
@@ -45,119 +79,185 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
         where: block.consensus == true,
         where: transaction.status == ^1,
         where: transaction.gas_price > ^0,
-        group_by: block.number,
-        order_by: [desc: block.number],
+        where: transaction.block_number > ^from_block,
+        group_by: transaction.block_number,
+        order_by: [desc: transaction.block_number],
         select: %{
+          block_number: transaction.block_number,
           slow_gas_price:
             fragment(
-              "percentile_disc(?) within group ( order by ? )",
+              "percentile_disc(? :: real) within group ( order by ? )",
               ^safelow_percentile_fraction,
               transaction.gas_price
             ),
           average_gas_price:
             fragment(
-              "percentile_disc(?) within group ( order by ? )",
+              "percentile_disc(? :: real) within group ( order by ? )",
               ^average_percentile_fraction,
               transaction.gas_price
             ),
           fast_gas_price:
             fragment(
-              "percentile_disc(?) within group ( order by ? )",
+              "percentile_disc(? :: real) within group ( order by ? )",
               ^fast_percentile_fraction,
               transaction.gas_price
             ),
-          slow:
+          slow_priority_fee_per_gas:
             fragment(
-              "percentile_disc(?) within group ( order by ? )",
+              "percentile_disc(? :: real) within group ( order by ? )",
               ^safelow_percentile_fraction,
               transaction.max_priority_fee_per_gas
             ),
-          average:
+          average_priority_fee_per_gas:
             fragment(
-              "percentile_disc(?) within group ( order by ? )",
+              "percentile_disc(? :: real) within group ( order by ? )",
               ^average_percentile_fraction,
               transaction.max_priority_fee_per_gas
             ),
-          fast:
+          fast_priority_fee_per_gas:
             fragment(
-              "percentile_disc(?) within group ( order by ? )",
+              "percentile_disc(? :: real) within group ( order by ? )",
               ^fast_percentile_fraction,
               transaction.max_priority_fee_per_gas
+            ),
+          slow_time:
+            fragment(
+              "percentile_disc(? :: real) within group ( order by coalesce(extract(milliseconds from (?)::interval), ?) desc )",
+              ^safelow_percentile_fraction,
+              block.timestamp - transaction.earliest_processing_start,
+              ^average_block_time
+            ),
+          average_time:
+            fragment(
+              "percentile_disc(? :: real) within group ( order by coalesce(extract(milliseconds from (?)::interval), ?) desc )",
+              ^average_percentile_fraction,
+              block.timestamp - transaction.earliest_processing_start,
+              ^average_block_time
+            ),
+          fast_time:
+            fragment(
+              "percentile_disc(? :: real) within group ( order by coalesce(extract(milliseconds from (?)::interval), ?) desc )",
+              ^fast_percentile_fraction,
+              block.timestamp - transaction.earliest_processing_start,
+              ^average_block_time
             )
         },
         limit: ^num_of_blocks
       )
 
-    gas_prices = fee_query |> Repo.all(timeout: :infinity) |> process_fee_data_from_db()
+    new_acc = fee_query |> Repo.all(timeout: :infinity) |> merge_gas_prices(acc, num_of_blocks)
 
-    {:ok, gas_prices}
+    gas_prices = new_acc |> process_fee_data_from_db()
+
+    {{:ok, gas_prices}, new_acc}
   catch
     error ->
-      {:error, error}
+      Logger.error("Failed to get gas prices: #{inspect(error)}")
+      {{:error, error}, get_gas_prices_acc()}
   end
+
+  defp merge_gas_prices(new, acc, acc_size), do: Enum.take(new ++ acc, acc_size)
 
   defp process_fee_data_from_db([]) do
     %{
-      "slow" => nil,
-      "average" => nil,
-      "fast" => nil
+      slow: nil,
+      average: nil,
+      fast: nil
     }
   end
 
   defp process_fee_data_from_db(fees) do
-    fees_length = Enum.count(fees)
-
     %{
       slow_gas_price: slow_gas_price,
       average_gas_price: average_gas_price,
       fast_gas_price: fast_gas_price,
-      slow: slow,
-      average: average,
-      fast: fast
-    } =
-      fees
-      |> Enum.reduce(
-        &Map.merge(&1, &2, fn
-          _, v1, v2 when nil not in [v1, v2] -> Decimal.add(v1, v2)
-          _, v1, v2 -> v1 || v2
-        end)
-      )
-      |> Map.new(fn
-        {key, nil} -> {key, nil}
-        {key, value} -> {key, Decimal.div(value, fees_length)}
-      end)
+      slow_priority_fee_per_gas: slow_priority_fee_per_gas,
+      average_priority_fee_per_gas: average_priority_fee_per_gas,
+      fast_priority_fee_per_gas: fast_priority_fee_per_gas,
+      slow_time: slow_time,
+      average_time: average_time,
+      fast_time: fast_time
+    } = merge_fees(fees)
 
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
     {slow_fee, average_fee, fast_fee} =
-      case {nil not in [slow, average, fast], EthereumJSONRPC.fetch_block_by_tag("pending", json_rpc_named_arguments)} do
-        {true, {:ok, %Blocks{blocks_params: [%{base_fee_per_gas: base_fee}]}}} when not is_nil(base_fee) ->
+      case nil not in [slow_priority_fee_per_gas, average_priority_fee_per_gas, fast_priority_fee_per_gas] &&
+             EthereumJSONRPC.fetch_block_by_tag("pending", json_rpc_named_arguments) do
+        {:ok, %Blocks{blocks_params: [%{base_fee_per_gas: base_fee}]}} when not is_nil(base_fee) ->
           base_fee_wei = base_fee |> Decimal.new() |> Wei.from(:wei)
 
           {
-            priority_with_base_fee(slow, base_fee_wei),
-            priority_with_base_fee(average, base_fee_wei),
-            priority_with_base_fee(fast, base_fee_wei)
+            priority_with_base_fee(slow_priority_fee_per_gas, base_fee_wei),
+            priority_with_base_fee(average_priority_fee_per_gas, base_fee_wei),
+            priority_with_base_fee(fast_priority_fee_per_gas, base_fee_wei)
           }
 
         _ ->
           {gas_price(slow_gas_price), gas_price(average_gas_price), gas_price(fast_gas_price)}
       end
 
+    exchange_rate_from_db = Market.get_coin_exchange_rate()
+
     %{
-      "slow" => slow_fee,
-      "average" => average_fee,
-      "fast" => fast_fee
+      slow: compose_gas_price(slow_fee, slow_time, exchange_rate_from_db),
+      average: compose_gas_price(average_fee, average_time, exchange_rate_from_db),
+      fast: compose_gas_price(fast_fee, fast_time, exchange_rate_from_db)
     }
   end
 
+  defp merge_fees(fees_from_db) do
+    fees_from_db
+    |> Stream.map(&Map.delete(&1, :block_number))
+    |> Enum.reduce(
+      &Map.merge(&1, &2, fn
+        _, nil, nil -> nil
+        _, val, acc when nil not in [val, acc] and is_list(acc) -> [val | acc]
+        _, val, acc when nil not in [val, acc] -> [val, acc]
+        _, val, acc -> [val || acc]
+      end)
+    )
+    |> Map.new(fn
+      {key, nil} ->
+        {key, nil}
+
+      {key, value} ->
+        value = if is_list(value), do: value, else: [value]
+        count = Enum.count(value)
+        {key, value |> Enum.reduce(Decimal.new(0), &Decimal.add/2) |> Decimal.div(count)}
+    end)
+  end
+
+  defp compose_gas_price(fee, time, exchange_rate_from_db) do
+    %{
+      price: fee |> format_wei(),
+      time: time && time |> Decimal.to_float(),
+      fiat_price: fiat_fee(fee, exchange_rate_from_db)
+    }
+  end
+
+  defp fiat_fee(fee, exchange_rate) do
+    exchange_rate.usd_value &&
+      fee
+      |> Wei.to(:ether)
+      |> Decimal.mult(exchange_rate.usd_value)
+      |> Decimal.mult(simple_transaction_gas())
+      |> Decimal.round(2)
+  end
+
   defp priority_with_base_fee(priority, base_fee) do
-    priority |> Wei.from(:wei) |> Wei.sum(base_fee) |> Wei.to(:gwei) |> Decimal.to_float() |> Float.ceil(2)
+    priority |> Wei.from(:wei) |> Wei.sum(base_fee)
   end
 
   defp gas_price(value) do
-    value |> Wei.from(:wei) |> Wei.to(:gwei) |> Decimal.to_float() |> Float.ceil(2)
+    value |> Wei.from(:wei)
   end
+
+  defp format_wei(wei), do: wei |> Wei.to(:gwei) |> Decimal.to_float() |> Float.ceil(2)
+
+  def global_ttl, do: Application.get_env(:explorer, __MODULE__)[:global_ttl]
+
+  defp simple_transaction_gas, do: Application.get_env(:explorer, __MODULE__)[:simple_transaction_gas]
 
   defp num_of_blocks, do: Application.get_env(:explorer, __MODULE__)[:num_of_blocks]
 
@@ -181,12 +281,14 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
     {:ok, task} =
       Task.start(fn ->
         try do
-          result = get_average_gas_price(num_of_blocks(), safelow(), average(), fast())
+          {result, acc} = get_average_gas_price(num_of_blocks(), safelow(), average(), fast())
 
+          set_gas_prices_acc(acc)
           set_gas_prices(result)
+          set_updated_at(DateTime.utc_now())
         rescue
           e ->
-            Logger.debug([
+            Logger.error([
               "Couldn't update gas used gas_prices",
               Exception.format(:error, e, __STACKTRACE__)
             ])
@@ -196,6 +298,10 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       end)
 
     {:update, task}
+  end
+
+  defp handle_fallback(:gas_prices_acc) do
+    {:return, []}
   end
 
   defp handle_fallback(_), do: {:return, nil}

@@ -4,7 +4,12 @@
 
 ### Features
 
+- [#9044](https://github.com/blockscout/blockscout/pull/9044) - Expand gas price oracle functionality
+
 ### Fixes
+
+- [#9062](https://github.com/blockscout/blockscout/pull/9062) - Fix blockscout-ens integration
+- [#9061](https://github.com/blockscout/blockscout/pull/9061) - Arbitrum allow tx receipt gasUsedForL1 field
 
 ### Chore
 

@@ -61,5 +61,5 @@ jobs:
             AMPLITUDE_URL=
             AMPLITUDE_API_KEY=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
