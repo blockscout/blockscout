@@ -81,22 +81,18 @@ defmodule Indexer.Transform.TokenTransfers do
       end)
       |> Map.new()
 
-    existing_tokens =
-      existing_token_types_map
-      |> Map.keys()
-      |> Enum.map(&to_string/1)
-
-    new_tokens_token_transfers = Enum.filter(token_transfers, &(&1.token_contract_address_hash not in existing_tokens))
-
-    new_token_types_map =
-      new_tokens_token_transfers
+    token_types_map =
+      token_transfers
       |> Enum.group_by(& &1.token_contract_address_hash)
       |> Enum.map(fn {contract_address_hash, transfers} ->
         {contract_address_hash, define_token_type(transfers)}
       end)
       |> Map.new()
 
-    actual_token_types_map = Map.merge(new_token_types_map, existing_token_types_map)
+    actual_token_types_map =
+      Map.merge(token_types_map, existing_token_types_map, fn _k, new_type, old_type ->
+        if token_type_priority(old_type) > token_type_priority(new_type), do: old_type, else: new_type
+      end)
 
     actual_tokens =
       Enum.map(tokens, fn %{contract_address_hash: hash} = token ->
