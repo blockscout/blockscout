@@ -291,17 +291,17 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
 
     tokens_inserted = Map.get(inserts, :insert_zkevm_bridge_l1_tokens, [])
 
-    # we need to query uninserted tokens from DB separately as they
+    # we need to query not inserted tokens from DB separately as they
     # could be inserted by another module at the same time (a race condition).
     # this is an unlikely case but we handle it here as well
-    tokens_uninserted =
+    tokens_not_inserted =
       tokens_to_insert
       |> Enum.reject(fn token ->
         Enum.any?(tokens_inserted, fn inserted -> token.address == Hash.to_string(inserted.address) end)
       end)
       |> Enum.map(& &1.address)
 
-    tokens_inserted_outside = token_addresses_to_ids_from_db(tokens_uninserted)
+    tokens_inserted_outside = token_addresses_to_ids_from_db(tokens_not_inserted)
 
     tokens_inserted
     |> Enum.reduce(%{}, fn t, acc -> Map.put(acc, Hash.to_string(t.address), t.id) end)
