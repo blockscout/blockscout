@@ -371,7 +371,6 @@
 - [#8543](https://github.com/blockscout/blockscout/pull/8543) - Fix polygon tracer
 - [#8386](https://github.com/blockscout/blockscout/pull/8386) - Add `owner_address_hash` to the `token_instances`
 - [#8530](https://github.com/blockscout/blockscout/pull/8530) - Add `block_type` to search results
-- [#7584](https://github.com/blockscout/blockscout/pull/7584) - Add Polygon zkEVM batches fetcher
 - [#8180](https://github.com/blockscout/blockscout/pull/8180) - Deposits and Withdrawals for Polygon Edge
 - [#7996](https://github.com/blockscout/blockscout/pull/7996) - Add CoinBalance fetcher init query limit
 - [#8658](https://github.com/blockscout/blockscout/pull/8658) - Remove block consensus on import fail
