@@ -1,8 +1,9 @@
 defmodule Explorer.Migrator.TransactionsDenormalizationTest do
   use Explorer.DataCase, async: false
 
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.Transaction
-  alias Explorer.Migrator.TransactionsDenormalization
+  alias Explorer.Migrator.{MigrationStatus, TransactionsDenormalization}
   alias Explorer.Repo
 
   describe "Migrate transactions" do
@@ -20,6 +21,8 @@ defmodule Explorer.Migrator.TransactionsDenormalizationTest do
         assert not is_nil(timestamp)
       end)
 
+      assert MigrationStatus.get_status("denormalization") == nil
+
       TransactionsDenormalization.start_link([])
       Process.sleep(100)
 
@@ -33,6 +36,8 @@ defmodule Explorer.Migrator.TransactionsDenormalizationTest do
                  block: %{consensus: consensus, timestamp: timestamp}
                } = t
       end)
+
+      assert MigrationStatus.get_status("denormalization") == "completed"
     end
   end
 end

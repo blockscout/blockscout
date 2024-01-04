@@ -19,6 +19,29 @@
 
 </details>
 
+## 6.0.0-dev
+
+### Features
+
+### Fixes
+
+### Chore
+
+- [#9055](https://github.com/blockscout/blockscout/pull/9055) - Add ASC indices for logs, token transfers, transactions
+- [#9038](https://github.com/blockscout/blockscout/pull/9038) - Token type filling migrations
+- [#9009](https://github.com/blockscout/blockscout/pull/9009) - Index for block refetch_needed
+- [#9007](https://github.com/blockscout/blockscout/pull/9007) - Drop logs type index
+- [#9006](https://github.com/blockscout/blockscout/pull/9006) - Drop unused indexes on address_current_token_balances table
+- [#9005](https://github.com/blockscout/blockscout/pull/9005) - Drop unused token_id column from token_transfers table and indexes based on this column
+- [#9000](https://github.com/blockscout/blockscout/pull/9000) - Change log topic type in the DB to bytea
+- [#8996](https://github.com/blockscout/blockscout/pull/8996) - Refine token transfers token ids index
+- [#5322](https://github.com/blockscout/blockscout/pull/5322) - DB denormalization: block consensus and timestamp in transaction table
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+</details>
+
 ## 5.4.0-beta
 
 ### Features
@@ -48,7 +71,6 @@
 - [#9094](https://github.com/blockscout/blockscout/pull/9094) - Improve exchange rates logging
 - [#9014](https://github.com/blockscout/blockscout/pull/9014) - Decrease amount of NFT in address collection: 15 -> 9
 - [#8994](https://github.com/blockscout/blockscout/pull/8994) - Refactor transactions event preloads
-- [#8991](https://github.com/blockscout/blockscout/pull/8991) - Manage DB queue target via runtime env var
 
 <details>
   <summary>Dependencies version bumps</summary>

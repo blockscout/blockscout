@@ -3590,32 +3590,6 @@ defmodule Explorer.Chain do
     |> Repo.stream_reduce(initial, reducer)
   end
 
-  @doc """
-  Returns a list of block numbers token transfer `t:Log.t/0`s that don't have an
-  associated `t:TokenTransfer.t/0` record.
-  """
-  def uncataloged_token_transfer_block_numbers do
-    query =
-      from(l in Log,
-        as: :log,
-        where:
-          l.first_topic == unquote(TokenTransfer.constant()) or
-            l.first_topic == unquote(TokenTransfer.erc1155_single_transfer_signature()) or
-            l.first_topic == unquote(TokenTransfer.erc1155_batch_transfer_signature()),
-        where:
-          not exists(
-            from(tf in TokenTransfer,
-              where: tf.transaction_hash == parent_as(:log).transaction_hash,
-              where: tf.log_index == parent_as(:log).index
-            )
-          ),
-        select: l.block_number,
-        distinct: l.block_number
-      )
-
-    Repo.stream_reduce(query, [], &[&1 | &2])
-  end
-
   def decode_contract_address_hash_response(resp) do
     case resp do
       "0x000000000000000000000000" <> address ->

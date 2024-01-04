@@ -13,6 +13,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
 
   alias Explorer.Chain
   alias Explorer.Chain.Address.TokenBalance
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.{Address, Block, Hash, Token}
 
   @typedoc """
@@ -80,15 +81,27 @@ defmodule Explorer.Chain.Address.TokenBalance do
   ignores the burn_address for tokens ERC-721 since the most tokens ERC-721 don't allow get the
   balance for burn_address.
   """
+  # credo:disable-for-next-line /Complexity/
   def unfetched_token_balances do
-    from(
-      tb in TokenBalance,
-      join: t in Token,
-      on: tb.token_contract_address_hash == t.contract_address_hash,
-      where:
-        ((tb.address_hash != ^@burn_address_hash and t.type == "ERC-721") or t.type == "ERC-20" or t.type == "ERC-1155") and
-          (is_nil(tb.value_fetched_at) or is_nil(tb.value))
-    )
+    if BackgroundMigrations.get_tb_token_type_finished() do
+      from(
+        tb in TokenBalance,
+        where:
+          ((tb.address_hash != ^@burn_address_hash and tb.token_type == "ERC-721") or tb.token_type == "ERC-20" or
+             tb.token_type == "ERC-1155") and
+            (is_nil(tb.value_fetched_at) or is_nil(tb.value))
+      )
+    else
+      from(
+        tb in TokenBalance,
+        join: t in Token,
+        on: tb.token_contract_address_hash == t.contract_address_hash,
+        where:
+          ((tb.address_hash != ^@burn_address_hash and t.type == "ERC-721") or t.type == "ERC-20" or
+             t.type == "ERC-1155") and
+            (is_nil(tb.value_fetched_at) or is_nil(tb.value))
+      )
+    end
   end
 
   @doc """
