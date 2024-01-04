@@ -154,8 +154,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
           where: transaction.status == ^1,
           where: transaction.gas_price > ^0,
           where: transaction.block_number > ^from_block,
-          group_by: block.number,
-          order_by: [desc: block.number],
+          group_by: transaction.block_number,
+          order_by: [desc: transaction.block_number],
           select: %{
             block_number: transaction.block_number,
             slow_gas_price:
