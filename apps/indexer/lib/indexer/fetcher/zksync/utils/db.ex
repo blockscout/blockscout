@@ -1,6 +1,6 @@
 defmodule Indexer.Fetcher.ZkSync.Utils.Db do
   @moduledoc """
-    Common functions to simplify DB routines
+    Common functions to simplify DB routines for Indexer.Fetcher.ZkSync fetchers
   """
 
   alias Explorer.Chain
@@ -16,10 +16,33 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Db do
     :executed_timestamp
   ]
 
-  def prune_json_batch(batch_with_json_fields) do
+  @doc """
+    Deletes elements in the batch description map to prepare the batch for importing to
+    the database.
+
+    ## Parameters
+    - `batch_with_json_fields`: a map describing a batch with elements that could remain
+                                after downloading batch details from RPC.
+
+    ## Returns
+    - A map describing the batch compatible with the database import operation.
+  """
+  @spec prune_json_batch(map()) :: map()
+  def prune_json_batch(batch_with_json_fields)
+      when is_map(batch_with_json_fields) do
     Map.drop(batch_with_json_fields, @json_batch_fields_absent_in_db_batch)
   end
 
+  @doc """
+    Gets the oldest imported batch number.
+
+    ## Parameters
+    - none
+
+    ## Returns
+    - A batch number or `nil` if there are no batches in the database.
+  """
+  @spec get_earliest_batch_number() :: nil | non_neg_integer()
   def get_earliest_batch_number do
     case Reader.oldest_available_batch_number() do
       nil ->
@@ -31,40 +54,89 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Db do
     end
   end
 
+  @doc """
+    Gets the oldest imported batch number without an associated commitment L1 transaction.
+
+    ## Parameters
+    - none
+
+    ## Returns
+    - A batch number or `nil` in cases where there are no batches in the database or
+      all batches in the database are marked as committed.
+  """
+  @spec get_earliest_sealed_batch_number() :: nil | non_neg_integer()
   def get_earliest_sealed_batch_number do
     case Reader.earliest_sealed_batch_number() do
       nil ->
-        log_info("No committed batches found in DB")
-        get_earliest_batch_number()
+        log_info("No uncommitted batches found in DB")
+        nil
 
       value ->
         value
     end
   end
 
+  @doc """
+    Gets the oldest imported batch number without an associated proving L1 transaction.
+
+    ## Parameters
+    - none
+
+    ## Returns
+    - A batch number or `nil` in cases where there are no batches in the database or
+      all batches in the database are marked as proven.
+  """
+  @spec get_earliest_unproven_batch_number() :: nil | non_neg_integer()
   def get_earliest_unproven_batch_number do
     case Reader.earliest_unproven_batch_number() do
       nil ->
-        log_info("No proven batches found in DB")
-        get_earliest_batch_number()
+        log_info("No unproven batches found in DB")
+        nil
 
       value ->
         value
     end
   end
 
+  @doc """
+    Gets the oldest imported batch number without an associated executing L1 transaction.
+
+    ## Parameters
+    - none
+
+    ## Returns
+    - A batch number or `nil` in cases where there are no batches in the database or
+      all batches in the database are marked as executed.
+  """
+  @spec get_earliest_unexecuted_batch_number() :: nil | non_neg_integer()
   def get_earliest_unexecuted_batch_number do
     case Reader.earliest_unexecuted_batch_number() do
       nil ->
-        log_info("No executed batches found in DB")
-        get_earliest_batch_number()
+        log_info("No not executed batches found in DB")
+        nil
 
       value ->
         value
     end
   end
 
-  def get_indices_for_l1_transactions(new_l1_txs) do
+  @doc """
+    Indexes L1 transactions provided in the input map. For transactions that
+    are already in the database, existing indices are taken. For new transactions,
+    the next available indices are assigned.
+
+    ## Parameters
+    - `new_l1_txs`: A map of L1 transaction descriptions. The keys of the map are
+      transaction hashes.
+
+    ## Returns
+    - `l1_txs`: A map of L1 transaction descriptions. Each element is extended with
+      the key `:id`, representing the index of the L1 transaction in the
+      `zksync_lifecycle_l1_transactions` table.
+  """
+  @spec get_indices_for_l1_transactions(map()) :: any()
+  def get_indices_for_l1_transactions(new_l1_txs)
+      when is_map(new_l1_txs) do
     # Get indices for l1 transactions previously handled
     l1_txs =
       Map.keys(new_l1_txs)
@@ -103,7 +175,23 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Db do
     l1_txs
   end
 
-  def import_to_db(batches, l1_txs \\ [], l2_txs \\ [], l2_blocks \\ []) do
+  @doc """
+    Imports provided lists of batches and their associations with L1 transactions, rollup blocks,
+    and transactions to the database.
+
+    ## Parameters
+    - `batches`: A list of maps with batch descriptions.
+    - `l1_txs`: A list of maps with L1 transaction descriptions. Optional.
+    - `l2_txs`: A list of maps with rollup transaction associations. Optional.
+    - `l2_blocks`: A list of maps with rollup block associations. Optional.
+
+    ## Returns
+    n/a
+  """
+  @dialyzer {:no_return, [import_to_db: 1, import_to_db: 2, import_to_db: 3, import_to_db: 4]}
+  @dialyzer {:no_fail_call, [import_to_db: 1, import_to_db: 2, import_to_db: 3, import_to_db: 4]}
+  def import_to_db(batches, l1_txs \\ [], l2_txs \\ [], l2_blocks \\ [])
+      when is_list(batches) and is_list(l1_txs) and is_list(l2_txs) and is_list(l2_blocks) do
     {:ok, _} =
       Chain.import(%{
         zksync_lifecycle_transactions: %{params: l1_txs},

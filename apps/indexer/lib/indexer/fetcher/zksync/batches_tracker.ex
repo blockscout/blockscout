@@ -1,6 +1,44 @@
 defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
   @moduledoc """
-    Updates batches statuses and receives historical batches
+    Updates batches statuses and imports historical batches to the `zksync_transaction_batches` table.
+
+    Repetitiveness is supported by sending the following statuses every `recheck_interval` seconds:
+    - `:check_committed`: Discover batches committed to L1
+    - `:check_proven`: Discover batches proven in L1
+    - `:check_executed`: Discover batches executed on L1
+    - `:recover_batches`: Recover missed batches found during the handling of the three previous messages
+    - `:check_historical`: Check if the imported batches chain does not start with Batch #0
+
+    The initial message is `:check_committed`. If it is discovered that updating batches
+    in the `zksync_transaction_batches` table is not possible because some are missing,
+    `:recover_batches` is sent. The next messages are `:check_proven` and `:check_executed`.
+    Both could result in sending `:recover_batches` as well.
+
+    The logic ensures that every handler emits the `:recover_batches` message to return to
+    the previous "progressing" state. If `:recover_batches` is called during handling `:check_committed`,
+    it will be sent again after finishing batch recovery. Similar logic applies to `:check_proven` and
+    `:check_executed`.
+
+    The last message in the loop is `:check_historical`.
+
+    |---------------------------------------------------------------------------|
+    |-> check_committed -> check_proven -> check_executed -> check_historical ->|
+            |    ^           |    ^            |    ^
+            v    |           v    |            v    |
+        recover_batches   recover_batches  recover_batches
+
+    If a batch status change is discovered during handling of `check_committed`, `check_proven`,
+    or `check_executed` messages, the corresponding L1 transactions are imported and associated
+    with the batches. Rollup transactions and blocks are not re-associated since it is assumed
+    to be done by `Indexer.Fetcher.ZkSync.TransactionBatch` or during handling of
+    the `recover_batches` message.
+
+    The `recover_batches` handler downloads batch information from RPC and sets its actual L1 state
+    by linking with L1 transactions.
+
+    The `check_historical` message initiates the check if the tail of the batch chain is Batch 0.
+    If the tail is missing, batches are downloaded from RPC in chunks of `batches_max_range` in every
+    iteration. The batches are imported together with associated L1 transactions.
   """
 
   use GenServer
@@ -74,9 +112,34 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
     {:noreply, state}
   end
 
+  # Handles the `:check_historical` message to download historical batches from RPC if necessary and
+  # import them to the `zksync_transaction_batches` table. The batches are imported together with L1
+  # transactions associations, rollup blocks and transactions.
+  # Since it is the final handler in the loop, it schedules sending the `:check_committed` message
+  # to initiate the next iteration. The sending of the message is delayed, taking into account
+  # the time remaining after the previous handlers' execution.
+  #
+  # ## Parameters
+  # - `:check_historical`: the message triggering the handler
+  # - `state`: current state of the fetcher contaning both the fetcher configuration
+  #            and data re-used by different handlers.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where `new_state` contains `data` empty
   @impl GenServer
-  def handle_info(:check_historical, state) do
-    {handle_duration, _} = :timer.tc(&Workers.batches_catchup/1, [state.config])
+  def handle_info(:check_historical, state)
+      when is_map(state) and is_map_key(state, :config) and is_map_key(state, :data) and
+             is_map_key(state.config, :recheck_interval) and is_map_key(state.config, :batches_max_range) and
+             is_map_key(state.config, :json_l2_rpc_named_arguments) and
+             is_map_key(state.config, :chunk_size) do
+    {handle_duration, _} =
+      :timer.tc(&Workers.batches_catchup/1, [
+        %{
+          batches_max_range: state.config.batches_max_range,
+          chunk_size: state.config.chunk_size,
+          json_rpc_named_arguments: state.config.json_l2_rpc_named_arguments
+        }
+      ])
 
     Process.send_after(
       self(),
@@ -87,12 +150,35 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
     {:noreply, %{state | data: %{}}}
   end
 
+  # Handles the `:recover_batches` message to download a set of batches from RPC and imports them
+  # to the `zksync_transaction_batches` table. It is expected that the message is sent from handlers updating
+  # batches statuses when they discover the absence of batches in the `zksync_transaction_batches` table.
+  # The batches are imported together with L1 transactions associations, rollup blocks, and transactions.
+  #
+  # ## Parameters
+  # - `:recover_batches`: the message triggering the handler
+  # - `state`: current state of the fetcher contaning both the fetcher configuration
+  #             and data related to the batches recovery:
+  #             - `state.data.batches`: list of the batches to recover
+  #             - `state.data.switched_from`: the message to send after the batch recovery
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where `new_state` contains updated `duration` of the iteration
   @impl GenServer
-  def handle_info(:recover_batches, state) do
+  def handle_info(:recover_batches, state)
+      when is_map(state) and is_map_key(state, :config) and is_map_key(state, :data) and
+             is_map_key(state.config, :json_l2_rpc_named_arguments) and is_map_key(state.config, :chunk_size) and
+             is_map_key(state.data, :batches) and is_map_key(state.data, :switched_from) do
     {handle_duration, _} =
       :timer.tc(
         &Workers.get_full_batches_info_and_import/2,
-        [state.data.batches, state.config]
+        [
+          state.data.batches,
+          %{
+            chunk_size: state.config.chunk_size,
+            json_rpc_named_arguments: state.config.json_l2_rpc_named_arguments
+          }
+        ]
       )
 
     Process.send(self(), state.data.switched_from, [])
@@ -100,6 +186,24 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
     {:noreply, %{state | data: %{duration: update_duration(state.data, handle_duration)}}}
   end
 
+  # Handles `:check_committed`, `:check_proven`, and `:check_executed` messages to update the
+  # statuses of batches by associating L1 transactions with them. For different messages, it invokes
+  # different underlying functions due to different natures of discovering batches with changed status.
+  # Another reason why statuses are being tracked differently is the different pace of status changes:
+  # a batch is committed in a few minutes after sealing, proven in a few hours, and executed once in a day.
+  # Depending on the value returned from the underlying function, either a message (`:check_proven`,
+  # `:check_executed`, or `:check_historical`) to switch to the next status checker is sent, or a list
+  # of batches to recover is provided together with `:recover_batches`.
+  #
+  # ## Parameters
+  # - `input`: one of `:check_committed`, `:check_proven`, and `:check_executed`
+  # - `state`: the current state of the fetcher containing both the fetcher configuration
+  #            and data reused by different handlers.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where `new_state` contains the updated `duration` of the iteration,
+  #   could also contain the list of batches to recover and the message to return back to
+  #   the corresponding status update checker.
   @impl GenServer
   def handle_info(input, state)
       when input in [:check_committed, :check_proven, :check_executed] do

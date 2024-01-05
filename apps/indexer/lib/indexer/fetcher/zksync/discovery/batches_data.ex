@@ -4,7 +4,31 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_info: 1, log_details_chunk_handling: 4]
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
 
-  def extract_data_from_batches(start_batch_number, end_batch_number, config)
+  @doc """
+    Downloads batches, associates rollup blocks and transactions, and imports the results into the database.
+    Data is retrieved from the RPC endpoint in chunks of `chunk_size`.
+
+    ## Parameters
+    - `batches`: Either a tuple of two integers, `start_batch_number` and `end_batch_number`, defining
+                 the range of batches to receive, or a list of batch numbers, `batches_list`.
+    - `config`: Configuration containing `chunk_size` to limit the amount of data requested from the RPC endpoint,
+                and `json_rpc_named_arguments` defining parameters for the RPC connection.
+
+    ## Returns
+    - `{batches_to_import, 2_blocks_to_import, l2_txs_to_import}`
+      where
+      - `batches_to_import` is a map of batches data
+      - `l2_blocks_to_import` is a list of blocks associated with batches by batch numbers
+      - `l2_txs_to_import` is a list of transactions associated with batches by batch numbers
+  """
+  @spec extract_data_from_batches([integer()] | {integer(), integer()}, %{
+          :chunk_size => pos_integer(),
+          :json_rpc_named_arguments => any(),
+          optional(any()) => any()
+        }) :: {map(), list(), list()}
+  def extract_data_from_batches(batches, config)
+
+  def extract_data_from_batches({start_batch_number, end_batch_number}, config)
       when is_integer(start_batch_number) and is_integer(end_batch_number) and
              is_map(config) do
     start_batch_number..end_batch_number
@@ -31,9 +55,27 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
     {batches_to_import, l2_blocks_to_import, l2_txs_to_import}
   end
 
-  def collect_l1_transactions(batches) do
+  @doc """
+    Collects all unique L1 transactions from the given list of batches, including transactions
+    that change the status of a batch and their timestamps.
+
+    **Note**: Every map describing an L1 transaction in the response is not ready for importing into
+    the database since it does not contain `:id` elements.
+
+    ## Parameters
+    - `batches`: A list of maps describing batches. Each map is expected to define the following
+                 elements: `commit_tx_hash`, `commit_timestamp`, `prove_tx_hash`, `prove_timestamp`,
+                 `executed_tx_hash`, `executed_timestamp`.
+
+    ## Returns
+    - `l1_txs`: A map where keys are L1 transaction hashes, and values are maps containing
+      transaction hashes and timestamps.
+  """
+  @spec collect_l1_transactions(list()) :: map()
+  def collect_l1_transactions(batches)
+      when is_list(batches) do
     l1_txs =
-      Map.values(batches)
+      batches
       |> Enum.reduce(%{}, fn batch, l1_txs ->
         [
           %{hash: batch.commit_tx_hash, timestamp: batch.commit_timestamp},
@@ -54,10 +96,30 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
     l1_txs
   end
 
+  # Divides the list of batch numbers into chunks of size `chunk_size` to combine
+  # `zks_getL1BatchDetails` calls in one chunk together. To simplify further handling,
+  # each call is combined with the batch number in the JSON request identifier field.
+  # This allows parsing and associating every response with a particular batch, producing
+  # a list of maps describing the batches, ready for further handling.
+  #
+  # **Note**: The batches in the resulting map are not ready for importing into the DB. L1 transaction
+  #           indices as well as the rollup blocks range must be added, and then batch descriptions
+  #           must be pruned (see Indexer.Fetcher.ZkSync.Utils.Db.prune_json_batch/1).
+  #
+  # ## Parameters
+  # - `batches_list`: A list of batch numbers.
+  # - `config`: A map containing `chunk_size` specifying the number of `zks_getL1BatchDetails` in
+  #             one HTTP request, and `json_rpc_named_arguments` describing parameters for
+  #             RPC connection.
+  #
+  # ## Returns
+  # - `batches_details`: A map where keys are batch numbers, and values are maps produced
+  #   after parsing responses of `zks_getL1BatchDetails` calls.
   defp collect_batches_details(
          batches_list,
          %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: chunk_size} = _config
-       ) do
+       )
+       when is_list(batches_list) do
     batches_list_length = length(batches_list)
 
     {batches_details, _} =
@@ -91,10 +153,26 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
     batches_details
   end
 
+  # Extends each batch description with the block numbers specifying the start and end of
+  # a range of blocks included in the batch. The block ranges are obtained through the RPC call
+  # `zks_getL1BatchBlockRange`. The calls are combined in chunks of `chunk_size`. To distinguish
+  # each call in the chunk, they are combined with the batch number in the JSON request
+  # identifier field.
+  #
+  # ## Parameters
+  # - `batches`: A map of batch descriptions.
+  # - `config`: A map containing `chunk_size`, specifying the number of `zks_getL1BatchBlockRange`
+  #             in one HTTP request, and `json_rpc_named_arguments` describing parameters for
+  #             RPC connection.
+  #
+  # ## Returns
+  # - `updated_batches`: A map of batch descriptions where each description is updated with
+  #    a range (elements `:start_block` and `:end_block`) of rollup blocks included in the batch.
   defp get_block_ranges(
          batches,
          %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: chunk_size} = _config
-       ) do
+       )
+       when is_map(batches) do
     keys = Map.keys(batches)
     batches_list_length = length(keys)
     # The main goal of this reduce to get blocks ranges for every batch
@@ -144,15 +222,36 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
     updated_batches
   end
 
+  # Unfolds the ranges of rollup blocks in each batch description, makes RPC `eth_getBlockByNumber` calls,
+  # and builds two lists: a list of rollup blocks associated with each batch and a list of rollup transactions
+  # associated with each batch. RPC calls are made in chunks of `chunk_size`. To distinguish
+  # each call in the chunk, they are combined with the block number in the JSON request
+  # identifier field.
+  #
+  # ## Parameters
+  # - `batches`: A map of batch descriptions. Each description must contain `start_block` and
+  #              `end_block`, specifying the range of blocks associated with the batch.
+  # - `config`: A map containing `chunk_size`, specifying the number of `eth_getBlockByNumber`
+  #             in one HTTP request, and `json_rpc_named_arguments` describing parameters for
+  #             RPC connection.
+  #
+  # ## Returns
+  # - {l2_blocks_to_import, l2_txs_to_import}, where
+  #   - `l2_blocks_to_import` contains a list of all rollup blocks with their associations with
+  #      the provided batches. The association is a map with the block hash and the batch number.
+  #   - `l2_txs_to_import` contains a list of all rollup transactions with their associations
+  #     with the provided batches. The association is a map with the transaction hash and
+  #     the batch number.
   defp get_l2_blocks_and_transactions(
          batches,
          %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: chunk_size} = _config
        ) do
     {blocks, chunked_requests, cur_chunk, cur_chunk_size} =
+      # Extracts the rollup block range for every batch, unfolds it and
+      # build chunks of `eth_getBlockByNumber` calls
       Map.keys(batches)
       |> Enum.reduce({%{}, [], [], 0}, fn batch_number, {blocks, chunked_requests, cur_chunk, cur_chunk_size} = _acc ->
         batch = Map.get(batches, batch_number)
-        # log_info("The batch #{batch_number} contains blocks range #{batch.start_block}..#{batch.end_block}")
         batch.start_block..batch.end_block
         |> Enum.chunk_every(chunk_size)
         |> Enum.reduce({blocks, chunked_requests, cur_chunk, cur_chunk_size}, fn blocks_range,
@@ -182,6 +281,9 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
         end)
       end)
 
+    # After the last iteration of the reduce loop it is a valid case
+    # when the calls from the last chunk are not in the chunks list,
+    # so it is appended
     chunked_requests =
       if cur_chunk_size > 0 do
         [cur_chunk | chunked_requests]
@@ -189,6 +291,8 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
         chunked_requests
       end
 
+    # The chunks requests are sent to the RPC node and parsed to
+    # extract rollup block hashes and rollup transactions.
     {blocks, l2_txs_to_import} =
       chunked_requests
       |> Enum.reduce({blocks, []}, fn requests, {blocks, l2_txs} ->
@@ -211,6 +315,22 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
     {Map.values(blocks), l2_txs_to_import}
   end
 
+  # Parses responses from `eth_getBlockByNumber` calls and extracts the block hash and the
+  # transactions lists. The block hash and transaction hashes are used to build associations
+  # with the corresponding batches by utilizing their numbers.
+  #
+  # This function is not part of the `Indexer.Fetcher.ZkSync.Utils.Rpc` module since the resulting
+  # lists are too specific for further import to the database.
+  #
+  # ## Parameters
+  # - `json_responses`: A list of responses to `eth_getBlockByNumber` calls.
+  # - `l2_blocks`: A map of accumulated associations between rollup blocks and batches.
+  # - `l2_txs`: A list of accumulated associations between rollup transactions and batches.
+  #
+  # ## Returns
+  # - {l2_blocks, l2_txs}, where
+  #   - `l2_blocks`: Updated map of accumulated associations between rollup blocks and batches.
+  #   - `l2_txs`: Updated list of accumulated associations between rollup transactions and batches.
   defp extract_block_hash_and_transactions_list(json_responses, l2_blocks, l2_txs) do
     json_responses
     |> Enum.reduce({l2_blocks, l2_txs}, fn resp, {l2_blocks, l2_txs} ->

@@ -17,10 +17,25 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     @zero_hash_binary
   end
 
+  @doc """
+    Filters out logs from a list of transactions logs where topic #0 is `topic_0` and
+    builds a list of values located at position `position` in such logs.
+
+    ## Parameters
+    - `logs`: The list of transaction logs to filter logs with a specific topic.
+    - `topic_0`: The value of topic #0 in the required logs.
+    - `position`: The topic number to be extracted from the topic lists of every log
+                  and appended to the resulting list.
+
+    ## Returns
+    - A list of values extracted from the required transaction logs.
+    - An empty list if no logs with the specified topic are found.
+  """
+  @spec filter_logs_and_extract_topic_at(maybe_improper_list(), binary(), integer()) :: list()
   def filter_logs_and_extract_topic_at(logs, topic_0, position)
       when is_list(logs) and
              is_binary(topic_0) and
-             is_integer(position) do
+             (is_integer(position) and position >= 0 and position <= 3) do
     logs
     |> Enum.reduce([], fn log_entity, result ->
       topics = log_entity["topics"]
@@ -80,7 +95,22 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     |> Base.decode16!(case: :mixed)
   end
 
-  def transform_batch_details_to_map(json_response) do
+  @doc """
+    Transforms a map with batch data received from the `zks_getL1BatchDetails` call
+    into a map that can be used by Indexer.Fetcher.ZkSync fetchers for further handling.
+    All hexadecimal hashes are converted to their decoded binary representation,
+    Unix and ISO8601 timestamps are converted to DateTime objects.
+
+    ## Parameters
+    - `json_response`: Raw data received from the JSON RPC call.
+
+    ## Returns
+    - A map containing minimal information about the batch. `start_block` and `end_block`
+      elements are set to `nil`.
+  """
+  @spec transform_batch_details_to_map(map()) :: map()
+  def transform_batch_details_to_map(json_response)
+      when is_map(json_response) do
     %{
       "number" => {:number, :ok},
       "timestamp" => {:timestamp, :ts_to_datetime},
@@ -115,7 +145,19 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     end)
   end
 
-  def transform_transaction_batch_to_map(batch) do
+  @doc """
+    Transforms a map with batch data received from the database into a map that
+    can be used by Indexer.Fetcher.ZkSync fetchers for further handling.
+
+    ## Parameters
+    - `batch`: A map containing a batch description received from the database.
+
+    ## Returns
+    - A map containing simplified representation of the batch. Compatible with
+      the database import operation.
+  """
+  def transform_transaction_batch_to_map(batch)
+      when is_map(batch) do
     %{
       number: batch.number,
       timestamp: batch.timestamp,
@@ -132,7 +174,21 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     }
   end
 
-  def fetch_batch_details_by_batch_number(batch_number, json_rpc_named_arguments) do
+  @doc """
+    Retrieves batch details from the RPC endpoint using the `zks_getL1BatchDetails` call.
+
+    ## Parameters
+    - `batch_number`: The batch number or identifier.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    - A map containing minimal batch details. It includes `start_block` and `end_block`
+      elements, both set to `nil`.
+  """
+  @spec fetch_batch_details_by_batch_number(binary() | non_neg_integer(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          map()
+  def fetch_batch_details_by_batch_number(batch_number, json_rpc_named_arguments)
+      when (is_integer(batch_number) or is_binary(batch_number)) and is_list(json_rpc_named_arguments) do
     req =
       EthereumJSONRPC.request(%{
         id: batch_number,
@@ -147,7 +203,20 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     transform_batch_details_to_map(resp)
   end
 
-  def fetch_tx_by_hash(raw_hash, json_rpc_named_arguments) do
+  @doc """
+    Fetches transaction details from the RPC endpoint using the `eth_getTransactionByHash` call.
+
+    ## Parameters
+    - `raw_hash`: The hash of the Ethereum transaction. It can be provided as a decoded binary
+                  or hexadecimal string.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    - A map containing details of the transaction.
+  """
+  @spec fetch_tx_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: map()
+  def fetch_tx_by_hash(raw_hash, json_rpc_named_arguments)
+      when is_binary(raw_hash) and is_list(json_rpc_named_arguments) do
     hash =
       case raw_hash do
         "0x" <> _ -> raw_hash
@@ -168,7 +237,20 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     resp
   end
 
-  def fetch_tx_receipt_by_hash(raw_hash, json_rpc_named_arguments) do
+  @doc """
+    Fetches the transaction receipt from the RPC endpoint using the `eth_getTransactionReceipt` call.
+
+    ## Parameters
+    - `raw_hash`: The hash of the Ethereum transaction. It can be provided as a decoded binary
+                  or hexadecimal string.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    - A map containing the receipt details of the transaction.
+  """
+  @spec fetch_tx_receipt_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: map()
+  def fetch_tx_receipt_by_hash(raw_hash, json_rpc_named_arguments)
+      when is_binary(raw_hash) and is_list(json_rpc_named_arguments) do
     hash =
       case raw_hash do
         "0x" <> _ -> raw_hash
@@ -189,7 +271,18 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     resp
   end
 
-  def fetch_latest_sealed_batch_number(json_rpc_named_arguments) do
+  @doc """
+    Fetches the latest sealed batch number from the RPC endpoint using the `zks_L1BatchNumber` call.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    - A non-negative integer representing the latest sealed batch number.
+  """
+  @spec fetch_latest_sealed_batch_number(EthereumJSONRPC.json_rpc_named_arguments()) :: nil | non_neg_integer()
+  def fetch_latest_sealed_batch_number(json_rpc_named_arguments)
+      when is_list(json_rpc_named_arguments) do
     req = EthereumJSONRPC.request(%{id: 0, method: "zks_L1BatchNumber", params: []})
 
     error_message = &"Cannot call zks_L1BatchNumber. Error: #{inspect(&1)}"
@@ -199,12 +292,27 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     quantity_to_integer(resp)
   end
 
+  @doc """
+    Fetches block details using multiple `eth_getBlockByNumber` RPC calls.
+
+    ## Parameters
+    - `requests_list`: A list of `EthereumJSONRPC.Transport.request()` representing multiple
+      `eth_getBlockByNumber` RPC calls for different block numbers.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    - A list of responses containing details of the requested blocks.
+  """
+  @spec fetch_blocks_details([EthereumJSONRPC.Transport.request()], EthereumJSONRPC.json_rpc_named_arguments()) ::
+          list()
+  def fetch_blocks_details(requests_list, json_rpc_named_arguments)
+
   def fetch_blocks_details([], _) do
     []
   end
 
   def fetch_blocks_details(requests_list, json_rpc_named_arguments)
-      when is_list(requests_list) do
+      when is_list(requests_list) and is_list(json_rpc_named_arguments) do
     error_message = &"Cannot call eth_getBlockByNumber. Error: #{inspect(&1)}"
 
     {:ok, responses} = repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, 3)
@@ -212,12 +320,27 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     responses
   end
 
+  @doc """
+    Fetches batches details using multiple `zks_getL1BatchDetails` RPC calls.
+
+    ## Parameters
+    - `requests_list`: A list of `EthereumJSONRPC.Transport.request()` representing multiple
+      `zks_getL1BatchDetails` RPC calls for different block numbers.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    - A list of responses containing details of the requested batches.
+  """
+  @spec fetch_batches_details([EthereumJSONRPC.Transport.request()], EthereumJSONRPC.json_rpc_named_arguments()) ::
+          list()
+  def fetch_batches_details(requests_list, json_rpc_named_arguments)
+
   def fetch_batches_details([], _) do
     []
   end
 
   def fetch_batches_details(requests_list, json_rpc_named_arguments)
-      when is_list(requests_list) do
+      when is_list(requests_list) and is_list(json_rpc_named_arguments) do
     error_message = &"Cannot call zks_getL1BatchDetails. Error: #{inspect(&1)}"
 
     {:ok, responses} = repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, 3)
@@ -225,12 +348,28 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     responses
   end
 
+  @doc """
+    Fetches block ranges included in the specified batches by using multiple
+    `zks_getL1BatchBlockRange` RPC calls.
+
+    ## Parameters
+    - `requests_list`: A list of `EthereumJSONRPC.Transport.request()` representing multiple
+      `zks_getL1BatchBlockRange` RPC calls for different batch numbers.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    - A list of responses containing block ranges associated with the requested batches.
+  """
+  @spec fetch_blocks_ranges([EthereumJSONRPC.Transport.request()], EthereumJSONRPC.json_rpc_named_arguments()) ::
+          list()
+  def fetch_blocks_ranges(requests_list, json_rpc_named_arguments)
+
   def fetch_blocks_ranges([], _) do
     []
   end
 
   def fetch_blocks_ranges(requests_list, json_rpc_named_arguments)
-      when is_list(requests_list) do
+      when is_list(requests_list) and is_list(json_rpc_named_arguments) do
     error_message = &"Cannot call zks_getL1BatchBlockRange. Error: #{inspect(&1)}"
 
     {:ok, responses} = repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, 3)

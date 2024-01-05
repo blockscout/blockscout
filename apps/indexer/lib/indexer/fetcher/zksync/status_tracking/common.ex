@@ -8,8 +8,36 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
   alias Indexer.Fetcher.ZkSync.Utils.Db
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_warning: 1]
 
-  def check_if_batch_status_changed(batch_number, tx_type, config) do
-    batch_from_rpc = Rpc.fetch_batch_details_by_batch_number(batch_number, config.json_l2_rpc_named_arguments)
+  @doc """
+    Fetches the details of the batch with the given number and checks if the representation of
+    the same batch in the database refers to the same commitment, proving, or executing transaction
+    depending on `tx_type`. If the transaction state changes, the new transaction is prepared for
+    import to the database.
+
+    ## Parameters
+    - `batch_number`: the number of the batch to check L1 transaction state.
+    - `tx_type`: a type of the transaction to check, one of :commit_tx, :execute_tx, or :prove_tx.
+    - `json_l2_rpc_named_arguments`: parameters for the RPC connections.
+
+    ## Returns
+    - `{:look_for_batches, l1_tx_hash, l1_txs}` where
+      - `l1_tx_hash` is the hash of the L1 transaction.
+      - `l1_txs` is a map containing the transaction hash as a key, and values are maps
+        with transaction hashes and transaction timestamps.
+    - `{:skip, "", %{}}` means the batch is not found in the database or the state of the transaction
+      in the batch representation is the same as the state of the transaction for the batch
+      received from RPC.
+  """
+  @spec check_if_batch_status_changed(
+          binary() | non_neg_integer(),
+          :commit_tx | :execute_tx | :prove_tx,
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: {:look_for_batches, any(), any()} | {:skip, <<>>, %{}}
+  def check_if_batch_status_changed(batch_number, tx_type, json_l2_rpc_named_arguments)
+      when (is_binary(batch_number) or is_integer(batch_number)) and
+             tx_type in [:commit_tx, :prove_tx, :execute_tx] and
+             is_list(json_l2_rpc_named_arguments) do
+    batch_from_rpc = Rpc.fetch_batch_details_by_batch_number(batch_number, json_l2_rpc_named_arguments)
 
     association_tx =
       case tx_type do
@@ -72,7 +100,24 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
     tx_hash_json != tx_hash_db
   end
 
-  def prepare_batches_to_import(batches, map_to_update) do
+  @doc """
+    Receives batches from the database and merges each batch's data with the data provided
+    in `map_to_update`. If the number of batches returned from the database does not match
+    with the requested batches, the initial list of batch numbers is returned, assuming that they
+    can be used for the missed batch recovery procedure.
+
+    ## Parameters
+    - `batches`: the list of batch numbers that must be updated.
+    - `map_to_update`: a map containing new data that must be applied to all requested batches.
+
+    ## Returns
+    - `{:ok, batches_to_import}` where `batches_to_import` is the list of batches ready to import
+       with updated data.
+    - `{:error, batches}` where `batches` contains the input list of batch numbers.
+  """
+  @spec prepare_batches_to_import([integer()], map()) :: {:error, [integer()]} | {:ok, list()}
+  def prepare_batches_to_import(batches, map_to_update)
+      when is_list(batches) and is_map(map_to_update) do
     batches_from_db = Reader.batches(batches, [])
 
     if length(batches_from_db) == length(batches) do
