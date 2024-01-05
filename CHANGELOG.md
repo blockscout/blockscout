@@ -19,6 +19,8 @@
 
 ### Fixes
 
+- [#9101](https://github.com/blockscout/blockscout/pull/9101) - Fix migration_finished? logic
+
 ### Chore
 
 - [#9055](https://github.com/blockscout/blockscout/pull/9055) - Add ASC indices for logs, token transfers, transactions
