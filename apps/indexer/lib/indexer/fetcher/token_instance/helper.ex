@@ -6,6 +6,8 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   alias Explorer.SmartContract.Reader
   alias Indexer.Fetcher.TokenInstance.MetadataRetriever
 
+  require Logger
+
   @cryptokitties_address_hash "0x06012c8cf97bead5deae237070f9587f8e7a266d"
 
   @token_uri "c87b56dd"
@@ -107,19 +109,21 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     |> Task.yield_many(:infinity)
     |> Enum.zip(contract_results)
     |> Enum.map(fn {{_task, res}, {_result, _normalized_token_id, contract_address_hash, token_id}} ->
-      case res do
-        {:ok, result} ->
-          result_to_insert_params(result, contract_address_hash, token_id)
+      insert_params =
+        case res do
+          {:ok, result} ->
+            result_to_insert_params(result, contract_address_hash, token_id)
 
-        {:exit, reason} ->
-          result_to_insert_params(
-            {:error, MetadataRetriever.truncate_error("Terminated:" <> inspect(reason))},
-            contract_address_hash,
-            token_id
-          )
-      end
+          {:exit, reason} ->
+            result_to_insert_params(
+              {:error, MetadataRetriever.truncate_error("Terminated:" <> inspect(reason))},
+              contract_address_hash,
+              token_id
+            )
+        end
+
+      upsert_with_rescue(insert_params, token_id, contract_address_hash)
     end)
-    |> Chain.upsert_token_instances_list()
   end
 
   defp prepare_token_id(%Decimal{} = token_id), do: Decimal.to_integer(token_id)
@@ -169,5 +173,22 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
       token_contract_address_hash: token_contract_address_hash,
       error: error
     }
+  end
+
+  defp upsert_with_rescue(insert_params, token_id, token_contract_address_hash, retrying? \\ false) do
+    Chain.upsert_token_instance(insert_params)
+  rescue
+    error in Postgrex.Error ->
+      if retrying? do
+        Logger.warn(["Failed to upsert token instance: #{inspect(error)}"], fetcher: :token_instances)
+        nil
+      else
+        token_id
+        |> token_instance_map_with_error(
+          token_contract_address_hash,
+          MetadataRetriever.truncate_error(inspect(error.postgres.code))
+        )
+        |> upsert_with_rescue(token_id, token_contract_address_hash, true)
+      end
   end
 end

@@ -37,15 +37,21 @@ and 4 containers for microservices (written in Rust):
 
 The repo contains built-in configs for different JSON RPC clients without need to build the image.
 
-- Erigon: `docker-compose -f docker-compose-no-build-erigon.yml up -d`
-- Geth (suitable for Reth as well): `docker-compose -f docker-compose-no-build-geth.yml up -d`
-- Geth Clique: `docker-compose -f docker-compose-no-build-geth-clique-consensus.yml up -d`
-- Nethermind, OpenEthereum: `docker-compose -f docker-compose-no-build-nethermind up -d`
-- Ganache: `docker-compose -f docker-compose-no-build-ganache.yml up -d`
-- HardHat network: `docker-compose -f docker-compose-no-build-hardhat-network.yml up -d`
-- Running only explorer without DB: `docker-compose -f docker-compose-no-build-no-db-container.yml up -d`. In this case, one container is created - for the explorer itself. And it assumes that the DB credentials are provided through `DATABASE_URL` environment variable.
-- Running explorer with external backend: `docker-compose -f docker-compose-no-build-external-backend.yml up -d`
-- Running explorer with external frontend: `docker-compose -f docker-compose-no-build-external-frontend.yml up -d`
+**Note**: in all below examples, you can use `docker compose` instead of `docker-compose`, if compose v2 plugin is installed in Docker.
+
+| __JSON RPC Client__    | __Docker compose launch command__ |
+| -------- | ------- |
+| Erigon  | `docker-compose -f erigon.yml up -d`    |
+| Geth (suitable for Reth as well) | `docker-compose -f geth.yml up -d`     |
+| Geth Clique    | `docker-compose -f geth-clique-consensus.yml up -d`    |
+| Nethermind, OpenEthereum    | `docker-compose -f nethermind up -d`    |
+| Ganache    | `docker-compose -f ganache.yml up -d`    |
+| HardHat network    | `docker-compose -f hardhat-network.yml up -d`    |
+
+- Running only explorer without DB: `docker-compose -f external-db.yml up -d`. In this case, no db container is created. And it assumes that the DB credentials are provided through `DATABASE_URL` environment variable on the backend container.
+- Running explorer with external backend: `docker-compose -f external-backend.yml up -d`
+- Running explorer with external frontend: `docker-compose -f external-frontend.yml up -d`
+- Running all microservices: `docker-compose -f microservices.yml up -d`
 
 All of the configs assume the Ethereum JSON RPC is running at http://localhost:8545.
 

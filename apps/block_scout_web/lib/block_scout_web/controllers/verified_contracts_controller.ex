@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.VerifiedContractsController do
 
   alias BlockScoutWeb.{Controller, VerifiedContractsView}
   alias Explorer.Chain
+  alias Explorer.Chain.SmartContract
   alias Phoenix.View
 
   @necessity_by_association %{[address: :token] => :optional}
@@ -19,7 +20,7 @@ defmodule BlockScoutWeb.VerifiedContractsController do
       |> Keyword.merge(current_filter(params))
       |> Keyword.merge(search_query(params))
 
-    verified_contracts_plus_one = Chain.verified_contracts(full_options)
+    verified_contracts_plus_one = SmartContract.verified_contracts(full_options)
     {verified_contracts, next_page} = split_list_by_page(verified_contracts_plus_one)
 
     items =

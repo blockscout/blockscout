@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     Token.Instance,
     TokenTransfer,
     Transaction,
+    Wei,
     Withdrawal
   }
 
@@ -24,6 +25,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
+
+  @instances_amount_in_collection 9
 
   setup :set_mox_global
 
@@ -75,7 +78,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "has_tokens" => false,
         "has_token_transfers" => false,
         "watchlist_address_id" => nil,
-        "has_beacon_chain_withdrawals" => false
+        "has_beacon_chain_withdrawals" => false,
+        "ens_domain_name" => nil
       }
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
@@ -421,6 +425,211 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response = json_response(request, 200)
 
       check_paginated_response(response_2nd_page, response, txs_from ++ [Enum.at(txs_to, 0)])
+    end
+
+    test "ignores wrong ordering params", %{conn: conn} do
+      address = insert(:address)
+
+      txs = insert_list(51, :transaction, from_address: address) |> with_block()
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "foo", "order" => "bar"})
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"sort" => "foo", "order" => "bar"} |> Map.merge(response["next_page_params"])
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, txs)
+    end
+
+    test "backward compatible with legacy paging params", %{conn: conn} do
+      address = insert(:address)
+      block = insert(:block)
+
+      txs = insert_list(51, :transaction, from_address: address) |> with_block(block)
+
+      [_, tx_before_last | _] = txs
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"block_number" => to_string(block.number), "index" => to_string(tx_before_last.index)}
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, txs)
+    end
+
+    test "backward compatible with legacy paging params for pending transactions", %{conn: conn} do
+      address = insert(:address)
+
+      txs = insert_list(51, :transaction, from_address: address)
+
+      [_, tx_before_last | _] = txs
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
+      assert response = json_response(request, 200)
+
+      request_2nd_page_pending =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"inserted_at" => to_string(tx_before_last.inserted_at), "hash" => to_string(tx_before_last.hash)}
+        )
+
+      assert response_2nd_page_pending = json_response(request_2nd_page_pending, 200)
+
+      check_paginated_response(response, response_2nd_page_pending, txs)
+    end
+
+    test "can order and paginate by fee ascending", %{conn: conn} do
+      address = insert(:address)
+
+      txs_from = insert_list(25, :transaction, from_address: address) |> with_block()
+      txs_to = insert_list(26, :transaction, to_address: address) |> with_block()
+
+      txs =
+        (txs_from ++ txs_to)
+        |> Enum.sort(
+          &(Decimal.compare(&1 |> Chain.fee(:wei) |> elem(1), &2 |> Chain.fee(:wei) |> elem(1)) in [:eq, :lt])
+        )
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "fee", "order" => "asc"})
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"sort" => "fee", "order" => "asc"} |> Map.merge(response["next_page_params"])
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(txs, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(txs, 49), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 1
+      assert response_2nd_page["next_page_params"] == nil
+      compare_item(Enum.at(txs, 50), Enum.at(response_2nd_page["items"], 0))
+
+      check_paginated_response(response, response_2nd_page, txs |> Enum.reverse())
+    end
+
+    test "can order and paginate by fee descending", %{conn: conn} do
+      address = insert(:address)
+
+      txs_from = insert_list(25, :transaction, from_address: address) |> with_block()
+      txs_to = insert_list(26, :transaction, to_address: address) |> with_block()
+
+      txs =
+        (txs_from ++ txs_to)
+        |> Enum.sort(
+          &(Decimal.compare(&1 |> Chain.fee(:wei) |> elem(1), &2 |> Chain.fee(:wei) |> elem(1)) in [:eq, :gt])
+        )
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "fee", "order" => "desc"})
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"sort" => "fee", "order" => "desc"} |> Map.merge(response["next_page_params"])
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(txs, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(txs, 49), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 1
+      assert response_2nd_page["next_page_params"] == nil
+      compare_item(Enum.at(txs, 50), Enum.at(response_2nd_page["items"], 0))
+
+      check_paginated_response(response, response_2nd_page, txs |> Enum.reverse())
+    end
+
+    test "can order and paginate by value ascending", %{conn: conn} do
+      address = insert(:address)
+
+      txs_from = insert_list(25, :transaction, from_address: address) |> with_block()
+      txs_to = insert_list(26, :transaction, to_address: address) |> with_block()
+
+      txs =
+        (txs_from ++ txs_to)
+        |> Enum.sort(&(Decimal.compare(Wei.to(&1.value, :wei), Wei.to(&2.value, :wei)) in [:eq, :lt]))
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "value", "order" => "asc"})
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"sort" => "value", "order" => "asc"} |> Map.merge(response["next_page_params"])
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(txs, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(txs, 49), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 1
+      assert response_2nd_page["next_page_params"] == nil
+      compare_item(Enum.at(txs, 50), Enum.at(response_2nd_page["items"], 0))
+
+      check_paginated_response(response, response_2nd_page, txs |> Enum.reverse())
+    end
+
+    test "can order and paginate by value descending", %{conn: conn} do
+      address = insert(:address)
+
+      txs_from = insert_list(25, :transaction, from_address: address) |> with_block()
+      txs_to = insert_list(26, :transaction, to_address: address) |> with_block()
+
+      txs =
+        (txs_from ++ txs_to)
+        |> Enum.sort(&(Decimal.compare(Wei.to(&1.value, :wei), Wei.to(&2.value, :wei)) in [:eq, :gt]))
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "value", "order" => "desc"})
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"sort" => "value", "order" => "desc"} |> Map.merge(response["next_page_params"])
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(txs, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(txs, 49), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 1
+      assert response_2nd_page["next_page_params"] == nil
+      compare_item(Enum.at(txs, 50), Enum.at(response_2nd_page["items"], 0))
+
+      check_paginated_response(response, response_2nd_page, txs |> Enum.reverse())
     end
   end
 
@@ -2581,10 +2790,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     token_name = token.name
     amount = to_string(ctb.distinct_token_instances_count || ctb.value)
 
-    assert Enum.count(json["token_instances"]) == 15
+    assert Enum.count(json["token_instances"]) == @instances_amount_in_collection
 
     token_instances
-    |> Enum.take(15)
+    |> Enum.take(@instances_amount_in_collection)
     |> Enum.with_index()
     |> Enum.each(fn {instance, index} ->
       compare_token_instance_in_collection(instance, Enum.at(json["token_instances"], index))
@@ -2602,10 +2811,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     token_name = token.name
     amount = to_string(amount)
 
-    assert Enum.count(json["token_instances"]) == 15
+    assert Enum.count(json["token_instances"]) == @instances_amount_in_collection
 
     token_instances
-    |> Enum.take(15)
+    |> Enum.take(@instances_amount_in_collection)
     |> Enum.with_index()
     |> Enum.each(fn {instance, index} ->
       compare_token_instance_in_collection(instance, Enum.at(json["token_instances"], index))

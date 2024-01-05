@@ -9,13 +9,13 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - production-rsk-stg
+      - production-rsk
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.3.2
+      RELEASE_VERSION: 5.4.0
       DOCKER_CHAIN_NAME: rsk
     steps:
       - name: Check out the repo

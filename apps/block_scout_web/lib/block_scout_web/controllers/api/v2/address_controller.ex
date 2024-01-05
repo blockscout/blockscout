@@ -8,16 +8,24 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       token_transfers_next_page_params: 3,
       paging_options: 1,
       split_list_by_page: 1,
-      current_filter: 1
+      current_filter: 1,
+      paging_params_with_fiat_value: 1
     ]
 
   import BlockScoutWeb.PagingHelper,
-    only: [delete_parameters_from_next_page_params: 1, token_transfers_types_options: 1, nft_token_types_options: 1]
+    only: [
+      delete_parameters_from_next_page_params: 1,
+      token_transfers_types_options: 1,
+      address_transactions_sorting: 1,
+      nft_token_types_options: 1
+    ]
+
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_to_address: 1]
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Transaction}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Token.Instance
   alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
@@ -77,7 +85,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       conn
       |> put_status(200)
-      |> render(:address, %{address: fully_preloaded_address})
+      |> render(:address, %{address: fully_preloaded_address |> maybe_preload_ens_to_address()})
     end
   end
 
@@ -120,16 +128,23 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         @transaction_necessity_by_association
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
+        |> Keyword.merge(address_transactions_sorting(params))
 
-      results_plus_one = Chain.address_to_transactions_without_rewards(address_hash, options, false)
+      results_plus_one = Transaction.address_to_transactions_without_rewards(address_hash, options, false)
       {transactions, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
+      next_page_params =
+        next_page
+        |> next_page_params(
+          transactions,
+          delete_parameters_from_next_page_params(params),
+          &Transaction.address_transactions_next_page_params/1
+        )
 
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:transactions, %{transactions: transactions, next_page_params: next_page_params})
+      |> render(:transactions, %{transactions: transactions |> maybe_preload_ens(), next_page_params: next_page_params})
     end
   end
 
@@ -172,7 +187,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:token_transfers, %{token_transfers: token_transfers, next_page_params: next_page_params})
+      |> render(:token_transfers, %{
+        token_transfers: token_transfers |> maybe_preload_ens(),
+        next_page_params: next_page_params
+      })
     end
   end
 
@@ -201,7 +219,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:token_transfers, %{token_transfers: token_transfers, next_page_params: next_page_params})
+      |> render(:token_transfers, %{
+        token_transfers: token_transfers |> maybe_preload_ens(),
+        next_page_params: next_page_params
+      })
     end
   end
 
@@ -232,7 +253,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:internal_transactions, %{
-        internal_transactions: internal_transactions,
+        internal_transactions: internal_transactions |> maybe_preload_ens(),
         next_page_params: next_page_params
       })
     end
@@ -255,7 +276,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:logs, %{logs: logs, next_page_params: next_page_params})
+      |> render(:logs, %{logs: logs |> maybe_preload_ens(), next_page_params: next_page_params})
     end
   end
 
@@ -272,7 +293,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:logs, %{logs: logs, next_page_params: next_page_params})
+      |> render(:logs, %{logs: logs |> maybe_preload_ens(), next_page_params: next_page_params})
     end
   end
 
@@ -354,7 +375,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> next_page_params(
           tokens,
           delete_parameters_from_next_page_params(params),
-          &BlockScoutWeb.Chain.paging_params_with_fiat_value/1
+          &paging_params_with_fiat_value/1
         )
 
       conn
@@ -374,7 +395,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> put_view(WithdrawalView)
-      |> render(:withdrawals, %{withdrawals: withdrawals, next_page_params: next_page_params})
+      |> render(:withdrawals, %{withdrawals: withdrawals |> maybe_preload_ens(), next_page_params: next_page_params})
     end
   end
 
@@ -394,7 +415,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     conn
     |> put_status(200)
     |> render(:addresses, %{
-      addresses: addresses,
+      addresses: addresses |> maybe_preload_ens(),
       next_page_params: next_page_params,
       exchange_rate: exchange_rate,
       total_supply: total_supply

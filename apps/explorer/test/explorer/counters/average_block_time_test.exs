@@ -129,5 +129,55 @@ defmodule Explorer.Counters.AverageBlockTimeTest do
 
       assert AverageBlockTime.average_block_time() == Timex.Duration.parse!("PT3S")
     end
+
+    test "timestamps are compared correctly" do
+      block_number = 99_999_999
+
+      first_timestamp = ~U[2023-08-23 19:04:59.000000Z]
+      pseudo_after_timestamp = ~U[2022-08-23 19:05:59.000000Z]
+
+      insert(:block, number: block_number, consensus: true, timestamp: pseudo_after_timestamp)
+      insert(:block, number: block_number + 1, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 3))
+      insert(:block, number: block_number + 2, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 6))
+
+      Enum.each(1..100, fn i ->
+        insert(:block,
+          number: block_number + i + 2,
+          consensus: true,
+          timestamp: Timex.shift(first_timestamp, seconds: -(101 - i) - 9)
+        )
+      end)
+
+      AverageBlockTime.refresh()
+
+      %{timestamps: timestamps} = :sys.get_state(AverageBlockTime)
+
+      assert Enum.sort_by(timestamps, fn {_bn, ts} -> ts end, &>=/2) == timestamps
+    end
+
+    test "average time are calculated correctly for blocks that are not in chronological order" do
+      block_number = 99_999_999
+
+      first_timestamp = Timex.now()
+
+      insert(:block, number: block_number, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 3))
+      insert(:block, number: block_number + 1, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 6))
+      insert(:block, number: block_number + 2, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 9))
+      insert(:block, number: block_number + 3, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: -69))
+      insert(:block, number: block_number + 4, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: -66))
+      insert(:block, number: block_number + 5, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: -63))
+
+      Enum.each(1..100, fn i ->
+        insert(:block,
+          number: block_number + i + 5,
+          consensus: true,
+          timestamp: Timex.shift(first_timestamp, seconds: -(101 - i) - 9)
+        )
+      end)
+
+      AverageBlockTime.refresh()
+
+      assert Timex.Duration.to_milliseconds(AverageBlockTime.average_block_time()) == 3000
+    end
   end
 end

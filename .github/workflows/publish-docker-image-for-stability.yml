@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - production-stability-stg
+      - production-stability
 env:
   OTP_VERSION: '25.2.1'
   ELIXIR_VERSION: '1.14.5'
@@ -18,7 +18,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.3.2
+      RELEASE_VERSION: 5.4.0
       DOCKER_CHAIN_NAME: stability
     steps:
       - name: Check out the repo
