@@ -7,8 +7,10 @@
 ### Fixes
 
 - [#9123](https://github.com/blockscout/blockscout/pull/9123) - Fixes in Optimism due to changed log topics type
-- [#8917](https://github.com/blockscout/blockscout/pull/8917) - Proxy detection hotfix in API v2
-- [#8882](https://github.com/blockscout/blockscout/pull/8882) - Change order of proxy contracts patterns detection: existing popular EIPs to the top of the list
+- [#9109](https://github.com/blockscout/blockscout/pull/9109) - Return current exchange rate in api/v2/stats
+- [#9102](https://github.com/blockscout/blockscout/pull/9102) - Fix some log topics for Suave and Polygon Edge
+- [#9075](https://github.com/blockscout/blockscout/pull/9075) - Fix fetching contract codes
+- [#9073](https://github.com/blockscout/blockscout/pull/9073) - Allow payable function with output appear in the Read tab
 
 ### Chore
 
