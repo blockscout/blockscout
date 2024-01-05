@@ -134,11 +134,16 @@ defmodule Indexer.Fetcher.PolygonEdge.DepositExecute do
       |> log_topic_to_string()
       |> quantity_to_integer()
 
+    status =
+      third_topic
+      |> log_topic_to_string()
+      |> quantity_to_integer()
+
     %{
       msg_id: msg_id,
       l2_transaction_hash: l2_transaction_hash,
       l2_block_number: quantity_to_integer(l2_block_number),
-      success: quantity_to_integer(third_topic) != 0
+      success: status != 0
     }
   end
 
