@@ -27,7 +27,7 @@ defmodule Explorer.Migrator.FillingMigration do
       end
 
       def migration_finished? do
-        not Repo.exists?(unprocessed_data_query())
+        MigrationStatus.get_status(migration_name()) == "completed"
       end
 
       @impl true
