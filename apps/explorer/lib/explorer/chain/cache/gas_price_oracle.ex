@@ -29,10 +29,28 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
     key: :gas_prices_acc,
     key: :updated_at,
     key: :old_gas_prices,
+    key: :old_updated_at,
     key: :async_task,
-    global_ttl: global_ttl(),
+    global_ttl: :infinity,
     ttl_check_interval: :timer.seconds(1),
     callback: &async_task_on_deletion(&1)
+
+  @doc """
+  Calculates how much time left till the next gas prices updated taking into account estimated query running time.
+  """
+  @spec update_in :: non_neg_integer()
+  def update_in do
+    case {get_old_updated_at(), get_updated_at()} do
+      {%DateTime{} = old_updated_at, %DateTime{} = updated_at} ->
+        time_to_update = DateTime.diff(updated_at, old_updated_at, :millisecond) + 500
+        time_since_last_update = DateTime.diff(DateTime.utc_now(), updated_at, :millisecond)
+        next_update_in = time_to_update - time_since_last_update
+        if next_update_in <= 0, do: global_ttl(), else: next_update_in
+
+      _ ->
+        global_ttl() + :timer.seconds(2)
+    end
+  end
 
   @doc """
   Calculates the `slow`, `average`, and `fast` gas price and time percentiles from the last `num_of_blocks` blocks and estimates the fiat price for each percentile.
@@ -330,7 +348,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
   defp format_wei(wei), do: wei |> Wei.to(:gwei) |> Decimal.to_float() |> Float.ceil(2)
 
-  def global_ttl, do: Application.get_env(:explorer, __MODULE__)[:global_ttl]
+  defp global_ttl, do: Application.get_env(:explorer, __MODULE__)[:global_ttl]
 
   defp simple_transaction_gas, do: Application.get_env(:explorer, __MODULE__)[:simple_transaction_gas]
 
@@ -359,7 +377,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
           {result, acc} = get_average_gas_price(num_of_blocks(), safelow(), average(), fast())
 
           set_gas_prices_acc(acc)
-          set_gas_prices(result)
+          set_gas_prices(%ConCache.Item{ttl: global_ttl(), value: result})
+          set_old_updated_at(get_updated_at())
           set_updated_at(DateTime.utc_now())
         rescue
           e ->
