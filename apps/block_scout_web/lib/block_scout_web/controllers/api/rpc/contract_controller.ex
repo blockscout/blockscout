@@ -203,6 +203,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
+  def verifysourcecode(conn, _params) do
+    render(conn, :error, error: "Missing codeformat field")
+  end
+
   def checkverifystatus(conn, %{"guid" => guid}) do
     case VerificationStatus.fetch_status(guid) do
       :pending ->
@@ -257,14 +261,14 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   def checkproxyverification(conn, %{"guid" => guid}) do
     submission = ProxyVerificationStatus.fetch_status(guid)
 
-    case submission.status do
+    case submission && submission.status do
       :pending ->
         render(conn, :show, %{result: "Verification in progress"})
 
       :pass ->
         render(conn, :show, %{
           result:
-            "Implementation (#{SmartContract.address_hash_to_smart_contract(submission.address_hash).implementation_address_hash}) was verified and saved for proxy (#{submission.address_hash})"
+            "Implementation (#{SmartContract.address_hash_to_smart_contract(submission.contract_address_hash).implementation_address_hash}) was verified and saved for proxy (#{submission.contract_address_hash})"
         })
 
       :fail ->

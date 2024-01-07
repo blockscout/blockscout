@@ -16,6 +16,9 @@ defmodule Explorer.Etherscan.Contracts do
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.EIP1167
 
+  @doc """
+    Returns address with preloaded SmartContract and proxy info if it exists
+  """
   @spec address_hash_to_address_with_source_code(Hash.Address.t()) :: Address.t() | nil
   def address_hash_to_address_with_source_code(address_hash, twin_needed? \\ true) do
     result =

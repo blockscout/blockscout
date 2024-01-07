@@ -1186,6 +1186,10 @@ defmodule Explorer.Chain.SmartContract do
   defp db_implementation_data_converter(string) when is_binary(string), do: string
   defp db_implementation_data_converter(other), do: to_string(other)
 
+  @doc """
+    Function checks by timestamp if new implementation fetching needed
+  """
+  @spec check_implementation_refetch_necessity(Calendar.datetime() | nil) :: boolean()
   def check_implementation_refetch_necessity(nil), do: true
 
   def check_implementation_refetch_necessity(timestamp) do
@@ -1202,6 +1206,10 @@ defmodule Explorer.Chain.SmartContract do
     end
   end
 
+  @doc """
+    Returns time interval in milliseconds in which fetched proxy info is not needed to be refetched
+  """
+  @spec get_fresh_time_distance() :: integer()
   def get_fresh_time_distance do
     average_block_time = get_average_block_time_for_implementation_refetch()
 

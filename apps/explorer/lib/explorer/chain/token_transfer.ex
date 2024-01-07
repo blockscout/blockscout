@@ -359,6 +359,9 @@ defmodule Explorer.Chain.TokenTransfer do
 
   def filter_by_type(query, _), do: query
 
+  @doc """
+    Returns ecto query to fetch consensus token transfers
+  """
   @spec only_consensus_transfers_query() :: Ecto.Query.t()
   def only_consensus_transfers_query do
     from(token_transfer in __MODULE__,
@@ -395,6 +398,10 @@ defmodule Explorer.Chain.TokenTransfer do
     Repo.stream_reduce(query, [], &[&1 | &2])
   end
 
+  @doc """
+    Returns ecto query to fetch consensus token transfers with ERC-721 token type
+  """
+  @spec erc_721_token_transfers_query() :: Ecto.Query.t()
   def erc_721_token_transfers_query do
     only_consensus_transfers_query()
     |> join(:inner, [tt], token in assoc(tt, :token), as: :token)

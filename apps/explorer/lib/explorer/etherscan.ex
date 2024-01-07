@@ -288,6 +288,9 @@ defmodule Explorer.Etherscan do
     end
   end
 
+  @doc """
+    Gets a list of ERC-721 token transfers for a given address_hash. If contract_address_hash is not nil, transfers will be filtered by contract.
+  """
   @spec list_nft_token_transfers(Hash.Address.t(), Hash.Address.t() | nil, map()) :: [TokenTransfer.t()]
   def list_nft_token_transfers(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash,
@@ -300,6 +303,9 @@ defmodule Explorer.Etherscan do
     |> Repo.replica().all()
   end
 
+  @doc """
+    Gets a list of ERC-721 token transfers for a given token contract_address_hash.
+  """
   @spec list_nft_token_transfers_by_token(Hash.Address.t(), map()) :: [TokenTransfer.t()]
   def list_nft_token_transfers_by_token(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = contract_address_hash,

@@ -4382,60 +4382,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Checks if an `t:Explorer.Chain.Address.t/0` with the given `hash` exists.
-
-  Returns `:ok` if found
-
-      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
-      ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
-      ...> )
-      iex> Explorer.Chain.check_address_exists(hash)
-      :ok
-
-  Returns `:not_found` if not found
-
-      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      iex> Explorer.Chain.check_address_exists(hash)
-      :not_found
-
-  """
-  @spec check_address_exists(Hash.Address.t(), [api?]) :: :ok | :not_found
-  def check_address_exists(address_hash, options \\ []) do
-    address_hash
-    |> address_exists?(options)
-    |> boolean_to_check_result()
-  end
-
-  @doc """
-  Checks if an `t:Explorer.Chain.Address.t/0` with the given `hash` exists.
-
-  Returns `true` if found
-
-      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
-      ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
-      ...> )
-      iex> Explorer.Chain.address_exists?(hash)
-      true
-
-  Returns `false` if not found
-
-      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      iex> Explorer.Chain.address_exists?(hash)
-      false
-
-  """
-  @spec address_exists?(Hash.Address.t(), [api?]) :: boolean()
-  def address_exists?(address_hash, options \\ []) do
-    query =
-      from(
-        address in Address,
-        where: address.hash == ^address_hash
-      )
-
-    select_repo(options).exists?(query)
-  end
-
-  @doc """
   Checks if it exists an `t:Explorer.Chain.Address.t/0` that has the provided
   `t:Explorer.Chain.Address.t/0` `hash` and a contract.
 

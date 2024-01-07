@@ -40,6 +40,9 @@ defmodule BlockScoutWeb.API.RPC.Helper do
     if page_size <= Etherscan.page_size_max(), do: :ok, else: :error
   end
 
+  @doc """
+    Parses addresses list (delimiter is `,`) from a string and validates them.
+  """
   @spec parse_and_validate_addresses(binary(), integer()) :: list()
   def parse_and_validate_addresses(string, limit) do
     string
