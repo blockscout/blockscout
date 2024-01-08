@@ -51,6 +51,7 @@ defmodule Explorer.Chain do
     CurrencyHelper,
     Data,
     DecompiledSmartContract,
+    DenormalizationHelper,
     Hash,
     Import,
     InternalTransaction,
@@ -352,15 +353,26 @@ defmodule Explorer.Chain do
     to_block = to_block(options)
 
     base =
-      from(log in Log,
-        order_by: [desc: log.block_number, desc: log.index],
-        where: log.address_hash == ^address_hash,
-        limit: ^paging_options.page_size,
-        select: log,
-        inner_join: block in Block,
-        on: block.hash == log.block_hash,
-        where: block.consensus == true
-      )
+      if DenormalizationHelper.denormalization_finished?() do
+        from(log in Log,
+          order_by: [desc: log.block_number, desc: log.index],
+          where: log.address_hash == ^address_hash,
+          limit: ^paging_options.page_size,
+          select: log,
+          inner_join: transaction in assoc(log, :transaction),
+          where: transaction.block_consensus == true
+        )
+      else
+        from(log in Log,
+          order_by: [desc: log.block_number, desc: log.index],
+          where: log.address_hash == ^address_hash,
+          limit: ^paging_options.page_size,
+          select: log,
+          inner_join: block in Block,
+          on: block.hash == log.block_hash,
+          where: block.consensus == true
+        )
+      end
 
     preloaded_query =
       if csv_export? do
@@ -521,17 +533,34 @@ defmodule Explorer.Chain do
   @spec gas_payment_by_block_hash([Hash.Full.t()]) :: %{Hash.Full.t() => Wei.t()}
   def gas_payment_by_block_hash(block_hashes) when is_list(block_hashes) do
     query =
-      from(
-        block in Block,
-        left_join: transaction in assoc(block, :transactions),
-        where: block.hash in ^block_hashes and block.consensus == true,
-        group_by: block.hash,
-        select: {block.hash, %Wei{value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0)}}
-      )
+      if DenormalizationHelper.denormalization_finished?() do
+        from(
+          transaction in Transaction,
+          where: transaction.block_hash in ^block_hashes and transaction.block_consensus == true,
+          group_by: transaction.block_hash,
+          select: {transaction.block_hash, %Wei{value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0)}}
+        )
+      else
+        from(
+          block in Block,
+          left_join: transaction in assoc(block, :transactions),
+          where: block.hash in ^block_hashes and block.consensus == true,
+          group_by: block.hash,
+          select: {block.hash, %Wei{value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0)}}
+        )
+      end
 
-    query
-    |> Repo.all()
-    |> Enum.into(%{})
+    initial_gas_payments =
+      block_hashes
+      |> Enum.map(&{&1, %Wei{value: Decimal.new(0)}})
+      |> Enum.into(%{})
+
+    existing_data =
+      query
+      |> Repo.all()
+      |> Enum.into(%{})
+
+    Map.merge(initial_gas_payments, existing_data)
   end
 
   def timestamp_by_block_hash(block_hashes) when is_list(block_hashes) do
@@ -3559,32 +3588,6 @@ defmodule Explorer.Chain do
     |> add_fetcher_limit(limited?)
     |> order_by(asc: :updated_at)
     |> Repo.stream_reduce(initial, reducer)
-  end
-
-  @doc """
-  Returns a list of block numbers token transfer `t:Log.t/0`s that don't have an
-  associated `t:TokenTransfer.t/0` record.
-  """
-  def uncataloged_token_transfer_block_numbers do
-    query =
-      from(l in Log,
-        as: :log,
-        where:
-          l.first_topic == unquote(TokenTransfer.constant()) or
-            l.first_topic == unquote(TokenTransfer.erc1155_single_transfer_signature()) or
-            l.first_topic == unquote(TokenTransfer.erc1155_batch_transfer_signature()),
-        where:
-          not exists(
-            from(tf in TokenTransfer,
-              where: tf.transaction_hash == parent_as(:log).transaction_hash,
-              where: tf.log_index == parent_as(:log).index
-            )
-          ),
-        select: l.block_number,
-        distinct: l.block_number
-      )
-
-    Repo.stream_reduce(query, [], &[&1 | &2])
   end
 
   def decode_contract_address_hash_response(resp) do

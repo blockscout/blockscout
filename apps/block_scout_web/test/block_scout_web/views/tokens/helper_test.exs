@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.Tokens.HelperTest do
 
     test "returns a string with the token_id with ERC-721 token" do
       token = build(:token, type: "ERC-721", decimals: nil)
-      token_transfer = build(:token_transfer, token: token, amount: nil, token_id: 1)
+      token_transfer = build(:token_transfer, token: token, amount: nil, token_ids: [1])
 
       assert Helper.token_transfer_amount(token_transfer) == {:ok, :erc721_instance}
     end

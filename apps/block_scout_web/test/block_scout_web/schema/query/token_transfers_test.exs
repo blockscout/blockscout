@@ -16,7 +16,6 @@ defmodule BlockScoutWeb.Schema.Query.TokenTransfersTest do
               amounts
               block_number
               log_index
-              token_id
               token_ids
               from_address_hash
               to_address_hash
@@ -45,7 +44,6 @@ defmodule BlockScoutWeb.Schema.Query.TokenTransfersTest do
                          "amounts" => Enum.map(token_transfer.amounts, &to_string/1),
                          "block_number" => token_transfer.block_number,
                          "log_index" => token_transfer.log_index,
-                         "token_id" => token_transfer.token_id,
                          "token_ids" => Enum.map(token_transfer.token_ids, &to_string/1),
                          "from_address_hash" => to_string(token_transfer.from_address_hash),
                          "to_address_hash" => to_string(token_transfer.to_address_hash),
@@ -70,7 +68,6 @@ defmodule BlockScoutWeb.Schema.Query.TokenTransfersTest do
               amount
               block_number
               log_index
-              token_id
               from_address_hash
               to_address_hash
               token_contract_address_hash

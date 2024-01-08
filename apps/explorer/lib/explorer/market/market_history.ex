@@ -23,10 +23,10 @@ defmodule Explorer.Market.MarketHistory do
    * `:market_cap` - TVL in USD.
   """
   @type t :: %__MODULE__{
-          closing_price: Decimal.t(),
+          closing_price: Decimal.t() | nil,
           date: Date.t(),
-          opening_price: Decimal.t(),
-          market_cap: Decimal.t(),
-          tvl: Decimal.t()
+          opening_price: Decimal.t() | nil,
+          market_cap: Decimal.t() | nil,
+          tvl: Decimal.t() | nil
         }
 end

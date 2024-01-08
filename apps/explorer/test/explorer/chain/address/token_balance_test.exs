@@ -46,6 +46,7 @@ defmodule Explorer.Chain.Address.TokenBalanceTest do
         :token_balance,
         address: burn_address,
         token_contract_address_hash: token.contract_address_hash,
+        token_type: "ERC-721",
         value_fetched_at: nil
       )
 
