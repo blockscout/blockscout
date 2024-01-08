@@ -5,7 +5,15 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
 
   @moduletag capture_log: true
 
+  @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
+  @second_topic_hex_string_1 "0x00000000000000000000000098a9dc37d3650b5b30d6c12789b3881ee0b70c16"
+
   setup :verify_on_exit!
+
+  defp topic(topic_hex_string) do
+    {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
+    topic
+  end
 
   describe "gettxreceiptstatus" do
     test "with missing txhash", %{conn: conn} do
@@ -414,8 +422,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         insert(:log,
           address: address,
           transaction: transaction,
-          first_topic: "first topic",
-          second_topic: "second topic",
+          first_topic: topic(@first_topic_hex_string_1),
+          second_topic: topic(@second_topic_hex_string_1),
           block: block,
           block_number: block.number
         )
@@ -491,8 +499,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         insert(:log,
           address: address,
           transaction: transaction,
-          first_topic: "first topic",
-          second_topic: "second topic",
+          first_topic: topic(@first_topic_hex_string_1),
+          second_topic: topic(@second_topic_hex_string_1),
           block: block,
           block_number: block.number
         )
@@ -520,7 +528,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
           %{
             "address" => "#{address.hash}",
             "data" => "#{log.data}",
-            "topics" => ["first topic", "second topic", nil, nil],
+            "topics" => [@first_topic_hex_string_1, @second_topic_hex_string_1, nil, nil],
             "index" => "#{log.index}"
           }
         ],

@@ -256,6 +256,7 @@ config :explorer, Explorer.Chain.Cache.PendingBlockOperation,
 
 config :explorer, Explorer.Chain.Cache.GasPriceOracle,
   global_ttl: ConfigHelper.parse_time_env_var("GAS_PRICE_ORACLE_CACHE_PERIOD", "30s"),
+  simple_transaction_gas: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_SIMPLE_TRANSACTION_GAS", 21000),
   num_of_blocks: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_NUM_OF_BLOCKS", 200),
   safelow_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_SAFELOW_PERCENTILE", 35),
   average_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_AVERAGE_PERCENTILE", 60),
@@ -467,6 +468,10 @@ config :explorer, Explorer.Chain.Cache.AddressesTabsCounters,
 config :explorer, Explorer.MicroserviceInterfaces.BENS,
   service_url: System.get_env("MICROSERVICE_BENS_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_BENS_ENABLED")
+
+config :explorer, Explorer.Migrator.TransactionsDenormalization,
+  batch_size: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_BATCH_SIZE", 500),
+  concurrency: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_CONCURRENCY", 10)
 
 ###############
 ### Indexer ###

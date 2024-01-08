@@ -113,23 +113,11 @@ config :explorer, Explorer.Counters.BlockPriorityFeeCounter,
   enabled: true,
   enable_consolidation: true
 
-cache_bridge_market_cap_update_interval = System.get_env("CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL")
-
-bridge_market_cap_update_interval =
-  if cache_bridge_market_cap_update_interval do
-    case Integer.parse(cache_bridge_market_cap_update_interval) do
-      {integer, ""} -> integer
-      _ -> nil
-    end
-  end
-
-config :explorer, Explorer.Counters.Bridge,
-  enable_consolidation: System.get_env("DISABLE_BRIDGE_MARKET_CAP_UPDATER") !== "true",
-  update_interval_in_seconds: bridge_market_cap_update_interval || 30 * 60
-
-config :explorer, Explorer.TokenTransferTokenIdMigration.Supervisor, enabled: true
-
 config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: true
+
+config :explorer, Explorer.Migrator.TransactionsDenormalization, enabled: true
+config :explorer, Explorer.Migrator.AddressCurrentTokenBalanceTokenType, enabled: true
+config :explorer, Explorer.Migrator.AddressTokenBalanceTokenType, enabled: true
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 

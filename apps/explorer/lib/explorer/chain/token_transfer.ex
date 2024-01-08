@@ -28,7 +28,7 @@ defmodule Explorer.Chain.TokenTransfer do
   import Ecto.Query, only: [from: 2, limit: 2, where: 3, join: 5, order_by: 3, preload: 3]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, Hash, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, Log, TokenTransfer, Transaction}
   alias Explorer.Chain.Token.Instance
   alias Explorer.{PagingOptions, Repo}
 
@@ -44,7 +44,6 @@ defmodule Explorer.Chain.TokenTransfer do
   * `:to_address_hash` - Address hash foreign key
   * `:token_contract_address` - The `t:Explorer.Chain.Address.t/0` of the token's contract.
   * `:token_contract_address_hash` - Address hash foreign key
-  * `:token_id` - ID of the token (applicable to ERC-721 tokens)
   * `:transaction` - The `t:Explorer.Chain.Transaction.t/0` ledger
   * `:transaction_hash` - Transaction foreign key
   * `:log_index` - Index of the corresponding `t:Explorer.Chain.Log.t/0` in the block.
@@ -61,7 +60,6 @@ defmodule Explorer.Chain.TokenTransfer do
           to_address_hash: Hash.Address.t(),
           token_contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
           token_contract_address_hash: Hash.Address.t(),
-          token_id: non_neg_integer() | nil,
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
           log_index: non_neg_integer(),
@@ -86,7 +84,6 @@ defmodule Explorer.Chain.TokenTransfer do
     field(:amount, :decimal)
     field(:block_number, :integer)
     field(:log_index, :integer, primary_key: true)
-    field(:token_id, :decimal)
     field(:amounts, {:array, :decimal})
     field(:token_ids, {:array, :decimal})
     field(:index_in_batch, :integer, virtual: true)
@@ -129,7 +126,7 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash block_hash)a
-  @optional_attrs ~w(amount token_id amounts token_ids)a
+  @optional_attrs ~w(amount amounts token_ids)a
 
   @doc false
   def changeset(%TokenTransfer{} = struct, params \\ %{}) do
@@ -161,12 +158,13 @@ defmodule Explorer.Chain.TokenTransfer do
   @spec fetch_token_transfers_from_token_hash(Hash.t(), [paging_options | api?]) :: []
   def fetch_token_transfers_from_token_hash(token_address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
 
     query =
       from(
         tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number),
-        preload: [{:transaction, :block}, :token, :from_address, :to_address],
+        preload: ^preloads,
         order_by: [desc: tt.block_number, desc: tt.log_index]
       )
 
@@ -179,6 +177,7 @@ defmodule Explorer.Chain.TokenTransfer do
   @spec fetch_token_transfers_from_token_hash_and_token_id(Hash.t(), non_neg_integer(), [paging_options | api?]) :: []
   def fetch_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
 
     query =
       from(
@@ -186,7 +185,7 @@ defmodule Explorer.Chain.TokenTransfer do
         where: tt.token_contract_address_hash == ^token_address_hash,
         where: fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)),
         where: not is_nil(tt.block_number),
-        preload: [{:transaction, :block}, :token, :from_address, :to_address],
+        preload: ^preloads,
         order_by: [desc: tt.block_number, desc: tt.log_index]
       )
 
@@ -367,5 +366,32 @@ defmodule Explorer.Chain.TokenTransfer do
       on: token_transfer.block_hash == block.hash,
       where: block.consensus == true
     )
+  end
+
+  @doc """
+  Returns a list of block numbers token transfer `t:Log.t/0`s that don't have an
+  associated `t:TokenTransfer.t/0` record.
+  """
+  @spec uncataloged_token_transfer_block_numbers :: {:ok, [non_neg_integer()]}
+  def uncataloged_token_transfer_block_numbers do
+    query =
+      from(l in Log,
+        as: :log,
+        where:
+          l.first_topic == ^@constant or
+            l.first_topic == ^@erc1155_single_transfer_signature or
+            l.first_topic == ^@erc1155_batch_transfer_signature,
+        where:
+          not exists(
+            from(tf in TokenTransfer,
+              where: tf.transaction_hash == parent_as(:log).transaction_hash,
+              where: tf.log_index == parent_as(:log).index
+            )
+          ),
+        select: l.block_number,
+        distinct: l.block_number
+      )
+
+    Repo.stream_reduce(query, [], &[&1 | &2])
   end
 end
