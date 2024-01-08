@@ -3,7 +3,9 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   require Logger
 
+  alias BlockScoutWeb.Account.Api.V1.UserView
   alias BlockScoutWeb.API.V2.ApiView
+  alias Ecto.Changeset
 
   @verification_failed "API v2 smart-contract verification failed"
   @invalid_parameters "Invalid parameter(s)"
@@ -121,6 +123,13 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
     conn
     |> call({:not_found, nil})
+  end
+
+  def call(conn, {:error, %Changeset{} = changeset}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(UserView)
+    |> render(:changeset_errors, changeset: changeset)
   end
 
   def call(conn, {:restricted_access, true}) do
