@@ -13,14 +13,20 @@
 
 </details>
 
-## 6.0.0-dev
+## 6.0.0
 
 ### Features
+
+- [#9112](https://github.com/blockscout/blockscout/pull/9112) - Add specific url for eth_call
+- [#9044](https://github.com/blockscout/blockscout/pull/9044) - Expand gas price oracle functionality
 
 ### Fixes
 
 - [#9113](https://github.com/blockscout/blockscout/pull/9113) - Fix migrators cache updating
 - [#9101](https://github.com/blockscout/blockscout/pull/9101) - Fix migration_finished? logic
+- [#9062](https://github.com/blockscout/blockscout/pull/9062) - Fix blockscout-ens integration
+- [#9061](https://github.com/blockscout/blockscout/pull/9061) - Arbitrum allow tx receipt gasUsedForL1 field
+- [#8812](https://github.com/blockscout/blockscout/pull/8812) - Update existing tokens type if got transfer with higher type priority
 
 ### Chore
 
@@ -34,23 +40,20 @@
 - [#8996](https://github.com/blockscout/blockscout/pull/8996) - Refine token transfers token ids index
 - [#5322](https://github.com/blockscout/blockscout/pull/5322) - DB denormalization: block consensus and timestamp in transaction table
 
-## Current
-
-### Features
-
-- [#9112](https://github.com/blockscout/blockscout/pull/9112) - Add specific url for eth_call
-- [#9044](https://github.com/blockscout/blockscout/pull/9044) - Expand gas price oracle functionality
-
-### Fixes
-
-- [#9062](https://github.com/blockscout/blockscout/pull/9062) - Fix blockscout-ens integration
-- [#9061](https://github.com/blockscout/blockscout/pull/9061) - Arbitrum allow tx receipt gasUsedForL1 field
-- [#8812](https://github.com/blockscout/blockscout/pull/8812) - Update existing tokens type if got transfer with higher type priority
-
-### Chore
-
 <details>
   <summary>Dependencies version bumps</summary>
+
+- [#9059](https://github.com/blockscout/blockscout/pull/9059) - Bump redux from 5.0.0 to 5.0.1 in /apps/block_scout_web/assets
+- [#9057](https://github.com/blockscout/blockscout/pull/9057) - Bump benchee from 1.2.0 to 1.3.0
+- [#9060](https://github.com/blockscout/blockscout/pull/9060) - Bump @amplitude/analytics-browser from 2.3.7 to 2.3.8 in /apps/block_scout_web/assets
+- [#9084](https://github.com/blockscout/blockscout/pull/9084) - Bump @babel/preset-env from 7.23.6 to 7.23.7 in /apps/block_scout_web/assets
+- [#9083](https://github.com/blockscout/blockscout/pull/9083) - Bump @babel/core from 7.23.6 to 7.23.7 in /apps/block_scout_web/assets
+- [#9086](https://github.com/blockscout/blockscout/pull/9086) - Bump core-js from 3.34.0 to 3.35.0 in /apps/block_scout_web/assets
+- [#9081](https://github.com/blockscout/blockscout/pull/9081) - Bump sweetalert2 from 11.10.1 to 11.10.2 in /apps/block_scout_web/assets
+- [#9085](https://github.com/blockscout/blockscout/pull/9085) - Bump moment from 2.29.4 to 2.30.1 in /apps/block_scout_web/assets
+- [#9087](https://github.com/blockscout/blockscout/pull/9087) - Bump postcss-loader from 7.3.3 to 7.3.4 in /apps/block_scout_web/assets
+- [#9082](https://github.com/blockscout/blockscout/pull/9082) - Bump sass-loader from 13.3.2 to 13.3.3 in /apps/block_scout_web/assets
+- [#9088](https://github.com/blockscout/blockscout/pull/9088) - Bump sass from 1.69.5 to 1.69.6 in /apps/block_scout_web/assets
 
 </details>
 
