@@ -34,6 +34,7 @@ defmodule Explorer.Migrator.FillingMigration do
       def init(_) do
         case MigrationStatus.get_status(migration_name()) do
           "completed" ->
+            update_cache()
             :ignore
 
           _ ->
