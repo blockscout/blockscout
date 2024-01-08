@@ -19,6 +19,7 @@
 
 ### Fixes
 
+- [#9113](https://github.com/blockscout/blockscout/pull/9113) - Fix migrators cache updating
 - [#9101](https://github.com/blockscout/blockscout/pull/9101) - Fix migration_finished? logic
 
 ### Chore
