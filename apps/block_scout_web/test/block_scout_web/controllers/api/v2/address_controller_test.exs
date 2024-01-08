@@ -26,11 +26,17 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
 
+  @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
   @instances_amount_in_collection 9
 
   setup :set_mox_global
 
   setup :verify_on_exit!
+
+  defp topic(topic_hex_string) do
+    {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
+    topic
+  end
 
   describe "/addresses/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -1761,10 +1767,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block: tx.block,
           block_number: tx.block_number,
           address: address,
-          first_topic: "0x123456789123456789"
+          first_topic: topic(@first_topic_hex_string_1)
         )
 
-      request = get(conn, "/api/v2/addresses/#{address.hash}/logs?topic=0x123456789123456789")
+      request = get(conn, "/api/v2/addresses/#{address.hash}/logs?topic=#{@first_topic_hex_string_1}")
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 1
       assert response["next_page_params"] == nil

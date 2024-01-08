@@ -2,9 +2,8 @@ defmodule Explorer.Chain.SmartContractTest do
   use Explorer.DataCase, async: false
 
   import Mox
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
-  alias Explorer.Chain.Hash
   alias Explorer.Chain.SmartContract.Proxy
 
   doctest Explorer.Chain.SmartContract

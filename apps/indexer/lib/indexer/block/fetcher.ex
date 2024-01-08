@@ -194,7 +194,7 @@ defmodule Indexer.Block.Fetcher do
            logs: %{params: logs},
            optimism_withdrawals: %{params: optimism_withdrawals},
            token_transfers: %{params: token_transfers},
-           tokens: %{on_conflict: :nothing, params: tokens},
+           tokens: %{params: tokens},
            transactions: %{params: transactions_with_receipts},
            withdrawals: %{params: withdrawals_params},
            token_instances: %{params: token_instances}

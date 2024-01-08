@@ -72,4 +72,13 @@ defmodule Indexer.Helper do
       Logger.info("#{type} handling #{layer} block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
     end
   end
+
+  @spec log_topic_to_string(any()) :: binary() | nil
+  def log_topic_to_string(topic) do
+    if is_binary(topic) or is_nil(topic) do
+      topic
+    else
+      Hash.to_string(topic)
+    end
+  end
 end

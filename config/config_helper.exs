@@ -182,4 +182,9 @@ defmodule ConfigHelper do
 
   @spec chain_type() :: String.t()
   def chain_type, do: System.get_env("CHAIN_TYPE") || "ethereum"
+
+  @spec eth_call_url(String.t() | nil) :: String.t() | nil
+  def eth_call_url(default \\ nil) do
+    System.get_env("ETHEREUM_JSONRPC_ETH_CALL_URL") || System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || default
+  end
 end

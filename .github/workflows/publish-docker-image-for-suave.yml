@@ -18,7 +18,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 5.4.0
+      RELEASE_VERSION: 6.0.0
       DOCKER_CHAIN_NAME: suave
     steps:
       - name: Check out the repo
