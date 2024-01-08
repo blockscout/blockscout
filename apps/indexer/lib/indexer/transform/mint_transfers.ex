@@ -24,8 +24,7 @@ defmodule Indexer.Transform.MintTransfers do
         ...>         index: 1,
         ...>         second_topic: "0x0000000000000000000000009a4a90e2732f3fa4087b0bb4bf85c76d14833df1",
         ...>         third_topic: "0x0000000000000000000000007301cfa0e1756b71869e93d4e4dca5c7d0eb0aa6",
-        ...>         transaction_hash: "0x1d5066d30ff3404a9306733136103ac2b0b989951c38df637f464f3667f8d4ee",
-        ...>         type: "mined"
+        ...>         transaction_hash: "0x1d5066d30ff3404a9306733136103ac2b0b989951c38df637f464f3667f8d4ee"
         ...>        }
         ...>     ])
         %{
