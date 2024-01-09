@@ -51,13 +51,10 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
       result = Poison.decode!(request.resp_body)
 
       assert result["healthy"] == true
-
-      assert %{
-               "latest_block_number" => to_string(block1.number),
-               "latest_block_inserted_at" => to_string(block1.timestamp),
-               "cache_latest_block_number" => to_string(block1.number),
-               "cache_latest_block_inserted_at" => to_string(block1.timestamp)
-             } == result["data"]
+      assert result["data"]["latest_block_number"] == to_string(block1.number)
+      assert result["data"]["latest_block_inserted_at"] == to_string(block1.timestamp)
+      assert result["data"]["cache_latest_block_number"] == to_string(block1.number)
+      assert result["data"]["cache_latest_block_inserted_at"] == to_string(block1.timestamp)
     end
   end
 

@@ -30,8 +30,6 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 
-    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
-
     on_exit(fn ->
       Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
     end)

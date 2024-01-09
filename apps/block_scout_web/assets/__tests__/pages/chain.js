@@ -200,7 +200,7 @@ describe('RECEIVED_NEW_BLOCK', () => {
       { blockNumber: 3, chainBlockHtml: 'test 3' }
     ])
   })
-  test('skipped blocks list doesn\'t appear when another block comes in with +3 blockheight', () => {
+  test('skipped blocks list replaced when another block comes in with +3 blockheight', () => {
     window.localized = {}
     const state = Object.assign({}, initialState, {
       blocks: [
@@ -220,7 +220,10 @@ describe('RECEIVED_NEW_BLOCK', () => {
     const output = reducer(state, action)
 
     expect(output.blocks).toEqual([
-      { blockNumber: 10, chainBlockHtml: 'test 10' }
+      { blockNumber: 10, chainBlockHtml: 'test 10' },
+      { blockNumber: 9, chainBlockHtml: placeHolderBlock(9) },
+      { blockNumber: 8, chainBlockHtml: placeHolderBlock(8) },
+      { blockNumber: 7, chainBlockHtml: placeHolderBlock(7) }
     ])
   })
 })

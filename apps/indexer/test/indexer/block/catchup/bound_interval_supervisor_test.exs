@@ -30,16 +30,6 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
   setup :verify_on_exit!
 
-  setup ctx do
-    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
-
-    on_exit(fn ->
-      clear_db()
-    end)
-
-    ctx
-  end
-
   describe "start_link/1" do
     setup do
       initial_env = Application.get_env(:indexer, :block_ranges)

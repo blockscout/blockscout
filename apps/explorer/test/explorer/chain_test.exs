@@ -1370,8 +1370,6 @@ defmodule Explorer.ChainTest do
     }
 
     test "with valid data" do
-      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
-
       {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
       {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
       {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
@@ -1548,9 +1546,6 @@ defmodule Explorer.ChainTest do
                   }
                 ]
               }} = Chain.import(@import_data)
-
-      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
-      clear_db()
     end
   end
 
