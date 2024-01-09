@@ -202,7 +202,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
     end
 
     test "search transaction", %{conn: conn} do
-      tx = insert(:transaction)
+      tx = insert(:transaction, block_timestamp: nil)
 
       request = get(conn, "/api/v2/search?q=#{tx.hash}")
       assert response = json_response(request, 200)

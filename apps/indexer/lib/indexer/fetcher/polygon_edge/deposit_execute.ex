@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.PolygonEdge.DepositExecute do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Indexer.Fetcher.PolygonEdge, only: [fill_block_range: 5, get_block_number_by_tag: 3]
+  import Indexer.Helper, only: [log_topic_to_string: 1]
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Log
@@ -128,8 +129,13 @@ defmodule Indexer.Fetcher.PolygonEdge.DepositExecute do
 
   @spec event_to_deposit_execute(binary(), binary(), binary(), binary()) :: map()
   def event_to_deposit_execute(second_topic, third_topic, l2_transaction_hash, l2_block_number) do
+    msg_id =
+      second_topic
+      |> log_topic_to_string()
+      |> quantity_to_integer()
+
     %{
-      msg_id: quantity_to_integer(second_topic),
+      msg_id: msg_id,
       l2_transaction_hash: l2_transaction_hash,
       l2_block_number: quantity_to_integer(l2_block_number),
       success: quantity_to_integer(third_topic) != 0
