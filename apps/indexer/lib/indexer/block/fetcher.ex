@@ -190,7 +190,7 @@ defmodule Indexer.Block.Fetcher do
            block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
            logs: %{params: logs},
            token_transfers: %{params: token_transfers},
-           tokens: %{on_conflict: :nothing, params: tokens},
+           tokens: %{params: tokens},
            transactions: %{params: transactions_with_receipts},
            withdrawals: %{params: withdrawals_params},
            token_instances: %{params: token_instances}
@@ -407,15 +407,15 @@ defmodule Indexer.Block.Fetcher do
 
   def fetch_beneficiaries_manual(block, transactions) do
     block
-    |> Chain.block_reward_by_parts(transactions)
+    |> Block.block_reward_by_parts(transactions)
     |> reward_parts_to_beneficiaries()
   end
 
   defp reward_parts_to_beneficiaries(reward_parts) do
     reward =
       reward_parts.static_reward
-      |> Wei.sum(reward_parts.txn_fees)
-      |> Wei.sub(reward_parts.burned_fees)
+      |> Wei.sum(reward_parts.transaction_fees)
+      |> Wei.sub(reward_parts.burnt_fees)
       |> Wei.sum(reward_parts.uncle_reward)
 
     MapSet.new([

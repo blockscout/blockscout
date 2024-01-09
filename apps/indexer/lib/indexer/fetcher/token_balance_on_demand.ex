@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
 
   use Indexer.Fetcher
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Events.Publisher
@@ -52,6 +52,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
     stale_current_token_balances =
       address_hash
       |> Chain.fetch_last_token_balances_include_unfetched()
+      |> delete_invalid_balances()
       |> Enum.filter(fn current_token_balance -> current_token_balance.block_number < stale_balance_window end)
 
     if Enum.count(stale_current_token_balances) > 0 do
@@ -61,6 +62,12 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
     end
 
     :ok
+  end
+
+  defp delete_invalid_balances(current_token_balances) do
+    {invalid_balances, valid_balances} = Enum.split_with(current_token_balances, &is_nil(&1.token_type))
+    Enum.each(invalid_balances, &Repo.delete/1)
+    valid_balances
   end
 
   defp fetch_and_update(block_number, address_hash, stale_current_token_balances) do

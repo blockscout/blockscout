@@ -47,7 +47,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "name" => search_result.name,
       "address" => search_result.address_hash,
       "url" => address_path(Endpoint, :show, search_result.address_hash),
-      "is_smart_contract_verified" => search_result.verified
+      "is_smart_contract_verified" => search_result.verified,
+      "ens_info" => search_result[:ens_info]
     }
   end
 

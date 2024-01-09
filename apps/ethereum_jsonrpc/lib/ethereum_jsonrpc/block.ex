@@ -82,7 +82,7 @@ defmodule EthereumJSONRPC.Block do
    * `uncles`: `t:list/0` of
      [uncles](https://bitcoin.stackexchange.com/questions/39329/in-ethereum-what-is-an-uncle-block)
      `t:EthereumJSONRPC.hash/0`.
-   * `"baseFeePerGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote amount of fee burned per unit gas used. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
+   * `"baseFeePerGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote amount of fee burnt per unit gas used. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"withdrawalsRoot"` - `t:EthereumJSONRPC.hash/0` of the root of the withdrawals.
    #{if Application.compile_env(:explorer, :chain_type) == "rsk" do
     """
@@ -766,6 +766,11 @@ defmodule EthereumJSONRPC.Block do
     {key, quantity_to_integer(quantity)}
   end
 
+  # to be merged with clause above ^
+  defp entry_to_elixir({key, _quantity}, _block) when key in ~w(blobGasUsed excessBlobGas) do
+    {:ignore, :ignore}
+  end
+
   # Size and totalDifficulty may be `nil` for uncle blocks
   defp entry_to_elixir({key, nil}, _block) when key in ~w(size totalDifficulty) do
     {key, nil}
@@ -783,8 +788,8 @@ defmodule EthereumJSONRPC.Block do
     {key, timestamp_to_datetime(timestamp)}
   end
 
-  defp entry_to_elixir({"transactions" = key, transactions}, _block) do
-    {key, Transactions.to_elixir(transactions)}
+  defp entry_to_elixir({"transactions" = key, transactions}, %{"timestamp" => block_timestamp}) do
+    {key, Transactions.to_elixir(transactions, timestamp_to_datetime(block_timestamp))}
   end
 
   defp entry_to_elixir({"withdrawals" = key, nil}, _block) do

@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
     AddressTransactionCsvExporter
   }
 
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.{DenormalizationHelper, Transaction, Wei}
 
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
@@ -32,7 +32,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
       [created_contract_address: :names] => :optional,
       [from_address: :names] => :optional,
       [to_address: :names] => :optional,
-      :block => :optional,
       [created_contract_address: :smart_contract] => :optional,
       [from_address: :smart_contract] => :optional,
       [to_address: :smart_contract] => :optional
@@ -50,10 +49,11 @@ defmodule BlockScoutWeb.AddressTransactionController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       options =
         @transaction_necessity_by_association
+        |> DenormalizationHelper.extend_block_necessity(:optional)
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      results_plus_one = Chain.address_to_transactions_with_rewards(address_hash, options)
+      results_plus_one = Transaction.address_to_transactions_with_rewards(address_hash, options)
       {results, next_page} = split_list_by_page(results_plus_one)
 
       next_page_url =

@@ -7,6 +7,13 @@ defmodule Explorer.Chain.LogTest do
   alias Explorer.Chain.{Log, SmartContract}
   alias Explorer.Repo
 
+  @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
+
+  defp topic(topic_hex_string) do
+    {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
+    topic
+  end
+
   setup :set_mox_from_context
 
   doctest Log
@@ -36,18 +43,21 @@ defmodule Explorer.Chain.LogTest do
         params_for(
           :log,
           address_hash: build(:address).hash,
-          first_topic: "ham",
+          first_topic: @first_topic_hex_string_1,
           transaction_hash: build(:transaction).hash,
           block_hash: build(:block).hash
         )
 
-      assert %Changeset{changes: %{first_topic: "ham"}, valid?: true} = Log.changeset(%Log{}, params)
+      result = Log.changeset(%Log{}, params)
+
+      assert result.valid? == true
+      assert result.changes.first_topic == topic(@first_topic_hex_string_1)
     end
 
     test "assigns optional attributes" do
-      params = Map.put(params_for(:log), :first_topic, "ham")
+      params = Map.put(params_for(:log), :first_topic, topic(@first_topic_hex_string_1))
       changeset = Log.changeset(%Log{}, params)
-      assert changeset.changes.first_topic === "ham"
+      assert changeset.changes.first_topic === topic(@first_topic_hex_string_1)
     end
   end
 
@@ -99,9 +109,9 @@ defmodule Explorer.Chain.LogTest do
         insert(:log,
           address: to_address,
           transaction: transaction,
-          first_topic: topic1,
-          second_topic: topic2,
-          third_topic: topic3,
+          first_topic: topic(topic1),
+          second_topic: topic(topic2),
+          third_topic: topic(topic3),
           fourth_topic: nil,
           data: data
         )
@@ -153,9 +163,9 @@ defmodule Explorer.Chain.LogTest do
       log =
         insert(:log,
           transaction: transaction,
-          first_topic: topic1,
-          second_topic: topic2,
-          third_topic: topic3,
+          first_topic: topic(topic1),
+          second_topic: topic(topic2),
+          third_topic: topic(topic3),
           fourth_topic: nil,
           data: data
         )

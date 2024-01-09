@@ -6,6 +6,7 @@ defmodule Explorer.ExchangeRates.Source do
   alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Source.CoinGecko
   alias Explorer.ExchangeRates.Token
+  alias Explorer.Helper
   alias HTTPoison.{Error, Response}
 
   @doc """
@@ -91,12 +92,6 @@ defmodule Explorer.ExchangeRates.Source do
     [{"Content-Type", "application/json"}]
   end
 
-  def decode_json(data) do
-    Jason.decode!(data)
-  rescue
-    _ -> data
-  end
-
   def to_decimal(nil), do: nil
 
   def to_decimal(%Decimal{} = value), do: value
@@ -125,7 +120,7 @@ defmodule Explorer.ExchangeRates.Source do
         parse_http_success_response(body)
 
       {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..526 ->
-        parse_http_error_response(body)
+        parse_http_error_response(body, status_code)
 
       {:ok, %Response{status_code: status_code}} when status_code in 300..308 ->
         {:error, "Source redirected"}
@@ -135,37 +130,22 @@ defmodule Explorer.ExchangeRates.Source do
 
       {:error, %Error{reason: reason}} ->
         {:error, reason}
-
-      {:error, :nxdomain} ->
-        {:error, "Source is not responsive"}
-
-      {:error, _} ->
-        {:error, "Source unknown response"}
     end
   end
 
   defp parse_http_success_response(body) do
-    body_json = decode_json(body)
+    body_json = Helper.decode_json(body)
 
-    cond do
-      is_map(body_json) ->
-        {:ok, body_json}
-
-      is_list(body_json) ->
-        {:ok, body_json}
-
-      true ->
-        {:ok, body}
-    end
+    {:ok, body_json}
   end
 
-  defp parse_http_error_response(body) do
-    body_json = decode_json(body)
+  defp parse_http_error_response(body, status_code) do
+    body_json = Helper.decode_json(body)
 
     if is_map(body_json) do
-      {:error, body_json["error"]}
+      {:error, "#{status_code}: #{body_json["error"]}"}
     else
-      {:error, body}
+      {:error, "#{status_code}: #{body}"}
     end
   end
 end
