@@ -392,7 +392,11 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   @doc """
   Checks if this valid transaction hash string, and this transaction doesn't belong to prohibited address
   """
-  @spec validate_transaction(String.t(), any(), list()) :: {:ok, Transaction.t(), Hash.t()}
+  @spec validate_transaction(String.t(), any(), Keyword.t()) ::
+          {:format, :error}
+          | {:not_found, {:error, :not_found}}
+          | {:restricted_access, true}
+          | {:ok, Transaction.t(), Hash.t()}
   def validate_transaction(transaction_hash_string, params, options \\ @api_true) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
