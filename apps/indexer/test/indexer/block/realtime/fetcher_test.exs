@@ -490,6 +490,12 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                 jsonrpc: "2.0",
                 method: "eth_getBalance",
                 params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
+              },
+              %{
+                id: 3,
+                jsonrpc: "2.0",
+                method: "eth_getBalance",
+                params: ["0x698bf6943bab687b2756394624aa183f434f65da", "0x3C365F"]
               }
             ]
           ],
@@ -498,7 +504,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
              [
                %{id: 0, jsonrpc: "2.0", result: "0x148adc763b603291685"},
                %{id: 1, jsonrpc: "2.0", result: "0x53474fa377a46000"},
-               %{id: 2, jsonrpc: "2.0", result: "0x53507afe51f28000"}
+               %{id: 2, jsonrpc: "2.0", result: "0x53507afe51f28000"},
+               %{id: 3, jsonrpc: "2.0", result: "0x3e1a95d7517dc197108"}
              ]}
         end)
       end
@@ -509,7 +516,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                   addresses: [
                     %Address{hash: first_address_hash, fetched_coin_balance_block_number: 3_946_079},
                     %Address{hash: second_address_hash, fetched_coin_balance_block_number: 3_946_079},
-                    %Address{hash: third_address_hash, fetched_coin_balance_block_number: 3_946_080}
+                    %Address{hash: third_address_hash, fetched_coin_balance_block_number: 3_946_080},
+                    %Address{hash: fourth_address_hash, fetched_coin_balance_block_number: 3_946_079}
                   ],
                   address_coin_balances: [
                     %{
@@ -523,6 +531,10 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                     %{
                       address_hash: third_address_hash,
                       block_number: 3_946_080
+                    },
+                    %{
+                      address_hash: fourth_address_hash,
+                      block_number: 3_946_079
                     }
                   ],
                   blocks: [%Chain.Block{number: 3_946_079}, %Chain.Block{number: 3_946_080}],
@@ -972,6 +984,12 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                 jsonrpc: "2.0",
                 method: "eth_getBalance",
                 params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
+              },
+              %{
+                id: 3,
+                jsonrpc: "2.0",
+                method: "eth_getBalance",
+                params: ["0x698bf6943bab687b2756394624aa183f434f65da", "0x3C365F"]
               }
             ]
           ],
@@ -980,7 +998,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
              [
                %{id: 0, jsonrpc: "2.0", result: "0x148adc763b603291685"},
                %{id: 1, jsonrpc: "2.0", result: "0x53474fa377a46000"},
-               %{id: 2, jsonrpc: "2.0", result: "0x53507afe51f28000"}
+               %{id: 2, jsonrpc: "2.0", result: "0x53507afe51f28000"},
+               %{id: 3, jsonrpc: "2.0", result: "0x3e1a95d7517dc197108"}
              ]}
         end)
       end
@@ -994,7 +1013,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                   addresses: [
                     %Address{hash: first_address_hash, fetched_coin_balance_block_number: 3_946_079},
                     %Address{hash: second_address_hash, fetched_coin_balance_block_number: 3_946_079},
-                    %Address{hash: third_address_hash, fetched_coin_balance_block_number: 3_946_080}
+                    %Address{hash: third_address_hash, fetched_coin_balance_block_number: 3_946_080},
+                    %Address{hash: fourth_address_hash, fetched_coin_balance_block_number: 3_946_079}
                   ],
                   address_coin_balances: [
                     %{
@@ -1008,6 +1028,10 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                     %{
                       address_hash: third_address_hash,
                       block_number: 3_946_080
+                    },
+                    %{
+                      address_hash: fourth_address_hash,
+                      block_number: 3_946_079
                     }
                   ],
                   block_rewards: [
