@@ -287,9 +287,9 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
     |> Enum.reduce(
       &Map.merge(&1, &2, fn
         _, nil, nil -> nil
-        _, val, acc when nil not in [val, acc] and is_list(acc) -> [val | acc]
-        _, val, acc when nil not in [val, acc] -> [val, acc]
-        _, val, acc -> [val || acc]
+        _, val, nil -> [val]
+        _, nil, acc -> if is_list(acc), do: acc, else: [acc]
+        _, val, acc -> if is_list(acc), do: [val | acc], else: [val, acc]
       end)
     )
     |> Map.new(fn
