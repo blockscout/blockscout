@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#9075](https://github.com/blockscout/blockscout/pull/9075) - Fix fetching contract codes
+
 ### Chore
 
 <details>
