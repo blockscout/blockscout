@@ -11,12 +11,22 @@ defmodule Explorer.Market.MarketHistoryCache do
 
   @cache_name :market_history
   @last_update_key :last_update
+  @image_last_update_key :image_last_update
   @history_key :history
+  @image_key :image
   # 6 hours
   @recent_days 30
 
+  def fetch_image(image_url) do
+    if cache_expired?(@image_last_update_key) do
+      update_image(image_url)
+    else
+      fetch_from_cache(@image_key)
+    end
+  end
+
   def fetch do
-    if cache_expired?() do
+    if cache_expired?(@last_update_key) do
       update_cache()
     else
       fetch_from_cache(@history_key)
@@ -31,9 +41,9 @@ defmodule Explorer.Market.MarketHistoryCache do
 
   def recent_days_count, do: @recent_days
 
-  defp cache_expired? do
+  defp cache_expired?(key) do
     cache_period = Application.get_env(:explorer, __MODULE__)[:cache_period]
-    updated_at = fetch_from_cache(@last_update_key)
+    updated_at = fetch_from_cache(key)
 
     cond do
       is_nil(updated_at) -> true
@@ -49,6 +59,13 @@ defmodule Explorer.Market.MarketHistoryCache do
     put_into_cache(@history_key, new_data)
 
     new_data
+  end
+
+  defp update_image(image_url) do
+    put_into_cache(@image_last_update_key, Helper.current_time())
+    put_into_cache(@image_key, image_url)
+
+    image_url
   end
 
   defp fetch_from_db do
