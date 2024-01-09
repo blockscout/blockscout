@@ -341,6 +341,11 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     end
   end
 
+  @impl GenServer
+  def terminate(:normal, _state) do
+    :ok
+  end
+
   defp handle_new_logs(logs, json_rpc_named_arguments) do
     {reorgs, logs_to_parse, min_block, max_block, cnt} =
       logs

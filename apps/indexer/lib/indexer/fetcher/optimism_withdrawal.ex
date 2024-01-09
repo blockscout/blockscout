@@ -150,8 +150,14 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
   def event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number) do
     [_value, _gas_limit, _data, hash] = decode_data(data, [{:uint, 256}, {:uint, 256}, :bytes, {:bytes, 32}])
 
+    msg_nonce =
+      second_topic
+      |> Helper.log_topic_to_string()
+      |> quantity_to_integer()
+      |> Decimal.new()
+
     %{
-      msg_nonce: Decimal.new(quantity_to_integer(second_topic)),
+      msg_nonce: msg_nonce,
       hash: hash,
       l2_transaction_hash: l2_transaction_hash,
       l2_block_number: quantity_to_integer(l2_block_number)
@@ -201,7 +207,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
           from(log in Log,
             select: {log.second_topic, log.data, log.transaction_hash, log.block_number},
             where:
-              log.first_topic == @message_passed_event and log.address_hash == ^message_passer and
+              log.first_topic == ^@message_passed_event and log.address_hash == ^message_passer and
                 log.block_number >= ^block_start and log.block_number <= ^block_end
           )
 
