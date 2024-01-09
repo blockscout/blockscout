@@ -176,7 +176,7 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
           from(log in Log,
             select: {log.second_topic, log.data, log.transaction_hash, log.block_number},
             where:
-              log.first_topic == @l2_state_synced_event and log.address_hash == ^state_sender and
+              log.first_topic == ^@l2_state_synced_event and log.address_hash == ^state_sender and
                 log.block_number >= ^block_start and log.block_number <= ^block_end
           )
 
