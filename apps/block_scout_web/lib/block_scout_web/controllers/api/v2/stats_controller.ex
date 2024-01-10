@@ -70,7 +70,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         "transactions_today" => Enum.at(transaction_stats, 0).number_of_transactions |> to_string(),
         "gas_used_today" => Enum.at(transaction_stats, 0).gas_used,
         "gas_prices" => gas_prices,
-        "gas_prices_update_in" => GasPriceOracle.global_ttl(),
+        "gas_prices_update_in" => GasPriceOracle.update_in(),
         "gas_price_updated_at" => GasPriceOracle.get_updated_at(),
         "static_gas_price" => gas_price,
         "market_cap" => Helper.market_cap(market_cap_type, exchange_rate_from_db),
