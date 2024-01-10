@@ -379,7 +379,7 @@ config :explorer, Explorer.ThirdPartyIntegrations.SolidityScan,
   api_key: System.get_env("SOLIDITYSCAN_API_TOKEN")
 
 config :explorer, Explorer.ThirdPartyIntegrations.NovesFi,
-  api_base_url: System.get_env("NOVES_FI_BASE_API_URL"),
+  service_url: System.get_env("NOVES_FI_BASE_API_URL") || "https://blockscout.noves.fi",
   chain_name: System.get_env("NOVES_FI_CHAIN_NAME"),
   api_key: System.get_env("NOVES_FI_API_TOKEN")
 

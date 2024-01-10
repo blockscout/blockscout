@@ -4,13 +4,14 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
   """
 
   alias Explorer.Helper
+  alias Explorer.Utility.Microservice
 
   @recv_timeout 60_000
 
   @doc """
   Proxy request to noves.fi API endpoints
   """
-  @spec noves_fi_api_request(String.t(), Plug.Conn.t()) :: any()
+  @spec noves_fi_api_request(String.t(), Plug.Conn.t()) :: {any(), integer()}
   def noves_fi_api_request(url, conn) do
     headers = [{"apiKey", api_key()}]
     url_with_params = url <> "?" <> conn.query_string
@@ -20,7 +21,7 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
         {Helper.decode_json(body), status}
 
       _ ->
-        nil
+        {nil, 500}
     end
   end
 
@@ -49,11 +50,7 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
   end
 
   defp base_url do
-    api_base_url() || "https://blockscout.noves.fi"
-  end
-
-  defp api_base_url do
-    Application.get_env(:explorer, __MODULE__)[:api_base_url]
+    Microservice.base_url(__MODULE__)
   end
 
   defp chain_name do
