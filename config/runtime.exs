@@ -420,8 +420,8 @@ config :explorer, :air_table_public_tags,
   api_key: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
 
 config :explorer, :air_table_audit_reports,
-  table_url: System.get_env("AUDIT_REPORTS_AIRTABLE_URL"),
-  api_key: System.get_env("AUDIT_REPORTS_AIRTABLE_API_KEY")
+  table_url: System.get_env("SMART_CONTRACT_AUDIT_REPORTS_AIRTABLE_URL"),
+  api_key: System.get_env("SMART_CONTRACT_AUDIT_REPORTS_AIRTABLE_API_KEY")
 
 config :explorer, Explorer.Mailer,
   adapter: Bamboo.SendGridAdapter,
