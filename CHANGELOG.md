@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- [#9102](https://github.com/blockscout/blockscout/pull/9102) - Fix some log topics for Suave and Polygon Edge
 - [#9075](https://github.com/blockscout/blockscout/pull/9075) - Fix fetching contract codes
 
 ### Chore
@@ -25,7 +26,6 @@
 ### Fixes
 
 - [#9113](https://github.com/blockscout/blockscout/pull/9113) - Fix migrators cache updating
-- [#9102](https://github.com/blockscout/blockscout/pull/9102) - Fix some log topics for Suave and Polygon Edge
 - [#9101](https://github.com/blockscout/blockscout/pull/9101) - Fix migration_finished? logic
 - [#9062](https://github.com/blockscout/blockscout/pull/9062) - Fix blockscout-ens integration
 - [#9061](https://github.com/blockscout/blockscout/pull/9061) - Arbitrum allow tx receipt gasUsedForL1 field
