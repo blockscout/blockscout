@@ -7,6 +7,7 @@
 ### Fixes
 
 - [#9075](https://github.com/blockscout/blockscout/pull/9075) - Fix fetching contract codes
+- [#9073](https://github.com/blockscout/blockscout/pull/9073) - Allow payable function with output appear in the Read tab
 
 ### Chore
 
