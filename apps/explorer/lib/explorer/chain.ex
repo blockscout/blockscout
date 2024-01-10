@@ -1246,7 +1246,6 @@ defmodule Explorer.Chain do
       |> join_associations(necessity_by_association)
       |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
       |> select_repo(options).one()
-      |> Repo.preload(smart_contract: :smart_contract_additional_sources)
 
     address_updated_result =
       case address_result do

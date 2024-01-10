@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.SmartContractController do
   def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action} = params) do
     address_options = [
       necessity_by_association: %{
-        [smart_contract: :smart_contract_additional_sources] => :optional
+        :smart_contract => :optional
       }
     ]
 
