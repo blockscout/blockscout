@@ -561,7 +561,18 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   defp sanitize_log_first_topic(first_topic) do
-    if is_nil(first_topic), do: "", else: String.downcase(first_topic)
+    if is_nil(first_topic) do
+      ""
+    else
+      sanitized =
+        if is_binary(first_topic) do
+          first_topic
+        else
+          Hash.to_string(first_topic)
+        end
+
+      String.downcase(sanitized)
+    end
   end
 
   def token_transfers(_, _conn, false), do: nil
