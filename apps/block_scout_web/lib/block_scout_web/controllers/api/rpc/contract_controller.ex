@@ -268,11 +268,14 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       :pass ->
         render(conn, :show, %{
           result:
-            "Implementation (#{SmartContract.address_hash_to_smart_contract(submission.contract_address_hash).implementation_address_hash}) was verified and saved for proxy (#{submission.contract_address_hash})"
+            "The proxy's (#{submission.contract_address_hash}) implementation contract is found at #{SmartContract.address_hash_to_smart_contract(submission.contract_address_hash).implementation_address_hash} and is successfully updated."
         })
 
       :fail ->
-        render(conn, :show, %{result: "Implementation address was not detected for this smart contract"})
+        render(conn, :error, %{
+          error: "NOTOK",
+          data: "A corresponding implementation contract was unfortunately not detected for the proxy address."
+        })
 
       _ ->
         render(conn, :show, %{result: "Unknown UID"})
