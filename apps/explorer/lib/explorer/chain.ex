@@ -4011,21 +4011,21 @@ defmodule Explorer.Chain do
             foreign_token_address_hash
           )
 
-        if is_map(bridged_token_custom_metadata) do
-          tokens = Map.get(bridged_token_custom_metadata, :tokens)
-          weights = Map.get(bridged_token_custom_metadata, :weights)
-
-          if tokens == "" do
-            nil
-          else
-            if weights !== "", do: "#{tokens} #{weights}", else: tokens
-          end
-        else
-          nil
-        end
+        tokens_and_weights(bridged_token_custom_metadata)
 
       _ ->
         nil
+    end
+  end
+
+  defp tokens_and_weights(bridged_token_custom_metadata) do
+    with true <- is_map(bridged_token_custom_metadata),
+         tokens = Map.get(bridged_token_custom_metadata, :tokens),
+         weights = Map.get(bridged_token_custom_metadata, :weights),
+         false <- tokens == "" do
+      if weights !== "", do: "#{tokens} #{weights}", else: tokens
+    else
+      _ -> nil
     end
   end
 
