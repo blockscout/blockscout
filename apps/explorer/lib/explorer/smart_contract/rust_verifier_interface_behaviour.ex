@@ -5,7 +5,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
   defmacro __using__(_) do
     # credo:disable-for-next-line
     quote([]) do
-      alias Explorer.Utility.RustService
+      alias Explorer.Utility.Microservice
       alias HTTPoison.Response
       require Logger
 
@@ -172,7 +172,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       def base_api_url, do: "#{base_url()}" <> "/api/v2"
 
       def base_url do
-        RustService.base_url(Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+        Microservice.base_url(Explorer.SmartContract.RustVerifierInterfaceBehaviour)
       end
 
       def enabled?, do: Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)[:enabled]

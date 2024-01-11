@@ -5,6 +5,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
 
   require Logger
 
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Reader
   alias HTTPoison.{Error, Response}
 
@@ -52,7 +53,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     if error =~ "execution reverted" or error =~ @vm_execution_error do
       {:error, @vm_execution_error}
     else
-      Logger.debug(["Unknown metadata format error #{inspect(error)}."], fetcher: :token_instances)
+      Logger.warn(["Unknown metadata format error #{inspect(error)}."], fetcher: :token_instances)
 
       # truncate error since it will be stored in DB
       {:error, truncate_error(error)}
@@ -64,7 +65,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     if String.length(result) == 46 do
       fetch_json_from_uri({:ok, [ipfs_link() <> result]}, hex_token_id)
     else
-      Logger.debug(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
+      Logger.warn(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
 
       {:error, truncate_error(result)}
     end
@@ -89,7 +90,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     fetch_json_from_uri({:ok, [decoded_json]}, hex_token_id)
   rescue
     e ->
-      Logger.debug(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
+      Logger.warn(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
         fetcher: :token_instances
       )
 
@@ -106,7 +107,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     end
   rescue
     e ->
-      Logger.debug(
+      Logger.warn(
         [
           "Unknown metadata format base64 #{inspect(base64_encoded_json)}.",
           Exception.format(:error, e, __STACKTRACE__)
@@ -130,12 +131,12 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   end
 
   defp fetch_json_from_uri({:ok, [json]}, hex_token_id) do
-    {:ok, json} = decode_json(json)
+    json = ExplorerHelper.decode_json(json)
 
     check_type(json, hex_token_id)
   rescue
     e ->
-      Logger.debug(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
+      Logger.warn(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
         fetcher: :token_instances
       )
 
@@ -143,7 +144,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   end
 
   defp fetch_json_from_uri(uri, _hex_token_id) do
-    Logger.debug(["Unknown metadata uri format #{inspect(uri)}."], fetcher: :token_instances)
+    Logger.warn(["Unknown metadata uri format #{inspect(uri)}."], fetcher: :token_instances)
 
     {:error, "unknown metadata uri format"}
   end
@@ -158,7 +159,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     fetch_metadata_from_uri(prepared_uri, hex_token_id)
   rescue
     e ->
-      Logger.debug(
+      Logger.warn(
         ["Could not prepare token uri #{inspect(uri)}.", Exception.format(:error, e, __STACKTRACE__)],
         fetcher: :token_instances
       )
@@ -188,7 +189,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
         check_content_type(content_type, uri, hex_token_id, body)
 
       {:ok, %Response{body: body, status_code: code}} ->
-        Logger.debug(
+        Logger.warn(
           ["Request to token uri: #{inspect(uri)} failed with code #{code}. Body:", inspect(body)],
           fetcher: :token_instances
         )
@@ -196,7 +197,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
         {:error_code, code}
 
       {:error, %Error{reason: reason}} ->
-        Logger.debug(
+        Logger.warn(
           ["Request to token uri failed: #{inspect(uri)}.", inspect(reason)],
           fetcher: :token_instances
         )
@@ -205,7 +206,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     end
   rescue
     e ->
-      Logger.debug(
+      Logger.warn(
         ["Could not send request to token uri #{inspect(uri)}.", Exception.format(:error, e, __STACKTRACE__)],
         fetcher: :token_instances
       )
@@ -222,7 +223,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
 
       check_type(json, nil)
     else
-      {:ok, json} = decode_json(body)
+      json = ExplorerHelper.decode_json(body)
 
       check_type(json, hex_token_id)
     end
@@ -243,16 +244,6 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
 
   defp is_video?(content_type) do
     content_type && String.starts_with?(content_type, "video/")
-  end
-
-  defp decode_json(body) do
-    if String.valid?(body) do
-      Jason.decode(body)
-    else
-      body
-      |> :unicode.characters_to_binary(:latin1)
-      |> Jason.decode()
-    end
   end
 
   defp check_type(json, nil) when is_map(json) do

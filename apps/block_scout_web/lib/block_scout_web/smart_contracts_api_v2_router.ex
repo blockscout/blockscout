@@ -27,6 +27,7 @@ defmodule BlockScoutWeb.SmartContractsApiV2Router do
     get("/:address_hash/methods-read-proxy", V2.SmartContractController, :methods_read_proxy)
     get("/:address_hash/methods-write-proxy", V2.SmartContractController, :methods_write_proxy)
     post("/:address_hash/query-read-method", V2.SmartContractController, :query_read_method)
+    get("/:address_hash/solidityscan-report", V2.SmartContractController, :solidityscan_report)
 
     get("/verification/config", V2.VerificationController, :config)
 

@@ -12,7 +12,7 @@ defmodule Indexer.Temporary.UncatalogedTokenTransfers do
 
   require Logger
 
-  alias Explorer.Chain
+  alias Explorer.Chain.TokenTransfer
   alias Indexer.Block.Catchup.Fetcher
   alias Indexer.Temporary.UncatalogedTokenTransfers
 
@@ -52,7 +52,7 @@ defmodule Indexer.Temporary.UncatalogedTokenTransfers do
   end
 
   def handle_info(:scan, state) do
-    {:ok, block_numbers} = Chain.uncataloged_token_transfer_block_numbers()
+    {:ok, block_numbers} = TokenTransfer.uncataloged_token_transfer_block_numbers()
 
     case block_numbers do
       [] ->
