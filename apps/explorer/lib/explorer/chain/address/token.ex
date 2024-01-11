@@ -118,9 +118,15 @@ defmodule Explorer.Chain.Address.Token do
     )
   end
 
-  def page_tokens(query, %PagingOptions{key: {circulating_market_cap, holder_count, name, contract_address_hash}}) do
+  def page_tokens(query, %PagingOptions{key: key}) do
     from(token in query,
-      where: ^page_tokens_circulating_market_cap(circulating_market_cap, holder_count, name, contract_address_hash)
+      where:
+        ^page_tokens_circulating_market_cap(
+          key.circulating_market_cap,
+          key.holder_count,
+          key.name,
+          key.contract_address_hash
+        )
     )
   end
 
