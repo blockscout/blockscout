@@ -33,6 +33,19 @@ defmodule BlockScoutWeb.API.V2.BlockView do
 
     transaction_fees = Block.transaction_fees(block.transactions)
 
+    {transaction_fees, burnt_fees, blob_gas_price} =
+      if Application.get_env(:explorer, :chain_type) == "ethereum" do
+        blob_transaction_fees = Block.blob_transaction_fees(block.transactions)
+
+        {
+          transaction_fees |> Decimal.add(blob_transaction_fees),
+          burnt_fees |> Decimal.add(blob_transaction_fees),
+          blob_transaction_fees |> Decimal.div(block.blob_gas_used)
+        }
+      else
+        {transaction_fees, burnt_fees, nil}
+      end
+
     %{
       "height" => block.number,
       "timestamp" => block.timestamp,
@@ -60,7 +73,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "tx_fees" => transaction_fees,
       "withdrawals_count" => count_withdrawals(block)
     }
-    |> chain_type_fields(block, single_block?)
+    |> chain_type_fields(block, blob_gas_price, single_block?)
   end
 
   def prepare_rewards(rewards, block, single_block?) do
@@ -106,7 +119,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
 
   def burnt_fees_percentage(burnt_fees, transaction_fees)
       when not is_nil(transaction_fees) and not is_nil(burnt_fees) do
-    burnt_fees.value |> Decimal.div(transaction_fees) |> Decimal.mult(100) |> Decimal.to_float()
+    burnt_fees |> Decimal.div(transaction_fees) |> Decimal.mult(100) |> Decimal.to_float()
   end
 
   def burnt_fees_percentage(_, _), do: nil
@@ -117,15 +130,25 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   def count_withdrawals(%Block{withdrawals: withdrawals}) when is_list(withdrawals), do: Enum.count(withdrawals)
   def count_withdrawals(_), do: nil
 
-  defp chain_type_fields(result, block, single_block?) do
-    case single_block? && Application.get_env(:explorer, :chain_type) do
+  defp chain_type_fields(result, block, blob_gas_price, single_block?) do
+    case Application.get_env(:explorer, :chain_type) do
       "rsk" ->
+        if single_block? do
+          result
+          |> Map.put("minimum_gas_price", block.minimum_gas_price)
+          |> Map.put("bitcoin_merged_mining_header", block.bitcoin_merged_mining_header)
+          |> Map.put("bitcoin_merged_mining_coinbase_transaction", block.bitcoin_merged_mining_coinbase_transaction)
+          |> Map.put("bitcoin_merged_mining_merkle_proof", block.bitcoin_merged_mining_merkle_proof)
+          |> Map.put("hash_for_merged_mining", block.hash_for_merged_mining)
+        else
+          result
+        end
+
+      "ethereum" ->
         result
-        |> Map.put("minimum_gas_price", block.minimum_gas_price)
-        |> Map.put("bitcoin_merged_mining_header", block.bitcoin_merged_mining_header)
-        |> Map.put("bitcoin_merged_mining_coinbase_transaction", block.bitcoin_merged_mining_coinbase_transaction)
-        |> Map.put("bitcoin_merged_mining_merkle_proof", block.bitcoin_merged_mining_merkle_proof)
-        |> Map.put("hash_for_merged_mining", block.hash_for_merged_mining)
+        |> Map.put("blob_gas_used", block.blob_gas_used)
+        |> Map.put("excess_blob_gas", block.excess_blob_gas)
+        |> Map.put("blob_gas_price", blob_gas_price)
 
       _ ->
         result

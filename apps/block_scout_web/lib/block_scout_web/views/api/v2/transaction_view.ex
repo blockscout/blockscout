@@ -452,6 +452,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "suave" ->
         suave_fields(transaction, result, single_tx?, conn, watchlist_names)
 
+      # TODO this will not preload blob fields if single_tx? is false. is it ok? there is no preload in block_controller.ex for such case as well
+      "ethereum" ->
+        beacon_blob_transaction = transaction.beacon_blob_transaction
+
+        if !is_nil(beacon_blob_transaction) do
+          result
+          |> Map.put("max_fee_per_blob_gas", beacon_blob_transaction.max_fee_per_blob_gas)
+          |> Map.put("blob_versioned_hashes", beacon_blob_transaction.blob_versioned_hashes)
+          |> Map.put("blob_gas_used", beacon_blob_transaction.blob_gas_used)
+          |> Map.put("blob_gas_price", beacon_blob_transaction.blob_gas_price)
+        else
+          result
+        end
+
       _ ->
         result
     end

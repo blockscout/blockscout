@@ -16,6 +16,16 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   alias BlockScoutWeb.API.V2.{TransactionView, WithdrawalView}
   alias Explorer.Chain
 
+  case Application.compile_env(:explorer, :chain_type) do
+    "ethereum" ->
+      @chain_type_block_necessity_by_association %{
+        [transactions: :beacon_blob_transaction] => :optional
+      }
+
+    _ ->
+      @chain_type_block_necessity_by_association %{}
+  end
+
   @transaction_necessity_by_association [
     necessity_by_association: %{
       [created_contract_address: :names] => :optional,
@@ -31,14 +41,16 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   @api_true [api?: true]
 
   @block_params [
-    necessity_by_association: %{
-      [miner: :names] => :optional,
-      :uncles => :optional,
-      :nephews => :optional,
-      :rewards => :optional,
-      :transactions => :optional,
-      :withdrawals => :optional
-    },
+    necessity_by_association:
+      %{
+        [miner: :names] => :optional,
+        :uncles => :optional,
+        :nephews => :optional,
+        :rewards => :optional,
+        :transactions => :optional,
+        :withdrawals => :optional
+      }
+      |> Map.merge(@chain_type_block_necessity_by_association),
     api?: true
   ]
 

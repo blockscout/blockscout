@@ -38,6 +38,12 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
             Runner.Zkevm.BatchTransactions
           ]
 
+      "ethereum" ->
+        @default_runners ++
+          [
+            Runner.Beacon.BlobTransactions
+          ]
+
       _ ->
         @default_runners
     end

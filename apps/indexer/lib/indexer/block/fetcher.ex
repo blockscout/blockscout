@@ -196,12 +196,20 @@ defmodule Indexer.Block.Fetcher do
            token_instances: %{params: token_instances}
          },
          import_options =
-           (if Application.get_env(:explorer, :chain_type) == "polygon_edge" do
-              basic_import_options
-              |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
-              |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
-            else
-              basic_import_options
+           (case Application.get_env(:explorer, :chain_type) do
+              "polygon_edge" ->
+                basic_import_options
+                |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
+                |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
+
+              "ethereum" ->
+                basic_import_options
+                |> Map.put_new(:beacon_blob_transactions, %{
+                  params: transactions_with_receipts |> Enum.filter(&Map.has_key?(&1, :max_fee_per_blob_gas))
+                })
+
+              _ ->
+                basic_import_options
             end),
          {:ok, inserted} <-
            __MODULE__.import(

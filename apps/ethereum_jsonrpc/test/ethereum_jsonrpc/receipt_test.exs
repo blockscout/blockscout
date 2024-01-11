@@ -15,7 +15,7 @@ defmodule EthereumJSONRPC.ReceiptTest do
                      %{"new_key" => "new_value", "transactionHash" => "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060"}
 
                    Errors:
-                     {:unknown_key, %{key: "new_key", value: "new_value"}}
+                     {:unknown_key, %{value: "new_value", key: "new_key"}}
                    """,
                    fn ->
                      Receipt.to_elixir(%{

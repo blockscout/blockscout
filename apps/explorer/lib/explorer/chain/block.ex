@@ -17,6 +17,10 @@ defmodule Explorer.Chain.Block do
                             &1 ++
                               ~w(minimum_gas_price bitcoin_merged_mining_header bitcoin_merged_mining_coinbase_transaction bitcoin_merged_mining_merkle_proof hash_for_merged_mining)a
 
+                          "ethereum" ->
+                            &1 ++
+                              ~w(blob_gas_used excess_blob_gas)a
+
                           _ ->
                             &1
                         end)).()
@@ -35,18 +39,28 @@ defmodule Explorer.Chain.Block do
   """
   @type block_number :: non_neg_integer()
 
-  if Application.compile_env(:explorer, :chain_type) == "rsk" do
-    @rootstock_fields quote(
-                        do: [
-                          bitcoin_merged_mining_header: binary(),
-                          bitcoin_merged_mining_coinbase_transaction: binary(),
-                          bitcoin_merged_mining_merkle_proof: binary(),
-                          hash_for_merged_mining: binary(),
-                          minimum_gas_price: Decimal.t()
-                        ]
-                      )
-  else
-    @rootstock_fields quote(do: [])
+  case Application.compile_env(:explorer, :chain_type) do
+    "rsk" ->
+      @chain_type_fields quote(
+                           do: [
+                             bitcoin_merged_mining_header: binary(),
+                             bitcoin_merged_mining_coinbase_transaction: binary(),
+                             bitcoin_merged_mining_merkle_proof: binary(),
+                             hash_for_merged_mining: binary(),
+                             minimum_gas_price: Decimal.t()
+                           ]
+                         )
+
+    "ethereum" ->
+      @chain_type_fields quote(
+                           do: [
+                             blob_gas_used: Decimal.t(),
+                             excess_blob_gas: Decimal.t()
+                           ]
+                         )
+
+    _ ->
+      @chain_type_fields quote(do: [])
   end
 
   @typedoc """
@@ -70,18 +84,22 @@ defmodule Explorer.Chain.Block do
    * `total_difficulty` - the total `difficulty` of the chain until this block.
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
    * `base_fee_per_gas` - Minimum fee required per unit of gas. Fee adjusts based on network congestion.
-  #{if Application.compile_env(:explorer, :chain_type) == "rsk" do
-    """
-     * `bitcoin_merged_mining_header` - Bitcoin merged mining header on Rootstock chains.
-     * `bitcoin_merged_mining_coinbase_transaction` - Bitcoin merged mining coinbase transaction on Rootstock chains.
-     * `bitcoin_merged_mining_merkle_proof` - Bitcoin merged mining merkle proof on Rootstock chains.
-     * `hash_for_merged_mining` - Hash for merged mining on Rootstock chains.
-     * `minimum_gas_price` - Minimum block gas price on Rootstock chains.
-    """
+  #{case Application.compile_env(:explorer, :chain_type) do
+    "rsk" -> """
+       * `bitcoin_merged_mining_header` - Bitcoin merged mining header on Rootstock chains.
+       * `bitcoin_merged_mining_coinbase_transaction` - Bitcoin merged mining coinbase transaction on Rootstock chains.
+       * `bitcoin_merged_mining_merkle_proof` - Bitcoin merged mining merkle proof on Rootstock chains.
+       * `hash_for_merged_mining` - Hash for merged mining on Rootstock chains.
+       * `minimum_gas_price` - Minimum block gas price on Rootstock chains.
+      """
+    "ethereum" -> """
+       * `blob_gas_used` - The total amount of blob gas consumed by the transactions within the block.
+       * `excess_blob_gas` - The running total of blob gas consumed in excess of the target, prior to the block.
+      """
   end}
   """
   @type t :: %__MODULE__{
-          unquote_splicing(@rootstock_fields),
+          unquote_splicing(@chain_type_fields),
           consensus: boolean(),
           difficulty: difficulty(),
           gas_limit: Gas.t(),
@@ -116,12 +134,17 @@ defmodule Explorer.Chain.Block do
     field(:base_fee_per_gas, Wei)
     field(:is_empty, :boolean)
 
-    if Application.compile_env(:explorer, :chain_type) == "rsk" do
-      field(:bitcoin_merged_mining_header, :binary)
-      field(:bitcoin_merged_mining_coinbase_transaction, :binary)
-      field(:bitcoin_merged_mining_merkle_proof, :binary)
-      field(:hash_for_merged_mining, :binary)
-      field(:minimum_gas_price, :decimal)
+    case Application.compile_env(:explorer, :chain_type) do
+      "rsk" ->
+        field(:bitcoin_merged_mining_header, :binary)
+        field(:bitcoin_merged_mining_coinbase_transaction, :binary)
+        field(:bitcoin_merged_mining_merkle_proof, :binary)
+        field(:hash_for_merged_mining, :binary)
+        field(:minimum_gas_price, :decimal)
+
+      "ethereum" ->
+        field(:blob_gas_used, :decimal)
+        field(:excess_blob_gas, :decimal)
     end
 
     timestamps()
@@ -238,6 +261,23 @@ defmodule Explorer.Chain.Block do
     end)
   end
 
+  @doc """
+  Calculates blob transaction fees (gas price * gas used) for the list of transactions (from a single block)
+  """
+  @spec blob_transaction_fees([Transaction.t()]) :: Decimal.t()
+  def blob_transaction_fees(transactions) do
+    Enum.reduce(transactions, Decimal.new(0), fn %{beacon_blob_transaction: beacon_blob_transaction}, acc ->
+      if !is_nil(beacon_blob_transaction) do
+        beacon_blob_transaction.blob_gas_used
+        |> Decimal.new()
+        |> Decimal.mult(gas_price_to_decimal(beacon_blob_transaction.blob_gas_price))
+        |> Decimal.add(acc)
+      else
+        acc
+      end
+    end)
+  end
+
   defp gas_price_to_decimal(nil), do: nil
   defp gas_price_to_decimal(%Wei{} = wei), do: wei.value
   defp gas_price_to_decimal(gas_price), do: Decimal.new(gas_price)
@@ -245,25 +285,20 @@ defmodule Explorer.Chain.Block do
   @doc """
   Calculates burnt fees for the list of transactions (from a single block)
   """
-  @spec burnt_fees(list(), Wei.t() | nil) :: Wei.t() | nil
+  @spec burnt_fees(list(), Decimal.t() | nil) :: Decimal.t()
   def burnt_fees(transactions, base_fee_per_gas) do
-    total_gas_used =
+    if is_nil(base_fee_per_gas) do
+      Decimal.new(0)
+    else
       transactions
       |> Enum.reduce(Decimal.new(0), fn %{gas_used: gas_used}, acc ->
         gas_used
         |> Decimal.new()
         |> Decimal.add(acc)
       end)
-
-    if is_nil(base_fee_per_gas) do
-      nil
-    else
-      Wei.mult(base_fee_per_gas_to_wei(base_fee_per_gas), total_gas_used)
+      |> Decimal.add(gas_price_to_decimal(base_fee_per_gas))
     end
   end
-
-  defp base_fee_per_gas_to_wei(%Wei{} = wei), do: wei
-  defp base_fee_per_gas_to_wei(base_fee_per_gas), do: %Wei{value: Decimal.new(base_fee_per_gas)}
 
   @uncle_reward_coef 1 / 32
   @spec block_reward_by_parts(Block.t(), [Transaction.t()]) :: %{
@@ -295,13 +330,14 @@ defmodule Explorer.Chain.Block do
     burnt_fees = burnt_fees(transactions, base_fee_per_gas)
     uncle_reward = (has_uncles? && Wei.mult(static_reward, Decimal.from_float(@uncle_reward_coef))) || nil
 
+    # eip4844 blob transactions don't impact validator rewards, so we don't count them here as part of transaction_fees and burnt_fees
     %{
       block_number: block_number,
       block_hash: block_hash,
       miner_hash: block.miner_hash,
       static_reward: static_reward,
       transaction_fees: %Wei{value: transaction_fees},
-      burnt_fees: burnt_fees || %Wei{value: Decimal.new(0)},
+      burnt_fees: %Wei{value: burnt_fees},
       uncle_reward: uncle_reward || %Wei{value: Decimal.new(0)}
     }
   end

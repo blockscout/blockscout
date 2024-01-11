@@ -217,6 +217,10 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:transaction_hash_param/raw-trace", V2.TransactionController, :raw_trace)
       get("/:transaction_hash_param/state-changes", V2.TransactionController, :state_changes)
       get("/:transaction_hash_param/summary", V2.TransactionController, :summary)
+
+      if System.get_env("CHAIN_TYPE") == "ethereum" do
+        get("/:transaction_hash_param/blobs", V2.TransactionController, :blobs)
+      end
     end
 
     scope "/blocks" do
@@ -306,6 +310,13 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
         get("/transactions/:transaction_hash_param/describe", V2.Proxy.NovesFiController, :describe_transaction)
         get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
+      end
+    end
+
+    scope "/blobs" do
+      if System.get_env("CHAIN_TYPE") == "ethereum" do
+        get("/", V2.BlobController, :blobs)
+        get("/:blob_hash_param", V2.BlobController, :blob)
       end
     end
   end

@@ -30,6 +30,7 @@ defmodule Explorer.Chain.Transaction do
     Wei
   }
 
+  alias Explorer.Chain.Beacon.BlobTransaction
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.Transaction.{Fork, Status}
@@ -208,30 +209,37 @@ defmodule Explorer.Chain.Transaction do
               transaction_fee_log: any(),
               transaction_fee_token: any()
             },
-            suave
+            chain_type_fields
           )
 
-  if Application.compile_env(:explorer, :chain_type) == "suave" do
-    @type suave :: %{
-            execution_node: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-            execution_node_hash: Hash.Address.t() | nil,
-            wrapped_type: non_neg_integer() | nil,
-            wrapped_nonce: non_neg_integer() | nil,
-            wrapped_to_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-            wrapped_to_address_hash: Hash.Address.t() | nil,
-            wrapped_gas: Gas.t() | nil,
-            wrapped_gas_price: wei_per_gas | nil,
-            wrapped_max_priority_fee_per_gas: wei_per_gas | nil,
-            wrapped_max_fee_per_gas: wei_per_gas | nil,
-            wrapped_value: Wei.t() | nil,
-            wrapped_input: Data.t() | nil,
-            wrapped_v: v() | nil,
-            wrapped_r: r() | nil,
-            wrapped_s: s() | nil,
-            wrapped_hash: Hash.t() | nil
-          }
-  else
-    @type suave :: %{}
+  case Application.compile_env(:explorer, :chain_type) do
+    "suave" ->
+      @type chain_type_fields :: %{
+              execution_node: %Ecto.Association.NotLoaded{} | Address.t() | nil,
+              execution_node_hash: Hash.Address.t() | nil,
+              wrapped_type: non_neg_integer() | nil,
+              wrapped_nonce: non_neg_integer() | nil,
+              wrapped_to_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
+              wrapped_to_address_hash: Hash.Address.t() | nil,
+              wrapped_gas: Gas.t() | nil,
+              wrapped_gas_price: wei_per_gas | nil,
+              wrapped_max_priority_fee_per_gas: wei_per_gas | nil,
+              wrapped_max_fee_per_gas: wei_per_gas | nil,
+              wrapped_value: Wei.t() | nil,
+              wrapped_input: Data.t() | nil,
+              wrapped_v: v() | nil,
+              wrapped_r: r() | nil,
+              wrapped_s: s() | nil,
+              wrapped_hash: Hash.t() | nil
+            }
+
+    "ethereum" ->
+      @type chain_type_fields :: %{
+              beacon_blob_transaction: %Ecto.Association.NotLoaded{} | BlobTransaction.t()
+            }
+
+    _ ->
+      @type chain_type_fields :: %{}
   end
 
   @derive {Poison.Encoder,
@@ -344,6 +352,7 @@ defmodule Explorer.Chain.Transaction do
     has_one(:zkevm_batch, through: [:zkevm_batch_transaction, :batch])
     has_one(:zkevm_sequence_transaction, through: [:zkevm_batch, :sequence_transaction])
     has_one(:zkevm_verify_transaction, through: [:zkevm_batch, :verify_transaction])
+    has_one(:beacon_blob_transaction, BlobTransaction, foreign_key: :hash)
 
     belongs_to(
       :created_contract_address,
