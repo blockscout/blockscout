@@ -296,7 +296,9 @@ defmodule Explorer.Chain.Address.Counters do
       gas_usage_count(address)
     end)
 
-    [validation_count_task]
+    [
+      validation_count_task
+    ]
     |> Task.yield_many(:infinity)
     |> Enum.map(fn {_task, res} ->
       case res do

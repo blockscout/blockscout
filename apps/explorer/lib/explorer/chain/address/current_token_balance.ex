@@ -236,7 +236,6 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   @doc """
   Builds an `t:Ecto.Query.t/0` to fetch the current balance of the given address for the given token.
   """
-
   def last_token_balance(address_hash, token_contract_address_hash) do
     query =
       from(

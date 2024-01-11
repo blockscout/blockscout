@@ -793,8 +793,6 @@ defmodule Indexer.Block.FetcherTest do
       assert {:ok, %{errors: [], inserted: %{block_rewards: _block_rewards}}} =
                Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
 
-      Process.sleep(1000)
-
       assert Repo.one!(select(Chain.Block.Reward, fragment("COUNT(*)"))) == 2
     end
   end
