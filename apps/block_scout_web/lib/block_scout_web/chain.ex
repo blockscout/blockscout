@@ -366,14 +366,6 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {value, address_hash}}]
   end
 
-  def paging_options(%{"total_gas" => total_gas, "address_hash" => address_hash}) do
-    [paging_options: %{@default_paging_options | key: {total_gas, address_hash}}]
-  end
-
-  def paging_options(%{"token_name" => name, "token_type" => type, "value" => value}) do
-    [paging_options: %{@default_paging_options | key: {name, type, value}}]
-  end
-
   def paging_options(%{"fiat_value" => fiat_value_string, "value" => value_string, "id" => id_string})
       when is_binary(fiat_value_string) and is_binary(value_string) and is_binary(id_string) do
     with {id, ""} <- Integer.parse(id_string),

@@ -48,6 +48,8 @@ defmodule BlockScoutWeb.NFTHelper do
 
   def retrieve_image(image, _) when is_nil(image), do: nil
 
+  def retrieve_image(image, _) when image == "", do: nil
+
   def retrieve_image(image, _) when is_map(image) do
     image["description"]
   end

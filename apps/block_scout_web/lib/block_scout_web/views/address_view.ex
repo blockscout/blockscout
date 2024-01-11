@@ -418,7 +418,7 @@ defmodule BlockScoutWeb.AddressView do
   def short_hash(%Address{hash: hash}) do
     <<
       "0x",
-      short_address::binary-size(8),
+      short_address::binary-size(6),
       _rest::binary
     >> = to_string(hash)
 
@@ -445,8 +445,8 @@ defmodule BlockScoutWeb.AddressView do
 
   defp shortify_hash_string(hash) do
     <<
-      left::binary-size(8),
-      _middle::binary-size(26),
+      left::binary-size(6),
+      _middle::binary-size(28),
       right::binary-size(6)
     >> = to_string(hash)
 
@@ -556,32 +556,6 @@ defmodule BlockScoutWeb.AddressView do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
     String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN", "")) =~ address_hash_str
   end
-
-  # def get_chainlink_oracle_name(oracle_address) do
-  #   if oracle_address do
-  #     chainlink_oracles_config = Application.get_env(:block_scout_web, :chainlink_oracles)
-
-  #     if chainlink_oracles_config do
-  #       try do
-  #         chainlink_oracle =
-  #           chainlink_oracles_config
-  #           |> Parser.parse!(%{keys: :atoms!})
-  #           |> Enum.find(fn %{:name => _name, :address => address} ->
-  #             String.downcase(address) == String.downcase(oracle_address)
-  #           end)
-
-  #         chainlink_oracle[:name]
-  #       rescue
-  #         _ ->
-  #           ""
-  #       end
-  #     else
-  #       ""
-  #     end
-  #   else
-  #     ""
-  #   end
-  # end
 
   def tag_name_to_label(tag_name) do
     tag_name
