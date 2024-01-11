@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- [#9139](https://github.com/blockscout/blockscout/pull/9139) - TokenBalanceOnDemand fixes
 - [#9125](https://github.com/blockscout/blockscout/pull/9125) - Fix Explorer.Chain.Cache.GasPriceOracle.merge_fees
 - [#9110](https://github.com/blockscout/blockscout/pull/9110) - Improve update_in in gas tracker
 - [#9109](https://github.com/blockscout/blockscout/pull/9109) - Return current exchange rate in api/v2/stats
