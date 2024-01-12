@@ -48,7 +48,11 @@ defmodule BlockScoutWeb.API.V2.Helper do
     })
   end
 
-  defp address_with_info(%Address{} = address, _address_hash) do
+  @doc """
+  Gets address with the additional info for api v2
+  """
+  @spec address_with_info(any(), any()) :: nil | %{optional(<<_::32, _::_*8>>) => any()}
+  def address_with_info(%Address{} = address, _address_hash) do
     %{
       "hash" => Address.checksum(address),
       "is_contract" => Address.is_smart_contract(address),
@@ -59,21 +63,21 @@ defmodule BlockScoutWeb.API.V2.Helper do
     }
   end
 
-  defp address_with_info(%{ens_domain_name: name}, address_hash) do
+  def address_with_info(%{ens_domain_name: name}, address_hash) do
     nil
     |> address_with_info(address_hash)
     |> Map.put("ens_domain_name", name)
   end
 
-  defp address_with_info(%NotLoaded{}, address_hash) do
+  def address_with_info(%NotLoaded{}, address_hash) do
     address_with_info(nil, address_hash)
   end
 
-  defp address_with_info(nil, nil) do
+  def address_with_info(nil, nil) do
     nil
   end
 
-  defp address_with_info(_, address_hash) do
+  def address_with_info(_, address_hash) do
     %{
       "hash" => Address.checksum(address_hash),
       "is_contract" => false,
