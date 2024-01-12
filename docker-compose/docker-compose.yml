@@ -38,10 +38,9 @@ services:
     links:
       - db:database
     environment:
-        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
-        CHAIN_ID: '1337'
+        ETHEREUM_JSONRPC_HTTP_URL: https://node.ghostnet.etherlink.com
+        ETHEREUM_JSONRPC_TRACE_URL: https://node.ghostnet.etherlink.com
+        CHAIN_ID: '128123'
 
   visualizer:
     extends:
@@ -87,3 +86,5 @@ services:
     extends:
       file: ./services/docker-compose-nginx.yml
       service: proxy
+    volumes:
+      - /etc/letsencrypt/live/tezevm.xyz:/etc/nginx/ssl:ro
