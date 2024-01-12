@@ -14,7 +14,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
   import Indexer.Fetcher.Zkevm.Bridge,
     only: [get_logs_all: 3, import_operations: 1, json_rpc_named_arguments: 1, prepare_operations: 3]
 
-  alias Explorer.Chain.Zkevm.Bridge
+  alias Explorer.Chain.Zkevm.{Bridge, Reader}
   alias Explorer.Repo
   alias Indexer.{BoundQueue, Helper}
 
@@ -61,7 +61,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
          start_block = parse_integer(env[:start_block]),
          false <- is_nil(start_block),
          true <- start_block > 0,
-         {last_l1_block_number, last_l1_transaction_hash} = get_last_l1_item(),
+         {last_l1_block_number, last_l1_transaction_hash} = Reader.last_l1_item(),
          json_rpc_named_arguments = json_rpc_named_arguments(rpc),
          {:ok, block_check_interval, safe_block} <- get_block_check_interval(json_rpc_named_arguments),
          {:start_block_valid, true, _, _} <-
@@ -232,20 +232,6 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
       {:error, error} ->
         {:error, "Failed to calculate block check interval due to #{inspect(error)}"}
     end
-  end
-
-  defp get_last_l1_item do
-    query =
-      from(b in Bridge,
-        select: {b.block_number, b.l1_transaction_hash},
-        where: b.type == :deposit and not is_nil(b.block_number),
-        order_by: [desc: b.index],
-        limit: 1
-      )
-
-    query
-    |> Repo.one()
-    |> Kernel.||({0, nil})
   end
 
   defp get_safe_block(json_rpc_named_arguments) do

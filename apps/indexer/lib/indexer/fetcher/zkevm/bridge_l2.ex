@@ -14,7 +14,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL2 do
   import Indexer.Fetcher.Zkevm.Bridge,
     only: [get_logs_all: 3, import_operations: 1, json_rpc_named_arguments: 1, prepare_operations: 3]
 
-  alias Explorer.Chain.Zkevm.Bridge
+  alias Explorer.Chain.Zkevm.{Bridge, Reader}
   alias Explorer.Repo
   alias Indexer.Helper
 
@@ -62,7 +62,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL2 do
          start_block = parse_integer(env[:start_block]),
          false <- is_nil(start_block),
          true <- start_block > 0,
-         {last_l2_block_number, last_l2_transaction_hash} = get_last_l2_item(),
+         {last_l2_block_number, last_l2_transaction_hash} = Reader.last_l2_item(),
          {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000),
          {:start_block_valid, true} <-
            {:start_block_valid,
@@ -172,19 +172,5 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL2 do
         "As L2 reorg was detected, some withdrawals with block_number >= #{reorg_block} were removed from zkevm_bridge table. Number of removed rows: #{deleted_count}."
       )
     end
-  end
-
-  defp get_last_l2_item do
-    query =
-      from(b in Bridge,
-        select: {b.block_number, b.l2_transaction_hash},
-        where: b.type == :withdrawal and not is_nil(b.block_number),
-        order_by: [desc: b.index],
-        limit: 1
-      )
-
-    query
-    |> Repo.one()
-    |> Kernel.||({0, nil})
   end
 end

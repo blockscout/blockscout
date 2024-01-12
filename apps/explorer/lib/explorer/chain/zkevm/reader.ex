@@ -88,6 +88,46 @@ defmodule Explorer.Chain.Zkevm.Reader do
   end
 
   @doc """
+    Gets last known L1 item (deposit) from zkevm_bridge table.
+    Returns block number and L1 transaction hash bound to that deposit.
+    If not found, returns zero block number and nil as the transaction hash.
+  """
+  @spec last_l1_item() :: {non_neg_integer(), binary() | nil}
+  def last_l1_item do
+    query =
+      from(b in Bridge,
+        select: {b.block_number, b.l1_transaction_hash},
+        where: b.type == :deposit and not is_nil(b.block_number),
+        order_by: [desc: b.index],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||({0, nil})
+  end
+
+  @doc """
+    Gets last known L2 item (withdrawal) from zkevm_bridge table.
+    Returns block number and L2 transaction hash bound to that withdrawal.
+    If not found, returns zero block number and nil as the transaction hash.
+  """
+  @spec last_l2_item() :: {non_neg_integer(), binary() | nil}
+  def last_l2_item do
+    query =
+      from(b in Bridge,
+        select: {b.block_number, b.l2_transaction_hash},
+        where: b.type == :withdrawal and not is_nil(b.block_number),
+        order_by: [desc: b.index],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||({0, nil})
+  end
+
+  @doc """
     Gets the number of the latest batch with defined verify_id from `zkevm_transaction_batches` table.
     Returns 0 if not found.
   """
