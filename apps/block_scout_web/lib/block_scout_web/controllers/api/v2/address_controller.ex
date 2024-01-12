@@ -500,7 +500,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   @doc """
   Checks if this valid address hash string, and this address is not prohibited address
   """
-  @spec validate_address(String.t(), any(), list()) :: {:ok, Hash.Address.t(), Address.t()}
+  @spec validate_address(String.t(), any(), Keyword.t()) ::
+          {:format, :error}
+          | {:not_found, {:error, :not_found}}
+          | {:restricted_access, true}
+          | {:ok, Hash.t(), Address.t()}
   def validate_address(address_hash_string, params, options \\ @api_true) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
