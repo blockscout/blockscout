@@ -15,11 +15,9 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   """
   @spec operation(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def operation(conn, %{"operation_hash_param" => operation_hash_string}) do
-    {status_code, response} = AccountAbstraction.get_user_ops_by_hash(operation_hash_string)
-
-    conn
-    |> put_status(status_code)
-    |> json(extended_info(response))
+    operation_hash_string
+    |> AccountAbstraction.get_user_ops_by_hash()
+    |> process_response(conn)
   end
 
   @doc """
@@ -27,11 +25,9 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   """
   @spec bundler(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def bundler(conn, %{"address_hash_param" => address_hash_string}) do
-    {status_code, response} = AccountAbstraction.get_bundler_by_hash(address_hash_string)
-
-    conn
-    |> put_status(status_code)
-    |> json(extended_info(response))
+    address_hash_string
+    |> AccountAbstraction.get_bundler_by_hash()
+    |> process_response(conn)
   end
 
   @doc """
@@ -39,11 +35,9 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   """
   @spec bundlers(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def bundlers(conn, query_string) do
-    {status_code, response} = AccountAbstraction.get_bundlers(query_string)
-
-    conn
-    |> put_status(status_code)
-    |> json(extended_info(response))
+    query_string
+    |> AccountAbstraction.get_bundlers()
+    |> process_response(conn)
   end
 
   @doc """
@@ -51,11 +45,9 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   """
   @spec factory(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def factory(conn, %{"address_hash_param" => address_hash_string}) do
-    {status_code, response} = AccountAbstraction.get_factory_by_hash(address_hash_string)
-
-    conn
-    |> put_status(status_code)
-    |> json(extended_info(response))
+    address_hash_string
+    |> AccountAbstraction.get_factory_by_hash()
+    |> process_response(conn)
   end
 
   @doc """
@@ -63,11 +55,9 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   """
   @spec factories(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def factories(conn, query_string) do
-    {status_code, response} = AccountAbstraction.get_factories(query_string)
-
-    conn
-    |> put_status(status_code)
-    |> json(extended_info(response))
+    query_string
+    |> AccountAbstraction.get_factories()
+    |> process_response(conn)
   end
 
   @doc """
@@ -75,11 +65,9 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   """
   @spec paymaster(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def paymaster(conn, %{"address_hash_param" => address_hash_string}) do
-    {status_code, response} = AccountAbstraction.get_paymaster_by_hash(address_hash_string)
-
-    conn
-    |> put_status(status_code)
-    |> json(extended_info(response))
+    address_hash_string
+    |> AccountAbstraction.get_paymaster_by_hash()
+    |> process_response(conn)
   end
 
   @doc """
@@ -87,11 +75,9 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   """
   @spec paymasters(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def paymasters(conn, query_string) do
-    {status_code, response} = AccountAbstraction.get_paymasters(query_string)
-
-    conn
-    |> put_status(status_code)
-    |> json(extended_info(response))
+    query_string
+    |> AccountAbstraction.get_paymasters()
+    |> process_response(conn)
   end
 
   @doc """
@@ -99,11 +85,9 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   """
   @spec account(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def account(conn, %{"address_hash_param" => address_hash_string}) do
-    {status_code, response} = AccountAbstraction.get_account_by_hash(address_hash_string)
-
-    conn
-    |> put_status(status_code)
-    |> json(extended_info(response))
+    address_hash_string
+    |> AccountAbstraction.get_account_by_hash()
+    |> process_response(conn)
   end
 
   @doc """
@@ -111,11 +95,9 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   """
   @spec accounts(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def accounts(conn, query_string) do
-    {status_code, response} = AccountAbstraction.get_accounts(query_string)
-
-    conn
-    |> put_status(status_code)
-    |> json(extended_info(response))
+    query_string
+    |> AccountAbstraction.get_accounts()
+    |> process_response(conn)
   end
 
   @doc """
@@ -123,11 +105,9 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   """
   @spec bundles(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def bundles(conn, query_string) do
-    {status_code, response} = AccountAbstraction.get_bundles(query_string)
-
-    conn
-    |> put_status(status_code)
-    |> json(extended_info(response))
+    query_string
+    |> AccountAbstraction.get_bundles()
+    |> process_response(conn)
   end
 
   @doc """
@@ -135,11 +115,9 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   """
   @spec operations(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def operations(conn, query_string) do
-    {status_code, response} = AccountAbstraction.get_operations(query_string)
-
-    conn
-    |> put_status(status_code)
-    |> json(extended_info(response))
+    query_string
+    |> AccountAbstraction.get_operations()
+    |> process_response(conn)
   end
 
   defp extended_info(response) do
@@ -175,6 +153,20 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
       Helper.address_with_info(address, address_hash_string)
     else
       _ -> address_hash_string
+    end
+  end
+
+  defp process_response(response, conn) do
+    case response do
+      {:error, :disabled} ->
+        conn
+        |> put_status(501)
+        |> json(extended_info(%{message: "Service is disabled"}))
+
+      {status_code, response} ->
+        conn
+        |> put_status(status_code)
+        |> json(extended_info(response))
     end
   end
 end

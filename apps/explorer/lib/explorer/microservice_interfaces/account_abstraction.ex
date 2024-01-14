@@ -10,7 +10,7 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
   @doc """
     Get user operation by hash via GET {{baseUrl}}/api/v1/userOps/:hash
   """
-  @spec get_user_ops_by_hash(binary()) :: {non_neg_integer(), map()}
+  @spec get_user_ops_by_hash(binary()) :: {non_neg_integer(), map()} | {:error, :disabled}
   def get_user_ops_by_hash(user_operation_hash_string) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       query_params = %{}
