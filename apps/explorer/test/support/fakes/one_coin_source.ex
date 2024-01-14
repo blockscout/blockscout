@@ -20,7 +20,7 @@ defmodule Explorer.ExchangeRates.Source.OneCoinSource do
       symbol: Explorer.coin(),
       usd_value: Decimal.new(1),
       volume_24h_usd: Decimal.new(1),
-      image: nil
+      image_url: nil
     }
 
     [pseudo_token]

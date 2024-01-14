@@ -18,7 +18,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
     last_updated = get_last_updated(market_data)
     current_price = get_current_price(market_data)
-    image = get_coin_image(image_data)
+    image_url = get_coin_image(image_data)
 
     id = json_data["id"]
 
@@ -43,7 +43,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
         symbol: String.upcase(json_data["symbol"]),
         usd_value: current_price,
         volume_24h_usd: to_decimal(total_volume_data_usd),
-        image: image
+        image_url: image_url
       }
     ]
   end

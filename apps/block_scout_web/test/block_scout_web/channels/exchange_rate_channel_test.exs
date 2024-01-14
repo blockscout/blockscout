@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
       symbol: Explorer.coin(),
       usd_value: Decimal.new("2.5"),
       volume_24h_usd: Decimal.new("1000.0"),
-      image: nil
+      image_url: nil
     }
 
     on_exit(fn ->

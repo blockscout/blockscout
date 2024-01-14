@@ -43,7 +43,7 @@ defmodule Explorer.Market do
         name: nil,
         symbol: nil,
         volume_24h_usd: nil,
-        image: nil
+        image_url: nil
       }
     else
       Token.null()

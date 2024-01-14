@@ -45,7 +45,7 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
         symbol: String.upcase(token_properties["symbol"]),
         usd_value: current_price,
         volume_24h_usd: to_decimal(total_volume_data_usd),
-        image: nil
+        image_url: nil
       }
     ]
   end

@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         "total_addresses" => @api_true |> Counters.address_estimated_count() |> to_string(),
         "total_transactions" => TransactionCache.estimated_count() |> to_string(),
         "average_block_time" => AverageBlockTime.average_block_time() |> Duration.to_milliseconds(),
-        "coin_image" => MarketHistoryCache.fetch_image(exchange_rate.image),
+        "coin_image" => MarketHistoryCache.fetch_image(exchange_rate.image_url),
         "coin_price" => exchange_rate.usd_value,
         "coin_price_change_percentage" => coin_price_change,
         "total_gas_used" => GasUsage.total() |> to_string(),

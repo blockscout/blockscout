@@ -174,7 +174,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
         symbol: symbol,
         usd_value: Decimal.new("1.0"),
         volume_24h_usd: Decimal.new("1000.0"),
-        image: nil
+        image_url: nil
       }
 
       ExchangeRates.handle_info({nil, {:ok, [eth]}}, %{})
