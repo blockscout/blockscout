@@ -4,7 +4,17 @@
 
 ### Features
 
+- [#9072](https://github.com/blockscout/blockscout/pull/9072) - Add tracing by block logic for geth
+- [#9056](https://github.com/blockscout/blockscout/pull/9056) - Noves.fi API proxy
+
 ### Fixes
+
+- [#9125](https://github.com/blockscout/blockscout/pull/9125) - Fix Explorer.Chain.Cache.GasPriceOracle.merge_fees
+- [#9110](https://github.com/blockscout/blockscout/pull/9110) - Improve update_in in gas tracker
+- [#9109](https://github.com/blockscout/blockscout/pull/9109) - Return current exchange rate in api/v2/stats
+- [#9102](https://github.com/blockscout/blockscout/pull/9102) - Fix some log topics for Suave and Polygon Edge
+- [#9075](https://github.com/blockscout/blockscout/pull/9075) - Fix fetching contract codes
+- [#9073](https://github.com/blockscout/blockscout/pull/9073) - Allow payable function with output appear in the Read tab
 
 ### Chore
 

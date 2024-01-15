@@ -1988,7 +1988,7 @@ defmodule Explorer.Chain do
       from(t in Transaction,
         where:
           not is_nil(t.block_hash) and not is_nil(t.created_contract_address_hash) and
-            is_nil(t.created_contract_code_indexed_at),
+            is_nil(t.created_contract_code_indexed_at) and t.status == ^1,
         select: ^fields
       )
 
