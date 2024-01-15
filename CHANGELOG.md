@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#9155](https://github.com/blockscout/blockscout/pull/9155) - Allow bypassing avg block time in proxy implementation re-fetch ttl calculation
 - [#9145](https://github.com/blockscout/blockscout/pull/9145) - Proxy for Account abstraction microservice
 - [#9072](https://github.com/blockscout/blockscout/pull/9072) - Add tracing by block logic for geth
 - [#9056](https://github.com/blockscout/blockscout/pull/9056) - Noves.fi API proxy
@@ -16,6 +17,7 @@
 - [#9102](https://github.com/blockscout/blockscout/pull/9102) - Fix some log topics for Suave and Polygon Edge
 - [#9075](https://github.com/blockscout/blockscout/pull/9075) - Fix fetching contract codes
 - [#9073](https://github.com/blockscout/blockscout/pull/9073) - Allow payable function with output appear in the Read tab
+- [#9069](https://github.com/blockscout/blockscout/pull/9069) - Fetch realtime coin balances only for addresses for which it has changed
 
 ### Chore
 
