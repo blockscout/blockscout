@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
-  alias BlockScoutWeb.API.V2.{BlobView}
+  alias BlockScoutWeb.API.V2.BlobView
 
   import BlockScoutWeb.Chain,
     only: [

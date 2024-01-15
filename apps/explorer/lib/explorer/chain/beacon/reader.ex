@@ -3,6 +3,8 @@ defmodule Explorer.Chain.Beacon.Reader do
 
   import Ecto.Query,
     only: [
+      subquery: 1,
+      preload: 2,
       from: 2,
       limit: 2,
       order_by: 3,
@@ -14,9 +16,9 @@ defmodule Explorer.Chain.Beacon.Reader do
 
   import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain.Beacon.{BlobTransaction, Blob}
+  alias Explorer.Chain.Beacon.{Blob, BlobTransaction}
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Transaction, Hash}
+  alias Explorer.Chain.{Hash, Transaction}
 
   def blob(hash, options) when is_list(options) do
     Blob
@@ -41,29 +43,48 @@ defmodule Explorer.Chain.Beacon.Reader do
     |> select_repo(options).all()
   end
 
-  def blobs_transactions(options) when is_list(options) do
-    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+  def stream_missed_blob_transactions_timestamps(min_block, max_block, initial, reducer, options \\ [])
+      when is_list(options) do
+    query =
+      from(
+        transaction_blob in subquery(
+          from(
+            blob_transaction in BlobTransaction,
+            select: %{
+              transaction_hash: blob_transaction.hash,
+              blob_hash: fragment("unnest(blob_versioned_hashes)")
+            }
+          )
+        ),
+        inner_join: transaction in Transaction,
+        on: transaction_blob.transaction_hash == transaction.hash,
+        where: transaction.type == 3,
+        left_join: blob in Blob,
+        on: blob.hash == transaction_blob.blob_hash,
+        where: is_nil(blob.hash),
+        distinct: transaction.block_timestamp,
+        select: transaction.block_timestamp
+      )
 
-    BlobTransaction
-    |> join(:inner, [bt], transaction in Transaction, on: bt.hash == transaction.hash)
-    |> where([bt, transaction], transaction.type == 3)
-    |> order_by([bt, transaction], desc: transaction.block_number, desc: transaction.index)
-    |> page_blobs_transactions(paging_options)
-    |> limit(^paging_options.page_size)
-    |> select([bt, transaction], %{
-      block_number: transaction.block_number,
-      index: transaction.index,
-      blob_hashes: bt.blob_versioned_hashes,
-      transaction_hash: bt.hash
-    })
-    |> select_repo(options).all()
+    query
+    |> add_min_block_filter(min_block)
+    |> add_max_block_filter(min_block)
+    |> Repo.stream_reduce(initial, reducer)
   end
 
-  defp page_blobs_transactions(query, %PagingOptions{key: nil}), do: query
+  defp add_min_block_filter(query, block_number) do
+    if is_integer(block_number) do
+      query |> where([_, transaction], transaction.block_number <= ^block_number)
+    else
+      query
+    end
+  end
 
-  defp page_blobs_transactions(query, %PagingOptions{key: {block_number, index}}) do
-    from([bt, transaction] in query,
-      where: fragment("(?, ?) <= (?, ?)", transaction.block_number, transaction.index, ^block_number, ^index)
-    )
+  defp add_max_block_filter(query, block_number) do
+    if is_integer(block_number) and block_number > 0 do
+      query |> where([_, transaction], transaction.block_number >= ^block_number)
+    else
+      query
+    end
   end
 end

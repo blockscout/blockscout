@@ -39,6 +39,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
           ]
 
       "ethereum" ->
+        # credo:disable-for-next-line
         @default_runners ++
           [
             Runner.Beacon.BlobTransactions

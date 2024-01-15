@@ -434,13 +434,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   defp chain_type_fields(result, transaction, single_tx?, conn, watchlist_names) do
-    case single_tx? && Application.get_env(:explorer, :chain_type) do
-      "polygon_edge" ->
+    case {single_tx?, Application.get_env(:explorer, :chain_type)} do
+      {true, "polygon_edge"} ->
         result
         |> Map.put("polygon_edge_deposit", polygon_edge_deposit(transaction.hash, conn))
         |> Map.put("polygon_edge_withdrawal", polygon_edge_withdrawal(transaction.hash, conn))
 
-      "polygon_zkevm" ->
+      {true, "polygon_zkevm"} ->
         extended_result =
           result
           |> add_optional_transaction_field(transaction, "zkevm_batch_number", :zkevm_batch, :number)
@@ -449,21 +449,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
         Map.put(extended_result, "zkevm_status", zkevm_status(extended_result))
 
-      "suave" ->
+      {true, "suave"} ->
         suave_fields(transaction, result, single_tx?, conn, watchlist_names)
 
-      # TODO this will not preload blob fields if single_tx? is false. is it ok? there is no preload in block_controller.ex for such case as well
-      "ethereum" ->
+      {_, "ethereum"} ->
         beacon_blob_transaction = transaction.beacon_blob_transaction
 
-        if !is_nil(beacon_blob_transaction) do
+        if is_nil(beacon_blob_transaction) or beacon_blob_transaction == %Ecto.Association.NotLoaded{} do
+          result
+        else
           result
           |> Map.put("max_fee_per_blob_gas", beacon_blob_transaction.max_fee_per_blob_gas)
           |> Map.put("blob_versioned_hashes", beacon_blob_transaction.blob_versioned_hashes)
           |> Map.put("blob_gas_used", beacon_blob_transaction.blob_gas_used)
           |> Map.put("blob_gas_price", beacon_blob_transaction.blob_gas_price)
-        else
-          result
         end
 
       _ ->
@@ -777,7 +776,19 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
                | :rootstock_remasc
                | :token_creation
                | :token_transfer
-  def tx_types(tx, types \\ [], stage \\ :token_transfer)
+               | :blob_transaction
+  def tx_types(tx, types \\ [], stage \\ :blob_transaction)
+
+  def tx_types(%Transaction{type: type} = tx, types, :blob_transaction) do
+    types =
+      if type == 3 do
+        [:blob_transaction | types]
+      else
+        types
+      end
+
+    tx_types(tx, types, :token_transfer)
+  end
 
   def tx_types(%Transaction{token_transfers: token_transfers} = tx, types, :token_transfer) do
     types =

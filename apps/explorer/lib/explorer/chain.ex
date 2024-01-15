@@ -66,7 +66,7 @@ defmodule Explorer.Chain do
     Withdrawal
   }
 
-  alias Explorer.Chain.Beacon.{BlobTransaction, Blob}
+  alias Explorer.Chain.Beacon.{Blob, BlobTransaction}
   alias Explorer.Chain.Block.{EmissionReward, Reward}
 
   alias Explorer.Chain.Cache.{
@@ -5028,6 +5028,11 @@ defmodule Explorer.Chain do
             as: :created_token
           )
         )
+
+      :blob_transaction ->
+        dynamic
+        |> filter_blob_transaction_dynamic()
+        |> apply_filter_by_tx_type_to_transactions_inner(remain, query)
     end
   end
 
@@ -5059,6 +5064,10 @@ defmodule Explorer.Chain do
 
   def filter_token_creation_dynamic(dynamic) do
     dynamic([tx, created_token: created_token], ^dynamic or not is_nil(created_token))
+  end
+
+  def filter_blob_transaction_dynamic(dynamic) do
+    dynamic([tx], ^dynamic or tx.type == 3)
   end
 
   def count_verified_contracts do

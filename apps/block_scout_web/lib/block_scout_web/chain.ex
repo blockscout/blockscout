@@ -649,11 +649,6 @@ defmodule BlockScoutWeb.Chain do
     %{"id" => msg_id}
   end
 
-  # Beacon blob transactions
-  defp paging_params(%{block_number: block_number, index: index}) do
-    %{"block_number" => block_number, "index" => index}
-  end
-
   @spec paging_params_with_fiat_value(CurrentTokenBalance.t()) :: %{
           required(String.t()) => Decimal.t() | non_neg_integer() | nil
         }

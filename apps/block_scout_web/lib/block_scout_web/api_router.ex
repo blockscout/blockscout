@@ -315,7 +315,6 @@ defmodule BlockScoutWeb.ApiRouter do
 
     scope "/blobs" do
       if System.get_env("CHAIN_TYPE") == "ethereum" do
-        get("/", V2.BlobController, :blobs)
         get("/:blob_hash_param", V2.BlobController, :blob)
       end
     end

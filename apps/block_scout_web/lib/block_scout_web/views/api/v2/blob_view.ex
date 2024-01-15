@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.BlobView do
   alias Explorer.Chain.Beacon.Blob
 
   def render("blob.json", %{blob: blob, transaction_hashes: transaction_hashes}) do
-    prepare_blob(blob) |> Map.put("transaction_hashes", transaction_hashes)
+    blob |> prepare_blob() |> Map.put("transaction_hashes", transaction_hashes)
   end
 
   def render("blob.json", %{transaction_hashes: transaction_hashes}) do
@@ -16,27 +16,17 @@ defmodule BlockScoutWeb.API.V2.BlobView do
     %{"items" => Enum.map(blobs, &prepare_blob(&1))}
   end
 
-  def render("blobs_transactions.json", %{blobs_transactions: blobs_transactions, next_page_params: next_page_params}) do
-    %{"items" => Enum.map(blobs_transactions, &prepare_blob_transaction(&1)), "next_page_params" => next_page_params}
-  end
-
   @spec prepare_blob(Blob.t()) :: map()
   def prepare_blob(blob) do
     %{
       "hash" => blob.hash,
-      "blob_data" => blob.blob_data,
-      "kzg_commitment" => blob.kzg_commitment,
-      "kzg_proof" => blob.kzg_proof
+      "blob_data" => encode_binary(blob.blob_data),
+      "kzg_commitment" => encode_binary(blob.kzg_commitment),
+      "kzg_proof" => encode_binary(blob.kzg_proof)
     }
   end
 
-  @spec prepare_blob_transaction(%{block_number: non_neg_integer(), blob_hashes: [Hash.t()], transaction_hash: Hash.t()}) ::
-          map()
-  def prepare_blob_transaction(blob_transaction) do
-    %{
-      "block_number" => blob_transaction.block_number,
-      "blob_hashes" => blob_transaction.blob_hashes,
-      "transaction_hash" => blob_transaction.transaction_hash
-    }
+  defp encode_binary(binary) do
+    "0x" <> Base.encode16(binary, case: :lower)
   end
 end

@@ -9,6 +9,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   import Indexer.Block.Fetcher,
     only: [
+      async_import_blobs: 1,
       async_import_block_rewards: 1,
       async_import_coin_balances: 2,
       async_import_created_contract_codes: 1,
@@ -163,6 +164,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
     async_import_token_instances(imported)
+    async_import_blobs(imported)
   end
 
   defp stream_fetch_and_import(state, sequence)

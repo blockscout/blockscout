@@ -19,6 +19,7 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
 
   alias Indexer.Fetcher.{
+    Beacon.Blob,
     BlockReward,
     CoinBalance,
     ContractCode,
@@ -383,6 +384,15 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_replaced_transactions(_), do: :ok
+
+  def async_import_blobs(%{blocks: blocks}) do
+    timestamps =
+      blocks
+      |> Enum.filter(fn %{blob_gas_used: blob_gas_used} -> blob_gas_used > 0 end)
+      |> Enum.map(&Map.get(&1, :timestamp))
+
+    Blob.async_fetch(timestamps)
+  end
 
   defp block_reward_errors_to_block_numbers(block_reward_errors) when is_list(block_reward_errors) do
     Enum.map(block_reward_errors, &block_reward_error_to_block_number/1)

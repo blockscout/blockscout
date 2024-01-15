@@ -8,8 +8,8 @@ defmodule BlockScoutWeb.API.V2.BlobController do
       split_list_by_page: 1
     ]
 
-  alias Explorer.Chain.Beacon.Reader
   alias Explorer.Chain
+  alias Explorer.Chain.Beacon.Reader
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -33,27 +33,5 @@ defmodule BlockScoutWeb.API.V2.BlobController do
           |> render(:blob, %{transaction_hashes: transaction_hashes})
       end
     end
-  end
-
-  @doc """
-    Function to handle GET requests to `/api/v2/blobs` endpoint.
-  """
-  @spec blobs(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def blobs(conn, params) do
-    {blobs_transactions, next_page} =
-      params
-      |> paging_options()
-      |> Keyword.put(:api?, true)
-      |> Reader.blobs_transactions()
-      |> split_list_by_page()
-
-    next_page_params = next_page_params(next_page, blobs_transactions, params)
-
-    conn
-    |> put_status(200)
-    |> render(:blobs_transactions, %{
-      blobs_transactions: blobs_transactions,
-      next_page_params: next_page_params
-    })
   end
 end

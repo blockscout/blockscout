@@ -28,22 +28,22 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   end
 
   def prepare_block(block, _conn, single_block? \\ false) do
-    burnt_fees = Block.burnt_fees(block.transactions, block.base_fee_per_gas)
+    burnt_fees_execution = Block.burnt_fees(block.transactions, block.base_fee_per_gas)
     priority_fee = block.base_fee_per_gas && BlockPriorityFeeCounter.fetch(block.hash)
 
-    transaction_fees = Block.transaction_fees(block.transactions)
+    transaction_fees_execution = Block.transaction_fees(block.transactions)
 
     {transaction_fees, burnt_fees, blob_gas_price} =
       if Application.get_env(:explorer, :chain_type) == "ethereum" do
         blob_transaction_fees = Block.blob_transaction_fees(block.transactions)
 
         {
-          transaction_fees |> Decimal.add(blob_transaction_fees),
-          burnt_fees |> Decimal.add(blob_transaction_fees),
+          transaction_fees_execution |> Decimal.add(blob_transaction_fees),
+          burnt_fees_execution |> Decimal.add(blob_transaction_fees),
           blob_transaction_fees |> Decimal.div(block.blob_gas_used)
         }
       else
-        {transaction_fees, burnt_fees, nil}
+        {transaction_fees_execution, burnt_fees_execution, nil}
       end
 
     %{

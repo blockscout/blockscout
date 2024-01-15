@@ -679,6 +679,21 @@ config :indexer, Indexer.Fetcher.RootstockData,
   max_concurrency: ConfigHelper.parse_integer_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_CONCURRENCY", 5),
   db_batch_size: ConfigHelper.parse_integer_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_DB_BATCH_SIZE", 300)
 
+config :indexer, Indexer.Fetcher.Beacon, beacon_rpc: System.get_env("INDEXER_BEACON_RPC_URL")
+
+config :indexer, Indexer.Fetcher.Beacon.Blob.Supervisor,
+  disabled?:
+    ConfigHelper.chain_type() != "ethereum" ||
+      ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BEACON_BLOB_SANITIZE_FETCHER")
+
+config :indexer, Indexer.Fetcher.Beacon.Blob,
+  slot_duration: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_SANITIZE_FETCHER_SLOT_DURATION", 12),
+  reference_slot: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_SANITIZE_FETCHER_REFERENCE_SLOT", 8_206_822),
+  reference_timestamp:
+    ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_SANITIZE_FETCHER_REFERENCE_TIMESTAMP", 1_705_305_887),
+  start_block: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_SANITIZE_FETCHER_START_BLOCK", 8_206_822),
+  end_block: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_SANITIZE_FETCHER_END_BLOCK", 0)
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do

@@ -267,13 +267,13 @@ defmodule Explorer.Chain.Block do
   @spec blob_transaction_fees([Transaction.t()]) :: Decimal.t()
   def blob_transaction_fees(transactions) do
     Enum.reduce(transactions, Decimal.new(0), fn %{beacon_blob_transaction: beacon_blob_transaction}, acc ->
-      if !is_nil(beacon_blob_transaction) do
+      if is_nil(beacon_blob_transaction) do
+        acc
+      else
         beacon_blob_transaction.blob_gas_used
         |> Decimal.new()
         |> Decimal.mult(gas_price_to_decimal(beacon_blob_transaction.blob_gas_price))
         |> Decimal.add(acc)
-      else
-        acc
       end
     end)
   end
