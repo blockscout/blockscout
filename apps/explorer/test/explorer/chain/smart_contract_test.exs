@@ -15,8 +15,13 @@ defmodule Explorer.Chain.SmartContractTest do
     test "check proxy_contract/1 function" do
       smart_contract = insert(:smart_contract)
 
-      Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, :timer.seconds(20))
-      Application.put_env(:explorer, :implementation_data_fetching_timeout, :timer.seconds(20))
+      proxy =
+        :explorer
+        |> Application.get_env(:proxy)
+        |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+        |> Keyword.replace(:implementation_data_fetching_timeout, :timer.seconds(20))
+
+      Application.put_env(:explorer, :proxy, proxy)
 
       refute smart_contract.implementation_fetched_at
 
@@ -26,7 +31,12 @@ defmodule Explorer.Chain.SmartContractTest do
       verify!(EthereumJSONRPC.Mox)
       assert_implementation_never_fetched(smart_contract.address_hash)
 
-      Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, 0)
+      proxy =
+        :explorer
+        |> Application.get_env(:proxy)
+        |> Keyword.replace(:fallback_cached_implementation_data_ttl, 0)
+
+      Application.put_env(:explorer, :proxy, proxy)
 
       get_eip1967_implementation_error_response()
       refute Proxy.proxy_contract?(smart_contract)
@@ -42,10 +52,22 @@ defmodule Explorer.Chain.SmartContractTest do
       verify!(EthereumJSONRPC.Mox)
       assert_implementation_address(smart_contract.address_hash)
 
-      Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, :timer.seconds(20))
+      proxy =
+        :explorer
+        |> Application.get_env(:proxy)
+        |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+
+      Application.put_env(:explorer, :proxy, proxy)
+
       assert Proxy.proxy_contract?(smart_contract)
 
-      Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, 0)
+      proxy =
+        :explorer
+        |> Application.get_env(:proxy)
+        |> Keyword.replace(:fallback_cached_implementation_data_ttl, 0)
+
+      Application.put_env(:explorer, :proxy, proxy)
+
       get_eip1967_implementation_non_zero_address()
       assert Proxy.proxy_contract?(smart_contract)
       verify!(EthereumJSONRPC.Mox)
@@ -59,8 +81,13 @@ defmodule Explorer.Chain.SmartContractTest do
       smart_contract = insert(:smart_contract)
       implementation_smart_contract = insert(:smart_contract, name: "proxy")
 
-      Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, :timer.seconds(20))
-      Application.put_env(:explorer, :implementation_data_fetching_timeout, :timer.seconds(20))
+      proxy =
+        :explorer
+        |> Application.get_env(:proxy)
+        |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+        |> Keyword.replace(:implementation_data_fetching_timeout, :timer.seconds(20))
+
+      Application.put_env(:explorer, :proxy, proxy)
 
       refute smart_contract.implementation_fetched_at
 
@@ -71,7 +98,12 @@ defmodule Explorer.Chain.SmartContractTest do
       assert_implementation_never_fetched(smart_contract.address_hash)
 
       # extract proxy info from db
-      Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, 0)
+      proxy =
+        :explorer
+        |> Application.get_env(:proxy)
+        |> Keyword.replace(:fallback_cached_implementation_data_ttl, 0)
+
+      Application.put_env(:explorer, :proxy, proxy)
 
       string_implementation_address_hash = to_string(implementation_smart_contract.address_hash)
 
@@ -116,7 +148,12 @@ defmodule Explorer.Chain.SmartContractTest do
 
       contract_1 = SmartContract.address_hash_to_smart_contract(smart_contract.address_hash)
 
-      Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, :timer.seconds(20))
+      proxy =
+        :explorer
+        |> Application.get_env(:proxy)
+        |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+
+      Application.put_env(:explorer, :proxy, proxy)
 
       assert {^string_implementation_address_hash, "proxy"} =
                SmartContract.get_implementation_address_hash(smart_contract)
@@ -126,7 +163,12 @@ defmodule Explorer.Chain.SmartContractTest do
       assert contract_1.implementation_fetched_at == contract_2.implementation_fetched_at &&
                contract_1.updated_at == contract_2.updated_at
 
-      Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, 0)
+      proxy =
+        :explorer
+        |> Application.get_env(:proxy)
+        |> Keyword.replace(:fallback_cached_implementation_data_ttl, 0)
+
+      Application.put_env(:explorer, :proxy, proxy)
       get_eip1967_implementation_zero_addresses()
 
       assert {^string_implementation_address_hash, "proxy"} =
@@ -147,8 +189,13 @@ defmodule Explorer.Chain.SmartContractTest do
       twin = SmartContract.address_hash_to_smart_contract(another_address.hash)
       implementation_smart_contract = insert(:smart_contract, name: "proxy")
 
-      Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, :timer.seconds(20))
-      Application.put_env(:explorer, :implementation_data_fetching_timeout, :timer.seconds(20))
+      proxy =
+        :explorer
+        |> Application.get_env(:proxy)
+        |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+        |> Keyword.replace(:implementation_data_fetching_timeout, :timer.seconds(20))
+
+      Application.put_env(:explorer, :proxy, proxy)
 
       # fetch nil implementation
       get_eip1967_implementation_zero_addresses()
@@ -184,8 +231,13 @@ defmodule Explorer.Chain.SmartContractTest do
 
       implementation_smart_contract = insert(:smart_contract, name: "proxy")
 
-      Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, :timer.seconds(20))
-      Application.put_env(:explorer, :implementation_data_fetching_timeout, :timer.seconds(20))
+      proxy =
+        :explorer
+        |> Application.get_env(:proxy)
+        |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+        |> Keyword.replace(:implementation_data_fetching_timeout, :timer.seconds(20))
+
+      Application.put_env(:explorer, :proxy, proxy)
 
       # fetch nil implementation
       get_eip1967_implementation_zero_addresses()
@@ -231,8 +283,13 @@ defmodule Explorer.Chain.SmartContractTest do
 
       implementation_smart_contract = insert(:smart_contract, name: "proxy")
 
-      Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, :timer.seconds(20))
-      Application.put_env(:explorer, :implementation_data_fetching_timeout, :timer.seconds(20))
+      proxy =
+        :explorer
+        |> Application.get_env(:proxy)
+        |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+        |> Keyword.replace(:implementation_data_fetching_timeout, :timer.seconds(20))
+
+      Application.put_env(:explorer, :proxy, proxy)
 
       # fetch nil implementation
       get_eip1967_implementation_zero_addresses()
