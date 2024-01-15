@@ -158,7 +158,7 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
   end
 
   defp operations_url do
-    "#{base_url()}/operations"
+    "#{base_url()}/userOps"
   end
 
   defp bundler_by_hash_url(address_hash) do
