@@ -123,9 +123,13 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   defp extended_info(response) do
     case response do
       %{"items" => items} ->
-        Enum.map(items, fn response_item ->
-          add_address_extended_info(response_item)
-        end)
+        extended_items =
+          Enum.map(items, fn response_item ->
+            add_address_extended_info(response_item)
+          end)
+
+        response
+        |> Map.put("items", extended_items)
 
       _ ->
         add_address_extended_info(response)
