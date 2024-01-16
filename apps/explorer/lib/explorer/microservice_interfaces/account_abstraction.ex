@@ -22,7 +22,7 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
   @doc """
     Get operations list via GET {{baseUrl}}/api/v1/operations
   """
-  @spec get_operations(map()) :: {non_neg_integer(), map()}
+  @spec get_operations(map()) :: {non_neg_integer(), map()} | {:error, :disabled}
   def get_operations(query_params) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       http_get_request(operations_url(), query_params)
@@ -32,7 +32,7 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
   @doc """
     Get bundler by address hash via GET {{baseUrl}}/api/v1/bundlers/:address
   """
-  @spec get_bundler_by_hash(binary()) :: {non_neg_integer(), map()}
+  @spec get_bundler_by_hash(binary()) :: {non_neg_integer(), map()} | {:error, :disabled}
   def get_bundler_by_hash(address_hash_string) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       query_params = %{}
@@ -44,7 +44,7 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
   @doc """
     Get bundlers list via GET {{baseUrl}}/api/v1/bundlers
   """
-  @spec get_bundlers(map()) :: {non_neg_integer(), map()}
+  @spec get_bundlers(map()) :: {non_neg_integer(), map()} | {:error, :disabled}
   def get_bundlers(query_params) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       http_get_request(bundlers_url(), query_params)
@@ -54,7 +54,7 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
   @doc """
     Get factory by address hash via GET {{baseUrl}}/api/v1/factories/:address
   """
-  @spec get_factory_by_hash(binary()) :: {non_neg_integer(), map()}
+  @spec get_factory_by_hash(binary()) :: {non_neg_integer(), map()} | {:error, :disabled}
   def get_factory_by_hash(address_hash_string) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       query_params = %{}
@@ -66,7 +66,7 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
   @doc """
     Get factories list via GET {{baseUrl}}/api/v1/factories
   """
-  @spec get_factories(map()) :: {non_neg_integer(), map()}
+  @spec get_factories(map()) :: {non_neg_integer(), map()} | {:error, :disabled}
   def get_factories(query_params) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       http_get_request(factories_url(), query_params)
@@ -76,7 +76,7 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
   @doc """
     Get paymaster by address hash via GET {{baseUrl}}/api/v1/paymasters/:address
   """
-  @spec get_paymaster_by_hash(binary()) :: {non_neg_integer(), map()}
+  @spec get_paymaster_by_hash(binary()) :: {non_neg_integer(), map()} | {:error, :disabled}
   def get_paymaster_by_hash(address_hash_string) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       query_params = %{}
@@ -88,7 +88,7 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
   @doc """
     Get paymasters list via GET {{baseUrl}}/api/v1/paymasters
   """
-  @spec get_paymasters(map()) :: {non_neg_integer(), map()}
+  @spec get_paymasters(map()) :: {non_neg_integer(), map()} | {:error, :disabled}
   def get_paymasters(query_params) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       http_get_request(paymasters_url(), query_params)
@@ -98,7 +98,7 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
   @doc """
     Get account by address hash via GET {{baseUrl}}/api/v1/accounts/:address
   """
-  @spec get_account_by_hash(binary()) :: {non_neg_integer(), map()}
+  @spec get_account_by_hash(binary()) :: {non_neg_integer(), map()} | {:error, :disabled}
   def get_account_by_hash(address_hash_string) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       query_params = %{}
@@ -110,7 +110,7 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
   @doc """
     Get accounts list via GET {{baseUrl}}/api/v1/accounts
   """
-  @spec get_accounts(map()) :: {non_neg_integer(), map()}
+  @spec get_accounts(map()) :: {non_neg_integer(), map()} | {:error, :disabled}
   def get_accounts(query_params) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       http_get_request(accounts_url(), query_params)
@@ -120,7 +120,7 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
   @doc """
     Get bundles list via GET {{baseUrl}}/api/v1/bundles
   """
-  @spec get_bundles(map()) :: {non_neg_integer(), map()}
+  @spec get_bundles(map()) :: {non_neg_integer(), map()} | {:error, :disabled}
   def get_bundles(query_params) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       http_get_request(bundles_url(), query_params)
