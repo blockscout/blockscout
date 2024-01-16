@@ -13,8 +13,8 @@ defmodule BlockScoutWeb.API.V2.UtilsController do
     Function to handle GET and POST requests to `/api/v2/utils/decode-calldata`
   """
   @spec decode_calldata(any(), map()) :: {:format, :error} | Plug.Conn.t()
-  def decode_calldata(conn, %{"calldata" => calldata} = params) do
-    with {:format, {:ok, data}} <- {:format, Data.cast(calldata)},
+  def decode_calldata(conn, params) do
+    with {:format, {:ok, data}} <- {:format, Data.cast(params["calldata"])},
          address_hash <- params["address_hash"] && Chain.string_to_address_hash(params["address_hash"]),
          {:format, true} <- {:format, match?({:ok, _hash}, address_hash) || is_nil(address_hash)} do
       smart_contract =
