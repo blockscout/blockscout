@@ -30,6 +30,7 @@ Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonEdge, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonZkevm, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.RSK, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Suave, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Beacon, :manual)
 
 Absinthe.Test.prime(BlockScoutWeb.Schema)
 
