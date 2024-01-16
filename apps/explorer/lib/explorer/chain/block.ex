@@ -96,6 +96,7 @@ defmodule Explorer.Chain.Block do
        * `blob_gas_used` - The total amount of blob gas consumed by the transactions within the block.
        * `excess_blob_gas` - The running total of blob gas consumed in excess of the target, prior to the block.
       """
+    _ -> ""
   end}
   """
   @type t :: %__MODULE__{
@@ -145,6 +146,9 @@ defmodule Explorer.Chain.Block do
       "ethereum" ->
         field(:blob_gas_used, :decimal)
         field(:excess_blob_gas, :decimal)
+
+      _ ->
+        nil
     end
 
     timestamps()

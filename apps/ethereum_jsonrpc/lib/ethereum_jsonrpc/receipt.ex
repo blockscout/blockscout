@@ -80,6 +80,7 @@ defmodule EthereumJSONRPC.Receipt do
             blob_gas_price: 0,\
             blob_gas_used: 0\
       """
+    _ -> ""
   end}
       }
 
@@ -119,6 +120,7 @@ defmodule EthereumJSONRPC.Receipt do
             blob_gas_price: 0,\
             blob_gas_used: 0\
       """
+    _ -> ""
   end}
       }
 

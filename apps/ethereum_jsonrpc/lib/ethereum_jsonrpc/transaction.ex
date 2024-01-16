@@ -84,6 +84,7 @@ defmodule EthereumJSONRPC.Transaction do
        * `"executionNode"` - `t:EthereumJSONRPC.address/0` of execution node (used by Suave).
        * `"requestRecord"` - map of wrapped transaction data (used by Suave).
       """
+    _ -> ""
   end}
   """
   @type t :: %{

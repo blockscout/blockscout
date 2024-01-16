@@ -106,6 +106,7 @@ defmodule EthereumJSONRPC.Block do
        * `"blobGasUsed"` - `t:EthereumJSONRPC.quantity/0` of the total amount of blob gas consumed by the transactions within the block.
        * `"excessBlobGas"` - `t:EthereumJSONRPC.quantity/0` of the running total of blob gas consumed in excess of the target, prior to the block.
       """
+    _ -> ""
   end}
   """
   @type t :: %{String.t() => EthereumJSONRPC.data() | EthereumJSONRPC.hash() | EthereumJSONRPC.quantity() | nil}
@@ -171,6 +172,7 @@ defmodule EthereumJSONRPC.Block do
           "blobGasUsed" => 262144,\
           "excessBlobGas" => 79429632,\
       """
+    _ -> ""
   end}
       ...>     "uncles" => []
       ...>   }
@@ -208,6 +210,7 @@ defmodule EthereumJSONRPC.Block do
             blob_gas_used: 262144,\
             excess_blob_gas: 79429632,\
       """
+    _ -> ""
   end}
         uncles: []
       }
@@ -270,6 +273,7 @@ defmodule EthereumJSONRPC.Block do
             blob_gas_used: 0,\
             excess_blob_gas: 0,\
       """
+    _ -> ""
   end}
         uncles: []
       }

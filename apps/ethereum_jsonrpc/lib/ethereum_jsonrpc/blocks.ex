@@ -129,6 +129,7 @@ defmodule EthereumJSONRPC.Blocks do
               blob_gas_used: 0,\
               excess_blob_gas: 0,\
       """
+    _ -> ""
   end}
           uncles: ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"]
         }
