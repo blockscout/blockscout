@@ -120,7 +120,7 @@ defmodule Explorer.Chain.Transaction.StateChange do
   end
 
   defp do_update_balance(old_val, type, transfer, _) do
-    token_ids = if transfer.token.type == "ERC-1155", do: transfer.token_ids || [transfer.token_id], else: [nil]
+    token_ids = if transfer.token.type == "ERC-1155", do: transfer.token_ids, else: [nil]
     transfer_amounts = transfer.amounts || [transfer.amount || 1]
 
     sub_or_add =

@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
 
   alias BlockScoutWeb.{AccessHelper, Controller, TransactionView}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, DenormalizationHelper}
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -26,8 +26,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
       [token_transfers: :token] => :optional,
       [token_transfers: :to_address] => :optional,
       [token_transfers: :from_address] => :optional,
-      [token_transfers: :token_contract_address] => :optional,
-      :block => :required
+      [token_transfers: :token_contract_address] => :optional
     }
   ]
 
@@ -141,6 +140,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       options =
         @transaction_necessity_by_association
+        |> DenormalizationHelper.extend_block_necessity(:required)
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 

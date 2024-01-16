@@ -32,4 +32,13 @@ defmodule Indexer.Helper do
   def is_address_correct?(_address) do
     false
   end
+
+  @spec log_topic_to_string(any()) :: binary() | nil
+  def log_topic_to_string(topic) do
+    if is_binary(topic) or is_nil(topic) do
+      topic
+    else
+      Hash.to_string(topic)
+    end
+  end
 end

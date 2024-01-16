@@ -35,7 +35,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
            | Withdrawal.t()
 
   @doc """
-    Batch request for ENS names via {{baseUrl}}/api/v1/:chainId/addresses:batch-resolve-names
+    Batch request for ENS names via POST {{baseUrl}}/api/v1/:chainId/addresses:batch-resolve-names
   """
   @spec ens_names_batch_request([binary()]) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def ens_names_batch_request(addresses) do
@@ -49,37 +49,37 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   end
 
   @doc """
-    Request for ENS name via {{baseUrl}}/api/v1/:chainId/addresses:lookup
+    Request for ENS name via GET {{baseUrl}}/api/v1/:chainId/addresses:lookup
   """
   @spec address_lookup(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def address_lookup(address) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
-      body = %{
+      query_params = %{
         "address" => to_string(address),
-        "resolvedTo" => true,
-        "ownedBy" => false,
-        "onlyActive" => true,
+        "resolved_to" => true,
+        "owned_by" => false,
+        "only_active" => true,
         "order" => "ASC"
       }
 
-      http_post_request(address_lookup_url(), body)
+      http_get_request(address_lookup_url(), query_params)
     end
   end
 
   @doc """
-    Lookup for ENS domain name via {{baseUrl}}/api/v1/:chainId/domains:lookup
+    Lookup for ENS domain name via GET {{baseUrl}}/api/v1/:chainId/domains:lookup
   """
   @spec ens_domain_lookup(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def ens_domain_lookup(domain) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
-      body = %{
+      query_params = %{
         "name" => domain,
-        "onlyActive" => true,
+        "only_active" => true,
         "sort" => "registration_date",
         "order" => "DESC"
       }
 
-      http_post_request(domain_lookup_url(), body)
+      http_get_request(domain_lookup_url(), query_params)
     end
   end
 
@@ -97,6 +97,27 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
         Logger.error(fn ->
           [
             "Error while sending request to BENS microservice url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
+            inspect(error, limit: :infinity, printable_limit: :infinity)
+          ]
+        end)
+
+        Logger.configure(truncate: old_truncate)
+        {:error, @request_error_msg}
+    end
+  end
+
+  defp http_get_request(url, query_params) do
+    case HTTPoison.get(url, [], params: query_params) do
+      {:ok, %Response{body: body, status_code: 200}} ->
+        Jason.decode(body)
+
+      {_, error} ->
+        old_truncate = Application.get_env(:logger, :truncate)
+        Logger.configure(truncate: :infinity)
+
+        Logger.error(fn ->
+          [
+            "Error while sending request to BENS microservice url: #{url}: ",
             inspect(error, limit: :infinity, printable_limit: :infinity)
           ]
         end)
@@ -221,7 +242,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
           %{
             "items" =>
               [
-                %{"name" => name, "expiryDate" => expiry_date, "resolvedAddress" => %{"hash" => address_hash_string}}
+                %{"name" => name, "expiry_date" => expiry_date, "resolved_address" => %{"hash" => address_hash_string}}
                 | _other
               ] = items
           }}
@@ -249,9 +270,19 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   defp item_to_address_hash_strings(%Transaction{
          to_address_hash: to_address_hash,
          created_contract_address_hash: nil,
-         from_address_hash: from_address_hash
+         from_address_hash: from_address_hash,
+         token_transfers: token_transfers
        }) do
-    [to_string(to_address_hash), to_string(from_address_hash)]
+    token_transfers_addresses =
+      case token_transfers do
+        token_transfers_list when is_list(token_transfers_list) ->
+          List.flatten(Enum.map(token_transfers_list, &item_to_address_hash_strings/1))
+
+        _ ->
+          []
+      end
+
+    [to_string(to_address_hash), to_string(from_address_hash)] ++ token_transfers_addresses
   end
 
   defp item_to_address_hash_strings(%TokenTransfer{
@@ -304,11 +335,21 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
          } = tx,
          names
        ) do
+    token_transfers =
+      case tx.token_transfers do
+        token_transfers_list when is_list(token_transfers_list) ->
+          Enum.map(token_transfers_list, &put_ens_name_to_item(&1, names))
+
+        other ->
+          other
+      end
+
     %Transaction{
       tx
       | to_address: alter_address(tx.to_address, to_address_hash, names),
         created_contract_address: alter_address(tx.created_contract_address, created_contract_address_hash, names),
-        from_address: alter_address(tx.from_address, from_address_hash, names)
+        from_address: alter_address(tx.from_address, from_address_hash, names),
+        token_transfers: token_transfers
     }
   end
 

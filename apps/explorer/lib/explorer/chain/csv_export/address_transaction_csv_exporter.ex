@@ -10,14 +10,8 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
 
   alias Explorer.{Chain, Market, PagingOptions, Repo}
   alias Explorer.Market.MarketHistory
-  alias Explorer.Chain.{Address, Hash, Transaction, Wei}
+  alias Explorer.Chain.{Address, DenormalizationHelper, Hash, Transaction, Wei}
   alias Explorer.Chain.CSVExport.Helper
-
-  @necessity_by_association [
-    necessity_by_association: %{
-      :block => :required
-    }
-  ]
 
   @paging_options %PagingOptions{page_size: Helper.limit()}
 
@@ -35,7 +29,8 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
   # sobelow_skip ["DOS.StringToAtom"]
   def fetch_transactions(address_hash, from_block, to_block, filter_type, filter_value, paging_options) do
     options =
-      @necessity_by_association
+      []
+      |> DenormalizationHelper.extend_block_necessity(:required)
       |> Keyword.put(:paging_options, paging_options)
       |> Keyword.put(:from_block, from_block)
       |> Keyword.put(:to_block, to_block)
@@ -67,7 +62,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
 
     date_to_prices =
       Enum.reduce(transactions, %{}, fn tx, acc ->
-        date = DateTime.to_date(tx.block.timestamp)
+        date = tx |> Transaction.block_timestamp() |> DateTime.to_date()
 
         if Map.has_key?(acc, date) do
           acc
@@ -79,12 +74,12 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
     transaction_lists =
       transactions
       |> Stream.map(fn transaction ->
-        {opening_price, closing_price} = date_to_prices[DateTime.to_date(transaction.block.timestamp)]
+        {opening_price, closing_price} = date_to_prices[DateTime.to_date(Transaction.block_timestamp(transaction))]
 
         [
           to_string(transaction.hash),
           transaction.block_number,
-          transaction.block.timestamp,
+          Transaction.block_timestamp(transaction),
           Address.checksum(transaction.from_address_hash),
           Address.checksum(transaction.to_address_hash),
           Address.checksum(transaction.created_contract_address_hash),

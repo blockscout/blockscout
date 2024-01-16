@@ -60,10 +60,7 @@ defmodule BlockScoutWeb.ChainView do
   defp gas_prices do
     case GasPriceOracle.get_gas_prices() do
       {:ok, gas_prices} ->
-        gas_prices
-
-      nil ->
-        nil
+        %{slow: gas_prices[:slow][:price], average: gas_prices[:average][:price], fast: gas_prices[:fast][:price]}
 
       _ ->
         nil

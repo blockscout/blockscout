@@ -70,7 +70,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
       assert result.tx_hash == to_string(transaction.hash)
       assert result.from_address == Address.checksum(token_transfer.from_address_hash)
       assert result.to_address == Address.checksum(token_transfer.to_address_hash)
-      assert result.timestamp == to_string(transaction.block.timestamp)
+      assert result.timestamp == to_string(transaction.block_timestamp)
       assert result.type == "OUT"
     end
 
