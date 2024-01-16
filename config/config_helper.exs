@@ -7,13 +7,20 @@ defmodule ConfigHelper do
   def repos do
     base_repos = [Explorer.Repo, Explorer.Repo.Account]
 
-    case System.get_env("CHAIN_TYPE") do
-      "polygon_edge" -> base_repos ++ [Explorer.Repo.PolygonEdge]
-      "polygon_zkevm" -> base_repos ++ [Explorer.Repo.PolygonZkevm]
-      "rsk" -> base_repos ++ [Explorer.Repo.RSK]
-      "shibarium" -> base_repos ++ [Explorer.Repo.Shibarium]
-      "suave" -> base_repos ++ [Explorer.Repo.Suave]
-      _ -> base_repos
+    repos =
+      case System.get_env("CHAIN_TYPE") do
+        "polygon_edge" -> base_repos ++ [Explorer.Repo.PolygonEdge]
+        "polygon_zkevm" -> base_repos ++ [Explorer.Repo.PolygonZkevm]
+        "rsk" -> base_repos ++ [Explorer.Repo.RSK]
+        "shibarium" -> base_repos ++ [Explorer.Repo.Shibarium]
+        "suave" -> base_repos ++ [Explorer.Repo.Suave]
+        _ -> base_repos
+      end
+
+    if System.get_env("BRIDGED_TOKENS_ENABLED") do
+      repos ++ [Explorer.Repo.BridgedTokens]
+    else
+      repos
     end
   end
 

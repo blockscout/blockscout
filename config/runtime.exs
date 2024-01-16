@@ -485,6 +485,13 @@ config :explorer, Explorer.Migrator.TransactionsDenormalization,
   batch_size: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_BATCH_SIZE", 500),
   concurrency: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_CONCURRENCY", 10)
 
+config :explorer, Explorer.Chain.BridgedToken,
+  eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
+  bsc_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_BSC_OMNI_BRIDGE_MEDIATOR"),
+  poa_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_POA_OMNI_BRIDGE_MEDIATOR"),
+  amb_bridge_mediators: System.get_env("BRIDGED_TOKENS_AMB_BRIDGE_MEDIATORS"),
+  foreign_json_rpc: System.get_env("BRIDGED_TOKENS_FOREIGN_JSON_RPC", "")
+
 ###############
 ### Indexer ###
 ###############
