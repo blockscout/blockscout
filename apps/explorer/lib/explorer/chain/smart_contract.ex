@@ -1215,7 +1215,7 @@ defmodule Explorer.Chain.SmartContract do
 
     case average_block_time do
       0 ->
-        Application.get_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy)
+        Application.get_env(:explorer, :proxy)[:fallback_cached_implementation_data_ttl]
 
       time ->
         round(time)
