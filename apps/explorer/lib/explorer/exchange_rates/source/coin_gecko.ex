@@ -5,7 +5,6 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
   alias Explorer.{Chain, Helper}
   alias Explorer.ExchangeRates.{Source, Token}
-  alias Explorer.Market.MarketHistoryCache
 
   import Source, only: [to_decimal: 1]
 
@@ -254,7 +253,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
       end
 
     case Helper.validate_url(image_url_raw) do
-      {:ok, url} -> MarketHistoryCache.fetch_image(url)
+      {:ok, url} -> url
       _ -> nil
     end
   end
