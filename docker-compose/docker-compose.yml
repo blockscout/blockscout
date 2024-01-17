@@ -41,7 +41,7 @@ services:
         ETHEREUM_JSONRPC_HTTP_URL: http://185.249.225.34:9650/ext/bc/2HBTDhUdx6KmQZJ5N6DnApANXxKr6hA1ahqw8yxRUt1mB3uBNa/rpc
         ETHEREUM_JSONRPC_TRACE_URL: ""
         ETHEREUM_JSONRPC_WS_URL: ""
-        CHAIN_ID: '1337'
+        CHAIN_ID: '603985'
 
   visualizer:
     extends:
