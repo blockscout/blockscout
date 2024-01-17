@@ -38,9 +38,9 @@ services:
     links:
       - db:database
     environment:
-        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
+        ETHEREUM_JSONRPC_HTTP_URL: http://185.249.225.34:9650/ext/bc/2HBTDhUdx6KmQZJ5N6DnApANXxKr6hA1ahqw8yxRUt1mB3uBNa/rpc
+        ETHEREUM_JSONRPC_TRACE_URL: ""
+        ETHEREUM_JSONRPC_WS_URL: ""
         CHAIN_ID: '1337'
 
   visualizer:

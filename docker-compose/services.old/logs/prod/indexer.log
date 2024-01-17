@@ -1,0 +1,72 @@
+2024-01-17T04:37:22.727 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:22.727 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:22.749 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:22.749 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:22.774 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:22.774 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:22.796 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:22.796 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:34.267 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:34.267 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:34.295 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:34.295 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:34.322 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:34.322 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:34.349 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:34.349 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:44.185 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:44.185 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:44.215 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:44.215 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:44.258 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:44.258 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:44.288 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:44.288 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:54.300 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:54.300 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:54.330 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:54.330 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:54.360 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:54.361 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:37:54.390 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:37:54.390 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:04.389 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:04.389 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:04.413 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:04.413 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:04.446 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:04.446 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:04.474 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:04.474 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:14.667 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:14.667 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:14.695 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:14.695 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:14.726 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:14.726 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:14.755 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:14.755 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:26.565 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:26.565 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:26.600 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:26.601 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:26.631 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:26.631 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:26.668 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:26.668 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:42.295 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:42.295 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:42.339 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:42.339 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:42.391 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:42.391 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:38:42.441 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:38:42.441 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:39:04.119 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:39:04.119 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:39:04.154 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:39:04.154 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:39:04.192 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:39:04.192 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
+2024-01-17T04:39:04.218 application=indexer fetcher=block_catchup missing_block_count=0 shrunk=false [info] Index already caught up.
+2024-01-17T04:39:04.218 application=indexer fetcher=block_catchup [info] Checking if index needs to catch up in 5000ms.
