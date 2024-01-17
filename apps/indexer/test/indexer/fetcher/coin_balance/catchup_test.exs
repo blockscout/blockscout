@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.CoinBalanceTest do
+defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
   # MUST be `async: false` so that {:shared, pid} is set for connection to allow CoinBalanceFetcher's self-send to have
   # connection allowed immediately.
   use EthereumJSONRPC.Case, async: false
@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
   import Mox
 
   alias Explorer.Chain.{Address, Hash, Wei}
-  alias Indexer.Fetcher.CoinBalance
+  alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
 
   @moduletag :capture_log
 
@@ -83,7 +83,7 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
       assert miner.fetched_coin_balance == nil
       assert miner.fetched_coin_balance_block_number == nil
 
-      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       fetched_address =
         wait(fn ->
@@ -151,7 +151,7 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
       block = insert(:block, miner: miner, number: block_number)
       insert(:unfetched_balance, address_hash: miner.hash, block_number: block_number)
 
-      CoinBalance.Supervisor.Case.start_supervised!(
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(
         json_rpc_named_arguments: json_rpc_named_arguments,
         max_batch_size: 2
       )
@@ -225,9 +225,9 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
         end)
       end
 
-      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      assert :ok = CoinBalance.async_fetch_balances([%{address_hash: hash, block_number: block_number}])
+      assert :ok = CoinBalanceCatchup.async_fetch_balances([%{address_hash: hash, block_number: block_number}])
 
       address =
         wait(fn ->
@@ -318,7 +318,7 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
         {:ok, [res2]}
       end)
 
-      case CoinBalance.run(entries, json_rpc_named_arguments) do
+      case CoinBalanceCatchup.run(entries, json_rpc_named_arguments) do
         :ok ->
           balances = Repo.all(from(balance in Address.CoinBalance, where: balance.address_hash == ^hash_data))
 
@@ -373,7 +373,7 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
         {:ok, [%{id: id, error: %{code: 1, message: "Bad"}}]}
       end)
 
-      assert {:retry, ^entries} = CoinBalance.run(entries, json_rpc_named_arguments)
+      assert {:retry, ^entries} = CoinBalanceCatchup.run(entries, json_rpc_named_arguments)
     end
 
     test "retries none if all imported and no fetch errors", %{json_rpc_named_arguments: json_rpc_named_arguments} do
@@ -401,7 +401,7 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
         {:ok, [res]}
       end)
 
-      assert :ok = CoinBalance.run(entries, json_rpc_named_arguments)
+      assert :ok = CoinBalanceCatchup.run(entries, json_rpc_named_arguments)
     end
 
     test "retries fetch errors if all imported", %{json_rpc_named_arguments: json_rpc_named_arguments} do
@@ -457,7 +457,7 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
       end)
 
       assert {:retry, [{^address_hash_bytes, ^bad_block_number}]} =
-               CoinBalance.run(
+               CoinBalanceCatchup.run(
                  [{address_hash_bytes, good_block_number}, {address_hash_bytes, bad_block_number}],
                  json_rpc_named_arguments
                )

@@ -16,13 +16,14 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
+  alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
+  alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
   alias Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens, as: PolygonZkevmBridgeL1Tokens
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
 
   alias Indexer.Fetcher.{
     Beacon.Blob,
     BlockReward,
-    CoinBalance,
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
@@ -371,10 +372,16 @@ defmodule Indexer.Block.Fetcher do
       block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
       %{address_hash: address_hash, block_number: block_number}
     end)
-    |> CoinBalance.async_fetch_balances()
+    |> CoinBalanceCatchup.async_fetch_balances()
   end
 
   def async_import_coin_balances(_, _), do: :ok
+
+  def async_import_realtime_coin_balances(%{address_coin_balances: balances}) do
+    CoinBalanceRealtime.async_fetch_balances(balances)
+  end
+
+  def async_import_realtime_coin_balances(_), do: :ok
 
   def async_import_created_contract_codes(%{transactions: transactions}) do
     transactions
