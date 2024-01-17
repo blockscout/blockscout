@@ -666,7 +666,7 @@ config :indexer, Indexer.Fetcher.Zkevm.TransactionBatch,
 
 config :indexer, Indexer.Fetcher.Zkevm.TransactionBatch.Supervisor,
   enabled:
-    System.get_env("CHAIN_TYPE", "ethereum") == "polygon_zkevm" &&
+    ConfigHelper.chain_type() == "polygon_zkevm" &&
       ConfigHelper.parse_bool_env_var("INDEXER_ZKEVM_BATCHES_ENABLED")
 
 config :indexer, Indexer.Fetcher.RootstockData.Supervisor,
