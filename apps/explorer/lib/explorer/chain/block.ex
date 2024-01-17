@@ -266,18 +266,16 @@ defmodule Explorer.Chain.Block do
   end
 
   @doc """
-  Calculates blob transaction fees (gas price * gas used) for the list of transactions (from a single block)
+  Finds blob transaction gas price for the list of transactions (from a single block)
   """
-  @spec blob_transaction_fees([Transaction.t()]) :: Decimal.t()
-  def blob_transaction_fees(transactions) do
-    Enum.reduce(transactions, Decimal.new(0), fn %{beacon_blob_transaction: beacon_blob_transaction}, acc ->
+  @spec transaction_blob_gas_price([Transaction.t()]) :: Decimal.t() | nil
+  def transaction_blob_gas_price(transactions) do
+    transactions
+    |> Enum.find_value(fn %{beacon_blob_transaction: beacon_blob_transaction} ->
       if is_nil(beacon_blob_transaction) do
-        acc
+        nil
       else
-        beacon_blob_transaction.blob_gas_used
-        |> Decimal.new()
-        |> Decimal.mult(gas_price_to_decimal(beacon_blob_transaction.blob_gas_price))
-        |> Decimal.add(acc)
+        gas_price_to_decimal(beacon_blob_transaction.blob_gas_price)
       end
     end)
   end

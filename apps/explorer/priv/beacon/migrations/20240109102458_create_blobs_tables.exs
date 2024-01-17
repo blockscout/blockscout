@@ -17,8 +17,8 @@ defmodule Explorer.Repo.Beacon.Migrations.CreateBlobsTables do
     end
 
     alter table(:blocks) do
-      add(:blob_gas_used, :numeric, precision: 100, null: false)
-      add(:excess_blob_gas, :numeric, precision: 100, null: false)
+      add(:blob_gas_used, :numeric, precision: 100)
+      add(:excess_blob_gas, :numeric, precision: 100)
     end
 
     create table(:beacon_blobs, primary_key: false) do

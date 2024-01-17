@@ -28,23 +28,10 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   end
 
   def prepare_block(block, _conn, single_block? \\ false) do
-    burnt_fees_execution = Block.burnt_fees(block.transactions, block.base_fee_per_gas)
+    burnt_fees = Block.burnt_fees(block.transactions, block.base_fee_per_gas)
     priority_fee = block.base_fee_per_gas && BlockPriorityFeeCounter.fetch(block.hash)
 
-    transaction_fees_execution = Block.transaction_fees(block.transactions)
-
-    {transaction_fees, burnt_fees, blob_gas_price} =
-      if Application.get_env(:explorer, :chain_type) == "ethereum" do
-        blob_transaction_fees = Block.blob_transaction_fees(block.transactions)
-
-        {
-          transaction_fees_execution |> Decimal.add(blob_transaction_fees),
-          burnt_fees_execution |> Decimal.add(blob_transaction_fees),
-          blob_transaction_fees |> Decimal.div(block.blob_gas_used)
-        }
-      else
-        {transaction_fees_execution, burnt_fees_execution, nil}
-      end
+    transaction_fees = Block.transaction_fees(block.transactions)
 
     %{
       "height" => block.number,
@@ -73,7 +60,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "tx_fees" => transaction_fees,
       "withdrawals_count" => count_withdrawals(block)
     }
-    |> chain_type_fields(block, blob_gas_price, single_block?)
+    |> chain_type_fields(block, single_block?)
   end
 
   def prepare_rewards(rewards, block, single_block?) do
@@ -130,7 +117,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   def count_withdrawals(%Block{withdrawals: withdrawals}) when is_list(withdrawals), do: Enum.count(withdrawals)
   def count_withdrawals(_), do: nil
 
-  defp chain_type_fields(result, block, blob_gas_price, single_block?) do
+  defp chain_type_fields(result, block, single_block?) do
     case Application.get_env(:explorer, :chain_type) do
       "rsk" ->
         if single_block? do
@@ -145,10 +132,20 @@ defmodule BlockScoutWeb.API.V2.BlockView do
         end
 
       "ethereum" ->
-        result
-        |> Map.put("blob_gas_used", block.blob_gas_used)
-        |> Map.put("excess_blob_gas", block.excess_blob_gas)
-        |> Map.put("blob_gas_price", blob_gas_price)
+        if single_block? do
+          blob_gas_price = Block.transaction_blob_gas_price(block.transactions)
+          burnt_blob_transaction_fees = block |> Map.get(:blob_gas_used, 0) |> Decimal.mult(blob_gas_price || 0)
+
+          result
+          |> Map.put("blob_gas_used", block.blob_gas_used)
+          |> Map.put("excess_blob_gas", block.excess_blob_gas)
+          |> Map.put("blob_gas_price", blob_gas_price)
+          |> Map.put("burnt_blob_fees", burnt_blob_transaction_fees)
+        else
+          result
+          |> Map.put("blob_gas_used", block.blob_gas_used)
+          |> Map.put("excess_blob_gas", block.excess_blob_gas)
+        end
 
       _ ->
         result

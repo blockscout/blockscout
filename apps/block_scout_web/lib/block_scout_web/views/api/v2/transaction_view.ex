@@ -453,16 +453,19 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         suave_fields(transaction, result, single_tx?, conn, watchlist_names)
 
       {_, "ethereum"} ->
-        beacon_blob_transaction = transaction.beacon_blob_transaction
+        case Map.get(transaction, :beacon_blob_transaction) do
+          nil ->
+            result
 
-        if is_nil(beacon_blob_transaction) or beacon_blob_transaction == %Ecto.Association.NotLoaded{} do
-          result
-        else
-          result
-          |> Map.put("max_fee_per_blob_gas", beacon_blob_transaction.max_fee_per_blob_gas)
-          |> Map.put("blob_versioned_hashes", beacon_blob_transaction.blob_versioned_hashes)
-          |> Map.put("blob_gas_used", beacon_blob_transaction.blob_gas_used)
-          |> Map.put("blob_gas_price", beacon_blob_transaction.blob_gas_price)
+          %Ecto.Association.NotLoaded{} ->
+            result
+
+          item ->
+            result
+            |> Map.put("max_fee_per_blob_gas", item.max_fee_per_blob_gas)
+            |> Map.put("blob_versioned_hashes", item.blob_versioned_hashes)
+            |> Map.put("blob_gas_used", item.blob_gas_used)
+            |> Map.put("blob_gas_price", item.blob_gas_price)
         end
 
       _ ->

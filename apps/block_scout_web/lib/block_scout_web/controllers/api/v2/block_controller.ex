@@ -18,24 +18,30 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   case Application.compile_env(:explorer, :chain_type) do
     "ethereum" ->
+      @chain_type_transaction_necessity_by_association %{
+        :beacon_blob_transaction => :optional
+      }
       @chain_type_block_necessity_by_association %{
         [transactions: :beacon_blob_transaction] => :optional
       }
 
     _ ->
+      @chain_type_transaction_necessity_by_association %{}
       @chain_type_block_necessity_by_association %{}
   end
 
   @transaction_necessity_by_association [
-    necessity_by_association: %{
-      [created_contract_address: :names] => :optional,
-      [from_address: :names] => :optional,
-      [to_address: :names] => :optional,
-      :block => :optional,
-      [created_contract_address: :smart_contract] => :optional,
-      [from_address: :smart_contract] => :optional,
-      [to_address: :smart_contract] => :optional
-    }
+    necessity_by_association:
+      %{
+        [created_contract_address: :names] => :optional,
+        [from_address: :names] => :optional,
+        [to_address: :names] => :optional,
+        :block => :optional,
+        [created_contract_address: :smart_contract] => :optional,
+        [from_address: :smart_contract] => :optional,
+        [to_address: :smart_contract] => :optional
+      }
+      |> Map.merge(@chain_type_transaction_necessity_by_association)
   ]
 
   @api_true [api?: true]
