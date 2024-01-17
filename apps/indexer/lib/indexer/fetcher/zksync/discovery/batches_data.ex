@@ -246,12 +246,13 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
          batches,
          %{json_rpc_named_arguments: json_rpc_named_arguments, chunk_size: chunk_size} = _config
        ) do
+    # Extracts the rollup block range for every batch, unfolds it and
+    # build chunks of `eth_getBlockByNumber` calls
     {blocks, chunked_requests, cur_chunk, cur_chunk_size} =
-      # Extracts the rollup block range for every batch, unfolds it and
-      # build chunks of `eth_getBlockByNumber` calls
       Map.keys(batches)
       |> Enum.reduce({%{}, [], [], 0}, fn batch_number, {blocks, chunked_requests, cur_chunk, cur_chunk_size} = _acc ->
         batch = Map.get(batches, batch_number)
+
         batch.start_block..batch.end_block
         |> Enum.chunk_every(chunk_size)
         |> Enum.reduce({blocks, chunked_requests, cur_chunk, cur_chunk_size}, fn blocks_range,

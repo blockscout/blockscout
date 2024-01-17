@@ -1,5 +1,4 @@
 defmodule BlockScoutWeb.API.V2.ZkSyncController do
-
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,

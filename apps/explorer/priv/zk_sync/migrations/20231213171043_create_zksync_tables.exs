@@ -78,6 +78,5 @@ defmodule Explorer.Repo.ZkSync.Migrations.CreateZkSyncTables do
     end
 
     create(index(:zksync_batch_l2_blocks, :batch_number))
-
   end
 end

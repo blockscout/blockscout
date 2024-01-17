@@ -20,7 +20,6 @@ defmodule Explorer.Chain.ZkSync.Reader do
 
   alias Explorer.{Chain, PagingOptions, Repo}
 
-
   @doc """
     Receives total amount of batches imported to the `zksync_transaction_batches` table.
 
@@ -33,6 +32,7 @@ defmodule Explorer.Chain.ZkSync.Reader do
       from(tb in TransactionBatch,
         select: count(tb.number)
       )
+
     query
     |> Repo.one()
   end

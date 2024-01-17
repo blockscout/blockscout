@@ -41,7 +41,13 @@ config :explorer, Explorer.Repo.Account,
   queue_target: 1000,
   log: false
 
-for repo <- [Explorer.Repo.PolygonEdge, Explorer.Repo.PolygonZkevm, Explorer.Repo.ZkSync, Explorer.Repo.RSK, Explorer.Repo.Suave] do
+for repo <- [
+      Explorer.Repo.PolygonEdge,
+      Explorer.Repo.PolygonZkevm,
+      Explorer.Repo.ZkSync,
+      Explorer.Repo.RSK,
+      Explorer.Repo.Suave
+    ] do
   config :explorer, repo,
     database: "explorer_test",
     hostname: "localhost",

@@ -83,8 +83,7 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
              (is_map(config) and is_map_key(config, :json_rpc_named_arguments) and
                 is_map_key(config, :chunk_size)) do
     # Collect batches and linked L2 blocks and transaction
-    {batches_to_import, l2_blocks_to_import, l2_txs_to_import} =
-      extract_data_from_batches(batches_numbers_list, config)
+    {batches_to_import, l2_blocks_to_import, l2_txs_to_import} = extract_data_from_batches(batches_numbers_list, config)
 
     # Collect L1 transactions associated with batches
     l1_txs =

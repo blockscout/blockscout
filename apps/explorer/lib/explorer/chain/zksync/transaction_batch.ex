@@ -8,6 +8,7 @@ defmodule Explorer.Chain.ZkSync.TransactionBatch do
     Hash,
     Wei
   }
+
   alias Explorer.Chain.ZkSync.{BatchTransaction, LifecycleTransaction}
 
   @optional_attrs ~w(commit_id prove_id execute_id)a

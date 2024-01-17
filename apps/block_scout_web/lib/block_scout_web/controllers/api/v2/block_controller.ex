@@ -54,7 +54,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         _ ->
           @block_necessity_by_association
       end
-    block_params = Keyword.merge(@api_true, [necessity_by_association: extended_necessity_by_association])
+
+    block_params = Keyword.merge(@api_true, necessity_by_association: extended_necessity_by_association)
 
     with {:ok, type, value} <- parse_block_hash_or_number_param(block_hash_or_number),
          {:ok, block} <- fetch_block(type, value, block_params) do
