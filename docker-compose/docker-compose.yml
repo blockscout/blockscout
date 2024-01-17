@@ -39,8 +39,7 @@ services:
       - db:database
     environment:
         ETHEREUM_JSONRPC_HTTP_URL: http://185.249.225.34:9650/ext/bc/2HBTDhUdx6KmQZJ5N6DnApANXxKr6hA1ahqw8yxRUt1mB3uBNa/rpc
-        ETHEREUM_JSONRPC_TRACE_URL: ""
-        ETHEREUM_JSONRPC_WS_URL: ""
+        ETHEREUM_JSONRPC_TRACE_URL: http://185.249.225.34:9650/ext/bc/2HBTDhUdx6KmQZJ5N6DnApANXxKr6hA1ahqw8yxRUt1mB3uBNa/rpc
         CHAIN_ID: '603985'
 
   visualizer:
