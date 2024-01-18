@@ -113,7 +113,7 @@ interface IHomeWork {
    * @param key bytes32 The unique value used to derive the home address.
    * @param owner address The account that will be granted ownership of the
    * ERC721 token.
-   * @dev In order to mint an ERC721 token, the assocated home address cannot be
+   * @dev In order to mint an ERC721 token, the associated home address cannot be
    * in use, or else the token will not be able to deploy to the home address.
    * The controller is set to this contract until the token is redeemed, at
    * which point the redeemer designates a new controller for the home address.
@@ -239,7 +239,7 @@ interface IHomeWork {
    * @param owner address The account that will be granted ownership of the
    * ERC721 token.
    * @return The derived key.
-   * @dev In order to mint an ERC721 token, the assocated home address cannot be
+   * @dev In order to mint an ERC721 token, the associated home address cannot be
    * in use, or else the token will not be able to deploy to the home address.
    * The controller is set to this contract until the token is redeemed, at
    * which point the redeemer designates a new controller for the home address.
@@ -1778,7 +1778,7 @@ contract HomeWork is IHomeWork, ERC721Enumerable, IERC721Metadata, IERC1412 {
    * @param key bytes32 The unique value used to derive the home address.
    * @param owner address The account that will be granted ownership of the
    * ERC721 token.
-   * @dev In order to mint an ERC721 token, the assocated home address cannot be
+   * @dev In order to mint an ERC721 token, the associated home address cannot be
    * in use, or else the token will not be able to deploy to the home address.
    * The controller is set to this contract until the token is redeemed, at
    * which point the redeemer designates a new controller for the home address.
@@ -2011,7 +2011,7 @@ contract HomeWork is IHomeWork, ERC721Enumerable, IERC721Metadata, IERC1412 {
    * @param owner address The account that will be granted ownership of the
    * ERC721 token.
    * @return The derived key.
-   * @dev In order to mint an ERC721 token, the assocated home address cannot be
+   * @dev In order to mint an ERC721 token, the associated home address cannot be
    * in use, or else the token will not be able to deploy to the home address.
    * The controller is set to this contract until the token is redeemed, at
    * which point the redeemer designates a new controller for the home address.
