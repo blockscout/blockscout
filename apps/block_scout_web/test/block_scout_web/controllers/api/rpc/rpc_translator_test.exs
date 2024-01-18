@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslatorTest do
       result = RPCTranslator.call(conn, %{})
       assert result.halted
       assert response = json_response(result, 400)
-      assert response["message"] =~ "Unknown action"
+      assert response["message"] =~ "Unknown module"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]

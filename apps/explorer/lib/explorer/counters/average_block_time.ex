@@ -1,9 +1,8 @@
 defmodule Explorer.Counters.AverageBlockTime do
-  use GenServer
-
   @moduledoc """
-  Caches the number of token holders of a token.
+  Caches the average block time in milliseconds.
   """
+  use GenServer
 
   import Ecto.Query, only: [from: 2, where: 2]
 

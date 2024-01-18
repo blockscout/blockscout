@@ -59,6 +59,8 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
     render(conn, "coinsupply.json", total_supply: cached_coin_total_supply)
   end
 
+  def ethprice(conn, params), do: coinprice(conn, params)
+
   def coinprice(conn, _params) do
     rates = Market.get_coin_exchange_rate()
 

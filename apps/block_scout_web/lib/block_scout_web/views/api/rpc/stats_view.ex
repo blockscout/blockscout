@@ -33,12 +33,12 @@ defmodule BlockScoutWeb.API.RPC.StatsView do
 
   defp prepare_rates(rates) do
     if rates do
-      timestamp = rates.last_updated |> DateTime.to_unix() |> to_string()
+      timestamp = rates.last_updated && rates.last_updated |> DateTime.to_unix() |> to_string()
 
       %{
-        "coin_btc" => to_string(rates.btc_value),
+        "coin_btc" => rates.btc_value && to_string(rates.btc_value),
         "coin_btc_timestamp" => timestamp,
-        "coin_usd" => to_string(rates.usd_value),
+        "coin_usd" => rates.usd_value && to_string(rates.usd_value),
         "coin_usd_timestamp" => timestamp
       }
     else
