@@ -10,10 +10,10 @@ defmodule Indexer.Supervisor do
   alias Indexer.{
     Block,
     BridgedTokens.CalcLpTokensTotalLiquidity,
-    PendingOpsCleaner,
-    PendingTransactionsSanitizer,
     BridgedTokens.SetAmbBridgedMetadataForTokens,
-    BridgedTokens.SetOmniBridgedMetadataForTokens
+    BridgedTokens.SetOmniBridgedMetadataForTokens,
+    PendingOpsCleaner,
+    PendingTransactionsSanitizer
   }
 
   alias Indexer.Block.Catchup, as: BlockCatchup
