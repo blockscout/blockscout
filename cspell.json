@@ -60,6 +60,7 @@
         "buildx",
         "bytea",
         "bytecodes",
+        "byteshash",
         "byts",
         "bzzr",
         "cacerts",
@@ -390,6 +391,7 @@
         "reshows",
         "retryable",
         "reuseaddr",
+        "rollup",
         "RPC's",
         "RPCs",
         "safelow",
@@ -424,6 +426,7 @@
         "stateroot",
         "staticcall",
         "STATICCALL",
+        "strhash",
         "strftime",
         "stringly",
         "stylelint",
@@ -457,6 +460,7 @@
         "testpassword",
         "testtest",
         "testuser",
+        "timestmaps",
         "thead",
         "thicccbrowz",
         "throttleable",
@@ -539,7 +543,8 @@
         "zindex",
         "zipcode",
         "zkbob",
-        "zkevm"
+        "zkevm",
+        "zksync"
     ],
     "enableFiletypes": [
         "dotenv",

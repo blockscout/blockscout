@@ -195,7 +195,7 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
         {sequences, verifies}
       end)
 
-    # All L1 txes in one list without repitition
+    # All L1 transactions in one list without repetition
     l1_tx_hashes = Enum.uniq(sequence_hashes ++ verify_hashes)
 
     # Receive all IDs for L1 txs

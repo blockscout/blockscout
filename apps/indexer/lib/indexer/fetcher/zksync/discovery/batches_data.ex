@@ -1,6 +1,6 @@
 defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
   @moduledoc """
-    Provides main functionionality to extract data for batches and associated with them
+    Provides main functionality to extract data for batches and associated with them
     rollup blocks, rollup and L1 transactions.
   """
 
@@ -190,10 +190,10 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
     {updated_batches, _} =
       keys
       |> Enum.chunk_every(chunk_size)
-      |> Enum.reduce({batches, 0}, fn batches_chunk, {batches_with_blockranges, a} ->
+      |> Enum.reduce({batches, 0}, fn batches_chunk, {batches_with_block_ranges, a} ->
         log_details_chunk_handling("Collecting block ranges", batches_chunk, a * chunk_size, batches_list_length)
 
-        {request_block_ranges_for_batches(batches_chunk, batches, batches_with_blockranges, json_rpc_named_arguments),
+        {request_block_ranges_for_batches(batches_chunk, batches, batches_with_block_ranges, json_rpc_named_arguments),
          a + 1}
       end)
 

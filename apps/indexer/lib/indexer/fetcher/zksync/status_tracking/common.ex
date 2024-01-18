@@ -166,7 +166,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
 
       {:ok, batches_to_import}
     else
-      log_warning("Lack of batches recived from DB to update")
+      log_warning("Lack of batches received from DB to update")
       {:error, batches}
     end
   end

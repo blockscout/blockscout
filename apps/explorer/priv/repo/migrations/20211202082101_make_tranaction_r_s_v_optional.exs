@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.MakeTranactionRSVOptional do
+defmodule Explorer.Repo.Migrations.MakeTransactionRSVOptional do
   use Ecto.Migration
 
   def change do

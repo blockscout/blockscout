@@ -47,7 +47,7 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
   require Logger
 
   # alias Explorer.Chain.Events.Publisher
-  # TODO: publish event when new commited batches appear
+  # TODO: publish event when new committed batches appear
 
   alias Indexer.Fetcher.ZkSync.Discovery.Workers
   alias Indexer.Fetcher.ZkSync.StatusTracking.{Committed, Executed, Proven}
@@ -119,7 +119,7 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
   #
   # ## Parameters
   # - `:check_historical`: the message triggering the handler
-  # - `state`: current state of the fetcher contaning both the fetcher configuration
+  # - `state`: current state of the fetcher containing both the fetcher configuration
   #            and data re-used by different handlers.
   #
   # ## Returns
@@ -155,7 +155,7 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
   #
   # ## Parameters
   # - `:recover_batches`: the message triggering the handler
-  # - `state`: current state of the fetcher contaning both the fetcher configuration
+  # - `state`: current state of the fetcher containing both the fetcher configuration
   #             and data related to the batches recovery:
   #             - `state.data.batches`: list of the batches to recover
   #             - `state.data.switched_from`: the message to send after the batch recovery
