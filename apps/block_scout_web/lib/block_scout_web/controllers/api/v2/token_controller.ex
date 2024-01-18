@@ -170,7 +170,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
             |> Chain.put_owner_to_token_instance(token, @api_true)
 
           {:error, :not_found} ->
-            %{token_id: token_id, metadata: nil, owner: nil}
+            %Instance{token_id: token_id, metadata: nil, owner: nil}
+            |> Instance.put_is_unique(token, @api_true)
+            |> Chain.put_owner_to_token_instance(token, @api_true)
         end
 
       conn
