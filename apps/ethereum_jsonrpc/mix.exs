@@ -11,7 +11,7 @@ defmodule EthereumJsonrpc.MixProject do
       deps_path: "../../deps",
       description: "Ethereum JSONRPC client.",
       dialyzer: [
-        plt_add_deps: :transitive,
+        plt_add_deps: :app_tree,
         plt_add_apps: [:mix],
         ignore_warnings: "../../.dialyzer-ignore"
       ],
