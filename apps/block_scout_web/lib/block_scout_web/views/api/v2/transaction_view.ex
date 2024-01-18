@@ -427,7 +427,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_tx? && conn)),
       "has_error_in_internal_txs" => transaction.has_error_in_internal_txs,
       "near_receipt_hash" => transaction.near_receipt_hash,
-      "near_transaction_hash" => transaction.near_transaction_hash
+      "near_transaction_hash" => transaction.near_transaction_hash,
+      "error" => transaction.error
     }
 
     result
