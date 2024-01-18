@@ -4,6 +4,7 @@
 :0: Unknown type 'Elixir.Hash':t/0
 :0: Unknown type 'Elixir.Address':t/0
 lib/ethereum_jsonrpc/rolling_window.ex:171
+lib/explorer/chain/transaction.ex:171
 lib/explorer/smart_contract/solidity/publisher_worker.ex:1
 lib/explorer/smart_contract/vyper/publisher_worker.ex:1
 lib/explorer/smart_contract/solidity/publisher_worker.ex:8
@@ -23,4 +24,3 @@ lib/indexer/fetcher/zkevm/transaction_batch.ex:156
 lib/indexer/fetcher/zkevm/transaction_batch.ex:261
 lib/block_scout_web/views/api/v2/transaction_view.ex:431
 lib/block_scout_web/views/api/v2/transaction_view.ex:472
-lib/explorer/chain/transaction.ex:170
