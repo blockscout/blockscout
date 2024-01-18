@@ -563,6 +563,74 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     end)
   end
 
+  defp handle_l1_reorg(reorg_block, incomplete_channels) do
+    Enum.reduce(incomplete_channels, incomplete_channels, fn {channel_id, %{frames: frames} = channel}, incomplete_channels_acc ->
+      updated_frames =
+        frames
+        |> Enum.reduce(frames, fn {frame_number, %{block_number: block_number}}, frames_acc ->
+          if block_number >= reorg_block do
+            Map.delete(frames_acc, frame_number)
+          else
+            frames_acc
+          end
+        end)
+
+      if Enum.empty?(updated_frames) do
+        Map.delete(incomplete_channels_acc, channel_id)
+      else
+        Map.put(incomplete_channels_acc, channel_id, Map.put(channel, :frames, updated_frames))
+      end
+    end)
+  end
+
+  @doc """
+    Removes rows from op_transaction_batches and op_frame_sequences tables written beginning from the L2 reorg block.
+  """
+  @spec handle_l2_reorg(non_neg_integer()) :: any()
+  def handle_l2_reorg(reorg_block) do
+    frame_sequence_ids =
+      Repo.all(
+        from(
+          tb in OptimismTxnBatch,
+          select: tb.frame_sequence_id,
+          where: tb.l2_block_number >= ^reorg_block
+        ),
+        timeout: :infinity
+      )
+
+    {deleted_count, _} =
+      Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^reorg_block))
+
+    Repo.delete_all(from(fs in OptimismFrameSequence, where: fs.id in ^frame_sequence_ids))
+
+    if deleted_count > 0 do
+      Logger.warning(
+        "As L2 reorg was detected, all rows with l2_block_number >= #{reorg_block} were removed from the op_transaction_batches table. Number of removed rows: #{deleted_count}."
+      )
+    end
+  end
+
+  defp is_channel_complete(channel) do
+    last_frame_number =
+      channel.frames
+      |> Map.keys()
+      |> Enum.max()
+
+    Map.get(channel.frames, last_frame_number).is_last and last_frame_number == Enum.count(channel.frames) - 1
+  end
+
+  defp remove_expired_channels(channels_map) do
+    now = DateTime.utc_now()
+
+    Enum.reduce(channels_map, channels_map, fn {channel_id, %{timestamp: timestamp}}, channels_acc ->
+      if DateTime.diff(now, timestamp) >= 86400 do
+        Map.delete(channels_acc, channel_id)
+      else
+        channels_acc
+      end
+    end)
+  end
+
   defp input_to_frame("0x" <> input) do
     input_binary = Base.decode16!(input, case: :mixed)
 
