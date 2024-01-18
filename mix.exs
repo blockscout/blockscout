@@ -52,8 +52,8 @@ defmodule BlockScout.Mixfile do
 
   defp dialyzer() do
     [
-      plt_add_deps: :transitive,
-      plt_add_apps: ~w(ex_unit mix)a,
+      plt_add_deps: :app_tree,
+      plt_add_apps: ~w(ex_unit mix wallaby)a,
       ignore_warnings: ".dialyzer-ignore",
       plt_core_path: "priv/plts",
       plt_file: {:no_warn, "priv/plts/dialyzer.plt"}

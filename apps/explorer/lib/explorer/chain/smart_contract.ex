@@ -516,7 +516,7 @@ defmodule Explorer.Chain.SmartContract do
         options
       ) do
     updated_smart_contract =
-      if Application.get_env(:explorer, :enable_caching_implementation_data_of_proxy) &&
+      if Application.get_env(:explorer, :proxy)[:caching_implementation_data_enabled] &&
            check_implementation_refetch_necessity(implementation_fetched_at) do
         address_hash_to_smart_contract_without_twin(address_hash, options)
       else
@@ -544,7 +544,7 @@ defmodule Explorer.Chain.SmartContract do
           Proxy.fetch_implementation_address_hash(address_hash, abi, metadata_from_verified_twin, options)
         end)
 
-      timeout = Application.get_env(:explorer, :implementation_data_fetching_timeout)
+      timeout = Application.get_env(:explorer, :proxy)[:implementation_data_fetching_timeout]
 
       case Task.yield(get_implementation_address_hash_task, timeout) ||
              Task.ignore(get_implementation_address_hash_task) do
@@ -1182,15 +1182,15 @@ defmodule Explorer.Chain.SmartContract do
   defp check_implementation_refetch_necessity(nil), do: true
 
   defp check_implementation_refetch_necessity(timestamp) do
-    if Application.get_env(:explorer, :enable_caching_implementation_data_of_proxy) do
+    if Application.get_env(:explorer, :proxy)[:caching_implementation_data_enabled] do
       now = DateTime.utc_now()
 
-      average_block_time = get_average_block_time()
+      average_block_time = get_average_block_time_for_implementation_refetch()
 
       fresh_time_distance =
         case average_block_time do
           0 ->
-            Application.get_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy)
+            Application.get_env(:explorer, :proxy)[:fallback_cached_implementation_data_ttl]
 
           time ->
             round(time)
@@ -1204,8 +1204,8 @@ defmodule Explorer.Chain.SmartContract do
     end
   end
 
-  defp get_average_block_time do
-    if Application.get_env(:explorer, :avg_block_time_as_ttl_cached_implementation_data_of_proxy) do
+  defp get_average_block_time_for_implementation_refetch do
+    if Application.get_env(:explorer, :proxy)[:implementation_data_ttl_via_avg_block_time] do
       case AverageBlockTime.average_block_time() do
         {:error, :disabled} ->
           0
