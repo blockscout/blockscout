@@ -3,13 +3,12 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Committed do
     Functionality to discover committed batches
   """
 
-  alias Indexer.Fetcher.ZkSync.Utils.Db
-  alias Indexer.Fetcher.ZkSync.Utils.Rpc
+  alias Indexer.Fetcher.ZkSync.Utils.{Db, Rpc}
 
   import Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils,
     only: [
       check_if_batch_status_changed: 3,
-      prepare_batches_to_import: 2
+      associate_and_import_or_prepare_for_recovery: 4
     ]
 
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_info: 1]
@@ -65,14 +64,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Committed do
             commit_tx_receipt = Rpc.fetch_tx_receipt_by_hash(tx_hash, json_l1_rpc_named_arguments)
             batches_from_rpc = get_committed_batches_from_logs(commit_tx_receipt["logs"])
 
-            case prepare_batches_to_import(batches_from_rpc, %{commit_id: l1_txs[tx_hash][:id]}) do
-              {:error, batches_to_recover} ->
-                {:recovery_required, batches_to_recover}
-
-              {:ok, committed_batches} ->
-                Db.import_to_db(committed_batches, Map.values(l1_txs))
-                :ok
-            end
+            associate_and_import_or_prepare_for_recovery(batches_from_rpc, l1_txs, tx_hash, :commit_id)
         end
     end
   end

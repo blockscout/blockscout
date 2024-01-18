@@ -97,7 +97,9 @@ defmodule Explorer.Chain.ZkSync.Reader do
              is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    from(tb in TransactionBatch, order_by: [desc: tb.number])
+    base_query = from(tb in TransactionBatch, order_by: [desc: tb.number])
+
+    base_query
     |> where([tb], tb.number >= ^start_number and tb.number <= ^end_number)
     |> Chain.join_associations(necessity_by_association)
     |> select_repo(options).all()
@@ -120,7 +122,9 @@ defmodule Explorer.Chain.ZkSync.Reader do
              is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    from(tb in TransactionBatch, order_by: [desc: tb.number])
+    base_query = from(tb in TransactionBatch, order_by: [desc: tb.number])
+
+    base_query
     |> where([tb], tb.number in ^numbers)
     |> Chain.join_associations(necessity_by_association)
     |> select_repo(options).all()

@@ -4,13 +4,12 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
   """
 
   alias ABI.{FunctionSelector, TypeDecoder}
-  alias Indexer.Fetcher.ZkSync.Utils.Db
-  alias Indexer.Fetcher.ZkSync.Utils.Rpc
+  alias Indexer.Fetcher.ZkSync.Utils.{Db, Rpc}
 
   import Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils,
     only: [
       check_if_batch_status_changed: 3,
-      prepare_batches_to_import: 2
+      associate_and_import_or_prepare_for_recovery: 4
     ]
 
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_info: 1]
@@ -63,14 +62,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
             prove_tx = Rpc.fetch_tx_by_hash(tx_hash, json_l1_rpc_named_arguments)
             batches_from_rpc = get_proven_batches_from_calldata(prove_tx["input"])
 
-            case prepare_batches_to_import(batches_from_rpc, %{prove_id: l1_txs[tx_hash][:id]}) do
-              {:error, batches_to_recover} ->
-                {:recovery_required, batches_to_recover}
-
-              {:ok, proven_batches} ->
-                Db.import_to_db(proven_batches, Map.values(l1_txs))
-                :ok
-            end
+            associate_and_import_or_prepare_for_recovery(batches_from_rpc, l1_txs, tx_hash, :prove_id)
         end
     end
   end
@@ -104,7 +96,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
     # proveBatches(StoredBatchInfo calldata _prevBatch, StoredBatchInfo[] calldata _committedBatches, ProofInput calldata _proof)
 
     # IO.inspect(FunctionSelector.decode("proveBatches((uint64,bytes32,uint64,uint256,bytes32,bytes32,uint256,bytes32),(uint64,bytes32,uint64,uint256,bytes32,bytes32,uint256,bytes32)[],(uint256[],uint256[]))"))
-    [_prevBatch, proven_batches, _proof] =
+    [_prev_batch, proven_batches, _proof] =
       TypeDecoder.decode(
         Base.decode16!(encoded_params, case: :lower),
         %FunctionSelector{

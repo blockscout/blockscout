@@ -1,4 +1,9 @@
 defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
+  @moduledoc """
+    Provides main functionionality to extract data for batches and associated with them
+    rollup blocks, rollup and L1 transactions.
+  """
+
   alias Indexer.Fetcher.ZkSync.Utils.Rpc
 
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_info: 1, log_details_chunk_handling: 4]
@@ -44,10 +49,10 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
   end
 
   defp do_extract_data_from_batches(batches_list, config) when is_list(batches_list) do
-    batches_to_import = collect_batches_details(batches_list, config)
-    log_info("Collected details for #{length(Map.keys(batches_to_import))} batches")
+    initial_batches_to_import = collect_batches_details(batches_list, config)
+    log_info("Collected details for #{length(Map.keys(initial_batches_to_import))} batches")
 
-    batches_to_import = get_block_ranges(batches_to_import, config)
+    batches_to_import = get_block_ranges(initial_batches_to_import, config)
 
     {l2_blocks_to_import, l2_txs_to_import} = get_l2_blocks_and_transactions(batches_to_import, config)
     log_info("Linked #{length(l2_blocks_to_import)} L2 blocks and #{length(l2_txs_to_import)} L2 transactions")
@@ -83,17 +88,22 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
           %{hash: batch.executed_tx_hash, timestamp: batch.executed_timestamp}
         ]
         |> Enum.reduce(l1_txs, fn l1_tx, acc ->
-          if l1_tx.hash != Rpc.get_binary_zero_hash() do
-            Map.put(acc, l1_tx.hash, l1_tx)
-          else
-            acc
-          end
+          # checks if l1_tx is not empty and adds to acc
+          add_l1_tx_to_list(acc, l1_tx)
         end)
       end)
 
     log_info("Collected #{length(Map.keys(l1_txs))} L1 hashes")
 
     l1_txs
+  end
+
+  defp add_l1_tx_to_list(l1_txs, l1_tx) do
+    if l1_tx.hash != Rpc.get_binary_zero_hash() do
+      Map.put(l1_txs, l1_tx.hash, l1_tx)
+    else
+      l1_txs
+    end
   end
 
   # Divides the list of batch numbers into chunks of size `chunk_size` to combine
@@ -139,7 +149,8 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
           end)
 
         details =
-          Rpc.fetch_batches_details(requests, json_rpc_named_arguments)
+          requests
+          |> Rpc.fetch_batches_details(json_rpc_named_arguments)
           |> Enum.reduce(
             details,
             fn resp, details ->
@@ -175,51 +186,63 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
        when is_map(batches) do
     keys = Map.keys(batches)
     batches_list_length = length(keys)
-    # The main goal of this reduce to get blocks ranges for every batch
-    # by combining zks_getL1BatchBlockRange requests in chunks
+
     {updated_batches, _} =
       keys
       |> Enum.chunk_every(chunk_size)
-      |> Enum.reduce({batches, 0}, fn batches_chunk, {batches_with_blockranges, a} = _acc ->
+      |> Enum.reduce({batches, 0}, fn batches_chunk, {batches_with_blockranges, a} ->
         log_details_chunk_handling("Collecting block ranges", batches_chunk, a * chunk_size, batches_list_length)
 
-        # Execute requests list and extend the batches details with blocks ranges
-        batches_with_blockranges =
-          batches_chunk
-          |> Enum.reduce([], fn batch_number, requests ->
-            batch = Map.get(batches, batch_number)
-            # Prepare requests list to get blocks ranges
-            case is_nil(batch.start_block) or is_nil(batch.end_block) do
-              true ->
-                [
-                  EthereumJSONRPC.request(%{
-                    id: batch_number,
-                    method: "zks_getL1BatchBlockRange",
-                    params: [batch_number]
-                  })
-                  | requests
-                ]
-
-              false ->
-                requests
-            end
-          end)
-          |> Rpc.fetch_blocks_ranges(json_rpc_named_arguments)
-          |> Enum.reduce(batches_with_blockranges, fn resp, batches_with_blockranges ->
-            Map.update!(batches_with_blockranges, resp.id, fn batch ->
-              [start_block, end_block] = resp.result
-
-              Map.merge(batch, %{
-                start_block: quantity_to_integer(start_block),
-                end_block: quantity_to_integer(end_block)
-              })
-            end)
-          end)
-
-        {batches_with_blockranges, a + 1}
+        {request_block_ranges_for_batches(batches_chunk, batches, batches_with_blockranges, json_rpc_named_arguments),
+         a + 1}
       end)
 
     updated_batches
+  end
+
+  # For a given list of rollup batch numbers, this function builds a list of requests
+  # to `zks_getL1BatchBlockRange`, executes them, and extends the batches' descriptions with
+  # ranges of rollup blocks associated with each batch.
+  #
+  # ## Parameters
+  # - `batches_numbers`: A list with batch numbers.
+  # - `batches_src`: A list containing original batches descriptions.
+  # - `batches_dst`: A map with extended batch descriptions containing rollup block ranges.
+  # - `json_rpc_named_arguments`: Describes parameters for RPC connection.
+  #
+  # ## Returns
+  # - An updated version of `batches_dst` with new entities containing rollup block ranges.
+  defp request_block_ranges_for_batches(batches_numbers, batches_src, batches_dst, json_rpc_named_arguments) do
+    batches_numbers
+    |> Enum.reduce([], fn batch_number, requests ->
+      batch = Map.get(batches_src, batch_number)
+      # Prepare requests list to get blocks ranges
+      case is_nil(batch.start_block) or is_nil(batch.end_block) do
+        true ->
+          [
+            EthereumJSONRPC.request(%{
+              id: batch_number,
+              method: "zks_getL1BatchBlockRange",
+              params: [batch_number]
+            })
+            | requests
+          ]
+
+        false ->
+          requests
+      end
+    end)
+    |> Rpc.fetch_blocks_ranges(json_rpc_named_arguments)
+    |> Enum.reduce(batches_dst, fn resp, updated_batches ->
+      Map.update!(updated_batches, resp.id, fn batch ->
+        [start_block, end_block] = resp.result
+
+        Map.merge(batch, %{
+          start_block: quantity_to_integer(start_block),
+          end_block: quantity_to_integer(end_block)
+        })
+      end)
+    end)
   end
 
   # Unfolds the ranges of rollup blocks in each batch description, makes RPC `eth_getBlockByNumber` calls,
@@ -248,44 +271,23 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
        ) do
     # Extracts the rollup block range for every batch, unfolds it and
     # build chunks of `eth_getBlockByNumber` calls
-    {blocks, chunked_requests, cur_chunk, cur_chunk_size} =
-      Map.keys(batches)
-      |> Enum.reduce({%{}, [], [], 0}, fn batch_number, {blocks, chunked_requests, cur_chunk, cur_chunk_size} = _acc ->
+    {blocks_to_batches, chunked_requests, cur_chunk, cur_chunk_size} =
+      batches
+      |> Map.keys()
+      |> Enum.reduce({%{}, [], [], 0}, fn batch_number, cur_batch_acc ->
         batch = Map.get(batches, batch_number)
 
         batch.start_block..batch.end_block
         |> Enum.chunk_every(chunk_size)
-        |> Enum.reduce({blocks, chunked_requests, cur_chunk, cur_chunk_size}, fn blocks_range,
-                                                                                 {blks, chnkd_rqsts, c_chunk,
-                                                                                  c_chunk_size} = _acc ->
-          blocks_range
-          |> Enum.reduce({blks, chnkd_rqsts, c_chunk, c_chunk_size}, fn block_number,
-                                                                        {blks, chnkd_rqsts, c_chunk, c_chunk_size} =
-                                                                          _acc ->
-            blks = Map.put(blks, block_number, %{batch_number: batch_number})
-
-            c_chunk = [
-              EthereumJSONRPC.request(%{
-                id: block_number,
-                method: "eth_getBlockByNumber",
-                params: [integer_to_quantity(block_number), false]
-              })
-              | c_chunk
-            ]
-
-            if c_chunk_size + 1 == chunk_size do
-              {blks, [c_chunk | chnkd_rqsts], [], 0}
-            else
-              {blks, chnkd_rqsts, c_chunk, c_chunk_size + 1}
-            end
-          end)
+        |> Enum.reduce(cur_batch_acc, fn blocks_range, cur_chunk_acc ->
+          build_blocks_map_and_chunks_of_rpc_requests(batch_number, blocks_range, cur_chunk_acc, chunk_size)
         end)
       end)
 
     # After the last iteration of the reduce loop it is a valid case
     # when the calls from the last chunk are not in the chunks list,
     # so it is appended
-    chunked_requests =
+    finalized_chunked_requests =
       if cur_chunk_size > 0 do
         [cur_chunk | chunked_requests]
       else
@@ -294,15 +296,17 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
 
     # The chunks requests are sent to the RPC node and parsed to
     # extract rollup block hashes and rollup transactions.
-    {blocks, l2_txs_to_import} =
-      chunked_requests
-      |> Enum.reduce({blocks, []}, fn requests, {blocks, l2_txs} ->
-        Rpc.fetch_blocks_details(requests, json_rpc_named_arguments)
+    {blocks_associations, l2_txs_to_import} =
+      finalized_chunked_requests
+      |> Enum.reduce({blocks_to_batches, []}, fn requests, {blocks, l2_txs} ->
+        requests
+        |> Rpc.fetch_blocks_details(json_rpc_named_arguments)
         |> extract_block_hash_and_transactions_list(blocks, l2_txs)
       end)
 
     # Check that amount of received transactions for a batch is correct
-    Map.keys(batches)
+    batches
+    |> Map.keys()
     |> Enum.each(fn batch_number ->
       batch = Map.get(batches, batch_number)
       txs_in_batch = batch.l1_tx_count + batch.l2_tx_count
@@ -313,7 +317,50 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
         end)
     end)
 
-    {Map.values(blocks), l2_txs_to_import}
+    {Map.values(blocks_associations), l2_txs_to_import}
+  end
+
+  # For a given list of rollup block numbers, this function extends:
+  # - a map containing the linkage between rollup block numbers and batch numbers
+  # - a list of chunks of `eth_getBlockByNumber` requests
+  # - an uncompleted chunk of `eth_getBlockByNumber` requests
+  #
+  # ## Parameters
+  # - `batch_number`: The number of the batch to which the list of rollup blocks is linked.
+  # - `blocks_numbers`: A list of rollup block numbers.
+  # - `cur_chunk_acc`: The current state of the accumulator containing:
+  #   - the current state of the map containing the linkage between rollup block numbers and batch numbers
+  #   - the current state of the list of chunks of `eth_getBlockByNumber` requests
+  #   - the current state of the uncompleted chunk of `eth_getBlockByNumber` requests
+  #   - the size of the uncompleted chunk
+  # - `chunk_size`: The maximum size of the chunk of `eth_getBlockByNumber` requests
+  #
+  # ## Returns
+  # - {blocks_to_batches, chunked_requests, cur_chunk, cur_chunk_size}, where:
+  #   - `blocks_to_batches`: An updated map with new blocks added.
+  #   - `chunked_requests`: An updated list of lists of `eth_getBlockByNumber` requests.
+  #   - `cur_chunk`: An uncompleted chunk of `eth_getBlockByNumber` requests or an empty list.
+  #   - `cur_chunk_size`: The size of the uncompleted chunk.
+  defp build_blocks_map_and_chunks_of_rpc_requests(batch_number, blocks_numbers, cur_chunk_acc, chunk_size) do
+    blocks_numbers
+    |> Enum.reduce(cur_chunk_acc, fn block_number, {blocks_to_batches, chunked_requests, cur_chunk, cur_chunk_size} ->
+      blocks_to_batches = Map.put(blocks_to_batches, block_number, %{batch_number: batch_number})
+
+      cur_chunk = [
+        EthereumJSONRPC.request(%{
+          id: block_number,
+          method: "eth_getBlockByNumber",
+          params: [integer_to_quantity(block_number), false]
+        })
+        | cur_chunk
+      ]
+
+      if cur_chunk_size + 1 == chunk_size do
+        {blocks_to_batches, [cur_chunk | chunked_requests], [], 0}
+      else
+        {blocks_to_batches, chunked_requests, cur_chunk, cur_chunk_size + 1}
+      end
+    end)
   end
 
   # Parses responses from `eth_getBlockByNumber` calls and extracts the block hash and the
@@ -341,17 +388,21 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
         end)
 
       l2_txs =
-        Map.get(resp.result, "transactions")
-        |> Kernel.||([])
-        |> Enum.reduce(l2_txs, fn l2_tx_hash, l2_txs ->
-          [
-            %{
-              batch_number: block.batch_number,
-              hash: l2_tx_hash
-            }
-            | l2_txs
-          ]
-        end)
+        case Map.get(resp.result, "transactions") do
+          nil ->
+            []
+
+          new_txs ->
+            Enum.reduce(new_txs, l2_txs, fn l2_tx_hash, l2_txs ->
+              [
+                %{
+                  batch_number: block.batch_number,
+                  hash: l2_tx_hash
+                }
+                | l2_txs
+              ]
+            end)
+        end
 
       {l2_blocks, l2_txs}
     end)

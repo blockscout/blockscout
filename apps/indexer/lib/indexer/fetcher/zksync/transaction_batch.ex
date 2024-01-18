@@ -17,8 +17,8 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
   require Logger
 
   alias Explorer.Chain.ZkSync.Reader
-  alias Indexer.Fetcher.ZkSync.Utils.Rpc
   alias Indexer.Fetcher.ZkSync.Discovery.Workers
+  alias Indexer.Fetcher.ZkSync.Utils.Rpc
 
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_info: 1]
 
@@ -63,13 +63,13 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
   @impl GenServer
   def handle_info(:init, state) do
     latest_handled_batch_number =
-      cond do
-        latest_handled_batch_number = Reader.latest_available_batch_number() ->
-          latest_handled_batch_number - 1
-
-        true ->
+      case Reader.latest_available_batch_number() do
+        nil ->
           log_info("No batches found in DB")
           Rpc.fetch_latest_sealed_batch_number(state.config.json_rpc_named_arguments) - 1
+
+        latest_handled_batch_number ->
+          latest_handled_batch_number - 1
       end
 
     Process.send_after(self(), :continue, 2000)

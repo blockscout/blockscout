@@ -35,7 +35,7 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
           :chunk_size => integer(),
           :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
           optional(any()) => any()
-        }) :: none()
+        }) :: :ok
   def get_minimal_batches_info_and_import(start_batch_number, end_batch_number, config)
       when is_integer(start_batch_number) and
              is_integer(end_batch_number) and
@@ -45,7 +45,8 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
       extract_data_from_batches({start_batch_number, end_batch_number}, config)
 
     batches_list_to_import =
-      Map.values(batches_to_import)
+      batches_to_import
+      |> Map.values()
       |> Enum.reduce([], fn batch, batches_list ->
         [Db.prune_json_batch(batch) | batches_list]
       end)
@@ -87,13 +88,15 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
 
     # Collect L1 transactions associated with batches
     l1_txs =
-      Map.values(batches_to_import)
+      batches_to_import
+      |> Map.values()
       |> collect_l1_transactions()
       |> Db.get_indices_for_l1_transactions()
 
     # Update batches with l1 transactions indices and prune unnecessary fields
     batches_list_to_import =
-      Map.values(batches_to_import)
+      batches_to_import
+      |> Map.values()
       |> Enum.reduce([], fn batch, batches ->
         [
           batch

@@ -3,7 +3,7 @@ defmodule Explorer.Chain.ZkSync.BatchBlock do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, Block}
+  alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.ZkSync.TransactionBatch
 
   @required_attrs ~w(batch_number hash)a

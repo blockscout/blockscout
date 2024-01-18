@@ -4,8 +4,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
   """
 
   alias Explorer.Chain.ZkSync.Reader
-  alias Indexer.Fetcher.ZkSync.Utils.Rpc
-  alias Indexer.Fetcher.ZkSync.Utils.Db
+  alias Indexer.Fetcher.ZkSync.Utils.{Db, Rpc}
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_warning: 1]
 
   @doc """
@@ -39,39 +38,33 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
              is_list(json_l2_rpc_named_arguments) do
     batch_from_rpc = Rpc.fetch_batch_details_by_batch_number(batch_number, json_l2_rpc_named_arguments)
 
-    association_tx =
-      case tx_type do
-        :commit_tx -> :commit_transaction
-        :prove_tx -> :prove_transaction
-        :execute_tx -> :execute_transaction
-      end
-
     status_changed_or_error =
       case Reader.batch(
              batch_number,
              necessity_by_association: %{
-               association_tx => :optional
+               get_association(tx_type) => :optional
              }
            ) do
         {:ok, batch_from_db} -> is_transactions_of_batch_changed(batch_from_db, batch_from_rpc, tx_type)
         {:error, :not_found} -> :error
       end
 
-    l1_tx =
-      case tx_type do
-        :commit_tx -> %{hash: batch_from_rpc.commit_tx_hash, timestamp: batch_from_rpc.commit_timestamp}
-        :prove_tx -> %{hash: batch_from_rpc.prove_tx_hash, timestamp: batch_from_rpc.prove_timestamp}
-        :execute_tx -> %{hash: batch_from_rpc.executed_tx_hash, timestamp: batch_from_rpc.executed_timestamp}
-      end
+    l1_tx = get_l1_tx_from_batch(batch_from_rpc, tx_type)
 
     if l1_tx.hash != Rpc.get_binary_zero_hash() and status_changed_or_error in [true, :error] do
-      l1_txs =
-        %{l1_tx.hash => l1_tx}
-        |> Db.get_indices_for_l1_transactions()
+      l1_txs = Db.get_indices_for_l1_transactions(%{l1_tx.hash => l1_tx})
 
       {:look_for_batches, l1_tx.hash, l1_txs}
     else
       {:skip, "", %{}}
+    end
+  end
+
+  defp get_association(tx_type) do
+    case tx_type do
+      :commit_tx -> :commit_transaction
+      :prove_tx -> :prove_transaction
+      :execute_tx -> :execute_transaction
     end
   end
 
@@ -90,34 +83,73 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
         :execute_tx -> batch_db.execute_transaction
       end
 
-    tx_hash_db =
+    tx_hash_db_bytes =
       if is_nil(tx_hash_db) do
         Rpc.get_binary_zero_hash()
       else
         tx_hash_db.hash.bytes
       end
 
-    tx_hash_json != tx_hash_db
+    tx_hash_json != tx_hash_db_bytes
+  end
+
+  defp get_l1_tx_from_batch(batch_from_rpc, tx_type) do
+    case tx_type do
+      :commit_tx -> %{hash: batch_from_rpc.commit_tx_hash, timestamp: batch_from_rpc.commit_timestamp}
+      :prove_tx -> %{hash: batch_from_rpc.prove_tx_hash, timestamp: batch_from_rpc.prove_timestamp}
+      :execute_tx -> %{hash: batch_from_rpc.executed_tx_hash, timestamp: batch_from_rpc.executed_timestamp}
+    end
   end
 
   @doc """
-    Receives batches from the database and merges each batch's data with the data provided
-    in `map_to_update`. If the number of batches returned from the database does not match
-    with the requested batches, the initial list of batch numbers is returned, assuming that they
-    can be used for the missed batch recovery procedure.
+    Receives batches from the database, establishes an association between each batch and
+    the corresponding L1 transactions, and imports batches and L1 transactions into the database.
+    If the number of batches returned from the database does not match the requested batches,
+    the initial list of batch numbers is returned, assuming that they can be
+    used for the missed batch recovery procedure.
 
     ## Parameters
     - `batches`: the list of batch numbers that must be updated.
-    - `map_to_update`: a map containing new data that must be applied to all requested batches.
+    - `l1_txs`: a map containing transaction hashes as keys, and values are maps
+      with transaction hashes and transaction timestamps of L1 transactions to import to the database.
+    - `tx_hash`: the hash of the L1 transaction to build an association with.
+    - `association_key`: the field in the batch description to build an association with L1
+                         transactions.
 
     ## Returns
-    - `{:ok, batches_to_import}` where `batches_to_import` is the list of batches ready to import
-       with updated data.
-    - `{:error, batches}` where `batches` contains the input list of batch numbers.
+    - `:ok` if batches and the corresponding L1 transactions are imported successfully.
+    - `{:recovery_required, batches_to_recover}` if the absence of batches is discovered;
+      `batches_to_recover` contains the list of batch numbers.
   """
-  @spec prepare_batches_to_import([integer()], map()) :: {:error, [integer()]} | {:ok, list()}
-  def prepare_batches_to_import(batches, map_to_update)
-      when is_list(batches) and is_map(map_to_update) do
+  @spec associate_and_import_or_prepare_for_recovery([integer()], map(), binary(), :commit_id | :execute_id | :prove_id) ::
+          :ok | {:recovery_required, [integer()]}
+  def associate_and_import_or_prepare_for_recovery(batches, l1_txs, tx_hash, association_key)
+      when is_list(batches) and is_map(l1_txs) and is_binary(tx_hash) and
+             association_key in [:commit_id, :prove_id, :execute_id] do
+    case prepare_batches_to_import(batches, %{association_key => l1_txs[tx_hash][:id]}) do
+      {:error, batches_to_recover} ->
+        {:recovery_required, batches_to_recover}
+
+      {:ok, batches_to_import} ->
+        Db.import_to_db(batches_to_import, Map.values(l1_txs))
+        :ok
+    end
+  end
+
+  # Receives batches from the database and merges each batch's data with the data provided
+  # in `map_to_update`. If the number of batches returned from the database does not match
+  # with the requested batches, the initial list of batch numbers is returned, assuming that they
+  # can be used for the missed batch recovery procedure.
+  #
+  # ## Parameters
+  # - `batches`: the list of batch numbers that must be updated.
+  # - `map_to_update`: a map containing new data that must be applied to all requested batches.
+  #
+  # ## Returns
+  # - `{:ok, batches_to_import}` where `batches_to_import` is the list of batches ready to import
+  #    with updated data.
+  # - `{:error, batches}` where `batches` contains the input list of batch numbers.
+  defp prepare_batches_to_import(batches, map_to_update) do
     batches_from_db = Reader.batches(batches, [])
 
     if length(batches_from_db) == length(batches) do
@@ -125,7 +157,8 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
         batches_from_db
         |> Enum.reduce([], fn batch, batches ->
           [
-            Rpc.transform_transaction_batch_to_map(batch)
+            batch
+            |> Rpc.transform_transaction_batch_to_map()
             |> Map.merge(map_to_update)
             | batches
           ]

@@ -50,9 +50,7 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
   # TODO: publish event when new commited batches appear
 
   alias Indexer.Fetcher.ZkSync.Discovery.Workers
-  alias Indexer.Fetcher.ZkSync.StatusTracking.Committed
-  alias Indexer.Fetcher.ZkSync.StatusTracking.Proven
-  alias Indexer.Fetcher.ZkSync.StatusTracking.Executed
+  alias Indexer.Fetcher.ZkSync.StatusTracking.{Committed, Executed, Proven}
 
   def child_spec(start_link_arguments) do
     spec = %{

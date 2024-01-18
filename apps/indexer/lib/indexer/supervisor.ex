@@ -40,8 +40,8 @@ defmodule Indexer.Supervisor do
   }
 
   alias Indexer.Fetcher.Zkevm.TransactionBatch, as: ZkevmTransactionBatch
-  alias Indexer.Fetcher.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
   alias Indexer.Fetcher.ZkSync.BatchesStatusTracker, as: ZkSyncBatchesStatusTracker
+  alias Indexer.Fetcher.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
 
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,

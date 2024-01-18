@@ -139,7 +139,8 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Db do
       when is_map(new_l1_txs) do
     # Get indices for l1 transactions previously handled
     l1_txs =
-      Map.keys(new_l1_txs)
+      new_l1_txs
+      |> Map.keys()
       |> Reader.lifecycle_transactions()
       |> Enum.reduce(new_l1_txs, fn {hash, id}, txs ->
         {_, txs} =
@@ -156,8 +157,9 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Db do
 
     # Assign new indices for the transactions which are not in
     # the l1 transactions table yet
-    {l1_txs, _} =
-      Map.keys(l1_txs)
+    {updated_l1_txs, _} =
+      l1_txs
+      |> Map.keys()
       |> Enum.reduce(
         {l1_txs, l1_tx_next_id},
         fn hash, {txs, next_id} ->
@@ -172,7 +174,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Db do
         end
       )
 
-    l1_txs
+    updated_l1_txs
   end
 
   @doc """

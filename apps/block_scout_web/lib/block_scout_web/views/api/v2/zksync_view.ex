@@ -1,8 +1,7 @@
 defmodule BlockScoutWeb.API.V2.ZkSyncView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain.Transaction
-  alias Explorer.Chain.Block
+  alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.ZkSync.TransactionBatch
 
   @doc """

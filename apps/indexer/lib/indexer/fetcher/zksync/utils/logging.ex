@@ -81,7 +81,8 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Logging do
 
         false ->
           percentage =
-            Decimal.div(current_progress + chunk_length, total)
+            (current_progress + chunk_length)
+            |> Decimal.div(total)
             |> Decimal.mult(100)
             |> Decimal.round(2)
             |> Decimal.to_string()
@@ -112,7 +113,8 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Logging do
   # [1, 3, 4, 5] => ["1", "3..5"]
   defp shorten_numbers_list(numbers_list) do
     {shorten_list, _, _} =
-      Enum.sort(numbers_list)
+      numbers_list
+      |> Enum.sort()
       |> Enum.reduce({[], nil, nil}, fn number, {shorten_list, prev_range_start, prev_number} ->
         shorten_numbers_list_impl(number, shorten_list, prev_range_start, prev_number)
       end)
