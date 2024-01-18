@@ -23,8 +23,6 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   alias Indexer.Helper
 
   @fetcher_name :optimism_txn_batches
-  @future_frames_table_name :optimism_txn_batches_future_frames
-  @reorg_rewind_limit 10
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -79,8 +77,6 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
       Subscriber.to(:optimism_reorg_block, :realtime)
 
-      create_future_frames_table()
-
       Process.send(self(), :continue, [])
 
       {:noreply,
@@ -91,9 +87,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          start_block: start_block,
          end_block: last_safe_block,
          chunk_size: chunk_size,
-         incomplete_frame_sequence: empty_incomplete_frame_sequence(),
-         last_channel_id: <<>>,
-         current_channel_id: <<>>,
+         incomplete_channels: %{},
          json_rpc_named_arguments: json_rpc_named_arguments,
          json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
        }}
@@ -156,9 +150,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           start_block: start_block,
           end_block: end_block,
           chunk_size: chunk_size,
-          incomplete_frame_sequence: incomplete_frame_sequence,
-          last_channel_id: last_channel_id,
-          current_channel_id: current_channel_id,
+          incomplete_channels: incomplete_channels,
           json_rpc_named_arguments: json_rpc_named_arguments,
           json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
         } = state
@@ -168,25 +160,22 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     chunks_number = ceil((end_block - start_block + 1) / chunk_size)
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
 
-    {last_written_block, new_incomplete_frame_sequence, new_last_channel_id, new_current_channel_id} =
+    {last_written_block, new_incomplete_channels} =
       chunk_range
-      |> Enum.reduce_while(
-        {start_block - 1, incomplete_frame_sequence, last_channel_id, current_channel_id},
-        fn current_chunk, {_, incomplete_frame_sequence_acc, last_channel_id, current_channel_id} ->
+      |> Enum.reduce_while({start_block - 1, incomplete_channels}, fn current_chunk, {_, incomplete_channels_acc} ->
           chunk_start = start_block + chunk_size * current_chunk
           chunk_end = min(chunk_start + chunk_size - 1, end_block)
 
-          {new_incomplete_frame_sequence, new_last_channel_id, new_current_channel_id} =
+          new_incomplete_channels =
             if chunk_end >= chunk_start do
               Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
 
-              {:ok, batches, sequences, new_incomplete_frame_sequence, new_last_channel_id, new_current_channel_id} =
+              {:ok, new_incomplete_channels, batches, sequences} =
                 get_txn_batches(
                   Range.new(chunk_start, chunk_end),
                   batch_inbox,
                   batch_submitter,
-                  incomplete_frame_sequence_acc,
-                  {last_channel_id, current_channel_id},
+                  incomplete_channels_acc,
                   json_rpc_named_arguments,
                   json_rpc_named_arguments_l2,
                   100_000_000
@@ -210,19 +199,18 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
                 "L1"
               )
 
-              {new_incomplete_frame_sequence, new_last_channel_id, new_current_channel_id}
+              new_incomplete_channels
             else
-              {incomplete_frame_sequence_acc, last_channel_id, current_channel_id}
+              incomplete_channels_acc
             end
 
           reorg_block = Optimism.reorg_block_pop(@fetcher_name)
 
           if !is_nil(reorg_block) && reorg_block > 0 do
-            {:halt,
-             {if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end), nil, new_last_channel_id,
-              new_current_channel_id}}
+            new_incomplete_channels = handle_l1_reorg(reorg_block, new_incomplete_channels)
+            {:halt, {if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end), new_incomplete_channels}}
           else
-            {:cont, {chunk_end, new_incomplete_frame_sequence, new_last_channel_id, new_current_channel_id}}
+            {:cont, {chunk_end, new_incomplete_channels}}
           end
         end
       )
@@ -245,9 +233,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
        state
        | start_block: new_start_block,
          end_block: new_end_block,
-         incomplete_frame_sequence: new_incomplete_frame_sequence,
-         last_channel_id: new_last_channel_id,
-         current_channel_id: new_current_channel_id
+         incomplete_channels: new_incomplete_channels
      }}
   end
 
@@ -261,10 +247,6 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
-  end
-
-  defp empty_incomplete_frame_sequence(last_frame_number \\ -1) do
-    %{bytes: <<>>, last_frame_number: last_frame_number, l1_transaction_hashes: []}
   end
 
   defp get_block_numbers_by_hashes(hashes, json_rpc_named_arguments_l2) do
@@ -354,26 +336,19 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          block_range,
          batch_inbox,
          batch_submitter,
-         incomplete_frame_sequence,
-         {last_channel_id, current_channel_id},
+         incomplete_channels,
          json_rpc_named_arguments,
          json_rpc_named_arguments_l2,
          retries_left
        ) do
     case fetch_blocks_by_range(block_range, json_rpc_named_arguments) do
       {:ok, %Blocks{transactions_params: transactions_params, blocks_params: blocks_params, errors: []}} ->
-        from_block.._ = block_range
-        transactions_filtered = txs_filter_sort(transactions_params, batch_submitter, batch_inbox)
-
-        get_txn_batches_inner(
-          transactions_filtered,
+        transactions_params
+        |> txs_filter(batch_submitter, batch_inbox)
+        |> get_txn_batches_inner(
           blocks_params,
-          from_block,
-          batch_inbox,
-          batch_submitter,
-          incomplete_frame_sequence,
-          {last_channel_id, current_channel_id},
-          {json_rpc_named_arguments, json_rpc_named_arguments_l2}
+          incomplete_channels,
+          json_rpc_named_arguments_l2
         )
 
       {_, message_or_errors} ->
@@ -398,8 +373,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
             block_range,
             batch_inbox,
             batch_submitter,
-            incomplete_frame_sequence,
-            {last_channel_id, current_channel_id},
+            incomplete_channels,
             json_rpc_named_arguments,
             json_rpc_named_arguments_l2,
             retries_left
@@ -408,278 +382,132 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     end
   end
 
-  defp get_txn_batches_inner(
-         transactions_filtered,
-         blocks_params,
-         from_block,
-         batch_inbox,
-         batch_submitter,
-         incomplete_frame_sequence,
-         {last_channel_id, current_channel_id},
-         {json_rpc_named_arguments, json_rpc_named_arguments_l2}
-       ) do
+  defp get_txn_batches_inner(transactions_filtered, blocks_params, incomplete_channels, json_rpc_named_arguments_l2) do
     transactions_filtered
-    |> Enum.reduce_while({:ok, [], [], incomplete_frame_sequence, last_channel_id, current_channel_id}, fn t,
-                                                                                                           {_, batches,
-                                                                                                            sequences,
-                                                                                                            incomplete_frame_sequence_acc,
-                                                                                                            last_channel_id,
-                                                                                                            current_channel_id} ->
-      after_reorg = is_nil(incomplete_frame_sequence_acc)
-
+    |> Enum.reduce({:ok, incomplete_channels, [], []}, fn t, {_, incomplete_channels_acc, batches_acc, sequences_acc} ->
       frame = input_to_frame(t.input)
 
-      {batches, incomplete_frame_sequence_acc} =
-        if after_reorg do
-          # there was a reorg, so try to rewind and concat bytes to build incomplete frame sequence if the `from_block` block starts with a frame with non-zero number.
-          # if we cannot solve the puzzle, ignore the incomplete frame sequence and then find the nearest full one.
-          {[], rewind_after_reorg(from_block, frame.number, batch_submitter, batch_inbox, json_rpc_named_arguments)}
-        else
-          {batches, incomplete_frame_sequence_acc}
-        end
+      channel = Map.get(incomplete_channels_acc, frame.channel_id, %{frames: %{}})
 
-      if Enum.empty?(batches) and byte_size(incomplete_frame_sequence_acc.bytes) == 0 and frame.number > 0 do
-        # if this is the first launch and the head of tx sequence, skip all transactions until frame.number is 0
-        {:cont, {:ok, [], [], empty_incomplete_frame_sequence(), last_channel_id, current_channel_id}}
+      channel_frames = Map.put(channel.frames, frame.number, %{data: frame.data, is_last: frame.is_last, block_number: t.block_number, tx_hash: t.hash})
+
+      l1_timestamp = if frame.is_last, do: get_block_timestamp_by_number(t.block_number, blocks_params)
+
+      channel =
+        channel
+        |> Map.put(:frames, channel_frames)
+        |> Map.put(:timestamp, DateTime.utc_now())
+        |> Map.put(:l1_timestamp, l1_timestamp)
+
+      if is_channel_complete(channel) do
+        frame_sequence_last = List.first(sequences_acc)
+        frame_sequence_id = next_frame_sequence_id(frame_sequence_last)
+
+        {new_batches, new_frame_sequence} = handle_channel(channel, frame_sequence_id, json_rpc_named_arguments_l2)
+
+        new_incomplete_channels_acc =
+          incomplete_channels_acc
+          |> Map.delete(frame.channel_id)
+          |> remove_expired_channels()
+
+        {:ok, new_incomplete_channels_acc, batches_acc ++ new_batches, [new_frame_sequence | sequences_acc]}
       else
-        frame_sequence = incomplete_frame_sequence_acc.bytes <> frame.data
-        # credo:disable-for-next-line
-        l1_transaction_hashes = incomplete_frame_sequence_acc.l1_transaction_hashes ++ [t.hash]
-        last_frame_number = incomplete_frame_sequence_acc.last_frame_number
-
-        with {:new_channel_id, true} <- {:new_channel_id, frame.channel_id != last_channel_id},
-             {:frame_number_valid, true} <- {:frame_number_valid, frame.number == last_frame_number + 1},
-             {:channel_id_valid, true} <-
-               {:channel_id_valid, frame.channel_id == current_channel_id or current_channel_id == <<>>},
-             {:frame_is_last, true} <- {:frame_is_last, frame.is_last},
-             l1_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params),
-             {batches_parsed, seq} =
-               get_new_batches_and_sequence(
-                 frame_sequence,
-                 sequences,
-                 l1_transaction_hashes,
-                 l1_timestamp,
-                 json_rpc_named_arguments_l2,
-                 after_reorg
-               ),
-             true <- batches_parsed != :error do
-          {:cont,
-           {:ok, batches ++ batches_parsed, [seq | sequences], empty_incomplete_frame_sequence(), frame.channel_id,
-            <<>>}}
-        else
-          {:new_channel_id, false} ->
-            # ignore duplicated transaction with the same channel_id
-            {:cont, {:ok, batches, sequences, empty_incomplete_frame_sequence(), last_channel_id, current_channel_id}}
-
-          {:frame_number_valid, false} ->
-            l1_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params)
-
-            handle_invalid_frame_number(
-              last_frame_number,
-              frame,
-              t,
-              l1_timestamp,
-              batches,
-              sequences,
-              {last_channel_id, current_channel_id},
-              {incomplete_frame_sequence_acc, json_rpc_named_arguments_l2}
-            )
-
-          {:channel_id_valid, false} ->
-            # ignore invalid frame
-            {:cont, {:ok, batches, sequences, incomplete_frame_sequence_acc, last_channel_id, current_channel_id}}
-
-          {:frame_is_last, false} ->
-            handle_not_last_valid_frame(
-              batches,
-              sequences,
-              frame_sequence,
-              frame,
-              l1_transaction_hashes,
-              last_channel_id,
-              current_channel_id,
-              json_rpc_named_arguments_l2
-            )
-
-          false ->
-            {:halt,
-             {:error,
-              "Invalid RLP in frame sequence. Tx hash of the last frame: #{t.hash}. Compressed bytes of the sequence: 0x#{Base.encode16(frame_sequence, case: :lower)}"}}
-        end
+        {:ok, Map.put(incomplete_channels_acc, frame.channel_id, channel), batches_acc, sequences_acc}
       end
     end)
   end
 
-  # credo:disable-for-next-line /Complexity/
-  defp handle_invalid_frame_number(
-         last_frame_number,
-         frame,
-         tx,
-         l1_timestamp,
-         batches,
-         sequences,
-         {last_channel_id, current_channel_id},
-         {incomplete_frame_sequence, json_rpc_named_arguments_l2}
-       ) do
-    cond do
-      frame.number == 0 && frame.is_last ->
-        # the new frame rewrites the previous frame sequence
-        clear_future_frames()
-
-        {batches_parsed, seq} =
-          get_new_batches_and_sequence(
-            frame.data,
-            sequences,
-            [tx.hash],
-            l1_timestamp,
-            json_rpc_named_arguments_l2,
-            false
-          )
-
-        if batches_parsed != :error do
-          {:cont,
-           {:ok, batches ++ batches_parsed, [seq | sequences], empty_incomplete_frame_sequence(), frame.channel_id,
-            <<>>}}
-        else
-          {:halt,
-           {:error,
-            "Invalid RLP in a frame. Tx hash of the frame: #{tx.hash}. Compressed frame data: 0x#{Base.encode16(frame.data, case: :lower)}"}}
-        end
-
-      frame.number == 0 && !frame.is_last ->
-        # the new frame rewrites the previous frame sequence
-        clear_future_frames()
-
-        {:cont,
-         {:ok, batches, sequences,
-          %{bytes: frame.data, last_frame_number: frame.number, l1_transaction_hashes: [tx.hash]}, last_channel_id,
-          frame.channel_id}}
-
-      last_frame_number < 0 && frame.number > 0 ->
-        # ignore duplicated frame with the number greater than 0
-        {:cont, {:ok, batches, sequences, empty_incomplete_frame_sequence(), last_channel_id, current_channel_id}}
-
-      frame.number > last_frame_number ->
-        if frame.channel_id == current_channel_id do
-          # temporarily save future frame to handle that later
-          future_frame = %{frame: frame, l1_tx_hash: tx.hash, l1_timestamp: l1_timestamp}
-          put_future_frame(current_channel_id, future_frame)
-        end
-
-        # ignore invalid frame
-        {:cont, {:ok, batches, sequences, incomplete_frame_sequence, last_channel_id, current_channel_id}}
-
-      frame.number < last_frame_number && frame.channel_id == current_channel_id &&
-          :binary.match(incomplete_frame_sequence.bytes, frame.data) != :nomatch ->
-        # ignore the frame (with the same channel id) which has already been concatenated before
-        {:cont, {:ok, batches, sequences, incomplete_frame_sequence, last_channel_id, current_channel_id}}
-
-      frame.number == last_frame_number && frame.channel_id == current_channel_id ->
-        # ignore duplicated frame
-        {:cont, {:ok, batches, sequences, incomplete_frame_sequence, last_channel_id, current_channel_id}}
-
-      true ->
-        {:halt,
-         {:error,
-          "Invalid frame sequence. Last frame number: #{last_frame_number}. Next frame number: #{frame.number}. Tx hash: #{tx.hash}."}}
-    end
-  end
-
-  defp handle_not_last_valid_frame(
-         batches,
-         sequences,
-         frame_sequence,
-         frame,
-         l1_transaction_hashes,
-         last_channel_id,
-         current_channel_id,
-         json_rpc_named_arguments_l2
-       ) do
-    future_frames =
-      current_channel_id
-      |> get_future_frames(true)
-      |> Enum.sort(fn f1, f2 -> f1.frame.number < f2.frame.number end)
-
-    # %{frame: frame, l1_tx_hash: tx.hash, l1_timestamp: l1_timestamp}
-
-    incomplete_frame_sequence_extended =
-      future_frames
-      |> Enum.reduce(
-        %{bytes: frame_sequence, last_frame_number: frame.number, l1_transaction_hashes: []},
-        fn future_frame, acc ->
-          %{
-            bytes: acc.bytes <> future_frame.frame.data,
-            last_frame_number: future_frame.frame.number,
-            l1_transaction_hashes: [future_frame.l1_tx_hash | acc.l1_transaction_hashes]
-          }
-        end
-      )
-
-    incomplete_frame_sequence =
-      Map.put(
-        incomplete_frame_sequence_extended,
-        :l1_transaction_hashes,
-        l1_transaction_hashes ++ Enum.reverse(incomplete_frame_sequence_extended.l1_transaction_hashes)
-      )
-
-    if not Enum.empty?(future_frames) and List.last(future_frames).frame.is_last do
-      last_future_frame = List.last(future_frames)
-      l1_timestamp = last_future_frame.l1_timestamp
-      new_last_channel_id = last_future_frame.frame.channel_id
-
-      {batches_parsed, seq} =
-        get_new_batches_and_sequence(
-          incomplete_frame_sequence.bytes,
-          sequences,
-          incomplete_frame_sequence.l1_transaction_hashes,
-          l1_timestamp,
-          json_rpc_named_arguments_l2,
-          false
-        )
-
-      true = batches_parsed != :error
-
-      {:cont,
-       {:ok, batches ++ batches_parsed, [seq | sequences], empty_incomplete_frame_sequence(), new_last_channel_id, <<>>}}
-    else
-      new_current_channel_id =
-        if frame.number == 0 do
-          frame.channel_id
-        else
-          current_channel_id
-        end
-
-      {:cont, {:ok, batches, sequences, incomplete_frame_sequence, last_channel_id, new_current_channel_id}}
-    end
-  end
-
-  defp get_new_batches_and_sequence(
-         frame_sequence,
-         sequences,
-         l1_transaction_hashes,
-         l1_timestamp,
-         json_rpc_named_arguments_l2,
-         after_reorg
-       ) do
-    frame_sequence_last = List.first(sequences)
-    frame_sequence_id = next_frame_sequence_id(frame_sequence_last)
+  defp handle_channel(channel, frame_sequence_id, json_rpc_named_arguments_l2) do
+    {bytes, l1_transaction_hashes} =
+      0..(Enum.count(channel.frames) - 1)
+      |> Enum.reduce({<<>>, []}, fn frame_number, {bytes_acc, tx_hashes_acc} ->
+        frame = Map.get(channel.frames, frame_number)
+        {bytes_acc <> frame.data, [frame.tx_hash | tx_hashes_acc]}
+      end)
 
     batches_parsed =
       parse_frame_sequence(
-        frame_sequence,
+        bytes,
         frame_sequence_id,
-        l1_timestamp,
-        json_rpc_named_arguments_l2,
-        after_reorg
+        channel.l1_timestamp,
+        json_rpc_named_arguments_l2
       )
 
     seq = %{
       id: frame_sequence_id,
-      l1_transaction_hashes: l1_transaction_hashes,
-      l1_timestamp: l1_timestamp
+      l1_transaction_hashes: Enum.reverse(l1_transaction_hashes),
+      l1_timestamp: channel.l1_timestamp
     }
 
     {batches_parsed, seq}
+  end
+
+  defp handle_l1_reorg(reorg_block, incomplete_channels) do
+    Enum.reduce(incomplete_channels, incomplete_channels, fn {channel_id, %{frames: frames} = channel}, incomplete_channels_acc ->
+      updated_frames =
+        frames
+        |> Enum.reduce(frames, fn {frame_number, %{block_number: block_number}}, frames_acc ->
+          if block_number >= reorg_block do
+            Map.delete(frames_acc, frame_number)
+          else
+            frames_acc
+          end
+        end)
+
+      if Enum.empty?(updated_frames) do
+        Map.delete(incomplete_channels_acc, channel_id)
+      else
+        Map.put(incomplete_channels_acc, channel_id, Map.put(channel, :frames, updated_frames))
+      end
+    end)
+  end
+
+  @doc """
+    Removes rows from op_transaction_batches and op_frame_sequences tables written beginning from the L2 reorg block.
+  """
+  @spec handle_l2_reorg(non_neg_integer()) :: any()
+  def handle_l2_reorg(reorg_block) do
+    frame_sequence_ids =
+      Repo.all(
+        from(
+          tb in OptimismTxnBatch,
+          select: tb.frame_sequence_id,
+          where: tb.l2_block_number >= ^reorg_block
+        ),
+        timeout: :infinity
+      )
+
+    {deleted_count, _} =
+      Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^reorg_block))
+
+    Repo.delete_all(from(fs in OptimismFrameSequence, where: fs.id in ^frame_sequence_ids))
+
+    if deleted_count > 0 do
+      Logger.warning(
+        "As L2 reorg was detected, all rows with l2_block_number >= #{reorg_block} were removed from the op_transaction_batches table. Number of removed rows: #{deleted_count}."
+      )
+    end
+  end
+
+  defp is_channel_complete(channel) do
+    last_frame_number =
+      channel.frames
+      |> Map.keys()
+      |> Enum.max()
+
+    Map.get(channel.frames, last_frame_number).is_last and last_frame_number == Enum.count(channel.frames) - 1
+  end
+
+  defp remove_expired_channels(channels_map) do
+    now = DateTime.utc_now()
+
+    Enum.reduce(channels_map, channels_map, fn {channel_id, %{timestamp: timestamp}}, channels_acc ->
+      if DateTime.diff(now, timestamp) >= 86400 do
+        Map.delete(channels_acc, channel_id)
+      else
+        channels_acc
+      end
+    end)
   end
 
   defp input_to_frame("0x" <> input) do
@@ -741,14 +569,6 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     end
   end
 
-  defp log_deleted_rows_count(reorg_block, count) do
-    if count > 0 do
-      Logger.warning(
-        "As L1 reorg was detected, all rows with l2_block_number >= #{reorg_block} were removed from the op_transaction_batches table. Number of removed rows: #{count}."
-      )
-    end
-  end
-
   defp next_frame_sequence_id(last_known_sequence) when is_nil(last_known_sequence) do
     last_known_id =
       Repo.one(
@@ -775,8 +595,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          bytes,
          id,
          l1_timestamp,
-         json_rpc_named_arguments_l2,
-         after_reorg
+         json_rpc_named_arguments_l2
        ) do
     uncompressed_bytes = zlib_decompress(bytes)
 
@@ -785,6 +604,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         try do
           {decoded, new_remainder} = ExRLP.decode(remainder, stream: true)
           batch = ExRLP.decode(binary_part(decoded, 1, byte_size(decoded) - 1))
+
+          # todo: use https://hexdocs.pm/varint/readme.html
 
           batch = %{
             parent_hash: Enum.at(batch, 0),
@@ -804,11 +625,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       end)
 
     if batches == :error do
-      if after_reorg do
-        []
-      else
-        :error
-      end
+      :error
     else
       batches = Enum.reverse(batches)
 
@@ -817,40 +634,15 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         |> Enum.map(fn batch -> batch.parent_hash end)
         |> get_block_numbers_by_hashes(json_rpc_named_arguments_l2)
 
-      return =
-        batches
-        |> Stream.filter(&Map.has_key?(numbers_by_hashes, &1.parent_hash))
-        |> Enum.map(fn batch ->
-          number = Map.get(numbers_by_hashes, batch.parent_hash)
+      batches
+      |> Stream.filter(&Map.has_key?(numbers_by_hashes, &1.parent_hash))
+      |> Enum.map(fn batch ->
+        number = Map.get(numbers_by_hashes, batch.parent_hash)
 
-          batch
-          |> Map.put(:l2_block_number, number + 1)
-          |> Map.delete(:parent_hash)
-        end)
-
-      if after_reorg do
-        # once we find the nearest full frame sequence after reorg, we first need to remove irrelevant items from op_transaction_batches table
-        first_batch_l2_block_number = Enum.at(return, 0).l2_block_number
-
-        frame_sequence_ids =
-          Repo.all(
-            from(
-              tb in OptimismTxnBatch,
-              select: tb.frame_sequence_id,
-              where: tb.l2_block_number >= ^first_batch_l2_block_number
-            ),
-            timeout: :infinity
-          )
-
-        {deleted_count, _} =
-          Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^first_batch_l2_block_number))
-
-        Repo.delete_all(from(fs in OptimismFrameSequence, where: fs.id in ^frame_sequence_ids))
-
-        log_deleted_rows_count(first_batch_l2_block_number, deleted_count)
-      end
-
-      return
+        batch
+        |> Map.put(:l2_block_number, number + 1)
+        |> Map.delete(:parent_hash)
+      end)
     end
   end
 
@@ -880,49 +672,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     {unique_batches, unique_sequences}
   end
 
-  defp rewind_after_reorg(block_number, frame_number, batch_submitter, batch_inbox, json_rpc_named_arguments) do
-    if frame_number == 0 do
-      empty_incomplete_frame_sequence()
-    else
-      Enum.reduce_while(Stream.iterate(1, &(&1 + 1)), empty_incomplete_frame_sequence(frame_number), fn i,
-                                                                                                        sequence_acc ->
-        prev_block_number = block_number - i
-
-        with {:ok, %Blocks{transactions_params: transactions, errors: []}} <-
-               fetch_blocks_by_range(prev_block_number..prev_block_number, json_rpc_named_arguments),
-             seq = txs_to_sequence(transactions, batch_submitter, batch_inbox, sequence_acc),
-             true <- seq != :error,
-             {false, seq} <- {seq.last_frame_number == 0, seq},
-             true <- i < @reorg_rewind_limit do
-          {:cont, seq}
-        else
-          {true, seq} -> {:halt, %{seq | last_frame_number: frame_number - 1}}
-          _ -> {:halt, empty_incomplete_frame_sequence()}
-        end
-      end)
-    end
-  end
-
-  defp txs_to_sequence(transactions, batch_submitter, batch_inbox, sequence_acc) do
-    transactions
-    |> txs_filter_sort(batch_submitter, batch_inbox, :desc)
-    |> Enum.reduce_while(sequence_acc, fn t, acc ->
-      frame = input_to_frame(t.input)
-
-      if frame.number == acc.last_frame_number - 1 do
-        {if(frame.number == 0, do: :halt, else: :cont),
-         %{
-           bytes: frame.data <> acc.bytes,
-           last_frame_number: frame.number,
-           l1_transaction_hashes: [t.hash | acc.l1_transaction_hashes]
-         }}
-      else
-        {:halt, :error}
-      end
-    end)
-  end
-
-  defp txs_filter_sort(transactions_params, batch_submitter, batch_inbox, direction \\ :asc) do
+  defp txs_filter(transactions_params, batch_submitter, batch_inbox) do
     transactions_params
     |> Enum.filter(fn t ->
       from_address_hash = Map.get(t, :from_address_hash)
@@ -934,30 +684,6 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         String.downcase(from_address_hash) == batch_submitter and String.downcase(to_address_hash) == batch_inbox
       end
     end)
-    |> Enum.sort(fn t1, t2 ->
-      txs_filter_sort_fn(direction, t1, t2)
-    end)
-  end
-
-  defp txs_filter_sort_fn(:asc, t1, t2) do
-    txs_filter_sort_fn(:desc, t2, t1)
-  end
-
-  defp txs_filter_sort_fn(_direction, t1, t2) do
-    cond do
-      t1.block_number > t2.block_number ->
-        true
-
-      t1.block_number == t2.block_number ->
-        t1_frame = input_to_frame(t1.input)
-        t2_frame = input_to_frame(t2.input)
-
-        (t1_frame.channel_id != t2_frame.channel_id and t1.transaction_index > t2.transaction_index) or
-          (t1_frame.channel_id == t2_frame.channel_id and t1_frame.number > t2_frame.number)
-
-      true ->
-        false
-    end
   end
 
   defp zlib_decompress(bytes) do
@@ -993,39 +719,5 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   defp zlib_inflate(z, compressed_bytes, acc \\ <<>>) do
     result = :zlib.safeInflate(z, compressed_bytes)
     zlib_inflate_handler(z, result, acc)
-  end
-
-  defp create_future_frames_table do
-    if :ets.whereis(@future_frames_table_name) == :undefined do
-      :ets.new(@future_frames_table_name, [
-        :set,
-        :named_table,
-        :public,
-        read_concurrency: true,
-        write_concurrency: true
-      ])
-    end
-  end
-
-  defp clear_future_frames do
-    :ets.delete_all_objects(@future_frames_table_name)
-  end
-
-  defp get_future_frames(channel_id, clear \\ false) do
-    with info when info != :undefined <- :ets.info(@future_frames_table_name),
-         [{_, value}] <- :ets.lookup(@future_frames_table_name, channel_id) do
-      if clear do
-        clear_future_frames()
-      end
-
-      value
-    else
-      _ -> []
-    end
-  end
-
-  defp put_future_frame(channel_id, data) do
-    list = [data | get_future_frames(channel_id)]
-    :ets.insert(@future_frames_table_name, {channel_id, list})
   end
 end
