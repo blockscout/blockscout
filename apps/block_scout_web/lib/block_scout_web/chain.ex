@@ -15,6 +15,8 @@ defmodule BlockScoutWeb.Chain do
       token_contract_address_from_token_name: 1
     ]
 
+  alias Explorer.Chain.UserOperation
+
   import Explorer.Helper, only: [parse_integer: 1]
 
   alias Ecto.Association.NotLoaded
@@ -54,7 +56,7 @@ defmodule BlockScoutWeb.Chain do
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @address_hash_len 40
-  @tx_block_hash_len 64
+  @tx_block_op_hash_len 64
 
   def default_paging_options do
     @default_paging_options
@@ -80,20 +82,21 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  @spec from_param(String.t()) :: {:ok, Address.t() | Block.t() | Transaction.t()} | {:error, :not_found}
+  @spec from_param(String.t()) ::
+          {:ok, Address.t() | Block.t() | Transaction.t() | UserOperation.t()} | {:error, :not_found}
   def from_param(param)
 
   def from_param("0x" <> number_string = param) when byte_size(number_string) == @address_hash_len,
     do: address_from_param(param)
 
-  def from_param("0x" <> number_string = param) when byte_size(number_string) == @tx_block_hash_len,
-    do: block_or_transaction_from_param(param)
+  def from_param("0x" <> number_string = param) when byte_size(number_string) == @tx_block_op_hash_len,
+    do: block_or_transaction_or_operation_from_param(param)
 
   def from_param(param) when byte_size(param) == @address_hash_len,
     do: address_from_param("0x" <> param)
 
-  def from_param(param) when byte_size(param) == @tx_block_hash_len,
-    do: block_or_transaction_from_param("0x" <> param)
+  def from_param(param) when byte_size(param) == @tx_block_op_hash_len,
+    do: block_or_transaction_or_operation_from_param("0x" <> param)
 
   def from_param(string) when is_binary(string) do
     case param_to_block_number(string) do
@@ -670,9 +673,9 @@ defmodule BlockScoutWeb.Chain do
     %{"fiat_value" => ctb.fiat_value, "value" => value, "id" => id}
   end
 
-  defp block_or_transaction_from_param(param) do
+  defp block_or_transaction_or_operation_from_param(param) do
     with {:error, :not_found} <- transaction_from_param(param) do
-      hash_string_to_block(param)
+      hash_string_to_block_or_operation(param)
     end
   end
 
@@ -686,13 +689,15 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  defp hash_string_to_block(hash_string) do
-    case string_to_block_hash(hash_string) do
-      {:ok, hash} ->
-        hash_to_block(hash)
-
-      :error ->
-        {:error, :not_found}
+  defp hash_string_to_block_or_operation(hash_string) do
+    with {:ok, hash} <- string_to_block_hash(hash_string),
+         {:error, :not_found} <- hash_to_block(hash),
+         {:user_operations_enabled, true} <- {:user_operations_enabled, UserOperation.user_operations_enabled?()} do
+      UserOperation.hash_to_user_operation(hash)
+    else
+      {:user_operations_enabled, false} -> {:error, :not_found}
+      :error -> {:error, :not_found}
+      res -> res
     end
   end
 
