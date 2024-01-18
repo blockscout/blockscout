@@ -1,4 +1,4 @@
-defmodule Indexer.SetOmniBridgedMetadataForTokens do
+defmodule Indexer.BridgedTokens.SetOmniBridgedMetadataForTokens do
   @moduledoc """
     Periodically checks unprocessed tokens and sets bridged status.
   """

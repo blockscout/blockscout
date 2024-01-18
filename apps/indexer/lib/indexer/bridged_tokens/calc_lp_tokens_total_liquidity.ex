@@ -1,4 +1,4 @@
-defmodule Indexer.CalcLpTokensTotalLiquidity do
+defmodule Indexer.BridgedTokens.CalcLpTokensTotalLiquidity do
   @moduledoc """
   Periodically updates LP tokens total liquidity
   """
