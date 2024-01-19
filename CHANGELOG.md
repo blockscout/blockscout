@@ -30,6 +30,7 @@
 ### Chore
 
 - [#9198](https://github.com/blockscout/blockscout/pull/9198) - Make Postgres@15 default option
+- [#9197](https://github.com/blockscout/blockscout/pull/9197) - Add `MARKET_HISTORY_FETCH_INTERVAL` env
 - [#9196](https://github.com/blockscout/blockscout/pull/9196) - Compatibility with docker-compose 2.24
 - [#9193](https://github.com/blockscout/blockscout/pull/9193) - Equalize elixir stack versions
 
