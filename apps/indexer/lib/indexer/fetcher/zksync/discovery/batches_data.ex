@@ -4,10 +4,11 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
     rollup blocks, rollup and L1 transactions.
   """
 
+  alias EthereumJSONRPC.Block.ByNumber
   alias Indexer.Fetcher.ZkSync.Utils.Rpc
 
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_info: 1, log_details_chunk_handling: 4]
-  import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   @doc """
     Downloads batches, associates rollup blocks and transactions, and imports the results into the database.
@@ -20,7 +21,7 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
                 and `json_rpc_named_arguments` defining parameters for the RPC connection.
 
     ## Returns
-    - `{batches_to_import, 2_blocks_to_import, l2_txs_to_import}`
+    - `{batches_to_import, l2_blocks_to_import, l2_txs_to_import}`
       where
       - `batches_to_import` is a map of batches data
       - `l2_blocks_to_import` is a list of blocks associated with batches by batch numbers
@@ -347,11 +348,13 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
       blocks_to_batches = Map.put(blocks_to_batches, block_number, %{batch_number: batch_number})
 
       cur_chunk = [
-        EthereumJSONRPC.request(%{
-          id: block_number,
-          method: "eth_getBlockByNumber",
-          params: [integer_to_quantity(block_number), false]
-        })
+        ByNumber.request(
+          %{
+            id: block_number,
+            number: block_number
+          },
+          false
+        )
         | cur_chunk
       ]
 

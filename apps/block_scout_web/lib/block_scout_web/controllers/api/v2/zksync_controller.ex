@@ -81,7 +81,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
   def batches_count(conn, _params) do
     conn
     |> put_status(200)
-    |> render(:zksync_batches_count, %{count: Reader.batches_count()})
+    |> render(:zksync_batches_count, %{count: Reader.batches_count(api?: true)})
   end
 
   @doc """

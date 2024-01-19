@@ -27,8 +27,8 @@ defmodule Explorer.Chain.ZkSync.BatchBlock do
     Validates that the `attrs` are valid.
   """
   @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Schema.t()
-  def changeset(%__MODULE__{} = transactions, attrs \\ %{}) do
-    transactions
+  def changeset(%__MODULE__{} = items, attrs \\ %{}) do
+    items
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:batch_number)

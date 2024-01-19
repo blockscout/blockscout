@@ -23,18 +23,16 @@ defmodule Explorer.Chain.ZkSync.Reader do
   @doc """
     Receives total amount of batches imported to the `zksync_transaction_batches` table.
 
+    ## Parameters
+    - `options`: passed to `Chain.select_repo()`
+
     ## Returns
     Total amount of batches
   """
-  @spec batches_count() :: non_neg_integer()
-  def batches_count do
-    query =
-      from(tb in TransactionBatch,
-        select: count(tb.number)
-      )
-
-    query
-    |> Repo.one()
+  @spec batches_count(keyword()) :: any()
+  def batches_count(options) do
+    TransactionBatch
+    |> select_repo(options).aggregate(:count, timeout: :infinity)
   end
 
   @doc """
@@ -207,7 +205,6 @@ defmodule Explorer.Chain.ZkSync.Reader do
 
     query
     |> Repo.one()
-    |> Kernel.||(nil)
   end
 
   @doc """
@@ -229,7 +226,6 @@ defmodule Explorer.Chain.ZkSync.Reader do
 
     query
     |> Repo.one()
-    |> Kernel.||(nil)
   end
 
   @doc """
@@ -251,7 +247,6 @@ defmodule Explorer.Chain.ZkSync.Reader do
 
     query
     |> Repo.one()
-    |> Kernel.||(nil)
   end
 
   @doc """
@@ -271,7 +266,6 @@ defmodule Explorer.Chain.ZkSync.Reader do
 
     query
     |> Repo.one()
-    |> Kernel.||(nil)
   end
 
   @doc """
@@ -291,7 +285,6 @@ defmodule Explorer.Chain.ZkSync.Reader do
 
     query
     |> Repo.one()
-    |> Kernel.||(nil)
   end
 
   @doc """

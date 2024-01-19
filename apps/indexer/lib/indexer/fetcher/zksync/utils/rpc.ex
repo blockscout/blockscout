@@ -9,6 +9,8 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
   @zero_hash_binary <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
 
+  @rpc_resend_attempts 20
+
   def get_zero_hash do
     @zero_hash
   end
@@ -198,7 +200,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
 
     error_message = &"Cannot call zks_getL1BatchDetails. Error: #{inspect(&1)}"
 
-    {:ok, resp} = repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, 3)
+    {:ok, resp} = repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, @rpc_resend_attempts)
 
     transform_batch_details_to_map(resp)
   end
@@ -232,7 +234,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
 
     error_message = &"Cannot call eth_getTransactionByHash for hash #{hash}. Error: #{inspect(&1)}"
 
-    {:ok, resp} = repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, 3)
+    {:ok, resp} = repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, @rpc_resend_attempts)
 
     resp
   end
@@ -266,7 +268,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
 
     error_message = &"Cannot call eth_getTransactionReceipt for hash #{hash}. Error: #{inspect(&1)}"
 
-    {:ok, resp} = repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, 3)
+    {:ok, resp} = repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, @rpc_resend_attempts)
 
     resp
   end
@@ -287,7 +289,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
 
     error_message = &"Cannot call zks_L1BatchNumber. Error: #{inspect(&1)}"
 
-    {:ok, resp} = repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, 3)
+    {:ok, resp} = repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, @rpc_resend_attempts)
 
     quantity_to_integer(resp)
   end
@@ -315,7 +317,8 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
       when is_list(requests_list) and is_list(json_rpc_named_arguments) do
     error_message = &"Cannot call eth_getBlockByNumber. Error: #{inspect(&1)}"
 
-    {:ok, responses} = repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, 3)
+    {:ok, responses} =
+      repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, @rpc_resend_attempts)
 
     responses
   end
@@ -343,7 +346,8 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
       when is_list(requests_list) and is_list(json_rpc_named_arguments) do
     error_message = &"Cannot call zks_getL1BatchDetails. Error: #{inspect(&1)}"
 
-    {:ok, responses} = repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, 3)
+    {:ok, responses} =
+      repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, @rpc_resend_attempts)
 
     responses
   end
@@ -372,7 +376,8 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
       when is_list(requests_list) and is_list(json_rpc_named_arguments) do
     error_message = &"Cannot call zks_getL1BatchBlockRange. Error: #{inspect(&1)}"
 
-    {:ok, responses} = repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, 3)
+    {:ok, responses} =
+      repeated_call(&json_rpc/2, [requests_list, json_rpc_named_arguments], error_message, @rpc_resend_attempts)
 
     responses
   end
