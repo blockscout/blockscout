@@ -340,11 +340,11 @@ defmodule Explorer.Chain.Address do
   @doc """
   Checks if given address is smart-contract
   """
-  @spec is_smart_contract(any()) :: boolean() | nil
-  def is_smart_contract(%__MODULE__{contract_code: nil}), do: false
-  def is_smart_contract(%__MODULE__{contract_code: _}), do: true
-  def is_smart_contract(%NotLoaded{}), do: nil
-  def is_smart_contract(_), do: false
+  @spec smart_contract?(any()) :: boolean() | nil
+  def smart_contract?(%__MODULE__{contract_code: nil}), do: false
+  def smart_contract?(%__MODULE__{contract_code: _}), do: true
+  def smart_contract?(%NotLoaded{}), do: nil
+  def smart_contract?(_), do: false
 
   defp get_addresses(options) do
     accounts_with_n = fetch_top_addresses(options)
