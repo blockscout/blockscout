@@ -169,9 +169,9 @@ defmodule Explorer.Chain.Hash.Address do
   @spec validate(String.t()) :: {:ok, String.t()} | {:error, :invalid_length | :invalid_characters | :invalid_checksum}
   def validate("0x" <> hash) do
     with {:length, true} <- {:length, String.length(hash) == 40},
-         {:hex, true} <- {:hex, is_hex?(hash)},
-         {:mixed_case, true} <- {:mixed_case, is_mixed_case?(hash)},
-         {:checksummed, true} <- {:checksummed, is_checksummed?(hash)} do
+         {:hex, true} <- {:hex, hex?(hash)},
+         {:mixed_case, true} <- {:mixed_case, mixed_case?(hash)},
+         {:checksummed, true} <- {:checksummed, checksummed?(hash)} do
       {:ok, "0x" <> hash}
     else
       {:length, false} ->
@@ -188,16 +188,16 @@ defmodule Explorer.Chain.Hash.Address do
     end
   end
 
-  @spec is_hex?(String.t()) :: boolean()
-  defp is_hex?(hash) do
+  @spec hex?(String.t()) :: boolean()
+  defp hex?(hash) do
     case Regex.run(~r|[0-9a-f]{40}|i, hash) do
       nil -> false
       [_] -> true
     end
   end
 
-  @spec is_mixed_case?(String.t()) :: boolean()
-  defp is_mixed_case?(hash) do
+  @spec mixed_case?(String.t()) :: boolean()
+  defp mixed_case?(hash) do
     upper_check = ~r|[0-9A-F]{40}|
     lower_check = ~r|[0-9a-f]{40}|
 
@@ -209,8 +209,8 @@ defmodule Explorer.Chain.Hash.Address do
     end
   end
 
-  @spec is_checksummed?(String.t()) :: boolean()
-  defp is_checksummed?(original_hash) do
+  @spec checksummed?(String.t()) :: boolean()
+  defp checksummed?(original_hash) do
     lowercase_hash = String.downcase(original_hash)
     sha3_hash = ExKeccak.hash_256(lowercase_hash)
 
@@ -224,15 +224,15 @@ defmodule Explorer.Chain.Hash.Address do
     <<checksum_digit::integer-size(4), remaining_sha3_hash::bits>> = sha3_hash
     <<current_char::binary-size(1), remaining_address_hash::binary>> = address_hash
 
-    if is_proper_case?(checksum_digit, current_char) do
+    if proper_case?(checksum_digit, current_char) do
       do_checksum_check(remaining_sha3_hash, remaining_address_hash)
     else
       false
     end
   end
 
-  @spec is_proper_case?(integer, String.t()) :: boolean()
-  defp is_proper_case?(checksum_digit, character) do
+  @spec proper_case?(integer, String.t()) :: boolean()
+  defp proper_case?(checksum_digit, character) do
     case_map = %{
       "0" => :both,
       "1" => :both,

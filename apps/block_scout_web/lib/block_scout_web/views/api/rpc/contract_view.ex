@@ -8,6 +8,12 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
   defguardp is_empty_string(input) when input == "" or input == nil
 
+  def render("getcontractcreation.json", %{addresses: addresses}) do
+    contracts = addresses |> Enum.map(&address_to_response/1) |> Enum.reject(&is_nil/1)
+
+    RPCView.render("show.json", data: contracts)
+  end
+
   def render("listcontracts.json", %{contracts: contracts}) do
     contracts = Enum.map(contracts, &prepare_contract/1)
 
@@ -171,7 +177,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
     additional_sources =
       if AddressView.smart_contract_verified?(address),
-        do: address.smart_contract_additional_sources,
+        do: address.smart_contract.smart_contract_additional_sources,
         else: additional_sources_from_twin
 
     additional_sources_array =
@@ -229,4 +235,16 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
   defp decompiler_version(nil), do: ""
   defp decompiler_version(%DecompiledSmartContract{decompiler_version: decompiler_version}), do: decompiler_version
+
+  defp address_to_response(address) do
+    creator_hash = AddressView.from_address_hash(address)
+    creation_tx = creator_hash && AddressView.transaction_hash(address)
+
+    creation_tx &&
+      %{
+        "contractAddress" => to_string(address.hash),
+        "contractCreator" => to_string(creator_hash),
+        "txHash" => to_string(creation_tx)
+      }
+  end
 end

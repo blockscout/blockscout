@@ -1,14 +1,13 @@
 defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
   use BlockScoutWeb, :controller
 
-  alias Explorer.Chain
-  alias Explorer.Chain.Hash.Address
-  alias Explorer.Chain.SmartContract
+  alias Explorer.Chain.Hash.Address, as: AddressHash
+  alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.SmartContract.Solidity.Publisher
 
   def create(conn, params) do
     with {:ok, hash} <- validate_address_hash(params["address_hash"]),
-         :ok <- Chain.check_address_exists(hash),
+         :ok <- Address.check_address_exists(hash),
          {:contract, :not_found} <- {:contract, SmartContract.check_verified_smart_contract_exists(hash)} do
       external_libraries = fetch_external_libraries(params)
 
@@ -42,7 +41,7 @@ defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
   end
 
   defp validate_address_hash(address_hash) do
-    case Address.cast(address_hash) do
+    case AddressHash.cast(address_hash) do
       {:ok, hash} -> {:ok, hash}
       :error -> :invalid_address
     end
