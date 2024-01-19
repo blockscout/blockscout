@@ -78,5 +78,12 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslatorTest do
       result = RPCTranslator.call(conn, %{"test" => {TestController, []}})
       assert json_response(result, 200) == %{}
     end
+
+    test "allow multiple '/' before api", %{conn: conn} do
+      conn = %Conn{conn | params: %{"module" => "test", "action" => "test_action"}, request_path: "//api"}
+
+      result = RPCTranslator.call(conn, %{"test" => {TestController, []}})
+      assert json_response(result, 200) == %{}
+    end
   end
 end
