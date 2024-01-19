@@ -11,7 +11,7 @@ on:
     branches:
       - production-stability
 env:
-  OTP_VERSION: '25.2.1'
+  OTP_VERSION: '25.3.2.8'
   ELIXIR_VERSION: '1.14.5'
 jobs:
   push_to_registry:

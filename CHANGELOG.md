@@ -22,6 +22,9 @@
 
 ### Chore
 
+- [#9196](https://github.com/blockscout/blockscout/pull/9196) - Compatibility with docker-compose 2.24
+- [#9193](https://github.com/blockscout/blockscout/pull/9193) - Equalize elixir stack versions
+
 <details>
   <summary>Dependencies version bumps</summary>
 
