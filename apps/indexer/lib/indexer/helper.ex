@@ -24,12 +24,12 @@ defmodule Indexer.Helper do
     end
   end
 
-  @spec is_address_correct?(binary()) :: boolean()
-  def is_address_correct?(address) when is_binary(address) do
+  @spec address_correct?(binary()) :: boolean()
+  def address_correct?(address) when is_binary(address) do
     String.match?(address, ~r/^0x[[:xdigit:]]{40}$/i)
   end
 
-  def is_address_correct?(_address) do
+  def address_correct?(_address) do
     false
   end
 
