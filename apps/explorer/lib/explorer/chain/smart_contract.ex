@@ -312,6 +312,11 @@ defmodule Explorer.Chain.SmartContract do
       type: Hash.Address
     )
 
+    has_many(:smart_contract_additional_sources, SmartContractAdditionalSource,
+      references: :address_hash,
+      foreign_key: :address_hash
+    )
+
     timestamps()
   end
 

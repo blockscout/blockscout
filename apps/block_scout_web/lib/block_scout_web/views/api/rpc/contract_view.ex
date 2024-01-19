@@ -171,7 +171,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
     additional_sources =
       if AddressView.smart_contract_verified?(address),
-        do: address.smart_contract_additional_sources,
+        do: address.smart_contract.smart_contract_additional_sources,
         else: additional_sources_from_twin
 
     additional_sources_array =
