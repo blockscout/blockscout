@@ -26,7 +26,8 @@ services:
         POSTGRES_USER: 'stats'
         POSTGRES_PASSWORD: 'n0uejXPl61ci6ldCuE2gQU5Y'
     ports:
-      - 7433:5432
+      - target: 5432
+        published: 7433
     volumes:
       - ./stats-db-data:/var/lib/postgresql/data
     healthcheck:
