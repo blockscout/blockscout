@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#9202](https://github.com/blockscout/blockscout/pull/9202) - Add base and priority fee to gas oracle response
+
 ### Fixes
 
 - [#9317](https://github.com/blockscout/blockscout/pull/9317) - Include null gas price txs in fee calculations

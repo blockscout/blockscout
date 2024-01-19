@@ -299,4 +299,83 @@ defmodule Explorer.Chain.Block do
   end
 
   def uncle_reward_coef, do: @uncle_reward_coef
+
+  @doc """
+  Calculates the gas target for a given block.
+
+  The gas target represents the percentage by which the actual gas used is above or below the gas target for the block, adjusted by the elasticity multiplier.
+  If the `gas_limit` is greater than 0, it calculates the ratio of `gas_used` to `gas_limit` adjusted by this multiplier.
+  """
+  @spec gas_target(t()) :: float()
+  def gas_target(block) do
+    if Decimal.compare(block.gas_limit, 0) == :gt do
+      elasticity_multiplier = Application.get_env(:explorer, :elasticity_multiplier)
+      ratio = Decimal.div(block.gas_used, Decimal.div(block.gas_limit, elasticity_multiplier))
+      ratio |> Decimal.sub(1) |> Decimal.mult(100) |> Decimal.to_float()
+    else
+      0.0
+    end
+  end
+
+  @doc """
+  Calculates the percentage of gas used for a given block relative to its gas limit.
+
+  This function determines what percentage of the block's gas limit was actually used by the transactions in the block.
+  """
+  @spec gas_used_percentage(t()) :: float()
+  def gas_used_percentage(block) do
+    if Decimal.compare(block.gas_limit, 0) == :gt do
+      block.gas_used |> Decimal.div(block.gas_limit) |> Decimal.mult(100) |> Decimal.to_float()
+    else
+      0.0
+    end
+  end
+
+  @doc """
+  Calculates the base fee for the next block based on the current block's gas usage.
+
+  The base fee calculation uses the following [formula](https://eips.ethereum.org/EIPS/eip-1559):
+
+      gas_target = gas_limit / elasticity_multiplier
+      base_fee_for_next_block = base_fee_per_gas + (base_fee_per_gas * gas_used_delta / gas_target / base_fee_max_change_denominator)
+
+  where elasticity_multiplier is an env variable `EIP_1559_ELASTICITY_MULTIPLIER`,
+  `gas_used_delta` is the difference between the actual gas used and the target gas
+  and `base_fee_max_change_denominator` is an env variable `EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR` that limits the maximum change of the base fee from one block to the next.
+
+
+  """
+  @spec next_block_base_fee :: Decimal.t() | nil
+  def next_block_base_fee do
+    query =
+      from(block in Block,
+        where: block.consensus == true,
+        order_by: [desc: block.number],
+        limit: 1
+      )
+
+    case Repo.one(query) do
+      nil -> nil
+      block -> next_block_base_fee(block)
+    end
+  end
+
+  @spec next_block_base_fee(t()) :: Decimal.t() | nil
+  def next_block_base_fee(block) do
+    elasticity_multiplier = Application.get_env(:explorer, :elasticity_multiplier)
+    base_fee_max_change_denominator = Application.get_env(:explorer, :base_fee_max_change_denominator)
+
+    gas_target = Decimal.div(block.gas_limit, elasticity_multiplier)
+
+    gas_used_delta = Decimal.sub(block.gas_used, gas_target)
+
+    base_fee_per_gas_decimal = block.base_fee_per_gas |> Wei.to(:wei)
+
+    base_fee_per_gas_decimal &&
+      base_fee_per_gas_decimal
+      |> Decimal.mult(gas_used_delta)
+      |> Decimal.div(gas_target)
+      |> Decimal.div(base_fee_max_change_denominator)
+      |> Decimal.add(base_fee_per_gas_decimal)
+  end
 end

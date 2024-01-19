@@ -100,4 +100,44 @@ defmodule Explorer.Chain.BlockTest do
       assert %{uncle_reward: ^expected_uncle_reward} = Block.block_reward_by_parts(block, [])
     end
   end
+
+  describe "next_block_base_fee" do
+    test "with no blocks in the database returns nil" do
+      assert Block.next_block_base_fee() == nil
+    end
+
+    test "ignores non consensus blocks" do
+      insert(:block, consensus: false, base_fee_per_gas: Wei.from(Decimal.new(1), :wei))
+      assert Block.next_block_base_fee() == nil
+    end
+
+    test "returns the next block base fee" do
+      insert(:block,
+        consensus: true,
+        base_fee_per_gas: Wei.from(Decimal.new(1000), :wei),
+        gas_limit: Decimal.new(30_000_000),
+        gas_used: Decimal.new(15_000_000)
+      )
+
+      assert Block.next_block_base_fee() == Decimal.new(1000)
+
+      insert(:block,
+        consensus: true,
+        base_fee_per_gas: Wei.from(Decimal.new(1000), :wei),
+        gas_limit: Decimal.new(30_000_000),
+        gas_used: Decimal.new(3_000_000)
+      )
+
+      assert Block.next_block_base_fee() == Decimal.new(900)
+
+      insert(:block,
+        consensus: true,
+        base_fee_per_gas: Wei.from(Decimal.new(1000), :wei),
+        gas_limit: Decimal.new(30_000_000),
+        gas_used: Decimal.new(27_000_000)
+      )
+
+      assert Block.next_block_base_fee() == Decimal.new(1100)
+    end
+  end
 end
