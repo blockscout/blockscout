@@ -2,9 +2,8 @@
 <% minimal_proxy_template = EIP1167.get_implementation_address(@address.hash) %>
 <% metadata_for_verification = minimal_proxy_template || SmartContract.get_address_verified_twin_contract(@address.hash).verified_contract %>
 <% smart_contract_verified = BlockScoutWeb.AddressView.smart_contract_verified?(@address) %>
-<% additional_sources_from_twin = SmartContract.get_address_verified_twin_contract(@address.hash).additional_sources %>
 <% fully_verified = SmartContract.verified_with_full_match?(@address.hash)%>
-<% additional_sources = if smart_contract_verified, do: @address.smart_contract_additional_sources, else: additional_sources_from_twin %>
+<% additional_sources = BlockScoutWeb.API.V2.SmartContractView.additional_sources(@address.smart_contract, smart_contract_verified, minimal_proxy_template, SmartContract.get_address_verified_twin_contract(@address.hash)) %>
 <% visualize_sol2uml_enabled = Explorer.Visualize.Sol2uml.enabled?() %>
 <section class="container">
   <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>

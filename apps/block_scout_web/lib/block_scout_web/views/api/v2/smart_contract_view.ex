@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
   alias Ecto.Changeset
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
   alias Explorer.Chain.SmartContract.Proxy.EIP1167
   alias Explorer.Visualize.Sol2uml
 
@@ -136,14 +136,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   # credo:disable-for-next-line
   def prepare_smart_contract(%Address{smart_contract: %SmartContract{} = smart_contract} = address) do
     minimal_proxy_template = EIP1167.get_implementation_address(address.hash, @api_true)
-    twin = SmartContract.get_address_verified_twin_contract(address.hash, @api_true)
-    metadata_for_verification = minimal_proxy_template || twin.verified_contract
+    bytecode_twin = SmartContract.get_address_verified_twin_contract(address.hash, @api_true)
+    metadata_for_verification = minimal_proxy_template || bytecode_twin.verified_contract
     smart_contract_verified = AddressView.smart_contract_verified?(address)
-    additional_sources_from_twin = twin.additional_sources
     fully_verified = SmartContract.verified_with_full_match?(address.hash, @api_true)
 
     additional_sources =
-      if smart_contract_verified, do: address.smart_contract_additional_sources, else: additional_sources_from_twin
+      additional_sources(smart_contract, smart_contract_verified, minimal_proxy_template, bytecode_twin)
 
     visualize_sol2uml_enabled = Sol2uml.enabled?()
     target_contract = if smart_contract_verified, do: address.smart_contract, else: metadata_for_verification
@@ -190,6 +189,26 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   def prepare_smart_contract(address) do
     bytecode_info(address)
+  end
+
+  @doc """
+  Returns additional sources of the smart-contract or from bytecode twin or from implementation, if it fits minimal proxy pattern (EIP-1167)
+  """
+  @spec additional_sources(SmartContract.t(), boolean, SmartContract.t() | nil, %{
+          :verified_contract => any(),
+          :additional_sources => SmartContractAdditionalSource.t() | nil
+        }) :: [SmartContractAdditionalSource.t()]
+  def additional_sources(smart_contract, smart_contract_verified, minimal_proxy_template, bytecode_twin) do
+    cond do
+      !is_nil(minimal_proxy_template) ->
+        minimal_proxy_template.smart_contract_additional_sources
+
+      smart_contract_verified ->
+        smart_contract.smart_contract_additional_sources
+
+      true ->
+        bytecode_twin.additional_sources
+    end
   end
 
   defp bytecode_info(address) do

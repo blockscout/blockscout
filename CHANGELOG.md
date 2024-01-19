@@ -8,12 +8,15 @@
 - [#9145](https://github.com/blockscout/blockscout/pull/9145) - Proxy for Account abstraction microservice
 - [#9131](https://github.com/blockscout/blockscout/pull/9131) - Merge addresses stage with address referencing
 - [#9072](https://github.com/blockscout/blockscout/pull/9072) - Add tracing by block logic for geth
+- [#9068](https://github.com/blockscout/blockscout/pull/9068) - New RPC API v1 endpoints
 - [#9056](https://github.com/blockscout/blockscout/pull/9056) - Noves.fi API proxy
 - [#9158](https://github.com/blockscout/blockscout/pull/9158) - Increase shared memory for PostgreSQL containers
 
 ### Fixes
 
+- [#9139](https://github.com/blockscout/blockscout/pull/9139) - TokenBalanceOnDemand fixes
 - [#9125](https://github.com/blockscout/blockscout/pull/9125) - Fix Explorer.Chain.Cache.GasPriceOracle.merge_fees
+- [#9124](https://github.com/blockscout/blockscout/pull/9124) - EIP-1167 display multiple sources of implementation
 - [#9110](https://github.com/blockscout/blockscout/pull/9110) - Improve update_in in gas tracker
 - [#9109](https://github.com/blockscout/blockscout/pull/9109) - Return current exchange rate in api/v2/stats
 - [#9102](https://github.com/blockscout/blockscout/pull/9102) - Fix some log topics for Suave and Polygon Edge
@@ -23,15 +26,8 @@
 
 ### Chore
 
-- [#9055](https://github.com/blockscout/blockscout/pull/9055) - Add ASC indices for logs, token transfers, transactions
-- [#9038](https://github.com/blockscout/blockscout/pull/9038) - Token type filling migrations
-- [#9009](https://github.com/blockscout/blockscout/pull/9009) - Index for block refetch_needed
-- [#9007](https://github.com/blockscout/blockscout/pull/9007) - Drop logs type index
-- [#9006](https://github.com/blockscout/blockscout/pull/9006) - Drop unused indexes on address_current_token_balances table
-- [#9005](https://github.com/blockscout/blockscout/pull/9005) - Drop unused token_id column from token_transfers table and indexes based on this column
-- [#9000](https://github.com/blockscout/blockscout/pull/9000) - Change log topic type in the DB to bytea
-- [#8996](https://github.com/blockscout/blockscout/pull/8996) - Refine token transfers token ids index
-- [#5322](https://github.com/blockscout/blockscout/pull/5322) - DB denormalization: block consensus and timestamp in transaction table
+- [#9196](https://github.com/blockscout/blockscout/pull/9196) - Compatibility with docker-compose 2.24
+- [#9193](https://github.com/blockscout/blockscout/pull/9193) - Equalize elixir stack versions
 
 <details>
   <summary>Dependencies version bumps</summary>
