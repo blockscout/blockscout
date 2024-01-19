@@ -65,16 +65,18 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
     latest_handled_batch_number =
       case Reader.latest_available_batch_number() do
         nil ->
-          log_info("No batches found in DB")
+          log_info("No batches found in DB. Will start with the latest batch available by RPC")
+          # The value received from RPC is decremented in order to not waste
+          # the first iteration of handling `:continue` message.
           Rpc.fetch_latest_sealed_batch_number(state.config.json_rpc_named_arguments) - 1
 
         latest_handled_batch_number ->
-          latest_handled_batch_number - 1
+          latest_handled_batch_number
       end
 
     Process.send_after(self(), :continue, 2000)
 
-    log_info("The latest unfinalized batch number #{latest_handled_batch_number}")
+    log_info("All batches including #{latest_handled_batch_number} are considered as handled")
 
     {:noreply, %{state | data: %{latest_handled_batch_number: latest_handled_batch_number}}}
   end
@@ -112,9 +114,9 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
           }
         } = state
       ) do
-    latest_sealed_batch_number = Rpc.fetch_latest_sealed_batch_number(json_rpc_named_arguments)
+    log_info("Checking for a new batch or batches")
 
-    log_info("Checking for a new batch")
+    latest_sealed_batch_number = Rpc.fetch_latest_sealed_batch_number(json_rpc_named_arguments)
 
     {new_state, handle_duration} =
       if latest_handled_batch_number < latest_sealed_batch_number do

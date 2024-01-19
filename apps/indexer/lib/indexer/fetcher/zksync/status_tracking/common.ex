@@ -109,7 +109,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
     used for the missed batch recovery procedure.
 
     ## Parameters
-    - `batches`: the list of batch numbers that must be updated.
+    - `batches_numbers`: the list of batch numbers that must be updated.
     - `l1_txs`: a map containing transaction hashes as keys, and values are maps
       with transaction hashes and transaction timestamps of L1 transactions to import to the database.
     - `tx_hash`: the hash of the L1 transaction to build an association with.
@@ -123,10 +123,10 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
   """
   @spec associate_and_import_or_prepare_for_recovery([integer()], map(), binary(), :commit_id | :execute_id | :prove_id) ::
           :ok | {:recovery_required, [integer()]}
-  def associate_and_import_or_prepare_for_recovery(batches, l1_txs, tx_hash, association_key)
-      when is_list(batches) and is_map(l1_txs) and is_binary(tx_hash) and
+  def associate_and_import_or_prepare_for_recovery(batches_numbers, l1_txs, tx_hash, association_key)
+      when is_list(batches_numbers) and is_map(l1_txs) and is_binary(tx_hash) and
              association_key in [:commit_id, :prove_id, :execute_id] do
-    case prepare_batches_to_import(batches, %{association_key => l1_txs[tx_hash][:id]}) do
+    case prepare_batches_to_import(batches_numbers, %{association_key => l1_txs[tx_hash][:id]}) do
       {:error, batches_to_recover} ->
         {:recovery_required, batches_to_recover}
 

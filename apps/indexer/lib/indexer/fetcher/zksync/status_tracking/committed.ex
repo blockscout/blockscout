@@ -62,9 +62,9 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Committed do
           :look_for_batches ->
             log_info("The batch #{expected_batch_number} looks like committed")
             commit_tx_receipt = Rpc.fetch_tx_receipt_by_hash(tx_hash, json_l1_rpc_named_arguments)
-            batches_from_rpc = get_committed_batches_from_logs(commit_tx_receipt["logs"])
+            batches_numbers_from_rpc = get_committed_batches_from_logs(commit_tx_receipt["logs"])
 
-            associate_and_import_or_prepare_for_recovery(batches_from_rpc, l1_txs, tx_hash, :commit_id)
+            associate_and_import_or_prepare_for_recovery(batches_numbers_from_rpc, l1_txs, tx_hash, :commit_id)
         end
     end
   end

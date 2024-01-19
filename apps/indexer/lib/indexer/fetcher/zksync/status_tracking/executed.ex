@@ -29,7 +29,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Executed do
                 `json_l2_rpc_named_arguments` defining parameters for the RPC connections.
 
     ## Returns
-    - `:ok` if no new committed batches are found, or if all found batches and the corresponding L1
+    - `:ok` if no new executed batches are found, or if all found batches and the corresponding L1
       transactions are imported successfully.
     - `{:recovery_required, batches_to_recover}` if the absence of new executed batches is
       discovered; `batches_to_recover` contains the list of batch numbers.
@@ -62,9 +62,9 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Executed do
           :look_for_batches ->
             log_info("The batch #{expected_batch_number} looks like executed")
             execute_tx_receipt = Rpc.fetch_tx_receipt_by_hash(tx_hash, json_l1_rpc_named_arguments)
-            batches_from_rpc = get_executed_batches_from_logs(execute_tx_receipt["logs"])
+            batches_numbers_from_rpc = get_executed_batches_from_logs(execute_tx_receipt["logs"])
 
-            associate_and_import_or_prepare_for_recovery(batches_from_rpc, l1_txs, tx_hash, :execute_id)
+            associate_and_import_or_prepare_for_recovery(batches_numbers_from_rpc, l1_txs, tx_hash, :execute_id)
         end
     end
   end
