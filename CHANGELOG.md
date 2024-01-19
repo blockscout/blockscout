@@ -22,6 +22,8 @@
 
 ### Chore
 
+- [#9193](https://github.com/blockscout/blockscout/pull/9193) - Equalize elixir stack versions
+
 <details>
   <summary>Dependencies version bumps</summary>
 
