@@ -124,10 +124,10 @@ defmodule Indexer.Fetcher.Beacon.Blob do
   end
 
   defp blob_entry(%{
-        "blob" => blob,
-        "kzg_commitment" => kzg_commitment,
-        "kzg_proof" => kzg_proof
-      }) do
+         "blob" => blob,
+         "kzg_commitment" => kzg_commitment,
+         "kzg_proof" => kzg_proof
+       }) do
     {:ok, kzg_commitment} = Data.cast(kzg_commitment)
     {:ok, blob} = Data.cast(blob)
     {:ok, kzg_proof} = Data.cast(kzg_proof)
