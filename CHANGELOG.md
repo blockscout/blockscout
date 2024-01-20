@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#9168](https://github.com/blockscout/blockscout/pull/9168) - Support EIP4844 blobs indexing & API
 - [#9155](https://github.com/blockscout/blockscout/pull/9155) - Allow bypassing avg block time in proxy implementation re-fetch ttl calculation
 - [#9131](https://github.com/blockscout/blockscout/pull/9131) - Merge addresses stage with address referencing
 - [#9072](https://github.com/blockscout/blockscout/pull/9072) - Add tracing by block logic for geth

@@ -3,22 +3,22 @@ defmodule Explorer.Chain.Beacon.Blob do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Data, Hash}
 
   @required_attrs ~w(hash blob_data kzg_commitment kzg_proof)a
 
   @type t :: %__MODULE__{
           hash: Hash.t(),
-          blob_data: binary(),
-          kzg_commitment: binary(),
-          kzg_proof: binary()
+          blob_data: Data.t(),
+          kzg_commitment: Data.t(),
+          kzg_proof: Data.t()
         }
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "beacon_blobs" do
-    field(:blob_data, :binary)
-    field(:kzg_commitment, :binary)
-    field(:kzg_proof, :binary)
+    field(:blob_data, Data)
+    field(:kzg_commitment, Data)
+    field(:kzg_proof, Data)
 
     timestamps(updated_at: false)
   end

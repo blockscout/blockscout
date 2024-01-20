@@ -510,7 +510,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       |> Map.put(
         "execution_node",
         Helper.address_with_info(
-          single_tx? && conn,
+          conn,
           transaction.execution_node,
           transaction.execution_node_hash,
           single_tx?,
@@ -522,7 +522,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         "nonce" => transaction.wrapped_nonce,
         "to" =>
           Helper.address_with_info(
-            single_tx? && conn,
+            conn,
             transaction.wrapped_to_address,
             transaction.wrapped_to_address_hash,
             single_tx?,
@@ -783,6 +783,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def tx_types(tx, types \\ [], stage \\ :blob_transaction)
 
   def tx_types(%Transaction{type: type} = tx, types, :blob_transaction) do
+    # EIP-2718 blob transaction type
     types =
       if type == 3 do
         [:blob_transaction | types]

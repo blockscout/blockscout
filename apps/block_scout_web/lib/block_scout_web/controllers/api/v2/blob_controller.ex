@@ -1,13 +1,6 @@
 defmodule BlockScoutWeb.API.V2.BlobController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain,
-    only: [
-      next_page_params: 3,
-      paging_options: 1,
-      split_list_by_page: 1
-    ]
-
   alias Explorer.Chain
   alias Explorer.Chain.Beacon.Reader
 

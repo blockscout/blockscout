@@ -5067,6 +5067,7 @@ defmodule Explorer.Chain do
   end
 
   def filter_blob_transaction_dynamic(dynamic) do
+    # EIP-2718 blob transaction type
     dynamic([tx], ^dynamic or tx.type == 3)
   end
 

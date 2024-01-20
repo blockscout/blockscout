@@ -1,7 +1,6 @@
 defmodule BlockScoutWeb.API.V2.BlobView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.V2.Helper
   alias Explorer.Chain.Beacon.Blob
 
   def render("blob.json", %{blob: blob, transaction_hashes: transaction_hashes}) do
@@ -20,13 +19,9 @@ defmodule BlockScoutWeb.API.V2.BlobView do
   def prepare_blob(blob) do
     %{
       "hash" => blob.hash,
-      "blob_data" => encode_binary(blob.blob_data),
-      "kzg_commitment" => encode_binary(blob.kzg_commitment),
-      "kzg_proof" => encode_binary(blob.kzg_proof)
+      "blob_data" => blob.blob_data,
+      "kzg_commitment" => blob.kzg_commitment,
+      "kzg_proof" => blob.kzg_proof
     }
-  end
-
-  defp encode_binary(binary) do
-    "0x" <> Base.encode16(binary, case: :lower)
   end
 end

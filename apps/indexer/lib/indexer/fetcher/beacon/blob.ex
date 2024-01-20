@@ -61,14 +61,14 @@ defmodule Indexer.Fetcher.Beacon.Blob do
   def init(initial, reducer, state) do
     {:ok, final} =
       Reader.stream_missed_blob_transactions_timestamps(
-        state.start_block,
-        state.end_block,
         initial,
         fn fields, acc ->
           fields
           |> entry()
           |> reducer.(acc)
-        end
+        end,
+        state.start_block,
+        state.end_block
       )
 
     final
@@ -91,13 +91,13 @@ defmodule Indexer.Fetcher.Beacon.Blob do
     |> Enum.map(&timestamp_to_slot(&1, state))
     |> Client.get_blob_sidecars()
     |> case do
-      {:ok, fetched_blobs, retries} ->
+      {:ok, fetched_blobs, retry_indices} ->
         run_fetched_blobs(fetched_blobs)
 
-        if Enum.empty?(retries) do
+        if Enum.empty?(retry_indices) do
           :ok
         else
-          {:retry, retries |> Enum.map(&Enum.at(entries, &1))}
+          {:retry, retry_indices |> Enum.map(&Enum.at(entries, &1))}
         end
     end
   end
@@ -123,7 +123,7 @@ defmodule Indexer.Fetcher.Beacon.Blob do
     Repo.insert_all(Blob, blobs, on_conflict: :nothing, conflict_target: [:hash])
   end
 
-  def blob_entry(%{
+  defp blob_entry(%{
         "blob" => blob,
         "kzg_commitment" => kzg_commitment,
         "kzg_proof" => kzg_proof
@@ -134,13 +134,13 @@ defmodule Indexer.Fetcher.Beacon.Blob do
 
     %{
       hash: blob_hash(kzg_commitment.bytes),
-      blob_data: blob.bytes,
-      kzg_commitment: kzg_commitment.bytes,
-      kzg_proof: kzg_proof.bytes
+      blob_data: blob,
+      kzg_commitment: kzg_commitment,
+      kzg_proof: kzg_proof
     }
   end
 
-  def blob_hash(kzg_commitment) do
+  defp blob_hash(kzg_commitment) do
     raw_hash = :crypto.hash(:sha256, kzg_commitment)
     <<_::size(8), rest::binary>> = raw_hash
     {:ok, hash} = Hash.Full.cast(<<1>> <> rest)

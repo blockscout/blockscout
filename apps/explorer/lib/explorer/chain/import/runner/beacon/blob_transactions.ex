@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Import.Runner.Beacon.BlobTransactions do
 
   alias Explorer.Chain.Beacon.BlobTransaction
   alias Ecto.{Multi, Repo}
-  alias Explorer.Chain.{Block, Hash, Import}
+  alias Explorer.Chain.{Hash, Import}
   alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner

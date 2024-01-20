@@ -684,15 +684,15 @@ config :indexer, Indexer.Fetcher.Beacon, beacon_rpc: System.get_env("INDEXER_BEA
 config :indexer, Indexer.Fetcher.Beacon.Blob.Supervisor,
   disabled?:
     ConfigHelper.chain_type() != "ethereum" ||
-      ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BEACON_BLOB_SANITIZE_FETCHER")
+      ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BEACON_BLOB_FETCHER")
 
 config :indexer, Indexer.Fetcher.Beacon.Blob,
-  slot_duration: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_SANITIZE_FETCHER_SLOT_DURATION", 12),
-  reference_slot: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_SANITIZE_FETCHER_REFERENCE_SLOT", 8_206_822),
+  slot_duration: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_SLOT_DURATION", 12),
+  reference_slot: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_REFERENCE_SLOT", 8_206_822),
   reference_timestamp:
-    ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_SANITIZE_FETCHER_REFERENCE_TIMESTAMP", 1_705_305_887),
-  start_block: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_SANITIZE_FETCHER_START_BLOCK", 8_206_822),
-  end_block: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_SANITIZE_FETCHER_END_BLOCK", 0)
+    ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_REFERENCE_TIMESTAMP", 1_705_305_887),
+  start_block: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_START_BLOCK", 8_206_822),
+  end_block: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_END_BLOCK", 0)
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 

@@ -31,6 +31,7 @@ defmodule Indexer.Fetcher.Beacon.Client do
     end
   end
 
+  @spec get_blob_sidecars([integer()]) :: {:ok, list(), [integer()]}
   def get_blob_sidecars(slots) when is_list(slots) do
     {oks, errors_with_retries} =
       slots
@@ -53,6 +54,7 @@ defmodule Indexer.Fetcher.Beacon.Client do
     {:ok, oks |> Enum.map(fn {_, blob} -> blob end), retries}
   end
 
+  @spec get_blob_sidecars(integer()) :: {:error, any()} | {:ok, any()}
   def get_blob_sidecars(slot) do
     http_get_request(blob_sidecars_url(slot))
   end
@@ -63,6 +65,7 @@ defmodule Indexer.Fetcher.Beacon.Client do
   defp successful?({:ok, _}), do: true
   defp successful?(_), do: false
 
+  @spec get_header(integer()) :: {:error, any()} | {:ok, any()}
   def get_header(slot) do
     http_get_request(header_url(slot))
   end
