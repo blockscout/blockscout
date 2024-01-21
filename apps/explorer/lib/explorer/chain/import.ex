@@ -41,7 +41,6 @@ defmodule Explorer.Chain.Import do
   @type all_options :: %{
           optional(:broadcast) => atom,
           optional(:timeout) => timeout,
-          optional(:error_for_unknown) => boolean,
           unquote_splicing(quoted_runner_options)
         }
 
@@ -184,11 +183,9 @@ defmodule Explorer.Chain.Import do
     end
   end
 
-  @global_options ~w(broadcast timeout error_for_unknown)a
+  @global_options ~w(broadcast timeout)a
 
   defp validate_options(options) when is_map(options) do
-    validate_unknown = Map.get(options, :error_for_unknown, true)
-
     local_options = Map.drop(options, @global_options)
 
     {reverse_runner_options_pairs, unknown_options} =
@@ -205,7 +202,7 @@ defmodule Explorer.Chain.Import do
         end
       end)
 
-    case validate_unknown == false || Enum.empty?(unknown_options) do
+    case Enum.empty?(unknown_options) do
       true -> {:ok, Enum.reverse(reverse_runner_options_pairs)}
       false -> {:error, {:unknown_options, unknown_options}}
     end
