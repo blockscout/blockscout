@@ -30,7 +30,6 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
     ## Returns
     - `:ok`
   """
-  @dialyzer {:no_return, [get_minimal_batches_info_and_import: 3]}
   @spec get_minimal_batches_info_and_import(non_neg_integer(), non_neg_integer(), %{
           :chunk_size => integer(),
           :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
@@ -73,7 +72,6 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
     ## Returns
     - `:ok`
   """
-  @dialyzer {:no_return, [get_full_batches_info_and_import: 2]}
   @spec get_full_batches_info_and_import([integer()], %{
           :chunk_size => integer(),
           :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),

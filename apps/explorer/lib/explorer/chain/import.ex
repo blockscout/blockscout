@@ -20,7 +20,8 @@ defmodule Explorer.Chain.Import do
   ]
 
   # in order so that foreign keys are inserted before being referenced
-  @runners Enum.flat_map(@stages, fn stage -> stage.runners() end)
+  @configured_runners Enum.flat_map(@stages, fn stage -> stage.runners() end)
+  @all_runners Enum.flat_map(@stages, fn stage -> stage.all_runners() end)
 
   quoted_runner_option_value =
     quote do
@@ -28,7 +29,7 @@ defmodule Explorer.Chain.Import do
     end
 
   quoted_runner_options =
-    for runner <- @runners do
+    for runner <- @all_runners do
       quoted_key =
         quote do
           optional(unquote(runner.option_key()))
@@ -40,11 +41,12 @@ defmodule Explorer.Chain.Import do
   @type all_options :: %{
           optional(:broadcast) => atom,
           optional(:timeout) => timeout,
+          optional(:error_for_unknown) => boolean,
           unquote_splicing(quoted_runner_options)
         }
 
   quoted_runner_imported =
-    for runner <- @runners do
+    for runner <- @all_runners do
       quoted_key =
         quote do
           optional(unquote(runner.option_key()))
@@ -69,7 +71,7 @@ defmodule Explorer.Chain.Import do
   # milliseconds
   @transaction_timeout :timer.minutes(4)
 
-  @imported_table_rows @runners
+  @imported_table_rows @all_runners
                        |> Stream.map(&Map.put(&1.imported_table_row(), :key, &1.option_key()))
                        |> Enum.map_join("\n", fn %{
                                                    key: key,
@@ -78,7 +80,7 @@ defmodule Explorer.Chain.Import do
                                                  } ->
                          "| `#{inspect(key)}` | `#{value_type}` | #{value_description} |"
                        end)
-  @runner_options_doc Enum.map_join(@runners, fn runner ->
+  @runner_options_doc Enum.map_join(@all_runners, fn runner ->
                         ecto_schema_module = runner.ecto_schema_module()
 
                         """
@@ -123,7 +125,7 @@ defmodule Explorer.Chain.Import do
       milliseconds.
   #{@runner_options_doc}
   """
-  @spec all(all_options()) :: all_result()
+  # @spec all(all_options()) :: all_result()
   def all(options) when is_map(options) do
     with {:ok, runner_options_pairs} <- validate_options(options),
          {:ok, valid_runner_option_pairs} <- validate_runner_options_pairs(runner_options_pairs),
@@ -182,13 +184,16 @@ defmodule Explorer.Chain.Import do
     end
   end
 
-  @global_options ~w(broadcast timeout)a
+  @global_options ~w(broadcast timeout error_for_unknown)a
 
   defp validate_options(options) when is_map(options) do
+    validate_unknown = Map.get(options, :error_for_unknown, true)
+
     local_options = Map.drop(options, @global_options)
 
     {reverse_runner_options_pairs, unknown_options} =
-      Enum.reduce(@runners, {[], local_options}, fn runner, {acc_runner_options_pairs, unknown_options} = acc ->
+      Enum.reduce(@configured_runners, {[], local_options}, fn runner,
+                                                               {acc_runner_options_pairs, unknown_options} = acc ->
         option_key = runner.option_key()
 
         case local_options do
@@ -200,7 +205,7 @@ defmodule Explorer.Chain.Import do
         end
       end)
 
-    case Enum.empty?(unknown_options) do
+    case validate_unknown == false || Enum.empty?(unknown_options) do
       true -> {:ok, Enum.reverse(reverse_runner_options_pairs)}
       false -> {:error, {:unknown_options, unknown_options}}
     end

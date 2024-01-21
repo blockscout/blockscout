@@ -13,6 +13,10 @@ defmodule Explorer.Chain.Import.Stage.Addresses do
   @impl Stage
   def runners, do: [@runner]
 
+  @impl Stage
+  def all_runners,
+    do: runners()
+
   @chunk_size 50
 
   @impl Stage

@@ -3,9 +3,10 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Db do
     Common functions to simplify DB routines for Indexer.Fetcher.ZkSync fetchers
   """
 
-  alias Explorer.Chain
   alias Explorer.Chain.ZkSync.Reader
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_warning: 1, log_info: 1]
+
+  require Explorer.Chain, as: Chain
 
   @json_batch_fields_absent_in_db_batch [
     :commit_tx_hash,
@@ -190,8 +191,6 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Db do
     ## Returns
     n/a
   """
-  @dialyzer {:no_return, [import_to_db: 1, import_to_db: 2, import_to_db: 3, import_to_db: 4]}
-  @dialyzer {:no_fail_call, [import_to_db: 1, import_to_db: 2, import_to_db: 3, import_to_db: 4]}
   def import_to_db(batches, l1_txs \\ [], l2_txs \\ [], l2_blocks \\ [])
       when is_list(batches) and is_list(l1_txs) and is_list(l2_txs) and is_list(l2_blocks) do
     {:ok, _} =
