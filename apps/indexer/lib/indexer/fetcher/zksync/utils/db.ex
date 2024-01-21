@@ -3,10 +3,9 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Db do
     Common functions to simplify DB routines for Indexer.Fetcher.ZkSync fetchers
   """
 
+  alias Explorer.Chain
   alias Explorer.Chain.ZkSync.Reader
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_warning: 1, log_info: 1]
-
-  require Explorer.Chain, as: Chain
 
   @json_batch_fields_absent_in_db_batch [
     :commit_tx_hash,
