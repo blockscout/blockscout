@@ -145,7 +145,7 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
   end
 
   defp trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params, traces_module)
-      when is_list(responses) and is_map(id_to_params) do
+       when is_list(responses) and is_map(id_to_params) do
     with {:ok, traces} <- trace_replay_transaction_responses_to_first_trace(responses, id_to_params) do
       params =
         traces

@@ -4,6 +4,7 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
   [`trace_replayTransaction`](https://openethereum.github.io/JSONRPC-trace-module#trace_replaytransaction).
   """
 
+  import EthereumJSONRPC.Transaction, only: [put_if_present: 3]
   alias EthereumJSONRPC.Nethermind.Trace.{Action, Result}
 
   @doc """
@@ -218,8 +219,6 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
       "traceAddress" => trace_address
     } = elixir
 
-    result = elixir |> Map.get("result") || %{}
-
     %{
       block_number: block_number,
       transaction_hash: transaction_hash,
@@ -232,11 +231,15 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
       to_address_hash: to_address_hash,
       gas: gas,
       input: input,
-      value: value,
-      gas_used: result |> Map.get("gasUsed"),
-      output: result |> Map.get("output"),
-      error: elixir |> Map.get("error")
+      value: value
     }
+    |> put_if_present(elixir, [
+      {"error", :error}
+    ])
+    |> put_if_present(elixir |> Map.get("result") || %{}, [
+      {"gasUsed", :gas_used},
+      {"output", :output}
+    ])
   end
 
   def elixir_to_params(%{"type" => "create" = type} = elixir) do
@@ -249,8 +252,6 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
       "transactionIndex" => transaction_index
     } = elixir
 
-    result = elixir |> Map.get("result") || %{}
-
     %{
       block_number: block_number,
       from_address_hash: from_address_hash,
@@ -261,12 +262,16 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
       transaction_hash: transaction_hash,
       type: type,
       value: value,
-      transaction_index: transaction_index,
-      gas_used: result |> Map.get("gasUsed"),
-      created_contract_code: result |> Map.get("code"),
-      created_contract_address_hash: result |> Map.get("address"),
-      error: elixir |> Map.get("error")
+      transaction_index: transaction_index
     }
+    |> put_if_present(elixir, [
+      {"error", :error}
+    ])
+    |> put_if_present(elixir |> Map.get("result") || %{}, [
+      {"gasUsed", :gas_used},
+      {"code", :created_contract_code},
+      {"address", :created_contract_address_hash}
+    ])
   end
 
   def elixir_to_params(%{"type" => "suicide"} = elixir) do
