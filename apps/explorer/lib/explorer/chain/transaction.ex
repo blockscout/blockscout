@@ -141,6 +141,7 @@ defmodule Explorer.Chain.Transaction.Schema do
         field(:status, Status)
         field(:v, :decimal)
         field(:value, Wei)
+        # TODO change to Data.t(), convert current hex-string values, prune all non-hex ones
         field(:revert_reason, :string)
         field(:max_priority_fee_per_gas, Wei)
         field(:max_fee_per_gas, Wei)
@@ -616,22 +617,54 @@ defmodule Explorer.Chain.Transaction do
     process_hex_revert_reason(hex, transaction, options)
   end
 
+  @default_error_abi [
+    %{
+      "inputs" => [
+        %{
+          "name" => "reason",
+          "type" => "string"
+        }
+      ],
+      "name" => "Error",
+      "type" => "error"
+    },
+    %{
+      "inputs" => [
+        %{
+          "name" => "errorCode",
+          "type" => "uint256"
+        }
+      ],
+      "name" => "Panic",
+      "type" => "error"
+    }
+  ]
+
   defp process_hex_revert_reason(hex_revert_reason, %__MODULE__{to_address: smart_contract, hash: hash}, options) do
     case Integer.parse(hex_revert_reason, 16) do
       {number, ""} ->
         binary_revert_reason = :binary.encode_unsigned(number)
 
-        {result, _, _} =
-          decoded_input_data(
-            %Transaction{
-              to_address: smart_contract,
-              hash: hash,
-              input: %Data{bytes: binary_revert_reason}
-            },
-            options
-          )
+        case find_and_decode(@default_error_abi, binary_revert_reason, hash) do
+          {:ok, {selector, values}} ->
+            {:ok, mapping} = selector_mapping(selector, values, hash)
+            identifier = Base.encode16(selector.method_id, case: :lower)
+            text = function_call(selector.function, mapping)
+            {:ok, identifier, text, mapping}
 
-        result
+          _ ->
+            {result, _, _} =
+              decoded_input_data(
+                %Transaction{
+                  to_address: smart_contract,
+                  hash: hash,
+                  input: %Data{bytes: binary_revert_reason}
+                },
+                options
+              )
+
+            result
+        end
 
       _ ->
         hex_revert_reason

@@ -218,6 +218,8 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
       "traceAddress" => trace_address
     } = elixir
 
+    result = elixir |> Map.get("result") || %{}
+
     %{
       block_number: block_number,
       transaction_hash: transaction_hash,
@@ -230,9 +232,11 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
       to_address_hash: to_address_hash,
       gas: gas,
       input: input,
-      value: value
+      value: value,
+      gas_used: result |> Map.get("gasUsed"),
+      output: result |> Map.get("output"),
+      error: elixir |> Map.get("error")
     }
-    |> put_call_error_or_result(elixir)
   end
 
   def elixir_to_params(%{"type" => "create" = type} = elixir) do
@@ -245,6 +249,8 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
       "transactionIndex" => transaction_index
     } = elixir
 
+    result = elixir |> Map.get("result") || %{}
+
     %{
       block_number: block_number,
       from_address_hash: from_address_hash,
@@ -255,9 +261,12 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
       transaction_hash: transaction_hash,
       type: type,
       value: value,
-      transaction_index: transaction_index
+      transaction_index: transaction_index,
+      gas_used: result |> Map.get("gasUsed"),
+      created_contract_code: result |> Map.get("code"),
+      created_contract_address_hash: result |> Map.get("address"),
+      error: elixir |> Map.get("error")
     }
-    |> put_create_error_or_result(elixir)
   end
 
   def elixir_to_params(%{"type" => "suicide"} = elixir) do
@@ -470,32 +479,4 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
   end
 
   defp entry_to_elixir({"transactionIndex", index} = entry) when is_integer(index), do: entry
-
-  defp put_call_error_or_result(params, %{
-         "result" => %{"gasUsed" => gas_used, "output" => output}
-       }) do
-    Map.merge(params, %{gas_used: gas_used, output: output})
-  end
-
-  defp put_call_error_or_result(params, %{"error" => error}) do
-    Map.put(params, :error, error)
-  end
-
-  defp put_create_error_or_result(params, %{
-         "result" => %{
-           "address" => created_contract_address_hash,
-           "code" => code,
-           "gasUsed" => gas_used
-         }
-       }) do
-    Map.merge(params, %{
-      created_contract_code: code,
-      created_contract_address_hash: created_contract_address_hash,
-      gas_used: gas_used
-    })
-  end
-
-  defp put_create_error_or_result(params, %{"error" => error}) do
-    Map.put(params, :error, error)
-  end
 end

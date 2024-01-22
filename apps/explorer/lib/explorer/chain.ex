@@ -118,8 +118,6 @@ defmodule Explorer.Chain do
   @revert_msg_prefix_4 "Reverted "
   # Geth-like node
   @revert_msg_prefix_5 "execution reverted: "
-  # keccak256("Error(string)")
-  @revert_error_method_id "08c379a0"
 
   @limit_showing_transactions 10_000
   @default_page_size 50
@@ -2938,17 +2936,59 @@ defmodule Explorer.Chain do
     end
   end
 
-  def fetch_tx_revert_reason(
-        %Transaction{
-          block_number: block_number,
-          to_address_hash: to_address_hash,
-          from_address_hash: from_address_hash,
-          input: data,
-          gas: gas,
-          gas_price: gas_price,
-          value: value
-        } = transaction
-      ) do
+  def fetch_tx_revert_reason(transaction) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    hash_string = to_string(transaction.hash)
+
+    response =
+      fetch_first_trace(
+        [
+          %{
+            block_hash: transaction.block_hash,
+            block_number: transaction.block_number,
+            hash_data: hash_string,
+            transaction_index: transaction.index
+          }
+        ],
+        json_rpc_named_arguments
+      )
+
+    revert_reason =
+      case response do
+        {:ok, first_trace_params} ->
+          first_trace_params |> Enum.at(0) |> Map.get(:output)
+
+        {:error, reason} ->
+          Logger.error(fn ->
+            ["Error while fetching first trace for tx: #{hash_string} error reason: ", reason]
+          end)
+
+          fetch_tx_revert_reason_using_call(transaction)
+
+        :ignore ->
+          fetch_tx_revert_reason_using_call(transaction)
+      end
+
+    if !is_nil(revert_reason) do
+      transaction
+      # TODO remove to_string once type in table is bytea
+      |> Changeset.change(%{revert_reason: to_string(revert_reason)})
+      |> Repo.update()
+    end
+
+    to_string(revert_reason)
+  end
+
+  defp fetch_tx_revert_reason_using_call(%Transaction{
+         block_number: block_number,
+         to_address_hash: to_address_hash,
+         from_address_hash: from_address_hash,
+         input: data,
+         gas: gas,
+         gas_price: gas_price,
+         value: value
+       }) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
     req =
@@ -2963,28 +3003,22 @@ defmodule Explorer.Chain do
         Wei.hex_format(value)
       )
 
-    revert_reason =
+    hex_data =
       case EthereumJSONRPC.json_rpc(req, json_rpc_named_arguments) do
         {:error, %{data: data}} ->
           data
 
         {:error, %{message: message}} ->
-          message
+          message |> format_revert_reason_message()
 
         _ ->
           ""
       end
 
-    formatted_revert_reason =
-      revert_reason |> format_revert_reason_message() |> (&if(String.valid?(&1), do: &1, else: revert_reason)).()
-
-    if byte_size(formatted_revert_reason) > 0 do
-      transaction
-      |> Changeset.change(%{revert_reason: formatted_revert_reason})
-      |> Repo.update()
+    case Data.cast(hex_data) do
+      {:ok, revert_reason} -> revert_reason
+      _ -> nil
     end
-
-    formatted_revert_reason
   end
 
   def format_revert_reason_message(revert_reason) do
@@ -2996,41 +3030,16 @@ defmodule Explorer.Chain do
         rest
 
       @revert_msg_prefix_3 <> rest ->
-        extract_revert_reason_message_wrapper(rest)
+        rest
 
       @revert_msg_prefix_4 <> rest ->
-        extract_revert_reason_message_wrapper(rest)
+        rest
 
       @revert_msg_prefix_5 <> rest ->
-        extract_revert_reason_message_wrapper(rest)
-
-      revert_reason_full ->
-        revert_reason_full
-    end
-  end
-
-  defp extract_revert_reason_message_wrapper(revert_reason_message) do
-    case revert_reason_message do
-      "0x" <> hex ->
-        extract_revert_reason_message(hex)
+        rest
 
       _ ->
-        revert_reason_message
-    end
-  end
-
-  defp extract_revert_reason_message(hex) do
-    case hex do
-      @revert_error_method_id <> msg_with_offset ->
-        [msg] =
-          msg_with_offset
-          |> Base.decode16!(case: :mixed)
-          |> TypeDecoder.decode_raw([:string])
-
-        msg
-
-      _ ->
-        hex
+        ""
     end
   end
 
