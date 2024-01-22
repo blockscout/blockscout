@@ -2476,8 +2476,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             for _ <- 0..(amount - 1) do
               ti =
                 insert(:token_instance,
-                  token_contract_address_hash: token.contract_address_hash,
-                  owner_address_hash: address.hash
+                  token_contract_address_hash: token.contract_address_hash
                 )
                 |> Repo.preload([:token])
 

@@ -21,6 +21,7 @@
 - [#9315](https://github.com/blockscout/blockscout/pull/9315) - Fix manual uncle reward calculation
 - [#9305](https://github.com/blockscout/blockscout/pull/9305) - Add effective gas price calculation as fallback
 - [#9300](https://github.com/blockscout/blockscout/pull/9300) - Fix read contract bug
+- [#9226](https://github.com/blockscout/blockscout/pull/9226) - Split Indexer.Fetcher.TokenInstance.LegacySanitize
 
 ### Chore
 
