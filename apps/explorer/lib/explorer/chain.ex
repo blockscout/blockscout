@@ -2977,7 +2977,7 @@ defmodule Explorer.Chain do
       |> Repo.update()
     end
 
-    to_string(revert_reason)
+    revert_reason && to_string(revert_reason)
   end
 
   defp fetch_tx_revert_reason_using_call(%Transaction{

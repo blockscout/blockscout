@@ -232,6 +232,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
   Failed `:call`s are not allowed to set `gas_used` or `output` because they are part of the successful `result` object
   in the Nethermind JSONRPC response.  They still need `input`, however.
+  The changeset will be fixed by `validate_call_error_or_result`, therefore the changeset is still valid.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -256,11 +257,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   }
       ...> )
       iex> changeset.valid?
-      false
-      iex> changeset.errors
-      [
-        output: {"can't be present for failed call", []}
-      ]
+      true
 
   Likewise, successful `:call`s require `input`, `gas_used` and `output` to be set.
 
@@ -293,6 +290,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
   For failed `:create`, `created_contract_code`, `created_contract_address_hash`, and `gas_used` are not allowed to be
   set because they come from `result` object, which shouldn't be returned from Nethermind.
+  The changeset will be fixed by `validate_create_error_or_result`, therefore the changeset is still valid.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -316,13 +314,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   }
       iex> )
       iex> changeset.valid?
-      false
-      iex> changeset.errors
-      [
-        gas_used: {"can't be present for failed create", []},
-        created_contract_address_hash: {"can't be present for failed create", []},
-        created_contract_code: {"can't be present for failed create", []}
-      ]
+      true
 
   For successful `:create`,  `created_contract_code`, `created_contract_address_hash`, and `gas_used` are required.
 
