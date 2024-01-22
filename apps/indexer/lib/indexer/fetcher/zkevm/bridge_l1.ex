@@ -57,7 +57,8 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
          rpc = env[:rpc],
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
-         {:bridge_contract_address_is_valid, true} <- {:bridge_contract_address_is_valid, Helper.address_correct?(env[:bridge_contract])},
+         {:bridge_contract_address_is_valid, true} <-
+           {:bridge_contract_address_is_valid, Helper.address_correct?(env[:bridge_contract])},
          start_block = parse_integer(env[:start_block]),
          false <- is_nil(start_block),
          true <- start_block > 0,

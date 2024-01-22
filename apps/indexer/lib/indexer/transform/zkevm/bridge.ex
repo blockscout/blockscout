@@ -26,7 +26,7 @@ defmodule Indexer.Transform.Zkevm.Bridge do
            {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(rpc_l1)},
            bridge_contract = Application.get_env(:indexer, BridgeL2)[:bridge_contract],
            {:bridge_contract_address_is_valid, true} <-
-             {:bridge_contract_address_is_valid, Helper.is_address_correct?(bridge_contract)} do
+             {:bridge_contract_address_is_valid, Helper.address_correct?(bridge_contract)} do
         bridge_contract = String.downcase(bridge_contract)
 
         block_numbers = Enum.map(blocks, fn block -> block.number end)

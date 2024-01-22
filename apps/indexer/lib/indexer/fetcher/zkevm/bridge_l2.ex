@@ -58,7 +58,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL2 do
          rpc_l1 = Application.get_all_env(:indexer)[Indexer.Fetcher.Zkevm.BridgeL1][:rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(rpc_l1)},
          {:bridge_contract_address_is_valid, true} <-
-           {:bridge_contract_address_is_valid, Helper.is_address_correct?(env[:bridge_contract])},
+           {:bridge_contract_address_is_valid, Helper.address_correct?(env[:bridge_contract])},
          start_block = parse_integer(env[:start_block]),
          false <- is_nil(start_block),
          true <- start_block > 0,
