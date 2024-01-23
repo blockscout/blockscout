@@ -5,7 +5,8 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
 
   import Ecto.Query
 
-  alias Explorer.Chain.Shibarium.Bridge
+  alias Explorer.Chain.Cache.ShibariumCounter
+  alias Explorer.Chain.Shibarium.{Bridge, Reader}
   alias Explorer.Repo
 
   @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
@@ -66,6 +67,15 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
     |> Map.values()
   end
 
+  @doc """
+  Recalculate the cached count of complete rows for deposits and withdrawals.
+  """
+  @spec recalculate_cached_count() :: no_return()
+  def recalculate_cached_count do
+    ShibariumCounter.deposits_count_save(Reader.deposits_count())
+    ShibariumCounter.withdrawals_count_save(Reader.withdrawals_count())
+  end
+
   # credo:disable-for-next-line /Complexity/
   defp bind_existing_operation_in_db(op, calling_module) do
     {query, set} =
@@ -110,6 +120,13 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
         ),
         set: set
       )
+
+    # increment the cached count of complete rows
+    case updated_count > 0 && op.operation_type do
+      :deposit -> ShibariumCounter.deposits_count_save(updated_count, true)
+      :withdrawal -> ShibariumCounter.withdrawals_count_save(updated_count, true)
+      false -> nil
+    end
 
     updated_count
   end

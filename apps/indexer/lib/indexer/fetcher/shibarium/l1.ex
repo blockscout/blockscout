@@ -20,7 +20,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
   import Explorer.Helper, only: [parse_integer: 1, decode_data: 2]
 
-  import Indexer.Fetcher.Shibarium.Helper, only: [calc_operation_hash: 5, prepare_insert_items: 2]
+  import Indexer.Fetcher.Shibarium.Helper,
+    only: [calc_operation_hash: 5, prepare_insert_items: 2, recalculate_cached_count: 0]
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
@@ -137,6 +138,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
          {:ok, block_check_interval, latest_block} <- get_block_check_interval(json_rpc_named_arguments),
          {:start_block_valid, true} <- {:start_block_valid, start_block <= latest_block} do
+      recalculate_cached_count()
+
       Process.send(self(), :reorg_monitor, [])
       Process.send(self(), :continue, [])
 
@@ -697,6 +700,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     updated_count = max(updated_count1, updated_count2)
 
     if deleted_count > 0 or updated_count > 0 do
+      recalculate_cached_count()
+
       Logger.warning(
         "As L1 reorg was detected, some rows with l1_block_number >= #{reorg_block} were affected (removed or updated) in the shibarium_bridge table. Number of removed rows: #{deleted_count}. Number of updated rows: >= #{updated_count}."
       )
