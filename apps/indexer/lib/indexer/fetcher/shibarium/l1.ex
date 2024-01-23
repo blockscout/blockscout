@@ -326,7 +326,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
   defp filter_deposit_events(events) do
     Enum.filter(events, fn event ->
       topic0 = Enum.at(event["topics"], 0)
-      is_deposit(topic0)
+      deposit?(topic0)
     end)
   end
 
@@ -559,7 +559,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     end
   end
 
-  defp is_deposit(topic0) do
+  defp deposit?(topic0) do
     Enum.member?(
       [
         @new_deposit_block_event,
@@ -610,7 +610,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
       l1_block_number = quantity_to_integer(event["blockNumber"])
 
       {operation_type, timestamp} =
-        if is_deposit(topic0) do
+        if deposit?(topic0) do
           {:deposit, Map.get(timestamps, l1_block_number)}
         else
           {:withdrawal, nil}

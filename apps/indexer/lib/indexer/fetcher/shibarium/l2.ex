@@ -465,7 +465,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     |> Logs.elixir_to_params()
   end
 
-  defp is_withdrawal(event) do
+  defp withdrawal?(event) do
     cond do
       event.first_topic == @withdraw_event ->
         true
@@ -501,7 +501,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       l2_block_number = quantity_to_integer(event.block_number)
 
       {operation_type, timestamp} =
-        if is_withdrawal(event) do
+        if withdrawal?(event) do
           {:withdrawal, Map.get(timestamps, l2_block_number)}
         else
           {:deposit, nil}
