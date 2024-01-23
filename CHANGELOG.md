@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#9202](https://github.com/blockscout/blockscout/pull/9202) - Add base and priority fee to gas oracle response
 - [#9189](https://github.com/blockscout/blockscout/pull/9189) - User operations in the search
 - [#9155](https://github.com/blockscout/blockscout/pull/9155) - Allow bypassing avg block time in proxy implementation re-fetch ttl calculation
 - [#9145](https://github.com/blockscout/blockscout/pull/9145) - Proxy for Account abstraction microservice
