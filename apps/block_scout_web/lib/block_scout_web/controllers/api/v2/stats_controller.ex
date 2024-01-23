@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
           :standard
       end
 
-    exchange_rate_from_db = Market.get_coin_exchange_rate()
+    exchange_rate_from_db = Market.get_native_coin_exchange_rate_from_db()
 
     transaction_stats = Helper.get_transaction_stats()
 
