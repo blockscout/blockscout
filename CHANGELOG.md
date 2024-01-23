@@ -15,6 +15,7 @@
 
 ### Fixes
 
+- [#9229](https://github.com/blockscout/blockscout/pull/9229) - Add missing filter to txlist query
 - [#9139](https://github.com/blockscout/blockscout/pull/9139) - TokenBalanceOnDemand fixes
 - [#9125](https://github.com/blockscout/blockscout/pull/9125) - Fix Explorer.Chain.Cache.GasPriceOracle.merge_fees
 - [#9124](https://github.com/blockscout/blockscout/pull/9124) - EIP-1167 display multiple sources of implementation
@@ -27,6 +28,7 @@
 
 ### Chore
 
+- [#9198](https://github.com/blockscout/blockscout/pull/9198) - Make Postgres@15 default option
 - [#9196](https://github.com/blockscout/blockscout/pull/9196) - Compatibility with docker-compose 2.24
 - [#9193](https://github.com/blockscout/blockscout/pull/9193) - Equalize elixir stack versions
 

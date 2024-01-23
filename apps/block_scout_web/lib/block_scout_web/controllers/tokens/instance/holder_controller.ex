@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.Tokens.Instance.HolderController do
   def index(conn, %{"token_id" => token_address_hash, "instance_id" => token_id_str, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(token_address_hash),
          {:ok, token} <- Chain.token_from_address_hash(address_hash),
-         false <- Chain.is_erc_20_token?(token),
+         false <- Chain.erc_20_token?(token),
          {token_id, ""} <- Integer.parse(token_id_str),
          token_holders <-
            Chain.fetch_token_holders_from_token_hash_and_token_id(address_hash, token_id, paging_options(params)) do
@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.Tokens.Instance.HolderController do
 
     with {:ok, hash} <- Chain.string_to_address_hash(token_address_hash),
          {:ok, token} <- Chain.token_from_address_hash(hash, options),
-         false <- Chain.is_erc_20_token?(token),
+         false <- Chain.erc_20_token?(token),
          {token_id, ""} <- Integer.parse(token_id_str) do
       case Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, hash) do
         {:ok, token_instance} -> Helper.render(conn, token_instance, hash, token_id, token)

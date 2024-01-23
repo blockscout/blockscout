@@ -473,6 +473,7 @@ defmodule Explorer.Etherscan do
       if DenormalizationHelper.denormalization_finished?() do
         from(
           t in Transaction,
+          where: not is_nil(t.block_hash),
           order_by: [{^options.order_by_direction, t.block_number}],
           limit: ^options.page_size,
           offset: ^offset(options),

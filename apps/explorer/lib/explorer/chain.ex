@@ -4369,12 +4369,12 @@ defmodule Explorer.Chain do
     Repo.one(query)
   end
 
-  @spec is_erc_20_token?(Token.t()) :: bool
-  def is_erc_20_token?(token) do
-    is_erc_20_token_type?(token.type)
+  @spec erc_20_token?(Token.t()) :: bool
+  def erc_20_token?(token) do
+    erc_20_token_type?(token.type)
   end
 
-  defp is_erc_20_token_type?(type) do
+  defp erc_20_token_type?(type) do
     case type do
       "ERC-20" -> true
       _ -> false
@@ -4826,9 +4826,9 @@ defmodule Explorer.Chain do
     |> Repo.one()
   end
 
-  def is_address_hash_is_smart_contract?(nil), do: false
+  def address_hash_is_smart_contract?(nil), do: false
 
-  def is_address_hash_is_smart_contract?(address_hash) do
+  def address_hash_is_smart_contract?(address_hash) do
     with %Address{contract_code: bytecode} <- Repo.get_by(Address, hash: address_hash),
          false <- is_nil(bytecode) do
       true
