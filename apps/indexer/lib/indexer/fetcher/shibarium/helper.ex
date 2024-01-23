@@ -76,39 +76,8 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
     ShibariumCounter.withdrawals_count_save(Reader.withdrawals_count())
   end
 
-  # credo:disable-for-next-line /Complexity/
   defp bind_existing_operation_in_db(op, calling_module) do
-    {query, set} =
-      case calling_module do
-        Indexer.Fetcher.Shibarium.L1 ->
-          {
-            from(sb in Bridge,
-              where:
-                sb.operation_hash == ^op.operation_hash and sb.operation_type == ^op.operation_type and
-                  sb.l2_transaction_hash != ^@empty_hash and sb.l1_transaction_hash == ^@empty_hash,
-              order_by: [asc: sb.l2_block_number],
-              limit: 1
-            ),
-            [l1_transaction_hash: op.l1_transaction_hash, l1_block_number: op.l1_block_number] ++
-              if(op.operation_type == :deposit, do: [timestamp: op.timestamp], else: [])
-          }
-
-        Indexer.Fetcher.Shibarium.L2 ->
-          {
-            from(sb in Bridge,
-              where:
-                sb.operation_hash == ^op.operation_hash and sb.operation_type == ^op.operation_type and
-                  sb.l1_transaction_hash != ^@empty_hash and sb.l2_transaction_hash == ^@empty_hash,
-              order_by: [asc: sb.l1_block_number],
-              limit: 1
-            ),
-            [l2_transaction_hash: op.l2_transaction_hash, l2_block_number: op.l2_block_number] ++
-              if(op.operation_type == :withdrawal, do: [timestamp: op.timestamp], else: [])
-          }
-
-        _ ->
-          raise "unsupported module"
-      end
+    {query, set} = make_query_for_bind(op, calling_module)
 
     {updated_count, _} =
       Repo.update_all(
@@ -129,5 +98,39 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
     end
 
     updated_count
+  end
+
+  defp make_query_for_bind(op, calling_module) when calling_module == Indexer.Fetcher.Shibarium.L1 do
+    query =
+      from(sb in Bridge,
+        where:
+          sb.operation_hash == ^op.operation_hash and sb.operation_type == ^op.operation_type and
+            sb.l2_transaction_hash != ^@empty_hash and sb.l1_transaction_hash == ^@empty_hash,
+        order_by: [asc: sb.l2_block_number],
+        limit: 1
+      )
+
+    set =
+      [l1_transaction_hash: op.l1_transaction_hash, l1_block_number: op.l1_block_number] ++
+        if(op.operation_type == :deposit, do: [timestamp: op.timestamp], else: [])
+
+    {query, set}
+  end
+
+  defp make_query_for_bind(op, calling_module) when calling_module == Indexer.Fetcher.Shibarium.L2 do
+    query =
+      from(sb in Bridge,
+        where:
+          sb.operation_hash == ^op.operation_hash and sb.operation_type == ^op.operation_type and
+            sb.l1_transaction_hash != ^@empty_hash and sb.l2_transaction_hash == ^@empty_hash,
+        order_by: [asc: sb.l1_block_number],
+        limit: 1
+      )
+
+    set =
+      [l2_transaction_hash: op.l2_transaction_hash, l2_block_number: op.l2_block_number] ++
+        if(op.operation_type == :withdrawal, do: [timestamp: op.timestamp], else: [])
+
+    {query, set}
   end
 end
