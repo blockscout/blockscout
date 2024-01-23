@@ -298,7 +298,7 @@ defmodule Explorer.Chain.Block do
         |> Decimal.new()
         |> Decimal.add(acc)
       end)
-      |> Decimal.add(gas_price_to_decimal(base_fee_per_gas))
+      |> Decimal.mult(gas_price_to_decimal(base_fee_per_gas))
     end
   end
 

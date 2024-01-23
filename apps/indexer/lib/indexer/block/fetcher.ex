@@ -391,7 +391,9 @@ defmodule Indexer.Block.Fetcher do
       |> Enum.filter(fn block -> block |> Map.get(:blob_gas_used, 0) > 0 end)
       |> Enum.map(&Map.get(&1, :timestamp))
 
-    Blob.async_fetch(timestamps)
+    if !Enum.empty?(timestamps) do
+      Blob.async_fetch(timestamps)
+    end
   end
 
   def async_import_blobs(_), do: :ok

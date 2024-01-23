@@ -9,8 +9,8 @@ defmodule Indexer.Fetcher.Beacon.Blob do
   require Logger
 
   alias Explorer.Repo
-  alias Explorer.Chain.{Data, Hash}
   alias Explorer.Chain.Beacon.{Blob, Reader}
+  alias Explorer.Chain.Data
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.Beacon.Blob.Supervisor, as: BlobSupervisor
   alias Indexer.Fetcher.Beacon.Client
@@ -41,7 +41,6 @@ defmodule Indexer.Fetcher.Beacon.Blob do
           optional(:type) => :supervisor | :worker
         }
   @doc false
-  # credo:disable-for-next-line Credo.Check.Design.DuplicatedCode
   def child_spec([init_options, gen_server_options]) do
     state =
       :indexer
@@ -133,18 +132,11 @@ defmodule Indexer.Fetcher.Beacon.Blob do
     {:ok, kzg_proof} = Data.cast(kzg_proof)
 
     %{
-      hash: blob_hash(kzg_commitment.bytes),
+      hash: Blob.hash(kzg_commitment.bytes),
       blob_data: blob,
       kzg_commitment: kzg_commitment,
       kzg_proof: kzg_proof
     }
-  end
-
-  defp blob_hash(kzg_commitment) do
-    raw_hash = :crypto.hash(:sha256, kzg_commitment)
-    <<_::size(8), rest::binary>> = raw_hash
-    {:ok, hash} = Hash.Full.cast(<<1>> <> rest)
-    hash
   end
 
   defp defaults do
@@ -154,7 +146,7 @@ defmodule Indexer.Fetcher.Beacon.Blob do
       max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
       task_supervisor: Indexer.Fetcher.Beacon.Blob.TaskSupervisor,
-      metadata: [fetcher: :beacon_blobs_sanitize]
+      metadata: [fetcher: :beacon_blob]
     ]
   end
 end

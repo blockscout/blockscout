@@ -17,37 +17,67 @@ defmodule Explorer.Chain.Beacon.Reader do
   import Explorer.Chain, only: [select_repo: 1]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{DenormalizationHelper, Hash, Transaction}
+  alias Explorer.Chain.{Block, DenormalizationHelper, Hash, Transaction}
   alias Explorer.Chain.Beacon.{Blob, BlobTransaction}
 
+  @doc """
+  Finds `t:Explorer.Chain.Beacon.Blob.t/0` by its `hash`.
+
+  Returns `{:ok, %Explorer.Chain.Beacon.Blob{}}` if found
+
+      iex> %Explorer.Chain.Beacon.Blob{hash: hash} = insert(:blob)
+      iex> {:ok, %Explorer.Chain.Beacon.Blob{hash: found_hash}} = Explorer.Chain.Beacon.Reader.blob(hash)
+      iex> found_hash == hash
+      true
+
+  Returns `{:error, :not_found}` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
+      ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
+      ...> )
+      iex> Explorer.Chain.Beacon.Reader.blob(hash)
+      {:error, :not_found}
+
+  """
   @spec blob(Hash.Full.t(), [Chain.api?()]) :: {:error, :not_found} | {:ok, Blob.t()}
-  def blob(hash, options) when is_list(options) do
+  def blob(hash, options \\ []) when is_list(options) do
     Blob
     |> where(hash: ^hash)
     |> select_repo(options).one()
     |> case do
       nil -> {:error, :not_found}
-      batch -> {:ok, batch}
+      blob -> {:ok, blob}
     end
   end
 
+  @doc """
+  Finds associated transaction hashes for the given blob `hash` identifier. Returns at most 10 matches.
+
+  Returns a list of `%{block_consensus: boolean(), transaction_hash: Hash.Full.t()}` maps for all found transactions.
+
+      iex> %Explorer.Chain.Beacon.Blob{hash: blob_hash} = insert(:blob)
+      iex> %Explorer.Chain.Beacon.BlobTransaction{hash: transaction_hash} = insert(:blob_transaction, blob_versioned_hashes: [blob_hash])
+      iex> blob_transactions = Explorer.Chain.Beacon.Reader.blob_hash_to_transactions(blob_hash)
+      iex> blob_transactions == [%{block_consensus: true, transaction_hash: transaction_hash}]
+      true
+  """
   @spec blob_hash_to_transactions(Hash.Full.t(), [Chain.api?()]) :: [
           %{
             block_consensus: boolean(),
             transaction_hash: Hash.Full.t()
           }
         ]
-  def blob_hash_to_transactions(hash, options) when is_list(options) do
+  def blob_hash_to_transactions(hash, options \\ []) when is_list(options) do
     query =
       BlobTransaction
       |> where(type(^hash, Hash.Full) == fragment("any(blob_versioned_hashes)"))
       |> join(:inner, [bt], transaction in Transaction, on: bt.hash == transaction.hash)
-      |> order_by([bt, transaction], desc: transaction.block_consensus, desc: transaction.block_number)
       |> limit(10)
 
     query_with_denormalization =
       if DenormalizationHelper.denormalization_finished?() do
         query
+        |> order_by([bt, transaction], desc: transaction.block_consensus, desc: transaction.block_number)
         |> select([bt, transaction], %{
           block_consensus: transaction.block_consensus,
           transaction_hash: transaction.hash
@@ -55,6 +85,7 @@ defmodule Explorer.Chain.Beacon.Reader do
       else
         query
         |> join(:inner, [bt, transaction], block in Block, on: block.hash == transaction.block_hash)
+        |> order_by([bt, transaction, block], desc: block.consensus, desc: transaction.block_number)
         |> select([bt, transaction, block], %{
           block_consensus: block.consensus,
           transaction_hash: transaction.hash
@@ -64,6 +95,10 @@ defmodule Explorer.Chain.Beacon.Reader do
     query_with_denormalization |> select_repo(options).all()
   end
 
+  @doc """
+  Returns a stream of all unique block timestamps containing missing data blobs.
+  Filters blocks by `min_block` and `max_block` if provided.
+  """
   @spec stream_missed_blob_transactions_timestamps(
           initial :: accumulator,
           reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator),

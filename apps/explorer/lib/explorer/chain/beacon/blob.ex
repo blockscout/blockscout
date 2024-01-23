@@ -33,4 +33,15 @@ defmodule Explorer.Chain.Beacon.Blob do
     |> validate_required(@required_attrs)
     |> unique_constraint(:hash)
   end
+
+  @doc """
+    Returns the `hash` of the `t:Explorer.Chain.Beacon.Blob.t/0` as per EIP-4844.
+  """
+  @spec hash(binary()) :: Hash.Full.t()
+  def hash(kzg_commitment) do
+    raw_hash = :crypto.hash(:sha256, kzg_commitment)
+    <<_::size(8), rest::binary>> = raw_hash
+    {:ok, hash} = Hash.Full.cast(<<1>> <> rest)
+    hash
+  end
 end

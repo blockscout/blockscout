@@ -21,6 +21,7 @@ defmodule Explorer.Factory do
   }
 
   alias Explorer.Admin.Administrator
+  alias Explorer.Chain.Beacon.{Blob, BlobTransaction}
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
 
   alias Explorer.Chain.{
@@ -1084,6 +1085,31 @@ defmodule Explorer.Factory do
 
   def withdrawal_validator_index do
     sequence("withdrawal_validator_index", & &1)
+  end
+
+  def blob_factory do
+    kzg_commitment = data(:kzg_commitment)
+
+    %Blob{
+      hash: Blob.hash(kzg_commitment.bytes),
+      blob_data: data(:blob_data),
+      kzg_commitment: kzg_commitment,
+      kzg_proof: data(:kzg_proof)
+    }
+  end
+
+  def blob_transaction_factory do
+    blob = build(:blob)
+    transaction = build(:transaction)
+
+    %BlobTransaction{
+      hash: transaction.hash,
+      transaction: transaction,
+      max_fee_per_blob_gas: Decimal.new(1_000_000_000),
+      blob_gas_price: Decimal.new(1_000_000_000),
+      blob_gas_used: Decimal.new(131_072),
+      blob_versioned_hashes: [blob.hash]
+    }
   end
 
   def random_bool, do: Enum.random([true, false])

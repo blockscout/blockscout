@@ -31,6 +31,12 @@ defmodule Indexer.Fetcher.Beacon.Client do
     end
   end
 
+  @doc """
+  Fetches blob sidecars for multiple given beacon `slots` from the beacon RPC.
+
+  Returns `{:ok, blob_sidecars_list, retry_indices_list}`
+  where `retry_indices_list` is the list of indices from `slots` for which the request failed and should be retried.
+  """
   @spec get_blob_sidecars([integer()]) :: {:ok, list(), [integer()]}
   def get_blob_sidecars(slots) when is_list(slots) do
     {oks, errors_with_retries} =

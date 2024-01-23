@@ -11,6 +11,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
   alias Indexer.BoundInterval
   alias Indexer.Block.Catchup
   alias Indexer.Block.Catchup.MissingRangesCollector
+  alias Indexer.Fetcher.Beacon.Blob
 
   alias Indexer.Fetcher.{
     CoinBalance,
@@ -32,8 +33,14 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
   describe "start_link/1" do
     setup do
-      initial_env = Application.get_env(:indexer, :block_ranges)
-      on_exit(fn -> Application.put_env(:indexer, :block_ranges, initial_env) end)
+      initial_block_ranges = Application.get_env(:indexer, :block_ranges)
+      initial_blob_disabled = Application.get_env(:indexer, Blob.Supervisor)[:disabled?]
+      Application.put_env(:indexer, Blob.Supervisor, disabled?: true)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, :block_ranges, initial_block_ranges)
+        Application.put_env(:indexer, Blob.Supervisor, disabled?: initial_blob_disabled)
+      end)
     end
 
     # See https://github.com/poanetwork/blockscout/issues/597

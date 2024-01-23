@@ -8,6 +8,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
   alias Explorer.Chain.{Address, Transaction, Wei}
   alias Indexer.Block.Catchup.Sequence
   alias Indexer.Block.Realtime
+  alias Indexer.Fetcher.Beacon.Blob
   alias Indexer.Fetcher.{ContractCode, InternalTransaction, ReplacedTransaction, Token, TokenBalance, UncleBlock}
 
   @moduletag capture_log: true
@@ -41,6 +42,15 @@ defmodule Indexer.Block.Realtime.FetcherTest do
   end
 
   describe "Indexer.Block.Fetcher.fetch_and_import_range/1" do
+    setup do
+      initial_blob_disabled = Application.get_env(:indexer, Blob.Supervisor)[:disabled?]
+      Application.put_env(:indexer, Blob.Supervisor, disabled?: true)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Blob.Supervisor, disabled?: initial_blob_disabled)
+      end)
+    end
+
     @tag :no_geth
     test "in range with internal transactions", %{
       block_fetcher: %Indexer.Block.Fetcher{} = block_fetcher,
@@ -1057,6 +1067,15 @@ defmodule Indexer.Block.Realtime.FetcherTest do
   end
 
   describe "start_fetch_and_import" do
+    setup do
+      initial_blob_disabled = Application.get_env(:indexer, Blob.Supervisor)[:disabled?]
+      Application.put_env(:indexer, Blob.Supervisor, disabled?: true)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Blob.Supervisor, disabled?: initial_blob_disabled)
+      end)
+    end
+
     @tag :no_geth
     test "reorg", %{
       block_fetcher: block_fetcher,

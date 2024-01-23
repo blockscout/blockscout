@@ -13,6 +13,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
   alias Indexer.Block
   alias Indexer.Block.Catchup.Fetcher
   alias Indexer.Block.Catchup.MissingRangesCollector
+  alias Indexer.Fetcher.Beacon.Blob
   alias Indexer.Fetcher.{BlockReward, CoinBalance, InternalTransaction, Token, TokenBalance, UncleBlock}
 
   @moduletag capture_log: true
@@ -37,11 +38,14 @@ defmodule Indexer.Block.Catchup.FetcherTest do
 
   describe "import/1" do
     setup do
-      configuration = Application.get_env(:indexer, :last_block)
+      initial_last_block = Application.get_env(:indexer, :last_block)
+      initial_blob_disabled = Application.get_env(:indexer, Blob.Supervisor)[:disabled?]
       Application.put_env(:indexer, :last_block, 0)
+      Application.put_env(:indexer, Blob.Supervisor, disabled?: true)
 
       on_exit(fn ->
-        Application.put_env(:indexer, :last_block, configuration)
+        Application.put_env(:indexer, :last_block, initial_last_block)
+        Application.put_env(:indexer, Blob.Supervisor, disabled?: initial_blob_disabled)
       end)
     end
 
@@ -139,7 +143,13 @@ defmodule Indexer.Block.Catchup.FetcherTest do
   describe "task/1" do
     setup do
       initial_env = Application.get_env(:indexer, :block_ranges)
-      on_exit(fn -> Application.put_env(:indexer, :block_ranges, initial_env) end)
+      initial_blob_disabled = Application.get_env(:indexer, Blob.Supervisor)[:disabled?]
+      Application.put_env(:indexer, Blob.Supervisor, disabled?: true)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, :block_ranges, initial_env)
+        Application.put_env(:indexer, Blob.Supervisor, disabled?: initial_blob_disabled)
+      end)
     end
 
     test "ignores fetched beneficiaries with different hash for same number", %{
