@@ -277,9 +277,10 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
             |> prepare_operations(json_rpc_named_arguments)
 
           {:ok, _} =
-            operations
-            |> get_import_options()
-            |> Chain.import()
+            Chain.import(%{
+              shibarium_bridge_operations: %{params: prepare_insert_items(operations, __MODULE__)},
+              timeout: :infinity
+            })
 
           Helper.log_blocks_chunk_handling(
             chunk_start,
@@ -363,18 +364,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     case Helper.repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
       {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
       {:error, _} -> []
-    end
-  end
-
-  defp get_import_options(operations) do
-    # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
-    if System.get_env("CHAIN_TYPE") == "shibarium" do
-      %{
-        shibarium_bridge_operations: %{params: prepare_insert_items(operations, __MODULE__)},
-        timeout: :infinity
-      }
-    else
-      %{}
     end
   end
 

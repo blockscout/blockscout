@@ -180,18 +180,11 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
         |> get_logs_all(child_chain, bone_withdraw, json_rpc_named_arguments)
         |> prepare_operations(weth)
 
-      # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
-      import_options =
-        if System.get_env("CHAIN_TYPE") == "shibarium" do
-          %{
-            shibarium_bridge_operations: %{params: prepare_insert_items(operations, __MODULE__)},
-            timeout: :infinity
-          }
-        else
-          %{}
-        end
-
-      {:ok, _} = Chain.import(import_options)
+      {:ok, _} =
+        Chain.import(%{
+          shibarium_bridge_operations: %{params: prepare_insert_items(operations, __MODULE__)},
+          timeout: :infinity
+        })
 
       Helper.log_blocks_chunk_handling(
         chunk_start,
