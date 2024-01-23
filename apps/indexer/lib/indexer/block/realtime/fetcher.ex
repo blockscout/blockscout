@@ -195,7 +195,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
         block_fetcher,
         %{
           address_coin_balances: %{params: address_coin_balances_params},
-          address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           addresses: %{params: addresses_params},
           block_rewards: block_rewards
         } = options
@@ -209,7 +208,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
            }}} <-
            {:balances,
             balances(block_fetcher, %{
-              address_hash_to_block_number: address_hash_to_block_number,
               addresses_params: addresses_params,
               balances_params: address_coin_balances_params
             })},

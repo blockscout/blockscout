@@ -31,7 +31,7 @@ defmodule Explorer.Account.Notifier.ForbiddenAddress do
       address_hash in blacklist() ->
         {:error, "This address is blacklisted"}
 
-      is_contract(address_hash) ->
+      contract?(address_hash) ->
         {:error, "This address isn't EOA"}
 
       match?({:restricted_access, true}, AccessHelper.restricted_access?(to_string(address_hash), %{})) ->
@@ -42,10 +42,10 @@ defmodule Explorer.Account.Notifier.ForbiddenAddress do
     end
   end
 
-  defp is_contract(%Explorer.Chain.Hash{} = address_hash) do
+  defp contract?(%Explorer.Chain.Hash{} = address_hash) do
     case hash_to_address(address_hash) do
       {:error, :not_found} -> false
-      {:ok, address} -> Address.is_smart_contract(address)
+      {:ok, address} -> Address.smart_contract?(address)
     end
   end
 

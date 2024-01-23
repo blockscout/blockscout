@@ -111,19 +111,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     json_rpc_named_arguments
     |> Keyword.fetch!(:variant)
-    |> case do
-      variant
-      when variant in [EthereumJSONRPC.Nethermind, EthereumJSONRPC.Erigon, EthereumJSONRPC.Besu, EthereumJSONRPC.RSK] ->
-        EthereumJSONRPC.fetch_block_internal_transactions(filtered_unique_numbers, json_rpc_named_arguments)
-
-      _ ->
-        try do
-          fetch_block_internal_transactions_by_transactions(filtered_unique_numbers, json_rpc_named_arguments)
-        rescue
-          error ->
-            {:error, error, __STACKTRACE__}
-        end
-    end
+    |> fetch_internal_transactions(filtered_unique_numbers, json_rpc_named_arguments)
     |> case do
       {:ok, internal_transactions_params} ->
         safe_import_internal_transaction(internal_transactions_params, filtered_unique_numbers)
@@ -156,6 +144,33 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
       :ignore ->
         :ok
+    end
+  end
+
+  defp fetch_internal_transactions(variant, block_numbers, json_rpc_named_arguments) do
+    if variant in block_traceable_variants() do
+      EthereumJSONRPC.fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments)
+    else
+      try do
+        fetch_block_internal_transactions_by_transactions(block_numbers, json_rpc_named_arguments)
+      rescue
+        error ->
+          {:error, error, __STACKTRACE__}
+      end
+    end
+  end
+
+  @default_block_traceable_variants [
+    EthereumJSONRPC.Nethermind,
+    EthereumJSONRPC.Erigon,
+    EthereumJSONRPC.Besu,
+    EthereumJSONRPC.RSK
+  ]
+  defp block_traceable_variants do
+    if Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)[:block_traceable?] do
+      [EthereumJSONRPC.Geth | @default_block_traceable_variants]
+    else
+      @default_block_traceable_variants
     end
   end
 

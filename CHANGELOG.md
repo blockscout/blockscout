@@ -4,21 +4,33 @@
 
 ### Features
 
+- [#9155](https://github.com/blockscout/blockscout/pull/9155) - Allow bypassing avg block time in proxy implementation re-fetch ttl calculation
+- [#9145](https://github.com/blockscout/blockscout/pull/9145) - Proxy for Account abstraction microservice
+- [#9131](https://github.com/blockscout/blockscout/pull/9131) - Merge addresses stage with address referencing
+- [#9072](https://github.com/blockscout/blockscout/pull/9072) - Add tracing by block logic for geth
+- [#9068](https://github.com/blockscout/blockscout/pull/9068) - New RPC API v1 endpoints
+- [#9056](https://github.com/blockscout/blockscout/pull/9056) - Noves.fi API proxy
+- [#9158](https://github.com/blockscout/blockscout/pull/9158) - Increase shared memory for PostgreSQL containers
+
 ### Fixes
 
-<<<<<<< HEAD
 - [#9069](https://github.com/blockscout/blockscout/pull/9069) - Fetch realtime coin balances only for addresses for which it has changed
 - [#9024](https://github.com/blockscout/blockscout/pull/9024) - Split address current token balances updates by token types
-=======
+- [#9229](https://github.com/blockscout/blockscout/pull/9229) - Add missing filter to txlist query
+- [#9139](https://github.com/blockscout/blockscout/pull/9139) - TokenBalanceOnDemand fixes
 - [#9125](https://github.com/blockscout/blockscout/pull/9125) - Fix Explorer.Chain.Cache.GasPriceOracle.merge_fees
+- [#9124](https://github.com/blockscout/blockscout/pull/9124) - EIP-1167 display multiple sources of implementation
 - [#9110](https://github.com/blockscout/blockscout/pull/9110) - Improve update_in in gas tracker
 - [#9109](https://github.com/blockscout/blockscout/pull/9109) - Return current exchange rate in api/v2/stats
 - [#9102](https://github.com/blockscout/blockscout/pull/9102) - Fix some log topics for Suave and Polygon Edge
 - [#9075](https://github.com/blockscout/blockscout/pull/9075) - Fix fetching contract codes
 - [#9073](https://github.com/blockscout/blockscout/pull/9073) - Allow payable function with output appear in the Read tab
->>>>>>> origin/master
 
 ### Chore
+
+- [#9198](https://github.com/blockscout/blockscout/pull/9198) - Make Postgres@15 default option
+- [#9196](https://github.com/blockscout/blockscout/pull/9196) - Compatibility with docker-compose 2.24
+- [#9193](https://github.com/blockscout/blockscout/pull/9193) - Equalize elixir stack versions
 
 <details>
   <summary>Dependencies version bumps</summary>

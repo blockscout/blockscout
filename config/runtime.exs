@@ -175,6 +175,7 @@ config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
     |> Map.to_list()
 
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
+  block_traceable?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_GETH_TRACE_BY_BLOCK"),
   debug_trace_transaction_timeout: System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s"),
   tracer:
     if(ConfigHelper.chain_type() == "polygon_edge",
@@ -215,14 +216,17 @@ config :explorer,
       do: Explorer.Chain.Events.DBSender,
       else: Explorer.Chain.Events.SimpleSender
     ),
-  enable_caching_implementation_data_of_proxy: true,
-  avg_block_time_as_ttl_cached_implementation_data_of_proxy: true,
-  fallback_ttl_cached_implementation_data_of_proxy: :timer.seconds(4),
-  implementation_data_fetching_timeout: :timer.seconds(2),
   restricted_list: System.get_env("RESTRICTED_LIST"),
   restricted_list_key: System.get_env("RESTRICTED_LIST_KEY"),
   checksum_function: checksum_function && String.to_atom(checksum_function),
   elasticity_multiplier: ConfigHelper.parse_integer_env_var("EIP_1559_ELASTICITY_MULTIPLIER", 2)
+
+config :explorer, :proxy,
+  caching_implementation_data_enabled: true,
+  implementation_data_ttl_via_avg_block_time:
+    ConfigHelper.parse_bool_env_var("CONTRACT_PROXY_IMPLEMENTATION_TTL_VIA_AVG_BLOCK_TIME", "true"),
+  fallback_cached_implementation_data_ttl: :timer.seconds(4),
+  implementation_data_fetching_timeout: :timer.seconds(2)
 
 config :explorer, Explorer.Chain.Events.Listener,
   enabled:
@@ -390,6 +394,11 @@ config :explorer, Explorer.ThirdPartyIntegrations.SolidityScan,
   chain_id: System.get_env("SOLIDITYSCAN_CHAIN_ID"),
   api_key: System.get_env("SOLIDITYSCAN_API_TOKEN")
 
+config :explorer, Explorer.ThirdPartyIntegrations.NovesFi,
+  service_url: System.get_env("NOVES_FI_BASE_API_URL") || "https://blockscout.noves.fi",
+  chain_name: System.get_env("NOVES_FI_CHAIN_NAME"),
+  api_key: System.get_env("NOVES_FI_API_TOKEN")
+
 enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED")
 # or "eth_bytecode_db"
 type = System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")
@@ -408,6 +417,14 @@ config :explorer, Explorer.Visualize.Sol2uml,
 config :explorer, Explorer.SmartContract.SigProviderInterface,
   service_url: System.get_env("MICROSERVICE_SIG_PROVIDER_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_SIG_PROVIDER_ENABLED")
+
+config :explorer, Explorer.MicroserviceInterfaces.BENS,
+  service_url: System.get_env("MICROSERVICE_BENS_URL"),
+  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_BENS_ENABLED")
+
+config :explorer, Explorer.MicroserviceInterfaces.AccountAbstraction,
+  service_url: System.get_env("MICROSERVICE_ACCOUNT_ABSTRACTION_URL"),
+  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_ACCOUNT_ABSTRACTION_ENABLED")
 
 config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
   table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
@@ -464,10 +481,6 @@ config :explorer, Explorer.Chain.Transaction,
 
 config :explorer, Explorer.Chain.Cache.AddressesTabsCounters,
   ttl: ConfigHelper.parse_time_env_var("ADDRESSES_TABS_COUNTERS_TTL", "10m")
-
-config :explorer, Explorer.MicroserviceInterfaces.BENS,
-  service_url: System.get_env("MICROSERVICE_BENS_URL"),
-  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_BENS_ENABLED")
 
 config :explorer, Explorer.Migrator.TransactionsDenormalization,
   batch_size: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_BATCH_SIZE", 500),

@@ -860,6 +860,63 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     # end
   end
 
+  describe "getcontractcreation" do
+    setup do
+      %{params: %{"module" => "contract", "action" => "getcontractcreation"}}
+    end
+
+    test "return error", %{conn: conn, params: params} do
+      %{
+        "status" => "0",
+        "message" => "Query parameter contractaddresses is required",
+        "result" => "Query parameter contractaddresses is required"
+      } =
+        conn
+        |> get("/api", params)
+        |> json_response(200)
+    end
+
+    test "get empty list", %{conn: conn, params: params} do
+      address = build(:address)
+      address_1 = insert(:address)
+
+      %{
+        "status" => "1",
+        "message" => "OK",
+        "result" => []
+      } =
+        conn
+        |> get("/api", Map.put(params, "contractaddresses", "#{to_string(address)},#{to_string(address_1)}"))
+        |> json_response(200)
+    end
+
+    test "get not empty list", %{conn: conn, params: params} do
+      address_1 = build(:address)
+      address = insert(:contract_address)
+
+      transaction = insert(:transaction, created_contract_address: address)
+
+      %{
+        "status" => "1",
+        "message" => "OK",
+        "result" => [
+          %{
+            "contractAddress" => contract_address,
+            "contractCreator" => contract_creator,
+            "txHash" => tx_hash
+          }
+        ]
+      } =
+        conn
+        |> get("/api", Map.put(params, "contractaddresses", "#{to_string(address)},#{to_string(address_1)}"))
+        |> json_response(200)
+
+      assert contract_address == to_string(address.hash)
+      assert contract_creator == to_string(transaction.from_address_hash)
+      assert tx_hash == to_string(transaction.hash)
+    end
+  end
+
   defp listcontracts_schema do
     resolve_schema(%{
       "type" => ["array", "null"],

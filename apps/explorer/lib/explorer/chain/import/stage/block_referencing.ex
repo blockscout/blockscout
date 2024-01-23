@@ -1,8 +1,7 @@
 defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   @moduledoc """
   Imports any tables that reference `t:Explorer.Chain.Block.t/0` and that were
-  imported by `Explorer.Chain.Import.Stage.Addresses` and
-  `Explorer.Chain.Import.Stage.AddressReferencing`.
+  imported by `Explorer.Chain.Import.Stage.AddressesBlocksCoinBalances`.
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}

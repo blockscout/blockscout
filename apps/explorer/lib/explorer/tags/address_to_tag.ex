@@ -94,7 +94,7 @@ defmodule Explorer.Tags.AddressToTag do
         addresses_to_add
         |> Enum.map(fn address_hash_string ->
           with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-               :ok <- Chain.check_address_exists(address_hash) do
+               :ok <- Address.check_address_exists(address_hash) do
             %{
               tag_id: tag_id,
               address_hash: address_hash,

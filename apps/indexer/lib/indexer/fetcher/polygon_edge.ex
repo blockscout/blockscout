@@ -83,7 +83,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
            {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.PolygonEdge))},
          polygon_edge_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonEdge][:polygon_edge_l1_rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(polygon_edge_l1_rpc)},
-         {:contract_is_valid, true} <- {:contract_is_valid, Helper.is_address_correct?(contract_address)},
+         {:contract_is_valid, true} <- {:contract_is_valid, Helper.address_correct?(contract_address)},
          start_block_l1 = parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
@@ -163,7 +163,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
   def init_l2(table, env, pid, contract_address, contract_name, table_name, entity_name, json_rpc_named_arguments)
       when table in [Explorer.Chain.PolygonEdge.DepositExecute, Explorer.Chain.PolygonEdge.Withdrawal] do
     with {:start_block_l2_undefined, false} <- {:start_block_l2_undefined, is_nil(env[:start_block_l2])},
-         {:contract_address_valid, true} <- {:contract_address_valid, Helper.is_address_correct?(contract_address)},
+         {:contract_address_valid, true} <- {:contract_address_valid, Helper.address_correct?(contract_address)},
          start_block_l2 = parse_integer(env[:start_block_l2]),
          false <- is_nil(start_block_l2),
          true <- start_block_l2 > 0,

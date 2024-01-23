@@ -40,6 +40,7 @@ defmodule Explorer.Factory do
     Log,
     PendingBlockOperation,
     SmartContract,
+    SmartContractAdditionalSource,
     Token,
     TokenTransfer,
     Token.Instance,
@@ -874,6 +875,10 @@ defmodule Explorer.Factory do
       is_vyper_contract: Enum.random([true, false]),
       verified_via_eth_bytecode_db: Enum.random([true, false])
     }
+  end
+
+  def smart_contract_additional_source_factory do
+    %SmartContractAdditionalSource{}
   end
 
   def unique_smart_contract_factory do
