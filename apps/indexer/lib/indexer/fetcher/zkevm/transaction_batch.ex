@@ -249,20 +249,13 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
         {[batch | batches], l2_txs ++ l2_txs_append, l1_txs, next_id, hash_to_id}
       end)
 
-    # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
-    import_options =
-      if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
-        %{
-          zkevm_lifecycle_transactions: %{params: l1_txs_to_import},
-          zkevm_transaction_batches: %{params: batches_to_import},
-          zkevm_batch_transactions: %{params: l2_txs_to_import},
-          timeout: :infinity
-        }
-      else
-        %{}
-      end
-
-    {:ok, _} = Chain.import(import_options)
+    {:ok, _} =
+      Chain.import(%{
+        zkevm_lifecycle_transactions: %{params: l1_txs_to_import},
+        zkevm_transaction_batches: %{params: batches_to_import},
+        zkevm_batch_transactions: %{params: l2_txs_to_import},
+        timeout: :infinity
+      })
 
     confirmed_batches =
       Enum.filter(batches_to_import, fn batch -> not is_nil(batch.sequence_id) and batch.sequence_id > 0 end)

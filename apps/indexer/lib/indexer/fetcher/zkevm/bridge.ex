@@ -104,24 +104,17 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
 
   @spec import_operations(list()) :: no_return()
   def import_operations(operations) do
-    # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
-    import_options =
-      if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
-        addresses =
-          Addresses.extract_addresses(%{
-            zkevm_bridge_operations: operations
-          })
+    addresses =
+      Addresses.extract_addresses(%{
+        zkevm_bridge_operations: operations
+      })
 
-        %{
-          addresses: %{params: addresses, on_conflict: :nothing},
-          zkevm_bridge_operations: %{params: operations},
-          timeout: :infinity
-        }
-      else
-        %{}
-      end
-
-    {:ok, _} = Chain.import(import_options)
+    {:ok, _} =
+      Chain.import(%{
+        addresses: %{params: addresses, on_conflict: :nothing},
+        zkevm_bridge_operations: %{params: operations},
+        timeout: :infinity
+      })
   end
 
   @spec json_rpc_named_arguments(binary()) :: list()
