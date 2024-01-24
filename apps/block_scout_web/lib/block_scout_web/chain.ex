@@ -649,6 +649,16 @@ defmodule BlockScoutWeb.Chain do
     %{"id" => msg_id}
   end
 
+  # clause for Shibarium Deposits
+  defp paging_params(%{l1_block_number: block_number}) do
+    %{"block_number" => block_number}
+  end
+
+  # clause for Shibarium Withdrawals
+  defp paging_params(%{l2_block_number: block_number}) do
+    %{"block_number" => block_number}
+  end
+
   @spec paging_params_with_fiat_value(CurrentTokenBalance.t()) :: %{
           required(String.t()) => Decimal.t() | non_neg_integer() | nil
         }

@@ -44,6 +44,8 @@ defmodule Indexer.Block.Fetcher do
 
   alias Indexer.Transform.PolygonEdge.{DepositExecutes, Withdrawals}
 
+  alias Indexer.Transform.Shibarium.Bridge, as: ShibariumBridge
+
   alias Indexer.Transform.Blocks, as: TransformBlocks
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
@@ -151,6 +153,11 @@ defmodule Indexer.Block.Fetcher do
              do: DepositExecutes.parse(logs),
              else: []
            ),
+         shibarium_bridge_operations =
+           if(callback_module == Indexer.Block.Realtime.Fetcher,
+             do: ShibariumBridge.parse(blocks, transactions_with_receipts, logs),
+             else: []
+           ),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
          addresses =
@@ -159,6 +166,7 @@ defmodule Indexer.Block.Fetcher do
              blocks: blocks,
              logs: logs,
              mint_transfers: mint_transfers,
+             shibarium_bridge_operations: shibarium_bridge_operations,
              token_transfers: token_transfers,
              transactions: transactions_with_receipts,
              transaction_actions: transaction_actions,
@@ -208,6 +216,10 @@ defmodule Indexer.Block.Fetcher do
                 |> Map.put_new(:beacon_blob_transactions, %{
                   params: transactions_with_receipts |> Enum.filter(&Map.has_key?(&1, :max_fee_per_blob_gas))
                 })
+
+              "shibarium" ->
+                basic_import_options
+                |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
 
               _ ->
                 basic_import_options

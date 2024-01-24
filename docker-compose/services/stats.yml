@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   stats-db-init:
-    image: postgres:14
+    image: postgres:15
     volumes:
       - ./stats-db-data:/var/lib/postgresql/data
     entrypoint:
@@ -15,7 +15,7 @@ services:
     depends_on:
       stats-db-init:
         condition: service_completed_successfully
-    image: postgres:14
+    image: postgres:15
     user: 2000:2000
     shm_size: 256m
     restart: always

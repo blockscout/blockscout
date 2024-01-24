@@ -3083,7 +3083,7 @@ defmodule Explorer.ChainTest do
           :contracts_creation_internal_transaction,
           :contracts_creation_transaction,
           :token,
-          :smart_contract_additional_sources
+          [smart_contract: :smart_contract_additional_sources]
         ])
 
       options = [

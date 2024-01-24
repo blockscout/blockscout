@@ -18,25 +18,34 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.Withdrawals
   ]
 
+  @polygon_edge_runners [
+    Runner.PolygonEdge.Deposits,
+    Runner.PolygonEdge.DepositExecutes,
+    Runner.PolygonEdge.Withdrawals,
+    Runner.PolygonEdge.WithdrawalExits
+  ]
+
+  @polygon_zkevm_runners [
+    Runner.Zkevm.LifecycleTransactions,
+    Runner.Zkevm.TransactionBatches,
+    Runner.Zkevm.BatchTransactions
+  ]
+
+  @shibarium_runners [
+    Runner.Shibarium.BridgeOperations
+  ]
+
   @impl Stage
   def runners do
     case System.get_env("CHAIN_TYPE") do
       "polygon_edge" ->
-        @default_runners ++
-          [
-            Runner.PolygonEdge.Deposits,
-            Runner.PolygonEdge.DepositExecutes,
-            Runner.PolygonEdge.Withdrawals,
-            Runner.PolygonEdge.WithdrawalExits
-          ]
+        @default_runners ++ @polygon_edge_runners
 
       "polygon_zkevm" ->
-        @default_runners ++
-          [
-            Runner.Zkevm.LifecycleTransactions,
-            Runner.Zkevm.TransactionBatches,
-            Runner.Zkevm.BatchTransactions
-          ]
+        @default_runners ++ @polygon_zkevm_runners
+
+      "shibarium" ->
+        @default_runners ++ @shibarium_runners
 
       "ethereum" ->
         # credo:disable-for-next-line
@@ -48,6 +57,11 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       _ ->
         @default_runners
     end
+  end
+
+  @impl Stage
+  def all_runners do
+    @default_runners ++ @polygon_edge_runners ++ @polygon_zkevm_runners ++ @shibarium_runners
   end
 
   @impl Stage

@@ -1133,8 +1133,8 @@ defmodule Explorer.Chain.Transaction do
   @doc """
   Returns true if the transaction is a Rootstock REMASC transaction.
   """
-  @spec is_rootstock_remasc_transaction(Explorer.Chain.Transaction.t()) :: boolean
-  def is_rootstock_remasc_transaction(%__MODULE__{to_address_hash: to_address_hash}) do
+  @spec rootstock_remasc_transaction?(Explorer.Chain.Transaction.t()) :: boolean
+  def rootstock_remasc_transaction?(%__MODULE__{to_address_hash: to_address_hash}) do
     case Hash.Address.cast(Application.get_env(:explorer, __MODULE__)[:rootstock_remasc_address]) do
       {:ok, address} -> address == to_address_hash
       _ -> false
@@ -1144,8 +1144,8 @@ defmodule Explorer.Chain.Transaction do
   @doc """
   Returns true if the transaction is a Rootstock bridge transaction.
   """
-  @spec is_rootstock_bridge_transaction(Explorer.Chain.Transaction.t()) :: boolean
-  def is_rootstock_bridge_transaction(%__MODULE__{to_address_hash: to_address_hash}) do
+  @spec rootstock_bridge_transaction?(Explorer.Chain.Transaction.t()) :: boolean
+  def rootstock_bridge_transaction?(%__MODULE__{to_address_hash: to_address_hash}) do
     case Hash.Address.cast(Application.get_env(:explorer, __MODULE__)[:rootstock_bridge_address]) do
       {:ok, address} -> address == to_address_hash
       _ -> false
