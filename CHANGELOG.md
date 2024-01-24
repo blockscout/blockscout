@@ -15,6 +15,7 @@
 ### Fixes
 
 - [#9123](https://github.com/blockscout/blockscout/pull/9123) - Fixes in Optimism due to changed log topics type
+- [#9241](https://github.com/blockscout/blockscout/pull/9241) - Fix log decoding bug
 - [#9229](https://github.com/blockscout/blockscout/pull/9229) - Add missing filter to txlist query
 - [#9143](https://github.com/blockscout/blockscout/pull/9143) - Handle nil token_ids in token transfers on render
 - [#9139](https://github.com/blockscout/blockscout/pull/9139) - TokenBalanceOnDemand fixes
