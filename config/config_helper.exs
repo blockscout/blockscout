@@ -18,6 +18,7 @@ defmodule ConfigHelper do
         "suave" -> base_repos ++ [Explorer.Repo.Suave]
         "filecoin" -> base_repos ++ [Explorer.Repo.Filecoin]
         "stability" -> base_repos ++ [Explorer.Repo.Stability]
+        "zksync" -> base_repos ++ [Explorer.Repo.ZkSync]
         _ -> base_repos
       end
 

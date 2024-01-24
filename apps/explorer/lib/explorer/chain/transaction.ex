@@ -14,7 +14,8 @@ defmodule Explorer.Chain.Transaction.Schema do
     Wei
   }
 
-  alias Explorer.Chain.PolygonZkevm.BatchTransaction
+  alias Explorer.Chain.Zkevm.BatchTransaction, as: ZkevmBatchTransaction
+  alias Explorer.Chain.ZkSync.BatchTransaction, as: ZkSyncBatchTransaction
   alias Explorer.Chain.Transaction.{Fork, Status}
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
@@ -77,7 +78,11 @@ defmodule Explorer.Chain.Transaction.Schema do
                         "polygon_zkevm" ->
                           elem(
                             quote do
-                              has_one(:zkevm_batch_transaction, BatchTransaction, foreign_key: :hash, references: :hash)
+                              has_one(:zkevm_batch_transaction, ZkevmBatchTransaction,
+                                foreign_key: :hash,
+                                references: :hash
+                              )
+
                               has_one(:zkevm_batch, through: [:zkevm_batch_transaction, :batch], references: :hash)
 
                               has_one(:zkevm_sequence_transaction,
@@ -89,6 +94,18 @@ defmodule Explorer.Chain.Transaction.Schema do
                                 through: [:zkevm_batch, :verify_transaction],
                                 references: :hash
                               )
+                            end,
+                            2
+                          )
+
+                        "zksync" ->
+                          elem(
+                            quote do
+                              has_one(:zksync_batch_transaction, ZkSyncBatchTransaction, foreign_key: :hash)
+                              has_one(:zksync_batch, through: [:zksync_batch_transaction, :batch])
+                              has_one(:zksync_commit_transaction, through: [:zksync_batch, :commit_transaction])
+                              has_one(:zksync_prove_transaction, through: [:zksync_batch, :prove_transaction])
+                              has_one(:zksync_execute_transaction, through: [:zksync_batch, :execute_transaction])
                             end,
                             2
                           )
