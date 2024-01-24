@@ -172,9 +172,9 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
   # A string with one of predefined statuses
   defp batch_status(zksync_item) do
     cond do
-      is_specified(zksync_item.execute_transaction) -> "Executed on L1"
-      is_specified(zksync_item.prove_transaction) -> "Validated on L1"
-      is_specified(zksync_item.commit_transaction) -> "Sent to L1"
+      specified?(zksync_item.execute_transaction) -> "Executed on L1"
+      specified?(zksync_item.prove_transaction) -> "Validated on L1"
+      specified?(zksync_item.commit_transaction) -> "Sent to L1"
       # Batch entity itself has no batch_number
       not Map.has_key?(zksync_item, :batch_number) -> "Sealed on L2"
       not is_nil(zksync_item.batch_number) -> "Sealed on L2"
@@ -190,7 +190,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
   # ## Returns
   # - `false`: if the item is nil or not loaded
   # - `true`: if the item has actual value
-  defp is_specified(associated_item) do
+  defp specified?(associated_item) do
     case associated_item do
       nil -> false
       %Ecto.Association.NotLoaded{} -> false

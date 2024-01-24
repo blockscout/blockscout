@@ -45,7 +45,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
                get_association(tx_type) => :optional
              }
            ) do
-        {:ok, batch_from_db} -> is_transactions_of_batch_changed(batch_from_db, batch_from_rpc, tx_type)
+        {:ok, batch_from_db} -> transactions_of_batch_changed?(batch_from_db, batch_from_rpc, tx_type)
         {:error, :not_found} -> :error
       end
 
@@ -68,7 +68,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
     end
   end
 
-  defp is_transactions_of_batch_changed(batch_db, batch_json, tx_type) do
+  defp transactions_of_batch_changed?(batch_db, batch_json, tx_type) do
     tx_hash_json =
       case tx_type do
         :commit_tx -> batch_json.commit_tx_hash
