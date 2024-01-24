@@ -312,7 +312,9 @@ config :explorer, Explorer.ExchangeRates.TokenExchangeRates,
   refetch_interval: ConfigHelper.parse_time_env_var("TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL", "1h"),
   max_batch_size: ConfigHelper.parse_integer_env_var("TOKEN_EXCHANGE_RATE_MAX_BATCH_SIZE", 150)
 
-config :explorer, Explorer.Market.History.Cataloger, enabled: !disable_indexer? && !disable_exchange_rates?
+config :explorer, Explorer.Market.History.Cataloger,
+  enabled: !disable_indexer? && !disable_exchange_rates?,
+  history_fetch_interval: ConfigHelper.parse_time_env_var("MARKET_HISTORY_FETCH_INTERVAL", "1h")
 
 config :explorer, Explorer.Chain.Transaction, suave_bid_contracts: System.get_env("SUAVE_BID_CONTRACTS", "")
 
