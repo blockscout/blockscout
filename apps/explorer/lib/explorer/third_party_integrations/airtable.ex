@@ -1,6 +1,6 @@
 defmodule Explorer.ThirdPartyIntegrations.AirTable do
   @moduledoc """
-    Module is responsible for submitting requests for public tags to AirTable
+    Module is responsible for submitting requests for public tags and audit reports to AirTable
   """
   require Logger
 
@@ -13,8 +13,8 @@ defmodule Explorer.ThirdPartyIntegrations.AirTable do
   @doc """
     Submits a public tags request or audit report to AirTable
   """
-  @spec submit({:ok, PublicTagsRequest.t() | AuditReport.t()} | {:error, Changeset.t()}) ::
-          {:ok, PublicTagsRequest.t() | AuditReport.t()} | {:error, Changeset.t()}
+  @spec submit({:ok, PublicTagsRequest.t()} | {:error, Changeset.t()} | Changeset.t()) ::
+          {:ok, PublicTagsRequest.t()} | {:error, Changeset.t()} | Changeset.t()
   def submit({:ok, %PublicTagsRequest{} = new_request} = input) do
     if Mix.env() == :test do
       new_request
@@ -34,34 +34,36 @@ defmodule Explorer.ThirdPartyIntegrations.AirTable do
           input
         end,
         fn ->
-          %PublicTagsRequest{}
-          |> PublicTagsRequest.changeset_without_constraints(PublicTagsRequest.to_map(new_request))
-          |> Changeset.add_error(:full_name, "AirTable error. Please try again later")
+          {:error,
+           %{
+             (%PublicTagsRequest{}
+              |> PublicTagsRequest.changeset_without_constraints(PublicTagsRequest.to_map(new_request))
+              |> Changeset.add_error(:full_name, "AirTable error. Please try again later"))
+             | action: :insert
+           }}
         end
       )
     end
   end
 
-  def submit({:ok, %AuditReport{} = audit_report} = input) do
+  def submit(%Changeset{} = changeset), do: submit(Changeset.apply_action(changeset, :insert), changeset)
+
+  def submit({:ok, %AuditReport{} = audit_report}, changeset) do
     submit_entry(
       AuditReport.to_map(audit_report),
       :air_table_audit_reports,
       fn request_id ->
-        audit_report
-        |> AuditReport.changeset(%{request_id: request_id})
-        |> Repo.update()
-
-        input
+        changeset
+        |> Changeset.put_change(:request_id, request_id)
       end,
       fn ->
-        audit_report
-        |> AuditReport.changeset()
+        changeset
         |> Changeset.add_error(:smart_contract_address_hash, "AirTable error. Please try again later")
       end
     )
   end
 
-  def submit(error), do: error
+  def submit(_error, changeset), do: changeset
 
   defp submit_entry(map, envs_key, success_callback, failure_callback) do
     envs = Application.get_env(:explorer, envs_key)
@@ -85,11 +87,7 @@ defmodule Explorer.ThirdPartyIntegrations.AirTable do
       error ->
         Logger.error(fn -> ["Error while submitting AirTable entry", inspect(error)] end)
 
-        {:error,
-         %{
-           failure_callback.()
-           | action: :insert
-         }}
+        failure_callback.()
     end
   end
 end

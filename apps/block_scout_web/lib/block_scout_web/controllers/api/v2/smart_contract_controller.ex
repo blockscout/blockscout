@@ -60,10 +60,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   end
 
   def methods_read(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         smart_contract <- SmartContract.address_hash_to_smart_contract(address_hash, @api_true),
-         {:not_found, false} <- {:not_found, is_nil(smart_contract)} do
+    with {:ok, address_hash, smart_contract} <- validate_smart_contract(params, address_hash_string) do
       read_only_functions_from_abi = Reader.read_only_functions(smart_contract, address_hash, params["from"])
 
       read_functions_required_wallet_from_abi = Reader.read_functions_required_wallet(smart_contract)
@@ -90,10 +87,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   def methods_write(conn, %{"address_hash" => address_hash_string} = params) do
     with {:contract_interaction_disabled, false} <-
            {:contract_interaction_disabled, AddressView.contract_interaction_disabled?()},
-         {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         smart_contract <- SmartContract.address_hash_to_smart_contract(address_hash, @api_true),
-         {:not_found, false} <- {:not_found, is_nil(smart_contract)} do
+         {:ok, _address_hash, smart_contract} <- validate_smart_contract(params, address_hash_string) do
       conn
       |> put_status(200)
       |> json(smart_contract |> Writer.write_functions() |> Reader.get_abi_with_method_id())
@@ -250,9 +244,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     captcha_helper = Application.get_env(:block_scout_web, :captcha_helper)
 
     with {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string),
-         {:recaptcha, true} <- {:recaptcha, captcha_helper.recaptcha_passed?(params["recaptcha_response"])},
+         {:recaptcha, _} <- {:recaptcha, captcha_helper.recaptcha_passed?(params["recaptcha_response"])},
          audit_report_params <- %{
-           smart_contract_address_hash: address_hash,
+           address_hash: address_hash,
            submitter_name: params["submitter_name"],
            submitter_email: params["submitter_email"],
            is_project_owner: params["is_project_owner"],

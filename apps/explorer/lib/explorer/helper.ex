@@ -105,4 +105,14 @@ defmodule Explorer.Helper do
   end
 
   def validate_url(_), do: :error
+
+  @doc """
+    Validate url
+  """
+  @spec valid_url?(String.t()) :: boolean
+  def valid_url?(string) do
+    uri = URI.parse(string)
+
+    uri.scheme != nil && uri.host =~ "."
+  end
 end
