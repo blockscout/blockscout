@@ -237,13 +237,21 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
 
   def elixir_to_params(%{"type" => "create" = type} = elixir) do
     %{
-      "action" => %{"from" => from_address_hash, "gas" => gas, "init" => init, "value" => value},
       "blockNumber" => block_number,
       "index" => index,
       "traceAddress" => trace_address,
       "transactionHash" => transaction_hash,
       "transactionIndex" => transaction_index
     } = elixir
+
+    {from_address_hash, gas, init, value} =
+      case elixir["action"] do
+        %{"from" => from_address_hash, "gas" => gas, "init" => init, "value" => value} ->
+          {from_address_hash, gas, init, value}
+
+        %{"from" => from_address_hash, "gas" => gas, "input" => init, "value" => value} ->
+          {from_address_hash, gas, init, value}
+      end
 
     %{
       block_number: block_number,
