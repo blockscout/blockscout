@@ -176,11 +176,19 @@ defmodule Explorer.Chain.Log do
       <<method_id::binary-size(4), _rest::binary>> = log.first_topic.bytes
       key = {method_id, log.second_topic, log.third_topic, log.fourth_topic}
 
+<<<<<<< HEAD
       if Map.has_key?(events_acc, key) do
         {events_acc[key], events_acc}
       else
         result = find_method_candidates_from_db(method_id, log, transaction, options, skip_sig_provider?)
         {result, Map.put(events_acc, key, result)}
+=======
+      if Map.has_key?(events_acc, {method_id, log.second_topic, log.third_topic, log.fourth_topic}) do
+        {events_acc[{method_id, log.second_topic, log.third_topic, log.fourth_topic}], events_acc}
+      else
+        result = find_method_candidates_from_db(method_id, log, transaction, options, skip_sig_provider?)
+        {result, Map.put(events_acc, {method_id, log.second_topic, log.third_topic, log.fourth_topic}, result)}
+>>>>>>> 7577d70bee (Fix log decoding bug)
       end
     end
   end
