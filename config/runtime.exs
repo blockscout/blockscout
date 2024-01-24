@@ -748,7 +748,8 @@ config :indexer, Indexer.Fetcher.Zkevm.TransactionBatch,
 
 config :indexer, Indexer.Fetcher.Zkevm.TransactionBatch.Supervisor,
   enabled:
-    ConfigHelper.chain_type() == "polygon_zkevm" && ConfigHelper.parse_bool_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_ENABLED")
+    ConfigHelper.chain_type() == "polygon_zkevm" &&
+      ConfigHelper.parse_bool_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_ENABLED")
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 

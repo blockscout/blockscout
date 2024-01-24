@@ -19,8 +19,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
 
   import Explorer.Helper, only: [decode_data: 2]
 
-  alias EthereumJSONRPC.Block.ByNumber
-  alias EthereumJSONRPC.{Blocks, Logs}
+  alias EthereumJSONRPC.Logs
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Zkevm.BridgeL1Token
   alias Explorer.{Chain, Repo}
@@ -201,31 +200,12 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
 
   defp blocks_to_timestamps(events, json_rpc_named_arguments) do
     events
-    |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+    |> Helper.get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
     |> Enum.reduce(%{}, fn block, acc ->
       block_number = quantity_to_integer(Map.get(block, "number"))
       {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
       Map.put(acc, block_number, timestamp)
     end)
-  end
-
-  defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
-    request =
-      events
-      |> Enum.reduce(%{}, fn event, acc ->
-        Map.put(acc, event.block_number, 0)
-      end)
-      |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
-      |> Stream.with_index()
-      |> Enum.into(%{}, fn {params, id} -> {id, params} end)
-      |> Blocks.requests(&ByNumber.request(&1, false, false))
-
-    error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
-
-    case Helper.repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
-      {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
-      {:error, _} -> []
-    end
   end
 
   defp operation_type(first_topic, is_l1) do

@@ -23,8 +23,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
   import Indexer.Fetcher.Shibarium.Helper,
     only: [calc_operation_hash: 5, prepare_insert_items: 2, recalculate_cached_count: 0]
 
-  alias EthereumJSONRPC.Block.ByNumber
-  alias EthereumJSONRPC.Blocks
   alias Explorer.Chain.Shibarium.Bridge
   alias Explorer.{Chain, Repo}
   alias Indexer.{BoundQueue, Helper}
@@ -348,25 +346,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     end
   end
 
-  defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
-    request =
-      events
-      |> Enum.reduce(%{}, fn event, acc ->
-        Map.put(acc, event["blockNumber"], 0)
-      end)
-      |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
-      |> Stream.with_index()
-      |> Enum.into(%{}, fn {params, id} -> {id, params} end)
-      |> Blocks.requests(&ByNumber.request(&1, false, false))
-
-    error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
-
-    case Helper.repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
-      {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
-      {:error, _} -> []
-    end
-  end
-
   defp get_last_l1_item do
     query =
       from(sb in Bridge,
@@ -581,7 +560,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     timestamps =
       events
       |> filter_deposit_events()
-      |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+      |> Helper.get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
       |> Enum.reduce(%{}, fn block, acc ->
         block_number = quantity_to_integer(Map.get(block, "number"))
         {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
