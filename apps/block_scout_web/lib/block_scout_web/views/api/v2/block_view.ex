@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.BlockView
-  alias BlockScoutWeb.API.V2.{ApiView, Helper}
+  alias BlockScoutWeb.API.V2.{ApiView, Helper, ZkSyncView}
   alias Explorer.Chain.Block
   alias Explorer.Counters.BlockPriorityFeeCounter
 
@@ -137,6 +137,14 @@ defmodule BlockScoutWeb.API.V2.BlockView do
           |> Map.put("blob_tx_count", count_blob_transactions(block))
           |> Map.put("blob_gas_used", block.blob_gas_used)
           |> Map.put("excess_blob_gas", block.excess_blob_gas)
+        end
+      end
+
+    "zksync" ->
+      defp chain_type_fields(result, block, single_block?) do
+        if single_block? do
+          result
+          |> ZkSyncView.add_zksync_info(block)
         end
       end
 

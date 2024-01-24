@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.TransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
+  alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView, ZkSyncView}
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
   alias BlockScoutWeb.Tokens.Helper, as: TokensHelper
@@ -492,6 +492,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
             |> Map.put("blob_gas_price", item.blob_gas_price)
             |> Map.put("burnt_blob_fee", Decimal.mult(item.blob_gas_used, item.blob_gas_price))
         end
+
+      {true, "zksync"} ->
+        result
+        |> ZkSyncView.add_zksync_info(transaction)
 
       _ ->
         result

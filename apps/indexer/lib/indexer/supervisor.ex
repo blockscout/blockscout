@@ -46,6 +46,9 @@ defmodule Indexer.Supervisor do
     Withdrawal
   }
 
+  alias Indexer.Fetcher.ZkSync.BatchesStatusTracker, as: ZkSyncBatchesStatusTracker
+  alias Indexer.Fetcher.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
+
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,
     UncatalogedTokenTransfers,
@@ -165,6 +168,12 @@ defmodule Indexer.Supervisor do
         configure(Indexer.Fetcher.PolygonZkevm.BridgeL1.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.PolygonZkevm.BridgeL2.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(ZkSyncTransactionBatch.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(ZkSyncBatchesStatusTracker.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
         configure(Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor, [

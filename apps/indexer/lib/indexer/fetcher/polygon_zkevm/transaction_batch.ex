@@ -155,6 +155,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
   end
 
   defp fetch_and_save_batches(batch_start, batch_end, json_rpc_named_arguments) do
+    # For every batch from batch_start to batch_end request the batch info
     requests =
       batch_start
       |> Range.new(batch_end, 1)
@@ -171,6 +172,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
 
     {:ok, responses} = Helper.repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, 3)
 
+    # For every batch info extract batches' L1 sequence tx and L1 verify tx
     {sequence_hashes, verify_hashes} =
       responses
       |> Enum.reduce({[], []}, fn res, {sequences, verifies} = _acc ->
@@ -194,8 +196,10 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
         {sequences, verifies}
       end)
 
+    # All L1 transactions in one list without repetition
     l1_tx_hashes = Enum.uniq(sequence_hashes ++ verify_hashes)
 
+    # Receive all IDs for L1 txs
     hash_to_id =
       l1_tx_hashes
       |> Reader.lifecycle_transactions()
@@ -203,6 +207,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
         Map.put(acc, hash.bytes, id)
       end)
 
+    # For every batch build batch representation, collect associated L1 and L2 transactions
     {batches_to_import, l2_txs_to_import, l1_txs_to_import, _, _} =
       responses
       |> Enum.reduce({[], [], [], Reader.next_id(), hash_to_id}, fn res,
@@ -222,16 +227,19 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
         acc_input_hash = Map.get(res.result, "accInputHash")
         state_root = Map.get(res.result, "stateRoot")
 
+        # Get ID for sequence transaction (new ID if the batch is just sequenced)
         {sequence_id, l1_txs, next_id, hash_to_id} =
           res.result
           |> get_tx_hash("sendSequencesTxHash")
           |> handle_tx_hash(hash_to_id, next_id, l1_txs, false)
 
+        # Get ID for verify transaction (new ID if the batch is just verified)
         {verify_id, l1_txs, next_id, hash_to_id} =
           res.result
           |> get_tx_hash("verifyBatchTxHash")
           |> handle_tx_hash(hash_to_id, next_id, l1_txs, true)
 
+        # Associate every transaction from batch with the batch number
         l2_txs_append =
           l2_transaction_hashes
           |> Kernel.||([])
@@ -256,6 +264,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
         {[batch | batches], l2_txs ++ l2_txs_append, l1_txs, next_id, hash_to_id}
       end)
 
+    # Update batches list, L1 transactions list and L2 transaction list
     {:ok, _} =
       Chain.import(%{
         polygon_zkevm_lifecycle_transactions: %{params: l1_txs_to_import},
@@ -267,6 +276,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
     confirmed_batches =
       Enum.filter(batches_to_import, fn batch -> not is_nil(batch.sequence_id) and batch.sequence_id > 0 end)
 
+    # Publish update for open batches Views in BS app with the new confirmed batches
     if not Enum.empty?(confirmed_batches) do
       Publisher.broadcast([{:zkevm_confirmed_batches, confirmed_batches}], :realtime)
     end

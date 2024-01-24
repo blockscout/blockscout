@@ -1,4 +1,5 @@
 lib/ethereum_jsonrpc/rolling_window.ex:171
+lib/explorer/chain/transaction.ex:171
 lib/explorer/smart_contract/solidity/publisher_worker.ex:1
 lib/explorer/smart_contract/vyper/publisher_worker.ex:1
 lib/explorer/smart_contract/solidity/publisher_worker.ex:8
@@ -9,4 +10,3 @@ lib/explorer/exchange_rates/source.ex:139
 lib/explorer/exchange_rates/source.ex:142
 lib/block_scout_web/views/api/v2/transaction_view.ex:431
 lib/block_scout_web/views/api/v2/transaction_view.ex:472
-lib/explorer/chain/transaction.ex:171
