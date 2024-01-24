@@ -28,6 +28,10 @@ config :explorer, Explorer.Repo.RSK,
   prepare: :unnamed,
   timeout: :timer.seconds(60)
 
+config :explorer, Explorer.Repo.Shibarium,
+  prepare: :unnamed,
+  timeout: :timer.seconds(60)
+
 config :explorer, Explorer.Repo.Suave,
   prepare: :unnamed,
   timeout: :timer.seconds(60)

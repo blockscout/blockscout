@@ -12,15 +12,15 @@ defmodule Explorer.Chain.Import do
   require Logger
 
   @stages [
-    Import.Stage.Addresses,
-    Import.Stage.AddressReferencing,
+    Import.Stage.AddressesBlocksCoinBalances,
     Import.Stage.BlockReferencing,
     Import.Stage.BlockFollowing,
     Import.Stage.BlockPending
   ]
 
   # in order so that foreign keys are inserted before being referenced
-  @runners Enum.flat_map(@stages, fn stage -> stage.runners() end)
+  @configured_runners Enum.flat_map(@stages, fn stage -> stage.runners() end)
+  @all_runners Enum.flat_map(@stages, fn stage -> stage.all_runners() end)
 
   quoted_runner_option_value =
     quote do
@@ -28,7 +28,7 @@ defmodule Explorer.Chain.Import do
     end
 
   quoted_runner_options =
-    for runner <- @runners do
+    for runner <- @all_runners do
       quoted_key =
         quote do
           optional(unquote(runner.option_key()))
@@ -44,7 +44,7 @@ defmodule Explorer.Chain.Import do
         }
 
   quoted_runner_imported =
-    for runner <- @runners do
+    for runner <- @all_runners do
       quoted_key =
         quote do
           optional(unquote(runner.option_key()))
@@ -69,7 +69,7 @@ defmodule Explorer.Chain.Import do
   # milliseconds
   @transaction_timeout :timer.minutes(4)
 
-  @imported_table_rows @runners
+  @imported_table_rows @all_runners
                        |> Stream.map(&Map.put(&1.imported_table_row(), :key, &1.option_key()))
                        |> Enum.map_join("\n", fn %{
                                                    key: key,
@@ -78,7 +78,7 @@ defmodule Explorer.Chain.Import do
                                                  } ->
                          "| `#{inspect(key)}` | `#{value_type}` | #{value_description} |"
                        end)
-  @runner_options_doc Enum.map_join(@runners, fn runner ->
+  @runner_options_doc Enum.map_join(@all_runners, fn runner ->
                         ecto_schema_module = runner.ecto_schema_module()
 
                         """
@@ -188,7 +188,8 @@ defmodule Explorer.Chain.Import do
     local_options = Map.drop(options, @global_options)
 
     {reverse_runner_options_pairs, unknown_options} =
-      Enum.reduce(@runners, {[], local_options}, fn runner, {acc_runner_options_pairs, unknown_options} = acc ->
+      Enum.reduce(@configured_runners, {[], local_options}, fn runner,
+                                                               {acc_runner_options_pairs, unknown_options} = acc ->
         option_key = runner.option_key()
 
         case local_options do

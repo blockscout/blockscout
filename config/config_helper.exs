@@ -11,6 +11,7 @@ defmodule ConfigHelper do
       "polygon_edge" -> base_repos ++ [Explorer.Repo.PolygonEdge]
       "polygon_zkevm" -> base_repos ++ [Explorer.Repo.PolygonZkevm]
       "rsk" -> base_repos ++ [Explorer.Repo.RSK]
+      "shibarium" -> base_repos ++ [Explorer.Repo.Shibarium]
       "suave" -> base_repos ++ [Explorer.Repo.Suave]
       _ -> base_repos
     end

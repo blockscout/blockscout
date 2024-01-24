@@ -31,7 +31,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   Fetches into DB proxy contract implementation's address and name from different proxy patterns
   """
   @spec fetch_implementation_address_hash(Hash.Address.t(), list(), boolean() | nil, [api?]) ::
-          {String.t() | nil, String.t() | nil}
+          {String.t() | nil | :empty, String.t() | nil | :empty}
   def fetch_implementation_address_hash(proxy_address_hash, proxy_abi, metadata_from_verified_twin, options)
       when not is_nil(proxy_address_hash) and not is_nil(proxy_abi) do
     implementation_address_hash_string = get_implementation_address_hash_string(proxy_address_hash, proxy_abi)

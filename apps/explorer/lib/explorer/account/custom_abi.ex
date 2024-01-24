@@ -65,7 +65,7 @@ defmodule Explorer.Account.CustomABI do
   defp check_smart_contract_address(custom_abi), do: custom_abi
 
   defp check_smart_contract_address_inner(changeset, address_hash) do
-    if Chain.is_address_hash_is_smart_contract?(address_hash) do
+    if Chain.address_hash_is_smart_contract?(address_hash) do
       changeset
     else
       add_error(changeset, :address_hash, "Address is not a smart contract")

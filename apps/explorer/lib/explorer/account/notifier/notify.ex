@@ -117,7 +117,7 @@ defmodule Explorer.Account.Notifier.Notify do
   direction  = :incoming || :outgoing
   """
   def build_watchlist_notification(%Explorer.Account.WatchlistAddress{} = address, summary, direction) do
-    if is_watched(address, summary, direction) do
+    if watched?(address, summary, direction) do
       %WatchlistNotification{
         watchlist_address_id: address.id,
         watchlist_id: address.watchlist_id,
@@ -140,7 +140,7 @@ defmodule Explorer.Account.Notifier.Notify do
     end
   end
 
-  defp is_watched(%WatchlistAddress{} = address, %{type: type}, direction) do
+  defp watched?(%WatchlistAddress{} = address, %{type: type}, direction) do
     case {type, direction} do
       {"COIN", :incoming} -> address.watch_coin_input
       {"COIN", :outgoing} -> address.watch_coin_output
