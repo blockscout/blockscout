@@ -98,6 +98,7 @@ defmodule Indexer.Fetcher.ContractCode do
     Logger.debug("fetching created_contract_code for transactions")
 
     entries
+    |> Enum.uniq()
     |> Enum.map(&params/1)
     |> EthereumJSONRPC.fetch_codes(json_rpc_named_arguments)
     |> case do

@@ -35,6 +35,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Indexer.Block.Realtime.TaskSupervisor
   alias Indexer.Fetcher.{CoinBalance, CoinBalanceDailyUpdater, OptimismWithdrawal}
   alias Indexer.Fetcher.PolygonEdge.{DepositExecute, Withdrawal}
+  alias Indexer.Fetcher.Shibarium.L2, as: ShibariumBridgeL2
   alias Indexer.Prometheus
   alias Indexer.Transform.Addresses
   alias Timex.Duration
@@ -195,7 +196,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
         block_fetcher,
         %{
           address_coin_balances: %{params: address_coin_balances_params},
-          address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           addresses: %{params: addresses_params},
           block_rewards: block_rewards
         } = options
@@ -209,7 +209,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
            }}} <-
            {:balances,
             balances(block_fetcher, %{
-              address_hash_to_block_number: address_hash_to_block_number,
               addresses_params: addresses_params,
               balances_params: address_coin_balances_params
             })},
@@ -292,6 +291,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
           # we need to remove all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables previously written starting from reorg block number
           remove_polygon_edge_assets_by_number(block_number_to_fetch)
 
+          # we need to remove all rows from `shibarium_bridge` table previously written starting from reorg block number
+          remove_shibarium_assets_by_number(block_number_to_fetch)
+
           # give previous fetch attempt (for same block number) a chance to finish
           # before fetching again, to reduce block consensus mistakes
           :timer.sleep(@reorg_delay)
@@ -308,6 +310,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
     if Application.get_env(:explorer, :chain_type) == "polygon_edge" do
       Withdrawal.remove(block_number_to_fetch)
       DepositExecute.remove(block_number_to_fetch)
+    end
+  end
+
+  defp remove_shibarium_assets_by_number(block_number_to_fetch) do
+    if Application.get_env(:explorer, :chain_type) == "shibarium" do
+      ShibariumBridgeL2.reorg_handle(block_number_to_fetch)
     end
   end
 
@@ -477,33 +485,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
-  defp fetch_balances_params_list(%{
-         addresses_params: addresses_params,
-         address_hash_to_block_number: address_hash_to_block_number,
-         balances_params: balances_params
-       }) do
-    addresses_params
-    |> addresses_params_to_fetched_balances_params_set(%{address_hash_to_block_number: address_hash_to_block_number})
-    |> MapSet.union(balances_params_to_fetch_balances_params_set(balances_params))
+  defp fetch_balances_params_list(%{balances_params: balances_params}) do
+    balances_params
+    |> balances_params_to_fetch_balances_params_set()
     # stable order for easier moxing
     |> Enum.sort_by(fn %{hash_data: hash_data, block_quantity: block_quantity} -> {hash_data, block_quantity} end)
-  end
-
-  defp addresses_params_to_fetched_balances_params_set(addresses_params, %{
-         address_hash_to_block_number: address_hash_to_block_number
-       }) do
-    Enum.into(addresses_params, MapSet.new(), fn %{hash: address_hash} = address_params when is_binary(address_hash) ->
-      block_number =
-        case address_params do
-          %{fetched_coin_balance_block_number: block_number} when is_integer(block_number) ->
-            block_number
-
-          _ ->
-            Map.fetch!(address_hash_to_block_number, String.downcase(address_hash))
-        end
-
-      %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
-    end)
   end
 
   defp balances_params_to_fetch_balances_params_set(balances_params) do

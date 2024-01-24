@@ -93,10 +93,10 @@ defmodule BlockScoutWeb.AccessHelper do
       Enum.member?(whitelisted_ips(rate_limit_config), ip_string) ->
         rate_limit(ip_string, limit_by_whitelisted_ip, time_interval_limit)
 
-      is_api_v2_request?(conn) && !is_nil(token) && !is_nil(user_agent) ->
+      api_v2_request?(conn) && !is_nil(token) && !is_nil(user_agent) ->
         rate_limit(token, api_v2_ui_limit, time_interval_limit)
 
-      is_api_v2_request?(conn) && !is_nil(user_agent) ->
+      api_v2_request?(conn) && !is_nil(user_agent) ->
         rate_limit(ip_string, limit_by_ip, time_interval_by_ip)
 
       true ->
@@ -155,8 +155,8 @@ defmodule BlockScoutWeb.AccessHelper do
     end
   end
 
-  defp is_api_v2_request?(%Plug.Conn{request_path: "/api/v2/" <> _}), do: true
-  defp is_api_v2_request?(_), do: false
+  defp api_v2_request?(%Plug.Conn{request_path: "/api/v2/" <> _}), do: true
+  defp api_v2_request?(_), do: false
 
   def conn_to_ip_string(conn) do
     is_blockscout_behind_proxy = Application.get_env(:block_scout_web, :api_rate_limit)[:is_blockscout_behind_proxy]
@@ -171,7 +171,7 @@ defmodule BlockScoutWeb.AccessHelper do
     api_v2_temp_token_key = Application.get_env(:block_scout_web, :api_v2_temp_token_key)
     conn = Conn.fetch_cookies(conn, signed: [api_v2_temp_token_key])
 
-    case is_api_v2_request?(conn) && conn.cookies[api_v2_temp_token_key] do
+    case api_v2_request?(conn) && conn.cookies[api_v2_temp_token_key] do
       %{ip: ^ip_string} ->
         conn.req_cookies[api_v2_temp_token_key]
 

@@ -246,16 +246,25 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
+  # credo:disable-for-next-line /Complexity/
   def prepare_token_transfer_total(token_transfer) do
     case TokensHelper.token_transfer_amount_for_api(token_transfer) do
       {:ok, :erc721_instance} ->
-        %{"token_id" => List.first(token_transfer.token_ids)}
+        %{"token_id" => token_transfer.token_ids && List.first(token_transfer.token_ids)}
 
       {:ok, :erc1155_instance, value, decimals} ->
-        %{"token_id" => List.first(token_transfer.token_ids), "value" => value, "decimals" => decimals}
+        %{
+          "token_id" => token_transfer.token_ids && List.first(token_transfer.token_ids),
+          "value" => value,
+          "decimals" => decimals
+        }
 
       {:ok, :erc1155_instance, values, token_ids, decimals} ->
-        %{"token_id" => List.first(token_ids), "value" => List.first(values), "decimals" => decimals}
+        %{
+          "token_id" => token_ids && List.first(token_ids),
+          "value" => values && List.first(values),
+          "decimals" => decimals
+        }
 
       {:ok, value, decimals} ->
         %{"value" => value, "decimals" => decimals}
@@ -573,7 +582,18 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   defp sanitize_log_first_topic(first_topic) do
-    if is_nil(first_topic), do: "", else: String.downcase(first_topic)
+    if is_nil(first_topic) do
+      ""
+    else
+      sanitized =
+        if is_binary(first_topic) do
+          first_topic
+        else
+          Hash.to_string(first_topic)
+        end
+
+      String.downcase(sanitized)
+    end
   end
 
   defp add_optimism_fields(result, transaction_hash, single_tx?) do
@@ -756,7 +776,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         _,
         skip_sc_check?
       ) do
-    if skip_sc_check? || Address.is_smart_contract(to_address) do
+    if skip_sc_check? || Address.smart_contract?(to_address) do
       "0x" <> Base.encode16(method_id, case: :lower)
     else
       nil
@@ -825,7 +845,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def tx_types(%Transaction{to_address: to_address} = tx, types, :contract_call) do
     types =
-      if Address.is_smart_contract(to_address) do
+      if Address.smart_contract?(to_address) do
         [:contract_call | types]
       else
         types
@@ -847,7 +867,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def tx_types(tx, types, :rootstock_remasc) do
     types =
-      if Transaction.is_rootstock_remasc_transaction(tx) do
+      if Transaction.rootstock_remasc_transaction?(tx) do
         [:rootstock_remasc | types]
       else
         types
@@ -857,7 +877,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def tx_types(tx, types, :rootstock_bridge) do
-    if Transaction.is_rootstock_bridge_transaction(tx) do
+    if Transaction.rootstock_bridge_transaction?(tx) do
       [:rootstock_bridge | types]
     else
       types

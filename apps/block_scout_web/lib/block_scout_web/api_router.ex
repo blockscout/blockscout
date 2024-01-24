@@ -300,6 +300,15 @@ defmodule BlockScoutWeb.ApiRouter do
       end
     end
 
+    scope "/shibarium" do
+      if System.get_env("CHAIN_TYPE") == "shibarium" do
+        get("/deposits", V2.ShibariumController, :deposits)
+        get("/deposits/count", V2.ShibariumController, :deposits_count)
+        get("/withdrawals", V2.ShibariumController, :withdrawals)
+        get("/withdrawals/count", V2.ShibariumController, :withdrawals_count)
+      end
+    end
+
     scope "/withdrawals" do
       get("/", V2.WithdrawalController, :withdrawals_list)
       get("/counters", V2.WithdrawalController, :withdrawals_counters)
@@ -310,6 +319,28 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/batches", V2.ZkevmController, :batches)
         get("/batches/count", V2.ZkevmController, :batches_count)
         get("/batches/:batch_number", V2.ZkevmController, :batch)
+      end
+    end
+
+    scope "/proxy" do
+      scope "/noves-fi" do
+        get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
+        get("/transactions/:transaction_hash_param/describe", V2.Proxy.NovesFiController, :describe_transaction)
+        get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
+      end
+
+      scope "/account-abstraction" do
+        get("/operations/:operation_hash_param", V2.Proxy.AccountAbstractionController, :operation)
+        get("/bundlers/:address_hash_param", V2.Proxy.AccountAbstractionController, :bundler)
+        get("/bundlers", V2.Proxy.AccountAbstractionController, :bundlers)
+        get("/factories/:address_hash_param", V2.Proxy.AccountAbstractionController, :factory)
+        get("/factories", V2.Proxy.AccountAbstractionController, :factories)
+        get("/paymasters/:address_hash_param", V2.Proxy.AccountAbstractionController, :paymaster)
+        get("/paymasters", V2.Proxy.AccountAbstractionController, :paymasters)
+        get("/accounts/:address_hash_param", V2.Proxy.AccountAbstractionController, :account)
+        get("/accounts", V2.Proxy.AccountAbstractionController, :accounts)
+        get("/bundles", V2.Proxy.AccountAbstractionController, :bundles)
+        get("/operations", V2.Proxy.AccountAbstractionController, :operations)
       end
     end
   end

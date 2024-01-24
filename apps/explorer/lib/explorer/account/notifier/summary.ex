@@ -132,7 +132,7 @@ defmodule Explorer.Account.Notifier.Summary do
           from_address_hash: transfer.from_address_hash,
           to_address_hash: transfer.to_address_hash,
           block_number: transfer.block_number,
-          subject: to_string(List.first(transfer.token_ids)),
+          subject: to_string(transfer.token_ids && List.first(transfer.token_ids)),
           tx_fee: fee(transaction),
           name: transfer.token.name,
           type: transfer.token.type
@@ -190,6 +190,8 @@ defmodule Explorer.Account.Notifier.Summary do
       decimals
     )
   end
+
+  def token_ids(%Chain.TokenTransfer{token_ids: nil}), do: ""
 
   def token_ids(%Chain.TokenTransfer{token_ids: token_ids}) do
     Enum.map_join(token_ids, ", ", fn id -> to_string(id) end)

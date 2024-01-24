@@ -38,6 +38,7 @@ defmodule Explorer.DataCase do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.PolygonEdge)
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.PolygonZkevm)
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.RSK)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.Shibarium)
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.Suave)
 
     unless tags[:async] do
@@ -46,6 +47,7 @@ defmodule Explorer.DataCase do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonEdge, {:shared, self()})
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonZkevm, {:shared, self()})
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.RSK, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Shibarium, {:shared, self()})
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Suave, {:shared, self()})
     end
 
