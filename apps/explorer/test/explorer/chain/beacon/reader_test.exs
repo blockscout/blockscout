@@ -3,5 +3,7 @@ defmodule Explorer.Chain.Beacon.ReaderTest do
 
   alias Explorer.Chain.Beacon.Reader
 
-  doctest Reader
+  if Application.compile_env(:explorer, :chain_type) == "ethereum" do
+    doctest Reader
+  end
 end
