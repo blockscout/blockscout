@@ -11,13 +11,14 @@ defmodule Indexer.Fetcher.PolygonEdge.DepositExecute do
   import Ecto.Query
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
-  import Indexer.Fetcher.PolygonEdge, only: [fill_block_range: 5, get_block_number_by_tag: 3]
+  import Indexer.Fetcher.PolygonEdge, only: [fill_block_range: 5]
   import Indexer.Helper, only: [log_topic_to_string: 1]
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Log
   alias Explorer.Chain.PolygonEdge.DepositExecute
   alias Indexer.Fetcher.PolygonEdge
+  alias Indexer.Helper
 
   @fetcher_name :polygon_edge_deposit_execute
 
@@ -102,7 +103,7 @@ defmodule Indexer.Fetcher.PolygonEdge.DepositExecute do
 
     if not safe_block_is_latest do
       # find and fill all events between "safe" and "latest" block (excluding "safe")
-      {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+      {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
 
       fill_block_range(
         safe_block + 1,
@@ -134,11 +135,16 @@ defmodule Indexer.Fetcher.PolygonEdge.DepositExecute do
       |> log_topic_to_string()
       |> quantity_to_integer()
 
+    status =
+      third_topic
+      |> log_topic_to_string()
+      |> quantity_to_integer()
+
     %{
       msg_id: msg_id,
       l2_transaction_hash: l2_transaction_hash,
       l2_block_number: quantity_to_integer(l2_block_number),
-      success: quantity_to_integer(third_topic) != 0
+      success: status != 0
     }
   end
 
@@ -156,7 +162,7 @@ defmodule Indexer.Fetcher.PolygonEdge.DepositExecute do
           from(log in Log,
             select: {log.second_topic, log.third_topic, log.transaction_hash, log.block_number},
             where:
-              log.first_topic == @state_sync_result_event and log.address_hash == ^state_receiver and
+              log.first_topic == ^@state_sync_result_event and log.address_hash == ^state_receiver and
                 log.block_number >= ^block_start and log.block_number <= ^block_end
           )
 
@@ -186,11 +192,18 @@ defmodule Indexer.Fetcher.PolygonEdge.DepositExecute do
         end)
       end
 
-    {:ok, _} =
-      Chain.import(%{
-        polygon_edge_deposit_executes: %{params: executes},
-        timeout: :infinity
-      })
+    # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
+    import_options =
+      if System.get_env("CHAIN_TYPE") == "polygon_edge" do
+        %{
+          polygon_edge_deposit_executes: %{params: executes},
+          timeout: :infinity
+        }
+      else
+        %{}
+      end
+
+    {:ok, _} = Chain.import(import_options)
 
     Enum.count(executes)
   end

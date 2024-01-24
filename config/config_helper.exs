@@ -12,6 +12,7 @@ defmodule ConfigHelper do
       "polygon_zkevm" -> base_repos ++ [Explorer.Repo.PolygonZkevm]
       "zksync" -> base_repos ++ [Explorer.Repo.ZkSync]
       "rsk" -> base_repos ++ [Explorer.Repo.RSK]
+      "shibarium" -> base_repos ++ [Explorer.Repo.Shibarium]
       "suave" -> base_repos ++ [Explorer.Repo.Suave]
       _ -> base_repos
     end

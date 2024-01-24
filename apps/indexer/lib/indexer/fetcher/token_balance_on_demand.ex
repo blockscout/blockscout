@@ -128,28 +128,30 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
       (updated_erc_1155_ctbs ++ updated_other_ctbs)
       |> Enum.filter(&(!is_nil(&1)))
 
-    {:ok,
-     %{
-       address_current_token_balances: imported_ctbs
-     }} =
-      Chain.import(%{
-        address_current_token_balances: %{
-          params: filtered_current_token_balances_update_params
-        },
-        broadcast: false
-      })
+    if Enum.count(filtered_current_token_balances_update_params) > 0 do
+      {:ok,
+       %{
+         address_current_token_balances: imported_ctbs
+       }} =
+        Chain.import(%{
+          address_current_token_balances: %{
+            params: filtered_current_token_balances_update_params
+          },
+          broadcast: false
+        })
 
-    Publisher.broadcast(
-      %{
-        address_current_token_balances: %{
-          address_hash: to_string(address_hash),
-          address_current_token_balances:
-            imported_ctbs
-            |> Enum.map(fn ctb -> %CurrentTokenBalance{ctb | token: tokens[ctb.token_contract_address_hash.bytes]} end)
-        }
-      },
-      :on_demand
-    )
+      Publisher.broadcast(
+        %{
+          address_current_token_balances: %{
+            address_hash: to_string(address_hash),
+            address_current_token_balances:
+              imported_ctbs
+              |> Enum.map(fn ctb -> %CurrentTokenBalance{ctb | token: tokens[ctb.token_contract_address_hash.bytes]} end)
+          }
+        },
+        :on_demand
+      )
+    end
   end
 
   defp prepare_updated_balance({{:ok, updated_balance}, stale_current_token_balance}, block_number) do

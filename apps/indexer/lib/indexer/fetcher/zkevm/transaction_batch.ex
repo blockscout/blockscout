@@ -13,6 +13,7 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Zkevm.Reader
+  alias Indexer.Helper
 
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
 
@@ -169,7 +170,7 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
     error_message =
       &"Cannot call zkevm_getBatchByNumber for the batch range #{batch_start}..#{batch_end}. Error: #{inspect(&1)}"
 
-    {:ok, responses} = repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, 3)
+    {:ok, responses} = Helper.repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, 3)
 
     # For every batch info extract batches' L1 sequence tx and L1 verify tx
     {sequence_hashes, verify_hashes} =
@@ -283,7 +284,7 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
 
     error_message = &"Cannot call zkevm_batchNumber. Error: #{inspect(&1)}"
 
-    {:ok, responses} = repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, 3)
+    {:ok, responses} = Helper.repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, 3)
 
     latest_batch_number =
       Enum.find_value(responses, fn resp -> if resp.id == 0, do: quantity_to_integer(resp.result) end)
@@ -318,25 +319,6 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
       end
     else
       {nil, l1_txs, next_id, hash_to_id}
-    end
-  end
-
-  defp repeated_call(func, args, error_message, retries_left) do
-    case apply(func, args) do
-      {:ok, _} = res ->
-        res
-
-      {:error, message} = err ->
-        retries_left = retries_left - 1
-
-        if retries_left <= 0 do
-          Logger.error(error_message.(message))
-          err
-        else
-          Logger.error("#{error_message.(message)} Retrying...")
-          :timer.sleep(3000)
-          repeated_call(func, args, error_message, retries_left)
-        end
     end
   end
 end

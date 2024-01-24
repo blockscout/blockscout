@@ -108,6 +108,11 @@ defmodule Indexer.Transform.Addresses do
         %{from: :address_hash, to: :hash}
       ]
     ],
+    shibarium_bridge_operations: [
+      [
+        %{from: :user, to: :hash}
+      ]
+    ],
     token_transfers: [
       [
         %{from: :block_number, to: :fetched_coin_balance_block_number},
@@ -412,6 +417,11 @@ defmodule Indexer.Transform.Addresses do
             %{
               required(:address_hash) => String.t(),
               required(:block_number) => non_neg_integer()
+            }
+          ],
+          optional(:shibarium_bridge_operations) => [
+            %{
+              required(:user) => String.t()
             }
           ],
           optional(:token_transfers) => [

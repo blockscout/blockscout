@@ -215,8 +215,8 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   end
 
   defp check_content_type(content_type, uri, hex_token_id, body) do
-    image = is_image?(content_type)
-    video = is_video?(content_type)
+    image = image?(content_type)
+    video = video?(content_type)
 
     if content_type && (image || video) do
       json = if image, do: %{"image" => uri}, else: %{"animation_url" => uri}
@@ -238,11 +238,11 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     content_type
   end
 
-  defp is_image?(content_type) do
+  defp image?(content_type) do
     content_type && String.starts_with?(content_type, "image/")
   end
 
-  defp is_video?(content_type) do
+  defp video?(content_type) do
     content_type && String.starts_with?(content_type, "video/")
   end
 
