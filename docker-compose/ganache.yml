@@ -48,6 +48,9 @@ services:
     extends:
       file: ./services/frontend.yml
       service: frontend
+    environment:
+      NEXT_PUBLIC_NETWORK_ID: '1337'
+      NEXT_PUBLIC_NETWORK_RPC_URL: http://host.docker.internal:8545/
 
   stats-db-init:
     extends:
