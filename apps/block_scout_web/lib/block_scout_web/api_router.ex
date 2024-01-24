@@ -288,6 +288,15 @@ defmodule BlockScoutWeb.ApiRouter do
       end
     end
 
+    scope "/shibarium" do
+      if System.get_env("CHAIN_TYPE") == "shibarium" do
+        get("/deposits", V2.ShibariumController, :deposits)
+        get("/deposits/count", V2.ShibariumController, :deposits_count)
+        get("/withdrawals", V2.ShibariumController, :withdrawals)
+        get("/withdrawals/count", V2.ShibariumController, :withdrawals_count)
+      end
+    end
+
     scope "/withdrawals" do
       get("/", V2.WithdrawalController, :withdrawals_list)
       get("/counters", V2.WithdrawalController, :withdrawals_counters)

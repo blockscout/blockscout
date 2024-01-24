@@ -2174,6 +2174,16 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec increment_last_fetched_counter(binary(), non_neg_integer()) :: {non_neg_integer(), nil}
+  def increment_last_fetched_counter(type, value) do
+    query =
+      from(counter in LastFetchedCounter,
+        where: counter.counter_type == ^type
+      )
+
+    Repo.update_all(query, [inc: [value: value]], timeout: :infinity)
+  end
+
   @spec upsert_last_fetched_counter(map()) :: {:ok, LastFetchedCounter.t()} | {:error, Ecto.Changeset.t()}
   def upsert_last_fetched_counter(params) do
     changeset = LastFetchedCounter.changeset(%LastFetchedCounter{}, params)
