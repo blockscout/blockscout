@@ -101,7 +101,7 @@ defmodule Explorer.Chain.Beacon.Reader do
   """
   @spec stream_missed_blob_transactions_timestamps(
           initial :: accumulator,
-          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator),
+          reducer :: (entry :: DateTime.t(), accumulator -> accumulator),
           min_block :: integer() | nil,
           max_block :: integer() | nil,
           options :: []

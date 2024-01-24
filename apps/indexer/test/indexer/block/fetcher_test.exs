@@ -11,8 +11,6 @@ defmodule Indexer.Block.FetcherTest do
   alias Indexer.Block.Fetcher
   alias Indexer.BufferedTask
 
-  alias Indexer.Fetcher.Beacon.Blob
-
   alias Indexer.Fetcher.{
     CoinBalance,
     ContractCode,
@@ -61,13 +59,6 @@ defmodule Indexer.Block.FetcherTest do
       UncleBlock.Supervisor.Case.start_supervised!(
         block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
       )
-
-      initial_blob_disabled = Application.get_env(:indexer, Blob.Supervisor)[:disabled?]
-      Application.put_env(:indexer, Blob.Supervisor, disabled?: true)
-
-      on_exit(fn ->
-        Application.put_env(:indexer, Blob.Supervisor, disabled?: initial_blob_disabled)
-      end)
 
       %{
         block_fetcher: %Fetcher{

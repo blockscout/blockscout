@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.Beacon.Client do
   @request_error_msg "Error while sending request to beacon rpc"
 
   def http_get_request(url) do
-    case HTTPoison.get(url) do
+    case Application.get_env(:explorer, :http_adapter).get(url) do
       {:ok, %Response{body: body, status_code: 200}} ->
         Jason.decode(body)
 

@@ -1099,16 +1099,12 @@ defmodule Explorer.Factory do
   end
 
   def blob_transaction_factory do
-    blob = build(:blob)
-    transaction = build(:transaction)
-
     %BlobTransaction{
-      hash: transaction.hash,
-      transaction: transaction,
+      hash: insert(:transaction) |> with_block() |> Map.get(:hash),
       max_fee_per_blob_gas: Decimal.new(1_000_000_000),
       blob_gas_price: Decimal.new(1_000_000_000),
       blob_gas_used: Decimal.new(131_072),
-      blob_versioned_hashes: [blob.hash]
+      blob_versioned_hashes: []
     }
   end
 
