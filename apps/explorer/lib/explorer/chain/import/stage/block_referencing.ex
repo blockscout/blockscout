@@ -45,7 +45,6 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
         @default_runners ++ @polygon_zkevm_runners
 
       "shibarium" ->
-        # credo:disable-for-next-line
         @default_runners ++ @shibarium_runners
 
       _ ->
