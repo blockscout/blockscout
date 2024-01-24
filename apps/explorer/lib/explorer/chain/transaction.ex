@@ -33,7 +33,8 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.Transaction.{Fork, Status}
-  alias Explorer.Chain.Zkevm.BatchTransaction
+  alias Explorer.Chain.Zkevm.BatchTransaction, as: ZkevmBatchTransaction
+  alias Explorer.Chain.ZkSync.BatchTransaction, as: ZkSyncBatchTransaction
   alias Explorer.{PagingOptions, SortingHelper}
   alias Explorer.SmartContract.SigProviderInterface
 
@@ -340,10 +341,20 @@ defmodule Explorer.Chain.Transaction do
 
     has_many(:uncles, through: [:forks, :uncle])
 
-    has_one(:zkevm_batch_transaction, BatchTransaction, foreign_key: :hash)
-    has_one(:zkevm_batch, through: [:zkevm_batch_transaction, :batch])
-    has_one(:zkevm_sequence_transaction, through: [:zkevm_batch, :sequence_transaction])
-    has_one(:zkevm_verify_transaction, through: [:zkevm_batch, :verify_transaction])
+    if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
+      has_one(:zkevm_batch_transaction, ZkevmBatchTransaction, foreign_key: :hash)
+      has_one(:zkevm_batch, through: [:zkevm_batch_transaction, :batch])
+      has_one(:zkevm_sequence_transaction, through: [:zkevm_batch, :sequence_transaction])
+      has_one(:zkevm_verify_transaction, through: [:zkevm_batch, :verify_transaction])
+    end
+
+    if System.get_env("CHAIN_TYPE") == "zksync" do
+      has_one(:zksync_batch_transaction, ZkSyncBatchTransaction, foreign_key: :hash)
+      has_one(:zksync_batch, through: [:zksync_batch_transaction, :batch])
+      has_one(:zksync_commit_transaction, through: [:zksync_batch, :commit_transaction])
+      has_one(:zksync_prove_transaction, through: [:zksync_batch, :prove_transaction])
+      has_one(:zksync_execute_transaction, through: [:zksync_batch, :execute_transaction])
+    end
 
     belongs_to(
       :created_contract_address,

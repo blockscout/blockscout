@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Block do
 
   alias Explorer.Chain.{Address, Block, Gas, Hash, PendingBlockOperation, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Block.{EmissionReward, Reward, SecondDegreeRelation}
+  alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
   alias Explorer.Repo
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
@@ -135,6 +136,14 @@ defmodule Explorer.Chain.Block do
 
     has_many(:uncle_relations, SecondDegreeRelation, foreign_key: :nephew_hash)
     has_many(:uncles, through: [:uncle_relations, :uncle])
+
+    if System.get_env("CHAIN_TYPE") == "zksync" do
+      has_one(:zksync_batch_block, ZkSyncBatchBlock, foreign_key: :hash)
+      has_one(:zksync_batch, through: [:zksync_batch_block, :batch])
+      has_one(:zksync_commit_transaction, through: [:zksync_batch, :commit_transaction])
+      has_one(:zksync_prove_transaction, through: [:zksync_batch, :prove_transaction])
+      has_one(:zksync_execute_transaction, through: [:zksync_batch, :execute_transaction])
+    end
 
     has_many(:transactions, Transaction)
     has_many(:transaction_forks, Transaction.Fork, foreign_key: :uncle_hash)

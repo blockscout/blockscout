@@ -46,6 +46,7 @@ config :explorer, Explorer.Repo.Account,
 for repo <- [
       Explorer.Repo.PolygonEdge,
       Explorer.Repo.PolygonZkevm,
+      Explorer.Repo.ZkSync,
       Explorer.Repo.RSK,
       Explorer.Repo.Shibarium,
       Explorer.Repo.Suave

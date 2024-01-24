@@ -30,23 +30,35 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   @api_true [api?: true]
 
-  @block_params [
-    necessity_by_association: %{
-      [miner: :names] => :optional,
-      :uncles => :optional,
-      :nephews => :optional,
-      :rewards => :optional,
-      :transactions => :optional,
-      :withdrawals => :optional
-    },
-    api?: true
-  ]
+  @block_necessity_by_association %{
+    [miner: :names] => :optional,
+    :uncles => :optional,
+    :nephews => :optional,
+    :rewards => :optional,
+    :transactions => :optional,
+    :withdrawals => :optional
+  }
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   def block(conn, %{"block_hash_or_number" => block_hash_or_number}) do
+    extended_necessity_by_association =
+      case Application.get_env(:explorer, :chain_type) do
+        "zksync" ->
+          @block_necessity_by_association
+          |> Map.put(:zksync_batch, :optional)
+          |> Map.put(:zksync_commit_transaction, :optional)
+          |> Map.put(:zksync_prove_transaction, :optional)
+          |> Map.put(:zksync_execute_transaction, :optional)
+
+        _ ->
+          @block_necessity_by_association
+      end
+
+    block_params = Keyword.merge(@api_true, necessity_by_association: extended_necessity_by_association)
+
     with {:ok, type, value} <- parse_block_hash_or_number_param(block_hash_or_number),
-         {:ok, block} <- fetch_block(type, value, @block_params) do
+         {:ok, block} <- fetch_block(type, value, block_params) do
       conn
       |> put_status(200)
       |> render(:block, %{block: block})
