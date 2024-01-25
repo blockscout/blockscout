@@ -691,10 +691,10 @@ config :indexer, Indexer.Fetcher.Beacon.Blob.Supervisor,
 
 config :indexer, Indexer.Fetcher.Beacon.Blob,
   slot_duration: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_SLOT_DURATION", 12),
-  reference_slot: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_REFERENCE_SLOT", 8_206_822),
+  reference_slot: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_REFERENCE_SLOT", 8_000_000),
   reference_timestamp:
-    ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_REFERENCE_TIMESTAMP", 1_705_305_887),
-  start_block: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_START_BLOCK", 8_206_822),
+    ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_REFERENCE_TIMESTAMP", 1_702_824_023),
+  start_block: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_START_BLOCK", 19_200_000),
   end_block: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_END_BLOCK", 0)
 
 config :indexer, Indexer.Fetcher.Shibarium.L1,
