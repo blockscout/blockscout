@@ -43,18 +43,18 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
 
       # we space these very far apart so that we know it will consider the 0th block stale (it calculates how far
       # back we'd need to go to get 24 hours in the past)
-      Enum.each(0..100, fn i ->
-        insert(:block, number: i, timestamp: Timex.shift(now, hours: -(101 - i) * 50))
+      Enum.each(0..101, fn i ->
+        insert(:block, number: i, timestamp: Timex.shift(now, hours: -(102 - i) * 50))
       end)
 
-      insert(:block, number: 101, timestamp: now)
+      insert(:block, number: 102, timestamp: now)
       AverageBlockTime.refresh()
 
-      stale_address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 100)
-      current_address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 101)
+      stale_address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 101)
+      current_address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 102)
 
-      pending_address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 101)
-      insert(:unfetched_balance, address_hash: pending_address.hash, block_number: 102)
+      pending_address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 102)
+      insert(:unfetched_balance, address_hash: pending_address.hash, block_number: 103)
 
       %{stale_address: stale_address, current_address: current_address, pending_address: pending_address}
     end
@@ -68,7 +68,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
     test "if the address has not been fetched within the last 24 hours of blocks it is considered stale", %{
       stale_address: address
     } do
-      assert CoinBalanceOnDemand.trigger_fetch(address) == {:stale, 101}
+      assert CoinBalanceOnDemand.trigger_fetch(address) == {:stale, 102}
     end
 
     test "if the address has been fetched within the last 24 hours of blocks it is considered current", %{
@@ -80,7 +80,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
     test "if there is an unfetched balance within the window for an address, it is considered pending", %{
       pending_address: pending_address
     } do
-      assert CoinBalanceOnDemand.trigger_fetch(pending_address) == {:pending, 102}
+      assert CoinBalanceOnDemand.trigger_fetch(pending_address) == {:pending, 103}
     end
   end
 
@@ -139,60 +139,18 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
 
       # we space these very far apart so that we know it will consider the 0th block stale (it calculates how far
       # back we'd need to go to get 24 hours in the past)
-      Enum.each(0..100, fn i ->
-        insert(:block, number: i, timestamp: Timex.shift(now, hours: -(101 - i) * 50))
+      Enum.each(0..101, fn i ->
+        insert(:block, number: i, timestamp: Timex.shift(now, hours: -(102 - i) * 50))
       end)
 
-      insert(:block, number: 101, timestamp: now)
+      insert(:block, number: 102, timestamp: now)
       AverageBlockTime.refresh()
 
       :ok
     end
 
     test "a stale address broadcasts the new address" do
-      address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 100)
-      address_hash = address.hash
-      string_address_hash = to_string(address.hash)
-
-      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
-                                                     %{
-                                                       id: id,
-                                                       method: "eth_getBalance",
-                                                       params: [^string_address_hash, "0x65"]
-                                                     }
-                                                   ],
-                                                   _options ->
-        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
-      end)
-
-      res = eth_block_number_fake_response("0x65")
-
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: 0,
-                                  jsonrpc: "2.0",
-                                  method: "eth_getBlockByNumber",
-                                  params: ["0x65", true]
-                                }
-                              ],
-                              _ ->
-        {:ok, [res]}
-      end)
-
-      assert CoinBalanceOnDemand.trigger_fetch(address) == {:stale, 101}
-
-      {:ok, expected_wei} = Wei.cast(2)
-
-      assert_receive(
-        {:chain_event, :addresses, :on_demand,
-         [%{hash: ^address_hash, fetched_coin_balance: ^expected_wei, fetched_coin_balance_block_number: 101}]}
-      )
-    end
-
-    test "a pending address broadcasts the new address and the new coin balance" do
-      address = insert(:address, fetched_coin_balance: 0, fetched_coin_balance_block_number: 101)
-      insert(:unfetched_balance, address_hash: address.hash, block_number: 102)
+      address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 101)
       address_hash = address.hash
       string_address_hash = to_string(address.hash)
 
@@ -207,27 +165,69 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
         {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
       end)
 
+      res = eth_block_number_fake_response("0x66")
+
       EthereumJSONRPC.Mox
-      |> expect(:json_rpc, 1, fn [
-                                   %{
-                                     id: 0,
-                                     jsonrpc: "2.0",
-                                     method: "eth_getBlockByNumber",
-                                     params: ["0x66", true]
-                                   }
-                                 ],
-                                 _ ->
-        res = eth_block_number_fake_response("0x66")
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_getBlockByNumber",
+                                  params: ["0x66", true]
+                                }
+                              ],
+                              _ ->
         {:ok, [res]}
       end)
 
-      assert CoinBalanceOnDemand.trigger_fetch(address) == {:pending, 102}
+      assert CoinBalanceOnDemand.trigger_fetch(address) == {:stale, 102}
 
       {:ok, expected_wei} = Wei.cast(2)
 
       assert_receive(
         {:chain_event, :addresses, :on_demand,
          [%{hash: ^address_hash, fetched_coin_balance: ^expected_wei, fetched_coin_balance_block_number: 102}]}
+      )
+    end
+
+    test "a pending address broadcasts the new address and the new coin balance" do
+      address = insert(:address, fetched_coin_balance: 0, fetched_coin_balance_block_number: 102)
+      insert(:unfetched_balance, address_hash: address.hash, block_number: 103)
+      address_hash = address.hash
+      string_address_hash = to_string(address.hash)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
+                                                     %{
+                                                       id: id,
+                                                       method: "eth_getBalance",
+                                                       params: [^string_address_hash, "0x67"]
+                                                     }
+                                                   ],
+                                                   _options ->
+        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
+      end)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, 1, fn [
+                                   %{
+                                     id: 0,
+                                     jsonrpc: "2.0",
+                                     method: "eth_getBlockByNumber",
+                                     params: ["0x67", true]
+                                   }
+                                 ],
+                                 _ ->
+        res = eth_block_number_fake_response("0x67")
+        {:ok, [res]}
+      end)
+
+      assert CoinBalanceOnDemand.trigger_fetch(address) == {:pending, 103}
+
+      {:ok, expected_wei} = Wei.cast(2)
+
+      assert_receive(
+        {:chain_event, :addresses, :on_demand,
+         [%{hash: ^address_hash, fetched_coin_balance: ^expected_wei, fetched_coin_balance_block_number: 103}]}
       )
     end
   end
