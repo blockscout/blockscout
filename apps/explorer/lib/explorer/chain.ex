@@ -4180,6 +4180,10 @@ defmodule Explorer.Chain do
     |> Enum.map(&put_owner_to_token_instance(&1, token, options))
   end
 
+  @doc """
+    Put owner address to unique token instance. If not unique, return original instance.
+  """
+  @spec put_owner_to_token_instance(Instance.t(), Token.t(), [api?]) :: Instance.t()
   def put_owner_to_token_instance(token_instance, token, options \\ [])
 
   def put_owner_to_token_instance(%Instance{is_unique: nil} = token_instance, token, options) do
