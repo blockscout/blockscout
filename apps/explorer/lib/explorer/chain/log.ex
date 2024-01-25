@@ -187,12 +187,13 @@ defmodule Explorer.Chain.Log do
       {{:error, :could_not_decode}, events_acc}
     else
       <<method_id::binary-size(4), _rest::binary>> = log.first_topic.bytes
+      key = {method_id, log.second_topic, log.third_topic, log.fourth_topic}
 
-      if Map.has_key?(events_acc, method_id) do
-        {events_acc[method_id], events_acc}
+      if Map.has_key?(events_acc, key) do
+        {events_acc[key], events_acc}
       else
         result = find_method_candidates_from_db(method_id, log, transaction, options, skip_sig_provider?)
-        {result, Map.put(events_acc, method_id, result)}
+        {result, Map.put(events_acc, key, result)}
       end
     end
   end
