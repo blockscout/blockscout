@@ -5,11 +5,10 @@ defmodule Explorer.Chain.OptimismTxnBatch do
 
   alias Explorer.Chain.OptimismFrameSequence
 
-  @required_attrs ~w(l2_block_number epoch_number frame_sequence_id)a
+  @required_attrs ~w(l2_block_number frame_sequence_id)a
 
   @type t :: %__MODULE__{
           l2_block_number: non_neg_integer(),
-          epoch_number: non_neg_integer(),
           frame_sequence_id: non_neg_integer(),
           frame_sequence: %Ecto.Association.NotLoaded{} | OptimismFrameSequence.t()
         }
@@ -17,7 +16,6 @@ defmodule Explorer.Chain.OptimismTxnBatch do
   @primary_key false
   schema "op_transaction_batches" do
     field(:l2_block_number, :integer, primary_key: true)
-    field(:epoch_number, :integer)
     belongs_to(:frame_sequence, OptimismFrameSequence, foreign_key: :frame_sequence_id, references: :id, type: :integer)
 
     timestamps()

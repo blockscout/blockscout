@@ -56,7 +56,8 @@ defmodule Indexer.MixProject do
       {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog
       {:spandex_datadog, "~> 1.0"},
-      {:logger_json, "~> 5.1"}
+      {:logger_json, "~> 5.1"},
+      {:varint, "~> 1.4"}
     ]
   end
 
