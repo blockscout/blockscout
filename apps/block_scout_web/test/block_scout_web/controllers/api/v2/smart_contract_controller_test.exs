@@ -382,7 +382,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_fully_verified" => false,
         "is_verified_via_sourcify" => false,
         "is_vyper_contract" => implementation_contract.is_vyper_contract,
-        "minimal_proxy_address_hash" => "0x" <> implementation_contract_address_hash_string,
+        "minimal_proxy_address_hash" => Address.checksum("0x" <> implementation_contract_address_hash_string),
         "sourcify_repo_url" => nil,
         "can_be_visualized_via_sol2uml" => false,
         "name" => implementation_contract && implementation_contract.name,
