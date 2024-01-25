@@ -80,7 +80,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
          json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
          {:ok, last_l1_tx} <- Optimism.get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_tx_hash) && is_nil(last_l1_tx)},
-         {:ok, safe_block} <- Optimism.get_block_number_by_tag("safe", json_rpc_named_arguments),
+         {safe_block, _} = Optimism.get_safe_block(json_rpc_named_arguments),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid,
             (start_block_l1 <= last_l1_block_number || last_l1_block_number == 0) && start_block_l1 <= safe_block} do
@@ -119,9 +119,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         {:stop, :normal, state}
 
       {:error, error_data} ->
-        Logger.error(
-          "Cannot get last L1 transaction from RPC by its hash or last safe block due to the RPC error: #{inspect(error_data)}"
-        )
+        Logger.error("Cannot get last L1 transaction from RPC by its hash due to the RPC error: #{inspect(error_data)}")
 
         {:stop, :normal, state}
 
