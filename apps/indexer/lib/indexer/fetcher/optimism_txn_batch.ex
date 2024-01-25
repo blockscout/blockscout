@@ -132,9 +132,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         {:stop, :normal, state}
 
       {:error, error_data} ->
-        Logger.error(
-          "Cannot get last safe block or block timestamp by its number due to RPC error: #{inspect(error_data)}"
-        )
+        Logger.error("Cannot get block timestamp by its number due to RPC error: #{inspect(error_data)}")
 
         {:stop, :normal, state}
 

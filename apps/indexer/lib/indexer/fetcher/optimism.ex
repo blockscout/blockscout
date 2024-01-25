@@ -92,10 +92,14 @@ defmodule Indexer.Fetcher.Optimism do
   end
 
   def get_block_check_interval(json_rpc_named_arguments) do
-    with {:ok, last_safe_block} <- get_block_number_by_tag("safe", json_rpc_named_arguments),
-         first_block = max(last_safe_block - @block_check_interval_range_size, 1),
-         {:ok, first_block_timestamp} <- get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
-         {:ok, last_safe_block_timestamp} <- get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments) do
+    {last_safe_block, _} = get_safe_block(json_rpc_named_arguments)
+
+    first_block = max(last_safe_block - @block_check_interval_range_size, 1)
+
+    with {:ok, first_block_timestamp} <-
+           get_block_timestamp_by_number(first_block, json_rpc_named_arguments, 100_000_000),
+         {:ok, last_safe_block_timestamp} <-
+           get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, 100_000_000) do
       block_check_interval =
         ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
@@ -110,6 +114,17 @@ defmodule Indexer.Fetcher.Optimism do
   def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ 3) do
     error_message = &"Cannot fetch #{tag} block number. Error: #{inspect(&1)}"
     repeated_call(&fetch_block_number_by_tag/2, [tag, json_rpc_named_arguments], error_message, retries)
+  end
+
+  def get_safe_block(json_rpc_named_arguments) do
+    case get_block_number_by_tag("safe", json_rpc_named_arguments) do
+      {:ok, safe_block} ->
+        {safe_block, false}
+
+      {:error, :not_found} ->
+        {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+        {latest_block, true}
+    end
   end
 
   defp get_block_timestamp_by_number_inner(number, json_rpc_named_arguments) do
@@ -259,7 +274,7 @@ defmodule Indexer.Fetcher.Optimism do
 
       {:error, error_data} ->
         Logger.error(
-          "Cannot get last L1 transaction from RPC by its hash, last safe block, or block timestamp by its number due to RPC error: #{inspect(error_data)}"
+          "Cannot get last L1 transaction from RPC by its hash, last safe/latest block, or block timestamp by its number due to RPC error: #{inspect(error_data)}"
         )
 
         {:stop, :normal, %{}}
