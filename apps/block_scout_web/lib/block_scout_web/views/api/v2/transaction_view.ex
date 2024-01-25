@@ -475,6 +475,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
             |> Map.put("blob_versioned_hashes", item.blob_versioned_hashes)
             |> Map.put("blob_gas_used", item.blob_gas_used)
             |> Map.put("blob_gas_price", item.blob_gas_price)
+            |> Map.put("burnt_blob_fee", Decimal.mult(item.blob_gas_used, item.blob_gas_price))
         end
 
       _ ->
