@@ -193,12 +193,13 @@ defmodule Explorer.Chain.Log do
     with "0x" <> hex_part <- log.first_topic,
          {number, ""} <- Integer.parse(hex_part, 16) do
       <<method_id::binary-size(4), _rest::binary>> = :binary.encode_unsigned(number)
+      key = {method_id, log.second_topic, log.third_topic, log.fourth_topic}
 
-      if Map.has_key?(events_acc, method_id) do
-        {events_acc[method_id], events_acc}
+      if Map.has_key?(events_acc, key) do
+        {events_acc[key], events_acc}
       else
         result = find_method_candidates_from_db(method_id, log, transaction, options, skip_sig_provider?)
-        {result, Map.put(events_acc, method_id, result)}
+        {result, Map.put(events_acc, key, result)}
       end
     else
       _ -> {{:error, :could_not_decode}, events_acc}

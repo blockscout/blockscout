@@ -6,13 +6,14 @@
 
 ### Fixes
 
+- [#9241](https://github.com/blockscout/blockscout/pull/9241) - Fix log decoding bug
+>>>>>>> d06d4f3cab (Fix log decoding bug (#9241))
 - [#9109](https://github.com/blockscout/blockscout/pull/9109) - Return current exchange rate in api/v2/stats
 - [#9102](https://github.com/blockscout/blockscout/pull/9102) - Fix some log topics for Suave and Polygon Edge
 - [#9075](https://github.com/blockscout/blockscout/pull/9075) - Fix fetching contract codes
 - [#9073](https://github.com/blockscout/blockscout/pull/9073) - Allow payable function with output appear in the Read tab
 
 ### Chore
-
 <details>
   <summary>Dependencies version bumps</summary>
 
