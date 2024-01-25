@@ -127,6 +127,17 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
+  def get_safe_block(json_rpc_named_arguments) do
+    case get_block_number_by_tag("safe", json_rpc_named_arguments) do
+      {:ok, safe_block} ->
+        {safe_block, false}
+
+      {:error, :not_found} ->
+        {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+        {latest_block, true}
+    end
+  end
+
   defp get_block_timestamp_by_number_inner(number, json_rpc_named_arguments) do
     result =
       %{id: 0, number: number}
