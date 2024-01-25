@@ -84,7 +84,6 @@ defmodule Explorer.Chain.Import.Runner.OptimismTxnBatches do
       update: [
         set: [
           # don't update `l2_block_number` as it is a primary key and used for the conflict target
-          epoch_number: fragment("EXCLUDED.epoch_number"),
           frame_sequence_id: fragment("EXCLUDED.frame_sequence_id"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", tb.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", tb.updated_at)
@@ -92,8 +91,7 @@ defmodule Explorer.Chain.Import.Runner.OptimismTxnBatches do
       ],
       where:
         fragment(
-          "(EXCLUDED.epoch_number, EXCLUDED.frame_sequence_id) IS DISTINCT FROM (?, ?)",
-          tb.epoch_number,
+          "(EXCLUDED.frame_sequence_id) IS DISTINCT FROM (?)",
           tb.frame_sequence_id
         )
     )
