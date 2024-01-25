@@ -21,8 +21,12 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   alias Explorer.Chain.{Block, OptimismFrameSequence, OptimismTxnBatch}
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
+  alias Varint.LEB128
 
   @fetcher_name :optimism_txn_batches
+
+  # Optimism chain block time is a constant (2 seconds)
+  @op_chain_block_time 2
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -57,6 +61,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
+         {:genesis_block_l2_invalid, false} <-
+           {:genesis_block_l2_invalid, is_nil(env[:genesis_block_l2]) or env[:genesis_block_l2] < 0},
          {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.Optimism))},
          optimism_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
@@ -88,12 +94,17 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          end_block: last_safe_block,
          chunk_size: chunk_size,
          incomplete_channels: %{},
+         genesis_block_l2: env[:genesis_block_l2],
          json_rpc_named_arguments: json_rpc_named_arguments,
          json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
        }}
     else
       {:start_block_l1_undefined, true} ->
         # the process shouldn't start if the start block is not defined
+        {:stop, :normal, state}
+
+      {:genesis_block_l2_invalid, true} ->
+        Logger.error("L2 genesis block number is undefined or invalid.")
         {:stop, :normal, state}
 
       {:reorg_monitor_started, false} ->
@@ -151,6 +162,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
           end_block: end_block,
           chunk_size: chunk_size,
           incomplete_channels: incomplete_channels,
+          genesis_block_l2: genesis_block_l2,
           json_rpc_named_arguments: json_rpc_named_arguments,
           json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
         } = state
@@ -163,57 +175,57 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     {last_written_block, new_incomplete_channels} =
       chunk_range
       |> Enum.reduce_while({start_block - 1, incomplete_channels}, fn current_chunk, {_, incomplete_channels_acc} ->
-          chunk_start = start_block + chunk_size * current_chunk
-          chunk_end = min(chunk_start + chunk_size - 1, end_block)
+        chunk_start = start_block + chunk_size * current_chunk
+        chunk_end = min(chunk_start + chunk_size - 1, end_block)
 
-          new_incomplete_channels =
-            if chunk_end >= chunk_start do
-              Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+        new_incomplete_channels =
+          if chunk_end >= chunk_start do
+            Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
 
-              {:ok, new_incomplete_channels, batches, sequences} =
-                get_txn_batches(
-                  Range.new(chunk_start, chunk_end),
-                  batch_inbox,
-                  batch_submitter,
-                  incomplete_channels_acc,
-                  json_rpc_named_arguments,
-                  json_rpc_named_arguments_l2,
-                  100_000_000
-                )
-
-              {batches, sequences} = remove_duplicates(batches, sequences)
-
-              {:ok, _} =
-                Chain.import(%{
-                  optimism_frame_sequences: %{params: sequences},
-                  optimism_txn_batches: %{params: batches},
-                  timeout: :infinity
-                })
-
-              Helper.log_blocks_chunk_handling(
-                chunk_start,
-                chunk_end,
-                start_block,
-                end_block,
-                "#{Enum.count(batches)} batch(es)",
-                "L1"
+            {:ok, new_incomplete_channels, batches, sequences} =
+              get_txn_batches(
+                Range.new(chunk_start, chunk_end),
+                batch_inbox,
+                batch_submitter,
+                genesis_block_l2,
+                incomplete_channels_acc,
+                json_rpc_named_arguments,
+                json_rpc_named_arguments_l2,
+                100_000_000
               )
 
-              new_incomplete_channels
-            else
-              incomplete_channels_acc
-            end
+            {batches, sequences} = remove_duplicates(batches, sequences)
 
-          reorg_block = Optimism.reorg_block_pop(@fetcher_name)
+            {:ok, _} =
+              Chain.import(%{
+                optimism_frame_sequences: %{params: sequences},
+                optimism_txn_batches: %{params: batches},
+                timeout: :infinity
+              })
 
-          if !is_nil(reorg_block) && reorg_block > 0 do
-            new_incomplete_channels = handle_l1_reorg(reorg_block, new_incomplete_channels)
-            {:halt, {if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end), new_incomplete_channels}}
+            Helper.log_blocks_chunk_handling(
+              chunk_start,
+              chunk_end,
+              start_block,
+              end_block,
+              "#{Enum.count(sequences)} batch(es) containing #{Enum.count(batches)} block(s).",
+              "L1"
+            )
+
+            new_incomplete_channels
           else
-            {:cont, {chunk_end, new_incomplete_channels}}
+            incomplete_channels_acc
           end
+
+        reorg_block = Optimism.reorg_block_pop(@fetcher_name)
+
+        if !is_nil(reorg_block) && reorg_block > 0 do
+          new_incomplete_channels = handle_l1_reorg(reorg_block, new_incomplete_channels)
+          {:halt, {if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end), new_incomplete_channels}}
+        else
+          {:cont, {chunk_end, new_incomplete_channels}}
         end
-      )
+      end)
 
     new_start_block = last_written_block + 1
     {:ok, new_end_block} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
@@ -247,6 +259,10 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
+  end
+
+  defp get_block_numbers_by_hashes([], _json_rpc_named_arguments_l2) do
+    %{}
   end
 
   defp get_block_numbers_by_hashes(hashes, json_rpc_named_arguments_l2) do
@@ -336,6 +352,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          block_range,
          batch_inbox,
          batch_submitter,
+         genesis_block_l2,
          incomplete_channels,
          json_rpc_named_arguments,
          json_rpc_named_arguments_l2,
@@ -347,6 +364,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         |> txs_filter(batch_submitter, batch_inbox)
         |> get_txn_batches_inner(
           blocks_params,
+          genesis_block_l2,
           incomplete_channels,
           json_rpc_named_arguments_l2
         )
@@ -373,6 +391,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
             block_range,
             batch_inbox,
             batch_submitter,
+            genesis_block_l2,
             incomplete_channels,
             json_rpc_named_arguments,
             json_rpc_named_arguments_l2,
@@ -382,42 +401,67 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     end
   end
 
-  defp get_txn_batches_inner(transactions_filtered, blocks_params, incomplete_channels, json_rpc_named_arguments_l2) do
+  defp get_txn_batches_inner(
+         transactions_filtered,
+         blocks_params,
+         genesis_block_l2,
+         incomplete_channels,
+         json_rpc_named_arguments_l2
+       ) do
     transactions_filtered
     |> Enum.reduce({:ok, incomplete_channels, [], []}, fn t, {_, incomplete_channels_acc, batches_acc, sequences_acc} ->
       frame = input_to_frame(t.input)
 
       channel = Map.get(incomplete_channels_acc, frame.channel_id, %{frames: %{}})
 
-      channel_frames = Map.put(channel.frames, frame.number, %{data: frame.data, is_last: frame.is_last, block_number: t.block_number, tx_hash: t.hash})
+      channel_frames =
+        Map.put(channel.frames, frame.number, %{
+          data: frame.data,
+          is_last: frame.is_last,
+          block_number: t.block_number,
+          tx_hash: t.hash
+        })
 
-      l1_timestamp = if frame.is_last, do: get_block_timestamp_by_number(t.block_number, blocks_params)
+      l1_timestamp =
+        if frame.is_last do
+          get_block_timestamp_by_number(t.block_number, blocks_params)
+        else
+          Map.get(channel, :l1_timestamp)
+        end
 
       channel =
         channel
+        |> Map.put_new(:id, frame.channel_id)
         |> Map.put(:frames, channel_frames)
         |> Map.put(:timestamp, DateTime.utc_now())
         |> Map.put(:l1_timestamp, l1_timestamp)
 
-      if is_channel_complete(channel) do
-        frame_sequence_last = List.first(sequences_acc)
-        frame_sequence_id = next_frame_sequence_id(frame_sequence_last)
-
-        {new_batches, new_frame_sequence} = handle_channel(channel, frame_sequence_id, json_rpc_named_arguments_l2)
-
-        new_incomplete_channels_acc =
-          incomplete_channels_acc
-          |> Map.delete(frame.channel_id)
-          |> remove_expired_channels()
-
-        {:ok, new_incomplete_channels_acc, batches_acc ++ new_batches, [new_frame_sequence | sequences_acc]}
+      if channel_complete?(channel) do
+        handle_channel(
+          channel,
+          incomplete_channels_acc,
+          batches_acc,
+          sequences_acc,
+          genesis_block_l2,
+          json_rpc_named_arguments_l2
+        )
       else
         {:ok, Map.put(incomplete_channels_acc, frame.channel_id, channel), batches_acc, sequences_acc}
       end
     end)
   end
 
-  defp handle_channel(channel, frame_sequence_id, json_rpc_named_arguments_l2) do
+  defp handle_channel(
+         channel,
+         incomplete_channels_acc,
+         batches_acc,
+         sequences_acc,
+         genesis_block_l2,
+         json_rpc_named_arguments_l2
+       ) do
+    frame_sequence_last = List.first(sequences_acc)
+    frame_sequence_id = next_frame_sequence_id(frame_sequence_last)
+
     {bytes, l1_transaction_hashes} =
       0..(Enum.count(channel.frames) - 1)
       |> Enum.reduce({<<>>, []}, fn frame_number, {bytes_acc, tx_hashes_acc} ->
@@ -430,8 +474,13 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         bytes,
         frame_sequence_id,
         channel.l1_timestamp,
+        genesis_block_l2,
         json_rpc_named_arguments_l2
       )
+
+    if batches_parsed == :error do
+      Logger.error("Cannot parse frame sequence from these L1 transaction(s): #{inspect(l1_transaction_hashes)}")
+    end
 
     seq = %{
       id: frame_sequence_id,
@@ -439,25 +488,32 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       l1_timestamp: channel.l1_timestamp
     }
 
-    {batches_parsed, seq}
+    new_incomplete_channels_acc =
+      incomplete_channels_acc
+      |> Map.delete(channel.id)
+      |> remove_expired_channels()
+
+    if batches_parsed == :error or Enum.empty?(batches_parsed) do
+      {:ok, new_incomplete_channels_acc, batches_acc, sequences_acc}
+    else
+      {:ok, new_incomplete_channels_acc, batches_acc ++ batches_parsed, [seq | sequences_acc]}
+    end
   end
 
   defp handle_l1_reorg(reorg_block, incomplete_channels) do
-    Enum.reduce(incomplete_channels, incomplete_channels, fn {channel_id, %{frames: frames} = channel}, incomplete_channels_acc ->
+    incomplete_channels
+    |> Enum.reduce(incomplete_channels, fn {channel_id, %{frames: frames} = channel}, acc ->
       updated_frames =
         frames
-        |> Enum.reduce(frames, fn {frame_number, %{block_number: block_number}}, frames_acc ->
-          if block_number >= reorg_block do
-            Map.delete(frames_acc, frame_number)
-          else
-            frames_acc
-          end
+        |> Enum.filter(fn {_frame_number, %{block_number: block_number}} ->
+          block_number < reorg_block
         end)
+        |> Enum.into(%{})
 
       if Enum.empty?(updated_frames) do
-        Map.delete(incomplete_channels_acc, channel_id)
+        Map.delete(acc, channel_id)
       else
-        Map.put(incomplete_channels_acc, channel_id, Map.put(channel, :frames, updated_frames))
+        Map.put(acc, channel_id, Map.put(channel, :frames, updated_frames))
       end
     end)
   end
@@ -477,8 +533,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         timeout: :infinity
       )
 
-    {deleted_count, _} =
-      Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^reorg_block))
+    {deleted_count, _} = Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^reorg_block))
 
     Repo.delete_all(from(fs in OptimismFrameSequence, where: fs.id in ^frame_sequence_ids))
 
@@ -489,7 +544,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     end
   end
 
-  defp is_channel_complete(channel) do
+  defp channel_complete?(channel) do
     last_frame_number =
       channel.frames
       |> Map.keys()
@@ -595,6 +650,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          bytes,
          id,
          l1_timestamp,
+         genesis_block_l2,
          json_rpc_named_arguments_l2
        ) do
     uncompressed_bytes = zlib_decompress(bytes)
@@ -603,21 +659,28 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), {uncompressed_bytes, []}, fn _i, {remainder, batch_acc} ->
         try do
           {decoded, new_remainder} = ExRLP.decode(remainder, stream: true)
-          batch = ExRLP.decode(binary_part(decoded, 1, byte_size(decoded) - 1))
 
-          # todo: use https://hexdocs.pm/varint/readme.html
+          <<version>> = binary_part(decoded, 0, 1)
+          content = binary_part(decoded, 1, byte_size(decoded) - 1)
 
-          batch = %{
-            parent_hash: Enum.at(batch, 0),
-            epoch_number: :binary.decode_unsigned(Enum.at(batch, 1)),
-            frame_sequence_id: id,
-            l1_timestamp: l1_timestamp
-          }
+          new_batch_acc =
+            cond do
+              version == 0 ->
+                handle_v0_batch(content, id, l1_timestamp, batch_acc)
 
-          if byte_size(new_remainder) > 0 do
-            {:cont, {new_remainder, [batch | batch_acc]}}
+              version <= 2 ->
+                # parsing the span batch
+                handle_v1_batch(content, id, l1_timestamp, genesis_block_l2, batch_acc)
+
+              true ->
+                Logger.error("Unsupported batch version ##{version}")
+                :error
+            end
+
+          if byte_size(new_remainder) > 0 and new_batch_acc != :error do
+            {:cont, {new_remainder, new_batch_acc}}
           else
-            {:halt, [batch | batch_acc]}
+            {:halt, new_batch_acc}
           end
         rescue
           _ -> {:halt, :error}
@@ -631,18 +694,76 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
       numbers_by_hashes =
         batches
+        |> Stream.filter(&Map.has_key?(&1, :parent_hash))
         |> Enum.map(fn batch -> batch.parent_hash end)
         |> get_block_numbers_by_hashes(json_rpc_named_arguments_l2)
 
-      batches
-      |> Stream.filter(&Map.has_key?(numbers_by_hashes, &1.parent_hash))
-      |> Enum.map(fn batch ->
-        number = Map.get(numbers_by_hashes, batch.parent_hash)
+      Enum.map(batches, &parent_hash_to_l2_block_number(&1, numbers_by_hashes))
+    end
+  end
 
-        batch
-        |> Map.put(:l2_block_number, number + 1)
-        |> Map.delete(:parent_hash)
-      end)
+  defp handle_v0_batch(content, frame_sequence_id, l1_timestamp, batch_acc) do
+    content_decoded = ExRLP.decode(content)
+
+    batch = %{
+      parent_hash: Enum.at(content_decoded, 0),
+      frame_sequence_id: frame_sequence_id,
+      l1_timestamp: l1_timestamp
+    }
+
+    [batch | batch_acc]
+  end
+
+  defp handle_v1_batch(content, frame_sequence_id, l1_timestamp, genesis_block_l2, batch_acc) do
+    {rel_timestamp, content_remainder} = LEB128.decode(content)
+
+    # skip l1_origin_num
+    {_l1_origin_num, checks_and_payload} = LEB128.decode(content_remainder)
+
+    # skip `parent_check` and `l1_origin_check` fields (20 bytes each)
+    # and read the block count
+    {block_count, _} =
+      checks_and_payload
+      |> binary_part(40, byte_size(checks_and_payload) - 40)
+      |> LEB128.decode()
+
+    # the first and last L2 blocks in the span
+    span_start = div(rel_timestamp, @op_chain_block_time) + genesis_block_l2
+    span_end = span_start + block_count - 1
+
+    cond do
+      rem(rel_timestamp, @op_chain_block_time) != 0 ->
+        Logger.error("rel_timestamp is not divisible by #{@op_chain_block_time}. We ignore the span batch.")
+        batch_acc
+
+      block_count <= 0 ->
+        Logger.error("Empty span batch found. We ignore it.")
+        batch_acc
+
+      true ->
+        span_start..span_end
+        |> Enum.reduce(batch_acc, fn l2_block_number, batch_acc ->
+          [
+            %{
+              l2_block_number: l2_block_number,
+              frame_sequence_id: frame_sequence_id,
+              l1_timestamp: l1_timestamp
+            }
+            | batch_acc
+          ]
+        end)
+    end
+  end
+
+  defp parent_hash_to_l2_block_number(batch, numbers_by_hashes) do
+    if Map.has_key?(batch, :parent_hash) do
+      number = Map.get(numbers_by_hashes, batch.parent_hash)
+
+      batch
+      |> Map.put(:l2_block_number, number + 1)
+      |> Map.delete(:parent_hash)
+    else
+      batch
     end
   end
 
@@ -692,12 +813,16 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
     uncompressed_bytes =
       try do
-        res = zlib_inflate(z, bytes)
-        :zlib.inflateEnd(z)
-        res
+        zlib_inflate(z, bytes)
       rescue
         _ -> <<>>
       end
+
+    try do
+      :zlib.inflateEnd(z)
+    rescue
+      _ -> nil
+    end
 
     :zlib.close(z)
 
