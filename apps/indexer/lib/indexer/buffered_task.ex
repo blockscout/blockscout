@@ -438,7 +438,7 @@ defmodule Indexer.BufferedTask do
           new_bound_queue
 
         {%BoundQueue{maximum_size: maximum_size} = new_bound_queue, remaining_entries} ->
-          Logger.warn(fn ->
+          Logger.warning(fn ->
             [
               "BufferedTask ",
               process(self()),
