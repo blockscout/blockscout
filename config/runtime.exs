@@ -419,10 +419,15 @@ config :explorer, :air_table_public_tags,
   table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
   api_key: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
 
+audit_reports_table_url = System.get_env("CONTRACT_AUDIT_REPORTS_AIRTABLE_URL")
+
+audit_reports_api_key =
+  System.get_env("CONTRACT_AUDIT_REPORTS_AIRTABLE_API_KEY") || System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
+
 config :explorer, :air_table_audit_reports,
-  table_url: System.get_env("CONTRACT_AUDIT_REPORTS_AIRTABLE_URL"),
-  api_key:
-    System.get_env("CONTRACT_AUDIT_REPORTS_AIRTABLE_API_KEY") || System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
+  table_url: audit_reports_table_url,
+  api_key: audit_reports_api_key,
+  enabled: (audit_reports_table_url && audit_reports_api_key && true) || false
 
 config :explorer, Explorer.Mailer,
   adapter: Bamboo.SendGridAdapter,

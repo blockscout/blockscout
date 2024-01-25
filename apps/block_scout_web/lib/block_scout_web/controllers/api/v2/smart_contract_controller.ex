@@ -243,7 +243,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   def audit_report_submission(conn, %{"address_hash" => address_hash_string} = params) do
     captcha_helper = Application.get_env(:block_scout_web, :captcha_helper)
 
-    with {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string),
+    with {:disabled, true} <- {:disabled, Application.get_env(:explorer, :air_table_audit_reports)[:enabled]},
+         {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string),
          {:recaptcha, _} <- {:recaptcha, captcha_helper.recaptcha_passed?(params["recaptcha_response"])},
          audit_report_params <- %{
            address_hash: address_hash,

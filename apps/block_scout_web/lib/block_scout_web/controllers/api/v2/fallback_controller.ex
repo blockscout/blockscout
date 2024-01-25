@@ -29,6 +29,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   @address_is_not_smart_contract "Address is not smart-contract"
   @empty_response "Empty response"
   @tx_interpreter_service_disabled "Transaction Interpretation Service is not enabled"
+  @disabled "API endpoint is disabled"
 
   def call(conn, {:format, _params}) do
     Logger.error(fn ->
@@ -272,5 +273,12 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> put_status(404)
     |> put_view(ApiView)
     |> render(:message, %{message: @tx_interpreter_service_disabled})
+  end
+
+  def call(conn, {:disabled, _}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @disabled})
   end
 end
