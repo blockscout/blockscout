@@ -564,21 +564,19 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   end
 
   defp handle_l1_reorg(reorg_block, incomplete_channels) do
-    Enum.reduce(incomplete_channels, incomplete_channels, fn {channel_id, %{frames: frames} = channel}, incomplete_channels_acc ->
+    incomplete_channels
+    |> Enum.reduce(incomplete_channels, fn {channel_id, %{frames: frames} = channel}, acc ->
       updated_frames =
         frames
-        |> Enum.reduce(frames, fn {frame_number, %{block_number: block_number}}, frames_acc ->
-          if block_number >= reorg_block do
-            Map.delete(frames_acc, frame_number)
-          else
-            frames_acc
-          end
+        |> Enum.filter(fn {_frame_number, %{block_number: block_number}} ->
+          block_number < reorg_block
         end)
+        |> Enum.into(%{})
 
       if Enum.empty?(updated_frames) do
-        Map.delete(incomplete_channels_acc, channel_id)
+        Map.delete(acc, channel_id)
       else
-        Map.put(incomplete_channels_acc, channel_id, Map.put(channel, :frames, updated_frames))
+        Map.put(acc, channel_id, Map.put(channel, :frames, updated_frames))
       end
     end)
   end
@@ -598,8 +596,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
         timeout: :infinity
       )
 
-    {deleted_count, _} =
-      Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^reorg_block))
+    {deleted_count, _} = Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^reorg_block))
 
     Repo.delete_all(from(fs in OptimismFrameSequence, where: fs.id in ^frame_sequence_ids))
 
@@ -610,7 +607,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     end
   end
 
-  defp is_channel_complete(channel) do
+  defp channel_complete?(channel) do
     last_frame_number =
       channel.frames
       |> Map.keys()
