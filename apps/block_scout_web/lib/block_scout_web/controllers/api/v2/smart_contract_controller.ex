@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.SmartContract.AuditReport
   alias Explorer.SmartContract.{Reader, Writer}
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.ThirdPartyIntegrations.SolidityScan
@@ -59,10 +60,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   end
 
   def methods_read(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         smart_contract <- SmartContract.address_hash_to_smart_contract(address_hash, @api_true),
-         {:not_found, false} <- {:not_found, is_nil(smart_contract)} do
+    with {:ok, address_hash, smart_contract} <- validate_smart_contract(params, address_hash_string) do
       read_only_functions_from_abi = Reader.read_only_functions(smart_contract, address_hash, params["from"])
 
       read_functions_required_wallet_from_abi = Reader.read_functions_required_wallet(smart_contract)
@@ -89,10 +87,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   def methods_write(conn, %{"address_hash" => address_hash_string} = params) do
     with {:contract_interaction_disabled, false} <-
            {:contract_interaction_disabled, AddressView.contract_interaction_disabled?()},
-         {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         smart_contract <- SmartContract.address_hash_to_smart_contract(address_hash, @api_true),
-         {:not_found, false} <- {:not_found, is_nil(smart_contract)} do
+         {:ok, _address_hash, smart_contract} <- validate_smart_contract(params, address_hash_string) do
       conn
       |> put_status(200)
       |> json(smart_contract |> Writer.write_functions() |> Reader.get_abi_with_method_id())
@@ -235,6 +230,58 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     |> render(:smart_contracts, %{smart_contracts: smart_contracts, next_page_params: next_page_params})
   end
 
+  @doc """
+    POST /api/v2/smart-contracts/{address_hash}/audit-reports
+  """
+  @spec audit_report_submission(Plug.Conn.t(), map()) ::
+          {:error, Ecto.Changeset.t()}
+          | {:format, :error}
+          | {:not_found, nil | Explorer.Chain.SmartContract.t()}
+          | {:recaptcha, any()}
+          | {:restricted_access, true}
+          | Plug.Conn.t()
+  def audit_report_submission(conn, %{"address_hash" => address_hash_string} = params) do
+    captcha_helper = Application.get_env(:block_scout_web, :captcha_helper)
+
+    with {:disabled, true} <- {:disabled, Application.get_env(:explorer, :air_table_audit_reports)[:enabled]},
+         {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string),
+         {:recaptcha, _} <- {:recaptcha, captcha_helper.recaptcha_passed?(params["recaptcha_response"])},
+         audit_report_params <- %{
+           address_hash: address_hash,
+           submitter_name: params["submitter_name"],
+           submitter_email: params["submitter_email"],
+           is_project_owner: params["is_project_owner"],
+           project_name: params["project_name"],
+           project_url: params["project_url"],
+           audit_company_name: params["audit_company_name"],
+           audit_report_url: params["audit_report_url"],
+           audit_publish_date: params["audit_publish_date"],
+           comment: params["comment"]
+         },
+         {:ok, _} <- AuditReport.create(audit_report_params) do
+      conn
+      |> put_status(200)
+      |> json(%{message: "OK"})
+    end
+  end
+
+  @doc """
+    GET /api/v2/smart-contracts/{address_hash}/audit-reports
+  """
+  @spec audit_reports_list(Plug.Conn.t(), map()) ::
+          {:format, :error}
+          | {:not_found, nil | Explorer.Chain.SmartContract.t()}
+          | {:restricted_access, true}
+          | Plug.Conn.t()
+  def audit_reports_list(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string) do
+      reports = AuditReport.get_audit_reports_by_smart_contract_address_hash(address_hash, @api_true)
+
+      conn
+      |> render(:audit_reports, %{reports: reports})
+    end
+  end
+
   def smart_contracts_counters(conn, _params) do
     conn
     |> json(%{
@@ -247,4 +294,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   def prepare_args(list) when is_list(list), do: list
   def prepare_args(other), do: [other]
+
+  defp validate_smart_contract(params, address_hash_string) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         {:not_found, smart_contract} when not is_nil(smart_contract) <-
+           {:not_found, SmartContract.address_hash_to_smart_contract(address_hash, @api_true)} do
+      {:ok, address_hash, smart_contract}
+    end
+  end
 end
