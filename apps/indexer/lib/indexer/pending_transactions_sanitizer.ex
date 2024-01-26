@@ -13,7 +13,6 @@ defmodule Indexer.PendingTransactionsSanitizer do
 
   alias Ecto.Changeset
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Hash.Full, as: Hash
   alias Explorer.Chain.Import.Runner.Blocks
   alias Explorer.Chain.Transaction
 
@@ -158,7 +157,6 @@ defmodule Indexer.PendingTransactionsSanitizer do
     if block.consensus do
       Blocks.invalidate_consensus_blocks([block.number])
     else
-      {:ok, hash} = Hash.cast(block.hash)
       tx_info = to_elixir(tx)
 
       changeset =
@@ -168,8 +166,9 @@ defmodule Indexer.PendingTransactionsSanitizer do
         |> Changeset.put_change(:gas_used, tx_info["gasUsed"])
         |> Changeset.put_change(:index, tx_info["transactionIndex"])
         |> Changeset.put_change(:block_number, block.number)
-        |> Changeset.put_change(:block_hash, hash)
+        |> Changeset.put_change(:block_hash, block.hash)
         |> Changeset.put_change(:block_timestamp, block.timestamp)
+        |> Changeset.put_change(:block_consensus, false)
 
       Repo.update(changeset)
 
