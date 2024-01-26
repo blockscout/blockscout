@@ -215,18 +215,6 @@ defmodule Explorer.GraphQLTest do
 
       assert index_order == Enum.sort(index_order)
     end
-
-    # Note that `transaction_to_internal_transactions_query/1` relies on
-    # `Explorer.Chain.where_transaction_has_multiple_transactions/1` to ensure the
-    # following behavior:
-    #
-    # * exclude internal transactions of type call with no siblings in the
-    #   transaction
-    #
-    # * include internal transactions of type create, reward, or suicide
-    #   even when they are alone in the parent transaction
-    #
-    # These two requirements are tested in `Explorer.ChainTest`.
   end
 
   describe "get_token_transfer/1" do

@@ -745,18 +745,6 @@ defmodule Explorer.EtherscanTest do
 
       assert length(internal_transactions2) == 1
     end
-
-    # Note that `list_internal_transactions/1` relies on
-    # `Chain.where_transaction_has_multiple_transactions/1` to ensure the
-    # following behavior:
-    #
-    # * exclude internal transactions of type call with no siblings in the
-    #   transaction
-    #
-    # * include internal transactions of type create, reward, or suicide
-    #   even when they are alone in the parent transaction
-    #
-    # These two requirements are tested in `Explorer.ChainTest`.
   end
 
   describe "list_internal_transactions/2 with address hash" do
@@ -988,18 +976,6 @@ defmodule Explorer.EtherscanTest do
         assert internal_transaction.block_number in expected_block_numbers
       end
     end
-
-    # Note that `list_internal_transactions/2` relies on
-    # `Chain.where_transaction_has_multiple_transactions/1` to ensure the
-    # following behavior:
-    #
-    # * exclude internal transactions of type call with no siblings in the
-    #   transaction
-    #
-    # * include internal transactions of type create, reward, or suicide
-    #   even when they are alone in the parent transaction
-    #
-    # These two requirements are tested in `Explorer.ChainTest`.
   end
 
   describe "list_token_transfers/2" do
