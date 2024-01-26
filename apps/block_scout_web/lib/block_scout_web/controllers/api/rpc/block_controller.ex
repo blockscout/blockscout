@@ -8,14 +8,27 @@ defmodule BlockScoutWeb.API.RPC.BlockController do
   alias Timex.Duration
 
   @doc """
-  Reward for mining a block.
+  Calculates the total reward for mining a specific block.
 
-  The block reward is the sum of the following:
+  ## Parameters
+    - conn: Plug.Conn struct.
+    - params: A map containing the query parameters which should include:
+      - `blockno`: The number of the block for which to calculate the reward.
 
-  * Sum of the transaction fees (gas_used * gas_price) for the block
-  * A static reward for miner (this value may change during the life of the chain)
-  * The reward for uncle blocks (1/32 * static_reward * number_of_uncles)
+  ## Description
+  This function computes the block reward, which consists of:
+    - The sum of the transaction fees (gas_used * gas_price) for the block.
+    - A static reward for the miner, which may vary over the blockchain's lifespan.
+    - The reward for uncle blocks calculated as (1/32 * static_reward * number_of_uncles).
+
+  ## Responses
+    - On success: Renders a JSON response with the reward details for the block.
+    - On failure: Renders an error response with an appropriate message due to:
+      - Absence of the `blockno` parameter.
+      - Invalid `blockno` parameter.
+      - Non-existence of the specified block.
   """
+  @spec getblockreward(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def getblockreward(conn, params) do
     with {:block_param, {:ok, unsafe_block_number}} <- {:block_param, Map.fetch(params, "blockno")},
          {:ok, block_number} <- ChainWeb.param_to_block_number(unsafe_block_number),
@@ -37,6 +50,27 @@ defmodule BlockScoutWeb.API.RPC.BlockController do
     end
   end
 
+  @doc """
+  Calculates and renders the estimated time until a target block number is reached.
+
+  ## Parameters
+    - conn: Plug.Conn struct.
+    - params: A map containing the query parameters which should include:
+      - `blockno`: The target block number to countdown to.
+
+  ## Description
+  This function takes a target block number from the `params` map and calculates the remaining time in seconds until that block is reached, considering the current maximum block number and the average block time.
+
+  ## Responses
+    - On success: Renders a view with the countdown information including the current block number, target block number, the number of remaining blocks, and the estimated time in seconds until the target block number is reached.
+    - On failure: Renders an error view with an appropriate message, which could be due to:
+      - Missing `blockno` parameter.
+      - Invalid block number provided.
+      - Average block time calculation being disabled.
+      - Chain is currently indexing and cannot provide the information.
+      - The target block number has already been passed.
+  """
+  @spec getblockcountdown(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def getblockcountdown(conn, params) do
     with {:block_param, {:ok, unsafe_target_block_number}} <- {:block_param, Map.fetch(params, "blockno")},
          {:ok, target_block_number} <- ChainWeb.param_to_block_number(unsafe_target_block_number),
@@ -72,6 +106,28 @@ defmodule BlockScoutWeb.API.RPC.BlockController do
     end
   end
 
+  @doc """
+  Retrieves the block number associated with a given timestamp and closest policy.
+
+  ## Parameters
+    - conn: Plug.Conn struct.
+    - params: A map containing the query parameters which should include:
+      - `timestamp`: The timestamp to query the block number for.
+      - `closest`: The policy to determine which block number to return. It could be a value like 'before' or 'after' to indicate whether the closest block before or after the given timestamp should be returned.
+
+  ## Description
+  This function finds the block number that is closest to a specific timestamp according to the provided 'closest' policy.
+
+  ## Responses
+    - On success: Renders a JSON response with the found block number.
+    - On failure: Renders an error response with an appropriate message, which could be due to:
+      - Missing `timestamp` parameter.
+      - Missing `closest` parameter.
+      - Invalid `timestamp` parameter.
+      - Invalid `closest` parameter.
+      - No block corresponding to the given timestamp and closest policy.
+  """
+  @spec getblocknobytime(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def getblocknobytime(conn, params) do
     from_api = true
 
@@ -99,6 +155,21 @@ defmodule BlockScoutWeb.API.RPC.BlockController do
     end
   end
 
+  @doc """
+  Fetches the highest block number from the chain.
+
+  ## Parameters
+    - conn: Plug.Conn struct.
+    - params: A map containing the query parameters which may include:
+      - `id`: An optional parameter that defaults to 1 if not provided.
+
+  ## Description
+  This function retrieves the maximum block number that has been recorded in the blockchain.
+
+  ## Responses
+    - Renders a JSON response including the maximum block number and the provided or default `id`.
+  """
+  @spec eth_block_number(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def eth_block_number(conn, params) do
     id = Map.get(params, "id", 1)
     max_block_number = BlockNumber.get_max()
