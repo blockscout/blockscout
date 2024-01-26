@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- [#9258](https://github.com/blockscout/blockscout/pull/92492581) - Fix withdrawal status
 - [#9241](https://github.com/blockscout/blockscout/pull/9241) - Fix log decoding bug
 >>>>>>> d06d4f3cab (Fix log decoding bug (#9241))
 - [#9109](https://github.com/blockscout/blockscout/pull/9109) - Return current exchange rate in api/v2/stats
