@@ -78,6 +78,7 @@
 
 ### Fixes
 
+<<<<<<< HEAD
 - [#9444](https://github.com/blockscout/blockscout/pull/9444) - Fix quick search bug
 - [#9440](https://github.com/blockscout/blockscout/pull/9440) - Add `debug_traceBlockByNumber` to `method_to_url`
 - [#9387](https://github.com/blockscout/blockscout/pull/9387) - Filter out Vyper contracts in Solidityscan API endpoint
@@ -153,6 +154,10 @@
 - [#9275](https://github.com/blockscout/blockscout/pull/9275) - Tx summary endpoint fixes
 - [#9261](https://github.com/blockscout/blockscout/pull/9261) - Fix pending transactions sanitizer
 - [#9253](https://github.com/blockscout/blockscout/pull/9253) - Don't fetch first trace for pending transactions
+=======
+- [#9262](https://github.com/blockscout/blockscout/pull/9262) - Fix withdrawal status
+- [#9123](https://github.com/blockscout/blockscout/pull/9123) - Fixes in Optimism due to changed log topics type
+>>>>>>> 2ec5081957 (add an entry to CHANEGELOG.md)
 - [#9241](https://github.com/blockscout/blockscout/pull/9241) - Fix log decoding bug
 - [#9234](https://github.com/blockscout/blockscout/pull/9234) - Add missing filters by non-pending transactions
 - [#9229](https://github.com/blockscout/blockscout/pull/9229) - Add missing filter to txlist query
