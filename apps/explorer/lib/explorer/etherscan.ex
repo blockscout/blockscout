@@ -107,6 +107,7 @@ defmodule Explorer.Etherscan do
         from(
           it in InternalTransaction,
           inner_join: transaction in assoc(it, :transaction),
+          where: not is_nil(transaction.block_hash),
           where: it.transaction_hash == ^transaction_hash,
           limit: 10_000,
           select:
@@ -232,6 +233,7 @@ defmodule Explorer.Etherscan do
           from(
             it in InternalTransaction,
             inner_join: transaction in assoc(it, :transaction),
+            where: not is_nil(transaction.block_hash),
             order_by: [{^options.order_by_direction, transaction.block_number}],
             limit: ^options.page_size,
             offset: ^offset(options),
