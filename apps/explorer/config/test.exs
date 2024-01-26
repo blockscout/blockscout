@@ -48,7 +48,8 @@ for repo <- [
       Explorer.Repo.PolygonZkevm,
       Explorer.Repo.RSK,
       Explorer.Repo.Shibarium,
-      Explorer.Repo.Suave
+      Explorer.Repo.Suave,
+      Explorer.Repo.BridgedTokens
     ] do
   config :explorer, repo,
     database: "explorer_test",

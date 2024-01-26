@@ -568,7 +568,8 @@
         "evmversion",
         "verifyproxycontract",
         "checkproxyverification",
-        "NOTOK"
+        "NOTOK",
+        "sushiswap"
     ],
     "enableFiletypes": [
         "dotenv",

@@ -23,6 +23,8 @@ config :explorer, Explorer.Repo.Shibarium, timeout: :timer.seconds(80)
 
 config :explorer, Explorer.Repo.Suave, timeout: :timer.seconds(80)
 
+config :explorer, Explorer.Repo.BridgedTokens, timeout: :timer.seconds(80)
+
 config :explorer, Explorer.Tracer, env: "dev", disabled?: true
 
 config :logger, :explorer,

@@ -532,6 +532,10 @@ defmodule BlockScoutWeb.Chain do
     }
   end
 
+  defp paging_params({%Token{} = token, _}) do
+    paging_params(token)
+  end
+
   defp paging_params(%TagAddress{id: id}) do
     %{"id" => id}
   end
