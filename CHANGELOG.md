@@ -16,6 +16,7 @@
 
 ### Fixes
 
+- [#9261](https://github.com/blockscout/blockscout/pull/9261) - Fix pending transactions sanitizer
 - [#9241](https://github.com/blockscout/blockscout/pull/9241) - Fix log decoding bug
 - [#9229](https://github.com/blockscout/blockscout/pull/9229) - Add missing filter to txlist query
 - [#9187](https://github.com/blockscout/blockscout/pull/9187) - Fix Internal Server Error on request for nonexistent token instance
