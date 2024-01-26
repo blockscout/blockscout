@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Multi, Repo}
-  alias Explorer.Chain.{BridgedToken, Hash, Import, Token}
+  alias Explorer.Chain.{Hash, Import, Token}
   alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
