@@ -14,6 +14,7 @@
 
 ### Fixes
 
+- [#9262](https://github.com/blockscout/blockscout/pull/9262) - Fix withdrawal status
 - [#9123](https://github.com/blockscout/blockscout/pull/9123) - Fixes in Optimism due to changed log topics type
 - [#9241](https://github.com/blockscout/blockscout/pull/9241) - Fix log decoding bug
 - [#9229](https://github.com/blockscout/blockscout/pull/9229) - Add missing filter to txlist query
