@@ -520,6 +520,7 @@
         "valuemax",
         "valuemin",
         "valuenow",
+        "varint",
         "verifysourcecode",
         "viewerjs",
         "volumefrom",
