@@ -10,6 +10,8 @@
 
 ### Chore
 
+- [#9260](https://github.com/blockscout/blockscout/pull/9260) - Optimism Delta upgrade support by Indexer.Fetcher.OptimismTxnBatch module
+
 <details>
   <summary>Dependencies version bumps</summary>
 
