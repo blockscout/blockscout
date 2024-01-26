@@ -98,7 +98,7 @@ defmodule Explorer.Chain.Search do
         basic_query
         |> union(^address_query)
 
-      valid_tx_or_op_hash?(string) ->
+      valid_full_hash?(string) ->
         tx_query = search_tx_query(string)
 
         if UserOperation.user_operations_enabled?() do
@@ -172,7 +172,7 @@ defmodule Explorer.Chain.Search do
           |> select_repo(options).all()
 
         tx_result =
-          if valid_tx_or_op_hash?(search_query) do
+          if valid_full_hash?(search_query) do
             search_query
             |> search_tx_query()
             |> select_repo(options).all()
@@ -181,7 +181,7 @@ defmodule Explorer.Chain.Search do
           end
 
         op_result =
-          if valid_tx_or_op_hash?(search_query) && UserOperation.user_operations_enabled?() do
+          if valid_full_hash?(search_query) && UserOperation.user_operations_enabled?() do
             search_query
             |> search_user_operation_query()
             |> select_repo(options).all()
@@ -372,7 +372,7 @@ defmodule Explorer.Chain.Search do
     end
   end
 
-  defp valid_tx_or_op_hash?(string_input) do
+  defp valid_full_hash?(string_input) do
     case Chain.string_to_transaction_hash(string_input) do
       {:ok, _tx_hash} -> true
       _ -> false
