@@ -44,6 +44,13 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
         |> Controller.render(:error, error: "Unknown action")
         |> halt()
 
+      {:error, :no_module} ->
+        conn
+        |> put_status(400)
+        |> put_view(RPCView)
+        |> Controller.render(:error, error: "Unknown module")
+        |> halt()
+
       {:error, error} ->
         APILogger.error(fn ->
           ["Error while calling RPC action", inspect(error, limit: :infinity, printable_limit: :infinity)]
@@ -89,7 +96,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
 
     case Map.fetch(translations, module_lowercase) do
       {:ok, module} -> {:ok, module}
-      _ -> {:error, :no_action}
+      _ -> {:error, :no_module}
     end
   end
 

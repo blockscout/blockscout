@@ -12,7 +12,7 @@
 - [#9131](https://github.com/blockscout/blockscout/pull/9131) - Merge addresses stage with address referencing
 - [#9120](https://github.com/blockscout/blockscout/pull/9120) - Add GET and POST `/api/v2/smart-contracts/:address_hash/audit-reports`
 - [#9072](https://github.com/blockscout/blockscout/pull/9072) - Add tracing by block logic for geth
-- [#9068](https://github.com/blockscout/blockscout/pull/9068) - New RPC API v1 endpoints
+- [#9185](https://github.com/blockscout/blockscout/pull/9185), [#9068](https://github.com/blockscout/blockscout/pull/9068) - New RPC API v1 endpoints
 - [#9056](https://github.com/blockscout/blockscout/pull/9056) - Noves.fi API proxy
 
 ### Fixes
