@@ -136,8 +136,8 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       )
   end
 
-  def default_on_conflict do
-    if BridgedToken.enabled?() do
+  if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+    def default_on_conflict do
       from(
         token in Token,
         update: [
@@ -170,7 +170,9 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
             token.skip_metadata
           )
       )
-    else
+    end
+  else
+    def default_on_conflict do
       from(
         token in Token,
         update: [

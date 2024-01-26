@@ -183,6 +183,15 @@ defmodule Indexer.Supervisor do
       ]
       |> List.flatten()
 
+    all_fetchers = maybe_add_bridged_tokens_fetchers(basic_fetchers)
+
+    Supervisor.init(
+      all_fetchers,
+      strategy: :one_for_one
+    )
+  end
+
+  defp maybe_add_bridged_tokens_fetchers(basic_fetchers) do
     extended_fetchers =
       if BridgedToken.enabled?() && BridgedToken.necessary_envs_passed?() do
         [{CalcLpTokensTotalLiquidity, [[], []]}, {SetOmniBridgedMetadataForTokens, [[], []]}] ++ basic_fetchers
@@ -192,17 +201,11 @@ defmodule Indexer.Supervisor do
 
     amb_bridge_mediators = Application.get_env(:explorer, Explorer.Chain.BridgedToken)[:amb_bridge_mediators]
 
-    all_fetchers =
-      if BridgedToken.enabled?() && amb_bridge_mediators && amb_bridge_mediators !== "" do
-        [{SetAmbBridgedMetadataForTokens, [[], []]} | extended_fetchers]
-      else
-        extended_fetchers
-      end
-
-    Supervisor.init(
-      all_fetchers,
-      strategy: :one_for_one
-    )
+    if BridgedToken.enabled?() && amb_bridge_mediators && amb_bridge_mediators !== "" do
+      [{SetAmbBridgedMetadataForTokens, [[], []]} | extended_fetchers]
+    else
+      extended_fetchers
+    end
   end
 
   defp configure(process, opts) do
