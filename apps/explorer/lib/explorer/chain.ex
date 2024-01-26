@@ -1889,7 +1889,7 @@ defmodule Explorer.Chain do
         on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
         select: %{
           hash: w.hash,
-          l2_timestamp: l2_block.timestamp,
+          l2_block_number: l2_block.number,
           l1_transaction_hash: we.l1_transaction_hash,
           msg_nonce: w.msg_nonce
         }
@@ -1924,16 +1924,16 @@ defmodule Explorer.Chain do
       )
 
     if is_nil(l1_timestamp) do
-      last_root_timestamp =
+      last_root_l2_block_number =
         Repo.replica().one(
           from(root in OptimismOutputRoot,
-            select: root.l1_timestamp,
+            select: root.l2_block_number,
             order_by: [desc: root.l2_output_index],
             limit: 1
           )
         ) || 0
 
-      if w.l2_timestamp > last_root_timestamp do
+      if w.l2_block_number > last_root_l2_block_number do
         {"Waiting for state root", nil}
       else
         {"Ready to prove", nil}
