@@ -247,6 +247,10 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/tokens" do
+      if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+        get("/bridged", V2.TokenController, :bridged_tokens_list)
+      end
+
       get("/", V2.TokenController, :tokens_list)
       get("/:address_hash_param", V2.TokenController, :token)
       get("/:address_hash_param/counters", V2.TokenController, :counters)
@@ -286,6 +290,15 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/deposits/count", V2.PolygonEdgeController, :deposits_count)
         get("/withdrawals", V2.PolygonEdgeController, :withdrawals)
         get("/withdrawals/count", V2.PolygonEdgeController, :withdrawals_count)
+      end
+    end
+
+    scope "/shibarium" do
+      if System.get_env("CHAIN_TYPE") == "shibarium" do
+        get("/deposits", V2.ShibariumController, :deposits)
+        get("/deposits/count", V2.ShibariumController, :deposits_count)
+        get("/withdrawals", V2.ShibariumController, :withdrawals)
+        get("/withdrawals/count", V2.ShibariumController, :withdrawals_count)
       end
     end
 

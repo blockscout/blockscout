@@ -305,4 +305,6 @@ defmodule Explorer.Chain.Block do
       uncle_reward: uncle_reward || %Wei{value: Decimal.new(0)}
     }
   end
+
+  def uncle_reward_coef, do: @uncle_reward_coef
 end

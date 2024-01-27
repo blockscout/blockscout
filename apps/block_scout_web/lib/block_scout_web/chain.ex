@@ -535,6 +535,10 @@ defmodule BlockScoutWeb.Chain do
     }
   end
 
+  defp paging_params({%Token{} = token, _}) do
+    paging_params(token)
+  end
+
   defp paging_params(%TagAddress{id: id}) do
     %{"id" => id}
   end
@@ -650,6 +654,16 @@ defmodule BlockScoutWeb.Chain do
   # clause for Polygon Edge Deposits and Withdrawals
   defp paging_params(%{msg_id: msg_id}) do
     %{"id" => msg_id}
+  end
+
+  # clause for Shibarium Deposits
+  defp paging_params(%{l1_block_number: block_number}) do
+    %{"block_number" => block_number}
+  end
+
+  # clause for Shibarium Withdrawals
+  defp paging_params(%{l2_block_number: block_number}) do
+    %{"block_number" => block_number}
   end
 
   @spec paging_params_with_fiat_value(CurrentTokenBalance.t()) :: %{

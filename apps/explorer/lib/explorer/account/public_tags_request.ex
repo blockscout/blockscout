@@ -19,6 +19,22 @@ defmodule Explorer.Account.PublicTagsRequest do
   @max_tags_per_request 2
   @max_tag_length 35
 
+  @type t :: %__MODULE__{
+          company: String.t(),
+          website: String.t(),
+          tags: String.t(),
+          addresses: [Hash.Address.t()],
+          description: String.t(),
+          additional_comment: String.t(),
+          request_type: String.t(),
+          is_owner: boolean(),
+          remove_reason: String.t(),
+          request_id: String.t(),
+          full_name: String.t(),
+          email: String.t(),
+          identity_id: integer()
+        }
+
   schema("account_public_tags_requests") do
     field(:company, :string)
     field(:website, :string)
