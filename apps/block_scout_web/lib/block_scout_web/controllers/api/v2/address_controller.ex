@@ -498,7 +498,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   end
 
   @doc """
-  Checks if this valid address hash string, and this address is not prohibited address
+    Checks if this valid address hash string, and this address is not prohibited address.
+    Returns the `{:ok, address_hash, address}` if address hash passed all the checks.
   """
   @spec validate_address(String.t(), any(), Keyword.t()) ::
           {:format, :error}

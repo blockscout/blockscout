@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.VisualizeSol2umlController do
            # check that contract is verified. partial and twin verification is ok for this case
            false <- is_nil(address.smart_contract) do
         sources =
-          address.smart_contract_additional_sources
+          address.smart_contract.smart_contract_additional_sources
           |> Enum.map(fn additional_source -> {additional_source.file_name, additional_source.contract_source_code} end)
           |> Enum.into(%{})
           |> Map.merge(%{

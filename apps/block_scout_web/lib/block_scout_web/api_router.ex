@@ -13,11 +13,12 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
-  alias BlockScoutWeb.{AddressTransactionController, APIKeyV2Router, SmartContractsApiV2Router}
+  alias BlockScoutWeb.{AddressTransactionController, APIKeyV2Router, SmartContractsApiV2Router, UtilsApiV2Router}
   alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2, RateLimit}
 
   forward("/v2/smart-contracts", SmartContractsApiV2Router)
   forward("/v2/key", APIKeyV2Router)
+  forward("/v2/utils", UtilsApiV2Router)
 
   pipeline :api do
     plug(BlockScoutWeb.Plug.Logger, application: :api)
@@ -246,6 +247,10 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/tokens" do
+      if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+        get("/bridged", V2.TokenController, :bridged_tokens_list)
+      end
+
       get("/", V2.TokenController, :tokens_list)
       get("/:address_hash_param", V2.TokenController, :token)
       get("/:address_hash_param/counters", V2.TokenController, :counters)
@@ -288,6 +293,15 @@ defmodule BlockScoutWeb.ApiRouter do
       end
     end
 
+    scope "/shibarium" do
+      if System.get_env("CHAIN_TYPE") == "shibarium" do
+        get("/deposits", V2.ShibariumController, :deposits)
+        get("/deposits/count", V2.ShibariumController, :deposits_count)
+        get("/withdrawals", V2.ShibariumController, :withdrawals)
+        get("/withdrawals/count", V2.ShibariumController, :withdrawals_count)
+      end
+    end
+
     scope "/withdrawals" do
       get("/", V2.WithdrawalController, :withdrawals_list)
       get("/counters", V2.WithdrawalController, :withdrawals_counters)
@@ -306,6 +320,20 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
         get("/transactions/:transaction_hash_param/describe", V2.Proxy.NovesFiController, :describe_transaction)
         get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
+      end
+
+      scope "/account-abstraction" do
+        get("/operations/:operation_hash_param", V2.Proxy.AccountAbstractionController, :operation)
+        get("/bundlers/:address_hash_param", V2.Proxy.AccountAbstractionController, :bundler)
+        get("/bundlers", V2.Proxy.AccountAbstractionController, :bundlers)
+        get("/factories/:address_hash_param", V2.Proxy.AccountAbstractionController, :factory)
+        get("/factories", V2.Proxy.AccountAbstractionController, :factories)
+        get("/paymasters/:address_hash_param", V2.Proxy.AccountAbstractionController, :paymaster)
+        get("/paymasters", V2.Proxy.AccountAbstractionController, :paymasters)
+        get("/accounts/:address_hash_param", V2.Proxy.AccountAbstractionController, :account)
+        get("/accounts", V2.Proxy.AccountAbstractionController, :accounts)
+        get("/bundles", V2.Proxy.AccountAbstractionController, :bundles)
+        get("/operations", V2.Proxy.AccountAbstractionController, :operations)
       end
     end
   end

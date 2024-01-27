@@ -19,7 +19,8 @@ defmodule Explorer.ExchangeRates.Source.OneCoinSource do
       tvl_usd: Decimal.new(100_500_000),
       symbol: Explorer.coin(),
       usd_value: Decimal.new(1),
-      volume_24h_usd: Decimal.new(1)
+      volume_24h_usd: Decimal.new(1),
+      image_url: nil
     }
 
     [pseudo_token]

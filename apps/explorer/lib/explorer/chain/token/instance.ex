@@ -20,12 +20,12 @@ defmodule Explorer.Chain.Token.Instance do
 
   @type t :: %Instance{
           token_id: non_neg_integer(),
-          token_contract_address_hash: Hash.Address.t(),
+          token_contract_address_hash: Hash.Address.t() | nil,
           metadata: map() | nil,
-          error: String.t(),
-          owner_address_hash: Hash.Address.t(),
-          owner_updated_at_block: Block.block_number(),
-          owner_updated_at_log_index: non_neg_integer(),
+          error: String.t() | nil,
+          owner_address_hash: Hash.Address.t() | nil,
+          owner_updated_at_block: Block.block_number() | nil,
+          owner_updated_at_log_index: non_neg_integer() | nil,
           current_token_balance: any(),
           is_unique: bool() | nil
         }
@@ -443,11 +443,16 @@ defmodule Explorer.Chain.Token.Instance do
     |> limit(^limit)
   end
 
+  @doc """
+    Puts is_unique field in token instance. Returns updated token instance
+    is_unique is true for ERC-721 always and for ERC-1155 only if token_id is unique
+  """
+  @spec put_is_unique(Instance.t(), Token.t(), Keyword.t()) :: Instance.t()
   def put_is_unique(instance, token, options) do
-    %__MODULE__{instance | is_unique: is_unique?(instance, token, options)}
+    %__MODULE__{instance | is_unique: unique?(instance, token, options)}
   end
 
-  defp is_unique?(
+  defp unique?(
          %Instance{current_token_balance: %CurrentTokenBalance{value: %Decimal{} = value}} = instance,
          token,
          options
@@ -455,15 +460,15 @@ defmodule Explorer.Chain.Token.Instance do
     if Decimal.compare(value, 1) == :gt do
       false
     else
-      is_unique?(%Instance{instance | current_token_balance: nil}, token, options)
+      unique?(%Instance{instance | current_token_balance: nil}, token, options)
     end
   end
 
-  defp is_unique?(%Instance{current_token_balance: %CurrentTokenBalance{value: value}}, _token, _options)
+  defp unique?(%Instance{current_token_balance: %CurrentTokenBalance{value: value}}, _token, _options)
        when value > 1,
        do: false
 
-  defp is_unique?(instance, token, options),
+  defp unique?(instance, token, options),
     do:
       not (token.type == "ERC-1155") or
         Chain.token_id_1155_is_unique?(token.contract_address_hash, instance.token_id, options)

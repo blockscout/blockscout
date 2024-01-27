@@ -60,6 +60,9 @@ defmodule Indexer.Fetcher.FirstTraceOnDemand do
   end
 
   @impl true
+  # Don't fetch first trace for pending transactions
+  def handle_cast({:fetch, %{block_hash: nil}}, state), do: {:noreply, state}
+
   def handle_cast({:fetch, transaction}, state) do
     fetch_first_trace(transaction, state)
 
