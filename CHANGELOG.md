@@ -32,6 +32,7 @@
 
 ### Fixes
 
+- [#9275](https://github.com/blockscout/blockscout/pull/9275) - Tx summary endpoint fixes
 - [#9261](https://github.com/blockscout/blockscout/pull/9261) - Fix pending transactions sanitizer
 - [#9253](https://github.com/blockscout/blockscout/pull/9253) - Don't fetch first trace for pending transactions
 - [#9241](https://github.com/blockscout/blockscout/pull/9241) - Fix log decoding bug
