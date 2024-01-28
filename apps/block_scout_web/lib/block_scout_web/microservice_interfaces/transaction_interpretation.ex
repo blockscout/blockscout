@@ -141,7 +141,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       |> Chain.transaction_to_logs(full_options)
       |> Enum.take(@items_limit)
 
-    decoded_logs = TransactionView.decode_logs(logs, true)
+    decoded_logs = TransactionView.decode_logs(logs, false)
 
     logs
     |> Enum.zip(decoded_logs)
