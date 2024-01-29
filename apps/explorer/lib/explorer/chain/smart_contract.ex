@@ -221,6 +221,39 @@ defmodule Explorer.Chain.SmartContract do
   """
   @type abi :: [event_description | function_description]
 
+  @doc """
+    1. No License (None)
+    2. The Unlicense (Unlicense)
+    3. MIT License (MIT)
+    4. GNU General Public License v2.0 (GNU GPLv2)
+    5. GNU General Public License v3.0 (GNU GPLv3)
+    6. GNU Lesser General Public License v2.1 (GNU LGPLv2.1)
+    7. GNU Lesser General Public License v3.0 (GNU LGPLv3)
+    8. BSD 2-clause "Simplified" license (BSD-2-Clause)
+    9. BSD 3-clause "New" Or "Revised" license* (BSD-3-Clause)
+    10. Mozilla Public License 2.0 (MPL-2.0)
+    11. Open Software License 3.0 (OSL-3.0)
+    12. Apache 2.0 (Apache-2.0)
+    13. GNU Affero General Public License (GNU AGPLv3)
+    14. Business Source License (BSL 1.1)
+  """
+  @license_enum [
+    none: 1,
+    unlicense: 2,
+    mit: 3,
+    gnu_gpl_v2: 4,
+    gnu_gpl_v3: 5,
+    gnu_lgpl_v2_1: 6,
+    gnu_lgpl_v3: 7,
+    bsd_2_clause: 8,
+    bsd_3_clause: 9,
+    mpl_2_0: 10,
+    osl_3_0: 11,
+    apache_2_0: 12,
+    gnu_agpl_v3: 13,
+    bsl_1_1: 14
+  ]
+
   @typedoc """
   * `name` - the human-readable name of the smart contract.
   * `compiler_version` - the version of the Solidity compiler used to compile `contract_source_code` with `optimization`
@@ -271,6 +304,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:is_yul, :boolean, virtual: true)
     field(:metadata_from_verified_twin, :boolean, virtual: true)
     field(:verified_via_eth_bytecode_db, :boolean)
+    field(:license_type, Ecto.Enum, values: @license_enum, default: :none)
 
     has_many(
       :decompiled_smart_contracts,
@@ -322,7 +356,8 @@ defmodule Explorer.Chain.SmartContract do
       :compiler_settings,
       :implementation_address_hash,
       :implementation_fetched_at,
-      :verified_via_eth_bytecode_db
+      :verified_via_eth_bytecode_db,
+      :license_type
     ])
     |> validate_required([
       :name,
@@ -363,7 +398,8 @@ defmodule Explorer.Chain.SmartContract do
         :contract_code_md5,
         :implementation_name,
         :autodetect_constructor_args,
-        :verified_via_eth_bytecode_db
+        :verified_via_eth_bytecode_db,
+        :license_type
       ])
       |> (&if(verification_with_files?,
             do: &1,
@@ -461,6 +497,8 @@ defmodule Explorer.Chain.SmartContract do
     |> Changeset.put_change(:compiler_version, "latest")
     |> Changeset.put_change(:contract_source_code, "")
   end
+
+  def license_types_enum, do: @license_enum
 
   @doc """
   Returns smart-contract changeset with checksummed address hash

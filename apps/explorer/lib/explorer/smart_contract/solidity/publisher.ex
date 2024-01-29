@@ -7,6 +7,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
   import Explorer.SmartContract.Helper, only: [cast_libraries: 1]
 
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{CompilerVersion, Helper}
   alias Explorer.SmartContract.Solidity.Verifier
@@ -48,7 +49,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           "sourceFiles" => _
         } = result_params
       } ->
-        process_rust_verifier_response(result_params, address_hash, false, false)
+        process_rust_verifier_response(result_params, address_hash, params, false, false)
 
       {:ok, %{abi: abi, constructor_arguments: constructor_arguments}} ->
         params_with_constructor_arguments =
@@ -84,7 +85,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
          "sourceFiles" => _,
          "compilerSettings" => _
        } = result_params} ->
-        process_rust_verifier_response(result_params, address_hash, true, true)
+        process_rust_verifier_response(result_params, address_hash, params, true, true)
 
       {:ok, %{abi: abi, constructor_arguments: constructor_arguments}, additional_params} ->
         params_with_constructor_arguments =
@@ -124,7 +125,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
          "sourceFiles" => _,
          "compilerSettings" => _
        } = result_params} ->
-        process_rust_verifier_response(result_params, address_hash, false, true)
+        process_rust_verifier_response(result_params, address_hash, params, false, true)
 
       {:error, error} ->
         {:error, unverified_smart_contract(address_hash, params, error, nil, true)}
@@ -146,6 +147,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           "matchType" => match_type
         } = source,
         address_hash,
+        initial_params,
         is_standard_json?,
         save_file_path?,
         automatically_verified? \\ false
@@ -177,6 +179,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("partially_verified", match_type == "PARTIAL")
       |> Map.put("verified_via_eth_bytecode_db", automatically_verified?)
       |> Map.put("verified_via_sourcify", source["sourcify?"])
+      |> Map.put("license_type", initial_params["license_type"])
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
   end
@@ -271,7 +274,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       autodetect_constructor_args: params["autodetect_constructor_args"],
       is_yul: params["is_yul"] || false,
       compiler_settings: clean_compiler_settings,
-      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false
+      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
+      license_type: prepare_license_type(params["license_type"]) || :none
     }
   end
 
@@ -283,6 +287,12 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       %{name: key, address_hash: value}
     end)
   end
+
+  defp prepare_license_type(atom_or_integer) when is_atom(atom_or_integer) or is_integer(atom_or_integer),
+    do: atom_or_integer
+
+  defp prepare_license_type(binary) when is_binary(binary), do: ExplorerHelper.parse_integer(binary) || binary
+  defp prepare_license_type(_), do: nil
 
   defp add_external_libraries(%{"external_libraries" => _} = params, _external_libraries), do: params
 
