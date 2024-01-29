@@ -270,7 +270,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:tx_interpreter_enabled, false}) do
     conn
-    |> put_status(404)
+    |> put_status(:forbidden)
     |> put_view(ApiView)
     |> render(:message, %{message: @tx_interpreter_service_disabled})
   end

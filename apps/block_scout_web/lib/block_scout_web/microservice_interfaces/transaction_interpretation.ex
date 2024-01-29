@@ -17,7 +17,10 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   @api_true api?: true
   @items_limit 50
 
-  @spec interpret(Transaction.t()) :: {:error, :disabled | binary | Jason.DecodeError.t()} | {:ok, any}
+  @spec interpret(Transaction.t()) ::
+          {{:error, :disabled | binary()}, integer()}
+          | {:error, Jason.DecodeError.t()}
+          | {:ok, any}
   def interpret(transaction) do
     if enabled?() do
       url = interpret_url()
@@ -26,7 +29,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
       http_post_request(url, body)
     else
-      {:error, :disabled}
+      {{:error, :disabled}, 403}
     end
   end
 
@@ -53,9 +56,12 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         end)
 
         Logger.configure(truncate: old_truncate)
-        {:error, @request_error_msg}
+        {{:error, @request_error_msg}, http_response_code(error)}
     end
   end
+
+  defp http_response_code({:ok, %Response{status_code: status_code}}), do: status_code
+  defp http_response_code(_), do: 500
 
   defp config do
     Application.get_env(:block_scout_web, __MODULE__)
@@ -141,7 +147,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       |> Chain.transaction_to_logs(full_options)
       |> Enum.take(@items_limit)
 
-    decoded_logs = TransactionView.decode_logs(logs, true)
+    decoded_logs = TransactionView.decode_logs(logs, false)
 
     logs
     |> Enum.zip(decoded_logs)
