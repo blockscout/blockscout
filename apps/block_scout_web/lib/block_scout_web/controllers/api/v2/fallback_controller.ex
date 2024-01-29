@@ -3,7 +3,9 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   require Logger
 
+  alias BlockScoutWeb.Account.Api.V1.UserView
   alias BlockScoutWeb.API.V2.ApiView
+  alias Ecto.Changeset
 
   @verification_failed "API v2 smart-contract verification failed"
   @invalid_parameters "Invalid parameter(s)"
@@ -27,6 +29,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   @address_is_not_smart_contract "Address is not smart-contract"
   @empty_response "Empty response"
   @tx_interpreter_service_disabled "Transaction Interpretation Service is not enabled"
+  @disabled "API endpoint is disabled"
 
   def call(conn, {:format, _params}) do
     Logger.error(fn ->
@@ -121,6 +124,13 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
     conn
     |> call({:not_found, nil})
+  end
+
+  def call(conn, {:error, %Changeset{} = changeset}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(UserView)
+    |> render(:changeset_errors, changeset: changeset)
   end
 
   def call(conn, {:restricted_access, true}) do
@@ -260,8 +270,15 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:tx_interpreter_enabled, false}) do
     conn
-    |> put_status(404)
+    |> put_status(:forbidden)
     |> put_view(ApiView)
     |> render(:message, %{message: @tx_interpreter_service_disabled})
+  end
+
+  def call(conn, {:disabled, _}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @disabled})
   end
 end

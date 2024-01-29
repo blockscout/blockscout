@@ -95,6 +95,14 @@ config :explorer, Explorer.Repo.Shibarium,
   pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
+# Configures BridgedTokens database
+config :explorer, Explorer.Repo.BridgedTokens,
+  url: System.get_env("DATABASE_URL"),
+  # actually this repo is not started, and its pool size remains unused.
+  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+  pool_size: 1,
+  ssl: ExplorerConfigHelper.ssl_enabled?()
+
 variant = Variant.get()
 
 Code.require_file("#{variant}.exs", "apps/explorer/config/prod")

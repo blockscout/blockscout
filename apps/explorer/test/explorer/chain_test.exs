@@ -3114,39 +3114,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "block_reward/1" do
-    setup do
-      %{block_range: range} = emission_reward = insert(:emission_reward)
-
-      block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
-      insert(:transaction)
-
-      {:ok, block: block, emission_reward: emission_reward}
-    end
-
-    test "with block containing transactions", %{block: block, emission_reward: emission_reward} do
-      :transaction
-      |> insert(gas_price: 1)
-      |> with_block(block, gas_used: 1)
-
-      :transaction
-      |> insert(gas_price: 1)
-      |> with_block(block, gas_used: 2)
-
-      expected =
-        emission_reward.reward
-        |> Wei.to(:wei)
-        |> Decimal.add(Decimal.new(3))
-        |> Wei.from(:wei)
-
-      assert expected == Chain.block_reward(block.number)
-    end
-
-    test "with block without transactions", %{block: block, emission_reward: emission_reward} do
-      assert emission_reward.reward == Chain.block_reward(block.number)
-    end
-  end
-
   describe "gas_payment_by_block_hash/1" do
     setup do
       number = 1

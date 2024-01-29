@@ -13,11 +13,12 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
-  alias BlockScoutWeb.{AddressTransactionController, APIKeyV2Router, SmartContractsApiV2Router}
+  alias BlockScoutWeb.{AddressTransactionController, APIKeyV2Router, SmartContractsApiV2Router, UtilsApiV2Router}
   alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2, RateLimit}
 
   forward("/v2/smart-contracts", SmartContractsApiV2Router)
   forward("/v2/key", APIKeyV2Router)
+  forward("/v2/utils", UtilsApiV2Router)
 
   pipeline :api do
     plug(BlockScoutWeb.Plug.Logger, application: :api)
@@ -250,6 +251,10 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/tokens" do
+      if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+        get("/bridged", V2.TokenController, :bridged_tokens_list)
+      end
+
       get("/", V2.TokenController, :tokens_list)
       get("/:address_hash_param", V2.TokenController, :token)
       get("/:address_hash_param/counters", V2.TokenController, :counters)

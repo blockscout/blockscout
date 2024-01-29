@@ -24,7 +24,7 @@ defmodule Explorer.Chain.Token do
 
   alias Ecto.Changeset
   alias Explorer.{Chain, SortingHelper}
-  alias Explorer.Chain.{Address, Hash, Search, Token}
+  alias Explorer.Chain.{Address, BridgedToken, Hash, Search, Token}
   alias Explorer.SmartContract.Helper
 
   @default_sorting [
@@ -34,6 +34,16 @@ defmodule Explorer.Chain.Token do
     asc: :name,
     asc: :contract_address_hash
   ]
+
+  if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+    @bridged_field quote(
+                     do: [
+                       bridged: boolean()
+                     ]
+                   )
+  else
+    @bridged_field quote(do: [])
+  end
 
   @typedoc """
   * `name` - Name of the token
@@ -51,23 +61,25 @@ defmodule Explorer.Chain.Token do
   * `icon_url` - URL of the token's icon.
   * `is_verified_via_admin_panel` - is token verified via admin panel.
   """
-  @type t :: %Token{
-          name: String.t(),
-          symbol: String.t(),
-          total_supply: Decimal.t() | nil,
-          decimals: non_neg_integer(),
-          type: String.t(),
-          cataloged: boolean(),
-          contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          contract_address_hash: Hash.Address.t(),
-          holder_count: non_neg_integer() | nil,
-          skip_metadata: boolean(),
-          total_supply_updated_at_block: non_neg_integer() | nil,
-          fiat_value: Decimal.t() | nil,
-          circulating_market_cap: Decimal.t() | nil,
-          icon_url: String.t(),
-          is_verified_via_admin_panel: boolean()
-        }
+  @type t ::
+          %Token{
+            unquote_splicing(@bridged_field),
+            name: String.t(),
+            symbol: String.t(),
+            total_supply: Decimal.t() | nil,
+            decimals: non_neg_integer(),
+            type: String.t(),
+            cataloged: boolean(),
+            contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
+            contract_address_hash: Hash.Address.t(),
+            holder_count: non_neg_integer() | nil,
+            skip_metadata: boolean(),
+            total_supply_updated_at_block: non_neg_integer() | nil,
+            fiat_value: Decimal.t() | nil,
+            circulating_market_cap: Decimal.t() | nil,
+            icon_url: String.t(),
+            is_verified_via_admin_panel: boolean()
+          }
 
   @derive {Poison.Encoder,
            except: [
@@ -110,6 +122,10 @@ defmodule Explorer.Chain.Token do
       type: Hash.Address
     )
 
+    if Application.compile_env(:explorer, BridgedToken)[:enabled] do
+      field(:bridged, :boolean)
+    end
+
     timestamps()
   end
 
@@ -118,8 +134,10 @@ defmodule Explorer.Chain.Token do
 
   @doc false
   def changeset(%Token{} = token, params \\ %{}) do
+    additional_attrs = if BridgedToken.enabled?(), do: [:bridged], else: []
+
     token
-    |> cast(params, @required_attrs ++ @optional_attrs)
+    |> cast(params, @required_attrs ++ @optional_attrs ++ additional_attrs)
     |> validate_required(@required_attrs)
     |> trim_name()
     |> sanitize_token_input(:name)
@@ -167,6 +185,14 @@ defmodule Explorer.Chain.Token do
   def tokens_by_contract_address_hashes(contract_address_hashes) do
     from(token in __MODULE__, where: token.contract_address_hash in ^contract_address_hashes)
   end
+
+  def base_token_query(type, sorting) do
+    query = from(t in Token, preload: [:contract_address])
+
+    query |> apply_filter(type) |> SortingHelper.apply_sorting(sorting, @default_sorting)
+  end
+
+  def default_sorting, do: @default_sorting
 
   @doc """
   Lists the top `t:__MODULE__.t/0`'s'.

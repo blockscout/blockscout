@@ -207,21 +207,17 @@ defmodule Explorer.Repo do
       adapter: Ecto.Adapters.Postgres
 
     def init(_, opts) do
-      db_url = Application.get_env(:explorer, __MODULE__)[:url]
-      repo_conf = Application.get_env(:explorer, __MODULE__)
+      ConfigHelper.init_repo_module(__MODULE__, opts)
+    end
+  end
 
-      merged =
-        %{url: db_url}
-        |> ConfigHelper.get_db_config()
-        |> Keyword.merge(repo_conf, fn
-          _key, v1, nil -> v1
-          _key, nil, v2 -> v2
-          _, _, v2 -> v2
-        end)
+  defmodule BridgedTokens do
+    use Ecto.Repo,
+      otp_app: :explorer,
+      adapter: Ecto.Adapters.Postgres
 
-      Application.put_env(:explorer, __MODULE__, merged)
-
-      {:ok, Keyword.put(opts, :url, db_url)}
+    def init(_, opts) do
+      ConfigHelper.init_repo_module(__MODULE__, opts)
     end
   end
 end

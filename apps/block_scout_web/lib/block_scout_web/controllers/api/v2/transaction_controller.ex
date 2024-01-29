@@ -390,14 +390,15 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def summary(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:tx_interpreter_enabled, true} <- {:tx_interpreter_enabled, TransactionInterpretationService.enabled?()},
          {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params) do
-      response =
+      {response, code} =
         case TransactionInterpretationService.interpret(transaction) do
-          {:ok, response} -> response
-          {:error, %Jason.DecodeError{}} -> %{error: "Error while tx interpreter response decoding"}
-          {:error, error} -> %{error: error}
+          {:ok, response} -> {response, 200}
+          {:error, %Jason.DecodeError{}} -> {%{error: "Error while tx interpreter response decoding"}, 500}
+          {{:error, error}, code} -> {%{error: error}, code}
         end
 
       conn
+      |> put_status(code)
       |> json(response)
     end
   end

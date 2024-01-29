@@ -4,7 +4,7 @@ defmodule Explorer.Etherscan do
   """
 
   import Ecto.Query,
-    only: [from: 2, where: 3, or_where: 3, union: 2, subquery: 1, order_by: 3, limit: 2, offset: 2, preload: 3]
+    only: [from: 2, where: 3, union: 2, subquery: 1, order_by: 3, limit: 2, offset: 2, preload: 3]
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
@@ -107,6 +107,7 @@ defmodule Explorer.Etherscan do
         from(
           it in InternalTransaction,
           inner_join: transaction in assoc(it, :transaction),
+          where: not is_nil(transaction.block_hash),
           where: it.transaction_hash == ^transaction_hash,
           limit: 10_000,
           select:
@@ -232,6 +233,7 @@ defmodule Explorer.Etherscan do
           from(
             it in InternalTransaction,
             inner_join: transaction in assoc(it, :transaction),
+            where: not is_nil(transaction.block_hash),
             order_by: [{^options.order_by_direction, transaction.block_number}],
             limit: ^options.page_size,
             offset: ^offset(options),
@@ -474,6 +476,7 @@ defmodule Explorer.Etherscan do
         from(
           t in Transaction,
           where: not is_nil(t.block_hash),
+          where: t.block_consensus == true,
           order_by: [{^options.order_by_direction, t.block_number}],
           limit: ^options.page_size,
           offset: ^offset(options),
@@ -486,6 +489,7 @@ defmodule Explorer.Etherscan do
         from(
           t in Transaction,
           inner_join: b in assoc(t, :block),
+          where: b.consensus == true,
           order_by: [{^options.order_by_direction, t.block_number}],
           limit: ^options.page_size,
           offset: ^offset(options),
@@ -515,10 +519,12 @@ defmodule Explorer.Etherscan do
   end
 
   defp where_address_match(query, address_hash, _) do
-    query
-    |> where([t], t.to_address_hash == ^address_hash)
-    |> or_where([t], t.from_address_hash == ^address_hash)
-    |> or_where([t], t.created_contract_address_hash == ^address_hash)
+    where(
+      query,
+      [t],
+      t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash or
+        t.created_contract_address_hash == ^address_hash
+    )
   end
 
   @token_transfer_fields ~w(
@@ -564,7 +570,9 @@ defmodule Explorer.Etherscan do
         from(
           tt in subquery(tt_specific_token_query),
           inner_join: t in Transaction,
-          on: tt.transaction_hash == t.hash and tt.block_number == t.block_number and tt.block_hash == t.block_hash,
+          on:
+            tt.transaction_hash == t.hash and tt.block_number == t.block_number and tt.block_hash == t.block_hash and
+              t.block_consensus == true,
           order_by: [{^options.order_by_direction, tt.block_number}, {^options.order_by_direction, tt.token_log_index}],
           select: %{
             token_contract_address_hash: tt.token_contract_address_hash,
@@ -598,6 +606,7 @@ defmodule Explorer.Etherscan do
           inner_join: t in Transaction,
           on: tt.transaction_hash == t.hash and tt.block_number == t.block_number and tt.block_hash == t.block_hash,
           inner_join: b in assoc(t, :block),
+          where: b.consensus == true,
           order_by: [{^options.order_by_direction, tt.block_number}, {^options.order_by_direction, tt.token_log_index}],
           select: %{
             token_contract_address_hash: tt.token_contract_address_hash,

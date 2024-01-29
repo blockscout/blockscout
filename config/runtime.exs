@@ -415,9 +415,19 @@ config :explorer, Explorer.MicroserviceInterfaces.AccountAbstraction,
   service_url: System.get_env("MICROSERVICE_ACCOUNT_ABSTRACTION_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_ACCOUNT_ABSTRACTION_ENABLED")
 
-config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
+config :explorer, :air_table_public_tags,
   table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
   api_key: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
+
+audit_reports_table_url = System.get_env("CONTRACT_AUDIT_REPORTS_AIRTABLE_URL")
+
+audit_reports_api_key =
+  System.get_env("CONTRACT_AUDIT_REPORTS_AIRTABLE_API_KEY") || System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
+
+config :explorer, :air_table_audit_reports,
+  table_url: audit_reports_table_url,
+  api_key: audit_reports_api_key,
+  enabled: (audit_reports_table_url && audit_reports_api_key && true) || false
 
 config :explorer, Explorer.Mailer,
   adapter: Bamboo.SendGridAdapter,
@@ -474,6 +484,13 @@ config :explorer, Explorer.Chain.Cache.AddressesTabsCounters,
 config :explorer, Explorer.Migrator.TransactionsDenormalization,
   batch_size: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_BATCH_SIZE", 500),
   concurrency: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_CONCURRENCY", 10)
+
+config :explorer, Explorer.Chain.BridgedToken,
+  eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
+  bsc_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_BSC_OMNI_BRIDGE_MEDIATOR"),
+  poa_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_POA_OMNI_BRIDGE_MEDIATOR"),
+  amb_bridge_mediators: System.get_env("BRIDGED_TOKENS_AMB_BRIDGE_MEDIATORS"),
+  foreign_json_rpc: System.get_env("BRIDGED_TOKENS_FOREIGN_JSON_RPC", "")
 
 ###############
 ### Indexer ###

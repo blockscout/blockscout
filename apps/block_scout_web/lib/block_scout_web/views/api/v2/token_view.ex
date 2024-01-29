@@ -4,10 +4,10 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.NFTHelper
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, BridgedToken}
   alias Explorer.Chain.Token.Instance
 
-  def render("token.json", %{token: nil, contract_address_hash: contract_address_hash}) do
+  def render("token.json", %{token: nil = token, contract_address_hash: contract_address_hash}) do
     %{
       "address" => Address.checksum(contract_address_hash),
       "symbol" => nil,
@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "icon_url" => nil,
       "circulating_market_cap" => nil
     }
+    |> maybe_append_bridged_info(token)
   end
 
   def render("token.json", %{token: nil}) do
@@ -39,6 +40,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "icon_url" => token.icon_url,
       "circulating_market_cap" => token.circulating_market_cap
     }
+    |> maybe_append_bridged_info(token)
   end
 
   def render("token_balances.json", %{
@@ -69,6 +71,20 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "items" => Enum.map(token_instances, &render("token_instance.json", %{token_instance: &1, token: token})),
       "next_page_params" => next_page_params
     }
+  end
+
+  def render("bridged_tokens.json", %{tokens: tokens, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(tokens, &render("bridged_token.json", %{token: &1})), "next_page_params" => next_page_params}
+  end
+
+  def render("bridged_token.json", %{token: {token, bridged_token}}) do
+    "token.json"
+    |> render(%{token: token})
+    |> Map.merge(%{
+      foreign_address: Address.checksum(bridged_token.foreign_token_contract_address_hash),
+      bridge_type: bridged_token.type,
+      origin_chain_id: bridged_token.foreign_chain_id
+    })
   end
 
   def exchange_rate(%{fiat_value: fiat_value}) when not is_nil(fiat_value), do: to_string(fiat_value)
@@ -114,4 +130,12 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   defp prepare_holders_count(nil), do: nil
   defp prepare_holders_count(count) when count < 0, do: prepare_holders_count(0)
   defp prepare_holders_count(count), do: to_string(count)
+
+  defp maybe_append_bridged_info(map, token) do
+    if BridgedToken.enabled?() do
+      (token && Map.put(map, "is_bridged", token.bridged || false)) || map
+    else
+      map
+    end
+  end
 end
