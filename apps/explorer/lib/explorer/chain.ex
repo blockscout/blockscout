@@ -1889,7 +1889,7 @@ defmodule Explorer.Chain do
         on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
         select: %{
           hash: w.hash,
-          l2_block_number: l2_block.number,
+          l2_block_number: w.l2_block_number,
           l1_transaction_hash: we.l1_transaction_hash,
           msg_nonce: w.msg_nonce
         }
