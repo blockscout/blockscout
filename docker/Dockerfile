@@ -3,6 +3,7 @@ FROM hexpm/elixir:1.16.0-erlang-26.2.1-alpine-3.18.4 AS builder
 WORKDIR /app
 
 ENV MIX_ENV="prod"
+ENV ERL_FLAGS="+JPperf fp"
 
 RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file gcompat
 
