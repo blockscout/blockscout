@@ -5,6 +5,7 @@ defmodule Explorer.SmartContract.Helper do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.Helper
   alias Phoenix.HTML
 
   def queriable_method?(method) do
@@ -193,4 +194,14 @@ defmodule Explorer.SmartContract.Helper do
       "creationCode" => to_string(init)
     }
   end
+
+  @doc """
+    Prepare license type for verification.
+  """
+  @spec prepare_license_type(any()) :: atom() | integer() | binary() | nil
+  def prepare_license_type(atom_or_integer) when is_atom(atom_or_integer) or is_integer(atom_or_integer),
+    do: atom_or_integer
+
+  def prepare_license_type(binary) when is_binary(binary), do: Helper.parse_integer(binary) || binary
+  def prepare_license_type(_), do: nil
 end

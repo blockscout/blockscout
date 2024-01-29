@@ -5,9 +5,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
   require Logger
 
-  import Explorer.SmartContract.Helper, only: [cast_libraries: 1]
+  import Explorer.SmartContract.Helper, only: [cast_libraries: 1, prepare_license_type: 1]
 
-  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{CompilerVersion, Helper}
   alias Explorer.SmartContract.Solidity.Verifier
@@ -287,12 +286,6 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       %{name: key, address_hash: value}
     end)
   end
-
-  defp prepare_license_type(atom_or_integer) when is_atom(atom_or_integer) or is_integer(atom_or_integer),
-    do: atom_or_integer
-
-  defp prepare_license_type(binary) when is_binary(binary), do: ExplorerHelper.parse_integer(binary) || binary
-  defp prepare_license_type(_), do: nil
 
   defp add_external_libraries(%{"external_libraries" => _} = params, _external_libraries), do: params
 
