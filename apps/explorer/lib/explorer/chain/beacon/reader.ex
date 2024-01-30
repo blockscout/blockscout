@@ -11,7 +11,8 @@ defmodule Explorer.Chain.Beacon.Reader do
       where: 2,
       where: 3,
       join: 5,
-      select: 3
+      select: 3,
+      select_merge: 3
     ]
 
   import Explorer.Chain, only: [select_repo: 1]
@@ -26,7 +27,7 @@ defmodule Explorer.Chain.Beacon.Reader do
   Returns `{:ok, %Explorer.Chain.Beacon.Blob{}}` if found
 
       iex> %Explorer.Chain.Beacon.Blob{hash: hash} = insert(:blob)
-      iex> {:ok, %Explorer.Chain.Beacon.Blob{hash: found_hash}} = Explorer.Chain.Beacon.Reader.blob(hash)
+      iex> {:ok, %Explorer.Chain.Beacon.Blob{hash: found_hash}} = Explorer.Chain.Beacon.Reader.blob(hash, true)
       iex> found_hash == hash
       true
 
@@ -35,14 +36,23 @@ defmodule Explorer.Chain.Beacon.Reader do
       iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
       ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
       ...> )
-      iex> Explorer.Chain.Beacon.Reader.blob(hash)
+      iex> Explorer.Chain.Beacon.Reader.blob(hash, true)
       {:error, :not_found}
 
   """
-  @spec blob(Hash.Full.t(), [Chain.api?()]) :: {:error, :not_found} | {:ok, Blob.t()}
-  def blob(hash, options \\ []) when is_list(options) do
-    Blob
-    |> where(hash: ^hash)
+  @spec blob(Hash.Full.t(), boolean(), [Chain.api?()]) :: {:error, :not_found} | {:ok, Blob.t()}
+  def blob(hash, with_data, options \\ []) when is_list(options) do
+    query =
+      if with_data do
+        Blob
+        |> where(hash: ^hash)
+      else
+        Blob
+        |> where(hash: ^hash)
+        |> select_merge([_], %{blob_data: nil})
+      end
+
+    query
     |> select_repo(options).one()
     |> case do
       nil -> {:error, :not_found}

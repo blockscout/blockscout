@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.API.V2.BlobController do
     with {:format, {:ok, blob_hash}} <- {:format, Chain.string_to_transaction_hash(blob_hash_string)} do
       transaction_hashes = Reader.blob_hash_to_transactions(blob_hash, api?: true)
 
-      case Reader.blob(blob_hash, api?: true) do
+      case Reader.blob(blob_hash, true, api?: true) do
         {:ok, blob} ->
           conn
           |> put_status(200)
