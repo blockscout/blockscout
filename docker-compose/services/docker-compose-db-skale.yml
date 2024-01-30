@@ -12,6 +12,6 @@ services:
         POSTGRES_USER: 'postgres'
         POSTGRES_HOST_AUTH_METHOD: 'trust'
     ports:
-      - ${DB_PORT}:5432
+      - ${DB_PORT:-5432}:5432
     volumes:
       - ${SCHAIN_DATA_DIR:-./blockscout-data}:/var/lib/postgresql/data/

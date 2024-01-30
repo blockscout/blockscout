@@ -60,7 +60,7 @@ services:
       CHAIN_ID: ${CHAIN_ID}
       RE_CAPTCHA_DISABLED: "true"
     ports:
-      - ${PORT}:4000
+      - ${PORT:-4000}:4000
     volumes:
       - ${SCHAIN_DATA_DIR:-./blockscout-data}/logs:/app/logs/
       - ${CONFIG_PATH:-./}:/opt/app/config.json

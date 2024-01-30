@@ -9,5 +9,5 @@ services:
     env_file:
       -  ../envs/common-smart-contract-verifier.env
     ports:
-      - ${SC_VERIFIER_PORT}:8050
+      - ${SC_VERIFIER_PORT:-8050}:8050
 
