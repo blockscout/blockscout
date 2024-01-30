@@ -134,7 +134,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "ethereum" ->
         if single_block? do
           blob_gas_price = Block.transaction_blob_gas_price(block.transactions)
-          burnt_blob_transaction_fees = block |> Map.get(:blob_gas_used, 0) |> Decimal.mult(blob_gas_price || 0)
+          burnt_blob_transaction_fees = Decimal.mult(block.blob_gas_used || 0, blob_gas_price || 0)
 
           result
           |> Map.put("blob_gas_used", block.blob_gas_used)
