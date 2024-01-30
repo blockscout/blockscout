@@ -34,14 +34,14 @@ jobs:
         export VERSION=$(cat VERSION)
         echo "Branch: $BRANCH"
         echo "Base version: $VERSION"
-        export VERSION=$(bash ./helper-scripts/calculate_version.sh)
+        export VERSION=$(bash ./scripts/calculate_version.sh)
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "Version $VERSION"
         export RELEASE=true
         ( test $BRANCH = "stable" && export PRERELEASE=false ) || export PRERELEASE=true
         echo "PRERELEASE=$PRERELEASE" >> $GITHUB_ENV
         echo "RELEASE=$RELEASE" >> $GITHUB_ENV
-        bash ./helper-scripts/build_and_publish.sh
+        bash ./scripts/build_and_publish.sh
     - name: Checkout code
       uses: actions/checkout@master
     - name: Create Release
