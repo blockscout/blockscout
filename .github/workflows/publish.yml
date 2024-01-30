@@ -3,6 +3,7 @@ on:
   pull_request:
     types: [closed]
     branches:
+      - master
       - stable
       - beta
       - develop
