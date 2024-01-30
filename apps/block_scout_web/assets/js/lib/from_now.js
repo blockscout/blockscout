@@ -23,11 +23,12 @@ function updateAge (el, timestamp) {
   // show the exact time only for transaction details page. Otherwise, short entry
   const elInTile = el.hasAttribute('in-tile')
   if ((window.location.pathname.includes('/tx/') || window.location.pathname.includes('/block/') || window.location.pathname.includes('/blocks/')) && !elInTile) {
-    const offset = moment().utcOffset() / 60;
-    const sign = offset >= 0 ? '+' : '-'
-    const absOffset = Math.abs(offset)
-    const formatDate = `MMMM-DD-YYYY hh:mm:ss A ${sign}${absOffset} UTC`
-    fromNow = `${fromNow} | ${timestamp.format(formatDate)}`
+    const offset = moment().utcOffset() / 60
+    const sign = offset && Math.sign(offset) ? '+' : '-'
+    const formatDate = `MMMM-DD-YYYY hh:mm:ss A ${sign}${offset} UTC`
+    fromNow = `Finalized ${fromNow} | ${timestamp.format(formatDate)}`
+  } else {
+    fromNow = `Finalized ${fromNow}`;
   }
   if (fromNow !== el.innerHTML) el.innerHTML = fromNow
 }

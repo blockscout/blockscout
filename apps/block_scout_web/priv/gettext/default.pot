@@ -3394,8 +3394,7 @@ msgid "View the beacon chain withdrawals on %{subnetwork}"
 msgstr ""
 
 #: lib/block_scout_web/templates/block/_metatags.html.eex:10
-#, elixir-autogen, elixir-format
-msgid "View the transactions, token transfers, and uncles for block number %{block_number}"
+msgid "View the transactions and token transfers for block number %{block_number}"
 msgstr ""
 
 #: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:8
