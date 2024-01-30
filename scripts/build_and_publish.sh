@@ -4,12 +4,11 @@ set -e
 
 : "${VERSION?Need to set VERSION}"
 : "${BRANCH?Need to set BRANCH}"
-: "${CONTAINER_NAME?Need to set CONTAINER_NAME}"
 
 : "${DOCKER_USERNAME?Need to set DOCKER_USERNAME}"
 : "${DOCKER_PASSWORD?Need to set DOCKER_PASSWORD}"
 
-REPO_NAME=skalenetwork/$CONTAINER_NAME
+REPO_NAME=skalenetwork/blockscout
 IMAGE_NAME=$REPO_NAME:$VERSION
 LATEST_IMAGE_NAME=$REPO_NAME:$BRANCH-latest
 

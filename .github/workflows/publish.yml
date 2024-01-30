@@ -41,7 +41,6 @@ jobs:
         ( test $BRANCH = "stable" && export PRERELEASE=false ) || export PRERELEASE=true
         echo "PRERELEASE=$PRERELEASE" >> $GITHUB_ENV
         echo "RELEASE=$RELEASE" >> $GITHUB_ENV
-        export CONTAINER_NAME="blockscout"
         bash ./helper-scripts/build_and_publish.sh
     - name: Checkout code
       uses: actions/checkout@master
