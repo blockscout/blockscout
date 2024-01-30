@@ -2084,6 +2084,88 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                "result" => %{"names" => ["bool"], "output" => [%{"type" => "bool", "value" => true}]}
              } == response
     end
+
+    test "query read method 1", %{conn: conn} do
+      abi = [
+        %{
+          "inputs" => [
+            %{
+              "internalType" => "uint256",
+              "name" => "amountIn",
+              "type" => "uint256"
+            },
+            %{
+              "internalType" => "address[]",
+              "name" => "path",
+              "type" => "address[]"
+            }
+          ],
+          "name" => "getAmountsOut",
+          "outputs" => [
+            %{
+              "internalType" => "uint256[]",
+              "name" => "amounts",
+              "type" => "uint256[]"
+            }
+          ],
+          "stateMutability" => "view",
+          "type" => "function"
+        }
+      ]
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [
+             %{
+               id: id,
+               method: "eth_call",
+               params: [
+                 %{
+                   data:
+                     "0xd06ca61f00000000000000000000000000000000000000000000003635c9adc5dea0000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000002000000000000000000000000909fd75ce23a7e61787fe2763652935f921164610000000000000000000000009801eeb848987c0a8d6443912827bd36c288f8fb"
+                 },
+                 _
+               ]
+             }
+           ],
+           _opts ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result:
+                 "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000003635c9adc5dea000000000000000000000000000000000000000000000000000000037240fc3496a65"
+             }
+           ]}
+        end
+      )
+
+      target_contract = insert(:smart_contract, abi: abi)
+
+      request =
+        post(conn, "/api/v2/smart-contracts/#{target_contract.address_hash}/query-read-method", %{
+          "contract_type" => "regular",
+          "args" => [
+            "1000000000000000000000",
+            ["0x909Fd75Ce23a7e61787FE2763652935F92116461", "0x9801eeb848987c0a8d6443912827bd36c288f8fb"]
+          ],
+          "method_id" => "d06ca61f"
+        })
+
+      assert response = json_response(request, 200)
+
+      assert %{
+               "is_error" => false,
+               "result" => %{
+                 "names" => ["amounts"],
+                 "output" => [
+                   %{"type" => "uint256[]", "value" => [1_000_000_000_000_000_000_000, 15_520_773_838_563_941]}
+                 ]
+               }
+             } == response
+    end
   end
 
   describe "/smart-contracts/{address_hash}/methods-read-proxy" do
