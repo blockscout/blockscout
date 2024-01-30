@@ -1,10 +1,5 @@
 name: Build and publish
 on:
-  push:
-    branches-ignore:
-      - stable
-      - beta
-      - develop
   pull_request:
     types: [closed]
     branches:
@@ -16,7 +11,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # if: github.event.pull_request.merged
+    if: github.event.pull_request.merged
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
