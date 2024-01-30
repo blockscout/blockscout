@@ -5,16 +5,16 @@ defmodule Explorer.Account.Notifier.ForbiddenAddress do
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
+  alias Explorer.Chain.Address
+
   @blacklist [
     burn_address_hash_string(),
     "0x000000000000000000000000000000000000dEaD"
   ]
 
-  alias Explorer.{AccessHelper, Repo}
-  alias Explorer.Chain.Token
+  alias Explorer.AccessHelper
 
-  import Ecto.Query, only: [from: 2]
-  import Explorer.Chain, only: [string_to_address_hash: 1]
+  import Explorer.Chain, only: [string_to_address_hash: 1, hash_to_address: 1]
 
   def check(address_string) when is_bitstring(address_string) do
     case format_address(address_string) do
@@ -31,8 +31,8 @@ defmodule Explorer.Account.Notifier.ForbiddenAddress do
       address_hash in blacklist() ->
         {:error, "This address is blacklisted"}
 
-      is_contract(address_hash) ->
-        {:error, "This address isn't personal"}
+      contract?(address_hash) ->
+        {:error, "This address isn't EOA"}
 
       match?({:restricted_access, true}, AccessHelper.restricted_access?(to_string(address_hash), %{})) ->
         {:error, "This address has restricted access"}
@@ -42,15 +42,11 @@ defmodule Explorer.Account.Notifier.ForbiddenAddress do
     end
   end
 
-  defp is_contract(%Explorer.Chain.Hash{} = address_hash) do
-    query =
-      from(
-        token in Token,
-        where: token.contract_address_hash == ^address_hash
-      )
-
-    contract_addresses = Repo.all(query)
-    List.first(contract_addresses)
+  defp contract?(%Explorer.Chain.Hash{} = address_hash) do
+    case hash_to_address(address_hash) do
+      {:error, :not_found} -> false
+      {:ok, address} -> Address.smart_contract?(address)
+    end
   end
 
   defp format_address(address_hash_string) do

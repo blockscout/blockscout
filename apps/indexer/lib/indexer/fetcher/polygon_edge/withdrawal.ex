@@ -12,13 +12,15 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Explorer.Helper, only: [decode_data: 2]
-  import Indexer.Fetcher.PolygonEdge, only: [fill_block_range: 5, get_block_number_by_tag: 3]
+  import Indexer.Fetcher.PolygonEdge, only: [fill_block_range: 5]
+  import Indexer.Helper, only: [log_topic_to_string: 1]
 
   alias ABI.TypeDecoder
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Log
   alias Explorer.Chain.PolygonEdge.Withdrawal
   alias Indexer.Fetcher.PolygonEdge
+  alias Indexer.Helper
 
   @fetcher_name :polygon_edge_withdrawal
 
@@ -106,7 +108,7 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
 
     if not safe_block_is_latest do
       # find and fill all events between "safe" and "latest" block (excluding "safe")
-      {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+      {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
 
       fill_block_range(
         safe_block + 1,
@@ -133,6 +135,11 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
 
   @spec event_to_withdrawal(binary(), map(), binary(), binary()) :: map()
   def event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number) do
+    msg_id =
+      second_topic
+      |> log_topic_to_string()
+      |> quantity_to_integer()
+
     [data_bytes] = decode_data(data, [:bytes])
 
     sig = binary_part(data_bytes, 0, 32)
@@ -148,7 +155,7 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
       end
 
     %{
-      msg_id: quantity_to_integer(second_topic),
+      msg_id: msg_id,
       from: from,
       to: to,
       l2_transaction_hash: l2_transaction_hash,
@@ -170,7 +177,7 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
           from(log in Log,
             select: {log.second_topic, log.data, log.transaction_hash, log.block_number},
             where:
-              log.first_topic == @l2_state_synced_event and log.address_hash == ^state_sender and
+              log.first_topic == ^@l2_state_synced_event and log.address_hash == ^state_sender and
                 log.block_number >= ^block_start and log.block_number <= ^block_end
           )
 
@@ -200,11 +207,18 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
         end)
       end
 
-    {:ok, _} =
-      Chain.import(%{
-        polygon_edge_withdrawals: %{params: withdrawals},
-        timeout: :infinity
-      })
+    # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
+    import_options =
+      if System.get_env("CHAIN_TYPE") == "polygon_edge" do
+        %{
+          polygon_edge_withdrawals: %{params: withdrawals},
+          timeout: :infinity
+        }
+      else
+        %{}
+      end
+
+    {:ok, _} = Chain.import(import_options)
 
     Enum.count(withdrawals)
   end

@@ -1,0 +1,57 @@
+version: '3.9'
+
+services:
+  redis_db:
+    extends:
+      file: ./services/redis.yml
+      service: redis_db
+
+  db-init:
+    extends:
+      file: ./services/db.yml
+      service: db-init
+
+  db:
+    extends:
+      file: ./services/db.yml
+      service: db
+
+  visualizer:
+    extends:
+      file: ./services/visualizer.yml
+      service: visualizer
+
+  sig-provider:
+    extends:
+      file: ./services/sig-provider.yml
+      service: sig-provider
+
+  frontend:
+    extends:
+      file: ./services/frontend.yml
+      service: frontend
+
+  stats-db-init:
+    extends:
+      file: ./services/stats.yml
+      service: stats-db-init
+
+  stats-db:
+    extends:
+      file: ./services/stats.yml
+      service: stats-db
+
+  stats:
+    depends_on:
+      - stats-db
+    extends:
+      file: ./services/stats.yml
+      service: stats
+
+  proxy:
+    depends_on:
+      - frontend
+      - stats
+    extends:
+      file: ./services/nginx.yml
+      service: proxy

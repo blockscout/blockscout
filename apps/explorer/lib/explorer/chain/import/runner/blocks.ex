@@ -9,6 +9,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   alias Ecto.{Changeset, Multi, Repo}
 
+  alias EthereumJSONRPC.Utility.RangesHelper
+
   alias Explorer.Chain.{
     Address,
     Block,
@@ -60,11 +62,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     hashes = Enum.map(changes_list, & &1.hash)
 
-    minimal_block_height = trace_minimal_block_height()
-
     items_for_pending_ops =
       changes_list
-      |> filter_by_min_height(&(&1.number >= minimal_block_height))
+      |> filter_by_height_range(&RangesHelper.traceable_block_number?(&1.number))
       |> Enum.filter(& &1.consensus)
       |> Enum.map(&{&1.number, &1.hash})
 
@@ -74,7 +74,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     run_func = fn repo ->
       {:ok, nonconsensus_items} = lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
 
-      {:ok, filter_by_min_height(nonconsensus_items, fn {number, _hash} -> number >= minimal_block_height end)}
+      {:ok,
+       filter_by_height_range(nonconsensus_items, fn {number, _hash} -> RangesHelper.traceable_block_number?(number) end)}
     end
 
     multi
@@ -394,6 +395,18 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         timeout: timeout
       )
 
+    repo.update_all(
+      from(
+        transaction in Transaction,
+        join: s in subquery(acquire_query),
+        on: transaction.block_hash == s.hash,
+        # we don't want to remove consensus from blocks that will be upserted
+        where: transaction.block_hash not in ^hashes
+      ),
+      [set: [block_consensus: false, updated_at: updated_at]],
+      timeout: timeout
+    )
+
     removed_consensus_block_hashes
     |> Enum.map(fn {number, _hash} -> number end)
     |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
@@ -414,37 +427,29 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     lose_consensus(ExplorerRepo, [], block_numbers, [], opts)
   end
 
-  defp trace_minimal_block_height do
-    EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
-  end
-
   defp new_pending_operations(repo, nonconsensus_items, items, %{
          timeout: timeout,
          timestamps: timestamps
        }) do
-    if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
-      {:ok, []}
-    else
-      sorted_pending_ops =
-        items
-        |> MapSet.new()
-        |> MapSet.difference(MapSet.new(nonconsensus_items))
-        |> Enum.sort()
-        |> Enum.map(fn {number, hash} ->
-          %{block_hash: hash, block_number: number}
-        end)
+    sorted_pending_ops =
+      items
+      |> MapSet.new()
+      |> MapSet.difference(MapSet.new(nonconsensus_items))
+      |> Enum.sort()
+      |> Enum.map(fn {number, hash} ->
+        %{block_hash: hash, block_number: number}
+      end)
 
-      Import.insert_changes_list(
-        repo,
-        sorted_pending_ops,
-        conflict_target: :block_hash,
-        on_conflict: :nothing,
-        for: PendingBlockOperation,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
-    end
+    Import.insert_changes_list(
+      repo,
+      sorted_pending_ops,
+      conflict_target: :block_hash,
+      on_conflict: :nothing,
+      for: PendingBlockOperation,
+      returning: true,
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 
   defp delete_address_token_balances(_, [], _), do: {:ok, []}
@@ -893,10 +898,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     where(invalid_neighbors_query, [block], block.consensus)
   end
 
-  defp filter_by_min_height(blocks, filter_func) do
-    minimal_block_height = trace_minimal_block_height()
-
-    if minimal_block_height > 0 do
+  defp filter_by_height_range(blocks, filter_func) do
+    if RangesHelper.trace_ranges_present?() do
       Enum.filter(blocks, &filter_func.(&1))
     else
       blocks

@@ -28,7 +28,27 @@ defmodule Explorer.Repo.ConfigHelper do
 
   def get_account_db_url, do: System.get_env("ACCOUNT_DATABASE_URL") || System.get_env("DATABASE_URL")
 
+  def get_suave_db_url, do: System.get_env("SUAVE_DATABASE_URL") || System.get_env("DATABASE_URL")
+
   def get_api_db_url, do: System.get_env("DATABASE_READ_ONLY_API_URL") || System.get_env("DATABASE_URL")
+
+  def init_repo_module(module, opts) do
+    db_url = Application.get_env(:explorer, module)[:url]
+    repo_conf = Application.get_env(:explorer, module)
+
+    merged =
+      %{url: db_url}
+      |> get_db_config()
+      |> Keyword.merge(repo_conf, fn
+        _key, v1, nil -> v1
+        _key, nil, v2 -> v2
+        _, _, v2 -> v2
+      end)
+
+    Application.put_env(:explorer, module, merged)
+
+    {:ok, Keyword.put(opts, :url, db_url)}
+  end
 
   def ssl_enabled?, do: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true")
 

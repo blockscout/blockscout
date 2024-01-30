@@ -6,27 +6,24 @@ defmodule Explorer.Market.History.Source.Price.CoinGecko do
   alias Explorer.ExchangeRates.Source
   alias Explorer.ExchangeRates.Source.CoinGecko, as: ExchangeRatesSourceCoinGecko
   alias Explorer.Market.History.Source.Price, as: SourcePrice
+  alias Explorer.Market.History.Source.Price.CryptoCompare
 
   @behaviour SourcePrice
 
   @impl SourcePrice
-  def fetch_price_history(_previous_days \\ nil) do
-    url = ExchangeRatesSourceCoinGecko.source_url()
+  def fetch_price_history(previous_days) do
+    url = ExchangeRatesSourceCoinGecko.history_url(previous_days)
 
-    if url do
-      case Source.http_request(url, ExchangeRatesSourceCoinGecko.headers()) do
-        {:ok, data} ->
-          result =
-            data
-            |> format_data()
+    case Source.http_request(url, ExchangeRatesSourceCoinGecko.headers()) do
+      {:ok, data} ->
+        result =
+          data
+          |> format_data()
 
-          {:ok, result}
+        {:ok, result}
 
-        _ ->
-          :error
-      end
-    else
-      :error
+      _ ->
+        :error
     end
   end
 
@@ -34,26 +31,16 @@ defmodule Explorer.Market.History.Source.Price.CoinGecko do
   defp format_data(nil), do: nil
 
   defp format_data(data) do
-    market_data = data["market_data"]
-    current_price = market_data["current_price"]
-    current_price_usd = Decimal.new(to_string(current_price["usd"]))
-    price_change_percentage_24h_in_currency = market_data["price_change_percentage_24h_in_currency"]
+    prices = data["prices"]
 
-    delta_perc = Decimal.new(to_string(price_change_percentage_24h_in_currency["usd"]))
+    for [date, price] <- prices do
+      date = Decimal.to_integer(Decimal.round(Decimal.from_float(date / 1000)))
 
-    delta =
-      current_price_usd
-      |> Decimal.mult(delta_perc)
-      |> Decimal.div(100)
-
-    opening_price = Decimal.add(current_price_usd, delta)
-
-    [
       %{
-        closing_price: current_price_usd,
-        date: ExchangeRatesSourceCoinGecko.date(data["last_updated"]),
-        opening_price: opening_price
+        closing_price: Decimal.new(to_string(price)),
+        date: CryptoCompare.date(date),
+        opening_price: Decimal.new(to_string(price))
       }
-    ]
+    end
   end
 end

@@ -1,6 +1,6 @@
 defmodule Explorer.Counters.BlockPriorityFeeCounter do
   @moduledoc """
-  Caches Block Burned Fee counter.
+  Caches Block Priority Fee counter.
   """
   use GenServer
 

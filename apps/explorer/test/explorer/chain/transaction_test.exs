@@ -4,9 +4,14 @@ defmodule Explorer.Chain.TransactionTest do
   import Mox
 
   alias Ecto.Changeset
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Address, InternalTransaction, Transaction}
+  alias Explorer.PagingOptions
 
   doctest Transaction
+
+  setup :set_mox_global
+
+  setup :verify_on_exit!
 
   describe "changeset/2" do
     test "with valid attributes" do
@@ -265,7 +270,7 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert()
         |> Repo.preload(to_address: :smart_contract)
 
-      get_eip1967_implementation()
+      request_zero_implementations()
 
       assert {{:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]}, _, _} =
                Transaction.decoded_input_data(transaction, [])
@@ -288,7 +293,7 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert(to_address: contract.address, input: "0x" <> input_data)
         |> Repo.preload(to_address: :smart_contract)
 
-      get_eip1967_implementation()
+      request_zero_implementations()
 
       assert {{:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}, _, _} =
                Transaction.decoded_input_data(transaction, [])
@@ -309,7 +314,482 @@ defmodule Explorer.Chain.TransactionTest do
     end
   end
 
-  def get_eip1967_implementation do
+  describe "address_to_transactions_tasks_range_of_blocks/2" do
+    test "returns empty extremums if no transactions" do
+      address = insert(:address)
+
+      extremums = Transaction.address_to_transactions_tasks_range_of_blocks(address.hash, [])
+
+      assert extremums == %{
+               :min_block_number => nil,
+               :max_block_number => 0
+             }
+    end
+
+    test "returns correct extremums for from_address" do
+      address = insert(:address)
+
+      :transaction
+      |> insert(from_address: address)
+      |> with_block(insert(:block, number: 1000))
+
+      extremums = Transaction.address_to_transactions_tasks_range_of_blocks(address.hash, [])
+
+      assert extremums == %{
+               :min_block_number => 1000,
+               :max_block_number => 1000
+             }
+    end
+
+    test "returns correct extremums for to_address" do
+      address = insert(:address)
+
+      :transaction
+      |> insert(to_address: address)
+      |> with_block(insert(:block, number: 1000))
+
+      extremums = Transaction.address_to_transactions_tasks_range_of_blocks(address.hash, [])
+
+      assert extremums == %{
+               :min_block_number => 1000,
+               :max_block_number => 1000
+             }
+    end
+
+    test "returns correct extremums for created_contract_address" do
+      address = insert(:address)
+
+      :transaction
+      |> insert(created_contract_address: address)
+      |> with_block(insert(:block, number: 1000))
+
+      extremums = Transaction.address_to_transactions_tasks_range_of_blocks(address.hash, [])
+
+      assert extremums == %{
+               :min_block_number => 1000,
+               :max_block_number => 1000
+             }
+    end
+
+    test "returns correct extremums for multiple number of transactions" do
+      address = insert(:address)
+
+      :transaction
+      |> insert(created_contract_address: address)
+      |> with_block(insert(:block, number: 1000))
+
+      :transaction
+      |> insert(created_contract_address: address)
+      |> with_block(insert(:block, number: 999))
+
+      :transaction
+      |> insert(created_contract_address: address)
+      |> with_block(insert(:block, number: 1003))
+
+      :transaction
+      |> insert(from_address: address)
+      |> with_block(insert(:block, number: 1001))
+
+      :transaction
+      |> insert(from_address: address)
+      |> with_block(insert(:block, number: 1004))
+
+      :transaction
+      |> insert(to_address: address)
+      |> with_block(insert(:block, number: 1002))
+
+      :transaction
+      |> insert(to_address: address)
+      |> with_block(insert(:block, number: 998))
+
+      extremums = Transaction.address_to_transactions_tasks_range_of_blocks(address.hash, [])
+
+      assert extremums == %{
+               :min_block_number => 998,
+               :max_block_number => 1004
+             }
+    end
+  end
+
+  describe "address_to_transactions_with_rewards/2" do
+    test "without transactions" do
+      %Address{hash: address_hash} = insert(:address)
+
+      assert Repo.aggregate(Transaction, :count, :hash) == 0
+
+      assert [] == Transaction.address_to_transactions_with_rewards(address_hash)
+    end
+
+    test "with from transactions" do
+      %Address{hash: address_hash} = address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      assert [transaction] ==
+               Transaction.address_to_transactions_with_rewards(address_hash, direction: :from)
+               |> Repo.preload([:block, :to_address, :from_address])
+    end
+
+    test "with to transactions" do
+      %Address{hash: address_hash} = address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      assert [transaction] ==
+               Transaction.address_to_transactions_with_rewards(address_hash, direction: :to)
+               |> Repo.preload([:block, :to_address, :from_address])
+    end
+
+    test "with to and from transactions and direction: :from" do
+      %Address{hash: address_hash} = address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      # only contains "from" transaction
+      assert [transaction] ==
+               Transaction.address_to_transactions_with_rewards(address_hash, direction: :from)
+               |> Repo.preload([:block, :to_address, :from_address])
+    end
+
+    test "with to and from transactions and direction: :to" do
+      %Address{hash: address_hash} = address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      assert [transaction] ==
+               Transaction.address_to_transactions_with_rewards(address_hash, direction: :to)
+               |> Repo.preload([:block, :to_address, :from_address])
+    end
+
+    test "with to and from transactions and no :direction option" do
+      %Address{hash: address_hash} = address = insert(:address)
+      block = insert(:block)
+
+      transaction1 =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(block)
+
+      transaction2 =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block(block)
+
+      assert [transaction2, transaction1] ==
+               Transaction.address_to_transactions_with_rewards(address_hash)
+               |> Repo.preload([:block, :to_address, :from_address])
+    end
+
+    test "does not include non-contract-creation parent transactions" do
+      transaction =
+        %Transaction{} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      %InternalTransaction{created_contract_address: address} =
+        insert(:internal_transaction_create,
+          transaction: transaction,
+          index: 0,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 0,
+          transaction_index: transaction.index
+        )
+
+      assert [] == Transaction.address_to_transactions_with_rewards(address.hash)
+    end
+
+    test "returns transactions that have token transfers for the given to_address" do
+      %Address{hash: address_hash} = address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(to_address: address, to_address_hash: address.hash)
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        to_address: address,
+        transaction: transaction
+      )
+
+      assert [transaction.hash] ==
+               Transaction.address_to_transactions_with_rewards(address_hash)
+               |> Enum.map(& &1.hash)
+    end
+
+    test "with transactions can be paginated" do
+      %Address{hash: address_hash} = address = insert(:address)
+
+      second_page_hashes =
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block()
+        |> Enum.map(& &1.hash)
+
+      %Transaction{block_number: block_number, index: index} =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      assert second_page_hashes ==
+               address_hash
+               |> Transaction.address_to_transactions_with_rewards(
+                 paging_options: %PagingOptions{
+                   key: {block_number, index},
+                   page_size: 2
+                 }
+               )
+               |> Enum.map(& &1.hash)
+               |> Enum.reverse()
+    end
+
+    test "returns results in reverse chronological order by block number and transaction index" do
+      %Address{hash: address_hash} = address = insert(:address)
+
+      a_block = insert(:block, number: 6000)
+
+      %Transaction{hash: first} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(a_block)
+
+      %Transaction{hash: second} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(a_block)
+
+      %Transaction{hash: third} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(a_block)
+
+      %Transaction{hash: fourth} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(a_block)
+
+      b_block = insert(:block, number: 2000)
+
+      %Transaction{hash: fifth} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(b_block)
+
+      %Transaction{hash: sixth} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(b_block)
+
+      result =
+        address_hash
+        |> Transaction.address_to_transactions_with_rewards()
+        |> Enum.map(& &1.hash)
+
+      assert [fourth, third, second, first, sixth, fifth] == result
+    end
+
+    test "with emission rewards" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: true)
+
+      Application.put_env(:explorer, Explorer.Chain.Block.Reward,
+        validators_contract_address: "0x0000000000000000000000000000000000000005",
+        keys_manager_contract_address: "0x0000000000000000000000000000000000000006"
+      )
+
+      consumer_pid = start_supervised!(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand)
+      :erlang.trace(consumer_pid, true, [:receive])
+
+      block = insert(:block)
+
+      block_miner_hash_string = Base.encode16(block.miner_hash.bytes, case: :lower)
+      block_miner_hash = block.miner_hash
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :validator
+      )
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :emission_funds
+      )
+
+      # isValidator => true
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000001"}]}
+        end
+      )
+
+      # getPayoutByMining => 0x0000000000000000000000000000000000000001
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
+          {:ok, [%{id: id, result: "0x000000000000000000000000" <> block_miner_hash_string}]}
+        end
+      )
+
+      res = Transaction.address_to_transactions_with_rewards(block.miner.hash)
+      assert [{_, _}] = res
+
+      assert_receive {:trace, ^consumer_pid, :receive, {:"$gen_cast", {:fetch_or_update, ^block_miner_hash}}}, 1000
+      :timer.sleep(500)
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+
+        Application.put_env(:explorer, Explorer.Chain.Block.Reward,
+          validators_contract_address: nil,
+          keys_manager_contract_address: nil
+        )
+      end)
+    end
+
+    test "with emission rewards and transactions" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: true)
+
+      Application.put_env(:explorer, Explorer.Chain.Block.Reward,
+        validators_contract_address: "0x0000000000000000000000000000000000000005",
+        keys_manager_contract_address: "0x0000000000000000000000000000000000000006"
+      )
+
+      consumer_pid = start_supervised!(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand)
+      :erlang.trace(consumer_pid, true, [:receive])
+
+      block = insert(:block)
+
+      block_miner_hash_string = Base.encode16(block.miner_hash.bytes, case: :lower)
+      block_miner_hash = block.miner_hash
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :validator
+      )
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :emission_funds
+      )
+
+      :transaction
+      |> insert(to_address: block.miner)
+      |> with_block(block)
+      |> Repo.preload(:token_transfers)
+
+      # isValidator => true
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000001"}]}
+        end
+      )
+
+      # getPayoutByMining => 0x0000000000000000000000000000000000000001
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
+          {:ok, [%{id: id, result: "0x000000000000000000000000" <> block_miner_hash_string}]}
+        end
+      )
+
+      assert [_, {_, _}] = Transaction.address_to_transactions_with_rewards(block.miner.hash, direction: :to)
+
+      assert_receive {:trace, ^consumer_pid, :receive, {:"$gen_cast", {:fetch_or_update, ^block_miner_hash}}}, 1000
+      :timer.sleep(500)
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+
+        Application.put_env(:explorer, Explorer.Chain.Block.Reward,
+          validators_contract_address: nil,
+          keys_manager_contract_address: nil
+        )
+      end)
+    end
+
+    test "with transactions if rewards are not in the range of blocks" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: true)
+
+      block = insert(:block)
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :validator
+      )
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :emission_funds
+      )
+
+      :transaction
+      |> insert(from_address: block.miner)
+      |> with_block()
+      |> Repo.preload(:token_transfers)
+
+      assert [_] = Transaction.address_to_transactions_with_rewards(block.miner.hash, direction: :from)
+
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+    end
+
+    test "with emissions rewards, but feature disabled" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+
+      block = insert(:block)
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :validator
+      )
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :emission_funds
+      )
+
+      assert [] == Transaction.address_to_transactions_with_rewards(block.miner.hash)
+    end
+  end
+
+  # EIP-1967 + EIP-1822
+  defp request_zero_implementations do
     EthereumJSONRPC.Mox
     |> expect(:json_rpc, fn %{
                               id: 0,
@@ -341,6 +821,18 @@ defmodule Explorer.Chain.TransactionTest do
                               params: [
                                 _,
                                 "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
                                 "latest"
                               ]
                             },

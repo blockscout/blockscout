@@ -7,7 +7,6 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
   import Explorer.SmartContract.Helper, only: [cast_libraries: 1]
 
-  alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{CompilerVersion, Helper}
   alias Explorer.SmartContract.Solidity.Verifier
@@ -145,7 +144,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           "sourceFiles" => sources,
           "compilerSettings" => compiler_settings_string,
           "matchType" => match_type
-        },
+        } = source,
         address_hash,
         is_standard_json?,
         save_file_path?,
@@ -177,6 +176,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("compiler_settings", if(is_standard_json?, do: compiler_settings))
       |> Map.put("partially_verified", match_type == "PARTIAL")
       |> Map.put("verified_via_eth_bytecode_db", automatically_verified?)
+      |> Map.put("verified_via_sourcify", source["sourcify?"])
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
   end
@@ -199,10 +199,10 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   defp create_or_update_smart_contract(address_hash, attrs) do
     Logger.info("Publish successfully verified Solidity smart-contract #{address_hash} into the DB")
 
-    if Chain.smart_contract_verified?(address_hash) do
-      Chain.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    if SmartContract.verified?(address_hash) do
+      SmartContract.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
     else
-      Chain.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+      SmartContract.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
     end
   end
 

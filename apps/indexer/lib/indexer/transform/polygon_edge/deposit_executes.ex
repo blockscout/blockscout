@@ -20,7 +20,7 @@ defmodule Indexer.Transform.PolygonEdge.DepositExecutes do
       with false <-
              is_nil(Application.get_env(:indexer, DepositExecute)[:start_block_l2]),
            state_receiver = Application.get_env(:indexer, DepositExecute)[:state_receiver],
-           true <- Helper.is_address_correct?(state_receiver) do
+           true <- Helper.address_correct?(state_receiver) do
         state_receiver = String.downcase(state_receiver)
         state_sync_result_event_signature = DepositExecute.state_sync_result_event_signature()
 

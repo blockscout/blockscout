@@ -593,6 +593,23 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
+    test "ignores wrong ordering params", %{conn: conn} do
+      tokens =
+        for i <- 0..50 do
+          insert(:token, fiat_value: i)
+        end
+
+      request = get(conn, "/api/v2/tokens", %{"sort" => "foo", "order" => "bar"})
+
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/tokens", %{"sort" => "foo", "order" => "bar"} |> Map.merge(response["next_page_params"]))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+      check_paginated_response(response, response_2nd_page, tokens)
+    end
+
     test "tokens are filtered by single type", %{conn: conn} do
       erc_20_tokens =
         for i <- 0..50 do
@@ -609,14 +626,14 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           insert(:token, type: "ERC-1155")
         end
 
-      check_tokens_pagination(erc_20_tokens |> Enum.reverse(), conn, %{"type" => "ERC-20"})
+      check_tokens_pagination(erc_20_tokens, conn, %{"type" => "ERC-20"})
       check_tokens_pagination(erc_721_tokens |> Enum.reverse(), conn, %{"type" => "ERC-721"})
       check_tokens_pagination(erc_1155_tokens |> Enum.reverse(), conn, %{"type" => "ERC-1155"})
     end
 
     test "tokens are filtered by multiple type", %{conn: conn} do
       erc_20_tokens =
-        for i <- 0..25 do
+        for i <- 11..36 do
           insert(:token, fiat_value: i)
         end
 
@@ -639,7 +656,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       )
 
       check_tokens_pagination(
-        erc_20_tokens |> Kernel.++(erc_1155_tokens) |> Enum.reverse(),
+        erc_1155_tokens |> Enum.reverse() |> Kernel.++(erc_20_tokens),
         conn,
         %{
           "type" => "[erc-20,ERC-1155]"
@@ -652,7 +669,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         for i <- 0..50 do
           insert(:token, fiat_value: i)
         end
-        |> Enum.reverse()
 
       check_tokens_pagination(tokens, conn)
     end
@@ -865,6 +881,87 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       check_paginated_response(response, response_2nd_page, instances)
     end
+
+    test "get instances list by holder erc-721", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      insert_list(51, :token_instance, token_contract_address_hash: token.contract_address_hash)
+
+      address = insert(:address, contract_code: Enum.random([nil, "0x010101"]))
+
+      insert_list(51, :token_instance)
+
+      token_instances =
+        for _ <- 0..50 do
+          insert(:token_instance,
+            owner_address_hash: address.hash,
+            token_contract_address_hash: token.contract_address_hash
+          )
+          |> Repo.preload([:token, :owner])
+        end
+
+      filter = %{"holder_address_hash" => to_string(address.hash)}
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens/#{token.contract_address_hash}/instances",
+          Map.merge(response["next_page_params"], filter)
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_instances)
+    end
+
+    test "get instances list by holder erc-1155", %{conn: conn} do
+      token = insert(:token, type: "ERC-1155")
+
+      insert_list(51, :token_instance, token_contract_address_hash: token.contract_address_hash)
+
+      address = insert(:address, contract_code: Enum.random([nil, "0x010101"]))
+
+      insert_list(51, :token_instance)
+
+      token_instances =
+        for _ <- 0..50 do
+          ti =
+            insert(:token_instance,
+              token_contract_address_hash: token.contract_address_hash
+            )
+            |> Repo.preload([:token])
+
+          current_token_balance =
+            insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+              address: address,
+              token_type: "ERC-1155",
+              token_id: ti.token_id,
+              token_contract_address_hash: token.contract_address_hash,
+              value: Enum.random(1..2)
+            )
+
+          %Instance{ti | current_token_balance: current_token_balance, owner: address}
+        end
+
+      filter = %{"holder_address_hash" => to_string(address.hash)}
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens/#{token.contract_address_hash}/instances",
+          Map.merge(response["next_page_params"], filter)
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_instances)
+    end
   end
 
   describe "/tokens/{address_hash}/instances/{token_id}" do
@@ -911,7 +1008,27 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert data = json_response(request, 200)
       assert compare_item(instance, data)
-      assert compare_item(transfer.to_address, data["owner"])
+      assert Address.checksum(instance.owner_address_hash) == data["owner"]["hash"]
+    end
+
+    test "get token instance by token id which is not presented in DB", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0")
+      token_address = Address.checksum(token.contract_address.hash)
+      token_name = token.name
+      token_type = token.type
+
+      assert %{
+               "animation_url" => nil,
+               "external_app_url" => nil,
+               "id" => 0,
+               "image_url" => nil,
+               "is_unique" => true,
+               "metadata" => nil,
+               "owner" => nil,
+               "token" => %{"address" => ^token_address, "name" => ^token_name, "type" => ^token_type}
+             } = json_response(request, 200)
     end
   end
 
@@ -1240,12 +1357,49 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     compare_item(Repo.preload(ctb, [{:token, :contract_address}]).token, json["token"])
   end
 
+  def compare_item(%Instance{token: %Token{} = token} = instance, json) do
+    token_type = token.type
+    value = to_string(value(token.type, instance))
+    id = to_string(instance.token_id)
+    metadata = instance.metadata
+    token_address_hash = Address.checksum(token.contract_address_hash)
+    app_url = instance.metadata["external_url"]
+    animation_url = instance.metadata["animation_url"]
+    image_url = instance.metadata["image_url"]
+    token_name = token.name
+    owner_address_hash = Address.checksum(instance.owner.hash)
+    is_contract = !is_nil(instance.owner.contract_code)
+    is_unique = value == "1"
+
+    assert %{
+             "token_type" => ^token_type,
+             "value" => ^value,
+             "id" => ^id,
+             "metadata" => ^metadata,
+             "token" => %{"address" => ^token_address_hash, "name" => ^token_name, "type" => ^token_type},
+             "external_app_url" => ^app_url,
+             "animation_url" => ^animation_url,
+             "image_url" => ^image_url,
+             "is_unique" => ^is_unique
+           } = json
+
+    if is_unique do
+      assert owner_address_hash == json["owner"]["hash"]
+      assert is_contract == json["owner"]["is_contract"]
+    else
+      assert json["owner"] == nil
+    end
+  end
+
   def compare_item(%Instance{} = instance, json) do
     assert to_string(instance.token_id) == json["id"]
     assert Jason.decode!(Jason.encode!(instance.metadata)) == json["metadata"]
     assert json["is_unique"]
     compare_item(Repo.preload(instance, [{:token, :contract_address}]).token, json["token"])
   end
+
+  defp value("ERC-721", _), do: 1
+  defp value(_, nft), do: nft.current_token_balance.value
 
   # with the current implementation no transfers should come with list in totals
   def check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do

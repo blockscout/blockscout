@@ -13,11 +13,12 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
-  alias BlockScoutWeb.{AddressTransactionController, APIKeyV2Router, SmartContractsApiV2Router}
+  alias BlockScoutWeb.{AddressTransactionController, APIKeyV2Router, SmartContractsApiV2Router, UtilsApiV2Router}
   alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2, RateLimit}
 
   forward("/v2/smart-contracts", SmartContractsApiV2Router)
   forward("/v2/key", APIKeyV2Router)
+  forward("/v2/utils", UtilsApiV2Router)
 
   pipeline :api do
     plug(BlockScoutWeb.Plug.Logger, application: :api)
@@ -49,7 +50,72 @@ defmodule BlockScoutWeb.ApiRouter do
   alias BlockScoutWeb.Account.Api.V1.{AuthenticateController, EmailController, TagsController, UserController}
   alias BlockScoutWeb.API.V2
 
+  # TODO: Remove /account/v1 paths
   scope "/account/v1", as: :account_v1 do
+    pipe_through(:api)
+    pipe_through(:account_api)
+
+    get("/authenticate", AuthenticateController, :authenticate_get)
+    post("/authenticate", AuthenticateController, :authenticate_post)
+
+    get("/get_csrf", UserController, :get_csrf)
+
+    scope "/email" do
+      get("/resend", EmailController, :resend_email)
+    end
+
+    scope "/user" do
+      get("/info", UserController, :info)
+
+      get("/watchlist", UserController, :watchlist_old)
+      delete("/watchlist/:id", UserController, :delete_watchlist)
+      post("/watchlist", UserController, :create_watchlist)
+      put("/watchlist/:id", UserController, :update_watchlist)
+
+      get("/api_keys", UserController, :api_keys)
+      delete("/api_keys/:api_key", UserController, :delete_api_key)
+      post("/api_keys", UserController, :create_api_key)
+      put("/api_keys/:api_key", UserController, :update_api_key)
+
+      get("/custom_abis", UserController, :custom_abis)
+      delete("/custom_abis/:id", UserController, :delete_custom_abi)
+      post("/custom_abis", UserController, :create_custom_abi)
+      put("/custom_abis/:id", UserController, :update_custom_abi)
+
+      get("/public_tags", UserController, :public_tags_requests)
+      delete("/public_tags/:id", UserController, :delete_public_tags_request)
+      post("/public_tags", UserController, :create_public_tags_request)
+      put("/public_tags/:id", UserController, :update_public_tags_request)
+
+      scope "/tags" do
+        get("/address/", UserController, :tags_address_old)
+        get("/address/:id", UserController, :tags_address)
+        delete("/address/:id", UserController, :delete_tag_address)
+        post("/address/", UserController, :create_tag_address)
+        put("/address/:id", UserController, :update_tag_address)
+
+        get("/transaction/", UserController, :tags_transaction_old)
+        get("/transaction/:id", UserController, :tags_transaction)
+        delete("/transaction/:id", UserController, :delete_tag_transaction)
+        post("/transaction/", UserController, :create_tag_transaction)
+        put("/transaction/:id", UserController, :update_tag_transaction)
+      end
+    end
+  end
+
+  # TODO: Remove /account/v1 paths
+  scope "/account/v1" do
+    pipe_through(:api)
+    pipe_through(:account_api)
+
+    scope "/tags" do
+      get("/address/:address_hash", TagsController, :tags_address)
+
+      get("/transaction/:transaction_hash", TagsController, :tags_transaction)
+    end
+  end
+
+  scope "/account/v2", as: :account_v2 do
     pipe_through(:api)
     pipe_through(:account_api)
 
@@ -101,7 +167,7 @@ defmodule BlockScoutWeb.ApiRouter do
     end
   end
 
-  scope "/account/v1" do
+  scope "/account/v2" do
     pipe_through(:api)
     pipe_through(:account_api)
 
@@ -116,6 +182,7 @@ defmodule BlockScoutWeb.ApiRouter do
     pipe_through(:api_v2_no_session)
 
     post("/token-info", V2.ImportController, :import_token_info)
+    get("/smart-contracts/:address_hash_param", V2.ImportController, :try_to_search_contract)
   end
 
   scope "/v2", as: :api_v2 do
@@ -135,12 +202,22 @@ defmodule BlockScoutWeb.ApiRouter do
     scope "/transactions" do
       get("/", V2.TransactionController, :transactions)
       get("/watchlist", V2.TransactionController, :watchlist_transactions)
+
+      if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
+        get("/zkevm-batch/:batch_number", V2.TransactionController, :zkevm_batch)
+      end
+
+      if System.get_env("CHAIN_TYPE") == "suave" do
+        get("/execution-node/:execution_node_hash_param", V2.TransactionController, :execution_node)
+      end
+
       get("/:transaction_hash_param", V2.TransactionController, :transaction)
       get("/:transaction_hash_param/token-transfers", V2.TransactionController, :token_transfers)
       get("/:transaction_hash_param/internal-transactions", V2.TransactionController, :internal_transactions)
       get("/:transaction_hash_param/logs", V2.TransactionController, :logs)
       get("/:transaction_hash_param/raw-trace", V2.TransactionController, :raw_trace)
       get("/:transaction_hash_param/state-changes", V2.TransactionController, :state_changes)
+      get("/:transaction_hash_param/summary", V2.TransactionController, :summary)
     end
 
     scope "/blocks" do
@@ -165,9 +242,15 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash_param/coin-balance-history", V2.AddressController, :coin_balance_history)
       get("/:address_hash_param/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
       get("/:address_hash_param/withdrawals", V2.AddressController, :withdrawals)
+      get("/:address_hash_param/nft", V2.AddressController, :nft_list)
+      get("/:address_hash_param/nft/collections", V2.AddressController, :nft_collections)
     end
 
     scope "/tokens" do
+      if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+        get("/bridged", V2.TokenController, :bridged_tokens_list)
+      end
+
       get("/", V2.TokenController, :tokens_list)
       get("/:address_hash_param", V2.TokenController, :token)
       get("/:address_hash_param/counters", V2.TokenController, :counters)
@@ -185,6 +268,11 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/transactions", V2.MainPageController, :transactions)
       get("/transactions/watchlist", V2.MainPageController, :watchlist_transactions)
       get("/indexing-status", V2.MainPageController, :indexing_status)
+
+      if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
+        get("/zkevm/batches/confirmed", V2.ZkevmController, :batches_confirmed)
+        get("/zkevm/batches/latest-number", V2.ZkevmController, :batch_latest_number)
+      end
     end
 
     scope "/stats" do
@@ -205,9 +293,48 @@ defmodule BlockScoutWeb.ApiRouter do
       end
     end
 
+    scope "/shibarium" do
+      if System.get_env("CHAIN_TYPE") == "shibarium" do
+        get("/deposits", V2.ShibariumController, :deposits)
+        get("/deposits/count", V2.ShibariumController, :deposits_count)
+        get("/withdrawals", V2.ShibariumController, :withdrawals)
+        get("/withdrawals/count", V2.ShibariumController, :withdrawals_count)
+      end
+    end
+
     scope "/withdrawals" do
       get("/", V2.WithdrawalController, :withdrawals_list)
       get("/counters", V2.WithdrawalController, :withdrawals_counters)
+    end
+
+    scope "/zkevm" do
+      if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
+        get("/batches", V2.ZkevmController, :batches)
+        get("/batches/count", V2.ZkevmController, :batches_count)
+        get("/batches/:batch_number", V2.ZkevmController, :batch)
+      end
+    end
+
+    scope "/proxy" do
+      scope "/noves-fi" do
+        get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
+        get("/transactions/:transaction_hash_param/describe", V2.Proxy.NovesFiController, :describe_transaction)
+        get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
+      end
+
+      scope "/account-abstraction" do
+        get("/operations/:operation_hash_param", V2.Proxy.AccountAbstractionController, :operation)
+        get("/bundlers/:address_hash_param", V2.Proxy.AccountAbstractionController, :bundler)
+        get("/bundlers", V2.Proxy.AccountAbstractionController, :bundlers)
+        get("/factories/:address_hash_param", V2.Proxy.AccountAbstractionController, :factory)
+        get("/factories", V2.Proxy.AccountAbstractionController, :factories)
+        get("/paymasters/:address_hash_param", V2.Proxy.AccountAbstractionController, :paymaster)
+        get("/paymasters", V2.Proxy.AccountAbstractionController, :paymasters)
+        get("/accounts/:address_hash_param", V2.Proxy.AccountAbstractionController, :account)
+        get("/accounts", V2.Proxy.AccountAbstractionController, :accounts)
+        get("/bundles", V2.Proxy.AccountAbstractionController, :bundles)
+        get("/operations", V2.Proxy.AccountAbstractionController, :operations)
+      end
     end
   end
 

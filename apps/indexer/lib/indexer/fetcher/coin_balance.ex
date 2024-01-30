@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.CoinBalance do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
 
-  alias EthereumJSONRPC.{Blocks, FetchedBalances}
+  alias EthereumJSONRPC.{Blocks, FetchedBalances, Utility.RangesHelper}
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Cache.Accounts
@@ -84,9 +84,7 @@ defmodule Indexer.Fetcher.CoinBalance do
     unique_entries = Enum.uniq(entries)
 
     unique_filtered_entries =
-      Enum.filter(unique_entries, fn {_hash, block_number} ->
-        block_number >= EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
-      end)
+      Enum.filter(unique_entries, fn {_hash, block_number} -> RangesHelper.traceable_block_number?(block_number) end)
 
     unique_entry_count = Enum.count(unique_filtered_entries)
     Logger.metadata(count: unique_entry_count)

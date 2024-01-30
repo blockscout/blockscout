@@ -15,19 +15,7 @@ defmodule Explorer.ReleaseTasks do
   ]
 
   def repos do
-    base_repos_list = [
-      Explorer.Repo,
-      Explorer.Repo.Account
-    ]
-
-    repos_list =
-      if System.get_env("CHAIN_TYPE") == "polygon_edge" do
-        [Explorer.Repo.PolygonEdge | base_repos_list]
-      else
-        base_repos_list
-      end
-
-    Application.get_env(:blockscout, :ecto_repos, repos_list)
+    Application.get_env(:explorer, :ecto_repos)
   end
 
   def create_and_migrate do

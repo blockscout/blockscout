@@ -7,7 +7,9 @@ defmodule Explorer.Chain.Address do
 
   use Explorer.Schema
 
+  alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
+  alias Explorer.{Chain, PagingOptions}
 
   alias Explorer.Chain.{
     Address,
@@ -17,14 +19,13 @@ defmodule Explorer.Chain.Address do
     Hash,
     InternalTransaction,
     SmartContract,
-    SmartContractAdditionalSource,
     Token,
     Transaction,
     Wei,
     Withdrawal
   }
 
-  alias Explorer.Chain.Cache.NetVersion
+  alias Explorer.Chain.Cache.{Accounts, NetVersion}
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
   @required_attrs ~w(hash)a
@@ -45,7 +46,8 @@ defmodule Explorer.Chain.Address do
     contract has been verified
    * `names` - names known for the address
    * `inserted_at` - when this address was inserted
-   * `updated_at` when this address was last updated
+   * `updated_at` - when this address was last updated
+   * `ens_domain_name` - virtual field for ENS domain name passing
 
    `fetched_coin_balance` and `fetched_coin_balance_block_number` may be updated when a new coin_balance row is fetched.
     They may also be updated when the balance is fetched via the on demand fetcher.
@@ -62,7 +64,8 @@ defmodule Explorer.Chain.Address do
           nonce: non_neg_integer() | nil,
           transactions_count: non_neg_integer() | nil,
           token_transfers_count: non_neg_integer() | nil,
-          gas_used: non_neg_integer() | nil
+          gas_used: non_neg_integer() | nil,
+          ens_domain_name: String.t() | nil
         }
 
   @derive {Poison.Encoder,
@@ -73,8 +76,7 @@ defmodule Explorer.Chain.Address do
              :token,
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
-             :names,
-             :smart_contract_additional_sources
+             :names
            ]}
 
   @derive {Jason.Encoder,
@@ -85,8 +87,7 @@ defmodule Explorer.Chain.Address do
              :token,
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
-             :names,
-             :smart_contract_additional_sources
+             :names
            ]}
 
   @primary_key {:hash, Hash.Address, autogenerate: false}
@@ -102,6 +103,7 @@ defmodule Explorer.Chain.Address do
     field(:transactions_count, :integer)
     field(:token_transfers_count, :integer)
     field(:gas_used, :integer)
+    field(:ens_domain_name, :string, virtual: true)
 
     has_one(:smart_contract, SmartContract)
     has_one(:token, Token, foreign_key: :contract_address_hash)
@@ -120,7 +122,6 @@ defmodule Explorer.Chain.Address do
 
     has_many(:names, Address.Name, foreign_key: :address_hash)
     has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash)
-    has_many(:smart_contract_additional_sources, SmartContractAdditionalSource, foreign_key: :address_hash)
     has_many(:withdrawals, Withdrawal, foreign_key: :address_hash)
 
     timestamps()
@@ -153,6 +154,11 @@ defmodule Explorer.Chain.Address do
   def checksum(nil, _iodata?), do: ""
 
   def checksum(%__MODULE__{hash: hash}, iodata?) do
+    checksum(hash, iodata?)
+  end
+
+  def checksum(hash_string, iodata?) when is_binary(hash_string) do
+    {:ok, hash} = Chain.string_to_address_hash(hash_string)
     checksum(hash, iodata?)
   end
 
@@ -253,6 +259,16 @@ defmodule Explorer.Chain.Address do
   end
 
   @doc """
+    Preloads provided contracts associations if address has contract_code which is not nil
+  """
+  @spec maybe_preload_smart_contract_associations(Address.t(), list, list) :: Address.t()
+  def maybe_preload_smart_contract_associations(%Address{contract_code: nil} = address, _associations, _options),
+    do: address
+
+  def maybe_preload_smart_contract_associations(%Address{contract_code: _} = address, associations, options),
+    do: Chain.select_repo(options).preload(address, associations)
+
+  @doc """
   Counts all the addresses where the `fetched_coin_balance` is > 0.
   """
   def count_with_fetched_coin_balance do
@@ -292,5 +308,132 @@ defmodule Explorer.Chain.Address do
     def to_string(%@for{} = address) do
       @for.checksum(address)
     end
+  end
+
+  @default_paging_options %PagingOptions{page_size: 50}
+  @doc """
+  Lists the top `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance and address hash.
+
+  """
+  @spec list_top_addresses :: [{Address.t(), non_neg_integer()}]
+  def list_top_addresses(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    if is_nil(paging_options.key) do
+      paging_options.page_size
+      |> Accounts.take_enough()
+      |> case do
+        nil ->
+          get_addresses(options)
+
+        accounts ->
+          Enum.map(
+            accounts,
+            &{&1, &1.transactions_count || 0}
+          )
+      end
+    else
+      fetch_top_addresses(options)
+    end
+  end
+
+  @doc """
+  Checks if given address is smart-contract
+  """
+  @spec smart_contract?(any()) :: boolean() | nil
+  def smart_contract?(%__MODULE__{contract_code: nil}), do: false
+  def smart_contract?(%__MODULE__{contract_code: _}), do: true
+  def smart_contract?(%NotLoaded{}), do: nil
+  def smart_contract?(_), do: false
+
+  defp get_addresses(options) do
+    accounts_with_n = fetch_top_addresses(options)
+
+    accounts_with_n
+    |> Enum.map(fn {address, _n} -> address end)
+    |> Accounts.update()
+
+    accounts_with_n
+  end
+
+  defp fetch_top_addresses(options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(a in Address,
+        where: a.fetched_coin_balance > ^0,
+        order_by: [desc: a.fetched_coin_balance, asc: a.hash],
+        preload: [:names, :smart_contract],
+        select: {a, a.transactions_count}
+      )
+
+    base_query
+    |> page_addresses(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Chain.select_repo(options).all()
+  end
+
+  defp page_addresses(query, %PagingOptions{key: nil}), do: query
+
+  defp page_addresses(query, %PagingOptions{key: {coin_balance, hash}}) do
+    from(address in query,
+      where:
+        (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
+          address.fetched_coin_balance < ^coin_balance
+    )
+  end
+
+  @doc """
+  Checks if an `t:Explorer.Chain.Address.t/0` with the given `hash` exists.
+
+  Returns `:ok` if found
+
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
+      ...> )
+      iex> Explorer.Address.check_address_exists(hash)
+      :ok
+
+  Returns `:not_found` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+      iex> Explorer.Address.check_address_exists(hash)
+      :not_found
+
+  """
+  @spec check_address_exists(Hash.Address.t(), [Chain.api?()]) :: :ok | :not_found
+  def check_address_exists(address_hash, options \\ []) do
+    address_hash
+    |> address_exists?(options)
+    |> Chain.boolean_to_check_result()
+  end
+
+  @doc """
+  Checks if an `t:Explorer.Chain.Address.t/0` with the given `hash` exists.
+
+  Returns `true` if found
+
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
+      ...> )
+      iex> Explorer.Chain.Address.address_exists?(hash)
+      true
+
+  Returns `false` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+      iex> Explorer.Chain.Address.address_exists?(hash)
+      false
+
+  """
+  @spec address_exists?(Hash.Address.t(), [Chain.api?()]) :: boolean()
+  def address_exists?(address_hash, options \\ []) do
+    query =
+      from(
+        address in Address,
+        where: address.hash == ^address_hash
+      )
+
+    Chain.select_repo(options).exists?(query)
   end
 end

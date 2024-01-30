@@ -9,6 +9,8 @@ defmodule Explorer.Factory do
 
   alias Explorer.Account.{
     Identity,
+    TagAddress,
+    TagTransaction,
     Watchlist,
     WatchlistAddress
   }
@@ -36,6 +38,7 @@ defmodule Explorer.Factory do
     Log,
     PendingBlockOperation,
     SmartContract,
+    SmartContractAdditionalSource,
     Token,
     TokenTransfer,
     Token.Instance,
@@ -107,6 +110,26 @@ defmodule Explorer.Factory do
     }
   end
 
+  def watchlist_address_db_factory(%{wl_id: id}) do
+    hash = build(:address).hash
+
+    %WatchlistAddress{
+      name: sequence("test"),
+      watchlist_id: id,
+      address_hash: hash,
+      address_hash_hash: hash_to_lower_case_string(hash),
+      watch_coin_input: random_bool(),
+      watch_coin_output: random_bool(),
+      watch_erc_20_input: random_bool(),
+      watch_erc_20_output: random_bool(),
+      watch_erc_721_input: random_bool(),
+      watch_erc_721_output: random_bool(),
+      watch_erc_1155_input: random_bool(),
+      watch_erc_1155_output: random_bool(),
+      notify_email: random_bool()
+    }
+  end
+
   def custom_abi_factory do
     contract_address_hash = to_string(insert(:contract_address).hash)
 
@@ -140,6 +163,14 @@ defmodule Explorer.Factory do
     %{"name" => sequence("name"), "transaction_hash" => to_string(insert(:transaction).hash)}
   end
 
+  def tag_address_db_factory(%{user: user}) do
+    %TagAddress{name: sequence("name"), address_hash: build(:address).hash, identity_id: user.id}
+  end
+
+  def tag_transaction_db_factory(%{user: user}) do
+    %TagTransaction{name: sequence("name"), tx_hash: insert(:transaction).hash, identity_id: user.id}
+  end
+
   def address_to_tag_factory do
     %AddressToTag{
       tag: build(:address_tag),
@@ -162,15 +193,15 @@ defmodule Explorer.Factory do
       watchlist: build(:account_watchlist),
       address_hash: hash,
       address_hash_hash: hash_to_lower_case_string(hash),
-      watch_coin_input: true,
-      watch_coin_output: true,
-      watch_erc_20_input: true,
-      watch_erc_20_output: true,
-      watch_erc_721_input: true,
-      watch_erc_721_output: true,
-      watch_erc_1155_input: true,
-      watch_erc_1155_output: true,
-      notify_email: true
+      watch_coin_input: random_bool(),
+      watch_coin_output: random_bool(),
+      watch_erc_20_input: random_bool(),
+      watch_erc_20_output: random_bool(),
+      watch_erc_721_input: random_bool(),
+      watch_erc_721_output: random_bool(),
+      watch_erc_1155_input: random_bool(),
+      watch_erc_1155_output: random_bool(),
+      notify_email: random_bool()
     }
   end
 
@@ -503,7 +534,7 @@ defmodule Explorer.Factory do
         %Transaction{index: nil} = transaction,
         # The `transaction.block` must be consensus.  Non-consensus blocks can only be associated with the
         # `transaction_forks`.
-        %Block{consensus: true, hash: block_hash, number: block_number},
+        %Block{consensus: true, hash: block_hash, number: block_number, timestamp: timestamp},
         collated_params
       )
       when is_list(collated_params) do
@@ -512,6 +543,8 @@ defmodule Explorer.Factory do
     cumulative_gas_used = collated_params[:cumulative_gas_used] || Enum.random(21_000..100_000)
     gas_used = collated_params[:gas_used] || Enum.random(21_000..100_000)
     status = Keyword.get(collated_params, :status, Enum.random([:ok, :error]))
+    block_timestamp = Keyword.get(collated_params, :block_timestamp, timestamp)
+    block_consensus = Keyword.get(collated_params, :block_consensus, true)
 
     error = (status == :error && collated_params[:error]) || nil
 
@@ -525,7 +558,9 @@ defmodule Explorer.Factory do
       error: error,
       gas_used: gas_used,
       index: next_transaction_index,
-      status: status
+      status: status,
+      block_timestamp: block_timestamp,
+      block_consensus: block_consensus
     })
     |> Repo.update!()
     |> Repo.preload(:block)
@@ -645,8 +680,7 @@ defmodule Explorer.Factory do
       index: sequence("log_index", & &1),
       second_topic: nil,
       third_topic: nil,
-      transaction: build(:transaction),
-      type: sequence("0x")
+      transaction: build(:transaction)
     }
   end
 
@@ -777,7 +811,8 @@ defmodule Explorer.Factory do
       s: sequence(:transaction_s, & &1),
       to_address: build(:address),
       v: Enum.random(27..30),
-      value: Enum.random(1..100_000)
+      value: Enum.random(1..100_000),
+      block_timestamp: DateTime.utc_now()
     }
   end
 
@@ -840,6 +875,10 @@ defmodule Explorer.Factory do
     }
   end
 
+  def smart_contract_additional_source_factory do
+    %SmartContractAdditionalSource{}
+  end
+
   def unique_smart_contract_factory do
     Map.replace(smart_contract_factory(), :name, sequence("SimpleStorage"))
   end
@@ -858,8 +897,14 @@ defmodule Explorer.Factory do
     %Instance{
       token_contract_address_hash: insert(:token).contract_address_hash,
       token_id: sequence("token_id", & &1),
-      metadata: %{key: "value"},
-      error: nil
+      metadata: %{
+        "key" => sequence("value"),
+        "image_url" => sequence("image_url"),
+        "animation_url" => sequence("image_url"),
+        "external_url" => sequence("external_url")
+      },
+      error: nil,
+      owner_address_hash: insert(:address).hash
     }
   end
 
@@ -905,6 +950,41 @@ defmodule Explorer.Factory do
     %CurrentTokenBalance{
       address: build(:address),
       token_contract_address_hash: insert(:token, type: token_type).contract_address_hash,
+      block_number: block_number(),
+      value: Enum.random(1_000_000_000_000_000_000..10_000_000_000_000_000_000),
+      value_fetched_at: DateTime.utc_now(),
+      token_id: token_id,
+      token_type: token_type
+    }
+  end
+
+  def address_current_token_balance_with_token_id_and_fixed_token_type_factory(%{
+        token_type: token_type,
+        address: address,
+        token_id: token_id,
+        token_contract_address_hash: token_contract_address_hash,
+        value: value
+      }) do
+    %CurrentTokenBalance{
+      address: address,
+      token_contract_address_hash: token_contract_address_hash,
+      block_number: block_number(),
+      value: value,
+      value_fetched_at: DateTime.utc_now(),
+      token_id: token_id,
+      token_type: token_type
+    }
+  end
+
+  def address_current_token_balance_with_token_id_and_fixed_token_type_factory(%{
+        token_type: token_type,
+        address: address,
+        token_id: token_id,
+        token_contract_address_hash: token_contract_address_hash
+      }) do
+    %CurrentTokenBalance{
+      address: address,
+      token_contract_address_hash: token_contract_address_hash,
       block_number: block_number(),
       value: Enum.random(1_000_000_000_000_000_000..10_000_000_000_000_000_000),
       value_fetched_at: DateTime.utc_now(),

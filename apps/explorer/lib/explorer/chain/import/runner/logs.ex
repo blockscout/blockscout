@@ -92,7 +92,6 @@ defmodule Explorer.Chain.Import.Runner.Logs do
           third_topic: fragment("EXCLUDED.third_topic"),
           fourth_topic: fragment("EXCLUDED.fourth_topic"),
           # Don't update `index` as it is part of the composite primary key and used for the conflict target
-          type: fragment("EXCLUDED.type"),
           # Don't update `transaction_hash` as it is part of the composite primary key and used for the conflict target
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", log.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", log.updated_at)
@@ -100,14 +99,13 @@ defmodule Explorer.Chain.Import.Runner.Logs do
       ],
       where:
         fragment(
-          "(EXCLUDED.address_hash, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic, EXCLUDED.type) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.address_hash, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
           log.address_hash,
           log.data,
           log.first_topic,
           log.second_topic,
           log.third_topic,
-          log.fourth_topic,
-          log.type
+          log.fourth_topic
         )
     )
   end

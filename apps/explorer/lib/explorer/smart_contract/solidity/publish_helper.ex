@@ -4,9 +4,9 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
   """
 
   alias Ecto.Changeset
-  alias Explorer.Chain
+  alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
-  alias Explorer.Chain.SmartContract
+  alias Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand
   alias Explorer.SmartContract.Solidity.Publisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
@@ -148,26 +148,41 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
   end
 
   def check_and_verify(address_hash_string) do
-    if Chain.smart_contract_fully_verified?(address_hash_string) do
-      {:ok, :already_fully_verified}
+    if Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)[:eth_bytecode_db?] do
+      LookUpSmartContractSourcesOnDemand.trigger_fetch(%Address{hash: address_hash_string}, nil)
     else
-      check_and_verify_inner(address_hash_string)
-    end
-  end
-
-  defp check_and_verify_inner(address_hash_string) do
-    if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
-      if Chain.smart_contract_verified?(address_hash_string) do
-        check_by_address_in_sourcify_if_contract_verified(address_hash_string)
+      if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
+        check_by_address_in_sourcify(
+          SmartContract.select_partially_verified_by_address_hash(address_hash_string),
+          address_hash_string
+        )
       else
-        check_by_address_in_sourcify_else(address_hash_string)
+        {:error, :sourcify_disabled}
       end
-    else
-      {:error, :sourcify_disabled}
     end
   end
 
-  defp check_by_address_in_sourcify_if_contract_verified(address_hash_string) do
+  def sourcify_check(address_hash_string) do
+    cond do
+      Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)[:eth_bytecode_db?] ->
+        {:error, :eth_bytecode_db_enabled}
+
+      Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] ->
+        check_by_address_in_sourcify(
+          SmartContract.select_partially_verified_by_address_hash(address_hash_string),
+          address_hash_string
+        )
+
+      true ->
+        {:error, :sourcify_disabled}
+    end
+  end
+
+  defp check_by_address_in_sourcify(false, _address_hash_string) do
+    {:ok, :already_fully_verified}
+  end
+
+  defp check_by_address_in_sourcify(true, address_hash_string) do
     case Sourcify.check_by_address(address_hash_string) do
       {:ok, _verified_status} ->
         get_metadata_and_publish(address_hash_string, nil)
@@ -177,7 +192,7 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
     end
   end
 
-  defp check_by_address_in_sourcify_else(address_hash_string) do
+  defp check_by_address_in_sourcify(nil, address_hash_string) do
     case Sourcify.check_by_address_any(address_hash_string) do
       {:ok, "full", metadata} ->
         process_metadata_and_publish(address_hash_string, metadata, false, false)

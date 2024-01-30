@@ -28,6 +28,8 @@ defmodule Indexer.Fetcher.TokenBalance do
   @default_max_batch_size 100
   @default_max_concurrency 10
 
+  @timeout :timer.minutes(10)
+
   @max_retries 3
 
   @spec async_fetch([
@@ -117,17 +119,21 @@ defmodule Indexer.Fetcher.TokenBalance do
     %{fetched_token_balances: fetched_token_balances, failed_token_balances: _failed_token_balances} =
       1..@max_retries
       |> Enum.reduce_while(%{fetched_token_balances: [], failed_token_balances: retryable_params_list}, fn _x, acc ->
-        {:ok,
-         %{fetched_token_balances: _fetched_token_balances, failed_token_balances: failed_token_balances} =
-           token_balances} = TokenBalances.fetch_token_balances_from_blockchain(acc.failed_token_balances)
+        {:ok, %{fetched_token_balances: fetched_token_balances, failed_token_balances: failed_token_balances}} =
+          TokenBalances.fetch_token_balances_from_blockchain(acc.failed_token_balances)
+
+        all_token_balances = %{
+          fetched_token_balances: acc.fetched_token_balances ++ fetched_token_balances,
+          failed_token_balances: failed_token_balances
+        }
 
         if Enum.empty?(failed_token_balances) do
-          {:halt, token_balances}
+          {:halt, all_token_balances}
         else
           failed_token_balances = increase_retries_count(failed_token_balances)
 
           token_balances_updated_retries_count =
-            token_balances
+            all_token_balances
             |> Map.put(:failed_token_balances, failed_token_balances)
 
           {:cont, token_balances_updated_retries_count}
@@ -152,7 +158,7 @@ defmodule Indexer.Fetcher.TokenBalance do
       address_current_token_balances: %{
         params: TokenBalances.to_address_current_token_balances(formatted_token_balances_params)
       },
-      timeout: :infinity
+      timeout: @timeout
     }
 
     case Chain.import(import_params) do

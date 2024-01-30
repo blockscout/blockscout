@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.SmartContractController do
       implementation_abi =
         if contract_type == "proxy" do
           implementation_address_hash_string
-          |> Chain.get_implementation_abi()
+          |> SmartContract.get_smart_contract_abi()
           |> Poison.encode!()
         else
           []
@@ -224,7 +224,7 @@ defmodule BlockScoutWeb.SmartContractController do
   end
 
   defp convert_map_to_array(map) do
-    if is_turned_out_array?(map) do
+    if turned_out_array?(map) do
       map |> Map.values() |> try_to_map_elements()
     else
       try_to_map_elements(map)
@@ -239,11 +239,11 @@ defmodule BlockScoutWeb.SmartContractController do
     end
   end
 
-  defp is_turned_out_array?(map) when is_map(map), do: Enum.all?(Map.keys(map), &is_integer?/1)
+  defp turned_out_array?(map) when is_map(map), do: Enum.all?(Map.keys(map), &integer?/1)
 
-  defp is_turned_out_array?(_), do: false
+  defp turned_out_array?(_), do: false
 
-  defp is_integer?(string) when is_binary(string) do
+  defp integer?(string) when is_binary(string) do
     case string |> String.trim() |> Integer.parse() do
       {_, ""} ->
         true
@@ -253,9 +253,9 @@ defmodule BlockScoutWeb.SmartContractController do
     end
   end
 
-  defp is_integer?(integer) when is_integer(integer), do: true
+  defp integer?(integer) when is_integer(integer), do: true
 
-  defp is_integer?(_), do: false
+  defp integer?(_), do: false
 
   defp write_contract_api_disabled?(action), do: AddressView.contract_interaction_disabled?() && action == "write"
 end

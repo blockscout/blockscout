@@ -5,7 +5,7 @@ defmodule Explorer.TokenInstanceOwnerAddressMigration.Supervisor do
 
   use Supervisor
 
-  alias Explorer.TokenInstanceOwnerAddressMigration.{Helper, Worker}
+  alias Explorer.TokenInstanceOwnerAddressMigration.Worker
 
   def start_link(init_arg) do
     Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)
@@ -13,9 +13,11 @@ defmodule Explorer.TokenInstanceOwnerAddressMigration.Supervisor do
 
   @impl true
   def init(_init_arg) do
-    if Helper.unfilled_token_instances_exists?() do
+    params = Application.get_env(:explorer, Explorer.TokenInstanceOwnerAddressMigration)
+
+    if params[:enabled] do
       children = [
-        {Worker, Application.get_env(:explorer, Explorer.TokenInstanceOwnerAddressMigration)}
+        {Worker, params}
       ]
 
       Supervisor.init(children, strategy: :one_for_one)

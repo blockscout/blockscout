@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.UserSocketV2 do
   channel("rewards:*", BlockScoutWeb.RewardChannel)
   channel("transactions:*", BlockScoutWeb.TransactionChannel)
   channel("tokens:*", BlockScoutWeb.TokenChannel)
+  channel("zkevm_batches:*", BlockScoutWeb.ZkevmConfirmedBatchChannel)
 
   def connect(_params, socket) do
     {:ok, socket}
