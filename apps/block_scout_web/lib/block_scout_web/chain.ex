@@ -19,13 +19,13 @@ defmodule BlockScoutWeb.Chain do
 
   alias Ecto.Association.NotLoaded
   alias Explorer.Account.{TagAddress, TagTransaction, WatchlistAddress}
+  alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.Block.Reward
 
   alias Explorer.Chain.{
     Address,
     Address.CoinBalance,
     Address.CurrentTokenBalance,
-    Beacon,
     Beacon.Blob,
     Block,
     Hash,
@@ -697,7 +697,7 @@ defmodule BlockScoutWeb.Chain do
 
   defp hash_to_blob(hash) do
     if Application.get_env(:explorer, :chain_type) == "ethereum" do
-      Beacon.Reader.blob(hash, false)
+      BeaconReader.blob(hash, false)
     else
       {:error, :not_found}
     end

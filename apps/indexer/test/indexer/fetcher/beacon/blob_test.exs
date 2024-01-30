@@ -40,10 +40,10 @@ defmodule Indexer.Fetcher.Beacon.BlobTest do
         insert(:blob_transaction, hash: transaction_b_hash, blob_versioned_hashes: [blob_c.hash])
         insert(:blob_transaction, hash: transaction_c_hash, blob_versioned_hashes: [blob_d.hash])
 
-        assert {:error, :not_found} = Reader.blob(blob_a.hash)
-        assert {:error, :not_found} = Reader.blob(blob_b.hash)
-        assert {:error, :not_found} = Reader.blob(blob_c.hash)
-        assert {:ok, _} = Reader.blob(blob_d.hash)
+        assert {:error, :not_found} = Reader.blob(blob_a.hash, true)
+        assert {:error, :not_found} = Reader.blob(blob_b.hash, true)
+        assert {:error, :not_found} = Reader.blob(blob_c.hash, true)
+        assert {:ok, _} = Reader.blob(blob_d.hash, true)
 
         Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
 
@@ -96,10 +96,10 @@ defmodule Indexer.Fetcher.Beacon.BlobTest do
           Repo.one!(from(blob in Blob, where: blob.hash == ^blob_a.hash))
         end)
 
-        assert {:ok, _} = Reader.blob(blob_a.hash)
-        assert {:ok, _} = Reader.blob(blob_b.hash)
-        assert {:ok, _} = Reader.blob(blob_c.hash)
-        assert {:ok, _} = Reader.blob(blob_d.hash)
+        assert {:ok, _} = Reader.blob(blob_a.hash, true)
+        assert {:ok, _} = Reader.blob(blob_b.hash, true)
+        assert {:ok, _} = Reader.blob(blob_c.hash, true)
+        assert {:ok, _} = Reader.blob(blob_d.hash, true)
 
         Application.put_env(:explorer, :http_adapter, HTTPoison)
       end
@@ -154,7 +154,7 @@ defmodule Indexer.Fetcher.Beacon.BlobTest do
           Repo.one!(from(blob in Blob, where: blob.hash == ^blob_hash_a))
         end)
 
-        assert {:ok, blob} = Reader.blob(blob_hash_a)
+        assert {:ok, blob} = Reader.blob(blob_hash_a, true)
 
         assert %{
                  hash: ^blob_hash_a,
