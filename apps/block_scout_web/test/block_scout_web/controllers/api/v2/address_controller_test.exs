@@ -507,7 +507,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       txs =
         (txs_from ++ txs_to)
         |> Enum.sort(
-          &(Decimal.compare(&1 |> Chain.fee(:wei) |> elem(1), &2 |> Chain.fee(:wei) |> elem(1)) in [:eq, :lt])
+          &(Decimal.compare(&1 |> Transaction.fee(:wei) |> elem(1), &2 |> Transaction.fee(:wei) |> elem(1)) in [
+              :eq,
+              :lt
+            ])
         )
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "fee", "order" => "asc"})
@@ -543,7 +546,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       txs =
         (txs_from ++ txs_to)
         |> Enum.sort(
-          &(Decimal.compare(&1 |> Chain.fee(:wei) |> elem(1), &2 |> Chain.fee(:wei) |> elem(1)) in [:eq, :gt])
+          &(Decimal.compare(&1 |> Transaction.fee(:wei) |> elem(1), &2 |> Transaction.fee(:wei) |> elem(1)) in [
+              :eq,
+              :gt
+            ])
         )
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "fee", "order" => "desc"})

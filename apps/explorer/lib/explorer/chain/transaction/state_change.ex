@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Transaction.StateChange do
   """
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Hash, TokenTransfer, Wei}
+  alias Explorer.Chain.{Hash, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Transaction.StateChange
 
   defstruct [:coin_or_token_transfers, :address, :token_id, :balance_before, :balance_after, :balance_diff, :miner?]
@@ -140,7 +140,7 @@ defmodule Explorer.Chain.Transaction.StateChange do
   end
 
   def from_loss(tx) do
-    {_, fee} = Chain.fee(tx, :wei)
+    {_, fee} = Transaction.fee(tx, :wei)
 
     if error?(tx) do
       %Wei{value: fee}

@@ -1467,8 +1467,8 @@ defmodule Explorer.Chain.Transaction do
           :asc_nulls_first -> Decimal.new("inf")
         end
 
-      a_fee = a |> Chain.fee(:wei) |> elem(1) || nil_case
-      b_fee = b |> Chain.fee(:wei) |> elem(1) || nil_case
+      a_fee = a |> fee(:wei) |> elem(1) || nil_case
+      b_fee = b |> fee(:wei) |> elem(1) || nil_case
 
       case Decimal.compare(a_fee, b_fee) do
         :eq -> compare_default_sorting(a, b)
@@ -1657,7 +1657,7 @@ defmodule Explorer.Chain.Transaction do
         %__MODULE__{block_number: block_number, index: index, inserted_at: inserted_at, hash: hash, value: value} = tx
       ) do
     %{
-      "fee" => tx |> Chain.fee(:wei) |> elem(1),
+      "fee" => tx |> fee(:wei) |> elem(1),
       "value" => value,
       "block_number" => block_number,
       "index" => index,
@@ -1708,5 +1708,100 @@ defmodule Explorer.Chain.Transaction do
 
       String.downcase(sanitized)
     end
+  end
+
+  @doc """
+  The fee a `transaction` paid for the `t:Explorer.Transaction.t/0` `gas`
+
+  If the transaction is pending, then the fee will be a range of `unit`
+
+      iex> Explorer.Chain.Transaction.fee(
+      ...>   %Explorer.Chain.Transaction{
+      ...>     gas: Decimal.new(3),
+      ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
+      ...>     gas_used: nil
+      ...>   },
+      ...>   :wei
+      ...> )
+      {:maximum, Decimal.new(6)}
+
+  If the transaction has been confirmed in block, then the fee will be the actual fee paid in `unit` for the `gas_used`
+  in the `transaction`.
+
+      iex> Explorer.Chain.Transaction.fee(
+      ...>   %Explorer.Chain.Transaction{
+      ...>     gas: Decimal.new(3),
+      ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
+      ...>     gas_used: Decimal.new(2)
+      ...>   },
+      ...>   :wei
+      ...> )
+      {:actual, Decimal.new(4)}
+
+  """
+  @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t() | nil}
+  def fee(%Transaction{gas: gas, gas_price: nil, gas_used: nil} = transaction, unit) do
+    gas_price = effective_gas_price(transaction)
+
+    {:maximum, gas_price && gas_price |> Wei.to(unit) |> Decimal.mult(gas)}
+  end
+
+  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
+    fee =
+      gas_price
+      |> Wei.to(unit)
+      |> Decimal.mult(gas)
+
+    {:maximum, fee}
+  end
+
+  def fee(%Transaction{gas_price: nil, gas_used: gas_used} = transaction, unit) do
+    gas_price = effective_gas_price(transaction)
+
+    {:actual,
+     gas_price &&
+       gas_price
+       |> Wei.to(unit)
+       |> Decimal.mult(gas_used)}
+  end
+
+  def fee(%Transaction{gas_price: gas_price, gas_used: gas_used}, unit) do
+    fee =
+      gas_price
+      |> Wei.to(unit)
+      |> Decimal.mult(gas_used)
+
+    {:actual, fee}
+  end
+
+  @doc """
+    Calculates effective gas price for transaction with type 2 (EIP-1559)
+
+    `effective_gas_price = priority_fee_per_gas + block.base_fee_per_gas`
+  """
+  @spec effective_gas_price(Transaction.t()) :: Wei.t() | nil
+  def effective_gas_price(%Transaction{} = transaction) do
+    base_fee_per_gas = transaction.block && transaction.block.base_fee_per_gas
+    max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
+    max_fee_per_gas = transaction.max_fee_per_gas
+
+    priority_fee_per_gas = priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas)
+
+    priority_fee_per_gas && Wei.sum(priority_fee_per_gas, base_fee_per_gas)
+  end
+
+  @doc """
+    Calculates priority fee per gas for transaction with type 2 (EIP-1559)
+
+    `priority_fee_per_gas = min(transaction.max_priority_fee_per_gas, transaction.max_fee_per_gas - block.base_fee_per_gas)`
+  """
+  @spec priority_fee_per_gas(Wei.t() | nil, Wei.t() | nil, Wei.t() | nil) :: Wei.t() | nil
+  def priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas) do
+    if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas),
+      do: nil,
+      else:
+        Enum.min_by([max_priority_fee_per_gas, Wei.sub(max_fee_per_gas, base_fee_per_gas)], fn x ->
+          Wei.to(x, :wei)
+        end)
   end
 end
