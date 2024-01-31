@@ -63,6 +63,7 @@ jobs:
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+
       - name: Build & Push Docker image for Shibarium
         uses: docker/build-push-action@v5
         with:
@@ -74,7 +75,6 @@ jobs:
           tags: blockscout/blockscout-shibarium:latest, blockscout/blockscout-shibarium:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
           platforms: |
             linux/amd64
-            linux/arm64/v8
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             API_V1_READ_METHODS_DISABLED=false
