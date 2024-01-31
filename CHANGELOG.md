@@ -8,6 +8,8 @@
 
 ### Chore
 
+- [#9303](https://github.com/blockscout/blockscout/pull/9303) - Add workflow for Shibarium
+
 <details>
   <summary>Dependencies version bumps</summary>
 
