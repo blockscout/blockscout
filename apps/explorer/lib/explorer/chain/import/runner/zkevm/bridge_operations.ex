@@ -89,6 +89,7 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeOperations do
           l1_transaction_hash: fragment("COALESCE(EXCLUDED.l1_transaction_hash, ?)", op.l1_transaction_hash),
           l2_transaction_hash: fragment("COALESCE(EXCLUDED.l2_transaction_hash, ?)", op.l2_transaction_hash),
           l1_token_id: fragment("COALESCE(EXCLUDED.l1_token_id, ?)", op.l1_token_id),
+          l1_token_address: fragment("COALESCE(EXCLUDED.l1_token_address, ?)", op.l1_token_address),
           l2_token_address: fragment("COALESCE(EXCLUDED.l2_token_address, ?)", op.l2_token_address),
           amount: fragment("EXCLUDED.amount"),
           block_number: fragment("COALESCE(EXCLUDED.block_number, ?)", op.block_number),
@@ -99,10 +100,11 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeOperations do
       ],
       where:
         fragment(
-          "(EXCLUDED.l1_transaction_hash, EXCLUDED.l2_transaction_hash, EXCLUDED.l1_token_id, EXCLUDED.l2_token_address, EXCLUDED.amount, EXCLUDED.block_number, EXCLUDED.block_timestamp) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.l1_transaction_hash, EXCLUDED.l2_transaction_hash, EXCLUDED.l1_token_id, EXCLUDED.l1_token_address, EXCLUDED.l2_token_address, EXCLUDED.amount, EXCLUDED.block_number, EXCLUDED.block_timestamp) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?)",
           op.l1_transaction_hash,
           op.l2_transaction_hash,
           op.l1_token_id,
+          op.l1_token_address,
           op.l2_token_address,
           op.amount,
           op.block_number,

@@ -146,6 +146,7 @@ defmodule Indexer.Supervisor do
         ]),
         configure(Indexer.Fetcher.Shibarium.L1.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.Zkevm.BridgeL1.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.Zkevm.BridgeL1Tokens.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.Zkevm.BridgeL2.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),

@@ -134,44 +134,54 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
 
   @spec prepare_operations(list(), list() | nil, list(), map() | nil) :: list()
   def prepare_operations(events, json_rpc_named_arguments, json_rpc_named_arguments_l1, block_to_timestamp \\ nil) do
-    bridge_events = Enum.filter(events, fn event -> event.first_topic == @bridge_event end)
-
-    block_to_timestamp =
+    {block_to_timestamp, token_address_to_id} =
       if is_nil(block_to_timestamp) do
-        blocks_to_timestamps(bridge_events, json_rpc_named_arguments)
+        bridge_events = Enum.filter(events, fn event -> event.first_topic == @bridge_event end)
+
+        l1_token_addresses =
+          bridge_events
+          |> Enum.reduce(%MapSet{}, fn event, acc ->
+            case bridge_event_parse(event) do
+              {{nil, _}, _, _} -> acc
+              {{token_address, nil}, _, _} -> MapSet.put(acc, token_address)
+            end
+          end)
+          |> MapSet.to_list()
+
+        {
+          blocks_to_timestamps(bridge_events, json_rpc_named_arguments),
+          token_addresses_to_ids(l1_token_addresses, json_rpc_named_arguments_l1)
+        }
       else
-        block_to_timestamp
+        # this is called in realtime
+        {block_to_timestamp, %{}}
       end
 
-    token_address_to_id = token_addresses_to_ids(bridge_events, json_rpc_named_arguments_l1)
-
     Enum.map(events, fn event ->
-      {index, l1_token_id, l2_token_address, amount, block_number, block_timestamp} =
+      {index, l1_token_id, l1_token_address, l2_token_address, amount, block_number, block_timestamp} =
         if event.first_topic == @bridge_event do
-          [
-            leaf_type,
-            origin_network,
-            origin_address,
-            _destination_network,
-            _destination_address,
+          {
+            {l1_token_address, l2_token_address},
             amount,
-            _metadata,
             deposit_count
-          ] = decode_data(event.data, @bridge_event_params)
-
-          {l1_token_address, l2_token_address} =
-            token_address_by_origin_address(origin_address, origin_network, leaf_type)
+          } = bridge_event_parse(event)
 
           l1_token_id = Map.get(token_address_to_id, l1_token_address)
           block_number = quantity_to_integer(event.block_number)
           block_timestamp = Map.get(block_to_timestamp, block_number)
 
-          {deposit_count, l1_token_id, l2_token_address, amount, block_number, block_timestamp}
+          # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+          l1_token_address =
+            if is_nil(l1_token_id) do
+              l1_token_address
+            end
+
+          {deposit_count, l1_token_id, l1_token_address, l2_token_address, amount, block_number, block_timestamp}
         else
           [index, _origin_network, _origin_address, _destination_address, amount] =
             decode_data(event.data, @claim_event_params)
 
-          {index, nil, nil, amount, nil, nil}
+          {index, nil, nil, nil, amount, nil, nil}
         end
 
       is_l1 = json_rpc_named_arguments == json_rpc_named_arguments_l1
@@ -192,6 +202,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
       result
       |> extend_result(transaction_hash_field, event.transaction_hash)
       |> extend_result(:l1_token_id, l1_token_id)
+      |> extend_result(:l1_token_address, l1_token_address)
       |> extend_result(:l2_token_address, l2_token_address)
       |> extend_result(:block_number, block_number)
       |> extend_result(:block_timestamp, block_timestamp)
@@ -208,6 +219,21 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     end)
   end
 
+  defp bridge_event_parse(event) do
+    [
+      leaf_type,
+      origin_network,
+      origin_address,
+      _destination_network,
+      _destination_address,
+      amount,
+      _metadata,
+      deposit_count
+    ] = decode_data(event.data, @bridge_event_params)
+
+    {token_address_by_origin_address(origin_address, origin_network, leaf_type), amount, deposit_count}
+  end
+
   defp operation_type(first_topic, is_l1) do
     if first_topic == @bridge_event do
       if is_l1, do: :deposit, else: :withdrawal
@@ -216,27 +242,9 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     end
   end
 
-  defp token_addresses_to_ids(events, json_rpc_named_arguments) do
+  def token_addresses_to_ids(l1_token_addresses, json_rpc_named_arguments) do
     token_data =
-      events
-      |> Enum.reduce(%MapSet{}, fn event, acc ->
-        [
-          leaf_type,
-          origin_network,
-          origin_address,
-          _destination_network,
-          _destination_address,
-          _amount,
-          _metadata,
-          _deposit_count
-        ] = decode_data(event.data, @bridge_event_params)
-
-        case token_address_by_origin_address(origin_address, origin_network, leaf_type) do
-          {nil, _} -> acc
-          {token_address, nil} -> MapSet.put(acc, token_address)
-        end
-      end)
-      |> MapSet.to_list()
+      l1_token_addresses
       |> get_token_data(json_rpc_named_arguments)
 
     tokens_existing =
@@ -249,18 +257,11 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
       |> Enum.reject(fn {address, _} -> Map.has_key?(tokens_existing, address) end)
       |> Enum.map(fn {address, data} -> Map.put(data, :address, address) end)
 
-    # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
-    import_options =
-      if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
-        %{
-          zkevm_bridge_l1_tokens: %{params: tokens_to_insert},
-          timeout: :infinity
-        }
-      else
-        %{}
-      end
-
-    {:ok, inserts} = Chain.import(import_options)
+    {:ok, inserts} =
+      Chain.import(%{
+        zkevm_bridge_l1_tokens: %{params: tokens_to_insert},
+        timeout: :infinity
+      })
 
     tokens_inserted = Map.get(inserts, :insert_zkevm_bridge_l1_tokens, [])
 

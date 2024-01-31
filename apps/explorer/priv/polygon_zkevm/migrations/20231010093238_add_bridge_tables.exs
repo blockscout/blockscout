@@ -29,11 +29,14 @@ defmodule Explorer.Repo.PolygonZkevm.Migrations.AddBridgeTables do
         null: true
       )
 
+      add(:l1_token_address, :bytea, null: true)
       add(:l2_token_address, :bytea, null: true)
       add(:amount, :numeric, precision: 100, null: false)
       add(:block_number, :bigint, null: true)
       add(:block_timestamp, :"timestamp without time zone", null: true)
       timestamps(null: false, type: :utc_datetime_usec)
     end
+
+    create(index(:zkevm_bridge, :l1_token_address))
   end
 end

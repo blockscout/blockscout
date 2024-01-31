@@ -735,6 +735,7 @@ config :indexer, Indexer.Fetcher.Zkevm.BridgeL1,
   native_decimals: ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NATIVE_DECIMALS", 18)
 
 config :indexer, Indexer.Fetcher.Zkevm.BridgeL1.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_zkevm"
+config :indexer, Indexer.Fetcher.Zkevm.BridgeL1Tokens.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_zkevm"
 
 config :indexer, Indexer.Fetcher.Zkevm.BridgeL2,
   start_block: System.get_env("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_START_BLOCK"),

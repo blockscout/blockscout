@@ -17,6 +17,7 @@ defmodule Explorer.Chain.Zkevm.Bridge do
           l2_transaction_hash: Hash.t() | nil,
           l1_token: %Ecto.Association.NotLoaded{} | BridgeL1Token.t() | nil,
           l1_token_id: non_neg_integer() | nil,
+          l1_token_address: Hash.Address.t() | nil,
           l2_token: %Ecto.Association.NotLoaded{} | Token.t() | nil,
           l2_token_address: Hash.Address.t() | nil,
           amount: Decimal.t(),
@@ -31,6 +32,7 @@ defmodule Explorer.Chain.Zkevm.Bridge do
     field(:l1_transaction_hash, Hash.Full)
     field(:l2_transaction_hash, Hash.Full)
     belongs_to(:l1_token, BridgeL1Token, foreign_key: :l1_token_id, references: :id, type: :integer)
+    field(:l1_token_address, Hash.Address)
     belongs_to(:l2_token, Token, foreign_key: :l2_token_address, references: :contract_address_hash, type: Hash.Address)
     field(:amount, :decimal)
     field(:block_number, :integer)

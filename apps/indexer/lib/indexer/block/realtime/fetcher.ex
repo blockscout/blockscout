@@ -22,6 +22,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       async_import_token_balances: 1,
       async_import_token_instances: 1,
       async_import_uncles: 1,
+      async_import_zkevm_bridge_l1_tokens: 1,
       fetch_and_import_range: 2
     ]
 
@@ -451,6 +452,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
     async_import_blobs(imported)
+    async_import_zkevm_bridge_l1_tokens(imported)
   end
 
   defp balances(
