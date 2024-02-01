@@ -342,9 +342,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
       has_failed_parent?(failed_parent_paths, tail, [head | reverse_path_acc])
   end
 
-  defp has_failed_parent?(failed_parent_paths, [], reverse_path_acc) do
-    MapSet.member?(failed_parent_paths, reverse_path_acc)
-  end
+  # don't count itself as a parent
+  defp has_failed_parent?(_failed_parent_paths, [], _reverse_path_acc), do: false
 
   defp handle_unique_key_violation(%{exception: %{postgres: %{code: :unique_violation}}}, block_numbers) do
     BlocksRunner.invalidate_consensus_blocks(block_numbers)
