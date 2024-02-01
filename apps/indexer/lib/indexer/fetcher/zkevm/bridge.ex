@@ -5,8 +5,6 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
 
   require Logger
 
-  import Ecto.Query
-
   import EthereumJSONRPC,
     only: [
       integer_to_quantity: 1,
@@ -20,10 +18,9 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
   import Explorer.Helper, only: [decode_data: 2]
 
   alias EthereumJSONRPC.Logs
-  alias Explorer.Chain.Hash
-  alias Explorer.Chain.Zkevm.BridgeL1Token
-  alias Explorer.{Chain, Repo}
-  alias Explorer.SmartContract.Reader
+  alias Explorer.Chain
+  alias Explorer.Chain.Zkevm.Reader
+  alias Explorer.SmartContract.Reader, as: SmartContractReader
   alias Indexer.Helper
   alias Indexer.Transform.Addresses
 
@@ -34,6 +31,9 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
   # 32-byte signature of the event ClaimEvent(uint32 index, uint32 originNetwork, address originAddress, address destinationAddress, uint256 amount)
   @claim_event "0x25308c93ceeed162da955b3f7ce3e3f93606579e40fb92029faa9efe27545983"
   @claim_event_params [{:uint, 32}, {:uint, 32}, :address, :address, {:uint, 256}]
+
+  @symbol_method_selector "95d89b41"
+  @decimals_method_selector "313ce567"
 
   @erc20_abi [
     %{
@@ -59,7 +59,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
   @spec filter_bridge_events(list(), binary()) :: list()
   def filter_bridge_events(events, bridge_contract) do
     Enum.filter(events, fn event ->
-      String.downcase(event.address_hash) == bridge_contract and
+      Helper.address_hash_to_string(event.address_hash, true) == bridge_contract and
         Enum.member?([@bridge_event, @claim_event], Helper.log_topic_to_string(event.first_topic))
     end)
   end
@@ -250,7 +250,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     tokens_existing =
       token_data
       |> Map.keys()
-      |> token_addresses_to_ids_from_db()
+      |> Reader.token_addresses_to_ids_from_db()
 
     tokens_to_insert =
       token_data
@@ -271,24 +271,16 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     tokens_not_inserted =
       tokens_to_insert
       |> Enum.reject(fn token ->
-        Enum.any?(tokens_inserted, fn inserted -> token.address == Hash.to_string(inserted.address) end)
+        Enum.any?(tokens_inserted, fn inserted -> token.address == Helper.address_hash_to_string(inserted.address) end)
       end)
       |> Enum.map(& &1.address)
 
-    tokens_inserted_outside = token_addresses_to_ids_from_db(tokens_not_inserted)
+    tokens_inserted_outside = Reader.token_addresses_to_ids_from_db(tokens_not_inserted)
 
     tokens_inserted
-    |> Enum.reduce(%{}, fn t, acc -> Map.put(acc, Hash.to_string(t.address), t.id) end)
+    |> Enum.reduce(%{}, fn t, acc -> Map.put(acc, Helper.address_hash_to_string(t.address), t.id) end)
     |> Map.merge(tokens_existing)
     |> Map.merge(tokens_inserted_outside)
-  end
-
-  defp token_addresses_to_ids_from_db(addresses) do
-    query = from(t in BridgeL1Token, select: {t.address, t.id}, where: t.address in ^addresses)
-
-    query
-    |> Repo.all(timeout: :infinity)
-    |> Enum.reduce(%{}, fn {address, id}, acc -> Map.put(acc, Hash.to_string(address), id) end)
   end
 
   defp token_address_by_origin_address(origin_address, origin_network, leaf_type) do
@@ -311,34 +303,8 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     # first, we're trying to read token data from the DB.
     # if tokens are not in the DB, read them through RPC.
     token_addresses
-    |> get_token_data_from_db()
+    |> Reader.get_token_data_from_db()
     |> get_token_data_from_rpc(json_rpc_named_arguments)
-  end
-
-  defp get_token_data_from_db(token_addresses) do
-    # try to read token symbols and decimals from the database
-    query =
-      from(
-        t in BridgeL1Token,
-        where: t.address in ^token_addresses,
-        select: {t.address, t.decimals, t.symbol}
-      )
-
-    token_data =
-      query
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn {address, decimals, symbol}, acc ->
-        token_address = String.downcase(Hash.to_string(address))
-        Map.put(acc, token_address, %{symbol: symbol, decimals: decimals})
-      end)
-
-    token_addresses_for_rpc =
-      token_addresses
-      |> Enum.reject(fn address ->
-        Map.has_key?(token_data, String.downcase(address))
-      end)
-
-    {token_data, token_addresses_for_rpc}
   end
 
   defp get_token_data_from_rpc({token_data, token_addresses}, json_rpc_named_arguments) do
@@ -350,7 +316,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
       if status == :ok do
         response = parse_response(response)
 
-        address = String.downcase(request.contract_address)
+        address = Helper.address_hash_to_string(request.contract_address, true)
 
         new_data = get_new_data(token_data_acc[address] || %{}, request, response)
 
@@ -366,7 +332,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
       token_addresses
       |> Enum.map(fn address ->
         # we will call symbol() and decimals() public getters
-        Enum.map(["95d89b41", "313ce567"], fn method_id ->
+        Enum.map([@symbol_method_selector, @decimals_method_selector], fn method_id ->
           %{
             contract_address: address,
             method_id: method_id,
@@ -388,7 +354,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
   end
 
   defp read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left) when retries_left > 0 do
-    responses = Reader.query_contracts(requests, abi, json_rpc_named_arguments: json_rpc_named_arguments)
+    responses = SmartContractReader.query_contracts(requests, abi, json_rpc_named_arguments: json_rpc_named_arguments)
 
     error_messages =
       Enum.reduce(responses, [], fn {status, error_message}, acc ->
@@ -427,8 +393,8 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
 
   defp atomized_key("symbol"), do: :symbol
   defp atomized_key("decimals"), do: :decimals
-  defp atomized_key("95d89b41"), do: :symbol
-  defp atomized_key("313ce567"), do: :decimals
+  defp atomized_key(@symbol_method_selector), do: :symbol
+  defp atomized_key(@decimals_method_selector), do: :decimals
 
   defp parse_response(response) do
     case response do

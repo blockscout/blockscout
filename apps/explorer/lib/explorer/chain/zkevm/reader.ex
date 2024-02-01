@@ -12,8 +12,9 @@ defmodule Explorer.Chain.Zkevm.Reader do
 
   import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain.Zkevm.{BatchTransaction, Bridge, LifecycleTransaction, TransactionBatch}
+  alias Explorer.Chain.Zkevm.{BatchTransaction, Bridge, BridgeL1Token, LifecycleTransaction, TransactionBatch}
   alias Explorer.{Chain, PagingOptions, Repo}
+  alias Indexer.Helper
 
   @doc """
     Reads a batch by its number from database.
@@ -85,6 +86,39 @@ defmodule Explorer.Chain.Zkevm.Reader do
     query = from(bts in BatchTransaction, where: bts.batch_number == ^batch_number)
 
     select_repo(options).all(query)
+  end
+
+  @doc """
+    Tries to read L1 token data (address, symbol, decimals) for the given addresses
+    from the database. If the data for an address is not found in Explorer.Chain.Zkevm.BridgeL1Token,
+    the address is returned in the list inside the tuple (the second item of the tuple).
+    The first item of the returned tuple contains `L1 token address -> L1 token data` map.
+  """
+  @spec get_token_data_from_db(list()) :: {map(), list()}
+  def get_token_data_from_db(token_addresses) do
+    # try to read token symbols and decimals from the database
+    query =
+      from(
+        t in BridgeL1Token,
+        where: t.address in ^token_addresses,
+        select: {t.address, t.decimals, t.symbol}
+      )
+
+    token_data =
+      query
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn {address, decimals, symbol}, acc ->
+        token_address = Helper.address_hash_to_string(address, true)
+        Map.put(acc, token_address, %{symbol: symbol, decimals: decimals})
+      end)
+
+    token_addresses_for_rpc =
+      token_addresses
+      |> Enum.reject(fn address ->
+        Map.has_key?(token_data, Helper.address_hash_to_string(address, true))
+      end)
+
+    {token_data, token_addresses_for_rpc}
   end
 
   @doc """
@@ -182,8 +216,24 @@ defmodule Explorer.Chain.Zkevm.Reader do
   end
 
   @doc """
-  Retrieves a list of Polygon zkEVM deposits (completed and unclaimed)
-  sorted in descending order of the index.
+    Builds `L1 token address -> L1 token id` map for the given token addresses.
+    The info is taken from Explorer.Chain.Zkevm.BridgeL1Token.
+    If an address is not in the table, it won't be in the resulting map.
+  """
+  @spec token_addresses_to_ids_from_db(list()) :: map()
+  def token_addresses_to_ids_from_db(addresses) do
+    query = from(t in BridgeL1Token, select: {t.address, t.id}, where: t.address in ^addresses)
+
+    query
+    |> Repo.all(timeout: :infinity)
+    |> Enum.reduce(%{}, fn {address, id}, acc ->
+      Map.put(acc, Helper.address_hash_to_string(address), id)
+    end)
+  end
+
+  @doc """
+    Retrieves a list of Polygon zkEVM deposits (completed and unclaimed)
+    sorted in descending order of the index.
   """
   @spec deposits(list()) :: list()
   def deposits(options \\ []) do
@@ -206,7 +256,7 @@ defmodule Explorer.Chain.Zkevm.Reader do
   end
 
   @doc """
-  Returns a total number of Polygon zkEVM deposits (completed and unclaimed).
+    Returns a total number of Polygon zkEVM deposits (completed and unclaimed).
   """
   @spec deposits_count(list()) :: term() | nil
   def deposits_count(options \\ []) do
@@ -220,8 +270,8 @@ defmodule Explorer.Chain.Zkevm.Reader do
   end
 
   @doc """
-  Retrieves a list of Polygon zkEVM withdrawals (completed and unclaimed)
-  sorted in descending order of the index.
+    Retrieves a list of Polygon zkEVM withdrawals (completed and unclaimed)
+    sorted in descending order of the index.
   """
   @spec withdrawals(list()) :: list()
   def withdrawals(options \\ []) do
@@ -244,7 +294,7 @@ defmodule Explorer.Chain.Zkevm.Reader do
   end
 
   @doc """
-  Returns a total number of Polygon zkEVM withdrawals (completed and unclaimed).
+    Returns a total number of Polygon zkEVM withdrawals (completed and unclaimed).
   """
   @spec withdrawals_count(list()) :: term() | nil
   def withdrawals_count(options \\ []) do
