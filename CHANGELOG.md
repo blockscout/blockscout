@@ -8,8 +8,6 @@
 
 ### Chore
 
-- [#9303](https://github.com/blockscout/blockscout/pull/9303) - Add workflow for Shibarium
-
 <details>
   <summary>Dependencies version bumps</summary>
 
@@ -24,7 +22,7 @@
 - [#9158](https://github.com/blockscout/blockscout/pull/9158) - Increase shared memory for PostgreSQL containers
 - [#9155](https://github.com/blockscout/blockscout/pull/9155) - Allow bypassing avg block time in proxy implementation re-fetch ttl calculation
 - [#9148](https://github.com/blockscout/blockscout/pull/9148) - Add `/api/v2/utils/decode-calldata`
-- [#9145](https://github.com/blockscout/blockscout/pull/9145) - Proxy for Account abstraction microservice
+- [#9145](https://github.com/blockscout/blockscout/pull/9145), [#9309](https://github.com/blockscout/blockscout/pull/9309) - Proxy for Account abstraction microservice
 - [#9132](https://github.com/blockscout/blockscout/pull/9132) - Fetch token image from CoinGecko
 - [#9131](https://github.com/blockscout/blockscout/pull/9131) - Merge addresses stage with address referencing
 - [#9120](https://github.com/blockscout/blockscout/pull/9120) - Add GET and POST `/api/v2/smart-contracts/:address_hash/audit-reports`
@@ -57,6 +55,7 @@
 
 ### Chore
 
+- [#9303](https://github.com/blockscout/blockscout/pull/9303) - Add workflow for Shibarium
 - [#9233](https://github.com/blockscout/blockscout/pull/9233) - "cataloged" index on tokens table
 - [#9198](https://github.com/blockscout/blockscout/pull/9198) - Make Postgres@15 default option
 - [#9197](https://github.com/blockscout/blockscout/pull/9197) - Add `MARKET_HISTORY_FETCH_INTERVAL` env
