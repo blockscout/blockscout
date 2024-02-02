@@ -49,6 +49,7 @@ for repo <- [
       Explorer.Repo.RSK,
       Explorer.Repo.Shibarium,
       Explorer.Repo.Suave,
+      Explorer.Repo.Arbitrum,
       Explorer.Repo.BridgedTokens
     ] do
   config :explorer, repo,

@@ -14,6 +14,7 @@ defmodule ConfigHelper do
         "rsk" -> base_repos ++ [Explorer.Repo.RSK]
         "shibarium" -> base_repos ++ [Explorer.Repo.Shibarium]
         "suave" -> base_repos ++ [Explorer.Repo.Suave]
+        "arbitrum" -> base_repos ++ [Explorer.Repo.Arbitrum]
         _ -> base_repos
       end
 

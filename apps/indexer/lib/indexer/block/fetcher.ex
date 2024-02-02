@@ -43,6 +43,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias Indexer.Transform.PolygonEdge.{DepositExecutes, Withdrawals}
 
+  alias Indexer.Transform.Arbitrum.Messaging, as: ArbitrumMessaging
   alias Indexer.Transform.Shibarium.Bridge, as: ShibariumBridge
 
   alias Indexer.Transform.Blocks, as: TransformBlocks
@@ -157,6 +158,11 @@ defmodule Indexer.Block.Fetcher do
              do: ShibariumBridge.parse(blocks, transactions_with_receipts, logs),
              else: []
            ),
+         arbitrum_xlevel_messages =
+           if(callback_module == Indexer.Block.Realtime.Fetcher,
+             do: ArbitrumMessaging.parse(transactions_with_receipts, logs),
+             else: []
+           ),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
          addresses =
@@ -213,6 +219,10 @@ defmodule Indexer.Block.Fetcher do
               "shibarium" ->
                 basic_import_options
                 |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
+
+              "arbitrum" ->
+                basic_import_options
+                |> Map.put_new(:arbitrum_messages, %{params: arbitrum_xlevel_messages})
 
               _ ->
                 basic_import_options

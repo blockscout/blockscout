@@ -35,6 +35,10 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.Shibarium.BridgeOperations
   ]
 
+  @artbitrum_runners [
+    Runner.Arbitrum.Messages
+  ]
+
   @impl Stage
   def runners do
     case System.get_env("CHAIN_TYPE") do
@@ -47,6 +51,9 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       "shibarium" ->
         @default_runners ++ @shibarium_runners
 
+      "arbitrum" ->
+        @default_runners ++ @artbitrum_runners
+
       _ ->
         @default_runners
     end
@@ -54,7 +61,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
   @impl Stage
   def all_runners do
-    @default_runners ++ @polygon_edge_runners ++ @polygon_zkevm_runners ++ @shibarium_runners
+    @default_runners ++ @polygon_edge_runners ++ @polygon_zkevm_runners ++ @shibarium_runners ++ @artbitrum_runners
   end
 
   @impl Stage
