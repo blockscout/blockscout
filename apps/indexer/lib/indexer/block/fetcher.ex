@@ -423,7 +423,7 @@ defmodule Indexer.Block.Fetcher do
   def async_import_replaced_transactions(_), do: :ok
 
   @doc """
-  Fills a buffer of L1 token addresses to handle it asyncronously in
+  Fills a buffer of L1 token addresses to handle it asynchronously in
   the Indexer.Fetcher.Zkevm.BridgeL1Tokens module. The addresses are
   taken from the `operations` list.
   """
