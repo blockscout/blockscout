@@ -17,6 +17,11 @@ defmodule Indexer.Helper do
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain.Hash
 
+  @doc """
+  Checks whether the given Ethereum address looks correct.
+  The address should begin with 0x prefix and then contain 40 hexadecimal digits (can be in mixed case).
+  This function doesn't check if the address is checksummed.
+  """
   @spec address_correct?(binary()) :: boolean()
   def address_correct?(address) when is_binary(address) do
     String.match?(address, ~r/^0x[[:xdigit:]]{40}$/i)
@@ -26,6 +31,11 @@ defmodule Indexer.Helper do
     false
   end
 
+  @doc """
+  Converts Explorer.Chain.Hash representation of the given address to a string
+  beginning with 0x prefix. If the given address is already a string, it is not modified.
+  The second argument forces the result to be downcased.
+  """
   @spec address_hash_to_string(binary(), boolean()) :: binary()
   def address_hash_to_string(hash, downcase \\ false)
 

@@ -56,6 +56,10 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     }
   ]
 
+  @doc """
+  Filters the given list of events keeping only `BridgeEvent` and `ClaimEvent` ones
+  emitted by the bridge contract.
+  """
   @spec filter_bridge_events(list(), binary()) :: list()
   def filter_bridge_events(events, bridge_contract) do
     Enum.filter(events, fn event ->
@@ -64,6 +68,10 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     end)
   end
 
+  @doc """
+  Fetches `BridgeEvent` and `ClaimEvent` events of the bridge contract from an RPC node
+  for the given range of blocks.
+  """
   @spec get_logs_all({non_neg_integer(), non_neg_integer()}, binary(), list()) :: list()
   def get_logs_all({chunk_start, chunk_end}, bridge_contract, json_rpc_named_arguments) do
     {:ok, result} =
@@ -101,6 +109,11 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
+  @doc """
+  Imports the given zkEVM bridge operations into database.
+  Used by Indexer.Fetcher.Zkevm.BridgeL1 and Indexer.Fetcher.Zkevm.BridgeL2 fetchers.
+  Doesn't return anything.
+  """
   @spec import_operations(list()) :: no_return()
   def import_operations(operations) do
     addresses =
@@ -116,6 +129,9 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
       })
   end
 
+  @doc """
+  Forms JSON RPC named arguments for the given RPC URL.
+  """
   @spec json_rpc_named_arguments(binary()) :: list()
   def json_rpc_named_arguments(rpc_url) do
     [
@@ -132,6 +148,10 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     ]
   end
 
+  @doc """
+  Converts the list of zkEVM bridge events to the list of operations
+  preparing them for importing to the database.
+  """
   @spec prepare_operations(list(), list() | nil, list(), map() | nil) :: list()
   def prepare_operations(events, json_rpc_named_arguments, json_rpc_named_arguments_l1, block_to_timestamp \\ nil) do
     {block_to_timestamp, token_address_to_id} =
@@ -242,6 +262,12 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     end
   end
 
+  @doc """
+  Fetches L1 token data for the given token addresses,
+  builds `L1 token address -> L1 token id` map for them,
+  and writes the data to the database. Returns the resulting map.
+  """
+  @spec token_addresses_to_ids(list(), list()) :: map()
   def token_addresses_to_ids(l1_token_addresses, json_rpc_named_arguments) do
     token_data =
       l1_token_addresses
