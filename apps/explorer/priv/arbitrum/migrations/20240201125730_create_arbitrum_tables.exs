@@ -8,7 +8,7 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
     )
 
     execute(
-      "CREATE TYPE arbitrum_messages_status AS ENUM ('initiated', 'confirmed', 'relayed')",
+      "CREATE TYPE arbitrum_messages_status AS ENUM ('initiated', 'sent', 'confirmed', 'relayed')",
       "DROP TYPE arbitrum_messages_status"
     )
 

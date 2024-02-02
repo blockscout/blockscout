@@ -31,7 +31,7 @@ defmodule Explorer.Chain.Arbitrum.Message do
     field(:origination_timestamp, :utc_datetime_usec)
     field(:originating_tx_blocknum, :integer)
     field(:completion_tx_hash, Hash.Full)
-    field(:status, Ecto.Enum, values: [:initiated, :confirmed, :relayed])
+    field(:status, Ecto.Enum, values: [:initiated, :sent, :confirmed, :relayed])
 
     timestamps()
   end
