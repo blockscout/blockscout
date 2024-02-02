@@ -8,8 +8,8 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.Messages do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.Import
   alias Explorer.Chain.Arbitrum.Message, as: CrosslevelMessage
+  alias Explorer.Chain.Import
   alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner

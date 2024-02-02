@@ -82,7 +82,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     [
       caller,
       arb_block_num,
-      _ethBlockNum,
+      _eth_block_num,
       timestamp,
       _callvalue,
       _data
