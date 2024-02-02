@@ -56,6 +56,7 @@ defmodule EthereumJSONRPC.Contract do
       |> case do
         {:ok, responses} -> responses
         {:error, {:bad_gateway, _request_url}} -> raise "Bad gateway"
+        {:error, {reason, _request_url}} -> raise to_string(reason)
         {:error, reason} when is_atom(reason) -> raise Atom.to_string(reason)
         {:error, error} -> raise error
       end
@@ -188,19 +189,15 @@ defmodule EthereumJSONRPC.Contract do
         block_number -> integer_to_quantity(block_number)
       end
 
-    full_params =
-      case from do
-        nil -> %{
-                 id: id,
-                 method: "eth_call",
-                 params: [%{to: contract_address, data: data}, block]
-               }
-        from ->  %{
-                   id: id,
-                   method: "eth_call",
-                   params: [%{to: contract_address, data: data, from: from}, block]
-                 }
-      end
+    params =
+      %{to: contract_address, data: data}
+      |> (&if(is_nil(from), do: &1, else: Map.put(&1, :from, from))).()
+
+    full_params = %{
+      id: id,
+      method: "eth_call",
+      params: [params, block]
+    }
 
     request(full_params)
   end
@@ -223,6 +220,8 @@ defmodule EthereumJSONRPC.Contract do
     end
   end
 
+  defp format_error(nil), do: {:error, ""}
+
   defp format_error(message) when is_binary(message) do
     {:error, message}
   end
@@ -232,6 +231,9 @@ defmodule EthereumJSONRPC.Contract do
   end
 
   defp format_error(error) do
-    format_error(Exception.message(error))
+    error
+    |> Map.put(:hide_url, true)
+    |> Exception.message()
+    |> format_error()
   end
 end

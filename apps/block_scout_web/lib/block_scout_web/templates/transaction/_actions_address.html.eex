@@ -1,0 +1,13 @@
+<%= link to: address_path(BlockScoutWeb.Endpoint, :show, @address_string), "data-test": "address_hash_link" do %>
+  <% name = Map.get(@action.data, "name") %>
+  <span data-toggle="tooltip" data-placement="top" title="<%= name %>">
+    <span class="d-none d-md-none d-lg-inline d-xl-inline"><%= AddressView.short_string(name, 15) %></span>
+    <span class="d-inline d-md-inline d-lg-none d-xl-none"><%= AddressView.short_string(name, 5) %></span>
+  </span>
+
+  <% symbol = Map.get(@action.data, "symbol") %>
+  <span data-toggle="tooltip" data-placement="top" title="<%= symbol %>">
+    <span class="d-none d-md-none d-lg-inline d-xl-inline">(<%= AddressView.short_string(symbol, 15) %>)</span>
+    <span class="d-inline d-md-inline d-lg-none d-xl-none">(<%= AddressView.short_string(symbol, 5) %>)</span>
+  </span>
+<% end %>

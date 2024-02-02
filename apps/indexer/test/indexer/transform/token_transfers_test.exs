@@ -1,5 +1,5 @@
 defmodule Indexer.Transform.TokenTransfersTest do
-  use ExUnit.Case
+  use Explorer.DataCase
 
   import ExUnit.CaptureLog
 
@@ -68,13 +68,13 @@ defmodule Indexer.Transform.TokenTransfersTest do
             from_address_hash: truncated_hash(log_3.second_topic),
             to_address_hash: truncated_hash(log_3.third_topic),
             token_contract_address_hash: log_3.address_hash,
-            token_id: 183,
+            token_ids: [183],
             transaction_hash: log_3.transaction_hash,
             token_type: "ERC-721",
             block_hash: log_3.block_hash
           },
           %{
-            token_id: nil,
+            token_ids: nil,
             amount: Decimal.new(17_000_000_000_000_000_000),
             block_number: log_1.block_number,
             log_index: log_1.index,
@@ -122,7 +122,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
             to_address_hash: "0xbe8cdfc13ffda20c844ac3da2b53a23ac5787f1e",
             block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
             token_contract_address_hash: log.address_hash,
-            token_id: 14_939,
+            token_ids: [14_939],
             transaction_hash: log.transaction_hash,
             token_type: "ERC-721"
           }
@@ -158,8 +158,9 @@ defmodule Indexer.Transform.TokenTransfersTest do
                    log_index: 2,
                    to_address_hash: "0x9c978f4cfa1fe13406bcc05baf26a35716f881dd",
                    token_contract_address_hash: "0x58Ab73CB79c8275628E0213742a85B163fE0A9Fb",
-                   token_id:
-                     7_237_005_577_332_282_011_952_059_972_634_123_378_909_214_838_582_411_639_295_170_840_059_424_276_480,
+                   token_ids: [
+                     7_237_005_577_332_282_011_952_059_972_634_123_378_909_214_838_582_411_639_295_170_840_059_424_276_480
+                   ],
                    token_type: "ERC-1155",
                    transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8"
                  }
@@ -198,7 +199,6 @@ defmodule Indexer.Transform.TokenTransfersTest do
                    log_index: 2,
                    to_address_hash: "0x6c943470780461b00783ad530a53913bd2c104d3",
                    token_contract_address_hash: "0x58Ab73CB79c8275628E0213742a85B163fE0A9Fb",
-                   token_id: nil,
                    token_ids: [680_564_733_841_876_926_926_749_214_863_536_422_912],
                    token_type: "ERC-1155",
                    transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8",
@@ -226,6 +226,73 @@ defmodule Indexer.Transform.TokenTransfersTest do
 
       error = capture_log(fn -> %{tokens: [], token_transfers: []} = TokenTransfers.parse([log]) end)
       assert error =~ ~r"unknown token transfer"i
+    end
+
+    test "token type from database is preferred if the incoming one is different" do
+      %{contract_address_hash: hash} = insert(:token, type: "ERC-1155")
+
+      contract_address_hash = to_string(hash)
+
+      log = %{
+        address_hash: contract_address_hash,
+        block_number: 3_530_917,
+        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
+        data: "0x000000000000000000000000000000000000000000000000ebec21ee1da40000",
+        first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+        fourth_topic: nil,
+        index: 8,
+        second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
+        third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
+        transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
+        type: "mined"
+      }
+
+      assert %{
+               token_transfers: [%{token_contract_address_hash: ^contract_address_hash, token_type: "ERC-1155"}],
+               tokens: [%{contract_address_hash: ^contract_address_hash, type: "ERC-1155"}]
+             } = TokenTransfers.parse([log])
+    end
+
+    test "if there are transfers of different token types, the highest priority will be selected for all" do
+      contract_address_hash = "0x0000000000000000000000000000000000000001"
+
+      logs = [
+        %{
+          address_hash: contract_address_hash,
+          block_number: 3_530_917,
+          block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
+          data: "0x000000000000000000000000000000000000000000000000ebec21ee1da40000",
+          first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          fourth_topic: nil,
+          index: 8,
+          second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
+          third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
+          transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
+          type: "mined"
+        },
+        %{
+          address_hash: contract_address_hash,
+          block_number: 3_530_917,
+          data:
+            "0x1000000000000c520000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+          first_topic: "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62",
+          secon_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
+          third_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
+          fourth_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
+          index: 2,
+          transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
+          block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
+          type: "mined"
+        }
+      ]
+
+      assert %{
+               token_transfers: [
+                 %{token_contract_address_hash: ^contract_address_hash, token_type: "ERC-1155"},
+                 %{token_contract_address_hash: ^contract_address_hash, token_type: "ERC-1155"}
+               ],
+               tokens: [%{contract_address_hash: ^contract_address_hash, type: "ERC-1155"}]
+             } = TokenTransfers.parse(logs)
     end
   end
 

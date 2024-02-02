@@ -122,7 +122,7 @@ defmodule Indexer.Block.Catchup.SequenceTest do
 
       :ok = Shrinkable.shrink(pid)
 
-      # error if currently size == maximumm_size
+      # error if currently size == maximum_size
       assert {:error, :maximum_size} = Sequence.push_back(pid, 2..2)
 
       assert Sequence.pop_front(pid) == 1..1
@@ -181,7 +181,7 @@ defmodule Indexer.Block.Catchup.SequenceTest do
 
       :ok = Shrinkable.shrink(pid)
 
-      # error if currently size == maximumm_size
+      # error if currently size == maximum_size
       assert {:error, :maximum_size} = Sequence.push_front(pid, 2..2)
 
       assert Sequence.pop_front(pid) == 1..1

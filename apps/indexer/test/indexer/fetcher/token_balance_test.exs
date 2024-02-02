@@ -68,6 +68,54 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
       assert token_balance_updated.value_fetched_at != nil
     end
 
+    test "imports the given token balances from 2nd retry" do
+      %Address.TokenBalance{
+        address_hash: %Hash{bytes: address_hash_bytes} = address_hash,
+        token_contract_address_hash: %Hash{bytes: token_contract_address_hash_bytes},
+        block_number: block_number
+      } = insert(:token_balance, value_fetched_at: nil, value: nil)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               error: %{code: -32015, message: "VM execution error.", data: ""}
+             }
+           ]}
+        end
+      )
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
+             }
+           ]}
+        end
+      )
+
+      assert TokenBalance.run(
+               [{address_hash_bytes, token_contract_address_hash_bytes, block_number, "ERC-20", nil, 0}],
+               nil
+             ) == :ok
+
+      token_balance_updated = Explorer.Repo.get_by(Address.TokenBalance, address_hash: address_hash)
+
+      assert token_balance_updated.value == Decimal.new(1_000_000_000_000_000_000_000_000)
+      assert token_balance_updated.value_fetched_at != nil
+    end
+
     test "does not try to fetch the token balance again if the retry is over" do
       max_retries = 3
 

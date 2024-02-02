@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :block_scout_web, :sql_sandbox, true
 
@@ -20,8 +20,16 @@ config :logger, :block_scout_web,
 # Configure wallaby
 config :wallaby, screenshot_on_failure: true, driver: Wallaby.Chrome, js_errors: false
 
-config :explorer, Explorer.ExchangeRates, enabled: false, store: :none
-
-config :explorer, Explorer.KnownTokens, enabled: false, store: :none
-
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: false
+
+config :block_scout_web, BlockScoutWeb.Counters.InternalTransactionsIndexedCounter, enabled: false
+
+config :block_scout_web, :captcha_helper, BlockScoutWeb.TestCaptchaHelper
+
+config :ueberauth, Ueberauth,
+  providers: [
+    auth0: {
+      Ueberauth.Strategy.Auth0,
+      [callback_url: "example.com/callback"]
+    }
+  ]

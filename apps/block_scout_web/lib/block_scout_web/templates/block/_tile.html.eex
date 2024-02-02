@@ -30,12 +30,12 @@
         </span>
         <%= if @block.size do %>
            <!-- size -->
-          <span class="mr-2"> <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
+          <span class="mr-2"> <%= Cldr.Unit.new!(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
         <% end %>
         <!-- age -->
         <span data-from-now="<%= @block.timestamp %>"></span>
       </div>
-      <%= if System.get_env("HIDE_BLOCK_MINER") !== "true" do %>
+      <%= if !Application.get_env(:block_scout_web, :hide_block_miner) do %>
         <div class="text-nowrap text-truncate mt-3 mt-md-0">
           <!-- validator -->
           <%= gettext "Miner" %>
@@ -68,7 +68,7 @@
       <!-- Gas Used -->
       <div class="mr-3 mr-md-0">
         <%= formatted_gas(@block.gas_used) %>
-        <% gas = if Decimal.cmp(@block.gas_limit, 0) == :gt, do: Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit), else: 0  %>
+        <% gas = if Decimal.compare(@block.gas_limit, 0) == :gt, do: Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit), else: 0  %>
         (<%= formatted_gas(gas, format: "#.#%") %>)
         <%= gettext "Gas Used" %>
       </div>

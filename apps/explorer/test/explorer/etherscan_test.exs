@@ -803,6 +803,7 @@ defmodule Explorer.EtherscanTest do
         index: internal_transaction.index,
         transaction_hash: internal_transaction.transaction_hash,
         type: internal_transaction.type,
+        call_type: internal_transaction.call_type,
         gas: internal_transaction.gas,
         gas_used: internal_transaction.gas_used,
         error: internal_transaction.error
@@ -1616,7 +1617,8 @@ defmodule Explorer.EtherscanTest do
           name: token_balance.token.name,
           decimals: token_balance.token.decimals,
           symbol: token_balance.token.symbol,
-          type: token_balance.token.type
+          type: token_balance.token.type,
+          id: token_balance.token_id
         }
       ]
 

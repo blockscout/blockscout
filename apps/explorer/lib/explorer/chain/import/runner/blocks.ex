@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   require Ecto.Query
 
-  import Ecto.Query, only: [from: 2, subquery: 1]
+  import Ecto.Query, only: [from: 2, where: 3, subquery: 1]
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Address, Block, Import, PendingBlockOperation, Transaction}
@@ -13,7 +13,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
   alias Explorer.Chain.Import.Runner.Tokens
+  alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
+  alias Explorer.Utility.MissingBlockRange
 
   @behaviour Runner
 
@@ -46,70 +48,157 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       |> Map.put(:timestamps, timestamps)
 
     hashes = Enum.map(changes_list, & &1.hash)
+
+    minimal_block_height = trace_minimal_block_height()
+
+    items_for_pending_ops =
+      changes_list
+      |> filter_by_min_height(&(&1.number >= minimal_block_height))
+      |> Enum.filter(& &1.consensus)
+      |> Enum.map(&{&1.number, &1.hash})
+
     consensus_block_numbers = consensus_block_numbers(changes_list)
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
+    run_func = fn repo ->
+      {:ok, nonconsensus_items} = lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
+
+      {:ok, filter_by_min_height(nonconsensus_items, fn {number, _hash} -> number >= minimal_block_height end)}
+    end
+
     multi
     |> Multi.run(:lose_consensus, fn repo, _ ->
-      lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn -> run_func.(repo) end,
+        :address_referencing,
+        :blocks,
+        :lose_consensus
+      )
     end)
     |> Multi.run(:blocks, fn repo, _ ->
-      # Note, needs to be executed after `lose_consensus` for lock acquisition
-      insert(repo, changes_list, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          # Note, needs to be executed after `lose_consensus` for lock acquisition
+          insert(repo, changes_list, insert_options)
+        end,
+        :address_referencing,
+        :blocks,
+        :blocks
+      )
     end)
-    |> Multi.run(:new_pending_operations, fn repo, %{lose_consensus: nonconsensus_hashes} ->
-      new_pending_operations(repo, nonconsensus_hashes, hashes, insert_options)
+    |> Multi.run(:new_pending_operations, fn repo, %{lose_consensus: nonconsensus_items} ->
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          new_pending_operations(repo, nonconsensus_items, items_for_pending_ops, insert_options)
+        end,
+        :address_referencing,
+        :blocks,
+        :new_pending_operations
+      )
     end)
     |> Multi.run(:uncle_fetched_block_second_degree_relations, fn repo, _ ->
-      update_block_second_degree_relations(repo, hashes, %{
-        timeout:
-          options[Runner.Block.SecondDegreeRelations.option_key()][:timeout] ||
-            Runner.Block.SecondDegreeRelations.timeout(),
-        timestamps: timestamps
-      })
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          update_block_second_degree_relations(repo, hashes, %{
+            timeout:
+              options[Runner.Block.SecondDegreeRelations.option_key()][:timeout] ||
+                Runner.Block.SecondDegreeRelations.timeout(),
+            timestamps: timestamps
+          })
+        end,
+        :address_referencing,
+        :blocks,
+        :uncle_fetched_block_second_degree_relations
+      )
     end)
     |> Multi.run(:delete_rewards, fn repo, _ ->
-      delete_rewards(repo, changes_list, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn -> delete_rewards(repo, changes_list, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :delete_rewards
+      )
     end)
     |> Multi.run(:fork_transactions, fn repo, _ ->
-      fork_transactions(%{
-        repo: repo,
-        timeout: options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout(),
-        timestamps: timestamps,
-        blocks_changes: changes_list
-      })
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          fork_transactions(%{
+            repo: repo,
+            timeout: options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout(),
+            timestamps: timestamps,
+            blocks_changes: changes_list
+          })
+        end,
+        :address_referencing,
+        :blocks,
+        :fork_transactions
+      )
     end)
     |> Multi.run(:derive_transaction_forks, fn repo, %{fork_transactions: transactions} ->
-      derive_transaction_forks(%{
-        repo: repo,
-        timeout: options[Runner.Transaction.Forks.option_key()][:timeout] || Runner.Transaction.Forks.timeout(),
-        timestamps: timestamps,
-        transactions: transactions
-      })
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          derive_transaction_forks(%{
+            repo: repo,
+            timeout: options[Runner.Transaction.Forks.option_key()][:timeout] || Runner.Transaction.Forks.timeout(),
+            timestamps: timestamps,
+            transactions: transactions
+          })
+        end,
+        :address_referencing,
+        :blocks,
+        :derive_transaction_forks
+      )
     end)
     |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
-      acquire_contract_address_tokens(repo, consensus_block_numbers)
+      Instrumenter.block_import_stage_runner(
+        fn -> acquire_contract_address_tokens(repo, consensus_block_numbers) end,
+        :address_referencing,
+        :blocks,
+        :acquire_contract_address_tokens
+      )
     end)
     |> Multi.run(:delete_address_token_balances, fn repo, _ ->
-      delete_address_token_balances(repo, consensus_block_numbers, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn -> delete_address_token_balances(repo, consensus_block_numbers, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :delete_address_token_balances
+      )
     end)
     |> Multi.run(:delete_address_current_token_balances, fn repo, _ ->
-      delete_address_current_token_balances(repo, consensus_block_numbers, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn -> delete_address_current_token_balances(repo, consensus_block_numbers, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :delete_address_current_token_balances
+      )
     end)
     |> Multi.run(:derive_address_current_token_balances, fn repo,
                                                             %{
                                                               delete_address_current_token_balances:
                                                                 deleted_address_current_token_balances
                                                             } ->
-      derive_address_current_token_balances(repo, deleted_address_current_token_balances, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn -> derive_address_current_token_balances(repo, deleted_address_current_token_balances, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :derive_address_current_token_balances
+      )
     end)
     |> Multi.run(:blocks_update_token_holder_counts, fn repo,
                                                         %{
                                                           delete_address_current_token_balances: deleted,
                                                           derive_address_current_token_balances: inserted
                                                         } ->
-      deltas = CurrentTokenBalances.token_holder_count_deltas(%{deleted: deleted, inserted: inserted})
-      Tokens.update_holder_counts_with_deltas(repo, deltas, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          deltas = CurrentTokenBalances.token_holder_count_deltas(%{deleted: deleted, inserted: inserted})
+          Tokens.update_holder_counts_with_deltas(repo, deltas, insert_options)
+        end,
+        :address_referencing,
+        :blocks,
+        :blocks_update_token_holder_counts
+      )
     end)
   end
 
@@ -280,7 +369,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       }) do
     acquire_query =
       from(
-        block in where_invalid_neighbour(changes_list),
+        block in where_invalid_neighbor(changes_list),
         or_where: block.number in ^consensus_block_numbers,
         # we also need to acquire blocks that will be upserted here, for ordering
         or_where: block.hash in ^hashes,
@@ -298,11 +387,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           on: block.hash == s.hash,
           # we don't want to remove consensus from blocks that will be upserted
           where: block.hash not in ^hashes,
-          select: block.hash
+          select: {block.number, block.hash}
         ),
         [set: [consensus: false, updated_at: updated_at]],
         timeout: timeout
       )
+
+    removed_consensus_block_hashes
+    |> Enum.map(fn {number, _hash} -> number end)
+    |> MissingBlockRange.add_ranges_by_block_numbers()
 
     {:ok, removed_consensus_block_hashes}
   rescue
@@ -319,24 +412,31 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     lose_consensus(ExplorerRepo, [], block_numbers, [], opts)
   end
 
-  defp new_pending_operations(repo, nonconsensus_hashes, hashes, %{timeout: timeout, timestamps: timestamps}) do
+  defp trace_minimal_block_height do
+    EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
+  end
+
+  defp new_pending_operations(repo, nonconsensus_items, items, %{
+         timeout: timeout,
+         timestamps: timestamps
+       }) do
     if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
       {:ok, []}
     else
       sorted_pending_ops =
-        nonconsensus_hashes
+        items
         |> MapSet.new()
-        |> MapSet.union(MapSet.new(hashes))
+        |> MapSet.difference(MapSet.new(nonconsensus_items))
         |> Enum.sort()
-        |> Enum.map(fn hash ->
-          %{block_hash: hash, fetch_internal_transactions: true}
+        |> Enum.map(fn {number, hash} ->
+          %{block_hash: hash, block_number: number}
         end)
 
       Import.insert_changes_list(
         repo,
         sorted_pending_ops,
         conflict_target: :block_hash,
-        on_conflict: PendingBlockOperation.default_on_conflict(),
+        on_conflict: :nothing,
         for: PendingBlockOperation,
         returning: true,
         timeout: timeout,
@@ -611,25 +711,38 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end)
   end
 
-  defp where_invalid_neighbour(blocks_changes) when is_list(blocks_changes) do
+  defp where_invalid_neighbor(blocks_changes) when is_list(blocks_changes) do
     initial = from(b in Block, where: false)
 
-    Enum.reduce(blocks_changes, initial, fn %{
-                                              consensus: consensus,
-                                              hash: hash,
-                                              parent_hash: parent_hash,
-                                              number: number
-                                            },
-                                            acc ->
-      if consensus do
-        from(
-          block in acc,
-          or_where: block.number == ^(number - 1) and block.hash != ^parent_hash,
-          or_where: block.number == ^(number + 1) and block.parent_hash != ^hash
-        )
-      else
-        acc
-      end
-    end)
+    invalid_neighbors_query =
+      Enum.reduce(blocks_changes, initial, fn %{
+                                                consensus: consensus,
+                                                hash: hash,
+                                                parent_hash: parent_hash,
+                                                number: number
+                                              },
+                                              acc ->
+        if consensus do
+          from(
+            block in acc,
+            or_where: block.number == ^(number - 1) and block.hash != ^parent_hash,
+            or_where: block.number == ^(number + 1) and block.parent_hash != ^hash
+          )
+        else
+          acc
+        end
+      end)
+
+    where(invalid_neighbors_query, [block], block.consensus)
+  end
+
+  defp filter_by_min_height(blocks, filter_func) do
+    minimal_block_height = trace_minimal_block_height()
+
+    if minimal_block_height > 0 do
+      Enum.filter(blocks, &filter_func.(&1))
+    else
+      blocks
+    end
   end
 end

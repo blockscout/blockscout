@@ -1,8 +1,8 @@
 <section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address.hash %>" data-async-counters="<%= @counters_path %>">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
-  <% dark_forest_addresses_list_0_4 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses) %>
-  <% dark_forest_addresses_list_0_5 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_5) %>
-  <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
+  <% dark_forest_addresses_list_0_4 = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses) %>
+  <% dark_forest_addresses_list_0_5 = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses_v_0_5) %>
+  <% circles_addresses_list = CustomContractsHelper.get_custom_addresses_list(:circles_addresses) %>
   <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
   <% created_from_address_hash = if from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
   <div class="row js-ad-dependant-mb-2 js-ad-dependant-mb-5-reverse">
@@ -28,6 +28,7 @@
           <% end %>
           <h1 class="card-title lg-card-title mb-2-desktop">
             <div class="title-with-label"><%= address_title(@address) %> <%= gettext "Details" %></div>
+            <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @address.hash, tags: @tags %>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
@@ -37,25 +38,6 @@
                       aria_label: gettext("Copy Address"),
                       title: gettext("Copy Address") %>
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_qr_code.html" %>
-              <%= if validator_metadata = primary_validator_metadata(@address) do %>
-                <span
-                  class="overview-title-item"
-                  data-target="#validatorModal"
-                  data-toggle="modal"
-                >
-                  <span
-                    aria-label='<%= gettext("Show Validator Info") %>'
-                    class="btn-address-card-icon"
-                    data-placement="top"
-                    data-toggle="tooltip"
-                    title='<%= gettext("Validator Info") %>'
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="10">
-                      <path fill-rule="evenodd" d="M19 6h-6a1 1 0 0 1 0-2h6a1 1 0 0 1 0 2zm0-4h-6a1 1 0 0 1 0-2h6a1 1 0 0 1 0 2zM9 10H1a1 1 0 0 1-1-1V7a2 2 0 0 1 2-2h.184A2.962 2.962 0 0 1 2 4V3a3 3 0 1 1 6 0v1c0 .353-.072.686-.184 1H8a2 2 0 0 1 2 2v2a1 1 0 0 1-1 1zM6 3a1 1 0 0 0-2 0v1a1 1 0 0 0 2 0V3zm2 4H2v1h6V7zm5 1h6a1 1 0 0 1 0 2h-6a1 1 0 0 1 0-2z"/>
-                    </svg>
-                  </span>
-                </span>
-              <% end %>
             </span>
           </h1>
           <h3 class="address-detail-hash-title mb-4 <%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
@@ -141,7 +123,8 @@
           <% end %>
           <!-- Implementation -->
           <%= if @is_proxy do %>
-            <% implementation_address = Chain.get_implementation_address_hash(@address.hash, @address.smart_contract.abi) || "0x0000000000000000000000000000000000000000" %>
+            <% {implementation_address_, name} = SmartContract.get_implementation_address_hash(@address.smart_contract) %>
+            <% implementation_address = implementation_address_ || "0x0000000000000000000000000000000000000000" %>
             <dl class="row">
               <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -150,10 +133,9 @@
               </dt>
               <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_contract_implementation">
                 <%= link(
-                  implementation_address,
+                  (if name, do: name <> " | " <> implementation_address, else: implementation_address),
                   to: address_path(@conn, :show, implementation_address),
-                  class: "contract-address mb-2",
-                  style: "margin-top: 0.5rem;"
+                  class: "contract-address"
                 ) 
                 %>
               </dd>
@@ -163,10 +145,10 @@
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-              text: gettext("Address balance in xDAI (doesn't include ERC20, ERC721, ERC1155 tokens).") %>
+              text: gettext("Address balance in") <> " " <> Explorer.coin_name() <> " " <> gettext("doesn't include ERC20, ERC721, ERC1155 tokens).") %>
               <%= gettext("Balance") %>
             </dt>
-            <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_balance">
+            <dd data-selector="current-coin-balance" class="col-sm-8 col-md-8 col-lg-9" data-test="address_balance">
               <%= balance(@address) %>
             </dd>
           </dl>
@@ -198,7 +180,7 @@
                   <% end %>
                 </a>
               <% else %>
-                <a href="<%= AccessHelpers.get_path(@conn, :address_transaction_path, :index, @address.hash)%>#txs" class="page-link bs-label large btn-no-border-link-to-tems" data-selector="transaction-count">
+                <a href="<%= AccessHelper.get_path(@conn, :address_transaction_path, :index, @address.hash)%>#txs" class="page-link bs-label large btn-no-border-link-to-tems" data-selector="transaction-count">
                   <%= if @address.token_transfers_count do %>
                     <%= Number.Delimit.number_to_delimited(@address.transactions_count, precision: 0) %> <%= gettext("Transactions") %>
                   <% else %>
@@ -225,7 +207,7 @@
                   <% end %>
                 </a>
               <% else %>
-                <a href="<%= AccessHelpers.get_path(@conn, :address_token_transfers_path, :index, @address.hash)%>#transfers" class="page-link bs-label large btn-no-border-link-to-tems" data-selector="transfer-count">
+                <a href="<%= AccessHelper.get_path(@conn, :address_token_transfers_path, :index, @address.hash)%>#transfers" class="page-link bs-label large btn-no-border-link-to-tems" data-selector="transfer-count">
                   <%= if @address.token_transfers_count do %>
                     <%= Number.Delimit.number_to_delimited(@address.token_transfers_count, precision: 0) %> <%= gettext("Transfers") %>
                   <% else %>
@@ -260,7 +242,7 @@
                 text: gettext("Block number in which the address was updated.") %>
                 <%= gettext("Last Balance Update") %>
               </dt>
-              <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_last_balance_update">
+              <dd data-selector="last-balance-update" class="col-sm-8 col-md-8 col-lg-9" data-test="address_last_balance_update">
                 <%= link(
                     @address.fetched_coin_balance_block_number,
                     to: block_path(@conn, :show, @address.fetched_coin_balance_block_number),
@@ -269,11 +251,12 @@
               </dd>
             </dl>
           <% end %>
+          <div data-last-balance-update="<%= @address.fetched_coin_balance_block_number %>"></div>
           <!-- Blocks Validated -->
           <dl class="row address-validation-count-item" style="display: none;">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-              text: gettext("Gas used by the address.") %>
+              text: gettext("Number of blocks validated by this validator.") %>
               <%= gettext("Blocks Validated") %>
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_blocks_validated">
@@ -289,10 +272,5 @@
 
 <!-- Modal QR -->
 <%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: qr_code(@address), title: @address %>
-
-<!-- Modal Validator -->
-<%= if validator_metadata do %>
-  <%= render BlockScoutWeb.AddressView, "_validator_metadata_modal.html", address_name: address_name, validator_metadata: validator_metadata %>
-<% end %>
 
 <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %> 

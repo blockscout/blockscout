@@ -8,11 +8,9 @@ This is a tool for inspecting and analyzing the POA Network blockchain from a we
 * Elixir 1.9+
 * Postgres 10.3
 
-
 ## Required Accounts
 
 * Github for code storage
-
 
 ## Setup Instructions
 
@@ -20,9 +18,9 @@ This is a tool for inspecting and analyzing the POA Network blockchain from a we
 
 To get BlockScout Web interface up and running locally:
 
-  * Setup `../explorer`
-  * Install Node.js dependencies with `$ cd assets && npm install && cd ..`
-  * Start Phoenix with `$ mix phx.server` (This can be run from this directory or the project root: the project root is recommended.)
+* Setup `../explorer`
+* Install Node.js dependencies with `$ cd assets && npm install && cd ..`
+* Start Phoenix with `$ mix phx.server` (This can be run from this directory or the project root: the project root is recommended.)
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
@@ -30,14 +28,13 @@ You can also run IEx (Interactive Elixir): `$ iex -S mix phx.server` (This can b
 
 ### Testing
 
-  * Build the assets: `cd assets && npm run build`
-  * Format the Elixir code: `mix format`
-  * Lint the Elixir code: `mix credo --strict`
-  * Run the dialyzer: `mix dialyzer --halt-exit-status`
-  * Check the Elixir code for vulnerabilities: `mix sobelow --config`
-  * Update translations templates and translations and check there are no uncommitted changes: `mix gettext.extract --merge`
-  * Lint the JavaScript code: `cd assets && npm run eslint`
-
+* Build the assets: `cd assets && npm run build`
+* Format the Elixir code: `mix format`
+* Lint the Elixir code: `mix credo --strict`
+* Run the dialyzer: `mix dialyzer --halt-exit-status`
+* Check the Elixir code for vulnerabilities: `mix sobelow --config`
+* Update translations templates and translations and check there are no uncommitted changes: `mix gettext.extract --merge`
+* Lint the JavaScript code: `cd assets && npm run eslint`
 
 ## Internationalization
 

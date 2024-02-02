@@ -24,7 +24,7 @@ defmodule Explorer.Chain.Address.Name do
           metadata: map()
         }
 
-  @primary_key false
+  @primary_key {:id, :integer, autogenerate: false}
   schema "address_names" do
     field(:name, :string)
     field(:primary, :boolean)

@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.ModifyAddressGasUsedBignit do
+defmodule Explorer.Repo.Migrations.ModifyAddressGasUsedBigint do
   use Ecto.Migration
 
   def up do

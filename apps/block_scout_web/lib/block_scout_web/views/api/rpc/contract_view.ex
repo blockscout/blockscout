@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
   alias BlockScoutWeb.AddressView
   alias BlockScoutWeb.API.RPC.RPCView
+  alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.{Address, DecompiledSmartContract, SmartContract}
 
@@ -34,24 +35,6 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     RPCView.render("show.json", data: result)
   end
 
-  defp prepare_source_code_contract(nil) do
-    %{
-      "Address" => "",
-      "SourceCode" => "",
-      "ABI" => "Contract source code not verified",
-      "ContractName" => "",
-      "CompilerVersion" => "",
-      "DecompiledSourceCode" => "",
-      "DecompilerVersion" => decompiler_version(nil),
-      "OptimizationUsed" => "",
-      "OptimizationRuns" => "",
-      "EVMVersion" => "",
-      "ConstructorArguments" => "",
-      "ExternalLibraries" => "",
-      "FileName" => ""
-    }
-  end
-
   defp prepare_source_code_contract(address) do
     decompiled_smart_contract = latest_decompiled_smart_contract(address.decompiled_smart_contracts)
     contract = address.smart_contract || %{}
@@ -68,6 +51,38 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     |> set_constructor_arguments(contract)
     |> set_external_libraries(contract)
     |> set_verified_contract_data(contract, address, optimization)
+    |> set_proxy_info(contract)
+    |> set_compiler_settings(contract)
+  end
+
+  defp set_compiler_settings(contract_output, contract) when contract == %{}, do: contract_output
+
+  defp set_compiler_settings(contract_output, contract) do
+    if is_nil(contract.compiler_settings) do
+      contract_output
+    else
+      contract_output
+      |> Map.put(:CompilerSettings, contract.compiler_settings)
+    end
+  end
+
+  defp set_proxy_info(contract_output, contract) when contract == %{} do
+    contract_output
+  end
+
+  defp set_proxy_info(contract_output, contract) do
+    result =
+      if contract.is_proxy do
+        contract_output
+        |> Map.put_new(:ImplementationAddress, contract.implementation_address_hash_string)
+      else
+        contract_output
+      end
+
+    is_proxy_string = if contract.is_proxy, do: "true", else: "false"
+
+    result
+    |> Map.put_new(:IsProxy, is_proxy_string)
   end
 
   defp set_decompiled_contract_data(contract_output, decompiled_smart_contract) do
@@ -198,6 +213,8 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
       "OptimizationUsed" => if(contract.optimization, do: "1", else: "0")
     }
   end
+
+  defp latest_decompiled_smart_contract(%NotLoaded{}), do: nil
 
   defp latest_decompiled_smart_contract([]), do: nil
 

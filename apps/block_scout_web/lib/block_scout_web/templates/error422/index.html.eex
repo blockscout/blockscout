@@ -1,12 +1,12 @@
-<section class="container">
+<section class="container error-container">
   <div class="block-not-found">
     <div class="block-not-found-img">
-      <img alt="Page Not Found" src="/images/errors-img/pic-404.svg">
+      <img alt="Request cannot be processed" src="/images/errors-img/unprocessable-entity.svg">
     </div>
     <div class="block-not-found-content">
-      <h1 class="card-title error-title">Unprocessable Entity</h1>
-      <p class="error-descr">The request was well-formed but was unable to be followed due to semantic errors. Maybe, you mistype a hash of tx/block/address?</p>
-      <a class="error-btn btn-line" href="/">Back Home</a>
+      <h1 class="card-title error-title"><%= gettext "Request cannot be processed" %></h1>
+      <p class="error-descr"><%= gettext "Your request contained an error, perhaps a mistyped tx/block/address hash. Try again, and check the developer tools console for more info." %></p>
+      <a class="error-btn" href="/"><%= gettext "Back to home" %></a>
     </div>
   </div>
 </section>

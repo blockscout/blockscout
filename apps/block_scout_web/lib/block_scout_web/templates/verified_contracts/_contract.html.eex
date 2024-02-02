@@ -1,0 +1,64 @@
+<tr data-identifier-hash="<%= @contract.address_hash %>">
+    <!-- Address -->
+    <td class="stakes-td">
+    <%= render BlockScoutWeb.AddressView,
+      "_link.html",
+      address: @contract.address,
+      contract: true,
+      use_custom_tooltip: false
+    %>
+    </td>
+    <!-- Balance -->
+    <td class="stakes-td">
+        <%= balance(@contract.address) %>
+    </td>
+    <!-- Txns -->
+    <td class="stakes-td">
+        <span>
+            <%= if @contract.address.transactions_count do %>
+                <%= Number.Delimit.number_to_delimited(@contract.address.transactions_count, precision: 0) %>
+            <% else %>
+                <%= gettext "N/A" %>
+            <% end %>
+        </span>
+    </td>
+    <!-- Compiler -->
+    <td class="stakes-td">
+        <span>
+            <%= if @contract.is_vyper_contract, do: gettext("Vyper"), else: gettext("Solidity") %>
+        </span>
+    </td>
+    <!-- Version -->
+    <td class="stakes-td">
+        <span><%= @contract.compiler_version %></span>
+
+    </td>
+    <!-- Optimization -->
+    <td class="stakes-td text-center">
+        <%= if @contract.optimization do %>
+            <i style="color: #20b760;" class="fa-regular fa-circle-check"></i>
+        <% else %>
+            <i style="color: #dc3545;" class="fa-regular fa-circle-xmark"></i>
+        <% end %>
+    </td>
+    <!-- Constructor arguments -->
+    <td class="stakes-td text-center">
+        <%= if @contract.constructor_arguments do %>
+            <i style="color: #20b760;" class="fa-regular fa-circle-check"></i>
+        <% else %>
+            <i style="color: #dc3545;" class="fa-regular fa-circle-xmark"></i>
+        <% end %>
+    </td>
+    <!-- Verified -->
+    <td class="stakes-td">
+        <span data-from-now="<%= @contract.inserted_at %>"></span>
+    </td>
+    <!-- Market cap -->
+    <td class="stakes-td">
+        <%= if @token && @token.decimals && @token.total_supply && @token.fiat_value do %>
+            <span data-selector="verified-contract-market-cap-usd" data-usd-value="<%= total_supply_usd(@token) %>"></span>
+        <% else %>
+            <span data-selector="verified-contract-market-cap-usd"> <%= gettext "N/A" %> </span>
+        <% end %>
+    </td>
+</tr>

@@ -1,6 +1,6 @@
 defmodule EthereumJSONRPC.Block.ByTag do
   @moduledoc """
-  Block format returned by [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbyhash)
+  Block format returned by [`eth_getBlockByNumber`](https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_getblockbyhash)
   when used with a semantic tag name instead of a number.
   """
 
@@ -16,8 +16,6 @@ defmodule EthereumJSONRPC.Block.ByTag do
     {:ok, quantity_to_integer(quantity)}
   end
 
-  # https://github.com/paritytech/parity-ethereum/pull/8281 fixed
-  #   https://github.com/paritytech/parity-ethereum/issues/8028
   def number_from_result({:ok, nil}), do: {:error, :not_found}
 
   def number_from_result({:error, %{"code" => -32602}}), do: {:error, :invalid_tag}

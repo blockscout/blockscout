@@ -1,4 +1,4 @@
-import debounce from 'lodash/debounce'
+import debounce from 'lodash.debounce'
 
 export function batchChannel (func) {
   let msgs = []
@@ -23,4 +23,16 @@ export function showLoader (isTimeout, loader) {
     loader.hide()
     return null
   }
+}
+
+export function escapeHtml (text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }
+
+  return text.replace(/[&<>"']/g, function (m) { return map[m] })
 }

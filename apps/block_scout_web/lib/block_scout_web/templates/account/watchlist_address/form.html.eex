@@ -1,0 +1,91 @@
+<section class="container">
+  <div class="row">
+    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn, active_item: :watchlist %>
+    <div class="col-sm-10">
+      <div class="card">
+        <div class="card-body" >
+          <h1 class="card-title list-title-description header-account"><%=if @method == :update, do: gettext("Edit Watch list address"), else: gettext "Add address to the Watch list" %></h1>
+          <div class="col-sm-10 card-body-account">
+          <% path = if @method == :update, do: watchlist_address_path(@conn, @method, @watchlist_address.data.id), else: watchlist_address_path(@conn, @method) %>
+            <%= form_for @watchlist_address, path, fn f -> %>
+              <div class="form-group">
+                <%= label f, :address_hash, gettext("Address"), class: "control-label", style: "font-size: 14px" %>
+                <%= text_input f, :address_hash, class: "form-control", placeholder: "0x0000000000000000000000000000000000000000", maxlength: 42 %>
+                <%= error_tag f, :address_hash, class: "text-danger form-error" %>
+                <%= error_tag f, :watchlist_id, class: "text-danger form-error" %>
+              </div>
+
+              <div class="form-group">
+                <%= label f, :name, gettext("Name"), class: "control-label", style: "font-size: 14px" %>
+                <%= text_input f, :name, class: "form-control", placeholder: gettext("Name this address"), maxlength: 35 %>
+                <%= error_tag f, :name, class: "text-danger form-error" %>
+              </div>
+              <br>
+              <p style="font-size: 14px;"><%= gettext("Please select what types of notifications you will receive:") %></p>
+              <div class="row">
+                <div class="col-sm">
+                  <h3><%= Explorer.coin_name() %></h3>
+                  <div class="form-input">
+                    <%= checkbox f, :watch_coin_input, class: "form-checkbox" %>
+                    <%= label f, :watch_coin_input, gettext("Incoming"), class: "label-checkbox" %>
+                    <%= error_tag f, :watch_coin_input, class: "text-danger form-error" %>
+                  </div>
+                  <div class="form-input">
+                    <%= checkbox f, :watch_coin_output, class: "form-checkbox" %>
+                    <%= label f, :watch_coin_output, gettext("Outgoing"), class: "label-checkbox" %>
+                    <%= error_tag f, :watch_coin_output, class: "text-danger form-error" %>
+                  </div>
+                </div>
+                <div class="col-sm">
+                  <h3><%= gettext "ERC-20 tokens (beta)" %></h3>
+                  <div class="form-input">
+                    <%= checkbox f, :watch_erc_20_input, class: "form-checkbox" %>
+                    <%= label f, :watch_erc_20_input, gettext("Incoming"), class: "label-checkbox" %>
+                    <%= error_tag f, :watch_erc_20_input, class: "text-danger form-error" %>
+                  </div>
+                  <div class="form-input">
+                    <%= checkbox f, :watch_erc_20_output, class: "form-checkbox" %>
+                    <%= label f, :watch_erc_20_output, gettext("Outgoing"), class: "label-checkbox" %>
+                    <%= error_tag f, :watch_erc_20_output, class: "text-danger form-error" %>
+                  </div>
+                </div>
+                <div class="col-md">
+                  <h3><%= gettext "ERC-721, ERC-1155 tokens (NFT) (beta)" %></h3>
+                  <div class="form-input">
+                    <%= checkbox f, :watch_erc_721_input, class: "form-checkbox" %>
+                    <%= label f, :watch_erc_721_input, gettext("Incoming"), class: "label-checkbox" %>
+                    <%= error_tag f, :watch_erc_721_input, class: "text-danger form-error" %>
+                  </div>
+                  <div class="form-input">
+                    <%= checkbox f, :watch_erc_721_output, class: "form-checkbox" %>
+                    <%= label f, :watch_erc_721_output, gettext("Outgoing"), class: "label-checkbox" %>
+                    <%= error_tag f, :watch_erc_721_output, class: "text-danger form-error" %>
+                  </div>
+                </div>
+              </div>
+
+              <br>
+              <p style="font-size: 14px;"><%= gettext "Please select notification methods:"%></p>
+              <div class="form-input">
+                <%= checkbox f, :notify_email, class: "form-checkbox" %>
+                <%= label f, :notify_email, gettext("Email notifications"), class: "label-checkbox" %>
+                <%= error_tag f, :notify_email, class: "text-danger form-error" %>
+              </div>
+
+              <br>
+              <%= if @method != :create do %>
+                <%= link gettext("Remove from Watch list"), to: watchlist_address_path(@conn, :delete, @watchlist_address.data.id), method: :delete, class: "btn btn-danger white button-sm", style: "color: #fff !important;" %>
+              <% end %>
+              <div class="form-group float-right form-input">
+                <a class="btn btn-line"  href="<%= watchlist_path(@conn, :show) %>">
+                  <%= gettext "Back to Watch list (Cancel)" %>
+                </a>
+                <%= submit gettext("Save"), class: "#{if @method == :create, do: "save-address-button "}button button-primary button-sm ml-3" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

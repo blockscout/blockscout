@@ -18,7 +18,9 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
     current_price = get_current_price(market_data)
 
     id = json_data["id"]
-    btc_value = get_btc_value(id, market_data)
+
+    btc_value =
+      if Application.get_env(:explorer, Explorer.ExchangeRates)[:fetch_btc_value], do: get_btc_value(id, market_data)
 
     circulating_supply_data = market_data && market_data["circulating_supply"]
     total_supply_data = market_data && market_data["total_supply"]
@@ -42,7 +44,145 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   @impl Source
+  def format_data(%{} = market_data_for_tokens) do
+    currency = currency()
+    market_cap = currency <> "_market_cap"
+
+    market_data_for_tokens
+    |> Enum.reduce(%{}, fn
+      {address_hash_string, market_data}, acc ->
+        case Explorer.Chain.Hash.Address.cast(address_hash_string) do
+          {:ok, address_hash} ->
+            acc
+            |> Map.put(address_hash, %{
+              fiat_value: Map.get(market_data, currency),
+              circulating_market_cap: Map.get(market_data, market_cap)
+            })
+
+          _ ->
+            acc
+        end
+
+      _, acc ->
+        acc
+    end)
+  end
+
+  @impl Source
   def format_data(_), do: []
+
+  @impl Source
+  def source_url do
+    explicit_coin_id = config(:coin_id)
+
+    {:ok, id} =
+      if explicit_coin_id do
+        {:ok, explicit_coin_id}
+      else
+        case coin_id() do
+          {:ok, id} ->
+            {:ok, id}
+
+          _ ->
+            {:ok, nil}
+        end
+      end
+
+    if id, do: "#{base_url()}/coins/#{id}", else: nil
+  end
+
+  @impl Source
+  def source_url(token_addresses) when is_list(token_addresses) do
+    joined_addresses = token_addresses |> Enum.map_join(",", &to_string/1)
+
+    "#{base_url()}/simple/token_price/#{platform()}?vs_currencies=#{currency()}&include_market_cap=true&contract_addresses=#{joined_addresses}"
+  end
+
+  @impl Source
+  def source_url(input) do
+    case Chain.Hash.Address.cast(input) do
+      {:ok, _} ->
+        address_hash_str = input
+        "#{base_url()}/coins/#{platform()}/contract/#{address_hash_str}"
+
+      _ ->
+        symbol = input
+
+        id =
+          case coin_id(symbol) do
+            {:ok, id} ->
+              id
+
+            _ ->
+              nil
+          end
+
+        if id, do: "#{base_url()}/coins/#{id}", else: nil
+    end
+  end
+
+  @impl Source
+  def headers do
+    if api_key() do
+      [{"X-Cg-Pro-Api-Key", "#{api_key()}"}]
+    else
+      []
+    end
+  end
+
+  defp api_key do
+    config(:api_key) || nil
+  end
+
+  def coin_id do
+    symbol = String.downcase(Explorer.coin())
+
+    coin_id(symbol)
+  end
+
+  def coin_id(symbol) do
+    id_mapping = token_symbol_to_id_mapping_to_get_price(symbol)
+
+    if id_mapping do
+      {:ok, id_mapping}
+    else
+      url = "#{base_url()}/coins/list"
+
+      symbol_downcase = String.downcase(symbol)
+
+      case Source.http_request(url, headers()) do
+        {:ok, data} ->
+          get_symbol_data(data, symbol_downcase)
+
+        resp ->
+          resp
+      end
+    end
+  end
+
+  defp get_symbol_data(data, symbol_downcase) do
+    if is_list(data) do
+      symbol_data = find_symbol_data(data, symbol_downcase)
+
+      process_symbol_data(symbol_data)
+    else
+      {:ok, data}
+    end
+  end
+
+  defp find_symbol_data(data, symbol_downcase) do
+    Enum.find(data, fn item ->
+      item["symbol"] == symbol_downcase
+    end)
+  end
+
+  defp process_symbol_data(symbol_data) do
+    if symbol_data do
+      {:ok, symbol_data["id"]}
+    else
+      {:error, :not_found}
+    end
+  end
 
   defp get_last_updated(market_data) do
     last_updated_data = market_data && market_data["last_updated"]
@@ -80,96 +220,34 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
     end
   end
 
-  @impl Source
-  def source_url do
-    explicit_coin_id = Application.get_env(:explorer, :coingecko_coin_id)
-
-    {:ok, id} =
-      if explicit_coin_id do
-        {:ok, explicit_coin_id}
-      else
-        case coin_id() do
-          {:ok, id} ->
-            {:ok, id}
-
-          _ ->
-            {:ok, nil}
-        end
-      end
-
-    if id, do: "#{base_url()}/coins/#{id}", else: nil
+  defp platform do
+    config(:platform) || "ethereum"
   end
 
-  @impl Source
-  def source_url(input) do
-    case Chain.Hash.Address.cast(input) do
-      {:ok, _} ->
-        address_hash_str = input
-        "#{base_url()}/coins/ethereum/contract/#{address_hash_str}"
-
-      _ ->
-        symbol = input
-
-        id =
-          case coin_id(symbol) do
-            {:ok, id} ->
-              id
-
-            _ ->
-              nil
-          end
-
-        if id, do: "#{base_url()}/coins/#{id}", else: nil
-    end
+  defp currency do
+    config(:currency) || "usd"
   end
 
   defp base_url do
+    if api_key() do
+      base_pro_url()
+    else
+      base_free_url()
+    end
+  end
+
+  defp base_free_url do
     config(:base_url) || "https://api.coingecko.com/api/v3"
   end
 
-  def coin_id do
-    symbol = String.downcase(Explorer.coin())
-
-    coin_id(symbol)
-  end
-
-  def coin_id(symbol) do
-    id_mapping = bridged_token_symbol_to_id_mapping_to_get_price(symbol)
-
-    if id_mapping do
-      {:ok, id_mapping}
-    else
-      url = "#{base_url()}/coins/list"
-
-      symbol_downcase = String.downcase(symbol)
-
-      case Source.http_request(url) do
-        {:ok, data} = resp ->
-          if is_list(data) do
-            symbol_data =
-              Enum.find(data, fn item ->
-                item["symbol"] == symbol_downcase
-              end)
-
-            if symbol_data do
-              {:ok, symbol_data["id"]}
-            else
-              {:error, :not_found}
-            end
-          else
-            resp
-          end
-
-        resp ->
-          resp
-      end
-    end
+  defp base_pro_url do
+    config(:base_pro_url) || "https://pro-api.coingecko.com/api/v3"
   end
 
   defp get_btc_price(currency \\ "usd") do
     url = "#{base_url()}/exchange_rates"
 
-    case Source.http_request(url) do
+    case Source.http_request(url, headers()) do
       {:ok, data} = resp ->
         if is_map(data) do
           current_price = data["rates"][currency]["value"]
@@ -189,7 +267,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
     Application.get_env(:explorer, __MODULE__, [])[key]
   end
 
-  defp bridged_token_symbol_to_id_mapping_to_get_price(symbol) do
+  defp token_symbol_to_id_mapping_to_get_price(symbol) do
     case symbol do
       "UNI" -> "uniswap"
       "SURF" -> "surf-finance"

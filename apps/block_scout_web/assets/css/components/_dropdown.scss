@@ -110,3 +110,7 @@ $dropdown-menu-item-hover-background: rgba($secondary, 0.1) !default;
   left: unset !important;
   width: 300px !important;
 }
+
+.flex-grow-2 {
+  flex-grow: 2;
+}

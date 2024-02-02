@@ -1,0 +1,11 @@
+<div class="contract-library-form-group js-contract-library-form-group active">
+  <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_name.html",
+    index: 1,
+    tooltip_text: gettext("A library name called in the .sol file. Multiple libraries (up to ") <> to_string(Application.get_env(:block_scout_web, :contract)[:verification_max_libraries]) <> gettext(") may be added for each contract. Click the Add Library button to add an additional one.")
+  %>
+
+  <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_address.html",
+    index: 1,
+    tooltip_text: gettext "The 0x library address. This can be found in the generated json file or Truffle output (if using truffle)."
+  %>
+</div>

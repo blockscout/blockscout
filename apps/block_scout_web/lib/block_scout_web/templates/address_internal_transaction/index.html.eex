@@ -1,12 +1,12 @@
 <section class="container">
   <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
 
-  <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path %>
+  <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path, tags: @tags %>
 
   <section data-page="address-internal-transactions">
     <div class="card">
       <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
-      <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+      <div class="card-body" data-async-load data-async-listing="<%= @current_path %>" data-no-self-calls>
         <div data-selector="channel-batching-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-info">
             <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More internal transactions have come in" %></a>
@@ -24,19 +24,19 @@
               <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
                 <%= link(
                   gettext("All"),
-                  to: AccessHelpers.get_path(@conn, :address_internal_transaction_path, :index, @address.hash),
+                  to: AccessHelper.get_path(@conn, :address_internal_transaction_path, :index, @address.hash),
                   class: "address__link address__link--active dropdown-item",
                   "data-test": "filter_option"
                 ) %>
                 <%= link(
                   gettext("To"),
-                  to: AccessHelpers.get_path(@conn, :address_internal_transaction_path, :index, @address.hash, %{:filter => "to"}),
+                  to: AccessHelper.get_path(@conn, :address_internal_transaction_path, :index, @address.hash, %{:filter => "to"}),
                   class: "address__link address__link--active dropdown-item",
                   "data-test": "filter_option"
                 ) %>
                 <%= link(
                   gettext("From"),
-                  to: AccessHelpers.get_path(@conn, :address_internal_transaction_path, :index, @address.hash, %{:filter => "from"}),
+                  to: AccessHelper.get_path(@conn, :address_internal_transaction_path, :index, @address.hash, %{:filter => "from"}),
                   class: "address__link address__link--active dropdown-item",
                   "data-test": "filter_option"
                 ) %>

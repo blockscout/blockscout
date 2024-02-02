@@ -311,7 +311,7 @@ defmodule EthereumJSONRPC.Receipt do
       one when one in ["0x1", "0x01"] ->
         {:ok, {key, :ok}}
 
-      # pre-Byzantium / Ethereum Classic on Parity
+      # pre-Byzantium
       nil ->
         :ignore
 
@@ -332,6 +332,16 @@ defmodule EthereumJSONRPC.Receipt do
 
   # Arbitrum fields
   defp entry_to_elixir({key, _}) when key in ~w(returnData returnCode feeStats l1BlockNumber) do
+    :ignore
+  end
+
+  # Metis fields
+  defp entry_to_elixir({key, _}) when key in ~w(l1GasUsed l1GasPrice l1FeeScalar l1Fee) do
+    :ignore
+  end
+
+  # GoQuorum specific transaction receipt fields
+  defp entry_to_elixir({key, _}) when key in ~w(isPrivacyMarkerTransaction) do
     :ignore
   end
 

@@ -120,8 +120,7 @@ defmodule Explorer.Chain.InternalTransaction do
       foreign_key: :block_hash,
       define_field: false,
       references: :block_hash,
-      type: Hash.Full,
-      where: [fetch_internal_transactions: true]
+      type: Hash.Full
     )
   end
 
@@ -201,7 +200,7 @@ defmodule Explorer.Chain.InternalTransaction do
         bytes: <<120, 164, 45, 55, 5, 251, 60, 38, 164, 181, 71, 55, 167, 132, 191, 6, 79, 8, 21, 251>>
       }
 
-  `:call` type traces are generated when a method in a contrat is call.
+  `:call` type traces are generated when a method in a contract is call.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -253,7 +252,7 @@ defmodule Explorer.Chain.InternalTransaction do
       true
 
   Failed `:call`s are not allowed to set `gas_used` or `output` because they are part of the successful `result` object
-  in the Parity JSONRPC response.  They still need `input`, however.
+  in the Nethermind JSONRPC response.  They still need `input`, however.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -281,8 +280,7 @@ defmodule Explorer.Chain.InternalTransaction do
       false
       iex> changeset.errors
       [
-        output: {"can't be present for failed call", []},
-        gas_used: {"can't be present for failed call", []}
+        output: {"can't be present for failed call", []}
       ]
 
   Likewise, successful `:call`s require `input`, `gas_used` and `output` to be set.
@@ -315,7 +313,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ]
 
   For failed `:create`, `created_contract_code`, `created_contract_address_hash`, and `gas_used` are not allowed to be
-  set because they come from `result` object, which shouldn't be returned from Parity.
+  set because they come from `result` object, which shouldn't be returned from Nethermind.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -496,13 +494,11 @@ defmodule Explorer.Chain.InternalTransaction do
     end)
   end
 
-  @call_success_fields ~w(gas_used output)a
-
   # Validates that :call `type` changeset either has an `error` or both `gas_used` and `output`
   defp validate_call_error_or_result(changeset) do
     case get_field(changeset, :error) do
-      nil -> validate_required(changeset, @call_success_fields, message: "can't be blank for successful call")
-      _ -> validate_disallowed(changeset, @call_success_fields, message: "can't be present for failed call")
+      nil -> validate_required(changeset, [:gas_used, :output], message: "can't be blank for successful call")
+      _ -> validate_disallowed(changeset, [:output], message: "can't be present for failed call")
     end
   end
 
@@ -612,7 +608,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @doc """
-  Filters out internal_transactions of blocks that are flagged as needing fethching
+  Filters out internal_transactions of blocks that are flagged as needing fetching
   of internal_transactions
   """
   def where_nonpending_block(query \\ nil) do

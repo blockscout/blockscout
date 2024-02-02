@@ -53,7 +53,7 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
       assert {3, nil} = Importer.import_emission_rewards(@chain_spec)
     end
 
-    test "rewrites all recored" do
+    test "rewrites all recorded" do
       old_block_rewards = %{
         "0x0" => "0x1bc16d674ec80000",
         "0x42ae50" => "0x29a2241af62c0000",

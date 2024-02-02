@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["message"] =~ "contract address not found"
+      assert response["message"] =~ "Contract address not found"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
@@ -209,11 +209,11 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
     })
   end
 
-  defp ethsupply_schema do
-    resolve_schema(%{
-      "type" => ["string", "null"]
-    })
-  end
+  # defp ethsupply_schema do
+  #   resolve_schema(%{
+  #     "type" => ["string", "null"]
+  #   })
+  # end
 
   defp ethsupplyexchange_schema do
     resolve_schema(%{
@@ -233,7 +233,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
     })
   end
 
-  defp resolve_schema(result \\ %{}) do
+  defp resolve_schema(result) do
     %{
       "type" => "object",
       "properties" => %{

@@ -1,13 +1,14 @@
 import $ from 'jquery'
-import reduce from 'lodash/reduce'
-import isObject from 'lodash/isObject'
-import forIn from 'lodash/forIn'
+import reduce from 'lodash.reduce'
+import isObject from 'lodash.isobject'
+import forIn from 'lodash.forin'
 import { createStore as reduxCreateStore } from 'redux'
 
 /**
  * Create a redux store given the reducer. It also enables the Redux dev tools.
  */
 export function createStore (reducer) {
+  // @ts-ignore
   return reduxCreateStore(reducer, window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__())
 }
 

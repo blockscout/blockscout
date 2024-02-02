@@ -106,7 +106,8 @@ defmodule BlockScoutWeb.Etherscan do
         "transactionHash" => "0xd65b788c610949704a5f9aac2228c7c777434dfe11c863a12306f57fcbd8cdbb",
         "index" => "0",
         "input" => "",
-        "type" => "create",
+        "type" => "call",
+        "callType" => "delegatecall",
         "gas" => "814937",
         "gasUsed" => "536262",
         "isError" => "0",
@@ -293,35 +294,6 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
-  @token_bridgedtokenlist_example_value %{
-    "status" => "1",
-    "message" => "OK",
-    "result" => [
-      %{
-        "foreignChainId" => "1",
-        "foreignTokenContractAddressHash" => "0x0ae055097c6d159879521c384f1d2123d1f195e6",
-        "homeContractAddressHash" => "0xb7d311e2eb55f2f68a9440da38e7989210b9a05e",
-        "homeDecimals" => "18",
-        "homeHolderCount" => 393,
-        "homeName" => "STAKE on xDai",
-        "homeSymbol" => "STAKE",
-        "homeTotalSupply" => "1484374.775044204093387391",
-        "homeUsdValue" => "18807028.39981006586321824397"
-      },
-      %{
-        "foreignChainId" => "1",
-        "foreignTokenContractAddressHash" => "0xf5581dfefd8fb0e4aec526be659cfab1f8c781da",
-        "homeContractAddressHash" => "0xd057604a14982fe8d88c5fc25aac3267ea142a08",
-        "homeDecimals" => "18",
-        "homeHolderCount" => 73,
-        "homeName" => "HOPR Token on xDai",
-        "homeSymbol" => "HOPR",
-        "homeTotalSupply" => "26600449.86076749062791602",
-        "homeUsdValue" => "6638727.472651464170990256943"
-      }
-    ]
-  }
-
   @stats_tokensupply_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -491,7 +463,9 @@ defmodule BlockScoutWeb.Etherscan do
       """,
       "ContractName" => "Test",
       "CompilerVersion" => "v0.2.1-2016-01-30-91a6b35",
-      "OptimizationUsed" => "1"
+      "OptimizationUsed" => "1",
+      "IsProxy" => "true",
+      "ImplementationAddress" => "0x000000000000000000000000000000000000000e"
     }
   }
 
@@ -547,7 +521,9 @@ defmodule BlockScoutWeb.Etherscan do
       "ContractName" => "Test",
       "CompilerVersion" => "v0.2.1-2016-01-30-91a6b35",
       "OptimizationUsed" => "1",
-      "FileName" => "{sourcify path or empty}"
+      "FileName" => "{sourcify path or empty}",
+      "IsProxy" => "true",
+      "ImplementationAddress" => "0x000000000000000000000000000000000000000e"
     }
   }
 
@@ -616,12 +592,6 @@ defmodule BlockScoutWeb.Etherscan do
     type: "status",
     enum: ~s(["0", "1"]),
     enum_interpretation: %{"0" => "error", "1" => "ok"}
-  }
-
-  @success_status_type %{
-    type: "status",
-    enum: ~s(["1"]),
-    enum_interpretation: %{"1" => "ok"}
   }
 
   @jsonrpc_version_type %{
@@ -707,6 +677,7 @@ defmodule BlockScoutWeb.Etherscan do
   }
 
   @token_id_type %{
+    name: "Token ID",
     type: "integer",
     definition: "id of token",
     example: ~s("0")
@@ -765,37 +736,6 @@ defmodule BlockScoutWeb.Etherscan do
         type: "value",
         definition: "A nonnegative number used to identify the balance of the target token.",
         example: ~s("1000000000000000000")
-      }
-    }
-  }
-
-  @bridged_token_details %{
-    name: "Bridged Token Detail",
-    fields: %{
-      foreignChainId: %{
-        type: "value",
-        definition: "Chain ID of the chain where original token exists.",
-        example: ~s("1")
-      },
-      foreignTokenContractAddressHash: @address_hash_type,
-      homeContractAddressHash: @address_hash_type,
-      homeDecimals: @token_decimal_type,
-      homeHolderCount: %{
-        type: "value",
-        definition: "Token holders count.",
-        example: ~s("393")
-      },
-      homeName: @token_name_type,
-      homeSymbol: @token_symbol_type,
-      homeTotalSupply: %{
-        type: "value",
-        definition: "Total supply of the token on the home side (where token was bridged).",
-        example: ~s("1484374.775044204093387391")
-      },
-      homeUsdValue: %{
-        type: "value",
-        definition: "Total supply of the token on the home side (where token was bridged) in USD.",
-        example: ~s("6638727.472651464170990256943")
       }
     }
   }
@@ -868,6 +808,11 @@ defmodule BlockScoutWeb.Etherscan do
         definition: ~s(Possible values: "create", "call", "reward", or "selfdestruct"),
         example: ~s("create")
       },
+      callType: %{
+        type: "type",
+        definition: ~s(Possible values: "call", "callcode", "delegatecall", or "staticcall"),
+        example: ~s("delegatecall")
+      },
       gas: @gas_type,
       gasUsed: @gas_type,
       isError: %{
@@ -923,8 +868,21 @@ defmodule BlockScoutWeb.Etherscan do
         definition: "The transferred amount.",
         example: ~s("663046792267785498951364")
       },
+      values: %{
+        type: "array",
+        array_type: %{
+          name: "Transferred amount",
+          type: "integer",
+          definition: "The transferred amount of particular token instance."
+        },
+        definition: "Transferred amounts of token instances in ERC-1155 batch transfer corresponding to tokenIDs field."
+      },
       tokenName: @token_name_type,
       tokenID: @token_id_type,
+      tokenIDs: %{
+        type: "array",
+        array_type: @token_id_type
+      },
       tokenSymbol: @token_symbol_type,
       tokenDecimal: @token_decimal_type,
       transactionIndex: @transaction_index_type,
@@ -1282,7 +1240,7 @@ defmodule BlockScoutWeb.Etherscan do
 
         latest will be the latest balance in a *consensus* block.
         earliest will be the first recorded balance for the address.
-        pending will be the latest balance in consensus *or* nonconcensus blocks.
+        pending will be the latest balance in consensus *or* nonconsensus blocks.
         """
       }
     ],
@@ -1462,12 +1420,12 @@ defmodule BlockScoutWeb.Etherscan do
           "A string representing the order by block number direction. Defaults to descending order. Available values: asc, desc"
       },
       %{
-        key: "startblock",
+        key: "start_block",
         type: "integer",
         description: "A nonnegative integer that represents the starting block number."
       },
       %{
-        key: "endblock",
+        key: "end_block",
         type: "integer",
         description: "A nonnegative integer that represents the ending block number."
       },
@@ -1484,7 +1442,7 @@ defmodule BlockScoutWeb.Etherscan do
           "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction."
       },
       %{
-        key: "filterby",
+        key: "filter_by",
         type: "string",
         description: """
         A string representing the field to filter by. If none is given
@@ -1493,12 +1451,12 @@ defmodule BlockScoutWeb.Etherscan do
         """
       },
       %{
-        key: "starttimestamp",
+        key: "start_timestamp",
         type: "unix timestamp",
         description: "Represents the starting block timestamp."
       },
       %{
-        key: "endtimestamp",
+        key: "end_timestamp",
         type: "unix timestamp",
         description: "Represents the ending block timestamp."
       }
@@ -1538,7 +1496,7 @@ defmodule BlockScoutWeb.Etherscan do
         placeholder: "transactionHash",
         type: "string",
         description:
-          "Transaction hash. Hash of contents of the transaction. A transcation hash or address hash is required."
+          "Transaction hash. Hash of contents of the transaction. A transaction hash or address hash is required."
       }
     ],
     optional_params: [
@@ -1555,13 +1513,13 @@ defmodule BlockScoutWeb.Etherscan do
           "A string representing the order by block number direction. Defaults to ascending order. Available values: asc, desc. WARNING: Only available if 'address' is provided."
       },
       %{
-        key: "startblock",
+        key: "start_block",
         type: "integer",
         description:
           "A nonnegative integer that represents the starting block number. WARNING: Only available if 'address' is provided."
       },
       %{
-        key: "endblock",
+        key: "end_block",
         type: "integer",
         description:
           "A nonnegative integer that represents the ending block number. WARNING: Only available if 'address' is provided."
@@ -1630,12 +1588,12 @@ defmodule BlockScoutWeb.Etherscan do
           "A string representing the order by block number direction. Defaults to ascending order. Available values: asc, desc"
       },
       %{
-        key: "startblock",
+        key: "start_block",
         type: "integer",
         description: "A nonnegative integer that represents the starting block number."
       },
       %{
-        key: "endblock",
+        key: "end_block",
         type: "integer",
         description: "A nonnegative integer that represents the ending block number."
       },
@@ -2051,49 +2009,6 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
-  @token_bridgedtokenlist_action %{
-    name: "bridgedTokenList",
-    description: "Get bridged tokens list.",
-    required_params: [],
-    optional_params: [
-      %{
-        key: "chainid",
-        type: "integer",
-        description: "A nonnegative integer that represents the chain id, where original token exists."
-      },
-      %{
-        key: "page",
-        type: "integer",
-        description:
-          "A nonnegative integer that represents the page number to be used for pagination. 'offset' must be provided in conjunction."
-      },
-      %{
-        key: "offset",
-        type: "integer",
-        description:
-          "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction."
-      }
-    ],
-    responses: [
-      %{
-        code: "200",
-        description: "successful operation",
-        example_value: Jason.encode!(@token_bridgedtokenlist_example_value),
-        model: %{
-          name: "Result",
-          fields: %{
-            status: @success_status_type,
-            message: @message_type,
-            result: %{
-              type: "array",
-              array_type: @bridged_token_details
-            }
-          }
-        }
-      }
-    ]
-  }
-
   @stats_tokensupply_action %{
     name: "tokensupply",
     description:
@@ -2275,7 +2190,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @block_eth_block_number_action %{
     name: "eth_block_number",
-    description: "Mimics Ethereum JSON RPC's eth_blockNumber. Returns the lastest block number",
+    description: "Mimics Ethereum JSON RPC's eth_blockNumber. Returns the latest block number",
     required_params: [],
     optional_params: [
       %{
@@ -2415,6 +2330,18 @@ defmodule BlockScoutWeb.Etherscan do
         type: "string",
         description:
           "Ensures that none of the returned contracts were decompiled with the provided version. Ignored unless filtering for decompiled contracts."
+      },
+      %{
+        key: "verified_at_start_timestamp",
+        type: "unix timestamp",
+        description:
+          "Represents the starting timestamp when contracts verified. Taking into account only with `verified` filter."
+      },
+      %{
+        key: "verified_at_end_timestamp",
+        type: "unix timestamp",
+        description:
+          "Represents the ending timestamp when contracts verified. Taking into account only with `verified` filter."
       }
     ],
     responses: [
@@ -2762,7 +2689,7 @@ defmodule BlockScoutWeb.Etherscan do
     ],
     optional_params: [
       %{
-        key: "constructorArguements",
+        key: "constructorArguments",
         type: "string",
         description: "The constructor argument data provided."
       },
@@ -3024,8 +2951,7 @@ defmodule BlockScoutWeb.Etherscan do
     name: "token",
     actions: [
       @token_gettoken_action,
-      @token_gettokenholders_action,
-      @token_bridgedtokenlist_action
+      @token_gettokenholders_action
     ]
   }
 

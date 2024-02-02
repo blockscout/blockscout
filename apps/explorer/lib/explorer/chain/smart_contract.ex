@@ -12,9 +12,19 @@ defmodule Explorer.Chain.SmartContract do
 
   use Explorer.Schema
 
+  alias Ecto.Changeset
+  alias EthereumJSONRPC.Contract
+  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, ContractMethod, DecompiledSmartContract, Hash}
   alias Explorer.Chain.SmartContract.ExternalLibrary
-  alias Explorer.Repo
+  alias Explorer.SmartContract.Reader
+  alias Timex.Duration
+
+  @burn_address_hash_str "0x0000000000000000000000000000000000000000"
+  @burn_address_hash_str_32 "0x0000000000000000000000000000000000000000000000000000000000000000"
+
+  @typep api? :: {:api?, true | false}
 
   @typedoc """
   The name of a parameter to a function or event.
@@ -196,8 +206,15 @@ defmodule Explorer.Chain.SmartContract do
   * `partially_verified` - whether contract verified using partial matched source code or not.
   * `is_vyper_contract` - boolean flag, determines if contract is Vyper or not
   * `file_path` - show the filename or path to the file of the contract source file
-  * `is_changed_bytecode` - boolean flag, determines if contract's bytecode was modified 
+  * `is_changed_bytecode` - boolean flag, determines if contract's bytecode was modified
   * `bytecode_checked_at` - timestamp of the last check of contract's bytecode matching (DB and BlockChain)
+  * `contract_code_md5` - md5(`t:Explorer.Chain.Address.t/0` `contract_code`)
+  * `implementation_name` - name of the proxy implementation
+  * `compiler_settings` - raw compilation parameters
+  * `implementation_fetched_at` - timestamp of the last fetching contract's implementation info
+  * `implementation_address_hash` - address hash of the proxy's implementation if any
+  * `autodetect_constructor_args` - field was added for storing user's choice
+  * `is_yul` - field was added for storing user's choice
   """
 
   @type t :: %Explorer.Chain.SmartContract{
@@ -214,7 +231,14 @@ defmodule Explorer.Chain.SmartContract do
           file_path: String.t(),
           is_vyper_contract: boolean | nil,
           is_changed_bytecode: boolean,
-          bytecode_checked_at: DateTime.t()
+          bytecode_checked_at: DateTime.t(),
+          contract_code_md5: String.t(),
+          implementation_name: String.t() | nil,
+          compiler_settings: map() | nil,
+          implementation_fetched_at: DateTime.t(),
+          implementation_address_hash: Hash.Address.t(),
+          autodetect_constructor_args: boolean | nil,
+          is_yul: boolean | nil
         }
 
   schema "smart_contracts" do
@@ -233,6 +257,14 @@ defmodule Explorer.Chain.SmartContract do
     field(:is_vyper_contract, :boolean)
     field(:is_changed_bytecode, :boolean, default: false)
     field(:bytecode_checked_at, :utc_datetime_usec, default: DateTime.add(DateTime.utc_now(), -86400, :second))
+    field(:contract_code_md5, :string)
+    field(:implementation_name, :string)
+    field(:compiler_settings, :map)
+    field(:implementation_fetched_at, :utc_datetime_usec, default: nil)
+    field(:implementation_address_hash, Hash.Address, default: nil)
+    field(:autodetect_constructor_args, :boolean, virtual: true)
+    field(:is_yul, :boolean, virtual: true)
+    field(:metadata_from_verified_twin, :boolean, virtual: true)
 
     has_many(
       :decompiled_smart_contracts,
@@ -272,9 +304,21 @@ defmodule Explorer.Chain.SmartContract do
       :file_path,
       :is_vyper_contract,
       :is_changed_bytecode,
-      :bytecode_checked_at
+      :bytecode_checked_at,
+      :contract_code_md5,
+      :implementation_name,
+      :compiler_settings,
+      :implementation_address_hash,
+      :implementation_fetched_at
     ])
-    |> validate_required([:name, :compiler_version, :optimization, :contract_source_code, :abi, :address_hash])
+    |> validate_required([
+      :name,
+      :compiler_version,
+      :optimization,
+      :contract_source_code,
+      :address_hash,
+      :contract_code_md5
+    ])
     |> unique_constraint(:address_hash)
     |> prepare_changes(&upsert_contract_methods/1)
   end
@@ -302,14 +346,17 @@ defmodule Explorer.Chain.SmartContract do
         :file_path,
         :is_vyper_contract,
         :is_changed_bytecode,
-        :bytecode_checked_at
+        :bytecode_checked_at,
+        :contract_code_md5,
+        :implementation_name,
+        :autodetect_constructor_args
       ])
       |> (&if(json_verification,
             do: &1,
-            else: validate_required(&1, [:name, :compiler_version, :optimization, :address_hash])
+            else: validate_required(&1, [:compiler_version, :optimization, :address_hash, :contract_code_md5])
           )).()
 
-    field_to_put_message = if json_verification, do: :file, else: :contract_source_code
+    field_to_put_message = if json_verification, do: :files, else: select_error_field(error)
 
     if error_message do
       add_error(validated, field_to_put_message, error_message(error, error_message))
@@ -357,7 +404,7 @@ defmodule Explorer.Chain.SmartContract do
     end
   end
 
-  defp upsert_contract_methods(%Ecto.Changeset{changes: %{abi: abi}} = changeset) do
+  defp upsert_contract_methods(%Changeset{changes: %{abi: abi}} = changeset) do
     ContractMethod.upsert_from_abi(abi, get_field(changeset, :address_hash))
 
     changeset
@@ -378,6 +425,491 @@ defmodule Explorer.Chain.SmartContract do
   defp error_message(:constructor_arguments), do: "Constructor arguments do not match, please try again."
   defp error_message(:name), do: "Wrong contract name, please try again."
   defp error_message(:json), do: "Invalid JSON file."
+
+  defp error_message(:autodetect_constructor_arguments_failed),
+    do: "Autodetection of constructor arguments failed. Please try to input constructor arguments manually."
+
+  defp error_message(:no_creation_data),
+    do: "The contract creation transaction has not been indexed yet. Please wait a few minutes and try again."
+
+  defp error_message(:unknown_error), do: "Unable to verify: unknown error."
+  defp error_message(:deployed_bytecode), do: "Deployed bytecode does not correspond to contract creation code."
+
+  defp error_message(string) when is_binary(string), do: string
+
   defp error_message(_), do: "There was an error validating your contract, please try again."
+
   defp error_message(:compilation, error_message), do: "There was an error compiling your contract: #{error_message}"
+
+  defp select_error_field(:no_creation_data), do: :address_hash
+  defp select_error_field(:compiler_version), do: :compiler_version
+
+  defp select_error_field(constructor_arguments)
+       when constructor_arguments in [:constructor_arguments, :autodetect_constructor_arguments_failed],
+       do: :constructor_arguments
+
+  defp select_error_field(:name), do: :name
+  defp select_error_field(_), do: :contract_source_code
+
+  def merge_twin_contract_with_changeset(%__MODULE__{} = twin_contract, %Changeset{} = changeset) do
+    %__MODULE__{}
+    |> changeset(Map.from_struct(twin_contract))
+    |> Changeset.put_change(:autodetect_constructor_args, true)
+    |> Changeset.put_change(:is_yul, false)
+    |> Changeset.force_change(:address_hash, Changeset.get_field(changeset, :address_hash))
+  end
+
+  def merge_twin_contract_with_changeset(nil, %Changeset{} = changeset) do
+    changeset
+    |> Changeset.put_change(:name, "")
+    |> Changeset.put_change(:optimization_runs, "200")
+    |> Changeset.put_change(:optimization, true)
+    |> Changeset.put_change(:evm_version, "default")
+    |> Changeset.put_change(:compiler_version, "latest")
+    |> Changeset.put_change(:contract_source_code, "")
+    |> Changeset.put_change(:autodetect_constructor_args, true)
+    |> Changeset.put_change(:is_yul, false)
+  end
+
+  def merge_twin_vyper_contract_with_changeset(
+        %__MODULE__{is_vyper_contract: true} = twin_contract,
+        %Changeset{} = changeset
+      ) do
+    %__MODULE__{}
+    |> changeset(Map.from_struct(twin_contract))
+    |> Changeset.force_change(:address_hash, Changeset.get_field(changeset, :address_hash))
+  end
+
+  def merge_twin_vyper_contract_with_changeset(%__MODULE__{is_vyper_contract: false}, %Changeset{} = changeset) do
+    merge_twin_vyper_contract_with_changeset(nil, changeset)
+  end
+
+  def merge_twin_vyper_contract_with_changeset(%__MODULE__{is_vyper_contract: nil}, %Changeset{} = changeset) do
+    merge_twin_vyper_contract_with_changeset(nil, changeset)
+  end
+
+  def merge_twin_vyper_contract_with_changeset(nil, %Changeset{} = changeset) do
+    changeset
+    |> Changeset.put_change(:name, "Vyper_contract")
+    |> Changeset.put_change(:compiler_version, "latest")
+    |> Changeset.put_change(:contract_source_code, "")
+  end
+
+  def address_to_checksum_address(changeset) do
+    checksum_address =
+      changeset
+      |> Changeset.get_field(:address_hash)
+      |> to_address_hash()
+      |> Address.checksum()
+
+    Changeset.force_change(changeset, :address_hash, checksum_address)
+  end
+
+  defp to_address_hash(string) when is_binary(string) do
+    {:ok, address_hash} = Chain.string_to_address_hash(string)
+    address_hash
+  end
+
+  defp to_address_hash(address_hash), do: address_hash
+
+  def proxy_contract?(smart_contract, options \\ [])
+
+  def proxy_contract?(%__MODULE__{abi: abi} = smart_contract, options) when not is_nil(abi) do
+    implementation_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Map.get(method, "name") == "implementation" ||
+          Chain.master_copy_pattern?(method)
+      end)
+
+    if implementation_method_abi ||
+         not is_nil(
+           smart_contract
+           |> get_implementation_address_hash(options)
+           |> Tuple.to_list()
+           |> List.first()
+         ),
+       do: true,
+       else: false
+  end
+
+  def proxy_contract?(_, _), do: false
+
+  def get_implementation_address_hash(smart_contract, options \\ [])
+
+  def get_implementation_address_hash(%__MODULE__{abi: nil}, _), do: {nil, nil}
+
+  def get_implementation_address_hash(%__MODULE__{metadata_from_verified_twin: true} = smart_contract, options) do
+    get_implementation_address_hash({:updated, smart_contract}, options)
+  end
+
+  def get_implementation_address_hash(
+        %__MODULE__{
+          address_hash: address_hash,
+          implementation_fetched_at: implementation_fetched_at
+        } = smart_contract,
+        options
+      ) do
+    updated_smart_contract =
+      if Application.get_env(:explorer, :enable_caching_implementation_data_of_proxy) &&
+           check_implementation_refetch_necessity(implementation_fetched_at) do
+        Chain.address_hash_to_smart_contract_without_twin(address_hash, options)
+      else
+        smart_contract
+      end
+
+    get_implementation_address_hash({:updated, updated_smart_contract})
+  end
+
+  def get_implementation_address_hash(
+        {:updated,
+         %__MODULE__{
+           address_hash: address_hash,
+           abi: abi,
+           implementation_address_hash: implementation_address_hash_from_db,
+           implementation_name: implementation_name_from_db,
+           implementation_fetched_at: implementation_fetched_at,
+           metadata_from_verified_twin: metadata_from_verified_twin
+         }},
+        options
+      ) do
+    if check_implementation_refetch_necessity(implementation_fetched_at) do
+      get_implementation_address_hash_task =
+        Task.async(fn -> get_implementation_address_hash(address_hash, abi, metadata_from_verified_twin, options) end)
+
+      timeout = Application.get_env(:explorer, :implementation_data_fetching_timeout)
+
+      case Task.yield(get_implementation_address_hash_task, timeout) ||
+             Task.ignore(get_implementation_address_hash_task) do
+        {:ok, {:empty, :empty}} ->
+          {nil, nil}
+
+        {:ok, {address_hash, _name} = result} when not is_nil(address_hash) ->
+          result
+
+        _ ->
+          {db_implementation_data_converter(implementation_address_hash_from_db),
+           db_implementation_data_converter(implementation_name_from_db)}
+      end
+    else
+      {db_implementation_data_converter(implementation_address_hash_from_db),
+       db_implementation_data_converter(implementation_name_from_db)}
+    end
+  end
+
+  def get_implementation_address_hash(_, _), do: {nil, nil}
+
+  defp db_implementation_data_converter(nil), do: nil
+  defp db_implementation_data_converter(string) when is_binary(string), do: string
+  defp db_implementation_data_converter(other), do: to_string(other)
+
+  defp check_implementation_refetch_necessity(nil), do: true
+
+  defp check_implementation_refetch_necessity(timestamp) do
+    if Application.get_env(:explorer, :enable_caching_implementation_data_of_proxy) do
+      now = DateTime.utc_now()
+
+      average_block_time = get_average_block_time()
+
+      fresh_time_distance =
+        case average_block_time do
+          0 ->
+            Application.get_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy)
+
+          time ->
+            round(time)
+        end
+
+      timestamp
+      |> DateTime.add(fresh_time_distance, :millisecond)
+      |> DateTime.compare(now) != :gt
+    else
+      true
+    end
+  end
+
+  defp get_average_block_time do
+    if Application.get_env(:explorer, :avg_block_time_as_ttl_cached_implementation_data_of_proxy) do
+      case AverageBlockTime.average_block_time() do
+        {:error, :disabled} ->
+          0
+
+        duration ->
+          duration
+          |> Duration.to_milliseconds()
+      end
+    else
+      0
+    end
+  end
+
+  @spec get_implementation_address_hash(Hash.Address.t(), list(), boolean() | nil, [api?]) ::
+          {String.t() | nil, String.t() | nil}
+  defp get_implementation_address_hash(proxy_address_hash, abi, metadata_from_verified_twin, options)
+       when not is_nil(proxy_address_hash) and not is_nil(abi) do
+    implementation_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Map.get(method, "name") == "implementation" && Map.get(method, "stateMutability") == "view"
+      end)
+
+    get_implementation_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Map.get(method, "name") == "getImplementation" && Map.get(method, "stateMutability") == "view"
+      end)
+
+    master_copy_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Chain.master_copy_pattern?(method)
+      end)
+
+    implementation_address =
+      cond do
+        implementation_method_abi ->
+          get_implementation_address_hash_basic("5c60da1b", proxy_address_hash, abi)
+
+        get_implementation_method_abi ->
+          get_implementation_address_hash_basic("aaf10f42", proxy_address_hash, abi)
+
+        master_copy_method_abi ->
+          get_implementation_address_hash_from_master_copy_pattern(proxy_address_hash)
+
+        true ->
+          get_implementation_address_hash_eip_1967(proxy_address_hash)
+      end
+
+    save_implementation_data(implementation_address, proxy_address_hash, metadata_from_verified_twin, options)
+  end
+
+  defp get_implementation_address_hash(_proxy_address_hash, _abi, _, _) do
+    {nil, nil}
+  end
+
+  defp get_implementation_address_hash_eip_1967(proxy_address_hash) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    # https://eips.ethereum.org/EIPS/eip-1967
+    storage_slot_logic_contract_address = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+
+    {_status, implementation_address} =
+      case Contract.eth_get_storage_at_request(
+             proxy_address_hash,
+             storage_slot_logic_contract_address,
+             nil,
+             json_rpc_named_arguments
+           ) do
+        {:ok, empty_address}
+        when empty_address in ["0x", "0x0", @burn_address_hash_str_32, nil] ->
+          fetch_beacon_proxy_implementation(proxy_address_hash, json_rpc_named_arguments)
+
+        {:ok, implementation_logic_address} ->
+          {:ok, implementation_logic_address}
+
+        _ ->
+          {:ok, nil}
+      end
+
+    abi_decode_address_output(implementation_address)
+  end
+
+  # changes requested by https://github.com/blockscout/blockscout/issues/4770
+  # for support BeaconProxy pattern
+  defp fetch_beacon_proxy_implementation(proxy_address_hash, json_rpc_named_arguments) do
+    # https://eips.ethereum.org/EIPS/eip-1967
+    storage_slot_beacon_contract_address = "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50"
+
+    implementation_method_abi = [
+      %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
+        "name" => "implementation",
+        "inputs" => []
+      }
+    ]
+
+    case Contract.eth_get_storage_at_request(
+           proxy_address_hash,
+           storage_slot_beacon_contract_address,
+           nil,
+           json_rpc_named_arguments
+         ) do
+      {:ok, empty_address}
+      when empty_address in ["0x", "0x0", @burn_address_hash_str_32, nil] ->
+        fetch_openzeppelin_proxy_implementation(proxy_address_hash, json_rpc_named_arguments)
+
+      {:ok, beacon_contract_address} ->
+        case beacon_contract_address
+             |> abi_decode_address_output()
+             |> get_implementation_address_hash_basic("5c60da1b", implementation_method_abi) do
+          <<implementation_address::binary-size(42)>> ->
+            {:ok, implementation_address}
+
+          _ ->
+            {:ok, beacon_contract_address}
+        end
+
+      _ ->
+        {:ok, nil}
+    end
+  end
+
+  # changes requested by https://github.com/blockscout/blockscout/issues/5292
+  defp fetch_openzeppelin_proxy_implementation(proxy_address_hash, json_rpc_named_arguments) do
+    # This is the keccak-256 hash of "org.zeppelinos.proxy.implementation"
+    storage_slot_logic_contract_address = "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3"
+
+    case Contract.eth_get_storage_at_request(
+           proxy_address_hash,
+           storage_slot_logic_contract_address,
+           nil,
+           json_rpc_named_arguments
+         ) do
+      {:ok, empty_address}
+      when empty_address in ["0x", "0x0", @burn_address_hash_str_32] ->
+        {:ok, "0x"}
+
+      {:ok, logic_contract_address} ->
+        {:ok, logic_contract_address}
+
+      _ ->
+        {:ok, nil}
+    end
+  end
+
+  defp get_implementation_address_hash_basic(signature, proxy_address_hash, abi) do
+    # supported signatures:
+    # 5c60da1b = keccak256(implementation())
+    # aaf10f42 = keccak256(getImplementation())
+    implementation_address =
+      case Reader.query_contract(
+             proxy_address_hash,
+             abi,
+             %{
+               "#{signature}" => []
+             },
+             false
+           ) do
+        %{^signature => {:ok, [result]}} -> result
+        _ -> nil
+      end
+
+    address_to_hex(implementation_address)
+  end
+
+  defp get_implementation_address_hash_from_master_copy_pattern(proxy_address_hash) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    master_copy_storage_pointer = "0x0"
+
+    {:ok, implementation_address} =
+      case Contract.eth_get_storage_at_request(
+             proxy_address_hash,
+             master_copy_storage_pointer,
+             nil,
+             json_rpc_named_arguments
+           ) do
+        {:ok, empty_address}
+        when empty_address in ["0x", "0x0", @burn_address_hash_str_32] ->
+          {:ok, "0x"}
+
+        {:ok, logic_contract_address} ->
+          {:ok, logic_contract_address}
+
+        _ ->
+          {:ok, nil}
+      end
+
+    abi_decode_address_output(implementation_address)
+  end
+
+  defp save_implementation_data(nil, _, _, _), do: {nil, nil}
+
+  defp save_implementation_data(empty_address_hash_string, proxy_address_hash, metadata_from_verified_twin, options)
+       when empty_address_hash_string in [
+              "0x",
+              "0x0",
+              @burn_address_hash_str_32,
+              @burn_address_hash_str
+            ] do
+    if is_nil(metadata_from_verified_twin) or !metadata_from_verified_twin do
+      proxy_address_hash
+      |> Chain.address_hash_to_smart_contract_without_twin(options)
+      |> changeset(%{
+        implementation_name: nil,
+        implementation_address_hash: nil,
+        implementation_fetched_at: DateTime.utc_now()
+      })
+      |> Repo.update()
+    end
+
+    {:empty, :empty}
+  end
+
+  defp save_implementation_data(implementation_address_hash_string, proxy_address_hash, _, options)
+       when is_binary(implementation_address_hash_string) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(implementation_address_hash_string),
+         proxy_contract <- Chain.address_hash_to_smart_contract_without_twin(proxy_address_hash, options),
+         false <- is_nil(proxy_contract),
+         %{implementation: %__MODULE__{name: name}, proxy: proxy_contract} <- %{
+           implementation: Chain.address_hash_to_smart_contract(address_hash, options),
+           proxy: proxy_contract
+         } do
+      proxy_contract
+      |> changeset(%{
+        implementation_name: name,
+        implementation_address_hash: implementation_address_hash_string,
+        implementation_fetched_at: DateTime.utc_now()
+      })
+      |> Repo.update()
+
+      {implementation_address_hash_string, name}
+    else
+      %{implementation: _, proxy: proxy_contract} ->
+        proxy_contract
+        |> changeset(%{
+          implementation_name: nil,
+          implementation_address_hash: implementation_address_hash_string,
+          implementation_fetched_at: DateTime.utc_now()
+        })
+        |> Repo.update()
+
+        {implementation_address_hash_string, nil}
+
+      true ->
+        {:ok, address_hash} = Chain.string_to_address_hash(implementation_address_hash_string)
+        smart_contract = Chain.address_hash_to_smart_contract(address_hash, options)
+
+        {implementation_address_hash_string, smart_contract && smart_contract.name}
+
+      _ ->
+        {implementation_address_hash_string, nil}
+    end
+  end
+
+  defp address_to_hex(address) do
+    if address do
+      if String.starts_with?(address, "0x") do
+        address
+      else
+        "0x" <> Base.encode16(address, case: :lower)
+      end
+    end
+  end
+
+  defp abi_decode_address_output(nil), do: nil
+
+  defp abi_decode_address_output("0x"), do: @burn_address_hash_str
+
+  defp abi_decode_address_output(address) when is_binary(address) do
+    if String.length(address) > 42 do
+      "0x" <> String.slice(address, -40, 40)
+    else
+      address
+    end
+  end
+
+  defp abi_decode_address_output(_), do: nil
 end

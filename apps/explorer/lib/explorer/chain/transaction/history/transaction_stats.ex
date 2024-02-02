@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Transaction.History.TransactionStats do
 
   use Explorer.Schema
 
-  alias Explorer.Repo
+  alias Explorer.Chain
 
   @derive {Jason.Encoder,
            except: [
@@ -36,7 +36,7 @@ defmodule Explorer.Chain.Transaction.History.TransactionStats do
         }
 
   @spec by_date_range(Date.t(), Date.t()) :: [__MODULE__]
-  def by_date_range(earliest, latest) do
+  def by_date_range(earliest, latest, options \\ []) do
     # Create a query
     query =
       from(stat in __MODULE__,
@@ -44,6 +44,6 @@ defmodule Explorer.Chain.Transaction.History.TransactionStats do
         order_by: [desc: :date]
       )
 
-    Repo.all(query)
+    Chain.select_repo(options).all(query)
   end
 end

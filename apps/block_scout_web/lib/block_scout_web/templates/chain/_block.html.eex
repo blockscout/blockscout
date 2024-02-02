@@ -11,7 +11,7 @@
         <span class="mr-2"><%= gettext("%{count} Transactions", count: Enum.count(@block.transactions)) %></span>
         <span class="text-nowrap" data-from-now="<%= @block.timestamp %>"> </span>
       </div>
-      <%= if System.get_env("HIDE_BLOCK_MINER") !== "true" do %>
+      <%= if !Application.get_env(:block_scout_web, :hide_block_miner) do %>
         <div class="text-truncate">
           <%= gettext "Miner" %>
           <%= render BlockScoutWeb.AddressView,

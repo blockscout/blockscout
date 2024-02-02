@@ -40,7 +40,12 @@ defmodule Explorer.Token.BalanceReader do
   ]
 
   @spec get_balances_of([
-          %{token_contract_address_hash: String.t(), address_hash: String.t(), block_number: non_neg_integer()}
+          %{
+            token_contract_address_hash: String.t(),
+            address_hash: String.t(),
+            block_number: non_neg_integer(),
+            token_id: non_neg_integer() | nil
+          }
         ]) :: [{:ok, non_neg_integer()} | {:error, String.t()}]
   def get_balances_of(token_balance_requests) do
     token_balance_requests
@@ -51,7 +56,12 @@ defmodule Explorer.Token.BalanceReader do
 
   @spec get_balances_of_with_abi(
           [
-            %{token_contract_address_hash: String.t(), address_hash: String.t(), block_number: non_neg_integer()}
+            %{
+              token_contract_address_hash: String.t(),
+              address_hash: String.t(),
+              block_number: non_neg_integer(),
+              token_id: non_neg_integer() | nil
+            }
           ],
           [%{}]
         ) :: [{:ok, non_neg_integer()} | {:error, String.t()}]
@@ -72,6 +82,18 @@ defmodule Explorer.Token.BalanceReader do
     else
       []
     end
+  end
+
+  @spec get_balances_of_erc_1155([
+          %{
+            token_contract_address_hash: String.t(),
+            address_hash: String.t(),
+            block_number: non_neg_integer(),
+            token_id: non_neg_integer() | nil
+          }
+        ]) :: [{:ok, non_neg_integer()} | {:error, String.t()}]
+  def get_balances_of_erc_1155(token_balance_requests) do
+    get_balances_of_with_abi(token_balance_requests, @erc1155_balance_function_abi)
   end
 
   defp format_balance_request(%{

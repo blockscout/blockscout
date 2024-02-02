@@ -4,6 +4,7 @@
     "_details.html",
     token: @token,
     counters_path: @counters_path,
+    tags: @tags,
     conn: @conn
   ) %>
 

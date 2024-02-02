@@ -14,7 +14,7 @@ defmodule Explorer.Chain.Supply.RSKTest do
   end
 
   describe "market_cap/1" do
-    @tag :no_parity
+    @tag :no_nethermind
     @tag :no_geth
     test "calculates market_cap" do
       EthereumJSONRPC.Mox

@@ -5,24 +5,18 @@ defmodule Explorer.Chain.Events.Listener do
 
   use GenServer
 
+  alias Explorer.Repo
+  alias Explorer.Utility.EventNotification
   alias Postgrex.Notifications
-  import Explorer.Chain, only: [extract_db_name: 1, extract_db_host: 1]
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, "chain_event", name: __MODULE__)
   end
 
   def init(channel) do
-    explorer_repo =
+    {:ok, pid} =
       :explorer
       |> Application.get_env(Explorer.Repo)
-
-    db_url = explorer_repo[:url]
-
-    {:ok, pid} =
-      explorer_repo
-      |> Keyword.put(:database, extract_db_name(db_url))
-      |> Keyword.put(:hostname, extract_db_host(db_url))
       |> Notifications.start_link()
 
     ref = Notifications.listen!(pid, channel)
@@ -31,11 +25,22 @@ defmodule Explorer.Chain.Events.Listener do
   end
 
   def handle_info({:notification, _pid, _ref, _topic, payload}, state) do
-    payload
-    |> decode_payload!()
-    |> broadcast()
+    expanded_payload = expand_payload(payload)
+
+    if expanded_payload != nil do
+      expanded_payload
+      |> decode_payload!()
+      |> broadcast()
+    end
 
     {:noreply, state}
+  end
+
+  defp expand_payload(payload) do
+    case Integer.parse(payload) do
+      {event_notification_id, ""} -> fetch_and_delete_event_notification(event_notification_id)
+      _ -> payload
+    end
   end
 
   # sobelow_skip ["Misc.BinToTerm"]
@@ -59,5 +64,21 @@ defmodule Explorer.Chain.Events.Listener do
         send(pid, event)
       end
     end)
+  end
+
+  defp fetch_and_delete_event_notification(id) do
+    case Repo.get(EventNotification, id) do
+      nil ->
+        nil
+
+      %{data: data} = notification ->
+        try do
+          Repo.delete(notification)
+        rescue
+          Ecto.StaleEntryError -> nil
+        end
+
+        data
+    end
   end
 end

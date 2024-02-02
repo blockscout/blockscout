@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.APIDocsView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.LayoutView
+  alias Explorer
 
   def action_tile_id(module, action) do
     "#{module}-#{action}"
@@ -20,7 +21,7 @@ defmodule BlockScoutWeb.APIDocsView do
   end
 
   def model_type_definition(definition_func) when is_function(definition_func, 1) do
-    coin = Application.get_env(:explorer, :coin)
+    coin = Explorer.coin()
     definition_func.(coin)
   end
 
@@ -48,16 +49,11 @@ defmodule BlockScoutWeb.APIDocsView do
     end
   end
 
-  def blockscout_url(set_path, is_api) when set_path == true do
+  def blockscout_url(set_path) when set_path == true do
     url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
     host = url_params[:host]
 
-    path =
-      if is_api do
-        url_params[:api_path]
-      else
-        url_params[:path]
-      end
+    path = url_params[:path]
 
     scheme = Keyword.get(url_params, :scheme, "http")
 
@@ -70,20 +66,14 @@ defmodule BlockScoutWeb.APIDocsView do
   end
 
   def api_url do
-    is_api = true
-    set_path = true
-
-    set_path
-    |> blockscout_url(is_api)
+    true
+    |> blockscout_url()
     |> Path.join("api")
   end
 
   def eth_rpc_api_url do
-    is_api = true
-    set_path = true
-
-    set_path
-    |> blockscout_url(is_api)
+    true
+    |> blockscout_url()
     |> Path.join("api/eth-rpc")
   end
 end

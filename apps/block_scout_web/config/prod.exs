@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # For production, we often load configuration from external
 # sources, such as your system environment. For this reason,
@@ -15,17 +15,7 @@ use Mix.Config
 # which you typically run after static files are built.
 config :block_scout_web, BlockScoutWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
-  force_ssl: false,
-  secret_key_base: System.get_env("SECRET_KEY_BASE"),
-  check_origin: System.get_env("CHECK_ORIGIN") || false,
-  http: [port: System.get_env("PORT")],
-  url: [
-    scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "https",
-    port: System.get_env("PORT"),
-    host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
-    path: System.get_env("NETWORK_PATH") || "/",
-    api_path: System.get_env("API_PATH") || "/"
-  ]
+  force_ssl: false
 
 config :block_scout_web, BlockScoutWeb.Tracer, env: "production", disabled?: true
 
@@ -37,5 +27,13 @@ config :logger, :block_scout_web,
 config :logger, :api,
   level: :debug,
   path: Path.absname("logs/prod/api.log"),
-  metadata_filter: [fetcher: :api],
+  metadata_filter: [application: :api],
   rotate: %{max_bytes: 52_428_800, keep: 19}
+
+config :logger, :api_v2,
+  level: :debug,
+  path: Path.absname("logs/prod/api_v2.log"),
+  metadata_filter: [application: :api_v2],
+  rotate: %{max_bytes: 52_428_800, keep: 19}
+
+config :block_scout_web, :captcha_helper, BlockScoutWeb.CaptchaHelper

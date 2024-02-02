@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
     {:ok, bypass: bypass}
   end
 
-  # wallaby with chrome headles always fails this test
+  # wallaby with chrome headless always fails this test
   @tag :skip
   test "users validates smart contract", %{session: session, bypass: bypass} do
     Bypass.expect(bypass, fn conn -> Conn.resp(conn, 200, solc_bin_versions()) end)

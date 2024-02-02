@@ -115,7 +115,9 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
       {:ok, bypass: bypass}
     end
 
-    test "fetches poa coin id by default", %{bypass: bypass} do
+    test "fetches poa coin id", %{bypass: bypass} do
+      Application.put_env(:explorer, :coin, "POA")
+
       Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
         Conn.resp(conn, 200, @coins_list)
       end)

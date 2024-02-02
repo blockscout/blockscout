@@ -49,10 +49,20 @@ defmodule BlockScoutWeb.Controller do
       if path =~ network_path do
         path
       else
+        network_path = sanitize_network_path(network_path, path)
+
         network_path <> path
       end
     else
       path
+    end
+  end
+
+  defp sanitize_network_path(network_path, path) do
+    if String.starts_with?(path, "/") do
+      String.trim_trailing(network_path, "/")
+    else
+      network_path
     end
   end
 end

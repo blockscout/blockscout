@@ -18,7 +18,7 @@ defmodule Explorer.Etherscan.Addresses do
     query =
       from(
         address in Address,
-        order_by: [asc: address.inserted_at],
+        order_by: [asc: address.inserted_at, asc: address.hash],
         offset: ^offset,
         limit: ^limit
       )

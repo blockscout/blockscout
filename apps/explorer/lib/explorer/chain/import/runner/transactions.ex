@@ -10,6 +10,8 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   alias Ecto.{Multi, Repo}
   alias Explorer.Chain.{Block, Hash, Import, Transaction}
   alias Explorer.Chain.Import.Runner.TokenTransfers
+  alias Explorer.Prometheus.Instrumenter
+  alias Explorer.Utility.MissingBlockRange
 
   @behaviour Import.Runner
 
@@ -45,10 +47,22 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
     |> Multi.run(:recollated_transactions, fn repo, _ ->
-      discard_blocks_for_recollated_transactions(repo, changes_list, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          discard_blocks_for_recollated_transactions(repo, changes_list, insert_options)
+        end,
+        :block_referencing,
+        :transactions,
+        :recollated_transactions
+      )
     end)
     |> Multi.run(:transactions, fn repo, _ ->
-      insert(repo, changes_list, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn -> insert(repo, changes_list, insert_options) end,
+        :block_referencing,
+        :transactions,
+        :transactions
+      )
     end)
   end
 
@@ -207,10 +221,12 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       try do
         {_, result} =
           repo.update_all(
-            from(b in Block, join: s in subquery(query), on: b.hash == s.hash),
+            from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: b.number),
             [set: [consensus: false, updated_at: updated_at]],
             timeout: timeout
           )
+
+        MissingBlockRange.add_ranges_by_block_numbers(result)
 
         {:ok, result}
       rescue

@@ -39,7 +39,7 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
               miner_hash_data: "0xe6a7a1d47ff21b6321162aea7c6cb457d5476bca"
             }
 
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             %{
               block_number: 34,
               fetched_balance: 252_460_834_000_000_000_000_000_000,
@@ -110,7 +110,7 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
               miner_hash_data: "0xe6a7a1d47ff21b6321162aea7c6cb457d5476bca"
             }
 
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             %{
               block_number: 34,
               fetched_balance: 252_460_834_000_000_000_000_000_000,
@@ -184,7 +184,7 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
               }
             }
 
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             %{
               block_number: 34,
               fetched_balance: 252_460_834_000_000_000_000_000_000,
@@ -254,7 +254,7 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
               hash_data: "0x05a56e2d52c817161883f50c441c3228cfe54d9f"
             }
 
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             %{
               balance_by_block_number: %{
                 1 => 252_460_801_000_000_000_000_000_000,
@@ -360,7 +360,7 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
           transport: EthereumJSONRPC.Mox,
           transport_options: [],
           # Which one does not matter, so pick one
-          variant: EthereumJSONRPC.Parity
+          variant: EthereumJSONRPC.Nethermind
         ]
       }
     end

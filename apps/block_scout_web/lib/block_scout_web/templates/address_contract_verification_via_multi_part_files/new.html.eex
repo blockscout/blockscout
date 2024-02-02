@@ -1,0 +1,116 @@
+<% metadata_for_verification = if assigns[:retrying], do: nil, else: Chain.get_address_verified_twin_contract(@address_hash).verified_contract %>
+<% changeset = (if assigns[:retrying], do: @changeset, else: SmartContract.merge_twin_contract_with_changeset(metadata_for_verification, @changeset)) |> SmartContract.address_to_checksum_address() %>
+<section data-page="contract-verification" class="container new-smart-contract-container">
+  <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost") %>
+
+  <div class="new-smart-contract-form">
+      <h1 class="smart-contract-title"><%= if RustVerifierInterface.enabled?(), do: gettext "New Solidity/Yul Smart Contract Verification", else: gettext "New Solidity Smart Contract Verification" %></h1>
+
+      <%= form_for changeset,
+          address_contract_verification_path(@conn, :create),
+          [id: "multi-part-dropzone-form"],
+          fn f -> %>
+
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", f: f %>
+
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_include_nightly_builds_field.html", f: f %>
+
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_versions: @compiler_versions, tooltip: gettext "The compiler version is specified in <span class=\"tooltip-quote\">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class=\"tooltip-quote\">solc —version</span> to check." %>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :evm_version, gettext("EVM Version") %>
+            <div class="center-column">
+              <%= select f, :evm_version, @evm_versions, class: "form-control border-rounded", "aria-describedby": "evm-version-help-block" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip"><%= gettext "The EVM version the contract is written for. If the bytecode does not match the version, we try to verify using the latest EVM version." %> <a href="https://forum.poa.network/t/smart-contract-verification-evm-version-details/2318" target="_blank"><%= gettext "EVM version details" %></a>.</div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :optimization, gettext("Optimization") %>
+            <div class="center-column">
+              <div class="form-radios-group">
+                <div class="radio-big">
+                  <%= radio_button f, :optimization, false, class: "form-check-input optimization-false" %>
+                  <div class="radio-icon"></div>
+                  <%= label f, :optimization_false, gettext("No"), class: "radio-text" %>
+                </div>
+                <div class="radio-big">
+                  <%= radio_button f, :optimization, true, class: "form-check-input optimization-true", "aria-describedby": "optimization-help-block" %>
+                  <div class="radio-icon"></div>
+                  <%= label f, :optimization_true, gettext("Yes"), class: "radio-text" %>
+                </div>
+              </div>
+              <%= error_tag f, :optimization, id: "optimization-help-block", class: "text-danger form-error" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip"><%= gettext "If you enabled optimization during compilation, select yes." %></div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group optimization-runs" style="<%= if !changeset.changes.optimization, do: "display: none;"%>">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :optimization_runs, gettext("Optimization runs") %>
+            <div class="center-column">
+              <%= text_input f, :optimization_runs, class: "form-control border-rounded", "aria-describedby": "optimization-runs-help-block", "data-test": "optimization-runs" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip"></div>
+          </div>
+        </div>
+
+       <div class="smart-contract-form-group-inner-wrapper">
+        <label for="smart_contract_multi_part_files"><%= if RustVerifierInterface.enabled?(), do: gettext("Sources *.sol or *.yul files"), else: gettext("Sources *.sol files") %></label>
+          <div class="center-column">
+            <div class="dropzone-1 dropzone-previews" style="display: flex; margin: 0 auto;", id="dropzone-previews">
+              <div style="text-align: center;">
+                <span class="dz-message btn-full-primary" id="dz-button-message"><%= gettext("Drop sources or click here") %></span>
+                <%= error_tag f, :files, id: "file-help-block", class: "text-danger form-error", style: "max-width: 600px;" %>
+              </div>
+            </div>
+          </div>
+          <div class="smart-contract-form-group-tooltip"><%= if RustVerifierInterface.enabled?(), do: gettext "Drop all Solidity or Yul contract source files into the drop zone.", else: gettext "Drop all Solidity contract source files into the drop zone." %></div>
+        </div>
+
+        <div class="add-contract-libraries-wrapper">
+          <span class="btn-line js-btn-add-contract-libraries"><%= gettext "Add Contract Libraries" %></span>
+        </div>
+
+        <div class="smart-contract-libraries-wrapper js-smart-contract-libraries-wrapper">
+          <h2 class="smart-contract-title margin-bottom-md"><%= gettext "Contract Libraries" %></h2>
+
+          <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_first.html" %>
+
+          <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_libraries_other.html" %>
+
+          <div class="add-contract-library-wrapper js-add-contract-library-wrapper">
+            <span class="btn-line js-btn-add-contract-library"><%= gettext "Add Library" %></span>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-buttons">
+          <button
+            class="position-absolute w-118 btn-full-primary d-none mr-2"
+            disabled="true"
+            id="loading"
+            name="button"
+            type="button"
+          >
+            <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Loading...") %>
+          </button>
+          <%#= submit gettext("Verify & publish"), class: "btn-full-primary mr-2", "data-button-loading": "animation", "data-submit-button": "" %>
+          <%# verify-via-multi-part-files-submit %>
+          <button id="verify-via-metadata-json-submit" class="btn-full-primary mr-2" disabled data-button-loading="animation"><%= gettext("Verify & publish") %></button>
+          <%= reset gettext("Reset"), class: "btn-line mr-2 js-smart-contract-form-reset" %>
+          <%=
+            link(
+              gettext("Cancel"),
+              class: "btn-no-border",
+              to: address_contract_path(@conn, :index, @address_hash)
+              )
+          %>
+        </div>
+      <% end %>
+    </div>
+</section>
+<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
