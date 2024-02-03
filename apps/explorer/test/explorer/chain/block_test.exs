@@ -95,7 +95,7 @@ defmodule Explorer.Chain.BlockTest do
       block =
         build(:block, number: range.from, uncles: ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"])
 
-      expected_uncle_reward = Wei.mult(reward, Decimal.from_float(1 / 32))
+      expected_uncle_reward = Wei.div(reward, 32)
 
       assert %{uncle_reward: ^expected_uncle_reward} = Block.block_reward_by_parts(block, [])
     end
