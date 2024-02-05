@@ -116,6 +116,7 @@ config :explorer, Explorer.Migrator.AddressCurrentTokenBalanceTokenType, enabled
 config :explorer, Explorer.Migrator.AddressTokenBalanceTokenType, enabled: true
 config :explorer, Explorer.Migrator.SanitizeMissingBlockRanges, enabled: true
 config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers, enabled: true
+config :explorer, Explorer.Migrator.TokenTransferTokenType, enabled: true
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 

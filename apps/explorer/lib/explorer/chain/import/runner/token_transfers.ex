@@ -90,18 +90,20 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
           to_address_hash: fragment("EXCLUDED.to_address_hash"),
           token_contract_address_hash: fragment("EXCLUDED.token_contract_address_hash"),
           token_ids: fragment("EXCLUDED.token_ids"),
+          token_type: fragment("EXCLUDED.token_type"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token_transfer.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_transfer.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.amount, EXCLUDED.from_address_hash, EXCLUDED.to_address_hash, EXCLUDED.token_contract_address_hash, EXCLUDED.token_ids) IS DISTINCT FROM (?, ? ,? , ?, ?)",
+          "(EXCLUDED.amount, EXCLUDED.from_address_hash, EXCLUDED.to_address_hash, EXCLUDED.token_contract_address_hash, EXCLUDED.token_ids, EXCLUDED.token_type) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
           token_transfer.amount,
           token_transfer.from_address_hash,
           token_transfer.to_address_hash,
           token_transfer.token_contract_address_hash,
-          token_transfer.token_ids
+          token_transfer.token_ids,
+          token_transfer.token_type
         )
     )
   end

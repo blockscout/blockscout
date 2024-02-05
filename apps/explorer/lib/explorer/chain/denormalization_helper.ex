@@ -47,4 +47,6 @@ defmodule Explorer.Chain.DenormalizationHelper do
   end
 
   def denormalization_finished?, do: BackgroundMigrations.get_denormalization_finished()
+
+  def tt_denormalization_finished?, do: BackgroundMigrations.get_tt_denormalization_finished()
 end
