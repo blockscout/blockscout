@@ -13,7 +13,6 @@ defmodule Indexer.PendingTransactionsSanitizer do
 
   alias Ecto.Changeset
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Hash.Full, as: Hash
   alias Explorer.Chain.Import.Runner.Blocks
   alias Explorer.Chain.Transaction
 
@@ -138,13 +137,13 @@ defmodule Indexer.PendingTransactionsSanitizer do
 
   defp fetch_block_and_invalidate(block_hash, pending_tx, tx) do
     case Chain.fetch_block_by_hash(block_hash) do
-      %{number: number, consensus: consensus} ->
+      %{number: number, consensus: consensus} = block ->
         Logger.debug(
           "Corresponding number of the block with hash #{block_hash} to invalidate is #{number} and consensus #{consensus}",
           fetcher: :pending_transactions_to_refetch
         )
 
-        invalidate_block(number, block_hash, consensus, pending_tx, tx)
+        invalidate_block(block, pending_tx, tx)
 
       _ ->
         Logger.debug(
@@ -154,11 +153,10 @@ defmodule Indexer.PendingTransactionsSanitizer do
     end
   end
 
-  defp invalidate_block(block_number, block_hash, consensus, pending_tx, tx) do
-    if consensus do
-      Blocks.invalidate_consensus_blocks([block_number])
+  defp invalidate_block(block, pending_tx, tx) do
+    if block.consensus do
+      Blocks.invalidate_consensus_blocks([block.number])
     else
-      {:ok, hash} = Hash.cast(block_hash)
       tx_info = to_elixir(tx)
 
       changeset =
@@ -167,13 +165,15 @@ defmodule Indexer.PendingTransactionsSanitizer do
         |> Changeset.put_change(:cumulative_gas_used, tx_info["cumulativeGasUsed"])
         |> Changeset.put_change(:gas_used, tx_info["gasUsed"])
         |> Changeset.put_change(:index, tx_info["transactionIndex"])
-        |> Changeset.put_change(:block_number, block_number)
-        |> Changeset.put_change(:block_hash, hash)
+        |> Changeset.put_change(:block_number, block.number)
+        |> Changeset.put_change(:block_hash, block.hash)
+        |> Changeset.put_change(:block_timestamp, block.timestamp)
+        |> Changeset.put_change(:block_consensus, false)
 
       Repo.update(changeset)
 
       Logger.debug(
-        "Pending tx with hash #{"0x" <> Base.encode16(pending_tx.hash.bytes, case: :lower)} assigned to block ##{block_number} with hash #{block_hash}"
+        "Pending tx with hash #{"0x" <> Base.encode16(pending_tx.hash.bytes, case: :lower)} assigned to block ##{block.number} with hash #{block.hash}"
       )
     end
   end

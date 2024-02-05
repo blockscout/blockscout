@@ -49,7 +49,8 @@ for repo <- [
       Explorer.Repo.ZkSync,
       Explorer.Repo.RSK,
       Explorer.Repo.Shibarium,
-      Explorer.Repo.Suave
+      Explorer.Repo.Suave,
+      Explorer.Repo.BridgedTokens
     ] do
   config :explorer, repo,
     database: "explorer_test",

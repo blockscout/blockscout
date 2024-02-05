@@ -65,7 +65,7 @@ body:
     attributes:
       label: Backend version
       description: The release version of the backend or branch/commit.
-      placeholder: v6.0.0
+      placeholder: v6.1.0
     validations:
       required: true
 

@@ -118,7 +118,6 @@ defmodule Explorer.Application do
         configure(Explorer.Counters.BlockBurntFeeCounter),
         configure(Explorer.Counters.BlockPriorityFeeCounter),
         configure(Explorer.Counters.AverageBlockTime),
-        configure(Explorer.Counters.Bridge),
         configure(Explorer.Validator.MetadataProcessor),
         configure(Explorer.Tags.AddressTag.Cataloger),
         configure(MinMissingBlockNumber),
@@ -144,7 +143,8 @@ defmodule Explorer.Application do
         Explorer.Repo.ZkSync,
         Explorer.Repo.RSK,
         Explorer.Repo.Shibarium,
-        Explorer.Repo.Suave
+        Explorer.Repo.Suave,
+        Explorer.Repo.BridgedTokens
       ]
     else
       []

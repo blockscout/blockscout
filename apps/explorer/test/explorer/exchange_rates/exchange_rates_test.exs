@@ -85,7 +85,8 @@ defmodule Explorer.ExchangeRatesTest do
         name: "test_name",
         symbol: "test_symbol",
         usd_value: Decimal.new("1.0"),
-        volume_24h_usd: Decimal.new("1000.0")
+        volume_24h_usd: Decimal.new("1000.0"),
+        image_url: nil
       }
 
       expected_symbol = expected_token.symbol
