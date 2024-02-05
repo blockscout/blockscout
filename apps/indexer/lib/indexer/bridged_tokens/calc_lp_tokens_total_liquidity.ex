@@ -1,4 +1,4 @@
-defmodule Indexer.CalcLpTokensTotalLiquidity do
+defmodule Indexer.BridgedTokens.CalcLpTokensTotalLiquidity do
   @moduledoc """
   Periodically updates LP tokens total liquidity
   """
@@ -7,7 +7,7 @@ defmodule Indexer.CalcLpTokensTotalLiquidity do
 
   require Logger
 
-  alias Explorer.Chain
+  alias Explorer.Chain.BridgedToken
 
   @interval :timer.minutes(20)
 
@@ -45,7 +45,7 @@ defmodule Indexer.CalcLpTokensTotalLiquidity do
   end
 
   defp calc_total_liquidity do
-    Chain.calc_lp_tokens_total_liquidity()
+    BridgedToken.calc_lp_tokens_total_liquidity()
 
     Logger.debug(fn -> "Total liquidity fetched for LP tokens" end)
   end

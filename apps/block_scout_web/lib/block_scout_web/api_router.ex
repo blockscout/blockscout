@@ -13,11 +13,12 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
-  alias BlockScoutWeb.{AddressTransactionController, APIKeyV2Router, SmartContractsApiV2Router}
+  alias BlockScoutWeb.{AddressTransactionController, APIKeyV2Router, SmartContractsApiV2Router, UtilsApiV2Router}
   alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2, RateLimit}
 
   forward("/v2/smart-contracts", SmartContractsApiV2Router)
   forward("/v2/key", APIKeyV2Router)
+  forward("/v2/utils", UtilsApiV2Router)
 
   pipeline :api do
     plug(BlockScoutWeb.Plug.Logger, application: :api)
@@ -246,6 +247,10 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/tokens" do
+      if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+        get("/bridged", V2.TokenController, :bridged_tokens_list)
+      end
+
       get("/", V2.TokenController, :tokens_list)
       get("/bridged", V2.TokenController, :bridged_tokens_list)
       get("/:address_hash_param", V2.TokenController, :token)
@@ -286,6 +291,15 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/deposits/count", V2.PolygonEdgeController, :deposits_count)
         get("/withdrawals", V2.PolygonEdgeController, :withdrawals)
         get("/withdrawals/count", V2.PolygonEdgeController, :withdrawals_count)
+      end
+    end
+
+    scope "/shibarium" do
+      if System.get_env("CHAIN_TYPE") == "shibarium" do
+        get("/deposits", V2.ShibariumController, :deposits)
+        get("/deposits/count", V2.ShibariumController, :deposits_count)
+        get("/withdrawals", V2.ShibariumController, :withdrawals)
+        get("/withdrawals/count", V2.ShibariumController, :withdrawals_count)
       end
     end
 

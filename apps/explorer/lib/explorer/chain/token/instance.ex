@@ -20,12 +20,12 @@ defmodule Explorer.Chain.Token.Instance do
 
   @type t :: %Instance{
           token_id: non_neg_integer(),
-          token_contract_address_hash: Hash.Address.t(),
+          token_contract_address_hash: Hash.Address.t() | nil,
           metadata: map() | nil,
-          error: String.t(),
-          owner_address_hash: Hash.Address.t(),
-          owner_updated_at_block: Block.block_number(),
-          owner_updated_at_log_index: non_neg_integer(),
+          error: String.t() | nil,
+          owner_address_hash: Hash.Address.t() | nil,
+          owner_updated_at_block: Block.block_number() | nil,
+          owner_updated_at_log_index: non_neg_integer() | nil,
           current_token_balance: any(),
           is_unique: bool() | nil
         }
@@ -443,6 +443,11 @@ defmodule Explorer.Chain.Token.Instance do
     |> limit(^limit)
   end
 
+  @doc """
+    Puts is_unique field in token instance. Returns updated token instance
+    is_unique is true for ERC-721 always and for ERC-1155 only if token_id is unique
+  """
+  @spec put_is_unique(Instance.t(), Token.t(), Keyword.t()) :: Instance.t()
   def put_is_unique(instance, token, options) do
     %__MODULE__{instance | is_unique: unique?(instance, token, options)}
   end

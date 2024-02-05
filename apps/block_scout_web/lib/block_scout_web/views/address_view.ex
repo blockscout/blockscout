@@ -491,68 +491,68 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_is_gnosis_safe_proxy?(_address), do: false
 
-  def is_random_aura?(nil), do: false
+  def random_aura?(nil), do: false
 
-  def is_random_aura?(address_hash) do
+  def random_aura?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
     address_hash_str == String.downcase(System.get_env("RANDOM_AURA_CONTRACT", ""))
   end
 
-  def is_omni_bridge?(nil), do: false
+  def omni_bridge?(nil), do: false
 
-  def is_omni_bridge?(address_hash) do
+  def omni_bridge?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
 
     address_hash_str == String.downcase(System.get_env("ETH_OMNI_BRIDGE_MEDIATOR", "")) ||
       address_hash_str == String.downcase(System.get_env("BSC_OMNI_BRIDGE_MEDIATOR", ""))
   end
 
-  def is_omni_eth_bridge?(nil), do: false
+  def omni_eth_bridge?(nil), do: false
 
-  def is_omni_eth_bridge?(address_hash) do
+  def omni_eth_bridge?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
 
     address_hash_str == String.downcase(System.get_env("ETH_OMNI_BRIDGE_MEDIATOR", "")) ||
       address_hash_str == String.downcase(System.get_env("ETH_OMNI_BRIDGE", ""))
   end
 
-  def is_omni_bsc_bridge?(nil), do: false
+  def omni_bsc_bridge?(nil), do: false
 
-  def is_omni_bsc_bridge?(address_hash) do
+  def omni_bsc_bridge?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
 
     address_hash_str == String.downcase(System.get_env("BSC_OMNI_BRIDGE_MEDIATOR", "")) ||
       address_hash_str == String.downcase(System.get_env("BSC_OMNI_BRIDGE", ""))
   end
 
-  def is_omni_poa_bridge?(nil), do: false
+  def omni_poa_bridge?(nil), do: false
 
-  def is_omni_poa_bridge?(address_hash) do
+  def omni_poa_bridge?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
 
     address_hash_str == String.downcase(System.get_env("POA_OMNI_BRIDGE_MEDIATOR", "")) ||
       address_hash_str == String.downcase(System.get_env("POA_OMNI_BRIDGE", ""))
   end
 
-  def is_xmoon_token?(nil), do: false
+  def xmoon_token?(nil), do: false
 
-  def is_xmoon_token?(address_hash) do
+  def xmoon_token?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
 
     address_hash_str == String.downcase(System.get_env("RINKEBY_XMOON_TOKEN", ""))
   end
 
-  def is_xbrick_token?(nil), do: false
+  def xbrick_token?(nil), do: false
 
-  def is_xbrick_token?(address_hash) do
+  def xbrick_token?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
 
     address_hash_str == String.downcase(System.get_env("RINKEBY_XBRICK_TOKEN", ""))
   end
 
-  def is_test?(nil), do: false
+  def test?(nil), do: false
 
-  def is_test?(address_hash) do
+  def test?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
     String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN", "")) =~ address_hash_str
   end

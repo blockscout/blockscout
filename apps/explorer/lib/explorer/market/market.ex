@@ -42,7 +42,8 @@ defmodule Explorer.Market do
         last_updated: nil,
         name: nil,
         symbol: nil,
-        volume_24h_usd: nil
+        volume_24h_usd: nil,
+        image_url: nil
       }
     else
       Token.null()

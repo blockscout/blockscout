@@ -4,10 +4,10 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.NFTHelper
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, BridgedToken}
   alias Explorer.Chain.Token.Instance
 
-  def render("token.json", %{token: nil, contract_address_hash: contract_address_hash}) do
+  def render("token.json", %{token: nil = token, contract_address_hash: contract_address_hash}) do
     %{
       "address" => Address.checksum(contract_address_hash),
       "symbol" => nil,
@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "icon_url" => nil,
       "circulating_market_cap" => nil
     }
+    |> maybe_append_bridged_info(token)
   end
 
   def render("token.json", %{token: nil}) do
@@ -40,6 +41,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "circulating_market_cap" => token.circulating_market_cap,
       "is_bridged" => token.bridged
     }
+    |> maybe_append_bridged_info(token)
   end
 
   def render("token_balances.json", %{
@@ -129,4 +131,12 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   defp prepare_holders_count(nil), do: nil
   defp prepare_holders_count(count) when count < 0, do: prepare_holders_count(0)
   defp prepare_holders_count(count), do: to_string(count)
+
+  defp maybe_append_bridged_info(map, token) do
+    if BridgedToken.enabled?() do
+      (token && Map.put(map, "is_bridged", token.bridged || false)) || map
+    else
+      map
+    end
+  end
 end

@@ -5,11 +5,13 @@ defmodule Indexer.Supervisor do
 
   use Supervisor
 
-  alias Explorer.Chain
+  alias Explorer.Chain.BridgedToken
 
   alias Indexer.{
     Block,
-    CalcLpTokensTotalLiquidity,
+    BridgedTokens.CalcLpTokensTotalLiquidity,
+    BridgedTokens.SetAmbBridgedMetadataForTokens,
+    BridgedTokens.SetOmniBridgedMetadataForTokens,
     PendingOpsCleaner,
     PendingTransactionsSanitizer,
     SetAmbBridgedMetadataForTokens,
@@ -134,13 +136,19 @@ defmodule Indexer.Supervisor do
         {TokenUpdater.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
-        {PolygonEdge.Supervisor, [[memory_monitor: memory_monitor]]},
-        {Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, [[memory_monitor: memory_monitor]]},
-        {Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor,
-         [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]},
-        {Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor,
-         [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]},
-        {Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor, [[memory_monitor: memory_monitor]]},
+        configure(PolygonEdge.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor, [
+          [memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]
+        ]),
+        configure(Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor, [
+          [memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]
+        ]),
+        configure(Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.Shibarium.L2.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(Indexer.Fetcher.Shibarium.L1.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(TransactionBatch.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
@@ -177,27 +185,29 @@ defmodule Indexer.Supervisor do
       ]
       |> List.flatten()
 
-    extended_fetchers =
-      if Chain.bridged_tokens_enabled?() do
-        fetchers_with_omni_status = [{SetOmniBridgedMetadataForTokens, [[], []]} | basic_fetchers]
-        [{CalcLpTokensTotalLiquidity, [[], []]} | fetchers_with_omni_status]
-      else
-        basic_fetchers
-      end
-
-    amb_bridge_mediators = Application.get_env(:block_scout_web, :amb_bridge_mediators)
-
-    all_fetchers =
-      if amb_bridge_mediators && amb_bridge_mediators !== "" do
-        [{SetAmbBridgedMetadataForTokens, [[], []]} | extended_fetchers]
-      else
-        extended_fetchers
-      end
+    all_fetchers = maybe_add_bridged_tokens_fetchers(basic_fetchers)
 
     Supervisor.init(
       all_fetchers,
       strategy: :one_for_one
     )
+  end
+
+  defp maybe_add_bridged_tokens_fetchers(basic_fetchers) do
+    extended_fetchers =
+      if BridgedToken.enabled?() && BridgedToken.necessary_envs_passed?() do
+        [{CalcLpTokensTotalLiquidity, [[], []]}, {SetOmniBridgedMetadataForTokens, [[], []]}] ++ basic_fetchers
+      else
+        basic_fetchers
+      end
+
+    amb_bridge_mediators = Application.get_env(:explorer, Explorer.Chain.BridgedToken)[:amb_bridge_mediators]
+
+    if BridgedToken.enabled?() && amb_bridge_mediators && amb_bridge_mediators !== "" do
+      [{SetAmbBridgedMetadataForTokens, [[], []]} | extended_fetchers]
+    else
+      extended_fetchers
+    end
   end
 
   defp configure(process, opts) do

@@ -1,4 +1,4 @@
-defmodule Indexer.SetAmbBridgedMetadataForTokens do
+defmodule Indexer.BridgedTokens.SetAmbBridgedMetadataForTokens do
   @moduledoc """
   Sets token metadata for bridged tokens from AMB extensions.
   """
@@ -7,7 +7,7 @@ defmodule Indexer.SetAmbBridgedMetadataForTokens do
 
   require Logger
 
-  alias Explorer.Chain
+  alias Explorer.Chain.BridgedToken
 
   def start_link([init_opts, gen_server_opts]) do
     start_link(init_opts, gen_server_opts)
@@ -37,7 +37,7 @@ defmodule Indexer.SetAmbBridgedMetadataForTokens do
   end
 
   defp fetch_amb_bridged_tokens_metadata do
-    :ok = Chain.process_amb_tokens()
+    :ok = BridgedToken.process_amb_tokens()
 
     Logger.debug(fn -> "Bridged status fetched for AMB tokens" end)
   end

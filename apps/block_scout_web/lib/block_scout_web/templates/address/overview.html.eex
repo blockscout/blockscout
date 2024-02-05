@@ -23,7 +23,7 @@
               <%= if @address.token do %>
                 <%= render BlockScoutWeb.FormView, "_tag.html", text: "token", additional_classes: ["token", "ml-1"] %>
               <% end %>
-              <%= if is_random_aura?(@address.hash) do %>
+              <%= if random_aura?(@address.hash) do %>
                 <%= render BlockScoutWeb.FormView, "_tag.html", text: "random AuRa", additional_classes: ["random", "ml-1"] %>
               <% end %>
             <% else %>

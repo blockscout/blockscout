@@ -37,6 +37,13 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
       TokenTotalSupplyOnDemand.trigger_fetch(address_hash)
 
+      conn
+      |> token_response(token, address_hash)
+    end
+  end
+
+  if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+    defp token_response(conn, token, address_hash) do
       if token.bridged do
         bridged_token = Repo.get_by(BridgedToken, home_token_contract_address_hash: address_hash)
 
@@ -48,6 +55,12 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         |> put_status(200)
         |> render(:token, %{token: token})
       end
+    end
+  else
+    defp token_response(conn, token, _address_hash) do
+      conn
+      |> put_status(200)
+      |> render(:token, %{token: token})
     end
   end
 
@@ -183,7 +196,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
             |> Chain.put_owner_to_token_instance(token, @api_true)
 
           {:error, :not_found} ->
-            %{token_id: token_id, metadata: nil, owner: nil}
+            %Instance{token_id: token_id, metadata: nil, owner: nil}
+            |> Instance.put_is_unique(token, @api_true)
+            |> Chain.put_owner_to_token_instance(token, @api_true)
         end
 
       conn

@@ -19,6 +19,9 @@ defmodule Explorer.Chain.Import.Stage.AddressesBlocksCoinBalances do
   @impl Stage
   def runners, do: [@addresses_runner | @rest_runners]
 
+  @impl Stage
+  def all_runners, do: runners()
+
   @addresses_chunk_size 50
 
   @impl Stage

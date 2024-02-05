@@ -131,24 +131,24 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       mining_address =
         insert(:address,
           fetched_coin_balance: 0,
-          fetched_coin_balance_block_number: 102,
+          fetched_coin_balance_block_number: 103,
           inserted_at: Timex.shift(now, minutes: -10)
         )
 
       mining_address_hash = to_string(mining_address.hash)
       # we space these very far apart so that we know it will consider the 0th block stale (it calculates how far
       # back we'd need to go to get 24 hours in the past)
-      Enum.each(0..100, fn i ->
-        insert(:block, number: i, timestamp: Timex.shift(now, hours: -(102 - i) * 25), miner: mining_address)
+      Enum.each(0..101, fn i ->
+        insert(:block, number: i, timestamp: Timex.shift(now, hours: -(103 - i) * 25), miner: mining_address)
       end)
 
-      insert(:block, number: 101, timestamp: Timex.shift(now, hours: -25), miner: mining_address)
+      insert(:block, number: 102, timestamp: Timex.shift(now, hours: -25), miner: mining_address)
       AverageBlockTime.refresh()
 
       address =
         insert(:address,
           fetched_coin_balance: 100,
-          fetched_coin_balance_block_number: 100,
+          fetched_coin_balance_block_number: 101,
           inserted_at: Timex.shift(now, minutes: -5)
         )
 
@@ -158,20 +158,20 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                                                      %{
                                                        id: id,
                                                        method: "eth_getBalance",
-                                                       params: [^mining_address_hash, "0x65"]
+                                                       params: [^mining_address_hash, "0x66"]
                                                      }
                                                    ],
                                                    _options ->
         {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
       end)
 
-      res = eth_block_number_fake_response("0x65")
+      res = eth_block_number_fake_response("0x66")
 
       expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
                                                      %{
                                                        id: 0,
                                                        method: "eth_getBlockByNumber",
-                                                       params: ["0x65", true]
+                                                       params: ["0x66", true]
                                                      }
                                                    ],
                                                    _ ->
@@ -182,7 +182,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                                                      %{
                                                        id: id,
                                                        method: "eth_getBalance",
-                                                       params: [^address_hash, "0x65"]
+                                                       params: [^address_hash, "0x66"]
                                                      }
                                                    ],
                                                    _options ->
@@ -193,7 +193,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                                                      %{
                                                        id: 0,
                                                        method: "eth_getBlockByNumber",
-                                                       params: ["0x65", true]
+                                                       params: ["0x66", true]
                                                      }
                                                    ],
                                                    _ ->
@@ -229,7 +229,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       assert received_address.hash == address.hash
       assert received_address.fetched_coin_balance == expected_wei
-      assert received_address.fetched_coin_balance_block_number == 101
+      assert received_address.fetched_coin_balance_block_number == 102
     end
   end
 

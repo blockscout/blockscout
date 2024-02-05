@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   alias BlockScoutWeb.{AccessHelper, CurrencyHelper, LayoutView}
 
-  import BlockScoutWeb.AddressView, only: [contract_interaction_disabled?: 0, is_test?: 1]
+  import BlockScoutWeb.AddressView, only: [contract_interaction_disabled?: 0, test?: 1]
 
   @tabs ["token-transfers", "token-holders", "read-contract", "inventory"]
   @etherscan_token_link "https://etherscan.io/token/"

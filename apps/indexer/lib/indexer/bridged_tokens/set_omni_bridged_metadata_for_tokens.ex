@@ -1,13 +1,13 @@
-defmodule Indexer.SetOmniBridgedMetadataForTokens do
+defmodule Indexer.BridgedTokens.SetOmniBridgedMetadataForTokens do
   @moduledoc """
-  Peiodically checks unprocessed tokens and sets bridged status.
+    Periodically checks unprocessed tokens and sets bridged status.
   """
 
   use GenServer
 
   require Logger
 
-  alias Explorer.Chain
+  alias Explorer.Chain.BridgedToken
 
   @interval :timer.minutes(20)
 
@@ -23,7 +23,7 @@ defmodule Indexer.SetOmniBridgedMetadataForTokens do
   def init(opts) do
     interval = opts[:interval] || @interval
 
-    Process.send_after(self(), :reveal_unprocessed_tokens, interval)
+    send(self(), :reveal_unprocessed_tokens)
 
     {:ok, %{interval: interval}}
   end
@@ -32,7 +32,7 @@ defmodule Indexer.SetOmniBridgedMetadataForTokens do
   def handle_info(:reveal_unprocessed_tokens, %{interval: interval} = state) do
     Logger.debug(fn -> "Reveal unprocessed tokens" end)
 
-    {:ok, token_addresses} = Chain.unprocessed_token_addresses_to_reveal_bridged_tokens()
+    {:ok, token_addresses} = BridgedToken.unprocessed_token_addresses_to_reveal_bridged_tokens()
 
     fetch_omni_bridged_tokens_metadata(token_addresses)
 
@@ -47,7 +47,7 @@ defmodule Indexer.SetOmniBridgedMetadataForTokens do
   end
 
   defp fetch_omni_bridged_tokens_metadata(token_addresses) do
-    :ok = Chain.fetch_omni_bridged_tokens_metadata(token_addresses)
+    :ok = BridgedToken.fetch_omni_bridged_tokens_metadata(token_addresses)
 
     Logger.debug(fn -> "Bridged status fetched for tokens" end)
   end
