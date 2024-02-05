@@ -9,7 +9,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1Tokens do
   import Ecto.Query
 
   alias Explorer.Repo
-  alias Indexer.BufferedTask
+  alias Indexer.{BufferedTask, Helper}
   alias Indexer.Fetcher.Zkevm.{Bridge, BridgeL1}
 
   @behaviour BufferedTask
@@ -20,7 +20,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1Tokens do
   @doc false
   def child_spec([init_options, gen_server_options]) do
     rpc = Application.get_all_env(:indexer)[BridgeL1][:rpc]
-    json_rpc_named_arguments = Bridge.json_rpc_named_arguments(rpc)
+    json_rpc_named_arguments = Helper.json_rpc_named_arguments(rpc)
 
     merged_init_opts =
       defaults()

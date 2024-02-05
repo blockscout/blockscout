@@ -12,13 +12,13 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
   import Explorer.Helper, only: [parse_integer: 1]
 
   import Indexer.Fetcher.Zkevm.Bridge,
-    only: [get_logs_all: 3, import_operations: 1, json_rpc_named_arguments: 1, prepare_operations: 3]
+    only: [get_logs_all: 3, import_operations: 1, prepare_operations: 3]
 
   alias Explorer.Chain.Zkevm.{Bridge, Reader}
   alias Explorer.Repo
-  alias Indexer.{BoundQueue, Helper}
+  alias Indexer.Fetcher.RollupL1ReorgMonitor
+  alias Indexer.Helper
 
-  @block_check_interval_range_size 100
   @eth_get_logs_range_size 1000
   @fetcher_name :zkevm_bridge_l1
 
@@ -55,6 +55,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
+         {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(RollupL1ReorgMonitor))},
          rpc = env[:rpc],
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
          {:bridge_contract_address_is_valid, true} <-
@@ -63,15 +64,14 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
          false <- is_nil(start_block),
          true <- start_block > 0,
          {last_l1_block_number, last_l1_transaction_hash} = Reader.last_l1_item(),
-         json_rpc_named_arguments = json_rpc_named_arguments(rpc),
-         {:ok, block_check_interval, safe_block} <- get_block_check_interval(json_rpc_named_arguments),
+         json_rpc_named_arguments = Helper.json_rpc_named_arguments(rpc),
+         {:ok, block_check_interval, safe_block} <- Helper.get_block_check_interval(json_rpc_named_arguments),
          {:start_block_valid, true, _, _} <-
            {:start_block_valid,
             (start_block <= last_l1_block_number || last_l1_block_number == 0) && start_block <= safe_block,
             last_l1_block_number, safe_block},
          {:ok, last_l1_tx} <- Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)} do
-      Process.send(self(), :reorg_monitor, [])
       Process.send(self(), :continue, [])
 
       {:noreply,
@@ -79,13 +79,16 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
          block_check_interval: block_check_interval,
          bridge_contract: env[:bridge_contract],
          json_rpc_named_arguments: json_rpc_named_arguments,
-         reorg_monitor_prev_latest: 0,
          end_block: safe_block,
          start_block: max(start_block, last_l1_block_number)
        }}
     else
       {:start_block_undefined, true} ->
         # the process shouldn't start if the start block is not defined
+        {:stop, :normal, %{}}
+
+      {:reorg_monitor_started, false} ->
+        Logger.error("Cannot start this process as Indexer.Fetcher.RollupL1ReorgMonitor is not started.")
         {:stop, :normal, %{}}
 
       {:rpc_undefined, true} ->
@@ -120,27 +123,6 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
         Logger.error("L1 Start Block is invalid or zero.")
         {:stop, :normal, %{}}
     end
-  end
-
-  @impl GenServer
-  def handle_info(
-        :reorg_monitor,
-        %{
-          block_check_interval: block_check_interval,
-          json_rpc_named_arguments: json_rpc_named_arguments,
-          reorg_monitor_prev_latest: prev_latest
-        } = state
-      ) do
-    {:ok, latest} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-
-    if latest < prev_latest do
-      Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
-      reorg_block_push(latest)
-    end
-
-    Process.send_after(self(), :reorg_monitor, block_check_interval)
-
-    {:noreply, %{state | reorg_monitor_prev_latest: latest}}
   end
 
   @impl GenServer
@@ -183,7 +165,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
           )
         end
 
-        reorg_block = reorg_block_pop()
+        reorg_block = RollupL1ReorgMonitor.reorg_block_pop()
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           reorg_handle(reorg_block)
@@ -215,56 +197,6 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
     {:noreply, state}
   end
 
-  defp get_block_check_interval(json_rpc_named_arguments) do
-    {last_safe_block, _} = get_safe_block(json_rpc_named_arguments)
-
-    first_block = max(last_safe_block - @block_check_interval_range_size, 1)
-
-    with {:ok, first_block_timestamp} <-
-           Helper.get_block_timestamp_by_number(first_block, json_rpc_named_arguments, 100_000_000),
-         {:ok, last_safe_block_timestamp} <-
-           Helper.get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, 100_000_000) do
-      block_check_interval =
-        ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
-
-      Logger.info("Block check interval is calculated as #{block_check_interval} ms.")
-      {:ok, block_check_interval, last_safe_block}
-    else
-      {:error, error} ->
-        {:error, "Failed to calculate block check interval due to #{inspect(error)}"}
-    end
-  end
-
-  defp get_safe_block(json_rpc_named_arguments) do
-    case Helper.get_block_number_by_tag("safe", json_rpc_named_arguments) do
-      {:ok, safe_block} ->
-        {safe_block, false}
-
-      {:error, :not_found} ->
-        {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-        {latest_block, true}
-    end
-  end
-
-  defp reorg_block_pop do
-    table_name = reorg_table_name(@fetcher_name)
-
-    case BoundQueue.pop_front(reorg_queue_get(table_name)) do
-      {:ok, {block_number, updated_queue}} ->
-        :ets.insert(table_name, {:queue, updated_queue})
-        block_number
-
-      {:error, :empty} ->
-        nil
-    end
-  end
-
-  defp reorg_block_push(block_number) do
-    table_name = reorg_table_name(@fetcher_name)
-    {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(table_name), block_number)
-    :ets.insert(table_name, {:queue, updated_queue})
-  end
-
   defp reorg_handle(reorg_block) do
     {deleted_count, _} =
       Repo.delete_all(from(b in Bridge, where: b.type == :deposit and b.block_number >= ^reorg_block))
@@ -274,28 +206,5 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
         "As L1 reorg was detected, some deposits with block_number >= #{reorg_block} were removed from zkevm_bridge table. Number of removed rows: #{deleted_count}."
       )
     end
-  end
-
-  defp reorg_queue_get(table_name) do
-    if :ets.whereis(table_name) == :undefined do
-      :ets.new(table_name, [
-        :set,
-        :named_table,
-        :public,
-        read_concurrency: true,
-        write_concurrency: true
-      ])
-    end
-
-    with info when info != :undefined <- :ets.info(table_name),
-         [{_, value}] <- :ets.lookup(table_name, :queue) do
-      value
-    else
-      _ -> %BoundQueue{}
-    end
-  end
-
-  defp reorg_table_name(fetcher_name) do
-    :"#{fetcher_name}#{:_reorgs}"
   end
 end

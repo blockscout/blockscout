@@ -32,7 +32,6 @@ defmodule Indexer.Supervisor do
     InternalTransaction,
     PendingBlockOperationsSanitizer,
     PendingTransaction,
-    PolygonEdge,
     ReplacedTransaction,
     RootstockData,
     Token,
@@ -132,7 +131,7 @@ defmodule Indexer.Supervisor do
         {TokenUpdater.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
-        configure(PolygonEdge.Supervisor, [[memory_monitor: memory_monitor]]),
+        {Indexer.Fetcher.RollupL1ReorgMonitor.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor, [
           [memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]

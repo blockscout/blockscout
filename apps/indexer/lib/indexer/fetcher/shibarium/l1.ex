@@ -25,7 +25,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
   alias Explorer.Chain.Shibarium.Bridge
   alias Explorer.{Chain, Repo}
-  alias Indexer.{BoundQueue, Helper}
+  alias Indexer.Fetcher.RollupL1ReorgMonitor
+  alias Indexer.Helper
 
   @block_check_interval_range_size 100
   @eth_get_logs_range_size 1000
@@ -109,6 +110,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
+         {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(RollupL1ReorgMonitor))},
          rpc = env[:rpc],
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
          {:deposit_manager_address_is_valid, true} <-
@@ -138,7 +140,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
          {:start_block_valid, true} <- {:start_block_valid, start_block <= latest_block} do
       recalculate_cached_count()
 
-      Process.send(self(), :reorg_monitor, [])
       Process.send(self(), :continue, [])
 
       {:noreply,
@@ -152,12 +153,15 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
          block_check_interval: block_check_interval,
          start_block: max(start_block, last_l1_block_number),
          end_block: latest_block,
-         json_rpc_named_arguments: json_rpc_named_arguments,
-         reorg_monitor_prev_latest: 0
+         json_rpc_named_arguments: json_rpc_named_arguments
        }}
     else
       {:start_block_undefined, true} ->
         # the process shouldn't start if the start block is not defined
+        {:stop, :normal, %{}}
+
+      {:reorg_monitor_started, false} ->
+        Logger.error("Cannot start this process as Indexer.Fetcher.RollupL1ReorgMonitor is not started.")
         {:stop, :normal, %{}}
 
       {:rpc_undefined, true} ->
@@ -210,27 +214,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
         Logger.error("L1 Start Block is invalid or zero.")
         {:stop, :normal, %{}}
     end
-  end
-
-  @impl GenServer
-  def handle_info(
-        :reorg_monitor,
-        %{
-          block_check_interval: block_check_interval,
-          json_rpc_named_arguments: json_rpc_named_arguments,
-          reorg_monitor_prev_latest: prev_latest
-        } = state
-      ) do
-    {:ok, latest} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-
-    if latest < prev_latest do
-      Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
-      reorg_block_push(latest)
-    end
-
-    Process.send_after(self(), :reorg_monitor, block_check_interval)
-
-    {:noreply, %{state | reorg_monitor_prev_latest: latest}}
   end
 
   @impl GenServer
@@ -290,7 +273,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
           )
         end
 
-        reorg_block = reorg_block_pop()
+        reorg_block = RollupL1ReorgMonitor.reorg_block_pop()
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           reorg_handle(reorg_block)
@@ -626,25 +609,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     "0x#{truncated_hash}"
   end
 
-  defp reorg_block_pop do
-    table_name = reorg_table_name(@fetcher_name)
-
-    case BoundQueue.pop_front(reorg_queue_get(table_name)) do
-      {:ok, {block_number, updated_queue}} ->
-        :ets.insert(table_name, {:queue, updated_queue})
-        block_number
-
-      {:error, :empty} ->
-        nil
-    end
-  end
-
-  defp reorg_block_push(block_number) do
-    table_name = reorg_table_name(@fetcher_name)
-    {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(table_name), block_number)
-    :ets.insert(table_name, {:queue, updated_queue})
-  end
-
   defp reorg_handle(reorg_block) do
     {deleted_count, _} =
       Repo.delete_all(from(sb in Bridge, where: sb.l1_block_number >= ^reorg_block and is_nil(sb.l2_transaction_hash)))
@@ -674,28 +638,5 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
         "As L1 reorg was detected, some rows with l1_block_number >= #{reorg_block} were affected (removed or updated) in the shibarium_bridge table. Number of removed rows: #{deleted_count}. Number of updated rows: >= #{updated_count}."
       )
     end
-  end
-
-  defp reorg_queue_get(table_name) do
-    if :ets.whereis(table_name) == :undefined do
-      :ets.new(table_name, [
-        :set,
-        :named_table,
-        :public,
-        read_concurrency: true,
-        write_concurrency: true
-      ])
-    end
-
-    with info when info != :undefined <- :ets.info(table_name),
-         [{_, value}] <- :ets.lookup(table_name, :queue) do
-      value
-    else
-      _ -> %BoundQueue{}
-    end
-  end
-
-  defp reorg_table_name(fetcher_name) do
-    :"#{fetcher_name}#{:_reorgs}"
   end
 end

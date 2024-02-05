@@ -130,25 +130,6 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
   end
 
   @doc """
-  Forms JSON RPC named arguments for the given RPC URL.
-  """
-  @spec json_rpc_named_arguments(binary()) :: list()
-  def json_rpc_named_arguments(rpc_url) do
-    [
-      transport: EthereumJSONRPC.HTTP,
-      transport_options: [
-        http: EthereumJSONRPC.HTTP.HTTPoison,
-        url: rpc_url,
-        http_options: [
-          recv_timeout: :timer.minutes(10),
-          timeout: :timer.minutes(10),
-          hackney: [pool: :ethereum_jsonrpc]
-        ]
-      ]
-    ]
-  end
-
-  @doc """
   Converts the list of zkEVM bridge events to the list of operations
   preparing them for importing to the database.
   """

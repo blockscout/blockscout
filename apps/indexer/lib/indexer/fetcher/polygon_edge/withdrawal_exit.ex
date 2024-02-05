@@ -3,6 +3,8 @@ defmodule Indexer.Fetcher.PolygonEdge.WithdrawalExit do
   Fills polygon_edge_withdrawal_exits DB table.
   """
 
+  # todo: this module is deprecated and should be removed
+
   use GenServer
   use Indexer.Fetcher
 
@@ -10,7 +12,6 @@ defmodule Indexer.Fetcher.PolygonEdge.WithdrawalExit do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
-  alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.PolygonEdge.WithdrawalExit
   alias Indexer.Fetcher.PolygonEdge
 
@@ -40,8 +41,6 @@ defmodule Indexer.Fetcher.PolygonEdge.WithdrawalExit do
 
     env = Application.get_all_env(:indexer)[__MODULE__]
 
-    Subscriber.to(:polygon_edge_reorg_block, :realtime)
-
     PolygonEdge.init_l1(
       WithdrawalExit,
       env,
@@ -55,13 +54,7 @@ defmodule Indexer.Fetcher.PolygonEdge.WithdrawalExit do
 
   @impl GenServer
   def handle_info(:continue, state) do
-    PolygonEdge.handle_continue(state, @exit_processed_event, __MODULE__, @fetcher_name)
-  end
-
-  @impl GenServer
-  def handle_info({:chain_event, :polygon_edge_reorg_block, :realtime, block_number}, state) do
-    PolygonEdge.reorg_block_push(@fetcher_name, block_number)
-    {:noreply, state}
+    PolygonEdge.handle_continue(state, @exit_processed_event, __MODULE__)
   end
 
   @impl GenServer

@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL2 do
   import Explorer.Helper, only: [parse_integer: 1]
 
   import Indexer.Fetcher.Zkevm.Bridge,
-    only: [get_logs_all: 3, import_operations: 1, json_rpc_named_arguments: 1, prepare_operations: 3]
+    only: [get_logs_all: 3, import_operations: 1, prepare_operations: 3]
 
   alias Explorer.Chain.Zkevm.{Bridge, Reader}
   alias Explorer.Repo
@@ -75,7 +75,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL2 do
        %{
          bridge_contract: env[:bridge_contract],
          json_rpc_named_arguments: json_rpc_named_arguments,
-         json_rpc_named_arguments_l1: json_rpc_named_arguments(rpc_l1),
+         json_rpc_named_arguments_l1: Helper.json_rpc_named_arguments(rpc_l1),
          end_block: latest_block,
          start_block: max(start_block, last_l2_block_number)
        }}

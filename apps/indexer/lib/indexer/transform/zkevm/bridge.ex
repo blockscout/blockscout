@@ -6,7 +6,7 @@ defmodule Indexer.Transform.Zkevm.Bridge do
   require Logger
 
   import Indexer.Fetcher.Zkevm.Bridge,
-    only: [filter_bridge_events: 2, json_rpc_named_arguments: 1, prepare_operations: 4]
+    only: [filter_bridge_events: 2, prepare_operations: 4]
 
   alias Indexer.Fetcher.Zkevm.{BridgeL1, BridgeL2}
   alias Indexer.Helper
@@ -35,7 +35,7 @@ defmodule Indexer.Transform.Zkevm.Bridge do
 
         Helper.log_blocks_chunk_handling(start_block, end_block, start_block, end_block, nil, "L2")
 
-        json_rpc_named_arguments_l1 = json_rpc_named_arguments(rpc_l1)
+        json_rpc_named_arguments_l1 = Helper.json_rpc_named_arguments(rpc_l1)
 
         block_to_timestamp = Enum.reduce(blocks, %{}, fn block, acc -> Map.put(acc, block.number, block.timestamp) end)
 
