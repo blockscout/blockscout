@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - v6.0.0-dev
       - production-core
       - production-eth-experimental
       - production-eth-goerli
@@ -29,7 +28,6 @@ on:
   pull_request:
     branches:
       - master
-      - v6.0.0-dev
       - production-optimism
       - production-zksync
 
