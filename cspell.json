@@ -397,6 +397,7 @@
         "retryable",
         "returnaddress",
         "reuseaddr",
+        "rollup",
         "RPC's",
         "RPCs",
         "safelow",
