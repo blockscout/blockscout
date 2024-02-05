@@ -55,6 +55,7 @@
 
 ### Chore
 
+- [#9323](https://github.com/blockscout/blockscout/pull/9323) - Change index creation to concurrent
 - [#9322](https://github.com/blockscout/blockscout/pull/9322) - Create repo setup actions
 - [#9303](https://github.com/blockscout/blockscout/pull/9303) - Add workflow for Shibarium
 - [#9233](https://github.com/blockscout/blockscout/pull/9233) - "cataloged" index on tokens table
