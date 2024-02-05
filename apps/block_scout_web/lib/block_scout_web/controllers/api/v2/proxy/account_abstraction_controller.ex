@@ -153,7 +153,17 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
 
   defp address_info_from_hash_string(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash, [], false) do
+         {:ok, address} <-
+           Chain.hash_to_address(
+             address_hash,
+             [
+               necessity_by_association: %{
+                 :names => :optional,
+                 :smart_contract => :optional
+               }
+             ],
+             false
+           ) do
       Helper.address_with_info(address, address_hash_string)
     else
       _ -> address_hash_string

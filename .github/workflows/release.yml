@@ -1,8 +1,3 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: Release
 
 on:
@@ -10,35 +5,24 @@ on:
     types: [published]
 
 env:
-  OTP_VERSION: '25.3.2.8'
-  ELIXIR_VERSION: '1.14.5'
+  OTP_VERSION: ${{ vars.OTP_VERSION }}
+  ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
 
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 6.0.0
+      RELEASE_VERSION: ${{ vars.RELEASE_VERSION }}
     steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+      - uses: actions/checkout@v4
+      - name: Setup repo
+        uses: ./.github/actions/setup-repo
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: blockscout/blockscout
-
-      - name: Build & Push Docker image
+      - name: Build & Push Core Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -109,7 +93,6 @@ jobs:
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=suave
-
       - name: Send release announcement to Slack workflow
         id: slack
         uses: slackapi/slack-github-action@v1.24.0

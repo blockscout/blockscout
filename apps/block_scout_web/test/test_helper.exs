@@ -31,6 +31,7 @@ Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonZkevm, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.RSK, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Shibarium, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Suave, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.BridgedTokens, :manual)
 
 Absinthe.Test.prime(BlockScoutWeb.Schema)
 

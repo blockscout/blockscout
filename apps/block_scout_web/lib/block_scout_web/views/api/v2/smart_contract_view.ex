@@ -42,6 +42,18 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     end)
   end
 
+  def render("audit_reports.json", %{reports: reports}) do
+    %{"items" => Enum.map(reports, &prepare_audit_report/1), "next_page_params" => nil}
+  end
+
+  defp prepare_audit_report(report) do
+    %{
+      "audit_company_name" => report.audit_company_name,
+      "audit_report_url" => report.audit_report_url,
+      "audit_publish_date" => report.audit_publish_date
+    }
+  end
+
   def prepare_function_response(outputs, names, contract_address_hash) do
     case outputs do
       {:error, %{code: code, message: message, data: data}} ->
