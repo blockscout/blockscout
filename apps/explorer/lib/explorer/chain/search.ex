@@ -108,7 +108,7 @@ defmodule Explorer.Chain.Search do
           |> union(^block_query)
 
         tx_block_op_query =
-          if UserOperation.user_operations_enabled?() do
+          if UserOperation.enabled?() do
             user_operation_query = search_user_operation_query(string)
 
             tx_block_query
@@ -194,7 +194,7 @@ defmodule Explorer.Chain.Search do
           end
 
         op_result =
-          if valid_full_hash?(search_query) && UserOperation.user_operations_enabled?() do
+          if valid_full_hash?(search_query) && UserOperation.enabled?() do
             search_query
             |> search_user_operation_query()
             |> select_repo(options).all()

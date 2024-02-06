@@ -688,7 +688,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp hash_to_user_operation(hash) do
-    if UserOperation.user_operations_enabled?() do
+    if UserOperation.enabled?() do
       UserOperation.hash_to_user_operation(hash)
     else
       {:error, :not_found}

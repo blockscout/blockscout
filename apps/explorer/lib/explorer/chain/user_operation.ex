@@ -67,7 +67,7 @@ defmodule Explorer.Chain.UserOperation do
     end
   end
 
-  def user_operations_enabled? do
+  def enabled? do
     Microservice.check_enabled(Explorer.MicroserviceInterfaces.AccountAbstraction) == :ok
   end
 end
