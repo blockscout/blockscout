@@ -102,7 +102,7 @@ defmodule Indexer.Helper do
   Performs a specified number of retries (up to) if the first attempt returns error.
   """
   @spec get_block_number_by_tag(binary(), list(), non_neg_integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
-  def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ 3) do
+  def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ @finite_retries_number) do
     error_message = &"Cannot fetch #{tag} block number. Error: #{inspect(&1)}"
     repeated_call(&fetch_block_number_by_tag/2, [tag, json_rpc_named_arguments], error_message, retries)
   end
@@ -112,7 +112,7 @@ defmodule Indexer.Helper do
   Performs a specified number of retries (up to) if the first attempt returns error.
   """
   @spec get_transaction_by_hash(binary() | nil, list(), non_neg_integer()) :: {:ok, any()} | {:error, any()}
-  def get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
+  def get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ @finite_retries_number)
 
   def get_transaction_by_hash(hash, _json_rpc_named_arguments, _retries_left) when is_nil(hash), do: {:ok, nil}
 
@@ -127,6 +127,10 @@ defmodule Indexer.Helper do
     error_message = &"eth_getTransactionByHash failed. Error: #{inspect(&1)}"
 
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
+  end
+
+  def infinite_retries_number do
+    @infinite_retries_number
   end
 
   @doc """
@@ -157,7 +161,7 @@ defmodule Indexer.Helper do
           non_neg_integer(),
           non_neg_integer(),
           binary() | nil,
-          binary()
+          :L1 | :L2
         ) :: :ok
   def log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, items_count, layer) do
     is_start = is_nil(items_count)
@@ -217,7 +221,19 @@ defmodule Indexer.Helper do
           err
         else
           Logger.error("#{error_message.(message)} Retrying...")
-          :timer.sleep(3000)
+
+          sleep_time_factor = 3000
+
+          # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+          sleep_time =
+            if retries_left > @finite_retries_number do
+              sleep_time_factor * (@infinite_retries_number - retries_left)
+            else
+              sleep_time_factor
+            end
+
+          :timer.sleep(sleep_time)
+
           repeated_call(func, args, error_message, retries_left)
         end
     end
@@ -266,7 +282,7 @@ defmodule Indexer.Helper do
   """
   @spec get_block_timestamp_by_number(non_neg_integer(), list(), non_neg_integer()) ::
           {:ok, non_neg_integer()} | {:error, any()}
-  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ 3) do
+  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ @finite_retries_number) do
     func = &get_block_timestamp_by_number_inner/2
     args = [number, json_rpc_named_arguments]
     error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"

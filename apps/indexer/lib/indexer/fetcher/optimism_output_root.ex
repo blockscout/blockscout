@@ -75,7 +75,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         chunk_end = min(chunk_start + Optimism.get_logs_range_size() - 1, end_block)
 
         if chunk_end >= chunk_start do
-          IndexerHelper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+          IndexerHelper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L1)
 
           {:ok, result} =
             Optimism.get_logs(
@@ -84,7 +84,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
               output_oracle,
               @output_proposed_event,
               json_rpc_named_arguments,
-              100_000_000
+              IndexerHelper.infinite_retries_number()
             )
 
           output_roots = events_to_output_roots(result)
@@ -101,7 +101,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
             start_block,
             end_block,
             "#{Enum.count(output_roots)} OutputProposed event(s)",
-            "L1"
+            :L1
           )
         end
 
@@ -119,7 +119,9 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
       end)
 
     new_start_block = last_written_block + 1
-    {:ok, new_end_block} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+
+    {:ok, new_end_block} =
+      Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, IndexerHelper.infinite_retries_number())
 
     delay =
       if new_end_block == last_written_block do

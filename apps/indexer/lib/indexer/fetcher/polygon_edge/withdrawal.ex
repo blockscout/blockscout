@@ -110,7 +110,8 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
 
     if not safe_block_is_latest do
       # find and fill all events between "safe" and "latest" block (excluding "safe")
-      {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+      {:ok, latest_block} =
+        Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
 
       fill_block_range(
         safe_block + 1,
@@ -196,7 +197,7 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
             state_sender,
             @l2_state_synced_event,
             json_rpc_named_arguments,
-            100_000_000
+            Helper.infinite_retries_number()
           )
 
         Enum.map(result, fn event ->
