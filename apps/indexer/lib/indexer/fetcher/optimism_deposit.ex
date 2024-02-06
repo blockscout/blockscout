@@ -161,7 +161,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
               json_rpc_named_arguments,
               3
             )},
-         _ = Helper.log_blocks_chunk_handling(from_block, to_block, start_block, safe_block, nil, "L1"),
+         _ = Helper.log_blocks_chunk_handling(from_block, to_block, start_block, safe_block, nil, :L1),
          deposits = events_to_deposits(logs, json_rpc_named_arguments),
          {:import, {:ok, _imported}} <-
            {:import, Chain.import(%{optimism_deposits: %{params: deposits}, timeout: :infinity})} do
@@ -173,7 +173,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         start_block,
         safe_block,
         "#{Enum.count(deposits)} TransactionDeposited event(s)",
-        "L1"
+        :L1
       )
 
       if to_block == safe_block do
@@ -375,7 +375,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         min_block,
         max_block,
         "#{cnt} TransactionDeposited event(s)",
-        "L1"
+        :L1
       )
     end
   end

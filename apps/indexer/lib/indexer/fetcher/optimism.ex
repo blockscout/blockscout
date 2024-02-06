@@ -21,6 +21,7 @@ defmodule Indexer.Fetcher.Optimism do
   @fetcher_name :optimism
   @block_check_interval_range_size 100
   @eth_get_logs_range_size 1000
+  @finite_retries_number 3
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -78,7 +79,7 @@ defmodule Indexer.Fetcher.Optimism do
           prev_latest: prev_latest
         } = state
       ) do
-    {:ok, latest} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+    {:ok, latest} = get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
 
     if latest < prev_latest do
       Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
@@ -97,9 +98,9 @@ defmodule Indexer.Fetcher.Optimism do
     first_block = max(last_safe_block - @block_check_interval_range_size, 1)
 
     with {:ok, first_block_timestamp} <-
-           get_block_timestamp_by_number(first_block, json_rpc_named_arguments, 100_000_000),
+           get_block_timestamp_by_number(first_block, json_rpc_named_arguments, Helper.infinite_retries_number()),
          {:ok, last_safe_block_timestamp} <-
-           get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, 100_000_000) do
+           get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, Helper.infinite_retries_number()) do
       block_check_interval =
         ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
@@ -111,7 +112,7 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
-  def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ 3) do
+  def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ @finite_retries_number) do
     error_message = &"Cannot fetch #{tag} block number. Error: #{inspect(&1)}"
     repeated_call(&fetch_block_number_by_tag/2, [tag, json_rpc_named_arguments], error_message, retries)
   end
@@ -133,7 +134,9 @@ defmodule Indexer.Fetcher.Optimism do
         {safe_block, false}
 
       {:error, :not_found} ->
-        {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+        {:ok, latest_block} =
+          get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+
         {latest_block, true}
     end
   end
@@ -158,7 +161,7 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
-  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ 3) do
+  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ @finite_retries_number) do
     func = &get_block_timestamp_by_number_inner/2
     args = [number, json_rpc_named_arguments]
     error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"
@@ -188,7 +191,7 @@ defmodule Indexer.Fetcher.Optimism do
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
-  def get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
+  def get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ @finite_retries_number)
 
   def get_transaction_by_hash(hash, _json_rpc_named_arguments, _retries_left) when is_nil(hash), do: {:ok, nil}
 

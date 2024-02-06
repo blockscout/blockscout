@@ -178,7 +178,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
         new_incomplete_channels =
           if chunk_end >= chunk_start do
-            Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+            Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L1)
 
             {:ok, new_incomplete_channels, batches, sequences} =
               get_txn_batches(
@@ -189,7 +189,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
                 incomplete_channels_acc,
                 json_rpc_named_arguments,
                 json_rpc_named_arguments_l2,
-                100_000_000
+                Helper.infinite_retries_number()
               )
 
             {batches, sequences} = remove_duplicates(batches, sequences)
@@ -207,7 +207,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
               start_block,
               end_block,
               "#{Enum.count(sequences)} batch(es) containing #{Enum.count(batches)} block(s).",
-              "L1"
+              :L1
             )
 
             new_incomplete_channels
@@ -226,7 +226,9 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       end)
 
     new_start_block = last_written_block + 1
-    {:ok, new_end_block} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+
+    {:ok, new_end_block} =
+      Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
 
     delay =
       if new_end_block == last_written_block do

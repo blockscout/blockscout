@@ -17,8 +17,6 @@ defmodule Indexer.Helper do
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain.Hash
 
-  @finite_retries_number 3
-  @infinite_retries_number 100_000_000
   @block_check_interval_range_size 100
   @block_by_number_chunk_size 50
 
@@ -206,11 +204,11 @@ defmodule Indexer.Helper do
   @doc """
   Calls the given function with the given arguments
   until it returns {:ok, any()} or the given attempts number is reached.
-  Pauses execution between invokes for 3..1200 seconds (depending on the number of retries).
+  Pauses execution between invokes for 3 seconds.
   """
   @spec repeated_call((... -> any()), list(), (... -> any()), non_neg_integer()) ::
-          {:ok, any()} | {:error, binary() | atom() | map()}
-  def repeated_call(func, args, error_message, retries_left, retries_done \\ 0) do
+          {:ok, any()} | {:error, binary() | atom()}
+  def repeated_call(func, args, error_message, retries_left) do
     case apply(func, args) do
       {:ok, _} = res ->
         res
@@ -224,10 +222,19 @@ defmodule Indexer.Helper do
         else
           Logger.error("#{error_message.(message)} Retrying...")
 
-          # wait up to 20 minutes
-          :timer.sleep(min(3000 * Integer.pow(2, retries_done), 1_200_000))
+          sleep_time_factor = 3000
 
-          repeated_call(func, args, error_message, retries_left, retries_done + 1)
+          # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+          sleep_time =
+            if retries_left > @finite_retries_number do
+              sleep_time_factor * (@infinite_retries_number - retries_left)
+            else
+              sleep_time_factor
+            end
+
+          :timer.sleep(sleep_time)
+
+          repeated_call(func, args, error_message, retries_left)
         end
     end
   end
