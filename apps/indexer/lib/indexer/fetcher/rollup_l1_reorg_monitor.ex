@@ -56,7 +56,10 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
       module_using_reorg_monitor = Enum.at(modules_using_reorg_monitor, 0)
 
       l1_rpc =
-        if Enum.member?([Indexer.Fetcher.PolygonEdge.Deposit, Indexer.Fetcher.PolygonEdge.WithdrawalExit], module_using_reorg_monitor) do
+        if Enum.member?(
+             [Indexer.Fetcher.PolygonEdge.Deposit, Indexer.Fetcher.PolygonEdge.WithdrawalExit],
+             module_using_reorg_monitor
+           ) do
           # there can be more than one PolygonEdge.* modules, so we get the common L1 RPC URL for them from Indexer.Fetcher.PolygonEdge
           Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonEdge][:polygon_edge_l1_rpc]
         else
