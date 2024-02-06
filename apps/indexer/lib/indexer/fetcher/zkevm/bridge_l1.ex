@@ -165,7 +165,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
           )
         end
 
-        reorg_block = RollupL1ReorgMonitor.reorg_block_pop()
+        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           reorg_handle(reorg_block)

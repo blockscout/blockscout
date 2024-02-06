@@ -32,6 +32,8 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
     Logger.metadata(fetcher: @fetcher_name)
 
     modules_can_use_reorg_monitor = [
+      Indexer.Fetcher.PolygonEdge.Deposit,
+      Indexer.Fetcher.PolygonEdge.WithdrawalExit,
       Indexer.Fetcher.Shibarium.L1,
       Indexer.Fetcher.Zkevm.BridgeL1
     ]
@@ -39,35 +41,41 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
     modules_using_reorg_monitor =
       modules_can_use_reorg_monitor
       |> Enum.reject(fn module ->
-        is_nil(Application.get_all_env(:indexer)[module][:start_block])
+        module_config = Application.get_all_env(:indexer)[module]
+        is_nil(module_config[:start_block]) and is_nil(module_config[:start_block_l1])
       end)
 
-    cond do
-      Enum.count(modules_using_reorg_monitor) > 1 ->
-        Logger.error("#{__MODULE__} cannot work for more than one rollup module. Please, check config.")
-        :ignore
+    if Enum.empty?(modules_using_reorg_monitor) do
+      # don't start reorg monitor as there is no module which would use it
+      :ignore
+    else
+      # As there cannot be different modules for different rollups at the same time,
+      # it's correct to only get the first item of the list.
+      # For example, Indexer.Fetcher.PolygonEdge.Deposit and Indexer.Fetcher.PolygonEdge.WithdrawalExit can be in the list
+      # because they are for the same rollup, but Indexer.Fetcher.Shibarium.L1 and Indexer.Fetcher.Zkevm.BridgeL1 cannot (as they are for different rollups).
+      module_using_reorg_monitor = Enum.at(modules_using_reorg_monitor, 0)
 
-      Enum.empty?(modules_using_reorg_monitor) ->
-        # don't start reorg monitor as there is no module which would use it
-        :ignore
+      l1_rpc =
+        if Enum.member?([Indexer.Fetcher.PolygonEdge.Deposit, Indexer.Fetcher.PolygonEdge.WithdrawalExit], module_using_reorg_monitor) do
+          # there can be more than one PolygonEdge.* modules, so we get the common L1 RPC URL for them from Indexer.Fetcher.PolygonEdge
+          Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonEdge][:polygon_edge_l1_rpc]
+        else
+          Application.get_all_env(:indexer)[module_using_reorg_monitor][:rpc]
+        end
 
-      true ->
-        module_using_reorg_monitor = Enum.at(modules_using_reorg_monitor, 0)
+      json_rpc_named_arguments = Helper.json_rpc_named_arguments(l1_rpc)
 
-        l1_rpc = Application.get_all_env(:indexer)[module_using_reorg_monitor][:rpc]
+      {:ok, block_check_interval, _} = Helper.get_block_check_interval(json_rpc_named_arguments)
 
-        json_rpc_named_arguments = Helper.json_rpc_named_arguments(l1_rpc)
+      Process.send(self(), :reorg_monitor, [])
 
-        {:ok, block_check_interval, _} = Helper.get_block_check_interval(json_rpc_named_arguments)
-
-        Process.send(self(), :reorg_monitor, [])
-
-        {:ok,
-         %{
-           block_check_interval: block_check_interval,
-           json_rpc_named_arguments: json_rpc_named_arguments,
-           prev_latest: 0
-         }}
+      {:ok,
+       %{
+         block_check_interval: block_check_interval,
+         json_rpc_named_arguments: json_rpc_named_arguments,
+         modules: modules_using_reorg_monitor,
+         prev_latest: 0
+       }}
     end
   end
 
@@ -77,6 +85,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
         %{
           block_check_interval: block_check_interval,
           json_rpc_named_arguments: json_rpc_named_arguments,
+          modules: modules,
           prev_latest: prev_latest
         } = state
       ) do
@@ -84,7 +93,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
     if latest < prev_latest do
       Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
-      reorg_block_push(latest)
+      Enum.each(modules, &reorg_block_push(latest, &1))
     end
 
     Process.send_after(self(), :reorg_monitor, block_check_interval)
@@ -93,12 +102,12 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
   end
 
   @doc """
-  Pops the number of reorg block from the front of the queue.
+  Pops the number of reorg block from the front of the queue for the specified rollup module.
   Returns `nil` if the reorg queue is empty.
   """
-  @spec reorg_block_pop() :: non_neg_integer() | nil
-  def reorg_block_pop do
-    table_name = reorg_table_name(@fetcher_name)
+  @spec reorg_block_pop(module()) :: non_neg_integer() | nil
+  def reorg_block_pop(module) do
+    table_name = reorg_table_name(module)
 
     case BoundQueue.pop_front(reorg_queue_get(table_name)) do
       {:ok, {block_number, updated_queue}} ->
@@ -110,8 +119,8 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
     end
   end
 
-  defp reorg_block_push(block_number) do
-    table_name = reorg_table_name(@fetcher_name)
+  defp reorg_block_push(block_number, module) do
+    table_name = reorg_table_name(module)
     {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(table_name), block_number)
     :ets.insert(table_name, {:queue, updated_queue})
   end
@@ -135,7 +144,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
     end
   end
 
-  defp reorg_table_name(fetcher_name) do
-    :"#{fetcher_name}#{:_reorgs}"
+  defp reorg_table_name(module) do
+    :"#{module}#{:_reorgs}"
   end
 end
