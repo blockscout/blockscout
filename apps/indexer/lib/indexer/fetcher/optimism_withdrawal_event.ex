@@ -81,7 +81,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
         chunk_end = min(chunk_start + Optimism.get_logs_range_size() - 1, end_block)
 
         if chunk_end >= chunk_start do
-          Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+          Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L1)
 
           {:ok, result} =
             Optimism.get_logs(
@@ -90,7 +90,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
               optimism_portal,
               [@withdrawal_proven_event, @withdrawal_finalized_event],
               json_rpc_named_arguments,
-              100_000_000
+              Helper.infinite_retries_number()
             )
 
           withdrawal_events = prepare_events(result, json_rpc_named_arguments)
@@ -107,7 +107,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
             start_block,
             end_block,
             "#{Enum.count(withdrawal_events)} WithdrawalProven/WithdrawalFinalized event(s)",
-            "L1"
+            :L1
           )
         end
 
@@ -126,7 +126,9 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
       end)
 
     new_start_block = last_written_block + 1
-    {:ok, new_end_block} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+
+    {:ok, new_end_block} =
+      Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
 
     delay =
       if new_end_block == last_written_block do
@@ -164,7 +166,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
   defp prepare_events(events, json_rpc_named_arguments) do
     timestamps =
       events
-      |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+      |> get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number())
       |> Enum.reduce(%{}, fn block, acc ->
         block_number = quantity_to_integer(Map.get(block, "number"))
         {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
