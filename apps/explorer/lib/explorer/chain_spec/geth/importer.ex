@@ -8,7 +8,7 @@ defmodule Explorer.ChainSpec.Geth.Importer do
 
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
-  alias Explorer.Chain.Hash.Address, as: AddressHash
+  alias Explorer.Chain.Hash.Address
 
   def import_genesis_accounts(chain_spec) do
     balance_params =
@@ -50,11 +50,25 @@ defmodule Explorer.ChainSpec.Geth.Importer do
     Chain.import(params)
   end
 
+  @spec genesis_accounts(any()) :: [%{address_hash: Address.t(), value: integer(), contract_code: String.t()}]
   def genesis_accounts(%{"genesis" => genesis}) do
     genesis_accounts(genesis)
   end
 
-  def genesis_accounts(chain_spec) do
+  def genesis_accounts(raw_accounts) when is_list(raw_accounts) do
+    raw_accounts
+    |> Enum.map(fn account ->
+      with {:ok, address_hash} <- Chain.string_to_address_hash(account["address"]),
+           {balance, ""} <- Integer.parse(account["balance"]) do
+        %{address_hash: address_hash, value: balance, contract_code: account["bytecode"]}
+      else
+        _ -> nil
+      end
+    end)
+    |> Enum.filter(&(!is_nil(&1)))
+  end
+
+  def genesis_accounts(chain_spec) when is_map(chain_spec) do
     accounts = chain_spec["alloc"]
 
     if accounts do
@@ -73,7 +87,7 @@ defmodule Explorer.ChainSpec.Geth.Importer do
     end)
     |> Stream.map(fn {address, %{"balance" => value} = params} ->
       formatted_address = if String.starts_with?(address, "0x"), do: address, else: "0x" <> address
-      {:ok, address_hash} = AddressHash.cast(formatted_address)
+      {:ok, address_hash} = Address.cast(formatted_address)
       balance = parse_number(value)
 
       code = params["code"]
