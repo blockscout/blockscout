@@ -3,9 +3,8 @@ defmodule Explorer.SmartContract.Helper do
   SmartContract helper functions
   """
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Helper}
   alias Explorer.Chain.{Hash, SmartContract}
-  alias Explorer.Helper
   alias Phoenix.HTML
 
   def queriable_method?(method) do
