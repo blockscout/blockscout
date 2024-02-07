@@ -324,6 +324,7 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
         get("/transactions/:transaction_hash_param/describe", V2.Proxy.NovesFiController, :describe_transaction)
         get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
+        get("/transactions", V2.Proxy.NovesFiController, :describe_transactions)
       end
 
       scope "/account-abstraction" do
