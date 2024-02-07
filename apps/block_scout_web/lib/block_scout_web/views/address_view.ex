@@ -315,7 +315,7 @@ defmodule BlockScoutWeb.AddressView do
   defp token_title_inner(name, symbol, contract_address_hash, token) do
     if Map.has_key?(token, :bridged) && token.bridged do
       bridged_token = Repo.get(BridgedToken, contract_address_hash)
-      Chain.token_display_name_based_on_bridge_destination(name, symbol, bridged_token.foreign_chain_id)
+      BridgedToken.token_display_name_based_on_bridge_destination(name, symbol, bridged_token.foreign_chain_id)
     else
       "#{name} (#{symbol})"
     end

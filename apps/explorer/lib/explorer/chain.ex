@@ -4823,39 +4823,6 @@ defmodule Explorer.Chain do
     )
   end
 
-  def token_display_name_based_on_bridge_destination(name, foreign_chain_id) do
-    cond do
-      Decimal.compare(foreign_chain_id, 1) == :eq ->
-        name
-        |> String.replace("on xDai", "from Ethereum")
-
-      Decimal.compare(foreign_chain_id, 56) == :eq ->
-        name
-        |> String.replace("on xDai", "from BSC")
-
-      true ->
-        name
-    end
-  end
-
-  def token_display_name_based_on_bridge_destination(name, symbol, foreign_chain_id) do
-    token_name =
-      cond do
-        Decimal.compare(foreign_chain_id, 1) == :eq ->
-          name
-          |> String.replace("on xDai", "from Ethereum")
-
-        Decimal.compare(foreign_chain_id, 56) == :eq ->
-          name
-          |> String.replace("on xDai", "from BSC")
-
-        true ->
-          name
-      end
-
-    "#{token_name} (#{symbol})"
-  end
-
   @spec get_token_transfer_type(TokenTransfer.t()) ::
           :token_burning | :token_minting | :token_spawning | :token_transfer
   def get_token_transfer_type(transfer) do

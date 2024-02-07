@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   use BlockScoutWeb, :view
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, SmartContract, Token}
+  alias Explorer.Chain.{Address, BridgedToken, SmartContract, Token}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.{Helper, Writer}
 
@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   def token_display_name(token) do
     if token.bridged do
-      Chain.token_display_name_based_on_bridge_destination(token.name, token.foreign_chain_id)
+      BridgedToken.token_display_name_based_on_bridge_destination(token.name, token.foreign_chain_id)
     else
       token.name
     end

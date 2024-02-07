@@ -1,7 +1,6 @@
 defmodule BlockScoutWeb.TokensView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain
   alias Explorer.Chain.{Address, BridgedToken, CurrencyHelper, Token}
 
   def decimals?(%Token{decimals: nil}), do: false
@@ -27,7 +26,7 @@ defmodule BlockScoutWeb.TokensView do
         foreign_chain_id: foreign_chain_id
       }) do
     if bridged do
-      Chain.token_display_name_based_on_bridge_destination(name, symbol, foreign_chain_id)
+      BridgedToken.token_display_name_based_on_bridge_destination(name, symbol, foreign_chain_id)
     else
       "#{name} (#{symbol})"
     end
