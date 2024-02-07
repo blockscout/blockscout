@@ -9,6 +9,8 @@
 
 ### Fixes
 
+- [#9355](https://github.com/blockscout/blockscout/pull/9355) - Exclude preloads of smart-contracts in the lists for user operations
+
 ### Chore
 
 <details>

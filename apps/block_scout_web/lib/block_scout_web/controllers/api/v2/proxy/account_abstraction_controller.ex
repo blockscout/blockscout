@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   def bundlers(conn, query_string) do
     query_string
     |> AccountAbstraction.get_bundlers()
-    |> process_response(conn)
+    |> process_response(conn, true)
   end
 
   @doc """
@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   def factories(conn, query_string) do
     query_string
     |> AccountAbstraction.get_factories()
-    |> process_response(conn)
+    |> process_response(conn, true)
   end
 
   @doc """
@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   def paymasters(conn, query_string) do
     query_string
     |> AccountAbstraction.get_paymasters()
-    |> process_response(conn)
+    |> process_response(conn, true)
   end
 
   @doc """
@@ -97,7 +97,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   def accounts(conn, query_string) do
     query_string
     |> AccountAbstraction.get_accounts()
-    |> process_response(conn)
+    |> process_response(conn, true)
   end
 
   @doc """
@@ -107,7 +107,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   def bundles(conn, query_string) do
     query_string
     |> AccountAbstraction.get_bundles()
-    |> process_response(conn)
+    |> process_response(conn, true)
   end
 
   @doc """
@@ -117,33 +117,33 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   def operations(conn, query_string) do
     query_string
     |> AccountAbstraction.get_operations()
-    |> process_response(conn)
+    |> process_response(conn, true)
   end
 
-  defp extended_info(response) do
+  defp extended_info(response, list? \\ false) do
     case response do
       %{"items" => items} ->
         extended_items =
           Enum.map(items, fn response_item ->
-            add_address_extended_info(response_item)
+            add_address_extended_info(response_item, list?)
           end)
 
         response
         |> Map.put("items", extended_items)
 
       _ ->
-        add_address_extended_info(response)
+        add_address_extended_info(response, list?)
     end
   end
 
-  defp add_address_extended_info(response) do
+  defp add_address_extended_info(response, list?) do
     @address_fields
     |> Enum.reduce(response, fn address_output_field, output_response ->
       if Map.has_key?(output_response, address_output_field) do
         output_response
         |> Map.replace(
           address_output_field,
-          address_info_from_hash_string(Map.get(output_response, address_output_field))
+          address_info_from_hash_string(Map.get(output_response, address_output_field), list?)
         )
       else
         output_response
@@ -151,16 +151,24 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     end)
   end
 
-  defp address_info_from_hash_string(address_hash_string) do
+  defp address_info_from_hash_string(address_hash_string, list?) do
+    necessity_by_association_base = %{
+      :names => :optional
+    }
+
+    necessity_by_association =
+      if list? do
+        necessity_by_association_base
+      else
+        Map.put(necessity_by_association_base, :smart_contract, :optional)
+      end
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <-
            Chain.hash_to_address(
              address_hash,
              [
-               necessity_by_association: %{
-                 :names => :optional,
-                 :smart_contract => :optional
-               }
+               necessity_by_association: necessity_by_association
              ],
              false
            ) do
@@ -170,7 +178,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     end
   end
 
-  defp process_response(response, conn) do
+  defp process_response(response, conn, list? \\ false) do
     case response do
       {:error, :disabled} ->
         conn
@@ -180,7 +188,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
       {status_code, response} ->
         conn
         |> put_status(status_code)
-        |> json(extended_info(response))
+        |> json(extended_info(response, list?))
     end
   end
 end
