@@ -176,7 +176,8 @@ defmodule Indexer.Block.Fetcher do
              beneficiary_params: MapSet.to_list(beneficiary_params_set),
              blocks_params: blocks,
              logs_params: logs,
-             transactions_params: transactions_with_receipts
+             transactions_params: transactions_with_receipts,
+             withdrawals: withdrawals_params
            }
            |> AddressCoinBalances.params_set(),
          beneficiaries_with_gas_payment =

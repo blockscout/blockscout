@@ -191,7 +191,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     imports =
       Chain.import(%{
         internal_transactions: %{params: internal_transactions_params, with: :blockless_changeset},
-        timeout: :infinity
+        timeout: 60_000
       })
 
     case imports do
