@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#9356](https://github.com/blockscout/blockscout/pull/9356) - Remove ERC-1155 logs params from coin balances params
+
 ### Chore
 
 <details>
