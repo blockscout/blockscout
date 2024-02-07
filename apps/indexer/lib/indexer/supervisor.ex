@@ -13,9 +13,7 @@ defmodule Indexer.Supervisor do
     BridgedTokens.SetAmbBridgedMetadataForTokens,
     BridgedTokens.SetOmniBridgedMetadataForTokens,
     PendingOpsCleaner,
-    PendingTransactionsSanitizer,
-    SetAmbBridgedMetadataForTokens,
-    SetOmniBridgedMetadataForTokens
+    PendingTransactionsSanitizer
   }
 
   alias Indexer.Block.Catchup, as: BlockCatchup
