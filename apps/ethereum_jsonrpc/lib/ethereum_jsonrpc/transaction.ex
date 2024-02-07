@@ -237,7 +237,7 @@ defmodule EthereumJSONRPC.Transaction do
         result
       end
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp}
     ])
@@ -285,7 +285,7 @@ defmodule EthereumJSONRPC.Transaction do
       max_fee_per_gas: max_fee_per_gas
     }
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp}
     ])
@@ -334,7 +334,7 @@ defmodule EthereumJSONRPC.Transaction do
       max_fee_per_gas: max_fee_per_gas
     }
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp}
     ])
@@ -404,7 +404,7 @@ defmodule EthereumJSONRPC.Transaction do
         result
       end
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp}
     ])
@@ -448,7 +448,7 @@ defmodule EthereumJSONRPC.Transaction do
       type: type
     }
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp}
     ])
@@ -490,7 +490,7 @@ defmodule EthereumJSONRPC.Transaction do
       transaction_index: index
     }
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp}
     ])
@@ -656,7 +656,7 @@ defmodule EthereumJSONRPC.Transaction do
     {nil, nil}
   end
 
-  defp put_if_present(transaction, result, keys) do
+  def put_if_present(result, transaction, keys) do
     Enum.reduce(keys, result, fn {from_key, to_key}, acc ->
       value = transaction[from_key]
 

@@ -660,11 +660,25 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
 
       insert(:address)
 
+      # Error("No credit of that type")
+      hex_reason =
+        "0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000164e6f20637265646974206f662074686174207479706500000000000000000000"
+
+      # fail to trace_replayTransaction
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
         fn _json, [] ->
-          {:error, %{code: -32015, message: "VM execution error.", data: "revert: No credit of that type"}}
+          {:error, :econnrefused}
+        end
+      )
+
+      # fallback to eth_call
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn _json, [] ->
+          {:error, %{code: -32015, message: "VM execution error.", data: hex_reason}}
         end
       )
 
@@ -679,7 +693,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"]["revertReason"] == "No credit of that type"
+      assert response["result"]["revertReason"] == hex_reason
       assert response["status"] == "1"
       assert response["message"] == "OK"
     end
@@ -707,7 +721,38 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
       EthereumJSONRPC.Mox,
       :json_rpc,
       fn _json, [] ->
-        {:error, %{code: -32015, message: "VM execution error.", data: ""}}
+        {:ok,
+         [
+           %{
+             id: 0,
+             result: %{
+               "output" => "0x",
+               "stateDiff" => nil,
+               "trace" => [
+                 %{
+                   "action" => %{
+                     "callType" => "call",
+                     "from" => "0x6a17ca3bbf83764791f4a9f2b4dbbaebbc8b3e0d",
+                     "gas" => "0x5208",
+                     "input" => "0x01",
+                     "to" => "0x7ed1e469fcb3ee19c0366d829e291451be638e59",
+                     "value" => "0x0"
+                   },
+                   "error" => "Reverted",
+                   "result" => %{
+                     "gasUsed" => "0x5208",
+                     "output" => "0x"
+                   },
+                   "subtraces" => 0,
+                   "traceAddress" => [],
+                   "type" => "call"
+                 }
+               ],
+               "transactionHash" => "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269",
+               "vmTrace" => nil
+             }
+           }
+         ]}
       end
     )
 
@@ -722,7 +767,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
              |> get("/api", params)
              |> json_response(200)
 
-    assert response["result"]["revertReason"] == ""
+    assert response["result"]["revertReason"] == "0x"
     assert response["status"] == "1"
     assert response["message"] == "OK"
   end
@@ -745,6 +790,16 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
 
     insert(:address)
 
+    # fail to trace_replayTransaction
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn _json, [] ->
+        {:error, :econnrefused}
+      end
+    )
+
+    # fallback to eth_call
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,

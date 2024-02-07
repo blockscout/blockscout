@@ -253,6 +253,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
   Failed `:call`s are not allowed to set `gas_used` or `output` because they are part of the successful `result` object
   in the Nethermind JSONRPC response.  They still need `input`, however.
+  The changeset will be fixed by `validate_call_error_or_result`, therefore the changeset is still valid.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -277,11 +278,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   }
       ...> )
       iex> changeset.valid?
-      false
-      iex> changeset.errors
-      [
-        output: {"can't be present for failed call", []}
-      ]
+      true
 
   Likewise, successful `:call`s require `input`, `gas_used` and `output` to be set.
 
@@ -314,6 +311,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
   For failed `:create`, `created_contract_code`, `created_contract_address_hash`, and `gas_used` are not allowed to be
   set because they come from `result` object, which shouldn't be returned from Nethermind.
+  The changeset will be fixed by `validate_create_error_or_result`, therefore the changeset is still valid.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -337,13 +335,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   }
       iex> )
       iex> changeset.valid?
-      false
-      iex> changeset.errors
-      [
-        gas_used: {"can't be present for failed create", []},
-        created_contract_address_hash: {"can't be present for failed create", []},
-        created_contract_code: {"can't be present for failed create", []}
-      ]
+      true
 
   For successful `:create`,  `created_contract_code`, `created_contract_address_hash`, and `gas_used` are required.
 
@@ -441,6 +433,7 @@ defmodule Explorer.Chain.InternalTransaction do
     changeset
     |> cast(attrs, @call_allowed_fields)
     |> validate_required(@call_required_fields)
+    # TODO consider removing
     |> validate_call_error_or_result()
     |> check_constraint(:call_type, message: ~S|can't be blank when type is 'call'|, name: :call_has_call_type)
     |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_call_type)
@@ -456,6 +449,7 @@ defmodule Explorer.Chain.InternalTransaction do
     changeset
     |> cast(attrs, @create_allowed_fields)
     |> validate_required(@create_required_fields)
+    # TODO consider removing
     |> validate_create_error_or_result()
     |> check_constraint(:init, message: ~S|can't be blank when type is 'create'|, name: :create_has_init)
     |> foreign_key_constraint(:transaction_hash)
@@ -502,8 +496,14 @@ defmodule Explorer.Chain.InternalTransaction do
   # Validates that :call `type` changeset either has an `error` or both `gas_used` and `output`
   defp validate_call_error_or_result(changeset) do
     case get_field(changeset, :error) do
-      nil -> validate_required(changeset, [:gas_used, :output], message: "can't be blank for successful call")
-      _ -> validate_disallowed(changeset, [:output], message: "can't be present for failed call")
+      nil ->
+        validate_required(changeset, [:gas_used, :output], message: "can't be blank for successful call")
+
+      _ ->
+        changeset
+        |> delete_change(:gas_used)
+        |> delete_change(:output)
+        |> validate_disallowed([:output], message: "can't be present for failed call")
     end
   end
 
@@ -513,8 +513,15 @@ defmodule Explorer.Chain.InternalTransaction do
   # `:created_contract_address_hash`
   defp validate_create_error_or_result(changeset) do
     case get_field(changeset, :error) do
-      nil -> validate_required(changeset, @create_success_fields, message: "can't be blank for successful create")
-      _ -> validate_disallowed(changeset, @create_success_fields, message: "can't be present for failed create")
+      nil ->
+        validate_required(changeset, @create_success_fields, message: "can't be blank for successful create")
+
+      _ ->
+        changeset
+        |> delete_change(:created_contract_code)
+        |> delete_change(:created_contract_address_hash)
+        |> delete_change(:gas_used)
+        |> validate_disallowed(@create_success_fields, message: "can't be present for failed create")
     end
   end
 
