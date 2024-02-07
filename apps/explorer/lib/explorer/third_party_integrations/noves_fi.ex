@@ -11,17 +11,45 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
   @doc """
   Proxy request to noves.fi API endpoints
   """
-  @spec noves_fi_api_request(String.t(), Plug.Conn.t()) :: {any(), integer()}
-  def noves_fi_api_request(url, conn) do
+  @spec noves_fi_api_request(String.t(), Plug.Conn.t(), :get | :post_transactions) :: {any(), integer()}
+  def noves_fi_api_request(url, conn, method \\ :get) do
     headers = [{"apiKey", api_key()}]
-    url_with_params = url <> "?" <> conn.query_string
 
-    case HTTPoison.get(url_with_params, headers, recv_timeout: @recv_timeout) do
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        {Helper.decode_json(body), status}
+    if method == :post_transactions do
+      headers = headers ++ [{"Content-Type", "application/json"}, {"accept", "text/plain"}]
 
-      _ ->
-        {nil, 500}
+      hashes =
+        conn.query_params
+        |> Map.get("hashes")
+        |> Map.values()
+
+      prepared_query_string =
+        conn.query_params
+        |> Map.drop(["hashes"])
+        |> Map.to_list()
+        |> Enum.reduce("", fn {key, value}, query_string ->
+          query_string <> "#{key}=#{value}"
+        end)
+
+      url_with_params = url <> "?" <> prepared_query_string
+
+      case HTTPoison.post(url_with_params, Jason.encode!(hashes), headers, recv_timeout: @recv_timeout) do
+        {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+          {Helper.decode_json(body), status}
+
+        _ ->
+          {nil, 500}
+      end
+    else
+      url_with_params = url <> "?" <> conn.query_string
+
+      case HTTPoison.get(url_with_params, headers, recv_timeout: @recv_timeout) do
+        {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+          {Helper.decode_json(body), status}
+
+        _ ->
+          {nil, 500}
+      end
     end
   end
 
@@ -39,6 +67,14 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
   @spec describe_tx_url(String.t()) :: String.t()
   def describe_tx_url(transaction_hash_string) do
     "#{base_url()}/evm/#{chain_name()}/describeTx/#{transaction_hash_string}"
+  end
+
+  @doc """
+  Noves.fi /evm/{chain}/describeTxs endpoint
+  """
+  @spec describe_txs_url() :: String.t()
+  def describe_txs_url do
+    "#{base_url()}/evm/#{chain_name()}/describeTxs"
   end
 
   @doc """

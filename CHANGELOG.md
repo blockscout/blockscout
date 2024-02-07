@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#9351](https://github.com/blockscout/blockscout/pull/9351) - Noves.fi: add proxy endpoint for describeTxs endpoint
+
 ### Fixes
 
 ### Chore
