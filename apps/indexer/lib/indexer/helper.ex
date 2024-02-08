@@ -18,6 +18,7 @@ defmodule Indexer.Helper do
   alias Explorer.Chain.Hash
 
   @block_check_interval_range_size 100
+  @block_by_number_chunk_size 50
 
   @doc """
   Checks whether the given Ethereum address looks correct.
@@ -228,29 +229,35 @@ defmodule Indexer.Helper do
   """
   @spec get_blocks_by_events(list(), list(), non_neg_integer()) :: list()
   def get_blocks_by_events(events, json_rpc_named_arguments, retries) do
-    request =
-      events
-      |> Enum.reduce(%{}, fn event, acc ->
-        block_number =
-          if is_map(event) do
-            event.block_number
-          else
-            event["blockNumber"]
-          end
+    events
+    |> Enum.reduce(%{}, fn event, acc ->
+      block_number =
+        if is_map(event) do
+          event.block_number
+        else
+          event["blockNumber"]
+        end
 
-        Map.put(acc, block_number, 0)
-      end)
-      |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
-      |> Stream.with_index()
-      |> Enum.into(%{}, fn {params, id} -> {id, params} end)
-      |> Blocks.requests(&ByNumber.request(&1, false, false))
+      Map.put(acc, block_number, 0)
+    end)
+    |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
+    |> Stream.with_index()
+    |> Enum.into(%{}, fn {params, id} -> {id, params} end)
+    |> Blocks.requests(&ByNumber.request(&1, false, false))
+    |> Enum.chunk_every(@block_by_number_chunk_size)
+    |> Enum.reduce([], fn current_requests, results_acc ->
+      error_message =
+        &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(current_requests)}"
 
-    error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
+      # credo:disable-for-lines:3 Credo.Check.Refactor.Nesting
+      results =
+        case repeated_call(&json_rpc/2, [current_requests, json_rpc_named_arguments], error_message, retries) do
+          {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
+          {:error, _} -> []
+        end
 
-    case repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
-      {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
-      {:error, _} -> []
-    end
+      results_acc ++ results
+    end)
   end
 
   @doc """
