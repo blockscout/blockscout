@@ -39,7 +39,7 @@ defmodule Indexer.Transform.Shibarium.Bridge do
         start_block = Enum.min(block_numbers)
         end_block = Enum.max(block_numbers)
 
-        Helper.log_blocks_chunk_handling(start_block, end_block, start_block, end_block, nil, "L2")
+        Helper.log_blocks_chunk_handling(start_block, end_block, start_block, end_block, nil, :L2)
 
         deposit_transaction_hashes =
           transactions_with_receipts
@@ -76,7 +76,7 @@ defmodule Indexer.Transform.Shibarium.Bridge do
           start_block,
           end_block,
           "#{Enum.count(operations)} L2 operation(s)",
-          "L2"
+          :L2
         )
 
         items

@@ -80,7 +80,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
          json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
          {:ok, last_l1_tx} <- Optimism.get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_tx_hash) && is_nil(last_l1_tx)},
-         {:ok, safe_block} <- Optimism.get_block_number_by_tag("safe", json_rpc_named_arguments),
+         {safe_block, _} = Optimism.get_safe_block(json_rpc_named_arguments),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid,
             (start_block_l1 <= last_l1_block_number || last_l1_block_number == 0) && start_block_l1 <= safe_block} do
@@ -119,9 +119,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         {:stop, :normal, state}
 
       {:error, error_data} ->
-        Logger.error(
-          "Cannot get last L1 transaction from RPC by its hash or last safe block due to the RPC error: #{inspect(error_data)}"
-        )
+        Logger.error("Cannot get last L1 transaction from RPC by its hash due to the RPC error: #{inspect(error_data)}")
 
         {:stop, :normal, state}
 
@@ -163,7 +161,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
               json_rpc_named_arguments,
               3
             )},
-         _ = Helper.log_blocks_chunk_handling(from_block, to_block, start_block, safe_block, nil, "L1"),
+         _ = Helper.log_blocks_chunk_handling(from_block, to_block, start_block, safe_block, nil, :L1),
          deposits = events_to_deposits(logs, json_rpc_named_arguments),
          {:import, {:ok, _imported}} <-
            {:import, Chain.import(%{optimism_deposits: %{params: deposits}, timeout: :infinity})} do
@@ -175,7 +173,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         start_block,
         safe_block,
         "#{Enum.count(deposits)} TransactionDeposited event(s)",
-        "L1"
+        :L1
       )
 
       if to_block == safe_block do
@@ -377,7 +375,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
         min_block,
         max_block,
         "#{cnt} TransactionDeposited event(s)",
-        "L1"
+        :L1
       )
     end
   end

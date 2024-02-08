@@ -56,7 +56,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
          false <- is_nil(start_block_l2),
          true <- start_block_l2 > 0,
          {last_l2_block_number, last_l2_transaction_hash} <- get_last_l2_item(),
-         {:ok, safe_block} = Optimism.get_block_number_by_tag("safe", json_rpc_named_arguments),
+         {safe_block, safe_block_is_latest} = Optimism.get_safe_block(json_rpc_named_arguments),
          {:start_block_l2_valid, true} <-
            {:start_block_l2_valid,
             (start_block_l2 <= last_l2_block_number || last_l2_block_number == 0) && start_block_l2 <= safe_block},
@@ -69,6 +69,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
          start_block: max(start_block_l2, last_l2_block_number),
          start_block_l2: start_block_l2,
          safe_block: safe_block,
+         safe_block_is_latest: safe_block_is_latest,
          message_passer: env[:message_passer],
          json_rpc_named_arguments: json_rpc_named_arguments
        }}
@@ -123,16 +124,20 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
         %{
           start_block: start_block,
           safe_block: safe_block,
+          safe_block_is_latest: safe_block_is_latest,
           message_passer: message_passer,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
     # find and fill all events between start_block and "safe" block
+    # the "safe" block can be "latest" (when safe_block_is_latest == true)
     fill_block_range(start_block, safe_block, message_passer, json_rpc_named_arguments)
 
-    # find and fill all events between "safe" and "latest" block (excluding "safe")
-    {:ok, latest_block} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments)
-    fill_block_range(safe_block + 1, latest_block, message_passer, json_rpc_named_arguments)
+    if not safe_block_is_latest do
+      # find and fill all events between "safe" and "latest" block (excluding "safe")
+      {:ok, latest_block} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments)
+      fill_block_range(safe_block + 1, latest_block, message_passer, json_rpc_named_arguments)
+    end
 
     {:stop, :normal, state}
   end
@@ -266,7 +271,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
           min(chunk_start + Optimism.get_logs_range_size() - 1, l2_block_end)
         end
 
-      Helper.log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, "L2")
+      Helper.log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, :L2)
 
       withdrawals_count =
         find_and_save_withdrawals(
@@ -283,7 +288,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
         l2_block_start,
         l2_block_end,
         "#{withdrawals_count} MessagePassed event(s)",
-        "L2"
+        :L2
       )
 
       withdrawals_count_acc + withdrawals_count
