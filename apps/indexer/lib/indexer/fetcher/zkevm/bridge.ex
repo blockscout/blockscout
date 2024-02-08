@@ -10,7 +10,8 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
       integer_to_quantity: 1,
       json_rpc: 2,
       quantity_to_integer: 1,
-      request: 1
+      request: 1,
+      timestamp_to_datetime: 1
     ]
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
@@ -215,7 +216,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
     |> Helper.get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
     |> Enum.reduce(%{}, fn block, acc ->
       block_number = quantity_to_integer(Map.get(block, "number"))
-      {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
+      timestamp = timestamp_to_datetime(Map.get(block, "timestamp"))
       Map.put(acc, block_number, timestamp)
     end)
   end
