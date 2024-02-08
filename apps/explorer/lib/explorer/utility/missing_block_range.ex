@@ -145,7 +145,7 @@ defmodule Explorer.Utility.MissingBlockRange do
     __MODULE__
     |> where([r], r.from_number < r.to_number)
     |> update([r], set: [from_number: r.to_number, to_number: r.from_number])
-    |> Repo.update_all([])
+    |> Repo.update_all([], timeout: :infinity)
 
     {last_range, merged_ranges} = delete_and_merge_ranges()
 
@@ -175,7 +175,7 @@ defmodule Explorer.Utility.MissingBlockRange do
              (r.to_number <= r1.from_number and r.to_number >= r1.to_number)) and r1.id != r.id
       )
       |> select([r, r1], r)
-      |> Repo.delete_all()
+      |> Repo.delete_all(timeout: :infinity)
 
     intersecting_ranges
   end
