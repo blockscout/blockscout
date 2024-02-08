@@ -133,7 +133,13 @@ defmodule Indexer.Fetcher.Optimism do
   @spec get_block_number_by_tag(binary(), list(), non_neg_integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
   def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ @finite_retries_number) do
     error_message = &"Cannot fetch #{tag} block number. Error: #{inspect(&1)}"
-    repeated_call(&fetch_block_number_by_tag_op_version/2, [tag, json_rpc_named_arguments], error_message, retries)
+
+    Helper.repeated_call(
+      &fetch_block_number_by_tag_op_version/2,
+      [tag, json_rpc_named_arguments],
+      error_message,
+      retries
+    )
   end
 
   @doc """
@@ -186,7 +192,7 @@ defmodule Indexer.Fetcher.Optimism do
     func = &get_block_timestamp_by_number_inner/2
     args = [number, json_rpc_named_arguments]
     error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"
-    repeated_call(func, args, error_message, retries)
+    Helper.repeated_call(func, args, error_message, retries)
   end
 
   @doc """
@@ -222,7 +228,7 @@ defmodule Indexer.Fetcher.Optimism do
 
     error_message = &"Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(&1)}"
 
-    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
+    Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
   @doc """
@@ -244,7 +250,7 @@ defmodule Indexer.Fetcher.Optimism do
 
     error_message = &"eth_getTransactionByHash failed. Error: #{inspect(&1)}"
 
-    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
+    Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
   def get_logs_range_size do
@@ -349,27 +355,8 @@ defmodule Indexer.Fetcher.Optimism do
     end
   end
 
-  defp repeated_call(func, args, error_message, retries_left) do
-    case apply(func, args) do
-      {:ok, _} = res ->
-        res
-
-      {:error, message} = err ->
-        retries_left = retries_left - 1
-
-        if retries_left <= 0 do
-          Logger.error(error_message.(message))
-          err
-        else
-          Logger.error("#{error_message.(message)} Retrying...")
-          :timer.sleep(3000)
-          repeated_call(func, args, error_message, retries_left)
-        end
-    end
-  end
-
   def repeated_request(req, error_message, json_rpc_named_arguments, retries) do
-    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
+    Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
   def reorg_block_pop(fetcher_name) do
