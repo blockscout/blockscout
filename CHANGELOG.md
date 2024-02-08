@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- [#9262](https://github.com/blockscout/blockscout/pull/9262) - Fix withdrawal status
 - [#9123](https://github.com/blockscout/blockscout/pull/9123) - Fixes in Optimism due to changed log topics type
 
 ### Chore
