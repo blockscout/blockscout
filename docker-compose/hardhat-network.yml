@@ -1,10 +1,10 @@
 version: '3.9'
 
 services:
-  redis_db:
+  redis-db:
     extends:
       file: ./services/redis.yml
-      service: redis_db
+      service: redis-db
 
   db-init:
     extends:
@@ -19,7 +19,7 @@ services:
   backend:
     depends_on:
       - db
-      - redis_db
+      - redis-db
     extends:
       file: ./services/backend.yml
       service: backend
