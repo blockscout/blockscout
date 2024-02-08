@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#9317](https://github.com/blockscout/blockscout/pull/9317) - Include null gas price txs in fee calculations
+
 ### Chore
 
 <details>
