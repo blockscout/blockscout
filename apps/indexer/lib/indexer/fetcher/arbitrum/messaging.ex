@@ -31,6 +31,8 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       tx[:request_id] != nil
     end)
     |> Enum.map(fn tx ->
+      Logger.info("L1 to L2 message #{tx.hash} found with the type #{tx.type}")
+
       %{direction: :to_l2, message_id: tx.request_id, completion_tx_hash: tx.hash, status: :relayed}
       |> complete_to_params()
     end)
@@ -45,7 +47,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       event.first_topic == @l2_to_l1_event
     end)
     |> Enum.map(fn event ->
-      Logger.info("L2 to L1 message found #{event.transaction_hash}")
+      Logger.info("L2 to L1 message #{event.transaction_hash} found")
 
       {message_id, caller, blocknum, timestamp} = l2_to_l1_event_parse(event)
 

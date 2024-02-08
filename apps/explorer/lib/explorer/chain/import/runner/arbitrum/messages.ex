@@ -92,7 +92,7 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.Messages do
           originating_tx_blocknum:
             fragment("COALESCE(EXCLUDED.originating_tx_blocknum, ?)", op.originating_tx_blocknum),
           completion_tx_hash: fragment("COALESCE(EXCLUDED.completion_tx_hash, ?)", op.completion_tx_hash),
-          status: fragment("COALESCE(EXCLUDED.status, ?)", op.status),
+          status: fragment("GREATEST(?, EXCLUDED.status)", op.status),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", op.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", op.updated_at)
         ]

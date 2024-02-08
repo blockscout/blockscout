@@ -45,6 +45,7 @@ defmodule Indexer.Supervisor do
   }
 
   alias Indexer.Fetcher.Zkevm.TransactionBatch
+  alias Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1, as: ArbitrumTrackingMessagesOnL1
 
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,
@@ -148,6 +149,9 @@ defmodule Indexer.Supervisor do
         ]),
         configure(Indexer.Fetcher.Shibarium.L1.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(TransactionBatch.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(ArbitrumTrackingMessagesOnL1.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
 

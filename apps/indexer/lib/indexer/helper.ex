@@ -10,6 +10,7 @@ defmodule Indexer.Helper do
       fetch_block_number_by_tag: 2,
       json_rpc: 2,
       quantity_to_integer: 1,
+      integer_to_quantity: 1,
       request: 1
     ]
 
@@ -72,6 +73,32 @@ defmodule Indexer.Helper do
       })
 
     error_message = &"eth_getTransactionByHash failed. Error: #{inspect(&1)}"
+
+    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
+  end
+
+  @doc """
+  TBD
+  """
+  def get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, id \\ 0, retries \\ 3) do
+    processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
+    processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
+
+    req =
+      request(%{
+        id: id,
+        method: "eth_getLogs",
+        params: [
+          %{
+            :fromBlock => processed_from_block,
+            :toBlock => processed_to_block,
+            :address => address,
+            :topics => topics
+          }
+        ]
+      })
+
+    error_message = &"Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(&1)}"
 
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end

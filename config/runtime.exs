@@ -692,6 +692,17 @@ config :indexer, Indexer.Fetcher.Zkevm.TransactionBatch.Supervisor,
 config :indexer, Indexer.Fetcher.Arbitrum.Messaging,
   ARBSYS: ConfigHelper.safe_get_env("INDEXER_ARBITRUM_ARBSYS_CONTRACT", "0x0000000000000000000000000000000000000064")
 
+config :indexer, Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1,
+  l1_rpc: System.get_env("INDEXER_ARBITRUM_L1_RPC"),
+  l1_rpc_block_range: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_L1_RPC_HISTORICAL_BLOCKS_RANGE", 1000),
+  recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_TRACKING_MESSAGES_ON_L1_RECHECK_INTERVAL", 20),
+  l1_bridge_address: System.get_env("INDEXER_ARBITRUM_L1_BRIDGE_CONTRACT"),
+  l1_bridge_start_block: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_L1_BRIDGE_START_BLOCK", 1),
+  chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_CHUNK_SIZE", 20)
+
+config :indexer, Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1.Supervisor,
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_TRACKING_MESSAGES_ON_L1_ENABLED")
+
 config :indexer, Indexer.Fetcher.RootstockData.Supervisor,
   disabled?:
     ConfigHelper.chain_type() != "rsk" || ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ROOTSTOCK_DATA_FETCHER")
