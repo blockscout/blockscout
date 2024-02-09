@@ -2874,7 +2874,8 @@ defmodule Explorer.Chain do
           from(
             blob_transaction in BlobTransaction,
             select: %{
-              hash: fragment("unnest(blob_versioned_hashes)")
+              hash: fragment("unnest(blob_versioned_hashes)"),
+              idx: fragment("generate_series(1, array_length(blob_versioned_hashes, 1))")
             },
             where: blob_transaction.hash == ^transaction_hash
           )
@@ -2886,7 +2887,8 @@ defmodule Explorer.Chain do
           blob_data: blob.blob_data,
           kzg_commitment: blob.kzg_commitment,
           kzg_proof: blob.kzg_proof
-        }
+        },
+        order_by: transaction_blob.idx
       )
 
     query
