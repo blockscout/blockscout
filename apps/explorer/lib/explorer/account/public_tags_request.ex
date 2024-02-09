@@ -19,37 +19,21 @@ defmodule Explorer.Account.PublicTagsRequest do
   @max_tags_per_request 2
   @max_tag_length 35
 
-  @type t :: %__MODULE__{
-          company: String.t(),
-          website: String.t(),
-          tags: String.t(),
-          addresses: [Hash.Address.t()],
-          description: String.t(),
-          additional_comment: String.t(),
-          request_type: String.t(),
-          is_owner: boolean(),
-          remove_reason: String.t(),
-          request_id: String.t(),
-          full_name: String.t(),
-          email: String.t(),
-          identity_id: integer()
-        }
-
-  schema("account_public_tags_requests") do
+  typed_schema "account_public_tags_requests" do
     field(:company, :string)
     field(:website, :string)
-    field(:tags, :string)
-    field(:addresses, {:array, Hash.Address})
+    field(:tags, :string, null: false)
+    field(:addresses, {:array, Hash.Address}, null: false)
     field(:description, :string)
-    field(:additional_comment, :string)
-    field(:request_type, :string)
-    field(:is_owner, :boolean, default: true)
+    field(:additional_comment, :string, null: false)
+    field(:request_type, :string, null: false)
+    field(:is_owner, :boolean, default: true, null: false)
     field(:remove_reason, :string)
     field(:request_id, :string)
-    field(:full_name, Explorer.Encrypted.Binary)
-    field(:email, Explorer.Encrypted.Binary)
+    field(:full_name, Explorer.Encrypted.Binary, null: false)
+    field(:email, Explorer.Encrypted.Binary, null: false)
 
-    belongs_to(:identity, Identity)
+    belongs_to(:identity, Identity, null: false)
 
     timestamps()
   end

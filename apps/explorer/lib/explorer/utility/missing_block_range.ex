@@ -8,7 +8,7 @@ defmodule Explorer.Utility.MissingBlockRange do
 
   @default_returning_batch_size 10
 
-  schema "missing_block_ranges" do
+  typed_schema "missing_block_ranges" do
     field(:from_number, :integer)
     field(:to_number, :integer)
   end
