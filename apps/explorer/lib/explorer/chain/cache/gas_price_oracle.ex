@@ -280,7 +280,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
     {slow_fee, average_fee, fast_fee, base_fee_wei} =
       case nil not in [slow_priority_fee_per_gas, average_priority_fee_per_gas, fast_priority_fee_per_gas] &&
-             Block.next_block_base_fee() do
+             Block.next_block_base_fee_per_gas() do
         %Decimal{} = base_fee ->
           base_fee_wei = base_fee |> Wei.from(:wei)
 

@@ -345,8 +345,8 @@ defmodule Explorer.Chain.Block do
 
 
   """
-  @spec next_block_base_fee :: Decimal.t() | nil
-  def next_block_base_fee do
+  @spec next_block_base_fee_per_gas :: Decimal.t() | nil
+  def next_block_base_fee_per_gas do
     query =
       from(block in Block,
         where: block.consensus == true,
@@ -356,12 +356,12 @@ defmodule Explorer.Chain.Block do
 
     case Repo.one(query) do
       nil -> nil
-      block -> next_block_base_fee(block)
+      block -> next_block_base_fee_per_gas(block)
     end
   end
 
-  @spec next_block_base_fee(t()) :: Decimal.t() | nil
-  def next_block_base_fee(block) do
+  @spec next_block_base_fee_per_gas(t()) :: Decimal.t() | nil
+  def next_block_base_fee_per_gas(block) do
     elasticity_multiplier = Application.get_env(:explorer, :elasticity_multiplier)
     base_fee_max_change_denominator = Application.get_env(:explorer, :base_fee_max_change_denominator)
 
