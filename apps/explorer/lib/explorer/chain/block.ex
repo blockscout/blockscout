@@ -154,7 +154,6 @@ defmodule Explorer.Chain.Block do
     _ -> ""
   end}
   """
-
   Explorer.Chain.Block.Schema.generate()
 
   def changeset(%__MODULE__{} = block, attrs) do

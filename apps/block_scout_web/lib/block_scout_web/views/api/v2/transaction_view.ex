@@ -521,7 +521,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         |> Map.put(
           "execution_node",
           Helper.address_with_info(
-            single_tx? && conn,
+            conn,
             transaction.execution_node,
             transaction.execution_node_hash,
             single_tx?,
