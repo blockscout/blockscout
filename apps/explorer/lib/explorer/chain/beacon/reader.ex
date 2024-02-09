@@ -61,6 +61,47 @@ defmodule Explorer.Chain.Beacon.Reader do
   end
 
   @doc """
+  Finds all `t:Explorer.Chain.Beacon.Blob.t/0`s for `t:Explorer.Chain.Transaction.t/0`.
+
+  Returns a list of `%Explorer.Chain.Beacon.Blob{}` belonging to the given `transaction_hash`.
+
+      iex> blob = insert(:blob)
+      iex> %Explorer.Chain.Beacon.BlobTransaction{hash: transaction_hash} = insert(:blob_transaction, blob_versioned_hashes: [blob.hash])
+      iex> blobs = Explorer.Chain.Beacon.Reader.transaction_to_blobs(transaction_hash)
+      iex> blobs == [%{hash: blob.hash, blob_data: blob.blob_data, kzg_commitment: blob.kzg_commitment, kzg_proof: blob.kzg_proof}]
+      true
+
+  """
+  @spec transaction_to_blobs(Hash.Full.t(), [Chain.api?()]) :: [Blob.t()]
+  def transaction_to_blobs(transaction_hash, options \\ []) when is_list(options) do
+    query =
+      from(
+        transaction_blob in subquery(
+          from(
+            blob_transaction in BlobTransaction,
+            select: %{
+              hash: fragment("unnest(blob_versioned_hashes)"),
+              idx: fragment("generate_series(1, array_length(blob_versioned_hashes, 1))")
+            },
+            where: blob_transaction.hash == ^transaction_hash
+          )
+        ),
+        left_join: blob in Blob,
+        on: blob.hash == transaction_blob.hash,
+        select: %{
+          hash: type(transaction_blob.hash, Hash.Full),
+          blob_data: blob.blob_data,
+          kzg_commitment: blob.kzg_commitment,
+          kzg_proof: blob.kzg_proof
+        },
+        order_by: transaction_blob.idx
+      )
+
+    query
+    |> select_repo(options).all()
+  end
+
+  @doc """
   Finds associated transaction hashes for the given blob `hash` identifier. Returns at most 10 matches.
 
   Returns a list of `%{block_consensus: boolean(), transaction_hash: Hash.Full.t()}` maps for all found transactions.

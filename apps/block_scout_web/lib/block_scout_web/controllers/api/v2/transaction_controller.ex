@@ -29,6 +29,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
   alias BlockScoutWeb.Models.TransactionStateHelper
   alias Explorer.Chain
+  alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.Chain.Zkevm.Reader
   alias Indexer.Fetcher.FirstTraceOnDemand
@@ -411,7 +412,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     with {:ok, _transaction, transaction_hash} <- validate_transaction(transaction_hash_string, params) do
       full_options = @api_true
 
-      blobs = Chain.transaction_to_blobs(transaction_hash, full_options)
+      blobs = BeaconReader.transaction_to_blobs(transaction_hash, full_options)
 
       conn
       |> put_status(200)

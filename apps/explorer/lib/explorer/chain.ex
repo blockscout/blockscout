@@ -66,8 +66,6 @@ defmodule Explorer.Chain do
     Withdrawal
   }
 
-  alias Explorer.Chain.Beacon.{Blob, BlobTransaction}
-
   alias Explorer.Chain.Cache.{
     BlockNumber,
     Blocks,
@@ -2853,45 +2851,6 @@ defmodule Explorer.Chain do
     |> limit(^paging_options.page_size)
     |> order_by([token_transfer], asc: token_transfer.log_index)
     |> join_associations(necessity_by_association)
-    |> select_repo(options).all()
-  end
-
-  @doc """
-  Finds all `t:Explorer.Chain.Beacon.Blob.t/0`s for `t:Explorer.Chain.Transaction.t/0`.
-
-  ## Options
-
-    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
-      `:required`, and the `t:Explorer.Chain.Log.t/0` has no associated record for that association, then the
-      `t:Explorer.Chain.Beacon.Blob.t/0` will not be included in the page `entries`.
-
-  """
-  @spec transaction_to_blobs(Hash.Full.t(), [necessity_by_association_option | api?]) :: [Blob.t()]
-  def transaction_to_blobs(transaction_hash, options \\ []) when is_list(options) do
-    query =
-      from(
-        transaction_blob in subquery(
-          from(
-            blob_transaction in BlobTransaction,
-            select: %{
-              hash: fragment("unnest(blob_versioned_hashes)"),
-              idx: fragment("generate_series(1, array_length(blob_versioned_hashes, 1))")
-            },
-            where: blob_transaction.hash == ^transaction_hash
-          )
-        ),
-        left_join: blob in Blob,
-        on: blob.hash == transaction_blob.hash,
-        select: %{
-          hash: type(transaction_blob.hash, Hash.Full),
-          blob_data: blob.blob_data,
-          kzg_commitment: blob.kzg_commitment,
-          kzg_proof: blob.kzg_proof
-        },
-        order_by: transaction_blob.idx
-      )
-
-    query
     |> select_repo(options).all()
   end
 
