@@ -206,7 +206,8 @@ config :explorer,
   restricted_list: System.get_env("RESTRICTED_LIST"),
   restricted_list_key: System.get_env("RESTRICTED_LIST_KEY"),
   checksum_function: checksum_function && String.to_atom(checksum_function),
-  elasticity_multiplier: ConfigHelper.parse_integer_env_var("EIP_1559_ELASTICITY_MULTIPLIER", 2)
+  elasticity_multiplier: ConfigHelper.parse_integer_env_var("EIP_1559_ELASTICITY_MULTIPLIER", 2),
+  base_fee_max_change_denominator: ConfigHelper.parse_integer_env_var("EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR", 8)
 
 config :explorer, :proxy,
   caching_implementation_data_enabled: true,

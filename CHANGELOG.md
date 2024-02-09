@@ -5,10 +5,12 @@
 ### Features
 
 - [#9168](https://github.com/blockscout/blockscout/pull/9168) - Support EIP4844 blobs indexing & API
+- [#9202](https://github.com/blockscout/blockscout/pull/9202) - Add base and priority fee to gas oracle response
 
 ### Fixes
 
 - [#9317](https://github.com/blockscout/blockscout/pull/9317) - Include null gas price txs in fee calculations
+- [#9315](https://github.com/blockscout/blockscout/pull/9315) - Fix manual uncle reward calculation
 
 ### Chore
 
