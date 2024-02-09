@@ -17,18 +17,14 @@ defmodule Explorer.Tags.AddressToTag do
   * `:tag_id` - id of Tag
   * `:address_hash` - hash of Address
   """
-  @type t :: %AddressToTag{
-          tag_id: Decimal.t(),
-          address_hash: Hash.Address.t()
-        }
-
-  schema "address_to_tags" do
+  typed_schema "address_to_tags" do
     belongs_to(
       :tag,
       AddressTag,
       foreign_key: :tag_id,
       references: :id,
-      type: :integer
+      type: :integer,
+      null: false
     )
 
     belongs_to(
@@ -36,7 +32,8 @@ defmodule Explorer.Tags.AddressToTag do
       Address,
       foreign_key: :address_hash,
       references: :hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
     )
 
     timestamps()
