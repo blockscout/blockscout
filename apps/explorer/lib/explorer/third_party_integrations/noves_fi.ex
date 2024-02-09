@@ -21,7 +21,10 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
       hashes =
         conn.query_params
         |> Map.get("hashes")
-        |> Map.values()
+        |> (&if(is_map(&1),
+              do: Map.values(&1),
+              else: String.split(&1, ",")
+            )).()
 
       prepared_query_string =
         conn.query_params
