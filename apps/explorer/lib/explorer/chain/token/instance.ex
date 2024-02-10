@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Token.Instance do
   use Explorer.Schema
 
   alias Explorer.{Chain, Helper}
-  alias Explorer.Chain.{Address, Block, Hash, Token, TokenTransfer}
+  alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Token.Instance
   alias Explorer.PagingOptions
@@ -17,22 +17,9 @@ defmodule Explorer.Chain.Token.Instance do
   * `metadata` - Token instance metadata
   * `error` - error fetching token instance
   """
-
-  @type t :: %Instance{
-          token_id: non_neg_integer(),
-          token_contract_address_hash: Hash.Address.t() | nil,
-          metadata: map() | nil,
-          error: String.t() | nil,
-          owner_address_hash: Hash.Address.t() | nil,
-          owner_updated_at_block: Block.block_number() | nil,
-          owner_updated_at_log_index: non_neg_integer() | nil,
-          current_token_balance: any(),
-          is_unique: bool() | nil
-        }
-
   @primary_key false
-  schema "token_instances" do
-    field(:token_id, :decimal, primary_key: true)
+  typed_schema "token_instances" do
+    field(:token_id, :decimal, primary_key: true, null: false)
     field(:metadata, :map)
     field(:error, :string)
     field(:owner_updated_at_block, :integer)
@@ -48,7 +35,8 @@ defmodule Explorer.Chain.Token.Instance do
       foreign_key: :token_contract_address_hash,
       references: :contract_address_hash,
       type: Hash.Address,
-      primary_key: true
+      primary_key: true,
+      null: false
     )
 
     timestamps()
@@ -106,7 +94,7 @@ defmodule Explorer.Chain.Token.Instance do
     |> select([ctb], ctb.address_hash)
   end
 
-  @spec token_instance_query(non_neg_integer(), Hash.Address.t()) :: Ecto.Query.t()
+  @spec token_instance_query(Decimal.t() | non_neg_integer(), Hash.Address.t()) :: Ecto.Query.t()
   def token_instance_query(token_id, token_contract_address),
     do: from(i in Instance, where: i.token_contract_address_hash == ^token_contract_address and i.token_id == ^token_id)
 

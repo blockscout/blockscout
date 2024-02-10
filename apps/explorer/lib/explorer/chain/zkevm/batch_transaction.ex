@@ -8,19 +8,19 @@ defmodule Explorer.Chain.Zkevm.BatchTransaction do
 
   @required_attrs ~w(batch_number hash)a
 
-  @type t :: %__MODULE__{
-          batch_number: non_neg_integer(),
-          batch: %Ecto.Association.NotLoaded{} | TransactionBatch.t() | nil,
-          hash: Hash.t(),
-          l2_transaction: %Ecto.Association.NotLoaded{} | Transaction.t() | nil
-        }
-
   @primary_key false
-  schema "zkevm_batch_l2_transactions" do
-    belongs_to(:batch, TransactionBatch, foreign_key: :batch_number, references: :number, type: :integer)
-    belongs_to(:l2_transaction, Transaction, foreign_key: :hash, primary_key: true, references: :hash, type: Hash.Full)
+  typed_schema "zkevm_batch_l2_transactions" do
+    belongs_to(:batch, TransactionBatch, foreign_key: :batch_number, references: :number, type: :integer, null: false)
 
-    timestamps()
+    belongs_to(:l2_transaction, Transaction,
+      foreign_key: :hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full,
+      null: false
+    )
+
+    timestamps(null: false)
   end
 
   @doc """

@@ -1022,7 +1022,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert %{
                "animation_url" => nil,
                "external_app_url" => nil,
-               "id" => 0,
+               "id" => "0",
                "image_url" => nil,
                "is_unique" => true,
                "metadata" => nil,

@@ -19,17 +19,10 @@ defmodule Explorer.Accounts.UserContact do
   * `:verified` - Flag indicating if email contact has been verified
   * `:user` - owning `t:User.t/0`
   """
-  @type t :: %UserContact{
-          email: String.t(),
-          primary: boolean(),
-          verified: boolean(),
-          user: User.t()
-        }
-
-  schema "user_contacts" do
-    field(:email, :string)
-    field(:primary, :boolean, default: false)
-    field(:verified, :boolean, default: false)
+  typed_schema "user_contacts" do
+    field(:email, :string, null: false)
+    field(:primary, :boolean, default: false, null: false)
+    field(:verified, :boolean, default: false, null: false)
 
     belongs_to(:user, User)
 

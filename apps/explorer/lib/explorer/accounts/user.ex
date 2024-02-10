@@ -16,13 +16,7 @@ defmodule Explorer.Accounts.User do
   * `:password_hash` - Encrypted password
   * `:contacts` - List of `t:UserContact.t/0`
   """
-  @type t :: %User{
-          username: String.t(),
-          password_hash: String.t(),
-          contacts: [UserContact.t()]
-        }
-
-  schema "users" do
+  typed_schema "users" do
     field(:username, :string)
     field(:password, :string, virtual: true)
     field(:password_hash, :string)

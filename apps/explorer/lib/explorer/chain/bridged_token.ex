@@ -20,7 +20,6 @@ defmodule Explorer.Chain.BridgedToken do
   alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
-    Address,
     BridgedToken,
     Hash,
     InternalTransaction,
@@ -32,28 +31,6 @@ defmodule Explorer.Chain.BridgedToken do
   require Logger
 
   @default_paging_options %PagingOptions{page_size: 50}
-
-  @typedoc """
-  * `foreign_chain_id` - chain ID of a foreign token
-  * `foreign_token_contract_address_hash` - Foreign token's contract hash
-  * `home_token_contract_address` - The `t:Address.t/0` of the home token's contract
-  * `home_token_contract_address_hash` - Home token's contract hash foreign key
-  * `custom_metadata` - Arbitrary string with custom metadata. For instance, tokens/weights for Balance tokens
-  * `custom_cap` - Custom capitalization for this token
-  * `lp_token` - Boolean flag: LP token or not
-  * `type` - omni/amb
-  """
-  @type t :: %BridgedToken{
-          foreign_chain_id: Decimal.t(),
-          foreign_token_contract_address_hash: Hash.Address.t(),
-          home_token_contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          home_token_contract_address_hash: Hash.Address.t(),
-          custom_metadata: String.t(),
-          custom_cap: Decimal.t(),
-          lp_token: boolean(),
-          type: String.t(),
-          exchange_rate: Decimal.t()
-        }
 
   @derive {Poison.Encoder,
            except: [
@@ -71,8 +48,18 @@ defmodule Explorer.Chain.BridgedToken do
              :updated_at
            ]}
 
+  @typedoc """
+  * `foreign_chain_id` - chain ID of a foreign token
+  * `foreign_token_contract_address_hash` - Foreign token's contract hash
+  * `home_token_contract_address` - The `t:Address.t/0` of the home token's contract
+  * `home_token_contract_address_hash` - Home token's contract hash foreign key
+  * `custom_metadata` - Arbitrary string with custom metadata. For instance, tokens/weights for Balance tokens
+  * `custom_cap` - Custom capitalization for this token
+  * `lp_token` - Boolean flag: LP token or not
+  * `type` - omni/amb
+  """
   @primary_key false
-  schema "bridged_tokens" do
+  typed_schema "bridged_tokens" do
     field(:foreign_chain_id, :decimal)
     field(:foreign_token_contract_address_hash, Hash.Address)
     field(:custom_metadata, :string)
@@ -87,7 +74,8 @@ defmodule Explorer.Chain.BridgedToken do
       foreign_key: :home_token_contract_address_hash,
       primary_key: true,
       references: :contract_address_hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
     )
 
     timestamps()
