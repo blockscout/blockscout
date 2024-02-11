@@ -1141,11 +1141,13 @@ defmodule Explorer.Chain do
   @doc """
   Converts list of `t:Explorer.Chain.Address.t/0` `hash` to the `t:Explorer.Chain.Address.t/0` with that `hash`.
 
-  Returns `[%Explorer.Chain.Address{}]}` if found
+  Returns `[%Explorer.Chain.Address{}]` if found
 
   """
-  @spec hashes_to_addresses([Hash.Address.t()]) :: [Address.t()]
-  def hashes_to_addresses(hashes) when is_list(hashes) do
+  @spec hashes_to_addresses([Hash.Address.t()], [necessity_by_association_option | api?]) :: [Address.t()]
+  def hashes_to_addresses(hashes, options \\ []) when is_list(hashes) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
     query =
       from(
         address in Address,
@@ -1154,7 +1156,9 @@ defmodule Explorer.Chain do
         order_by: fragment("array_position(?, ?)", type(^hashes, {:array, Hash.Address}), address.hash)
       )
 
-    Repo.all(query)
+    query
+    |> join_associations(necessity_by_association)
+    |> select_repo(options).all()
   end
 
   @doc """
