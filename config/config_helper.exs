@@ -17,6 +17,7 @@ defmodule ConfigHelper do
         "shibarium" -> base_repos ++ [Explorer.Repo.Shibarium]
         "suave" -> base_repos ++ [Explorer.Repo.Suave]
         "filecoin" -> base_repos ++ [Explorer.Repo.Filecoin]
+        "stability" -> base_repos ++ [Explorer.Repo.Stability]
         _ -> base_repos
       end
 
