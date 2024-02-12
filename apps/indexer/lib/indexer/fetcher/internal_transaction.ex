@@ -164,7 +164,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
     EthereumJSONRPC.Nethermind,
     EthereumJSONRPC.Erigon,
     EthereumJSONRPC.Besu,
-    EthereumJSONRPC.RSK
+    EthereumJSONRPC.RSK,
+    EthereumJSONRPC.Filecoin
   ]
   defp block_traceable_variants do
     if Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)[:block_traceable?] do
