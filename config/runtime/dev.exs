@@ -41,7 +41,6 @@ pool_size =
   if System.get_env("DATABASE_READ_ONLY_API_URL"),
     do: ConfigHelper.parse_integer_env_var("POOL_SIZE", 30),
     else: ConfigHelper.parse_integer_env_var("POOL_SIZE", 40)
-queue_target = ConfigHelper.parse_integer_env_var("DATABASE_QUEUE_TARGET", 50)
 
 queue_target = ConfigHelper.parse_integer_env_var("DATABASE_QUEUE_TARGET", 50)
 
