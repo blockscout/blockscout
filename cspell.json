@@ -570,7 +570,8 @@
         "verifyproxycontract",
         "checkproxyverification",
         "NOTOK",
-        "sushiswap"
+        "sushiswap",
+        "zetachain"
     ],
     "enableFiletypes": [
         "dotenv",
