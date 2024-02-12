@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#9379](https://github.com/blockscout/blockscout/pull/9379) - Filter non-traceable transactions for zetachain
 - [#9202](https://github.com/blockscout/blockscout/pull/9202) - Add base and priority fee to gas oracle response
 
 ### Fixes
