@@ -99,7 +99,7 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "mini-css-extract-plugin": "^2.8.0",
-    "postcss": "^8.4.33",
+    "postcss": "^8.4.35",
     "postcss-loader": "^8.1.0",
     "sass": "^1.70.0",
     "sass-loader": "^14.1.0",
