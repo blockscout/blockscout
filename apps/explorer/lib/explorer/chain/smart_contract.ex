@@ -246,37 +246,11 @@ defmodule Explorer.Chain.SmartContract do
   * `is_yul` - field was added for storing user's choice
   * `verified_via_eth_bytecode_db` - whether contract automatically verified via eth-bytecode-db or not.
   """
-
-  @type t :: %SmartContract{
-          name: String.t(),
-          compiler_version: String.t(),
-          optimization: boolean,
-          contract_source_code: String.t(),
-          constructor_arguments: String.t() | nil,
-          evm_version: String.t() | nil,
-          optimization_runs: non_neg_integer() | nil,
-          abi: [function_description],
-          verified_via_sourcify: boolean | nil,
-          partially_verified: boolean | nil,
-          file_path: String.t(),
-          is_vyper_contract: boolean | nil,
-          is_changed_bytecode: boolean,
-          bytecode_checked_at: DateTime.t(),
-          contract_code_md5: String.t(),
-          implementation_name: String.t() | nil,
-          compiler_settings: map() | nil,
-          implementation_fetched_at: DateTime.t(),
-          implementation_address_hash: Hash.Address.t(),
-          autodetect_constructor_args: boolean | nil,
-          is_yul: boolean | nil,
-          verified_via_eth_bytecode_db: boolean | nil
-        }
-
-  schema "smart_contracts" do
-    field(:name, :string)
-    field(:compiler_version, :string)
-    field(:optimization, :boolean)
-    field(:contract_source_code, :string)
+  typed_schema "smart_contracts" do
+    field(:name, :string, null: false)
+    field(:compiler_version, :string, null: false)
+    field(:optimization, :boolean, null: false)
+    field(:contract_source_code, :string, null: false)
     field(:constructor_arguments, :string)
     field(:evm_version, :string)
     field(:optimization_runs, :integer)
@@ -288,7 +262,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:is_vyper_contract, :boolean)
     field(:is_changed_bytecode, :boolean, default: false)
     field(:bytecode_checked_at, :utc_datetime_usec, default: DateTime.add(DateTime.utc_now(), -86400, :second))
-    field(:contract_code_md5, :string)
+    field(:contract_code_md5, :string, null: false)
     field(:implementation_name, :string)
     field(:compiler_settings, :map)
     field(:implementation_fetched_at, :utc_datetime_usec, default: nil)
@@ -309,7 +283,13 @@ defmodule Explorer.Chain.SmartContract do
       Address,
       foreign_key: :address_hash,
       references: :hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
+    )
+
+    has_many(:smart_contract_additional_sources, SmartContractAdditionalSource,
+      references: :address_hash,
+      foreign_key: :address_hash
     )
 
     timestamps()
@@ -516,14 +496,14 @@ defmodule Explorer.Chain.SmartContract do
         options
       ) do
     updated_smart_contract =
-      if Application.get_env(:explorer, :enable_caching_implementation_data_of_proxy) &&
+      if Application.get_env(:explorer, :proxy)[:caching_implementation_data_enabled] &&
            check_implementation_refetch_necessity(implementation_fetched_at) do
         address_hash_to_smart_contract_without_twin(address_hash, options)
       else
         smart_contract
       end
 
-    get_implementation_address_hash({:updated, updated_smart_contract})
+    get_implementation_address_hash({:updated, updated_smart_contract}, options)
   end
 
   def get_implementation_address_hash(
@@ -541,10 +521,17 @@ defmodule Explorer.Chain.SmartContract do
     if check_implementation_refetch_necessity(implementation_fetched_at) do
       get_implementation_address_hash_task =
         Task.async(fn ->
-          Proxy.fetch_implementation_address_hash(address_hash, abi, metadata_from_verified_twin, options)
+          result = Proxy.fetch_implementation_address_hash(address_hash, abi, metadata_from_verified_twin, options)
+          callback = Keyword.get(options, :callback, nil)
+          uid = Keyword.get(options, :uid)
+
+          callback && callback.(result, uid)
+
+          result
         end)
 
-      timeout = Application.get_env(:explorer, :implementation_data_fetching_timeout)
+      timeout =
+        Keyword.get(options, :timeout, Application.get_env(:explorer, :proxy)[:implementation_data_fetching_timeout])
 
       case Task.yield(get_implementation_address_hash_task, timeout) ||
              Task.ignore(get_implementation_address_hash_task) do
@@ -1179,22 +1166,17 @@ defmodule Explorer.Chain.SmartContract do
   defp db_implementation_data_converter(string) when is_binary(string), do: string
   defp db_implementation_data_converter(other), do: to_string(other)
 
-  defp check_implementation_refetch_necessity(nil), do: true
+  @doc """
+    Function checks by timestamp if new implementation fetching needed
+  """
+  @spec check_implementation_refetch_necessity(Calendar.datetime() | nil) :: boolean()
+  def check_implementation_refetch_necessity(nil), do: true
 
-  defp check_implementation_refetch_necessity(timestamp) do
-    if Application.get_env(:explorer, :enable_caching_implementation_data_of_proxy) do
+  def check_implementation_refetch_necessity(timestamp) do
+    if Application.get_env(:explorer, :proxy)[:caching_implementation_data_enabled] do
       now = DateTime.utc_now()
 
-      average_block_time = get_average_block_time()
-
-      fresh_time_distance =
-        case average_block_time do
-          0 ->
-            Application.get_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy)
-
-          time ->
-            round(time)
-        end
+      fresh_time_distance = get_fresh_time_distance()
 
       timestamp
       |> DateTime.add(fresh_time_distance, :millisecond)
@@ -1204,8 +1186,24 @@ defmodule Explorer.Chain.SmartContract do
     end
   end
 
-  defp get_average_block_time do
-    if Application.get_env(:explorer, :avg_block_time_as_ttl_cached_implementation_data_of_proxy) do
+  @doc """
+    Returns time interval in milliseconds in which fetched proxy info is not needed to be refetched
+  """
+  @spec get_fresh_time_distance() :: integer()
+  def get_fresh_time_distance do
+    average_block_time = get_average_block_time_for_implementation_refetch()
+
+    case average_block_time do
+      0 ->
+        Application.get_env(:explorer, :proxy)[:fallback_cached_implementation_data_ttl]
+
+      time ->
+        round(time)
+    end
+  end
+
+  defp get_average_block_time_for_implementation_refetch do
+    if Application.get_env(:explorer, :proxy)[:implementation_data_ttl_via_avg_block_time] do
       case AverageBlockTime.average_block_time() do
         {:error, :disabled} ->
           0

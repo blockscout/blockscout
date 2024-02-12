@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.LayoutView do
   use BlockScoutWeb, :view
 
   alias EthereumJSONRPC.Variant
-  alias Explorer.Chain
+  alias Explorer.{Chain, Helper}
   alias Poison.Parser
 
   import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1]
@@ -203,7 +203,7 @@ defmodule BlockScoutWeb.LayoutView do
   def webapp_url(conn) do
     :block_scout_web
     |> Application.get_env(:webapp_url)
-    |> validate_url()
+    |> Helper.validate_url()
     |> case do
       :error -> chain_path(conn, :show)
       {:ok, url} -> url
@@ -213,7 +213,7 @@ defmodule BlockScoutWeb.LayoutView do
   def api_url do
     :block_scout_web
     |> Application.get_env(:api_url)
-    |> validate_url()
+    |> Helper.validate_url()
     |> case do
       :error -> ""
       {:ok, url} -> url
@@ -235,15 +235,6 @@ defmodule BlockScoutWeb.LayoutView do
       []
     end
   end
-
-  defp validate_url(url) when is_binary(url) do
-    case URI.parse(url) do
-      %URI{host: nil} -> :error
-      _ -> {:ok, url}
-    end
-  end
-
-  defp validate_url(_), do: :error
 
   def sign_in_link do
     if Mix.env() == :test do

@@ -76,7 +76,7 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
   def handle_cast({:set_txs_state, address_hash, %{txs_types: txs_types} = results}, state) do
     address_hash = lowercased_string(address_hash)
 
-    if is_ignored?(state[address_hash]) do
+    if ignored?(state[address_hash]) do
       {:noreply, state}
     else
       address_state =
@@ -104,15 +104,15 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
     end
   end
 
-  defp is_ignored?({:updated, datetime}), do: is_up_to_date?(datetime, ttl())
-  defp is_ignored?(_), do: false
+  defp ignored?({:updated, datetime}), do: up_to_date?(datetime, ttl())
+  defp ignored?(_), do: false
 
   defp check_staleness(nil), do: nil
   defp check_staleness({datetime, counter}) when counter > 50, do: {datetime, counter, :limit_value}
 
   defp check_staleness({datetime, counter}) do
     status =
-      if is_up_to_date?(datetime, ttl()) do
+      if up_to_date?(datetime, ttl()) do
         :up_to_date
       else
         :stale
@@ -121,7 +121,7 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
     {datetime, counter, status}
   end
 
-  defp is_up_to_date?(datetime, ttl) do
+  defp up_to_date?(datetime, ttl) do
     datetime
     |> DateTime.add(ttl, :millisecond)
     |> DateTime.compare(DateTime.utc_now()) != :lt

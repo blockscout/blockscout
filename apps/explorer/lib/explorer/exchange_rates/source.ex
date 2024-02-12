@@ -120,7 +120,7 @@ defmodule Explorer.ExchangeRates.Source do
         parse_http_success_response(body)
 
       {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..526 ->
-        parse_http_error_response(body)
+        parse_http_error_response(body, status_code)
 
       {:ok, %Response{status_code: status_code}} when status_code in 300..308 ->
         {:error, "Source redirected"}
@@ -139,13 +139,13 @@ defmodule Explorer.ExchangeRates.Source do
     {:ok, body_json}
   end
 
-  defp parse_http_error_response(body) do
+  defp parse_http_error_response(body, status_code) do
     body_json = Helper.decode_json(body)
 
     if is_map(body_json) do
-      {:error, body_json["error"]}
+      {:error, "#{status_code}: #{body_json["error"]}"}
     else
-      {:error, body}
+      {:error, "#{status_code}: #{body}"}
     end
   end
 end

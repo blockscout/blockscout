@@ -132,6 +132,10 @@ config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
 
 config :block_scout_web, BlockScoutWeb.API.V2, enabled: ConfigHelper.parse_bool_env_var("API_V2_ENABLED", "true")
 
+config :block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
+  service_url: System.get_env("MICROSERVICE_TRANSACTION_INTERPRETATION_URL"),
+  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_TRANSACTION_INTERPRETATION_ENABLED")
+
 # Configures Ueberauth's Auth0 auth provider
 config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
   domain: System.get_env("ACCOUNT_AUTH0_DOMAIN"),
@@ -158,6 +162,7 @@ config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
     |> Map.to_list()
 
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
+  block_traceable?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_GETH_TRACE_BY_BLOCK"),
   debug_trace_transaction_timeout: System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s"),
   tracer:
     if(ConfigHelper.chain_type() == "polygon_edge",
@@ -198,14 +203,18 @@ config :explorer,
       do: Explorer.Chain.Events.DBSender,
       else: Explorer.Chain.Events.SimpleSender
     ),
-  enable_caching_implementation_data_of_proxy: true,
-  avg_block_time_as_ttl_cached_implementation_data_of_proxy: true,
-  fallback_ttl_cached_implementation_data_of_proxy: :timer.seconds(4),
-  implementation_data_fetching_timeout: :timer.seconds(2),
   restricted_list: System.get_env("RESTRICTED_LIST"),
   restricted_list_key: System.get_env("RESTRICTED_LIST_KEY"),
   checksum_function: checksum_function && String.to_atom(checksum_function),
-  elasticity_multiplier: ConfigHelper.parse_integer_env_var("EIP_1559_ELASTICITY_MULTIPLIER", 2)
+  elasticity_multiplier: ConfigHelper.parse_integer_env_var("EIP_1559_ELASTICITY_MULTIPLIER", 2),
+  base_fee_max_change_denominator: ConfigHelper.parse_integer_env_var("EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR", 8)
+
+config :explorer, :proxy,
+  caching_implementation_data_enabled: true,
+  implementation_data_ttl_via_avg_block_time:
+    ConfigHelper.parse_bool_env_var("CONTRACT_PROXY_IMPLEMENTATION_TTL_VIA_AVG_BLOCK_TIME", "true"),
+  fallback_cached_implementation_data_ttl: :timer.seconds(4),
+  implementation_data_fetching_timeout: :timer.seconds(2)
 
 config :explorer, Explorer.Chain.Events.Listener,
   enabled:
@@ -239,6 +248,7 @@ config :explorer, Explorer.Chain.Cache.PendingBlockOperation,
 
 config :explorer, Explorer.Chain.Cache.GasPriceOracle,
   global_ttl: ConfigHelper.parse_time_env_var("GAS_PRICE_ORACLE_CACHE_PERIOD", "30s"),
+  simple_transaction_gas: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_SIMPLE_TRANSACTION_GAS", 21000),
   num_of_blocks: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_NUM_OF_BLOCKS", 200),
   safelow_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_SAFELOW_PERCENTILE", 35),
   average_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_AVERAGE_PERCENTILE", 60),
@@ -303,7 +313,9 @@ config :explorer, Explorer.ExchangeRates.TokenExchangeRates,
   refetch_interval: ConfigHelper.parse_time_env_var("TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL", "1h"),
   max_batch_size: ConfigHelper.parse_integer_env_var("TOKEN_EXCHANGE_RATE_MAX_BATCH_SIZE", 150)
 
-config :explorer, Explorer.Market.History.Cataloger, enabled: !disable_indexer? && !disable_exchange_rates?
+config :explorer, Explorer.Market.History.Cataloger,
+  enabled: !disable_indexer? && !disable_exchange_rates?,
+  history_fetch_interval: ConfigHelper.parse_time_env_var("MARKET_HISTORY_FETCH_INTERVAL", "1h")
 
 config :explorer, Explorer.Chain.Transaction, suave_bid_contracts: System.get_env("SUAVE_BID_CONTRACTS", "")
 
@@ -372,6 +384,11 @@ config :explorer, Explorer.ThirdPartyIntegrations.SolidityScan,
   chain_id: System.get_env("SOLIDITYSCAN_CHAIN_ID"),
   api_key: System.get_env("SOLIDITYSCAN_API_TOKEN")
 
+config :explorer, Explorer.ThirdPartyIntegrations.NovesFi,
+  service_url: System.get_env("NOVES_FI_BASE_API_URL") || "https://blockscout.noves.fi",
+  chain_name: System.get_env("NOVES_FI_CHAIN_NAME"),
+  api_key: System.get_env("NOVES_FI_API_TOKEN")
+
 enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED")
 # or "eth_bytecode_db"
 type = System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")
@@ -391,9 +408,27 @@ config :explorer, Explorer.SmartContract.SigProviderInterface,
   service_url: System.get_env("MICROSERVICE_SIG_PROVIDER_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_SIG_PROVIDER_ENABLED")
 
-config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
+config :explorer, Explorer.MicroserviceInterfaces.BENS,
+  service_url: System.get_env("MICROSERVICE_BENS_URL"),
+  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_BENS_ENABLED")
+
+config :explorer, Explorer.MicroserviceInterfaces.AccountAbstraction,
+  service_url: System.get_env("MICROSERVICE_ACCOUNT_ABSTRACTION_URL"),
+  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_ACCOUNT_ABSTRACTION_ENABLED")
+
+config :explorer, :air_table_public_tags,
   table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
   api_key: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
+
+audit_reports_table_url = System.get_env("CONTRACT_AUDIT_REPORTS_AIRTABLE_URL")
+
+audit_reports_api_key =
+  System.get_env("CONTRACT_AUDIT_REPORTS_AIRTABLE_API_KEY") || System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
+
+config :explorer, :air_table_audit_reports,
+  table_url: audit_reports_table_url,
+  api_key: audit_reports_api_key,
+  enabled: (audit_reports_table_url && audit_reports_api_key && true) || false
 
 config :explorer, Explorer.Mailer,
   adapter: Bamboo.SendGridAdapter,
@@ -447,9 +482,29 @@ config :explorer, Explorer.Chain.Transaction,
 config :explorer, Explorer.Chain.Cache.AddressesTabsCounters,
   ttl: ConfigHelper.parse_time_env_var("ADDRESSES_TABS_COUNTERS_TTL", "10m")
 
+config :explorer, Explorer.Migrator.TransactionsDenormalization,
+  batch_size: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_BATCH_SIZE", 500),
+  concurrency: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_CONCURRENCY", 10)
+
+config :explorer, Explorer.Chain.BridgedToken,
+  eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
+  bsc_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_BSC_OMNI_BRIDGE_MEDIATOR"),
+  poa_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_POA_OMNI_BRIDGE_MEDIATOR"),
+  amb_bridge_mediators: System.get_env("BRIDGED_TOKENS_AMB_BRIDGE_MEDIATORS"),
+  foreign_json_rpc: System.get_env("BRIDGED_TOKENS_FOREIGN_JSON_RPC", "")
+
 ###############
 ### Indexer ###
 ###############
+
+trace_first_block = ConfigHelper.parse_integer_env_var("TRACE_FIRST_BLOCK", 0)
+trace_last_block = ConfigHelper.parse_integer_or_nil_env_var("TRACE_LAST_BLOCK")
+
+trace_block_ranges =
+  case ConfigHelper.safe_get_env("TRACE_BLOCK_RANGES", nil) do
+    "" -> "#{trace_first_block}..#{trace_last_block || "latest"}"
+    ranges -> ranges
+  end
 
 config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
@@ -457,8 +512,9 @@ config :indexer,
   block_ranges: System.get_env("BLOCK_RANGES"),
   first_block: ConfigHelper.parse_integer_env_var("FIRST_BLOCK", 0),
   last_block: ConfigHelper.parse_integer_or_nil_env_var("LAST_BLOCK"),
-  trace_first_block: ConfigHelper.parse_integer_env_var("TRACE_FIRST_BLOCK", 0),
-  trace_last_block: ConfigHelper.parse_integer_or_nil_env_var("TRACE_LAST_BLOCK"),
+  trace_block_ranges: trace_block_ranges,
+  trace_first_block: trace_first_block,
+  trace_last_block: trace_last_block,
   fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block"),
   memory_limit: ConfigHelper.indexer_memory_limit(),
   receipts_batch_size: ConfigHelper.parse_integer_env_var("INDEXER_RECEIPTS_BATCH_SIZE", 250),
@@ -575,7 +631,7 @@ config :indexer, Indexer.Fetcher.TokenInstance.Sanitize,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_SANITIZE_BATCH_SIZE", 10)
 
 config :indexer, Indexer.Fetcher.TokenInstance.LegacySanitize,
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_LEGACY_SANITIZE_CONCURRENCY", 10),
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_LEGACY_SANITIZE_CONCURRENCY", 2),
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_LEGACY_SANITIZE_BATCH_SIZE", 10)
 
 config :indexer, Indexer.Fetcher.InternalTransaction,
@@ -593,19 +649,17 @@ config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
 
 config :indexer, Indexer.Fetcher.Withdrawal, first_block: System.get_env("WITHDRAWALS_FIRST_BLOCK")
 
-config :indexer, Indexer.Fetcher.PolygonEdge.Supervisor, disabled?: !(ConfigHelper.chain_type() == "polygon_edge")
+config :indexer, Indexer.Fetcher.PolygonEdge.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_edge"
 
-config :indexer, Indexer.Fetcher.PolygonEdge.Deposit.Supervisor,
-  disabled?: !(ConfigHelper.chain_type() == "polygon_edge")
+config :indexer, Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_edge"
 
 config :indexer, Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor,
-  disabled?: !(ConfigHelper.chain_type() == "polygon_edge")
+  enabled: ConfigHelper.chain_type() == "polygon_edge"
 
-config :indexer, Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor,
-  disabled?: !(ConfigHelper.chain_type() == "polygon_edge")
+config :indexer, Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_edge"
 
 config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor,
-  disabled?: !(ConfigHelper.chain_type() == "polygon_edge")
+  enabled: ConfigHelper.chain_type() == "polygon_edge"
 
 config :indexer, Indexer.Fetcher.PolygonEdge,
   polygon_edge_l1_rpc: System.get_env("INDEXER_POLYGON_EDGE_L1_RPC"),
@@ -634,8 +688,7 @@ config :indexer, Indexer.Fetcher.Zkevm.TransactionBatch,
 
 config :indexer, Indexer.Fetcher.Zkevm.TransactionBatch.Supervisor,
   enabled:
-    System.get_env("CHAIN_TYPE", "ethereum") == "polygon_zkevm" &&
-      ConfigHelper.parse_bool_env_var("INDEXER_ZKEVM_BATCHES_ENABLED")
+    ConfigHelper.chain_type() == "polygon_zkevm" && ConfigHelper.parse_bool_env_var("INDEXER_ZKEVM_BATCHES_ENABLED")
 
 config :indexer, Indexer.Fetcher.RootstockData.Supervisor,
   disabled?:
@@ -646,6 +699,26 @@ config :indexer, Indexer.Fetcher.RootstockData,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_BATCH_SIZE", 10),
   max_concurrency: ConfigHelper.parse_integer_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_CONCURRENCY", 5),
   db_batch_size: ConfigHelper.parse_integer_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_DB_BATCH_SIZE", 300)
+
+config :indexer, Indexer.Fetcher.Shibarium.L1,
+  rpc: System.get_env("INDEXER_SHIBARIUM_L1_RPC"),
+  start_block: System.get_env("INDEXER_SHIBARIUM_L1_START_BLOCK"),
+  deposit_manager_proxy: System.get_env("INDEXER_SHIBARIUM_L1_DEPOSIT_MANAGER_CONTRACT"),
+  ether_predicate_proxy: System.get_env("INDEXER_SHIBARIUM_L1_ETHER_PREDICATE_CONTRACT"),
+  erc20_predicate_proxy: System.get_env("INDEXER_SHIBARIUM_L1_ERC20_PREDICATE_CONTRACT"),
+  erc721_predicate_proxy: System.get_env("INDEXER_SHIBARIUM_L1_ERC721_PREDICATE_CONTRACT"),
+  erc1155_predicate_proxy: System.get_env("INDEXER_SHIBARIUM_L1_ERC1155_PREDICATE_CONTRACT"),
+  withdraw_manager_proxy: System.get_env("INDEXER_SHIBARIUM_L1_WITHDRAW_MANAGER_CONTRACT")
+
+config :indexer, Indexer.Fetcher.Shibarium.L2,
+  start_block: System.get_env("INDEXER_SHIBARIUM_L2_START_BLOCK"),
+  child_chain: System.get_env("INDEXER_SHIBARIUM_L2_CHILD_CHAIN_CONTRACT"),
+  weth: System.get_env("INDEXER_SHIBARIUM_L2_WETH_CONTRACT"),
+  bone_withdraw: System.get_env("INDEXER_SHIBARIUM_L2_BONE_WITHDRAW_CONTRACT")
+
+config :indexer, Indexer.Fetcher.Shibarium.L1.Supervisor, enabled: ConfigHelper.chain_type() == "shibarium"
+
+config :indexer, Indexer.Fetcher.Shibarium.L2.Supervisor, enabled: ConfigHelper.chain_type() == "shibarium"
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 

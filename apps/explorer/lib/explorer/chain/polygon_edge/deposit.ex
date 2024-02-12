@@ -22,23 +22,14 @@ defmodule Explorer.Chain.PolygonEdge.Deposit do
   * `l1_timestamp` - timestamp of the L1 transaction block
   * `l1_block_number` - block number of the L1 transaction
   """
-  @type t :: %__MODULE__{
-          msg_id: non_neg_integer(),
-          from: Hash.Address.t() | nil,
-          to: Hash.Address.t() | nil,
-          l1_transaction_hash: Hash.t() | nil,
-          l1_timestamp: DateTime.t() | nil,
-          l1_block_number: Block.block_number()
-        }
-
   @primary_key false
-  schema "polygon_edge_deposits" do
-    field(:msg_id, :integer, primary_key: true)
+  typed_schema "polygon_edge_deposits" do
+    field(:msg_id, :integer, primary_key: true, null: false)
     field(:from, Hash.Address)
     field(:to, Hash.Address)
     field(:l1_transaction_hash, Hash.Full)
     field(:l1_timestamp, :utc_datetime_usec)
-    field(:l1_block_number, :integer)
+    field(:l1_block_number, :integer) :: Block.block_number()
 
     timestamps()
   end

@@ -43,6 +43,8 @@ pool_size =
     else: ConfigHelper.parse_integer_env_var("POOL_SIZE", 40)
 queue_target = ConfigHelper.parse_integer_env_var("DATABASE_QUEUE_TARGET", 50)
 
+queue_target = ConfigHelper.parse_integer_env_var("DATABASE_QUEUE_TARGET", 50)
+
 # Configure your database
 config :explorer, Explorer.Repo,
   database: database,
@@ -105,6 +107,22 @@ config :explorer, Explorer.Repo.Suave,
   database: database,
   hostname: hostname,
   url: ExplorerConfigHelper.get_suave_db_url(),
+  pool_size: 1
+
+# Configure Shibarium database
+config :explorer, Explorer.Repo.Shibarium,
+  database: database,
+  hostname: hostname,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: 1
+
+# Configures BridgedTokens database
+config :explorer, Explorer.Repo.BridgedTokens,
+  database: database,
+  hostname: hostname,
+  url: System.get_env("DATABASE_URL"),
+  # actually this repo is not started, and its pool size remains unused.
+  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
   pool_size: 1
 
 variant = Variant.get()

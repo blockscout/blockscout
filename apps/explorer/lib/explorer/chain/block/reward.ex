@@ -43,26 +43,18 @@ defmodule Explorer.Chain.Block.Reward do
   * `:block_hash` - Hash of the validated block
   * `:reward` - Total block reward
   """
-  @type t :: %__MODULE__{
-          address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-          address_hash: Hash.Address.t(),
-          address_type: AddressType.t(),
-          block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
-          block_hash: Hash.Full.t(),
-          reward: Wei.t()
-        }
-
   @primary_key false
-  schema "block_rewards" do
-    field(:address_type, AddressType)
-    field(:reward, Wei)
+  typed_schema "block_rewards" do
+    field(:address_type, AddressType, null: false)
+    field(:reward, Wei, null: false)
 
     belongs_to(
       :address,
       Address,
       foreign_key: :address_hash,
       references: :hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
     )
 
     belongs_to(
@@ -70,7 +62,8 @@ defmodule Explorer.Chain.Block.Reward do
       Block,
       foreign_key: :block_hash,
       references: :hash,
-      type: Hash.Full
+      type: Hash.Full,
+      null: false
     )
 
     timestamps()
@@ -143,7 +136,7 @@ defmodule Explorer.Chain.Block.Reward do
     end
   end
 
-  defp is_validator(mining_key) do
+  defp validator?(mining_key) do
     validators_contract_address =
       Application.get_env(:explorer, Explorer.Chain.Block.Reward, %{})[:validators_contract_address]
 
@@ -191,7 +184,7 @@ defmodule Explorer.Chain.Block.Reward do
   end
 
   def get_validator_payout_key_by_mining(mining_key) do
-    is_validator = is_validator(mining_key)
+    is_validator = validator?(mining_key)
 
     if is_validator do
       keys_manager_contract_address =

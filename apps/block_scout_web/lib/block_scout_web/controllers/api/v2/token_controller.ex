@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Token, Token.Instance}
+  alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
   alias Indexer.Fetcher.TokenTotalSupplyOnDemand
 
   import BlockScoutWeb.Chain,
@@ -18,7 +18,14 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   import BlockScoutWeb.PagingHelper,
-    only: [delete_parameters_from_next_page_params: 1, token_transfers_types_options: 1, tokens_sorting: 1]
+    only: [
+      chain_ids_filter_options: 1,
+      delete_parameters_from_next_page_params: 1,
+      token_transfers_types_options: 1,
+      tokens_sorting: 1
+    ]
+
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -30,6 +37,27 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
       TokenTotalSupplyOnDemand.trigger_fetch(address_hash)
 
+      conn
+      |> token_response(token, address_hash)
+    end
+  end
+
+  if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+    defp token_response(conn, token, address_hash) do
+      if token.bridged do
+        bridged_token = Repo.get_by(BridgedToken, home_token_contract_address_hash: address_hash)
+
+        conn
+        |> put_status(200)
+        |> render(:bridged_token, %{token: {token, bridged_token}})
+      else
+        conn
+        |> put_status(200)
+        |> render(:token, %{token: token})
+      end
+    end
+  else
+    defp token_response(conn, token, _address_hash) do
       conn
       |> put_status(200)
       |> render(:token, %{token: token})
@@ -67,7 +95,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:token_transfers, %{token_transfers: token_transfers, next_page_params: next_page_params})
+      |> render(:token_transfers, %{
+        token_transfers: token_transfers |> maybe_preload_ens(),
+        next_page_params: next_page_params
+      })
     end
   end
 
@@ -84,7 +115,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
       conn
       |> put_status(200)
-      |> render(:token_balances, %{token_balances: token_balances, next_page_params: next_page_params, token: token})
+      |> render(:token_balances, %{
+        token_balances: token_balances |> maybe_preload_ens(),
+        next_page_params: next_page_params,
+        token: token
+      })
     end
   end
 
@@ -95,7 +130,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
-         {:not_found, false} <- {:not_found, Chain.is_erc_20_token?(token)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
          {:format, {:ok, holder_address_hash}} <- {:format, Chain.string_to_address_hash(holder_address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(holder_address_hash_string, params) do
       holder_address = Repo.get_by(Address, hash: holder_address_hash)
@@ -132,6 +167,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       results_plus_one =
         Chain.address_to_unique_tokens(
           token.contract_address_hash,
+          token,
           Keyword.merge(unique_tokens_paging_options(params), @api_true)
         )
 
@@ -150,12 +186,24 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
-         {:not_found, false} <- {:not_found, Chain.is_erc_20_token?(token)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_str)} do
       token_instance =
         case Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, address_hash, @api_true) do
-          {:ok, token_instance} -> token_instance |> Chain.put_owner_to_token_instance(@api_true)
-          {:error, :not_found} -> %{token_id: token_id, metadata: nil, owner: nil}
+          {:ok, token_instance} ->
+            token_instance
+            |> Chain.select_repo(@api_true).preload(:owner)
+            |> Chain.put_owner_to_token_instance(token, @api_true)
+
+          {:error, :not_found} ->
+            %Instance{
+              token_id: Decimal.new(token_id),
+              metadata: nil,
+              owner: nil,
+              token_contract_address_hash: address_hash
+            }
+            |> Instance.put_is_unique(token, @api_true)
+            |> Chain.put_owner_to_token_instance(token, @api_true)
         end
 
       conn
@@ -171,7 +219,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
-         {:not_found, false} <- {:not_found, Chain.is_erc_20_token?(token)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_str)} do
       paging_options = paging_options(params)
 
@@ -190,7 +238,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:token_transfers, %{token_transfers: token_transfers, next_page_params: next_page_params})
+      |> render(:token_transfers, %{
+        token_transfers: token_transfers |> maybe_preload_ens(),
+        next_page_params: next_page_params
+      })
     end
   end
 
@@ -198,7 +249,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
-         {:not_found, false} <- {:not_found, Chain.is_erc_20_token?(token)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_str)} do
       paging_options = paging_options(params)
 
@@ -217,7 +268,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
       conn
       |> put_status(200)
-      |> render(:token_balances, %{token_balances: token_holders, next_page_params: next_page_params, token: token})
+      |> render(:token_balances, %{
+        token_balances: token_holders |> maybe_preload_ens(),
+        next_page_params: next_page_params,
+        token: token
+      })
     end
   end
 
@@ -228,7 +283,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
-         {:not_found, false} <- {:not_found, Chain.is_erc_20_token?(token)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_str)} do
       conn
       |> put_status(200)
@@ -255,6 +310,25 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     conn
     |> put_status(200)
     |> render(:tokens, %{tokens: tokens, next_page_params: next_page_params})
+  end
+
+  def bridged_tokens_list(conn, params) do
+    filter = params["q"]
+
+    options =
+      params
+      |> paging_options()
+      |> Keyword.merge(chain_ids_filter_options(params))
+      |> Keyword.merge(tokens_sorting(params))
+      |> Keyword.merge(@api_true)
+
+    {tokens, next_page} = filter |> BridgedToken.list_top_bridged_tokens(options) |> split_list_by_page()
+
+    next_page_params = next_page |> next_page_params(tokens, delete_parameters_from_next_page_params(params))
+
+    conn
+    |> put_status(200)
+    |> render(:bridged_tokens, %{tokens: tokens, next_page_params: next_page_params})
   end
 
   defp put_owner(token_instances, holder_address),

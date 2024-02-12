@@ -11,7 +11,7 @@ defmodule Explorer.Mixfile do
       deps_path: "../../deps",
       description: "Read-access to indexed block chain data.",
       dialyzer: [
-        plt_add_deps: :transitive,
+        plt_add_deps: :app_tree,
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
@@ -24,7 +24,7 @@ defmodule Explorer.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "5.3.3",
+      version: "6.1.0",
       xref: [exclude: [BlockScoutWeb.WebRouter.Helpers]]
     ]
   end
@@ -61,7 +61,7 @@ defmodule Explorer.Mixfile do
       {:mime, "~> 2.0"},
       {:bcrypt_elixir, "~> 3.0"},
       # benchmark optimizations
-      {:benchee, "~> 1.2.0", only: :test},
+      {:benchee, "~> 1.3.0", only: :test},
       # CSV output for benchee
       {:benchee_csv, "~> 1.0.0", only: :test},
       {:bypass, "~> 2.1", only: :test},
@@ -118,7 +118,8 @@ defmodule Explorer.Mixfile do
       {:cloak_ecto, "~> 1.2.0"},
       {:redix, "~> 1.1"},
       {:hammer_backend_redis, "~> 6.1"},
-      {:logger_json, "~> 5.1"}
+      {:logger_json, "~> 5.1"},
+      {:typed_ecto_schema, "~> 0.4.1", runtime: false}
     ]
   end
 

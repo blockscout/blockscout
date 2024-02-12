@@ -43,6 +43,8 @@ defmodule Indexer.Block.Fetcher do
 
   alias Indexer.Transform.PolygonEdge.{DepositExecutes, Withdrawals}
 
+  alias Indexer.Transform.Shibarium.Bridge, as: ShibariumBridge
+
   alias Indexer.Transform.Blocks, as: TransformBlocks
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
@@ -150,6 +152,11 @@ defmodule Indexer.Block.Fetcher do
              do: DepositExecutes.parse(logs),
              else: []
            ),
+         shibarium_bridge_operations =
+           if(callback_module == Indexer.Block.Realtime.Fetcher,
+             do: ShibariumBridge.parse(blocks, transactions_with_receipts, logs),
+             else: []
+           ),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
          addresses =
@@ -158,6 +165,7 @@ defmodule Indexer.Block.Fetcher do
              blocks: blocks,
              logs: logs,
              mint_transfers: mint_transfers,
+             shibarium_bridge_operations: shibarium_bridge_operations,
              token_transfers: token_transfers,
              transactions: transactions_with_receipts,
              transaction_actions: transaction_actions,
@@ -190,18 +198,24 @@ defmodule Indexer.Block.Fetcher do
            block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
            logs: %{params: logs},
            token_transfers: %{params: token_transfers},
-           tokens: %{on_conflict: :nothing, params: tokens},
+           tokens: %{params: tokens},
            transactions: %{params: transactions_with_receipts},
            withdrawals: %{params: withdrawals_params},
            token_instances: %{params: token_instances}
          },
          import_options =
-           (if Application.get_env(:explorer, :chain_type) == "polygon_edge" do
-              basic_import_options
-              |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
-              |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
-            else
-              basic_import_options
+           (case Application.get_env(:explorer, :chain_type) do
+              "polygon_edge" ->
+                basic_import_options
+                |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
+                |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
+
+              "shibarium" ->
+                basic_import_options
+                |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
+
+              _ ->
+                basic_import_options
             end),
          {:ok, inserted} <-
            __MODULE__.import(
@@ -407,15 +421,15 @@ defmodule Indexer.Block.Fetcher do
 
   def fetch_beneficiaries_manual(block, transactions) do
     block
-    |> Chain.block_reward_by_parts(transactions)
+    |> Block.block_reward_by_parts(transactions)
     |> reward_parts_to_beneficiaries()
   end
 
   defp reward_parts_to_beneficiaries(reward_parts) do
     reward =
       reward_parts.static_reward
-      |> Wei.sum(reward_parts.txn_fees)
-      |> Wei.sub(reward_parts.burned_fees)
+      |> Wei.sum(reward_parts.transaction_fees)
+      |> Wei.sub(reward_parts.burnt_fees)
       |> Wei.sum(reward_parts.uncle_reward)
 
     MapSet.new([

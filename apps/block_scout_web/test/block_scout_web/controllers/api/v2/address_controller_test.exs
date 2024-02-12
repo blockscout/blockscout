@@ -26,9 +26,17 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
 
+  @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
+  @instances_amount_in_collection 9
+
   setup :set_mox_global
 
   setup :verify_on_exit!
+
+  defp topic(topic_hex_string) do
+    {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
+    topic
+  end
 
   describe "/addresses/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -76,7 +84,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "has_tokens" => false,
         "has_token_transfers" => false,
         "watchlist_address_id" => nil,
-        "has_beacon_chain_withdrawals" => false
+        "has_beacon_chain_withdrawals" => false,
+        "ens_domain_name" => nil
       }
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
@@ -442,6 +451,51 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, txs)
+    end
+
+    test "backward compatible with legacy paging params", %{conn: conn} do
+      address = insert(:address)
+      block = insert(:block)
+
+      txs = insert_list(51, :transaction, from_address: address) |> with_block(block)
+
+      [_, tx_before_last | _] = txs
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"block_number" => to_string(block.number), "index" => to_string(tx_before_last.index)}
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, txs)
+    end
+
+    test "backward compatible with legacy paging params for pending transactions", %{conn: conn} do
+      address = insert(:address)
+
+      txs = insert_list(51, :transaction, from_address: address)
+
+      [_, tx_before_last | _] = txs
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
+      assert response = json_response(request, 200)
+
+      request_2nd_page_pending =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"inserted_at" => to_string(tx_before_last.inserted_at), "hash" => to_string(tx_before_last.hash)}
+        )
+
+      assert response_2nd_page_pending = json_response(request_2nd_page_pending, 200)
+
+      check_paginated_response(response, response_2nd_page_pending, txs)
     end
 
     test "can order and paginate by fee ascending", %{conn: conn} do
@@ -1713,10 +1767,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block: tx.block,
           block_number: tx.block_number,
           address: address,
-          first_topic: "0x123456789123456789"
+          first_topic: topic(@first_topic_hex_string_1)
         )
 
-      request = get(conn, "/api/v2/addresses/#{address.hash}/logs?topic=0x123456789123456789")
+      request = get(conn, "/api/v2/addresses/#{address.hash}/logs?topic=#{@first_topic_hex_string_1}")
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 1
       assert response["next_page_params"] == nil
@@ -2742,10 +2796,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     token_name = token.name
     amount = to_string(ctb.distinct_token_instances_count || ctb.value)
 
-    assert Enum.count(json["token_instances"]) == 15
+    assert Enum.count(json["token_instances"]) == @instances_amount_in_collection
 
     token_instances
-    |> Enum.take(15)
+    |> Enum.take(@instances_amount_in_collection)
     |> Enum.with_index()
     |> Enum.each(fn {instance, index} ->
       compare_token_instance_in_collection(instance, Enum.at(json["token_instances"], index))
@@ -2763,10 +2817,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     token_name = token.name
     amount = to_string(amount)
 
-    assert Enum.count(json["token_instances"]) == 15
+    assert Enum.count(json["token_instances"]) == @instances_amount_in_collection
 
     token_instances
-    |> Enum.take(15)
+    |> Enum.take(@instances_amount_in_collection)
     |> Enum.with_index()
     |> Enum.each(fn {instance, index} ->
       compare_token_instance_in_collection(instance, Enum.at(json["token_instances"], index))

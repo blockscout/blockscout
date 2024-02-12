@@ -25,50 +25,13 @@ defmodule Explorer.Chain.TokenTransfer do
   use Explorer.Schema
 
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2, limit: 2, where: 3, join: 5, order_by: 3, preload: 3]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, Hash, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, Log, TokenTransfer, Transaction}
   alias Explorer.Chain.Token.Instance
   alias Explorer.{PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
-
-  @typedoc """
-  * `:amount` - The token transferred amount
-  * `:block_hash` - hash of the block
-  * `:block_number` - The block number that the transfer took place.
-  * `:from_address` - The `t:Explorer.Chain.Address.t/0` that sent the tokens
-  * `:from_address_hash` - Address hash foreign key
-  * `:to_address` - The `t:Explorer.Chain.Address.t/0` that received the tokens
-  * `:to_address_hash` - Address hash foreign key
-  * `:token_contract_address` - The `t:Explorer.Chain.Address.t/0` of the token's contract.
-  * `:token_contract_address_hash` - Address hash foreign key
-  * `:token_id` - ID of the token (applicable to ERC-721 tokens)
-  * `:transaction` - The `t:Explorer.Chain.Transaction.t/0` ledger
-  * `:transaction_hash` - Transaction foreign key
-  * `:log_index` - Index of the corresponding `t:Explorer.Chain.Log.t/0` in the block.
-  * `:amounts` - Tokens transferred amounts in case of batched transfer in ERC-1155
-  * `:token_ids` - IDs of the tokens (applicable to ERC-1155 tokens)
-  """
-  @type t :: %TokenTransfer{
-          amount: Decimal.t() | nil,
-          block_number: non_neg_integer() | nil,
-          block_hash: Hash.Full.t(),
-          from_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          from_address_hash: Hash.Address.t(),
-          to_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          to_address_hash: Hash.Address.t(),
-          token_contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          token_contract_address_hash: Hash.Address.t(),
-          token_id: non_neg_integer() | nil,
-          transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
-          transaction_hash: Hash.Full.t(),
-          log_index: non_neg_integer(),
-          amounts: [Decimal.t()] | nil,
-          token_ids: [non_neg_integer()] | nil,
-          index_in_batch: non_neg_integer() | nil
-        }
 
   @typep paging_options :: {:paging_options, PagingOptions.t()}
   @typep api? :: {:api?, true | false}
@@ -81,39 +44,63 @@ defmodule Explorer.Chain.TokenTransfer do
 
   @transfer_function_signature "0xa9059cbb"
 
+  @typedoc """
+  * `:amount` - The token transferred amount
+  * `:block_hash` - hash of the block
+  * `:block_number` - The block number that the transfer took place.
+  * `:from_address` - The `t:Explorer.Chain.Address.t/0` that sent the tokens
+  * `:from_address_hash` - Address hash foreign key
+  * `:to_address` - The `t:Explorer.Chain.Address.t/0` that received the tokens
+  * `:to_address_hash` - Address hash foreign key
+  * `:token_contract_address` - The `t:Explorer.Chain.Address.t/0` of the token's contract.
+  * `:token_contract_address_hash` - Address hash foreign key
+  * `:transaction` - The `t:Explorer.Chain.Transaction.t/0` ledger
+  * `:transaction_hash` - Transaction foreign key
+  * `:log_index` - Index of the corresponding `t:Explorer.Chain.Log.t/0` in the block.
+  * `:amounts` - Tokens transferred amounts in case of batched transfer in ERC-1155
+  * `:token_ids` - IDs of the tokens (applicable to ERC-1155 tokens)
+  """
   @primary_key false
-  schema "token_transfers" do
+  typed_schema "token_transfers" do
     field(:amount, :decimal)
-    field(:block_number, :integer)
-    field(:log_index, :integer, primary_key: true)
-    field(:token_id, :decimal)
+    field(:block_number, :integer) :: Block.block_number()
+    field(:log_index, :integer, primary_key: true, null: false)
     field(:amounts, {:array, :decimal})
     field(:token_ids, {:array, :decimal})
     field(:index_in_batch, :integer, virtual: true)
 
-    belongs_to(:from_address, Address, foreign_key: :from_address_hash, references: :hash, type: Hash.Address)
-    belongs_to(:to_address, Address, foreign_key: :to_address_hash, references: :hash, type: Hash.Address)
+    belongs_to(:from_address, Address,
+      foreign_key: :from_address_hash,
+      references: :hash,
+      type: Hash.Address,
+      null: false
+    )
+
+    belongs_to(:to_address, Address, foreign_key: :to_address_hash, references: :hash, type: Hash.Address, null: false)
 
     belongs_to(
       :token_contract_address,
       Address,
       foreign_key: :token_contract_address_hash,
       references: :hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
     )
 
     belongs_to(:transaction, Transaction,
       foreign_key: :transaction_hash,
       primary_key: true,
       references: :hash,
-      type: Hash.Full
+      type: Hash.Full,
+      null: false
     )
 
     belongs_to(:block, Block,
       foreign_key: :block_hash,
       primary_key: true,
       references: :hash,
-      type: Hash.Full
+      type: Hash.Full,
+      null: false
     )
 
     has_many(
@@ -129,7 +116,7 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash block_hash)a
-  @optional_attrs ~w(amount token_id amounts token_ids)a
+  @optional_attrs ~w(amount amounts token_ids)a
 
   @doc false
   def changeset(%TokenTransfer{} = struct, params \\ %{}) do
@@ -161,12 +148,13 @@ defmodule Explorer.Chain.TokenTransfer do
   @spec fetch_token_transfers_from_token_hash(Hash.t(), [paging_options | api?]) :: []
   def fetch_token_transfers_from_token_hash(token_address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
 
     query =
       from(
         tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number),
-        preload: [{:transaction, :block}, :token, :from_address, :to_address],
+        preload: ^preloads,
         order_by: [desc: tt.block_number, desc: tt.log_index]
       )
 
@@ -179,6 +167,7 @@ defmodule Explorer.Chain.TokenTransfer do
   @spec fetch_token_transfers_from_token_hash_and_token_id(Hash.t(), non_neg_integer(), [paging_options | api?]) :: []
   def fetch_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
 
     query =
       from(
@@ -186,7 +175,7 @@ defmodule Explorer.Chain.TokenTransfer do
         where: tt.token_contract_address_hash == ^token_address_hash,
         where: fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)),
         where: not is_nil(tt.block_number),
-        preload: [{:transaction, :block}, :token, :from_address, :to_address],
+        preload: ^preloads,
         order_by: [desc: tt.block_number, desc: tt.log_index]
       )
 
@@ -361,11 +350,53 @@ defmodule Explorer.Chain.TokenTransfer do
 
   def filter_by_type(query, _), do: query
 
+  @doc """
+    Returns ecto query to fetch consensus token transfers
+  """
+  @spec only_consensus_transfers_query() :: Ecto.Query.t()
   def only_consensus_transfers_query do
     from(token_transfer in __MODULE__,
-      inner_join: block in Block,
-      on: token_transfer.block_hash == block.hash,
+      inner_join: block in assoc(token_transfer, :block),
+      as: :block,
       where: block.consensus == true
     )
+  end
+
+  @doc """
+  Returns a list of block numbers token transfer `t:Log.t/0`s that don't have an
+  associated `t:TokenTransfer.t/0` record.
+  """
+  @spec uncataloged_token_transfer_block_numbers :: {:ok, [non_neg_integer()]}
+  def uncataloged_token_transfer_block_numbers do
+    query =
+      from(l in Log,
+        as: :log,
+        where:
+          l.first_topic == ^@constant or
+            l.first_topic == ^@erc1155_single_transfer_signature or
+            l.first_topic == ^@erc1155_batch_transfer_signature,
+        where:
+          not exists(
+            from(tf in TokenTransfer,
+              where: tf.transaction_hash == parent_as(:log).transaction_hash,
+              where: tf.log_index == parent_as(:log).index
+            )
+          ),
+        select: l.block_number,
+        distinct: l.block_number
+      )
+
+    Repo.stream_reduce(query, [], &[&1 | &2])
+  end
+
+  @doc """
+    Returns ecto query to fetch consensus token transfers with ERC-721 token type
+  """
+  @spec erc_721_token_transfers_query() :: Ecto.Query.t()
+  def erc_721_token_transfers_query do
+    only_consensus_transfers_query()
+    |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+    |> where([tt, token: token], token.type == "ERC-721")
+    |> preload([tt, token: token], [{:token, token}])
   end
 end

@@ -4,14 +4,10 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.NFTHelper
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain
-  alias Explorer.Chain.Address
-  alias Explorer.Chain.Address.CurrentTokenBalance
+  alias Explorer.Chain.{Address, BridgedToken}
   alias Explorer.Chain.Token.Instance
 
-  @api_true [api?: true]
-
-  def render("token.json", %{token: nil, contract_address_hash: contract_address_hash}) do
+  def render("token.json", %{token: nil = token, contract_address_hash: contract_address_hash}) do
     %{
       "address" => Address.checksum(contract_address_hash),
       "symbol" => nil,
@@ -24,6 +20,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "icon_url" => nil,
       "circulating_market_cap" => nil
     }
+    |> maybe_append_bridged_info(token)
   end
 
   def render("token.json", %{token: nil}) do
@@ -43,6 +40,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "icon_url" => token.icon_url,
       "circulating_market_cap" => token.circulating_market_cap
     }
+    |> maybe_append_bridged_info(token)
   end
 
   def render("token_balances.json", %{
@@ -75,6 +73,20 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     }
   end
 
+  def render("bridged_tokens.json", %{tokens: tokens, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(tokens, &render("bridged_token.json", %{token: &1})), "next_page_params" => next_page_params}
+  end
+
+  def render("bridged_token.json", %{token: {token, bridged_token}}) do
+    "token.json"
+    |> render(%{token: token})
+    |> Map.merge(%{
+      foreign_address: Address.checksum(bridged_token.foreign_token_contract_address_hash),
+      bridge_type: bridged_token.type,
+      origin_chain_id: bridged_token.foreign_chain_id
+    })
+  end
+
   def exchange_rate(%{fiat_value: fiat_value}) when not is_nil(fiat_value), do: to_string(fiat_value)
   def exchange_rate(_), do: nil
 
@@ -90,18 +102,16 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   @doc """
     Internal json rendering function
   """
-  def prepare_token_instance(instance, token, need_uniqueness_and_owner? \\ true) do
-    is_unique = is_unique?(need_uniqueness_and_owner?, instance, token)
-
+  def prepare_token_instance(instance, token) do
     %{
       "id" => instance.token_id,
       "metadata" => instance.metadata,
-      "owner" => token_instance_owner(is_unique, instance),
+      "owner" => token_instance_owner(instance.is_unique, instance),
       "token" => render("token.json", %{token: token}),
       "external_app_url" => NFTHelper.external_url(instance),
       "animation_url" => instance.metadata && NFTHelper.retrieve_image(instance.metadata["animation_url"]),
       "image_url" => instance.metadata && NFTHelper.get_media_src(instance.metadata, false),
-      "is_unique" => is_unique
+      "is_unique" => instance.is_unique
     }
   end
 
@@ -117,30 +127,15 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   defp token_instance_owner(_is_unique, instance),
     do: instance.owner && Helper.address_with_info(nil, instance.owner, instance.owner.hash, false)
 
-  defp is_unique?(false, _instance, _token), do: nil
-
-  defp is_unique?(
-         not_ignore?,
-         %Instance{current_token_balance: %CurrentTokenBalance{value: %Decimal{} = value}} = instance,
-         token
-       ) do
-    if Decimal.compare(value, 1) == :gt do
-      false
-    else
-      is_unique?(not_ignore?, %Instance{instance | current_token_balance: nil}, token)
-    end
-  end
-
-  defp is_unique?(_not_ignore?, %Instance{current_token_balance: %CurrentTokenBalance{value: value}}, _token)
-       when value > 1,
-       do: false
-
-  defp is_unique?(_, instance, token),
-    do:
-      not (token.type == "ERC-1155") or
-        Chain.token_id_1155_is_unique?(token.contract_address_hash, instance.token_id, @api_true)
-
   defp prepare_holders_count(nil), do: nil
   defp prepare_holders_count(count) when count < 0, do: prepare_holders_count(0)
   defp prepare_holders_count(count), do: to_string(count)
+
+  defp maybe_append_bridged_info(map, token) do
+    if BridgedToken.enabled?() do
+      (token && Map.put(map, "is_bridged", token.bridged || false)) || map
+    else
+      map
+    end
+  end
 end

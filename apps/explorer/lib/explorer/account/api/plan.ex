@@ -4,7 +4,7 @@ defmodule Explorer.Account.Api.Plan do
   """
   use Explorer.Schema
 
-  schema "account_api_plans" do
+  typed_schema "account_api_plans" do
     field(:name, :string)
     field(:max_req_per_second, :integer)
 

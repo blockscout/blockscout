@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Token.Instance do
   use Explorer.Schema
 
   alias Explorer.{Chain, Helper}
-  alias Explorer.Chain.{Address, Block, Hash, Token, TokenTransfer}
+  alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Token.Instance
   alias Explorer.PagingOptions
@@ -17,26 +17,15 @@ defmodule Explorer.Chain.Token.Instance do
   * `metadata` - Token instance metadata
   * `error` - error fetching token instance
   """
-
-  @type t :: %Instance{
-          token_id: non_neg_integer(),
-          token_contract_address_hash: Hash.Address.t(),
-          metadata: map() | nil,
-          error: String.t(),
-          owner_address_hash: Hash.Address.t(),
-          owner_updated_at_block: Block.block_number(),
-          owner_updated_at_log_index: non_neg_integer(),
-          current_token_balance: any()
-        }
-
   @primary_key false
-  schema "token_instances" do
-    field(:token_id, :decimal, primary_key: true)
+  typed_schema "token_instances" do
+    field(:token_id, :decimal, primary_key: true, null: false)
     field(:metadata, :map)
     field(:error, :string)
     field(:owner_updated_at_block, :integer)
     field(:owner_updated_at_log_index, :integer)
     field(:current_token_balance, :any, virtual: true)
+    field(:is_unique, :boolean, virtual: true)
 
     belongs_to(:owner, Address, foreign_key: :owner_address_hash, references: :hash, type: Hash.Address)
 
@@ -46,7 +35,8 @@ defmodule Explorer.Chain.Token.Instance do
       foreign_key: :token_contract_address_hash,
       references: :contract_address_hash,
       type: Hash.Address,
-      primary_key: true
+      primary_key: true,
+      null: false
     )
 
     timestamps()
@@ -95,19 +85,16 @@ defmodule Explorer.Chain.Token.Instance do
   def page_token_instance(query, _), do: query
 
   def owner_query(%Instance{token_contract_address_hash: token_contract_address_hash, token_id: token_id}) do
-    from(
-      tt in TokenTransfer,
-      join: to_address in assoc(tt, :to_address),
-      where:
-        tt.token_contract_address_hash == ^token_contract_address_hash and
-          fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^token_id),
-      order_by: [desc: tt.block_number],
-      limit: 1,
-      select: to_address
+    CurrentTokenBalance
+    |> where(
+      [ctb],
+      ctb.token_contract_address_hash == ^token_contract_address_hash and ctb.token_id == ^token_id and ctb.value > 0
     )
+    |> limit(1)
+    |> select([ctb], ctb.address_hash)
   end
 
-  @spec token_instance_query(non_neg_integer(), Hash.Address.t()) :: Ecto.Query.t()
+  @spec token_instance_query(Decimal.t() | non_neg_integer(), Hash.Address.t()) :: Ecto.Query.t()
   def token_instance_query(token_id, token_contract_address),
     do: from(i in Instance, where: i.token_contract_address_hash == ^token_contract_address and i.token_id == ^token_id)
 
@@ -224,7 +211,7 @@ defmodule Explorer.Chain.Token.Instance do
     %{"token_contract_address_hash" => token_contract_address_hash, "token_id" => token_id, "token_type" => "ERC-721"}
   end
 
-  @preloaded_nfts_limit 15
+  @preloaded_nfts_limit 9
 
   @spec nft_collections(binary() | Hash.Address.t(), keyword) :: list
   def nft_collections(address_hash, options \\ [])
@@ -393,6 +380,7 @@ defmodule Explorer.Chain.Token.Instance do
     |> limit(^paging_options.page_size)
     |> page_token_instance(paging_options)
     |> Chain.select_repo(options).all()
+    |> Enum.map(&put_is_unique(&1, token, options))
   end
 
   def token_instances_by_holder_address_hash(%Token{} = token, holder_address_hash, options) do
@@ -412,5 +400,64 @@ defmodule Explorer.Chain.Token.Instance do
     |> page_token_instance(paging_options)
     |> select_merge([ctb: ctb], %{current_token_balance: ctb})
     |> Chain.select_repo(options).all()
+    |> Enum.map(&put_is_unique(&1, token, options))
   end
+
+  @doc """
+    Finds token instances (pairs of contract_address_hash and token_id) which was met in token transfers but has no corresponding entry in token_instances table
+  """
+  @spec not_inserted_token_instances_query(integer()) :: Ecto.Query.t()
+  def not_inserted_token_instances_query(limit) do
+    token_transfers_query =
+      TokenTransfer
+      |> where([token_transfer], not is_nil(token_transfer.token_ids) and token_transfer.token_ids != ^[])
+      |> select([token_transfer], %{
+        token_contract_address_hash: token_transfer.token_contract_address_hash,
+        token_id: fragment("unnest(?)", token_transfer.token_ids)
+      })
+
+    token_transfers_query
+    |> subquery()
+    |> join(:left, [token_transfer], token_instance in __MODULE__,
+      on:
+        token_instance.token_contract_address_hash == token_transfer.token_contract_address_hash and
+          token_instance.token_id == token_transfer.token_id
+    )
+    |> where([token_transfer, token_instance], is_nil(token_instance.token_id))
+    |> select([token_transfer, token_instance], %{
+      contract_address_hash: token_transfer.token_contract_address_hash,
+      token_id: token_transfer.token_id
+    })
+    |> limit(^limit)
+  end
+
+  @doc """
+    Puts is_unique field in token instance. Returns updated token instance
+    is_unique is true for ERC-721 always and for ERC-1155 only if token_id is unique
+  """
+  @spec put_is_unique(Instance.t(), Token.t(), Keyword.t()) :: Instance.t()
+  def put_is_unique(instance, token, options) do
+    %__MODULE__{instance | is_unique: unique?(instance, token, options)}
+  end
+
+  defp unique?(
+         %Instance{current_token_balance: %CurrentTokenBalance{value: %Decimal{} = value}} = instance,
+         token,
+         options
+       ) do
+    if Decimal.compare(value, 1) == :gt do
+      false
+    else
+      unique?(%Instance{instance | current_token_balance: nil}, token, options)
+    end
+  end
+
+  defp unique?(%Instance{current_token_balance: %CurrentTokenBalance{value: value}}, _token, _options)
+       when value > 1,
+       do: false
+
+  defp unique?(instance, token, options),
+    do:
+      not (token.type == "ERC-1155") or
+        Chain.token_id_1155_is_unique?(token.contract_address_hash, instance.token_id, options)
 end

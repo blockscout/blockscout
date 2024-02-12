@@ -1,42 +1,198 @@
+defmodule Explorer.Chain.Transaction.Schema do
+  @moduledoc false
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    Data,
+    Hash,
+    InternalTransaction,
+    Log,
+    TokenTransfer,
+    TransactionAction,
+    Wei
+  }
+
+  alias Explorer.Chain.Transaction.{Fork, Status}
+  alias Explorer.Chain.Zkevm.BatchTransaction
+
+  @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
+                        "suave" ->
+                          elem(
+                            quote do
+                              belongs_to(
+                                :execution_node,
+                                Address,
+                                foreign_key: :execution_node_hash,
+                                references: :hash,
+                                type: Hash.Address
+                              )
+
+                              field(:wrapped_type, :integer)
+                              field(:wrapped_nonce, :integer)
+                              field(:wrapped_gas, :decimal)
+                              field(:wrapped_gas_price, Wei)
+                              field(:wrapped_max_priority_fee_per_gas, Wei)
+                              field(:wrapped_max_fee_per_gas, Wei)
+                              field(:wrapped_value, Wei)
+                              field(:wrapped_input, Data)
+                              field(:wrapped_v, :decimal)
+                              field(:wrapped_r, :decimal)
+                              field(:wrapped_s, :decimal)
+                              field(:wrapped_hash, Hash.Full)
+
+                              belongs_to(
+                                :wrapped_to_address,
+                                Address,
+                                foreign_key: :wrapped_to_address_hash,
+                                references: :hash,
+                                type: Hash.Address
+                              )
+                            end,
+                            2
+                          )
+
+                        "polygon_zkevm" ->
+                          elem(
+                            quote do
+                              has_one(:zkevm_batch_transaction, BatchTransaction, foreign_key: :hash, references: :hash)
+                              has_one(:zkevm_batch, through: [:zkevm_batch_transaction, :batch], references: :hash)
+
+                              has_one(:zkevm_sequence_transaction,
+                                through: [:zkevm_batch, :sequence_transaction],
+                                references: :hash
+                              )
+
+                              has_one(:zkevm_verify_transaction,
+                                through: [:zkevm_batch, :verify_transaction],
+                                references: :hash
+                              )
+                            end,
+                            2
+                          )
+
+                        _ ->
+                          []
+                      end)
+
+  defmacro generate do
+    quote do
+      @primary_key false
+      typed_schema "transactions" do
+        field(:hash, Hash.Full, primary_key: true)
+        field(:block_number, :integer)
+        field(:block_consensus, :boolean)
+        field(:block_timestamp, :utc_datetime_usec)
+        field(:cumulative_gas_used, :decimal)
+        field(:earliest_processing_start, :utc_datetime_usec)
+        field(:error, :string)
+        field(:gas, :decimal)
+        field(:gas_price, Wei)
+        field(:gas_used, :decimal)
+        field(:index, :integer)
+        field(:created_contract_code_indexed_at, :utc_datetime_usec)
+        field(:input, Data)
+        field(:nonce, :integer) :: non_neg_integer() | nil
+        field(:r, :decimal)
+        field(:s, :decimal)
+        field(:status, Status)
+        field(:v, :decimal)
+        field(:value, Wei)
+        field(:revert_reason, :string)
+        field(:max_priority_fee_per_gas, Wei)
+        field(:max_fee_per_gas, Wei)
+        field(:type, :integer)
+        field(:has_error_in_internal_txs, :boolean)
+        field(:has_token_transfers, :boolean, virtual: true)
+
+        # stability virtual fields
+        field(:transaction_fee_log, :any, virtual: true)
+        field(:transaction_fee_token, :any, virtual: true)
+
+        # A transient field for deriving old block hash during transaction upserts.
+        # Used to force refetch of a block in case a transaction is re-collated
+        # in a different block. See: https://github.com/blockscout/blockscout/issues/1911
+        field(:old_block_hash, Hash.Full)
+
+        timestamps()
+
+        belongs_to(:block, Block, foreign_key: :block_hash, references: :hash, type: Hash.Full)
+        has_many(:forks, Fork, foreign_key: :hash, references: :hash)
+
+        belongs_to(
+          :from_address,
+          Address,
+          foreign_key: :from_address_hash,
+          references: :hash,
+          type: Hash.Address
+        )
+
+        has_many(:internal_transactions, InternalTransaction, foreign_key: :transaction_hash, references: :hash)
+        has_many(:logs, Log, foreign_key: :transaction_hash, references: :hash)
+
+        has_many(:token_transfers, TokenTransfer, foreign_key: :transaction_hash, references: :hash)
+
+        has_many(:transaction_actions, TransactionAction,
+          foreign_key: :hash,
+          preload_order: [asc: :log_index],
+          references: :hash
+        )
+
+        belongs_to(
+          :to_address,
+          Address,
+          foreign_key: :to_address_hash,
+          references: :hash,
+          type: Hash.Address
+        )
+
+        has_many(:uncles, through: [:forks, :uncle], references: :hash)
+
+        belongs_to(
+          :created_contract_address,
+          Address,
+          foreign_key: :created_contract_address_hash,
+          references: :hash,
+          type: Hash.Address
+        )
+
+        unquote_splicing(@chain_type_fields)
+      end
+    end
+  end
+end
+
 defmodule Explorer.Chain.Transaction do
   @moduledoc "Models a Web3 transaction."
 
   use Explorer.Schema
 
   require Logger
+  require Explorer.Chain.Transaction.Schema
 
   alias ABI.FunctionSelector
-
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
-
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, Helper, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
-    Address,
-    Block,
+    Block.Reward,
     ContractMethod,
     Data,
-    Gas,
+    DenormalizationHelper,
     Hash,
-    InternalTransaction,
     Log,
     SmartContract,
+    SmartContract.Proxy,
     Token,
     TokenTransfer,
     Transaction,
-    TransactionAction,
     Wei
   }
 
-  alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.SmartContract.Proxy
-  alias Explorer.Chain.Transaction.{Fork, Status}
-  alias Explorer.Chain.Zkevm.BatchTransaction
-  alias Explorer.{PagingOptions, SortingHelper}
   alias Explorer.SmartContract.SigProviderInterface
 
-  @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
+  @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number block_consensus block_timestamp created_contract_address_hash cumulative_gas_used earliest_processing_start
                      error gas_price gas_used index created_contract_code_indexed_at status to_address_hash revert_reason type has_error_in_internal_txs)a
 
   @suave_optional_attrs ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
@@ -84,6 +240,48 @@ defmodule Explorer.Chain.Transaction do
   """
   @type wei_per_gas :: Wei.t()
 
+  @derive {Poison.Encoder,
+           only: [
+             :block_number,
+             :block_timestamp,
+             :cumulative_gas_used,
+             :error,
+             :gas,
+             :gas_price,
+             :gas_used,
+             :index,
+             :created_contract_code_indexed_at,
+             :input,
+             :nonce,
+             :r,
+             :s,
+             :v,
+             :status,
+             :value,
+             :revert_reason
+           ]}
+
+  @derive {Jason.Encoder,
+           only: [
+             :block_number,
+             :block_timestamp,
+             :cumulative_gas_used,
+             :error,
+             :gas,
+             :gas_price,
+             :gas_used,
+             :index,
+             :created_contract_code_indexed_at,
+             :input,
+             :nonce,
+             :r,
+             :s,
+             :v,
+             :status,
+             :value,
+             :revert_reason
+           ]}
+
   @typedoc """
    * `block` - the block in which this transaction was mined/validated.  `nil` when transaction is pending or has only
      been collated into one of the `uncles` in one of the `forks`.
@@ -91,6 +289,8 @@ defmodule Explorer.Chain.Transaction do
      `uncles` in one of the `forks`.
    * `block_number` - Denormalized `block` `number`. `nil` when transaction is pending or has only been collated into
      one of the `uncles` in one of the `forks`.
+   * `block_consensus` - consensus of the block where transaction collated.
+   * `block_timestamp` - timestamp of the block where transaction collated.
    * `created_contract_address` - belongs_to association to `address` corresponding to `created_contract_address_hash`.
    * `created_contract_address_hash` - Denormalized `internal_transaction` `created_contract_address_hash`
      populated only when `to_address_hash` is nil.
@@ -163,218 +363,7 @@ defmodule Explorer.Chain.Transaction do
    * `wrapped_s` - S field of the signature from the `wrapped` field (used by Suave)
    * `wrapped_hash` - hash from the `wrapped` field (used by Suave)
   """
-  @type t ::
-          Map.merge(
-            %__MODULE__{
-              block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
-              block_hash: Hash.t() | nil,
-              block_number: Block.block_number() | nil,
-              created_contract_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-              created_contract_address_hash: Hash.Address.t() | nil,
-              created_contract_code_indexed_at: DateTime.t() | nil,
-              cumulative_gas_used: Gas.t() | nil,
-              earliest_processing_start: DateTime.t() | nil,
-              error: String.t() | nil,
-              forks: %Ecto.Association.NotLoaded{} | [Fork.t()],
-              from_address: %Ecto.Association.NotLoaded{} | Address.t(),
-              from_address_hash: Hash.Address.t(),
-              gas: Gas.t(),
-              gas_price: wei_per_gas | nil,
-              gas_used: Gas.t() | nil,
-              hash: Hash.t(),
-              index: transaction_index | nil,
-              input: Data.t(),
-              internal_transactions: %Ecto.Association.NotLoaded{} | [InternalTransaction.t()],
-              logs: %Ecto.Association.NotLoaded{} | [Log.t()],
-              nonce: non_neg_integer(),
-              r: r(),
-              s: s(),
-              status: Status.t() | nil,
-              to_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-              to_address_hash: Hash.Address.t() | nil,
-              uncles: %Ecto.Association.NotLoaded{} | [Block.t()],
-              v: v(),
-              value: Wei.t(),
-              revert_reason: String.t() | nil,
-              max_priority_fee_per_gas: wei_per_gas | nil,
-              max_fee_per_gas: wei_per_gas | nil,
-              type: non_neg_integer() | nil,
-              has_error_in_internal_txs: boolean(),
-              transaction_fee_log: any(),
-              transaction_fee_token: any()
-            },
-            suave
-          )
-
-  if Application.compile_env(:explorer, :chain_type) == "suave" do
-    @type suave :: %{
-            execution_node: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-            execution_node_hash: Hash.Address.t() | nil,
-            wrapped_type: non_neg_integer() | nil,
-            wrapped_nonce: non_neg_integer() | nil,
-            wrapped_to_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-            wrapped_to_address_hash: Hash.Address.t() | nil,
-            wrapped_gas: Gas.t() | nil,
-            wrapped_gas_price: wei_per_gas | nil,
-            wrapped_max_priority_fee_per_gas: wei_per_gas | nil,
-            wrapped_max_fee_per_gas: wei_per_gas | nil,
-            wrapped_value: Wei.t() | nil,
-            wrapped_input: Data.t() | nil,
-            wrapped_v: v() | nil,
-            wrapped_r: r() | nil,
-            wrapped_s: s() | nil,
-            wrapped_hash: Hash.t() | nil
-          }
-  else
-    @type suave :: %{}
-  end
-
-  @derive {Poison.Encoder,
-           only: [
-             :block_number,
-             :cumulative_gas_used,
-             :error,
-             :gas,
-             :gas_price,
-             :gas_used,
-             :index,
-             :created_contract_code_indexed_at,
-             :input,
-             :nonce,
-             :r,
-             :s,
-             :v,
-             :status,
-             :value,
-             :revert_reason
-           ]}
-
-  @derive {Jason.Encoder,
-           only: [
-             :block_number,
-             :cumulative_gas_used,
-             :error,
-             :gas,
-             :gas_price,
-             :gas_used,
-             :index,
-             :created_contract_code_indexed_at,
-             :input,
-             :nonce,
-             :r,
-             :s,
-             :v,
-             :status,
-             :value,
-             :revert_reason
-           ]}
-
-  @primary_key {:hash, Hash.Full, autogenerate: false}
-  schema "transactions" do
-    field(:block_number, :integer)
-    field(:cumulative_gas_used, :decimal)
-    field(:earliest_processing_start, :utc_datetime_usec)
-    field(:error, :string)
-    field(:gas, :decimal)
-    field(:gas_price, Wei)
-    field(:gas_used, :decimal)
-    field(:index, :integer)
-    field(:created_contract_code_indexed_at, :utc_datetime_usec)
-    field(:input, Data)
-    field(:nonce, :integer)
-    field(:r, :decimal)
-    field(:s, :decimal)
-    field(:status, Status)
-    field(:v, :decimal)
-    field(:value, Wei)
-    field(:revert_reason, :string)
-    field(:max_priority_fee_per_gas, Wei)
-    field(:max_fee_per_gas, Wei)
-    field(:type, :integer)
-    field(:has_error_in_internal_txs, :boolean)
-    field(:has_token_transfers, :boolean, virtual: true)
-
-    # stability virtual fields
-    field(:transaction_fee_log, :any, virtual: true)
-    field(:transaction_fee_token, :any, virtual: true)
-
-    # A transient field for deriving old block hash during transaction upserts.
-    # Used to force refetch of a block in case a transaction is re-collated
-    # in a different block. See: https://github.com/blockscout/blockscout/issues/1911
-    field(:old_block_hash, Hash.Full)
-
-    timestamps()
-
-    belongs_to(:block, Block, foreign_key: :block_hash, references: :hash, type: Hash.Full)
-    has_many(:forks, Fork, foreign_key: :hash)
-
-    belongs_to(
-      :from_address,
-      Address,
-      foreign_key: :from_address_hash,
-      references: :hash,
-      type: Hash.Address
-    )
-
-    has_many(:internal_transactions, InternalTransaction, foreign_key: :transaction_hash)
-    has_many(:logs, Log, foreign_key: :transaction_hash)
-    has_many(:token_transfers, TokenTransfer, foreign_key: :transaction_hash)
-    has_many(:transaction_actions, TransactionAction, foreign_key: :hash, preload_order: [asc: :log_index])
-
-    belongs_to(
-      :to_address,
-      Address,
-      foreign_key: :to_address_hash,
-      references: :hash,
-      type: Hash.Address
-    )
-
-    has_many(:uncles, through: [:forks, :uncle])
-
-    has_one(:zkevm_batch_transaction, BatchTransaction, foreign_key: :hash)
-    has_one(:zkevm_batch, through: [:zkevm_batch_transaction, :batch])
-    has_one(:zkevm_sequence_transaction, through: [:zkevm_batch, :sequence_transaction])
-    has_one(:zkevm_verify_transaction, through: [:zkevm_batch, :verify_transaction])
-
-    belongs_to(
-      :created_contract_address,
-      Address,
-      foreign_key: :created_contract_address_hash,
-      references: :hash,
-      type: Hash.Address
-    )
-
-    if System.get_env("CHAIN_TYPE") == "suave" do
-      belongs_to(
-        :execution_node,
-        Address,
-        foreign_key: :execution_node_hash,
-        references: :hash,
-        type: Hash.Address
-      )
-
-      field(:wrapped_type, :integer)
-      field(:wrapped_nonce, :integer)
-      field(:wrapped_gas, :decimal)
-      field(:wrapped_gas_price, Wei)
-      field(:wrapped_max_priority_fee_per_gas, Wei)
-      field(:wrapped_max_fee_per_gas, Wei)
-      field(:wrapped_value, Wei)
-      field(:wrapped_input, Data)
-      field(:wrapped_v, :decimal)
-      field(:wrapped_r, :decimal)
-      field(:wrapped_s, :decimal)
-      field(:wrapped_hash, Hash.Full)
-
-      belongs_to(
-        :wrapped_to_address,
-        Address,
-        foreign_key: :wrapped_to_address_hash,
-        references: :hash,
-        type: Hash.Address
-      )
-    end
-  end
+  Explorer.Chain.Transaction.Schema.generate()
 
   @doc """
   A pending transaction does not have a `block_hash`
@@ -544,6 +533,11 @@ defmodule Explorer.Chain.Transaction do
     |> unique_constraint(:hash)
   end
 
+  @spec block_timestamp(t()) :: DateTime.t()
+  def block_timestamp(%{block_number: nil, inserted_at: time}), do: time
+  def block_timestamp(%{block_timestamp: time}) when not is_nil(time), do: time
+  def block_timestamp(%{block: %{timestamp: time}}), do: time
+
   def preload_token_transfers(query, address_hash) do
     token_transfers_query =
       from(
@@ -594,6 +588,18 @@ defmodule Explorer.Chain.Transaction do
   end
 
   # Because there is no contract association, we know the contract was not verified
+  @spec decoded_input_data(
+          NotLoaded.t() | Transaction.t(),
+          boolean(),
+          [Chain.api?()],
+          full_abi_acc,
+          methods_acc
+        ) ::
+          {error_type | success_type, full_abi_acc, methods_acc}
+        when full_abi_acc: map(),
+             methods_acc: map(),
+             error_type: {:error, any()} | {:error, :contract_not_verified | :contract_verified, list()},
+             success_type: {:ok | binary(), any()} | {:ok, binary(), binary(), list()}
   def decoded_input_data(tx, skip_sig_provider? \\ false, options, full_abi_acc \\ %{}, methods_acc \\ %{})
 
   def decoded_input_data(%__MODULE__{to_address: nil}, _, _, full_abi_acc, methods_acc),
@@ -613,7 +619,7 @@ defmodule Explorer.Chain.Transaction do
 
   def decoded_input_data(
         %__MODULE__{
-          to_address: %NotLoaded{},
+          to_address: %{smart_contract: nil},
           input: input,
           hash: hash
         },
@@ -624,7 +630,7 @@ defmodule Explorer.Chain.Transaction do
       ) do
     decoded_input_data(
       %__MODULE__{
-        to_address: %{smart_contract: nil},
+        to_address: %NotLoaded{},
         input: input,
         hash: hash
       },
@@ -648,7 +654,7 @@ defmodule Explorer.Chain.Transaction do
       ) do
     decoded_input_data(
       %__MODULE__{
-        to_address: %{smart_contract: nil},
+        to_address: %NotLoaded{},
         input: input,
         hash: hash
       },
@@ -661,7 +667,7 @@ defmodule Explorer.Chain.Transaction do
 
   def decoded_input_data(
         %__MODULE__{
-          to_address: %{smart_contract: nil},
+          to_address: %NotLoaded{},
           input: %{bytes: <<method_id::binary-size(4), _::binary>> = data} = input,
           hash: hash
         },
@@ -688,7 +694,7 @@ defmodule Explorer.Chain.Transaction do
      full_abi_acc, methods_acc}
   end
 
-  def decoded_input_data(%__MODULE__{to_address: %{smart_contract: nil}}, _, _, full_abi_acc, methods_acc) do
+  def decoded_input_data(%__MODULE__{to_address: %NotLoaded{}}, _, _, full_abi_acc, methods_acc) do
     {{:error, :contract_not_verified, []}, full_abi_acc, methods_acc}
   end
 
@@ -708,7 +714,7 @@ defmodule Explorer.Chain.Transaction do
       {{:error, :could_not_decode}, full_abi_acc} ->
         case decoded_input_data(
                %__MODULE__{
-                 to_address: %{smart_contract: nil},
+                 to_address: %NotLoaded{},
                  input: input,
                  hash: hash
                },
@@ -804,7 +810,7 @@ defmodule Explorer.Chain.Transaction do
     else
       case decoded_input_data(
              %__MODULE__{
-               to_address: %{smart_contract: nil},
+               to_address: %NotLoaded{},
                input: transaction.input,
                hash: transaction.hash
              },
@@ -1007,11 +1013,12 @@ defmodule Explorer.Chain.Transaction do
   """
   def transactions_with_token_transfers(address_hash, token_hash) do
     query = transactions_with_token_transfers_query(address_hash, token_hash)
+    preloads = DenormalizationHelper.extend_block_preload([:from_address, :to_address, :created_contract_address])
 
     from(
       t in subquery(query),
       order_by: [desc: t.block_number, desc: t.index],
-      preload: [:from_address, :to_address, :created_contract_address, :block]
+      preload: ^preloads
     )
   end
 
@@ -1028,11 +1035,12 @@ defmodule Explorer.Chain.Transaction do
 
   def transactions_with_token_transfers_direction(direction, address_hash) do
     query = transactions_with_token_transfers_query_direction(direction, address_hash)
+    preloads = DenormalizationHelper.extend_block_preload([:from_address, :to_address, :created_contract_address])
 
     from(
       t in subquery(query),
       order_by: [desc: t.block_number, desc: t.index],
-      preload: [:from_address, :to_address, :created_contract_address, :block]
+      preload: ^preloads
     )
   end
 
@@ -1096,8 +1104,8 @@ defmodule Explorer.Chain.Transaction do
   @doc """
   Returns true if the transaction is a Rootstock REMASC transaction.
   """
-  @spec is_rootstock_remasc_transaction(Explorer.Chain.Transaction.t()) :: boolean
-  def is_rootstock_remasc_transaction(%__MODULE__{to_address_hash: to_address_hash}) do
+  @spec rootstock_remasc_transaction?(Explorer.Chain.Transaction.t()) :: boolean
+  def rootstock_remasc_transaction?(%__MODULE__{to_address_hash: to_address_hash}) do
     case Hash.Address.cast(Application.get_env(:explorer, __MODULE__)[:rootstock_remasc_address]) do
       {:ok, address} -> address == to_address_hash
       _ -> false
@@ -1107,8 +1115,8 @@ defmodule Explorer.Chain.Transaction do
   @doc """
   Returns true if the transaction is a Rootstock bridge transaction.
   """
-  @spec is_rootstock_bridge_transaction(Explorer.Chain.Transaction.t()) :: boolean
-  def is_rootstock_bridge_transaction(%__MODULE__{to_address_hash: to_address_hash}) do
+  @spec rootstock_bridge_transaction?(Explorer.Chain.Transaction.t()) :: boolean
+  def rootstock_bridge_transaction?(%__MODULE__{to_address_hash: to_address_hash}) do
     case Hash.Address.cast(Application.get_env(:explorer, __MODULE__)[:rootstock_bridge_address]) do
       {:ok, address} -> address == to_address_hash
       _ -> false
@@ -1373,6 +1381,7 @@ defmodule Explorer.Chain.Transaction do
   defp address_to_transactions_tasks(address_hash, options, old_ui?) do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    old_ui? = old_ui? || is_tuple(Keyword.get(options, :paging_options, Chain.default_paging_options()).key)
 
     options
     |> address_to_transactions_tasks_query(false, old_ui?)
@@ -1603,7 +1612,7 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Adds a `has_token_transfers` field to the query via `select_merge` if second argument is `true` and returns
+  Adds a `has_token_transfers` field to the query via `select_merge` if second argument is `false` and returns
   the query untouched otherwise.
   """
   @spec put_has_token_transfers_to_tx(Ecto.Query.t() | atom, boolean) :: Ecto.Query.t()
@@ -1624,7 +1633,7 @@ defmodule Explorer.Chain.Transaction do
   @doc """
   Return the dynamic that calculates the fee for transactions.
   """
-  @spec dynamic_fee :: struct()
+  @spec dynamic_fee :: Ecto.Query.dynamic_expr()
   def dynamic_fee do
     dynamic([tx], tx.gas_price * fragment("COALESCE(?, ?)", tx.gas_used, tx.gas))
   end
@@ -1646,5 +1655,49 @@ defmodule Explorer.Chain.Transaction do
       "inserted_at" => inserted_at,
       "hash" => hash
     }
+  end
+
+  @suave_bid_event "0x83481d5b04dea534715acad673a8177a46fc93882760f36bdc16ccac439d504e"
+
+  @spec suave_parse_allowed_peekers(Ecto.Schema.has_many(Log.t())) :: [String.t()]
+  def suave_parse_allowed_peekers(%NotLoaded{}), do: []
+
+  def suave_parse_allowed_peekers(logs) do
+    suave_bid_contracts =
+      Application.get_all_env(:explorer)[Transaction][:suave_bid_contracts]
+      |> String.split(",")
+      |> Enum.map(fn sbc -> String.downcase(String.trim(sbc)) end)
+
+    bid_event =
+      Enum.find(logs, fn log ->
+        sanitize_log_first_topic(log.first_topic) == @suave_bid_event &&
+          Enum.member?(suave_bid_contracts, String.downcase(Hash.to_string(log.address_hash)))
+      end)
+
+    if is_nil(bid_event) do
+      []
+    else
+      [_bid_id, _decryption_condition, allowed_peekers] =
+        Helper.decode_data(bid_event.data, [{:bytes, 16}, {:uint, 64}, {:array, :address}])
+
+      Enum.map(allowed_peekers, fn peeker ->
+        "0x" <> Base.encode16(peeker, case: :lower)
+      end)
+    end
+  end
+
+  defp sanitize_log_first_topic(first_topic) do
+    if is_nil(first_topic) do
+      ""
+    else
+      sanitized =
+        if is_binary(first_topic) do
+          first_topic
+        else
+          Hash.to_string(first_topic)
+        end
+
+      String.downcase(sanitized)
+    end
   end
 end
