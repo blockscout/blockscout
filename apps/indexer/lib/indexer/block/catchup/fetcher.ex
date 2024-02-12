@@ -22,8 +22,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   alias Ecto.Changeset
   alias Explorer.Chain
+  alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
-  alias Indexer.Block.Catchup.{MissingRangesManipulator, Sequence, TaskSupervisor}
+  alias Indexer.Block.Catchup.{Sequence, TaskSupervisor}
   alias Indexer.Memory.Shrinkable
   alias Indexer.Prometheus
 
@@ -53,7 +54,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
           shrunk: false
         }
 
-      missing_ranges ->
+      latest_missing_ranges ->
+        missing_ranges = filter_consensus_blocks(latest_missing_ranges)
+
         first.._ = List.first(missing_ranges)
         _..last = List.last(missing_ranges)
 
@@ -74,8 +77,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
         shrunk = Shrinkable.shrunk?(sequence)
 
-        MissingRangesManipulator.clear_batch(missing_ranges)
-
         %{
           first_block_number: first,
           last_block_number: last,
@@ -83,6 +84,21 @@ defmodule Indexer.Block.Catchup.Fetcher do
           shrunk: shrunk
         }
     end
+  end
+
+  defp filter_consensus_blocks(ranges) do
+    filtered_ranges =
+      ranges
+      |> Enum.map(&Chain.missing_block_number_ranges(&1))
+      |> List.flatten()
+
+    consensus_blocks = ranges_to_numbers(ranges) -- ranges_to_numbers(filtered_ranges)
+
+    consensus_blocks
+    |> numbers_to_ranges()
+    |> MissingRangesManipulator.clear_batch()
+
+    filtered_ranges
   end
 
   @doc """
@@ -229,9 +245,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
   rescue
     exception ->
       Logger.error(fn -> [Exception.format(:error, exception, __STACKTRACE__), ?\n, ?\n, "Retrying."] end)
-
-      push_back(sequence, range)
-
       {:error, exception}
   end
 
@@ -273,7 +286,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
     success_numbers
     |> numbers_to_ranges()
-    |> Enum.map(&MissingRangesManipulator.delete_range/1)
+    |> MissingRangesManipulator.clear_batch()
   end
 
   defp block_errors_to_block_number_ranges(block_errors) when is_list(block_errors) do
@@ -288,14 +301,14 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   defp numbers_to_ranges(numbers) when is_list(numbers) do
     numbers
-    |> Enum.sort()
+    |> Enum.sort(&>=/2)
     |> Enum.chunk_while(
       nil,
       fn
         number, nil ->
           {:cont, number..number}
 
-        number, first..last when number == last + 1 ->
+        number, first..last when number == last - 1 ->
           {:cont, first..number}
 
         number, range ->
@@ -303,6 +316,12 @@ defmodule Indexer.Block.Catchup.Fetcher do
       end,
       fn range -> {:cont, range, nil} end
     )
+  end
+
+  defp ranges_to_numbers(ranges) do
+    ranges
+    |> Enum.map(&Enum.to_list/1)
+    |> List.flatten()
   end
 
   defp put_memory_monitor(sequence_options, %__MODULE__{memory_monitor: nil}) when is_list(sequence_options),

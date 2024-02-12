@@ -4,6 +4,7 @@ defmodule Explorer.SmartContract.Helper do
   """
 
   alias Explorer.Chain
+  alias Explorer.Chain.{Hash, SmartContract}
   alias Phoenix.HTML
 
   def queriable_method?(method) do
@@ -22,12 +23,10 @@ defmodule Explorer.SmartContract.Helper do
   @spec read_with_wallet_method?(%{}) :: true | false
   def read_with_wallet_method?(function),
     do:
-      !error?(function) && !event?(function) && !constructor?(function) && nonpayable?(function) &&
+      !error?(function) && !event?(function) && !constructor?(function) &&
         !empty_outputs?(function)
 
-  def empty_inputs?(function), do: function["inputs"] == []
-
-  def empty_outputs?(function), do: function["outputs"] == []
+  def empty_outputs?(function), do: is_nil(function["outputs"]) || function["outputs"] == []
 
   def payable?(function), do: function["stateMutability"] == "payable" || function["payable"]
 
@@ -117,10 +116,16 @@ defmodule Explorer.SmartContract.Helper do
   end
 
   def cast_libraries(map) do
-    map
-    |> Map.values()
-    |> Enum.reduce(%{}, fn map, acc -> Map.merge(acc, map) end)
+    map |> Map.values() |> List.first() |> cast_libraries(map)
   end
+
+  def cast_libraries(value, map) when is_map(value),
+    do:
+      map
+      |> Map.values()
+      |> Enum.reduce(%{}, fn map, acc -> Map.merge(acc, map) end)
+
+  def cast_libraries(_value, map), do: map
 
   def contract_creation_input(address_hash) do
     case Chain.smart_contract_creation_tx_bytecode(address_hash) do
@@ -130,5 +135,62 @@ defmodule Explorer.SmartContract.Helper do
       _ ->
         nil
     end
+  end
+
+  @doc """
+    Returns a tuple: `{creation_bytecode, deployed_bytecode, metadata}` where `metadata` is a map:
+      {
+        "blockNumber": "string",
+        "chainId": "string",
+        "contractAddress": "string",
+        "creationCode": "string",
+        "deployer": "string",
+        "runtimeCode": "string",
+        "transactionHash": "string",
+        "transactionIndex": "string"
+      }
+
+    Metadata will be sent to a verifier microservice
+  """
+  @spec fetch_data_for_verification(binary() | Hash.t()) :: {binary() | nil, binary(), map()}
+  def fetch_data_for_verification(address_hash) do
+    deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
+
+    metadata = %{
+      "contractAddress" => to_string(address_hash),
+      "runtimeCode" => to_string(deployed_bytecode),
+      "chainId" => Application.get_env(:block_scout_web, :chain_id)
+    }
+
+    case SmartContract.creation_tx_with_bytecode(address_hash) do
+      %{init: init, tx: tx} ->
+        {init, deployed_bytecode, tx |> tx_to_metadata(init) |> Map.merge(metadata)}
+
+      %{init: init, internal_tx: internal_tx} ->
+        {init, deployed_bytecode, internal_tx |> internal_tx_to_metadata(init) |> Map.merge(metadata)}
+
+      _ ->
+        {nil, deployed_bytecode, metadata}
+    end
+  end
+
+  defp tx_to_metadata(tx, init) do
+    %{
+      "blockNumber" => to_string(tx.block_number),
+      "transactionHash" => to_string(tx.hash),
+      "transactionIndex" => to_string(tx.index),
+      "deployer" => to_string(tx.from_address_hash),
+      "creationCode" => to_string(init)
+    }
+  end
+
+  defp internal_tx_to_metadata(internal_tx, init) do
+    %{
+      "blockNumber" => to_string(internal_tx.block_number),
+      "transactionHash" => to_string(internal_tx.transaction_hash),
+      "transactionIndex" => to_string(internal_tx.transaction_index),
+      "deployer" => to_string(internal_tx.from_address_hash),
+      "creationCode" => to_string(init)
+    }
   end
 end

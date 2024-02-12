@@ -12,23 +12,17 @@ defmodule Explorer.Tags.AddressTag do
       from: 2
     ]
 
-  alias Explorer.Chain.Address
   alias Explorer.Repo
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
   @typedoc """
   * `:id` - id of Tag
   * `:label` - Tag's label
-  * `:label` - Label's display name
+  * `:display_name` - Label's display name
   """
-  @type t :: %AddressTag{
-          label: String.t()
-        }
-
-  schema "address_tags" do
-    field(:label, :string)
-    field(:display_name, :string)
-    has_many(:addresses, Address, foreign_key: :hash)
+  typed_schema "address_tags" do
+    field(:label, :string, null: false)
+    field(:display_name, :string, null: false)
     has_many(:tag_id, AddressToTag, foreign_key: :id)
 
     timestamps()

@@ -5,6 +5,9 @@ apps/explorer/node_modules
 test
 .git
 .circleci
+.vscode
+.elixir_ls
+erl_crash.dump
 logs
 apps/*/test
 server

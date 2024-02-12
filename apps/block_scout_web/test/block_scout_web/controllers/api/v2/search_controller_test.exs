@@ -2,6 +2,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Chain.{Address, Block}
+  alias Explorer.Repo
+  alias Explorer.Tags.AddressTag
 
   setup do
     insert(:block)
@@ -27,6 +29,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       item = Enum.at(response["items"], 0)
 
       assert item["type"] == "block"
+      assert item["block_type"] == "block"
       assert item["block_number"] == block.number
       assert item["block_hash"] == to_string(block.hash)
       assert item["url"] =~ to_string(block.hash)
@@ -40,6 +43,39 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       item = Enum.at(response["items"], 0)
 
       assert item["type"] == "block"
+      assert item["block_number"] == block.number
+      assert item["block_hash"] == to_string(block.hash)
+      assert item["url"] =~ to_string(block.hash)
+      assert item["timestamp"] == block.timestamp |> to_string() |> String.replace(" ", "T")
+    end
+
+    test "search reorg", %{conn: conn} do
+      block = insert(:block, consensus: false)
+
+      request = get(conn, "/api/v2/search?q=#{block.hash}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+
+      item = Enum.at(response["items"], 0)
+
+      assert item["type"] == "block"
+      assert item["block_type"] == "reorg"
+      assert item["block_number"] == block.number
+      assert item["block_hash"] == to_string(block.hash)
+      assert item["url"] =~ to_string(block.hash)
+
+      request = get(conn, "/api/v2/search?q=#{block.number}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+
+      item = Enum.at(response["items"], 0)
+
+      assert item["type"] == "block"
+      assert item["block_type"] == "reorg"
       assert item["block_number"] == block.number
       assert item["block_hash"] == to_string(block.hash)
       assert item["url"] =~ to_string(block.hash)
@@ -61,6 +97,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["name"] == name.name
       assert item["address"] == Address.checksum(address.hash)
       assert item["url"] =~ Address.checksum(address.hash)
+      assert item["is_smart_contract_verified"] == address.verified
     end
 
     test "search contract", %{conn: conn} do
@@ -78,6 +115,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["name"] == contract.name
       assert item["address"] == Address.checksum(contract.address_hash)
       assert item["url"] =~ Address.checksum(contract.address_hash)
+      assert item["is_smart_contract_verified"] == true
     end
 
     test "check pagination", %{conn: conn} do
@@ -126,10 +164,45 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["address"] == Address.checksum(token.contract_address_hash)
       assert item["token_url"] =~ Address.checksum(token.contract_address_hash)
       assert item["address_url"] =~ Address.checksum(token.contract_address_hash)
+      assert item["token_type"] == token.type
+      assert item["is_smart_contract_verified"] == token.contract_address.verified
+      assert item["exchange_rate"] == (token.fiat_value && to_string(token.fiat_value))
+      assert item["total_supply"] == to_string(token.total_supply)
+      assert item["icon_url"] == token.icon_url
+      assert item["is_verified_via_admin_panel"] == token.is_verified_via_admin_panel
+    end
+
+    test "search token by hash", %{conn: conn} do
+      token = insert(:unique_token)
+
+      request = get(conn, "/api/v2/search?q=#{token.contract_address_hash}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 2
+      assert response["next_page_params"] == nil
+
+      item = Enum.at(response["items"], 0)
+
+      assert item["type"] == "token"
+      assert item["name"] == token.name
+      assert item["symbol"] == token.symbol
+      assert item["address"] == Address.checksum(token.contract_address_hash)
+      assert item["token_url"] =~ Address.checksum(token.contract_address_hash)
+      assert item["address_url"] =~ Address.checksum(token.contract_address_hash)
+      assert item["token_type"] == token.type
+      assert item["is_smart_contract_verified"] == token.contract_address.verified
+      assert item["exchange_rate"] == (token.fiat_value && to_string(token.fiat_value))
+      assert item["total_supply"] == to_string(token.total_supply)
+      assert item["icon_url"] == token.icon_url
+      assert item["is_verified_via_admin_panel"] == token.is_verified_via_admin_panel
+
+      item_1 = Enum.at(response["items"], 1)
+
+      assert item_1["type"] == "address"
     end
 
     test "search transaction", %{conn: conn} do
-      tx = insert(:transaction)
+      tx = insert(:transaction, block_timestamp: nil)
 
       request = get(conn, "/api/v2/search?q=#{tx.hash}")
       assert response = json_response(request, 200)
@@ -142,6 +215,62 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["type"] == "transaction"
       assert item["tx_hash"] == to_string(tx.hash)
       assert item["url"] =~ to_string(tx.hash)
+      assert item["timestamp"] == nil
+    end
+
+    test "search transaction with timestamp", %{conn: conn} do
+      tx = :transaction |> insert() |> with_block()
+
+      request = get(conn, "/api/v2/search?q=#{tx.hash}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+
+      item = Enum.at(response["items"], 0)
+
+      assert item["type"] == "transaction"
+      assert item["tx_hash"] == to_string(tx.hash)
+      assert item["url"] =~ to_string(tx.hash)
+      assert item["timestamp"] == Repo.preload(tx, [:block]).block.timestamp |> to_string() |> String.replace(" ", "T")
+    end
+
+    test "search tags", %{conn: conn} do
+      tag = insert(:address_to_tag)
+
+      request = get(conn, "/api/v2/search?q=#{tag.tag.display_name}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+
+      item = Enum.at(response["items"], 0)
+
+      assert item["type"] == "label"
+      assert item["address"] == Address.checksum(tag.address.hash)
+      assert item["name"] == tag.tag.display_name
+      assert item["url"] =~ Address.checksum(tag.address.hash)
+      assert item["is_smart_contract_verified"] == tag.address.verified
+    end
+
+    test "check that simultaneous search of ", %{conn: conn} do
+      block = insert(:block)
+
+      insert(:smart_contract, name: to_string(block.number))
+      insert(:token, name: to_string(block.number))
+
+      insert(:address_to_tag,
+        tag: %AddressTag{
+          label: "qwerty",
+          display_name: to_string(block.number)
+        }
+      )
+
+      request = get(conn, "/api/v2/search?q=#{block.number}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 4
+      assert response["next_page_params"] == nil
     end
   end
 
@@ -240,6 +369,54 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       request = get(conn, "/api/v2/search/check-redirect?q=qwerty")
 
       %{"redirect" => false, "type" => nil, "parameter" => nil} = json_response(request, 200)
+    end
+  end
+
+  describe "/search/quick" do
+    test "check that all categories are in response list", %{conn: conn} do
+      name = "156000"
+
+      tags =
+        for _ <- 0..50 do
+          insert(:address_to_tag, tag: build(:address_tag, display_name: name))
+        end
+
+      contracts = insert_list(50, :smart_contract, name: name)
+      tokens = insert_list(50, :token, name: name)
+      blocks = [insert(:block, number: name, consensus: false), insert(:block, number: name)]
+
+      request = get(conn, "/api/v2/search/quick?q=#{name}")
+      assert response = json_response(request, 200)
+      assert Enum.count(response) == 50
+
+      assert response |> Enum.filter(fn x -> x["type"] == "label" end) |> Enum.map(fn x -> x["address"] end) ==
+               tags |> Enum.reverse() |> Enum.take(16) |> Enum.map(fn tag -> Address.checksum(tag.address.hash) end)
+
+      assert response |> Enum.filter(fn x -> x["type"] == "contract" end) |> Enum.map(fn x -> x["address"] end) ==
+               contracts
+               |> Enum.reverse()
+               |> Enum.take(16)
+               |> Enum.map(fn contract -> Address.checksum(contract.address_hash) end)
+
+      assert response |> Enum.filter(fn x -> x["type"] == "token" end) |> Enum.map(fn x -> x["address"] end) ==
+               tokens
+               |> Enum.reverse()
+               |> Enum.sort_by(fn x -> x.is_verified_via_admin_panel end, :desc)
+               |> Enum.take(16)
+               |> Enum.map(fn token -> Address.checksum(token.contract_address_hash) end)
+
+      block_hashes = response |> Enum.filter(fn x -> x["type"] == "block" end) |> Enum.map(fn x -> x["block_hash"] end)
+
+      assert block_hashes == blocks |> Enum.reverse() |> Enum.map(fn block -> to_string(block.hash) end) ||
+               block_hashes == blocks |> Enum.map(fn block -> to_string(block.hash) end)
+
+      assert response |> Enum.filter(fn x -> x["block_type"] == "block" end) |> Enum.count() == 1
+      assert response |> Enum.filter(fn x -> x["block_type"] == "reorg" end) |> Enum.count() == 1
+    end
+
+    test "returns empty list and don't crash", %{conn: conn} do
+      request = get(conn, "/api/v2/search/quick?q=qwertyuioiuytrewertyuioiuytrertyuio")
+      assert [] = json_response(request, 200)
     end
   end
 end

@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.API.V2.WithdrawalView do
     %{
       "index" => withdrawal.index,
       "validator_index" => withdrawal.validator_index,
-      "receiver" => Helper.address_with_info(withdrawal.address, withdrawal.address_hash),
+      "receiver" => Helper.address_with_info(nil, withdrawal.address, withdrawal.address_hash, false),
       "amount" => withdrawal.amount
     }
   end
@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.API.V2.WithdrawalView do
       "index" => withdrawal.index,
       "validator_index" => withdrawal.validator_index,
       "block_number" => withdrawal.block.number,
-      "receiver" => Helper.address_with_info(withdrawal.address, withdrawal.address_hash),
+      "receiver" => Helper.address_with_info(nil, withdrawal.address, withdrawal.address_hash, false),
       "amount" => withdrawal.amount,
       "timestamp" => withdrawal.block.timestamp
     }

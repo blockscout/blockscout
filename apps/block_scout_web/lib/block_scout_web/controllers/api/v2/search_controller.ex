@@ -2,8 +2,12 @@ defmodule BlockScoutWeb.API.V2.SearchController do
   use Phoenix.Controller
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1, from_param: 1]
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens_info_to_search_results: 1]
 
-  alias Explorer.Chain
+  alias Explorer.Chain.Search
+  alias Explorer.PagingOptions
+
+  @api_true [api?: true]
 
   def search(conn, %{"q" => query} = params) do
     [paging_options: paging_options] = paging_options(params)
@@ -11,7 +15,7 @@ defmodule BlockScoutWeb.API.V2.SearchController do
 
     search_results_plus_one =
       paging_options
-      |> Chain.joint_search(offset, query, api?: true)
+      |> Search.joint_search(offset, query, @api_true)
 
     {search_results, next_page} = split_list_by_page(search_results_plus_one)
 
@@ -19,7 +23,10 @@ defmodule BlockScoutWeb.API.V2.SearchController do
 
     conn
     |> put_status(200)
-    |> render(:search_results, %{search_results: search_results, next_page_params: next_page_params})
+    |> render(:search_results, %{
+      search_results: search_results |> maybe_preload_ens_info_to_search_results(),
+      next_page_params: next_page_params
+    })
   end
 
   def check_redirect(conn, %{"q" => query}) do
@@ -31,5 +38,13 @@ defmodule BlockScoutWeb.API.V2.SearchController do
     conn
     |> put_status(200)
     |> render(:search_results, %{result: result})
+  end
+
+  def quick_search(conn, %{"q" => query}) do
+    search_results = Search.balanced_unpaginated_search(%PagingOptions{page_size: 50}, query, @api_true)
+
+    conn
+    |> put_status(200)
+    |> render(:search_results, %{search_results: search_results |> maybe_preload_ens_info_to_search_results()})
   end
 end

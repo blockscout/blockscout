@@ -13,7 +13,7 @@ defmodule EthereumJSONRPC.Encoder do
   """
   @spec encode_function_call(ABI.FunctionSelector.t(), [term()]) :: String.t()
   def encode_function_call(function_selector, args) when is_list(args) do
-    parsed_args = parse_args(args)
+    parsed_args = parse_args(args, function_selector.types)
 
     encoded_args =
       function_selector
@@ -25,16 +25,22 @@ defmodule EthereumJSONRPC.Encoder do
 
   def encode_function_call(function_selector, args), do: encode_function_call(function_selector, [args])
 
-  defp parse_args(args) when is_list(args) do
+  defp parse_args(args, types) when is_list(args) do
     args
-    |> Enum.map(&parse_args/1)
+    |> Enum.zip(types)
+    |> Enum.map(fn {arg, type} ->
+      parse_args(arg, type)
+    end)
   end
 
-  defp parse_args(<<"0x", hexadecimal_digits::binary>>), do: Base.decode16!(hexadecimal_digits, case: :mixed)
+  defp parse_args(<<hexadecimal_digits::binary>>, type) when type in [:string, "string"],
+    do: hexadecimal_digits |> Base.encode16() |> try_to_decode()
 
-  defp parse_args(<<hexadecimal_digits::binary>>), do: try_to_decode(hexadecimal_digits)
+  defp parse_args(<<"0x", hexadecimal_digits::binary>>, _type), do: Base.decode16!(hexadecimal_digits, case: :mixed)
 
-  defp parse_args(arg), do: arg
+  defp parse_args(<<hexadecimal_digits::binary>>, _type), do: try_to_decode(hexadecimal_digits)
+
+  defp parse_args(arg, _type), do: arg
 
   defp try_to_decode(hexadecimal_digits) do
     case Base.decode16(hexadecimal_digits, case: :mixed) do
@@ -69,7 +75,7 @@ defmodule EthereumJSONRPC.Encoder do
     end
   end
 
-  def decode_result(result, selectors, _leave_error_as_map) when is_list(selectors) do
+  def decode_result(%{id: id, result: _result} = result, selectors, _leave_error_as_map) when is_list(selectors) do
     selectors
     |> Enum.map(fn selector ->
       try do
@@ -78,7 +84,7 @@ defmodule EthereumJSONRPC.Encoder do
         _ -> :error
       end
     end)
-    |> Enum.find(fn decode ->
+    |> Enum.find({id, {:error, :unable_to_decode}}, fn decode ->
       case decode do
         {_id, {:ok, _}} -> true
         _ -> false

@@ -3,10 +3,18 @@ defmodule BlockScoutWeb.WebsocketV2Test do
 
   alias BlockScoutWeb.Notifier
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Chain.{Address, Import, InternalTransaction, Log, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Import, Token, TokenTransfer, Transaction}
   alias Explorer.Repo
 
+  @first_topic_hex_string "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+  @second_topic_hex_string "0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+  @third_topic_hex_string "0x000000000000000000000000515c09c5bba1ed566b02a5b0599ec5d5d0aee73d"
+
   describe "websocket v2" do
+    {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
+    {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
+    {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
+
     @import_data %{
       blocks: %{
         params: [
@@ -34,37 +42,34 @@ defmodule BlockScoutWeb.WebsocketV2Test do
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-            first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-            second_topic: "0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-            third_topic: "0x000000000000000000000000515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
+            first_topic: first_topic,
+            second_topic: second_topic,
+            third_topic: third_topic,
             fourth_topic: nil,
             index: 0,
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-            type: "mined"
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
           },
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-            first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-            second_topic: "0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-            third_topic: "0x000000000000000000000000515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
+            first_topic: first_topic,
+            second_topic: second_topic,
+            third_topic: third_topic,
             fourth_topic: nil,
             index: 1,
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-            type: "mined"
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
           },
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-            first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-            second_topic: "0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-            third_topic: "0x000000000000000000000000515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
+            first_topic: first_topic,
+            second_topic: second_topic,
+            third_topic: third_topic,
             fourth_topic: nil,
             index: 2,
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-            type: "mined"
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
           }
         ],
         timeout: 5
@@ -74,6 +79,7 @@ defmodule BlockScoutWeb.WebsocketV2Test do
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             block_number: 37,
+            block_timestamp: Timex.parse!("2017-12-15T21:06:30.000000Z", "{ISO:Extended:Z}"),
             cumulative_gas_used: 50450,
             from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
             gas: 4_700_000,
@@ -96,6 +102,7 @@ defmodule BlockScoutWeb.WebsocketV2Test do
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             block_number: 37,
+            block_timestamp: Timex.parse!("2017-12-15T21:06:30.000000Z", "{ISO:Extended:Z}"),
             cumulative_gas_used: 50450,
             from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
             gas: 4_700_000,
@@ -375,6 +382,11 @@ defmodule BlockScoutWeb.WebsocketV2Test do
     assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
   end
 
+  # with the current implementation no transfers should come with list in totals
+  defp check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
+    false
+  end
+
   defp check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-1155"] do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end) and
       json["value"] == to_string(token_transfer.amount)
@@ -382,11 +394,6 @@ defmodule BlockScoutWeb.WebsocketV2Test do
 
   defp check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-721"] do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end)
-  end
-
-  # with the current implementation no transfers should come with list in totals
-  defp check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
-    false
   end
 
   defp check_total(_, _, _), do: true

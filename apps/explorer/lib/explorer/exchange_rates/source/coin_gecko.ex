@@ -3,7 +3,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   Adapter for fetching exchange rates from https://coingecko.com
   """
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Helper}
   alias Explorer.ExchangeRates.{Source, Token}
 
   import Source, only: [to_decimal: 1]
@@ -13,9 +13,11 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   @impl Source
   def format_data(%{"market_data" => _} = json_data) do
     market_data = json_data["market_data"]
+    image_data = json_data["image"]
 
     last_updated = get_last_updated(market_data)
     current_price = get_current_price(market_data)
+    image_url = get_coin_image(image_data)
 
     id = json_data["id"]
 
@@ -35,10 +37,12 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
         id: id,
         last_updated: last_updated,
         market_cap_usd: to_decimal(market_cap_data_usd),
+        tvl_usd: nil,
         name: json_data["name"],
         symbol: String.upcase(json_data["symbol"]),
         usd_value: current_price,
-        volume_24h_usd: to_decimal(total_volume_data_usd)
+        volume_24h_usd: to_decimal(total_volume_data_usd),
+        image_url: image_url
       }
     ]
   end
@@ -69,7 +73,34 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   @impl Source
+  def format_data(supported_coins) when is_list(supported_coins) do
+    platform = platform()
+
+    supported_coins
+    |> Enum.reduce([], fn
+      %{"platforms" => %{^platform => token_contract_hash_str}}, acc ->
+        case Chain.Hash.Address.cast(token_contract_hash_str) do
+          {:ok, token_contract_hash} -> [token_contract_hash | acc]
+          _ -> acc
+        end
+
+      _, acc ->
+        acc
+    end)
+  end
+
+  @impl Source
   def format_data(_), do: []
+
+  @spec history_url(non_neg_integer()) :: String.t()
+  def history_url(previous_days) do
+    query_params = %{
+      "days" => previous_days,
+      "vs_currency" => "usd"
+    }
+
+    "#{source_url()}/market_chart?#{URI.encode_query(query_params)}"
+  end
 
   @impl Source
   def source_url do
@@ -89,6 +120,11 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
       end
 
     if id, do: "#{base_url()}/coins/#{id}", else: nil
+  end
+
+  @impl Source
+  def source_url(:coins_list) do
+    "#{base_url()}/coins/list?include_platform=true"
   end
 
   @impl Source
@@ -130,6 +166,17 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
     end
   end
 
+  @doc """
+  Converts date time string into DateTime object formatted as date
+  """
+  @spec date(String.t()) :: Date.t()
+  def date(date_time_string) do
+    with {:ok, datetime, _} <- DateTime.from_iso8601(date_time_string) do
+      datetime
+      |> DateTime.to_date()
+    end
+  end
+
   defp api_key do
     config(:api_key) || nil
   end
@@ -141,22 +188,16 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   def coin_id(symbol) do
-    id_mapping = token_symbol_to_id_mapping_to_get_price(symbol)
+    url = "#{base_url()}/coins/list"
 
-    if id_mapping do
-      {:ok, id_mapping}
-    else
-      url = "#{base_url()}/coins/list"
+    symbol_downcase = String.downcase(symbol)
 
-      symbol_downcase = String.downcase(symbol)
+    case Source.http_request(url, headers()) do
+      {:ok, data} ->
+        get_symbol_data(data, symbol_downcase)
 
-      case Source.http_request(url, headers()) do
-        {:ok, data} ->
-          get_symbol_data(data, symbol_downcase)
-
-        resp ->
-          resp
-      end
+      _ ->
+        {:ok, symbol_downcase}
     end
   end
 
@@ -200,6 +241,20 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
       to_decimal(market_data["current_price"]["usd"])
     else
       1
+    end
+  end
+
+  defp get_coin_image(image_data) do
+    image_url_raw =
+      if image_data do
+        image_data["thumb"] || image_data["small"]
+      else
+        nil
+      end
+
+    case Helper.validate_url(image_url_raw) do
+      {:ok, url} -> url
+      _ -> nil
     end
   end
 
@@ -265,13 +320,5 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   @spec config(atom()) :: term
   defp config(key) do
     Application.get_env(:explorer, __MODULE__, [])[key]
-  end
-
-  defp token_symbol_to_id_mapping_to_get_price(symbol) do
-    case symbol do
-      "UNI" -> "uniswap"
-      "SURF" -> "surf-finance"
-      _symbol -> nil
-    end
   end
 end

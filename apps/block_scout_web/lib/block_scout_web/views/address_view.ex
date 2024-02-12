@@ -6,8 +6,10 @@ defmodule BlockScoutWeb.AddressView do
   alias BlockScoutWeb.{AccessHelper, LayoutView}
   alias Explorer.Account.CustomABI
   alias Explorer.{Chain, CustomContractsHelper, Repo}
-  alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.{Address, Hash, InternalTransaction, Log, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
 
@@ -198,7 +200,7 @@ defmodule BlockScoutWeb.AddressView do
 
   def primary_name(%Address{names: _} = address) do
     with false <- is_nil(address.contract_code),
-         twin <- Chain.get_verified_twin_contract(address),
+         twin <- SmartContract.get_verified_twin_contract(address),
          false <- is_nil(twin) do
       twin.name
     else
@@ -254,20 +256,20 @@ defmodule BlockScoutWeb.AddressView do
   def smart_contract_verified?(%Address{smart_contract: nil}), do: false
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: %SmartContract{}} = address) do
-    Enum.any?(address.smart_contract.abi || [], &is_read_function?(&1))
+    Enum.any?(address.smart_contract.abi || [], &read_function?(&1))
   end
 
-  def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
+  def smart_contract_with_read_only_functions?(%Address{smart_contract: _}), do: false
 
-  def is_read_function?(function), do: Helper.queriable_method?(function) || Helper.read_with_wallet_method?(function)
+  def read_function?(function), do: Helper.queriable_method?(function) || Helper.read_with_wallet_method?(function)
 
   def smart_contract_is_proxy?(address, options \\ [])
 
   def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}, options) do
-    SmartContract.proxy_contract?(smart_contract, options)
+    Proxy.proxy_contract?(smart_contract, options)
   end
 
-  def smart_contract_is_proxy?(%Address{smart_contract: nil}, _), do: false
+  def smart_contract_is_proxy?(%Address{smart_contract: _}, _), do: false
 
   def smart_contract_with_write_functions?(%Address{smart_contract: %SmartContract{}} = address) do
     !contract_interaction_disabled?() &&
@@ -277,7 +279,7 @@ defmodule BlockScoutWeb.AddressView do
       )
   end
 
-  def smart_contract_with_write_functions?(%Address{smart_contract: nil}), do: false
+  def smart_contract_with_write_functions?(%Address{smart_contract: _}), do: false
 
   def has_decompiled_code?(address) do
     address.has_decompiled_code? ||
@@ -455,7 +457,7 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def smart_contract_is_gnosis_safe_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
-    address.smart_contract.name == "GnosisSafeProxy" && Chain.gnosis_safe_contract?(address.smart_contract.abi)
+    address.smart_contract.name == "GnosisSafeProxy" && Proxy.gnosis_safe_contract?(address.smart_contract.abi)
   end
 
   def smart_contract_is_gnosis_safe_proxy?(_address), do: false
@@ -478,7 +480,7 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def check_custom_abi_for_having_read_functions(custom_abi),
-    do: !is_nil(custom_abi) && Enum.any?(custom_abi.abi, &is_read_function?(&1))
+    do: !is_nil(custom_abi) && Enum.any?(custom_abi.abi, &read_function?(&1))
 
   def has_address_custom_abi_with_write_functions?(conn, address_hash) do
     if contract_interaction_disabled?() do
@@ -494,4 +496,17 @@ defmodule BlockScoutWeb.AddressView do
     do: !is_nil(custom_abi) && Enum.any?(custom_abi.abi, &Writer.write_function?(&1))
 
   def contract_interaction_disabled?, do: Application.get_env(:block_scout_web, :contract)[:disable_interaction]
+
+  @doc """
+    Decodes given log
+  """
+  @spec decode(Log.t(), Transaction.t()) ::
+          {:ok, String.t(), String.t(), map()}
+          | {:error, atom()}
+          | {:error, atom(), list()}
+          | {{:error, :contract_not_verified, list()}, any()}
+  def decode(log, transaction) do
+    {result, _contracts_acc, _events_acc} = Log.decode(log, transaction, [], true)
+    result
+  end
 end

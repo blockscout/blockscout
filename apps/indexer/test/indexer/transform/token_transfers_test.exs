@@ -7,7 +7,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
 
   describe "parse/1" do
     test "parse/1 parses logs for tokens and token transfers" do
-      [log_1, _log_2, log_3] =
+      [log_1, _log_2, log_3, weth_deposit_log, weth_withdrawal_log] =
         logs = [
           %{
             address_hash: "0xf2eec76e45b328df99a34fa696320a262cb92154",
@@ -19,8 +19,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
             index: 8,
             second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
             third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
-            transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
-            type: "mined"
+            transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5"
           },
           %{
             address_hash: "0x6ea5ec9cb832e60b6b1654f5826e9be638f276a5",
@@ -32,8 +31,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
             index: 0,
             second_topic: "0x00000000000000000000000063b0595bb7a0b7edd0549c9557a0c8aee6da667b",
             third_topic: "0x000000000000000000000000f3089e15d0c23c181d7f98b0878b560bfe193a1d",
-            transaction_hash: "0x8425a9b81a9bd1c64861110c1a453b84719cb0361d6fa0db68abf7611b9a890e",
-            type: "mined"
+            transaction_hash: "0x8425a9b81a9bd1c64861110c1a453b84719cb0361d6fa0db68abf7611b9a890e"
           },
           %{
             address_hash: "0x91932e8c6776fb2b04abb71874a7988747728bb2",
@@ -45,8 +43,31 @@ defmodule Indexer.Transform.TokenTransfersTest do
             index: 1,
             second_topic: "0x0000000000000000000000009851ba177554eb07271ac230a137551e6dd0aa84",
             third_topic: "0x000000000000000000000000dccb72afee70e60b0c1226288fe86c01b953e8ac",
-            transaction_hash: "0x4011d9a930a3da620321589a54dc0ca3b88216b4886c7a7c3aaad1fb17702d35",
-            type: "mined"
+            transaction_hash: "0x4011d9a930a3da620321589a54dc0ca3b88216b4886c7a7c3aaad1fb17702d35"
+          },
+          %{
+            address_hash: "0x0BE9e53fd7EDaC9F859882AfdDa116645287C629",
+            block_number: 23_704_638,
+            block_hash: "0x8f61c99b0dd1196714ffda5bf979a282e6a62fdd3cff25c291284e6b57de2106",
+            data: "0x00000000000000000000000000000000000000000000002be19edfcf6b480000",
+            first_topic: "0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c",
+            second_topic: "0x000000000000000000000000fb76e9e7d88e308ab530330ed90e84a952570319",
+            third_topic: nil,
+            fourth_topic: nil,
+            index: 1,
+            transaction_hash: "0x185889bc91372106ecf114a4e23f4ee615e131ae3e698078bd5d2ed7e3f55a49"
+          },
+          %{
+            address_hash: "0x0BE9e53fd7EDaC9F859882AfdDa116645287C629",
+            block_number: 23_704_608,
+            block_hash: "0x5a5e69984f78d65fc6d92e18058d21a9b114f1d56d06ca7aa017b3d87bf0491a",
+            data: "0x00000000000000000000000000000000000000000000000000e1315e1ebd28e8",
+            first_topic: "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65",
+            second_topic: "0x000000000000000000000000e3f85aad0c8dd7337427b9df5d0fb741d65eeeb5",
+            third_topic: nil,
+            fourth_topic: nil,
+            index: 1,
+            transaction_hash: "0x07510dbfddbac9064f7d607c2d9a14aa26fa19cdfcd578c0b585ff2395df543f"
           }
         ]
 
@@ -58,6 +79,10 @@ defmodule Indexer.Transform.TokenTransfersTest do
           },
           %{
             contract_address_hash: log_1.address_hash,
+            type: "ERC-20"
+          },
+          %{
+            contract_address_hash: weth_withdrawal_log.address_hash,
             type: "ERC-20"
           }
         ],
@@ -84,6 +109,30 @@ defmodule Indexer.Transform.TokenTransfersTest do
             transaction_hash: log_1.transaction_hash,
             token_type: "ERC-20",
             block_hash: log_1.block_hash
+          },
+          %{
+            amount: Decimal.new("63386150072297704"),
+            block_hash: weth_withdrawal_log.block_hash,
+            block_number: weth_withdrawal_log.block_number,
+            from_address_hash: truncated_hash(weth_withdrawal_log.second_topic),
+            log_index: 1,
+            to_address_hash: "0x0000000000000000000000000000000000000000",
+            token_contract_address_hash: weth_withdrawal_log.address_hash,
+            token_ids: nil,
+            token_type: "ERC-20",
+            transaction_hash: weth_withdrawal_log.transaction_hash
+          },
+          %{
+            amount: Decimal.new("809467672956315893760"),
+            block_hash: weth_deposit_log.block_hash,
+            block_number: weth_deposit_log.block_number,
+            from_address_hash: "0x0000000000000000000000000000000000000000",
+            log_index: 1,
+            to_address_hash: truncated_hash(weth_deposit_log.second_topic),
+            token_contract_address_hash: weth_deposit_log.address_hash,
+            token_ids: nil,
+            token_type: "ERC-20",
+            transaction_hash: weth_deposit_log.transaction_hash
           }
         ]
       }
@@ -103,8 +152,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         second_topic: nil,
         third_topic: nil,
         transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8",
-        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
-        type: "mined"
+        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca"
       }
 
       expected = %{
@@ -144,8 +192,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         fourth_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
         index: 2,
         transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8",
-        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
-        type: "mined"
+        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca"
       }
 
       assert TokenTransfers.parse([log]) == %{
@@ -186,8 +233,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         fourth_topic: "0x0000000000000000000000006c943470780461b00783ad530a53913bd2c104d3",
         index: 2,
         transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8",
-        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
-        type: "mined"
+        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca"
       }
 
       assert TokenTransfers.parse([log]) == %{
@@ -209,6 +255,27 @@ defmodule Indexer.Transform.TokenTransfersTest do
              }
     end
 
+    test "parses erc1155 batch token transfer with empty ids/values" do
+      log = %{
+        address_hash: "0x598AF04C88122FA4D1e08C5da3244C39F10D4F14",
+        block_number: 9_065_059,
+        data:
+          "0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        first_topic: "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb",
+        secon_topic: "0x81D0caF80E9bFfD9bF9c641ab964feB9ef69069e",
+        third_topic: "0x598AF04C88122FA4D1e08C5da3244C39F10D4F14",
+        fourth_topic: "0x0000000000000000000000000000000000000000",
+        index: 6,
+        transaction_hash: "0xa6ad6588edb4abd8ca45f30d2f026ba20b68a3002a5870dbd30cc3752568483b",
+        block_hash: "0x61b720e40f8c521edd77a52cabce556c18b18b198f78e361f310003386ff1f02"
+      }
+
+      assert TokenTransfers.parse([log]) == %{
+               token_transfers: [],
+               tokens: []
+             }
+    end
+
     test "logs error with unrecognized token transfer format" do
       log = %{
         address_hash: "0x58Ab73CB79c8275628E0213742a85B163fE0A9Fb",
@@ -220,8 +287,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         index: 2,
         second_topic: nil,
         third_topic: nil,
-        transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8",
-        type: "mined"
+        transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8"
       }
 
       error = capture_log(fn -> %{tokens: [], token_transfers: []} = TokenTransfers.parse([log]) end)
@@ -243,8 +309,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         index: 8,
         second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
         third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
-        transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
-        type: "mined"
+        transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5"
       }
 
       assert %{
@@ -267,8 +332,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
           index: 8,
           second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
           third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
-          transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
-          type: "mined"
+          transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5"
         },
         %{
           address_hash: contract_address_hash,
@@ -281,8 +345,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
           fourth_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
           index: 2,
           transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
-          block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
-          type: "mined"
+          block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca"
         }
       ]
 

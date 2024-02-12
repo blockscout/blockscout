@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   alias Ecto.Changeset
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, PendingBlockOperation, Transaction}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Import.Runner.Blocks
 
   @interval :timer.seconds(10)
@@ -41,9 +42,11 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
   @impl GenServer
   def init(opts) when is_list(opts) do
+    interval = Application.get_env(:indexer, __MODULE__)[:interval]
+
     state = %__MODULE__{
       json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
-      interval: opts[:interval] || @interval
+      interval: interval || @interval
     }
 
     Process.send_after(self(), :sanitize_empty_blocks, state.interval)
@@ -68,19 +71,15 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   end
 
   defp sanitize_empty_blocks(json_rpc_named_arguments) do
-    unprocessed_non_empty_blocks_from_db = unprocessed_non_empty_blocks_query_list(limit())
+    unprocessed_non_empty_blocks_query = unprocessed_non_empty_blocks_query(limit())
 
-    uniq_block_hashes = unprocessed_non_empty_blocks_from_db
-
-    if Enum.count(uniq_block_hashes) > 0 do
-      Repo.update_all(
-        from(
-          block in Block,
-          where: block.hash in ^uniq_block_hashes
-        ),
-        set: [is_empty: false, updated_at: Timex.now()]
-      )
-    end
+    Repo.update_all(
+      from(
+        block in Block,
+        where: block.hash in subquery(unprocessed_non_empty_blocks_query)
+      ),
+      set: [is_empty: false, updated_at: Timex.now()]
+    )
 
     unprocessed_empty_blocks_from_db = unprocessed_empty_blocks_query_list(limit())
 
@@ -97,7 +96,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
         if transactions_count > 0 do
           Logger.info(
-            "Block with number #{block_number} and hash #{to_string(block_hash)} is full of transactions. We should set consensus=false for it in order to refetch.",
+            "Block with number #{block_number} and hash #{to_string(block_hash)} is full of transactions. We should set consensus = false for it in order to refetch.",
             fetcher: :empty_blocks_to_refetch
           )
 
@@ -135,31 +134,29 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
       {:error, %{exception: postgrex_error}}
   end
 
+  @head_offset 1000
   defp consensus_blocks_with_nil_is_empty_query(limit) do
+    safe_block_number = BlockNumber.get_max() - @head_offset
+
     from(block in Block,
       where: is_nil(block.is_empty),
+      where: block.number <= ^safe_block_number,
       where: block.consensus == true,
       order_by: [asc: block.hash],
-      limit: ^limit,
-      offset: 1000,
-      lock: "FOR UPDATE"
+      limit: ^limit
     )
   end
 
-  defp unprocessed_non_empty_blocks_query_list(limit) do
+  defp unprocessed_non_empty_blocks_query(limit) do
     blocks_query = consensus_blocks_with_nil_is_empty_query(limit)
 
-    query =
-      from(q in subquery(blocks_query),
-        inner_join: transaction in Transaction,
-        on: q.number == transaction.block_number,
-        select: q.hash,
-        distinct: q.hash,
-        order_by: [asc: q.hash]
-      )
-
-    query
-    |> Repo.all(timeout: :infinity)
+    from(q in subquery(blocks_query),
+      inner_join: transaction in Transaction,
+      on: q.number == transaction.block_number,
+      select: q.hash,
+      order_by: [asc: q.hash],
+      lock: fragment("FOR NO KEY UPDATE OF ?", q)
+    )
   end
 
   defp unprocessed_empty_blocks_query_list(limit) do

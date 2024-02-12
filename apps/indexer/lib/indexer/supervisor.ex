@@ -5,13 +5,20 @@ defmodule Indexer.Supervisor do
 
   use Supervisor
 
+  alias Explorer.Chain.BridgedToken
+
   alias Indexer.{
     Block,
-    PendingOpsCleaner
+    BridgedTokens.CalcLpTokensTotalLiquidity,
+    BridgedTokens.SetAmbBridgedMetadataForTokens,
+    BridgedTokens.SetOmniBridgedMetadataForTokens,
+    PendingOpsCleaner,
+    PendingTransactionsSanitizer
   }
 
   alias Indexer.Block.Catchup, as: BlockCatchup
   alias Indexer.Block.Realtime, as: BlockRealtime
+  alias Indexer.Fetcher.TokenInstance.LegacySanitize, as: TokenInstanceLegacySanitize
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Indexer.Fetcher.TokenInstance.Retry, as: TokenInstanceRetry
   alias Indexer.Fetcher.TokenInstance.Sanitize, as: TokenInstanceSanitize
@@ -19,16 +26,25 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.{
     BlockReward,
     CoinBalance,
+    CoinBalanceDailyUpdater,
     ContractCode,
     EmptyBlocksSanitizer,
+    InternalTransaction,
+    PendingBlockOperationsSanitizer,
+    PendingTransaction,
+    PolygonEdge,
     ReplacedTransaction,
+    RootstockData,
     Token,
     TokenBalance,
+    TokenTotalSupplyUpdater,
     TokenUpdater,
     TransactionAction,
     UncleBlock,
     Withdrawal
   }
+
+  alias Indexer.Fetcher.Zkevm.TransactionBatch
 
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,
@@ -105,6 +121,7 @@ defmodule Indexer.Supervisor do
         {TokenInstanceRealtime.Supervisor, [[memory_monitor: memory_monitor]]},
         {TokenInstanceRetry.Supervisor, [[memory_monitor: memory_monitor]]},
         {TokenInstanceSanitize.Supervisor, [[memory_monitor: memory_monitor]]},
+        {TokenInstanceLegacySanitize, [[memory_monitor: memory_monitor]]},
         configure(TransactionAction.Supervisor, [[memory_monitor: memory_monitor]]),
         {ContractCode.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
@@ -113,6 +130,28 @@ defmodule Indexer.Supervisor do
         {TokenUpdater.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
+        configure(PolygonEdge.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor, [
+          [memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]
+        ]),
+        configure(Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor, [
+          [memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]
+        ]),
+        configure(Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.Shibarium.L2.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(Indexer.Fetcher.Shibarium.L1.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(TransactionBatch.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+
+        # Out-of-band fetchers
+        {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
+        {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
+        {TokenTotalSupplyUpdater, [[]]},
+        {CoinBalanceDailyUpdater, [[]]},
 
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},
@@ -121,25 +160,48 @@ defmodule Indexer.Supervisor do
         {BlocksTransactionsMismatch.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {PendingOpsCleaner, [[], []]},
+        {PendingBlockOperationsSanitizer, [[]]},
+        {RootstockData.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
 
         # Block fetchers
         configure(BlockRealtime.Supervisor, [
           %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
           [name: BlockRealtime.Supervisor]
         ]),
-        {BlockCatchup.Supervisor,
-         [
-           %{block_fetcher: block_fetcher, block_interval: block_interval, memory_monitor: memory_monitor},
-           [name: BlockCatchup.Supervisor]
-         ]},
+        configure(
+          BlockCatchup.Supervisor,
+          [
+            %{block_fetcher: block_fetcher, block_interval: block_interval, memory_monitor: memory_monitor},
+            [name: BlockCatchup.Supervisor]
+          ]
+        ),
         {Withdrawal.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]}
       ]
       |> List.flatten()
 
+    all_fetchers = maybe_add_bridged_tokens_fetchers(basic_fetchers)
+
     Supervisor.init(
-      basic_fetchers,
+      all_fetchers,
       strategy: :one_for_one
     )
+  end
+
+  defp maybe_add_bridged_tokens_fetchers(basic_fetchers) do
+    extended_fetchers =
+      if BridgedToken.enabled?() && BridgedToken.necessary_envs_passed?() do
+        [{CalcLpTokensTotalLiquidity, [[], []]}, {SetOmniBridgedMetadataForTokens, [[], []]}] ++ basic_fetchers
+      else
+        basic_fetchers
+      end
+
+    amb_bridge_mediators = Application.get_env(:explorer, Explorer.Chain.BridgedToken)[:amb_bridge_mediators]
+
+    if BridgedToken.enabled?() && amb_bridge_mediators && amb_bridge_mediators !== "" do
+      [{SetAmbBridgedMetadataForTokens, [[], []]} | extended_fetchers]
+    else
+      extended_fetchers
+    end
   end
 
   defp configure(process, opts) do

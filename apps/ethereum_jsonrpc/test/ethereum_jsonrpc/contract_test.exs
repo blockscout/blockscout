@@ -5,6 +5,8 @@ defmodule EthereumJSONRPC.ContractTest do
 
   import Mox
 
+  setup :verify_on_exit!
+
   describe "execute_contract_functions/3" do
     test "executes the functions with and without the block_number, returns results in order" do
       json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)

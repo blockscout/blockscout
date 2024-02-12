@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   alias Explorer.Chain.{Block, Hash, Import, Transaction}
   alias Explorer.Chain.Import.Runner.TokenTransfers
   alias Explorer.Prometheus.Instrumenter
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.MissingRangesManipulator
 
   @behaviour Import.Runner
 
@@ -108,68 +108,169 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   end
 
   defp default_on_conflict do
-    from(
-      transaction in Transaction,
-      update: [
-        set: [
-          block_hash: fragment("EXCLUDED.block_hash"),
-          old_block_hash: transaction.block_hash,
-          block_number: fragment("EXCLUDED.block_number"),
-          created_contract_address_hash: fragment("EXCLUDED.created_contract_address_hash"),
-          created_contract_code_indexed_at: fragment("EXCLUDED.created_contract_code_indexed_at"),
-          cumulative_gas_used: fragment("EXCLUDED.cumulative_gas_used"),
-          error: fragment("EXCLUDED.error"),
-          from_address_hash: fragment("EXCLUDED.from_address_hash"),
-          gas: fragment("EXCLUDED.gas"),
-          gas_price: fragment("EXCLUDED.gas_price"),
-          gas_used: fragment("EXCLUDED.gas_used"),
-          index: fragment("EXCLUDED.index"),
-          input: fragment("EXCLUDED.input"),
-          nonce: fragment("EXCLUDED.nonce"),
-          r: fragment("EXCLUDED.r"),
-          s: fragment("EXCLUDED.s"),
-          status: fragment("EXCLUDED.status"),
-          to_address_hash: fragment("EXCLUDED.to_address_hash"),
-          v: fragment("EXCLUDED.v"),
-          value: fragment("EXCLUDED.value"),
-          earliest_processing_start: fragment("EXCLUDED.earliest_processing_start"),
-          revert_reason: fragment("EXCLUDED.revert_reason"),
-          max_priority_fee_per_gas: fragment("EXCLUDED.max_priority_fee_per_gas"),
-          max_fee_per_gas: fragment("EXCLUDED.max_fee_per_gas"),
-          type: fragment("EXCLUDED.type"),
-          # Don't update `hash` as it is part of the primary key and used for the conflict target
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", transaction.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", transaction.updated_at)
-        ]
-      ],
-      where:
-        fragment(
-          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value, EXCLUDED.earliest_processing_start, EXCLUDED.revert_reason, EXCLUDED.max_priority_fee_per_gas, EXCLUDED.max_fee_per_gas, EXCLUDED.type) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-          transaction.block_hash,
-          transaction.block_number,
-          transaction.created_contract_address_hash,
-          transaction.created_contract_code_indexed_at,
-          transaction.cumulative_gas_used,
-          transaction.from_address_hash,
-          transaction.gas,
-          transaction.gas_price,
-          transaction.gas_used,
-          transaction.index,
-          transaction.input,
-          transaction.nonce,
-          transaction.r,
-          transaction.s,
-          transaction.status,
-          transaction.to_address_hash,
-          transaction.v,
-          transaction.value,
-          transaction.earliest_processing_start,
-          transaction.revert_reason,
-          transaction.max_priority_fee_per_gas,
-          transaction.max_fee_per_gas,
-          transaction.type
-        )
-    )
+    if System.get_env("CHAIN_TYPE") == "suave" do
+      from(
+        transaction in Transaction,
+        update: [
+          set: [
+            block_hash: fragment("EXCLUDED.block_hash"),
+            old_block_hash: transaction.block_hash,
+            block_number: fragment("EXCLUDED.block_number"),
+            block_consensus: fragment("EXCLUDED.block_consensus"),
+            block_timestamp: fragment("EXCLUDED.block_timestamp"),
+            created_contract_address_hash: fragment("EXCLUDED.created_contract_address_hash"),
+            created_contract_code_indexed_at: fragment("EXCLUDED.created_contract_code_indexed_at"),
+            cumulative_gas_used: fragment("EXCLUDED.cumulative_gas_used"),
+            error: fragment("EXCLUDED.error"),
+            from_address_hash: fragment("EXCLUDED.from_address_hash"),
+            gas: fragment("EXCLUDED.gas"),
+            gas_price: fragment("EXCLUDED.gas_price"),
+            gas_used: fragment("EXCLUDED.gas_used"),
+            index: fragment("EXCLUDED.index"),
+            input: fragment("EXCLUDED.input"),
+            nonce: fragment("EXCLUDED.nonce"),
+            r: fragment("EXCLUDED.r"),
+            s: fragment("EXCLUDED.s"),
+            status: fragment("EXCLUDED.status"),
+            to_address_hash: fragment("EXCLUDED.to_address_hash"),
+            v: fragment("EXCLUDED.v"),
+            value: fragment("EXCLUDED.value"),
+            earliest_processing_start: fragment("EXCLUDED.earliest_processing_start"),
+            revert_reason: fragment("EXCLUDED.revert_reason"),
+            max_priority_fee_per_gas: fragment("EXCLUDED.max_priority_fee_per_gas"),
+            max_fee_per_gas: fragment("EXCLUDED.max_fee_per_gas"),
+            type: fragment("EXCLUDED.type"),
+            execution_node_hash: fragment("EXCLUDED.execution_node_hash"),
+            wrapped_type: fragment("EXCLUDED.wrapped_type"),
+            wrapped_nonce: fragment("EXCLUDED.wrapped_nonce"),
+            wrapped_to_address_hash: fragment("EXCLUDED.wrapped_to_address_hash"),
+            wrapped_gas: fragment("EXCLUDED.wrapped_gas"),
+            wrapped_gas_price: fragment("EXCLUDED.wrapped_gas_price"),
+            wrapped_max_priority_fee_per_gas: fragment("EXCLUDED.wrapped_max_priority_fee_per_gas"),
+            wrapped_max_fee_per_gas: fragment("EXCLUDED.wrapped_max_fee_per_gas"),
+            wrapped_value: fragment("EXCLUDED.wrapped_value"),
+            wrapped_input: fragment("EXCLUDED.wrapped_input"),
+            wrapped_v: fragment("EXCLUDED.wrapped_v"),
+            wrapped_r: fragment("EXCLUDED.wrapped_r"),
+            wrapped_s: fragment("EXCLUDED.wrapped_s"),
+            wrapped_hash: fragment("EXCLUDED.wrapped_hash"),
+            # Don't update `hash` as it is part of the primary key and used for the conflict target
+            inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", transaction.inserted_at),
+            updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", transaction.updated_at)
+          ]
+        ],
+        where:
+          fragment(
+            "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.block_consensus, EXCLUDED.block_timestamp, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value, EXCLUDED.earliest_processing_start, EXCLUDED.revert_reason, EXCLUDED.max_priority_fee_per_gas, EXCLUDED.max_fee_per_gas, EXCLUDED.type, EXCLUDED.execution_node_hash, EXCLUDED.wrapped_type, EXCLUDED.wrapped_nonce, EXCLUDED.wrapped_to_address_hash, EXCLUDED.wrapped_gas, EXCLUDED.wrapped_gas_price, EXCLUDED.wrapped_max_priority_fee_per_gas, EXCLUDED.wrapped_max_fee_per_gas, EXCLUDED.wrapped_value, EXCLUDED.wrapped_input, EXCLUDED.wrapped_v, EXCLUDED.wrapped_r, EXCLUDED.wrapped_s, EXCLUDED.wrapped_hash) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            transaction.block_hash,
+            transaction.block_number,
+            transaction.block_consensus,
+            transaction.block_timestamp,
+            transaction.created_contract_address_hash,
+            transaction.created_contract_code_indexed_at,
+            transaction.cumulative_gas_used,
+            transaction.from_address_hash,
+            transaction.gas,
+            transaction.gas_price,
+            transaction.gas_used,
+            transaction.index,
+            transaction.input,
+            transaction.nonce,
+            transaction.r,
+            transaction.s,
+            transaction.status,
+            transaction.to_address_hash,
+            transaction.v,
+            transaction.value,
+            transaction.earliest_processing_start,
+            transaction.revert_reason,
+            transaction.max_priority_fee_per_gas,
+            transaction.max_fee_per_gas,
+            transaction.type,
+            transaction.execution_node_hash,
+            transaction.wrapped_type,
+            transaction.wrapped_nonce,
+            transaction.wrapped_to_address_hash,
+            transaction.wrapped_gas,
+            transaction.wrapped_gas_price,
+            transaction.wrapped_max_priority_fee_per_gas,
+            transaction.wrapped_max_fee_per_gas,
+            transaction.wrapped_value,
+            transaction.wrapped_input,
+            transaction.wrapped_v,
+            transaction.wrapped_r,
+            transaction.wrapped_s,
+            transaction.wrapped_hash
+          )
+      )
+    else
+      from(
+        transaction in Transaction,
+        update: [
+          set: [
+            block_hash: fragment("EXCLUDED.block_hash"),
+            old_block_hash: transaction.block_hash,
+            block_number: fragment("EXCLUDED.block_number"),
+            block_consensus: fragment("EXCLUDED.block_consensus"),
+            block_timestamp: fragment("EXCLUDED.block_timestamp"),
+            created_contract_address_hash: fragment("EXCLUDED.created_contract_address_hash"),
+            created_contract_code_indexed_at: fragment("EXCLUDED.created_contract_code_indexed_at"),
+            cumulative_gas_used: fragment("EXCLUDED.cumulative_gas_used"),
+            error: fragment("EXCLUDED.error"),
+            from_address_hash: fragment("EXCLUDED.from_address_hash"),
+            gas: fragment("EXCLUDED.gas"),
+            gas_price: fragment("EXCLUDED.gas_price"),
+            gas_used: fragment("EXCLUDED.gas_used"),
+            index: fragment("EXCLUDED.index"),
+            input: fragment("EXCLUDED.input"),
+            nonce: fragment("EXCLUDED.nonce"),
+            r: fragment("EXCLUDED.r"),
+            s: fragment("EXCLUDED.s"),
+            status: fragment("EXCLUDED.status"),
+            to_address_hash: fragment("EXCLUDED.to_address_hash"),
+            v: fragment("EXCLUDED.v"),
+            value: fragment("EXCLUDED.value"),
+            earliest_processing_start: fragment("EXCLUDED.earliest_processing_start"),
+            revert_reason: fragment("EXCLUDED.revert_reason"),
+            max_priority_fee_per_gas: fragment("EXCLUDED.max_priority_fee_per_gas"),
+            max_fee_per_gas: fragment("EXCLUDED.max_fee_per_gas"),
+            type: fragment("EXCLUDED.type"),
+            # Don't update `hash` as it is part of the primary key and used for the conflict target
+            inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", transaction.inserted_at),
+            updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", transaction.updated_at)
+          ]
+        ],
+        where:
+          fragment(
+            "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.block_consensus, EXCLUDED.block_timestamp, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value, EXCLUDED.earliest_processing_start, EXCLUDED.revert_reason, EXCLUDED.max_priority_fee_per_gas, EXCLUDED.max_fee_per_gas, EXCLUDED.type) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            transaction.block_hash,
+            transaction.block_number,
+            transaction.block_consensus,
+            transaction.block_timestamp,
+            transaction.created_contract_address_hash,
+            transaction.created_contract_code_indexed_at,
+            transaction.cumulative_gas_used,
+            transaction.from_address_hash,
+            transaction.gas,
+            transaction.gas_price,
+            transaction.gas_used,
+            transaction.index,
+            transaction.input,
+            transaction.nonce,
+            transaction.r,
+            transaction.s,
+            transaction.status,
+            transaction.to_address_hash,
+            transaction.v,
+            transaction.value,
+            transaction.earliest_processing_start,
+            transaction.revert_reason,
+            transaction.max_priority_fee_per_gas,
+            transaction.max_fee_per_gas,
+            transaction.type
+          )
+      )
+    end
   end
 
   defp discard_blocks_for_recollated_transactions(repo, changes_list, %{
@@ -198,13 +299,19 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           ),
         on: transaction.hash == new_transaction.hash,
         where: transaction.block_hash != new_transaction.block_hash,
-        select: transaction.block_hash
+        select: %{hash: transaction.hash, block_hash: transaction.block_hash}
       )
 
     block_hashes =
       blocks_with_recollated_transactions
       |> repo.all()
+      |> Enum.map(fn %{block_hash: block_hash} -> block_hash end)
       |> Enum.uniq()
+
+    transaction_hashes =
+      blocks_with_recollated_transactions
+      |> repo.all()
+      |> Enum.map(fn %{hash: hash} -> hash end)
 
     if Enum.empty?(block_hashes) do
       {:ok, []}
@@ -215,8 +322,31 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           where: block.hash in ^block_hashes,
           # Enforce Block ShareLocks order (see docs: sharelocks.md)
           order_by: [asc: block.hash],
-          lock: "FOR UPDATE"
+          lock: "FOR NO KEY UPDATE"
         )
+
+      transactions_query =
+        from(
+          transaction in Transaction,
+          where: transaction.block_hash in ^block_hashes,
+          # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+          order_by: [asc: :hash],
+          lock: "FOR NO KEY UPDATE"
+        )
+
+      transactions_replacements = [
+        block_hash: nil,
+        block_number: nil,
+        gas_used: nil,
+        cumulative_gas_used: nil,
+        index: nil,
+        status: nil,
+        error: nil,
+        max_priority_fee_per_gas: nil,
+        max_fee_per_gas: nil,
+        type: nil,
+        updated_at: updated_at
+      ]
 
       try do
         {_, result} =
@@ -226,12 +356,46 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
             timeout: timeout
           )
 
-        MissingBlockRange.add_ranges_by_block_numbers(result)
+        {_, _transactions_result} =
+          repo.update_all(
+            from(t in Transaction, join: s in subquery(transactions_query), on: t.hash == s.hash),
+            [set: transactions_replacements],
+            timeout: timeout
+          )
+
+        MissingRangesManipulator.add_ranges_by_block_numbers(result)
 
         {:ok, result}
       rescue
         postgrex_error in Postgrex.Error ->
           {:error, %{exception: postgrex_error, block_hashes: block_hashes}}
+      end
+    end
+
+    if Enum.empty?(transaction_hashes) do
+      {:ok, []}
+    else
+      query =
+        from(
+          transaction in Transaction,
+          where: transaction.hash in ^transaction_hashes,
+          # Enforce Block ShareLocks order (see docs: sharelocks.md)
+          order_by: [asc: transaction.hash],
+          lock: "FOR UPDATE"
+        )
+
+      try do
+        {_, result} =
+          repo.update_all(
+            from(transaction in Transaction, join: s in subquery(query), on: transaction.hash == s.hash),
+            [set: [block_consensus: false, updated_at: updated_at]],
+            timeout: timeout
+          )
+
+        {:ok, result}
+      rescue
+        postgrex_error in Postgrex.Error ->
+          {:error, %{exception: postgrex_error, transaction_hashes: transaction_hashes}}
       end
     end
   end

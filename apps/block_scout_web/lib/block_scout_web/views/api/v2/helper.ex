@@ -10,13 +10,13 @@ defmodule BlockScoutWeb.API.V2.Helper do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 3]
 
-  def address_with_info(conn, address, address_hash, watchlist_names_cached \\ nil)
+  def address_with_info(conn, address, address_hash, tags_needed?, watchlist_names_cached \\ nil)
 
-  def address_with_info(_, _, nil, _) do
+  def address_with_info(_, _, nil, _, _) do
     nil
   end
 
-  def address_with_info(conn, address, address_hash, nil) do
+  def address_with_info(conn, address, address_hash, true, nil) do
     %{
       common_tags: public_tags,
       personal_tags: private_tags,
@@ -30,7 +30,15 @@ defmodule BlockScoutWeb.API.V2.Helper do
     })
   end
 
-  def address_with_info(_conn, address, address_hash, watchlist_names_cached) do
+  def address_with_info(_conn, address, address_hash, false, nil) do
+    Map.merge(address_with_info(address, address_hash), %{
+      "private_tags" => [],
+      "watchlist_names" => [],
+      "public_tags" => []
+    })
+  end
+
+  def address_with_info(_conn, address, address_hash, _, watchlist_names_cached) do
     watchlist_name = watchlist_names_cached[address_hash]
 
     Map.merge(address_with_info(address, address_hash), %{
@@ -40,14 +48,25 @@ defmodule BlockScoutWeb.API.V2.Helper do
     })
   end
 
+  @doc """
+  Gets address with the additional info for api v2
+  """
+  @spec address_with_info(any(), any()) :: nil | %{optional(<<_::32, _::_*8>>) => any()}
   def address_with_info(%Address{} = address, _address_hash) do
     %{
       "hash" => Address.checksum(address),
-      "is_contract" => is_smart_contract(address),
+      "is_contract" => Address.smart_contract?(address),
       "name" => address_name(address),
       "implementation_name" => implementation_name(address),
-      "is_verified" => is_verified(address)
+      "is_verified" => verified?(address),
+      "ens_domain_name" => address.ens_domain_name
     }
+  end
+
+  def address_with_info(%{ens_domain_name: name}, address_hash) do
+    nil
+    |> address_with_info(address_hash)
+    |> Map.put("ens_domain_name", name)
   end
 
   def address_with_info(%NotLoaded{}, address_hash) do
@@ -86,27 +105,18 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   def implementation_name(_), do: nil
 
-  def is_smart_contract(%Address{contract_code: nil}), do: false
-  def is_smart_contract(%Address{contract_code: _}), do: true
-  def is_smart_contract(%NotLoaded{}), do: nil
-  def is_smart_contract(_), do: false
+  def verified?(%Address{smart_contract: nil}), do: false
+  def verified?(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false
+  def verified?(%Address{smart_contract: %NotLoaded{}}), do: nil
+  def verified?(%Address{smart_contract: _}), do: true
 
-  def is_verified(%Address{smart_contract: nil}), do: false
-  def is_verified(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false
-  def is_verified(%Address{smart_contract: %NotLoaded{}}), do: nil
-  def is_verified(%Address{smart_contract: _}), do: true
-
-  def market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value})
+  def market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value, market_cap_usd: market_cap_usd})
       when is_nil(available_supply) or is_nil(usd_value) do
-    Decimal.new(0)
+    max(Decimal.new(0), market_cap_usd)
   end
 
   def market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value}) do
     Decimal.mult(available_supply, usd_value)
-  end
-
-  def market_cap(:standard, exchange_rate) do
-    exchange_rate.market_cap_usd
   end
 
   def market_cap(module, exchange_rate) do

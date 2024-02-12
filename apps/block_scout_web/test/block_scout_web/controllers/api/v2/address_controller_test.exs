@@ -1,8 +1,10 @@
 defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ConnCase
+  use EthereumJSONRPC.Case, async: false
 
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Address.Counters
 
   alias Explorer.Chain.{
     Address,
@@ -11,8 +13,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     InternalTransaction,
     Log,
     Token,
+    Token.Instance,
     TokenTransfer,
     Transaction,
+    Wei,
     Withdrawal
   }
 
@@ -20,6 +24,19 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   alias Explorer.Chain.Address.CurrentTokenBalance
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
+  import Mox
+
+  @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
+  @instances_amount_in_collection 9
+
+  setup :set_mox_global
+
+  setup :verify_on_exit!
+
+  defp topic(topic_hex_string) do
+    {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
+    topic
+  end
 
   describe "/addresses/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -42,7 +59,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       correct_response = %{
         "hash" => Address.checksum(address.hash),
         "is_contract" => false,
-        "is_verified" => false,
+        "is_verified" => nil,
         "name" => nil,
         "private_tags" => [],
         "public_tags" => [],
@@ -67,7 +84,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "has_tokens" => false,
         "has_token_transfers" => false,
         "watchlist_address_id" => nil,
-        "has_beacon_chain_withdrawals" => false
+        "has_beacon_chain_withdrawals" => false,
+        "ens_domain_name" => nil
       }
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
@@ -75,6 +93,47 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{String.downcase(to_string(address.hash))}")
       assert ^correct_response = json_response(request, 200)
+    end
+
+    test "get contract info", %{conn: conn} do
+      smart_contract = insert(:smart_contract)
+
+      tx =
+        insert(:transaction,
+          to_address_hash: nil,
+          to_address: nil,
+          created_contract_address_hash: smart_contract.address_hash,
+          created_contract_address: smart_contract.address
+        )
+
+      insert(:address_name,
+        address: smart_contract.address,
+        primary: true,
+        name: smart_contract.name,
+        address_hash: smart_contract.address_hash
+      )
+
+      name = smart_contract.name
+      from = Address.checksum(tx.from_address_hash)
+      tx_hash = to_string(tx.hash)
+      address_hash = Address.checksum(smart_contract.address_hash)
+
+      get_eip1967_implementation_non_zero_address()
+
+      request = get(conn, "/api/v2/addresses/#{Address.checksum(smart_contract.address_hash)}")
+
+      assert %{
+               "hash" => ^address_hash,
+               "is_contract" => true,
+               "is_verified" => true,
+               "name" => ^name,
+               "private_tags" => [],
+               "public_tags" => [],
+               "watchlist_names" => [],
+               "creator_address_hash" => ^from,
+               "creation_tx_hash" => ^tx_hash,
+               "implementation_address" => "0x0000000000000000000000000000000000000001"
+             } = json_response(request, 200)
     end
 
     test "get watchlist id", %{conn: conn} do
@@ -159,9 +218,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       insert(:block, miner: address)
 
-      Chain.transaction_count(address)
-      Chain.token_transfers_count(address)
-      Chain.gas_usage_count(address)
+      Counters.transaction_count(address)
+      Counters.token_transfers_count(address)
+      Counters.gas_usage_count(address)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/counters")
 
@@ -372,6 +431,211 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response = json_response(request, 200)
 
       check_paginated_response(response_2nd_page, response, txs_from ++ [Enum.at(txs_to, 0)])
+    end
+
+    test "ignores wrong ordering params", %{conn: conn} do
+      address = insert(:address)
+
+      txs = insert_list(51, :transaction, from_address: address) |> with_block()
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "foo", "order" => "bar"})
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"sort" => "foo", "order" => "bar"} |> Map.merge(response["next_page_params"])
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, txs)
+    end
+
+    test "backward compatible with legacy paging params", %{conn: conn} do
+      address = insert(:address)
+      block = insert(:block)
+
+      txs = insert_list(51, :transaction, from_address: address) |> with_block(block)
+
+      [_, tx_before_last | _] = txs
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"block_number" => to_string(block.number), "index" => to_string(tx_before_last.index)}
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, txs)
+    end
+
+    test "backward compatible with legacy paging params for pending transactions", %{conn: conn} do
+      address = insert(:address)
+
+      txs = insert_list(51, :transaction, from_address: address)
+
+      [_, tx_before_last | _] = txs
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
+      assert response = json_response(request, 200)
+
+      request_2nd_page_pending =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"inserted_at" => to_string(tx_before_last.inserted_at), "hash" => to_string(tx_before_last.hash)}
+        )
+
+      assert response_2nd_page_pending = json_response(request_2nd_page_pending, 200)
+
+      check_paginated_response(response, response_2nd_page_pending, txs)
+    end
+
+    test "can order and paginate by fee ascending", %{conn: conn} do
+      address = insert(:address)
+
+      txs_from = insert_list(25, :transaction, from_address: address) |> with_block()
+      txs_to = insert_list(26, :transaction, to_address: address) |> with_block()
+
+      txs =
+        (txs_from ++ txs_to)
+        |> Enum.sort(
+          &(Decimal.compare(&1 |> Chain.fee(:wei) |> elem(1), &2 |> Chain.fee(:wei) |> elem(1)) in [:eq, :lt])
+        )
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "fee", "order" => "asc"})
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"sort" => "fee", "order" => "asc"} |> Map.merge(response["next_page_params"])
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(txs, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(txs, 49), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 1
+      assert response_2nd_page["next_page_params"] == nil
+      compare_item(Enum.at(txs, 50), Enum.at(response_2nd_page["items"], 0))
+
+      check_paginated_response(response, response_2nd_page, txs |> Enum.reverse())
+    end
+
+    test "can order and paginate by fee descending", %{conn: conn} do
+      address = insert(:address)
+
+      txs_from = insert_list(25, :transaction, from_address: address) |> with_block()
+      txs_to = insert_list(26, :transaction, to_address: address) |> with_block()
+
+      txs =
+        (txs_from ++ txs_to)
+        |> Enum.sort(
+          &(Decimal.compare(&1 |> Chain.fee(:wei) |> elem(1), &2 |> Chain.fee(:wei) |> elem(1)) in [:eq, :gt])
+        )
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "fee", "order" => "desc"})
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"sort" => "fee", "order" => "desc"} |> Map.merge(response["next_page_params"])
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(txs, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(txs, 49), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 1
+      assert response_2nd_page["next_page_params"] == nil
+      compare_item(Enum.at(txs, 50), Enum.at(response_2nd_page["items"], 0))
+
+      check_paginated_response(response, response_2nd_page, txs |> Enum.reverse())
+    end
+
+    test "can order and paginate by value ascending", %{conn: conn} do
+      address = insert(:address)
+
+      txs_from = insert_list(25, :transaction, from_address: address) |> with_block()
+      txs_to = insert_list(26, :transaction, to_address: address) |> with_block()
+
+      txs =
+        (txs_from ++ txs_to)
+        |> Enum.sort(&(Decimal.compare(Wei.to(&1.value, :wei), Wei.to(&2.value, :wei)) in [:eq, :lt]))
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "value", "order" => "asc"})
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"sort" => "value", "order" => "asc"} |> Map.merge(response["next_page_params"])
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(txs, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(txs, 49), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 1
+      assert response_2nd_page["next_page_params"] == nil
+      compare_item(Enum.at(txs, 50), Enum.at(response_2nd_page["items"], 0))
+
+      check_paginated_response(response, response_2nd_page, txs |> Enum.reverse())
+    end
+
+    test "can order and paginate by value descending", %{conn: conn} do
+      address = insert(:address)
+
+      txs_from = insert_list(25, :transaction, from_address: address) |> with_block()
+      txs_to = insert_list(26, :transaction, to_address: address) |> with_block()
+
+      txs =
+        (txs_from ++ txs_to)
+        |> Enum.sort(&(Decimal.compare(Wei.to(&1.value, :wei), Wei.to(&2.value, :wei)) in [:eq, :gt]))
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "value", "order" => "desc"})
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"sort" => "value", "order" => "desc"} |> Map.merge(response["next_page_params"])
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(txs, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(txs, 49), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 1
+      assert response_2nd_page["next_page_params"] == nil
+      compare_item(Enum.at(txs, 50), Enum.at(response_2nd_page["items"], 0))
+
+      check_paginated_response(response, response_2nd_page, txs |> Enum.reverse())
     end
   end
 
@@ -1503,10 +1767,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block: tx.block,
           block_number: tx.block_number,
           address: address,
-          first_topic: "0x123456789123456789"
+          first_topic: topic(@first_topic_hex_string_1)
         )
 
-      request = get(conn, "/api/v2/addresses/#{address.hash}/logs?topic=0x123456789123456789")
+      request = get(conn, "/api/v2/addresses/#{address.hash}/logs?topic=#{@first_topic_hex_string_1}")
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 1
       assert response["next_page_params"] == nil
@@ -1534,21 +1798,29 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       ctbs_erc_20 =
         for _ <- 0..50 do
-          insert(:address_current_token_balance_with_token_id, address: address, token_type: "ERC-20", token_id: nil)
+          insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+            address: address,
+            token_type: "ERC-20",
+            token_id: nil
+          )
           |> Repo.preload([:token])
         end
-        |> Enum.sort_by(fn x -> x.value end, :asc)
+        |> Enum.sort_by(fn x -> Decimal.to_float(Decimal.mult(x.value, x.token.fiat_value)) end, :asc)
 
       ctbs_erc_721 =
         for _ <- 0..50 do
-          insert(:address_current_token_balance_with_token_id, address: address, token_type: "ERC-721", token_id: nil)
+          insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+            address: address,
+            token_type: "ERC-721",
+            token_id: nil
+          )
           |> Repo.preload([:token])
         end
         |> Enum.sort_by(fn x -> x.value end, :asc)
 
       ctbs_erc_1155 =
         for _ <- 0..50 do
-          insert(:address_current_token_balance_with_token_id,
+          insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
             address: address,
             token_type: "ERC-1155",
             token_id: Enum.random(1..100_000)
@@ -1651,7 +1923,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
 
     test "check nil", %{conn: conn} do
-      address = insert(:address, nonce: 1, fetched_coin_balance: 1)
+      address = insert(:address, transactions_count: 2, fetched_coin_balance: 1)
 
       request = get(conn, "/api/v2/addresses")
 
@@ -1659,11 +1931,768 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       compare_item(address, address_json)
     end
+
+    test "check smart contract preload", %{conn: conn} do
+      smart_contract = insert(:smart_contract, address_hash: insert(:contract_address, fetched_coin_balance: 1).hash)
+
+      request = get(conn, "/api/v2/addresses")
+      assert %{"items" => [address]} = json_response(request, 200)
+
+      assert String.downcase(address["hash"]) == to_string(smart_contract.address_hash)
+      assert address["is_contract"] == true
+      assert address["is_verified"] == true
+    end
+  end
+
+  describe "/addresses/{address_hash}/tabs-counters" do
+    test "get 404 on non existing address", %{conn: conn} do
+      address = build(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/addresses/0x/tabs-counters")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get counters with 0s", %{conn: conn} do
+      address = insert(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
+
+      assert %{
+               "validations_count" => 0,
+               "transactions_count" => 0,
+               "token_transfers_count" => 0,
+               "token_balances_count" => 0,
+               "logs_count" => 0,
+               "withdrawals_count" => 0,
+               "internal_txs_count" => 0
+             } = json_response(request, 200)
+    end
+
+    test "get counters and check that cache works", %{conn: conn} do
+      address = insert(:address, withdrawals: insert_list(60, :withdrawal))
+
+      insert(:transaction, from_address: address) |> with_block()
+      insert(:transaction, to_address: address) |> with_block()
+      another_tx = insert(:transaction) |> with_block()
+
+      insert(:token_transfer,
+        from_address: address,
+        transaction: another_tx,
+        block: another_tx.block,
+        block_number: another_tx.block_number
+      )
+
+      insert(:token_transfer,
+        to_address: address,
+        transaction: another_tx,
+        block: another_tx.block,
+        block_number: another_tx.block_number
+      )
+
+      insert(:block, miner: address)
+
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      for x <- 1..2 do
+        insert(:internal_transaction,
+          transaction: tx,
+          index: x,
+          block_number: tx.block_number,
+          transaction_index: tx.index,
+          block_hash: tx.block_hash,
+          block_index: x,
+          from_address: address
+        )
+      end
+
+      for _ <- 0..60 do
+        insert(:address_current_token_balance_with_token_id, address: address)
+      end
+
+      for x <- 0..60 do
+        tx =
+          :transaction
+          |> insert()
+          |> with_block()
+
+        insert(:log,
+          transaction: tx,
+          index: x,
+          block: tx.block,
+          block_number: tx.block_number,
+          address: address
+        )
+      end
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
+
+      assert %{
+               "validations_count" => 1,
+               "transactions_count" => 2,
+               "token_transfers_count" => 2,
+               "token_balances_count" => 51,
+               "logs_count" => 51,
+               "withdrawals_count" => 51,
+               "internal_txs_count" => 2
+             } = json_response(request, 200)
+
+      for x <- 3..4 do
+        insert(:internal_transaction,
+          transaction: tx,
+          index: x,
+          block_number: tx.block_number,
+          transaction_index: tx.index,
+          block_hash: tx.block_hash,
+          block_index: x,
+          from_address: address
+        )
+      end
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
+
+      assert %{
+               "validations_count" => 1,
+               "transactions_count" => 2,
+               "token_transfers_count" => 2,
+               "token_balances_count" => 51,
+               "logs_count" => 51,
+               "withdrawals_count" => 51,
+               "internal_txs_count" => 2
+             } = json_response(request, 200)
+    end
+
+    test "check counters cache ttl", %{conn: conn} do
+      address = insert(:address, withdrawals: insert_list(60, :withdrawal))
+
+      insert(:transaction, from_address: address) |> with_block()
+      insert(:transaction, to_address: address) |> with_block()
+      another_tx = insert(:transaction) |> with_block()
+
+      insert(:token_transfer,
+        from_address: address,
+        transaction: another_tx,
+        block: another_tx.block,
+        block_number: another_tx.block_number
+      )
+
+      insert(:token_transfer,
+        to_address: address,
+        transaction: another_tx,
+        block: another_tx.block,
+        block_number: another_tx.block_number
+      )
+
+      insert(:block, miner: address)
+
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      for x <- 1..2 do
+        insert(:internal_transaction,
+          transaction: tx,
+          index: x,
+          block_number: tx.block_number,
+          transaction_index: tx.index,
+          block_hash: tx.block_hash,
+          block_index: x,
+          from_address: address
+        )
+      end
+
+      for _ <- 0..60 do
+        insert(:address_current_token_balance_with_token_id, address: address)
+      end
+
+      for x <- 0..60 do
+        tx =
+          :transaction
+          |> insert()
+          |> with_block()
+
+        insert(:log,
+          transaction: tx,
+          index: x,
+          block: tx.block,
+          block_number: tx.block_number,
+          address: address
+        )
+      end
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
+
+      assert %{
+               "validations_count" => 1,
+               "transactions_count" => 2,
+               "token_transfers_count" => 2,
+               "token_balances_count" => 51,
+               "logs_count" => 51,
+               "withdrawals_count" => 51,
+               "internal_txs_count" => 2
+             } = json_response(request, 200)
+
+      old_env = Application.get_env(:explorer, Explorer.Chain.Cache.AddressesTabsCounters)
+      Application.put_env(:explorer, Explorer.Chain.Cache.AddressesTabsCounters, ttl: 200)
+      :timer.sleep(200)
+
+      for x <- 3..4 do
+        insert(:internal_transaction,
+          transaction: tx,
+          index: x,
+          block_number: tx.block_number,
+          transaction_index: tx.index,
+          block_hash: tx.block_hash,
+          block_index: x,
+          from_address: address
+        )
+      end
+
+      insert(:transaction, from_address: address) |> with_block()
+      insert(:transaction, to_address: address) |> with_block()
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
+
+      assert %{
+               "validations_count" => 1,
+               "transactions_count" => 4,
+               "token_transfers_count" => 2,
+               "token_balances_count" => 51,
+               "logs_count" => 51,
+               "withdrawals_count" => 51,
+               "internal_txs_count" => 4
+             } = json_response(request, 200)
+
+      Application.put_env(:explorer, Explorer.Chain.Cache.AddressesTabsCounters, old_env)
+    end
+  end
+
+  describe "/addresses/{address_hash}/nft" do
+    setup do
+      {:ok, endpoint: &"/api/v2/addresses/#{&1}/nft"}
+    end
+
+    test "get 404 on non existing address", %{conn: conn, endpoint: endpoint} do
+      address = build(:address)
+
+      request = get(conn, endpoint.(address.hash))
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn, endpoint: endpoint} do
+      request = get(conn, endpoint.("0x"))
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get paginated ERC-721 nft", %{conn: conn, endpoint: endpoint} do
+      address = insert(:address)
+
+      insert_list(51, :token_instance)
+
+      token_instances =
+        for _ <- 0..50 do
+          erc_721_token = insert(:token, type: "ERC-721")
+
+          insert(:token_instance,
+            owner_address_hash: address.hash,
+            token_contract_address_hash: erc_721_token.contract_address_hash
+          )
+          |> Repo.preload([:token])
+        end
+        # works because one token_id per token, despite ordering in DB: [asc: ti.token_contract_address_hash, desc: ti.token_id]
+        |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id}, :desc)
+
+      request = get(conn, endpoint.(address.hash))
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, endpoint.(address.hash), response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_instances)
+    end
+
+    test "get paginated ERC-1155 nft", %{conn: conn, endpoint: endpoint} do
+      address = insert(:address)
+
+      insert_list(51, :address_current_token_balance_with_token_id)
+
+      token_instances =
+        for _ <- 0..50 do
+          token = insert(:token, type: "ERC-1155")
+
+          ti =
+            insert(:token_instance,
+              token_contract_address_hash: token.contract_address_hash
+            )
+            |> Repo.preload([:token])
+
+          current_token_balance =
+            insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+              address: address,
+              token_type: "ERC-1155",
+              token_id: ti.token_id,
+              token_contract_address_hash: token.contract_address_hash
+            )
+
+          %Instance{ti | current_token_balance: current_token_balance}
+        end
+        |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id}, :desc)
+
+      request = get(conn, endpoint.(address.hash))
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, endpoint.(address.hash), response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_instances)
+    end
+
+    test "test filters", %{conn: conn, endpoint: endpoint} do
+      address = insert(:address)
+
+      insert_list(51, :token_instance)
+
+      token_instances_721 =
+        for _ <- 0..50 do
+          erc_721_token = insert(:token, type: "ERC-721")
+
+          insert(:token_instance,
+            owner_address_hash: address.hash,
+            token_contract_address_hash: erc_721_token.contract_address_hash
+          )
+          |> Repo.preload([:token])
+        end
+        |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id}, :desc)
+
+      insert_list(51, :address_current_token_balance_with_token_id)
+
+      token_instances_1155 =
+        for _ <- 0..50 do
+          token = insert(:token, type: "ERC-1155")
+
+          ti =
+            insert(:token_instance,
+              token_contract_address_hash: token.contract_address_hash
+            )
+            |> Repo.preload([:token])
+
+          current_token_balance =
+            insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+              address: address,
+              token_type: "ERC-1155",
+              token_id: ti.token_id,
+              token_contract_address_hash: token.contract_address_hash
+            )
+
+          %Instance{ti | current_token_balance: current_token_balance}
+        end
+        |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id}, :desc)
+
+      filter = %{"type" => "ERC-721"}
+      request = get(conn, endpoint.(address.hash), filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, endpoint.(address.hash), Map.merge(response["next_page_params"], filter))
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_instances_721)
+
+      filter = %{"type" => "ERC-1155"}
+      request = get(conn, endpoint.(address.hash), filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, endpoint.(address.hash), Map.merge(response["next_page_params"], filter))
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_instances_1155)
+    end
+
+    test "return all token instances", %{conn: conn, endpoint: endpoint} do
+      address = insert(:address)
+
+      insert_list(51, :token_instance)
+
+      token_instances_721 =
+        for _ <- 0..50 do
+          erc_721_token = insert(:token, type: "ERC-721")
+
+          insert(:token_instance,
+            owner_address_hash: address.hash,
+            token_contract_address_hash: erc_721_token.contract_address_hash
+          )
+          |> Repo.preload([:token])
+        end
+        |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id}, :desc)
+
+      insert_list(51, :address_current_token_balance_with_token_id)
+
+      token_instances_1155 =
+        for _ <- 0..50 do
+          token = insert(:token, type: "ERC-1155")
+
+          ti =
+            insert(:token_instance,
+              token_contract_address_hash: token.contract_address_hash
+            )
+            |> Repo.preload([:token])
+
+          current_token_balance =
+            insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+              address: address,
+              token_type: "ERC-1155",
+              token_id: ti.token_id,
+              token_contract_address_hash: token.contract_address_hash
+            )
+
+          %Instance{ti | current_token_balance: current_token_balance}
+        end
+        |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id}, :desc)
+
+      request = get(conn, endpoint.(address.hash))
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, endpoint.(address.hash), response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      request_3rd_page = get(conn, endpoint.(address.hash), response_2nd_page["next_page_params"])
+      assert response_3rd_page = json_response(request_3rd_page, 200)
+
+      assert response["next_page_params"] != nil
+      assert response_2nd_page["next_page_params"] != nil
+      assert response_3rd_page["next_page_params"] == nil
+
+      assert Enum.count(response["items"]) == 50
+      assert Enum.count(response_2nd_page["items"]) == 50
+      assert Enum.count(response_3rd_page["items"]) == 2
+
+      compare_item(Enum.at(token_instances_721, 50), Enum.at(response["items"], 0))
+      compare_item(Enum.at(token_instances_721, 1), Enum.at(response["items"], 49))
+
+      compare_item(Enum.at(token_instances_721, 0), Enum.at(response_2nd_page["items"], 0))
+      compare_item(Enum.at(token_instances_1155, 50), Enum.at(response_2nd_page["items"], 1))
+      compare_item(Enum.at(token_instances_1155, 2), Enum.at(response_2nd_page["items"], 49))
+
+      compare_item(Enum.at(token_instances_1155, 1), Enum.at(response_3rd_page["items"], 0))
+      compare_item(Enum.at(token_instances_1155, 0), Enum.at(response_3rd_page["items"], 1))
+    end
+  end
+
+  describe "/addresses/{address_hash}/nft/collections" do
+    setup do
+      {:ok, endpoint: &"/api/v2/addresses/#{&1}/nft/collections"}
+    end
+
+    test "get 404 on non existing address", %{conn: conn, endpoint: endpoint} do
+      address = build(:address)
+
+      request = get(conn, endpoint.(address.hash))
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn, endpoint: endpoint} do
+      request = get(conn, endpoint.("0x"))
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get paginated erc-721 collection", %{conn: conn, endpoint: endpoint} do
+      address = insert(:address)
+
+      insert_list(51, :address_current_token_balance_with_token_id)
+      insert_list(51, :token_instance)
+
+      ctbs =
+        for _ <- 0..50 do
+          token = insert(:token, type: "ERC-721")
+          amount = Enum.random(16..50)
+
+          current_token_balance =
+            insert(:address_current_token_balance,
+              address: address,
+              token_type: "ERC-721",
+              token_id: nil,
+              token_contract_address_hash: token.contract_address_hash,
+              value: amount
+            )
+            |> Repo.preload([:token])
+
+          token_instances =
+            for _ <- 0..(amount - 1) do
+              ti =
+                insert(:token_instance,
+                  token_contract_address_hash: token.contract_address_hash,
+                  owner_address_hash: address.hash
+                )
+                |> Repo.preload([:token])
+
+              %Instance{ti | current_token_balance: current_token_balance}
+            end
+            |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id}, :desc)
+
+          {current_token_balance, token_instances}
+        end
+        |> Enum.sort_by(&elem(&1, 0).token_contract_address_hash, :desc)
+
+      request = get(conn, endpoint.(address.hash))
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, endpoint.(address.hash), response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, ctbs)
+    end
+
+    test "get paginated erc-1155 collection", %{conn: conn, endpoint: endpoint} do
+      address = insert(:address)
+
+      insert_list(51, :address_current_token_balance_with_token_id)
+      insert_list(51, :token_instance)
+
+      collections =
+        for _ <- 0..50 do
+          token = insert(:token, type: "ERC-1155")
+          amount = Enum.random(16..50)
+
+          token_instances =
+            for _ <- 0..(amount - 1) do
+              ti =
+                insert(:token_instance,
+                  token_contract_address_hash: token.contract_address_hash,
+                  owner_address_hash: address.hash
+                )
+                |> Repo.preload([:token])
+
+              current_token_balance =
+                insert(:address_current_token_balance,
+                  address: address,
+                  token_type: "ERC-1155",
+                  token_id: ti.token_id,
+                  token_contract_address_hash: token.contract_address_hash,
+                  value: Enum.random(1..100_000)
+                )
+                |> Repo.preload([:token])
+
+              %Instance{ti | current_token_balance: current_token_balance}
+            end
+            |> Enum.sort_by(& &1.token_id, :desc)
+
+          {token, amount, token_instances}
+        end
+        |> Enum.sort_by(&elem(&1, 0).contract_address_hash, :desc)
+
+      request = get(conn, endpoint.(address.hash))
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, endpoint.(address.hash), response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, collections)
+    end
+
+    test "test filters", %{conn: conn, endpoint: endpoint} do
+      address = insert(:address)
+
+      insert_list(51, :address_current_token_balance_with_token_id)
+      insert_list(51, :token_instance)
+
+      ctbs =
+        for _ <- 0..50 do
+          token = insert(:token, type: "ERC-721")
+          amount = Enum.random(16..50)
+
+          current_token_balance =
+            insert(:address_current_token_balance,
+              address: address,
+              token_type: "ERC-721",
+              token_id: nil,
+              token_contract_address_hash: token.contract_address_hash,
+              value: amount
+            )
+            |> Repo.preload([:token])
+
+          token_instances =
+            for _ <- 0..(amount - 1) do
+              ti =
+                insert(:token_instance,
+                  token_contract_address_hash: token.contract_address_hash,
+                  owner_address_hash: address.hash
+                )
+                |> Repo.preload([:token])
+
+              %Instance{ti | current_token_balance: current_token_balance}
+            end
+            |> Enum.sort_by(& &1.token_id, :desc)
+
+          {current_token_balance, token_instances}
+        end
+        |> Enum.sort_by(&elem(&1, 0).token_contract_address_hash, :desc)
+
+      collections =
+        for _ <- 0..50 do
+          token = insert(:token, type: "ERC-1155")
+          amount = Enum.random(16..50)
+
+          token_instances =
+            for _ <- 0..(amount - 1) do
+              ti =
+                insert(:token_instance,
+                  token_contract_address_hash: token.contract_address_hash,
+                  owner_address_hash: address.hash
+                )
+                |> Repo.preload([:token])
+
+              current_token_balance =
+                insert(:address_current_token_balance,
+                  address: address,
+                  token_type: "ERC-1155",
+                  token_id: ti.token_id,
+                  token_contract_address_hash: token.contract_address_hash,
+                  value: Enum.random(1..100_000)
+                )
+                |> Repo.preload([:token])
+
+              %Instance{ti | current_token_balance: current_token_balance}
+            end
+            |> Enum.sort_by(& &1.token_id, :desc)
+
+          {token, amount, token_instances}
+        end
+        |> Enum.sort_by(&elem(&1, 0).contract_address_hash, :desc)
+
+      filter = %{"type" => "ERC-721"}
+      request = get(conn, endpoint.(address.hash), filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, endpoint.(address.hash), Map.merge(response["next_page_params"], filter))
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, ctbs)
+
+      filter = %{"type" => "ERC-1155"}
+      request = get(conn, endpoint.(address.hash), filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, endpoint.(address.hash), Map.merge(response["next_page_params"], filter))
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, collections)
+    end
+
+    test "return all collections", %{conn: conn, endpoint: endpoint} do
+      address = insert(:address)
+
+      insert_list(51, :address_current_token_balance_with_token_id)
+      insert_list(51, :token_instance)
+
+      collections_721 =
+        for _ <- 0..50 do
+          token = insert(:token, type: "ERC-721")
+          amount = Enum.random(16..50)
+
+          current_token_balance =
+            insert(:address_current_token_balance,
+              address: address,
+              token_type: "ERC-721",
+              token_id: nil,
+              token_contract_address_hash: token.contract_address_hash,
+              value: amount
+            )
+            |> Repo.preload([:token])
+
+          token_instances =
+            for _ <- 0..(amount - 1) do
+              ti =
+                insert(:token_instance,
+                  token_contract_address_hash: token.contract_address_hash,
+                  owner_address_hash: address.hash
+                )
+                |> Repo.preload([:token])
+
+              %Instance{ti | current_token_balance: current_token_balance}
+            end
+            |> Enum.sort_by(& &1.token_id, :desc)
+
+          {current_token_balance, token_instances}
+        end
+        |> Enum.sort_by(&elem(&1, 0).token_contract_address_hash, :desc)
+
+      collections_1155 =
+        for _ <- 0..50 do
+          token = insert(:token, type: "ERC-1155")
+          amount = Enum.random(16..50)
+
+          token_instances =
+            for _ <- 0..(amount - 1) do
+              ti =
+                insert(:token_instance,
+                  token_contract_address_hash: token.contract_address_hash,
+                  owner_address_hash: address.hash
+                )
+                |> Repo.preload([:token])
+
+              current_token_balance =
+                insert(:address_current_token_balance,
+                  address: address,
+                  token_type: "ERC-1155",
+                  token_id: ti.token_id,
+                  token_contract_address_hash: token.contract_address_hash,
+                  value: Enum.random(1..100_000)
+                )
+                |> Repo.preload([:token])
+
+              %Instance{ti | current_token_balance: current_token_balance}
+            end
+            |> Enum.sort_by(& &1.token_id, :desc)
+
+          {token, amount, token_instances}
+        end
+        |> Enum.sort_by(&elem(&1, 0).contract_address_hash, :desc)
+
+      request = get(conn, endpoint.(address.hash))
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, endpoint.(address.hash), response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      request_3rd_page = get(conn, endpoint.(address.hash), response_2nd_page["next_page_params"])
+      assert response_3rd_page = json_response(request_3rd_page, 200)
+
+      assert response["next_page_params"] != nil
+      assert response_2nd_page["next_page_params"] != nil
+      assert response_3rd_page["next_page_params"] == nil
+
+      assert Enum.count(response["items"]) == 50
+      assert Enum.count(response_2nd_page["items"]) == 50
+      assert Enum.count(response_3rd_page["items"]) == 2
+
+      compare_item(Enum.at(collections_721, 50), Enum.at(response["items"], 0))
+      compare_item(Enum.at(collections_721, 1), Enum.at(response["items"], 49))
+
+      compare_item(Enum.at(collections_721, 0), Enum.at(response_2nd_page["items"], 0))
+      compare_item(Enum.at(collections_1155, 50), Enum.at(response_2nd_page["items"], 1))
+      compare_item(Enum.at(collections_1155, 2), Enum.at(response_2nd_page["items"], 49))
+
+      compare_item(Enum.at(collections_1155, 1), Enum.at(response_3rd_page["items"], 0))
+      compare_item(Enum.at(collections_1155, 0), Enum.at(response_3rd_page["items"], 1))
+    end
   end
 
   defp compare_item(%Address{} = address, json) do
     assert Address.checksum(address.hash) == json["hash"]
-    assert to_string(address.nonce + 1) == json["tx_count"]
+    assert to_string(address.transactions_count) == json["tx_count"]
   end
 
   defp compare_item(%Transaction{} = transaction, json) do
@@ -1728,11 +2757,106 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert to_string(log.data) == json["data"]
     assert Address.checksum(log.address_hash) == json["address"]["hash"]
     assert to_string(log.transaction_hash) == json["tx_hash"]
+    assert json["block_number"] == log.block_number
+    assert json["block_hash"] == to_string(log.block_hash)
   end
 
   defp compare_item(%Withdrawal{} = withdrawal, json) do
     assert withdrawal.index == json["index"]
   end
+
+  defp compare_item(%Instance{token: %Token{} = token} = instance, json) do
+    token_type = token.type
+    value = to_string(value(token.type, instance))
+    id = to_string(instance.token_id)
+    metadata = instance.metadata
+    token_address_hash = Address.checksum(token.contract_address_hash)
+    app_url = instance.metadata["external_url"]
+    animation_url = instance.metadata["animation_url"]
+    image_url = instance.metadata["image_url"]
+    token_name = token.name
+
+    assert %{
+             "token_type" => ^token_type,
+             "value" => ^value,
+             "id" => ^id,
+             "metadata" => ^metadata,
+             "owner" => nil,
+             "token" => %{"address" => ^token_address_hash, "name" => ^token_name, "type" => ^token_type},
+             "external_app_url" => ^app_url,
+             "animation_url" => ^animation_url,
+             "image_url" => ^image_url,
+             "is_unique" => nil
+           } = json
+  end
+
+  defp compare_item({%CurrentTokenBalance{token: token} = ctb, token_instances}, json) do
+    token_type = token.type
+    token_address_hash = Address.checksum(token.contract_address_hash)
+    token_name = token.name
+    amount = to_string(ctb.distinct_token_instances_count || ctb.value)
+
+    assert Enum.count(json["token_instances"]) == @instances_amount_in_collection
+
+    token_instances
+    |> Enum.take(@instances_amount_in_collection)
+    |> Enum.with_index()
+    |> Enum.each(fn {instance, index} ->
+      compare_token_instance_in_collection(instance, Enum.at(json["token_instances"], index))
+    end)
+
+    assert %{
+             "token" => %{"address" => ^token_address_hash, "name" => ^token_name, "type" => ^token_type},
+             "amount" => ^amount
+           } = json
+  end
+
+  defp compare_item({token, amount, token_instances}, json) do
+    token_type = token.type
+    token_address_hash = Address.checksum(token.contract_address_hash)
+    token_name = token.name
+    amount = to_string(amount)
+
+    assert Enum.count(json["token_instances"]) == @instances_amount_in_collection
+
+    token_instances
+    |> Enum.take(@instances_amount_in_collection)
+    |> Enum.with_index()
+    |> Enum.each(fn {instance, index} ->
+      compare_token_instance_in_collection(instance, Enum.at(json["token_instances"], index))
+    end)
+
+    assert %{
+             "token" => %{"address" => ^token_address_hash, "name" => ^token_name, "type" => ^token_type},
+             "amount" => ^amount
+           } = json
+  end
+
+  defp compare_token_instance_in_collection(%Instance{token: %Token{} = token} = instance, json) do
+    token_type = token.type
+    value = to_string(value(token.type, instance))
+    id = to_string(instance.token_id)
+    metadata = instance.metadata
+    app_url = instance.metadata["external_url"]
+    animation_url = instance.metadata["animation_url"]
+    image_url = instance.metadata["image_url"]
+
+    assert %{
+             "token_type" => ^token_type,
+             "value" => ^value,
+             "id" => ^id,
+             "metadata" => ^metadata,
+             "owner" => nil,
+             "token" => nil,
+             "external_app_url" => ^app_url,
+             "animation_url" => ^animation_url,
+             "image_url" => ^image_url,
+             "is_unique" => nil
+           } = json
+  end
+
+  defp value("ERC-721", _), do: 1
+  defp value(_, nft), do: nft.current_token_balance.value
 
   defp check_paginated_response(first_page_resp, second_page_resp, list) do
     assert Enum.count(first_page_resp["items"]) == 50
@@ -1745,6 +2869,11 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
   end
 
+  # with the current implementation no transfers should come with list in totals
+  def check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
+    false
+  end
+
   def check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-1155"] do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end) and
       json["value"] == to_string(token_transfer.amount)
@@ -1754,10 +2883,44 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end)
   end
 
-  # with the current implementation no transfers should come with list in totals
-  def check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
-    false
-  end
-
   def check_total(_, _, _), do: true
+
+  def get_eip1967_implementation_non_zero_address do
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                id: 0,
+                                                method: "eth_getStorageAt",
+                                                params: [
+                                                  _,
+                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                  "latest"
+                                                ]
+                                              },
+                                              _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000001"}
+    end)
+  end
 end

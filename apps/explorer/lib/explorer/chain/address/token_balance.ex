@@ -9,8 +9,11 @@ defmodule Explorer.Chain.Address.TokenBalance do
 
   use Explorer.Schema
 
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
   alias Explorer.Chain
   alias Explorer.Chain.Address.TokenBalance
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.{Address, Block, Hash, Token}
 
   @typedoc """
@@ -23,34 +26,22 @@ defmodule Explorer.Chain.Address.TokenBalance do
    *  `token_id` - The token_id of the transferred token (applicable for ERC-1155 and ERC-721 tokens)
    *  `token_type` - The type of the token
   """
-  @type t :: %__MODULE__{
-          address: %Ecto.Association.NotLoaded{} | Address.t(),
-          address_hash: Hash.Address.t(),
-          token: %Ecto.Association.NotLoaded{} | Token.t(),
-          token_contract_address_hash: Hash.Address,
-          block_number: Block.block_number(),
-          inserted_at: DateTime.t(),
-          updated_at: DateTime.t(),
-          value: Decimal.t() | nil,
-          token_id: non_neg_integer() | nil,
-          token_type: String.t()
-        }
-
-  schema "address_token_balances" do
+  typed_schema "address_token_balances" do
     field(:value, :decimal)
-    field(:block_number, :integer)
+    field(:block_number, :integer) :: Block.block_number()
     field(:value_fetched_at, :utc_datetime_usec)
     field(:token_id, :decimal)
-    field(:token_type, :string)
+    field(:token_type, :string, null: false)
 
-    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
+    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address, null: false)
 
     belongs_to(
       :token,
       Token,
       foreign_key: :token_contract_address_hash,
       references: :contract_address_hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
     )
 
     timestamps()
@@ -65,12 +56,10 @@ defmodule Explorer.Chain.Address.TokenBalance do
     token_balance
     |> cast(attrs, @allowed_fields)
     |> validate_required(@required_fields)
-    |> foreign_key_constraint(:address_hash)
-    |> foreign_key_constraint(:token_contract_address_hash)
     |> unique_constraint(:block_number, name: :token_balances_address_hash_block_number_index)
   end
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
 
   @doc """
@@ -80,25 +69,51 @@ defmodule Explorer.Chain.Address.TokenBalance do
   ignores the burn_address for tokens ERC-721 since the most tokens ERC-721 don't allow get the
   balance for burn_address.
   """
+  # credo:disable-for-next-line /Complexity/
   def unfetched_token_balances do
-    from(
-      tb in TokenBalance,
-      join: t in Token,
-      on: tb.token_contract_address_hash == t.contract_address_hash,
-      where:
-        ((tb.address_hash != ^@burn_address_hash and t.type == "ERC-721") or t.type == "ERC-20" or t.type == "ERC-1155") and
-          (is_nil(tb.value_fetched_at) or is_nil(tb.value))
-    )
+    if BackgroundMigrations.get_tb_token_type_finished() do
+      from(
+        tb in TokenBalance,
+        where:
+          ((tb.address_hash != ^@burn_address_hash and tb.token_type == "ERC-721") or tb.token_type == "ERC-20" or
+             tb.token_type == "ERC-1155") and
+            (is_nil(tb.value_fetched_at) or is_nil(tb.value))
+      )
+    else
+      from(
+        tb in TokenBalance,
+        join: t in Token,
+        on: tb.token_contract_address_hash == t.contract_address_hash,
+        where:
+          ((tb.address_hash != ^@burn_address_hash and t.type == "ERC-721") or t.type == "ERC-20" or
+             t.type == "ERC-1155") and
+            (is_nil(tb.value_fetched_at) or is_nil(tb.value))
+      )
+    end
   end
 
   @doc """
   Builds an `Ecto.Query` to fetch the token balance of the given token contract hash of the given address in the given block.
   """
-  def fetch_token_balance(address_hash, token_contract_address_hash, block_number) do
+  def fetch_token_balance(address_hash, token_contract_address_hash, block_number, token_id \\ nil)
+
+  def fetch_token_balance(address_hash, token_contract_address_hash, block_number, nil) do
     from(
       tb in TokenBalance,
       where: tb.address_hash == ^address_hash,
       where: tb.token_contract_address_hash == ^token_contract_address_hash,
+      where: tb.block_number <= ^block_number,
+      limit: ^1,
+      order_by: [desc: :block_number]
+    )
+  end
+
+  def fetch_token_balance(address_hash, token_contract_address_hash, block_number, token_id) do
+    from(
+      tb in TokenBalance,
+      where: tb.address_hash == ^address_hash,
+      where: tb.token_contract_address_hash == ^token_contract_address_hash,
+      where: tb.token_id == ^token_id,
       where: tb.block_number <= ^block_number,
       limit: ^1,
       order_by: [desc: :block_number]

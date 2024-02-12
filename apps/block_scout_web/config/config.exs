@@ -5,11 +5,19 @@
 # is restricted to this project.
 import Config
 
+[__DIR__ | ~w(.. .. .. config config_helper.exs)]
+|> Path.join()
+|> Code.eval_file()
+
 # General application configuration
 config :block_scout_web,
   namespace: BlockScoutWeb,
-  ecto_repos: [Explorer.Repo, Explorer.Repo.Account],
-  cookie_domain: System.get_env("SESSION_COOKIE_DOMAIN")
+  ecto_repos: ConfigHelper.repos(),
+  cookie_domain: System.get_env("SESSION_COOKIE_DOMAIN"),
+  # 604800 seconds, 1 week
+  session_cookie_ttl: 60 * 60 * 24 * 7,
+  invalid_session_key: "invalid_session",
+  api_v2_temp_token_key: "api_v2_temp_token"
 
 config :block_scout_web,
   admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"

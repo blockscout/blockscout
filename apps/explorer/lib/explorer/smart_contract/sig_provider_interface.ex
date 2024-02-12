@@ -3,7 +3,7 @@ defmodule Explorer.SmartContract.SigProviderInterface do
     Adapter for decoding events and function calls with https://github.com/blockscout/blockscout-rs/tree/main/sig-provider
   """
 
-  alias Explorer.Utility.RustService
+  alias Explorer.Utility.Microservice
   alias HTTPoison.Response
   require Logger
 
@@ -81,7 +81,7 @@ defmodule Explorer.SmartContract.SigProviderInterface do
   def base_api_url, do: "#{base_url()}" <> "/api/v1/abi"
 
   def base_url do
-    RustService.base_url(__MODULE__)
+    Microservice.base_url(__MODULE__)
   end
 
   def enabled?, do: Application.get_env(:explorer, __MODULE__)[:enabled]
