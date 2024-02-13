@@ -6,11 +6,14 @@
 
 - [#9379](https://github.com/blockscout/blockscout/pull/9379) - Filter non-traceable transactions for zetachain
 - [#9202](https://github.com/blockscout/blockscout/pull/9202) - Add base and priority fee to gas oracle response
+- [#9168](https://github.com/blockscout/blockscout/pull/9168) - Support EIP4844 blobs indexing & API
 
 ### Fixes
 
+- [#9346](https://github.com/blockscout/blockscout/pull/9346) - Process integer balance in genesis.json
 - [#9317](https://github.com/blockscout/blockscout/pull/9317) - Include null gas price txs in fee calculations
 - [#9315](https://github.com/blockscout/blockscout/pull/9315) - Fix manual uncle reward calculation
+- [#9300](https://github.com/blockscout/blockscout/pull/9300) - Fix read contract bug
 
 ### Chore
 

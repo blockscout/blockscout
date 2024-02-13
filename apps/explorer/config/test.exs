@@ -44,6 +44,7 @@ config :explorer, Explorer.Repo.Account,
   log: false
 
 for repo <- [
+      Explorer.Repo.Beacon,
       Explorer.Repo.PolygonEdge,
       Explorer.Repo.PolygonZkevm,
       Explorer.Repo.RSK,
@@ -59,7 +60,8 @@ for repo <- [
     ownership_timeout: :timer.minutes(1),
     timeout: :timer.seconds(60),
     queue_target: 1000,
-    log: false
+    log: false,
+    pool_size: 1
 end
 
 config :logger, :explorer,

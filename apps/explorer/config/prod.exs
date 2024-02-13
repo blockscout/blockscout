@@ -36,6 +36,10 @@ config :explorer, Explorer.Repo.Suave,
   prepare: :unnamed,
   timeout: :timer.seconds(60)
 
+config :explorer, Explorer.Repo.Beacon,
+  prepare: :unnamed,
+  timeout: :timer.seconds(60)
+
 config :explorer, Explorer.Repo.BridgedTokens,
   prepare: :unnamed,
   timeout: :timer.seconds(60)

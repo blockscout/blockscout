@@ -83,6 +83,10 @@ defmodule Explorer.ChainSpec.Geth.Importer do
     |> Enum.to_list()
   end
 
+  defp parse_number(number) when is_integer(number) do
+    number
+  end
+
   defp parse_number("0x" <> hex_number) do
     {number, ""} = Integer.parse(hex_number, 16)
 
