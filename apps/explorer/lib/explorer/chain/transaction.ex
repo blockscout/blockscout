@@ -1410,6 +1410,7 @@ defmodule Explorer.Chain.Transaction do
     options
     |> address_to_transactions_tasks_query(false, old_ui?)
     |> not_dropped_or_replaced_transactions()
+    |> not_pending_transactions()
     |> Chain.join_associations(necessity_by_association)
     |> put_has_token_transfers_to_tx(old_ui?)
     |> matching_address_queries_list(direction, address_hash)
