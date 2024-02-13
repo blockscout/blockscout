@@ -213,6 +213,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
       block_number, {:ok, acc_list} ->
         block_number
         |> Chain.get_transactions_of_block_number()
+        |> filter_non_traceable_transactions()
         |> Enum.map(&params(&1))
         |> case do
           [] ->
@@ -234,6 +235,14 @@ defmodule Indexer.Fetcher.InternalTransaction do
       _, error_or_ignore ->
         error_or_ignore
     end)
+  end
+
+  @zetachain_non_traceable_type 88
+  defp filter_non_traceable_transactions(transactions) do
+    case Application.get_env(:explorer, :chain_type) do
+      "zetachain" -> Enum.reject(transactions, &(&1.type == @zetachain_non_traceable_type))
+      _ -> transactions
+    end
   end
 
   defp safe_import_internal_transaction(internal_transactions_params, block_numbers) do

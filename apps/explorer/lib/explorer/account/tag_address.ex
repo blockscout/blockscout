@@ -14,12 +14,12 @@ defmodule Explorer.Account.TagAddress do
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
-  schema "account_tag_addresses" do
-    field(:address_hash_hash, Cloak.Ecto.SHA256)
-    field(:name, Explorer.Encrypted.Binary)
-    field(:address_hash, Explorer.Encrypted.AddressHash)
+  typed_schema "account_tag_addresses" do
+    field(:address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
+    field(:name, Explorer.Encrypted.Binary, null: false)
+    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
 
-    belongs_to(:identity, Identity)
+    belongs_to(:identity, Identity, null: false)
 
     timestamps()
   end

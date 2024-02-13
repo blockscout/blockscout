@@ -5,14 +5,6 @@ defmodule Explorer.Market.MarketHistory do
 
   use Explorer.Schema
 
-  schema "market_history" do
-    field(:closing_price, :decimal)
-    field(:date, :date)
-    field(:opening_price, :decimal)
-    field(:market_cap, :decimal)
-    field(:tvl, :decimal)
-  end
-
   @typedoc """
   The recorded values of the configured coin to USD for a single day.
 
@@ -22,11 +14,11 @@ defmodule Explorer.Market.MarketHistory do
    * `:market_cap` - Market cap in USD.
    * `:tvl` - TVL in USD.
   """
-  @type t :: %__MODULE__{
-          closing_price: Decimal.t() | nil,
-          date: Date.t(),
-          opening_price: Decimal.t() | nil,
-          market_cap: Decimal.t() | nil,
-          tvl: Decimal.t() | nil
-        }
+  typed_schema "market_history" do
+    field(:closing_price, :decimal)
+    field(:date, :date, null: false)
+    field(:opening_price, :decimal)
+    field(:market_cap, :decimal)
+    field(:tvl, :decimal)
+  end
 end

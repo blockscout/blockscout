@@ -8,7 +8,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
       from: 2
     ]
 
-  alias Explorer.{Chain, Market, PagingOptions, Repo}
+  alias Explorer.{Market, PagingOptions, Repo}
   alias Explorer.Market.MarketHistory
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, Transaction, Wei}
   alias Explorer.Chain.CSVExport.Helper
@@ -105,7 +105,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
 
   defp fee(transaction) do
     transaction
-    |> Chain.fee(:wei)
+    |> Transaction.fee(:wei)
     |> case do
       {:actual, value} -> value
       {:maximum, value} -> "Max of #{value}"

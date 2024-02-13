@@ -333,6 +333,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     # common_tuples = MapSet.intersection(required_tuples, candidate_tuples) #should be added
     # |> MapSet.difference(internal_transactions_tuples) should be replaced with |> MapSet.difference(common_tuples)
 
+    # Note: for zetachain, the case "# - there are no internal txs for some transactions" is removed since
+    # there are may be non-traceable transactions
+
     transactions_tuples = MapSet.new(transactions, &{&1.hash, &1.block_number})
 
     internal_transactions_tuples = MapSet.new(internal_transactions_params, &{&1.transaction_hash, &1.block_number})
@@ -340,10 +343,21 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     all_tuples = MapSet.union(transactions_tuples, internal_transactions_tuples)
 
     invalid_block_numbers =
-      all_tuples
-      |> MapSet.difference(internal_transactions_tuples)
-      |> MapSet.new(fn {_hash, block_number} -> block_number end)
-      |> MapSet.to_list()
+      if Application.get_env(:explorer, :chain_type) == "zetachain" do
+        Enum.reduce(internal_transactions_tuples, [], fn {transaction_hash, block_number}, acc ->
+          # credo:disable-for-next-line
+          case Enum.find(transactions_tuples, fn {t_hash, _block_number} -> t_hash == transaction_hash end) do
+            nil -> acc
+            {_t_hash, ^block_number} -> acc
+            _ -> [block_number | acc]
+          end
+        end)
+      else
+        all_tuples
+        |> MapSet.difference(internal_transactions_tuples)
+        |> MapSet.new(fn {_hash, block_number} -> block_number end)
+        |> MapSet.to_list()
+      end
 
     {:ok, invalid_block_numbers}
   end

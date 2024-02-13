@@ -35,6 +35,10 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.Shibarium.BridgeOperations
   ]
 
+  @ethereum_runners [
+    Runner.Beacon.BlobTransactions
+  ]
+
   @impl Stage
   def runners do
     case System.get_env("CHAIN_TYPE") do
@@ -46,6 +50,9 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
       "shibarium" ->
         @default_runners ++ @shibarium_runners
+
+      "ethereum" ->
+        @default_runners ++ @ethereum_runners
 
       _ ->
         @default_runners

@@ -546,6 +546,7 @@
         "ziczr",
         "zindex",
         "zipcode",
+        "zkatana",
         "zkbob",
         "zkevm",
         "erts",
@@ -569,7 +570,8 @@
         "verifyproxycontract",
         "checkproxyverification",
         "NOTOK",
-        "sushiswap"
+        "sushiswap",
+        "zetachain"
     ],
     "enableFiletypes": [
         "dotenv",

@@ -20,6 +20,7 @@ defmodule Explorer.Chain.Search do
 
   alias Explorer.Chain.{
     Address,
+    Beacon.Blob,
     Block,
     DenormalizationHelper,
     SmartContract,
@@ -101,17 +102,28 @@ defmodule Explorer.Chain.Search do
       valid_full_hash?(string) ->
         tx_query = search_tx_query(string)
 
-        if UserOperation.user_operations_enabled?() do
-          user_operation_query = search_user_operation_query(string)
+        tx_block_query =
+          basic_query
+          |> union(^tx_query)
+          |> union(^block_query)
 
-          basic_query
-          |> union(^tx_query)
-          |> union(^user_operation_query)
-          |> union(^block_query)
+        tx_block_op_query =
+          if UserOperation.enabled?() do
+            user_operation_query = search_user_operation_query(string)
+
+            tx_block_query
+            |> union(^user_operation_query)
+          else
+            tx_block_query
+          end
+
+        if Application.get_env(:explorer, :chain_type) == "ethereum" do
+          blob_query = search_blob_query(string)
+
+          tx_block_op_query
+          |> union(^blob_query)
         else
-          basic_query
-          |> union(^tx_query)
-          |> union(^block_query)
+          tx_block_op_query
         end
 
       block_query ->
@@ -137,6 +149,7 @@ defmodule Explorer.Chain.Search do
       2. Results couldn't be paginated
   """
   @spec balanced_unpaginated_search(PagingOptions.t(), binary(), [Chain.api?()] | []) :: list
+  # credo:disable-for-next-line
   def balanced_unpaginated_search(paging_options, raw_search_query, options \\ []) do
     search_query = String.trim(raw_search_query)
     ens_task = Task.async(fn -> search_ens_name(raw_search_query, options) end)
@@ -181,9 +194,18 @@ defmodule Explorer.Chain.Search do
           end
 
         op_result =
-          if valid_full_hash?(search_query) && UserOperation.user_operations_enabled?() do
+          if valid_full_hash?(search_query) && UserOperation.enabled?() do
             search_query
             |> search_user_operation_query()
+            |> select_repo(options).all()
+          else
+            []
+          end
+
+        blob_result =
+          if valid_full_hash?(search_query) && Application.get_env(:explorer, :chain_type) == "ethereum" do
+            search_query
+            |> search_blob_query()
             |> select_repo(options).all()
           else
             []
@@ -215,6 +237,7 @@ defmodule Explorer.Chain.Search do
             labels_result,
             tx_result,
             op_result,
+            blob_result,
             address_result,
             blocks_result,
             ens_result
@@ -431,6 +454,19 @@ defmodule Explorer.Chain.Search do
     )
   end
 
+  defp search_blob_query(term) do
+    blob_search_fields =
+      search_fields()
+      |> Map.put(:blob_hash, dynamic([blob, _], blob.hash))
+      |> Map.put(:type, "blob")
+      |> Map.put(:inserted_at, dynamic([blob, _], blob.inserted_at))
+
+    from(blob in Blob,
+      where: blob.hash == ^term,
+      select: ^blob_search_fields
+    )
+  end
+
   defp search_block_query(term) do
     block_search_fields =
       search_fields()
@@ -586,6 +622,7 @@ defmodule Explorer.Chain.Search do
       address_hash: dynamic([_], type(^nil, :binary)),
       tx_hash: dynamic([_], type(^nil, :binary)),
       user_operation_hash: dynamic([_], type(^nil, :binary)),
+      blob_hash: dynamic([_], type(^nil, :binary)),
       block_hash: dynamic([_], type(^nil, :binary)),
       type: nil,
       name: nil,

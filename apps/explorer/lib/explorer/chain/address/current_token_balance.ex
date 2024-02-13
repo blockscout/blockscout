@@ -27,30 +27,13 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
    *  `token_id` - The token_id of the transferred token (applicable for ERC-1155)
    *  `token_type` - The type of the token
   """
-  @type t :: %__MODULE__{
-          address: %Ecto.Association.NotLoaded{} | Address.t(),
-          address_hash: Hash.Address.t(),
-          token: %Ecto.Association.NotLoaded{} | Token.t(),
-          token_contract_address_hash: Hash.Address,
-          block_number: Block.block_number(),
-          max_block_number: Block.block_number(),
-          inserted_at: DateTime.t(),
-          updated_at: DateTime.t(),
-          value: Decimal.t() | nil,
-          token_id: non_neg_integer() | nil,
-          token_type: String.t(),
-          distinct_token_instances_count: non_neg_integer(),
-          token_ids: list(Decimal.t()),
-          preloaded_token_instances: list()
-        }
-
-  schema "address_current_token_balances" do
+  typed_schema "address_current_token_balances" do
     field(:value, :decimal)
-    field(:block_number, :integer)
-    field(:max_block_number, :integer, virtual: true)
+    field(:block_number, :integer) :: Block.block_number()
+    field(:max_block_number, :integer, virtual: true) :: Block.block_number()
     field(:value_fetched_at, :utc_datetime_usec)
     field(:token_id, :decimal)
-    field(:token_type, :string)
+    field(:token_type, :string, null: false)
     field(:fiat_value, :decimal, virtual: true)
     field(:distinct_token_instances_count, :integer, virtual: true)
     field(:token_ids, {:array, :decimal}, virtual: true)
@@ -59,14 +42,15 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     # A transient field for deriving token holder count deltas during address_current_token_balances upserts
     field(:old_value, :decimal)
 
-    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
+    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address, null: false)
 
     belongs_to(
       :token,
       Token,
       foreign_key: :token_contract_address_hash,
       references: :contract_address_hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
     )
 
     timestamps()

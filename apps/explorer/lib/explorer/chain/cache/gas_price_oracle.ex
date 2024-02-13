@@ -10,8 +10,6 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       from: 2
     ]
 
-  alias EthereumJSONRPC.Blocks
-
   alias Explorer.Chain.{
     Block,
     DenormalizationHelper,
@@ -106,7 +104,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
           transaction in Transaction,
           where: transaction.block_consensus == true,
           where: transaction.status == ^1,
-          where: transaction.gas_price > ^0,
+          where: is_nil(transaction.gas_price) or transaction.gas_price > ^0,
           where: transaction.block_number > ^from_block,
           group_by: transaction.block_number,
           order_by: [desc: transaction.block_number],
@@ -178,7 +176,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
           left_join: transaction in assoc(block, :transactions),
           where: block.consensus == true,
           where: transaction.status == ^1,
-          where: transaction.gas_price > ^0,
+          where: is_nil(transaction.gas_price) or transaction.gas_price > ^0,
           where: transaction.block_number > ^from_block,
           group_by: transaction.block_number,
           order_by: [desc: transaction.block_number],
@@ -280,13 +278,11 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       fast_time: fast_time
     } = merge_fees(fees)
 
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-    {slow_fee, average_fee, fast_fee, base_fee} =
+    {slow_fee, average_fee, fast_fee, base_fee_wei} =
       case nil not in [slow_priority_fee_per_gas, average_priority_fee_per_gas, fast_priority_fee_per_gas] &&
-             EthereumJSONRPC.fetch_block_by_tag("pending", json_rpc_named_arguments) do
-        {:ok, %Blocks{blocks_params: [%{base_fee_per_gas: base_fee}]}} when not is_nil(base_fee) ->
-          base_fee_wei = base_fee |> Decimal.new() |> Wei.from(:wei)
+             Block.next_block_base_fee_per_gas() do
+        %Decimal{} = base_fee ->
+          base_fee_wei = base_fee |> Wei.from(:wei)
 
           {
             priority_with_base_fee(slow_priority_fee_per_gas, base_fee_wei),
@@ -302,10 +298,10 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
     exchange_rate_from_db = Market.get_coin_exchange_rate()
 
     %{
-      slow: compose_gas_price(slow_fee, slow_time, exchange_rate_from_db, base_fee, slow_priority_fee_per_gas),
+      slow: compose_gas_price(slow_fee, slow_time, exchange_rate_from_db, base_fee_wei, slow_priority_fee_per_gas),
       average:
-        compose_gas_price(average_fee, average_time, exchange_rate_from_db, base_fee, average_priority_fee_per_gas),
-      fast: compose_gas_price(fast_fee, fast_time, exchange_rate_from_db, base_fee, fast_priority_fee_per_gas)
+        compose_gas_price(average_fee, average_time, exchange_rate_from_db, base_fee_wei, average_priority_fee_per_gas),
+      fast: compose_gas_price(fast_fee, fast_time, exchange_rate_from_db, base_fee_wei, fast_priority_fee_per_gas)
     }
   end
 

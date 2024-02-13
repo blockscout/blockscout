@@ -8,18 +8,14 @@ defmodule Explorer.Chain.Zkevm.LifecycleTransaction do
 
   @required_attrs ~w(id hash is_verify)a
 
-  @type t :: %__MODULE__{
-          hash: Hash.t(),
-          is_verify: boolean()
-        }
+  @primary_key false
+  typed_schema "zkevm_lifecycle_l1_transactions" do
+    field(:id, :integer, primary_key: true, null: false)
+    field(:hash, Hash.Full, null: false)
+    field(:is_verify, :boolean, null: false)
 
-  @primary_key {:id, :integer, autogenerate: false}
-  schema "zkevm_lifecycle_l1_transactions" do
-    field(:hash, Hash.Full)
-    field(:is_verify, :boolean)
-
-    has_many(:sequenced_batches, TransactionBatch, foreign_key: :sequence_id)
-    has_many(:verified_batches, TransactionBatch, foreign_key: :verify_id)
+    has_many(:sequenced_batches, TransactionBatch, foreign_key: :sequence_id, references: :id)
+    has_many(:verified_batches, TransactionBatch, foreign_key: :verify_id, references: :id)
 
     timestamps()
   end

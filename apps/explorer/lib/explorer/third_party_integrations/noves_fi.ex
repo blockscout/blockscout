@@ -12,47 +12,43 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
   Proxy request to noves.fi API endpoints
   """
   @spec noves_fi_api_request(String.t(), Plug.Conn.t(), :get | :post_transactions) :: {any(), integer()}
-  def noves_fi_api_request(url, conn, method \\ :get) do
+  def noves_fi_api_request(url, conn, method \\ :get)
+
+  def noves_fi_api_request(url, conn, :post_transactions) do
+    headers = [{"apiKey", api_key()}, {"Content-Type", "application/json"}, {"accept", "text/plain"}]
+
+    hashes =
+      conn.query_params
+      |> Map.get("hashes")
+      |> (&if(is_map(&1),
+            do: Map.values(&1),
+            else: String.split(&1, ",")
+          )).()
+
+    prepared_params =
+      conn.query_params
+      |> Map.drop(["hashes"])
+
+    case HTTPoison.post(url, Jason.encode!(hashes), headers, recv_timeout: @recv_timeout, params: prepared_params) do
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+        {Helper.decode_json(body), status}
+
+      _ ->
+        {nil, 500}
+    end
+  end
+
+  def noves_fi_api_request(url, conn, :get) do
     headers = [{"apiKey", api_key()}]
 
-    if method == :post_transactions do
-      headers = headers ++ [{"Content-Type", "application/json"}, {"accept", "text/plain"}]
+    url_with_params = url <> "?" <> conn.query_string
 
-      hashes =
-        conn.query_params
-        |> Map.get("hashes")
-        |> (&if(is_map(&1),
-              do: Map.values(&1),
-              else: String.split(&1, ",")
-            )).()
+    case HTTPoison.get(url_with_params, headers, recv_timeout: @recv_timeout) do
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+        {Helper.decode_json(body), status}
 
-      prepared_query_string =
-        conn.query_params
-        |> Map.drop(["hashes"])
-        |> Map.to_list()
-        |> Enum.reduce("", fn {key, value}, query_string ->
-          query_string <> "#{key}=#{value}"
-        end)
-
-      url_with_params = url <> "?" <> prepared_query_string
-
-      case HTTPoison.post(url_with_params, Jason.encode!(hashes), headers, recv_timeout: @recv_timeout) do
-        {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-          {Helper.decode_json(body), status}
-
-        _ ->
-          {nil, 500}
-      end
-    else
-      url_with_params = url <> "?" <> conn.query_string
-
-      case HTTPoison.get(url_with_params, headers, recv_timeout: @recv_timeout) do
-        {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-          {Helper.decode_json(body), status}
-
-        _ ->
-          {nil, 500}
-      end
+      _ ->
+        {nil, 500}
     end
   end
 
