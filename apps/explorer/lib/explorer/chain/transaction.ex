@@ -3,6 +3,7 @@ defmodule Explorer.Chain.Transaction.Schema do
 
   alias Explorer.Chain.{
     Address,
+    Beacon.BlobTransaction,
     Block,
     Data,
     Hash,
@@ -17,6 +18,14 @@ defmodule Explorer.Chain.Transaction.Schema do
   alias Explorer.Chain.Zkevm.BatchTransaction
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
+                        "ethereum" ->
+                          # elem(quote do ... end, 2) doesn't work with a single has_one instruction
+                          quote do
+                            [
+                              has_one(:beacon_blob_transaction, BlobTransaction, foreign_key: :hash, references: :hash)
+                            ]
+                          end
+
                         "suave" ->
                           elem(
                             quote do

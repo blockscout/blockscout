@@ -88,7 +88,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
 
   def burnt_fees_percentage(burnt_fees, transaction_fees)
       when not is_nil(transaction_fees) and not is_nil(burnt_fees) do
-    burnt_fees.value |> Decimal.div(transaction_fees) |> Decimal.mult(100) |> Decimal.to_float()
+    burnt_fees |> Decimal.div(transaction_fees) |> Decimal.mult(100) |> Decimal.to_float()
   end
 
   def burnt_fees_percentage(_, _), do: nil
@@ -111,6 +111,24 @@ defmodule BlockScoutWeb.API.V2.BlockView do
           |> Map.put("hash_for_merged_mining", block.hash_for_merged_mining)
         else
           result
+        end
+      end
+
+    "ethereum" ->
+      defp chain_type_fields(result, block, single_block?) do
+        if single_block? do
+          blob_gas_price = Block.transaction_blob_gas_price(block.transactions)
+          burnt_blob_transaction_fees = Decimal.mult(block.blob_gas_used || 0, blob_gas_price || 0)
+
+          result
+          |> Map.put("blob_gas_used", block.blob_gas_used)
+          |> Map.put("excess_blob_gas", block.excess_blob_gas)
+          |> Map.put("blob_gas_price", blob_gas_price)
+          |> Map.put("burnt_blob_fees", burnt_blob_transaction_fees)
+        else
+          result
+          |> Map.put("blob_gas_used", block.blob_gas_used)
+          |> Map.put("excess_blob_gas", block.excess_blob_gas)
         end
       end
 
