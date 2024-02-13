@@ -26,17 +26,11 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
               else: String.split(&1, ",")
             )).()
 
-      prepared_query_string =
+      prepared_params =
         conn.query_params
         |> Map.drop(["hashes"])
-        |> Map.to_list()
-        |> Enum.reduce("", fn {key, value}, query_string ->
-          query_string <> "#{key}=#{value}"
-        end)
 
-      url_with_params = url <> "?" <> prepared_query_string
-
-      case HTTPoison.post(url_with_params, Jason.encode!(hashes), headers, recv_timeout: @recv_timeout) do
+      case HTTPoison.post(url, Jason.encode!(hashes), headers, recv_timeout: @recv_timeout, params: prepared_params) do
         {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
           {Helper.decode_json(body), status}
 
