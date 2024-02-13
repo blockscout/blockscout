@@ -41,6 +41,30 @@ defmodule Explorer.Helper do
   end
 
   @doc """
+  Parses number from hex string or decimal number string
+  """
+  @spec parse_number(binary() | nil) :: integer() | nil
+  def parse_number(nil), do: nil
+
+  def parse_number(number) when is_integer(number) do
+    number
+  end
+
+  def parse_number("0x" <> hex_number) do
+    {number, ""} = Integer.parse(hex_number, 16)
+
+    number
+  end
+
+  def parse_number(""), do: 0
+
+  def parse_number(string_number) do
+    {number, ""} = Integer.parse(string_number, 10)
+
+    number
+  end
+
+  @doc """
     Function to preload a `struct` for each element of the `list`.
     You should specify a primary key for a `struct` in `references_field`,
     and the list element's foreign key in `foreign_key_field`.
