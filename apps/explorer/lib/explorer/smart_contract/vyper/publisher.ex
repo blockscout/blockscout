@@ -3,7 +3,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
   Module responsible to control Vyper contract verification.
   """
 
-  import Explorer.SmartContract.Helper, only: [cast_libraries: 1]
+  import Explorer.SmartContract.Helper, only: [cast_libraries: 1, prepare_license_type: 1]
 
   require Logger
 
@@ -25,7 +25,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
           "compilerSettings" => _compiler_settings_string
         } = source
       } ->
-        process_rust_verifier_response(source, address_hash, false, false)
+        process_rust_verifier_response(source, address_hash, params, false, false)
 
       {:ok, %{abi: abi}} ->
         publish_smart_contract(address_hash, params, abi)
@@ -60,7 +60,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
           "compilerSettings" => _compiler_settings_string
         } = source
       } ->
-        process_rust_verifier_response(source, address_hash, true, standard_json?)
+        process_rust_verifier_response(source, address_hash, params, true, standard_json?)
 
       {:ok, %{abi: abi}} ->
         publish_smart_contract(address_hash, params, abi)
@@ -85,6 +85,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
           "matchType" => match_type
         },
         address_hash,
+        initial_params,
         save_file_path?,
         standard_json?,
         automatically_verified? \\ false
@@ -115,6 +116,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
         if(is_nil(compiler_settings["optimize"]), do: true, else: compiler_settings["optimize"])
       )
       |> Map.put("compiler_settings", if(standard_json?, do: compiler_settings))
+      |> Map.put("license_type", initial_params["license_type"])
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
   end
@@ -182,7 +184,8 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       is_vyper_contract: true,
       file_path: params["file_path"],
       verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
-      compiler_settings: clean_compiler_settings
+      compiler_settings: clean_compiler_settings,
+      license_type: prepare_license_type(params["license_type"]) || :none
     }
   end
 end

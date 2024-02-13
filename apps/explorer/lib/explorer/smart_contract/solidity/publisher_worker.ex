@@ -64,6 +64,10 @@ defmodule Explorer.SmartContract.Solidity.PublisherWorker do
           result
 
         {:error, changeset} ->
+          Logger.error(
+            "Solidity smart-contract verification #{address_hash} failed because of the error: #{inspect(changeset)}"
+          )
+
           {:error, changeset}
       end
 

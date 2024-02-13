@@ -194,7 +194,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         if(smart_contract_verified,
           do: format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
         ),
-      "language" => smart_contract_language(smart_contract)
+      "language" => smart_contract_language(smart_contract),
+      "license_type" => smart_contract.license_type
     }
     |> Map.merge(bytecode_info(address))
   end
@@ -304,7 +305,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "market_cap" => token && token.circulating_market_cap,
       "has_constructor_args" => !is_nil(smart_contract.constructor_arguments),
       "coin_balance" =>
-        if(smart_contract.address.fetched_coin_balance, do: smart_contract.address.fetched_coin_balance.value)
+        if(smart_contract.address.fetched_coin_balance, do: smart_contract.address.fetched_coin_balance.value),
+      "license_type" => smart_contract.license_type
     }
   end
 
