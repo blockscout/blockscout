@@ -38,8 +38,7 @@ defmodule BlockScoutWeb.Chain do
     Transaction,
     Transaction.StateChange,
     UserOperation,
-    Wei,
-    Withdrawal
+    Wei
   }
 
   alias Explorer.Chain.Zkevm.TransactionBatch
