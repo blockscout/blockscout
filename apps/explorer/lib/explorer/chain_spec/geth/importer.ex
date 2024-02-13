@@ -7,7 +7,7 @@ defmodule Explorer.ChainSpec.Geth.Importer do
   require Logger
 
   alias EthereumJSONRPC.Blocks
-  alias Explorer.Chain
+  alias Explorer.{Chain, Helper}
   alias Explorer.Chain.Hash.Address
 
   def import_genesis_accounts(chain_spec) do
@@ -59,7 +59,7 @@ defmodule Explorer.ChainSpec.Geth.Importer do
     raw_accounts
     |> Enum.map(fn account ->
       with {:ok, address_hash} <- Chain.string_to_address_hash(account["address"]),
-           {balance, ""} <- Integer.parse(account["balance"]) do
+           balance <- Helper.parse_number(account["balance"]) do
         %{address_hash: address_hash, value: balance, contract_code: account["bytecode"]}
       else
         _ -> nil
@@ -88,30 +88,12 @@ defmodule Explorer.ChainSpec.Geth.Importer do
     |> Stream.map(fn {address, %{"balance" => value} = params} ->
       formatted_address = if String.starts_with?(address, "0x"), do: address, else: "0x" <> address
       {:ok, address_hash} = Address.cast(formatted_address)
-      balance = parse_number(value)
+      balance = Helper.parse_number(value)
 
       code = params["code"]
 
       %{address_hash: address_hash, value: balance, contract_code: code}
     end)
     |> Enum.to_list()
-  end
-
-  defp parse_number(number) when is_integer(number) do
-    number
-  end
-
-  defp parse_number("0x" <> hex_number) do
-    {number, ""} = Integer.parse(hex_number, 16)
-
-    number
-  end
-
-  defp parse_number(""), do: 0
-
-  defp parse_number(string_number) do
-    {number, ""} = Integer.parse(string_number, 10)
-
-    number
   end
 end

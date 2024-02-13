@@ -59,7 +59,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   @doc """
   Fetches pre-mined balances and pre-compiled smart-contract bytecodes from genesis.json
   """
-  @spec fetch_genesis_data() :: :ok
+  @spec fetch_genesis_data() :: any()
   def fetch_genesis_data do
     path = Application.get_env(:explorer, __MODULE__)[:chain_spec_path]
 
