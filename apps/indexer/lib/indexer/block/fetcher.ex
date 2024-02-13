@@ -212,34 +212,17 @@ defmodule Indexer.Block.Fetcher do
            withdrawals: %{params: withdrawals_params},
            token_instances: %{params: token_instances}
          },
-         import_options =
-           (case Application.get_env(:explorer, :chain_type) do
-              "ethereum" ->
-                basic_import_options
-                |> Map.put_new(:beacon_blob_transactions, %{
-                  params: transactions_with_receipts |> Enum.filter(&Map.has_key?(&1, :max_fee_per_blob_gas))
-                })
-
-              "polygon_edge" ->
-                basic_import_options
-                |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
-                |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
-
-              "polygon_zkevm" ->
-                basic_import_options
-                |> Map.put_new(:zkevm_bridge_operations, %{params: zkevm_bridge_operations})
-
-              "shibarium" ->
-                basic_import_options
-                |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
-
-              _ ->
-                basic_import_options
-            end),
+         chain_type_import_options = %{
+           transactions_with_receipts: transactions_with_receipts,
+           polygon_edge_withdrawals: polygon_edge_withdrawals,
+           polygon_edge_deposit_executes: polygon_edge_deposit_executes,
+           zkevm_bridge_operations: zkevm_bridge_operations,
+           shibarium_bridge_operations: shibarium_bridge_operations
+         },
          {:ok, inserted} <-
            __MODULE__.import(
              state,
-             import_options
+             import_options(basic_import_options, chain_type_import_options)
            ),
          {:tx_actions, {:ok, inserted_tx_actions}} <-
            {:tx_actions,
@@ -259,6 +242,38 @@ defmodule Indexer.Block.Fetcher do
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
       {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
+    end
+  end
+
+  defp import_options(basic_import_options, %{
+         transactions_with_receipts: transactions_with_receipts,
+         polygon_edge_withdrawals: polygon_edge_withdrawals,
+         polygon_edge_deposit_executes: polygon_edge_deposit_executes,
+         zkevm_bridge_operations: zkevm_bridge_operations,
+         shibarium_bridge_operations: shibarium_bridge_operations
+       }) do
+    case Application.get_env(:explorer, :chain_type) do
+      "ethereum" ->
+        basic_import_options
+        |> Map.put_new(:beacon_blob_transactions, %{
+          params: transactions_with_receipts |> Enum.filter(&Map.has_key?(&1, :max_fee_per_blob_gas))
+        })
+
+      "polygon_edge" ->
+        basic_import_options
+        |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
+        |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
+
+      "polygon_zkevm" ->
+        basic_import_options
+        |> Map.put_new(:zkevm_bridge_operations, %{params: zkevm_bridge_operations})
+
+      "shibarium" ->
+        basic_import_options
+        |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
+
+      _ ->
+        basic_import_options
     end
   end
 
