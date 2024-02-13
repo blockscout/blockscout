@@ -1780,8 +1780,12 @@ defmodule Explorer.Chain.Transaction do
     `effective_gas_price = priority_fee_per_gas + block.base_fee_per_gas`
   """
   @spec effective_gas_price(Transaction.t()) :: Wei.t() | nil
+
+  def effective_gas_price(%Transaction{block: nil}), do: nil
+  def effective_gas_price(%Transaction{block: %NotLoaded{}}), do: nil
+
   def effective_gas_price(%Transaction{} = transaction) do
-    base_fee_per_gas = transaction.block && transaction.block.base_fee_per_gas
+    base_fee_per_gas = transaction.block.base_fee_per_gas
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
 
@@ -1800,8 +1804,9 @@ defmodule Explorer.Chain.Transaction do
     if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas),
       do: nil,
       else:
-        Enum.min_by([max_priority_fee_per_gas, Wei.sub(max_fee_per_gas, base_fee_per_gas)], fn x ->
-          Wei.to(x, :wei)
-        end)
+        max_priority_fee_per_gas
+        |> Wei.to(:wei)
+        |> Decimal.min(max_fee_per_gas |> Wei.sub(base_fee_per_gas) |> Wei.to(:wei))
+        |> Wei.from(:wei)
   end
 end
