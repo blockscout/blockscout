@@ -18,7 +18,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           hash: tx_hash
         } = with_block(insert(:transaction))
 
-      {_, fee} = Chain.fee(tx, :gwei)
+      {_, fee} = Transaction.fee(tx, :gwei)
       amount = Wei.to(tx.value, :ether)
 
       assert Summary.process(tx) == [
@@ -65,7 +65,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
         |> with_contract_creation(contract_address)
         |> with_block(block)
 
-      {_, fee} = Chain.fee(tx, :gwei)
+      {_, fee} = Transaction.fee(tx, :gwei)
       amount = Wei.to(tx.value, :ether)
 
       assert Summary.process(tx) == [
@@ -107,7 +107,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           :token
         ])
 
-      {_, fee} = Chain.fee(tx, :gwei)
+      {_, fee} = Transaction.fee(tx, :gwei)
 
       token_decimals = Decimal.to_integer(token.decimals)
 
@@ -159,7 +159,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           :token
         ])
 
-      {_, fee} = Chain.fee(tx, :gwei)
+      {_, fee} = Transaction.fee(tx, :gwei)
 
       assert Summary.process(transfer) == [
                %Summary{
@@ -205,7 +205,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           :token
         ])
 
-      {_, fee} = Chain.fee(tx, :gwei)
+      {_, fee} = Transaction.fee(tx, :gwei)
 
       assert Summary.process(transfer) == [
                %Summary{
@@ -251,7 +251,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           :token
         ])
 
-      {_, fee} = Chain.fee(tx, :gwei)
+      {_, fee} = Transaction.fee(tx, :gwei)
 
       assert Summary.process(transfer) == [
                %Summary{

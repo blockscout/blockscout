@@ -367,7 +367,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
 
-    priority_fee_per_gas = priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas)
+    priority_fee_per_gas = Transaction.priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas)
 
     burnt_fees = burnt_fees(transaction, max_fee_per_gas, base_fee_per_gas)
 
@@ -410,8 +410,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "confirmations" => transaction.block |> Chain.confirmations(block_height: block_height) |> format_confirmations(),
       "confirmation_duration" => processing_time_duration(transaction),
       "value" => transaction.value,
-      "fee" => transaction |> Chain.fee(:wei) |> format_fee(),
-      "gas_price" => transaction.gas_price,
+      "fee" => transaction |> Transaction.fee(:wei) |> format_fee(),
+      "gas_price" => transaction.gas_price || Transaction.effective_gas_price(transaction),
       "type" => transaction.type,
       "gas_used" => transaction.gas_used,
       "gas_limit" => transaction.gas,
@@ -543,7 +543,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           "gas_price" => transaction.wrapped_gas_price,
           "fee" =>
             format_fee(
-              Chain.fee(
+              Transaction.fee(
                 %Transaction{gas: transaction.wrapped_gas, gas_price: transaction.wrapped_gas_price, gas_used: nil},
                 :wei
               )
@@ -587,15 +587,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   """
   def transaction_actions(actions) do
     render("transaction_actions.json", %{actions: actions})
-  end
-
-  defp priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas) do
-    if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas),
-      do: nil,
-      else:
-        Enum.min_by([max_priority_fee_per_gas, Wei.sub(max_fee_per_gas, base_fee_per_gas)], fn x ->
-          Wei.to(x, :wei)
-        end)
   end
 
   defp burnt_fees(transaction, max_fee_per_gas, base_fee_per_gas) do
