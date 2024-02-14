@@ -57,6 +57,8 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./docker/Dockerfile
+          cache-from: type=registry,ref=blockscout/blockscout:buildcache
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=blockscout/blockscout,push-by-digest=true,name-canonical=true,push=true
