@@ -26,11 +26,8 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           driver: remote
-          endpoint: default
-          platforms: linux/amd64
-          append: |
-            - endpoint: ssh://ubuntu@3.145.97.144
-              platforms: linux/arm64
+          endpoint: ssh://ubuntu@3.145.97.144
+          platforms: linux/arm64
       -
         name: Checkout
         uses: actions/checkout@v4
