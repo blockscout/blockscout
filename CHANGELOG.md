@@ -13,7 +13,6 @@
 ### Fixes
 
 - [#9356](https://github.com/blockscout/blockscout/pull/9356) - Remove ERC-1155 logs params from coin balances params
-- [#9355](https://github.com/blockscout/blockscout/pull/9355) - Exclude preloads of smart-contracts in the lists for user operations
 - [#9346](https://github.com/blockscout/blockscout/pull/9346) - Process integer balance in genesis.json
 - [#9317](https://github.com/blockscout/blockscout/pull/9317) - Include null gas price txs in fee calculations
 - [#9315](https://github.com/blockscout/blockscout/pull/9315) - Fix manual uncle reward calculation
