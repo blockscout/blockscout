@@ -9,6 +9,7 @@
 - [#9282](https://github.com/blockscout/blockscout/pull/9282) - Add `license_type` to smart contracts
 - [#9202](https://github.com/blockscout/blockscout/pull/9202) - Add base and priority fee to gas oracle response
 - [#9168](https://github.com/blockscout/blockscout/pull/9168) - Support EIP4844 blobs indexing & API
+- [#9098](https://github.com/blockscout/blockscout/pull/9098) - Polygon zkEVM Bridge indexer and API v2 extension
 
 ### Fixes
 
@@ -117,7 +118,6 @@
 
 - [#9112](https://github.com/blockscout/blockscout/pull/9112) - Add specific url for eth_call
 - [#9044](https://github.com/blockscout/blockscout/pull/9044) - Expand gas price oracle functionality
-- [#9098](https://github.com/blockscout/blockscout/pull/9098) - Polygon zkEVM Bridge indexer and API v2 extension
 
 ### Fixes
 
