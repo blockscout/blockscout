@@ -7,18 +7,18 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
   use Indexer.Fetcher
 
   import EthereumJSONRPC,
-    only: [json_rpc: 2, quantity_to_integer: 1]
+    only: [quantity_to_integer: 1]
 
   import Explorer.Helper, only: [decode_data: 2]
 
+  import Indexer.Fetcher.Arbitrum.Utils.Helper, only: [increase_duration: 2]
+
   alias Indexer.Helper, as: IndexerHelper
+  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
 
   alias Explorer.Chain
-  alias Explorer.Chain.Arbitrum.Reader
 
   require Logger
-
-  @rpc_resend_attempts 20
 
   @types_of_l1_messages_forwarded_to_l2 [3, 7, 9, 12]
 
@@ -52,37 +52,28 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
   def init(args) do
     Logger.metadata(fetcher: :arbitrum_bridge_l1_tracker)
 
-    config_tracker = Application.get_all_env(:indexer)[__MODULE__]
-    l1_rpc = config_tracker[:l1_rpc]
-    l1_rpc_block_range = config_tracker[:l1_rpc_block_range]
-    l1_bridge_address = config_tracker[:l1_bridge_address]
-    l1_bridge_start_block = config_tracker[:l1_bridge_start_block]
-    recheck_interval = config_tracker[:recheck_interval]
-    chunk_size = config_tracker[:chunk_size]
+    config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
+    l1_rpc = config_common[:l1_rpc]
+    l1_rpc_block_range = config_common[:l1_rpc_block_range]
+    l1_rollup_address = config_common[:l1_rollup_address]
+    l1_start_block = config_common[:l1_start_block]
+    l1_rpc_chunk_size = config_common[:l1_rpc_chunk_size]
 
-    Process.send(self(), :init_start_position, [])
+    config_tracker = Application.get_all_env(:indexer)[__MODULE__]
+    recheck_interval = config_tracker[:recheck_interval]
+
+    Process.send(self(), :init_worker, [])
 
     {:ok,
      %{
        config: %{
          json_l2_rpc_named_arguments: args[:json_rpc_named_arguments],
-         json_l1_rpc_named_arguments: [
-           transport: EthereumJSONRPC.HTTP,
-           transport_options: [
-             http: EthereumJSONRPC.HTTP.HTTPoison,
-             url: l1_rpc,
-             http_options: [
-               recv_timeout: :timer.minutes(10),
-               timeout: :timer.minutes(10),
-               hackney: [pool: :ethereum_jsonrpc]
-             ]
-           ]
-         ],
+         json_l1_rpc_named_arguments: IndexerHelper.build_json_rpc_named_arguments(l1_rpc),
          recheck_interval: recheck_interval,
-         chunk_size: chunk_size,
+         l1_rpc_chunk_size: l1_rpc_chunk_size,
          l1_rpc_block_range: l1_rpc_block_range,
-         l1_bridge_address: l1_bridge_address,
-         l1_bridge_start_block: l1_bridge_start_block
+         l1_rollup_address: l1_rollup_address,
+         l1_start_block: l1_start_block
        },
        data: %{}
      }}
@@ -96,20 +87,20 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
 
   # TBD
   @impl GenServer
-  def handle_info(:init_start_position, state) do
-    new_msg_to_l2_start_block =
-      case Reader.latest_completed_message_to_l2() do
-        nil ->
-          Logger.warning("No completed messages to L2 found in DB")
-          state.config.l1_bridge_start_block
+  def handle_info(:init_worker, state) do
+    %{bridge: bridge_address} =
+      Rpc.get_contracts_for_rollup(state.config.l1_rollup_address, :bridge, state.config.json_l1_rpc_named_arguments)
 
-        value ->
-          value + 1
-      end
+    new_msg_to_l2_start_block = Db.l1_block_of_latest_discovered_message_to_l2(state.config.l1_start_block)
 
     Process.send(self(), :check_new_msgs_to_rollup, [])
 
-    {:noreply, %{state | data: %{new_msg_to_l2_start_block: new_msg_to_l2_start_block}}}
+    new_state =
+      state
+      |> Map.put(:config, Map.put(state.config, :l1_bridge_address, bridge_address))
+      |> Map.put(:data, Map.put(state.data, :new_msg_to_l2_start_block, new_msg_to_l2_start_block))
+
+    {:noreply, new_state}
   end
 
   # TBD
@@ -123,12 +114,12 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     Process.send_after(
       self(),
       :check_new_msgs_to_rollup,
-      max(:timer.seconds(state.config.recheck_interval) - div(update_duration(state.data, handle_duration), 1000), 0)
+      max(:timer.seconds(state.config.recheck_interval) - div(increase_duration(state.data, handle_duration), 1000), 0)
     )
 
     new_data =
       Map.merge(state.data, %{
-        duration: update_duration(state.data, handle_duration),
+        duration: 0,
         new_msg_to_l2_start_block: end_block + 1
       })
 
@@ -168,7 +159,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     {message_index, kind, Timex.from_unix(timestamp)}
   end
 
-  defp parse_get_logs_for_l1_to_l2_messages(logs) do
+  defp parse_logs_for_l1_to_l2_messages(logs) do
     {messages, txs_requests} =
       logs
       |> Enum.reduce({[], %{}}, fn event, {messages, txs_requests} ->
@@ -193,11 +184,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
             Map.put(
               txs_requests,
               tx_hash,
-              EthereumJSONRPC.request(%{
-                id: 0,
-                method: "eth_getTransactionByHash",
-                params: [tx_hash]
-              })
+              Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash})
             )
 
           Logger.info("L1 to L2 message #{tx_hash} found with the type #{type}")
@@ -211,65 +198,10 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     {messages, Map.values(txs_requests)}
   end
 
-  defp list_to_chunks(l, chunk_size) do
-    {chunks, cur_chunk, cur_chunk_size} =
-      l
-      |> Enum.chunk_every(chunk_size)
-      |> Enum.reduce({[], [], 0}, fn chunk, {chunks, cur_chunk, cur_chunk_size} ->
-        new_cur_chunk = [chunk | cur_chunk]
-
-        if cur_chunk_size + 1 == chunk_size do
-          {[new_cur_chunk | chunks], [], 0}
-        else
-          {chunks, new_cur_chunk, cur_chunk_size + 1}
-        end
-      end)
-
-    if cur_chunk_size != 0 do
-      [cur_chunk | chunks]
-    else
-      chunks
-    end
-  end
-
-  defp make_chunked_request(requests_list, json_rpc_named_arguments, help_str) do
-    error_message = &"Cannot call #{help_str}. Error: #{inspect(&1)}"
-
-    {:ok, responses} =
-      IndexerHelper.repeated_call(
-        &json_rpc/2,
-        [requests_list, json_rpc_named_arguments],
-        error_message,
-        @rpc_resend_attempts
-      )
-
-    Enum.map(responses, fn %{result: block_desc} -> block_desc end)
-  end
-
-  # defp execute_blocks_requests_and_get_timestamps(blocks_requests, json_rpc_named_arguments, chunk_size) do
-  #   list_to_chunks(blocks_requests, chunk_size)
-  #   |> Enum.reduce(%{}, fn chunk, blocks_to_ts ->
-  #     make_chunked_request(chunk, json_rpc_named_arguments, "eth_getBlockByNumber")
-  #     |> Enum.reduce(blocks_to_ts, fn resp, blocks_to_ts_inner ->
-  #       Map.put(blocks_to_ts_inner, quantity_to_integer(resp["number"]), timestamp_to_datetime(resp["timestamp"]))
-  #     end)
-  #   end)
-  # end
-
-  defp execute_transactions_requests_and_get_from(txs_requests, json_rpc_named_arguments, chunk_size) do
-    list_to_chunks(txs_requests, chunk_size)
-    |> Enum.reduce(%{}, fn chunk, tx_to_from ->
-      make_chunked_request(chunk, json_rpc_named_arguments, "eth_getTransactionByHash")
-      |> Enum.reduce(tx_to_from, fn resp, tx_to_from_inner ->
-        Map.put(tx_to_from_inner, resp["hash"], resp["from"])
-      end)
-    end)
-  end
-
   defp get_messages_from_logs(logs, json_rpc_named_arguments, chunk_size) do
-    {messages, txs_requests} = parse_get_logs_for_l1_to_l2_messages(logs)
+    {messages, txs_requests} = parse_logs_for_l1_to_l2_messages(logs)
 
-    txs_to_from = execute_transactions_requests_and_get_from(txs_requests, json_rpc_named_arguments, chunk_size)
+    txs_to_from = Rpc.execute_transactions_requests_and_get_from(txs_requests, json_rpc_named_arguments, chunk_size)
 
     Enum.map(messages, fn msg ->
       Map.merge(msg, %{
@@ -283,7 +215,11 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     # Requesting the "latest" block instead of "safe" allows to get messages originated to L2
     # much earlier than they will be seen by the Arbitrum Sequencer.
     {:ok, latest_block} =
-      IndexerHelper.get_block_number_by_tag("latest", state.config.json_l1_rpc_named_arguments, @rpc_resend_attempts)
+      IndexerHelper.get_block_number_by_tag(
+        "latest",
+        state.config.json_l1_rpc_named_arguments,
+        Rpc.get_resend_attempts()
+      )
 
     start_block = state.data.new_msg_to_l2_start_block
     end_block = min(start_block + state.config.l1_rpc_block_range - 1, latest_block)
@@ -299,7 +235,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
           state.config.json_l1_rpc_named_arguments
         )
 
-      messages = get_messages_from_logs(logs, state.config.json_l1_rpc_named_arguments, state.config.chunk_size)
+      messages = get_messages_from_logs(logs, state.config.json_l1_rpc_named_arguments, state.config.l1_rpc_chunk_size)
 
       {:ok, _} =
         Chain.import(%{
@@ -310,14 +246,6 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
       {:ok, end_block}
     else
       {:ok, start_block - 1}
-    end
-  end
-
-  defp update_duration(data, cur_duration) do
-    if Map.has_key?(data, :duration) do
-      data.duration + cur_duration
-    else
-      cur_duration
     end
   end
 end

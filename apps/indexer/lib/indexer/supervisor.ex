@@ -44,8 +44,9 @@ defmodule Indexer.Supervisor do
     Withdrawal
   }
 
-  alias Indexer.Fetcher.Zkevm.TransactionBatch
+  alias Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses, as: ArbitrumTrackingBatchesStatuses
   alias Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1, as: ArbitrumTrackingMessagesOnL1
+  alias Indexer.Fetcher.Zkevm.TransactionBatch
 
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,
@@ -152,6 +153,9 @@ defmodule Indexer.Supervisor do
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
         configure(ArbitrumTrackingMessagesOnL1.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(ArbitrumTrackingBatchesStatuses.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
 

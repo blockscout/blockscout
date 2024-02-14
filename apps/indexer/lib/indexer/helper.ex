@@ -16,6 +16,7 @@ defmodule Indexer.Helper do
 
   alias EthereumJSONRPC.Block.ByNumber
   alias Explorer.Chain.Hash
+  alias Explorer.SmartContract.Reader, as: ContractReader
 
   @spec address_hash_to_string(binary(), boolean()) :: binary()
   def address_hash_to_string(hash, downcase \\ false)
@@ -104,6 +105,25 @@ defmodule Indexer.Helper do
   end
 
   @doc """
+  Forms JSON RPC named arguments for the given RPC URL.
+  """
+  @spec build_json_rpc_named_arguments(binary()) :: EthereumJSONRPC.json_rpc_named_arguments()
+  def build_json_rpc_named_arguments(rpc_url) do
+    [
+      transport: EthereumJSONRPC.HTTP,
+      transport_options: [
+        http: EthereumJSONRPC.HTTP.HTTPoison,
+        url: rpc_url,
+        http_options: [
+          recv_timeout: :timer.minutes(10),
+          timeout: :timer.minutes(10),
+          hackney: [pool: :ethereum_jsonrpc]
+        ]
+      ]
+    ]
+  end
+
+  @doc """
   Prints a log of progress when handling something splitted to block chunks.
   """
   @spec log_blocks_chunk_handling(
@@ -149,6 +169,37 @@ defmodule Indexer.Helper do
       Logger.info("#{type} handling #{layer} block ##{chunk_start}.#{found}#{target_range}")
     else
       Logger.info("#{type} handling #{layer} block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
+    end
+  end
+
+  @doc """
+  TBD
+  """
+  def read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left) when retries_left > 0 do
+    responses = ContractReader.query_contracts(requests, abi, json_rpc_named_arguments: json_rpc_named_arguments)
+
+    error_messages =
+      Enum.reduce(responses, [], fn {status, error_message}, acc ->
+        acc ++
+          if status == :error do
+            [error_message]
+          else
+            []
+          end
+      end)
+
+    if Enum.empty?(error_messages) do
+      {responses, []}
+    else
+      retries_left = retries_left - 1
+
+      if retries_left == 0 do
+        {responses, Enum.uniq(error_messages)}
+      else
+        Logger.error("#{List.first(error_messages)}. Retrying...")
+        :timer.sleep(3000)
+        read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left)
+      end
     end
   end
 
