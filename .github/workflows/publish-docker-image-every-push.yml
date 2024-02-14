@@ -54,8 +54,7 @@ jobs:
           cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
           # tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
           tags: blockscout/blockscout:arm-build-test
-          platforms: |
-            linux/arm64/v8
+          platforms: linux/amd64,linux/arm64/v8
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             API_V1_READ_METHODS_DISABLED=false
