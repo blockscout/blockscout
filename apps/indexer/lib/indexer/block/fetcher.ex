@@ -19,6 +19,7 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
 
   alias Indexer.Fetcher.{
+    Beacon.Blob,
     BlockReward,
     CoinBalance,
     ContractCode,
@@ -210,6 +211,12 @@ defmodule Indexer.Block.Fetcher do
                 |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
                 |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
 
+              "ethereum" ->
+                basic_import_options
+                |> Map.put_new(:beacon_blob_transactions, %{
+                  params: transactions_with_receipts |> Enum.filter(&Map.has_key?(&1, :max_fee_per_blob_gas))
+                })
+
               "shibarium" ->
                 basic_import_options
                 |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
@@ -389,6 +396,19 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_replaced_transactions(_), do: :ok
+
+  def async_import_blobs(%{blocks: blocks}) do
+    timestamps =
+      blocks
+      |> Enum.filter(fn block -> block |> Map.get(:blob_gas_used, 0) > 0 end)
+      |> Enum.map(&Map.get(&1, :timestamp))
+
+    if !Enum.empty?(timestamps) do
+      Blob.async_fetch(timestamps)
+    end
+  end
+
+  def async_import_blobs(_), do: :ok
 
   defp block_reward_errors_to_block_numbers(block_reward_errors) when is_list(block_reward_errors) do
     Enum.map(block_reward_errors, &block_reward_error_to_block_number/1)

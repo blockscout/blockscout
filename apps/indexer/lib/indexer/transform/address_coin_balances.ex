@@ -32,7 +32,11 @@ defmodule Indexer.Transform.AddressCoinBalances do
   defp reducer({:logs_params, logs_params}, acc) when is_list(logs_params) do
     # a log MUST have address_hash and block_number
     logs_params
-    |> Enum.reject(&(&1.first_topic == TokenTransfer.constant()))
+    |> Enum.reject(
+      &(&1.first_topic == TokenTransfer.constant() or
+          &1.first_topic == TokenTransfer.erc1155_single_transfer_signature() or
+          &1.first_topic == TokenTransfer.erc1155_batch_transfer_signature())
+    )
     |> Enum.into(acc, fn
       %{address_hash: address_hash, block_number: block_number}
       when is_binary(address_hash) and is_integer(block_number) ->

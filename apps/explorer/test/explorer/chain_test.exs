@@ -643,22 +643,31 @@ defmodule Explorer.ChainTest do
 
   describe "fee/2" do
     test "without receipt with :wei unit" do
-      assert Chain.fee(%Transaction{gas: Decimal.new(3), gas_price: %Wei{value: Decimal.new(2)}, gas_used: nil}, :wei) ==
+      assert Transaction.fee(
+               %Transaction{gas: Decimal.new(3), gas_price: %Wei{value: Decimal.new(2)}, gas_used: nil},
+               :wei
+             ) ==
                {:maximum, Decimal.new(6)}
     end
 
     test "without receipt with :gwei unit" do
-      assert Chain.fee(%Transaction{gas: Decimal.new(3), gas_price: %Wei{value: Decimal.new(2)}, gas_used: nil}, :gwei) ==
+      assert Transaction.fee(
+               %Transaction{gas: Decimal.new(3), gas_price: %Wei{value: Decimal.new(2)}, gas_used: nil},
+               :gwei
+             ) ==
                {:maximum, Decimal.new("6e-9")}
     end
 
     test "without receipt with :ether unit" do
-      assert Chain.fee(%Transaction{gas: Decimal.new(3), gas_price: %Wei{value: Decimal.new(2)}, gas_used: nil}, :ether) ==
+      assert Transaction.fee(
+               %Transaction{gas: Decimal.new(3), gas_price: %Wei{value: Decimal.new(2)}, gas_used: nil},
+               :ether
+             ) ==
                {:maximum, Decimal.new("6e-18")}
     end
 
     test "with receipt with :wei unit" do
-      assert Chain.fee(
+      assert Transaction.fee(
                %Transaction{
                  gas: Decimal.new(3),
                  gas_price: %Wei{value: Decimal.new(2)},
@@ -669,7 +678,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "with receipt with :gwei unit" do
-      assert Chain.fee(
+      assert Transaction.fee(
                %Transaction{
                  gas: Decimal.new(3),
                  gas_price: %Wei{value: Decimal.new(2)},
@@ -680,7 +689,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "with receipt with :ether unit" do
-      assert Chain.fee(
+      assert Transaction.fee(
                %Transaction{
                  gas: Decimal.new(3),
                  gas_price: %Wei{value: Decimal.new(2)},

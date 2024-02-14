@@ -4,13 +4,21 @@
 
 ### Features
 
+- [#9379](https://github.com/blockscout/blockscout/pull/9379) - Filter non-traceable transactions for zetachain
+- [#9351](https://github.com/blockscout/blockscout/pull/9351) - Noves.fi: add proxy endpoint for describeTxs endpoint
+- [#9282](https://github.com/blockscout/blockscout/pull/9282) - Add `license_type` to smart contracts
 - [#9202](https://github.com/blockscout/blockscout/pull/9202) - Add base and priority fee to gas oracle response
+- [#9168](https://github.com/blockscout/blockscout/pull/9168) - Support EIP4844 blobs indexing & API
 
 ### Fixes
 
-- [#9377](https://github.com/blockscout/blockscout/pull/9315) - Speed up account abstraction proxy
+- [#9377](https://github.com/blockscout/blockscout/pull/9377) - Speed up account abstraction proxy
+- [#9356](https://github.com/blockscout/blockscout/pull/9356) - Remove ERC-1155 logs params from coin balances params
+- [#9346](https://github.com/blockscout/blockscout/pull/9346) - Process integer balance in genesis.json
 - [#9317](https://github.com/blockscout/blockscout/pull/9317) - Include null gas price txs in fee calculations
 - [#9315](https://github.com/blockscout/blockscout/pull/9315) - Fix manual uncle reward calculation
+- [#9305](https://github.com/blockscout/blockscout/pull/9305) - Add effective gas price calculation as fallback
+- [#9300](https://github.com/blockscout/blockscout/pull/9300) - Fix read contract bug
 
 ### Chore
 

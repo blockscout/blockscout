@@ -827,58 +827,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  The fee a `transaction` paid for the `t:Explorer.Transaction.t/0` `gas`
-
-  If the transaction is pending, then the fee will be a range of `unit`
-
-      iex> Explorer.Chain.fee(
-      ...>   %Explorer.Chain.Transaction{
-      ...>     gas: Decimal.new(3),
-      ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
-      ...>     gas_used: nil
-      ...>   },
-      ...>   :wei
-      ...> )
-      {:maximum, Decimal.new(6)}
-
-  If the transaction has been confirmed in block, then the fee will be the actual fee paid in `unit` for the `gas_used`
-  in the `transaction`.
-
-      iex> Explorer.Chain.fee(
-      ...>   %Explorer.Chain.Transaction{
-      ...>     gas: Decimal.new(3),
-      ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
-      ...>     gas_used: Decimal.new(2)
-      ...>   },
-      ...>   :wei
-      ...> )
-      {:actual, Decimal.new(4)}
-
-  """
-  @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t() | nil}
-  def fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
-
-  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
-    fee =
-      gas_price
-      |> Wei.to(unit)
-      |> Decimal.mult(gas)
-
-    {:maximum, fee}
-  end
-
-  def fee(%Transaction{gas_price: nil, gas_used: _gas_used}, _unit), do: {:actual, nil}
-
-  def fee(%Transaction{gas_price: gas_price, gas_used: gas_used}, unit) do
-    fee =
-      gas_price
-      |> Wei.to(unit)
-      |> Decimal.mult(gas_used)
-
-    {:actual, fee}
-  end
-
-  @doc """
   Checks to see if the chain is down indexing based on the transaction from the
   oldest block and the pending operation
   """
@@ -4906,6 +4854,11 @@ defmodule Explorer.Chain do
             as: :created_token
           )
         )
+
+      :blob_transaction ->
+        dynamic
+        |> filter_blob_transaction_dynamic()
+        |> apply_filter_by_tx_type_to_transactions_inner(remain, query)
     end
   end
 
@@ -4937,6 +4890,11 @@ defmodule Explorer.Chain do
 
   def filter_token_creation_dynamic(dynamic) do
     dynamic([tx, created_token: created_token], ^dynamic or not is_nil(created_token))
+  end
+
+  def filter_blob_transaction_dynamic(dynamic) do
+    # EIP-2718 blob transaction type
+    dynamic([tx], ^dynamic or tx.type == 3)
   end
 
   def count_verified_contracts do
