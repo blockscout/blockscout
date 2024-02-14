@@ -34,8 +34,8 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
     modules_can_use_reorg_monitor = [
       Indexer.Fetcher.PolygonEdge.Deposit,
       Indexer.Fetcher.PolygonEdge.WithdrawalExit,
-      Indexer.Fetcher.Shibarium.L1,
-      Indexer.Fetcher.Zkevm.BridgeL1
+      Indexer.Fetcher.PolygonZkevm.BridgeL1,
+      Indexer.Fetcher.Shibarium.L1
     ]
 
     modules_using_reorg_monitor =
@@ -52,7 +52,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
       # As there cannot be different modules for different rollups at the same time,
       # it's correct to only get the first item of the list.
       # For example, Indexer.Fetcher.PolygonEdge.Deposit and Indexer.Fetcher.PolygonEdge.WithdrawalExit can be in the list
-      # because they are for the same rollup, but Indexer.Fetcher.Shibarium.L1 and Indexer.Fetcher.Zkevm.BridgeL1 cannot (as they are for different rollups).
+      # because they are for the same rollup, but Indexer.Fetcher.Shibarium.L1 and Indexer.Fetcher.PolygonZkevm.BridgeL1 cannot (as they are for different rollups).
       module_using_reorg_monitor = Enum.at(modules_using_reorg_monitor, 0)
 
       l1_rpc =

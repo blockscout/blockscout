@@ -1,6 +1,6 @@
-defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
+defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
   @moduledoc """
-  Fills zkevm_transaction_batches DB table.
+  Fills polygon_zkevm_transaction_batches DB table.
   """
 
   use GenServer
@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
 
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Chain.Zkevm.Reader
+  alias Explorer.Chain.PolygonZkevm.Reader
   alias Indexer.Helper
 
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
@@ -34,9 +34,9 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
 
   @impl GenServer
   def init(args) do
-    Logger.metadata(fetcher: :zkevm_transaction_batches)
+    Logger.metadata(fetcher: :polygon_zkevm_transaction_batches)
 
-    config = Application.get_all_env(:indexer)[Indexer.Fetcher.Zkevm.TransactionBatch]
+    config = Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonZkevm.TransactionBatch]
     chunk_size = config[:chunk_size]
     recheck_interval = config[:recheck_interval]
 
@@ -251,9 +251,9 @@ defmodule Indexer.Fetcher.Zkevm.TransactionBatch do
 
     {:ok, _} =
       Chain.import(%{
-        zkevm_lifecycle_transactions: %{params: l1_txs_to_import},
-        zkevm_transaction_batches: %{params: batches_to_import},
-        zkevm_batch_transactions: %{params: l2_txs_to_import},
+        polygon_zkevm_lifecycle_transactions: %{params: l1_txs_to_import},
+        polygon_zkevm_transaction_batches: %{params: batches_to_import},
+        polygon_zkevm_batch_transactions: %{params: l2_txs_to_import},
         timeout: :infinity
       })
 

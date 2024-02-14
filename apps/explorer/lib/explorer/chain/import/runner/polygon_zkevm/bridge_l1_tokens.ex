@@ -1,6 +1,6 @@
-defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeL1Tokens do
+defmodule Explorer.Chain.Import.Runner.PolygonZkevm.BridgeL1Tokens do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.Zkevm.BridgeL1Token.t/0`.
+  Bulk imports `t:Explorer.Chain.PolygonZkevm.BridgeL1Token.t/0`.
   """
 
   require Ecto.Query
@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeL1Tokens do
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Import
-  alias Explorer.Chain.Zkevm.BridgeL1Token
+  alias Explorer.Chain.PolygonZkevm.BridgeL1Token
   alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
@@ -23,7 +23,7 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeL1Tokens do
   def ecto_schema_module, do: BridgeL1Token
 
   @impl Import.Runner
-  def option_key, do: :zkevm_bridge_l1_tokens
+  def option_key, do: :polygon_zkevm_bridge_l1_tokens
 
   @impl Import.Runner
   def imported_table_row do
@@ -42,12 +42,12 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeL1Tokens do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_zkevm_bridge_l1_tokens, fn repo, _ ->
+    Multi.run(multi, :insert_polygon_zkevm_bridge_l1_tokens, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :zkevm_bridge_l1_tokens,
-        :zkevm_bridge_l1_tokens
+        :polygon_zkevm_bridge_l1_tokens,
+        :polygon_zkevm_bridge_l1_tokens
       )
     end)
   end

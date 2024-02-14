@@ -1,15 +1,15 @@
-defmodule Explorer.Chain.Zkevm.LifecycleTransaction do
+defmodule Explorer.Chain.PolygonZkevm.LifecycleTransaction do
   @moduledoc "Models an L1 lifecycle transaction for zkEVM."
 
   use Explorer.Schema
 
   alias Explorer.Chain.Hash
-  alias Explorer.Chain.Zkevm.TransactionBatch
+  alias Explorer.Chain.PolygonZkevm.TransactionBatch
 
   @required_attrs ~w(id hash is_verify)a
 
   @primary_key false
-  typed_schema "zkevm_lifecycle_l1_transactions" do
+  typed_schema "polygon_zkevm_lifecycle_l1_transactions" do
     field(:id, :integer, primary_key: true, null: false)
     field(:hash, Hash.Full, null: false)
     field(:is_verify, :boolean, null: false)

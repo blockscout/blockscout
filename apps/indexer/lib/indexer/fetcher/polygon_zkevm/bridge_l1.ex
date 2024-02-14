@@ -1,6 +1,6 @@
-defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
+defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
   @moduledoc """
-  Fills zkevm_bridge DB table.
+  Fills polygon_zkevm_bridge DB table.
   """
 
   use GenServer
@@ -11,16 +11,16 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
   import Ecto.Query
   import Explorer.Helper, only: [parse_integer: 1]
 
-  import Indexer.Fetcher.Zkevm.Bridge,
+  import Indexer.Fetcher.PolygonZkevm.Bridge,
     only: [get_logs_all: 3, import_operations: 1, prepare_operations: 3]
 
-  alias Explorer.Chain.Zkevm.{Bridge, Reader}
+  alias Explorer.Chain.PolygonZkevm.{Bridge, Reader}
   alias Explorer.Repo
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
 
   @eth_get_logs_range_size 1000
-  @fetcher_name :zkevm_bridge_l1
+  @fetcher_name :polygon_zkevm_bridge_l1
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -100,7 +100,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
         {:stop, :normal, %{}}
 
       {:start_block_valid, false, last_l1_block_number, safe_block} ->
-        Logger.error("Invalid L1 Start Block value. Please, check the value and zkevm_bridge table.")
+        Logger.error("Invalid L1 Start Block value. Please, check the value and polygon_zkevm_bridge table.")
         Logger.error("last_l1_block_number = #{inspect(last_l1_block_number)}")
         Logger.error("safe_block = #{inspect(safe_block)}")
         {:stop, :normal, %{}}
@@ -114,7 +114,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
       {:l1_tx_not_found, true} ->
         Logger.error(
-          "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check zkevm_bridge table."
+          "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check polygon_zkevm_bridge table."
         )
 
         {:stop, :normal, %{}}
@@ -203,7 +203,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1 do
 
     if deleted_count > 0 do
       Logger.warning(
-        "As L1 reorg was detected, some deposits with block_number >= #{reorg_block} were removed from zkevm_bridge table. Number of removed rows: #{deleted_count}."
+        "As L1 reorg was detected, some deposits with block_number >= #{reorg_block} were removed from polygon_zkevm_bridge table. Number of removed rows: #{deleted_count}."
       )
     end
   end

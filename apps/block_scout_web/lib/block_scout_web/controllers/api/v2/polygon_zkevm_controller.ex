@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.API.V2.ZkevmController do
+defmodule BlockScoutWeb.API.V2.PolygonZkevmController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.ZkevmController do
       split_list_by_page: 1
     ]
 
-  alias Explorer.Chain.Zkevm.Reader
+  alias Explorer.Chain.PolygonZkevm.Reader
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 

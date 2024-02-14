@@ -41,7 +41,7 @@ defmodule BlockScoutWeb.Chain do
     Wei
   }
 
-  alias Explorer.Chain.Zkevm.TransactionBatch
+  alias Explorer.Chain.PolygonZkevm.TransactionBatch
   alias Explorer.PagingOptions
 
   defimpl Poison.Encoder, for: Decimal do

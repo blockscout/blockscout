@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.API.V2.ZkevmView do
+defmodule BlockScoutWeb.API.V2.PolygonZkevmView do
   use BlockScoutWeb, :view
 
   @doc """
@@ -75,7 +75,7 @@ defmodule BlockScoutWeb.API.V2.ZkevmView do
         items: items,
         next_page_params: next_page_params
       }) do
-    env = Application.get_all_env(:indexer)[Indexer.Fetcher.Zkevm.BridgeL1]
+    env = Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonZkevm.BridgeL1]
 
     %{
       items:

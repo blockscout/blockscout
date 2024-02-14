@@ -204,7 +204,7 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/watchlist", V2.TransactionController, :watchlist_transactions)
 
       if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
-        get("/zkevm-batch/:batch_number", V2.TransactionController, :zkevm_batch)
+        get("/zkevm-batch/:batch_number", V2.TransactionController, :polygon_zkevm_batch)
       end
 
       if System.get_env("CHAIN_TYPE") == "suave" do
@@ -274,8 +274,8 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/indexing-status", V2.MainPageController, :indexing_status)
 
       if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
-        get("/zkevm/batches/confirmed", V2.ZkevmController, :batches_confirmed)
-        get("/zkevm/batches/latest-number", V2.ZkevmController, :batch_latest_number)
+        get("/zkevm/batches/confirmed", V2.PolygonZkevmController, :batches_confirmed)
+        get("/zkevm/batches/latest-number", V2.PolygonZkevmController, :batch_latest_number)
       end
     end
 
@@ -313,13 +313,13 @@ defmodule BlockScoutWeb.ApiRouter do
 
     scope "/zkevm" do
       if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
-        get("/batches", V2.ZkevmController, :batches)
-        get("/batches/count", V2.ZkevmController, :batches_count)
-        get("/batches/:batch_number", V2.ZkevmController, :batch)
-        get("/deposits", V2.ZkevmController, :deposits)
-        get("/deposits/count", V2.ZkevmController, :deposits_count)
-        get("/withdrawals", V2.ZkevmController, :withdrawals)
-        get("/withdrawals/count", V2.ZkevmController, :withdrawals_count)
+        get("/batches", V2.PolygonZkevmController, :batches)
+        get("/batches/count", V2.PolygonZkevmController, :batches_count)
+        get("/batches/:batch_number", V2.PolygonZkevmController, :batch)
+        get("/deposits", V2.PolygonZkevmController, :deposits)
+        get("/deposits/count", V2.PolygonZkevmController, :deposits_count)
+        get("/withdrawals", V2.PolygonZkevmController, :withdrawals)
+        get("/withdrawals/count", V2.PolygonZkevmController, :withdrawals_count)
       end
     end
 

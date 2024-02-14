@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.Zkevm.BridgeL1Tokens do
+defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens do
   @moduledoc """
   Fetches information about L1 tokens for zkEVM bridge.
   """
@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1Tokens do
 
   alias Explorer.Repo
   alias Indexer.{BufferedTask, Helper}
-  alias Indexer.Fetcher.Zkevm.{Bridge, BridgeL1}
+  alias Indexer.Fetcher.PolygonZkevm.{Bridge, BridgeL1}
 
   @behaviour BufferedTask
 
@@ -41,7 +41,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL1Tokens do
     |> Bridge.token_addresses_to_ids(json_rpc_named_arguments)
     |> Enum.each(fn {l1_token_address, l1_token_id} ->
       Repo.update_all(
-        from(b in Explorer.Chain.Zkevm.Bridge, where: b.l1_token_address == ^l1_token_address),
+        from(b in Explorer.Chain.PolygonZkevm.Bridge, where: b.l1_token_address == ^l1_token_address),
         set: [l1_token_id: l1_token_id, l1_token_address: nil]
       )
     end)

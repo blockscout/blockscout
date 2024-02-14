@@ -1,14 +1,14 @@
-defmodule Indexer.Transform.Zkevm.Bridge do
+defmodule Indexer.Transform.PolygonZkevm.Bridge do
   @moduledoc """
   Helper functions for transforming data for Polygon zkEVM Bridge operations.
   """
 
   require Logger
 
-  import Indexer.Fetcher.Zkevm.Bridge,
+  import Indexer.Fetcher.PolygonZkevm.Bridge,
     only: [filter_bridge_events: 2, prepare_operations: 4]
 
-  alias Indexer.Fetcher.Zkevm.{BridgeL1, BridgeL2}
+  alias Indexer.Fetcher.PolygonZkevm.{BridgeL1, BridgeL2}
   alias Indexer.Helper
 
   @doc """
@@ -17,7 +17,7 @@ defmodule Indexer.Transform.Zkevm.Bridge do
   @spec parse(list(), list()) :: list()
   def parse(blocks, logs) do
     prev_metadata = Logger.metadata()
-    Logger.metadata(fetcher: :zkevm_bridge_l2_realtime)
+    Logger.metadata(fetcher: :polygon_zkevm_bridge_l2_realtime)
 
     items =
       with false <- is_nil(Application.get_env(:indexer, BridgeL2)[:start_block]),

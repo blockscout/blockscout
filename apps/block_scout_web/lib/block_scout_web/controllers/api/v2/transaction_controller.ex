@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.{Hash, Transaction}
-  alias Explorer.Chain.Zkevm.Reader
+  alias Explorer.Chain.PolygonZkevm.Reader
   alias Indexer.Fetcher.FirstTraceOnDemand
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -155,8 +155,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     Function to handle GET requests to `/api/v2/transactions/zkevm-batch/:batch_number` endpoint.
     It renders the list of L2 transactions bound to the specified batch.
   """
-  @spec zkevm_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def zkevm_batch(conn, %{"batch_number" => batch_number} = _params) do
+  @spec polygon_zkevm_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def polygon_zkevm_batch(conn, %{"batch_number" => batch_number} = _params) do
     transactions =
       batch_number
       |> Reader.batch_transactions(api?: true)

@@ -1,13 +1,13 @@
-defmodule Explorer.Chain.Import.Runner.Zkevm.LifecycleTransactions do
+defmodule Explorer.Chain.Import.Runner.PolygonZkevm.LifecycleTransactions do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.Zkevm.LifecycleTransaction.t/0`.
+  Bulk imports `t:Explorer.Chain.PolygonZkevm.LifecycleTransaction.t/0`.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Import
-  alias Explorer.Chain.Zkevm.LifecycleTransaction
+  alias Explorer.Chain.PolygonZkevm.LifecycleTransaction
   alias Explorer.Prometheus.Instrumenter
 
   import Ecto.Query, only: [from: 2]
@@ -23,7 +23,7 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.LifecycleTransactions do
   def ecto_schema_module, do: LifecycleTransaction
 
   @impl Import.Runner
-  def option_key, do: :zkevm_lifecycle_transactions
+  def option_key, do: :polygon_zkevm_lifecycle_transactions
 
   @impl Import.Runner
   @spec imported_table_row() :: %{:value_description => binary(), :value_type => binary()}
@@ -44,12 +44,12 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.LifecycleTransactions do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_zkevm_lifecycle_transactions, fn repo, _ ->
+    Multi.run(multi, :insert_polygon_zkevm_lifecycle_transactions, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :zkevm_lifecycle_transactions,
-        :zkevm_lifecycle_transactions
+        :polygon_zkevm_lifecycle_transactions,
+        :polygon_zkevm_lifecycle_transactions
       )
     end)
   end
@@ -63,7 +63,7 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.LifecycleTransactions do
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce Zkevm.LifecycleTransaction ShareLocks order (see docs: sharelock.md)
+    # Enforce PolygonZkevm.LifecycleTransaction ShareLocks order (see docs: sharelock.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.id)
 
     {:ok, inserted} =

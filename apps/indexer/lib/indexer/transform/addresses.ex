@@ -149,7 +149,7 @@ defmodule Indexer.Transform.Addresses do
         %{from: :address_hash, to: :hash}
       ]
     ],
-    zkevm_bridge_operations: [
+    polygon_zkevm_bridge_operations: [
       [
         %{from: :l2_token_address, to: :hash}
       ]
@@ -461,7 +461,7 @@ defmodule Indexer.Transform.Addresses do
               required(:block_number) => non_neg_integer()
             }
           ],
-          optional(:zkevm_bridge_operations) => [
+          optional(:polygon_zkevm_bridge_operations) => [
             %{
               optional(:l2_token_address) => String.t()
             }

@@ -1,6 +1,6 @@
-defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeOperations do
+defmodule Explorer.Chain.Import.Runner.PolygonZkevm.BridgeOperations do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.Zkevm.Bridge.t/0`.
+  Bulk imports `t:Explorer.Chain.PolygonZkevm.Bridge.t/0`.
   """
 
   require Ecto.Query
@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeOperations do
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Import
-  alias Explorer.Chain.Zkevm.Bridge, as: ZkevmBridge
+  alias Explorer.Chain.PolygonZkevm.Bridge, as: PolygonZkevmBridge
   alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
@@ -17,13 +17,13 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeOperations do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [ZkevmBridge.t()]
+  @type imported :: [PolygonZkevmBridge.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: ZkevmBridge
+  def ecto_schema_module, do: PolygonZkevmBridge
 
   @impl Import.Runner
-  def option_key, do: :zkevm_bridge_operations
+  def option_key, do: :polygon_zkevm_bridge_operations
 
   @impl Import.Runner
   def imported_table_row do
@@ -42,12 +42,12 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeOperations do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_zkevm_bridge_operations, fn repo, _ ->
+    Multi.run(multi, :insert_polygon_zkevm_bridge_operations, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :zkevm_bridge_operations,
-        :zkevm_bridge_operations
+        :polygon_zkevm_bridge_operations,
+        :polygon_zkevm_bridge_operations
       )
     end)
   end
@@ -56,12 +56,12 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeOperations do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [ZkevmBridge.t()]}
+          {:ok, [PolygonZkevmBridge.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce ZkevmBridge ShareLocks order (see docs: sharelock.md)
+    # Enforce PolygonZkevmBridge ShareLocks order (see docs: sharelock.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.type, &1.index})
 
     {:ok, inserted} =
@@ -70,7 +70,7 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeOperations do
         ordered_changes_list,
         conflict_target: [:type, :index],
         on_conflict: on_conflict,
-        for: ZkevmBridge,
+        for: PolygonZkevmBridge,
         returning: true,
         timeout: timeout,
         timestamps: timestamps
@@ -81,7 +81,7 @@ defmodule Explorer.Chain.Import.Runner.Zkevm.BridgeOperations do
 
   defp default_on_conflict do
     from(
-      op in ZkevmBridge,
+      op in PolygonZkevmBridge,
       update: [
         set: [
           # Don't update `type` as it is part of the composite primary key and used for the conflict target

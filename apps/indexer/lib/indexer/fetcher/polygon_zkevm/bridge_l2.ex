@@ -1,6 +1,6 @@
-defmodule Indexer.Fetcher.Zkevm.BridgeL2 do
+defmodule Indexer.Fetcher.PolygonZkevm.BridgeL2 do
   @moduledoc """
-  Fills zkevm_bridge DB table.
+  Fills polygon_zkevm_bridge DB table.
   """
 
   use GenServer
@@ -11,15 +11,15 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL2 do
   import Ecto.Query
   import Explorer.Helper, only: [parse_integer: 1]
 
-  import Indexer.Fetcher.Zkevm.Bridge,
+  import Indexer.Fetcher.PolygonZkevm.Bridge,
     only: [get_logs_all: 3, import_operations: 1, prepare_operations: 3]
 
-  alias Explorer.Chain.Zkevm.{Bridge, Reader}
+  alias Explorer.Chain.PolygonZkevm.{Bridge, Reader}
   alias Explorer.Repo
   alias Indexer.Helper
 
   @eth_get_logs_range_size 1000
-  @fetcher_name :zkevm_bridge_l2
+  @fetcher_name :polygon_zkevm_bridge_l2
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -55,7 +55,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL2 do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
-         rpc_l1 = Application.get_all_env(:indexer)[Indexer.Fetcher.Zkevm.BridgeL1][:rpc],
+         rpc_l1 = Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonZkevm.BridgeL1][:rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(rpc_l1)},
          {:bridge_contract_address_is_valid, true} <-
            {:bridge_contract_address_is_valid, Helper.address_correct?(env[:bridge_contract])},
@@ -93,7 +93,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL2 do
         {:stop, :normal, state}
 
       {:start_block_valid, false} ->
-        Logger.error("Invalid L2 Start Block value. Please, check the value and zkevm_bridge table.")
+        Logger.error("Invalid L2 Start Block value. Please, check the value and polygon_zkevm_bridge table.")
         {:stop, :normal, state}
 
       {:error, error_data} ->
@@ -105,7 +105,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL2 do
 
       {:l2_tx_not_found, true} ->
         Logger.error(
-          "Cannot find last L2 transaction from RPC by its hash. Probably, there was a reorg on L2 chain. Please, check zkevm_bridge table."
+          "Cannot find last L2 transaction from RPC by its hash. Probably, there was a reorg on L2 chain. Please, check polygon_zkevm_bridge table."
         )
 
         {:stop, :normal, state}
@@ -169,7 +169,7 @@ defmodule Indexer.Fetcher.Zkevm.BridgeL2 do
 
     if deleted_count > 0 do
       Logger.warning(
-        "As L2 reorg was detected, some withdrawals with block_number >= #{reorg_block} were removed from zkevm_bridge table. Number of removed rows: #{deleted_count}."
+        "As L2 reorg was detected, some withdrawals with block_number >= #{reorg_block} were removed from polygon_zkevm_bridge table. Number of removed rows: #{deleted_count}."
       )
     end
   end

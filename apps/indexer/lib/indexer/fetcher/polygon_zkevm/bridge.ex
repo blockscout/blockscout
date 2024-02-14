@@ -1,6 +1,6 @@
-defmodule Indexer.Fetcher.Zkevm.Bridge do
+defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   @moduledoc """
-  Contains common functions for Indexer.Fetcher.Zkevm.Bridge* modules.
+  Contains common functions for Indexer.Fetcher.PolygonZkevm.Bridge* modules.
   """
 
   require Logger
@@ -20,7 +20,7 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
 
   alias EthereumJSONRPC.Logs
   alias Explorer.Chain
-  alias Explorer.Chain.Zkevm.Reader
+  alias Explorer.Chain.PolygonZkevm.Reader
   alias Explorer.SmartContract.Reader, as: SmartContractReader
   alias Indexer.Helper
   alias Indexer.Transform.Addresses
@@ -112,20 +112,20 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
 
   @doc """
   Imports the given zkEVM bridge operations into database.
-  Used by Indexer.Fetcher.Zkevm.BridgeL1 and Indexer.Fetcher.Zkevm.BridgeL2 fetchers.
+  Used by Indexer.Fetcher.PolygonZkevm.BridgeL1 and Indexer.Fetcher.PolygonZkevm.BridgeL2 fetchers.
   Doesn't return anything.
   """
   @spec import_operations(list()) :: no_return()
   def import_operations(operations) do
     addresses =
       Addresses.extract_addresses(%{
-        zkevm_bridge_operations: operations
+        polygon_zkevm_bridge_operations: operations
       })
 
     {:ok, _} =
       Chain.import(%{
         addresses: %{params: addresses, on_conflict: :nothing},
-        zkevm_bridge_operations: %{params: operations},
+        polygon_zkevm_bridge_operations: %{params: operations},
         timeout: :infinity
       })
   end
@@ -267,11 +267,11 @@ defmodule Indexer.Fetcher.Zkevm.Bridge do
 
     {:ok, inserts} =
       Chain.import(%{
-        zkevm_bridge_l1_tokens: %{params: tokens_to_insert},
+        polygon_zkevm_bridge_l1_tokens: %{params: tokens_to_insert},
         timeout: :infinity
       })
 
-    tokens_inserted = Map.get(inserts, :insert_zkevm_bridge_l1_tokens, [])
+    tokens_inserted = Map.get(inserts, :insert_polygon_zkevm_bridge_l1_tokens, [])
 
     # we need to query not inserted tokens from DB separately as they
     # could be inserted by another module at the same time (a race condition).

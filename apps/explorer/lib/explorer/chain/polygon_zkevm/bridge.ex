@@ -1,10 +1,10 @@
-defmodule Explorer.Chain.Zkevm.Bridge do
+defmodule Explorer.Chain.PolygonZkevm.Bridge do
   @moduledoc "Models a bridge operation for Polygon zkEVM."
 
   use Explorer.Schema
 
   alias Explorer.Chain.{Block, Hash, Token}
-  alias Explorer.Chain.Zkevm.BridgeL1Token
+  alias Explorer.Chain.PolygonZkevm.BridgeL1Token
 
   @optional_attrs ~w(l1_transaction_hash l2_transaction_hash l1_token_id l2_token_address block_number block_timestamp)a
 
@@ -26,7 +26,7 @@ defmodule Explorer.Chain.Zkevm.Bridge do
         }
 
   @primary_key false
-  schema "zkevm_bridge" do
+  schema "polygon_zkevm_bridge" do
     field(:type, Ecto.Enum, values: [:deposit, :withdrawal], primary_key: true)
     field(:index, :integer, primary_key: true)
     field(:l1_transaction_hash, Hash.Full)

@@ -16,8 +16,8 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
+  alias Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens, as: PolygonZkevmBridgeL1Tokens
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
-  alias Indexer.Fetcher.Zkevm.BridgeL1Tokens, as: ZkevmBridgeL1Tokens
 
   alias Indexer.Fetcher.{
     Beacon.Blob,
@@ -48,7 +48,7 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Transform.Shibarium.Bridge, as: ShibariumBridge
 
   alias Indexer.Transform.Blocks, as: TransformBlocks
-  alias Indexer.Transform.Zkevm.Bridge, as: ZkevmBridge
+  alias Indexer.Transform.PolygonZkevm.Bridge, as: PolygonZkevmBridge
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
 
@@ -160,9 +160,9 @@ defmodule Indexer.Block.Fetcher do
              do: ShibariumBridge.parse(blocks, transactions_with_receipts, logs),
              else: []
            ),
-         zkevm_bridge_operations =
+         polygon_zkevm_bridge_operations =
            if(callback_module == Indexer.Block.Realtime.Fetcher,
-             do: ZkevmBridge.parse(blocks, logs),
+             do: PolygonZkevmBridge.parse(blocks, logs),
              else: []
            ),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
@@ -178,7 +178,7 @@ defmodule Indexer.Block.Fetcher do
              transactions: transactions_with_receipts,
              transaction_actions: transaction_actions,
              withdrawals: withdrawals_params,
-             zkevm_bridge_operations: zkevm_bridge_operations
+             polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations
            }),
          coin_balances_params_set =
            %{
@@ -216,7 +216,7 @@ defmodule Indexer.Block.Fetcher do
            transactions_with_receipts: transactions_with_receipts,
            polygon_edge_withdrawals: polygon_edge_withdrawals,
            polygon_edge_deposit_executes: polygon_edge_deposit_executes,
-           zkevm_bridge_operations: zkevm_bridge_operations,
+           polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
            shibarium_bridge_operations: shibarium_bridge_operations
          },
          {:ok, inserted} <-
@@ -249,7 +249,7 @@ defmodule Indexer.Block.Fetcher do
          transactions_with_receipts: transactions_with_receipts,
          polygon_edge_withdrawals: polygon_edge_withdrawals,
          polygon_edge_deposit_executes: polygon_edge_deposit_executes,
-         zkevm_bridge_operations: zkevm_bridge_operations,
+         polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
          shibarium_bridge_operations: shibarium_bridge_operations
        }) do
     case Application.get_env(:explorer, :chain_type) do
@@ -266,7 +266,7 @@ defmodule Indexer.Block.Fetcher do
 
       "polygon_zkevm" ->
         basic_import_options
-        |> Map.put_new(:zkevm_bridge_operations, %{params: zkevm_bridge_operations})
+        |> Map.put_new(:polygon_zkevm_bridge_operations, %{params: polygon_zkevm_bridge_operations})
 
       "shibarium" ->
         basic_import_options
@@ -439,15 +439,15 @@ defmodule Indexer.Block.Fetcher do
 
   @doc """
   Fills a buffer of L1 token addresses to handle it asynchronously in
-  the Indexer.Fetcher.Zkevm.BridgeL1Tokens module. The addresses are
+  the Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens module. The addresses are
   taken from the `operations` list.
   """
-  @spec async_import_zkevm_bridge_l1_tokens(map()) :: :ok
-  def async_import_zkevm_bridge_l1_tokens(%{zkevm_bridge_operations: operations}) do
-    ZkevmBridgeL1Tokens.async_fetch(operations)
+  @spec async_import_polygon_zkevm_bridge_l1_tokens(map()) :: :ok
+  def async_import_polygon_zkevm_bridge_l1_tokens(%{polygon_zkevm_bridge_operations: operations}) do
+    PolygonZkevmBridgeL1Tokens.async_fetch(operations)
   end
 
-  def async_import_zkevm_bridge_l1_tokens(_), do: :ok
+  def async_import_polygon_zkevm_bridge_l1_tokens(_), do: :ok
 
   defp block_reward_errors_to_block_numbers(block_reward_errors) when is_list(block_reward_errors) do
     Enum.map(block_reward_errors, &block_reward_error_to_block_number/1)

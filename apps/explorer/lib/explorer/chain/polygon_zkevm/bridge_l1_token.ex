@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Zkevm.BridgeL1Token do
+defmodule Explorer.Chain.PolygonZkevm.BridgeL1Token do
   @moduledoc "Models a bridge token on L1 for Polygon zkEVM."
 
   use Explorer.Schema
@@ -16,7 +16,7 @@ defmodule Explorer.Chain.Zkevm.BridgeL1Token do
         }
 
   @primary_key {:id, :id, autogenerate: true}
-  schema "zkevm_bridge_l1_tokens" do
+  schema "polygon_zkevm_bridge_l1_tokens" do
     field(:address, Hash.Address)
     field(:decimals, :integer)
     field(:symbol, :string)

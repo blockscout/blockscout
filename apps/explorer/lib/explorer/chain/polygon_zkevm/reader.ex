@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Zkevm.Reader do
+defmodule Explorer.Chain.PolygonZkevm.Reader do
   @moduledoc "Contains read functions for zkevm modules."
 
   import Ecto.Query,
@@ -12,13 +12,13 @@ defmodule Explorer.Chain.Zkevm.Reader do
 
   import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain.Zkevm.{BatchTransaction, Bridge, BridgeL1Token, LifecycleTransaction, TransactionBatch}
+  alias Explorer.Chain.PolygonZkevm.{BatchTransaction, Bridge, BridgeL1Token, LifecycleTransaction, TransactionBatch}
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Indexer.Helper
 
   @doc """
     Reads a batch by its number from database.
-    If the number is :latest, gets the latest batch from `zkevm_transaction_batches` table.
+    If the number is :latest, gets the latest batch from `polygon_zkevm_transaction_batches` table.
     Returns {:error, :not_found} in case the batch is not found.
   """
   @spec batch(non_neg_integer() | :latest, list()) :: {:ok, map()} | {:error, :not_found}
@@ -49,7 +49,7 @@ defmodule Explorer.Chain.Zkevm.Reader do
   end
 
   @doc """
-    Reads a list of batches from `zkevm_transaction_batches` table.
+    Reads a list of batches from `polygon_zkevm_transaction_batches` table.
   """
   @spec batches(list()) :: list()
   def batches(options \\ []) do
@@ -79,7 +79,7 @@ defmodule Explorer.Chain.Zkevm.Reader do
   end
 
   @doc """
-    Reads a list of L2 transaction hashes from `zkevm_batch_l2_transactions` table.
+    Reads a list of L2 transaction hashes from `polygon_zkevm_batch_l2_transactions` table.
   """
   @spec batch_transactions(non_neg_integer(), list()) :: list()
   def batch_transactions(batch_number, options \\ []) do
@@ -90,7 +90,7 @@ defmodule Explorer.Chain.Zkevm.Reader do
 
   @doc """
     Tries to read L1 token data (address, symbol, decimals) for the given addresses
-    from the database. If the data for an address is not found in Explorer.Chain.Zkevm.BridgeL1Token,
+    from the database. If the data for an address is not found in Explorer.Chain.PolygonZkevm.BridgeL1Token,
     the address is returned in the list inside the tuple (the second item of the tuple).
     The first item of the returned tuple contains `L1 token address -> L1 token data` map.
   """
@@ -122,7 +122,7 @@ defmodule Explorer.Chain.Zkevm.Reader do
   end
 
   @doc """
-    Gets last known L1 item (deposit) from zkevm_bridge table.
+    Gets last known L1 item (deposit) from polygon_zkevm_bridge table.
     Returns block number and L1 transaction hash bound to that deposit.
     If not found, returns zero block number and nil as the transaction hash.
   """
@@ -142,7 +142,7 @@ defmodule Explorer.Chain.Zkevm.Reader do
   end
 
   @doc """
-    Gets last known L2 item (withdrawal) from zkevm_bridge table.
+    Gets last known L2 item (withdrawal) from polygon_zkevm_bridge table.
     Returns block number and L2 transaction hash bound to that withdrawal.
     If not found, returns zero block number and nil as the transaction hash.
   """
@@ -162,7 +162,7 @@ defmodule Explorer.Chain.Zkevm.Reader do
   end
 
   @doc """
-    Gets the number of the latest batch with defined verify_id from `zkevm_transaction_batches` table.
+    Gets the number of the latest batch with defined verify_id from `polygon_zkevm_transaction_batches` table.
     Returns 0 if not found.
   """
   @spec last_verified_batch_number() :: non_neg_integer()
@@ -181,7 +181,7 @@ defmodule Explorer.Chain.Zkevm.Reader do
   end
 
   @doc """
-    Reads a list of L1 transactions by their hashes from `zkevm_lifecycle_l1_transactions` table.
+    Reads a list of L1 transactions by their hashes from `polygon_zkevm_lifecycle_l1_transactions` table.
   """
   @spec lifecycle_transactions(list()) :: list()
   def lifecycle_transactions(l1_tx_hashes) do
@@ -196,7 +196,7 @@ defmodule Explorer.Chain.Zkevm.Reader do
   end
 
   @doc """
-    Determines ID of the future lifecycle transaction by reading `zkevm_lifecycle_l1_transactions` table.
+    Determines ID of the future lifecycle transaction by reading `polygon_zkevm_lifecycle_l1_transactions` table.
   """
   @spec next_id() :: non_neg_integer()
   def next_id do
@@ -217,7 +217,7 @@ defmodule Explorer.Chain.Zkevm.Reader do
 
   @doc """
     Builds `L1 token address -> L1 token id` map for the given token addresses.
-    The info is taken from Explorer.Chain.Zkevm.BridgeL1Token.
+    The info is taken from Explorer.Chain.PolygonZkevm.BridgeL1Token.
     If an address is not in the table, it won't be in the resulting map.
   """
   @spec token_addresses_to_ids_from_db(list()) :: map()
