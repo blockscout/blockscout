@@ -21,12 +21,27 @@ jobs:
       release-version: ${{ steps.output-step.outputs.release-version }}
       short-sha: ${{ steps.output-step.outputs.short-sha }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup repo
-        uses: ./.github/actions/setup-repo-and-short-sha
+
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
         with:
-          docker-username: ${{ secrets.DOCKER_USERNAME }}
-          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: blockscout/blockscout
+
+      - name: Add SHORT_SHA env property with commit short sha
+        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
 
       - name: Add outputs
         run: |
@@ -82,7 +97,12 @@ jobs:
   push_to_registry_arm64:
     name: Push ARM64 Docker image to Docker Hub
     runs-on: ubuntu-latest
+    outputs:
+      release-version: ${{ steps.output-step.outputs.release-version }}
+      short-sha: ${{ steps.output-step.outputs.short-sha }}
     steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
       - name: Set up SSH
         uses: MrSquaare/ssh-setup-action@523473d91581ccbf89565e12b40faba93f2708bd # v1.1.0
         with:
@@ -94,12 +114,21 @@ jobs:
           driver: remote
           endpoint: ssh://ubuntu@3.145.97.144
           platforms: linux/arm64
-      - uses: actions/checkout@v4
-      - name: Setup repo
-        uses: ./.github/actions/setup-repo-and-short-sha
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
         with:
-          docker-username: ${{ secrets.DOCKER_USERNAME }}
-          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: blockscout/blockscout
+
+      - name: Add SHORT_SHA env property with commit short sha
+        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
 
       - name: Add outputs
         run: |
