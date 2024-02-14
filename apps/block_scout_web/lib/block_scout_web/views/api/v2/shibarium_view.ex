@@ -57,6 +57,7 @@ defmodule BlockScoutWeb.API.V2.ShibariumView do
     items
     |> Enum.map(& &1.user)
     |> Enum.reject(&is_nil(&1))
+    |> Enum.uniq()
     |> Chain.hashes_to_addresses(
       necessity_by_association: %{:names => :optional, :smart_contract => :optional},
       api?: true

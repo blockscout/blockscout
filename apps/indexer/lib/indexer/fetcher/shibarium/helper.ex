@@ -96,7 +96,7 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
         updated_count
       rescue
         error in Postgrex.Error ->
-          # if this is unique violation, we just ignode such an operation as it was inserted before
+          # if this is unique violation, we just ignore such an operation as it was inserted before
           if error.postgres.code != :unique_violation do
             reraise error, __STACKTRACE__
           end
