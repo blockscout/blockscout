@@ -10,6 +10,8 @@ defmodule BlockScoutWeb.API.V2.ShibariumView do
         next_page_params: next_page_params,
         conn: conn
       }) do
+    user_addresses = get_user_addresses(deposits, conn)
+
     %{
       items:
         Enum.map(deposits, fn deposit ->
@@ -17,7 +19,7 @@ defmodule BlockScoutWeb.API.V2.ShibariumView do
             "l1_block_number" => deposit.l1_block_number,
             "l1_transaction_hash" => deposit.l1_transaction_hash,
             "l2_transaction_hash" => deposit.l2_transaction_hash,
-            "user" => user(deposit.user, conn),
+            "user" => Map.get(user_addresses, deposit.user, deposit.user),
             "timestamp" => deposit.timestamp
           }
         end),
@@ -30,6 +32,8 @@ defmodule BlockScoutWeb.API.V2.ShibariumView do
         next_page_params: next_page_params,
         conn: conn
       }) do
+    user_addresses = get_user_addresses(withdrawals, conn)
+
     %{
       items:
         Enum.map(withdrawals, fn withdrawal ->
@@ -37,7 +41,7 @@ defmodule BlockScoutWeb.API.V2.ShibariumView do
             "l2_block_number" => withdrawal.l2_block_number,
             "l2_transaction_hash" => withdrawal.l2_transaction_hash,
             "l1_transaction_hash" => withdrawal.l1_transaction_hash,
-            "user" => user(withdrawal.user, conn),
+            "user" => Map.get(user_addresses, withdrawal.user, withdrawal.user),
             "timestamp" => withdrawal.timestamp
           }
         end),
@@ -49,23 +53,14 @@ defmodule BlockScoutWeb.API.V2.ShibariumView do
     count
   end
 
-  defp user(user_address_raw, conn) do
-    {user_address, user_address_hash} =
-      with false <- is_nil(user_address_raw),
-           {:ok, address} <-
-             Chain.hash_to_address(
-               user_address_raw,
-               [necessity_by_association: %{:names => :optional, :smart_contract => :optional}, api?: true],
-               false
-             ) do
-        {address, address.hash}
-      else
-        _ -> {nil, nil}
-      end
-
-    case Helper.address_with_info(conn, user_address, user_address_hash, true) do
-      nil -> user_address_raw
-      address -> address
-    end
+  defp get_user_addresses(items, conn) do
+    items
+    |> Enum.map(& &1.user)
+    |> Enum.reject(&is_nil(&1))
+    |> Chain.hashes_to_addresses(
+      necessity_by_association: %{:names => :optional, :smart_contract => :optional},
+      api?: true
+    )
+    |> Enum.into(%{}, &{&1.hash, Helper.address_with_info(conn, &1, &1.hash, true)})
   end
 end
