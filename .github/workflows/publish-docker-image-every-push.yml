@@ -14,7 +14,73 @@ env:
   RELEASE_VERSION: 6.1.0
 
 jobs:
-  build:
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    outputs:
+      release-version: ${{ steps.output-step.outputs.release-version }}
+      short-sha: ${{ steps.output-step.outputs.short-sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup repo
+        uses: ./.github/actions/setup-repo-and-short-sha
+        with:
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Add outputs
+        run: |
+          echo "::set-output name=release-version::${{ env.NEXT_RELEASE_VERSION }}"
+          echo "::set-output name=short-sha::${{ env.SHORT_SHA }}"
+        id: output-step
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          cache-from: type=registry,ref=blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
+          # tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
+          tags: blockscout/blockscout:arm-build-test
+          build-args: |
+            CACHE_EXCHANGE_RATES_PERIOD=
+            API_V1_READ_METHODS_DISABLED=false
+            DISABLE_WEBAPP=false
+            API_V1_WRITE_METHODS_DISABLED=false
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            ADMIN_PANEL_ENABLED=false
+            DECODE_NOT_A_CONTRACT_CALLS=false
+            MIXPANEL_URL=
+            MIXPANEL_TOKEN=
+            AMPLITUDE_URL=
+            AMPLITUDE_API_KEY=
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+
+      - name: Build and push Docker image for frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          cache-from: type=registry,ref=blockscout/blockscout:buildcache
+          tags: blockscout/blockscout:frontend-main
+          build-args: |
+            CACHE_EXCHANGE_RATES_PERIOD=
+            API_V1_READ_METHODS_DISABLED=false
+            DISABLE_WEBAPP=false
+            API_V1_WRITE_METHODS_DISABLED=false
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            ADMIN_PANEL_ENABLED=false
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            SESSION_COOKIE_DOMAIN=k8s-dev.blockscout.com
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+  push_to_registry_arm64:
+    name: Push ARM64 Docker image to Docker Hub
     runs-on: ubuntu-latest
     steps:
       - name: Set up SSH
@@ -28,21 +94,18 @@ jobs:
           driver: remote
           endpoint: ssh://ubuntu@3.145.97.144
           platforms: linux/arm64
-      -
-        name: Checkout
-        uses: actions/checkout@v4
-      -
-        name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
+      - uses: actions/checkout@v4
+      - name: Setup repo
+        uses: ./.github/actions/setup-repo-and-short-sha
         with:
-          images: ${{ env.REGISTRY_IMAGE }}
-      -
-        name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Add outputs
+        run: |
+          echo "::set-output name=release-version::${{ env.NEXT_RELEASE_VERSION }}"
+          echo "::set-output name=short-sha::${{ env.SHORT_SHA }}"
+        id: output-step
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -70,3 +133,56 @@ jobs:
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=arm-build-test
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+
+      - name: Build and push Docker image for frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          cache-from: type=registry,ref=blockscout/blockscout:buildcache
+          tags: blockscout/blockscout:frontend-main
+          build-args: |
+            CACHE_EXCHANGE_RATES_PERIOD=
+            API_V1_READ_METHODS_DISABLED=false
+            DISABLE_WEBAPP=false
+            API_V1_WRITE_METHODS_DISABLED=false
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            ADMIN_PANEL_ENABLED=false
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            SESSION_COOKIE_DOMAIN=k8s-dev.blockscout.com
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+
+
+  deploy_e2e:
+    needs: push_to_registry
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - name: Get Vault credentials
+        id: retrieve-vault-secrets
+        uses: hashicorp/vault-action@v2.4.1
+        with:
+          url: https://vault.k8s.blockscout.com
+          role: ci-dev
+          path: github-jwt
+          method: jwt
+          tlsSkipVerify: false
+          exportToken: true
+          secrets: |
+            ci/data/dev/github token | WORKFLOW_TRIGGER_TOKEN ;
+      - name: Trigger deploy
+        uses: convictional/trigger-workflow-and-wait@v1.6.1
+        with:
+          owner: blockscout
+          repo: deployment-values
+          github_token: ${{env.WORKFLOW_TRIGGER_TOKEN}}
+          workflow_file_name: deploy_blockscout.yaml
+          ref: main
+          wait_interval: 30
+          client_payload: '{ "instance": "dev", "globalEnv": "e2e"}'
+  test:
+    needs: deploy_e2e
+    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_new.yaml@master
+    secrets: inherit
