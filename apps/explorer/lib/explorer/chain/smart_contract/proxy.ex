@@ -6,7 +6,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   alias EthereumJSONRPC.Contract
   alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
-  alias Explorer.Chain.SmartContract.Proxy.{Basic, EIP1167, EIP1822, EIP1967, EIP930, MasterCopy, MoreMinimalProxy}
+  alias Explorer.Chain.SmartContract.Proxy.{Basic, EIP1167, EIP1822, EIP1967, EIP930, MasterCopy}
 
   import Explorer.Chain,
     only: [
@@ -171,21 +171,6 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   def get_implementation_address_hash_string_eip1167(proxy_address_hash, proxy_abi) do
     get_implementation_address_hash_string_by_module(
       EIP1167,
-      :get_implementation_address_hash_string_more_minimal_proxy,
-      [
-        proxy_address_hash,
-        proxy_abi
-      ]
-    )
-  end
-
-  @doc """
-  Returns More-Minimal Proxy implementation address or tries next proxy pattern
-  """
-  @spec get_implementation_address_hash_string_more_minimal_proxy(Hash.Address.t(), any()) :: String.t() | nil
-  def get_implementation_address_hash_string_more_minimal_proxy(proxy_address_hash, proxy_abi) do
-    get_implementation_address_hash_string_by_module(
-      MoreMinimalProxy,
       :get_implementation_address_hash_string_eip1967,
       [
         proxy_address_hash,

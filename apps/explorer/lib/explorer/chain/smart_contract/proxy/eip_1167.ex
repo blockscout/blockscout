@@ -42,21 +42,16 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
   end
 
   defp get_proxy_eip_1167(contract_bytecode) do
-    address_length = div(String.length(contract_bytecode), 2) - 25
+    case contract_bytecode do
+      "363d3d373d3d3d363d73" <> <<template_address::binary-size(40)>> <> "5af43d82803e903d91602b57fd5bf3" ->
+        "0x" <> template_address
 
-    if address_length in 10..20 do
-      push_n = String.downcase(Integer.to_string(95 + address_length, 16))
-      start_pattern = "363d3d373d3d3d363d" <> push_n
-      end_pattern = "5af43d82803e903d91602b57fd5bf3"
+      # https://medium.com/coinmonks/the-more-minimal-proxy-5756ae08ee48
+      "3d3d3d3d363d3d37363d73" <> <<template_address::binary-size(40)>> <> "5af43d3d93803e602a57fd5bf3" ->
+        "0x" <> template_address
 
-      if String.starts_with?(contract_bytecode, start_pattern) && String.ends_with?(contract_bytecode, end_pattern) do
-        "0x" <>
-          String.pad_leading(binary_part(contract_bytecode, byte_size(start_pattern), address_length * 2), 40, "0")
-      else
+      _ ->
         nil
-      end
-    else
-      nil
     end
   end
 
