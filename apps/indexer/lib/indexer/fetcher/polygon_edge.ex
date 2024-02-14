@@ -3,6 +3,8 @@ defmodule Indexer.Fetcher.PolygonEdge do
   Contains common functions for PolygonEdge.* fetchers.
   """
 
+  # todo: this module is deprecated and should be removed
+
   use GenServer
   use Indexer.Fetcher
 
@@ -15,13 +17,11 @@ defmodule Indexer.Fetcher.PolygonEdge do
 
   import Explorer.Helper, only: [parse_integer: 1]
 
-  alias Explorer.Chain.Events.Publisher
   alias Explorer.{Chain, Repo}
-  alias Indexer.{BoundQueue, Helper}
+  alias Indexer.Helper
   alias Indexer.Fetcher.PolygonEdge.{Deposit, DepositExecute, Withdrawal, WithdrawalExit}
 
   @fetcher_name :polygon_edge
-  @block_check_interval_range_size 100
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -41,29 +41,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
   @impl GenServer
   def init(_args) do
     Logger.metadata(fetcher: @fetcher_name)
-
-    modules_using_reorg_monitor = [Deposit, WithdrawalExit]
-
-    reorg_monitor_not_needed =
-      modules_using_reorg_monitor
-      |> Enum.all?(fn module ->
-        is_nil(Application.get_all_env(:indexer)[module][:start_block_l1])
-      end)
-
-    if reorg_monitor_not_needed do
-      :ignore
-    else
-      polygon_edge_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonEdge][:polygon_edge_l1_rpc]
-
-      json_rpc_named_arguments = json_rpc_named_arguments(polygon_edge_l1_rpc)
-
-      {:ok, block_check_interval, _} = get_block_check_interval(json_rpc_named_arguments)
-
-      Process.send(self(), :reorg_monitor, [])
-
-      {:ok,
-       %{block_check_interval: block_check_interval, json_rpc_named_arguments: json_rpc_named_arguments, prev_latest: 0}}
-    end
+    :ignore
   end
 
   @spec init_l1(
@@ -78,8 +56,6 @@ defmodule Indexer.Fetcher.PolygonEdge do
   def init_l1(table, env, pid, contract_address, contract_name, table_name, entity_name)
       when table in [Explorer.Chain.PolygonEdge.Deposit, Explorer.Chain.PolygonEdge.WithdrawalExit] do
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
-         {:reorg_monitor_started, true} <-
-           {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.PolygonEdge))},
          polygon_edge_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonEdge][:polygon_edge_l1_rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(polygon_edge_l1_rpc)},
          {:contract_is_valid, true} <- {:contract_is_valid, Helper.address_correct?(contract_address)},
@@ -94,7 +70,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
            Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments, 100_000_000),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
          {:ok, block_check_interval, last_safe_block} <-
-           get_block_check_interval(json_rpc_named_arguments) do
+           Helper.get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
 
       Process.send(pid, :continue, [])
@@ -110,10 +86,6 @@ defmodule Indexer.Fetcher.PolygonEdge do
     else
       {:start_block_l1_undefined, true} ->
         # the process shouldn't start if the start block is not defined
-        :ignore
-
-      {:reorg_monitor_started, false} ->
-        Logger.error("Cannot start this process as reorg monitor in Indexer.Fetcher.PolygonEdge is not started.")
         :ignore
 
       {:rpc_l1_undefined, true} ->
@@ -217,29 +189,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
     end
   end
 
-  @impl GenServer
-  def handle_info(
-        :reorg_monitor,
-        %{
-          block_check_interval: block_check_interval,
-          json_rpc_named_arguments: json_rpc_named_arguments,
-          prev_latest: prev_latest
-        } = state
-      ) do
-    {:ok, latest} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-
-    if latest < prev_latest do
-      Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
-
-      Publisher.broadcast([{:polygon_edge_reorg_block, latest}], :realtime)
-    end
-
-    Process.send_after(self(), :reorg_monitor, block_check_interval)
-
-    {:noreply, %{state | prev_latest: latest}}
-  end
-
-  @spec handle_continue(map(), binary(), Deposit | WithdrawalExit, atom()) :: {:noreply, map()}
+  @spec handle_continue(map(), binary(), Deposit | WithdrawalExit) :: {:noreply, map()}
   def handle_continue(
         %{
           contract_address: contract_address,
@@ -249,8 +199,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state,
         event_signature,
-        calling_module,
-        fetcher_name
+        calling_module
       )
       when calling_module in [Deposit, WithdrawalExit] do
     time_before = Timex.now()
@@ -295,14 +244,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
           )
         end
 
-        reorg_block = reorg_block_pop(fetcher_name)
-
-        if !is_nil(reorg_block) && reorg_block > 0 do
-          reorg_handle(reorg_block, calling_module)
-          {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
-        else
-          {:cont, chunk_end}
-        end
+        {:cont, chunk_end}
       end)
 
     new_start_block = last_written_block + 1
@@ -540,26 +482,6 @@ defmodule Indexer.Fetcher.PolygonEdge do
     Repo.all(query)
   end
 
-  defp get_block_check_interval(json_rpc_named_arguments) do
-    {last_safe_block, _} = get_safe_block(json_rpc_named_arguments)
-
-    first_block = max(last_safe_block - @block_check_interval_range_size, 1)
-
-    with {:ok, first_block_timestamp} <-
-           Helper.get_block_timestamp_by_number(first_block, json_rpc_named_arguments, 100_000_000),
-         {:ok, last_safe_block_timestamp} <-
-           Helper.get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, 100_000_000) do
-      block_check_interval =
-        ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
-
-      Logger.info("Block check interval is calculated as #{block_check_interval} ms.")
-      {:ok, block_check_interval, last_safe_block}
-    else
-      {:error, error} ->
-        {:error, "Failed to calculate block check interval due to #{inspect(error)}"}
-    end
-  end
-
   defp get_safe_block(json_rpc_named_arguments) do
     case Helper.get_block_number_by_tag("safe", json_rpc_named_arguments) do
       {:ok, safe_block} ->
@@ -667,72 +589,8 @@ defmodule Indexer.Fetcher.PolygonEdge do
     {events, event_name}
   end
 
-  defp log_deleted_rows_count(reorg_block, count, table_name) do
-    if count > 0 do
-      Logger.warning(
-        "As L1 reorg was detected, all rows with l1_block_number >= #{reorg_block} were removed from the #{table_name} table. Number of removed rows: #{count}."
-      )
-    end
-  end
-
   @spec repeated_request(list(), any(), list(), non_neg_integer()) :: {:ok, any()} | {:error, atom()}
   def repeated_request(req, error_message, json_rpc_named_arguments, retries) do
     Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
-  end
-
-  defp reorg_block_pop(fetcher_name) do
-    table_name = reorg_table_name(fetcher_name)
-
-    case BoundQueue.pop_front(reorg_queue_get(table_name)) do
-      {:ok, {block_number, updated_queue}} ->
-        :ets.insert(table_name, {:queue, updated_queue})
-        block_number
-
-      {:error, :empty} ->
-        nil
-    end
-  end
-
-  @spec reorg_block_push(atom(), non_neg_integer()) :: no_return()
-  def reorg_block_push(fetcher_name, block_number) do
-    table_name = reorg_table_name(fetcher_name)
-    {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(table_name), block_number)
-    :ets.insert(table_name, {:queue, updated_queue})
-  end
-
-  defp reorg_handle(reorg_block, calling_module) do
-    {table, table_name} =
-      if calling_module == Deposit do
-        {Explorer.Chain.PolygonEdge.Deposit, "polygon_edge_deposits"}
-      else
-        {Explorer.Chain.PolygonEdge.WithdrawalExit, "polygon_edge_withdrawal_exits"}
-      end
-
-    {deleted_count, _} = Repo.delete_all(from(item in table, where: item.l1_block_number >= ^reorg_block))
-
-    log_deleted_rows_count(reorg_block, deleted_count, table_name)
-  end
-
-  defp reorg_queue_get(table_name) do
-    if :ets.whereis(table_name) == :undefined do
-      :ets.new(table_name, [
-        :set,
-        :named_table,
-        :public,
-        read_concurrency: true,
-        write_concurrency: true
-      ])
-    end
-
-    with info when info != :undefined <- :ets.info(table_name),
-         [{_, value}] <- :ets.lookup(table_name, :queue) do
-      value
-    else
-      _ -> %BoundQueue{}
-    end
-  end
-
-  defp reorg_table_name(fetcher_name) do
-    :"#{fetcher_name}#{:_reorgs}"
   end
 end

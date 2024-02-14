@@ -14,8 +14,8 @@ defmodule Explorer.Chain.Transaction.Schema do
     Wei
   }
 
+  alias Explorer.Chain.PolygonZkevm.BatchTransaction
   alias Explorer.Chain.Transaction.{Fork, Status}
-  alias Explorer.Chain.Zkevm.BatchTransaction
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
                         "ethereum" ->
