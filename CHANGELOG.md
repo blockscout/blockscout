@@ -13,6 +13,7 @@
 ### Fixes
 
 - [#9377](https://github.com/blockscout/blockscout/pull/9377) - Speed up account abstraction proxy
+- [#9371](https://github.com/blockscout/blockscout/pull/9371) - Filter empty values before token update
 - [#9356](https://github.com/blockscout/blockscout/pull/9356) - Remove ERC-1155 logs params from coin balances params
 - [#9346](https://github.com/blockscout/blockscout/pull/9346) - Process integer balance in genesis.json
 - [#9317](https://github.com/blockscout/blockscout/pull/9317) - Include null gas price txs in fee calculations

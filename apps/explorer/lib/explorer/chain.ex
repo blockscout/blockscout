@@ -3718,8 +3718,12 @@ defmodule Explorer.Chain do
   """
   @spec update_token(Token.t(), map()) :: {:ok, Token.t()} | {:error, Ecto.Changeset.t()}
   def update_token(%Token{contract_address_hash: address_hash} = token, params \\ %{}) do
-    token_changeset = Token.changeset(token, Map.put(params, :updated_at, DateTime.utc_now()))
-    address_name_changeset = Address.Name.changeset(%Address.Name{}, Map.put(params, :address_hash, address_hash))
+    filtered_params = for({key, value} <- params, value !== "" && !is_nil(value), do: {key, value}) |> Enum.into(%{})
+
+    token_changeset = Token.changeset(token, Map.put(filtered_params, :updated_at, DateTime.utc_now()))
+
+    address_name_changeset =
+      Address.Name.changeset(%Address.Name{}, Map.put(filtered_params, :address_hash, address_hash))
 
     stale_error_field = :contract_address_hash
     stale_error_message = "is up to date"
