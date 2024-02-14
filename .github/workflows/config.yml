@@ -67,7 +67,7 @@ jobs:
         run: echo "${OTP_VERSION}" > OTP_VERSION.lock
 
       - name: Restore Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: deps-cache
         with:
           path: |
@@ -86,7 +86,7 @@ jobs:
           mix deps.compile
 
       - name: Restore Explorer NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: explorer-npm-cache
         with:
           path: apps/explorer/node_modules
@@ -100,7 +100,7 @@ jobs:
         working-directory: apps/explorer
 
       - name: Restore Blockscout Web NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: blockscoutweb-npm-cache
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -125,7 +125,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Restore Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: deps-cache
         with:
           path: |
@@ -149,7 +149,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Restore Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: deps-cache
         with:
           path: |
@@ -178,7 +178,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Restore Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: deps-cache
         with:
           path: |
@@ -189,7 +189,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
       - name: Restore Dialyzer Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: dialyzer-cache
         with:
           path: priv/plts
@@ -222,7 +222,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Restore Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: deps-cache
         with:
           path: |
@@ -248,7 +248,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: deps-cache
         with:
           path: |
@@ -277,7 +277,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: deps-cache
         with:
           path: |
@@ -288,7 +288,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
       - name: Restore Explorer NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: explorer-npm-cache
         with:
           path: apps/explorer/node_modules
@@ -297,7 +297,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-
 
       - name: Restore Blockscout Web NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: blockscoutweb-npm-cache
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -325,7 +325,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: deps-cache
         with:
           path: |
@@ -336,7 +336,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
       - name: Restore Explorer NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: explorer-npm-cache
         with:
           path: apps/explorer/node_modules
@@ -345,7 +345,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-
 
       - name: Restore Blockscout Web NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: blockscoutweb-npm-cache
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -371,7 +371,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: deps-cache
         with:
           path: |
@@ -382,7 +382,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
       - name: Restore Blockscout Web NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: blockscoutweb-npm-cache
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -433,7 +433,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: deps-cache
         with:
           path: |
@@ -493,7 +493,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: deps-cache
         with:
           path: |
@@ -504,7 +504,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
       - name: Restore Explorer NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: explorer-npm-cache
         with:
           path: apps/explorer/node_modules
@@ -564,7 +564,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: deps-cache
         with:
           path: |
@@ -632,7 +632,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: deps-cache
         with:
           path: |
@@ -643,7 +643,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
       - name: Restore Explorer NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: explorer-npm-cache
         with:
           path: apps/explorer/node_modules
@@ -652,7 +652,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-
 
       - name: Restore Blockscout Web NPM Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: blockscoutweb-npm-cache
         with:
           path: apps/block_scout_web/assets/node_modules
