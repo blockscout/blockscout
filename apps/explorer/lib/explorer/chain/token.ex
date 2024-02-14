@@ -77,7 +77,7 @@ defmodule Explorer.Chain.Token do
 
   alias Ecto.Changeset
   alias Explorer.{Chain, SortingHelper}
-  alias Explorer.Chain.{BridgedToken, Search, Token}
+  alias Explorer.Chain.{BridgedToken, Hash, Search, Token}
   alias Explorer.SmartContract.Helper
 
   @default_sorting [
