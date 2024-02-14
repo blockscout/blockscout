@@ -43,13 +43,15 @@ defmodule Explorer.Chain.SmartContract.Proxy.MoreMinimalProxy do
 
   defp get_proxy_more_minimal(contract_bytecode) do
     address_length = div(String.length(contract_bytecode), 2) - 24
+
     if address_length in 10..20 do
-      push_n = Integer.to_string(95 + address_length, 16) |> String.downcase()
+      push_n = String.downcase(Integer.to_string(95 + address_length, 16))
       start_pattern = "3d3d3d3d363d3d37363d" <> push_n
       end_pattern = "5af43d3d93803e602a57fd5bf3"
 
       if String.starts_with?(contract_bytecode, start_pattern) && String.ends_with?(contract_bytecode, end_pattern) do
-        "0x" <> String.pad_leading(binary_part(contract_bytecode, byte_size(start_pattern), address_length*2), 40, "0")
+        "0x" <>
+          String.pad_leading(binary_part(contract_bytecode, byte_size(start_pattern), address_length * 2), 40, "0")
       else
         nil
       end

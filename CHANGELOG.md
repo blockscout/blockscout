@@ -5,6 +5,7 @@
 ### Features
 
 - [#9379](https://github.com/blockscout/blockscout/pull/9379) - Filter non-traceable transactions for zetachain
+- [#9396](https://github.com/blockscout/blockscout/pull/9396) - More-Minimal Proxy support
 - [#9364](https://github.com/blockscout/blockscout/pull/9364) - Fix using of startblock/endblock in API v1 list endpoints: txlist, txlistinternal, tokentx
 - [#9351](https://github.com/blockscout/blockscout/pull/9351) - Noves.fi: add proxy endpoint for describeTxs endpoint
 - [#9282](https://github.com/blockscout/blockscout/pull/9282) - Add `license_type` to smart contracts
