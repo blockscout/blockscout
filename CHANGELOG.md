@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- [#9377](https://github.com/blockscout/blockscout/pull/9315) - Speed up account abstraction proxy
 - [#9317](https://github.com/blockscout/blockscout/pull/9317) - Include null gas price txs in fee calculations
 - [#9315](https://github.com/blockscout/blockscout/pull/9315) - Fix manual uncle reward calculation
 
