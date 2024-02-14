@@ -18,8 +18,8 @@ defmodule Explorer.Etherscan do
     order_by_direction: :desc,
     page_number: 1,
     page_size: 10_000,
-    start_block: nil,
-    end_block: nil,
+    startblock: nil,
+    endblock: nil,
     start_timestamp: nil,
     end_timestamp: nil
   }
@@ -640,21 +640,21 @@ defmodule Explorer.Etherscan do
     |> Repo.replica().all()
   end
 
-  defp where_start_block_match(query, %{start_block: nil}), do: query
+  defp where_start_block_match(query, %{startblock: nil}), do: query
 
-  defp where_start_block_match(query, %{start_block: start_block}) do
+  defp where_start_block_match(query, %{startblock: start_block}) do
     where(query, [..., block], block.number >= ^start_block)
   end
 
-  defp where_end_block_match(query, %{end_block: nil}), do: query
+  defp where_end_block_match(query, %{endblock: nil}), do: query
 
-  defp where_end_block_match(query, %{end_block: end_block}) do
+  defp where_end_block_match(query, %{endblock: end_block}) do
     where(query, [..., block], block.number <= ^end_block)
   end
 
-  defp where_start_transaction_block_match(query, %{start_block: nil}), do: query
+  defp where_start_transaction_block_match(query, %{startblock: nil}), do: query
 
-  defp where_start_transaction_block_match(query, %{start_block: start_block} = params) do
+  defp where_start_transaction_block_match(query, %{startblock: start_block} = params) do
     if DenormalizationHelper.denormalization_finished?() do
       where(query, [transaction], transaction.block_number >= ^start_block)
     else
@@ -662,9 +662,9 @@ defmodule Explorer.Etherscan do
     end
   end
 
-  defp where_end_transaction_block_match(query, %{end_block: nil}), do: query
+  defp where_end_transaction_block_match(query, %{endblock: nil}), do: query
 
-  defp where_end_transaction_block_match(query, %{end_block: end_block} = params) do
+  defp where_end_transaction_block_match(query, %{endblock: end_block} = params) do
     if DenormalizationHelper.denormalization_finished?() do
       where(query, [transaction], transaction.block_number <= ^end_block)
     else
@@ -672,15 +672,15 @@ defmodule Explorer.Etherscan do
     end
   end
 
-  defp where_start_block_match_tt(query, %{start_block: nil}), do: query
+  defp where_start_block_match_tt(query, %{startblock: nil}), do: query
 
-  defp where_start_block_match_tt(query, %{start_block: start_block}) do
+  defp where_start_block_match_tt(query, %{startblock: start_block}) do
     where(query, [tt], tt.block_number >= ^start_block)
   end
 
-  defp where_end_block_match_tt(query, %{end_block: nil}), do: query
+  defp where_end_block_match_tt(query, %{endblock: nil}), do: query
 
-  defp where_end_block_match_tt(query, %{end_block: end_block}) do
+  defp where_end_block_match_tt(query, %{endblock: end_block}) do
     where(query, [tt], tt.block_number <= ^end_block)
   end
 
