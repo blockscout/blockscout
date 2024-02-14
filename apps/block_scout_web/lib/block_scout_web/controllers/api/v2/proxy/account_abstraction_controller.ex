@@ -128,7 +128,8 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
         necessity_by_association: %{
           :names => :optional,
           :smart_contract => :optional
-        }
+        },
+        api?: true
       )
       |> Enum.into(%{}, &{&1.hash, Helper.address_with_info(&1, nil)})
 
