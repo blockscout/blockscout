@@ -3,7 +3,7 @@ name: Publish Docker image on every push to master branch
 on:
   push:
     branches:
-      - arm-build-test
+      - kf-arm-build-test
     paths-ignore:
       - 'CHANGELOG.md'
       - '**/README.md'
@@ -20,12 +20,10 @@ jobs:
     strategy:
       matrix:
         platform: [linux/arm64/v8, linux/amd64]
+    outputs:
+      digest_amd64: ${{ steps.digest_amd64.outputs.digest }}
+      digest_arm64: ${{ steps.digest_arm64.outputs.digest }}
     steps:
-      -
-        name: Prepare
-        run: |
-          platform=${{ matrix.platform }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV          
       -
         name: Checkout
         uses: actions/checkout@v4
@@ -37,27 +35,26 @@ jobs:
           images: blockscout/blockscout
           
       - name: Set up SSH
+        if: matrix.platform == 'linux/arm64/v8'
         uses: MrSquaare/ssh-setup-action@523473d91581ccbf89565e12b40faba93f2708bd # v1.1.0
         with:
           host: 3.145.97.144
           private-key: ${{ secrets.ARM_RUNNER_KEY }}
 
       - uses: docker/setup-buildx-action@v3
+        if: matrix.platform == 'linux/amd64'
         name: Set up local builder
         id: builder_local
         
       - uses: docker/setup-buildx-action@v3
+        if: matrix.platform == 'linux/arm64/v8'
         name: Set up ARM builder
         id: builder_remote_arm
         with:
           driver: remote
           endpoint: ssh://ubuntu@3.145.97.144
-          platforms: linux/arm64/v8  
+          platforms: ${{ matrix.platform }}
 
-      - name: Builder Local name
-        run: echo ${{ steps.builder_local.outputs.name }}
-      - name: Builder ARM name
-        run: echo ${{ steps.builder_remote_arm.outputs.name }}       
       - name: debug docker context
         run: |
           docker context ls        
@@ -68,37 +65,12 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      -
-        name: Build linux/amd64 by digest
-        id: build_amd64
-        if: ${{ matrix.platform == 'linux/amd64' }}
+      - name: Build ${{ matrix.platform }} by digest
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
-          builder: ${{ steps.builder_local.outputs.name }}
-          file: ./docker/Dockerfile
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          platforms: ${{ matrix.platform }}
-          labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=blockscout/blockscout,name-canonical=true,push=true
-          build-args: |
-            CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
-            DISABLE_WEBAPP=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=false
-            ADMIN_PANEL_ENABLED=false
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            BLOCKSCOUT_VERSION=arm-build-test
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}   
-      -
-        name: Build linux/arm64/v8 by digest
-        id: build_arm64
-        if: ${{ matrix.platform == 'linux/arm64/v8' }}
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          builder: ${{ steps.builder_remote_arm.outputs.name }}
+          builder: ${{ steps.builder_local.outputs.name || steps.builder_remote_arm.outputs.name }}
           file: ./docker/Dockerfile
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
           platforms: ${{ matrix.platform }}
@@ -112,43 +84,23 @@ jobs:
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=false
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            BLOCKSCOUT_VERSION=arm-build-test
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}            
-      -
-        name: Export digest amd64
-        if: ${{ matrix.platform == 'linux/amd64' }}        
-        run: |
-          mkdir -p /tmp/digests
-          digest="${{ steps.build_amd64.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"          
-      -
-        name: Export digest arm64
-        if: ${{ matrix.platform == 'linux/arm64/v8' }}        
-        run: |
-          mkdir -p /tmp/digests
-          digest="${{ steps.build_arm64.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}" 
-      -
-        name: Upload digest
-        uses: actions/upload-artifact@v4
-        with:
-          name: digests-${{ env.PLATFORM_PAIR }}
-          path: /tmp/digests/*
-          if-no-files-found: error
-          retention-days: 1
+            BLOCKSCOUT_VERSION=kf-arm-build-test
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+
+      - name: Set digest
+        if: matrix.platform == 'linux/amd64'
+        id: digest_amd64
+        run: echo "digest=${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
+      - name: Set digest
+        if: matrix.platform == 'linux/arm64/v8'
+        id: digest_arm64
+        run: echo "digest=${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
 
   merge:
     runs-on: ubuntu-latest
     needs:
       - build
     steps:
-      -
-        name: Download digests
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp/digests
-          pattern: digests-*
-          merge-multiple: true
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -166,10 +118,10 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       -
         name: Create manifest list and push
-        working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf 'blockscout/blockscout@sha256:%s ' *)          
+            ${{ needs.build.outputs.digest_amd64 }} \
+            ${{ needs.build.outputs.digest_arm64 }}
       -
         name: Inspect image
         run: |
