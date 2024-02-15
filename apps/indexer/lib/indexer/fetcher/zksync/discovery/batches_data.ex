@@ -393,7 +393,7 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
       l2_txs =
         case Map.get(resp.result, "transactions") do
           nil ->
-            []
+            l2_txs
 
           new_txs ->
             Enum.reduce(new_txs, l2_txs, fn l2_tx_hash, l2_txs ->
