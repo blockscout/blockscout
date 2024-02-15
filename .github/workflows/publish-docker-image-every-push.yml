@@ -113,7 +113,7 @@ jobs:
         with:
           driver: remote
           endpoint: ssh://ubuntu@3.145.97.144
-          platforms: linux/arm64
+          platforms: linux/arm64/v8
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -146,7 +146,7 @@ jobs:
           cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
           # tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
           tags: blockscout/blockscout:arm-build-test
-          platforms: linux/arm64
+          platforms: linux/arm64/v8
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             API_V1_READ_METHODS_DISABLED=false
@@ -171,7 +171,7 @@ jobs:
           push: true
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
           tags: blockscout/blockscout:frontend-main
-          platforms: linux/arm64
+          platforms: linux/arm64/v8
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             API_V1_READ_METHODS_DISABLED=false
