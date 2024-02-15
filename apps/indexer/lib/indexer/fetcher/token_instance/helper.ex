@@ -133,7 +133,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
       if Application.get_env(:indexer, __MODULE__)[:base_uri_retry?] do
         {success_results_from_retry, failed_results_after_retry} =
           instances_to_retry
-          |> batch_fetch_instances_inner(token_types_map, cryptokitties, true)
+          |> batch_fetch_instances_inner(token_types_map, [], true)
           |> Enum.reduce({[], []}, fn {{_task, res}, {_result, _normalized_token_id, contract_address_hash, token_id}},
                                       {success, failed} ->
             # credo:disable-for-next-line
