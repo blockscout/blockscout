@@ -1,15 +1,15 @@
-defmodule Explorer.Chain.Zkevm.BatchTransaction do
+defmodule Explorer.Chain.PolygonZkevm.BatchTransaction do
   @moduledoc "Models a list of transactions related to a batch for zkEVM."
 
   use Explorer.Schema
 
   alias Explorer.Chain.{Hash, Transaction}
-  alias Explorer.Chain.Zkevm.TransactionBatch
+  alias Explorer.Chain.PolygonZkevm.TransactionBatch
 
   @required_attrs ~w(batch_number hash)a
 
   @primary_key false
-  typed_schema "zkevm_batch_l2_transactions" do
+  typed_schema "polygon_zkevm_batch_l2_transactions" do
     belongs_to(:batch, TransactionBatch, foreign_key: :batch_number, references: :number, type: :integer, null: false)
 
     belongs_to(:l2_transaction, Transaction,

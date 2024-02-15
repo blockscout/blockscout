@@ -1,17 +1,17 @@
-defmodule Explorer.Chain.Zkevm.TransactionBatch do
+defmodule Explorer.Chain.PolygonZkevm.TransactionBatch do
   @moduledoc "Models a batch of transactions for zkEVM."
 
   use Explorer.Schema
 
   alias Explorer.Chain.Hash
-  alias Explorer.Chain.Zkevm.{BatchTransaction, LifecycleTransaction}
+  alias Explorer.Chain.PolygonZkevm.{BatchTransaction, LifecycleTransaction}
 
   @optional_attrs ~w(sequence_id verify_id)a
 
   @required_attrs ~w(number timestamp l2_transactions_count global_exit_root acc_input_hash state_root)a
 
   @primary_key false
-  typed_schema "zkevm_transaction_batches" do
+  typed_schema "polygon_zkevm_transaction_batches" do
     field(:number, :integer, primary_key: true, null: false)
     field(:timestamp, :utc_datetime_usec)
     field(:l2_transactions_count, :integer)

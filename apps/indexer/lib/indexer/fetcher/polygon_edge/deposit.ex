@@ -3,6 +3,8 @@ defmodule Indexer.Fetcher.PolygonEdge.Deposit do
   Fills polygon_edge_deposits DB table.
   """
 
+  # todo: this module is deprecated and should be removed
+
   use GenServer
   use Indexer.Fetcher
 
@@ -14,7 +16,6 @@ defmodule Indexer.Fetcher.PolygonEdge.Deposit do
   alias ABI.TypeDecoder
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
-  alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.PolygonEdge.Deposit
   alias Indexer.Fetcher.PolygonEdge
 
@@ -47,8 +48,6 @@ defmodule Indexer.Fetcher.PolygonEdge.Deposit do
 
     env = Application.get_all_env(:indexer)[__MODULE__]
 
-    Subscriber.to(:polygon_edge_reorg_block, :realtime)
-
     PolygonEdge.init_l1(
       Deposit,
       env,
@@ -62,13 +61,7 @@ defmodule Indexer.Fetcher.PolygonEdge.Deposit do
 
   @impl GenServer
   def handle_info(:continue, state) do
-    PolygonEdge.handle_continue(state, @state_synced_event, __MODULE__, @fetcher_name)
-  end
-
-  @impl GenServer
-  def handle_info({:chain_event, :polygon_edge_reorg_block, :realtime, block_number}, state) do
-    PolygonEdge.reorg_block_push(@fetcher_name, block_number)
-    {:noreply, state}
+    PolygonEdge.handle_continue(state, @state_synced_event, __MODULE__)
   end
 
   @impl GenServer

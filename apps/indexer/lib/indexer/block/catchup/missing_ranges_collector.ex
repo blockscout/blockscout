@@ -44,8 +44,6 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   end
 
   defp default_init do
-    MissingBlockRange.sanitize_missing_block_ranges()
-
     {min_number, max_number} = get_initial_min_max()
 
     clear_to_bounds(min_number, max_number)

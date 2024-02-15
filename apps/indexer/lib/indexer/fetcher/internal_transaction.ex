@@ -254,11 +254,11 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   defp import_internal_transaction(internal_transactions_params, unique_numbers) do
-    internal_transactions_params_without_failed_creations = remove_failed_creations(internal_transactions_params)
+    internal_transactions_params_marked = mark_failed_transactions(internal_transactions_params)
 
     addresses_params =
       Addresses.extract_addresses(%{
-        internal_transactions: internal_transactions_params_without_failed_creations
+        internal_transactions: internal_transactions_params_marked
       })
 
     address_hash_to_block_number =
@@ -269,11 +269,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
     empty_block_numbers =
       unique_numbers
       |> MapSet.new()
-      |> MapSet.difference(MapSet.new(internal_transactions_params_without_failed_creations, & &1.block_number))
+      |> MapSet.difference(MapSet.new(internal_transactions_params_marked, & &1.block_number))
       |> Enum.map(&%{block_number: &1})
 
-    internal_transactions_and_empty_block_numbers =
-      internal_transactions_params_without_failed_creations ++ empty_block_numbers
+    internal_transactions_and_empty_block_numbers = internal_transactions_params_marked ++ empty_block_numbers
 
     imports =
       Chain.import(%{
@@ -310,33 +309,41 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end
   end
 
-  defp remove_failed_creations(internal_transactions_params) do
+  defp mark_failed_transactions(internal_transactions_params) do
+    # we store reversed trace addresses for more efficient list head-tail decomposition in has_failed_parent?
+    failed_parent_paths =
+      internal_transactions_params
+      |> Enum.filter(& &1[:error])
+      |> Enum.map(&Enum.reverse([&1.transaction_hash | &1.trace_address]))
+      |> MapSet.new()
+
     internal_transactions_params
     |> Enum.map(fn internal_transaction_param ->
-      transaction_index = internal_transaction_param[:transaction_index]
-      block_number = internal_transaction_param[:block_number]
-
-      failed_parent =
-        internal_transactions_params
-        |> Enum.filter(fn internal_transactions_param ->
-          internal_transactions_param[:block_number] == block_number &&
-            internal_transactions_param[:transaction_index] == transaction_index &&
-            internal_transactions_param[:trace_address] == [] && !is_nil(internal_transactions_param[:error])
-        end)
-        |> Enum.at(0)
-
-      if failed_parent do
+      if has_failed_parent?(
+           failed_parent_paths,
+           internal_transaction_param.trace_address,
+           [internal_transaction_param.transaction_hash]
+         ) do
+        # TODO: consider keeping these deleted fields in the reverted transactions
         internal_transaction_param
         |> Map.delete(:created_contract_address_hash)
         |> Map.delete(:created_contract_code)
         |> Map.delete(:gas_used)
         |> Map.delete(:output)
-        |> Map.put(:error, internal_transaction_param[:error] || failed_parent[:error])
+        |> Map.put(:error, internal_transaction_param[:error] || "Parent reverted")
       else
         internal_transaction_param
       end
     end)
   end
+
+  defp has_failed_parent?(failed_parent_paths, [head | tail], reverse_path_acc) do
+    MapSet.member?(failed_parent_paths, reverse_path_acc) or
+      has_failed_parent?(failed_parent_paths, tail, [head | reverse_path_acc])
+  end
+
+  # don't count itself as a parent
+  defp has_failed_parent?(_failed_parent_paths, [], _reverse_path_acc), do: false
 
   defp handle_unique_key_violation(%{exception: %{postgres: %{code: :unique_violation}}}, block_numbers) do
     BlocksRunner.invalidate_consensus_blocks(block_numbers)

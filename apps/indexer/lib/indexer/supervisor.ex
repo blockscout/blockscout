@@ -32,7 +32,6 @@ defmodule Indexer.Supervisor do
     InternalTransaction,
     PendingBlockOperationsSanitizer,
     PendingTransaction,
-    PolygonEdge,
     ReplacedTransaction,
     RootstockData,
     Token,
@@ -43,8 +42,6 @@ defmodule Indexer.Supervisor do
     UncleBlock,
     Withdrawal
   }
-
-  alias Indexer.Fetcher.Zkevm.TransactionBatch
 
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,
@@ -134,7 +131,7 @@ defmodule Indexer.Supervisor do
         {TokenUpdater.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
-        configure(PolygonEdge.Supervisor, [[memory_monitor: memory_monitor]]),
+        {Indexer.Fetcher.RollupL1ReorgMonitor.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor, [
           [memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]
@@ -147,7 +144,12 @@ defmodule Indexer.Supervisor do
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
         configure(Indexer.Fetcher.Shibarium.L1.Supervisor, [[memory_monitor: memory_monitor]]),
-        configure(TransactionBatch.Supervisor, [
+        configure(Indexer.Fetcher.PolygonZkevm.BridgeL1.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.PolygonZkevm.BridgeL2.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
         {Indexer.Fetcher.Beacon.Blob.Supervisor, [[memory_monitor: memory_monitor]]},
