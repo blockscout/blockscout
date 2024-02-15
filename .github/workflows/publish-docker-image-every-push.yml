@@ -46,13 +46,15 @@ jobs:
           private-key: ${{ secrets.ARM_RUNNER_KEY }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: debug docker context
+        run: |
+          docker context ls         
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
         with:
           driver: remote
           endpoint: ssh://ubuntu@3.145.97.144
-          platforms: linux/arm64/v8
-          append: |
-            - endpoint: unix:///var/run/docker.sock
-              platforms: linux/amd64        
+          platforms: linux/arm64/v8     
       - name: debug docker context
         run: |
           docker context ls        
