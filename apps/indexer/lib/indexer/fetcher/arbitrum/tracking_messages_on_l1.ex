@@ -89,7 +89,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
   @impl GenServer
   def handle_info(:check_new_msgs_to_rollup, state) do
     {handle_duration, {:ok, end_block}} =
-      :timer.tc(&discover_new_messages_to_l1/1, [
+      :timer.tc(&discover_new_messages_to_l2/1, [
         state
       ])
 
@@ -108,7 +108,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     {:noreply, %{state | data: new_data}}
   end
 
-  defp discover_new_messages_to_l1(
+  defp discover_new_messages_to_l2(
          %{
            config: %{
              json_l1_rpc_named_arguments: json_rpc_named_arguments,
