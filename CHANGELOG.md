@@ -29,6 +29,7 @@
 ### Chore
 
 - [#9393](https://github.com/blockscout/blockscout/pull/9393) - Bump actions/cache to v4
+- [#9389](https://github.com/blockscout/blockscout/pull/9389) - Output user address as an object in API v2 for Shibarium
 - [#9361](https://github.com/blockscout/blockscout/pull/9361) - Define BRIDGED_TOKENS_ENABLED env in Dockerfile
 - [#8851](https://github.com/blockscout/blockscout/pull/8851) - Fix dialyzer and add TypedEctoSchema
 

@@ -27,6 +27,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
   alias Explorer.{Chain, Repo}
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
+  alias Indexer.Transform.Addresses
 
   @block_check_interval_range_size 100
   @eth_get_logs_range_size 1000
@@ -257,9 +258,17 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
             )
             |> prepare_operations(json_rpc_named_arguments)
 
+          insert_items = prepare_insert_items(operations, __MODULE__)
+
+          addresses =
+            Addresses.extract_addresses(%{
+              shibarium_bridge_operations: insert_items
+            })
+
           {:ok, _} =
             Chain.import(%{
-              shibarium_bridge_operations: %{params: prepare_insert_items(operations, __MODULE__)},
+              addresses: %{params: addresses, on_conflict: :nothing},
+              shibarium_bridge_operations: %{params: insert_items},
               timeout: :infinity
             })
 
