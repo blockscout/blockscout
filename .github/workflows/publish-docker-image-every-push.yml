@@ -17,7 +17,15 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-   
+    strategy:
+      matrix:
+        platform: [linux/arm64/v8, linux/amd64]
+        # builder: [builder_local, builder_remote_arm]
+        # exclude:
+        #   - platform: linux/arm64/v8
+        #     builder: builder_local
+        #   - platform: linux/amd64
+        #     builder: builder_remote_arm   
     steps:
       -
         name: Prepare
@@ -69,13 +77,14 @@ jobs:
       -
         name: Build linux/amd64 by digest
         id: build_amd64
+        if: ${{ matrix.platform == 'linux/amd64' }}
         uses: docker/build-push-action@v5
         with:
           context: .
           builder: ${{ steps.builder_local.outputs.name }}
           file: ./docker/Dockerfile
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          platforms: linux/amd64
+          platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=blockscout/blockscout,push-by-digest=true,name-canonical=true,push=true
           build-args: |
@@ -91,13 +100,14 @@ jobs:
       -
         name: Build linux/arm64/v8 by digest
         id: build_arm64
+        if: ${{ matrix.platform == 'linux/arm64/v8' }}
         uses: docker/build-push-action@v5
         with:
           context: .
           builder: ${{ steps.builder_remote_arm.outputs.name }}
           file: ./docker/Dockerfile
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          platforms: linux/amd64/v8
+          platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=blockscout/blockscout,push-by-digest=true,name-canonical=true,push=true
           build-args: |
@@ -162,5 +172,3 @@ jobs:
         name: Inspect image
         run: |
           docker buildx imagetools inspect blockscout/blockscout:${{ steps.meta.outputs.version }}     
-
-
