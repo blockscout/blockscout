@@ -54,7 +54,10 @@ jobs:
         with:
           driver: remote
           endpoint: ssh://ubuntu@3.145.97.144
-          platforms: linux/arm64/v8     
+          platforms: linux/arm64/v8
+          append: |
+            - endpoint: unix:///var/run/docker.sock
+              platforms: linux/amd64            
       - name: debug docker context
         run: |
           docker context ls        
