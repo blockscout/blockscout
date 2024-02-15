@@ -13,209 +13,164 @@ env:
   ELIXIR_VERSION: '1.14.5'
   RELEASE_VERSION: 6.1.0
 
+
 jobs:
-  push_to_registry:
-    name: Push Docker image to Docker Hub
+  build:
     runs-on: ubuntu-latest
-    outputs:
-      release-version: ${{ steps.output-step.outputs.release-version }}
-      short-sha: ${{ steps.output-step.outputs.short-sha }}
+    strategy:
+      matrix:
+        platform: [linux/arm64/v8, linux/amd64]
     steps:
-
-      - name: Check out the repo
+      -
+        name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV          
+      -
+        name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Extract metadata (tags, labels) for Docker
+      -
+        name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: blockscout/blockscout
-
-      - name: Add SHORT_SHA env property with commit short sha
-        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
-
-      - name: Add outputs
-        run: |
-          echo "::set-output name=release-version::${{ env.NEXT_RELEASE_VERSION }}"
-          echo "::set-output name=short-sha::${{ env.SHORT_SHA }}"
-        id: output-step
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          # tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
-          tags: blockscout/blockscout:arm-build-test
-          build-args: |
-            CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
-            DISABLE_WEBAPP=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
-            DECODE_NOT_A_CONTRACT_CALLS=false
-            MIXPANEL_URL=
-            MIXPANEL_TOKEN=
-            AMPLITUDE_URL=
-            AMPLITUDE_API_KEY=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-
-      - name: Build and push Docker image for frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          tags: blockscout/blockscout:frontend-main
-          build-args: |
-            CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
-            DISABLE_WEBAPP=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            SESSION_COOKIE_DOMAIN=k8s-dev.blockscout.com
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-  push_to_registry_arm64:
-    name: Push ARM64 Docker image to Docker Hub
-    runs-on: ubuntu-latest
-    outputs:
-      release-version: ${{ steps.output-step.outputs.release-version }}
-      short-sha: ${{ steps.output-step.outputs.short-sha }}
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
+          
       - name: Set up SSH
         uses: MrSquaare/ssh-setup-action@523473d91581ccbf89565e12b40faba93f2708bd # v1.1.0
         with:
           host: 3.145.97.144
           private-key: ${{ secrets.ARM_RUNNER_KEY }}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+        name: Set up local builder
+        id: builder_local
+        
+      - uses: docker/setup-buildx-action@v3
+        name: Set up ARM builder
+        id: builder_remote_arm
         with:
           driver: remote
           endpoint: ssh://ubuntu@3.145.97.144
-          platforms: linux/arm64/v8
+          platforms: linux/arm64/v8  
 
-      - name: Log in to Docker Hub
+      - name: Builder Local name
+        run: echo ${{ steps.builder_local.outputs.name }}
+      - name: Builder ARM name
+        run: echo ${{ steps.builder_remote_arm.outputs.name }}       
+      - name: debug docker context
+        run: |
+          docker context ls        
+      -
+        name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      -
+        name: Build linux/amd64 by digest
+        id: build_amd64
+        if: ${{ matrix.platform == 'linux/amd64' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          builder: ${{ steps.builder_local.outputs.name }}
+          file: ./docker/Dockerfile
+          cache-from: type=registry,ref=blockscout/blockscout:buildcache
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=blockscout/blockscout,name-canonical=true,push=true
+          build-args: |
+            CACHE_EXCHANGE_RATES_PERIOD=
+            API_V1_READ_METHODS_DISABLED=false
+            DISABLE_WEBAPP=false
+            API_V1_WRITE_METHODS_DISABLED=false
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=false
+            ADMIN_PANEL_ENABLED=false
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            BLOCKSCOUT_VERSION=arm-build-test
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}   
+      -
+        name: Build linux/arm64/v8 by digest
+        id: build_arm64
+        if: ${{ matrix.platform == 'linux/arm64/v8' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          builder: ${{ steps.builder_remote_arm.outputs.name }}
+          file: ./docker/Dockerfile
+          cache-from: type=registry,ref=blockscout/blockscout:buildcache
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=blockscout/blockscout,push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            CACHE_EXCHANGE_RATES_PERIOD=
+            API_V1_READ_METHODS_DISABLED=false
+            DISABLE_WEBAPP=false
+            API_V1_WRITE_METHODS_DISABLED=false
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=false
+            ADMIN_PANEL_ENABLED=false
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            BLOCKSCOUT_VERSION=arm-build-test
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}            
+      -
+        name: Export digest amd64
+        if: ${{ matrix.platform == 'linux/amd64' }}        
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build_amd64.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"          
+      -
+        name: Export digest arm64
+        if: ${{ matrix.platform == 'linux/arm64/v8' }}        
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build_arm64.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}" 
+      -
+        name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      -
+        name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      -
+        name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: blockscout/blockscout
-
-      - name: Add SHORT_SHA env property with commit short sha
-        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
-
-      - name: Add outputs
+      -
+        name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      -
+        name: Create manifest list and push
+        working-directory: /tmp/digests
         run: |
-          echo "::set-output name=release-version::${{ env.NEXT_RELEASE_VERSION }}"
-          echo "::set-output name=short-sha::${{ env.SHORT_SHA }}"
-        id: output-step
-
-      - name: debug docker context
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf 'blockscout/blockscout@sha256:%s ' *)          
+      -
+        name: Inspect image
         run: |
-          docker context ls
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          # tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
-          tags: blockscout/blockscout:arm-build-test
-          platforms: linux/arm64/v8
-          build-args: |
-            CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
-            DISABLE_WEBAPP=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
-            DECODE_NOT_A_CONTRACT_CALLS=false
-            MIXPANEL_URL=
-            MIXPANEL_TOKEN=
-            AMPLITUDE_URL=
-            AMPLITUDE_API_KEY=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            BLOCKSCOUT_VERSION=arm-build-test
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-
-      - name: Build and push Docker image for frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          tags: blockscout/blockscout:frontend-main
-          platforms: linux/arm64/v8
-          build-args: |
-            CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
-            DISABLE_WEBAPP=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            SESSION_COOKIE_DOMAIN=k8s-dev.blockscout.com
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-
-
-  deploy_e2e:
-    needs: push_to_registry
-    runs-on: ubuntu-latest
-    permissions: write-all
-    steps:
-      - name: Get Vault credentials
-        id: retrieve-vault-secrets
-        uses: hashicorp/vault-action@v2.4.1
-        with:
-          url: https://vault.k8s.blockscout.com
-          role: ci-dev
-          path: github-jwt
-          method: jwt
-          tlsSkipVerify: false
-          exportToken: true
-          secrets: |
-            ci/data/dev/github token | WORKFLOW_TRIGGER_TOKEN ;
-      - name: Trigger deploy
-        uses: convictional/trigger-workflow-and-wait@v1.6.1
-        with:
-          owner: blockscout
-          repo: deployment-values
-          github_token: ${{env.WORKFLOW_TRIGGER_TOKEN}}
-          workflow_file_name: deploy_blockscout.yaml
-          ref: main
-          wait_interval: 30
-          client_payload: '{ "instance": "dev", "globalEnv": "e2e"}'
-  test:
-    needs: deploy_e2e
-    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_new.yaml@master
-    secrets: inherit
+          docker buildx imagetools inspect blockscout/blockscout:${{ steps.meta.outputs.version }}     
