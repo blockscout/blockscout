@@ -573,7 +573,8 @@
         "checkproxyverification",
         "NOTOK",
         "sushiswap",
-        "zetachain"
+        "zetachain",
+        "filecoin"
     ],
     "enableFiletypes": [
         "dotenv",
