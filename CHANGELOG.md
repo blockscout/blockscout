@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#9409](https://github.com/blockscout/blockscout/pull/9409) - ETH JSON RPC extension
+
 ### Fixes
 
 ### Chore

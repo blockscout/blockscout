@@ -333,7 +333,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       time: time && time |> Decimal.to_float(),
       fiat_price: fiat_fee(fee, exchange_rate_from_db),
       base_fee: base_fee |> format_wei(),
-      priority_fee: base_fee && priority_fee && priority_fee |> Decimal.new() |> Wei.from(:wei) |> format_wei()
+      priority_fee: base_fee && priority_fee && priority_fee |> Decimal.new() |> Wei.from(:wei) |> format_wei(),
+      wei: fee |> Wei.to(:wei) |> Decimal.round()
     }
   end
 
