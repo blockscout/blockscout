@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
 
   use Explorer.Chain.MapCache,
     name: :background_migrations_status,
-    key: :denormalization_finished,
+    key: :transactions_denormalization_finished,
     key: :tb_token_type_finished,
     key: :ctb_token_type_finished,
     key: :tt_denormalization_finished
@@ -21,9 +21,9 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     TransactionsDenormalization
   }
 
-  defp handle_fallback(:denormalization_finished) do
+  defp handle_fallback(:transactions_denormalization_finished) do
     Task.start(fn ->
-      set_denormalization_finished(TransactionsDenormalization.migration_finished?())
+      set_transactions_denormalization_finished(TransactionsDenormalization.migration_finished?())
     end)
 
     {:return, false}

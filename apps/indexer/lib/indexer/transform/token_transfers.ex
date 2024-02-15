@@ -47,8 +47,8 @@ defmodule Indexer.Transform.TokenTransfers do
       erc1155_token_transfers.token_transfers ++
         erc20_and_erc721_token_transfers.token_transfers ++ weth_transfers.token_transfers
 
-    {tokens, sanitized_token_transfers} = sanitize_token_types(rough_tokens, rough_token_transfers)
-    token_transfers = sanitize_weth_transfers(tokens, sanitized_token_transfers, weth_transfers.token_transfers)
+    tokens = sanitize_token_types(rough_tokens, rough_token_transfers)
+    token_transfers = sanitize_weth_transfers(tokens, rough_token_transfers, weth_transfers.token_transfers)
 
     token_transfers
     |> Enum.filter(fn token_transfer ->
@@ -129,17 +129,9 @@ defmodule Indexer.Transform.TokenTransfers do
         if token_type_priority(old_type) > token_type_priority(new_type), do: old_type, else: new_type
       end)
 
-    actual_tokens =
-      Enum.map(tokens, fn %{contract_address_hash: hash} = token ->
-        Map.put(token, :type, actual_token_types_map[hash])
-      end)
-
-    actual_token_transfers =
-      Enum.map(token_transfers, fn %{token_contract_address_hash: hash} = tt ->
-        Map.put(tt, :token_type, actual_token_types_map[hash])
-      end)
-
-    {actual_tokens, actual_token_transfers}
+    Enum.map(tokens, fn %{contract_address_hash: hash} = token ->
+      Map.put(token, :type, actual_token_types_map[hash])
+    end)
   end
 
   defp define_token_type(token_transfers) do

@@ -99,7 +99,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       end
 
     fee_query =
-      if DenormalizationHelper.denormalization_finished?() do
+      if DenormalizationHelper.transactions_denormalization_finished?() do
         from(
           transaction in Transaction,
           where: transaction.block_consensus == true,

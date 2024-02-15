@@ -352,7 +352,7 @@ defmodule Explorer.Chain do
     to_block = to_block(options)
 
     base =
-      if DenormalizationHelper.denormalization_finished?() do
+      if DenormalizationHelper.transactions_denormalization_finished?() do
         from(log in Log,
           order_by: [desc: log.block_number, desc: log.index],
           where: log.address_hash == ^address_hash,
@@ -482,7 +482,7 @@ defmodule Explorer.Chain do
   @spec gas_payment_by_block_hash([Hash.Full.t()]) :: %{Hash.Full.t() => Wei.t()}
   def gas_payment_by_block_hash(block_hashes) when is_list(block_hashes) do
     query =
-      if DenormalizationHelper.denormalization_finished?() do
+      if DenormalizationHelper.transactions_denormalization_finished?() do
         from(
           transaction in Transaction,
           where: transaction.block_hash in ^block_hashes and transaction.block_consensus == true,
