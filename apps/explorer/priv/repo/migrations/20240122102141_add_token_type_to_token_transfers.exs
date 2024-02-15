@@ -6,6 +6,6 @@ defmodule Explorer.Repo.Migrations.AddTokenTypeToTokenTransfers do
       add_if_not_exists(:token_type, :string)
     end
 
-    create_if_not_exists(index(:token_transfers, :token_type))
+    create_if_not_exists(index(:token_transfers, :token_type, concurrently: true))
   end
 end
