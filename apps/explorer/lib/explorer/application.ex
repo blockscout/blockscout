@@ -129,7 +129,8 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.TransactionsDenormalization),
         configure(Explorer.Migrator.AddressCurrentTokenBalanceTokenType),
         configure(Explorer.Migrator.AddressTokenBalanceTokenType),
-        configure(Explorer.Migrator.SanitizeMissingBlockRanges)
+        configure(Explorer.Migrator.SanitizeMissingBlockRanges),
+        configure(Explorer.Migrator.TokenTransferTokenIds)
       ]
       |> List.flatten()
 
