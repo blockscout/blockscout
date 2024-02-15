@@ -75,7 +75,7 @@ defmodule Explorer.Etherscan.Logs do
     paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
 
-    if DenormalizationHelper.denormalization_finished?() do
+    if DenormalizationHelper.transactions_denormalization_finished?() do
       logs_query =
         Log
         |> where_topic_match(prepared_filter)
@@ -206,7 +206,7 @@ defmodule Explorer.Etherscan.Logs do
     prepared_filter = Map.merge(@base_filter, filter)
     logs_query = where_topic_match(Log, prepared_filter)
 
-    if DenormalizationHelper.denormalization_finished?() do
+    if DenormalizationHelper.transactions_denormalization_finished?() do
       block_transaction_query =
         from(transaction in Transaction,
           where: transaction.block_number >= ^prepared_filter.from_block,

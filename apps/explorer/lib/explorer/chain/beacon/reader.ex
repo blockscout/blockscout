@@ -126,7 +126,7 @@ defmodule Explorer.Chain.Beacon.Reader do
       |> limit(10)
 
     query_with_denormalization =
-      if DenormalizationHelper.denormalization_finished?() do
+      if DenormalizationHelper.transactions_denormalization_finished?() do
         query
         |> order_by([bt, transaction], desc: transaction.block_consensus, desc: transaction.block_number)
         |> select([bt, transaction], %{
@@ -181,7 +181,7 @@ defmodule Explorer.Chain.Beacon.Reader do
       )
 
     query_with_denormalization =
-      if DenormalizationHelper.denormalization_finished?() do
+      if DenormalizationHelper.transactions_denormalization_finished?() do
         query
         |> distinct([transaction_blob, transaction, blob], transaction.block_timestamp)
         |> select([transaction_blob, transaction, blob], transaction.block_timestamp)
