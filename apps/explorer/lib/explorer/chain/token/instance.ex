@@ -432,7 +432,7 @@ defmodule Explorer.Chain.Token.Instance do
   end
 
   @doc """
-    Finds token instances of particular token (pairs of contract_address_hash and token_id) which was met in token transfers but has no corresponding entry in token_instances table.
+    Finds token instances of a particular token (pairs of contract_address_hash and token_id) which was met in token_transfers table but has no corresponding entry in token_instances table.
   """
   @spec not_inserted_token_instances_query_by_token(integer(), Hash.Address.t()) :: Ecto.Query.t()
   def not_inserted_token_instances_query_by_token(limit, token_contract_address_hash) do
@@ -460,7 +460,7 @@ defmodule Explorer.Chain.Token.Instance do
   end
 
   @doc """
-    Finds ERC-1155 token instances (pairs of contract_address_hash and token_id) which was met in token transfers but has no corresponding entry in token_instances table.
+    Finds ERC-1155 token instances (pairs of contract_address_hash and token_id) which was met in current_token_balances table but has no corresponding entry in token_instances table.
   """
   @spec not_inserted_erc_1155_token_instances(integer()) :: Ecto.Query.t()
   def not_inserted_erc_1155_token_instances(limit) do

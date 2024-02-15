@@ -646,7 +646,9 @@ config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC1155,
 
 config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC721,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_ERC_721_SANITIZE_CONCURRENCY", 2),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_ERC_721_SANITIZE_BATCH_SIZE", 10)
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_ERC_721_SANITIZE_BATCH_SIZE", 10),
+  tokens_queue_size:
+    ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_ERC_721_SANITIZE_TOKENS_BATCH_SIZE", 100)
 
 config :indexer, Indexer.Fetcher.InternalTransaction,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", 10),

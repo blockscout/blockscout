@@ -14,12 +14,16 @@ defmodule Indexer.Fetcher.TokenInstance.SanitizeERC721 do
 
   import Indexer.Fetcher.TokenInstance.Helper
 
-  @tokens_queue_size 100
-
   def start_link(_) do
     concurrency = Application.get_env(:indexer, __MODULE__)[:concurrency]
     batch_size = Application.get_env(:indexer, __MODULE__)[:batch_size]
-    GenServer.start_link(__MODULE__, %{concurrency: concurrency, batch_size: batch_size}, name: __MODULE__)
+    tokens_queue_size = Application.get_env(:indexer, __MODULE__)[:tokens_queue_size]
+
+    GenServer.start_link(
+      __MODULE__,
+      %{concurrency: concurrency, batch_size: batch_size, tokens_queue_size: tokens_queue_size},
+      name: __MODULE__
+    )
   end
 
   @impl true
@@ -33,7 +37,7 @@ defmodule Indexer.Fetcher.TokenInstance.SanitizeERC721 do
   @impl true
   def handle_cast(:fetch_tokens_queue, state) do
     address_hashes =
-      @tokens_queue_size
+      state[:tokens_queue_size]
       |> Token.ordered_erc_721_token_address_hashes_list_query(state[:last_token_address_hash])
       |> Repo.all()
 

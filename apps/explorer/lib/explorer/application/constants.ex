@@ -5,6 +5,7 @@ defmodule Explorer.Application.Constants do
 
   use Explorer.Schema
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Hash
 
   @keys_manager_contract_address_key "keys_manager_contract_address"
   @last_processed_erc_721_token "token_instance_sanitizer_last_processed_erc_721_token"
@@ -48,7 +49,7 @@ defmodule Explorer.Application.Constants do
   @doc """
     For usage in Indexer.Fetcher.TokenInstance.SanitizeERC721
   """
-  @spec insert_last_processed_token_address_hash(any()) :: any()
+  @spec insert_last_processed_token_address_hash(Hash.Address.t()) :: Ecto.Schema.t()
   def insert_last_processed_token_address_hash(address_hash) do
     existing_value = Repo.get(__MODULE__, @last_processed_erc_721_token)
 
