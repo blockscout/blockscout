@@ -136,6 +136,9 @@ jobs:
           echo "::set-output name=short-sha::${{ env.SHORT_SHA }}"
         id: output-step
 
+      - name: debug docker context
+        run: |
+          docker context ls
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
