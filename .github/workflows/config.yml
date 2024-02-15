@@ -73,9 +73,9 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_40-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - name: Conditionally build Mix deps cache
         if: steps.deps-cache.outputs.cache-hit != 'true'
@@ -83,7 +83,7 @@ jobs:
           mix local.hex --force
           mix local.rebar --force
           mix deps.get
-          mix deps.compile
+          mix deps.compile --skip-umbrella-children
 
       - name: Restore Explorer NPM Cache
         uses: actions/cache@v4
@@ -125,15 +125,15 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Restore Mix Deps Cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: deps-cache
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_40-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - run: mix credo
 
@@ -149,15 +149,15 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Restore Mix Deps Cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: deps-cache
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_40-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - run: mix format --check-formatted
 
@@ -178,24 +178,24 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Restore Mix Deps Cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: deps-cache
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_40-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - name: Restore Dialyzer Cache
         uses: actions/cache@v4
         id: dialyzer-cache
         with:
           path: priv/plts
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-${{ matrix.chain-type }}-dialyzer-mixlockhash_25-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-${{ matrix.chain-type }}-dialyzer-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-${{ matrix.chain-type }}-dialyzer-"
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-${{ matrix.chain-type }}-dialyzer-mixlockhash-
 
       - name: Conditionally build Dialyzer Cache
         if: steps.dialyzer-cache.output.cache-hit != 'true'
@@ -222,15 +222,15 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Restore Mix Deps Cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: deps-cache
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_40-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - run: |
           mix gettext.extract --merge | tee stdout.txt
@@ -248,15 +248,15 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: deps-cache
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_40-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - name: Scan explorer for vulnerabilities
         run: mix sobelow --config
@@ -277,15 +277,15 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: deps-cache
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_40-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - name: Restore Explorer NPM Cache
         uses: actions/cache@v4
@@ -325,15 +325,15 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: deps-cache
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_40-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - name: Restore Explorer NPM Cache
         uses: actions/cache@v4
@@ -371,15 +371,15 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: deps-cache
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_40-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - name: Restore Blockscout Web NPM Cache
         uses: actions/cache@v4
@@ -433,15 +433,15 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: deps-cache
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_40-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - run: ./bin/install_chrome_headless.sh
       - name: mix test --exclude no_nethermind
@@ -493,15 +493,15 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: deps-cache
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_40-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - name: Restore Explorer NPM Cache
         uses: actions/cache@v4
@@ -564,15 +564,15 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: deps-cache
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_40-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - run: ./bin/install_chrome_headless.sh
 
@@ -632,15 +632,15 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Mix Deps Cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: deps-cache
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_40-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - name: Restore Explorer NPM Cache
         uses: actions/cache@v4
