@@ -160,6 +160,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
             block_number: tx.block_number,
             token_contract_address: token.contract_address,
             token_ids: Enum.map(0..50, fn _x -> id end),
+            token_type: "ERC-1155",
             amounts: Enum.map(0..50, fn x -> x end)
           )
         end
@@ -192,7 +193,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
             block: tx.block,
             block_number: tx.block_number,
             token_contract_address: token.contract_address,
-            token_ids: [i]
+            token_ids: [i],
+            token_type: "ERC-721"
           )
         end
 
@@ -218,6 +220,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           block_number: tx.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..50, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(0..50, fn x -> x end)
         )
 
@@ -250,6 +253,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           block_number: tx_1.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..24, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(0..24, fn x -> x end)
         )
 
@@ -267,6 +271,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           block_number: tx_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(25..49, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(25..49, fn x -> x end)
         )
 
@@ -282,6 +287,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           block_number: tx_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: [50],
+          token_type: "ERC-1155",
           amounts: [50]
         )
 
@@ -308,6 +314,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           block_number: tx_1.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..24, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(0..24, fn x -> x end)
         )
 
@@ -325,6 +332,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           block_number: tx_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(25..50, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(25..50, fn x -> x end)
         )
 
@@ -997,7 +1005,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         insert(:token_transfer,
           token_contract_address: token.contract_address,
           transaction: transaction,
-          token_ids: [0]
+          token_ids: [0],
+          token_type: "ERC-721"
         )
 
       for _ <- 1..50 do
@@ -1067,6 +1076,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         token_contract_address: token.contract_address,
         transaction: transaction,
         token_ids: [id + 1],
+        token_type: "ERC-1155",
         amounts: [1]
       )
 
@@ -1075,6 +1085,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           token_contract_address: token.contract_address,
           transaction: transaction,
           token_ids: [id, id + 1],
+          token_type: "ERC-1155",
           amounts: [1, 2]
         )
 
@@ -1088,7 +1099,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           insert(:token_transfer,
             token_contract_address: token.contract_address,
             transaction: transaction,
-            token_ids: [id]
+            token_ids: [id],
+            token_type: "ERC-1155"
           )
         end
 
@@ -1120,7 +1132,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
             block: tx.block,
             block_number: tx.block_number,
             token_contract_address: token.contract_address,
-            token_ids: [id]
+            token_ids: [id],
+            token_type: "ERC-721"
           )
         end
 
@@ -1155,6 +1168,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           block_number: tx.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..50, fn _x -> id end),
+          token_type: "ERC-1155",
           amounts: Enum.map(0..50, fn x -> x end)
         )
 
@@ -1183,6 +1197,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
             block_number: tx.block_number,
             token_contract_address: token.contract_address,
             token_ids: Enum.map(0..50, fn x -> x end) ++ [id],
+            token_type: "ERC-1155",
             amounts: Enum.map(1..51, fn x -> x end) ++ [amount]
           )
         end
@@ -1312,7 +1327,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       insert_list(count, :token_transfer,
         token_contract_address: token.contract_address,
         transaction: transaction,
-        token_ids: [0]
+        token_ids: [0],
+        token_type: "ERC-721"
       )
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0/transfers-count")

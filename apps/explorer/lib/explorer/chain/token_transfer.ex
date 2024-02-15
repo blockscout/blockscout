@@ -68,6 +68,7 @@ defmodule Explorer.Chain.TokenTransfer do
     field(:amounts, {:array, :decimal})
     field(:token_ids, {:array, :decimal})
     field(:index_in_batch, :integer, virtual: true)
+    field(:token_type, :string)
 
     belongs_to(:from_address, Address,
       foreign_key: :from_address_hash,
@@ -115,7 +116,7 @@ defmodule Explorer.Chain.TokenTransfer do
     timestamps()
   end
 
-  @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash block_hash)a
+  @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash block_hash token_type)a
   @optional_attrs ~w(amount amounts token_ids)a
 
   @doc false
@@ -345,7 +346,11 @@ defmodule Explorer.Chain.TokenTransfer do
   def filter_by_type(query, []), do: query
 
   def filter_by_type(query, token_types) when is_list(token_types) do
-    where(query, [token: token], token.type in ^token_types)
+    if DenormalizationHelper.tt_denormalization_finished?() do
+      where(query, [tt], tt.token_type in ^token_types)
+    else
+      where(query, [token: token], token.type in ^token_types)
+    end
   end
 
   def filter_by_type(query, _), do: query
