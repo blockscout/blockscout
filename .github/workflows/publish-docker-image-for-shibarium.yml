@@ -1,4 +1,4 @@
-name: Stability Publish Docker image
+name: Shibarium Publish Docker image
 
 on:
   workflow_dispatch:
