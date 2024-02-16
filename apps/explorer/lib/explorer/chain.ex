@@ -1423,7 +1423,7 @@ defmodule Explorer.Chain do
 
       case {min_saved_block_number, max_saved_block_number} do
         {0, 0} ->
-          Decimal.new(0)
+          Decimal.new(1)
 
         _ ->
           divisor = max_saved_block_number - min_blockchain_block_number + 1
