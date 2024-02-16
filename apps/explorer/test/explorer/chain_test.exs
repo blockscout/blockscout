@@ -1036,8 +1036,8 @@ defmodule Explorer.ChainTest do
       assert Decimal.compare(Chain.indexed_ratio_blocks(), Decimal.from_float(0.5)) == :eq
     end
 
-    test "returns 0 if no blocks" do
-      assert Decimal.new(0) == Chain.indexed_ratio_blocks()
+    test "returns 1 if no blocks" do
+      assert Decimal.new(1) == Chain.indexed_ratio_blocks()
     end
 
     test "returns 1.0 if fully indexed blocks" do
