@@ -4,7 +4,6 @@ defmodule Explorer.Account.Notifier.SummaryTest do
   import Explorer.Factory
 
   alias Explorer.Account.Notifier.Summary
-  alias Explorer.Chain
   alias Explorer.Chain.{TokenTransfer, Transaction, Wei}
   alias Explorer.Repo
 
