@@ -48,7 +48,7 @@ jobs:
         run: |
           echo "matrix=$matrixStringifiedObject" >> $GITHUB_OUTPUT
         env:
-          matrixStringifiedObject: '{"chain-type": ["ethereum", "polygon_edge", "polygon_zkevm", "rsk", "suave", "stability"]}'
+          matrixStringifiedObject: '{"chain-type": ["ethereum", "polygon_edge", "polygon_zkevm", "rsk", "suave", "stability", "filecoin"]}'
 
   build-and-cache:
     name: Build and Cache deps
