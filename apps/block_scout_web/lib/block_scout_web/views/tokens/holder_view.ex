@@ -70,6 +70,8 @@ defmodule BlockScoutWeb.Tokens.HolderView do
     to_string(format_according_to_decimals(value, decimals)) <> " TokenID " <> to_string(id)
   end
 
+  # todo: ERC-404
+
   def format_token_balance_value(value, _id, _token) do
     value
   end

@@ -1,6 +1,6 @@
 defmodule Indexer.Transform.TokenTransfers do
   @moduledoc """
-  Helper functions for transforming data for ERC-20 and ERC-721 token transfers.
+  Helper functions for transforming data for known token standards (ERC-20, ERC-721, ERC-1155, ERC-404) transfers.
   """
 
   require Logger
@@ -151,7 +151,7 @@ defmodule Indexer.Transform.TokenTransfers do
 
   defp token_type_priority(nil), do: -1
 
-  @token_types_priority_order ["ERC-20", "ERC-721", "ERC-1155"]
+  @token_types_priority_order ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
   defp token_type_priority(token_type) do
     Enum.find_index(@token_types_priority_order, &(&1 == token_type))
   end

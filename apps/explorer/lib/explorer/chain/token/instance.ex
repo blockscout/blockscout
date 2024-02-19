@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Token.Instance do
   @moduledoc """
-  Represents an ERC-721/ERC-1155 token instance and stores metadata defined in https://github.com/ethereum/EIPs/blob/master/EIPS/eip-721.md.
+  Represents an ERC-721/ERC-1155/ERC-404 token instance and stores metadata defined in https://github.com/ethereum/EIPs/blob/master/EIPS/eip-721.md.
   """
 
   use Explorer.Schema
@@ -113,6 +113,10 @@ defmodule Explorer.Chain.Token.Instance do
     erc_1155_token_instances_by_address_hash(address_hash, options)
   end
 
+  defp nft_list(address_hash, ["ERC-404"], options) do
+    erc_404_token_instances_by_address_hash(address_hash, options)
+  end
+
   defp nft_list(address_hash, _, options) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
@@ -127,8 +131,9 @@ defmodule Explorer.Chain.Token.Instance do
           erc_721
         else
           erc_1155 = erc_1155_token_instances_by_address_hash(address_hash, options)
+          erc_404 = erc_404_token_instances_by_address_hash(address_hash, options)
 
-          (erc_721 ++ erc_1155) |> Enum.take(paging_options.page_size)
+          (erc_721 ++ erc_1155 ++ erc_404) |> Enum.take(paging_options.page_size)
         end
     end
   end
@@ -183,6 +188,33 @@ defmodule Explorer.Chain.Token.Instance do
 
   defp page_erc_1155_token_instances(query, _), do: query
 
+  @spec erc_404_token_instances_by_address_hash(binary() | Hash.Address.t(), keyword) :: [Instance.t()]
+  def erc_404_token_instances_by_address_hash(address_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    __MODULE__
+    |> join(:inner, [ti], ctb in CurrentTokenBalance,
+      as: :ctb,
+      on:
+        ctb.token_contract_address_hash == ti.token_contract_address_hash and ctb.token_id == ti.token_id and
+          ctb.address_hash == ^address_hash
+    )
+    |> where([ctb: ctb], ctb.value > 0 and ctb.token_type == "ERC-404")
+    |> order_by([ti], asc: ti.token_contract_address_hash, desc: ti.token_id)
+    |> limit(^paging_options.page_size)
+    |> page_erc_404_token_instances(paging_options)
+    |> select_merge([ctb: ctb], %{current_token_balance: ctb})
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).all()
+  end
+
+  defp page_erc_404_token_instances(query, %PagingOptions{key: {contract_address_hash, token_id, "ERC-404"}}) do
+    page_token_instance(query, contract_address_hash, token_id)
+  end
+
+  defp page_erc_404_token_instances(query, _), do: query
+
   defp page_token_instance(query, contract_address_hash, token_id) do
     query
     |> where(
@@ -228,6 +260,10 @@ defmodule Explorer.Chain.Token.Instance do
     erc_1155_collections_by_address_hash(address_hash, options)
   end
 
+  defp nft_collections(address_hash, ["ERC-404"], options) do
+    erc_404_collections_by_address_hash(address_hash, options)
+  end
+
   defp nft_collections(address_hash, _, options) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
@@ -242,8 +278,9 @@ defmodule Explorer.Chain.Token.Instance do
           erc_721
         else
           erc_1155 = erc_1155_collections_by_address_hash(address_hash, options)
+          erc_404 = erc_404_collections_by_address_hash(address_hash, options)
 
-          (erc_721 ++ erc_1155) |> Enum.take(paging_options.page_size)
+          (erc_721 ++ erc_1155 ++ erc_404) |> Enum.take(paging_options.page_size)
         end
     end
   end
@@ -300,6 +337,38 @@ defmodule Explorer.Chain.Token.Instance do
   end
 
   defp page_erc_1155_nft_collections(query, _), do: query
+
+  @spec erc_404_collections_by_address_hash(binary() | Hash.Address.t(), keyword) :: [
+          %{
+            token_contract_address_hash: Hash.Address.t(),
+            distinct_token_instances_count: integer(),
+            token_ids: [integer()]
+          }
+        ]
+  def erc_404_collections_by_address_hash(address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    CurrentTokenBalance
+    |> where([ctb], ctb.address_hash == ^address_hash and ctb.value > 0 and ctb.token_type == "ERC-404")
+    |> group_by([ctb], ctb.token_contract_address_hash)
+    |> order_by([ctb], asc: ctb.token_contract_address_hash)
+    |> select([ctb], %{
+      token_contract_address_hash: ctb.token_contract_address_hash,
+      distinct_token_instances_count: fragment("COUNT(*)"),
+      token_ids: fragment("array_agg(?)", ctb.token_id)
+    })
+    |> page_erc_404_nft_collections(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Chain.select_repo(options).all()
+    |> Enum.map(&erc_1155_preload_nft(&1, address_hash, options))
+    |> Helper.custom_preload(options, Token, :token_contract_address_hash, :contract_address_hash, :token)
+  end
+
+  defp page_erc_404_nft_collections(query, %PagingOptions{key: {contract_address_hash, "ERC-404"}}) do
+    page_nft_collections(query, contract_address_hash)
+  end
+
+  defp page_erc_404_nft_collections(query, _), do: query
 
   defp page_nft_collections(query, token_contract_address_hash) do
     query

@@ -4229,7 +4229,7 @@ defmodule Explorer.Chain do
 
         decimal_value = Decimal.new(value)
 
-        find_erc721_or_erc20_or_erc1155_or_erc404_token_transfer(transaction.token_transfers, {address, decimal_value})
+        find_known_token_transfer(transaction.token_transfers, {address, decimal_value})
 
       _ ->
         nil
@@ -4254,7 +4254,7 @@ defmodule Explorer.Chain do
     if token_transfer, do: :erc1155
   end
 
-  defp find_erc721_or_erc20_or_erc1155_or_erc404_token_transfer(token_transfers, {address, decimal_value}) do
+  defp find_known_token_transfer(token_transfers, {address, decimal_value}) do
     token_transfer =
       Enum.find(token_transfers, fn token_transfer ->
         token_transfer.to_address_hash.bytes == address && token_transfer.amount == decimal_value

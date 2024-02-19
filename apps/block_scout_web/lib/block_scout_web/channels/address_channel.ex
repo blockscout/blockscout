@@ -237,6 +237,7 @@ defmodule BlockScoutWeb.AddressChannel do
     push_current_token_balances(socket, address_current_token_balances, "erc_20", "ERC-20")
     push_current_token_balances(socket, address_current_token_balances, "erc_721", "ERC-721")
     push_current_token_balances(socket, address_current_token_balances, "erc_1155", "ERC-1155")
+    push_current_token_balances(socket, address_current_token_balances, "erc_404", "ERC-404")
 
     {:noreply, socket}
   end

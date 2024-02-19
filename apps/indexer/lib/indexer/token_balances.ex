@@ -39,7 +39,7 @@ defmodule Indexer.TokenBalances do
   * `address_hash` - The address_hash that we want to know the balance.
   * `block_number` - The block number that the address_hash has the balance.
   * `token_type` - type of the token that balance belongs to
-  * `token_id` - token id for ERC-1155 tokens
+  * `token_id` - token id for ERC-1155/ERC-404 tokens
   """
   def fetch_token_balances_from_blockchain([]), do: {:ok, []}
 
@@ -56,6 +56,8 @@ defmodule Indexer.TokenBalances do
           true
         end
       end)
+
+    # todo: ERC-404 can be nft and ft
 
     erc1155_token_balances =
       token_balances
