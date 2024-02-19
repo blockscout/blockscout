@@ -3832,13 +3832,13 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
-  @spec erc721_or_erc1155_token_instance_from_token_id_and_token_address(
+  @spec nft_instance_from_token_id_and_token_address(
           Decimal.t() | non_neg_integer(),
           Hash.Address.t(),
           [api?]
         ) ::
           {:ok, Instance.t()} | {:error, :not_found}
-  def erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, token_contract_address, options \\ []) do
+  def nft_instance_from_token_id_and_token_address(token_id, token_contract_address, options \\ []) do
     query = Instance.token_instance_query(token_id, token_contract_address)
 
     case select_repo(options).one(query) do
@@ -4516,20 +4516,20 @@ defmodule Explorer.Chain do
       ...>  token_contract_address_hash: token.contract_address_hash,
       ...>  token_id: token_id
       ...> )
-      iex> Explorer.Chain.check_erc721_or_erc1155_token_instance_exists(token_id, token.contract_address_hash)
+      iex> Explorer.Chain.check_nft_instance_exists(token_id, token.contract_address_hash)
       :ok
 
   Returns `:not_found` if not found
 
       iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      iex> Explorer.Chain.check_erc721_or_erc1155_token_instance_exists(10, hash)
+      iex> Explorer.Chain.check_nft_instance_exists(10, hash)
       :not_found
   """
-  @spec check_erc721_or_erc1155_token_instance_exists(binary() | non_neg_integer(), Hash.Address.t()) ::
+  @spec check_nft_instance_exists(binary() | non_neg_integer(), Hash.Address.t()) ::
           :ok | :not_found
-  def check_erc721_or_erc1155_token_instance_exists(token_id, hash) do
+  def check_nft_instance_exists(token_id, hash) do
     token_id
-    |> erc721_or_erc1155_token_instance_exist?(hash)
+    |> nft_instance_exist?(hash)
     |> boolean_to_check_result()
   end
 
@@ -4544,17 +4544,17 @@ defmodule Explorer.Chain do
       ...>  token_contract_address_hash: token.contract_address_hash,
       ...>  token_id: token_id
       ...> )
-      iex> Explorer.Chain.erc721_or_erc1155_token_instance_exist?(token_id, token.contract_address_hash)
+      iex> Explorer.Chain.nft_instance_exist?(token_id, token.contract_address_hash)
       true
 
   Returns `false` if not found
 
       iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      iex> Explorer.Chain.erc721_or_erc1155_token_instance_exist?(10, hash)
+      iex> Explorer.Chain.nft_instance_exist?(10, hash)
       false
   """
-  @spec erc721_or_erc1155_token_instance_exist?(binary() | non_neg_integer(), Hash.Address.t()) :: boolean()
-  def erc721_or_erc1155_token_instance_exist?(token_id, hash) do
+  @spec nft_instance_exist?(binary() | non_neg_integer(), Hash.Address.t()) :: boolean()
+  def nft_instance_exist?(token_id, hash) do
     query =
       from(i in Instance,
         where: i.token_contract_address_hash == ^hash and i.token_id == ^Decimal.new(token_id)
