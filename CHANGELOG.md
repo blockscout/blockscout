@@ -16,6 +16,7 @@
 
 ### Fixes
 
+- [#9387](https://github.com/blockscout/blockscout/pull/9387) - Filter out Vyper contracts in Solidityscan API endpoint
 - [#9377](https://github.com/blockscout/blockscout/pull/9377) - Speed up account abstraction proxy
 - [#9371](https://github.com/blockscout/blockscout/pull/9371) - Filter empty values before token update
 - [#9356](https://github.com/blockscout/blockscout/pull/9356) - Remove ERC-1155 logs params from coin balances params
