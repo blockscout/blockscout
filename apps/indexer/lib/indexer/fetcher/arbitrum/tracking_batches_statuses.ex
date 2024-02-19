@@ -40,6 +40,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     l1_rollup_address = config_common[:l1_rollup_address]
     l1_start_block = config_common[:l1_start_block]
     l1_rpc_chunk_size = config_common[:l1_rpc_chunk_size]
+    rollup_chunk_size = config_common[:rollup_chunk_size]
 
     config_tracker = Application.get_all_env(:indexer)[__MODULE__]
     recheck_interval = config_tracker[:recheck_interval]
@@ -51,15 +52,20 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:ok,
      %{
        config: %{
-         json_l2_rpc_named_arguments: args[:json_rpc_named_arguments],
-         json_l1_rpc_named_arguments: IndexerHelper.build_json_rpc_named_arguments(l1_rpc),
-         l1_rpc_chunk_size: l1_rpc_chunk_size,
+         l1_rpc: %{
+           json_rpc_named_arguments: IndexerHelper.build_json_rpc_named_arguments(l1_rpc),
+           logs_block_range: l1_rpc_block_range,
+           chunk_size: l1_rpc_chunk_size,
+           track_finalization: track_l1_tx_finalization
+         },
+         rollup_rpc: %{
+           json_rpc_named_arguments: args[:json_rpc_named_arguments],
+           chunk_size: rollup_chunk_size
+         },
          recheck_interval: recheck_interval,
-         l1_rpc_block_range: l1_rpc_block_range,
          l1_rollup_address: l1_rollup_address,
          l1_start_block: l1_start_block,
-         messages_to_blocks_shift: messages_to_blocks_shift,
-         track_l1_tx_finalization: track_l1_tx_finalization
+         messages_to_blocks_shift: messages_to_blocks_shift
        },
        data: %{}
      }}
@@ -73,17 +79,26 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
   # TBD
   @impl GenServer
-  def handle_info(:init_worker, state) do
+  def handle_info(
+        :init_worker,
+        %{
+          config: %{
+            l1_rpc: %{json_rpc_named_arguments: json_l1_rpc_named_arguments},
+            l1_rollup_address: l1_rollup_address,
+            l1_start_block: l1_start_block
+          }
+        } = state
+      ) do
     %{outbox: outbox_address, sequencer_inbox: sequencer_inbox_address} =
       Rpc.get_contracts_for_rollup(
-        state.config.l1_rollup_address,
+        l1_rollup_address,
         :inbox_outbox,
-        state.config.json_l1_rpc_named_arguments
+        json_l1_rpc_named_arguments
       )
 
-    new_batches_start_block = Db.l1_block_of_latest_committed_batch(state.config.l1_start_block)
+    new_batches_start_block = Db.l1_block_of_latest_committed_batch(l1_start_block)
 
-    new_confirmations_start_block = state.config.l1_start_block
+    new_confirmations_start_block = l1_start_block
 
     Process.send(self(), :check_new_batches, [])
 
@@ -155,7 +170,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   @impl GenServer
   def handle_info(:check_lifecycle_txs_finalization, state) do
     {handle_duration, _} =
-      if state.config.track_l1_tx_finalization do
+      if state.config.l1_rpc.track_finalization do
         :timer.tc(&monitor_lifecycle_txs_finalization/1, [
           state
         ])
@@ -180,12 +195,10 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   def discover_new_batches(
         %{
           config: %{
-            json_l1_rpc_named_arguments: json_rpc_named_arguments,
-            l1_rpc_chunk_size: chunk_size,
-            l1_rpc_block_range: rpc_block_range,
+            l1_rpc: l1_rpc_config,
+            rollup_rpc: rollup_rpc_config,
             l1_sequencer_inbox_address: sequencer_inbox_address,
-            messages_to_blocks_shift: messages_to_blocks_shift,
-            track_l1_tx_finalization: track_l1_finalization?
+            messages_to_blocks_shift: messages_to_blocks_shift
           },
           data: %{new_batches_start_block: start_block}
         } = _state
@@ -195,11 +208,11 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:ok, latest_block} =
       IndexerHelper.get_block_number_by_tag(
         "latest",
-        json_rpc_named_arguments,
+        l1_rpc_config.json_rpc_named_arguments,
         Rpc.get_resend_attempts()
       )
 
-    end_block = min(start_block + rpc_block_range - 1, latest_block)
+    end_block = min(start_block + l1_rpc_config.logs_block_range - 1, latest_block)
 
     if start_block <= end_block do
       Logger.info("Block range for new batches discovery: #{start_block}..#{end_block}")
@@ -209,9 +222,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         start_block,
         end_block,
         messages_to_blocks_shift,
-        json_rpc_named_arguments,
-        chunk_size,
-        track_l1_finalization?
+        l1_rpc_config,
+        rollup_rpc_config
       )
 
       {:ok, end_block}
@@ -221,7 +233,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   end
 
   defp monitor_lifecycle_txs_finalization(state) do
-    L1Finalization.monitor_lifecycle_txs(state.config.json_l1_rpc_named_arguments)
+    L1Finalization.monitor_lifecycle_txs(state.config.l1_rpc.json_rpc_named_arguments)
   end
 
   defp nothing_to_do(_) do

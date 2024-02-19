@@ -3,7 +3,14 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     Common functions to simplify DB routines for Indexer.Fetcher.Arbitrum fetchers
   """
 
+  import Ecto.Query,
+    only: [
+      from: 2
+    ]
+
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Arbitrum.Reader
+  alias Explorer.Chain.Block, as: RollupBlock
 
   require Logger
 
@@ -92,6 +99,27 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     end
   end
 
+  @doc """
+  TBD
+  """
+  #
+  def rollup_blocks(list_of_block_nums) do
+    query =
+      from(
+        block in RollupBlock,
+        where: block.number in ^list_of_block_nums
+      )
+
+    query
+    |> Chain.join_associations(%{
+      :transactions => :optional
+    })
+    |> Repo.all(timeout: :infinity)
+  end
+
+  @doc """
+  TBD
+  """
   def transform_lifecycle_transaction_to_map(tx) do
     %{
       id: tx.id,

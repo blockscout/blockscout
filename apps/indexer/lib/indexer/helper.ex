@@ -204,6 +204,46 @@ defmodule Indexer.Helper do
   end
 
   @doc """
+  TBD
+  """
+  def repeated_batch_call(func, args, error_message, retries_left) do
+    case apply(func, args) do
+      {:ok, responses_list} = batch_responses ->
+        standardized_error =
+          Enum.reduce_while(responses_list, %{}, fn one_response, acc ->
+            case one_response do
+              %{error: error_msg_with_code} -> {:halt, error_msg_with_code}
+              _ -> {:cont, acc}
+            end
+          end)
+
+        case standardized_error do
+          %{code: _, message: error_msg} -> {:error, error_msg, batch_responses}
+          _ -> {:ok, batch_responses, []}
+        end
+
+      {:error, message} = err ->
+        {:error, message, err}
+    end
+    |> case do
+      {:ok, responses, _} ->
+        responses
+
+      {:error, message, responses_or_error} ->
+        retries_left = retries_left - 1
+
+        if retries_left <= 0 do
+          Logger.error(error_message.(message))
+          responses_or_error
+        else
+          Logger.error("#{error_message.(message)} Retrying...")
+          :timer.sleep(3000)
+          repeated_batch_call(func, args, error_message, retries_left)
+        end
+    end
+  end
+
+  @doc """
   Calls the given function with the given arguments
   until it returns {:ok, any()} or the given attempts number is reached.
   Pauses execution between invokes for 3 seconds.

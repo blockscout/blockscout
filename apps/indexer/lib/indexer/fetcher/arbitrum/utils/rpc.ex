@@ -95,18 +95,31 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     end)
   end
 
+  def make_chunked_request([], _, _) do
+    []
+  end
+
   def make_chunked_request(requests_list, json_rpc_named_arguments, help_str) do
+    make_chunked_request_keep_id(requests_list, json_rpc_named_arguments, help_str)
+    |> Enum.map(fn %{result: resp_body} -> resp_body end)
+  end
+
+  def make_chunked_request_keep_id([], _, _) do
+    []
+  end
+
+  def make_chunked_request_keep_id(requests_list, json_rpc_named_arguments, help_str) do
     error_message = &"Cannot call #{help_str}. Error: #{inspect(&1)}"
 
     {:ok, responses} =
-      IndexerHelper.repeated_call(
+      IndexerHelper.repeated_batch_call(
         &json_rpc/2,
         [requests_list, json_rpc_named_arguments],
         error_message,
         @rpc_resend_attempts
       )
 
-    Enum.map(responses, fn %{result: resp_body} -> resp_body end)
+    responses
   end
 
   def execute_blocks_requests_and_get_ts(blocks_requests, json_rpc_named_arguments, chunk_size) do

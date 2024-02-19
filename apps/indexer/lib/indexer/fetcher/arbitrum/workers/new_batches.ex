@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
 
   alias Indexer.Helper, as: IndexerHelper
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Logging, Rpc}
 
   alias Explorer.Chain
 
@@ -116,73 +116,268 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     |> Map.get(:id)
   end
 
-  defp get_batches_from_logs(logs, msg_to_block_shift, track_finalization?, json_rpc_named_arguments, chunk_size) do
+  defp prepare_rollup_block_map_and_transactions_list(json_responses, rollup_blocks, rollup_txs) do
+    json_responses
+    |> Enum.reduce({rollup_blocks, rollup_txs}, fn resp, {blocks_map, txs_list} ->
+      batch_num = resp.id
+      blk_hash = resp.result["hash"]
+      blk_num = quantity_to_integer(resp.result["number"])
+
+      updated_blocks_map =
+        Map.put(
+          blocks_map,
+          blk_num,
+          %{hash: blk_hash, batch_number: batch_num, confirm_id: nil}
+        )
+
+      updated_txs_list =
+        case resp.result["transactions"] do
+          nil ->
+            txs_list
+
+          new_txs ->
+            Enum.reduce(new_txs, txs_list, fn l2_tx_hash, txs_list ->
+              [
+                %{hash: l2_tx_hash, batch_number: batch_num, block_hash: blk_hash}
+                | txs_list
+              ]
+            end)
+        end
+
+      {updated_blocks_map, updated_txs_list}
+    end)
+  end
+
+  defp unwrap_rollup_block_ranges(batches) do
+    Map.values(batches)
+    |> Enum.reduce(%{}, fn batch, b_2_b ->
+      batch.start_block..batch.end_block
+      |> Enum.reduce(b_2_b, fn block_num, b_2_b_inner ->
+        Map.put(b_2_b_inner, block_num, batch.number)
+      end)
+    end)
+  end
+
+  defp get_rollup_blocks_and_txs_from_db(rollup_blocks_numbers, blocks_to_batches) do
+    rollup_blocks_numbers
+    |> Db.rollup_blocks()
+    |> Enum.reduce({%{}, []}, fn block, {blocks_map, txs_list} ->
+      batch_num = blocks_to_batches[block.number]
+      blk_hash = block.hash.bytes
+
+      updated_txs_list =
+        block.transactions
+        |> Enum.reduce(txs_list, fn tx, acc ->
+          [
+            %{hash: tx.hash.bytes, batch_number: batch_num, block_hash: blk_hash}
+            | acc
+          ]
+        end)
+
+      updated_blocks_map =
+        blocks_map
+        |> Map.put(block.number, %{hash: blk_hash, batch_number: batch_num, confirm_id: nil})
+
+      {updated_blocks_map, updated_txs_list}
+    end)
+  end
+
+  defp recover_rollup_blocks_and_txs_from_rpc(required_blocks_numbers, found_blocks_numbers, blocks_to_batches, %{
+         json_rpc_named_arguments: rollup_json_rpc_named_arguments,
+         chunk_size: rollup_chunk_size
+       }) do
+    missed_blocks = required_blocks_numbers -- found_blocks_numbers
+    missed_blocks_length = length(missed_blocks)
+
+    missed_blocks
+    |> Enum.sort()
+    |> Enum.chunk_every(rollup_chunk_size)
+    |> Enum.reduce({%{}, [], 0}, fn chunk, {blks_map, txs_list, chunks_counter} ->
+      Logging.log_details_chunk_handling(
+        "Collecting rollup data",
+        {"block", "blocks"},
+        chunk,
+        chunks_counter,
+        missed_blocks_length
+      )
+
+      requests =
+        chunk
+        |> Enum.reduce([], fn block_num, requests_list ->
+          [
+            BlockByNumber.request(
+              %{
+                id: blocks_to_batches[block_num],
+                number: block_num
+              },
+              false
+            )
+            | requests_list
+          ]
+        end)
+
+      {blks_map_updated, txs_list_updated} =
+        requests
+        |> Rpc.make_chunked_request_keep_id(rollup_json_rpc_named_arguments, "eth_getBlockByNumber")
+        |> prepare_rollup_block_map_and_transactions_list(blks_map, txs_list)
+
+      {blks_map_updated, txs_list_updated, chunks_counter + length(chunk)}
+    end)
+  end
+
+  defp recover_data_if_necessary(
+         current_rollup_blocks,
+         current_rollup_txs,
+         required_blocks_numbers,
+         blocks_to_batches,
+         rollup_rpc_config
+       ) do
+    required_blocks_amount = length(required_blocks_numbers)
+
+    found_blocks_numbers = Map.keys(current_rollup_blocks)
+    found_blocks_numbers_length = length(found_blocks_numbers)
+
+    if found_blocks_numbers_length != required_blocks_amount do
+      Logger.info("Only #{found_blocks_numbers_length} of #{required_blocks_amount} rollup blocks found in DB")
+
+      {recovered_blks_map, recovered_txs_list, _} =
+        recover_rollup_blocks_and_txs_from_rpc(
+          required_blocks_numbers,
+          found_blocks_numbers,
+          blocks_to_batches,
+          rollup_rpc_config
+        )
+
+      {Map.merge(current_rollup_blocks, recovered_blks_map), current_rollup_txs ++ recovered_txs_list}
+    else
+      {current_rollup_blocks, current_rollup_txs}
+    end
+  end
+
+  defp get_rollup_blocks_and_transactions(
+         batches,
+         rollup_rpc_config
+       ) do
+    blocks_to_batches = unwrap_rollup_block_ranges(batches)
+
+    required_blocks_numbers = Map.keys(blocks_to_batches)
+    Logger.info("Identified #{length(required_blocks_numbers)} rollup blocks")
+
+    {blocks_to_import_map, txs_to_import_list} =
+      get_rollup_blocks_and_txs_from_db(required_blocks_numbers, blocks_to_batches)
+
+    {blocks_to_import, txs_to_import} =
+      recover_data_if_necessary(
+        blocks_to_import_map,
+        txs_to_import_list,
+        required_blocks_numbers,
+        blocks_to_batches,
+        rollup_rpc_config
+      )
+
+    Logger.info(
+      "Found #{length(Map.keys(blocks_to_import))} rollup blocks and #{length(txs_to_import)} rollup transactions in DB"
+    )
+
+    {blocks_to_import, txs_to_import}
+  end
+
+  defp execute_tx_requests_parse_txs_calldata(txs_requests, msg_to_block_shift, blocks_to_ts, batches, %{
+         json_rpc_named_arguments: json_rpc_named_arguments,
+         track_finalization: track_finalization?,
+         chunk_size: chunk_size
+       }) do
+    txs_requests
+    |> ArbitrumHelper.list_to_chunks(chunk_size)
+    |> Enum.reduce({%{}, batches}, fn chunk, {l1_txs, updated_batches} ->
+      chunk
+      # each eth_getTransactionByHash will take time since it returns entire batch
+      # in `input` which is heavy because contains dozens of rollup blocks
+      |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getTransactionByHash")
+      |> Enum.reduce({l1_txs, updated_batches}, fn resp, {txs_map, batches_map} ->
+        block_num = quantity_to_integer(resp["blockNumber"])
+        tx_hash = resp["hash"]
+
+        # Every message is an L2 block
+        {batch_num, prev_message_count, new_message_count} =
+          add_sequencer_l2_batch_from_origin_calldata_parse(resp["input"])
+
+        updated_batches_map =
+          Map.put(
+            batches_map,
+            batch_num,
+            Map.merge(batches_map[batch_num], %{
+              start_block: prev_message_count + msg_to_block_shift,
+              end_block: new_message_count + msg_to_block_shift - 1
+            })
+          )
+
+        updated_txs_map =
+          Map.put(txs_map, tx_hash, %{
+            hash: tx_hash,
+            block: block_num,
+            timestamp: blocks_to_ts[block_num],
+            status:
+              if track_finalization? do
+                :unfinalized
+              else
+                :finalized
+              end
+          })
+
+        {updated_txs_map, updated_batches_map}
+      end)
+    end)
+  end
+
+  defp batches_to_rollup_txs_amounts(rollup_txs) do
+    rollup_txs
+    |> Enum.reduce(%{}, fn tx, acc ->
+      Map.put(acc, tx.batch_number, Map.get(acc, tx.batch_number, 0) + 1)
+    end)
+  end
+
+  defp handle_batches_from_logs([], _, _, _) do
+    {[], [], [], []}
+  end
+
+  defp handle_batches_from_logs(
+         logs,
+         msg_to_block_shift,
+         %{
+           json_rpc_named_arguments: json_rpc_named_arguments,
+           chunk_size: chunk_size
+         } = l1_rpc_config,
+         rollup_rpc_config
+       ) do
     {batches, txs_requests, blocks_requests} = parse_logs_for_new_batches(logs)
 
     blocks_to_ts = Rpc.execute_blocks_requests_and_get_ts(blocks_requests, json_rpc_named_arguments, chunk_size)
 
     {lifecycle_txs_wo_indices, batches_to_import} =
-      txs_requests
-      |> ArbitrumHelper.list_to_chunks(chunk_size)
-      |> Enum.reduce({%{}, batches}, fn chunk, {l1_txs, updated_batches} ->
-        chunk
-        # each eth_getTransactionByHash will take time since it returns entire batch
-        # in `input` which is heavy because contains dozens of rollup blocks
-        |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getTransactionByHash")
-        |> Enum.reduce({l1_txs, updated_batches}, fn resp, {txs_map, batches_map} ->
-          block_num = quantity_to_integer(resp["blockNumber"])
-          tx_hash = resp["hash"]
+      execute_tx_requests_parse_txs_calldata(txs_requests, msg_to_block_shift, blocks_to_ts, batches, l1_rpc_config)
 
-          # Every message is an L2 block
-          {batch_num, prev_message_count, new_message_count} =
-            add_sequencer_l2_batch_from_origin_calldata_parse(resp["input"])
-
-          updated_batches_map =
-            Map.put(
-              batches_map,
-              batch_num,
-              Map.merge(batches_map[batch_num], %{
-                start_block: prev_message_count + msg_to_block_shift,
-                end_block: new_message_count + msg_to_block_shift - 1
-              })
-            )
-
-          updated_txs_map =
-            Map.put(txs_map, tx_hash, %{
-              hash: tx_hash,
-              block: block_num,
-              timestamp: blocks_to_ts[block_num],
-              status:
-                if track_finalization? do
-                  :unfinalized
-                else
-                  :finalized
-                end
-            })
-
-          {updated_txs_map, updated_batches_map}
-        end)
-      end)
+    {blocks_to_import, rollup_txs_to_import} = get_rollup_blocks_and_transactions(batches_to_import, rollup_rpc_config)
 
     lifecycle_txs =
       lifecycle_txs_wo_indices
       |> Db.get_indices_for_l1_transactions()
 
+    tx_counts_per_batch = batches_to_rollup_txs_amounts(rollup_txs_to_import)
+
     batches_list_to_import =
-      batches_to_import
-      |> Map.values()
+      Map.values(batches_to_import)
       |> Enum.reduce([], fn batch, updated_batches_list ->
         [
-          # TODO
           batch
           |> Map.put(:commit_id, get_l1_tx_id_by_hash(lifecycle_txs, batch.tx_hash))
-          |> Map.put(:tx_count, 0)
+          |> Map.put(:tx_count, tx_counts_per_batch[batch.number])
           |> Map.drop([:tx_hash])
           | updated_batches_list
         ]
       end)
 
-    {batches_list_to_import, Map.values(lifecycle_txs)}
+    {batches_list_to_import, Map.values(lifecycle_txs), Map.values(blocks_to_import), rollup_txs_to_import}
   end
 
   @doc """
@@ -193,31 +388,31 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         start_block,
         end_block,
         messages_to_blocks_shift,
-        json_rpc_named_arguments,
-        chunk_size,
-        track_l1_finalization?
+        l1_rpc_config,
+        rollup_rpc_config
       ) do
     logs =
       get_logs_new_batches(
         start_block,
         end_block,
         sequencer_inbox_address,
-        json_rpc_named_arguments
+        l1_rpc_config.json_rpc_named_arguments
       )
 
-    {batches, lifecycle_txs} =
-      get_batches_from_logs(
+    {batches, lifecycle_txs, rollup_blocks, rollup_txs} =
+      handle_batches_from_logs(
         logs,
         messages_to_blocks_shift,
-        track_l1_finalization?,
-        json_rpc_named_arguments,
-        chunk_size
+        l1_rpc_config,
+        rollup_rpc_config
       )
 
     {:ok, _} =
       Chain.import(%{
         arbitrum_lifecycle_transactions: %{params: lifecycle_txs},
         arbitrum_l1_batches: %{params: batches},
+        arbitrum_batch_blocks: %{params: rollup_blocks},
+        arbitrum_batch_transactions: %{params: rollup_txs},
         timeout: :infinity
       })
   end
