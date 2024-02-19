@@ -15,6 +15,7 @@ defmodule ConfigHelper do
         "rsk" -> base_repos ++ [Explorer.Repo.RSK]
         "shibarium" -> base_repos ++ [Explorer.Repo.Shibarium]
         "suave" -> base_repos ++ [Explorer.Repo.Suave]
+        "filecoin" -> base_repos ++ [Explorer.Repo.Filecoin]
         _ -> base_repos
       end
 
