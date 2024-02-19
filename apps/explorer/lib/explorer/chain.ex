@@ -1411,7 +1411,7 @@ defmodule Explorer.Chain do
   If there are no blocks, the percentage is 0.
 
       iex> Explorer.Chain.indexed_ratio_blocks()
-      Decimal.new(0)
+      Decimal.new(1)
 
   """
   @spec indexed_ratio_blocks() :: Decimal.t()
@@ -1423,7 +1423,7 @@ defmodule Explorer.Chain do
 
       case {min_saved_block_number, max_saved_block_number} do
         {0, 0} ->
-          Decimal.new(0)
+          Decimal.new(1)
 
         _ ->
           divisor = max_saved_block_number - min_blockchain_block_number + 1

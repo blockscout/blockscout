@@ -432,6 +432,51 @@ defmodule Explorer.Chain.Token.Instance do
   end
 
   @doc """
+    Finds token instances of a particular token (pairs of contract_address_hash and token_id) which was met in token_transfers table but has no corresponding entry in token_instances table.
+  """
+  @spec not_inserted_token_instances_query_by_token(integer(), Hash.Address.t()) :: Ecto.Query.t()
+  def not_inserted_token_instances_query_by_token(limit, token_contract_address_hash) do
+    token_transfers_query =
+      TokenTransfer
+      |> where([token_transfer], token_transfer.token_contract_address_hash == ^token_contract_address_hash)
+      |> select([token_transfer], %{
+        token_contract_address_hash: token_transfer.token_contract_address_hash,
+        token_id: fragment("unnest(?)", token_transfer.token_ids)
+      })
+
+    token_transfers_query
+    |> subquery()
+    |> join(:left, [token_transfer], token_instance in __MODULE__,
+      on:
+        token_instance.token_contract_address_hash == token_transfer.token_contract_address_hash and
+          token_instance.token_id == token_transfer.token_id
+    )
+    |> where([token_transfer, token_instance], is_nil(token_instance.token_id))
+    |> select([token_transfer, token_instance], %{
+      contract_address_hash: token_transfer.token_contract_address_hash,
+      token_id: token_transfer.token_id
+    })
+    |> limit(^limit)
+  end
+
+  @doc """
+    Finds ERC-1155 token instances (pairs of contract_address_hash and token_id) which was met in current_token_balances table but has no corresponding entry in token_instances table.
+  """
+  @spec not_inserted_erc_1155_token_instances(integer()) :: Ecto.Query.t()
+  def not_inserted_erc_1155_token_instances(limit) do
+    CurrentTokenBalance
+    |> join(:left, [actb], ti in __MODULE__,
+      on: actb.token_contract_address_hash == ti.token_contract_address_hash and actb.token_id == ti.token_id
+    )
+    |> where([actb, ti], not is_nil(actb.token_id) and is_nil(ti.token_id))
+    |> select([actb], %{
+      contract_address_hash: actb.token_contract_address_hash,
+      token_id: actb.token_id
+    })
+    |> limit(^limit)
+  end
+
+  @doc """
     Puts is_unique field in token instance. Returns updated token instance
     is_unique is true for ERC-721 always and for ERC-1155 only if token_id is unique
   """

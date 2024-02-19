@@ -16,6 +16,7 @@
 
 ### Fixes
 
+- [#9387](https://github.com/blockscout/blockscout/pull/9387) - Filter out Vyper contracts in Solidityscan API endpoint
 - [#9377](https://github.com/blockscout/blockscout/pull/9377) - Speed up account abstraction proxy
 - [#9371](https://github.com/blockscout/blockscout/pull/9371) - Filter empty values before token update
 - [#9356](https://github.com/blockscout/blockscout/pull/9356) - Remove ERC-1155 logs params from coin balances params
@@ -25,6 +26,7 @@
 - [#9306](https://github.com/blockscout/blockscout/pull/9306) - Improve marking of failed internal transactions
 - [#9305](https://github.com/blockscout/blockscout/pull/9305) - Add effective gas price calculation as fallback
 - [#9300](https://github.com/blockscout/blockscout/pull/9300) - Fix read contract bug
+- [#9226](https://github.com/blockscout/blockscout/pull/9226) - Split Indexer.Fetcher.TokenInstance.LegacySanitize
 
 ### Chore
 
@@ -32,6 +34,7 @@
 - [#9393](https://github.com/blockscout/blockscout/pull/9393) - Bump actions/cache to v4
 - [#9389](https://github.com/blockscout/blockscout/pull/9389) - Output user address as an object in API v2 for Shibarium
 - [#9361](https://github.com/blockscout/blockscout/pull/9361) - Define BRIDGED_TOKENS_ENABLED env in Dockerfile
+- [#9257](https://github.com/blockscout/blockscout/pull/9257) - Retry token instance metadata fetch from baseURI + tokenID
 - [#8851](https://github.com/blockscout/blockscout/pull/8851) - Fix dialyzer and add TypedEctoSchema
 
 <details>
