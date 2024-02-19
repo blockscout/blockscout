@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.CreateNullRoundHeights do
+defmodule Explorer.Repo.Filecoin.Migrations.CreateNullRoundHeights do
   use Ecto.Migration
 
   def change do

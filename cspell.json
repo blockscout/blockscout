@@ -574,7 +574,8 @@
         "NOTOK",
         "sushiswap",
         "zetachain",
-        "filecoin"
+        "filecoin",
+        "Filecoin"
     ],
     "enableFiletypes": [
         "dotenv",
