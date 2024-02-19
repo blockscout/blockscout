@@ -53,8 +53,7 @@ defmodule EthereumJSONRPC.Filecoin do
 
       debug_trace_transaction_responses_to_internal_transactions_params(
         transactions_responses,
-        transactions_id_to_params,
-        json_rpc_named_arguments
+        transactions_id_to_params
       )
     end
   end
@@ -67,10 +66,12 @@ defmodule EthereumJSONRPC.Filecoin do
 
   defp extract_transactions_params(block_number, tx_result) do
     tx_result
-    |> Enum.reduce({[], 0}, fn %{"transactionHash" => tx_hash} = calls_result, {tx_acc, counter} ->
+    |> Enum.reduce({[], 0}, fn %{"transactionHash" => tx_hash, "transactionPosition" => transaction_index} =
+                                 calls_result,
+                               {tx_acc, counter} ->
       {
         [
-          {%{block_number: block_number, hash_data: tx_hash, transaction_index: counter, id: counter},
+          {%{block_number: block_number, hash_data: tx_hash, transaction_index: transaction_index, id: counter},
            %{id: counter, result: calls_result}}
           | tx_acc
         ],
@@ -100,8 +101,7 @@ defmodule EthereumJSONRPC.Filecoin do
 
   defp debug_trace_transaction_responses_to_internal_transactions_params(
          responses,
-         id_to_params,
-         _json_rpc_named_arguments
+         id_to_params
        )
        when is_list(responses) and is_map(id_to_params) do
     responses
@@ -112,16 +112,17 @@ defmodule EthereumJSONRPC.Filecoin do
 
   defp debug_trace_transaction_response_to_internal_transactions_params(%{id: id, result: calls}, id_to_params)
        when is_map(id_to_params) do
-    %{block_number: block_number, hash_data: transaction_hash, transaction_index: transaction_index} =
+    %{block_number: block_number, hash_data: transaction_hash, transaction_index: transaction_index, id: id} =
       Map.fetch!(id_to_params, id)
 
     internal_transaction_params =
       calls
-      |> prepare_calls()
+      |> parse_trace_block_calls()
       |> (&if(is_list(&1), do: &1, else: [&1])).()
       |> Enum.map(fn trace ->
         Map.merge(trace, %{
           "blockNumber" => block_number,
+          "index" => id,
           "transactionIndex" => transaction_index,
           "transactionHash" => transaction_hash
         })
@@ -163,10 +164,6 @@ defmodule EthereumJSONRPC.Filecoin do
     {:error, annotated_error}
   end
 
-  def prepare_calls(calls) do
-    parse_trace_block_calls(calls)
-  end
-
   defp parse_trace_block_calls(calls)
   defp parse_trace_block_calls(%{"type" => 0} = res), do: res
 
@@ -200,7 +197,6 @@ defmodule EthereumJSONRPC.Filecoin do
       "init" => input,
       "createdContractCode" => Map.get(result, "output", "0x"),
       "traceAddress" => Map.get(call, "traceAddress", []),
-      "index" => Map.get(call, "transactionPosition", 0),
       # : check, that error is returned in the root of the call
       "error" => call["error"]
     }
