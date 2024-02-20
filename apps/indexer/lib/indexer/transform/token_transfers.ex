@@ -107,6 +107,7 @@ defmodule Indexer.Transform.TokenTransfers do
   defp sanitize_token_types(tokens, token_transfers) do
     existing_token_types_map =
       tokens
+      |> Enum.uniq()
       |> Enum.reduce([], fn %{contract_address_hash: address_hash}, acc ->
         case Repo.get_by(Token, contract_address_hash: address_hash) do
           %{type: type} -> [{address_hash, type} | acc]
