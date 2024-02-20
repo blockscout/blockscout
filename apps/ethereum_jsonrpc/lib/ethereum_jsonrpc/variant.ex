@@ -115,6 +115,7 @@ defmodule EthereumJSONRPC.Variant do
     end
   end
 
+  # credo:disable-for-next-line
   defp get_default_variant do
     case Application.get_env(:explorer, :chain_type) do
       "polygon_zkevm" -> "geth"
