@@ -11,6 +11,26 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.Hash
+  alias Indexer.BufferedTask
+
+  @doc false
+  # credo:disable-for-next-line Credo.Check.Design.DuplicatedCode
+  def child_spec([init_options, gen_server_options], defaults, module) do
+    {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
+
+    unless state do
+      raise ArgumentError,
+            ":json_rpc_named_arguments must be provided to `#{module}.child_spec " <>
+              "to allow for json_rpc calls when running."
+    end
+
+    merged_init_options =
+      defaults
+      |> Keyword.merge(mergeable_init_options)
+      |> Keyword.put(:state, state)
+
+    Supervisor.child_spec({BufferedTask, [{module, merged_init_options}, gen_server_options]}, id: module)
+  end
 
   def run(entries, json_rpc_named_arguments) do
     # the same address may be used more than once in the same block, but we only want one `Balance` for a given

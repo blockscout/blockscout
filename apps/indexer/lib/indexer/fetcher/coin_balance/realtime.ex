@@ -23,32 +23,13 @@ defmodule Indexer.Fetcher.CoinBalance.Realtime do
           %{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}
         ]) :: :ok
   def async_fetch_balances(balance_fields) when is_list(balance_fields) do
-    if CoinBalanceSupervisor.disabled?() do
-      :ok
-    else
-      entries = Enum.map(balance_fields, &Helper.entry/1)
+    entries = Enum.map(balance_fields, &Helper.entry/1)
 
-      BufferedTask.buffer(__MODULE__, entries)
-    end
+    BufferedTask.buffer(__MODULE__, entries)
   end
 
-  @doc false
-  # credo:disable-for-next-line Credo.Check.Design.DuplicatedCode
-  def child_spec([init_options, gen_server_options]) do
-    {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
-
-    unless state do
-      raise ArgumentError,
-            ":json_rpc_named_arguments must be provided to `#{__MODULE__}.child_spec " <>
-              "to allow for json_rpc calls when running."
-    end
-
-    merged_init_options =
-      defaults()
-      |> Keyword.merge(mergeable_init_options)
-      |> Keyword.put(:state, state)
-
-    Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_options}, gen_server_options]}, id: __MODULE__)
+  def child_spec(params) do
+    Helper.child_spec(params, defaults(), __MODULE__)
   end
 
   @impl BufferedTask
