@@ -13,7 +13,7 @@ defmodule Indexer.TokenBalances do
   alias Indexer.Fetcher.TokenBalance
   alias Indexer.Tracer
 
-  @erc1155_balance_function_abi [
+  @nft_balance_function_abi [
     %{
       "constant" => true,
       "inputs" => [%{"name" => "_owner", "type" => "address"}, %{"name" => "_id", "type" => "uint256"}],
@@ -47,41 +47,39 @@ defmodule Indexer.TokenBalances do
   def fetch_token_balances_from_blockchain(token_balances) do
     Logger.debug("fetching token balances", count: Enum.count(token_balances))
 
-    regular_token_balances =
+    ft_token_balances =
       token_balances
-      |> Enum.filter(fn request ->
-        if Map.has_key?(request, :token_type) do
-          request.token_type !== "ERC-1155"
+      |> Enum.filter(fn token_balance ->
+        if Map.has_key?(token_balance, :token_type) do
+          token_balance.token_type !== "ERC-1155" && !(token_balance.token_type == "ERC-404" && token_balance.token_id)
         else
           true
         end
       end)
 
-    # todo: ERC-404 can be nft and ft
-
-    erc1155_token_balances =
+    nft_token_balances =
       token_balances
-      |> Enum.filter(fn request ->
-        if Map.has_key?(request, :token_type) do
-          request.token_type == "ERC-1155"
+      |> Enum.filter(fn token_balance ->
+        if Map.has_key?(token_balance, :token_type) do
+          token_balance.token_type == "ERC-1155" || (token_balance.token_type == "ERC-404" && token_balance.token_id)
         else
           false
         end
       end)
 
-    requested_regular_token_balances =
-      regular_token_balances
+    requested_ft_token_balances =
+      ft_token_balances
       |> BalanceReader.get_balances_of()
-      |> Stream.zip(regular_token_balances)
+      |> Stream.zip(ft_token_balances)
       |> Enum.map(fn {result, token_balance} -> set_token_balance_value(result, token_balance) end)
 
-    requested_erc1155_token_balances =
-      erc1155_token_balances
-      |> BalanceReader.get_balances_of_with_abi(@erc1155_balance_function_abi)
-      |> Stream.zip(erc1155_token_balances)
+    requested_nft_token_balances =
+      nft_token_balances
+      |> BalanceReader.get_balances_of_with_abi(@nft_balance_function_abi)
+      |> Stream.zip(nft_token_balances)
       |> Enum.map(fn {result, token_balance} -> set_token_balance_value(result, token_balance) end)
 
-    requested_token_balances = requested_regular_token_balances ++ requested_erc1155_token_balances
+    requested_token_balances = requested_ft_token_balances ++ requested_nft_token_balances
     fetched_token_balances = Enum.filter(requested_token_balances, &ignore_request_with_errors/1)
 
     requested_token_balances
