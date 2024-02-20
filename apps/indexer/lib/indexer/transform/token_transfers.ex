@@ -411,11 +411,11 @@ defmodule Indexer.Transform.TokenTransfers do
            first_topic: unquote(TokenTransfer.erc404_erc721_transfer_event()),
            second_topic: second_topic,
            third_topic: third_topic,
-           fourth_topic: nil,
-           data: data
+           fourth_topic: fourth_topic,
+           data: _data
          } = log
        ) do
-    [token_id] = Helper.decode_data(data, [{:uint, 256}])
+    [token_id] = Helper.decode_data(fourth_topic, [{:uint, 256}])
 
     if is_nil(token_id) or token_id == [] do
       nil
