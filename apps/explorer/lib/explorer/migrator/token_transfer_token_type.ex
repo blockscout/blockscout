@@ -41,15 +41,19 @@ defmodule Explorer.Migrator.TokenTransferTokenType do
 
   @impl FillingMigration
   def update_cache do
-    BackgroundMigrations.set_tb_token_type_finished(true)
+    BackgroundMigrations.set_tt_denormalization_finished(true)
   end
 
   defp build_update_query(token_transfer_ids) do
     """
     UPDATE token_transfers tt
-    SET token_type = t.type
-    FROM tokens t
-    WHERE tt.token_contract_address_hash = t.contract_address_hash
+    SET token_type = CASE WHEN t.type = 'ERC-1155' AND token_ids IS NULL THEN 'ERC-20'
+                          ELSE t.type
+                     END,
+        block_consensus = b.consensus
+    FROM tokens t, blocks b
+    WHERE tt.block_hash = b.hash
+      AND tt.token_contract_address_hash = t.contract_address_hash
       AND (tt.transaction_hash, tt.block_hash, tt.log_index) IN #{encode_token_transfer_ids(token_transfer_ids)};
     """
   end

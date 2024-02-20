@@ -530,6 +530,7 @@ defmodule Explorer.Etherscan do
   @token_transfer_fields ~w(
     block_number
     block_hash
+    block_consensus
     token_contract_address_hash
     transaction_hash
     from_address_hash

@@ -409,6 +409,18 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       timeout: timeout
     )
 
+    repo.update_all(
+      from(
+        token_transfer in TokenTransfer,
+        join: s in subquery(acquire_query),
+        on: token_transfer.block_hash == s.hash,
+        # we don't want to remove consensus from blocks that will be upserted
+        where: token_transfer.block_hash not in ^hashes
+      ),
+      [set: [block_consensus: false, updated_at: updated_at]],
+      timeout: timeout
+    )
+
     removed_consensus_block_hashes
     |> Enum.map(fn {number, _hash} -> number end)
     |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))

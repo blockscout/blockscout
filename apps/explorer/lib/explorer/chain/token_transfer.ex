@@ -59,6 +59,7 @@ defmodule Explorer.Chain.TokenTransfer do
   * `:log_index` - Index of the corresponding `t:Explorer.Chain.Log.t/0` in the block.
   * `:amounts` - Tokens transferred amounts in case of batched transfer in ERC-1155
   * `:token_ids` - IDs of the tokens (applicable to ERC-1155 tokens)
+  * `:block_consensus` - Consensus of the block that the transfer took place
   """
   @primary_key false
   typed_schema "token_transfers" do
@@ -69,6 +70,7 @@ defmodule Explorer.Chain.TokenTransfer do
     field(:token_ids, {:array, :decimal})
     field(:index_in_batch, :integer, virtual: true)
     field(:token_type, :string)
+    field(:block_consensus, :boolean)
 
     belongs_to(:from_address, Address,
       foreign_key: :from_address_hash,
@@ -117,7 +119,7 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash block_hash token_type)a
-  @optional_attrs ~w(amount amounts token_ids)a
+  @optional_attrs ~w(amount amounts token_ids block_consensus)a
 
   @doc false
   def changeset(%TokenTransfer{} = struct, params \\ %{}) do
@@ -151,15 +153,10 @@ defmodule Explorer.Chain.TokenTransfer do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
 
-    query =
-      from(
-        tt in TokenTransfer,
-        where: tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number),
-        preload: ^preloads,
-        order_by: [desc: tt.block_number, desc: tt.log_index]
-      )
-
-    query
+    only_consensus_transfers_query()
+    |> where([tt], tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number))
+    |> preload(^preloads)
+    |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
     |> page_token_transfer(paging_options)
     |> limit(^paging_options.page_size)
     |> Chain.select_repo(options).all()
@@ -170,17 +167,12 @@ defmodule Explorer.Chain.TokenTransfer do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
 
-    query =
-      from(
-        tt in TokenTransfer,
-        where: tt.token_contract_address_hash == ^token_address_hash,
-        where: fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)),
-        where: not is_nil(tt.block_number),
-        preload: ^preloads,
-        order_by: [desc: tt.block_number, desc: tt.log_index]
-      )
-
-    query
+    only_consensus_transfers_query()
+    |> where([tt], tt.token_contract_address_hash == ^token_address_hash)
+    |> where([tt], fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)))
+    |> where([tt], not is_nil(tt.block_number))
+    |> preload(^preloads)
+    |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
     |> page_token_transfer(paging_options)
     |> limit(^paging_options.page_size)
     |> Chain.select_repo(options).all()
@@ -313,14 +305,14 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   def token_transfers_by_address_hash_and_token_address_hash(address_hash, token_address_hash) do
-    TokenTransfer
+    only_consensus_transfers_query()
     |> where([tt], tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
     |> where([tt], tt.token_contract_address_hash == ^token_address_hash)
     |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
   end
 
   def token_transfers_by_address_hash(direction, address_hash, token_types) do
-    TokenTransfer
+    only_consensus_transfers_query()
     |> filter_by_direction(direction, address_hash)
     |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
     |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
@@ -360,11 +352,15 @@ defmodule Explorer.Chain.TokenTransfer do
   """
   @spec only_consensus_transfers_query() :: Ecto.Query.t()
   def only_consensus_transfers_query do
-    from(token_transfer in __MODULE__,
-      inner_join: block in assoc(token_transfer, :block),
-      as: :block,
-      where: block.consensus == true
-    )
+    if DenormalizationHelper.tt_denormalization_finished?() do
+      from(token_transfer in __MODULE__, where: token_transfer.block_consensus == true)
+    else
+      from(token_transfer in __MODULE__,
+        inner_join: block in assoc(token_transfer, :block),
+        as: :block,
+        where: block.consensus == true
+      )
+    end
   end
 
   @doc """

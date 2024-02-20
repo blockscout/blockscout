@@ -386,6 +386,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       tt =
         insert(:token_transfer,
           token_ids: [id],
+          token_type: "ERC-721",
           transaction: transaction,
           token_contract_address: token_address,
           block_number: block_number,
@@ -404,6 +405,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       for _ <- 0..10 do
         insert(:token_transfer,
           token_ids: [id],
+          token_type: "ERC-721",
           transaction: transaction,
           token_contract_address: tt.token_contract_address,
           block_number: consensus_block_1.number,
@@ -414,6 +416,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       tt_1 =
         insert(:token_transfer,
           token_ids: [id],
+          token_type: "ERC-721",
           transaction: transaction,
           token_contract_address: tt.token_contract_address,
           block_number: consensus_block_1.number,
@@ -431,6 +434,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
         insert(:token_transfer,
           token_ids: [id],
+          token_type: "ERC-721",
           transaction: tx,
           token_contract_address: tt.token_contract_address,
           block_number: consensus_block_2.number,
@@ -490,6 +494,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       tt =
         insert(:token_transfer,
           token_ids: [id],
+          token_type: "ERC-721",
           transaction: transaction,
           token_contract_address: token_address,
           block_number: block_number,
