@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#9437](https://github.com/blockscout/blockscout/pull/9437) - Add Enum.uniq before sanitizing token transfers
 - [#9403](https://github.com/blockscout/blockscout/pull/9403) - Null round handling
 - [#9401](https://github.com/blockscout/blockscout/pull/9401) - Eliminate incorrect token transfers with empty token_ids
 - [#9396](https://github.com/blockscout/blockscout/pull/9396) - More-Minimal Proxy support
