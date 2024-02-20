@@ -78,9 +78,9 @@ defmodule Indexer.Transform.TokenTransfers do
       |> Map.new()
 
     invalid_weth_transfers =
-      Enum.reduce(weth_transfers, [], fn token_transfer, acc ->
+      Enum.reduce(weth_transfers, %{}, fn token_transfer, acc ->
         if existing_token_types_map[token_transfer.token_contract_address_hash] == "ERC-721" do
-          [token_transfer | acc]
+          Map.put(acc, token_transfer_to_key(token_transfer), true)
         else
           acc
         end
@@ -91,13 +91,13 @@ defmodule Indexer.Transform.TokenTransfers do
     |> Enum.reverse()
   end
 
+  defp token_transfer_to_key(token_transfer) do
+    {token_transfer.block_hash, token_transfer.transaction_hash, token_transfer.log_index}
+  end
+
   defp subtract_token_transfers(tt_from, tt_to_subtract) do
     Enum.reduce(tt_from, [], fn tt, acc ->
-      case Enum.find(
-             tt_to_subtract,
-             &(&1.block_hash == tt.block_hash and &1.transaction_hash == tt.transaction_hash and
-                 &1.log_index == tt.log_index)
-           ) do
+      case tt_to_subtract[token_transfer_to_key(tt)] do
         nil -> [tt | acc]
         _ -> acc
       end
