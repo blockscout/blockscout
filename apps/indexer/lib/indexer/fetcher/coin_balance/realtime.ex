@@ -45,7 +45,7 @@ defmodule Indexer.Fetcher.CoinBalance.Realtime do
               tracer: Tracer
             )
   def run(entries, json_rpc_named_arguments) do
-    Helper.run(entries, json_rpc_named_arguments)
+    Helper.run(entries, json_rpc_named_arguments, false)
   end
 
   defp defaults do
