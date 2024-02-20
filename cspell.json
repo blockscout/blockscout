@@ -397,6 +397,8 @@
         "retryable",
         "returnaddress",
         "reuseaddr",
+        "rollup",
+        "rollups",
         "RPC's",
         "RPCs",
         "safelow",
@@ -546,6 +548,7 @@
         "ziczr",
         "zindex",
         "zipcode",
+        "zkatana",
         "zkbob",
         "zkevm",
         "erts",
@@ -569,7 +572,10 @@
         "verifyproxycontract",
         "checkproxyverification",
         "NOTOK",
-        "sushiswap"
+        "sushiswap",
+        "zetachain",
+        "filecoin",
+        "Filecoin"
     ],
     "enableFiletypes": [
         "dotenv",

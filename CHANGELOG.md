@@ -4,9 +4,39 @@
 
 ### Features
 
+- [#9403](https://github.com/blockscout/blockscout/pull/9403) - Null round handling
+- [#9396](https://github.com/blockscout/blockscout/pull/9396) - More-Minimal Proxy support
+- [#9379](https://github.com/blockscout/blockscout/pull/9379) - Filter non-traceable transactions for zetachain
+- [#9364](https://github.com/blockscout/blockscout/pull/9364) - Fix using of startblock/endblock in API v1 list endpoints: txlist, txlistinternal, tokentx
+- [#9360](https://github.com/blockscout/blockscout/pull/9360) - Move missing ranges sanitize to a separate background migration
+- [#9351](https://github.com/blockscout/blockscout/pull/9351) - Noves.fi: add proxy endpoint for describeTxs endpoint
+- [#9282](https://github.com/blockscout/blockscout/pull/9282) - Add `license_type` to smart contracts
+- [#9202](https://github.com/blockscout/blockscout/pull/9202) - Add base and priority fee to gas oracle response
+- [#9168](https://github.com/blockscout/blockscout/pull/9168) - Support EIP4844 blobs indexing & API
+- [#9098](https://github.com/blockscout/blockscout/pull/9098) - Polygon zkEVM Bridge indexer and API v2 extension
+
 ### Fixes
 
+- [#9387](https://github.com/blockscout/blockscout/pull/9387) - Filter out Vyper contracts in Solidityscan API endpoint
+- [#9377](https://github.com/blockscout/blockscout/pull/9377) - Speed up account abstraction proxy
+- [#9371](https://github.com/blockscout/blockscout/pull/9371) - Filter empty values before token update
+- [#9356](https://github.com/blockscout/blockscout/pull/9356) - Remove ERC-1155 logs params from coin balances params
+- [#9346](https://github.com/blockscout/blockscout/pull/9346) - Process integer balance in genesis.json
+- [#9317](https://github.com/blockscout/blockscout/pull/9317) - Include null gas price txs in fee calculations
+- [#9315](https://github.com/blockscout/blockscout/pull/9315) - Fix manual uncle reward calculation
+- [#9306](https://github.com/blockscout/blockscout/pull/9306) - Improve marking of failed internal transactions
+- [#9305](https://github.com/blockscout/blockscout/pull/9305) - Add effective gas price calculation as fallback
+- [#9300](https://github.com/blockscout/blockscout/pull/9300) - Fix read contract bug
+- [#9226](https://github.com/blockscout/blockscout/pull/9226) - Split Indexer.Fetcher.TokenInstance.LegacySanitize
+
 ### Chore
+
+- [#9398](https://github.com/blockscout/blockscout/pull/9398) - Improve elixir dependencies caching in CI
+- [#9393](https://github.com/blockscout/blockscout/pull/9393) - Bump actions/cache to v4
+- [#9389](https://github.com/blockscout/blockscout/pull/9389) - Output user address as an object in API v2 for Shibarium
+- [#9361](https://github.com/blockscout/blockscout/pull/9361) - Define BRIDGED_TOKENS_ENABLED env in Dockerfile
+- [#9257](https://github.com/blockscout/blockscout/pull/9257) - Retry token instance metadata fetch from baseURI + tokenID
+- [#8851](https://github.com/blockscout/blockscout/pull/8851) - Fix dialyzer and add TypedEctoSchema
 
 <details>
   <summary>Dependencies version bumps</summary>
@@ -55,6 +85,8 @@
 
 ### Chore
 
+- [#9323](https://github.com/blockscout/blockscout/pull/9323) - Change index creation to concurrent
+- [#9322](https://github.com/blockscout/blockscout/pull/9322) - Create repo setup actions
 - [#9303](https://github.com/blockscout/blockscout/pull/9303) - Add workflow for Shibarium
 - [#9233](https://github.com/blockscout/blockscout/pull/9233) - "cataloged" index on tokens table
 - [#9198](https://github.com/blockscout/blockscout/pull/9198) - Make Postgres@15 default option

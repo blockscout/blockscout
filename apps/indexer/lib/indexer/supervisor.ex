@@ -22,6 +22,8 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Indexer.Fetcher.TokenInstance.Retry, as: TokenInstanceRetry
   alias Indexer.Fetcher.TokenInstance.Sanitize, as: TokenInstanceSanitize
+  alias Indexer.Fetcher.TokenInstance.SanitizeERC1155, as: TokenInstanceSanitizeERC1155
+  alias Indexer.Fetcher.TokenInstance.SanitizeERC721, as: TokenInstanceSanitizeERC721
 
   alias Indexer.Fetcher.{
     BlockReward,
@@ -32,7 +34,6 @@ defmodule Indexer.Supervisor do
     InternalTransaction,
     PendingBlockOperationsSanitizer,
     PendingTransaction,
-    PolygonEdge,
     ReplacedTransaction,
     RootstockData,
     Token,
@@ -43,8 +44,6 @@ defmodule Indexer.Supervisor do
     UncleBlock,
     Withdrawal
   }
-
-  alias Indexer.Fetcher.Zkevm.TransactionBatch
 
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,
@@ -125,7 +124,9 @@ defmodule Indexer.Supervisor do
         {TokenInstanceRealtime.Supervisor, [[memory_monitor: memory_monitor]]},
         {TokenInstanceRetry.Supervisor, [[memory_monitor: memory_monitor]]},
         {TokenInstanceSanitize.Supervisor, [[memory_monitor: memory_monitor]]},
-        {TokenInstanceLegacySanitize, [[memory_monitor: memory_monitor]]},
+        configure(TokenInstanceLegacySanitize, [[memory_monitor: memory_monitor]]),
+        configure(TokenInstanceSanitizeERC721, [[memory_monitor: memory_monitor]]),
+        configure(TokenInstanceSanitizeERC1155, [[memory_monitor: memory_monitor]]),
         configure(TransactionAction.Supervisor, [[memory_monitor: memory_monitor]]),
         {ContractCode.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
@@ -134,7 +135,7 @@ defmodule Indexer.Supervisor do
         {TokenUpdater.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
-        configure(PolygonEdge.Supervisor, [[memory_monitor: memory_monitor]]),
+        {Indexer.Fetcher.RollupL1ReorgMonitor.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor, [
           [memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]
@@ -147,9 +148,15 @@ defmodule Indexer.Supervisor do
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
         configure(Indexer.Fetcher.Shibarium.L1.Supervisor, [[memory_monitor: memory_monitor]]),
-        configure(TransactionBatch.Supervisor, [
+        configure(Indexer.Fetcher.PolygonZkevm.BridgeL1.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.PolygonZkevm.BridgeL2.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
+        configure(Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        {Indexer.Fetcher.Beacon.Blob.Supervisor, [[memory_monitor: memory_monitor]]},
 
         # Out-of-band fetchers
         {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},

@@ -20,7 +20,6 @@ defmodule Explorer.Chain.BridgedToken do
   alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
-    Address,
     BridgedToken,
     Hash,
     InternalTransaction,
@@ -32,28 +31,18 @@ defmodule Explorer.Chain.BridgedToken do
   require Logger
 
   @default_paging_options %PagingOptions{page_size: 50}
-
-  @typedoc """
-  * `foreign_chain_id` - chain ID of a foreign token
-  * `foreign_token_contract_address_hash` - Foreign token's contract hash
-  * `home_token_contract_address` - The `t:Address.t/0` of the home token's contract
-  * `home_token_contract_address_hash` - Home token's contract hash foreign key
-  * `custom_metadata` - Arbitrary string with custom metadata. For instance, tokens/weights for Balance tokens
-  * `custom_cap` - Custom capitalization for this token
-  * `lp_token` - Boolean flag: LP token or not
-  * `type` - omni/amb
-  """
-  @type t :: %BridgedToken{
-          foreign_chain_id: Decimal.t(),
-          foreign_token_contract_address_hash: Hash.Address.t(),
-          home_token_contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          home_token_contract_address_hash: Hash.Address.t(),
-          custom_metadata: String.t(),
-          custom_cap: Decimal.t(),
-          lp_token: boolean(),
-          type: String.t(),
-          exchange_rate: Decimal.t()
-        }
+  # keccak 256 from name()
+  @name_signature "0x06fdde03"
+  # 95d89b41 = keccak256(symbol())
+  @symbol_signature "0x95d89b41"
+  # keccak 256 from decimals()
+  @decimals_signature "0x313ce567"
+  # keccak 256 from totalSupply()
+  @total_supply_signature "0x18160ddd"
+  # keccak 256 from token0()
+  @token0_signature "0x0dfe1681"
+  # keccak 256 from token1()
+  @token1_signature "0xd21220a7"
 
   @derive {Poison.Encoder,
            except: [
@@ -71,8 +60,18 @@ defmodule Explorer.Chain.BridgedToken do
              :updated_at
            ]}
 
+  @typedoc """
+  * `foreign_chain_id` - chain ID of a foreign token
+  * `foreign_token_contract_address_hash` - Foreign token's contract hash
+  * `home_token_contract_address` - The `t:Address.t/0` of the home token's contract
+  * `home_token_contract_address_hash` - Home token's contract hash foreign key
+  * `custom_metadata` - Arbitrary string with custom metadata. For instance, tokens/weights for Balance tokens
+  * `custom_cap` - Custom capitalization for this token
+  * `lp_token` - Boolean flag: LP token or not
+  * `type` - omni/amb
+  """
   @primary_key false
-  schema "bridged_tokens" do
+  typed_schema "bridged_tokens" do
     field(:foreign_chain_id, :decimal)
     field(:foreign_token_contract_address_hash, Hash.Address)
     field(:custom_metadata, :string)
@@ -87,7 +86,8 @@ defmodule Explorer.Chain.BridgedToken do
       foreign_key: :home_token_contract_address_hash,
       primary_key: true,
       references: :contract_address_hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
     )
 
     timestamps()
@@ -569,24 +569,12 @@ defmodule Explorer.Chain.BridgedToken do
   end
 
   defp sushiswap_custom_metadata(foreign_token_address_hash, eth_call_foreign_json_rpc_named_arguments) do
-    # keccak 256 from token0()
-    token0_signature = "0x0dfe1681"
-
-    # keccak 256 from token1()
-    token1_signature = "0xd21220a7"
-
-    # keccak 256 from name()
-    name_signature = "0x06fdde03"
-
-    # keccak 256 from symbol()
-    symbol_signature = "0x95d89b41"
-
     with {:ok, "0x" <> token0_encoded} <-
-           token0_signature
+           @token0_signature
            |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
            |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
          {:ok, "0x" <> token1_encoded} <-
-           token1_signature
+           @token1_signature
            |> Contract.eth_call_request(foreign_token_address_hash, 2, nil, nil)
            |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
          token0_hash <- parse_contract_response(token0_encoded, :address),
@@ -596,19 +584,19 @@ defmodule Explorer.Chain.BridgedToken do
          token0_hash_str <- "0x" <> Base.encode16(token0_hash, case: :lower),
          token1_hash_str <- "0x" <> Base.encode16(token1_hash, case: :lower),
          {:ok, "0x" <> token0_name_encoded} <-
-           name_signature
+           @name_signature
            |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
            |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
          {:ok, "0x" <> token1_name_encoded} <-
-           name_signature
+           @name_signature
            |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
            |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
          {:ok, "0x" <> token0_symbol_encoded} <-
-           symbol_signature
+           @symbol_signature
            |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
            |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
          {:ok, "0x" <> token1_symbol_encoded} <-
-           symbol_signature
+           @symbol_signature
            |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
            |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
       token0_name = parse_contract_response(token0_name_encoded, :string, {:bytes, 32})
@@ -662,21 +650,12 @@ defmodule Explorer.Chain.BridgedToken do
     # keccak 256 from getReserves()
     get_reserves_signature = "0x0902f1ac"
 
-    # keccak 256 from token0()
-    token0_signature = "0x0dfe1681"
-
-    # keccak 256 from token1()
-    token1_signature = "0xd21220a7"
-
-    # keccak 256 from totalSupply()
-    total_supply_signature = "0x18160ddd"
-
     with {:ok, "0x" <> get_reserves_encoded} <-
            get_reserves_signature
            |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
            |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
          {:ok, "0x" <> home_token_total_supply_encoded} <-
-           total_supply_signature
+           @total_supply_signature
            |> Contract.eth_call_request(home_token_contract_address_hash, 1, nil, nil)
            |> json_rpc(json_rpc_named_arguments),
          [reserve0, reserve1, _] <-
@@ -684,7 +663,7 @@ defmodule Explorer.Chain.BridgedToken do
          {:ok, token0_cap_usd} <-
            get_lp_token_cap(
              home_token_total_supply_encoded,
-             token0_signature,
+             @token0_signature,
              reserve0,
              foreign_token_address_hash,
              eth_call_foreign_json_rpc_named_arguments
@@ -692,7 +671,7 @@ defmodule Explorer.Chain.BridgedToken do
          {:ok, token1_cap_usd} <-
            get_lp_token_cap(
              home_token_total_supply_encoded,
-             token1_signature,
+             @token1_signature,
              reserve1,
              foreign_token_address_hash,
              eth_call_foreign_json_rpc_named_arguments
@@ -712,12 +691,6 @@ defmodule Explorer.Chain.BridgedToken do
          foreign_token_address_hash,
          eth_call_foreign_json_rpc_named_arguments
        ) do
-    # keccak 256 from decimals()
-    decimals_signature = "0x313ce567"
-
-    # keccak 256 from totalSupply()
-    total_supply_signature = "0x18160ddd"
-
     home_token_total_supply =
       home_token_total_supply_encoded
       |> parse_contract_response({:uint, 256})
@@ -731,11 +704,11 @@ defmodule Explorer.Chain.BridgedToken do
              false <- is_nil(token_hash),
              token_hash_str <- "0x" <> Base.encode16(token_hash, case: :lower),
              {:ok, "0x" <> token_decimals_encoded} <-
-               decimals_signature
+               @decimals_signature
                |> Contract.eth_call_request(token_hash_str, 1, nil, nil)
                |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
              {:ok, "0x" <> foreign_token_total_supply_encoded} <-
-               total_supply_signature
+               @total_supply_signature
                |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
                |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
           token_decimals = parse_contract_response(token_decimals_encoded, {:uint, 256})
@@ -874,10 +847,7 @@ defmodule Explorer.Chain.BridgedToken do
 
       balancer_token_hash = "0x" <> balancer_token_hash_without_0x
 
-      # 95d89b41 = keccak256(symbol())
-      symbol_signature = "0x95d89b41"
-
-      case symbol_signature
+      case @symbol_signature
            |> Contract.eth_call_request(balancer_token_hash, 1, nil, nil)
            |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
         {:ok, "0x" <> symbol_encoded} ->

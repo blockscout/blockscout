@@ -310,7 +310,7 @@ defmodule BlockScoutWeb.TransactionView do
   def contract_creation?(_), do: false
 
   def fee(%Transaction{} = transaction) do
-    {_, value} = Chain.fee(transaction, :wei)
+    {_, value} = Transaction.fee(transaction, :wei)
     value
   end
 
@@ -320,7 +320,7 @@ defmodule BlockScoutWeb.TransactionView do
 
   def formatted_fee(%Transaction{} = transaction, opts) do
     transaction
-    |> Chain.fee(:wei)
+    |> Transaction.fee(:wei)
     |> fee_to_denomination(opts)
     |> case do
       {:actual, value} -> value

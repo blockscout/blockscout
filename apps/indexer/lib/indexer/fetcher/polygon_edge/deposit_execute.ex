@@ -3,6 +3,8 @@ defmodule Indexer.Fetcher.PolygonEdge.DepositExecute do
   Fills polygon_edge_deposit_executes DB table.
   """
 
+  # todo: this module is deprecated and should be removed
+
   use GenServer
   use Indexer.Fetcher
 

@@ -121,53 +121,66 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   end
 
   defp extended_info(response) do
-    case response do
-      %{"items" => items} ->
-        extended_items =
-          Enum.map(items, fn response_item ->
-            add_address_extended_info(response_item)
-          end)
+    address_hashes =
+      response
+      |> collect_address_hashes()
+      |> Chain.hashes_to_addresses(
+        necessity_by_association: %{
+          :names => :optional,
+          :smart_contract => :optional
+        },
+        api?: true
+      )
+      |> Enum.into(%{}, &{&1.hash, Helper.address_with_info(&1, nil)})
 
-        response
-        |> Map.put("items", extended_items)
-
-      _ ->
-        add_address_extended_info(response)
-    end
+    response |> replace_address_hashes(address_hashes)
   end
 
-  defp add_address_extended_info(response) do
-    @address_fields
-    |> Enum.reduce(response, fn address_output_field, output_response ->
-      if Map.has_key?(output_response, address_output_field) do
-        output_response
-        |> Map.replace(
-          address_output_field,
-          address_info_from_hash_string(Map.get(output_response, address_output_field))
-        )
-      else
-        output_response
+  defp collect_address_hashes(response) do
+    address_hash_strings =
+      case response do
+        %{"items" => items} ->
+          @address_fields |> Enum.flat_map(fn field -> Enum.map(items, & &1[field]) end)
+
+        item ->
+          @address_fields |> Enum.map(&item[&1])
+      end
+
+    address_hash_strings
+    |> Enum.filter(&(!is_nil(&1)))
+    |> Enum.uniq()
+    |> Enum.map(fn hash_string ->
+      case Chain.string_to_address_hash(hash_string) do
+        {:ok, hash} -> hash
+        _ -> nil
       end
     end)
+    |> Enum.filter(&(!is_nil(&1)))
   end
 
-  defp address_info_from_hash_string(address_hash_string) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <-
-           Chain.hash_to_address(
-             address_hash,
-             [
-               necessity_by_association: %{
-                 :names => :optional,
-                 :smart_contract => :optional
-               }
-             ],
-             false
-           ) do
-      Helper.address_with_info(address, address_hash_string)
-    else
-      _ -> address_hash_string
+  defp replace_address_hashes(response, addresses) do
+    case response do
+      %{"items" => items} ->
+        extended_items = items |> Enum.map(&add_address_extended_info(&1, addresses))
+
+        response |> Map.put("items", extended_items)
+
+      item ->
+        add_address_extended_info(item, addresses)
     end
+  end
+
+  defp add_address_extended_info(response, addresses) do
+    @address_fields
+    |> Enum.reduce(response, fn address_output_field, output_response ->
+      with true <- Map.has_key?(output_response, address_output_field),
+           {:ok, address_hash} <- output_response |> Map.get(address_output_field) |> Chain.string_to_address_hash(),
+           true <- Map.has_key?(addresses, address_hash) do
+        output_response |> Map.replace(address_output_field, Map.get(addresses, address_hash))
+      else
+        _ -> output_response
+      end
+    end)
   end
 
   defp process_response(response, conn) do

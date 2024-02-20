@@ -2886,7 +2886,7 @@ contract HomeWork is IHomeWork, ERC721Enumerable, IERC721Metadata, IERC1412 {
    *
    * data:application/json,{
    *   "name":"Home%20Address%20-%200x********************",
-   *   "description":"< ... HomeWork NFT desription ... >",
+   *   "description":"< ... HomeWork NFT description ... >",
    *   "image":"data:image/svg+xml;charset=utf-8;base64,< ... Image ... >"}
    *
    * where ******************** represents the checksummed home address that the
@@ -3063,7 +3063,7 @@ contract HomeWork is IHomeWork, ERC721Enumerable, IERC721Metadata, IERC1412 {
 
   /**
    * @notice Internal function for deploying arbitrary contract code to the home
-   * address corresponding to a suppied key via metamorphic initialization code.
+   * address corresponding to a supplied key via metamorphic initialization code.
    * @return The home address and the hash of the deployed runtime code.
    * @dev This deployment method uses the "metamorphic delegator" pattern, where
    * it will retrieve the address of the contract that contains the target
@@ -3793,7 +3793,7 @@ contract HomeWorkDeployer {
 
   /**
    * @notice Internal function for deploying arbitrary contract code to the home
-   * address corresponding to a suppied key via metamorphic initialization code.
+   * address corresponding to a supplied key via metamorphic initialization code.
    * @dev This deployment method uses the "metamorphic delegator" pattern, where
    * it will retrieve the address of the contract that contains the target
    * initialization code, then delegatecall into it, which executes the

@@ -13,6 +13,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   import Indexer.Block.Fetcher,
     only: [
+      async_import_blobs: 1,
       async_import_block_rewards: 1,
       async_import_created_contract_codes: 1,
       async_import_internal_transactions: 1,
@@ -21,6 +22,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       async_import_token_balances: 1,
       async_import_token_instances: 1,
       async_import_uncles: 1,
+      async_import_polygon_zkevm_bridge_l1_tokens: 1,
       fetch_and_import_range: 2
     ]
 
@@ -35,6 +37,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Indexer.Block.Realtime.TaskSupervisor
   alias Indexer.Fetcher.{CoinBalance, CoinBalanceDailyUpdater}
   alias Indexer.Fetcher.PolygonEdge.{DepositExecute, Withdrawal}
+  alias Indexer.Fetcher.PolygonZkevm.BridgeL2, as: PolygonZkevmBridgeL2
   alias Indexer.Fetcher.Shibarium.L2, as: ShibariumBridgeL2
   alias Indexer.Prometheus
   alias Indexer.Transform.Addresses
@@ -291,6 +294,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
           # we need to remove all rows from `shibarium_bridge` table previously written starting from reorg block number
           remove_shibarium_assets_by_number(block_number_to_fetch)
 
+          # we need to remove all rows from `polygon_zkevm_bridge` table previously written starting from reorg block number
+          remove_polygon_zkevm_assets_by_number(block_number_to_fetch)
+
           # give previous fetch attempt (for same block number) a chance to finish
           # before fetching again, to reduce block consensus mistakes
           :timer.sleep(@reorg_delay)
@@ -307,6 +313,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
     if Application.get_env(:explorer, :chain_type) == "polygon_edge" do
       Withdrawal.remove(block_number_to_fetch)
       DepositExecute.remove(block_number_to_fetch)
+    end
+  end
+
+  defp remove_polygon_zkevm_assets_by_number(block_number_to_fetch) do
+    if Application.get_env(:explorer, :chain_type) == "polygon_zkevm" do
+      PolygonZkevmBridgeL2.reorg_handle(block_number_to_fetch)
     end
   end
 
@@ -439,6 +451,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
     async_import_token_instances(imported)
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
+    async_import_blobs(imported)
+    async_import_polygon_zkevm_bridge_l1_tokens(imported)
   end
 
   defp balances(

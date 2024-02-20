@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.Notifier do
 
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.{Address, DenormalizationHelper, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, BlockNumberHelper, DenormalizationHelper, InternalTransaction, Transaction}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.{AverageBlockTime, Helper}
@@ -305,12 +305,13 @@ defmodule BlockScoutWeb.Notifier do
 
   defp broadcast_latest_block?(block, last_broadcasted_block_number) do
     cond do
-      last_broadcasted_block_number == 0 || last_broadcasted_block_number == block.number - 1 ||
+      last_broadcasted_block_number == 0 ||
+        last_broadcasted_block_number == BlockNumberHelper.previous_block_number(block.number) ||
           last_broadcasted_block_number < block.number - 4 ->
         broadcast_block(block)
         :ets.insert(:last_broadcasted_block, {:number, block.number})
 
-      last_broadcasted_block_number > block.number - 1 ->
+      last_broadcasted_block_number > BlockNumberHelper.previous_block_number(block.number) ->
         broadcast_block(block)
 
       true ->
@@ -324,7 +325,7 @@ defmodule BlockScoutWeb.Notifier do
     :timer.sleep(@check_broadcast_sequence_period)
     last_broadcasted_block_number = Helper.fetch_from_cache(:number, :last_broadcasted_block)
 
-    if last_broadcasted_block_number == block.number - 1 do
+    if last_broadcasted_block_number == BlockNumberHelper.previous_block_number(block.number) do
       broadcast_block(block)
       :ets.insert(:last_broadcasted_block, {:number, block.number})
     else
