@@ -130,7 +130,7 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.AddressCurrentTokenBalanceTokenType),
         configure(Explorer.Migrator.AddressTokenBalanceTokenType),
         configure(Explorer.Migrator.SanitizeMissingBlockRanges),
-        configure(Explorer.Migrator.TokenTransferTokenIds)
+        configure(Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers)
       ]
       |> List.flatten()
 

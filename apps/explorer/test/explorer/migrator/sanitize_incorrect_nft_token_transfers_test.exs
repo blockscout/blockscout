@@ -1,8 +1,8 @@
-defmodule Explorer.Migrator.TokenTransferTokenIdsTest do
+defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfersTest do
   use Explorer.DataCase, async: false
 
   alias Explorer.Chain.{Block, TokenTransfer}
-  alias Explorer.Migrator.{TokenTransferTokenIds, MigrationStatus}
+  alias Explorer.Migrator.{SanitizeIncorrectNFTTokenTransfers, MigrationStatus}
   alias Explorer.Repo
 
   describe "Migrate token transfers" do
@@ -48,12 +48,12 @@ defmodule Explorer.Migrator.TokenTransferTokenIdsTest do
         token_ids: nil
       )
 
-      assert MigrationStatus.get_status("token_transfers_token_ids") == nil
+      assert MigrationStatus.get_status("sanitize_incorrect_nft") == nil
 
-      TokenTransferTokenIds.start_link([])
+      SanitizeIncorrectNFTTokenTransfers.start_link([])
       Process.sleep(100)
 
-      assert MigrationStatus.get_status("token_transfers_token_ids") == "completed"
+      assert MigrationStatus.get_status("sanitize_incorrect_nft") == "completed"
 
       token_address_hash = token_address.hash
       assert %{token_contract_address_hash: ^token_address_hash, token_ids: nil} = Repo.one(TokenTransfer)

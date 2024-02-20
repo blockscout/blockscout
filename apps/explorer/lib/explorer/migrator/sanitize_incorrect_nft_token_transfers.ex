@@ -1,4 +1,4 @@
-defmodule Explorer.Migrator.TokenTransferTokenIds do
+defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
   @moduledoc """
   Delete all token transfers of ERC-721 tokens with deposit/withdrawal signatures
   Delete all token transfers of ERC-1155 tokens with empty amount, amounts and token_ids
@@ -16,7 +16,7 @@ defmodule Explorer.Migrator.TokenTransferTokenIds do
   alias Explorer.Migrator.MigrationStatus
   alias Explorer.Repo
 
-  @migration_name "token_transfers_token_ids"
+  @migration_name "sanitize_incorrect_nft"
   @default_batch_size 500
 
   def start_link(_) do
@@ -42,12 +42,12 @@ defmodule Explorer.Migrator.TokenTransferTokenIds do
       [] ->
         case step do
           :delete ->
-            Logger.info("TokenTransferTokenIds deletion finished, continuing with blocks re-fetch")
+            Logger.info("SanitizeIncorrectNFTTokenTransfers deletion finished, continuing with blocks re-fetch")
             schedule_batch_migration()
             {:noreply, %{step: :refetch}}
 
           :refetch ->
-            Logger.info("TokenTransferTokenIds migration finished")
+            Logger.info("SanitizeIncorrectNFTTokenTransfers migration finished")
             MigrationStatus.set_status(@migration_name, "completed")
             {:stop, :normal, state}
         end

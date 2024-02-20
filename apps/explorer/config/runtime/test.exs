@@ -39,7 +39,7 @@ config :explorer, Explorer.Migrator.TransactionsDenormalization, enabled: false
 config :explorer, Explorer.Migrator.AddressCurrentTokenBalanceTokenType, enabled: false
 config :explorer, Explorer.Migrator.AddressTokenBalanceTokenType, enabled: false
 config :explorer, Explorer.Migrator.SanitizeMissingBlockRanges, enabled: false
-config :explorer, Explorer.Migrator.TokenTransferTokenIds, enabled: false
+config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers, enabled: false
 
 config :explorer,
   realtime_events_sender: Explorer.Chain.Events.SimpleSender
