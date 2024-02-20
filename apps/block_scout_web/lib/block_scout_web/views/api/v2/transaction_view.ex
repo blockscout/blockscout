@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.TransactionStateView
   alias Ecto.Association.NotLoaded
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Log, Token, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.PolygonEdge.Reader
   alias Explorer.Chain.Transaction.StateChange
@@ -17,10 +17,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import Explorer.Chain.Transaction, only: [maybe_prepare_stability_fees: 1, bytes_to_address_hash: 1]
-  import Explorer.Helper, only: [decode_data: 2]
 
   @api_true [api?: true]
-  @suave_bid_event "0x83481d5b04dea534715acad673a8177a46fc93882760f36bdc16ccac439d504e"
 
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
@@ -369,7 +367,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
 
-    priority_fee_per_gas = priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas)
+    priority_fee_per_gas = Transaction.priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas)
 
     burnt_fees = burnt_fees(transaction, max_fee_per_gas, base_fee_per_gas)
 
@@ -412,8 +410,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "confirmations" => transaction.block |> Chain.confirmations(block_height: block_height) |> format_confirmations(),
       "confirmation_duration" => processing_time_duration(transaction),
       "value" => transaction.value,
-      "fee" => transaction |> Chain.fee(:wei) |> format_fee(),
-      "gas_price" => transaction.gas_price,
+      "fee" => transaction |> Transaction.fee(:wei) |> format_fee(),
+      "gas_price" => transaction.gas_price || Transaction.effective_gas_price(transaction),
       "type" => transaction.type,
       "gas_used" => transaction.gas_used,
       "gas_limit" => transaction.gas,
@@ -443,13 +441,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   defp chain_type_fields(result, transaction, single_tx?, conn, watchlist_names) do
-    case single_tx? && Application.get_env(:explorer, :chain_type) do
-      "polygon_edge" ->
+    case {single_tx?, Application.get_env(:explorer, :chain_type)} do
+      {true, "polygon_edge"} ->
         result
         |> Map.put("polygon_edge_deposit", polygon_edge_deposit(transaction.hash, conn))
         |> Map.put("polygon_edge_withdrawal", polygon_edge_withdrawal(transaction.hash, conn))
 
-      "polygon_zkevm" ->
+      {true, "polygon_zkevm"} ->
         extended_result =
           result
           |> add_optional_transaction_field(transaction, "zkevm_batch_number", :zkevm_batch, :number)
@@ -458,8 +456,25 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
         Map.put(extended_result, "zkevm_status", zkevm_status(extended_result))
 
-      "suave" ->
+      {true, "suave"} ->
         suave_fields(transaction, result, single_tx?, conn, watchlist_names)
+
+      {_, "ethereum"} ->
+        case Map.get(transaction, :beacon_blob_transaction) do
+          nil ->
+            result
+
+          %Ecto.Association.NotLoaded{} ->
+            result
+
+          item ->
+            result
+            |> Map.put("max_fee_per_blob_gas", item.max_fee_per_blob_gas)
+            |> Map.put("blob_versioned_hashes", item.blob_versioned_hashes)
+            |> Map.put("blob_gas_used", item.blob_gas_used)
+            |> Map.put("blob_gas_price", item.blob_gas_price)
+            |> Map.put("burnt_blob_fee", Decimal.mult(item.blob_gas_used, item.blob_gas_price))
+        end
 
       _ ->
         result
@@ -482,105 +497,70 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  defp suave_fields(transaction, result, single_tx?, conn, watchlist_names) do
-    if is_nil(transaction.execution_node_hash) do
-      result
-    else
-      {[wrapped_decoded_input], _, _} =
-        decode_transactions(
-          [
-            %Transaction{
-              to_address: transaction.wrapped_to_address,
-              input: transaction.wrapped_input,
-              hash: transaction.wrapped_hash
-            }
-          ],
-          false
-        )
+  if Application.compile_env(:explorer, :chain_type) != "suave" do
+    defp suave_fields(_transaction, result, _single_tx?, _conn, _watchlist_names), do: result
+  else
+    defp suave_fields(transaction, result, single_tx?, conn, watchlist_names) do
+      if is_nil(transaction.execution_node_hash) do
+        result
+      else
+        {[wrapped_decoded_input], _, _} =
+          decode_transactions(
+            [
+              %Transaction{
+                to_address: transaction.wrapped_to_address,
+                input: transaction.wrapped_input,
+                hash: transaction.wrapped_hash
+              }
+            ],
+            false
+          )
 
-      result
-      |> Map.put("allowed_peekers", suave_parse_allowed_peekers(transaction.logs))
-      |> Map.put(
-        "execution_node",
-        Helper.address_with_info(
-          single_tx? && conn,
-          transaction.execution_node,
-          transaction.execution_node_hash,
-          single_tx?,
-          watchlist_names
-        )
-      )
-      |> Map.put("wrapped", %{
-        "type" => transaction.wrapped_type,
-        "nonce" => transaction.wrapped_nonce,
-        "to" =>
+        result
+        |> Map.put("allowed_peekers", Transaction.suave_parse_allowed_peekers(transaction.logs))
+        |> Map.put(
+          "execution_node",
           Helper.address_with_info(
-            single_tx? && conn,
-            transaction.wrapped_to_address,
-            transaction.wrapped_to_address_hash,
+            conn,
+            transaction.execution_node,
+            transaction.execution_node_hash,
             single_tx?,
             watchlist_names
-          ),
-        "gas_limit" => transaction.wrapped_gas,
-        "gas_price" => transaction.wrapped_gas_price,
-        "fee" =>
-          format_fee(
-            Chain.fee(
-              %Transaction{gas: transaction.wrapped_gas, gas_price: transaction.wrapped_gas_price, gas_used: nil},
-              :wei
-            )
-          ),
-        "max_priority_fee_per_gas" => transaction.wrapped_max_priority_fee_per_gas,
-        "max_fee_per_gas" => transaction.wrapped_max_fee_per_gas,
-        "value" => transaction.wrapped_value,
-        "hash" => transaction.wrapped_hash,
-        "method" =>
-          method_name(
-            %Transaction{to_address: transaction.wrapped_to_address, input: transaction.wrapped_input},
-            wrapped_decoded_input
-          ),
-        "decoded_input" => decoded_input(wrapped_decoded_input),
-        "raw_input" => transaction.wrapped_input
-      })
-    end
-  end
-
-  defp suave_parse_allowed_peekers(logs) do
-    suave_bid_contracts =
-      Application.get_all_env(:explorer)[Transaction][:suave_bid_contracts]
-      |> String.split(",")
-      |> Enum.map(fn sbc -> String.downcase(String.trim(sbc)) end)
-
-    bid_event =
-      Enum.find(logs, fn log ->
-        sanitize_log_first_topic(log.first_topic) == @suave_bid_event &&
-          Enum.member?(suave_bid_contracts, String.downcase(Hash.to_string(log.address_hash)))
-      end)
-
-    if is_nil(bid_event) do
-      []
-    else
-      [_bid_id, _decryption_condition, allowed_peekers] =
-        decode_data(bid_event.data, [{:bytes, 16}, {:uint, 64}, {:array, :address}])
-
-      Enum.map(allowed_peekers, fn peeker ->
-        "0x" <> Base.encode16(peeker, case: :lower)
-      end)
-    end
-  end
-
-  defp sanitize_log_first_topic(first_topic) do
-    if is_nil(first_topic) do
-      ""
-    else
-      sanitized =
-        if is_binary(first_topic) do
-          first_topic
-        else
-          Hash.to_string(first_topic)
-        end
-
-      String.downcase(sanitized)
+          )
+        )
+        |> Map.put("wrapped", %{
+          "type" => transaction.wrapped_type,
+          "nonce" => transaction.wrapped_nonce,
+          "to" =>
+            Helper.address_with_info(
+              conn,
+              transaction.wrapped_to_address,
+              transaction.wrapped_to_address_hash,
+              single_tx?,
+              watchlist_names
+            ),
+          "gas_limit" => transaction.wrapped_gas,
+          "gas_price" => transaction.wrapped_gas_price,
+          "fee" =>
+            format_fee(
+              Transaction.fee(
+                %Transaction{gas: transaction.wrapped_gas, gas_price: transaction.wrapped_gas_price, gas_used: nil},
+                :wei
+              )
+            ),
+          "max_priority_fee_per_gas" => transaction.wrapped_max_priority_fee_per_gas,
+          "max_fee_per_gas" => transaction.wrapped_max_fee_per_gas,
+          "value" => transaction.wrapped_value,
+          "hash" => transaction.wrapped_hash,
+          "method" =>
+            method_name(
+              %Transaction{to_address: transaction.wrapped_to_address, input: transaction.wrapped_input},
+              wrapped_decoded_input
+            ),
+          "decoded_input" => decoded_input(wrapped_decoded_input),
+          "raw_input" => transaction.wrapped_input
+        })
+      end
     end
   end
 
@@ -607,15 +587,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   """
   def transaction_actions(actions) do
     render("transaction_actions.json", %{actions: actions})
-  end
-
-  defp priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas) do
-    if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas),
-      do: nil,
-      else:
-        Enum.min_by([max_priority_fee_per_gas, Wei.sub(max_fee_per_gas, base_fee_per_gas)], fn x ->
-          Wei.to(x, :wei)
-        end)
   end
 
   defp burnt_fees(transaction, max_fee_per_gas, base_fee_per_gas) do
@@ -772,7 +743,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
                | :rootstock_remasc
                | :token_creation
                | :token_transfer
-  def tx_types(tx, types \\ [], stage \\ :token_transfer)
+               | :blob_transaction
+  def tx_types(tx, types \\ [], stage \\ :blob_transaction)
+
+  def tx_types(%Transaction{type: type} = tx, types, :blob_transaction) do
+    # EIP-2718 blob transaction type
+    types =
+      if type == 3 do
+        [:blob_transaction | types]
+      else
+        types
+      end
+
+    tx_types(tx, types, :token_transfer)
+  end
 
   def tx_types(%Transaction{token_transfers: token_transfers} = tx, types, :token_transfer) do
     types =

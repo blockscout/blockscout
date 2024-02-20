@@ -195,17 +195,28 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
           | {:is_empty_response, true}
           | {:is_smart_contract, false | nil}
           | {:restricted_access, true}
+          | {:is_vyper_contract, true}
           | Plug.Conn.t()
   def solidityscan_report(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format_address, {:ok, address_hash}} <- {:format_address, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:address, {:ok, address}} <- {:address, Chain.hash_to_address(address_hash)},
-         {:is_smart_contract, true} <- {:is_smart_contract, Address.smart_contract?(address)},
-         response = SolidityScan.solidityscan_request(address_hash_string),
-         {:is_empty_response, false} <- {:is_empty_response, is_nil(response)} do
-      conn
-      |> put_status(200)
-      |> json(response)
+         {:is_smart_contract, true} <- {:is_smart_contract, Address.smart_contract?(address)} do
+      smart_contract = SmartContract.address_hash_to_smart_contract_without_twin(address_hash, @api_true)
+
+      if smart_contract && smart_contract.is_vyper_contract do
+        {:is_vyper_contract, true}
+      else
+        response = SolidityScan.solidityscan_request(address_hash_string)
+
+        if is_nil(response) do
+          {:is_empty_response, true}
+        else
+          conn
+          |> put_status(200)
+          |> json(response)
+        end
+      end
     end
   end
 

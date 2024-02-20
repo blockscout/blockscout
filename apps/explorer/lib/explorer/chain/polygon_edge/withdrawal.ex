@@ -23,26 +23,21 @@ defmodule Explorer.Chain.PolygonEdge.Withdrawal do
   * `l2_transaction_hash` - hash of the L2 transaction containing the corresponding L2StateSynced event
   * `l2_block_number` - block number of the L2 transaction
   """
-  @type t :: %__MODULE__{
-          msg_id: non_neg_integer(),
-          from: Hash.Address.t() | nil,
-          from_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-          to: Hash.Address.t() | nil,
-          to_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-          l2_transaction_hash: Hash.t(),
-          l2_transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
-          l2_block_number: Block.block_number(),
-          l2_block: %Ecto.Association.NotLoaded{} | Block.t()
-        }
-
   @primary_key false
-  schema "polygon_edge_withdrawals" do
-    field(:msg_id, :integer, primary_key: true)
+  typed_schema "polygon_edge_withdrawals" do
+    field(:msg_id, :integer, primary_key: true, null: false)
 
     belongs_to(:from_address, Address, foreign_key: :from, references: :hash, type: Hash.Address)
     belongs_to(:to_address, Address, foreign_key: :to, references: :hash, type: Hash.Address)
-    belongs_to(:l2_transaction, Transaction, foreign_key: :l2_transaction_hash, references: :hash, type: Hash.Full)
-    belongs_to(:l2_block, Block, foreign_key: :l2_block_number, references: :number, type: :integer)
+
+    belongs_to(:l2_transaction, Transaction,
+      foreign_key: :l2_transaction_hash,
+      references: :hash,
+      type: Hash.Full,
+      null: false
+    )
+
+    belongs_to(:l2_block, Block, foreign_key: :l2_block_number, references: :number, type: :integer, null: false)
 
     timestamps()
   end

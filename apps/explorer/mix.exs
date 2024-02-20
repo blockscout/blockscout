@@ -25,7 +25,7 @@ defmodule Explorer.Mixfile do
       ],
       start_permanent: Mix.env() == :prod,
       version: "6.1.0",
-      xref: [exclude: [BlockScoutWeb.WebRouter.Helpers]]
+      xref: [exclude: [BlockScoutWeb.WebRouter.Helpers, Indexer.Helper]]
     ]
   end
 
@@ -118,7 +118,8 @@ defmodule Explorer.Mixfile do
       {:cloak_ecto, "~> 1.2.0"},
       {:redix, "~> 1.1"},
       {:hammer_backend_redis, "~> 6.1"},
-      {:logger_json, "~> 5.1"}
+      {:logger_json, "~> 5.1"},
+      {:typed_ecto_schema, "~> 0.4.1", runtime: false}
     ]
   end
 

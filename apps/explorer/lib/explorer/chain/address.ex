@@ -36,38 +36,6 @@ defmodule Explorer.Chain.Address do
   """
   @type hash :: Hash.t()
 
-  @typedoc """
-   * `fetched_coin_balance` - The last fetched balance from Nethermind
-   * `fetched_coin_balance_block_number` - the `t:Explorer.Chain.Block.t/0` `t:Explorer.Chain.Block.block_number/0` for
-     which `fetched_coin_balance` was fetched
-   * `hash` - the hash of the address's public key
-   * `contract_code` - the binary code of the contract when an Address is a contract.  The human-readable
-     Solidity source code is in `smart_contract` `t:Explorer.Chain.SmartContract.t/0` `contract_source_code` *if* the
-    contract has been verified
-   * `names` - names known for the address
-   * `inserted_at` - when this address was inserted
-   * `updated_at` - when this address was last updated
-   * `ens_domain_name` - virtual field for ENS domain name passing
-
-   `fetched_coin_balance` and `fetched_coin_balance_block_number` may be updated when a new coin_balance row is fetched.
-    They may also be updated when the balance is fetched via the on demand fetcher.
-  """
-  @type t :: %__MODULE__{
-          fetched_coin_balance: Wei.t(),
-          fetched_coin_balance_block_number: Block.block_number(),
-          hash: Hash.Address.t(),
-          contract_code: Data.t() | nil,
-          names: %Ecto.Association.NotLoaded{} | [Address.Name.t()],
-          contracts_creation_transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
-          inserted_at: DateTime.t(),
-          updated_at: DateTime.t(),
-          nonce: non_neg_integer() | nil,
-          transactions_count: non_neg_integer() | nil,
-          token_transfers_count: non_neg_integer() | nil,
-          gas_used: non_neg_integer() | nil,
-          ens_domain_name: String.t() | nil
-        }
-
   @derive {Poison.Encoder,
            except: [
              :__meta__,
@@ -90,10 +58,27 @@ defmodule Explorer.Chain.Address do
              :names
            ]}
 
-  @primary_key {:hash, Hash.Address, autogenerate: false}
-  schema "addresses" do
+  @typedoc """
+   * `fetched_coin_balance` - The last fetched balance from Nethermind
+   * `fetched_coin_balance_block_number` - the `t:Explorer.Chain.Block.t/0` `t:Explorer.Chain.Block.block_number/0` for
+     which `fetched_coin_balance` was fetched
+   * `hash` - the hash of the address's public key
+   * `contract_code` - the binary code of the contract when an Address is a contract.  The human-readable
+     Solidity source code is in `smart_contract` `t:Explorer.Chain.SmartContract.t/0` `contract_source_code` *if* the
+    contract has been verified
+   * `names` - names known for the address
+   * `inserted_at` - when this address was inserted
+   * `updated_at` - when this address was last updated
+   * `ens_domain_name` - virtual field for ENS domain name passing
+
+   `fetched_coin_balance` and `fetched_coin_balance_block_number` may be updated when a new coin_balance row is fetched.
+    They may also be updated when the balance is fetched via the on demand fetcher.
+  """
+  @primary_key false
+  typed_schema "addresses" do
+    field(:hash, Hash.Address, primary_key: true)
     field(:fetched_coin_balance, Wei)
-    field(:fetched_coin_balance_block_number, :integer)
+    field(:fetched_coin_balance_block_number, :integer) :: Block.block_number() | nil
     field(:contract_code, Data)
     field(:nonce, :integer)
     field(:decompiled, :boolean, default: false)
@@ -105,24 +90,26 @@ defmodule Explorer.Chain.Address do
     field(:gas_used, :integer)
     field(:ens_domain_name, :string, virtual: true)
 
-    has_one(:smart_contract, SmartContract)
-    has_one(:token, Token, foreign_key: :contract_address_hash)
+    has_one(:smart_contract, SmartContract, references: :hash)
+    has_one(:token, Token, foreign_key: :contract_address_hash, references: :hash)
 
     has_one(
       :contracts_creation_internal_transaction,
       InternalTransaction,
-      foreign_key: :created_contract_address_hash
+      foreign_key: :created_contract_address_hash,
+      references: :hash
     )
 
     has_one(
       :contracts_creation_transaction,
       Transaction,
-      foreign_key: :created_contract_address_hash
+      foreign_key: :created_contract_address_hash,
+      references: :hash
     )
 
-    has_many(:names, Address.Name, foreign_key: :address_hash)
-    has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash)
-    has_many(:withdrawals, Withdrawal, foreign_key: :address_hash)
+    has_many(:names, Address.Name, foreign_key: :address_hash, references: :hash)
+    has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
+    has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
 
     timestamps()
   end

@@ -15,22 +15,22 @@ defmodule Explorer.Account.WatchlistAddress do
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
-  schema "account_watchlist_addresses" do
-    field(:address_hash_hash, Cloak.Ecto.SHA256)
-    field(:name, Explorer.Encrypted.Binary)
-    field(:address_hash, Explorer.Encrypted.AddressHash)
+  typed_schema "account_watchlist_addresses" do
+    field(:address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
+    field(:name, Explorer.Encrypted.Binary, null: false)
+    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
 
-    belongs_to(:watchlist, Watchlist)
+    belongs_to(:watchlist, Watchlist, null: false)
 
-    field(:watch_coin_input, :boolean, default: true)
-    field(:watch_coin_output, :boolean, default: true)
-    field(:watch_erc_20_input, :boolean, default: true)
-    field(:watch_erc_20_output, :boolean, default: true)
-    field(:watch_erc_721_input, :boolean, default: true)
-    field(:watch_erc_721_output, :boolean, default: true)
-    field(:watch_erc_1155_input, :boolean, default: true)
-    field(:watch_erc_1155_output, :boolean, default: true)
-    field(:notify_email, :boolean, default: true)
+    field(:watch_coin_input, :boolean, default: true, null: false)
+    field(:watch_coin_output, :boolean, default: true, null: false)
+    field(:watch_erc_20_input, :boolean, default: true, null: false)
+    field(:watch_erc_20_output, :boolean, default: true, null: false)
+    field(:watch_erc_721_input, :boolean, default: true, null: false)
+    field(:watch_erc_721_output, :boolean, default: true, null: false)
+    field(:watch_erc_1155_input, :boolean, default: true, null: false)
+    field(:watch_erc_1155_output, :boolean, default: true, null: false)
+    field(:notify_email, :boolean, default: true, null: false)
     field(:notify_epns, :boolean)
     field(:notify_feed, :boolean)
     field(:notify_inapp, :boolean)

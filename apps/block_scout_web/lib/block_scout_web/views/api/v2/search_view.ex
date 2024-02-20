@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
 
   alias BlockScoutWeb.{BlockView, Endpoint}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, Hash, Transaction, UserOperation}
+  alias Explorer.Chain.{Address, Beacon.Blob, Block, Hash, Transaction, UserOperation}
 
   def render("search_results.json", %{search_results: search_results, next_page_params: next_page_params}) do
     %{"items" => Enum.map(search_results, &prepare_search_result/1), "next_page_params" => next_page_params}
@@ -94,6 +94,16 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     }
   end
 
+  def prepare_search_result(%{type: "blob"} = search_result) do
+    blob_hash = hash_to_string(search_result.blob_hash)
+
+    %{
+      "type" => search_result.type,
+      "blob_hash" => blob_hash,
+      "timestamp" => search_result.timestamp
+    }
+  end
+
   defp hash_to_string(%Hash{bytes: bytes}), do: hash_to_string(bytes)
   defp hash_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
@@ -119,5 +129,9 @@ defmodule BlockScoutWeb.API.V2.SearchView do
 
   defp redirect_search_results(%UserOperation{} = item) do
     %{"type" => "user_operation", "parameter" => to_string(item.hash)}
+  end
+
+  defp redirect_search_results(%Blob{} = item) do
+    %{"type" => "blob", "parameter" => to_string(item.hash)}
   end
 end

@@ -626,6 +626,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> required_param(params, "contractname", "name")
     |> required_param(params, "compilerversion", "compiler_version")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
+    |> optional_param(params, "licenseType", "license_type")
   end
 
   defp fetch_verifysourcecode_solidity_single_file_params(params) do
@@ -638,6 +639,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> optional_param(params, "runs", "optimization_runs")
     |> optional_param(params, "evmversion", "evm_version")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
+    |> optional_param(params, "licenseType", "license_type")
     |> prepare_optimization()
   end
 
