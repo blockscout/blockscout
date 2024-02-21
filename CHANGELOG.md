@@ -34,6 +34,7 @@
 
 ### Chore
 
+- [#9439](https://github.com/blockscout/blockscout/pull/9439) - Solidityscan integration enhancements
 - [#9398](https://github.com/blockscout/blockscout/pull/9398) - Improve elixir dependencies caching in CI
 - [#9393](https://github.com/blockscout/blockscout/pull/9393) - Bump actions/cache to v4
 - [#9389](https://github.com/blockscout/blockscout/pull/9389) - Output user address as an object in API v2 for Shibarium
