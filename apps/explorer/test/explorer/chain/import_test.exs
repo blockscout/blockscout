@@ -353,7 +353,8 @@ defmodule Explorer.Chain.ImportTest do
                           101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
                     },
                     inserted_at: %{},
-                    updated_at: %{}
+                    updated_at: %{},
+                    token_type: "ERC-20"
                   }
                 ]
               }} = Import.all(@import_data)
