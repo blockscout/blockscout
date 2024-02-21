@@ -60,7 +60,8 @@ defmodule Explorer.Account.Notifier.Email do
       "ERC-1155" ->
         "Token ID: " <> subject <> " of "
 
-        # "ERC-404" -> todo
+      "ERC-404" ->
+        "Token ID: " <> subject <> " of "
     end
   end
 

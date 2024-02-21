@@ -180,9 +180,18 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
 
     balance_response =
       case token_type do
-        # todo: ERC-404
-        "ERC-1155" -> BalanceReader.get_balances_of_erc_1155([request])
-        _ -> BalanceReader.get_balances_of([request])
+        "ERC-404" ->
+          if token_id do
+            BalanceReader.get_balances_of_erc_1155([request])
+          else
+            BalanceReader.get_balances_of([request])
+          end
+
+        "ERC-1155" ->
+          BalanceReader.get_balances_of_erc_1155([request])
+
+        _ ->
+          BalanceReader.get_balances_of([request])
       end
 
     balance = balance_response[:ok]

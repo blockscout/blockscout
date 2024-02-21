@@ -4143,9 +4143,10 @@ defmodule Explorer.Chain do
 
   def put_owner_to_token_instance(
         %Instance{owner: nil, is_unique: true} = token_instance,
-        %Token{type: "ERC-1155"},
+        %Token{type: type},
         options
-      ) do
+      )
+      when type in ["ERC-1155", "ERC-404"] do
     owner_address_hash =
       token_instance
       |> Instance.owner_query()

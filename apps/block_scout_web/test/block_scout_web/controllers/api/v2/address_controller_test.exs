@@ -2278,6 +2278,42 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       check_paginated_response(response, response_2nd_page, token_instances)
     end
 
+    test "get paginated ERC-404 nft", %{conn: conn, endpoint: endpoint} do
+      address = insert(:address)
+
+      insert_list(51, :address_current_token_balance_with_token_id)
+
+      token_instances =
+        for _ <- 0..50 do
+          token = insert(:token, type: "ERC-404")
+
+          ti =
+            insert(:token_instance,
+              token_contract_address_hash: token.contract_address_hash
+            )
+            |> Repo.preload([:token])
+
+          current_token_balance =
+            insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+              address: address,
+              token_type: "ERC-404",
+              token_id: ti.token_id,
+              token_contract_address_hash: token.contract_address_hash
+            )
+
+          %Instance{ti | current_token_balance: current_token_balance}
+        end
+        |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id}, :desc)
+
+      request = get(conn, endpoint.(address.hash))
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, endpoint.(address.hash), response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_instances)
+    end
+
     test "test filters", %{conn: conn, endpoint: endpoint} do
       address = insert(:address)
 

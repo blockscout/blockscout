@@ -231,9 +231,10 @@ defmodule Explorer.Chain.Token.Instance do
   def nft_list_next_page_params(%__MODULE__{
         current_token_balance: %CurrentTokenBalance{},
         token_contract_address_hash: token_contract_address_hash,
-        token_id: token_id
+        token_id: token_id,
+        token: token
       }) do
-    %{"token_contract_address_hash" => token_contract_address_hash, "token_id" => token_id, "token_type" => "ERC-1155"}
+    %{"token_contract_address_hash" => token_contract_address_hash, "token_id" => token_id, "token_type" => token.type}
   end
 
   def nft_list_next_page_params(%__MODULE__{

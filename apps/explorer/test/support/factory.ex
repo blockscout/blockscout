@@ -209,6 +209,8 @@ defmodule Explorer.Factory do
       watch_erc_721_output: random_bool(),
       watch_erc_1155_input: random_bool(),
       watch_erc_1155_output: random_bool(),
+      watch_erc_404_input: random_bool(),
+      watch_erc_404_output: random_bool(),
       notify_email: random_bool()
     }
   end
