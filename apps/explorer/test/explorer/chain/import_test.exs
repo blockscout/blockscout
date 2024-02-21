@@ -60,7 +60,8 @@ defmodule Explorer.Chain.ImportTest do
             block_number: 37,
             transaction_index: 0,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-            index: 0,
+            # transaction with index 0 is ignored in Nethermind JSON RPC Variant and not ignored in case of Geth
+            index: 1,
             trace_address: [],
             type: "call",
             call_type: "call",
@@ -76,7 +77,7 @@ defmodule Explorer.Chain.ImportTest do
             block_number: 37,
             transaction_index: 1,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-            index: 1,
+            index: 2,
             trace_address: [0],
             type: "call",
             call_type: "call",
@@ -264,6 +265,15 @@ defmodule Explorer.Chain.ImportTest do
                 internal_transactions: [
                   %{
                     index: 1,
+                    transaction_hash: %Hash{
+                      byte_count: 32,
+                      bytes:
+                        <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
+                          101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                    }
+                  },
+                  %{
+                    index: 2,
                     transaction_hash: %Hash{
                       byte_count: 32,
                       bytes:
@@ -504,7 +514,8 @@ defmodule Explorer.Chain.ImportTest do
       Subscriber.to(:internal_transactions, :realtime)
       Import.all(@import_data)
 
-      assert_receive {:chain_event, :internal_transactions, :realtime, [%{transaction_hash: _, index: _}]}
+      assert_receive {:chain_event, :internal_transactions, :realtime,
+                      [%{transaction_hash: _, index: _}, %{transaction_hash: _, index: _}]}
     end
 
     test "publishes transactions data to subscribers on insert" do

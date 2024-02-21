@@ -395,7 +395,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       block_hash = Map.fetch!(blocks_map, block_number)
 
       entries
-      |> Enum.sort_by(&{&1.transaction_hash, &1.index})
+      |> Enum.sort_by(
+        &{(Map.has_key?(&1, :transaction_index) && &1.transaction_index) || &1.transaction_hash, &1.index}
+      )
       |> Enum.with_index()
       |> Enum.map(fn {entry, index} ->
         entry
