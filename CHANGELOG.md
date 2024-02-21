@@ -4,6 +4,19 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+</details>
+
+## 6.2.0
+
+### Features
+
 - [#9441](https://github.com/blockscout/blockscout/pull/9441) - Update BENS integration: change endpoint for resolving address in search
 - [#9437](https://github.com/blockscout/blockscout/pull/9437) - Add Enum.uniq before sanitizing token transfers
 - [#9403](https://github.com/blockscout/blockscout/pull/9403) - Null round handling
@@ -49,6 +62,30 @@
 <details>
   <summary>Dependencies version bumps</summary>
 
+- [#9335](https://github.com/blockscout/blockscout/pull/9335) - Bump mini-css-extract-plugin from 2.7.7 to 2.8.0 in /apps/block_scout_web/assets
+- [#9333](https://github.com/blockscout/blockscout/pull/9333) - Bump sweetalert2 from 11.10.3 to 11.10.5 in /apps/block_scout_web/assets
+- [#9288](https://github.com/blockscout/blockscout/pull/9288) - Bump solc from 0.8.23 to 0.8.24 in /apps/explorer
+- [#9287](https://github.com/blockscout/blockscout/pull/9287) - Bump @babel/preset-env from 7.23.8 to 7.23.9 in /apps/block_scout_web/assets
+- [#9331](https://github.com/blockscout/blockscout/pull/9331) - Bump logger_json from 5.1.2 to 5.1.3
+- [#9330](https://github.com/blockscout/blockscout/pull/9330) - Bump hammer from 6.1.0 to 6.2.0
+- [#9294](https://github.com/blockscout/blockscout/pull/9294) - Bump exvcr from 0.15.0 to 0.15.1
+- [#9293](https://github.com/blockscout/blockscout/pull/9293) - Bump floki from 0.35.2 to 0.35.3
+- [#9338](https://github.com/blockscout/blockscout/pull/9338) - Bump postcss-loader from 8.0.0 to 8.1.0 in /apps/block_scout_web/assets
+- [#9336](https://github.com/blockscout/blockscout/pull/9336) - Bump web3 from 1.10.3 to 1.10.4 in /apps/block_scout_web/assets
+- [#9290](https://github.com/blockscout/blockscout/pull/9290) - Bump ex_doc from 0.31.0 to 0.31.1
+- [#9285](https://github.com/blockscout/blockscout/pull/9285) - Bump @amplitude/analytics-browser from 2.3.8 to 2.4.0 in /apps/block_scout_web/assets
+- [#9283](https://github.com/blockscout/blockscout/pull/9283) - Bump @babel/core from 7.23.7 to 7.23.9 in /apps/block_scout_web/assets
+- [#9337](https://github.com/blockscout/blockscout/pull/9337) - Bump css-loader from 6.9.1 to 6.10.0 in /apps/block_scout_web/assets
+- [#9334](https://github.com/blockscout/blockscout/pull/9334) - Bump sass-loader from 14.0.0 to 14.1.0 in /apps/block_scout_web/assets
+- [#9339](https://github.com/blockscout/blockscout/pull/9339) - Bump webpack from 5.89.0 to 5.90.1 in /apps/block_scout_web/assets
+- [#9383](https://github.com/blockscout/blockscout/pull/9383) - Bump credo from 1.7.3 to 1.7.4
+- [#9384](https://github.com/blockscout/blockscout/pull/9384) - Bump postcss from 8.4.33 to 8.4.35 in /apps/block_scout_web/assets
+- [#9385](https://github.com/blockscout/blockscout/pull/9385) - Bump mixpanel-browser from 2.48.1 to 2.49.0 in /apps/block_scout_web/assets
+- [#9423](https://github.com/blockscout/blockscout/pull/9423) - Bump @amplitude/analytics-browser from 2.4.0 to 2.4.1 in /apps/block_scout_web/assets
+- [#9422](https://github.com/blockscout/blockscout/pull/9422) - Bump core-js from 3.35.1 to 3.36.0 in /apps/block_scout_web/assets
+- [#9424](https://github.com/blockscout/blockscout/pull/9424) - Bump webpack from 5.90.1 to 5.90.3 in /apps/block_scout_web/assets
+- [#9425](https://github.com/blockscout/blockscout/pull/9425) - Bump sass-loader from 14.1.0 to 14.1.1 in /apps/block_scout_web/assets
+- [#9421](https://github.com/blockscout/blockscout/pull/9421) - Bump sass from 1.70.0 to 1.71.0 in /apps/block_scout_web/assets
 </details>
 
 ## 6.1.0
