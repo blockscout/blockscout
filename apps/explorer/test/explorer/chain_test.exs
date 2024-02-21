@@ -1294,7 +1294,8 @@ defmodule Explorer.ChainTest do
           %{
             block_number: 37,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-            index: 0,
+            # transaction with index 0 is ignored in Nethermind JSON RPC Variant and not ignored in case of Geth
+            index: 1,
             trace_address: [],
             type: "call",
             call_type: "call",
@@ -1383,7 +1384,7 @@ defmodule Explorer.ChainTest do
       }
     }
 
-    test "with valid data" do
+    test "with valid data", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
       {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
       {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
@@ -1392,6 +1393,9 @@ defmodule Explorer.ChainTest do
       token_transfer_amount = Decimal.new(1_000_000_000_000_000_000)
       gas_limit = Decimal.new(6_946_336)
       gas_used = Decimal.new(50450)
+
+      gas_int = Decimal.new("4677320")
+      gas_used_int = Decimal.new("27770")
 
       assert {:ok,
               %{
@@ -1474,7 +1478,41 @@ defmodule Explorer.ChainTest do
                     updated_at: %{}
                   }
                 ],
-                internal_transactions: [],
+                internal_transactions: [
+                  %InternalTransaction{
+                    call_type: :call,
+                    created_contract_code: nil,
+                    error: nil,
+                    gas: ^gas_int,
+                    gas_used: ^gas_used_int,
+                    index: 1,
+                    init: nil,
+                    input: %Explorer.Chain.Data{
+                      bytes:
+                        <<16, 133, 82, 105, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 134, 45, 103, 203, 7, 115, 238, 63, 140,
+                          231, 234, 137, 179, 40, 255, 234, 134, 26, 179, 239>>
+                    },
+                    output: %Explorer.Chain.Data{bytes: ""},
+                    trace_address: [],
+                    type: :call,
+                    block_number: 37,
+                    transaction_index: nil,
+                    block_index: 0,
+                    created_contract_address_hash: nil,
+                    from_address_hash: %Explorer.Chain.Hash{
+                      byte_count: 20,
+                      bytes:
+                        <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152, 122,
+                          202>>
+                    },
+                    to_address_hash: %Explorer.Chain.Hash{
+                      byte_count: 20,
+                      bytes:
+                        <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65,
+                          91>>
+                    }
+                  }
+                ],
                 logs: [
                   %Log{
                     address_hash: %Hash{
