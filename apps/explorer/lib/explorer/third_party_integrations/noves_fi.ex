@@ -61,14 +61,6 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
   end
 
   @doc """
-  Noves.fi /evm/{chain}/describeTx/{txHash} endpoint
-  """
-  @spec describe_tx_url(String.t()) :: String.t()
-  def describe_tx_url(transaction_hash_string) do
-    "#{base_url()}/evm/#{chain_name()}/describeTx/#{transaction_hash_string}"
-  end
-
-  @doc """
   Noves.fi /evm/{chain}/describeTxs endpoint
   """
   @spec describe_txs_url() :: String.t()

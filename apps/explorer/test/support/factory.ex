@@ -759,7 +759,8 @@ defmodule Explorer.Factory do
       token_contract_address: token_address,
       token_type: token.type,
       transaction: log.transaction,
-      log_index: log.index
+      log_index: log.index,
+      block_consensus: true
     }
   end
 

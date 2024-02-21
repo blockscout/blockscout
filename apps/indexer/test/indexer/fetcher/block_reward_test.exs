@@ -132,7 +132,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
           end
         end)
 
-      Process.register(pid, Indexer.Fetcher.CoinBalance)
+      Process.register(pid, Indexer.Fetcher.CoinBalance.Catchup)
 
       assert :ok = BlockReward.async_fetch([block_number])
 
@@ -205,7 +205,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
           end
         end)
 
-      Process.register(pid, Indexer.Fetcher.CoinBalance)
+      Process.register(pid, Indexer.Fetcher.CoinBalance.Catchup)
 
       assert :ok = BlockReward.async_fetch([block_number])
 
@@ -340,7 +340,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
           end
         end)
 
-      Process.register(pid, Indexer.Fetcher.CoinBalance)
+      Process.register(pid, Indexer.Fetcher.CoinBalance.Catchup)
 
       assert :ok = BlockReward.run([block_number], json_rpc_named_arguments)
 
@@ -430,7 +430,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
           end
         end)
 
-      Process.register(pid, Indexer.Fetcher.CoinBalance)
+      Process.register(pid, Indexer.Fetcher.CoinBalance.Catchup)
 
       assert :ok = BlockReward.run([block_number], json_rpc_named_arguments)
 
@@ -514,7 +514,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
           end
         end)
 
-      Process.register(pid, Indexer.Fetcher.CoinBalance)
+      Process.register(pid, Indexer.Fetcher.CoinBalance.Catchup)
 
       assert :ok = BlockReward.run([block_number], json_rpc_named_arguments)
 
@@ -651,7 +651,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
           end
         end)
 
-      Process.register(pid, Indexer.Fetcher.CoinBalance)
+      Process.register(pid, Indexer.Fetcher.CoinBalance.Catchup)
 
       assert {:retry, [^error_block_number]} =
                BlockReward.run([block_number, error_block_number], json_rpc_named_arguments)

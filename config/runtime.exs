@@ -573,8 +573,11 @@ config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
 config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER")
 
-config :indexer, Indexer.Fetcher.CoinBalance.Supervisor,
-  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ADDRESS_COIN_BALANCE_FETCHER")
+disable_coin_balances_fetcher? = ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ADDRESS_COIN_BALANCE_FETCHER")
+
+config :indexer, Indexer.Fetcher.CoinBalance.Catchup.Supervisor, disabled?: disable_coin_balances_fetcher?
+
+config :indexer, Indexer.Fetcher.CoinBalance.Realtime.Supervisor, disabled?: disable_coin_balances_fetcher?
 
 config :indexer, Indexer.Fetcher.TokenUpdater.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER")
@@ -659,9 +662,16 @@ config :indexer, Indexer.Fetcher.InternalTransaction,
   indexing_finished_threshold:
     ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_INDEXING_FINISHED_THRESHOLD", 1000)
 
-config :indexer, Indexer.Fetcher.CoinBalance,
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_BATCH_SIZE", 500),
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_CONCURRENCY", 4)
+coin_balances_batch_size = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_BATCH_SIZE", 100)
+coin_balances_concurrency = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_CONCURRENCY", 4)
+
+config :indexer, Indexer.Fetcher.CoinBalance.Catchup,
+  batch_size: coin_balances_batch_size,
+  concurrency: coin_balances_concurrency
+
+config :indexer, Indexer.Fetcher.CoinBalance.Realtime,
+  batch_size: coin_balances_batch_size,
+  concurrency: coin_balances_concurrency
 
 config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_WITHDRAWALS_FETCHER", "true") == "true"

@@ -9,10 +9,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
   require Indexer.Tracer
   require Logger
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   import Indexer.Block.Fetcher,
     only: [
+      async_import_realtime_coin_balances: 1,
       async_import_blobs: 1,
       async_import_block_rewards: 1,
       async_import_created_contract_codes: 1,
@@ -27,20 +28,17 @@ defmodule Indexer.Block.Realtime.Fetcher do
     ]
 
   alias Ecto.Changeset
-  alias EthereumJSONRPC.{FetchedBalances, Subscription}
+  alias EthereumJSONRPC.Subscription
   alias Explorer.Chain
-  alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
-  alias Indexer.Fetcher.{CoinBalance, CoinBalanceDailyUpdater}
   alias Indexer.Fetcher.PolygonEdge.{DepositExecute, Withdrawal}
   alias Indexer.Fetcher.PolygonZkevm.BridgeL2, as: PolygonZkevmBridgeL2
   alias Indexer.Fetcher.Shibarium.L2, as: ShibariumBridgeL2
   alias Indexer.Prometheus
-  alias Indexer.Transform.Addresses
   alias Timex.Duration
 
   @behaviour Block.Fetcher
@@ -195,42 +193,20 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @import_options ~w(address_hash_to_fetched_balance_block_number)a
 
   @impl Block.Fetcher
-  def import(
-        block_fetcher,
-        %{
-          address_coin_balances: %{params: address_coin_balances_params},
-          addresses: %{params: addresses_params},
-          block_rewards: block_rewards
-        } = options
-      ) do
-    with {:balances,
-          {:ok,
-           %{
-             addresses_params: balances_addresses_params,
-             balances_params: balances_params,
-             balances_daily_params: balances_daily_params
-           }}} <-
-           {:balances,
-            balances(block_fetcher, %{
-              addresses_params: addresses_params,
-              balances_params: address_coin_balances_params
-            })},
-         {block_reward_errors, chain_import_block_rewards} = Map.pop(block_rewards, :errors),
-         chain_import_options =
-           options
-           |> Map.drop(@import_options)
-           |> put_in([:addresses, :params], balances_addresses_params)
-           |> put_in([:blocks, :params, Access.all(), :consensus], true)
-           |> put_in([:block_rewards], chain_import_block_rewards)
-           |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params),
-         CoinBalanceDailyUpdater.add_daily_balances_params(balances_daily_params),
-         {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
+  def import(_block_fetcher, %{block_rewards: block_rewards} = options) do
+    {block_reward_errors, chain_import_block_rewards} = Map.pop(block_rewards, :errors)
+
+    chain_import_options =
+      options
+      |> Map.drop(@import_options)
+      |> put_in([:blocks, :params, Access.all(), :consensus], true)
+      |> put_in([:block_rewards], chain_import_block_rewards)
+
+    with {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
       async_import_remaining_block_data(
         imported,
         %{block_rewards: %{errors: block_reward_errors}}
       )
-
-      Accounts.drop(imported[:addresses])
 
       ok
     end
@@ -443,6 +419,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
          imported,
          %{block_rewards: %{errors: block_reward_errors}}
        ) do
+    async_import_realtime_coin_balances(imported)
     async_import_block_rewards(block_reward_errors)
     async_import_created_contract_codes(imported)
     async_import_internal_transactions(imported)
@@ -453,59 +430,5 @@ defmodule Indexer.Block.Realtime.Fetcher do
     async_import_replaced_transactions(imported)
     async_import_blobs(imported)
     async_import_polygon_zkevm_bridge_l1_tokens(imported)
-  end
-
-  defp balances(
-         %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
-         %{addresses_params: addresses_params} = options
-       ) do
-    case options
-         |> fetch_balances_params_list()
-         |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments, CoinBalance.batch_size()) do
-      {:ok, %FetchedBalances{params_list: params_list, errors: []}} ->
-        merged_addresses_params =
-          %{address_coin_balances: params_list}
-          |> Addresses.extract_addresses()
-          |> Kernel.++(addresses_params)
-          |> Addresses.merge_addresses()
-
-        value_fetched_at = DateTime.utc_now()
-
-        importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
-
-        block_timestamp_map = CoinBalance.block_timestamp_map(params_list, json_rpc_named_arguments)
-
-        importable_balances_daily_params =
-          Enum.map(params_list, fn param ->
-            day = Map.get(block_timestamp_map, "#{param.block_number}")
-            (day && Map.put(param, :day, day)) || param
-          end)
-
-        {:ok,
-         %{
-           addresses_params: merged_addresses_params,
-           balances_params: importable_balances_params,
-           balances_daily_params: importable_balances_daily_params
-         }}
-
-      {:error, _} = error ->
-        error
-
-      {:ok, %FetchedBalances{errors: errors}} ->
-        {:error, errors}
-    end
-  end
-
-  defp fetch_balances_params_list(%{balances_params: balances_params}) do
-    balances_params
-    |> balances_params_to_fetch_balances_params_set()
-    # stable order for easier moxing
-    |> Enum.sort_by(fn %{hash_data: hash_data, block_quantity: block_quantity} -> {hash_data, block_quantity} end)
-  end
-
-  defp balances_params_to_fetch_balances_params_set(balances_params) do
-    Enum.into(balances_params, MapSet.new(), fn %{address_hash: address_hash, block_number: block_number} ->
-      %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
-    end)
   end
 end

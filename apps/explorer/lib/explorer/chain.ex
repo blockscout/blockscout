@@ -48,6 +48,7 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
+    BlockNumberHelper,
     CurrencyHelper,
     Data,
     DecompiledSmartContract,
@@ -1426,7 +1427,7 @@ defmodule Explorer.Chain do
           Decimal.new(1)
 
         _ ->
-          divisor = max_saved_block_number - min_blockchain_block_number + 1
+          divisor = max_saved_block_number - min_blockchain_block_number - BlockNumberHelper.null_rounds_count() + 1
 
           ratio = get_ratio(BlockCache.estimated_count(), divisor)
 
@@ -1458,7 +1459,9 @@ defmodule Explorer.Chain do
           Decimal.new(0)
 
         _ ->
-          full_blocks_range = max_saved_block_number - min_blockchain_trace_block_number + 1
+          full_blocks_range =
+            max_saved_block_number - min_blockchain_trace_block_number - BlockNumberHelper.null_rounds_count() + 1
+
           processed_int_txs_for_blocks_count = max(0, full_blocks_range - pbo_count)
 
           ratio = get_ratio(processed_int_txs_for_blocks_count, full_blocks_range)
@@ -2211,26 +2214,50 @@ defmodule Explorer.Chain do
     range_max = max(range_start, range_end)
 
     ordered_missing_query =
-      from(b in Block,
-        right_join:
-          missing_range in fragment(
-            """
-            (
-              SELECT distinct b1.number
-              FROM generate_series((?)::integer, (?)::integer) AS b1(number)
-              WHERE NOT EXISTS
-                (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus)
-              ORDER BY b1.number DESC
-            )
-            """,
-            ^range_min,
-            ^range_max
-          ),
-        on: b.number == missing_range.number,
-        select: missing_range.number,
-        order_by: missing_range.number,
-        distinct: missing_range.number
-      )
+      if Application.get_env(:explorer, :chain_type) == "filecoin" do
+        from(b in Block,
+          right_join:
+            missing_range in fragment(
+              """
+              (
+                SELECT distinct b1.number
+                FROM generate_series((?)::integer, (?)::integer) AS b1(number)
+                WHERE NOT EXISTS
+                  (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus)
+                AND NOT EXISTS (SELECT 1 FROM null_round_heights nrh where nrh.height=b1.number)
+                ORDER BY b1.number DESC
+              )
+              """,
+              ^range_min,
+              ^range_max
+            ),
+          on: b.number == missing_range.number,
+          select: missing_range.number,
+          order_by: missing_range.number,
+          distinct: missing_range.number
+        )
+      else
+        from(b in Block,
+          right_join:
+            missing_range in fragment(
+              """
+              (
+                SELECT distinct b1.number
+                FROM generate_series((?)::integer, (?)::integer) AS b1(number)
+                WHERE NOT EXISTS
+                  (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus)
+                ORDER BY b1.number DESC
+              )
+              """,
+              ^range_min,
+              ^range_max
+            ),
+          on: b.number == missing_range.number,
+          select: missing_range.number,
+          order_by: missing_range.number,
+          distinct: missing_range.number
+        )
+      end
 
     missing_blocks = Repo.all(ordered_missing_query, timeout: :infinity)
 
@@ -2368,13 +2395,13 @@ defmodule Explorer.Chain do
              DateTime.compare(timestamp, given_timestamp) == :eq do
           number
         else
-          number - 1
+          BlockNumberHelper.previous_block_number(number)
         end
 
       :after ->
         if DateTime.compare(timestamp, given_timestamp) == :lt ||
              DateTime.compare(timestamp, given_timestamp) == :eq do
-          number + 1
+          BlockNumberHelper.next_block_number(number)
         else
           number
         end

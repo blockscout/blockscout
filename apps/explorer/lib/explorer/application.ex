@@ -130,6 +130,7 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.AddressCurrentTokenBalanceTokenType),
         configure(Explorer.Migrator.AddressTokenBalanceTokenType),
         configure(Explorer.Migrator.SanitizeMissingBlockRanges),
+        configure(Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers),
         configure(Explorer.Migrator.TokenTransferTokenType)
       ]
       |> List.flatten()
@@ -146,7 +147,8 @@ defmodule Explorer.Application do
         Explorer.Repo.RSK,
         Explorer.Repo.Shibarium,
         Explorer.Repo.Suave,
-        Explorer.Repo.BridgedTokens
+        Explorer.Repo.BridgedTokens,
+        Explorer.Repo.Filecoin
       ]
     else
       []

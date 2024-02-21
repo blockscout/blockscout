@@ -18,6 +18,8 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Block.Catchup, as: BlockCatchup
   alias Indexer.Block.Realtime, as: BlockRealtime
+  alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
+  alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
   alias Indexer.Fetcher.TokenInstance.LegacySanitize, as: TokenInstanceLegacySanitize
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Indexer.Fetcher.TokenInstance.Retry, as: TokenInstanceRetry
@@ -27,8 +29,6 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Fetcher.{
     BlockReward,
-    CoinBalance,
-    CoinBalanceDailyUpdater,
     ContractCode,
     EmptyBlocksSanitizer,
     InternalTransaction,
@@ -118,7 +118,9 @@ defmodule Indexer.Supervisor do
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {InternalTransaction.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-        {CoinBalance.Supervisor,
+        {CoinBalanceCatchup.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {CoinBalanceRealtime.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {TokenInstanceRealtime.Supervisor, [[memory_monitor: memory_monitor]]},
@@ -162,7 +164,6 @@ defmodule Indexer.Supervisor do
         {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {TokenTotalSupplyUpdater, [[]]},
-        {CoinBalanceDailyUpdater, [[]]},
 
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},

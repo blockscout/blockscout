@@ -14,6 +14,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.{
     Address,
     Block,
+    BlockNumberHelper,
     DenormalizationHelper,
     Import,
     PendingBlockOperation,
@@ -403,6 +404,18 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         on: transaction.block_hash == s.hash,
         # we don't want to remove consensus from blocks that will be upserted
         where: transaction.block_hash not in ^hashes
+      ),
+      [set: [block_consensus: false, updated_at: updated_at]],
+      timeout: timeout
+    )
+
+    repo.update_all(
+      from(
+        token_transfer in TokenTransfer,
+        join: s in subquery(acquire_query),
+        on: token_transfer.block_hash == s.hash,
+        # we don't want to remove consensus from blocks that will be upserted
+        where: token_transfer.block_hash not in ^hashes
       ),
       [set: [block_consensus: false, updated_at: updated_at]],
       timeout: timeout
@@ -908,11 +921,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
                                                 number: number
                                               },
                                               acc ->
+        previous_block_number = BlockNumberHelper.previous_block_number(number)
+        next_block_number = BlockNumberHelper.next_block_number(number)
+
         if consensus do
           from(
             block in acc,
-            or_where: block.number == ^(number - 1) and block.hash != ^parent_hash,
-            or_where: block.number == ^(number + 1) and block.parent_hash != ^hash
+            or_where: block.number == ^previous_block_number and block.hash != ^parent_hash,
+            or_where: block.number == ^next_block_number and block.parent_hash != ^hash
           )
         else
           acc

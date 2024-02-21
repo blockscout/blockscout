@@ -1,5 +1,5 @@
-defmodule Indexer.Fetcher.CoinBalance.Supervisor.Case do
-  alias Indexer.Fetcher.CoinBalance
+defmodule Indexer.Fetcher.CoinBalance.Catchup.Supervisor.Case do
+  alias Indexer.Fetcher.CoinBalance.Catchup
 
   def start_supervised!(fetcher_arguments \\ []) when is_list(fetcher_arguments) do
     merged_fetcher_arguments =
@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.CoinBalance.Supervisor.Case do
       )
 
     [merged_fetcher_arguments]
-    |> CoinBalance.Supervisor.child_spec()
+    |> Catchup.Supervisor.child_spec()
     |> ExUnit.Callbacks.start_supervised!()
   end
 end

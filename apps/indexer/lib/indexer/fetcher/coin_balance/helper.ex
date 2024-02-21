@@ -1,90 +1,48 @@
-defmodule Indexer.Fetcher.CoinBalance do
+defmodule Indexer.Fetcher.CoinBalance.Helper do
   @moduledoc """
-  Fetches `t:Explorer.Chain.Address.CoinBalance.t/0` and updates `t:Explorer.Chain.Address.t/0` `fetched_coin_balance` and
-  `fetched_coin_balance_block_number` to value at max `t:Explorer.Chain.Address.CoinBalance.t/0` `block_number` for the given `t:Explorer.Chain.Address.t/` `hash`.
+  Common functions for `Indexer.Fetcher.CoinBalance.Catchup` and `Indexer.Fetcher.CoinBalance.Realtime` modules
   """
-
-  use Indexer.Fetcher, restart: :permanent
-  use Spandex.Decorators
-
-  require Logger
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
 
+  require Logger
+
   alias EthereumJSONRPC.{Blocks, FetchedBalances, Utility.RangesHelper}
   alias Explorer.Chain
-  alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Cache.Accounts
-  alias Indexer.{BufferedTask, Tracer}
-  alias Indexer.Fetcher.CoinBalance.Supervisor, as: CoinBalanceSupervisor
-
-  @behaviour BufferedTask
-
-  @default_max_batch_size 500
-  @default_max_concurrency 4
-
-  def batch_size, do: defaults()[:max_batch_size]
-
-  @doc """
-  Asynchronously fetches balances for each address `hash` at the `block_number`.
-  """
-  @spec async_fetch_balances([
-          %{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}
-        ]) :: :ok
-  def async_fetch_balances(balance_fields) when is_list(balance_fields) do
-    if CoinBalanceSupervisor.disabled?() do
-      :ok
-    else
-      entries = Enum.map(balance_fields, &entry/1)
-
-      BufferedTask.buffer(__MODULE__, entries)
-    end
-  end
+  alias Explorer.Chain.Hash
+  alias Indexer.BufferedTask
 
   @doc false
   # credo:disable-for-next-line Credo.Check.Design.DuplicatedCode
-  def child_spec([init_options, gen_server_options]) do
+  def child_spec([init_options, gen_server_options], defaults, module) do
     {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
 
     unless state do
       raise ArgumentError,
-            ":json_rpc_named_arguments must be provided to `#{__MODULE__}.child_spec " <>
+            ":json_rpc_named_arguments must be provided to `#{module}.child_spec " <>
               "to allow for json_rpc calls when running."
     end
 
     merged_init_options =
-      defaults()
+      defaults
       |> Keyword.merge(mergeable_init_options)
       |> Keyword.put(:state, state)
 
-    Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_options}, gen_server_options]}, id: __MODULE__)
+    Supervisor.child_spec({BufferedTask, [{module, merged_init_options}, gen_server_options]}, id: module)
   end
 
-  @impl BufferedTask
-  def init(initial, reducer, _) do
-    {:ok, final} =
-      Chain.stream_unfetched_balances(
-        initial,
-        fn address_fields, acc ->
-          address_fields
-          |> entry()
-          |> reducer.(acc)
-        end,
-        true
-      )
-
-    final
-  end
-
-  @impl BufferedTask
-  @decorate trace(name: "fetch", resource: "Indexer.Fetcher.CoinBalance.run/2", service: :indexer, tracer: Tracer)
-  def run(entries, json_rpc_named_arguments) do
+  def run(entries, json_rpc_named_arguments, filter_non_traceable_blocks? \\ true) do
     # the same address may be used more than once in the same block, but we only want one `Balance` for a given
     # `{address, block}`, so take unique params only
     unique_entries = Enum.uniq(entries)
 
     unique_filtered_entries =
-      Enum.filter(unique_entries, fn {_hash, block_number} -> RangesHelper.traceable_block_number?(block_number) end)
+      if filter_non_traceable_blocks? do
+        Enum.filter(unique_entries, fn {_hash, block_number} -> RangesHelper.traceable_block_number?(block_number) end)
+      else
+        unique_entries
+      end
 
     unique_entry_count = Enum.count(unique_filtered_entries)
     Logger.metadata(count: unique_entry_count)
@@ -110,13 +68,13 @@ defmodule Indexer.Fetcher.CoinBalance do
     end
   end
 
+  def entry(%{address_hash: %Hash{bytes: address_hash_bytes}, block_number: block_number}) do
+    {address_hash_bytes, block_number}
+  end
+
   defp entry_to_params({address_hash_bytes, block_number}) when is_integer(block_number) do
     {:ok, address_hash} = Hash.Address.cast(address_hash_bytes)
     %{block_quantity: integer_to_quantity(block_number), hash_data: to_string(address_hash)}
-  end
-
-  defp entry(%{address_hash: %Hash{bytes: address_hash_bytes}, block_number: block_number}) do
-    {address_hash_bytes, block_number}
   end
 
   # We want to record all historical balances for an address, but have the address itself have balance from the
@@ -262,15 +220,5 @@ defmodule Indexer.Fetcher.CoinBalance do
         nil
       end
     end)
-  end
-
-  defp defaults do
-    [
-      flush_interval: :timer.seconds(3),
-      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
-      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
-      task_supervisor: Indexer.Fetcher.CoinBalance.TaskSupervisor,
-      metadata: [fetcher: :coin_balance]
-    ]
   end
 end

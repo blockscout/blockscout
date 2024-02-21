@@ -4,6 +4,9 @@
 
 ### Features
 
+- [#9437](https://github.com/blockscout/blockscout/pull/9437) - Add Enum.uniq before sanitizing token transfers
+- [#9403](https://github.com/blockscout/blockscout/pull/9403) - Null round handling
+- [#9401](https://github.com/blockscout/blockscout/pull/9401) - Eliminate incorrect token transfers with empty token_ids
 - [#9396](https://github.com/blockscout/blockscout/pull/9396) - More-Minimal Proxy support
 - [#9379](https://github.com/blockscout/blockscout/pull/9379) - Filter non-traceable transactions for zetachain
 - [#9364](https://github.com/blockscout/blockscout/pull/9364) - Fix using of startblock/endblock in API v1 list endpoints: txlist, txlistinternal, tokentx
@@ -11,11 +14,13 @@
 - [#9351](https://github.com/blockscout/blockscout/pull/9351) - Noves.fi: add proxy endpoint for describeTxs endpoint
 - [#9282](https://github.com/blockscout/blockscout/pull/9282) - Add `license_type` to smart contracts
 - [#9202](https://github.com/blockscout/blockscout/pull/9202) - Add base and priority fee to gas oracle response
+- [#9182](https://github.com/blockscout/blockscout/pull/9182) - Fetch coin balances in async mode in realtime fetcher
 - [#9168](https://github.com/blockscout/blockscout/pull/9168) - Support EIP4844 blobs indexing & API
 - [#9098](https://github.com/blockscout/blockscout/pull/9098) - Polygon zkEVM Bridge indexer and API v2 extension
 
 ### Fixes
 
+- [#9440](https://github.com/blockscout/blockscout/pull/9440) - Add `debug_traceBlockByNumber` to `method_to_url`
 - [#9387](https://github.com/blockscout/blockscout/pull/9387) - Filter out Vyper contracts in Solidityscan API endpoint
 - [#9377](https://github.com/blockscout/blockscout/pull/9377) - Speed up account abstraction proxy
 - [#9371](https://github.com/blockscout/blockscout/pull/9371) - Filter empty values before token update
@@ -30,6 +35,7 @@
 
 ### Chore
 
+- [#9439](https://github.com/blockscout/blockscout/pull/9439) - Solidityscan integration enhancements
 - [#9398](https://github.com/blockscout/blockscout/pull/9398) - Improve elixir dependencies caching in CI
 - [#9393](https://github.com/blockscout/blockscout/pull/9393) - Bump actions/cache to v4
 - [#9389](https://github.com/blockscout/blockscout/pull/9389) - Output user address as an object in API v2 for Shibarium
