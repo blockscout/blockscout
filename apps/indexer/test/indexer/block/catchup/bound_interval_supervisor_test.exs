@@ -11,9 +11,9 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
   alias Indexer.BoundInterval
   alias Indexer.Block.Catchup
   alias Indexer.Block.Catchup.MissingRangesCollector
+  alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
 
   alias Indexer.Fetcher.{
-    CoinBalance,
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
@@ -228,7 +228,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       previous_batch_block_number = first_catchup_block_number - default_blocks_batch_size
 
       Application.put_env(:indexer, :block_ranges, "#{previous_batch_block_number}..#{first_catchup_block_number}")
-      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -431,7 +431,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
       MissingRangesCollector.start_link([])
       start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
-      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -523,7 +523,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       Application.put_env(:indexer, :block_ranges, "0..0")
       MissingRangesCollector.start_link([])
       start_supervised({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
-      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
