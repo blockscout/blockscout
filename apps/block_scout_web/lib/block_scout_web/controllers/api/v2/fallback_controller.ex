@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   @address_not_found "Address not found"
   @address_is_not_smart_contract "Address is not smart-contract"
   @vyper_smart_contract_is_not_supported "Vyper smart-contracts are not supported by SolidityScan"
+  @unverified_smart_contract "Smart-contract is unverified"
   @empty_response "Empty response"
   @tx_interpreter_service_disabled "Transaction Interpretation Service is not enabled"
   @disabled "API endpoint is disabled"
@@ -267,6 +268,13 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> put_status(:not_found)
     |> put_view(ApiView)
     |> render(:message, %{message: @vyper_smart_contract_is_not_supported})
+  end
+
+  def call(conn, {:is_verified_smart_contract, result}) when result == false do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @unverified_smart_contract})
   end
 
   def call(conn, {:is_empty_response, true}) do
