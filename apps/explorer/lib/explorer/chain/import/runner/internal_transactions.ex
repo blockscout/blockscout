@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi, Repo}
   alias EthereumJSONRPC.Utility.RangesHelper
-  alias Explorer.Chain.{Block, Hash, Import, InternalTransaction, PendingBlockOperation, Transaction}
+  alias Explorer.Chain.{Block, Hash, Import, InternalTransaction, PendingBlockOperation, TokenTransfer, Transaction}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import.Runner
   alias Explorer.Prometheus.Instrumenter
@@ -147,7 +147,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end)
     |> Multi.run(:remove_consensus_of_invalid_blocks, fn repo, %{invalid_block_numbers: invalid_block_numbers} ->
       Instrumenter.block_import_stage_runner(
-        fn -> remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) end,
+        fn -> remove_consensus_of_invalid_blocks(repo, invalid_block_numbers, timestamps) end,
         :block_pending,
         :internal_transactions,
         :remove_consensus_of_invalid_blocks
@@ -705,7 +705,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
-  defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) do
+  defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers, %{updated_at: updated_at}) do
     if Enum.count(invalid_block_numbers) > 0 do
       update_block_query =
         from(
@@ -714,21 +714,31 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           where: ^traceable_blocks_dynamic_query(),
           select: block.hash,
           # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
-          update: [set: [consensus: false]]
+          update: [set: [consensus: false, updated_at: ^updated_at]]
         )
 
       update_transaction_query =
         from(
           transaction in Transaction,
           where: transaction.block_number in ^invalid_block_numbers and transaction.block_consensus,
-          where: ^traceable_transactions_dynamic_query(),
+          where: ^traceable_block_number_dynamic_query(),
           # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
-          update: [set: [block_consensus: false]]
+          update: [set: [block_consensus: false, updated_at: ^updated_at]]
+        )
+
+      update_token_transfers_query =
+        from(
+          token_transfer in TokenTransfer,
+          where: token_transfer.block_number in ^invalid_block_numbers and token_transfer.block_consensus,
+          where: ^traceable_block_number_dynamic_query(),
+          # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
+          update: [set: [block_consensus: false, updated_at: ^updated_at]]
         )
 
       try do
         {_num, result} = repo.update_all(update_block_query, [])
         {_num, _result} = repo.update_all(update_transaction_query, [])
+        {_num, _result} = repo.update_all(update_token_transfers_query, [])
 
         MissingRangesManipulator.add_ranges_by_block_numbers(invalid_block_numbers)
 
@@ -787,13 +797,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
-  defp traceable_transactions_dynamic_query do
+  defp traceable_block_number_dynamic_query do
     if RangesHelper.trace_ranges_present?() do
       block_ranges = RangesHelper.get_trace_block_ranges()
 
       Enum.reduce(block_ranges, dynamic([_], false), fn
-        _from.._to = range, acc -> dynamic([transaction], ^acc or transaction.block_number in ^range)
-        num_to_latest, acc -> dynamic([transaction], ^acc or transaction.block_number >= ^num_to_latest)
+        _from.._to = range, acc -> dynamic([transaction_or_tt], ^acc or transaction_or_tt.block_number in ^range)
+        num_to_latest, acc -> dynamic([transaction_or_tt], ^acc or transaction_or_tt.block_number >= ^num_to_latest)
       end)
     else
       dynamic([_], true)

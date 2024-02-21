@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Multi, Repo}
-  alias Explorer.Chain.{Block, Hash, Import, Transaction}
+  alias Explorer.Chain.{Block, Hash, Import, TokenTransfer, Transaction}
   alias Explorer.Chain.Import.Runner.TokenTransfers
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Utility.MissingRangesManipulator
@@ -388,6 +388,16 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
         {_, result} =
           repo.update_all(
             from(transaction in Transaction, join: s in subquery(query), on: transaction.hash == s.hash),
+            [set: [block_consensus: false, updated_at: updated_at]],
+            timeout: timeout
+          )
+
+        {_, _result} =
+          repo.update_all(
+            from(token_transfer in TokenTransfer,
+              join: s in subquery(query),
+              on: token_transfer.transaction_hash == s.hash
+            ),
             [set: [block_consensus: false, updated_at: updated_at]],
             timeout: timeout
           )

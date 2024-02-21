@@ -7,7 +7,7 @@ defmodule Explorer.Chain.DenormalizationHelper do
 
   @spec extend_block_necessity(keyword(), :optional | :required) :: keyword()
   def extend_block_necessity(opts, necessity \\ :optional) do
-    if denormalization_finished?() do
+    if transactions_denormalization_finished?() do
       opts
     else
       Keyword.update(opts, :necessity_by_association, %{:block => necessity}, &Map.put(&1, :block, necessity))
@@ -16,7 +16,7 @@ defmodule Explorer.Chain.DenormalizationHelper do
 
   @spec extend_transaction_block_necessity(keyword(), :optional | :required) :: keyword()
   def extend_transaction_block_necessity(opts, necessity \\ :optional) do
-    if denormalization_finished?() do
+    if transactions_denormalization_finished?() do
       opts
     else
       Keyword.update(
@@ -30,7 +30,7 @@ defmodule Explorer.Chain.DenormalizationHelper do
 
   @spec extend_transaction_preload(list()) :: list()
   def extend_transaction_preload(preloads) do
-    if denormalization_finished?() do
+    if transactions_denormalization_finished?() do
       preloads
     else
       [transaction: :block] ++ (preloads -- [:transaction])
@@ -39,12 +39,14 @@ defmodule Explorer.Chain.DenormalizationHelper do
 
   @spec extend_block_preload(list()) :: list()
   def extend_block_preload(preloads) do
-    if denormalization_finished?() do
+    if transactions_denormalization_finished?() do
       preloads
     else
       [:block | preloads]
     end
   end
 
-  def denormalization_finished?, do: BackgroundMigrations.get_denormalization_finished()
+  def transactions_denormalization_finished?, do: BackgroundMigrations.get_transactions_denormalization_finished()
+
+  def tt_denormalization_finished?, do: BackgroundMigrations.get_tt_denormalization_finished()
 end
