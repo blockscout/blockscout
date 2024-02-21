@@ -20,6 +20,7 @@
 
 ### Fixes
 
+- [#9440](https://github.com/blockscout/blockscout/pull/9440) - Add `debug_traceBlockByNumber` to `method_to_url`
 - [#9387](https://github.com/blockscout/blockscout/pull/9387) - Filter out Vyper contracts in Solidityscan API endpoint
 - [#9377](https://github.com/blockscout/blockscout/pull/9377) - Speed up account abstraction proxy
 - [#9371](https://github.com/blockscout/blockscout/pull/9371) - Filter empty values before token update
