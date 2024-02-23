@@ -39,6 +39,7 @@ defmodule Indexer.Block.Fetcher do
     Addresses,
     AddressTokenBalances,
     MintTransfers,
+    OptimismWithdrawals,
     TokenInstances,
     TokenTransfers,
     TransactionActions
@@ -149,6 +150,8 @@ defmodule Indexer.Block.Fetcher do
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
+         optimism_withdrawals =
+           if(callback_module == Indexer.Block.Realtime.Fetcher, do: OptimismWithdrawals.parse(logs), else: []),
          polygon_edge_withdrawals =
            if(callback_module == Indexer.Block.Realtime.Fetcher, do: Withdrawals.parse(logs), else: []),
          polygon_edge_deposit_executes =
@@ -207,6 +210,7 @@ defmodule Indexer.Block.Fetcher do
            block_second_degree_relations: %{params: block_second_degree_relations_params},
            block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
            logs: %{params: logs},
+           optimism_withdrawals: %{params: optimism_withdrawals},
            token_transfers: %{params: token_transfers},
            tokens: %{params: tokens},
            transactions: %{params: transactions_with_receipts},

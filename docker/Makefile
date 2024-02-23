@@ -1,4 +1,3 @@
-
 DOCKER_REPO := blockscout
 BACKEND_APP_NAME := blockscout
 FRONTEND_APP_NAME := frontend

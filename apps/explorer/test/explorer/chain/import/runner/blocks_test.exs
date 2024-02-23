@@ -555,26 +555,6 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
     end
   end
 
-  describe "lose_consensus/5" do
-    test "loses consensus only for consensus=true blocks" do
-      insert(:block, consensus: true, number: 0)
-      insert(:block, consensus: true, number: 1)
-      insert(:block, consensus: false, number: 2)
-
-      new_block0 = params_for(:block, miner_hash: insert(:address).hash, number: 0)
-      new_block1 = params_for(:block, miner_hash: insert(:address).hash, parent_hash: new_block0.hash, number: 1)
-
-      %Ecto.Changeset{valid?: true, changes: new_block1_changes} = Block.changeset(%Block{}, new_block1)
-
-      opts = %{
-        timeout: 60_000,
-        timestamps: %{updated_at: DateTime.utc_now()}
-      }
-
-      assert {:ok, [{0, _}, {1, _}]} = Blocks.lose_consensus(Repo, [], [1], [new_block1_changes], opts)
-    end
-  end
-
   defp insert_block(block_params, options) do
     %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
 

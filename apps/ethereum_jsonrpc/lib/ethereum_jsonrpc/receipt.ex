@@ -172,6 +172,29 @@ defmodule EthereumJSONRPC.Receipt do
     }
   end
 
+  # eth_getTransactionReceipt on Optimism BedRock Geth node
+  # doesn't return L1 fields for system transactions
+  def do_elixir_to_params(
+        %{
+          "cumulativeGasUsed" => cumulative_gas_used,
+          "gasUsed" => gas_used,
+          "contractAddress" => created_contract_address_hash,
+          "transactionHash" => transaction_hash,
+          "transactionIndex" => transaction_index
+        } = elixir
+      ) do
+    status = elixir_to_status(elixir)
+
+    %{
+      cumulative_gas_used: cumulative_gas_used,
+      gas_used: gas_used,
+      created_contract_address_hash: created_contract_address_hash,
+      status: status,
+      transaction_hash: transaction_hash,
+      transaction_index: transaction_index
+    }
+  end
+
   defp chain_type_fields(params, elixir) do
     case Application.get_env(:explorer, :chain_type) do
       "ethereum" ->
@@ -303,7 +326,7 @@ defmodule EthereumJSONRPC.Receipt do
        do: {:ok, entry}
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex blobGasUsed blobGasPrice) do
+       when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex blobGasUsed blobGasPrice l1Fee l1GasPrice l1GasUsed) do
     result =
       if is_nil(quantity) do
         nil

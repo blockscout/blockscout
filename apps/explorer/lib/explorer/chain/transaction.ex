@@ -113,6 +113,12 @@ defmodule Explorer.Chain.Transaction.Schema do
         field(:type, :integer)
         field(:has_error_in_internal_txs, :boolean)
         field(:has_token_transfers, :boolean, virtual: true)
+        field(:l1_fee, Wei)
+        field(:l1_fee_scalar, :decimal)
+        field(:l1_gas_price, Wei)
+        field(:l1_gas_used, :decimal)
+        field(:l1_tx_origin, Hash.Full)
+        field(:l1_block_number, :integer)
 
         # stability virtual fields
         field(:transaction_fee_log, :any, virtual: true)
@@ -202,7 +208,8 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.SmartContract.SigProviderInterface
 
   @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number block_consensus block_timestamp created_contract_address_hash cumulative_gas_used earliest_processing_start
-                     error gas_price gas_used index created_contract_code_indexed_at status to_address_hash revert_reason type has_error_in_internal_txs)a
+                     error gas_price gas_used index created_contract_code_indexed_at status
+                     to_address_hash revert_reason type has_error_in_internal_txs l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
 
   @suave_optional_attrs ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
 
@@ -1715,7 +1722,7 @@ defmodule Explorer.Chain.Transaction do
 
   If the transaction is pending, then the fee will be a range of `unit`
 
-      iex> Explorer.Chain.Transaction.fee(
+      iex> Explorer.Chain.fee(
       ...>   %Explorer.Chain.Transaction{
       ...>     gas: Decimal.new(3),
       ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
@@ -1728,7 +1735,7 @@ defmodule Explorer.Chain.Transaction do
   If the transaction has been confirmed in block, then the fee will be the actual fee paid in `unit` for the `gas_used`
   in the `transaction`.
 
-      iex> Explorer.Chain.Transaction.fee(
+      iex> Explorer.Chain.fee(
       ...>   %Explorer.Chain.Transaction{
       ...>     gas: Decimal.new(3),
       ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
@@ -1740,38 +1747,31 @@ defmodule Explorer.Chain.Transaction do
 
   """
   @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t() | nil}
-  def fee(%Transaction{gas: gas, gas_price: nil, gas_used: nil} = transaction, unit) do
-    gas_price = effective_gas_price(transaction)
+  def fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
 
-    {:maximum, gas_price && gas_price |> Wei.to(unit) |> Decimal.mult(gas)}
+  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil} = tx, unit) do
+    {:maximum, fee(tx, gas_price, gas, unit)}
   end
 
-  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
-    fee =
-      gas_price
-      |> Wei.to(unit)
-      |> Decimal.mult(gas)
+  def fee(%Transaction{gas_price: nil, gas_used: _gas_used}, _unit), do: {:actual, nil}
 
-    {:maximum, fee}
+  def fee(%Transaction{gas_price: gas_price, gas_used: gas_used} = tx, unit) do
+    {:actual, fee(tx, gas_price, gas_used, unit)}
   end
 
-  def fee(%Transaction{gas_price: nil, gas_used: gas_used} = transaction, unit) do
-    gas_price = effective_gas_price(transaction)
+  defp fee(tx, gas_price, gas, unit) do
+    l1_fee =
+      case Map.get(tx, :l1_fee) do
+        nil -> Wei.from(Decimal.new(0), :wei)
+        value -> value
+      end
 
-    {:actual,
-     gas_price &&
-       gas_price
-       |> Wei.to(unit)
-       |> Decimal.mult(gas_used)}
-  end
-
-  def fee(%Transaction{gas_price: gas_price, gas_used: gas_used}, unit) do
-    fee =
-      gas_price
-      |> Wei.to(unit)
-      |> Decimal.mult(gas_used)
-
-    {:actual, fee}
+    gas_price
+    |> Wei.to(unit)
+    |> Decimal.mult(gas)
+    |> Wei.from(unit)
+    |> Wei.sum(l1_fee)
+    |> Wei.to(unit)
   end
 
   @doc """

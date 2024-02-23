@@ -21,7 +21,7 @@ defmodule Indexer.Transform.OptimismWithdrawals do
     items =
       with false <- is_nil(Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:start_block_l2]),
            message_passer = Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:message_passer],
-           true <- Helper.is_address_correct?(message_passer) do
+           true <- Helper.address_correct?(message_passer) do
         message_passer = String.downcase(message_passer)
 
         logs

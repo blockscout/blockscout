@@ -66,8 +66,8 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
          {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.Optimism))},
          optimism_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-         {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helper.is_address_correct?(env[:batch_inbox])},
-         {:batch_submitter_valid, true} <- {:batch_submitter_valid, Helper.is_address_correct?(env[:batch_submitter])},
+         {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helper.address_correct?(env[:batch_inbox])},
+         {:batch_submitter_valid, true} <- {:batch_submitter_valid, Helper.address_correct?(env[:batch_submitter])},
          start_block_l1 = parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
@@ -498,71 +498,6 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     else
       {:ok, new_incomplete_channels_acc, batches_acc ++ batches_parsed, [seq | sequences_acc]}
     end
-  end
-
-  defp handle_l1_reorg(reorg_block, incomplete_channels) do
-    incomplete_channels
-    |> Enum.reduce(incomplete_channels, fn {channel_id, %{frames: frames} = channel}, acc ->
-      updated_frames =
-        frames
-        |> Enum.filter(fn {_frame_number, %{block_number: block_number}} ->
-          block_number < reorg_block
-        end)
-        |> Enum.into(%{})
-
-      if Enum.empty?(updated_frames) do
-        Map.delete(acc, channel_id)
-      else
-        Map.put(acc, channel_id, Map.put(channel, :frames, updated_frames))
-      end
-    end)
-  end
-
-  @doc """
-    Removes rows from op_transaction_batches and op_frame_sequences tables written beginning from the L2 reorg block.
-  """
-  @spec handle_l2_reorg(non_neg_integer()) :: any()
-  def handle_l2_reorg(reorg_block) do
-    frame_sequence_ids =
-      Repo.all(
-        from(
-          tb in OptimismTxnBatch,
-          select: tb.frame_sequence_id,
-          where: tb.l2_block_number >= ^reorg_block
-        ),
-        timeout: :infinity
-      )
-
-    {deleted_count, _} = Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^reorg_block))
-
-    Repo.delete_all(from(fs in OptimismFrameSequence, where: fs.id in ^frame_sequence_ids))
-
-    if deleted_count > 0 do
-      Logger.warning(
-        "As L2 reorg was detected, all rows with l2_block_number >= #{reorg_block} were removed from the op_transaction_batches table. Number of removed rows: #{deleted_count}."
-      )
-    end
-  end
-
-  defp channel_complete?(channel) do
-    last_frame_number =
-      channel.frames
-      |> Map.keys()
-      |> Enum.max()
-
-    Map.get(channel.frames, last_frame_number).is_last and last_frame_number == Enum.count(channel.frames) - 1
-  end
-
-  defp remove_expired_channels(channels_map) do
-    now = DateTime.utc_now()
-
-    Enum.reduce(channels_map, channels_map, fn {channel_id, %{timestamp: timestamp}}, channels_acc ->
-      if DateTime.diff(now, timestamp) >= 86400 do
-        Map.delete(channels_acc, channel_id)
-      else
-        channels_acc
-      end
-    end)
   end
 
   defp handle_l1_reorg(reorg_block, incomplete_channels) do

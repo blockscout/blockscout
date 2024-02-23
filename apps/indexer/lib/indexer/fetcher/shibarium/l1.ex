@@ -557,7 +557,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     timestamps =
       events
       |> filter_deposit_events()
-      |> Helper.get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+      |> Helper.get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number())
       |> Enum.reduce(%{}, fn block, acc ->
         block_number = quantity_to_integer(Map.get(block, "number"))
         {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))

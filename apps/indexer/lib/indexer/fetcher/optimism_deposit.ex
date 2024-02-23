@@ -71,7 +71,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     optimism_l1_rpc = optimism_env[:optimism_l1_rpc]
 
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
-         {:optimism_portal_valid, true} <- {:optimism_portal_valid, Helper.is_address_correct?(optimism_portal)},
+         {:optimism_portal_valid, true} <- {:optimism_portal_valid, Helper.address_correct?(optimism_portal)},
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          start_block_l1 <- parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),

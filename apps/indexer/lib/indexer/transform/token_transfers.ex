@@ -6,9 +6,8 @@ defmodule Indexer.Transform.TokenTransfers do
   require Logger
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
-  import Explorer.Helper, only: [decode_data: 2]
 
-  alias Explorer.Repo
+  alias Explorer.{Helper, Repo}
   alias Explorer.Chain.{Token, TokenTransfer}
   alias Indexer.Fetcher.TokenTotalSupplyUpdater
 

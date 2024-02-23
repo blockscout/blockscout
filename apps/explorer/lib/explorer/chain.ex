@@ -1666,6 +1666,196 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Lists `t:Explorer.Chain.OptimismTxnBatch.t/0`'s' in descending order based on l2_block_number.
+
+  """
+  @spec list_txn_batches :: [OptimismTxnBatch.t()]
+  def list_txn_batches(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(tb in OptimismTxnBatch,
+        order_by: [desc: tb.l2_block_number]
+      )
+
+    base_query
+    |> join_association(:frame_sequence, :required)
+    |> page_txn_batches(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
+  end
+
+  def get_table_rows_total_count(module, options) do
+    table_name = module.__schema__(:source)
+
+    count = CacheHelper.estimated_count_from(table_name, options)
+
+    if is_nil(count) do
+      select_repo(options).aggregate(module, :count, timeout: :infinity)
+    else
+      count
+    end
+  end
+
+  @doc """
+  Lists `t:Explorer.Chain.OptimismOutputRoot.t/0`'s' in descending order based on output root index.
+
+  """
+  @spec list_output_roots :: [OptimismOutputRoot.t()]
+  def list_output_roots(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(r in OptimismOutputRoot,
+        order_by: [desc: r.l2_output_index],
+        select: r
+      )
+
+    base_query
+    |> page_output_roots(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
+  end
+
+  @doc """
+  Lists `t:Explorer.Chain.OptimismDeposit.t/0`'s' in descending order based on l1_block_number and l2_transaction_hash.
+
+  """
+  @spec list_optimism_deposits :: [OptimismDeposit.t()]
+  def list_optimism_deposits(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(d in OptimismDeposit,
+        order_by: [desc: d.l1_block_number, desc: d.l2_transaction_hash]
+      )
+
+    base_query
+    |> join_association(:l2_transaction, :required)
+    |> page_deposits(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
+  end
+
+  @doc """
+  Lists `t:Explorer.Chain.OptimismWithdrawal.t/0`'s' in descending order based on message nonce.
+
+  """
+  @spec list_optimism_withdrawals :: [OptimismWithdrawal.t()]
+  def list_optimism_withdrawals(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(w in OptimismWithdrawal,
+        order_by: [desc: w.msg_nonce],
+        left_join: l2_tx in Transaction,
+        on: w.l2_transaction_hash == l2_tx.hash,
+        left_join: l2_block in Block,
+        on: w.l2_block_number == l2_block.number,
+        left_join: we in OptimismWithdrawalEvent,
+        on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
+        select: %{
+          msg_nonce: w.msg_nonce,
+          hash: w.hash,
+          l2_block_number: w.l2_block_number,
+          l2_timestamp: l2_block.timestamp,
+          l2_transaction_hash: w.l2_transaction_hash,
+          l1_transaction_hash: we.l1_transaction_hash,
+          from: l2_tx.from_address_hash
+        }
+      )
+
+    base_query
+    |> page_optimism_withdrawals(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
+  end
+
+  @doc """
+    Gets withdrawal statuses for Optimism Withdrawal transaction.
+    For each withdrawal associated with this transaction,
+    returns the status and the corresponding L1 transaction hash if the status is `Relayed`.
+  """
+  @spec optimism_withdrawal_transaction_statuses(Hash.t()) :: [{non_neg_integer(), String.t(), Hash.t() | nil}]
+  def optimism_withdrawal_transaction_statuses(l2_transaction_hash) do
+    query =
+      from(w in OptimismWithdrawal,
+        where: w.l2_transaction_hash == ^l2_transaction_hash,
+        left_join: l2_block in Block,
+        on: w.l2_block_number == l2_block.number and l2_block.consensus == true,
+        left_join: we in OptimismWithdrawalEvent,
+        on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
+        select: %{
+          hash: w.hash,
+          l2_block_number: w.l2_block_number,
+          l1_transaction_hash: we.l1_transaction_hash,
+          msg_nonce: w.msg_nonce
+        }
+      )
+
+    query
+    |> Repo.replica().all()
+    |> Enum.map(fn w ->
+      msg_nonce =
+        Bitwise.band(
+          Decimal.to_integer(w.msg_nonce),
+          0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+        )
+
+      {status, _} = optimism_withdrawal_status(w)
+      {msg_nonce, status, w.l1_transaction_hash}
+    end)
+  end
+
+  @doc """
+    Gets Optimism Withdrawal status and remaining time to unlock (when the status is `In challenge period`).
+  """
+  @spec optimism_withdrawal_status(map()) :: {String.t(), DateTime.t() | nil}
+  def optimism_withdrawal_status(w) when is_nil(w.l1_transaction_hash) do
+    l1_timestamp =
+      Repo.replica().one(
+        from(
+          we in OptimismWithdrawalEvent,
+          select: we.l1_timestamp,
+          where: we.withdrawal_hash == ^w.hash and we.l1_event_type == :WithdrawalProven
+        )
+      )
+
+    if is_nil(l1_timestamp) do
+      last_root_l2_block_number =
+        Repo.replica().one(
+          from(root in OptimismOutputRoot,
+            select: root.l2_block_number,
+            order_by: [desc: root.l2_output_index],
+            limit: 1
+          )
+        ) || 0
+
+      if w.l2_block_number > last_root_l2_block_number do
+        {"Waiting for state root", nil}
+      else
+        {"Ready to prove", nil}
+      end
+    else
+      challenge_period =
+        case OptimismFinalizationPeriod.get_period() do
+          nil -> 604_800
+          period -> period
+        end
+
+      if DateTime.compare(l1_timestamp, DateTime.add(DateTime.utc_now(), -challenge_period, :second)) == :lt do
+        {"Ready for relay", nil}
+      else
+        {"In challenge period", DateTime.add(l1_timestamp, challenge_period, :second)}
+      end
+    end
+  end
+
+  def optimism_withdrawal_status(_w) do
+    {"Relayed", nil}
+  end
+
+  @doc """
   Calls `reducer` on a stream of `t:Explorer.Chain.Block.t/0` without `t:Explorer.Chain.Block.Reward.t/0`.
   """
   def stream_blocks_without_rewards(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
@@ -3256,6 +3446,33 @@ defmodule Explorer.Chain do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
     end)
+  end
+
+  defp page_deposits(query, %PagingOptions{key: nil}), do: query
+
+  defp page_deposits(query, %PagingOptions{key: {block_number, l2_tx_hash}}) do
+    from(d in query,
+      where: d.l1_block_number < ^block_number,
+      or_where: d.l1_block_number == ^block_number and d.l2_transaction_hash < ^l2_tx_hash
+    )
+  end
+
+  defp page_txn_batches(query, %PagingOptions{key: nil}), do: query
+
+  defp page_txn_batches(query, %PagingOptions{key: {block_number}}) do
+    from(tb in query, where: tb.l2_block_number < ^block_number)
+  end
+
+  defp page_output_roots(query, %PagingOptions{key: nil}), do: query
+
+  defp page_output_roots(query, %PagingOptions{key: {index}}) do
+    from(r in query, where: r.l2_output_index < ^index)
+  end
+
+  defp page_optimism_withdrawals(query, %PagingOptions{key: nil}), do: query
+
+  defp page_optimism_withdrawals(query, %PagingOptions{key: {nonce}}) do
+    from(w in query, where: w.msg_nonce < ^nonce)
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query

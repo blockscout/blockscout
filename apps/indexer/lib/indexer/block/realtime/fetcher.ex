@@ -35,6 +35,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
+  alias Indexer.Fetcher.{OptimismTxnBatch, OptimismWithdrawal}
   alias Indexer.Fetcher.PolygonEdge.{DepositExecute, Withdrawal}
   alias Indexer.Fetcher.PolygonZkevm.BridgeL2, as: PolygonZkevmBridgeL2
   alias Indexer.Fetcher.Shibarium.L2, as: ShibariumBridgeL2
@@ -264,6 +265,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Indexer.Logger.metadata(
       fn ->
         if reorg? do
+          # we need to remove all rows from `op_transaction_batches` table previously written starting from reorg block number
+          OptimismTxnBatch.handle_l2_reorg(block_number_to_fetch)
+
+          # we need to remove all rows from `op_withdrawals` table previously written starting from reorg block number
+          OptimismWithdrawal.remove(block_number_to_fetch)
+
           # we need to remove all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables previously written starting from reorg block number
           remove_polygon_edge_assets_by_number(block_number_to_fetch)
 
