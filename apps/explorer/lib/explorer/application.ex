@@ -144,6 +144,7 @@ defmodule Explorer.Application do
     if Mix.env() == :test do
       [
         Explorer.Repo.Beacon,
+        Explorer.Repo.Optimism,
         Explorer.Repo.PolygonEdge,
         Explorer.Repo.PolygonZkevm,
         Explorer.Repo.RSK,

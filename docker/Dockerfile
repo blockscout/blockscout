@@ -35,7 +35,7 @@ ADD apps/indexer/mix.exs ./apps/indexer/
 
 ENV MIX_HOME=/opt/mix
 RUN mix local.hex --force
-RUN HEX_HTTP_TIMEOUT=3600 mix do deps.get, local.rebar --force, deps.compile
+RUN mix do deps.get, local.rebar --force, deps.compile
 
 ADD apps ./apps
 ADD config ./config

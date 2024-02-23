@@ -265,11 +265,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Indexer.Logger.metadata(
       fn ->
         if reorg? do
-          # we need to remove all rows from `op_transaction_batches` table previously written starting from reorg block number
-          OptimismTxnBatch.handle_l2_reorg(block_number_to_fetch)
-
-          # we need to remove all rows from `op_withdrawals` table previously written starting from reorg block number
-          OptimismWithdrawal.remove(block_number_to_fetch)
+          # we need to remove all rows from `op_transaction_batches` and `op_withdrawals` tables previously written starting from reorg block number
+          remove_optimism_assets_by_number(block_number_to_fetch)
 
           # we need to remove all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables previously written starting from reorg block number
           remove_polygon_edge_assets_by_number(block_number_to_fetch)
@@ -290,6 +287,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
       fetcher: :block_realtime,
       block_number: block_number_to_fetch
     )
+  end
+
+  defp remove_optimism_assets_by_number(block_number_to_fetch) do
+    if Application.get_env(:explorer, :chain_type) == "optimism" do
+      OptimismTxnBatch.handle_l2_reorg(block_number_to_fetch)
+      OptimismWithdrawal.remove(block_number_to_fetch)
+    end
   end
 
   defp remove_polygon_edge_assets_by_number(block_number_to_fetch) do

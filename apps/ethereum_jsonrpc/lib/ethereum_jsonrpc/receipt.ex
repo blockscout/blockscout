@@ -80,6 +80,12 @@ defmodule EthereumJSONRPC.Receipt do
             blob_gas_price: 0,\
             blob_gas_used: 0\
       """
+    "optimism" -> """
+          l1_fee: 0,\
+          l1_fee_scalar: 0,\
+          l1_gas_price: 0,\
+          l1_gas_used: 0\
+      """
     _ -> ""
   end}
       }
@@ -120,6 +126,12 @@ defmodule EthereumJSONRPC.Receipt do
             blob_gas_price: 0,\
             blob_gas_used: 0\
       """
+    "optimism" -> """
+          l1_fee: 0,\
+          l1_fee_scalar: 0,\
+          l1_gas_price: 0,\
+          l1_gas_used: 0\
+      """
     _ -> ""
   end}
       }
@@ -139,41 +151,6 @@ defmodule EthereumJSONRPC.Receipt do
     |> chain_type_fields(elixir)
   end
 
-  def do_elixir_to_params(
-        %{
-          "cumulativeGasUsed" => cumulative_gas_used,
-          "gasUsed" => gas_used,
-          "contractAddress" => created_contract_address_hash,
-          "transactionHash" => transaction_hash,
-          "transactionIndex" => transaction_index,
-          "l1Fee" => l1_fee,
-          "l1FeeScalar" => l1_fee_scalar_string,
-          "l1GasPrice" => l1_gas_price,
-          "l1GasUsed" => l1_gas_used
-        } = elixir
-      ) do
-    status = elixir_to_status(elixir)
-
-    {l1_fee_scalar, _} =
-      l1_fee_scalar_string
-      |> Float.parse()
-
-    %{
-      cumulative_gas_used: cumulative_gas_used,
-      gas_used: gas_used,
-      created_contract_address_hash: created_contract_address_hash,
-      status: status,
-      transaction_hash: transaction_hash,
-      transaction_index: transaction_index,
-      l1_fee: l1_fee,
-      l1_fee_scalar: l1_fee_scalar,
-      l1_gas_price: l1_gas_price,
-      l1_gas_used: l1_gas_used
-    }
-  end
-
-  # eth_getTransactionReceipt on Optimism BedRock Geth node
-  # doesn't return L1 fields for system transactions
   def do_elixir_to_params(
         %{
           "cumulativeGasUsed" => cumulative_gas_used,
@@ -202,6 +179,15 @@ defmodule EthereumJSONRPC.Receipt do
         |> Map.merge(%{
           blob_gas_price: Map.get(elixir, "blobGasPrice", 0),
           blob_gas_used: Map.get(elixir, "blobGasUsed", 0)
+        })
+
+      "optimism" ->
+        params
+        |> Map.merge(%{
+          l1_fee: Map.get(elixir, "l1Fee", 0),
+          l1_fee_scalar: Map.get(elixir, "l1FeeScalar", 0),
+          l1_gas_price: Map.get(elixir, "l1GasPrice", 0),
+          l1_gas_used: Map.get(elixir, "l1GasUsed", 0)
         })
 
       _ ->

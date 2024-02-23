@@ -210,7 +210,6 @@ defmodule Indexer.Block.Fetcher do
            block_second_degree_relations: %{params: block_second_degree_relations_params},
            block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
            logs: %{params: logs},
-           optimism_withdrawals: %{params: optimism_withdrawals},
            token_transfers: %{params: token_transfers},
            tokens: %{params: tokens},
            transactions: %{params: transactions_with_receipts},
@@ -219,6 +218,7 @@ defmodule Indexer.Block.Fetcher do
          },
          chain_type_import_options = %{
            transactions_with_receipts: transactions_with_receipts,
+           optimism_withdrawals: optimism_withdrawals,
            polygon_edge_withdrawals: polygon_edge_withdrawals,
            polygon_edge_deposit_executes: polygon_edge_deposit_executes,
            polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
@@ -252,6 +252,7 @@ defmodule Indexer.Block.Fetcher do
 
   defp import_options(basic_import_options, %{
          transactions_with_receipts: transactions_with_receipts,
+         optimism_withdrawals: optimism_withdrawals,
          polygon_edge_withdrawals: polygon_edge_withdrawals,
          polygon_edge_deposit_executes: polygon_edge_deposit_executes,
          polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
@@ -263,6 +264,10 @@ defmodule Indexer.Block.Fetcher do
         |> Map.put_new(:beacon_blob_transactions, %{
           params: transactions_with_receipts |> Enum.filter(&Map.has_key?(&1, :max_fee_per_blob_gas))
         })
+
+      "optimism" ->
+        basic_import_options
+        |> Map.put_new(:optimism_withdrawals, %{params: optimism_withdrawals})
 
       "polygon_edge" ->
         basic_import_options

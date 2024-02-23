@@ -33,7 +33,7 @@ defmodule Indexer.Transform.PolygonZkevm.Bridge do
         start_block = Enum.min(block_numbers)
         end_block = Enum.max(block_numbers)
 
-        Helper.log_blocks_chunk_handling(start_block, end_block, start_block, end_block, nil, "L2")
+        Helper.log_blocks_chunk_handling(start_block, end_block, start_block, end_block, nil, :L2)
 
         json_rpc_named_arguments_l1 = Helper.json_rpc_named_arguments(rpc_l1)
 
@@ -50,7 +50,7 @@ defmodule Indexer.Transform.PolygonZkevm.Bridge do
           start_block,
           end_block,
           "#{Enum.count(items)} L2 operation(s)",
-          "L2"
+          :L2
         )
 
         items
