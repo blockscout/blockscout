@@ -577,7 +577,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   defp add_optimism_fields(result, transaction_hash, single_tx?) do
-    if single_tx? do
+    if Application.get_env(:explorer, :chain_type) == "optimism" && single_tx? do
       withdrawals =
         transaction_hash
         |> Chain.optimism_withdrawal_transaction_statuses()

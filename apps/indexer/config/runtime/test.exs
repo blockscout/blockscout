@@ -1,3 +1,5 @@
+import Config
+
 alias EthereumJSONRPC.Variant
 
 config :indexer, Indexer.Fetcher.Beacon.Blob.Supervisor, disabled?: true

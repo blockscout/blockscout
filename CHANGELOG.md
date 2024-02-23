@@ -4,6 +4,7 @@
 
 ### Features
 
+- [#9460](https://github.com/blockscout/blockscout/pull/9460) - Optimism chain type
 - [#7200](https://github.com/blockscout/blockscout/pull/7200) - Add Optimism BedRock Deposits to the main page in API
 - [#6980](https://github.com/blockscout/blockscout/pull/6980) - Add Optimism BedRock support (Txn Batches, Output Roots, Deposits, Withdrawals)
 

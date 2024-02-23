@@ -16,22 +16,16 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.TokenInstances,
     Runner.Address.TokenBalances,
     Runner.TransactionActions,
-    Runner.Withdrawals,
+    Runner.Withdrawals
+  ]
+
+  @optimism_runners [
     Runner.OptimismFrameSequences,
     Runner.OptimismTxnBatches,
     Runner.OptimismOutputRoots,
     Runner.OptimismDeposits,
     Runner.OptimismWithdrawals,
     Runner.OptimismWithdrawalEvents
-  ]
-
-  @optimism_runners [
-    Runner.Optimism.FrameSequences,
-    Runner.Optimism.TxnBatches,
-    Runner.Optimism.OutputRoots,
-    Runner.Optimism.Deposits,
-    Runner.Optimism.Withdrawals,
-    Runner.Optimism.WithdrawalEvents
   ]
 
   @polygon_edge_runners [
@@ -59,7 +53,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
   @impl Stage
   def runners do
-    case Application.get_env(:explorer, :chain_type) do
+    case System.get_env("CHAIN_TYPE") do
       "optimism" ->
         @default_runners ++ @optimism_runners
 
