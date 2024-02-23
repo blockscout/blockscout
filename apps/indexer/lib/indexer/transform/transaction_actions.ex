@@ -6,6 +6,7 @@ defmodule Indexer.Transform.TransactionActions do
   require Logger
 
   import Ecto.Query, only: [from: 2]
+  import Explorer.Helper, only: [decode_data: 2]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
   import Explorer.Helper, only: [decode_data: 2]
 

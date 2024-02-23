@@ -69,4 +69,4 @@ config :logger, :token_instances,
   level: :debug,
   path: Path.absname("logs/prod/explorer/tokens/token_instances.log"),
   metadata_filter: [fetcher: :token_instances],
-  rotate: %{max_bytes: 52_428_800, keep: 19}
+  rotate: %{max_bytes: 52_428_800, keep: 5}

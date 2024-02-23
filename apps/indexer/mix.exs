@@ -14,15 +14,15 @@ defmodule Indexer.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "6.2.2",
+      version: "6.2.0",
       xref: [
         exclude: [
-          Explorer.Chain.Optimism.Deposit,
-          Explorer.Chain.Optimism.FrameSequence,
-          Explorer.Chain.Optimism.OutputRoot,
-          Explorer.Chain.Optimism.TxnBatch,
-          Explorer.Chain.Optimism.Withdrawal,
-          Explorer.Chain.Optimism.WithdrawalEvent
+          Explorer.Chain.OptimismDeposit,
+          Explorer.Chain.OptimismFrameSequence,
+          Explorer.Chain.OptimismOutputRoot,
+          Explorer.Chain.OptimismTxnBatch,
+          Explorer.Chain.OptimismWithdrawal,
+          Explorer.Chain.OptimismWithdrawalEvent
         ]
       ]
     ]

@@ -23,14 +23,14 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "6.2.2",
+      version: "6.2.0",
       xref: [
         exclude: [
           Explorer.Chain.PolygonZkevm.Reader,
           Explorer.Chain.Beacon.Reader,
           Explorer.Chain.Cache.OptimismFinalizationPeriod,
-          Explorer.Chain.Optimism.OutputRoot,
-          Explorer.Chain.Optimism.WithdrawalEvent
+          Explorer.Chain.OptimismOutputRoot,
+          Explorer.Chain.OptimismWithdrawalEvent
         ]
       ]
     ]

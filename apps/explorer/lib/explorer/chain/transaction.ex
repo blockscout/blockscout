@@ -26,19 +26,6 @@ defmodule Explorer.Chain.Transaction.Schema do
                             ]
                           end
 
-                        "optimism" ->
-                          elem(
-                            quote do
-                              field(:l1_fee, Wei)
-                              field(:l1_fee_scalar, :decimal)
-                              field(:l1_gas_price, Wei)
-                              field(:l1_gas_used, :decimal)
-                              field(:l1_tx_origin, Hash.Full)
-                              field(:l1_block_number, :integer)
-                            end,
-                            2
-                          )
-
                         "suave" ->
                           elem(
                             quote do
@@ -126,6 +113,12 @@ defmodule Explorer.Chain.Transaction.Schema do
         field(:type, :integer)
         field(:has_error_in_internal_txs, :boolean)
         field(:has_token_transfers, :boolean, virtual: true)
+        field(:l1_fee, Wei)
+        field(:l1_fee_scalar, :decimal)
+        field(:l1_gas_price, Wei)
+        field(:l1_gas_used, :decimal)
+        field(:l1_tx_origin, Hash.Full)
+        field(:l1_block_number, :integer)
 
         # stability virtual fields
         field(:transaction_fee_log, :any, virtual: true)
@@ -216,9 +209,8 @@ defmodule Explorer.Chain.Transaction do
 
   @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number block_consensus block_timestamp created_contract_address_hash cumulative_gas_used earliest_processing_start
                      error gas_price gas_used index created_contract_code_indexed_at status
-                     to_address_hash revert_reason type has_error_in_internal_txs)a
+                     to_address_hash revert_reason type has_error_in_internal_txs l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
 
-  @optimism_optional_attrs ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
   @suave_optional_attrs ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
 
   @required_attrs ~w(from_address_hash gas hash input nonce r s v value)a
@@ -542,7 +534,7 @@ defmodule Explorer.Chain.Transaction do
     attrs_to_cast =
       @required_attrs ++
         @optional_attrs ++
-        custom_optional_attrs()
+        if Application.get_env(:explorer, :chain_type) == "suave", do: @suave_optional_attrs, else: @empty_attrs
 
     transaction
     |> cast(attrs, attrs_to_cast)
@@ -555,14 +547,6 @@ defmodule Explorer.Chain.Transaction do
     |> check_status()
     |> foreign_key_constraint(:block_hash)
     |> unique_constraint(:hash)
-  end
-
-  defp custom_optional_attrs do
-    case Application.get_env(:explorer, :chain_type) do
-      "suave" -> @suave_optional_attrs
-      "optimism" -> @optimism_optional_attrs
-      _ -> @empty_attrs
-    end
   end
 
   @spec block_timestamp(t()) :: DateTime.t()
@@ -1738,7 +1722,7 @@ defmodule Explorer.Chain.Transaction do
 
   If the transaction is pending, then the fee will be a range of `unit`
 
-      iex> Explorer.Chain.Transaction.fee(
+      iex> Explorer.Chain.fee(
       ...>   %Explorer.Chain.Transaction{
       ...>     gas: Decimal.new(3),
       ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
@@ -1751,7 +1735,7 @@ defmodule Explorer.Chain.Transaction do
   If the transaction has been confirmed in block, then the fee will be the actual fee paid in `unit` for the `gas_used`
   in the `transaction`.
 
-      iex> Explorer.Chain.Transaction.fee(
+      iex> Explorer.Chain.fee(
       ...>   %Explorer.Chain.Transaction{
       ...>     gas: Decimal.new(3),
       ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
@@ -1769,19 +1753,7 @@ defmodule Explorer.Chain.Transaction do
     {:maximum, fee(tx, gas_price, gas, unit)}
   end
 
-  def fee(%Transaction{gas_price: nil, gas_used: gas_used} = transaction, unit) do
-    if Application.get_env(:explorer, :chain_type) == "optimism" do
-      {:actual, nil}
-    else
-      gas_price = effective_gas_price(transaction)
-
-      {:actual,
-       gas_price &&
-         gas_price
-         |> Wei.to(unit)
-         |> Decimal.mult(gas_used)}
-    end
-  end
+  def fee(%Transaction{gas_price: nil, gas_used: _gas_used}, _unit), do: {:actual, nil}
 
   def fee(%Transaction{gas_price: gas_price, gas_used: gas_used} = tx, unit) do
     {:actual, fee(tx, gas_price, gas_used, unit)}

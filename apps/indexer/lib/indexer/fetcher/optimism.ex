@@ -9,7 +9,13 @@ defmodule Indexer.Fetcher.Optimism do
   require Logger
 
   import EthereumJSONRPC,
-    only: [fetch_block_number_by_tag: 2, json_rpc: 2, integer_to_quantity: 1, quantity_to_integer: 1, request: 1]
+    only: [
+      fetch_block_number_by_tag_op_version: 2,
+      json_rpc: 2,
+      integer_to_quantity: 1,
+      quantity_to_integer: 1,
+      request: 1
+    ]
 
   import Explorer.Helper, only: [parse_integer: 1]
 
@@ -127,18 +133,13 @@ defmodule Indexer.Fetcher.Optimism do
   @spec get_block_number_by_tag(binary(), list(), non_neg_integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
   def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ @finite_retries_number) do
     error_message = &"Cannot fetch #{tag} block number. Error: #{inspect(&1)}"
-    repeated_call(&fetch_block_number_by_tag/2, [tag, json_rpc_named_arguments], error_message, retries)
-  end
 
-  def get_safe_block(json_rpc_named_arguments) do
-    case get_block_number_by_tag("safe", json_rpc_named_arguments) do
-      {:ok, safe_block} ->
-        {safe_block, false}
-
-      {:error, :not_found} ->
-        {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-        {latest_block, true}
-    end
+    Helper.repeated_call(
+      &fetch_block_number_by_tag_op_version/2,
+      [tag, json_rpc_named_arguments],
+      error_message,
+      retries
+    )
   end
 
   @doc """
@@ -288,7 +289,7 @@ defmodule Indexer.Fetcher.Optimism do
          {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.Optimism))},
          optimism_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-         {:contract_is_valid, true} <- {:contract_is_valid, Helper.is_address_correct?(contract_address)},
+         {:contract_is_valid, true} <- {:contract_is_valid, Helper.address_correct?(contract_address)},
          start_block_l1 = parse_integer(env[:start_block_l1]),
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
