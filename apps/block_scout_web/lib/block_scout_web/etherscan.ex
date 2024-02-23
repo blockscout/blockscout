@@ -1420,12 +1420,12 @@ defmodule BlockScoutWeb.Etherscan do
           "A string representing the order by block number direction. Defaults to descending order. Available values: asc, desc"
       },
       %{
-        key: "start_block",
+        key: "startblock",
         type: "integer",
         description: "A nonnegative integer that represents the starting block number."
       },
       %{
-        key: "end_block",
+        key: "endblock",
         type: "integer",
         description: "A nonnegative integer that represents the ending block number."
       },
@@ -1513,13 +1513,13 @@ defmodule BlockScoutWeb.Etherscan do
           "A string representing the order by block number direction. Defaults to ascending order. Available values: asc, desc. WARNING: Only available if 'address' is provided."
       },
       %{
-        key: "start_block",
+        key: "startblock",
         type: "integer",
         description:
           "A nonnegative integer that represents the starting block number. WARNING: Only available if 'address' is provided."
       },
       %{
-        key: "end_block",
+        key: "endblock",
         type: "integer",
         description:
           "A nonnegative integer that represents the ending block number. WARNING: Only available if 'address' is provided."
@@ -1588,12 +1588,12 @@ defmodule BlockScoutWeb.Etherscan do
           "A string representing the order by block number direction. Defaults to ascending order. Available values: asc, desc"
       },
       %{
-        key: "start_block",
+        key: "startblock",
         type: "integer",
         description: "A nonnegative integer that represents the starting block number."
       },
       %{
-        key: "end_block",
+        key: "endblock",
         type: "integer",
         description: "A nonnegative integer that represents the ending block number."
       },

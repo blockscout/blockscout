@@ -11,7 +11,7 @@ defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
       where: 3
     ]
 
-  alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.{PagingOptions, Repo}
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, TokenTransfer, Transaction}
   alias Explorer.Chain.CSVExport.Helper
 
@@ -92,7 +92,7 @@ defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
 
   defp fee(transaction) do
     transaction
-    |> Chain.fee(:wei)
+    |> Transaction.fee(:wei)
     |> case do
       {:actual, value} -> value
       {:maximum, value} -> "Max of #{value}"

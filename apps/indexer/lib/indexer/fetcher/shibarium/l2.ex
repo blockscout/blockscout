@@ -29,6 +29,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Shibarium.Bridge
   alias Indexer.Helper
+  alias Indexer.Transform.Addresses
 
   @eth_get_logs_range_size 100
   @fetcher_name :shibarium_bridge_l2
@@ -180,9 +181,17 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
         |> get_logs_all(child_chain, bone_withdraw, json_rpc_named_arguments)
         |> prepare_operations(weth)
 
+      insert_items = prepare_insert_items(operations, __MODULE__)
+
+      addresses =
+        Addresses.extract_addresses(%{
+          shibarium_bridge_operations: insert_items
+        })
+
       {:ok, _} =
         Chain.import(%{
-          shibarium_bridge_operations: %{params: prepare_insert_items(operations, __MODULE__)},
+          addresses: %{params: addresses, on_conflict: :nothing},
+          shibarium_bridge_operations: %{params: insert_items},
           timeout: :infinity
         })
 

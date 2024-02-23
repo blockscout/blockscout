@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi, Repo}
   alias EthereumJSONRPC.Utility.RangesHelper
-  alias Explorer.Chain.{Block, Hash, Import, InternalTransaction, PendingBlockOperation, Transaction}
+  alias Explorer.Chain.{Block, Hash, Import, InternalTransaction, PendingBlockOperation, TokenTransfer, Transaction}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import.Runner
   alias Explorer.Prometheus.Instrumenter
@@ -147,7 +147,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end)
     |> Multi.run(:remove_consensus_of_invalid_blocks, fn repo, %{invalid_block_numbers: invalid_block_numbers} ->
       Instrumenter.block_import_stage_runner(
-        fn -> remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) end,
+        fn -> remove_consensus_of_invalid_blocks(repo, invalid_block_numbers, timestamps) end,
         :block_pending,
         :internal_transactions,
         :remove_consensus_of_invalid_blocks
@@ -333,6 +333,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     # common_tuples = MapSet.intersection(required_tuples, candidate_tuples) #should be added
     # |> MapSet.difference(internal_transactions_tuples) should be replaced with |> MapSet.difference(common_tuples)
 
+    # Note: for zetachain, the case "# - there are no internal txs for some transactions" is removed since
+    # there are may be non-traceable transactions
+
     transactions_tuples = MapSet.new(transactions, &{&1.hash, &1.block_number})
 
     internal_transactions_tuples = MapSet.new(internal_transactions_params, &{&1.transaction_hash, &1.block_number})
@@ -340,10 +343,21 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     all_tuples = MapSet.union(transactions_tuples, internal_transactions_tuples)
 
     invalid_block_numbers =
-      all_tuples
-      |> MapSet.difference(internal_transactions_tuples)
-      |> MapSet.new(fn {_hash, block_number} -> block_number end)
-      |> MapSet.to_list()
+      if Application.get_env(:explorer, :chain_type) == "zetachain" do
+        Enum.reduce(internal_transactions_tuples, [], fn {transaction_hash, block_number}, acc ->
+          # credo:disable-for-next-line
+          case Enum.find(transactions_tuples, fn {t_hash, _block_number} -> t_hash == transaction_hash end) do
+            nil -> acc
+            {_t_hash, ^block_number} -> acc
+            _ -> [block_number | acc]
+          end
+        end)
+      else
+        all_tuples
+        |> MapSet.difference(internal_transactions_tuples)
+        |> MapSet.new(fn {_hash, block_number} -> block_number end)
+        |> MapSet.to_list()
+      end
 
     {:ok, invalid_block_numbers}
   end
@@ -381,7 +395,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       block_hash = Map.fetch!(blocks_map, block_number)
 
       entries
-      |> Enum.sort_by(&{&1.transaction_hash, &1.index})
+      |> Enum.sort_by(
+        &{(Map.has_key?(&1, :transaction_index) && &1.transaction_index) || &1.transaction_hash, &1.index}
+      )
       |> Enum.with_index()
       |> Enum.map(fn {entry, index} ->
         entry
@@ -691,7 +707,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
-  defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) do
+  defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers, %{updated_at: updated_at}) do
     if Enum.count(invalid_block_numbers) > 0 do
       update_block_query =
         from(
@@ -700,21 +716,31 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           where: ^traceable_blocks_dynamic_query(),
           select: block.hash,
           # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
-          update: [set: [consensus: false]]
+          update: [set: [consensus: false, updated_at: ^updated_at]]
         )
 
       update_transaction_query =
         from(
           transaction in Transaction,
           where: transaction.block_number in ^invalid_block_numbers and transaction.block_consensus,
-          where: ^traceable_transactions_dynamic_query(),
+          where: ^traceable_block_number_dynamic_query(),
           # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
-          update: [set: [block_consensus: false]]
+          update: [set: [block_consensus: false, updated_at: ^updated_at]]
+        )
+
+      update_token_transfers_query =
+        from(
+          token_transfer in TokenTransfer,
+          where: token_transfer.block_number in ^invalid_block_numbers and token_transfer.block_consensus,
+          where: ^traceable_block_number_dynamic_query(),
+          # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
+          update: [set: [block_consensus: false, updated_at: ^updated_at]]
         )
 
       try do
         {_num, result} = repo.update_all(update_block_query, [])
         {_num, _result} = repo.update_all(update_transaction_query, [])
+        {_num, _result} = repo.update_all(update_token_transfers_query, [])
 
         MissingRangesManipulator.add_ranges_by_block_numbers(invalid_block_numbers)
 
@@ -773,13 +799,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
-  defp traceable_transactions_dynamic_query do
+  defp traceable_block_number_dynamic_query do
     if RangesHelper.trace_ranges_present?() do
       block_ranges = RangesHelper.get_trace_block_ranges()
 
       Enum.reduce(block_ranges, dynamic([_], false), fn
-        _from.._to = range, acc -> dynamic([transaction], ^acc or transaction.block_number in ^range)
-        num_to_latest, acc -> dynamic([transaction], ^acc or transaction.block_number >= ^num_to_latest)
+        _from.._to = range, acc -> dynamic([transaction_or_tt], ^acc or transaction_or_tt.block_number in ^range)
+        num_to_latest, acc -> dynamic([transaction_or_tt], ^acc or transaction_or_tt.block_number >= ^num_to_latest)
       end)
     else
       dynamic([_], true)

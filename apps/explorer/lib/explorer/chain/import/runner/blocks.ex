@@ -14,6 +14,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.{
     Address,
     Block,
+    BlockNumberHelper,
+    DenormalizationHelper,
     Import,
     PendingBlockOperation,
     Token,
@@ -407,6 +409,18 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       timeout: timeout
     )
 
+    repo.update_all(
+      from(
+        token_transfer in TokenTransfer,
+        join: s in subquery(acquire_query),
+        on: token_transfer.block_hash == s.hash,
+        # we don't want to remove consensus from blocks that will be upserted
+        where: token_transfer.block_hash not in ^hashes
+      ),
+      [set: [block_consensus: false, updated_at: updated_at]],
+      timeout: timeout
+    )
+
     removed_consensus_block_hashes
     |> Enum.map(fn {number, _hash} -> number end)
     |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
@@ -709,28 +723,51 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp forked_token_transfers_query(forked_transaction_hashes) do
-    from(token_transfer in TokenTransfer,
-      where: token_transfer.transaction_hash in ^forked_transaction_hashes,
-      inner_join: token in Token,
-      on: token.contract_address_hash == token_transfer.token_contract_address_hash,
-      where: token.type == "ERC-721",
-      inner_join: instance in Instance,
-      on:
-        fragment("? @> ARRAY[?::decimal]", token_transfer.token_ids, instance.token_id) and
-          instance.token_contract_address_hash == token_transfer.token_contract_address_hash,
-      # per one token instance we will have only one token transfer
-      where:
-        token_transfer.block_number == instance.owner_updated_at_block and
-          token_transfer.log_index == instance.owner_updated_at_log_index,
-      select: %{
-        from: token_transfer.from_address_hash,
-        to: token_transfer.to_address_hash,
-        token_id: instance.token_id,
-        token_contract_address_hash: token_transfer.token_contract_address_hash,
-        block_number: token_transfer.block_number,
-        log_index: token_transfer.log_index
-      }
-    )
+    if DenormalizationHelper.tt_denormalization_finished?() do
+      from(token_transfer in TokenTransfer,
+        where: token_transfer.transaction_hash in ^forked_transaction_hashes,
+        where: token_transfer.token_type == "ERC-721",
+        inner_join: instance in Instance,
+        on:
+          fragment("? @> ARRAY[?::decimal]", token_transfer.token_ids, instance.token_id) and
+            instance.token_contract_address_hash == token_transfer.token_contract_address_hash,
+        # per one token instance we will have only one token transfer
+        where:
+          token_transfer.block_number == instance.owner_updated_at_block and
+            token_transfer.log_index == instance.owner_updated_at_log_index,
+        select: %{
+          from: token_transfer.from_address_hash,
+          to: token_transfer.to_address_hash,
+          token_id: instance.token_id,
+          token_contract_address_hash: token_transfer.token_contract_address_hash,
+          block_number: token_transfer.block_number,
+          log_index: token_transfer.log_index
+        }
+      )
+    else
+      from(token_transfer in TokenTransfer,
+        where: token_transfer.transaction_hash in ^forked_transaction_hashes,
+        inner_join: token in Token,
+        on: token.contract_address_hash == token_transfer.token_contract_address_hash,
+        where: token.type == "ERC-721",
+        inner_join: instance in Instance,
+        on:
+          fragment("? @> ARRAY[?::decimal]", token_transfer.token_ids, instance.token_id) and
+            instance.token_contract_address_hash == token_transfer.token_contract_address_hash,
+        # per one token instance we will have only one token transfer
+        where:
+          token_transfer.block_number == instance.owner_updated_at_block and
+            token_transfer.log_index == instance.owner_updated_at_log_index,
+        select: %{
+          from: token_transfer.from_address_hash,
+          to: token_transfer.to_address_hash,
+          token_id: instance.token_id,
+          token_contract_address_hash: token_transfer.token_contract_address_hash,
+          block_number: token_transfer.block_number,
+          log_index: token_transfer.log_index
+        }
+      )
+    end
   end
 
   defp token_instances_on_conflict do
@@ -884,11 +921,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
                                                 number: number
                                               },
                                               acc ->
+        previous_block_number = BlockNumberHelper.previous_block_number(number)
+        next_block_number = BlockNumberHelper.next_block_number(number)
+
         if consensus do
           from(
             block in acc,
-            or_where: block.number == ^(number - 1) and block.hash != ^parent_hash,
-            or_where: block.number == ^(number + 1) and block.parent_hash != ^hash
+            or_where: block.number == ^previous_block_number and block.hash != ^parent_hash,
+            or_where: block.number == ^next_block_number and block.parent_hash != ^hash
           )
         else
           acc
