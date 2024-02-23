@@ -18,8 +18,6 @@ $dashboard-stats-item-border-color: $primary !default;
 $dashboard-banner-network-plain-container-height: 205px;
 $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !default;
 $dashboard-banner-chart-axis-font-color-alt: #333;
-$dashboard-stats-left-border-color: $secondary !default;
-$dashboard-banner-network-stats-label: $tertiary default;
 
 .dashboard-banner-container {
   @include gradient-container();
@@ -153,7 +151,7 @@ $dashboard-banner-network-stats-label: $tertiary default;
 
     &.tx-per-day {
       &::before {
-        background: $dashboard-line-color-transactions;
+        background-color: $dashboard-line-color-transactions;
       }
     }
   }
@@ -277,16 +275,9 @@ $dashboard-banner-network-stats-label: $tertiary default;
   @include stats-item($dashboard-stats-item-border-color, $dashboard-stats-item-label-color, $dashboard-stats-item-value-color);
 
   .dashboard-banner-network-stats-item {
-    ::before {
-      background-color: $dashboard-stats-left-border-color !important;
-    }
     @media (max-width: 374px) {
       padding-left: calc(0.6rem + 4px);
       padding-right: 0.5rem;
-    }
-
-    & .dashboard-banner-network-stats-label {
-      color: $dashboard-banner-network-stats-label !important;
     }
   }
 

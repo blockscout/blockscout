@@ -698,19 +698,20 @@ $c-dark-text-color: #8a8dba;
 			color: $c-primary !important;
 		}
 	}
+}
 
-	a {
-		color: $c-primary;
-		&:hover,
-		&:focus {
-			color: $c-primary;
-		}
-	}
+.circles-theme-applied.dark-theme-applied .tile .tile-body a,
+.circles-theme-applied.dark-theme-applied .tile a:hover,
+.circles-theme-applied.dark-theme-applied .tile span[data-address-hash],
+.circles-theme-applied.dark-theme-applied .tile a[data-test=token_link] {
+    color: $c-primary !important;
+}
 
-	.tile .tile-body a,
-	.tile a:hover,
-	.tile span[data-address-hash],
-	.tile a[data-test=token_link] {
-		color: $c-primary !important;
-	}
+.circles-theme-applied.dark-theme-applied a {
+	color: $c-primary;
+  }
+  
+.circles-theme-applied.dark-theme-applied a:hover,
+.circles-theme-applied.dark-theme-applied a:focus {
+	color: $c-primary;
 }
