@@ -4,6 +4,8 @@
 
 ### Features
 
+- [#9461](https://github.com/blockscout/blockscout/pull/9461) - Fetch blocks without internal transactions backwards
+
 ### Fixes
 
 ### Chore
