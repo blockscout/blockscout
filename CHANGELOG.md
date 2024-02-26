@@ -35,6 +35,7 @@
 
 ### Fixes
 
+- [#9467](https://github.com/blockscout/blockscout/pull/9467) - Eliminate from_address_hash == #{address_hash} clause for transactions query in case of smart-contracts
 - [#9444](https://github.com/blockscout/blockscout/pull/9444) - Fix quick search bug
 - [#9440](https://github.com/blockscout/blockscout/pull/9440) - Add `debug_traceBlockByNumber` to `method_to_url`
 - [#9387](https://github.com/blockscout/blockscout/pull/9387) - Filter out Vyper contracts in Solidityscan API endpoint
