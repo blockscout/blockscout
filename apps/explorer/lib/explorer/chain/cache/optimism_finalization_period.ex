@@ -12,11 +12,12 @@ defmodule Explorer.Chain.Cache.OptimismFinalizationPeriod do
   import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
 
   alias EthereumJSONRPC.Contract
-  alias Indexer.Fetcher.{Optimism, OptimismOutputRoot}
+  alias Indexer.Fetcher.Optimism
+  alias Indexer.Fetcher.Optimism.OutputRoot
 
   defp handle_fallback(:period) do
     optimism_l1_rpc = Application.get_all_env(:indexer)[Optimism][:optimism_l1_rpc]
-    output_oracle = Application.get_all_env(:indexer)[OptimismOutputRoot][:output_oracle]
+    output_oracle = Application.get_all_env(:indexer)[OutputRoot][:output_oracle]
 
     # call FINALIZATION_PERIOD_SECONDS() public getter of L2OutputOracle contract on L1
     request = Contract.eth_call_request("0xf4daa291", output_oracle, 0, nil, nil)

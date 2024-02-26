@@ -20,12 +20,12 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   ]
 
   @optimism_runners [
-    Runner.OptimismFrameSequences,
-    Runner.OptimismTxnBatches,
-    Runner.OptimismOutputRoots,
-    Runner.OptimismDeposits,
-    Runner.OptimismWithdrawals,
-    Runner.OptimismWithdrawalEvents
+    Runner.Optimism.FrameSequences,
+    Runner.Optimism.TxnBatches,
+    Runner.Optimism.OutputRoots,
+    Runner.Optimism.Deposits,
+    Runner.Optimism.Withdrawals,
+    Runner.Optimism.WithdrawalEvents
   ]
 
   @polygon_edge_runners [

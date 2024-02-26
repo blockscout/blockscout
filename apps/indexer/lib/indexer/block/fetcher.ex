@@ -39,7 +39,6 @@ defmodule Indexer.Block.Fetcher do
     Addresses,
     AddressTokenBalances,
     MintTransfers,
-    OptimismWithdrawals,
     TokenInstances,
     TokenTransfers,
     TransactionActions

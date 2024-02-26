@@ -29,8 +29,8 @@ defmodule BlockScoutWeb.Mixfile do
           Explorer.Chain.PolygonZkevm.Reader,
           Explorer.Chain.Beacon.Reader,
           Explorer.Chain.Cache.OptimismFinalizationPeriod,
-          Explorer.Chain.OptimismOutputRoot,
-          Explorer.Chain.OptimismWithdrawalEvent
+          Explorer.Chain.Optimism.OutputRoot,
+          Explorer.Chain.Optimism.WithdrawalEvent
         ]
       ]
     ]
