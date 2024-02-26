@@ -14,7 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup repo
-        uses: ./.github/actions/setup-repo-and-short-sha
+        uses: ./.github/actions/setup-repo
+        id: setup
         with:
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
@@ -26,6 +27,7 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
+          labels: ${{ steps.setup.outputs.docker-labels }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             API_V1_READ_METHODS_DISABLED=false
