@@ -334,6 +334,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
       scope "/account-abstraction" do
         get("/operations/:operation_hash_param", V2.Proxy.AccountAbstractionController, :operation)
+        get("/operations/:operation_hash_param/summary", V2.Proxy.AccountAbstractionController, :summary)
         get("/bundlers/:address_hash_param", V2.Proxy.AccountAbstractionController, :bundler)
         get("/bundlers", V2.Proxy.AccountAbstractionController, :bundlers)
         get("/factories/:address_hash_param", V2.Proxy.AccountAbstractionController, :factory)
