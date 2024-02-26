@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.OptimismOutputRoot do
+defmodule Indexer.Fetcher.Optimism.OutputRoot do
   @moduledoc """
   Fills op_output_roots DB table.
   """
@@ -13,7 +13,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias Explorer.{Chain, Helper, Repo}
-  alias Explorer.Chain.OptimismOutputRoot
+  alias Explorer.Chain.Optimism.OutputRoot
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper, as: IndexerHelper
 
@@ -108,7 +108,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
         reorg_block = Optimism.reorg_block_pop(@fetcher_name)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
-          {deleted_count, _} = Repo.delete_all(from(r in OptimismOutputRoot, where: r.l1_block_number >= ^reorg_block))
+          {deleted_count, _} = Repo.delete_all(from(r in OutputRoot, where: r.l1_block_number >= ^reorg_block))
 
           log_deleted_rows_count(reorg_block, deleted_count)
 
@@ -174,7 +174,7 @@ defmodule Indexer.Fetcher.OptimismOutputRoot do
 
   def get_last_l1_item do
     query =
-      from(root in OptimismOutputRoot,
+      from(root in OutputRoot,
         select: {root.l1_block_number, root.l1_transaction_hash},
         order_by: [desc: root.l2_output_index],
         limit: 1

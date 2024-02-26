@@ -1,12 +1,13 @@
-defmodule Explorer.Chain.Import.Runner.OptimismFrameSequences do
+defmodule Explorer.Chain.Import.Runner.Optimism.OutputRoots do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.OptimismFrameSequence.t/0`.
+  Bulk imports `t:Explorer.Chain.Optimism.OutputRoot.t/0`.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, OptimismFrameSequence}
+  alias Explorer.Chain.Import
+  alias Explorer.Chain.Optimism.OutputRoot
   alias Explorer.Prometheus.Instrumenter
 
   import Ecto.Query, only: [from: 2]
@@ -16,13 +17,13 @@ defmodule Explorer.Chain.Import.Runner.OptimismFrameSequences do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [OptimismFrameSequence.t()]
+  @type imported :: [OutputRoot.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: OptimismFrameSequence
+  def ecto_schema_module, do: OutputRoot
 
   @impl Import.Runner
-  def option_key, do: :optimism_frame_sequences
+  def option_key, do: :optimism_output_roots
 
   @impl Import.Runner
   def imported_table_row do
@@ -41,12 +42,12 @@ defmodule Explorer.Chain.Import.Runner.OptimismFrameSequences do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_frame_sequences, fn repo, _ ->
+    Multi.run(multi, :insert_output_roots, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :optimism_frame_sequences,
-        :optimism_frame_sequences
+        :optimism_output_roots,
+        :optimism_output_roots
       )
     end)
   end
@@ -55,23 +56,23 @@ defmodule Explorer.Chain.Import.Runner.OptimismFrameSequences do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [OptimismFrameSequence.t()]}
+          {:ok, [OutputRoot.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce OptimismFrameSequence ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.id)
+    # Enforce OutputRoot ShareLocks order (see docs: sharelock.md)
+    ordered_changes_list = Enum.sort_by(changes_list, & &1.l2_output_index)
 
     {:ok, inserted} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        for: OptimismFrameSequence,
+        for: OutputRoot,
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
-        conflict_target: :id,
+        conflict_target: :l2_output_index,
         on_conflict: on_conflict
       )
 
@@ -80,21 +81,27 @@ defmodule Explorer.Chain.Import.Runner.OptimismFrameSequences do
 
   defp default_on_conflict do
     from(
-      fs in OptimismFrameSequence,
+      root in OutputRoot,
       update: [
         set: [
-          # don't update `id` as it is a primary key and used for the conflict target
-          l1_transaction_hashes: fragment("EXCLUDED.l1_transaction_hashes"),
+          # don't update `l2_output_index` as it is a primary key and used for the conflict target
+          l2_block_number: fragment("EXCLUDED.l2_block_number"),
+          l1_transaction_hash: fragment("EXCLUDED.l1_transaction_hash"),
           l1_timestamp: fragment("EXCLUDED.l1_timestamp"),
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", fs.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", fs.updated_at)
+          l1_block_number: fragment("EXCLUDED.l1_block_number"),
+          output_root: fragment("EXCLUDED.output_root"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", root.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", root.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.l1_transaction_hashes, EXCLUDED.l1_timestamp) IS DISTINCT FROM (?, ?)",
-          fs.l1_transaction_hashes,
-          fs.l1_timestamp
+          "(EXCLUDED.l2_block_number, EXCLUDED.l1_transaction_hash, EXCLUDED.l1_timestamp, EXCLUDED.l1_block_number, EXCLUDED.output_root) IS DISTINCT FROM (?, ?, ?, ?, ?)",
+          root.l2_block_number,
+          root.l1_transaction_hash,
+          root.l1_timestamp,
+          root.l1_block_number,
+          root.output_root
         )
     )
   end

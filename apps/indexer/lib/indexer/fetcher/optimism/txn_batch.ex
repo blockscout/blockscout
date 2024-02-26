@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.OptimismTxnBatch do
+defmodule Indexer.Fetcher.Optimism.TxnBatch do
   @moduledoc """
   Fills op_transaction_batches DB table.
   """
@@ -17,8 +17,10 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Block
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Chain.{Block, OptimismFrameSequence, OptimismTxnBatch}
+  alias Explorer.Chain.Optimism.FrameSequence
+  alias Explorer.Chain.Optimism.TxnBatch, as: OptimismTxnBatch
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
   alias Varint.LEB128
@@ -324,7 +326,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
       Repo.one(
         from(
           tb in OptimismTxnBatch,
-          inner_join: fs in OptimismFrameSequence,
+          inner_join: fs in FrameSequence,
           on: fs.id == tb.frame_sequence_id,
           select: fs.l1_transaction_hashes,
           order_by: [desc: tb.l2_block_number],
@@ -535,7 +537,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
 
     {deleted_count, _} = Repo.delete_all(from(tb in OptimismTxnBatch, where: tb.l2_block_number >= ^reorg_block))
 
-    Repo.delete_all(from(fs in OptimismFrameSequence, where: fs.id in ^frame_sequence_ids))
+    Repo.delete_all(from(fs in FrameSequence, where: fs.id in ^frame_sequence_ids))
 
     if deleted_count > 0 do
       Logger.warning(
@@ -628,7 +630,7 @@ defmodule Indexer.Fetcher.OptimismTxnBatch do
     last_known_id =
       Repo.one(
         from(
-          fs in OptimismFrameSequence,
+          fs in FrameSequence,
           select: fs.id,
           order_by: [desc: fs.id],
           limit: 1

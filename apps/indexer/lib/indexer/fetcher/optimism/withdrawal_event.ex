@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
+defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
   @moduledoc """
   Fills op_withdrawal_events DB table.
   """
@@ -15,7 +15,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.OptimismWithdrawalEvent
+  alias Explorer.Chain.Optimism.WithdrawalEvent
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
 
@@ -114,8 +114,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
         reorg_block = Optimism.reorg_block_pop(@fetcher_name)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
-          {deleted_count, _} =
-            Repo.delete_all(from(we in OptimismWithdrawalEvent, where: we.l1_block_number >= ^reorg_block))
+          {deleted_count, _} = Repo.delete_all(from(we in WithdrawalEvent, where: we.l1_block_number >= ^reorg_block))
 
           log_deleted_rows_count(reorg_block, deleted_count)
 
@@ -195,7 +194,7 @@ defmodule Indexer.Fetcher.OptimismWithdrawalEvent do
 
   def get_last_l1_item do
     query =
-      from(we in OptimismWithdrawalEvent,
+      from(we in WithdrawalEvent,
         select: {we.l1_block_number, we.l1_transaction_hash},
         order_by: [desc: we.l1_timestamp],
         limit: 1

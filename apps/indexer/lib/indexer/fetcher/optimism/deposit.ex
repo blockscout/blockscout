@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.OptimismDeposit do
+defmodule Indexer.Fetcher.Optimism.Deposit do
   @moduledoc """
   Fills op_deposits DB table.
   """
@@ -17,7 +17,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Chain.OptimismDeposit
+  alias Explorer.Chain.Optimism.Deposit
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
 
@@ -472,7 +472,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
     if MapSet.size(reorgs) > 0 do
       Logger.warning("L1 reorg detected. The following L1 blocks were removed: #{inspect(MapSet.to_list(reorgs))}")
 
-      {deleted_count, _} = Repo.delete_all(from(d in OptimismDeposit, where: d.l1_block_number in ^reorgs))
+      {deleted_count, _} = Repo.delete_all(from(d in Deposit, where: d.l1_block_number in ^reorgs))
 
       if deleted_count > 0 do
         Logger.warning(
@@ -558,7 +558,7 @@ defmodule Indexer.Fetcher.OptimismDeposit do
   end
 
   defp get_last_l1_item do
-    OptimismDeposit.last_deposit_l1_block_number_query()
+    Deposit.last_deposit_l1_block_number_query()
     |> Repo.one()
     |> Kernel.||({0, nil})
   end

@@ -57,11 +57,6 @@ defmodule Explorer.Chain do
     Import,
     InternalTransaction,
     Log,
-    OptimismDeposit,
-    OptimismOutputRoot,
-    OptimismTxnBatch,
-    OptimismWithdrawal,
-    OptimismWithdrawalEvent,
     PendingBlockOperation,
     SmartContract,
     Token,
@@ -91,6 +86,12 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
+  alias Explorer.Chain.Optimism
+  alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
+  alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
+  alias Explorer.Chain.Optimism.TxnBatch, as: OptimismTxnBatch
+  alias Explorer.Chain.Optimism.Withdrawal, as: OptimismWithdrawal
+  alias Explorer.Chain.Optimism.WithdrawalEvent, as: OptimismWithdrawalEvent
   alias Explorer.Chain.SmartContract.Proxy.EIP1167
 
   alias Explorer.Market.MarketHistoryCache
@@ -1666,7 +1667,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Lists `t:Explorer.Chain.OptimismTxnBatch.t/0`'s' in descending order based on l2_block_number.
+  Lists `t:Explorer.Chain.Optimism.TxnBatch.t/0`'s' in descending order based on l2_block_number.
 
   """
   @spec list_txn_batches :: [OptimismTxnBatch.t()]
@@ -1698,10 +1699,10 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Lists `t:Explorer.Chain.OptimismOutputRoot.t/0`'s' in descending order based on output root index.
+  Lists `t:Explorer.Chain.Optimism.OutputRoot.t/0`'s' in descending order based on output root index.
 
   """
-  @spec list_output_roots :: [OptimismOutputRoot.t()]
+  @spec list_output_roots :: [Optimism.OutputRoot.t()]
   def list_output_roots(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 

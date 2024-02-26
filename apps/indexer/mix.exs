@@ -17,12 +17,12 @@ defmodule Indexer.MixProject do
       version: "6.2.2",
       xref: [
         exclude: [
-          Explorer.Chain.OptimismDeposit,
-          Explorer.Chain.OptimismFrameSequence,
-          Explorer.Chain.OptimismOutputRoot,
-          Explorer.Chain.OptimismTxnBatch,
-          Explorer.Chain.OptimismWithdrawal,
-          Explorer.Chain.OptimismWithdrawalEvent
+          Explorer.Chain.Optimism.Deposit,
+          Explorer.Chain.Optimism.FrameSequence,
+          Explorer.Chain.Optimism.OutputRoot,
+          Explorer.Chain.Optimism.TxnBatch,
+          Explorer.Chain.Optimism.Withdrawal,
+          Explorer.Chain.Optimism.WithdrawalEvent
         ]
       ]
     ]

@@ -1,11 +1,11 @@
-defmodule Indexer.Transform.OptimismWithdrawals do
+defmodule Indexer.Transform.Optimism.Withdrawals do
   @moduledoc """
   Helper functions for transforming data for Optimism withdrawals.
   """
 
   require Logger
 
-  alias Indexer.Fetcher.OptimismWithdrawal
+  alias Indexer.Fetcher.Optimism.Withdrawal, as: OptimismWithdrawal
   alias Indexer.Helper
 
   # 32-byte signature of the event MessagePassed(uint256 indexed nonce, address indexed sender, address indexed target, uint256 value, uint256 gasLimit, bytes data, bytes32 withdrawalHash)

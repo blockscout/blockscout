@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.OptimismOutputRoot do
+defmodule Explorer.Chain.Optimism.OutputRoot do
   @moduledoc "Models an output root for Optimism."
 
   use Explorer.Schema

@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.OptimismWithdrawal do
+defmodule Explorer.Chain.Optimism.Withdrawal do
   @moduledoc "Models Optimism withdrawal."
 
   use Explorer.Schema

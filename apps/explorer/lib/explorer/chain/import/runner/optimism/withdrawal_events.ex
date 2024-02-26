@@ -1,12 +1,13 @@
-defmodule Explorer.Chain.Import.Runner.OptimismWithdrawals do
+defmodule Explorer.Chain.Import.Runner.Optimism.WithdrawalEvents do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.OptimismWithdrawal.t/0`.
+  Bulk imports `t:Explorer.Chain.Optimism.WithdrawalEvent.t/0`.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, OptimismWithdrawal}
+  alias Explorer.Chain.Import
+  alias Explorer.Chain.Optimism.WithdrawalEvent
   alias Explorer.Prometheus.Instrumenter
 
   import Ecto.Query, only: [from: 2]
@@ -16,13 +17,13 @@ defmodule Explorer.Chain.Import.Runner.OptimismWithdrawals do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [OptimismWithdrawal.t()]
+  @type imported :: [WithdrawalEvent.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: OptimismWithdrawal
+  def ecto_schema_module, do: WithdrawalEvent
 
   @impl Import.Runner
-  def option_key, do: :optimism_withdrawals
+  def option_key, do: :optimism_withdrawal_events
 
   @impl Import.Runner
   def imported_table_row do
@@ -41,12 +42,12 @@ defmodule Explorer.Chain.Import.Runner.OptimismWithdrawals do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_withdrawals, fn repo, _ ->
+    Multi.run(multi, :insert_withdrawal_events, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :optimism_withdrawals,
-        :optimism_withdrawals
+        :optimism_withdrawal_events,
+        :optimism_withdrawal_events
       )
     end)
   end
@@ -55,23 +56,23 @@ defmodule Explorer.Chain.Import.Runner.OptimismWithdrawals do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [OptimismWithdrawal.t()]}
+          {:ok, [WithdrawalEvent.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce OptimismWithdrawal ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.msg_nonce)
+    # Enforce WithdrawalEvent ShareLocks order (see docs: sharelock.md)
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.withdrawal_hash, &1.l1_event_type})
 
     {:ok, inserted} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        for: OptimismWithdrawal,
+        for: WithdrawalEvent,
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
-        conflict_target: :msg_nonce,
+        conflict_target: [:withdrawal_hash, :l1_event_type],
         on_conflict: on_conflict
       )
 
@@ -80,23 +81,24 @@ defmodule Explorer.Chain.Import.Runner.OptimismWithdrawals do
 
   defp default_on_conflict do
     from(
-      withdrawal in OptimismWithdrawal,
+      we in WithdrawalEvent,
       update: [
         set: [
-          # don't update `msg_nonce` as it is a primary key and used for the conflict target
-          hash: fragment("EXCLUDED.hash"),
-          l2_transaction_hash: fragment("EXCLUDED.l2_transaction_hash"),
-          l2_block_number: fragment("EXCLUDED.l2_block_number"),
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", withdrawal.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", withdrawal.updated_at)
+          # don't update `withdrawal_hash` as it is a part of the composite primary key and used for the conflict target
+          # don't update `l1_event_type` as it is a part of the composite primary key and used for the conflict target
+          l1_timestamp: fragment("EXCLUDED.l1_timestamp"),
+          l1_transaction_hash: fragment("EXCLUDED.l1_transaction_hash"),
+          l1_block_number: fragment("EXCLUDED.l1_block_number"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", we.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", we.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.hash, EXCLUDED.l2_transaction_hash, EXCLUDED.l2_block_number) IS DISTINCT FROM (?, ?, ?)",
-          withdrawal.hash,
-          withdrawal.l2_transaction_hash,
-          withdrawal.l2_block_number
+          "(EXCLUDED.l1_timestamp, EXCLUDED.l1_transaction_hash, EXCLUDED.l1_block_number) IS DISTINCT FROM (?, ?, ?)",
+          we.l1_timestamp,
+          we.l1_transaction_hash,
+          we.l1_block_number
         )
     )
   end

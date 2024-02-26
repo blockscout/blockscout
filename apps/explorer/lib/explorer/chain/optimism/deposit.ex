@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.OptimismDeposit do
+defmodule Explorer.Chain.Optimism.Deposit do
   @moduledoc "Models a deposit for Optimism."
 
   use Explorer.Schema

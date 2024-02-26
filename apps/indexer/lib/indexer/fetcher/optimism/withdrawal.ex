@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.OptimismWithdrawal do
+defmodule Indexer.Fetcher.Optimism.Withdrawal do
   @moduledoc """
   Fills op_withdrawals DB table.
   """
@@ -14,7 +14,8 @@ defmodule Indexer.Fetcher.OptimismWithdrawal do
   import Explorer.Helper, only: [decode_data: 2, parse_integer: 1]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Log, OptimismWithdrawal}
+  alias Explorer.Chain.Log
+  alias Explorer.Chain.Optimism.Withdrawal, as: OptimismWithdrawal
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
 

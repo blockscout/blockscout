@@ -39,11 +39,12 @@ defmodule Indexer.Block.Fetcher do
     Addresses,
     AddressTokenBalances,
     MintTransfers,
-    OptimismWithdrawals,
     TokenInstances,
     TokenTransfers,
     TransactionActions
   }
+
+  alias Indexer.Transform.Optimism.Withdrawals, as: OptimismWithdrawals
 
   alias Indexer.Transform.PolygonEdge.{DepositExecutes, Withdrawals}
 

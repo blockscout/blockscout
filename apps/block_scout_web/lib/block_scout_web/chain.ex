@@ -31,8 +31,6 @@ defmodule BlockScoutWeb.Chain do
     Hash,
     InternalTransaction,
     Log,
-    OptimismDeposit,
-    OptimismOutputRoot,
     SmartContract,
     Token,
     Token.Instance,
@@ -42,6 +40,9 @@ defmodule BlockScoutWeb.Chain do
     UserOperation,
     Wei
   }
+
+  alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
+  alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
 
   alias Explorer.Chain.PolygonZkevm.TransactionBatch
   alias Explorer.PagingOptions

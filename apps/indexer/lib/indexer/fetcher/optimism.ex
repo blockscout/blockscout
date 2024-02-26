@@ -22,7 +22,6 @@ defmodule Indexer.Fetcher.Optimism do
   alias EthereumJSONRPC.Block.ByNumber
   alias Explorer.Chain.Events.{Publisher, Subscriber}
   alias Indexer.{BoundQueue, Helper}
-  alias Indexer.Fetcher.{OptimismOutputRoot, OptimismTxnBatch, OptimismWithdrawalEvent}
 
   @fetcher_name :optimism
   @block_check_interval_range_size 100
@@ -48,7 +47,11 @@ defmodule Indexer.Fetcher.Optimism do
   def init(_args) do
     Logger.metadata(fetcher: @fetcher_name)
 
-    modules_using_reorg_monitor = [OptimismTxnBatch, OptimismOutputRoot, OptimismWithdrawalEvent]
+    modules_using_reorg_monitor = [
+      Indexer.Fetcher.Optimism.TxnBatch,
+      Indexer.Fetcher.Optimism.OutputRoot,
+      Indexer.Fetcher.Optimism.WithdrawalEvent
+    ]
 
     reorg_monitor_not_needed =
       modules_using_reorg_monitor
@@ -277,9 +280,9 @@ defmodule Indexer.Fetcher.Optimism do
   end
 
   def init_continue(env, contract_address, caller)
-      when caller in [Indexer.Fetcher.OptimismWithdrawalEvent, Indexer.Fetcher.OptimismOutputRoot] do
+      when caller in [Indexer.Fetcher.Optimism.WithdrawalEvent, Indexer.Fetcher.Optimism.OutputRoot] do
     {contract_name, table_name, start_block_note} =
-      if caller == Indexer.Fetcher.OptimismWithdrawalEvent do
+      if caller == Indexer.Fetcher.Optimism.WithdrawalEvent do
         {"Optimism Portal", "op_withdrawal_events", "Withdrawals L1"}
       else
         {"Output Oracle", "op_output_roots", "Output Roots"}

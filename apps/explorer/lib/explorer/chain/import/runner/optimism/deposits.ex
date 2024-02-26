@@ -1,12 +1,13 @@
-defmodule Explorer.Chain.Import.Runner.OptimismOutputRoots do
+defmodule Explorer.Chain.Import.Runner.Optimism.Deposits do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.OptimismOutputRoot.t/0`.
+  Bulk imports `t:Explorer.Chain.Deposit.t/0`.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, OptimismOutputRoot}
+  alias Explorer.Chain.Import
+  alias Explorer.Chain.Optimism.Deposit
   alias Explorer.Prometheus.Instrumenter
 
   import Ecto.Query, only: [from: 2]
@@ -16,13 +17,13 @@ defmodule Explorer.Chain.Import.Runner.OptimismOutputRoots do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [OptimismOutputRoot.t()]
+  @type imported :: [Deposit.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: OptimismOutputRoot
+  def ecto_schema_module, do: Deposit
 
   @impl Import.Runner
-  def option_key, do: :optimism_output_roots
+  def option_key, do: :optimism_deposits
 
   @impl Import.Runner
   def imported_table_row do
@@ -41,12 +42,12 @@ defmodule Explorer.Chain.Import.Runner.OptimismOutputRoots do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_output_roots, fn repo, _ ->
+    Multi.run(multi, :insert_optimism_deposits, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :optimism_output_roots,
-        :optimism_output_roots
+        :optimism_deposits,
+        :optimism_deposits
       )
     end)
   end
@@ -55,23 +56,23 @@ defmodule Explorer.Chain.Import.Runner.OptimismOutputRoots do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [OptimismOutputRoot.t()]}
+          {:ok, [Deposit.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce OptimismOutputRoot ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.l2_output_index)
+    # Enforce Deposit ShareLocks order (see docs: sharelock.md)
+    ordered_changes_list = Enum.sort_by(changes_list, & &1.l2_transaction_hash)
 
     {:ok, inserted} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        for: OptimismOutputRoot,
+        for: Deposit,
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
-        conflict_target: :l2_output_index,
+        conflict_target: :l2_transaction_hash,
         on_conflict: on_conflict
       )
 
@@ -80,27 +81,25 @@ defmodule Explorer.Chain.Import.Runner.OptimismOutputRoots do
 
   defp default_on_conflict do
     from(
-      root in OptimismOutputRoot,
+      deposit in Deposit,
       update: [
         set: [
-          # don't update `l2_output_index` as it is a primary key and used for the conflict target
-          l2_block_number: fragment("EXCLUDED.l2_block_number"),
-          l1_transaction_hash: fragment("EXCLUDED.l1_transaction_hash"),
-          l1_timestamp: fragment("EXCLUDED.l1_timestamp"),
+          # don't update `l2_transaction_hash` as it is a primary key and used for the conflict target
           l1_block_number: fragment("EXCLUDED.l1_block_number"),
-          output_root: fragment("EXCLUDED.output_root"),
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", root.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", root.updated_at)
+          l1_block_timestamp: fragment("EXCLUDED.l1_block_timestamp"),
+          l1_transaction_hash: fragment("EXCLUDED.l1_transaction_hash"),
+          l1_transaction_origin: fragment("EXCLUDED.l1_transaction_origin"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", deposit.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", deposit.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.l2_block_number, EXCLUDED.l1_transaction_hash, EXCLUDED.l1_timestamp, EXCLUDED.l1_block_number, EXCLUDED.output_root) IS DISTINCT FROM (?, ?, ?, ?, ?)",
-          root.l2_block_number,
-          root.l1_transaction_hash,
-          root.l1_timestamp,
-          root.l1_block_number,
-          root.output_root
+          "(EXCLUDED.l1_block_number, EXCLUDED.l1_block_timestamp, EXCLUDED.l1_transaction_hash, EXCLUDED.l1_transaction_origin) IS DISTINCT FROM (?, ?, ?, ?)",
+          deposit.l1_block_number,
+          deposit.l1_block_timestamp,
+          deposit.l1_transaction_hash,
+          deposit.l1_transaction_origin
         )
     )
   end
