@@ -71,7 +71,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
     end
 
     test "composes cg url to list of contract address hashes" do
-      assert "https://api.coingecko.com/api/v3/simple/token_price/ethereum?vs_currencies=usd&include_market_cap=true&contract_addresses=0xdAC17F958D2ee523a2206206994597C13D831ec7" ==
+      assert "https://api.coingecko.com/api/v3/simple/token_price/ethereum?vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&contract_addresses=0xdAC17F958D2ee523a2206206994597C13D831ec7" ==
                CoinGecko.source_url(["0xdAC17F958D2ee523a2206206994597C13D831ec7"])
     end
 

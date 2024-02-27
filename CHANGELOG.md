@@ -8,6 +8,7 @@
 - [#9532](https://github.com/blockscout/blockscout/pull/9532) - Add last output root size counter
 - [#9490](https://github.com/blockscout/blockscout/pull/9490) - Add blob transaction counter and filter in block view
 - [#9486](https://github.com/blockscout/blockscout/pull/9486) - Massive blocks fetcher
+- [#9483](https://github.com/blockscout/blockscout/pull/9483) - Add secondary coin and transaction stats
 - [#9473](https://github.com/blockscout/blockscout/pull/9473) - Add user_op interpretation
 - [#9461](https://github.com/blockscout/blockscout/pull/9461) - Fetch blocks without internal transactions backwards
 - [#9460](https://github.com/blockscout/blockscout/pull/9460) - Optimism chain type

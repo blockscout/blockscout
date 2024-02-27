@@ -202,6 +202,7 @@ defmodule BlockScoutWeb.ApiRouter do
     scope "/transactions" do
       get("/", V2.TransactionController, :transactions)
       get("/watchlist", V2.TransactionController, :watchlist_transactions)
+      get("/stats", V2.TransactionController, :stats)
 
       if Application.compile_env(:explorer, :chain_type) == "polygon_zkevm" do
         get("/zkevm-batch/:batch_number", V2.TransactionController, :polygon_zkevm_batch)
@@ -298,6 +299,7 @@ defmodule BlockScoutWeb.ApiRouter do
       scope "/charts" do
         get("/transactions", V2.StatsController, :transactions_chart)
         get("/market", V2.StatsController, :market_chart)
+        get("/secondary-coin-market", V2.StatsController, :secondary_coin_market_chart)
       end
     end
 
