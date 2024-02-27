@@ -3,7 +3,7 @@ version: '3.9'
 services:
   proxy:
     image: nginx
-    container_name: proxy
+    container_name: '${SCHAIN_NAME}_proxy'
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     volumes:
@@ -11,10 +11,10 @@ services:
     environment:
       BACK_PROXY_PASS: ${BACK_PROXY_PASS:-http://backend:4000}
       FRONT_PROXY_PASS: ${FRONT_PROXY_PASS:-http://frontend:3000}
+      PROXY_PORT: ${PROXY_PORT:-80}
     ports:
       - target: 80
-        published: 80
+        published: ${PROXY_PORT:-80}
       - target: 8080
-        published: 8080
-      - target: 8081
-        published: 8081
+        published: ${STATS_PORT:-8080}
+

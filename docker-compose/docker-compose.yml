@@ -1,11 +1,6 @@
 version: '3.9'
 
 services:
-  redis-db:
-    extends:
-      file: ./services/redis.yml
-      service: redis-db
-
   db-init:
     extends:
       file: ./services/db.yml
@@ -19,7 +14,6 @@ services:
   backend:
     depends_on:
       - db
-      - redis-db
     extends:
       file: ./services/backend.yml
       service: backend
@@ -38,20 +32,32 @@ services:
     links:
       - db:database
     environment:
-        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
-        CHAIN_ID: '1337'
-
-  visualizer:
-    extends:
-      file: ./services/visualizer.yml
-      service: visualizer
-
-  sig-provider:
-    extends:
-      file: ./services/sig-provider.yml
-      service: sig-provider
+        ETHEREUM_JSONRPC_HTTP_URL: ${ENDPOINT}
+        # ETHEREUM_JSONRPC_TRACE_URL: ${ENDPOINT}
+        ETHEREUM_JSONRPC_WS_URL: ${WS_ENDPOINT}
+        CHAIN_ID: '${CHAIN_ID}'
+        LOGO: "/images/skale_logo.png"
+        SUBNETWORK: ${SCHAIN_NAME}
+        ETHEREUM_JSONRPC_VARIANT: "geth"
+        # DATABASE_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@host.docker.internal:${DB_PORT:-7432}/blockscout?ssl=false
+        FIRST_BLOCK: ${FIRST_BLOCK:-0}
+        NETWORK: "SKALE"
+        INDEXER_RECEIPTS_BATCH_SIZE: 128
+        INDEXER_COIN_BALANCES_BATCH_SIZE: 128
+        # POOL_SIZE: 130
+        INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: "true"
+        INDEXER_DISABLE_BLOCK_REWARD_FETCHER: "true"
+        INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: "true"
+        INDEXER_DISABLE_ADDRESS_COIN_BALANCE_FETCHER: "true"
+        INDEXER_DISABLE_EMPTY_BLOCKS_SANITIZER: "true"
+        ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES: "true"
+        INDEXER_CATCHUP_BLOCK_INTERVAL: "3s"
+        # TXS_STATS_ENABLED: "false"
+        # APPS_MENU: "false"
+        # INDEXER_HIDE_INDEXING_PROGRESS_ALERT: "true"
+        CHAIN_SPEC_PATH: "/opt/app/config.json"
+        # COIN: "ETH"
+        SECRET_KEY_BASE: "RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
 
   frontend:
     depends_on:
