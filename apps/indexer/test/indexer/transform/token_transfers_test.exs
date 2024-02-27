@@ -92,6 +92,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
             log_index: log_3.index,
             from_address_hash: truncated_hash(log_3.second_topic),
             to_address_hash: truncated_hash(log_3.third_topic),
+            address_hashes: [truncated_hash(log_3.second_topic), truncated_hash(log_3.third_topic)],
             token_contract_address_hash: log_3.address_hash,
             token_ids: [183],
             transaction_hash: log_3.transaction_hash,
@@ -105,6 +106,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
             log_index: log_1.index,
             from_address_hash: truncated_hash(log_1.second_topic),
             to_address_hash: truncated_hash(log_1.third_topic),
+            address_hashes: [truncated_hash(log_1.second_topic), truncated_hash(log_1.third_topic)],
             token_contract_address_hash: log_1.address_hash,
             transaction_hash: log_1.transaction_hash,
             token_type: "ERC-20",
@@ -117,6 +119,10 @@ defmodule Indexer.Transform.TokenTransfersTest do
             from_address_hash: truncated_hash(weth_withdrawal_log.second_topic),
             log_index: 1,
             to_address_hash: "0x0000000000000000000000000000000000000000",
+            address_hashes: [
+              truncated_hash(weth_withdrawal_log.second_topic),
+              "0x0000000000000000000000000000000000000000"
+            ],
             token_contract_address_hash: weth_withdrawal_log.address_hash,
             token_ids: nil,
             token_type: "ERC-20",
@@ -129,6 +135,10 @@ defmodule Indexer.Transform.TokenTransfersTest do
             from_address_hash: "0x0000000000000000000000000000000000000000",
             log_index: 1,
             to_address_hash: truncated_hash(weth_deposit_log.second_topic),
+            address_hashes: [
+              "0x0000000000000000000000000000000000000000",
+              truncated_hash(weth_deposit_log.second_topic)
+            ],
             token_contract_address_hash: weth_deposit_log.address_hash,
             token_ids: nil,
             token_type: "ERC-20",
@@ -168,6 +178,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
             log_index: log.index,
             from_address_hash: "0x58ab73cb79c8275628e0213742a85b163fe0a9fb",
             to_address_hash: "0xbe8cdfc13ffda20c844ac3da2b53a23ac5787f1e",
+            address_hashes: ["0x58ab73cb79c8275628e0213742a85b163fe0a9fb", "0xbe8cdfc13ffda20c844ac3da2b53a23ac5787f1e"],
             block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
             token_contract_address_hash: log.address_hash,
             token_ids: [14_939],
@@ -204,6 +215,10 @@ defmodule Indexer.Transform.TokenTransfersTest do
                    from_address_hash: "0x9c978f4cfa1fe13406bcc05baf26a35716f881dd",
                    log_index: 2,
                    to_address_hash: "0x9c978f4cfa1fe13406bcc05baf26a35716f881dd",
+                   address_hashes: [
+                     "0x9c978f4cfa1fe13406bcc05baf26a35716f881dd",
+                     "0x9c978f4cfa1fe13406bcc05baf26a35716f881dd"
+                   ],
                    token_contract_address_hash: "0x58Ab73CB79c8275628E0213742a85B163fE0A9Fb",
                    token_ids: [
                      7_237_005_577_332_282_011_952_059_972_634_123_378_909_214_838_582_411_639_295_170_840_059_424_276_480
@@ -244,6 +259,10 @@ defmodule Indexer.Transform.TokenTransfersTest do
                    from_address_hash: "0x6c943470780461b00783ad530a53913bd2c104d3",
                    log_index: 2,
                    to_address_hash: "0x6c943470780461b00783ad530a53913bd2c104d3",
+                   address_hashes: [
+                     "0x6c943470780461b00783ad530a53913bd2c104d3",
+                     "0x6c943470780461b00783ad530a53913bd2c104d3"
+                   ],
                    token_contract_address_hash: "0x58Ab73CB79c8275628E0213742a85B163fE0A9Fb",
                    token_ids: [680_564_733_841_876_926_926_749_214_863_536_422_912],
                    token_type: "ERC-1155",

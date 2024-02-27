@@ -49,4 +49,6 @@ defmodule Explorer.Chain.DenormalizationHelper do
   def transactions_denormalization_finished?, do: BackgroundMigrations.get_transactions_denormalization_finished()
 
   def tt_denormalization_finished?, do: BackgroundMigrations.get_tt_denormalization_finished()
+
+  def tt_address_hashes_backfilling_finished?, do: BackgroundMigrations.get_tt_address_hashes_backfilling_finished()
 end

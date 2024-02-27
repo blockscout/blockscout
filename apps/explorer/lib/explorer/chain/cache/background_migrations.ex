@@ -10,13 +10,15 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :transactions_denormalization_finished,
     key: :tb_token_type_finished,
     key: :ctb_token_type_finished,
-    key: :tt_denormalization_finished
+    key: :tt_denormalization_finished,
+    key: :tt_address_hashes_backfilling_finished
 
   @dialyzer :no_match
 
   alias Explorer.Migrator.{
     AddressCurrentTokenBalanceTokenType,
     AddressTokenBalanceTokenType,
+    TokenTransferAddressHashes,
     TokenTransferTokenType,
     TransactionsDenormalization
   }
@@ -48,6 +50,14 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   defp handle_fallback(:tt_denormalization_finished) do
     Task.start(fn ->
       set_tt_denormalization_finished(TokenTransferTokenType.migration_finished?())
+    end)
+
+    {:return, false}
+  end
+
+  defp handle_fallback(:tt_address_hashes_backfilling_finished) do
+    Task.start(fn ->
+      set_tt_address_hashes_backfilling_finished(TokenTransferAddressHashes.migration_finished?())
     end)
 
     {:return, false}

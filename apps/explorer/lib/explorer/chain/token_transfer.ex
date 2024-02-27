@@ -60,6 +60,7 @@ defmodule Explorer.Chain.TokenTransfer do
   * `:amounts` - Tokens transferred amounts in case of batched transfer in ERC-1155
   * `:token_ids` - IDs of the tokens (applicable to ERC-1155 tokens)
   * `:block_consensus` - Consensus of the block that the transfer took place
+  * `:address_hashes` - Array of 2 items: [from_address_hash, to_address_hash] address hashes
   """
   @primary_key false
   typed_schema "token_transfers" do
@@ -71,6 +72,7 @@ defmodule Explorer.Chain.TokenTransfer do
     field(:index_in_batch, :integer, virtual: true)
     field(:token_type, :string)
     field(:block_consensus, :boolean)
+    field(:address_hashes, {:array, Hash.Address})
 
     belongs_to(:from_address, Address,
       foreign_key: :from_address_hash,
@@ -118,7 +120,7 @@ defmodule Explorer.Chain.TokenTransfer do
     timestamps()
   end
 
-  @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash block_hash token_type)a
+  @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash block_hash token_type address_hashes)a
   @optional_attrs ~w(amount amounts token_ids block_consensus)a
 
   @doc false
@@ -305,10 +307,17 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   def token_transfers_by_address_hash_and_token_address_hash(address_hash, token_address_hash) do
-    only_consensus_transfers_query()
-    |> where([tt], tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
-    |> where([tt], tt.token_contract_address_hash == ^token_address_hash)
-    |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+    if DenormalizationHelper.tt_address_hashes_backfilling_finished?() do
+      only_consensus_transfers_query()
+      |> where([tt], fragment("? @> ARRAY[?::bytea]", tt.address_hashes, ^address_hash.bytes))
+      |> where([tt], tt.token_contract_address_hash == ^token_address_hash)
+      |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+    else
+      only_consensus_transfers_query()
+      |> where([tt], tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
+      |> where([tt], tt.token_contract_address_hash == ^token_address_hash)
+      |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+    end
   end
 
   def token_transfers_by_address_hash(direction, address_hash, token_types) do
@@ -331,8 +340,13 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   def filter_by_direction(query, _, address_hash) do
-    query
-    |> where([tt], tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
+    if DenormalizationHelper.tt_address_hashes_backfilling_finished?() do
+      query
+      |> where([tt], fragment("? @> ARRAY[?::bytea]", tt.address_hashes, ^address_hash.bytes))
+    else
+      query
+      |> where([tt], tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
+    end
   end
 
   def filter_by_type(query, []), do: query

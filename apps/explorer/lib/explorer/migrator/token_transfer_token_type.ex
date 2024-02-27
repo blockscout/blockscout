@@ -58,7 +58,11 @@ defmodule Explorer.Migrator.TokenTransferTokenType do
     """
   end
 
-  defp encode_token_transfer_ids(ids) do
+  @doc """
+  Encodes array of row ids to migrate to encoded string
+  """
+  @spec encode_token_transfer_ids([map()]) :: String.t()
+  def encode_token_transfer_ids(ids) do
     encoded_values =
       ids
       |> Enum.reduce("", fn {t_hash, b_hash, log_index}, acc ->
