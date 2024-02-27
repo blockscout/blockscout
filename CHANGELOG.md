@@ -7,6 +7,7 @@
 ### Fixes
 
 - [#9502](https://github.com/blockscout/blockscout/pull/9502) - Add batch_size and concurrency envs for tt token type migration
+- [#9493](https://github.com/blockscout/blockscout/pull/9493) - Fix API response for unknown blob hashes
 
 ### Chore
 
