@@ -306,11 +306,19 @@ defmodule Explorer.Chain do
     filters = Keyword.get(options, :token_type)
     necessity_by_association = Keyword.get(options, :necessity_by_association)
 
-    direction
-    |> TokenTransfer.token_transfers_by_address_hash(address_hash, filters)
-    |> join_associations(necessity_by_association)
-    |> TokenTransfer.handle_paging_options(paging_options)
-    |> select_repo(options).all()
+    if direction == :to || direction == :from do
+      direction
+      |> TokenTransfer.token_transfers_by_address_hash(address_hash, filters, paging_options)
+      |> join_associations(necessity_by_association)
+      |> TokenTransfer.handle_paging_options(paging_options)
+      |> select_repo(options).all()
+    else
+      direction
+      |> TokenTransfer.token_transfers_by_address_hash(address_hash, filters, paging_options)
+      |> join_associations(necessity_by_association)
+      |> limit(^paging_options.page_size)
+      |> select_repo(options).all()
+    end
   end
 
   @spec address_hash_to_token_transfers_by_token_address_hash(
