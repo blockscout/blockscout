@@ -47,6 +47,8 @@ defmodule Explorer.Factory do
     Withdrawal
   }
 
+  alias Explorer.Chain.Optimism.OutputRoot
+
   alias Explorer.SmartContract.Helper
   alias Explorer.Tags.{AddressTag, AddressToTag}
   alias Explorer.Market.MarketHistory
@@ -1113,6 +1115,34 @@ defmodule Explorer.Factory do
       blob_gas_used: Decimal.new(131_072),
       blob_versioned_hashes: []
     }
+  end
+
+  def op_output_root_factory do
+    %OutputRoot{
+      l2_output_index: op_output_root_l2_output_index(),
+      l2_block_number: insert(:block) |> Map.get(:number),
+      l1_transaction_hash: transaction_hash(),
+      l1_timestamp: DateTime.utc_now(),
+      l1_block_number: op_output_root_l1_block_number(),
+      output_root: op_output_root_hash()
+    }
+  end
+
+  defp op_output_root_l2_output_index do
+    sequence("op_output_root_l2_output_index", & &1)
+  end
+
+  defp op_output_root_l1_block_number do
+    sequence("op_output_root_l1_block_number", & &1)
+  end
+
+  defp op_output_root_hash do
+    {:ok, hash} =
+      "op_output_root_hash"
+      |> sequence(& &1)
+      |> Hash.Full.cast()
+
+    hash
   end
 
   def random_bool, do: Enum.random([true, false])

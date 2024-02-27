@@ -2316,7 +2316,11 @@ defmodule Explorer.Chain do
         select: last_fetched_counter.value
       )
 
-    select_repo(options).one(query) || Decimal.new(0)
+    if options[:nullable] do
+      select_repo(options).one(query)
+    else
+      select_repo(options).one(query) || Decimal.new(0)
+    end
   end
 
   defp block_status({number, timestamp}) do

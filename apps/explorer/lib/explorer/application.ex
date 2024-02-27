@@ -120,6 +120,7 @@ defmodule Explorer.Application do
         configure(Explorer.Counters.BlockBurntFeeCounter),
         configure(Explorer.Counters.BlockPriorityFeeCounter),
         configure(Explorer.Counters.AverageBlockTime),
+        configure(Explorer.Counters.LastOutputRootSizeCounter),
         configure(Explorer.Validator.MetadataProcessor),
         configure(Explorer.Tags.AddressTag.Cataloger),
         configure(MinMissingBlockNumber),
