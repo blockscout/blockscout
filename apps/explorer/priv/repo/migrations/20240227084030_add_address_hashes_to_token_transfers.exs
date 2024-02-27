@@ -7,7 +7,7 @@ defmodule Explorer.Repo.Migrations.AddAddressHashesToTokenTransfers do
     end
 
     execute("""
-    CREATE INDEX on token_transfers USING GIN ("address_hashes") WHERE block_consensus;
+    CREATE INDEX CONCURRENTLY on token_transfers USING GIN ("address_hashes") WHERE block_consensus;
     """)
   end
 end
