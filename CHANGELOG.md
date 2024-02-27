@@ -8,6 +8,8 @@
 
 ### Chore
 
+- [#9487](https://github.com/blockscout/blockscout/pull/9487) - Add tsvector index on smart_contracts.name
+
 <details>
   <summary>Dependencies version bumps</summary>
 
