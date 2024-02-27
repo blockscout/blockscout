@@ -291,6 +291,11 @@ config :explorer, Explorer.Counters.AddressTokenUsdSum,
 config :explorer, Explorer.Counters.AddressTokenTransfersCounter,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TOKEN_TRANSFERS_COUNTER_PERIOD", "1h")
 
+config :explorer, Explorer.Counters.LastOutputRootSizeCounter,
+  enabled: true,
+  enable_consolidation: true,
+  cache_period: ConfigHelper.parse_time_env_var("CACHE_OPTIMISM_LAST_OUTPUT_ROOT_SIZE_COUNTER_PERIOD", "5m")
+
 config :explorer, Explorer.ExchangeRates,
   store: :ets,
   enabled: !disable_exchange_rates?,

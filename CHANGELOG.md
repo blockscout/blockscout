@@ -5,6 +5,7 @@
 ### Features
 
 - [#9631](https://github.com/blockscout/blockscout/pull/9631) - Initial support of zksync chain type
+- [#9532](https://github.com/blockscout/blockscout/pull/9532) - Add last output root size counter
 - [#9490](https://github.com/blockscout/blockscout/pull/9490) - Add blob transaction counter and filter in block view
 - [#9486](https://github.com/blockscout/blockscout/pull/9486) - Massive blocks fetcher
 - [#9473](https://github.com/blockscout/blockscout/pull/9473) - Add user_op interpretation
