@@ -9,6 +9,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   import Indexer.Block.Fetcher,
     only: [
+      async_import_blobs: 1,
       async_import_block_rewards: 1,
       async_import_coin_balances: 2,
       async_import_created_contract_codes: 1,
@@ -23,6 +24,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   alias Ecto.Changeset
   alias Explorer.Chain
+  alias Explorer.Chain.NullRoundHeight
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Catchup.{Sequence, TaskSupervisor}
@@ -163,6 +165,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
     async_import_token_instances(imported)
+    async_import_blobs(imported)
   end
 
   defp stream_fetch_and_import(state, sequence)
@@ -198,7 +201,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
     case result do
       {:ok, %{inserted: inserted, errors: errors}} ->
-        errors = cap_seq(sequence, errors)
+        valid_errors = handle_null_rounds(errors)
+        errors = cap_seq(sequence, valid_errors)
         retry(sequence, errors)
         clear_missing_ranges(range, errors)
 
@@ -248,6 +252,20 @@ defmodule Indexer.Block.Catchup.Fetcher do
     exception ->
       Logger.error(fn -> [Exception.format(:error, exception, __STACKTRACE__), ?\n, ?\n, "Retrying."] end)
       {:error, exception}
+  end
+
+  defp handle_null_rounds(errors) do
+    {null_rounds, other_errors} =
+      Enum.split_with(errors, fn
+        %{message: "requested epoch was a null round"} -> true
+        _ -> false
+      end)
+
+    null_rounds
+    |> Enum.map(&block_error_to_number/1)
+    |> NullRoundHeight.insert_heights()
+
+    other_errors
   end
 
   defp cap_seq(seq, errors) do

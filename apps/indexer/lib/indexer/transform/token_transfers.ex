@@ -47,7 +47,8 @@ defmodule Indexer.Transform.TokenTransfers do
       erc1155_token_transfers.token_transfers ++
         erc20_and_erc721_token_transfers.token_transfers ++ weth_transfers.token_transfers
 
-    {tokens, token_transfers} = sanitize_token_types(rough_tokens, rough_token_transfers)
+    tokens = sanitize_token_types(rough_tokens, rough_token_transfers)
+    token_transfers = sanitize_weth_transfers(tokens, rough_token_transfers, weth_transfers.token_transfers)
 
     token_transfers
     |> Enum.filter(fn token_transfer ->
@@ -70,9 +71,43 @@ defmodule Indexer.Transform.TokenTransfers do
     token_transfers_from_logs_uniq
   end
 
+  defp sanitize_weth_transfers(total_tokens, total_transfers, weth_transfers) do
+    existing_token_types_map =
+      total_tokens
+      |> Enum.map(&{&1.contract_address_hash, &1.type})
+      |> Map.new()
+
+    invalid_weth_transfers =
+      Enum.reduce(weth_transfers, %{}, fn token_transfer, acc ->
+        if existing_token_types_map[token_transfer.token_contract_address_hash] == "ERC-721" do
+          Map.put(acc, token_transfer_to_key(token_transfer), true)
+        else
+          acc
+        end
+      end)
+
+    total_transfers
+    |> subtract_token_transfers(invalid_weth_transfers)
+    |> Enum.reverse()
+  end
+
+  defp token_transfer_to_key(token_transfer) do
+    {token_transfer.block_hash, token_transfer.transaction_hash, token_transfer.log_index}
+  end
+
+  defp subtract_token_transfers(tt_from, tt_to_subtract) do
+    Enum.reduce(tt_from, [], fn tt, acc ->
+      case tt_to_subtract[token_transfer_to_key(tt)] do
+        nil -> [tt | acc]
+        _ -> acc
+      end
+    end)
+  end
+
   defp sanitize_token_types(tokens, token_transfers) do
     existing_token_types_map =
       tokens
+      |> Enum.uniq()
       |> Enum.reduce([], fn %{contract_address_hash: address_hash}, acc ->
         case Repo.get_by(Token, contract_address_hash: address_hash) do
           %{type: type} -> [{address_hash, type} | acc]
@@ -94,17 +129,9 @@ defmodule Indexer.Transform.TokenTransfers do
         if token_type_priority(old_type) > token_type_priority(new_type), do: old_type, else: new_type
       end)
 
-    actual_tokens =
-      Enum.map(tokens, fn %{contract_address_hash: hash} = token ->
-        Map.put(token, :type, actual_token_types_map[hash])
-      end)
-
-    actual_token_transfers =
-      Enum.map(token_transfers, fn %{token_contract_address_hash: hash} = tt ->
-        Map.put(tt, :token_type, actual_token_types_map[hash])
-      end)
-
-    {actual_tokens, actual_token_transfers}
+    Enum.map(tokens, fn %{contract_address_hash: hash} = token ->
+      Map.put(token, :type, actual_token_types_map[hash])
+    end)
   end
 
   defp define_token_type(token_transfers) do
@@ -273,7 +300,7 @@ defmodule Indexer.Transform.TokenTransfers do
       ) do
     [token_ids, values] = decode_data(data, [{:array, {:uint, 256}}, {:array, {:uint, 256}}])
 
-    if token_ids == [] || values == [] do
+    if is_nil(token_ids) or token_ids == [] or is_nil(values) or values == [] do
       nil
     else
       token_transfer = %{

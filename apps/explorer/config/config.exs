@@ -114,6 +114,9 @@ config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enable
 config :explorer, Explorer.Migrator.TransactionsDenormalization, enabled: true
 config :explorer, Explorer.Migrator.AddressCurrentTokenBalanceTokenType, enabled: true
 config :explorer, Explorer.Migrator.AddressTokenBalanceTokenType, enabled: true
+config :explorer, Explorer.Migrator.SanitizeMissingBlockRanges, enabled: true
+config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers, enabled: true
+config :explorer, Explorer.Migrator.TokenTransferTokenType, enabled: true
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 

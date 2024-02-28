@@ -11,32 +11,17 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
 
   @max_reports_per_day_for_contract 5
 
-  @type t :: %__MODULE__{
-          address_hash: Hash.Address.t(),
-          is_approved: boolean(),
-          submitter_name: String.t(),
-          submitter_email: String.t(),
-          is_project_owner: boolean(),
-          project_name: String.t(),
-          project_url: String.t(),
-          audit_company_name: String.t(),
-          audit_report_url: String.t(),
-          audit_publish_date: Date.t(),
-          request_id: String.t(),
-          comment: String.t()
-        }
-
-  schema "smart_contract_audit_reports" do
-    field(:address_hash, Hash.Address)
+  typed_schema "smart_contract_audit_reports" do
+    field(:address_hash, Hash.Address, null: false)
     field(:is_approved, :boolean)
-    field(:submitter_name, :string)
-    field(:submitter_email, :string)
-    field(:is_project_owner, :boolean)
-    field(:project_name, :string)
-    field(:project_url, :string)
-    field(:audit_company_name, :string)
-    field(:audit_report_url, :string)
-    field(:audit_publish_date, :date)
+    field(:submitter_name, :string, null: false)
+    field(:submitter_email, :string, null: false)
+    field(:is_project_owner, :boolean, null: false)
+    field(:project_name, :string, null: false)
+    field(:project_url, :string, null: false)
+    field(:audit_company_name, :string, null: false)
+    field(:audit_report_url, :string, null: false)
+    field(:audit_publish_date, :date, null: false)
     field(:request_id, :string)
     field(:comment, :string)
 
