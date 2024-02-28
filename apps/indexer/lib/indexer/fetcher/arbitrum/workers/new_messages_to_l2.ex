@@ -8,8 +8,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
 
   import Explorer.Helper, only: [decode_data: 2]
 
-  alias Indexer.Helper, as: IndexerHelper
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
+  alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain
 

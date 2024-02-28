@@ -101,7 +101,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   end
 
   def make_chunked_request(requests_list, json_rpc_named_arguments, help_str) do
-    make_chunked_request_keep_id(requests_list, json_rpc_named_arguments, help_str)
+    requests_list
+    |> make_chunked_request_keep_id(json_rpc_named_arguments, help_str)
     |> Enum.map(fn %{result: resp_body} -> resp_body end)
   end
 
@@ -151,6 +152,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     func = &do_get_block_number_by_hash/2
     args = [hash, json_rpc_named_arguments]
     error_message = &"Cannot fetch block #{hash} or its number. Error: #{inspect(&1)}"
+
     case IndexerHelper.repeated_call(func, args, error_message, @rpc_resend_attempts) do
       {:error, _} -> nil
       {:ok, res} -> res
@@ -158,6 +160,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   end
 
   defp do_get_block_number_by_hash(hash, json_rpc_named_arguments) do
+    # credo:disable-for-lines:3 Credo.Check.Refactor.PipeChainStart
     result =
       EthereumJSONRPC.request(%{id: 0, method: "eth_getBlockByHash", params: [hash, false]})
       |> json_rpc(json_rpc_named_arguments)

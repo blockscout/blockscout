@@ -150,7 +150,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   end
 
   defp unwrap_rollup_block_ranges(batches) do
-    Map.values(batches)
+    batches
+    |> Map.values()
     |> Enum.reduce(%{}, fn batch, b_2_b ->
       batch.start_block..batch.end_block
       |> Enum.reduce(b_2_b, fn block_num, b_2_b_inner ->
@@ -193,7 +194,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     missed_blocks
     |> Enum.sort()
     |> Enum.chunk_every(rollup_chunk_size)
-    |> Enum.reduce({%{}, [], 0}, fn chunk, {blks_map, txs_list, chunks_counter} ->
+    |> Enum.reduce({%{}, [], 0}, fn chunk, {blocks_map, txs_list, chunks_counter} ->
       Logging.log_details_chunk_handling(
         "Collecting rollup data",
         {"block", "blocks"},
@@ -217,12 +218,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           ]
         end)
 
-      {blks_map_updated, txs_list_updated} =
+      {blocks_map_updated, txs_list_updated} =
         requests
         |> Rpc.make_chunked_request_keep_id(rollup_json_rpc_named_arguments, "eth_getBlockByNumber")
-        |> prepare_rollup_block_map_and_transactions_list(blks_map, txs_list)
+        |> prepare_rollup_block_map_and_transactions_list(blocks_map, txs_list)
 
-      {blks_map_updated, txs_list_updated, chunks_counter + length(chunk)}
+      {blocks_map_updated, txs_list_updated, chunks_counter + length(chunk)}
     end)
   end
 
@@ -241,7 +242,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     if found_blocks_numbers_length != required_blocks_amount do
       Logger.info("Only #{found_blocks_numbers_length} of #{required_blocks_amount} rollup blocks found in DB")
 
-      {recovered_blks_map, recovered_txs_list, _} =
+      {recovered_blocks_map, recovered_txs_list, _} =
         recover_rollup_blocks_and_txs_from_rpc(
           required_blocks_numbers,
           found_blocks_numbers,
@@ -249,7 +250,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           rollup_rpc_config
         )
 
-      {Map.merge(current_rollup_blocks, recovered_blks_map), current_rollup_txs ++ recovered_txs_list}
+      {Map.merge(current_rollup_blocks, recovered_blocks_map), current_rollup_txs ++ recovered_txs_list}
     else
       {current_rollup_blocks, current_rollup_txs}
     end
@@ -367,7 +368,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     tx_counts_per_batch = batches_to_rollup_txs_amounts(rollup_txs_to_import)
 
     batches_list_to_import =
-      Map.values(batches_to_import)
+      batches_to_import
+      |> Map.values()
       |> Enum.reduce([], fn batch, updated_batches_list ->
         [
           batch

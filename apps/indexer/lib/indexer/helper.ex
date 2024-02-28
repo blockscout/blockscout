@@ -207,10 +207,12 @@ defmodule Indexer.Helper do
   TBD
   """
   def repeated_batch_call(func, args, error_message, retries_left) do
+    # credo:disable-for-previous-line Credo.Check.Refactor.CyclomaticComplexity
     case apply(func, args) do
       {:ok, responses_list} = batch_responses ->
         standardized_error =
           Enum.reduce_while(responses_list, %{}, fn one_response, acc ->
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             case one_response do
               %{error: error_msg_with_code} -> {:halt, error_msg_with_code}
               _ -> {:cont, acc}
@@ -226,6 +228,7 @@ defmodule Indexer.Helper do
         {:error, message, err}
     end
     |> case do
+      # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
       {:ok, responses, _} ->
         responses
 

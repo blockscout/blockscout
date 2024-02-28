@@ -90,7 +90,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   end
 
   defp extend_lifecycle_txs_with_ts_and_status(lifecycle_txs, blocks_to_ts, track_finalization?) do
-    Map.keys(lifecycle_txs)
+    lifecycle_txs
+    |> Map.keys()
     |> Enum.reduce(%{}, fn tx_key, updated_txs ->
       Map.put(
         updated_txs,
@@ -115,7 +116,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
   defp discover_rollup_blocks(rollup_blocks_to_l1_txs, rollup_json_rpc_named_arguments, outbox_config) do
     block_to_l1_txs =
-      Map.keys(rollup_blocks_to_l1_txs)
+      rollup_blocks_to_l1_txs
+      |> Map.keys()
       |> Enum.reduce(%{}, fn block_hash, transformed ->
         # If blocks were not caught up yet by indexer but the batch was discovered
         # the block number will be requested from RPC
@@ -137,11 +139,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         end
       end)
 
-    if not Enum.empty?(block_to_l1_txs) do
+    if Enum.empty?(block_to_l1_txs) do
+      []
+    else
       # Oldest (with the lowest number) block is first
-      rollup_block_nums = Enum.sort(Map.keys(block_to_l1_txs), :asc)
+      rollup_block_numbers = Enum.sort(Map.keys(block_to_l1_txs), :asc)
 
-      rollup_block_nums
+      rollup_block_numbers
       |> Enum.reduce([], fn block_num, updated_rollup_blocks ->
         Logger.info("Attempting to mark all rollup blocks including ##{block_num} and lower as confirmed")
 
@@ -153,6 +157,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             rollup_json_rpc_named_arguments
           )
 
+        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
         if length(confirmed_blocks) > 0 do
           Logger.info("Found #{length(confirmed_blocks)} confirmed blocks")
 
@@ -163,8 +168,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
           []
         end
       end)
-    else
-      []
     end
   end
 
@@ -206,9 +209,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   defp discover_rollup_blocks__get_unconfirmed_rollup_blocks(batch, rollup_block_num) do
     unconfirmed_rollup_blocks = Db.unconfirmed_rollup_blocks(batch.start_block, rollup_block_num)
 
-    if not Enum.empty?(unconfirmed_rollup_blocks) do
-      {:ok, unconfirmed_rollup_blocks}
-    else
+    if Enum.empty?(unconfirmed_rollup_blocks) do
       # Blocks are not found only in case when all blocks in the batch confirmed
       # or in case when Chain.Block for block in the batch are not received yet
 
@@ -219,6 +220,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         Logger.warning("Seems that the batch #{batch.number} was not fully synced. Skipping its blocks")
         {:error, []}
       end
+    else
+      {:ok, unconfirmed_rollup_blocks}
     end
   end
 
@@ -337,6 +340,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             {:cont, {block.block_num, true}}
 
           value ->
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             if block.block_num - 1 == value do
               {:cont, {block.block_num, true}}
             else
@@ -360,6 +364,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       l1_outbox_config.logs_block_range
     )
     |> Enum.reduce_while({nil, cache}, fn {log_start, log_end}, {_na, updated_cache} ->
+      # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
       {latest_block_confirmed, new_cache} =
         do_check_if_batch_confirmed(
           {batch.start_block, batch.end_block},
@@ -421,6 +426,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   end
 
   defp l1_blocks_pairs_to_get_logs(start, finish, max_range) do
+    # credo:disable-for-lines:9 Credo.Check.Refactor.PipeChainStart
     Stream.unfold(finish, fn cur_finish ->
       if cur_finish < start do
         nil
@@ -444,7 +450,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     end)
   end
 
-  defp finalise_lifecycle_txs_and_confirmed_blocks(
+  defp finalize_lifecycle_txs_and_confirmed_blocks(
          basic_lifecycle_txs,
          confirmed_rollup_blocks,
          l1_blocks_requests,
@@ -501,15 +507,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
     applicable_lifecycle_txs = take_lifecycle_txs_for_confirmed_blocks(rollup_blocks, lifecycle_txs_basic)
 
-    if not Enum.empty?(applicable_lifecycle_txs) do
-      finalise_lifecycle_txs_and_confirmed_blocks(
+    if Enum.empty?(applicable_lifecycle_txs) do
+      {[], []}
+    else
+      finalize_lifecycle_txs_and_confirmed_blocks(
         applicable_lifecycle_txs,
         rollup_blocks,
         blocks_requests,
         l1_rpc_config
       )
-    else
-      {[], []}
     end
   end
 

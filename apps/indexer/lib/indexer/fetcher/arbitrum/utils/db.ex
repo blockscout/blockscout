@@ -117,11 +117,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   TBD
   """
   #
-  def rollup_blocks(list_of_block_nums) do
+  def rollup_blocks(list_of_block_numbers) do
     query =
       from(
         block in FullBlock,
-        where: block.number in ^list_of_block_nums
+        where: block.number in ^list_of_block_numbers
       )
 
     query

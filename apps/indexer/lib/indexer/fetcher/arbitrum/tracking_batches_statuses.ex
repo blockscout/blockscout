@@ -102,7 +102,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
     # TODO: it is necessary to develop a way to discover missed batches to cover the case
     #       when the batch #1, #2 and #4 are in DB, but #3 is not
-    #       One of the approaches is to look deeper than the latest commited batch and
+    #       One of the approaches is to look deeper than the latest committed batch and
     #       check whether batches was already handled or not.
     new_batches_start_block = Db.l1_block_of_latest_committed_batch(l1_start_block)
 
@@ -111,7 +111,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     #       1. Find the latest unconfirmed block before which there is a confirmed block
     #       2. Get its hash
     #       3. Find SendRootUpdated with the given hash
-    #       4. Confirm all the blocks between the block with given hash (inclusevly) and the block
+    #       4. Confirm all the blocks between the block with given hash (inclusively) and the block
     #          from previous SendRootUpdated
     new_confirmations_start_block = Db.l1_block_of_latest_confirmed_block(l1_start_block)
 

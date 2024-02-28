@@ -60,9 +60,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Logging do
     `:ok`
 
     ## Examples:
-    - `log_details_chunk_handling("A message", {"batch", "batchs"}, [1, 2, 3], 0, 10)` produces
+    - `log_details_chunk_handling("A message", {"batch", "batches"}, [1, 2, 3], 0, 10)` produces
       `A message for batches 1..3. Progress 30%`
-    - `log_details_chunk_handling("A message", {"batch", "batchs"}, [2], 1, 10)` produces
+    - `log_details_chunk_handling("A message", {"batch", "batches"}, [2], 1, 10)` produces
       `A message for batch 2. Progress 20%`
     - `log_details_chunk_handling("A message", {"block", "blocks"}, [35], 0, 1)` produces
       `A message for block 35.`
@@ -71,6 +71,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Logging do
   """
   @spec log_details_chunk_handling(binary(), tuple(), list(), non_neg_integer(), non_neg_integer()) :: :ok
   def log_details_chunk_handling(prefix, data_items_names, chunk, current_progress, total)
+      # credo:disable-for-previous-line Credo.Check.Refactor.CyclomaticComplexity
       when is_binary(prefix) and is_tuple(data_items_names) and is_list(chunk) and
              (is_integer(current_progress) and current_progress >= 0) and
              (is_integer(total) and total > 0) do
