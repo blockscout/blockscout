@@ -1,4 +1,4 @@
-name: Release for Ethereum
+name: Release for Zetachain
 
 on:
   release:
@@ -28,7 +28,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-ethereum:latest, blockscout/blockscout-ethereum:${{ env.RELEASE_VERSION }}
+          tags: blockscout/blockscout-zetachain:latest, blockscout/blockscout-zetachain:${{ env.RELEASE_VERSION }}
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -42,4 +42,4 @@ jobs:
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=ethereum
+            CHAIN_TYPE=zetachain
