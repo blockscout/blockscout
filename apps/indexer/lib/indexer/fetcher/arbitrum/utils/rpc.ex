@@ -11,6 +11,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   alias EthereumJSONRPC.Transport
   alias Indexer.Helper, as: IndexerHelper
 
+  @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
   @rpc_resend_attempts 20
 
   @selector_outbox "ce11e6ab"
@@ -144,6 +145,48 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
         Map.put(result_inner, resp["hash"], resp["from"])
       end)
     end)
+  end
+
+  def get_block_number_by_hash(hash, json_rpc_named_arguments) do
+    func = &do_get_block_number_by_hash/2
+    args = [hash, json_rpc_named_arguments]
+    error_message = &"Cannot fetch block #{hash} or its number. Error: #{inspect(&1)}"
+    case IndexerHelper.repeated_call(func, args, error_message, @rpc_resend_attempts) do
+      {:error, _} -> nil
+      {:ok, res} -> res
+    end
+  end
+
+  defp do_get_block_number_by_hash(hash, json_rpc_named_arguments) do
+    result =
+      EthereumJSONRPC.request(%{id: 0, method: "eth_getBlockByHash", params: [hash, false]})
+      |> json_rpc(json_rpc_named_arguments)
+
+    with {:ok, block} <- result,
+         false <- is_nil(block),
+         number <- Map.get(block, "number"),
+         false <- is_nil(number) do
+      {:ok, quantity_to_integer(number)}
+    else
+      {:error, message} ->
+        {:error, message}
+
+      true ->
+        {:error, "RPC returned nil."}
+    end
+  end
+
+  defp json_txid_to_hash(hash) do
+    case hash do
+      "0x" <> tx_hash -> tx_hash
+      nil -> @zero_hash
+    end
+  end
+
+  def strhash_to_byteshash(hash) do
+    hash
+    |> json_txid_to_hash()
+    |> Base.decode16!(case: :mixed)
   end
 
   def get_resend_attempts do

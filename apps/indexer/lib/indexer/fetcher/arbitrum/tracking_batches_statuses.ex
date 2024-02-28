@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   use GenServer
   use Indexer.Fetcher
 
-  alias Indexer.Fetcher.Arbitrum.Workers.{L1Finalization, NewBatches}
+  alias Indexer.Fetcher.Arbitrum.Workers.{L1Finalization, NewBatches, NewConfirmations}
 
   import Indexer.Fetcher.Arbitrum.Utils.Helper, only: [increase_duration: 2]
 
@@ -46,6 +46,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     recheck_interval = config_tracker[:recheck_interval]
     messages_to_blocks_shift = config_tracker[:messages_to_blocks_shift]
     track_l1_tx_finalization = config_tracker[:track_l1_tx_finalization]
+    finalized_confirmations = config_tracker[:finalized_confirmations]
+    confirmation_batches_depth = config_tracker[:confirmation_batches_depth]
 
     Process.send(self(), :init_worker, [])
 
@@ -56,7 +58,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
            json_rpc_named_arguments: IndexerHelper.build_json_rpc_named_arguments(l1_rpc),
            logs_block_range: l1_rpc_block_range,
            chunk_size: l1_rpc_chunk_size,
-           track_finalization: track_l1_tx_finalization
+           track_finalization: track_l1_tx_finalization,
+           finalized_confirmations: finalized_confirmations
          },
          rollup_rpc: %{
            json_rpc_named_arguments: args[:json_rpc_named_arguments],
@@ -65,7 +68,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
          recheck_interval: recheck_interval,
          l1_rollup_address: l1_rollup_address,
          l1_start_block: l1_start_block,
-         messages_to_blocks_shift: messages_to_blocks_shift
+         messages_to_blocks_shift: messages_to_blocks_shift,
+         confirmation_batches_depth: confirmation_batches_depth
        },
        data: %{}
      }}
@@ -96,9 +100,20 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         json_l1_rpc_named_arguments
       )
 
+    # TODO: it is necessary to develop a way to discover missed batches to cover the case
+    #       when the batch #1, #2 and #4 are in DB, but #3 is not
+    #       One of the approaches is to look deeper than the latest commited batch and
+    #       check whether batches was already handled or not.
     new_batches_start_block = Db.l1_block_of_latest_committed_batch(l1_start_block)
 
-    new_confirmations_start_block = l1_start_block
+    # TODO: it is necessary to develop a way to discover missed L1 confirmation txs.
+    #       One of the approaches is
+    #       1. Find the latest unconfirmed block before which there is a confirmed block
+    #       2. Get its hash
+    #       3. Find SendRootUpdated with the given hash
+    #       4. Confirm all the blocks between the block with given hash (inclusevly) and the block
+    #          from previous SendRootUpdated
+    new_confirmations_start_block = Db.l1_block_of_latest_confirmed_block(l1_start_block)
 
     Process.send(self(), :check_new_batches, [])
 
@@ -151,8 +166,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   # TBD
   @impl GenServer
   def handle_info(:check_new_confirmations, state) do
-    {handle_duration, _} =
-      :timer.tc(&nothing_to_do/1, [
+    {handle_duration, {:ok, end_block}} =
+      :timer.tc(&discover_rollup_confirmation/1, [
         state
       ])
 
@@ -160,7 +175,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
     new_data =
       Map.merge(state.data, %{
-        duration: increase_duration(state.data, handle_duration)
+        duration: increase_duration(state.data, handle_duration),
+        new_confirmations_start_block: end_block + 1
       })
 
     {:noreply, %{state | data: new_data}}
@@ -232,11 +248,49 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     end
   end
 
+  def discover_rollup_confirmation(
+        %{
+          config: %{
+            l1_rpc: l1_rpc_config,
+            l1_outbox_address: outbox_address,
+            rollup_rpc: rollup_rpc_config
+          },
+          data: %{new_confirmations_start_block: start_block}
+        } = _state
+      ) do
+    # It makes sense to use "safe" here. Blocks are confirmed with delay in one week
+    # (applicable for ArbitrumOne and Nova), so 10 mins delay is not significant
+    {:ok, latest_block} =
+      IndexerHelper.get_block_number_by_tag(
+        if(l1_rpc_config.finalized_confirmations, do: "safe", else: "latest"),
+        l1_rpc_config.json_rpc_named_arguments,
+        Rpc.get_resend_attempts()
+      )
+
+    end_block = min(start_block + l1_rpc_config.logs_block_range - 1, latest_block)
+
+    if start_block <= end_block do
+      Logger.info("Block range for new rollup confirmations discovery: #{start_block}..#{end_block}")
+
+      NewConfirmations.discover(
+        outbox_address,
+        start_block,
+        end_block,
+        l1_rpc_config,
+        rollup_rpc_config
+      )
+
+      {:ok, end_block}
+    else
+      {:ok, start_block - 1}
+    end
+  end
+
   defp monitor_lifecycle_txs_finalization(state) do
     L1Finalization.monitor_lifecycle_txs(state.config.l1_rpc.json_rpc_named_arguments)
   end
 
-  defp nothing_to_do(_) do
-    :timer.sleep(500)
-  end
+  # defp nothing_to_do(_) do
+  #   :timer.sleep(500)
+  # end
 end

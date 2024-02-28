@@ -12,9 +12,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       where: 3
     ]
 
-  alias Explorer.Chain.Arbitrum.{L1Batch, LifecycleTransaction, Message}
+  alias Explorer.Chain.Arbitrum.{BatchBlock, L1Batch, LifecycleTransaction, Message}
 
   alias Explorer.{Chain, Repo}
+
+  alias Explorer.Chain.Block, as: FullBlock
 
   @doc """
   TBD
@@ -105,5 +107,98 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     Repo.all(query, timeout: :infinity)
+  end
+
+  def rollup_block_hash_to_num(block_hash) do
+    query =
+      from(bl in BatchBlock,
+        where: bl.hash == ^block_hash
+      )
+
+    case query
+         |> Chain.join_associations(%{
+           :block => :optional
+         })
+         |> Repo.one() do
+      nil ->
+        # Block with such hash is not found
+        {:ok, nil}
+
+      rollup_block ->
+        case rollup_block.block do
+          # `nil` and `%Ecto.Association.NotLoaded{}` indicate DB inconsistency
+          nil -> {:error, nil}
+          %Ecto.Association.NotLoaded{} -> {:error, nil}
+          associated_block -> {:ok, associated_block.number}
+        end
+    end
+  end
+
+  def get_batch_by_rollup_block_num(number) do
+    query =
+      from(batch in L1Batch,
+        # end_block has higher number than start_block
+        where: batch.end_block >= ^number and batch.start_block <= ^number
+      )
+
+    query
+    |> Repo.one()
+
+    query
+    |> Chain.join_associations(%{
+      :commit_transaction => :optional
+    })
+    |> Repo.one()
+  end
+
+  def l1_block_of_latest_confirmed_block do
+    query =
+      from(
+        rb in BatchBlock,
+        left_join: fb in FullBlock,
+        on: rb.hash == fb.hash,
+        select: rb,
+        where: not is_nil(rb.confirm_id),
+        order_by: [desc: fb.number],
+        limit: 1
+      )
+
+    case query
+         |> Chain.join_associations(%{
+           :confirm_transaction => :optional
+         })
+         |> Repo.one() do
+      nil -> nil
+      block -> block.confirm_transaction.block
+    end
+  end
+
+  def unconfirmed_rollup_blocks(first_block, last_block) do
+    query =
+      from(
+        rb in BatchBlock,
+        left_join: fb in FullBlock,
+        on: rb.hash == fb.hash,
+        select: %{
+          batch_number: rb.batch_number,
+          hash: rb.hash,
+          block_num: fb.number,
+          confirm_id: rb.confirm_id
+        },
+        where: fb.number >= ^first_block and fb.number <= ^last_block and is_nil(rb.confirm_id),
+        order_by: [asc: fb.number]
+      )
+
+    Repo.all(query, timeout: :infinity)
+  end
+
+  def count_confirmed_rollup_blocks_in_batch(batch_number) do
+    query =
+      from(
+        rb in BatchBlock,
+        where: rb.batch_number >= ^batch_number and not is_nil(rb.confirm_id)
+      )
+
+    Repo.aggregate(query, :count, timeout: :infinity)
   end
 end

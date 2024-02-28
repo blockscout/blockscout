@@ -74,7 +74,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       |> Enum.reduce({%{}, [], %{}}, fn event, {batches, txs_requests, blocks_requests} ->
         {batch_num, before_acc, after_acc} = sequencer_batch_delivered_event_parse(event)
 
-        tx_hash = event["transactionHash"]
+        tx_hash_raw = event["transactionHash"]
+        tx_hash = Rpc.strhash_to_byteshash(tx_hash_raw)
         blk_num = quantity_to_integer(event["blockNumber"])
 
         updated_batches =
@@ -90,7 +91,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           )
 
         updated_txs_requests = [
-          Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash})
+          Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash_raw})
           | txs_requests
         ]
 
@@ -101,7 +102,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             BlockByNumber.request(%{id: 0, number: blk_num}, false, true)
           )
 
-        Logger.info("New batch #{batch_num} found in #{tx_hash}")
+        Logger.info("New batch #{batch_num} found in #{tx_hash_raw}")
 
         {updated_batches, updated_txs_requests, updated_blocks_requests}
       end)
@@ -296,7 +297,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getTransactionByHash")
       |> Enum.reduce({l1_txs, updated_batches}, fn resp, {txs_map, batches_map} ->
         block_num = quantity_to_integer(resp["blockNumber"])
-        tx_hash = resp["hash"]
+        tx_hash = Rpc.strhash_to_byteshash(resp["hash"])
 
         # Every message is an L2 block
         {batch_num, prev_message_count, new_message_count} =
@@ -371,7 +372,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         [
           batch
           |> Map.put(:commit_id, get_l1_tx_id_by_hash(lifecycle_txs, batch.tx_hash))
-          |> Map.put(:tx_count, tx_counts_per_batch[batch.number])
+          |> Map.put(
+            :tx_count,
+            case tx_counts_per_batch[batch.number] do
+              nil -> 0
+              value -> value
+            end
+          )
           |> Map.drop([:tx_hash])
           | updated_batches_list
         ]
@@ -406,6 +413,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         l1_rpc_config,
         rollup_rpc_config
       )
+
+    # TODO: make sure that commit_ids from rollup_blocks will not override blocks in DB
 
     {:ok, _} =
       Chain.import(%{

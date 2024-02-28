@@ -90,7 +90,7 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.LifecycleTransactions do
           # don't update `hash` as it is a unique index and used for the conflict target
           timestamp: fragment("EXCLUDED.timestamp"),
           block: fragment("EXCLUDED.block"),
-          status: fragment("EXCLUDED.status"),
+          status: fragment("GREATEST(?, EXCLUDED.status)", tx.status),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", tx.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", tx.updated_at)
         ]

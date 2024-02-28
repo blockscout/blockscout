@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Arbitrum.Reader
-  alias Explorer.Chain.Block, as: RollupBlock
+  alias Explorer.Chain.Block, as: FullBlock
 
   require Logger
 
@@ -102,11 +102,25 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @doc """
   TBD
   """
+  def l1_block_of_latest_confirmed_block(value_if_nil) do
+    case Reader.l1_block_of_latest_confirmed_block() do
+      nil ->
+        Logger.warning("No confirmed blocks found in DB")
+        value_if_nil
+
+      value ->
+        value + 1
+    end
+  end
+
+  @doc """
+  TBD
+  """
   #
   def rollup_blocks(list_of_block_nums) do
     query =
       from(
-        block in RollupBlock,
+        block in FullBlock,
         where: block.number in ^list_of_block_nums
       )
 
@@ -128,5 +142,41 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       timestamp: tx.timestamp,
       status: tx.status
     }
+  end
+
+  @doc """
+  TBD
+  """
+  def rollup_block_hash_to_num(hash, %{function: func, params: params} = _recover) do
+    case Reader.rollup_block_hash_to_num(hash) do
+      {:error, _} ->
+        Logger.error("DB inconsistency discovered. No Chain.Block associated with the Arbitrum.BatchBlock")
+        apply(func, params)
+
+      {:ok, value} ->
+        value
+    end
+  end
+
+  def get_batch_by_rollup_block_num(num) do
+    case Reader.get_batch_by_rollup_block_num(num) do
+      nil ->
+        nil
+
+      batch ->
+        case batch.commit_transaction do
+          nil -> nil
+          %Ecto.Association.NotLoaded{} -> nil
+          _ -> batch
+        end
+    end
+  end
+
+  def unconfirmed_rollup_blocks(first_block, last_block) do
+    Reader.unconfirmed_rollup_blocks(first_block, last_block)
+  end
+
+  def count_confirmed_rollup_blocks_in_batch(batch_number) do
+    Reader.count_confirmed_rollup_blocks_in_batch(batch_number)
   end
 end
