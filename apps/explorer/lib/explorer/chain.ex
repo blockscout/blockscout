@@ -3545,27 +3545,6 @@ defmodule Explorer.Chain do
     |> Repo.stream_reduce(initial, reducer)
   end
 
-  def decode_contract_address_hash_response(resp) do
-    case resp do
-      "0x000000000000000000000000" <> address ->
-        "0x" <> address
-
-      _ ->
-        nil
-    end
-  end
-
-  def decode_contract_integer_response(resp) do
-    case resp do
-      "0x" <> integer_encoded ->
-        {integer_value, _} = Integer.parse(integer_encoded, 16)
-        integer_value
-
-      _ ->
-        nil
-    end
-  end
-
   @doc """
   Fetches a `t:Token.t/0` by an address hash.
 
