@@ -11,7 +11,6 @@ import { updateAllCalculatedUsdValues, formatUsdValue } from '../lib/currency'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import { batchChannel, showLoader } from '../lib/utils'
 import listMorph from '../lib/list_morph'
-import '../main_page'
 import '../app'
 import { openErrorModal, openSuccessModal, openWarningModal } from '../lib/modals'
 
@@ -394,7 +393,10 @@ export function placeHolderBlock (blockNumber) {
         </span>
         <div>
           <span class="tile-title pr-0 pl-0">${blockNumber}</span>
-          <div class="tile-transactions">Block Mined, awaiting import...</div>
+          <div class="tile-transactions">${
+            // @ts-ignore
+            window.localized['Block Processing']
+          }</div>
         </div>
       </div>
     </div>

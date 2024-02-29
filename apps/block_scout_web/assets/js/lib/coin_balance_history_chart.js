@@ -76,7 +76,8 @@ export function createCoinBalanceHistoryChart (el) {
               },
               title: {
                 display: true,
-                labelString: 'xDAI'
+                // @ts-ignore
+                labelString: window.localized.Ether
               }
             }
           }

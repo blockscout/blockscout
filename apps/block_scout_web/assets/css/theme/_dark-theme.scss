@@ -88,17 +88,13 @@ $header-links-background-color-dark-mode: $dark-light !default;
 		background: $dark-light-bg;
 		color: $labels-dark;
 	}
+	.footer-social-icon,
 	.footer-link {
 		color: $labels-dark;
 	}
+	.footer-social-icon:hover,
 	.footer-link:hover {
 		color: #fff;
-	}
-	.footer-social-icon-container {
-		background-color: $labels-dark;
-	}
-	.footer-social-icon-container:hover {
-		background-color: #fff;
 	}
 	.footer-list ul li::before {
 		background-color: $dark-secondary;
@@ -327,12 +323,6 @@ $header-links-background-color-dark-mode: $dark-light !default;
 		background-color: $dark-light;
 		border-color: $dark-light;
 		color: $labels-dark;
-
-		&:hover {
-			background-color: $dark-light;
-			border-color: $dark-light;
-			color: $labels-dark;
-		  }
 	}
 
 	// table
@@ -992,10 +982,10 @@ $header-links-background-color-dark-mode: $dark-light !default;
 		background: #6ca1e2
 	}
 
-	.bs-label.validator,
-	.bs-label.destination-eth {
-		background-color: $labels-dark;
-	}
+    .bs-label.validator,
+    .bs-label.destination-eth {
+        background-color: $labels-dark;
+    }
 
 	.dropdown-item {
 		.external-link-icon {
@@ -1056,16 +1046,10 @@ $header-links-background-color-dark-mode: $dark-light !default;
 	.custom-power-input {
 		border-color: $dark-primary;
 	}
-	.dropzone-1 {
-		background-color: $dark-light !important;
-	}
 	.stakes-btn-close-alert {
 		path {
 			fill: #fff;
 		  }
-	}
-	.apps-menu-header {
-		color: #fff;
 	}
 	.main-search-autocomplete {
 		background-color: $dark-bg !important;
@@ -1103,7 +1087,7 @@ $header-links-background-color-dark-mode: $dark-light !default;
 .dark-theme-applied .dropdown-item.active:not(.header), .dark-theme-applied .dropdown-item:not(.header):hover, .dark-theme-applied .dropdown-item:not(.header):focus {
     background-image: none;
     width: 100%;
-    background-color: #3f426c;
+    background-color: #3f426c !important;
 }
 
 @media (max-width: 991.98px) {

@@ -598,10 +598,6 @@ defmodule BlockScoutWeb.Chain do
     %{"block_number" => block_number}
   end
 
-  defp paging_params(%{address_hash: address_hash, total_gas: total_gas}) do
-    %{"address_hash" => address_hash, "total_gas" => Decimal.to_integer(total_gas)}
-  end
-
   defp paging_params(%SmartContract{address: %NotLoaded{}} = smart_contract) do
     %{"smart_contract_id" => smart_contract.id}
   end

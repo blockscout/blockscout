@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.AddressView do
 
   alias BlockScoutWeb.{AccessHelper, LayoutView}
   alias Explorer.Account.CustomABI
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, CustomContractsHelper, Repo}
 
   alias Explorer.Chain.{
     Address,
@@ -23,7 +23,6 @@ defmodule BlockScoutWeb.AddressView do
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.SmartContract.Proxy
-  alias Explorer.EnvVarTranslator
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
 
@@ -491,72 +490,6 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_is_gnosis_safe_proxy?(_address), do: false
 
-  def random_aura?(nil), do: false
-
-  def random_aura?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    address_hash_str == String.downcase(System.get_env("RANDOM_AURA_CONTRACT", ""))
-  end
-
-  def omni_bridge?(nil), do: false
-
-  def omni_bridge?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    address_hash_str == String.downcase(System.get_env("ETH_OMNI_BRIDGE_MEDIATOR", "")) ||
-      address_hash_str == String.downcase(System.get_env("BSC_OMNI_BRIDGE_MEDIATOR", ""))
-  end
-
-  def omni_eth_bridge?(nil), do: false
-
-  def omni_eth_bridge?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    address_hash_str == String.downcase(System.get_env("ETH_OMNI_BRIDGE_MEDIATOR", "")) ||
-      address_hash_str == String.downcase(System.get_env("ETH_OMNI_BRIDGE", ""))
-  end
-
-  def omni_bsc_bridge?(nil), do: false
-
-  def omni_bsc_bridge?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    address_hash_str == String.downcase(System.get_env("BSC_OMNI_BRIDGE_MEDIATOR", "")) ||
-      address_hash_str == String.downcase(System.get_env("BSC_OMNI_BRIDGE", ""))
-  end
-
-  def omni_poa_bridge?(nil), do: false
-
-  def omni_poa_bridge?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    address_hash_str == String.downcase(System.get_env("POA_OMNI_BRIDGE_MEDIATOR", "")) ||
-      address_hash_str == String.downcase(System.get_env("POA_OMNI_BRIDGE", ""))
-  end
-
-  def xmoon_token?(nil), do: false
-
-  def xmoon_token?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    address_hash_str == String.downcase(System.get_env("RINKEBY_XMOON_TOKEN", ""))
-  end
-
-  def xbrick_token?(nil), do: false
-
-  def xbrick_token?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    address_hash_str == String.downcase(System.get_env("RINKEBY_XBRICK_TOKEN", ""))
-  end
-
-  def test?(nil), do: false
-
-  def test?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN", "")) =~ address_hash_str
-  end
-
   def tag_name_to_label(tag_name) do
     tag_name
     |> String.replace(" ", "-")
@@ -589,33 +522,6 @@ defmodule BlockScoutWeb.AddressView do
 
   def check_custom_abi_for_having_write_functions(custom_abi),
     do: !is_nil(custom_abi) && Enum.any?(custom_abi.abi, &Writer.write_function?(&1))
-
-  def address_alert(target_address) do
-    alert_to_addresses = EnvVarTranslator.map_array_env_var_to_list(:alert_to_addresses)
-
-    alert_to_address =
-      alert_to_addresses
-      |> Enum.find(fn %{addresses: address_strings_array, message: _} ->
-        probe_address_string = find_address_in_array(address_strings_array, target_address)
-
-        if probe_address_string, do: true, else: false
-      end)
-
-    alert_to_address && alert_to_address.message
-  end
-
-  defp find_address_in_array(address_strings_array, target_address) do
-    address_strings_array
-    |> Enum.find(fn address_string ->
-      case Chain.string_to_address_hash(address_string) do
-        {:ok, probe_address} ->
-          probe_address.bytes == target_address.hash.bytes
-
-        _ ->
-          false
-      end
-    end)
-  end
 
   def contract_interaction_disabled?, do: Application.get_env(:block_scout_web, :contract)[:disable_interaction]
 

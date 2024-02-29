@@ -25,7 +25,7 @@ defmodule Explorer.Chain do
       where: 3
     ]
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, fetch_block_internal_transactions: 2]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1, fetch_block_internal_transactions: 2]
 
   require Logger
 
@@ -2914,7 +2914,7 @@ defmodule Explorer.Chain do
       )
 
     revert_reason =
-      case json_rpc(req, json_rpc_named_arguments) do
+      case EthereumJSONRPC.json_rpc(req, json_rpc_named_arguments) do
         {:error, %{data: data}} ->
           data
 
@@ -4680,134 +4680,6 @@ defmodule Explorer.Chain do
     |> select([block], block.timestamp)
     |> limit(1)
     |> select_repo(options).one()
-  end
-
-  def compare_address_hash_and_strings(address_hash, addresses_string) do
-    contract_address_lower = Base.encode16(address_hash.bytes, case: :lower)
-
-    if addresses_string do
-      token_addresses =
-        try do
-          addresses_string
-          |> String.downcase()
-          |> String.split(",")
-        rescue
-          _ ->
-            []
-        end
-
-      token_addresses
-      |> Enum.any?(fn token ->
-        token == "0x" <> contract_address_lower
-      end)
-    else
-      false
-    end
-  end
-
-  def total_gas(gas_items) do
-    gas_items
-    |> Enum.reduce(Decimal.new(0), fn gas_item, acc ->
-      if gas_item.total_gas, do: Decimal.add(acc, gas_item.total_gas), else: acc
-    end)
-  end
-
-  def bridged_tokens_enabled? do
-    eth_omni_bridge_mediator = Application.get_env(:block_scout_web, :eth_omni_bridge_mediator)
-    bsc_omni_bridge_mediator = Application.get_env(:block_scout_web, :bsc_omni_bridge_mediator)
-    poa_omni_bridge_mediator = Application.get_env(:block_scout_web, :poa_omni_bridge_mediator)
-
-    (eth_omni_bridge_mediator && eth_omni_bridge_mediator !== "") ||
-      (bsc_omni_bridge_mediator && bsc_omni_bridge_mediator !== "") ||
-      (poa_omni_bridge_mediator && poa_omni_bridge_mediator !== "")
-  end
-
-  def chain_id_display_name(nil), do: ""
-
-  def chain_id_display_name(chain_id) do
-    chain_id_int =
-      if is_integer(chain_id) do
-        chain_id
-      else
-        chain_id
-        |> Decimal.to_integer()
-      end
-
-    case chain_id_int do
-      1 -> "eth"
-      56 -> "bsc"
-      99 -> "poa"
-      _ -> ""
-    end
-  end
-
-  def chain_id_full_display_name(nil), do: ""
-
-  def chain_id_full_display_name(chain_id) do
-    chain_id_int =
-      if is_integer(chain_id) do
-        chain_id
-      else
-        chain_id
-        |> Decimal.to_integer()
-      end
-
-    case chain_id_int do
-      1 -> "Ethereum"
-      56 -> "BSC"
-      99 -> "POA"
-      _ -> ""
-    end
-  end
-
-  @spec amb_eth_tx?(Address.t()) :: boolean()
-  def amb_eth_tx?(hash) do
-    amb_tx?(hash, "ETH_OMNI_BRIDGE_MEDIATOR") || amb_tx?(hash, "ETH_OMNI_BRIDGE")
-  end
-
-  @spec amb_bsc_tx?(Address.t()) :: boolean()
-  def amb_bsc_tx?(hash) do
-    amb_tx?(hash, "BSC_OMNI_BRIDGE_MEDIATOR") || amb_tx?(hash, "BSC_OMNI_BRIDGE")
-  end
-
-  @spec amb_poa_tx?(Address.t()) :: boolean()
-  def amb_poa_tx?(hash) do
-    amb_tx?(hash, "POA_OMNI_BRIDGE_MEDIATOR") || amb_tx?(hash, "POA_OMNI_BRIDGE")
-  end
-
-  @spec amb_nft_tx?(Address.t()) :: boolean()
-  def amb_nft_tx?(hash) do
-    amb_tx?(hash, "NFT_OMNI_BRIDGE_MEDIATOR")
-  end
-
-  defp amb_tx?(hash, env_var) do
-    omni_bridge_mediator = String.downcase(System.get_env(env_var, ""))
-
-    if omni_bridge_mediator == "" do
-      false
-    else
-      log_exist?(hash, omni_bridge_mediator)
-    end
-  end
-
-  defp log_exist?(transaction_hash, address_hash) do
-    # "0x59a9a802" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256 value, bytes32 indexed messageId)
-    # "0x4592bc44" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256[] tokenIds, uint256[] values, bytes32 indexed messageId) (NFT Omni bridge)
-    # "0x520d2afd" - UserRequestForSignature(bytes32 indexed messageId, bytes encodedData)
-    # "0xe7a2c01f" - executeAffirmation(bytes message)
-
-    Repo.exists?(
-      from(
-        l in Log,
-        where: l.transaction_hash == ^transaction_hash,
-        where: l.address_hash == ^address_hash,
-        where:
-          fragment("first_topic like '0x59a9a802%'") or
-            fragment("first_topic like '0x4592bc44%'") or
-            fragment("first_topic like '0x520d2afd%'") or
-            fragment("first_topic like '0xe7a2c01f%'")
-      )
-    )
   end
 
   @spec get_token_transfer_type(TokenTransfer.t()) ::

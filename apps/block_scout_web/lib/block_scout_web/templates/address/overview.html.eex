@@ -1,34 +1,33 @@
-<%= if System.get_env("ALERT_TO_ADDRESSES") do %>
-  <% address_alert_message = address_alert(@address) %>
-  <% address_hash_str = Base.encode16(@address.hash.bytes) %>
-  <%= if address_alert_message do %>
-    <%= render BlockScoutWeb.StakesView, "_warning.html", conn: @conn, message: address_alert(@address), additional_container_classes: ["mb-2", "js-address-warning-alert"], additional_container_attributes: "data-address=#{address_hash_str}", additional_body_classes: ["alert-danger-etherscan", "border-radius-10"], additional_button_classes: ["js-address-btn-close-warning", "black-x"] %>
-  <% end %>
-<% end %>
 <section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address.hash %>" data-async-counters="<%= @counters_path %>">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
-  <div class="row mb-2">
+  <% dark_forest_addresses_list_0_4 = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses) %>
+  <% dark_forest_addresses_list_0_5 = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses_v_0_5) %>
+  <% circles_addresses_list = CustomContractsHelper.get_custom_addresses_list(:circles_addresses) %>
+  <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
+  <% created_from_address_hash = if from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
+  <div class="row js-ad-dependant-mb-2 js-ad-dependant-mb-5-reverse">
     <!-- Address details -->
-    <div class="col-md-12 mb-2">
-      <div class="card mb-2">
+    <div class="col-md-12 js-ad-dependant-mb-2">
+      <div class="card js-ad-dependant-mb-2">
         <div class="card-body fs-14" style="line-height: 31px;">
+          <%= cond do %>
+            <% Enum.member?(dark_forest_addresses_list_0_4, current_address) -> %>
+              <%= render BlockScoutWeb.AddressView, "_custom_view_df_title.html", title: "zkSnark space warfare (v0.4)" %>
+            <% Enum.member?(dark_forest_addresses_list_0_5, current_address) -> %>
+              <%= render BlockScoutWeb.AddressView, "_custom_view_df_title.html", title: "zkSnark space warfare (v0.5)" %>
+            <% Enum.member?(circles_addresses_list, current_address) -> %>
+              <div class="custom-dapp-header-container">
+                <img class="custom-address-icon"/>
+              </div>
+            <% Enum.member?(circles_addresses_list, created_from_address_hash) -> %>
+              <div class="custom-dapp-header-container">
+                <img class="custom-address-icon"/>
+              </div>
+            <% true -> %>
+              <%= nil %>
+          <% end %>
           <h1 class="card-title lg-card-title mb-2-desktop">
             <div class="title-with-label"><%= address_title(@address) %> <%= gettext "Details" %></div>
-            <% validator_metadata = primary_validator_metadata(@address) %>
-            <%= if contract?(@address) do %>
-              <%= render BlockScoutWeb.FormView, "_tag.html", text: "contract", additional_classes: ["contract", "ml-1"] %>
-              <%= if @is_proxy do %>
-                <%= render BlockScoutWeb.FormView, "_tag.html", text: "proxy", additional_classes: ["proxy", "ml-1"] %>
-              <% end %>
-              <%= if @address.token do %>
-                <%= render BlockScoutWeb.FormView, "_tag.html", text: "token", additional_classes: ["token", "ml-1"] %>
-              <% end %>
-              <%= if random_aura?(@address.hash) do %>
-                <%= render BlockScoutWeb.FormView, "_tag.html", text: "random AuRa", additional_classes: ["random", "ml-1"] %>
-              <% end %>
-            <% else %>
-              <%= render BlockScoutWeb.FormView, "_tag.html", text: "EOA", additional_classes: ["eoa", "ml-1"] %>
-            <% end %>
             <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @address.hash, tags: @tags %>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
@@ -39,35 +38,9 @@
                       aria_label: gettext("Copy Address"),
                       title: gettext("Copy Address") %>
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_qr_code.html" %>
-              <%= if validator_metadata do %>
-                <span
-                  class="overview-title-item"
-                  data-target="#validatorModal"
-                  data-toggle="modal"
-                >
-                  <span
-                    aria-label='<%= gettext("Show Validator Info") %>'
-                    class="btn-address-card-icon"
-                    data-placement="top"
-                    data-toggle="tooltip"
-                    title='<%= gettext("Validator Info") %>'
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="10">
-                      <path fill-rule="evenodd" d="M19 6h-6a1 1 0 0 1 0-2h6a1 1 0 0 1 0 2zm0-4h-6a1 1 0 0 1 0-2h6a1 1 0 0 1 0 2zM9 10H1a1 1 0 0 1-1-1V7a2 2 0 0 1 2-2h.184A2.962 2.962 0 0 1 2 4V3a3 3 0 1 1 6 0v1c0 .353-.072.686-.184 1H8a2 2 0 0 1 2 2v2a1 1 0 0 1-1 1zM6 3a1 1 0 0 0-2 0v1a1 1 0 0 0 2 0V3zm2 4H2v1h6V7zm5 1h6a1 1 0 0 1 0 2h-6a1 1 0 0 1 0-2z"/>
-                    </svg>
-                  </span>
-                </span>
-              <% end %>
             </span>
           </h1>
           <h3 class="address-detail-hash-title mb-4 <%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
-          <%= if smart_contract_is_gnosis_safe_proxy?(@address) do %>
-            <span class="ml-2 mr-4">
-              <a data-test="external_url" href=https://xdai.gnosis-safe.io/app/#/safes/<%= @address.hash %>/transactions target="_blank">
-              View In Gnosis Safe App <span class="external-token-icon"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span>
-              </a>
-            </span>
-          <% end %>
           <!-- Verify in other explorers -->
           <!--
           <%# <%= render "_verify_other_explorers.html", hash: @address.hash, type: "address" %> %>
@@ -315,4 +288,4 @@
 <!-- Modal QR -->
 <%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: qr_code(@address), title: @address %>
 
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_adbutler_banner.html", conn: @conn %>
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>

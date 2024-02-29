@@ -26,6 +26,7 @@
     </div>
     <!-- Content -->
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
+      <span>
       <div class="text-truncate d-flex">
         <%= render "_link.html", transaction_hash: @transaction.hash, data_test: "address_hash_link" %>
         <% method_name = Transaction.get_method_name(@transaction) %>
@@ -37,6 +38,7 @@
         <% end %>
         <%= render BlockScoutWeb.AddressView, "_labels.html", tags: tx_tags %>
       </div>
+      </span>
       <span>
         <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, assigns[:current_address]) |> BlockScoutWeb.RenderHelper.render_partial() %>
         &rarr;

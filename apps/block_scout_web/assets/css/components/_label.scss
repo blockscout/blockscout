@@ -19,22 +19,6 @@
         background: #6ca1e2;
         color: #fff;
     }
-    &.amb {
-        background: #458650;
-        color: #fff;
-    }
-    &.amb-bridge {
-        background: #458650;
-        color: #fff;
-    }
-    &.amb-bridge-mediators {
-        background: #458650;
-        color: #fff;
-    }
-    &.test {
-        background: rgb(219, 79, 79);
-        color: #fff;
-    }
     &.destination-eth {
         background: #253358;
         color: #fff;
@@ -43,119 +27,16 @@
         background: #e7b941;
         color: #fff;
     }
-    &.destination-poa {
-        background: #5c34a2;
-        color: #fff;
-    }
     &.destination-rinkeby {
         background: #153550;
         color: #fff;
     }
-    &.bridge {
+    &.bridged {
         background: #70aee3;
         color: #fff;
     }
     &.validator {
         background: $primary;
-        color: #fff;
-    }
-    &.faucet {
-        background: #2555da;
-        color: #fff;
-    }
-    &.contract {
-        background: $dark-purple;
-        color: #fff;
-    }
-    &.eoa {
-        background: #007bff;
-        color: #fff;
-    }
-    &.proxy {
-        background: #2a9e51;
-        color: #fff;
-    }
-    &.token {
-        background: #5d26c4;
-        color: #fff;
-    }
-    &.token-type {
-        background: #75066c;
-        color: #fff;
-    }
-    &.random {
-        background: #db5959;
-        color: #fff;
-    }
-    &.df {
-        background: #75f94d;
-        color: #080808;
-        &-dao {
-            font-size: 9.5px;
-        }
-    }
-    &.perpetual {
-        background: #050505;
-        color: #77e6af;
-    }
-    &.hopr {
-        background: #fffdab;
-        color: #414141;
-    }
-    &.gtgs {
-        background: #6c2dc3;
-        color: #fff;
-    }
-    &.chainlink-oracle {
-        background: #3960cb;
-        color: #fff;
-    }
-    &.lewinswap {
-        background: #a27395;
-        color: #fff;
-    }
-    &.lewinswap-farm {
-        background: #a27395;
-        color: #fff;
-    }
-    &.lewinswap-stake {
-        background: #a27395;
-        color: #fff;
-    }
-    &.swarm {
-        background: #cf762b;
-        color: #fff;
-    }
-    &.cryptostamps {
-        background: #fadb4a;
-        color: #000000;
-    }
-    &.curve {
-        background: #3465a4;
-        color: #fff;
-    }
-    &.tornado-cash {
-        background: #181818;
-        color: #44f1a6;
-    }
-    &.useless-mev-machine {
-        background: #b1dbfb;
-        color: #fff;
-    }
-    &.sana {
-        background: #030001;
-        color: #fff;
-    }
-    &.rarible {
-        background: #f9d534;
-        color: #000;
-    }
-    &.xdai-punks {
-        background: linear-gradient(to bottom, #6820f7, #60edf2);
-        color: #fff;
-    }
-    &.aox {
-        background: #539C9B;
         color: #fff;
     }
     &.secondary {
@@ -171,26 +52,6 @@
     &.success {
         background: rgba(40, 167, 69, 0.2);
         color: rgb(40, 167, 69);
-    }
-    &.spam {
-        background: #380000;
-        color: #fff;
-    }
-    &.scam {
-        background: #380000;
-        color: #fff;
-    }
-    &.ascendex-hacker {
-        background: rgba(222,68,55,.1);
-        color: #de4437;
-    }
-    &.heist {
-        background: rgba(222,68,55,.1);
-        color: #de4437;
-    }
-    &.gbc {
-        background: linear-gradient(to right, #013371, 70%, #0abd01);
-        color: #fff;
     }
 }
 

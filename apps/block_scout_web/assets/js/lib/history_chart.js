@@ -95,8 +95,28 @@ const config = {
     },
     scales: {
       x: xAxe(sassVariables.dashboardBannerChartAxisFontColor),
-      numTransactions: {
+      price: {
         position: 'left',
+        grid,
+        ticks: {
+          beginAtZero: true,
+          callback: (value, _index, _values) => `$${numeral(value).format('0,0.00')}`,
+          maxTicksLimit: 4,
+          color: sassVariables.dashboardBannerChartAxisFontColor
+        }
+      },
+      marketCap: {
+        position: 'right',
+        grid,
+        ticks: {
+          callback: (_value, _index, _values) => '',
+          maxTicksLimit: 6,
+          drawOnChartArea: false,
+          color: sassVariables.dashboardBannerChartAxisFontColor
+        }
+      },
+      numTransactions: {
+        position: 'right',
         grid,
         ticks: {
           beginAtZero: true,
@@ -192,7 +212,8 @@ class MarketHistoryChart {
     let marketCapActivated = true
 
     this.price = {
-      label: 'Gnosis Chain Price',
+      // @ts-ignore
+      label: window.localized.Price,
       yAxisID: 'price',
       data: [],
       fill: false,
@@ -209,7 +230,8 @@ class MarketHistoryChart {
     }
 
     this.marketCap = {
-      label: 'Total Value Locked',
+      // @ts-ignore
+      label: window.localized['Market Cap'],
       yAxisID: 'marketCap',
       data: [],
       fill: false,
@@ -228,7 +250,8 @@ class MarketHistoryChart {
     }
 
     this.numTransactions = {
-      label: 'Tx/day',
+      // @ts-ignore
+      label: window.localized['Tx/day'],
       yAxisID: 'numTransactions',
       data: [],
       cubicInterpolationMode: 'monotone',
@@ -256,7 +279,8 @@ class MarketHistoryChart {
     }
     config.options.plugins.title.text = chartTitle
 
-    config.data.datasets = [this.numTransactions]
+    // @ts-ignore
+    config.data.datasets = [this.price, this.marketCap, this.numTransactions]
 
     const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
     if (isChartLoaded) {

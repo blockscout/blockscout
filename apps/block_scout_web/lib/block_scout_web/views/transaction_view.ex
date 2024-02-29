@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.TransactionView do
   alias BlockScoutWeb.{AccessHelper, AddressView, BlockView, TabHelper}
   alias BlockScoutWeb.Account.AuthController
   alias BlockScoutWeb.Cldr.Number
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, CustomContractsHelper, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
   alias Explorer.Counters.AverageBlockTime
@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.TransactionView do
   alias Timex.Duration
 
   import BlockScoutWeb.Gettext
-  import BlockScoutWeb.AddressView, only: [short_token_id: 2, tag_name_to_label: 1]
+  import BlockScoutWeb.AddressView, only: [from_address_hash: 1, short_token_id: 2, tag_name_to_label: 1]
   import BlockScoutWeb.Tokens.Helper
 
   @tabs ["token-transfers", "internal-transactions", "logs", "raw-trace", "state"]
@@ -561,23 +561,6 @@ defmodule BlockScoutWeb.TransactionView do
       Enum.count(token_transfers_types) == mintings_count -> @token_minting_type
       Enum.count(token_transfers_types) == creations_count -> @token_creation_type
       true -> @token_transfer_type
-    end
-  end
-
-  defp amb_tx?(hash) do
-    Chain.amb_eth_tx?(hash) || Chain.amb_bsc_tx?(hash) || Chain.amb_poa_tx?(hash) || Chain.amb_nft_tx?(hash)
-  end
-
-  defp show_alm_link?(hash) do
-    amb_tx?(hash)
-  end
-
-  defp get_alm_app_link(hash) do
-    cond do
-      Chain.amb_eth_tx?(hash) == true or Chain.amb_nft_tx?(hash) == true -> "alm-xdai.herokuapp.com"
-      Chain.amb_bsc_tx?(hash) == true -> "alm-bsc-xdai.herokuapp.com"
-      Chain.amb_poa_tx?(hash) == true -> "alm-poa-xdai.herokuapp.com"
-      true -> nil
     end
   end
 

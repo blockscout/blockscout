@@ -3,8 +3,8 @@
   </td>
   <td>
     <%= if Application.get_env(:block_scout_web, :display_token_icons) do %>
-      <% chain_id_for_token_icon = if @bridged_token && @bridged_token.foreign_chain_id, do: @bridged_token.foreign_chain_id |> Decimal.to_integer() |> to_string(), else: Application.get_env(:block_scout_web, :chain_id) %>
-      <% address_hash = if @bridged_token && @bridged_token.foreign_token_contract_address_hash, do: @bridged_token.foreign_token_contract_address_hash, else: @token.contract_address_hash %>
+      <% chain_id_for_token_icon = Application.get_env(:block_scout_web, :chain_id) %>
+      <% address_hash = @token.contract_address_hash %>
       <%=
         render BlockScoutWeb.TokensView,
         "_token_icon.html",
@@ -26,7 +26,7 @@
     <%= @token.type  %>
   </td>
   <td class="stakes-td">
-    <%= CurrencyHelper.format_according_to_decimals(@token_balance.value, @token.decimals)  %>
+    <%= format_according_to_decimals(@token_balance.value, @token.decimals)  %>
   </td>
   <td class="stakes-td">
     <%= @token.symbol %>

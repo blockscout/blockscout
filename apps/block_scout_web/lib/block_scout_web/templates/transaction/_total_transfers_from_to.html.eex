@@ -8,7 +8,7 @@
   </td>
   <td class="address-mobile" style="word-break: break-all; width: 1%; white-space: nowrap;">
     <%= render BlockScoutWeb.AddressView, "_link.html", address: from_address, contract: BlockScoutWeb.AddressView.contract?(from_address), use_custom_tooltip: false, trimmed: false %>
-    <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: from_address.hash, tags: from_tags %>
+    <%= render BlockScoutWeb.AddressView, "_labels.html", tags: from_tags %>
   </td>
   <td style="word-break: break-all; white-space: nowrap;">
     <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy_for_table.html",
@@ -25,7 +25,7 @@ style: "position: relative;" %>
   </td>
   <td class="address-mobile" style="word-break: break-all; width: 1%; white-space: nowrap;">
     <%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: BlockScoutWeb.AddressView.contract?(to_address), use_custom_tooltip: false, trimmed: false %>
-    <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: to_address.hash, tags: to_tags %>
+    <%= render BlockScoutWeb.AddressView, "_labels.html", tags: to_tags %>
   </td>
   <td style="word-break: break-all; white-space: nowrap;">
     <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy_for_table.html",
@@ -40,7 +40,7 @@ style: "position: relative;"%>
   <td valign="top" style="width: 1%;">
     <b>For</b>
   </td>
-<% end %>       
+<% end %>
 <td class="address-mobile" style="word-break: break-all; white-space: nowrap;">
   <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", transfer: @transfer %>
 </td>

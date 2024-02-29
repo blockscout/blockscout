@@ -71,10 +71,6 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   min-height: 100px;
   height: calc(100% - 86px);
 
-  &.gas-usage-chart {
-    max-width: 700px;
-  }
-
   @include media-breakpoint-down(md) {
     flex-grow: 0;
     margin-top: 20px;

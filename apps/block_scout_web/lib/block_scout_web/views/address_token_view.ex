@@ -3,5 +3,5 @@ defmodule BlockScoutWeb.AddressTokenView do
 
   alias BlockScoutWeb.{AddressView, ChainView}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, CurrencyHelper, Wei}
+  alias Explorer.Chain.{Address, Wei}
 end
