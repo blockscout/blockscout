@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#9502](https://github.com/blockscout/blockscout/pull/9502) - Add batch_size and concurrency envs for tt token type migration
+
 ### Chore
 
 <details>
