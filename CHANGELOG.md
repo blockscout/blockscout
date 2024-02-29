@@ -5,7 +5,10 @@
 ### Features
 
 - [#9461](https://github.com/blockscout/blockscout/pull/9461) - Fetch blocks without internal transactions backwards
+- [#9460](https://github.com/blockscout/blockscout/pull/9460) - Optimism chain type
 - [#8702](https://github.com/blockscout/blockscout/pull/8702) - Add OP withdrawal status to transaction page in API
+- [#7200](https://github.com/blockscout/blockscout/pull/7200) - Add Optimism BedRock Deposits to the main page in API
+- [#6980](https://github.com/blockscout/blockscout/pull/6980) - Add Optimism BedRock support (Txn Batches, Output Roots, Deposits, Withdrawals)
 
 ### Fixes
 
@@ -25,6 +28,9 @@
 - [#6699](https://github.com/blockscout/blockscout/pull/6699) - L1 tx fields fix for Goerli Optimism BedRock update
 
 ### Chore
+
+- [#9260](https://github.com/blockscout/blockscout/pull/9260) - Optimism Delta upgrade support by Indexer.Fetcher.OptimismTxnBatch module
+- [#8740](https://github.com/blockscout/blockscout/pull/8740) - Add delay to Indexer.Fetcher.OptimismTxnBatch module initialization
 
 ## 6.2.2
 
