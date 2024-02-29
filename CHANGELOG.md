@@ -15,7 +15,6 @@
 
 <details>
   <summary>Dependencies version bumps</summary>
-
 </details>
 
 ## 6.2.2
