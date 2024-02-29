@@ -1,4 +1,4 @@
-name: Release for Zetachain
+name: Release for Filecoin
 
 on:
   release:
@@ -22,13 +22,13 @@ jobs:
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image for Zetachain
+      - name: Build and push Docker image for Filecoin
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-zetachain:latest, blockscout/blockscout-zetachain:${{ env.RELEASE_VERSION }}
+          tags: blockscout/blockscout-filecoin:latest, blockscout/blockscout-filecoin:${{ env.RELEASE_VERSION }}
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -42,4 +42,4 @@ jobs:
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=zetachain
+            CHAIN_TYPE=filecoin
