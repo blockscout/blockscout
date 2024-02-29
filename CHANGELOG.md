@@ -8,6 +8,7 @@
 
 - [#9502](https://github.com/blockscout/blockscout/pull/9502) - Add batch_size and concurrency envs for tt token type migration
 - [#9493](https://github.com/blockscout/blockscout/pull/9493) - Fix API response for unknown blob hashes
+- [#9484](https://github.com/blockscout/blockscout/pull/9484) - Fix read contract error
 - [#9426](https://github.com/blockscout/blockscout/pull/9426) - Fix tabs counter cache bug
 
 ### Chore
