@@ -7,7 +7,7 @@ defmodule Explorer.Migrator.MigrationStatus do
   alias Explorer.Repo
 
   @primary_key false
-  schema "migrations_status" do
+  typed_schema "migrations_status" do
     field(:migration_name, :string)
     # ["started", "completed"]
     field(:status, :string)

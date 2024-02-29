@@ -22,10 +22,10 @@ defmodule BlockScoutWeb.TokensView do
     "#{name} (#{symbol})"
   end
 
-  def token_display_name(%Token{name: name, symbol: symbol, bridged: bridged}, %BridgedToken{
+  def token_display_name(%Token{name: name, symbol: symbol} = token, %BridgedToken{
         foreign_chain_id: foreign_chain_id
       }) do
-    if bridged do
+    if BridgedToken.enabled?() && token[:bridged] do
       BridgedToken.token_display_name_based_on_bridge_destination(name, symbol, foreign_chain_id)
     else
       "#{name} (#{symbol})"

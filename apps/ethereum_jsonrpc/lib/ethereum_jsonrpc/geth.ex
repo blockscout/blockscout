@@ -89,7 +89,8 @@ defmodule EthereumJSONRPC.Geth do
     end
   end
 
-  defp check_errors_exist(blocks_responses, id_to_params) do
+  @spec check_errors_exist(list(), %{non_neg_integer() => any()}) :: :ok | {:error, list()}
+  def check_errors_exist(blocks_responses, id_to_params) do
     blocks_responses
     |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.reduce([], fn
@@ -400,7 +401,8 @@ defmodule EthereumJSONRPC.Geth do
     |> Enum.reduce(acc, &parse_call_tracer_calls(&1, &2, trace_address))
   end
 
-  defp reduce_internal_transactions_params(internal_transactions_params) when is_list(internal_transactions_params) do
+  @spec reduce_internal_transactions_params(list()) :: {:ok, list()} | {:error, list()}
+  def reduce_internal_transactions_params(internal_transactions_params) when is_list(internal_transactions_params) do
     internal_transactions_params
     |> Enum.reduce({:ok, []}, &internal_transactions_params_reducer/2)
     |> finalize_internal_transactions_params()

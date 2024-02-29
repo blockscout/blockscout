@@ -8,7 +8,7 @@ defmodule Explorer.Account.Notifier.Summary do
   alias Explorer
   alias Explorer.Account.Notifier.Summary
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.{Transaction, Wei}
 
   defstruct [
     :transaction_hash,
@@ -205,7 +205,7 @@ defmodule Explorer.Account.Notifier.Summary do
   def type(%Chain.InternalTransaction{}), do: :coin
 
   def fee(%Chain.Transaction{} = transaction) do
-    {_, fee} = Chain.fee(transaction, :gwei)
+    {_, fee} = Transaction.fee(transaction, :gwei)
     fee
   end
 

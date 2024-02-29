@@ -26,7 +26,6 @@ defmodule Explorer.Chain.Address do
   }
 
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
-  alias Explorer.Tags.AddressTag
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
   @required_attrs ~w(hash)a
@@ -36,6 +35,28 @@ defmodule Explorer.Chain.Address do
   Hash of the public key for this address.
   """
   @type hash :: Hash.t()
+
+  @derive {Poison.Encoder,
+           except: [
+             :__meta__,
+             :smart_contract,
+             :decompiled_smart_contracts,
+             :token,
+             :contracts_creation_internal_transaction,
+             :contracts_creation_transaction,
+             :names
+           ]}
+
+  @derive {Jason.Encoder,
+           except: [
+             :__meta__,
+             :smart_contract,
+             :decompiled_smart_contracts,
+             :token,
+             :contracts_creation_internal_transaction,
+             :contracts_creation_transaction,
+             :names
+           ]}
 
   @typedoc """
    * `fetched_coin_balance` - The last fetched balance from Nethermind
@@ -53,50 +74,11 @@ defmodule Explorer.Chain.Address do
    `fetched_coin_balance` and `fetched_coin_balance_block_number` may be updated when a new coin_balance row is fetched.
     They may also be updated when the balance is fetched via the on demand fetcher.
   """
-  @type t :: %__MODULE__{
-          fetched_coin_balance: Wei.t(),
-          fetched_coin_balance_block_number: Block.block_number(),
-          hash: Hash.Address.t(),
-          contract_code: Data.t() | nil,
-          names: %Ecto.Association.NotLoaded{} | [Address.Name.t()],
-          contracts_creation_transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
-          inserted_at: DateTime.t(),
-          updated_at: DateTime.t(),
-          nonce: non_neg_integer() | nil,
-          transactions_count: non_neg_integer() | nil,
-          token_transfers_count: non_neg_integer() | nil,
-          gas_used: non_neg_integer() | nil,
-          ens_domain_name: String.t() | nil
-        }
-
-  @derive {Poison.Encoder,
-           except: [
-             :__meta__,
-             :smart_contract,
-             :decompiled_smart_contracts,
-             :token,
-             :contracts_creation_internal_transaction,
-             :contracts_creation_transaction,
-             :names,
-             :tags
-           ]}
-
-  @derive {Jason.Encoder,
-           except: [
-             :__meta__,
-             :smart_contract,
-             :decompiled_smart_contracts,
-             :token,
-             :contracts_creation_internal_transaction,
-             :contracts_creation_transaction,
-             :names,
-             :tags
-           ]}
-
-  @primary_key {:hash, Hash.Address, autogenerate: false}
-  schema "addresses" do
+  @primary_key false
+  typed_schema "addresses" do
+    field(:hash, Hash.Address, primary_key: true)
     field(:fetched_coin_balance, Wei)
-    field(:fetched_coin_balance_block_number, :integer)
+    field(:fetched_coin_balance_block_number, :integer) :: Block.block_number() | nil
     field(:contract_code, Data)
     field(:nonce, :integer)
     field(:decompiled, :boolean, default: false)
@@ -108,25 +90,26 @@ defmodule Explorer.Chain.Address do
     field(:gas_used, :integer)
     field(:ens_domain_name, :string, virtual: true)
 
-    has_one(:smart_contract, SmartContract)
-    has_one(:token, Token, foreign_key: :contract_address_hash)
+    has_one(:smart_contract, SmartContract, references: :hash)
+    has_one(:token, Token, foreign_key: :contract_address_hash, references: :hash)
 
     has_one(
       :contracts_creation_internal_transaction,
       InternalTransaction,
-      foreign_key: :created_contract_address_hash
+      foreign_key: :created_contract_address_hash,
+      references: :hash
     )
 
     has_one(
       :contracts_creation_transaction,
       Transaction,
-      foreign_key: :created_contract_address_hash
+      foreign_key: :created_contract_address_hash,
+      references: :hash
     )
 
-    has_many(:names, Address.Name, foreign_key: :address_hash)
-    has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash)
-    has_many(:withdrawals, Withdrawal, foreign_key: :address_hash)
-    has_many(:tags, AddressTag, foreign_key: :id)
+    has_many(:names, Address.Name, foreign_key: :address_hash, references: :hash)
+    has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
+    has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
 
     timestamps()
   end

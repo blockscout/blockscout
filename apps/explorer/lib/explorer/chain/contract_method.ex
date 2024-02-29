@@ -11,13 +11,7 @@ defmodule Explorer.Chain.ContractMethod do
   alias Explorer.Chain.{Hash, MethodIdentifier, SmartContract}
   alias Explorer.Repo
 
-  @type t :: %__MODULE__{
-          identifier: MethodIdentifier.t(),
-          abi: map(),
-          type: String.t()
-        }
-
-  schema "contract_methods" do
+  typed_schema "contract_methods" do
     field(:identifier, MethodIdentifier)
     field(:abi, :map)
     field(:type, :string)

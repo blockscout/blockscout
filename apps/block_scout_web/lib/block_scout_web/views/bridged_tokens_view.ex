@@ -17,8 +17,8 @@ defmodule BlockScoutWeb.BridgedTokensView do
 
   def token_display_name(%Token{name: name}), do: name
 
-  def token_display_name(%Token{name: name, bridged: bridged}, %BridgedToken{foreign_chain_id: foreign_chain_id}) do
-    if bridged do
+  def token_display_name(%Token{name: name} = token, %BridgedToken{foreign_chain_id: foreign_chain_id}) do
+    if BridgedToken.enabled?() && token[:bridged] do
       BridgedToken.token_display_name_based_on_bridge_destination(name, foreign_chain_id)
     else
       name

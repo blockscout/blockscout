@@ -507,7 +507,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       txs =
         (txs_from ++ txs_to)
         |> Enum.sort(
-          &(Decimal.compare(&1 |> Chain.fee(:wei) |> elem(1), &2 |> Chain.fee(:wei) |> elem(1)) in [:eq, :lt])
+          &(Decimal.compare(&1 |> Transaction.fee(:wei) |> elem(1), &2 |> Transaction.fee(:wei) |> elem(1)) in [
+              :eq,
+              :lt
+            ])
         )
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "fee", "order" => "asc"})
@@ -543,7 +546,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       txs =
         (txs_from ++ txs_to)
         |> Enum.sort(
-          &(Decimal.compare(&1 |> Chain.fee(:wei) |> elem(1), &2 |> Chain.fee(:wei) |> elem(1)) in [:eq, :gt])
+          &(Decimal.compare(&1 |> Transaction.fee(:wei) |> elem(1), &2 |> Transaction.fee(:wei) |> elem(1)) in [
+              :eq,
+              :gt
+            ])
         )
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "fee", "order" => "desc"})
@@ -955,7 +961,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             block: tx.block,
             block_number: tx.block_number,
             from_address: address,
-            token_contract_address: erc_20_token.contract_address
+            token_contract_address: erc_20_token.contract_address,
+            token_type: "ERC-20"
           )
         end
 
@@ -971,7 +978,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             block_number: tx.block_number,
             from_address: address,
             token_contract_address: erc_721_token.contract_address,
-            token_ids: [x]
+            token_ids: [x],
+            token_type: "ERC-721"
           )
         end
 
@@ -987,7 +995,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             block_number: tx.block_number,
             from_address: address,
             token_contract_address: erc_1155_token.contract_address,
-            token_ids: [x]
+            token_ids: [x],
+            token_type: "ERC-1155"
           )
         end
 
@@ -1080,7 +1089,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             block: tx.block,
             block_number: tx.block_number,
             from_address: address,
-            token_contract_address: erc_20_token.contract_address
+            token_contract_address: erc_20_token.contract_address,
+            token_type: "ERC-20"
           )
         end
 
@@ -1096,7 +1106,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             block_number: tx.block_number,
             to_address: address,
             token_contract_address: erc_721_token.contract_address,
-            token_ids: [x]
+            token_ids: [x],
+            token_type: "ERC-721"
           )
         end
 
@@ -1160,6 +1171,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             block_number: tx.block_number,
             token_contract_address: token.contract_address,
             token_ids: Enum.map(0..50, fn _x -> id end),
+            token_type: "ERC-1155",
             amounts: Enum.map(0..50, fn x -> x end)
           )
         end
@@ -1194,7 +1206,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             block: tx.block,
             block_number: tx.block_number,
             token_contract_address: token.contract_address,
-            token_ids: [i]
+            token_ids: [i],
+            token_type: "ERC-721"
           )
         end
 
@@ -1222,6 +1235,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: tx.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..50, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(0..50, fn x -> x end)
         )
 
@@ -1264,6 +1278,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: tx_1.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..24, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(0..24, fn x -> x end)
         )
 
@@ -1282,6 +1297,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: tx_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(25..49, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(25..49, fn x -> x end)
         )
 
@@ -1298,6 +1314,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: tx_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: [50],
+          token_type: "ERC-1155",
           amounts: [50]
         )
 
@@ -1326,6 +1343,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: tx_1.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..24, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(0..24, fn x -> x end)
         )
 
@@ -1344,6 +1362,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: tx_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(25..50, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(25..50, fn x -> x end)
         )
 
@@ -2470,8 +2489,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             for _ <- 0..(amount - 1) do
               ti =
                 insert(:token_instance,
-                  token_contract_address_hash: token.contract_address_hash,
-                  owner_address_hash: address.hash
+                  token_contract_address_hash: token.contract_address_hash
                 )
                 |> Repo.preload([:token])
 

@@ -53,8 +53,7 @@ defmodule EthereumJSONRPC.BlockTest do
                  timestamp: Timex.parse!("2015-07-30T15:32:07Z", "{ISO:Extended:Z}"),
                  total_difficulty: nil,
                  transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-                 uncles: [],
-                 withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
+                 uncles: []
                }
                |> (&if(Application.get_env(:explorer, :chain_type) == "rsk",
                      do:
@@ -66,6 +65,18 @@ defmodule EthereumJSONRPC.BlockTest do
                            bitcoin_merged_mining_merkle_proof: nil,
                            hash_for_merged_mining: nil,
                            minimum_gas_price: nil
+                         }
+                       ),
+                     else: &1
+                   )).()
+               |> (&if(Application.get_env(:explorer, :chain_type) == "ethereum",
+                     do:
+                       Map.merge(
+                         &1,
+                         %{
+                           withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+                           blob_gas_used: 0,
+                           excess_blob_gas: 0
                          }
                        ),
                      else: &1

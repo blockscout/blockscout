@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.UtilsController do
 
   alias BlockScoutWeb.API.V2.TransactionView
   alias Explorer.Chain
-  alias Explorer.Chain.{Data, SmartContract, Transaction}
+  alias Explorer.Chain.{Address, Data, SmartContract, Transaction}
 
   @api_true [api?: true]
 
@@ -22,7 +22,10 @@ defmodule BlockScoutWeb.API.V2.UtilsController do
 
       {decoded_input, _abi_acc, _methods_acc} =
         Transaction.decoded_input_data(
-          %Transaction{input: data, to_address: %{contract_code: "", smart_contract: smart_contract}},
+          %Transaction{
+            input: data,
+            to_address: %Address{contract_code: %Data{bytes: ""}, smart_contract: smart_contract}
+          },
           @api_true
         )
 

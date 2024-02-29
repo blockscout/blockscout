@@ -5,6 +5,7 @@ defmodule Explorer.Chain.Shibarium.Bridge do
 
   alias Explorer.Chain.{
     Address,
+    Block,
     Hash,
     Transaction
   }
@@ -31,35 +32,16 @@ defmodule Explorer.Chain.Shibarium.Bridge do
   * `token_type` - `bone` or `eth` or `other`
   * `timestamp` - timestamp of the operation block (L1 block for deposit, L2 block - for withdrawal)
   """
-  @type t :: %__MODULE__{
-          user_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          user: Hash.Address.t(),
-          amount_or_id: Decimal.t() | nil,
-          erc1155_ids: [non_neg_integer()] | nil,
-          erc1155_amounts: [Decimal.t()] | nil,
-          l1_transaction_hash: Hash.t(),
-          l1_block_number: non_neg_integer() | nil,
-          l2_transaction: %Ecto.Association.NotLoaded{} | Transaction.t() | nil,
-          l2_transaction_hash: Hash.t(),
-          l2_block_number: non_neg_integer() | nil,
-          operation_hash: Hash.t(),
-          operation_type: String.t(),
-          token_type: String.t(),
-          timestamp: DateTime.t(),
-          inserted_at: DateTime.t(),
-          updated_at: DateTime.t()
-        }
-
   @primary_key false
-  schema "shibarium_bridge" do
-    belongs_to(:user_address, Address, foreign_key: :user, references: :hash, type: Hash.Address)
+  typed_schema "shibarium_bridge" do
+    belongs_to(:user_address, Address, foreign_key: :user, references: :hash, type: Hash.Address, null: false)
     field(:amount_or_id, :decimal)
     field(:erc1155_ids, {:array, :decimal})
     field(:erc1155_amounts, {:array, :decimal})
-    field(:operation_hash, Hash.Full, primary_key: true)
-    field(:operation_type, Ecto.Enum, values: [:deposit, :withdrawal])
+    field(:operation_hash, Hash.Full, primary_key: true, null: false)
+    field(:operation_type, Ecto.Enum, values: [:deposit, :withdrawal], null: false)
     field(:l1_transaction_hash, Hash.Full, primary_key: true)
-    field(:l1_block_number, :integer)
+    field(:l1_block_number, :integer) :: Block.block_number() | nil
 
     belongs_to(:l2_transaction, Transaction,
       foreign_key: :l2_transaction_hash,
@@ -68,8 +50,8 @@ defmodule Explorer.Chain.Shibarium.Bridge do
       primary_key: true
     )
 
-    field(:l2_block_number, :integer)
-    field(:token_type, Ecto.Enum, values: [:bone, :eth, :other])
+    field(:l2_block_number, :integer) :: Block.block_number() | nil
+    field(:token_type, Ecto.Enum, values: [:bone, :eth, :other], null: false)
     field(:timestamp, :utc_datetime_usec)
 
     timestamps()
