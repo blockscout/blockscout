@@ -6,6 +6,19 @@
 
 ### Fixes
 
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+</details>
+
+## 6.2.1
+
+### Features
+
+### Fixes
+
 - [#9502](https://github.com/blockscout/blockscout/pull/9502) - Add batch_size and concurrency envs for tt token type migration
 - [#9493](https://github.com/blockscout/blockscout/pull/9493) - Fix API response for unknown blob hashes
 - [#9484](https://github.com/blockscout/blockscout/pull/9484) - Fix read contract error
@@ -15,6 +28,13 @@
 
 <details>
   <summary>Dependencies version bumps</summary>
+
+- [#9478](https://github.com/blockscout/blockscout/pull/9478) - Bump floki from 0.35.3 to 0.35.4
+- [#9477](https://github.com/blockscout/blockscout/pull/9477) - Bump hammer from 6.2.0 to 6.2.1
+- [#9476](https://github.com/blockscout/blockscout/pull/9476) - Bump eslint from 8.56.0 to 8.57.0 in /apps/block_scout_web/assets
+- [#9475](https://github.com/blockscout/blockscout/pull/9475) - Bump @amplitude/analytics-browser from 2.4.1 to 2.5.1 in /apps/block_scout_web/assets
+- [#9474](https://github.com/blockscout/blockscout/pull/9474) - Bump sass from 1.71.0 to 1.71.1 in /apps/block_scout_web/assets
+- [#9492](https://github.com/blockscout/blockscout/pull/9492) - Bump es5-ext from 0.10.62 to 0.10.64 in /apps/block_scout_web/assets
 
 </details>
 
