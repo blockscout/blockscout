@@ -1,28 +1,19 @@
-<%= if omni_bridge?(assigns[:address_hash] && @address_hash) do %>
-  <%= render BlockScoutWeb.FormView, "_tag.html", text: "OMNI", additional_classes: ["omni", "ml-1"] %>
-  <%= render BlockScoutWeb.FormView, "_tag.html", text: "bridge", additional_classes: ["bridge", "ml-1"] %>
-<% end %>
-<%= if omni_eth_bridge?(assigns[:address_hash] && @address_hash) do %>
-  <%= render BlockScoutWeb.FormView, "_tag.html", text: "ETH", additional_classes: ["destination-eth", "ml-1"] %>
-<% end %>
-<%= if omni_bsc_bridge?(assigns[:address_hash] && @address_hash) do %>
-  <%= render BlockScoutWeb.FormView, "_tag.html", text: "BSC", additional_classes: ["destination-bsc", "ml-1"] %>
-<% end %>
-<%= if omni_poa_bridge?(assigns[:address_hash] && @address_hash) do %>
-  <%= render BlockScoutWeb.FormView, "_tag.html", text: "POA", additional_classes: ["destination-poa", "ml-1"] %>
-<% end %>
-<%= if xmoon_token?(assigns[:address_hash] && @address_hash) || xbrick_token?(assigns[:address_hash] && @address_hash) do %>
-  <%= render BlockScoutWeb.FormView, "_tag.html", text: "bridged", additional_classes: ["bridge", "ml-1"] %>
-  <%= render BlockScoutWeb.FormView, "_tag.html", text: "Rinkeby", additional_classes: ["destination-rinkeby", "ml-1"] %>
-<% end %>
 <%= for common_tag <- @tags.common_tags do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: common_tag.display_name, additional_classes: [tag_name_to_label(common_tag.label), "ml-1"] %>
 <% end %>
 <%= for personal_tag <- @tags.personal_tags do %>
   <%= if personal_tag.address_hash do %>
-    <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tag.display_name, additional_classes: [tag_name_to_label(personal_tag.label), "ml-1"] %>
+    <%= if personal_tag.label =~ "dark forest" do %>
+      <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tag.display_name, additional_classes: ["df", "ml-1"] %>
+    <% else %>
+      <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tag.display_name, additional_classes: [tag_name_to_label(personal_tag.label), "ml-1"] %>
+    <% end %>
   <% end %>
 <% end %>
 <%= for watchlist_name <- @tags.watchlist_names do %>
-  <%= render BlockScoutWeb.FormView, "_tag.html", text: watchlist_name.display_name, additional_classes: [tag_name_to_label(watchlist_name.label), "ml-1"] %>
+  <%= if watchlist_name.label =~ "dark forest" do %>
+    <%= render BlockScoutWeb.FormView, "_tag.html", text: watchlist_name.display_name, additional_classes: ["df", "ml-1"] %>
+  <% else %>
+    <%= render BlockScoutWeb.FormView, "_tag.html", text: watchlist_name.display_name, additional_classes: [tag_name_to_label(watchlist_name.label), "ml-1"] %>
+  <% end %>
 <% end %>

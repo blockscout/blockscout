@@ -1,0 +1,140 @@
+.modal-stake {
+  max-width: 100%;
+  width: 560px;
+
+  @include media-breakpoint-down(sm) {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  @include media-breakpoint-down(xs) {
+    width: 100%;
+  }
+}
+
+.modal-stake-move {
+  max-width: 740px;
+  min-width: 740px;
+  width: 100%;
+
+  @include media-breakpoint-down(sm) {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.modal-stake-three-cols {
+  display: grid;
+  grid-template-rows: [row1-start] auto [row2-start] auto [row3-start] auto [row3-end];
+  grid-template-columns: [col1-start] auto [col2-start] auto [col3-start] auto [col3-end];
+
+  > div {
+    grid-column: col2-start;
+  }
+
+  .modal-stake-left {
+    grid-column: col1-start;
+    grid-row: row1-start / row3-end;
+  }
+
+  .modal-stake-right {
+    grid-column: col3-start;
+    grid-row: row1-start / row3-end;
+  }
+
+  @include media-breakpoint-down(xs) {
+    grid-template-columns: [col1-start] auto [col1-end];
+    grid-template-rows: auto;
+
+    > div {
+      grid-column: col1-start;
+    }
+
+    .modal-stake-left {
+      width: 100%;
+      grid-column: col1-start;
+      grid-row: 3;
+    }
+
+    .modal-stake-right {
+      grid-column: col1-start;
+      grid-row: 4;
+    }
+
+    .stakes-progress {
+      width: auto;
+      padding-top: 15px;
+      padding-bottom: 15px;
+
+      .stakes-progress-graph {
+        float: left;
+        width: 130px;
+        margin-right: 15px;
+      }
+
+      .stakes-progress-info-title {
+        float: left;
+        margin-right: 15px;
+      }
+
+      .stakes-progress-info {
+        margin-bottom: 15px;
+      }
+    }
+  }
+}
+
+.modal-stake-two-cols {
+  display: grid;
+  grid-template-rows: [row1-start] auto [row2-start] auto [row3-start] auto [row3-end];
+  grid-template-columns: [col1-start] auto [col2-start] 190px [col2-end];
+
+  > div {
+    grid-column: col1-start;
+  }
+
+  .modal-stake-right {
+    grid-column: col2-start;
+    grid-row: row1-start / row3-end;
+  }
+
+  @include media-breakpoint-down(xs) {
+    grid-template-columns: [col1-start] auto [col1-end];
+    grid-template-rows: auto;
+
+    .modal-stake-right {
+      grid-column: col1-start;
+      grid-row: 3;
+    }
+
+    .stakes-progress {
+      width: auto;
+      padding-top: 15px;
+      padding-bottom: 15px;
+
+      .stakes-progress-graph {
+        float: left;
+        width: 130px;
+        margin-right: 15px;
+      }
+
+      .stakes-progress-info-title {
+        float: left;
+        margin-right: 15px;
+      }
+
+      .stakes-progress-info {
+        margin-bottom: 15px;
+      }
+    }
+  }
+}
+
+.modal-stake-left {
+  flex-shrink: 0;
+  height: 100%;
+  padding: $modal-vertical-padding $modal-horizontal-padding;
+  width: 190px;
+  height: 100%;
+  border-right: 1px solid $base-border-color;
+}

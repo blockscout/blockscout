@@ -21,14 +21,9 @@ function getTokenIconUrl (chainID, addressHash) {
   }
 }
 
-function appendTokenIcon ($tokenIconContainer, chainID, addressHash, foreignChainID, foreignAddressHash, displayTokenIcons, size) {
+function appendTokenIcon ($tokenIconContainer, chainID, addressHash, displayTokenIcons, size) {
   const iconSize = size || 20
-  let tokenIconURL = null
-  if (foreignChainID) {
-    tokenIconURL = getTokenIconUrl(foreignChainID.toString(), foreignAddressHash)
-  } else if (chainID) {
-    tokenIconURL = getTokenIconUrl(chainID.toString(), addressHash)
-  }
+  const tokenIconURL = getTokenIconUrl(chainID.toString(), addressHash)
   if (displayTokenIcons) {
     checkLink(tokenIconURL)
       .then(checkTokenIconLink => {

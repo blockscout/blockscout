@@ -2,10 +2,9 @@ defmodule BlockScoutWeb.LayoutView do
   use BlockScoutWeb, :view
 
   alias EthereumJSONRPC.Variant
-  alias Explorer.{Chain, EnvVarTranslator, Helper}
+  alias Explorer.{Chain, Helper}
   alias Poison.Parser
 
-  import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
   import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1]
 
   @default_other_networks [
@@ -190,26 +189,6 @@ defmodule BlockScoutWeb.LayoutView do
     else
       %{}
     end
-  end
-
-  def bridges_list do
-    EnvVarTranslator.map_array_env_var_to_list(:bridges)
-  end
-
-  def other_bridges_list do
-    EnvVarTranslator.map_array_env_var_to_list(:other_bridges)
-  end
-
-  def bridges_alm_list do
-    EnvVarTranslator.map_array_env_var_to_list(:bridges_alm)
-  end
-
-  def defi_list do
-    EnvVarTranslator.map_array_env_var_to_list(:defi)
-  end
-
-  def nft_list do
-    EnvVarTranslator.map_array_env_var_to_list(:nft)
   end
 
   @spec decode_other_explorers_json(nil | String.t()) :: map()

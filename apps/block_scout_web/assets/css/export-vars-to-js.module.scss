@@ -20,6 +20,9 @@
 
 @import "theme/dark-theme";
 
+@import "theme/custom_contracts/dark-forest-theme";
+@import "theme/custom_contracts/circles-theme";
+
 
 :export {
   dashboardBannerChartAxisFontColor: $dashboard-banner-chart-axis-font-color;

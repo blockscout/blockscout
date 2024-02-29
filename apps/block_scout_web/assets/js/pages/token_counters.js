@@ -9,9 +9,6 @@ import {
 } from '../lib/modals'
 import { subscribeChannel } from '../socket'
 
-import './token/add_to_mm'
-import './token/swap'
-
 export const initialState = {
   channelDisconnected: false,
   transferCount: null,

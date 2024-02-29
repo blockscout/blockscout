@@ -32,7 +32,6 @@ defmodule BlockScoutWeb.PagingHelper do
   end
 
   @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155"]
-  @allowed_chain_id [1, 56, 99]
   @allowed_nft_token_type_labels ["ERC-721", "ERC-1155"]
   @allowed_chain_id [1, 56, 99]
 

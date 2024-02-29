@@ -36,7 +36,7 @@ function getTextAdData () {
   return new Promise((resolve) => {
     const displayAd = showAd()
     if (displayAd) {
-      $.get('https://request-global.czilladx.com/serve/native.php?z=50860d190820e5a2595', function (data) {
+      $.get('https://request-global.czilladx.com/serve/native.php?z=19260bf627546ab7242', function (data) {
         if (!data) {
           if (customAds && customAds.length > 0) {
             try {
@@ -77,7 +77,7 @@ function fetchTextAdData () {
           $('.ad-cta-button').text(ctaButton)
           $('.ad-url').attr('href', url)
           $('.ad-prefix').text(prefix)
-          $('.ad').css('visibility', 'visible')
+          $('.ad').show()
           const urlObject = new URL(url)
           if (urlObject.hostname === 'nifty.ink') {
             $('.ad-img-url').replaceWith('🎨')

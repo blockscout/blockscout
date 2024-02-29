@@ -1,29 +1,21 @@
 .external-link-icon {
-    float: right;
-    margin-top: -1px;
-  
-    & {
-      &.active,
-      &:hover,
-      &:focus {
-        path {
-          fill: $header-icon-color-hover;
-        }
+  float: right;
+  margin-top: -1px;
+
+  & {
+    &.active,
+    &:hover,
+    &:focus {
+      path {
+        fill: $header-icon-color-hover;
       }
     }
-}
-
-.external-link-icon-2 {
-  margin-top: -2px;
-  margin-left: 3px;
-  path {
-    fill: $header-icon-color-hover;
   }
 }
 
 
 .external-token-icon {
-    path {
-        fill: $header-icon-color-hover;
-    }
+  path {
+      fill: $header-icon-color-hover;
+  }
 }

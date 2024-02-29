@@ -4,7 +4,6 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
   """
 
   require Ecto.Query
-  require Logger
 
   import Ecto.Query, only: [from: 2]
 

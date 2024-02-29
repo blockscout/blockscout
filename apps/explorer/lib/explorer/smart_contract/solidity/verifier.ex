@@ -39,36 +39,6 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
             Exception.format(:error, exception, __STACKTRACE__)
           ]
         end)
-
-        Sentry.capture_exception(exception,
-          stacktrace: __STACKTRACE__,
-          extra: %{address_hash: address_hash, params: params}
-        )
-    end
-  end
-
-  defp debug_contract_verification_with_sentry(result, params, address_hash) do
-    if !match?({:ok, _}, result) do
-      Sentry.capture_message("verification failed",
-        extra: %{
-          result: Kernel.inspect(result, limit: :infinity, printable_limit: :infinity),
-          params: params,
-          address_hash: address_hash
-        }
-      )
-    end
-  end
-
-  defp debug_contract_json_verification_with_sentry(result, params, address_hash, json) do
-    if !match?({:ok, _, _}, result) do
-      Sentry.capture_message("json verification failed",
-        extra: %{
-          result: Kernel.inspect(result, limit: :infinity, printable_limit: :infinity),
-          params: params,
-          address_hash: address_hash,
-          json_input: json
-        }
-      )
     end
   end
 
@@ -99,24 +69,20 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
       all_versions_extra = all_versions ++ [evm_version]
 
-      result =
-        Enum.reduce_while(all_versions_extra, false, fn version, acc ->
-          case acc do
-            {:ok, _} = result ->
-              {:cont, result}
+      Enum.reduce_while(all_versions_extra, false, fn version, acc ->
+        case acc do
+          {:ok, _} = result ->
+            {:cont, result}
 
-            {:error, error}
-            when error in [:name, :no_creation_data, :deployed_bytecode, :compiler_version, :constructor_arguments] ->
-              {:halt, acc}
+          {:error, error}
+          when error in [:name, :no_creation_data, :deployed_bytecode, :compiler_version, :constructor_arguments] ->
+            {:halt, acc}
 
-            _ ->
-              cur_params = Map.put(params, "evm_version", version)
-              {:cont, verify(address_hash, cur_params)}
-          end
-        end)
-
-      debug_contract_verification_with_sentry(result, params, address_hash)
-      result
+          _ ->
+            cur_params = Map.put(params, "evm_version", version)
+            {:cont, verify(address_hash, cur_params)}
+        end
+      end)
     end
   end
 
@@ -141,16 +107,12 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   def evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
     try do
-      result =
-        evaluate_authenticity_via_standard_json_input_inner(
-          RustVerifierInterface.enabled?(),
-          address_hash,
-          params,
-          json_input
-        )
-
-      debug_contract_json_verification_with_sentry(result, params, address_hash, json_input)
-      result
+      evaluate_authenticity_via_standard_json_input_inner(
+        RustVerifierInterface.enabled?(),
+        address_hash,
+        params,
+        json_input
+      )
     rescue
       exception ->
         Logger.error(fn ->
@@ -159,11 +121,6 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
             Exception.format(:error, exception, __STACKTRACE__)
           ]
         end)
-
-        Sentry.capture_exception(exception,
-          stacktrace: __STACKTRACE__,
-          extra: %{address_hash: address_hash, params: params, json_input: json_input}
-        )
     end
   end
 

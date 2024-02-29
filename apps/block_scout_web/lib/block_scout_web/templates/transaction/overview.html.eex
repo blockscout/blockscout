@@ -22,18 +22,30 @@
 <% priority_fee = if is_nil(priority_fee_per_gas), do: nil, else: Wei.mult(priority_fee_per_gas, @transaction.gas_used) %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
 <% status = transaction_status(@transaction) %>
+<% circles_addresses_list = CustomContractsHelper.get_custom_addresses_list(:circles_addresses) %>
+<% address_hash_str = if to_address_hash, do: "0x" <> Base.encode16(to_address_hash.bytes, case: :lower), else: nil %>
+<% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
+<% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
 <section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
     <div class="col-md-12">
       <!-- Transaction Details -->
-      <div class="card mb-3">
+      <div class="card js-ad-dependant-mb-3">
         <div class="card-body">
           <%= cond do %>
+            <% Enum.member?(circles_addresses_list, address_hash_str) -> %>
+              <div class="custom-dapp-header-container">
+                <img class="custom-address-icon"/>
+              </div>
+            <% Enum.member?(circles_addresses_list, created_from_address_hash_str) -> %>
+              <div class="custom-dapp-header-container">
+                <img class="custom-address-icon"/>
+              </div>
             <% true -> %>
               <%= nil %>
           <% end %>
-          <h1 class="card-title margin-bottom-1">
+          <h1 class="card-title">
             <div style="display: inline-block; vertical-align: bottom; line-height: 25px;">
               <%= gettext "Transaction Details" %>
               <% personal_tx_tag = if assigns[:tx_tags], do: @tx_tags.personal_tx_tag, else: nil %>
@@ -53,13 +65,6 @@
             </div>
           <% end %>
           <div class="d-flex flex-row">
-            <%= if show_alm_link?(@transaction.hash) do %>
-              <div class="mr-4 mb-2">
-                <a data-test="external_url" class="d-flex flex-row" href=<%= "https://#{get_alm_app_link(@transaction.hash)}/100/#{@transaction.hash}" %> target="_blank">
-                View In ALM App <span class="external-link-icon-2"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span>
-                </a>
-              </div>
-            <% end %>
             <%= if show_tenderly_link?() do %>
               <div class="mr-4 mb-4">
                 <%= render BlockScoutWeb.CommonComponentsView, "_tenderly_link.html",
@@ -247,7 +252,7 @@
                 <% created_address_hash -> %>
                   [<%= gettext("Contract") %>&nbsp;
                   <%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: BlockScoutWeb.AddressView.contract?(to_address), use_custom_tooltip: false, trimmed: false %>
-                  <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: recipient_address_hash, tags: @to_tags %>
+                  <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @to_tags %>
                   &nbsp;<%= gettext("created") %>]
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
@@ -256,7 +261,7 @@
                     title: gettext("Copy To Address") %>
                 <% recipient_address_hash -> %>
                   <%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: BlockScoutWeb.AddressView.contract?(to_address), use_custom_tooltip: false, trimmed: false %>
-                  <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: recipient_address_hash, tags: @to_tags %>
+                  <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @to_tags %>
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                     clipboard_text: Address.checksum(recipient_address_hash),
@@ -520,7 +525,7 @@
     </div>
   </div>
 
-  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_adbutler_banner.html", conn: @conn %>
+  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
 
   <%= unless skip_decoding?(@transaction) do %>
     <div class="row">

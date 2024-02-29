@@ -216,9 +216,3 @@ $stakes-link-color: $primary !default;
     }
   }
 }
-
-.table-title {
-  @include media-breakpoint-up(lg) {
-    float: left;
-  }
-}

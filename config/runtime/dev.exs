@@ -13,8 +13,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   secret_key_base:
     System.get_env("SECRET_KEY_BASE") || "RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5",
   http: [
-    port: port,
-    protocol_options: [idle_timeout: 300_000]
+    port: port
   ],
   url: [
     scheme: "http",

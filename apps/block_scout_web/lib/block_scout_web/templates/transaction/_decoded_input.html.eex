@@ -9,7 +9,7 @@
       <%= case @transaction do %>
         <% %{to_address: %{hash: hash}} -> %>
           <% path = address_verify_contract_path(@conn, :new, hash) %>
-          <%= gettext "Verify the contract " %><a class="alert-info-a-custom-color" href="<%= path %>"><%= gettext "here" %></a>
+          <%= gettext "Verify the contract " %><a href="<%= path %>"><%= gettext "here" %></a>
         <% _ -> %>
           <%= nil %>
       <% end %>

@@ -21,7 +21,8 @@ function tryUpdateIndexedStatus (el, indexedRatioBlocks = el.dataset.indexedRati
     // @ts-ignore
     indexedText = `${intTxsPercentComplete} ${window.localized['Blocks With Internal Transactions Indexed']}`
   } else {
-    indexedText = `${blocksPercentComplete} Blocks Indexed`
+    // @ts-ignore
+    indexedText = `${blocksPercentComplete} ${window.localized['Blocks Indexed']}`
   }
 
   if (indexedText !== el.innerHTML) {

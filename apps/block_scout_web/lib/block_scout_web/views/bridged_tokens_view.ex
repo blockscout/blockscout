@@ -1,11 +1,7 @@
 defmodule BlockScoutWeb.BridgedTokensView do
   use BlockScoutWeb, :view
 
-  import BlockScoutWeb.AddressView, only: [test?: 1]
-
-  alias BlockScoutWeb.ChainView
-  alias Explorer.Chain
-  alias Explorer.Chain.{Address, BridgedToken, CurrencyHelper, Token}
+  alias Explorer.Chain.{BridgedToken, CurrencyHelper, Token}
 
   @owl_token_amb "0x0905Ab807F8FD040255F0cF8fa14756c1D824931"
   @owl_token_omni "0x750eCf8c11867Ce5Dbc556592c5bb1E0C6d16538"

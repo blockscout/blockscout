@@ -10,10 +10,7 @@ $footer-title-color: #fff;
 $footer-text-color: #89cae6;
 $footer-item-disc-color: $secondary;
 .footer-logo { filter: brightness(0) invert(1); }
-.footer-social-icons { color: $secondary; }
-.footer-social-icon-container {
-	background-color: $secondary;
-}
+.footer-social-icons .footer-social-icon { color: $secondary; }
 
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border

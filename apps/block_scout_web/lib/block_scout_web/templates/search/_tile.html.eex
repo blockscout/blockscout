@@ -9,8 +9,8 @@
                     data-address-hash="<%= @result.address_hash %>"
                 >
                 <%= if Application.get_env(:block_scout_web, :display_token_icons) do %>
-                    <% chain_id_for_token_icon = if @result.foreign_chain_id, do: @result.foreign_chain_id |> Decimal.to_integer() |> to_string(), else: Application.get_env(:block_scout_web, :chain_id) %>
-                    <% address_hash = if @result.foreign_token_hash, do: @result.foreign_token_hash, else: @result.address_hash %>
+                    <% chain_id_for_token_icon = Application.get_env(:block_scout_web, :chain_id) %>
+                    <% address_hash = @result.address_hash %>
                     <%=
                         render BlockScoutWeb.TokensView,
                         "_token_icon.html",
@@ -21,7 +21,7 @@
                 </span>
             </td>
             <td class="stakes-td">
-                <% res = AddressView.token_title(@result) <> " (" <> @result.symbol <> ")" %>
+                <% res = @result.name <> " (" <> @result.symbol <> ")" %>
                 <a href="<%= token_path(@conn, :show, @result.address_hash) %>">
                     <%= highlight_search_result(res, @query) %>
                 </a>
@@ -40,9 +40,6 @@
                     to: block_path(@conn, :show, @result.block_number)
                 ) %>
             </td>
-        <% "label" -> %>
-            <%= render BlockScoutWeb.SearchView, "_empty_td.html" %>
-            <%= render BlockScoutWeb.SearchView, "_name_td.html", result: @result, query: @query, conn: @conn %>
         <% _ -> %>
             <%= render BlockScoutWeb.SearchView, "_empty_td.html" %>
             <%= render BlockScoutWeb.SearchView, "_empty_td.html" %>
@@ -92,16 +89,6 @@
                 "0x" <> Base.encode16(@result.block_hash, case: :lower),
                 to: block_path(@conn, :show, @result.block_number)
             ) %>
-        <% "label" -> %>
-            <%= with {:ok, address_hash} = Chain.string_to_address_hash(@result.address_hash),
-            {:ok, address} <- Chain.hash_to_address(address_hash) do %>
-                <%= render BlockScoutWeb.AddressView,
-                "_link.html",
-                address: address,
-                contract: false,
-                use_custom_tooltip: false
-                %>
-            <% end %>
         <% _ -> %>
     <% end %>
   </td>

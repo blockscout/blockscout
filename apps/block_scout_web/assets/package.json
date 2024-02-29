@@ -20,8 +20,6 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.5.1",
-    "@sentry/browser": "^5.29.2",
-    "@sentry/tracing": "^5.29.2",
     "@amplitude/analytics-browser": "^2.5.1",
     "@tarekraafat/autocomplete.js": "^10.2.7",
     "@walletconnect/web3-provider": "^1.8.0",
@@ -34,12 +32,10 @@
     "core-js": "^3.36.0",
     "crypto-browserify": "^3.12.0",
     "dropzone": "^5.9.3",
-    "easy-pie-chart": "^2.1.7",
     "eth-net-props": "^1.0.41",
     "highlight.js": "^11.9.0",
     "https-browserify": "^1.0.0",
     "humps": "^2.0.1",
-    "intl-tel-input": "^17.0.12",
     "jquery": "^3.7.1",
     "js-cookie": "^3.0.5",
     "lodash.debounce": "^4.0.8",
@@ -113,8 +109,7 @@
   },
   "jest": {
     "moduleNameMapper": {
-      "/css/app.scss": "<rootDir>/__mocks__/css/app.scss.js",
-      "/css/stakes.scss": "<rootDir>/__mocks__/css/app.scss.js"
+      "/css/app.scss": "<rootDir>/__mocks__/css/app.scss.js"
     }
   }
 }

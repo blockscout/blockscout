@@ -102,11 +102,6 @@ defmodule BlockScoutWeb.WebRouter do
       singleton: true
     )
 
-    resources("/gas-usage-history-chart", Chain.GasUsageHistoryChartController,
-      only: [:show],
-      singleton: true
-    )
-
     resources "/block", BlockController, only: [:show], param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
       resources("/withdrawals", BlockWithdrawalController, only: [:index], as: :withdrawal)
