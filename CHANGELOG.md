@@ -18,6 +18,21 @@
 
 </details>
 
+## 6.2.2
+
+### Features
+
+### Fixes
+
+- [#9505](https://github.com/blockscout/blockscout/pull/9505) - Add env vars for NFT sanitize migration
+
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+</details>
+
 ## 6.2.1
 
 ### Features
