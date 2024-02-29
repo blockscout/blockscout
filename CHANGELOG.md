@@ -4,6 +4,14 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+## 6.2.2
+
+### Features
+
 - [#9360](https://github.com/blockscout/blockscout/pull/9360) - Move missing ranges sanitize to a separate background migration
 
 ### Fixes
