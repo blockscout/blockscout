@@ -483,7 +483,7 @@ defmodule Explorer.Chain.Address.Counters do
         case res do
           {:ok, {txs_type, txs_hashes}} when txs_type in @txs_types ->
             acc
-            |> (&Map.put(&1, :txs_types, [txs_type | &1[:txs_types] || []])).()
+            |> (&Map.put(&1, :txs_types, [txs_type | &1[:txs_types]])).()
             |> (&Map.put(&1, :txs_hashes, &1[:txs_hashes] ++ txs_hashes)).()
 
           {:ok, {type, counter}} ->

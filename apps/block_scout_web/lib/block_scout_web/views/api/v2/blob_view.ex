@@ -7,10 +7,6 @@ defmodule BlockScoutWeb.API.V2.BlobView do
     blob |> prepare_blob() |> Map.put("transaction_hashes", transaction_hashes)
   end
 
-  def render("blob.json", %{transaction_hashes: transaction_hashes}) do
-    %{"transaction_hashes" => transaction_hashes}
-  end
-
   def render("blobs.json", %{blobs: blobs}) do
     %{"items" => Enum.map(blobs, &prepare_blob(&1))}
   end
