@@ -12,11 +12,9 @@
 
 ### Features
 
-- [#9360](https://github.com/blockscout/blockscout/pull/9360) - Move missing ranges sanitize to a separate background migration
-
 ### Fixes
 
-- [#9356](https://github.com/blockscout/blockscout/pull/9356) - Remove ERC-1155 logs params from coin balances params
+- [#9505](https://github.com/blockscout/blockscout/pull/9505) - Add env vars for NFT sanitize migration
 
 ### Chore
 
