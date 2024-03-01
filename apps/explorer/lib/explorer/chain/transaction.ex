@@ -1769,7 +1769,19 @@ defmodule Explorer.Chain.Transaction do
     {:maximum, fee(tx, gas_price, gas, unit)}
   end
 
-  def fee(%Transaction{gas_price: nil, gas_used: _gas_used}, _unit), do: {:actual, nil}
+  def fee(%Transaction{gas_price: nil, gas_used: gas_used} = transaction, unit) do
+    if Application.get_env(:explorer, :chain_type) == "optimism" do
+      {:actual, nil}
+    else
+      gas_price = effective_gas_price(transaction)
+
+      {:actual,
+       gas_price &&
+         gas_price
+         |> Wei.to(unit)
+         |> Decimal.mult(gas_used)}
+    end
+  end
 
   def fee(%Transaction{gas_price: gas_price, gas_used: gas_used} = tx, unit) do
     {:actual, fee(tx, gas_price, gas_used, unit)}
