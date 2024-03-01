@@ -340,7 +340,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   end
 
   defp get_committed_l2_to_l1_messages(highest_committed_block_number) do
-    Db.uncommitted_l2_to_l1_messages(highest_committed_block_number)
+    Db.initiated_l2_to_l1_messages(highest_committed_block_number)
     |> Enum.map(fn tx ->
       # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
       Map.put(tx, :status, :sent)

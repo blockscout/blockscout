@@ -3,16 +3,9 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   TBD
   """
 
-  import Ecto.Query,
-    only: [
-      from: 2,
-      limit: 2,
-      order_by: 2,
-      where: 2,
-      where: 3
-    ]
+  import Ecto.Query, only: [from: 2]
 
-  alias Explorer.Chain.Arbitrum.{BatchBlock, L1Batch, LifecycleTransaction, Message}
+  alias Explorer.Chain.Arbitrum.{BatchBlock, L1Batch, L1Execution, LifecycleTransaction, Message}
 
   alias Explorer.{Chain, Repo}
 
@@ -74,6 +67,20 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     Repo.all(query, timeout: :infinity)
+  end
+
+  def l1_executions(message_ids) do
+    query =
+      from(
+        ex in L1Execution,
+        where: ex.message_id in ^message_ids
+      )
+
+    query
+    |> Chain.join_associations(%{
+      :execution_transaction => :optional
+    })
+    |> Repo.all(timeout: :infinity)
   end
 
   @doc """
@@ -142,9 +149,6 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     query
-    |> Repo.one()
-
-    query
     |> Chain.join_associations(%{
       :commit_transaction => :optional
     })
@@ -171,6 +175,21 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       nil -> nil
       block -> block.confirm_transaction.block
     end
+  end
+
+  def l1_block_of_latest_execution do
+    query =
+      from(
+        tx in LifecycleTransaction,
+        left_join: ex in L1Execution,
+        on: tx.id == ex.execution_id,
+        select: tx.block,
+        order_by: [desc: tx.block],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
   end
 
   def unconfirmed_rollup_blocks(first_block, last_block) do

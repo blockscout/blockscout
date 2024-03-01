@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   alias Indexer.Helper, as: IndexerHelper
 
   alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
 
   alias Explorer.Chain
 
@@ -87,26 +88,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       end)
 
     {rollup_block_to_l1_txs, lifecycle_txs, Map.values(blocks_requests)}
-  end
-
-  defp extend_lifecycle_txs_with_ts_and_status(lifecycle_txs, blocks_to_ts, track_finalization?) do
-    lifecycle_txs
-    |> Map.keys()
-    |> Enum.reduce(%{}, fn tx_key, updated_txs ->
-      Map.put(
-        updated_txs,
-        tx_key,
-        Map.merge(lifecycle_txs[tx_key], %{
-          timestamp: blocks_to_ts[lifecycle_txs[tx_key].block],
-          status:
-            if track_finalization? do
-              :unfinalized
-            else
-              :finalized
-            end
-        })
-      )
-    end)
   end
 
   defp recover_block_number_by_hash(hash, json_rpc_named_arguments) do
@@ -465,7 +446,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
     lifecycle_txs =
       basic_lifecycle_txs
-      |> extend_lifecycle_txs_with_ts_and_status(blocks_to_ts, track_finalization?)
+      |> ArbitrumHelper.extend_lifecycle_txs_with_ts_and_status(blocks_to_ts, track_finalization?)
       |> Db.get_indices_for_l1_transactions()
 
     {updated_rollup_blocks, highest_confirmed_block_number} =
@@ -489,7 +470,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   end
 
   defp get_confirmed_l2_to_l1_messages(highest_confirmed_block_number) do
-    Db.unconfirmed_l2_to_l1_messages(highest_confirmed_block_number)
+    Db.sent_l2_to_l1_messages(highest_confirmed_block_number)
     |> Enum.map(fn tx ->
       # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
       Map.put(tx, :status, :confirmed)

@@ -38,6 +38,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   @arbitrum_runners [
     Runner.Arbitrum.Messages,
     Runner.Arbitrum.LifecycleTransactions,
+    Runner.Arbitrum.L1Executions,
     Runner.Arbitrum.L1Batches,
     Runner.Arbitrum.BatchBlocks,
     Runner.Arbitrum.BatchTransactions

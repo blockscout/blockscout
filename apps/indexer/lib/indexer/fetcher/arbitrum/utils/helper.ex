@@ -31,4 +31,24 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
       chunks
     end
   end
+
+  def extend_lifecycle_txs_with_ts_and_status(lifecycle_txs, blocks_to_ts, track_finalization?) do
+    lifecycle_txs
+    |> Map.keys()
+    |> Enum.reduce(%{}, fn tx_key, updated_txs ->
+      Map.put(
+        updated_txs,
+        tx_key,
+        Map.merge(lifecycle_txs[tx_key], %{
+          timestamp: blocks_to_ts[lifecycle_txs[tx_key].block],
+          status:
+            if track_finalization? do
+              :unfinalized
+            else
+              :finalized
+            end
+        })
+      )
+    end)
+  end
 end

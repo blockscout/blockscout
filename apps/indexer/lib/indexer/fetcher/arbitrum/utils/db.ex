@@ -113,6 +113,17 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     end
   end
 
+  def l1_block_of_latest_execution(value_if_nil) do
+    case Reader.l1_block_of_latest_execution() do
+      nil ->
+        Logger.warning("No L1 executions found in DB")
+        value_if_nil
+
+      value ->
+        value + 1
+    end
+  end
+
   @doc """
   TBD
   """
@@ -203,15 +214,25 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     end)
   end
 
-  def uncommitted_l2_to_l1_messages(batch_number) do
+  def initiated_l2_to_l1_messages(block_number) do
     # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.l2_to_l1_messages(:initiated, batch_number)
+    Reader.l2_to_l1_messages(:initiated, block_number)
     |> Enum.map(&message_to_map/1)
   end
 
-  def unconfirmed_l2_to_l1_messages(batch_number) do
+  def sent_l2_to_l1_messages(block_number) do
     # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.l2_to_l1_messages(:sent, batch_number)
+    Reader.l2_to_l1_messages(:sent, block_number)
     |> Enum.map(&message_to_map/1)
+  end
+
+  def confirmed_l2_to_l1_messages(block_number) do
+    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
+    Reader.l2_to_l1_messages(:confirmed, block_number)
+    |> Enum.map(&message_to_map/1)
+  end
+
+  def l1_executions(message_ids) do
+    Reader.l1_executions(message_ids)
   end
 end

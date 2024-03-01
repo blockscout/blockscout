@@ -40,6 +40,18 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
 
     create(unique_index(:arbitrum_lifecycle_l1_transactions, :hash))
 
+    create table(:arbitrum_l1_executions, primary_key: false) do
+      add(:message_id, :integer, null: false, primary_key: true)
+
+      add(
+        :execution_id,
+        references(:arbitrum_lifecycle_l1_transactions, on_delete: :restrict, on_update: :update_all, type: :integer),
+        null: false
+      )
+
+      timestamps(null: false, type: :utc_datetime_usec)
+    end
+
     create table(:arbitrum_l1_batches, primary_key: false) do
       add(:number, :integer, null: false, primary_key: true)
       add(:tx_count, :integer, null: false)

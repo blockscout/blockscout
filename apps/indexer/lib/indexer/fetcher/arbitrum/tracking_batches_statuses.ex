@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   use GenServer
   use Indexer.Fetcher
 
-  alias Indexer.Fetcher.Arbitrum.Workers.{L1Finalization, NewBatches, NewConfirmations}
+  alias Indexer.Fetcher.Arbitrum.Workers.{L1Finalization, NewBatches, NewConfirmations, NewL1Executions}
 
   import Indexer.Fetcher.Arbitrum.Utils.Helper, only: [increase_duration: 2]
 
@@ -103,7 +103,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     # TODO: it is necessary to develop a way to discover missed batches to cover the case
     #       when the batch #1, #2 and #4 are in DB, but #3 is not
     #       One of the approaches is to look deeper than the latest committed batch and
-    #       check whether batches was already handled or not.
+    #       check whether batches were already handled or not.
     new_batches_start_block = Db.l1_block_of_latest_committed_batch(l1_start_block)
 
     # TODO: it is necessary to develop a way to discover missed L1 confirmation txs.
@@ -114,6 +114,11 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     #       4. Confirm all the blocks between the block with given hash (inclusively) and the block
     #          from previous SendRootUpdated
     new_confirmations_start_block = Db.l1_block_of_latest_confirmed_block(l1_start_block)
+
+    # TODO: it is necessary to develop a way to discover missed executions.
+    #       One of the approaches is to look deeper than the latest execution and
+    #       check whether executions were already handled or not.
+    new_executions_start_block = Db.l1_block_of_latest_execution(l1_start_block)
 
     Process.send(self(), :check_new_batches, [])
 
@@ -130,7 +135,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         :data,
         Map.merge(state.data, %{
           new_batches_start_block: new_batches_start_block,
-          new_confirmations_start_block: new_confirmations_start_block
+          new_confirmations_start_block: new_confirmations_start_block,
+          new_executions_start_block: new_executions_start_block
         })
       )
 
@@ -171,12 +177,31 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         state
       ])
 
-    Process.send(self(), :check_lifecycle_txs_finalization, [])
+    Process.send(self(), :check_new_executions, [])
 
     new_data =
       Map.merge(state.data, %{
         duration: increase_duration(state.data, handle_duration),
         new_confirmations_start_block: end_block + 1
+      })
+
+    {:noreply, %{state | data: new_data}}
+  end
+
+  # TBD
+  @impl GenServer
+  def handle_info(:check_new_executions, state) do
+    {handle_duration, {:ok, end_block}} =
+      :timer.tc(&discover_l1_messages_executions/1, [
+        state
+      ])
+
+    Process.send(self(), :check_lifecycle_txs_finalization, [])
+
+    new_data =
+      Map.merge(state.data, %{
+        duration: increase_duration(state.data, handle_duration),
+        new_executions_start_block: end_block + 1
       })
 
     {:noreply, %{state | data: new_data}}
@@ -278,6 +303,42 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         end_block,
         l1_rpc_config,
         rollup_rpc_config
+      )
+
+      {:ok, end_block}
+    else
+      {:ok, start_block - 1}
+    end
+  end
+
+  defp discover_l1_messages_executions(
+         %{
+           config: %{
+             l1_rpc: l1_rpc_config,
+             l1_outbox_address: outbox_address
+           },
+           data: %{new_executions_start_block: start_block}
+         } = _state
+       ) do
+    # Requesting the "latest" block instead of "safe" allows to catch executions
+    # without latency.
+    {:ok, latest_block} =
+      IndexerHelper.get_block_number_by_tag(
+        "latest",
+        l1_rpc_config.json_rpc_named_arguments,
+        Rpc.get_resend_attempts()
+      )
+
+    end_block = min(start_block + l1_rpc_config.logs_block_range - 1, latest_block)
+
+    if start_block <= end_block do
+      Logger.info("Block range for new l2-to-l1 messages executions discovery: #{start_block}..#{end_block}")
+
+      NewL1Executions.discover(
+        outbox_address,
+        start_block,
+        end_block,
+        l1_rpc_config
       )
 
       {:ok, end_block}
