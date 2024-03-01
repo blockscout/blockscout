@@ -437,11 +437,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
 
     result
-    |> add_optional_transaction_field(transaction, :l1_fee)
-    |> add_optional_transaction_field(transaction, :l1_fee_scalar)
-    |> add_optional_transaction_field(transaction, :l1_gas_price)
-    |> add_optional_transaction_field(transaction, :l1_gas_used)
-    |> add_optimism_fields(transaction.hash, single_tx?)
     |> chain_type_fields(transaction, single_tx?, conn, watchlist_names)
     |> maybe_put_stability_fee(transaction)
   end
@@ -453,6 +448,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
+  # credo:disable-for-next-line
   defp chain_type_fields(result, transaction, single_tx?, conn, watchlist_names) do
     case {single_tx?, Application.get_env(:explorer, :chain_type)} do
       {true, "polygon_edge"} ->
@@ -468,6 +464,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           |> add_optional_transaction_field(transaction, "zkevm_verify_hash", :zkevm_verify_transaction, :hash)
 
         Map.put(extended_result, "zkevm_status", zkevm_status(extended_result))
+
+      {true, "optimism"} ->
+        result
+        |> add_optional_transaction_field(transaction, :l1_fee)
+        |> add_optional_transaction_field(transaction, :l1_fee_scalar)
+        |> add_optional_transaction_field(transaction, :l1_gas_price)
+        |> add_optional_transaction_field(transaction, :l1_gas_used)
+        |> add_optimism_fields(transaction.hash, single_tx?)
 
       {true, "suave"} ->
         suave_fields(transaction, result, single_tx?, conn, watchlist_names)

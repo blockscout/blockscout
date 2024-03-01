@@ -653,7 +653,7 @@ defmodule EthereumJSONRPC.Transaction do
 
   # quantity or nil for pending
   defp entry_to_elixir({key, quantity_or_nil})
-       when key in ~w(blockNumber transactionIndex l1Fee l1FeeScalar l1GasPrice l1GasUsed l1TxOrigin l1BlockNumber) do
+       when key in ~w(blockNumber transactionIndex l1TxOrigin l1BlockNumber) do
     elixir =
       case quantity_or_nil do
         nil -> nil
