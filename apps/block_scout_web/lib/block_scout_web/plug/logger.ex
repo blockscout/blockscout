@@ -22,6 +22,10 @@ defmodule BlockScoutWeb.Plug.Logger do
 
     start = System.monotonic_time()
 
+    Logger.log(level, fn ->
+      [conn.method, ?\s, endpoint(conn)]
+    end)
+
     Conn.register_before_send(conn, fn conn ->
       stop = System.monotonic_time()
       diff = System.convert_time_unit(stop - start, :native, :microsecond)
