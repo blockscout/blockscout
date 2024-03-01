@@ -160,9 +160,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       preload: [token: t],
       select: ctb,
-      select_merge: ^%{fiat_value: fiat_balance},
-      order_by: ^[desc_nulls_last: fiat_balance],
-      order_by: [desc: ctb.value, desc: ctb.id]
+      select_merge: ^%{fiat_value: fiat_balance}
     )
   end
 
