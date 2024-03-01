@@ -180,7 +180,6 @@ defmodule Explorer.EthRPC do
       "topics" => topics,
       "transactionHash" => to_string(log.transaction_hash),
       "transactionIndex" => log.transaction_index,
-      "transactionLogIndex" => log.index
     }
   end
 
