@@ -12,9 +12,6 @@ services:
         chown -R 2000:2000 /var/lib/postgresql/data
 
   db:
-    depends_on:
-      db-init:
-        condition: service_completed_successfully
     image: postgres:15
     user: 2000:2000
     shm_size: 256m
