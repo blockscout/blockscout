@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- [#9512](https://github.com/blockscout/blockscout/pull/9512) - Docker-compose 2.24.6 compatibility
+
 ### Chore
 
 ## 6.2.2
