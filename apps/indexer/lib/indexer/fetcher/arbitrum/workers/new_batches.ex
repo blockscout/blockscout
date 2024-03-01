@@ -339,8 +339,16 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     end)
   end
 
+  defp get_committed_l2_to_l1_messages(highest_committed_block_number) do
+    Db.uncommitted_l2_to_l1_messages(highest_committed_block_number)
+    |> Enum.map(fn tx ->
+      # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
+      Map.put(tx, :status, :sent)
+    end)
+  end
+
   defp handle_batches_from_logs([], _, _, _) do
-    {[], [], [], []}
+    {[], [], [], [], []}
   end
 
   defp handle_batches_from_logs(
@@ -386,7 +394,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         ]
       end)
 
-    {batches_list_to_import, Map.values(lifecycle_txs), Map.values(blocks_to_import), rollup_txs_to_import}
+    committed_txs =
+      blocks_to_import
+      |> Map.keys()
+      |> Enum.max()
+      |> get_committed_l2_to_l1_messages()
+
+    {batches_list_to_import, Map.values(lifecycle_txs), Map.values(blocks_to_import), rollup_txs_to_import,
+     committed_txs}
   end
 
   @doc """
@@ -408,7 +423,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         l1_rpc_config.json_rpc_named_arguments
       )
 
-    {batches, lifecycle_txs, rollup_blocks, rollup_txs} =
+    {batches, lifecycle_txs, rollup_blocks, rollup_txs, committed_txs} =
       handle_batches_from_logs(
         logs,
         messages_to_blocks_shift,
@@ -424,6 +439,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         arbitrum_l1_batches: %{params: batches},
         arbitrum_batch_blocks: %{params: rollup_blocks},
         arbitrum_batch_transactions: %{params: rollup_txs},
+        arbitrum_messages: %{params: committed_txs},
         timeout: :infinity
       })
   end

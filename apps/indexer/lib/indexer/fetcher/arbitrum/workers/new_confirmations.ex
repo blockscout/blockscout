@@ -468,22 +468,32 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       |> extend_lifecycle_txs_with_ts_and_status(blocks_to_ts, track_finalization?)
       |> Db.get_indices_for_l1_transactions()
 
-    updated_rollup_blocks =
+    {updated_rollup_blocks, highest_confirmed_block_number} =
       confirmed_rollup_blocks
-      |> Enum.reduce([], fn block, updated_list ->
+      |> Enum.reduce({[], nil}, fn block, {updated_list, highest_confirmed} ->
+        chosen_highest_confirmed = max(highest_confirmed, block.block_num)
+
         updated_block =
           block
           |> Map.put(:confirm_id, lifecycle_txs[block.confirm_transaction].id)
           |> Map.drop([:block_num, :confirm_transaction])
 
-        [updated_block | updated_list]
+        {[updated_block | updated_list], chosen_highest_confirmed}
       end)
 
-    {Map.values(lifecycle_txs), updated_rollup_blocks}
+    {Map.values(lifecycle_txs), updated_rollup_blocks, highest_confirmed_block_number}
+  end
+
+  defp get_confirmed_l2_to_l1_messages(highest_confirmed_block_number) do
+    Db.unconfirmed_l2_to_l1_messages(highest_confirmed_block_number)
+    |> Enum.map(fn tx ->
+      # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
+      Map.put(tx, :status, :confirmed)
+    end)
   end
 
   defp handle_confirmations_from_logs([], _, _, _) do
-    {[], []}
+    {[], [], []}
   end
 
   defp handle_confirmations_from_logs(
@@ -508,14 +518,22 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     applicable_lifecycle_txs = take_lifecycle_txs_for_confirmed_blocks(rollup_blocks, lifecycle_txs_basic)
 
     if Enum.empty?(applicable_lifecycle_txs) do
-      {[], []}
+      {[], [], []}
     else
-      finalize_lifecycle_txs_and_confirmed_blocks(
-        applicable_lifecycle_txs,
-        rollup_blocks,
-        blocks_requests,
-        l1_rpc_config
-      )
+      {lifecycle_txs, rollup_blocks, highest_confirmed_block_number} =
+        finalize_lifecycle_txs_and_confirmed_blocks(
+          applicable_lifecycle_txs,
+          rollup_blocks,
+          blocks_requests,
+          l1_rpc_config
+        )
+
+      # Drawback of marking messages as confirmed during a new confirmation handling
+      # is that the status change could become stuck if confirmations are not handled.
+      # For example, due to DB inconsistency: some blocks/batches are missed.
+      confirmed_txs = get_confirmed_l2_to_l1_messages(highest_confirmed_block_number)
+
+      {lifecycle_txs, rollup_blocks, confirmed_txs}
     end
   end
 
@@ -537,7 +555,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         l1_rpc_config.json_rpc_named_arguments
       )
 
-    {lifecycle_txs, rollup_blocks} =
+    {lifecycle_txs, rollup_blocks, confirmed_txs} =
       handle_confirmations_from_logs(
         logs,
         l1_rpc_config,
@@ -549,6 +567,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       Chain.import(%{
         arbitrum_lifecycle_transactions: %{params: lifecycle_txs},
         arbitrum_batch_blocks: %{params: rollup_blocks},
+        arbitrum_messages: %{params: confirmed_txs},
         timeout: :infinity
       })
   end

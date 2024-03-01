@@ -201,4 +201,14 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
     Repo.aggregate(query, :count, timeout: :infinity)
   end
+
+  def l2_to_l1_messages(status, block_number) do
+    query =
+      from(msg in Message,
+        where: msg.direction == :from_l2 and msg.originating_tx_blocknum <= ^block_number and msg.status == ^status,
+        order_by: [desc: msg.message_id]
+      )
+
+    Repo.all(query, timeout: :infinity)
+  end
 end

@@ -179,4 +179,39 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   def count_confirmed_rollup_blocks_in_batch(batch_number) do
     Reader.count_confirmed_rollup_blocks_in_batch(batch_number)
   end
+
+  defp message_to_map(message) do
+    [
+      :direction,
+      :message_id,
+      :originator_address,
+      :originating_tx_hash,
+      :originating_tx_blocknum,
+      :completion_tx_hash,
+      :status
+    ]
+    |> Enum.reduce(%{}, fn key, message_as_map ->
+      raw_value = Map.get(message, key)
+
+      value =
+        case raw_value do
+          %Explorer.Chain.Hash{} -> raw_value.bytes
+          _ -> raw_value
+        end
+
+      Map.put(message_as_map, key, value)
+    end)
+  end
+
+  def uncommitted_l2_to_l1_messages(batch_number) do
+    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
+    Reader.l2_to_l1_messages(:initiated, batch_number)
+    |> Enum.map(&message_to_map/1)
+  end
+
+  def unconfirmed_l2_to_l1_messages(batch_number) do
+    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
+    Reader.l2_to_l1_messages(:sent, batch_number)
+    |> Enum.map(&message_to_map/1)
+  end
 end
