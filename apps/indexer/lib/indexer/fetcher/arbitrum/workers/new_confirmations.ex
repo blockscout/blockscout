@@ -470,7 +470,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
     {updated_rollup_blocks, highest_confirmed_block_number} =
       confirmed_rollup_blocks
-      |> Enum.reduce({[], nil}, fn block, {updated_list, highest_confirmed} ->
+      |> Enum.reduce({[], -1}, fn block, {updated_list, highest_confirmed} ->
         chosen_highest_confirmed = max(highest_confirmed, block.block_num)
 
         updated_block =
@@ -482,6 +482,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       end)
 
     {Map.values(lifecycle_txs), updated_rollup_blocks, highest_confirmed_block_number}
+  end
+
+  defp get_confirmed_l2_to_l1_messages(-1) do
+    []
   end
 
   defp get_confirmed_l2_to_l1_messages(highest_confirmed_block_number) do
