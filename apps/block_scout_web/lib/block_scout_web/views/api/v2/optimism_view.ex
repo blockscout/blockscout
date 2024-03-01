@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Chain.Optimism.Withdrawal
 
   def render("optimism_txn_batches.json", %{
         batches: batches,
@@ -124,7 +125,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
               _ -> {nil, nil}
             end
 
-          {status, challenge_period_end} = Chain.optimism_withdrawal_status(w)
+          {status, challenge_period_end} = Withdrawal.status(w)
 
           %{
             "msg_nonce_raw" => Decimal.to_string(w.msg_nonce, :normal),

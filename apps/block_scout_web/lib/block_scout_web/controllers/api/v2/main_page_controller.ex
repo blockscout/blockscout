@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   alias Explorer.{Chain, PagingOptions}
   alias BlockScoutWeb.API.V2.{BlockView, OptimismView, TransactionView}
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Optimism.Deposit
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
@@ -38,7 +39,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
 
   def optimism_deposits(conn, _params) do
     recent_deposits =
-      Chain.list_optimism_deposits(
+      Deposit.list(
         paging_options: %PagingOptions{page_size: 6},
         api?: true
       )

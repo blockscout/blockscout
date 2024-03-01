@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       params
       |> paging_options()
       |> Keyword.put(:api?, true)
-      |> Chain.list_txn_batches()
+      |> TxnBatch.list()
       |> split_list_by_page()
 
     next_page_params = next_page_params(next_page, batches, params)
@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       params
       |> paging_options()
       |> Keyword.put(:api?, true)
-      |> Chain.list_output_roots()
+      |> OutputRoot.list()
       |> split_list_by_page()
 
     next_page_params = next_page_params(next_page, roots, params)
@@ -62,7 +62,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       params
       |> paging_options()
       |> Keyword.put(:api?, true)
-      |> Chain.list_optimism_deposits()
+      |> Deposit.list()
       |> split_list_by_page()
 
     next_page_params = next_page_params(next_page, deposits, params)
@@ -84,7 +84,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       params
       |> paging_options()
       |> Keyword.put(:api?, true)
-      |> Chain.list_optimism_withdrawals()
+      |> Withdrawal.list()
       |> split_list_by_page()
 
     next_page_params = next_page_params(next_page, withdrawals, params)

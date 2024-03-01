@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Optimism.Withdrawal, as: OptimismWithdrawal
   alias Explorer.Chain.PolygonEdge.Reader
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.Counters.AverageBlockTime
@@ -580,7 +581,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     if Application.get_env(:explorer, :chain_type) == "optimism" && single_tx? do
       withdrawals =
         transaction_hash
-        |> Chain.optimism_withdrawal_transaction_statuses()
+        |> OptimismWithdrawal.transaction_statuses()
         |> Enum.map(fn {nonce, status, l1_transaction_hash} ->
           %{
             "nonce" => nonce,
