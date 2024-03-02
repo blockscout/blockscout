@@ -23,6 +23,7 @@
 - [#9563](https://github.com/blockscout/blockscout/pull/9563) - Fix timestamp handler for unfinalized zkEVM batches
 - [#9560](https://github.com/blockscout/blockscout/pull/9560) - Fix fetch pending transaction for hyperledger besu client
 - [#9555](https://github.com/blockscout/blockscout/pull/9555) - Fix EIP-1967 beacon proxy pattern detection
+- [#9520](https://github.com/blockscout/blockscout/pull/9520) - Add missing preloads to API and WS responses
 - [#9518](https://github.com/blockscout/blockscout/pull/9518) - Fix MultipleResultsError in `smart_contract_creation_tx_bytecode/1`
 - [#9514](https://github.com/blockscout/blockscout/pull/9514) - Fix missing `0x` prefix for `blockNumber`, `logIndex`, `transactionIndex` and remove `transactionLogIndex` in `eth_getLogs` response.
 - [#9512](https://github.com/blockscout/blockscout/pull/9512) - Docker-compose 2.24.6 compatibility
