@@ -4,13 +4,15 @@ defmodule Explorer.EthRpcHelper do
   """
 
   alias Explorer.Chain.{Data, Hash.Address}
+  alias Explorer.Chain.Hash.Full, as: Hash
 
   @invalid_address "Invalid address"
   @invalid_block_number "Invalid block number"
   @invalid_integer "Invalid integer"
   @missed_to_address "Missed `to` address"
   @invalid_bool "Invalid bool"
-
+  @invalid_hash "Invalid hash"
+  @invalid_hex_data "Invalid hex data"
   @doc """
   Validates if address is valid
   """
@@ -19,6 +21,28 @@ defmodule Explorer.EthRpcHelper do
     case Address.cast(address_hash) do
       {:ok, _} -> :ok
       :error -> {:error, message}
+    end
+  end
+
+  @doc """
+  Validates if hash is valid
+  """
+  @spec hash_validator(binary()) :: :ok | {:error, String.t()}
+  def hash_validator(hash) do
+    case Hash.cast(hash) do
+      {:ok, _} -> :ok
+      :error -> {:error, @invalid_hash}
+    end
+  end
+
+  @doc """
+  Validates if hex data is valid
+  """
+  @spec hex_data_validator(binary()) :: :ok | {:error, String.t()}
+  def hex_data_validator(hex_data) do
+    case Data.cast(hex_data) do
+      {:ok, _} -> :ok
+      _ -> {:error, @invalid_hex_data}
     end
   end
 

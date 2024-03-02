@@ -208,6 +208,38 @@ defmodule Explorer.EthRPC do
         "id": 0
       }
       """
+    },
+    "eth_chainId" => %{
+      action: :eth_chain_id,
+      notes: """
+      """,
+      example: """
+      {"jsonrpc": "2.0","id": 0,"method": "eth_chainId","params": []}
+      """,
+      params: [],
+      result: """
+      {
+        "jsonrpc": "2.0",
+        "id": 0,
+        "result": "0x5"
+      }
+      """
+    },
+    "eth_maxPriorityFeePerGas" => %{
+      action: :eth_max_priority_fee_per_gas,
+      notes: """
+      """,
+      example: """
+      {"jsonrpc": "2.0","id": 0,"method": "eth_maxPriorityFeePerGas","params": []}
+      """,
+      params: [],
+      result: """
+      {
+        "jsonrpc": "2.0",
+        "id": 0,
+        "result": "0x3b9aca00"
+      }
+      """
     }
   }
 
@@ -423,6 +455,194 @@ defmodule Explorer.EthRPC do
         "id": 0
       }
       """
+    },
+    "eth_getBlockByHash" => %{
+      arity: 2,
+      params_validators: [&hash_validator/1, &bool_validator/1],
+      example: """
+      {"jsonrpc":"2.0","id": 0,"method":"eth_getBlockByHash","params":["0x2980314632a35ff83ef1f26a2a972259dca49353ed9368a04f21bcd7a5512231", false]}
+      """,
+      result: """
+      {
+        "jsonrpc": "2.0",
+        "id": 0,
+        "result": {
+            "baseFeePerGas": "0x7",
+            "blobGasUsed": "0xc0000",
+            "difficulty": "0x0",
+            "excessBlobGas": "0x4b40000",
+            "extraData": "0x496c6c756d696e61746520446d6f63726174697a6520447374726962757465",
+            "gasLimit": "0x1c9c380",
+            "gasUsed": "0x2ff140",
+            "hash": "0x2980314632a35ff83ef1f26a2a972259dca49353ed9368a04f21bcd7a5512231",
+            "logsBloom": "0x40200000202018800808200040082040800001000040000000200984800600000200000000000810000020014000200028000000200000010530034004202010000440800d00a0000100000800000820020100009040808c80004000000040000017000003040610800002002800081a405800080060140080004a100000000308220100000400020002000100004000040412020010020000018040000000010700804008040088108001020004110008026280800021824180002c00008200a01440120000223009022014801001120080000020080000090100020000281004102000802802a1820024000c00020008000290151802004000080000000804",
+            "miner": "0xb64a30399f7f6b0c154c2e7af0a3ec7b0a5b131a",
+            "mixHash": "0xe5cf393a9e4b40800fd4e4a1d2be0de08e7aabc83de5fd16ff719680d7a04253",
+            "nonce": "0x0000000000000000",
+            "number": "0xa21bc8",
+            "parentBeaconBlockRoot": "0xca280fd409ee503ae331931d64ee7fc29da9ed566cba6dfc4212a2f2f8004c41",
+            "parentHash": "0xc2fc3c51d15a2fe6f219079694865ffd9f8fe56e714d9bc49e9451e1c430acf9",
+            "receiptsRoot": "0x7941071eea76cec0eb4541854bd7820ef36c4d44ae51413063b45d9ea127313d",
+            "sha3Uncles": "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+            "size": "0x34cf",
+            "stateRoot": "0xcff5056271c6e6f6bf04d2e82392fa3ebcf2bc4aca9fe8801edcfcc261ddb557",
+            "timestamp": "0x65e324a4",
+            "totalDifficulty": "0xa4a470",
+            "transactions": [
+                "0x204c69c327e3202adba5cfb1e15b99e63fe104905e19a2359d827788f24b0579",
+                "0x2d07b3bc722c139ffe2ed6a32fc56e944569cc47511fef6e0351dc1da9a23562",
+                "0x87772fafc7eee41d723a2dcdf2ceaae3726d40a9588ae1f7802f03dce6902fbc",
+                "0x2e18d4a8bd9b4d0d70651097e44b25f29b4c013ff548ea6e5f3eb975b2bdfb78",
+                "0xf54ef7af503a7031dc01696339cfcfee3066979a63e3ed626c15bb8282273cea",
+                "0xb71201da6ad30304942a308e3a7666198394f1916accc9db72d03c1b508c8065",
+                "0xdc854518c44ae0c3fb80b8b9fdde5da72445552356f79bbfc45d7503a32a23f8",
+                "0x8b866e254a609a1a4163484cf330bdfc6c6a1878cd35dcc9fbfe2256f324a626",
+                "0xbc7448bf0c34c0a358ead13e8d3687cbccbbb7fe4048d005cb6648c897bc9254",
+                "0xa01733dc6d416a59d69fe17dc9d6960dbeb013b0dab2cd59b72cf84b371d19c1",
+                "0x1c194a1bca34deb14e93e9007de6f971856c43a65208393254f0b2e6f99deab3",
+                "0x9e9c8a6094300ed29a22892e87ab7fe33d19630ccdd85a0cce72ce6095d0c7da",
+                "0xa1d6c2fe6a937e437cda199cc0f6891727c0f3ca810a262fb3179fd961cb95c4",
+                "0xc4b55bada8c0c044f1e8bbd7fb57cd3a46844848e273720fc7bbc757d8e68665",
+                "0x8e971964ef06896d541d5cefef7cebc79d60d6746aae2fa39e954608e2c49824",
+                "0x6d120cf3998a767e567ef1b6615e5a14c380103b287c92d1da229cabc49ebb77",
+                "0x95d1b8d32a80809d79f4a0246e960fec11b59c07f1a33207485dda0b356b3c2c",
+                "0xa19b4b6372a9c8145e03d62e91536468169350790162508c0f07c66849fde86d",
+                "0x55348af743327b1377082b9fccddfcdefe7300b65e7ed32575c09d881ece711d",
+                "0xaaf03a35d70aa96582889565d1211e32fc395c9e63ce82d25cc23518e38aa4bc",
+                "0x85054ea8eddd5b1e8d010f8aac77693484c5863d3355756a64bd0225124c8fca"
+            ],
+            "transactionsRoot": "0x22309b0cc7df445160ca2c6ca344e63296231fad2e9322989477851d38c0eea0",
+            "uncles": [],
+            "withdrawals": [
+                {
+                    "index": "0x1dfb534",
+                    "validatorIndex": "0xaef81",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x1e2a5b"
+                },
+                {
+                    "index": "0x1dfb535",
+                    "validatorIndex": "0xaef82",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x1f9526"
+                },
+                {
+                    "index": "0x1dfb536",
+                    "validatorIndex": "0xaef83",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x1fa60c"
+                },
+                {
+                    "index": "0x1dfb537",
+                    "validatorIndex": "0xaef84",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x1e806a"
+                },
+                {
+                    "index": "0x1dfb538",
+                    "validatorIndex": "0xaef85",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x1eb4e4"
+                },
+                {
+                    "index": "0x1dfb539",
+                    "validatorIndex": "0xaef86",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x2054a0"
+                },
+                {
+                    "index": "0x1dfb53a",
+                    "validatorIndex": "0xaef87",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x1d984a"
+                },
+                {
+                    "index": "0x1dfb53b",
+                    "validatorIndex": "0xaef88",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x1fa4d4"
+                },
+                {
+                    "index": "0x1dfb53c",
+                    "validatorIndex": "0xaef89",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x203a98"
+                },
+                {
+                    "index": "0x1dfb53d",
+                    "validatorIndex": "0xaef8a",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x1fec28"
+                },
+                {
+                    "index": "0x1dfb53e",
+                    "validatorIndex": "0xaef8b",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x2025a5"
+                },
+                {
+                    "index": "0x1dfb53f",
+                    "validatorIndex": "0xaef8c",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x1fdb08"
+                },
+                {
+                    "index": "0x1dfb540",
+                    "validatorIndex": "0xaef8d",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x200a11"
+                },
+                {
+                    "index": "0x1dfb541",
+                    "validatorIndex": "0xaef8e",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x1f03d5"
+                },
+                {
+                    "index": "0x1dfb542",
+                    "validatorIndex": "0xaef8f",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x200804"
+                },
+                {
+                    "index": "0x1dfb543",
+                    "validatorIndex": "0xaef90",
+                    "address": "0xe2e336478e97bfd6a84c0e246f1b8695dd4e990d",
+                    "amount": "0x1dd0bb"
+                }
+            ],
+            "withdrawalsRoot": "0xcba66455c17861d36575f98adedc90b1fc56bbef7982992cab6914528dbd0100"
+        }
+      }
+      """
+    },
+    "eth_sendRawTransaction" => %{
+      arity: 1,
+      params_validators: [&hex_data_validator/1],
+      example: """
+      {"jsonrpc":"2.0","id": 0,"method":"eth_sendRawTransaction","params":["0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675"]}
+      """,
+      result: """
+      {
+        "jsonrpc": "2.0",
+        "id": 0,
+        "result": "0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d1527331"
+      }
+      """
+    },
+    "eth_call" => %{
+      arity: 2,
+      params_validators: [&eth_call_validator/1, &block_validator/1],
+      example: """
+      {"jsonrpc":"2.0","id": 0,"method":"eth_call","params":[{"to": "0x1643E812aE58766192Cf7D2Cf9567dF2C37e9B7F", "input": "0xd4aae0c4", "from": "0x1643E812aE58766192Cf7D2Cf9567dF2C37e9B7F"}, "latest"]}
+      """,
+      result: """
+      {
+        "jsonrpc": "2.0",
+        "result": "0x0000000000000000000000001dd91b354ebd706ab3ac7c727455c7baa164945a",
+        "id": 0
+      }
+      """
     }
   }
 
@@ -598,6 +818,28 @@ defmodule Explorer.EthRPC do
   end
 
   @doc """
+  Handles `eth_maxPriorityFeePerGas` method
+  """
+  @spec eth_max_priority_fee_per_gas() :: {:ok, String.t()} | {:error, String.t()}
+  def eth_max_priority_fee_per_gas do
+    case GasPriceOracle.get_gas_prices() do
+      {:ok, gas_prices} ->
+        {:ok, Wei.hex_format(gas_prices[:average][:priority_fee_wei])}
+
+      _ ->
+        {:error, "Gas price is not estimated yet"}
+    end
+  end
+
+  @doc """
+  Handles `eth_chainId` method
+  """
+  @spec eth_chain_id() :: {:ok, String.t() | nil}
+  def eth_chain_id do
+    {:ok, chain_id()}
+  end
+
+  @doc """
   Handles `eth_getTransactionByHash` method
   """
   @spec eth_get_transaction_by_hash(String.t()) :: {:ok, map() | nil} | {:error, String.t()}
@@ -622,7 +864,7 @@ defmodule Explorer.EthRPC do
        "transactionIndex" => encode_quantity(transaction.index),
        "value" => transaction.value |> Wei.to(:wei) |> encode_quantity(),
        "type" => encode_quantity(transaction.type),
-       "chainId" => :block_scout_web |> Application.get_env(:chain_id) |> Helper.parse_integer() |> encode_quantity(),
+       "chainId" => chain_id(),
        "v" => encode_quantity(transaction.v),
        "r" => encode_quantity(transaction.r),
        "s" => encode_quantity(transaction.s)
@@ -750,7 +992,7 @@ defmodule Explorer.EthRPC do
   end
 
   defp transaction_consensus(transaction) do
-    if DenormalizationHelper.denormalization_finished?() do
+    if DenormalizationHelper.transactions_denormalization_finished?() do
       transaction.block_consensus
     else
       transaction.block.consensus
@@ -1027,4 +1269,6 @@ defmodule Explorer.EthRPC do
   end
 
   def methods, do: @methods
+
+  defp chain_id, do: :block_scout_web |> Application.get_env(:chain_id) |> Helper.parse_integer() |> encode_quantity()
 end
