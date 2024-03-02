@@ -334,6 +334,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       fiat_price: fiat_fee(fee, exchange_rate_from_db),
       base_fee: base_fee |> format_wei(),
       priority_fee: base_fee && priority_fee && priority_fee |> Decimal.new() |> Wei.from(:wei) |> format_wei(),
+      priority_fee_wei: base_fee && priority_fee && priority_fee |> Decimal.new() |> Decimal.round(),
       wei: fee |> Wei.to(:wei) |> Decimal.round()
     }
   end

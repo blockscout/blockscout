@@ -103,7 +103,8 @@ config :block_scout_web, :api_rate_limit,
   whitelisted_ips: System.get_env("API_RATE_LIMIT_WHITELISTED_IPS"),
   is_blockscout_behind_proxy: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_IS_BLOCKSCOUT_BEHIND_PROXY"),
   api_v2_ui_limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_WITH_TOKEN", 5),
-  api_v2_token_ttl_seconds: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_TOKEN_TTL_IN_SECONDS", 18000)
+  api_v2_token_ttl_seconds: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_TOKEN_TTL_IN_SECONDS", 18000),
+  eth_json_rpc_max_batch_size: ConfigHelper.parse_integer_env_var("ETH_JSON_RPC_MAX_BATCH_SIZE", 5)
 
 # Configures History
 price_chart_config =
