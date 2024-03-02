@@ -198,7 +198,8 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert Enum.count(response["result"]) == 1000
 
-      {last_log_index, ""} = Integer.parse(List.last(response["result"])["logIndex"], 16)
+      "0x" <> hexadecimal_digits = List.last(response["result"])["logIndex"]
+      {last_log_index, ""} = Integer.parse(hexadecimal_digits, 16)
 
       next_page_params = %{
         "blockNumber" => Integer.to_string(transaction.block_number, 16),
@@ -225,7 +226,8 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert Enum.all?(inserted_records, fn record ->
                Enum.any?(all_found_logs, fn found_log ->
-                 {index, ""} = Integer.parse(found_log["logIndex"], 16)
+                 "0x" <> hexadecimal_digits = found_log["logIndex"]
+                 {index, ""} = Integer.parse(hexadecimal_digits, 16)
 
                  record.index == index
                end)
