@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.Notifier do
 
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.{Address, DenormalizationHelper, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, BlockNumberHelper, DenormalizationHelper, InternalTransaction, Transaction}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.{AverageBlockTime, Helper}
@@ -232,6 +232,10 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", "changed_bytecode", %{})
   end
 
+  def handle_event({:chain_event, :optimism_deposits, :realtime, deposits}) do
+    broadcast_optimism_deposits(deposits, "optimism_deposits:new_deposits", "deposits")
+  end
+
   def handle_event({:chain_event, :smart_contract_was_verified = event, :on_demand, [address_hash]}) do
     broadcast_automatic_verification_events(event, address_hash)
   end
@@ -305,12 +309,13 @@ defmodule BlockScoutWeb.Notifier do
 
   defp broadcast_latest_block?(block, last_broadcasted_block_number) do
     cond do
-      last_broadcasted_block_number == 0 || last_broadcasted_block_number == block.number - 1 ||
+      last_broadcasted_block_number == 0 ||
+        last_broadcasted_block_number == BlockNumberHelper.previous_block_number(block.number) ||
           last_broadcasted_block_number < block.number - 4 ->
         broadcast_block(block)
         :ets.insert(:last_broadcasted_block, {:number, block.number})
 
-      last_broadcasted_block_number > block.number - 1 ->
+      last_broadcasted_block_number > BlockNumberHelper.previous_block_number(block.number) ->
         broadcast_block(block)
 
       true ->
@@ -324,7 +329,7 @@ defmodule BlockScoutWeb.Notifier do
     :timer.sleep(@check_broadcast_sequence_period)
     last_broadcasted_block_number = Helper.fetch_from_cache(:number, :last_broadcasted_block)
 
-    if last_broadcasted_block_number == block.number - 1 do
+    if last_broadcasted_block_number == BlockNumberHelper.previous_block_number(block.number) do
       broadcast_block(block)
       :ets.insert(:last_broadcasted_block, {:number, block.number})
     else
@@ -397,6 +402,10 @@ defmodule BlockScoutWeb.Notifier do
         internal_transaction: internal_transaction
       })
     end
+  end
+
+  defp broadcast_optimism_deposits(deposits, deposit_channel, event) do
+    Endpoint.broadcast(deposit_channel, event, %{deposits: deposits})
   end
 
   defp broadcast_transactions_websocket_v2(transactions) do

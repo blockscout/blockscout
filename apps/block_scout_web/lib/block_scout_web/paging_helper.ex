@@ -9,7 +9,28 @@ defmodule BlockScoutWeb.PagingHelper do
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @allowed_filter_labels ["validated", "pending"]
-  @allowed_type_labels ["coin_transfer", "contract_call", "contract_creation", "token_transfer", "token_creation"]
+
+  case Application.compile_env(:explorer, :chain_type) do
+    "ethereum" ->
+      @allowed_type_labels [
+        "coin_transfer",
+        "contract_call",
+        "contract_creation",
+        "token_transfer",
+        "token_creation",
+        "blob_transaction"
+      ]
+
+    _ ->
+      @allowed_type_labels [
+        "coin_transfer",
+        "contract_call",
+        "contract_creation",
+        "token_transfer",
+        "token_creation"
+      ]
+  end
+
   @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155"]
   @allowed_nft_token_type_labels ["ERC-721", "ERC-1155"]
   @allowed_chain_id [1, 56, 99]

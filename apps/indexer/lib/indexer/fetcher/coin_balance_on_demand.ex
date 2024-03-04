@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   alias Explorer.Chain.Address.{CoinBalance, CoinBalanceDaily}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Counters.AverageBlockTime
-  alias Indexer.Fetcher.CoinBalance, as: CoinBalanceFetcher
+  alias Indexer.Fetcher.CoinBalance.Helper, as: CoinBalanceHelper
   alias Timex.Duration
 
   @type block_number :: integer
@@ -205,7 +205,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
         :ok
 
       {:ok, %{params_list: params_list}} ->
-        address_params = CoinBalanceFetcher.balances_params_to_address_params(params_list)
+        address_params = CoinBalanceHelper.balances_params_to_address_params(params_list)
 
         Chain.import(%{
           addresses: %{params: address_params, with: :balance_changeset},
@@ -224,14 +224,14 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   end
 
   defp do_import(%FetchedBalances{} = fetched_balances) do
-    case CoinBalanceFetcher.import_fetched_balances(fetched_balances, :on_demand) do
+    case CoinBalanceHelper.import_fetched_balances(fetched_balances, :on_demand) do
       {:ok, %{addresses: [address]}} -> {:ok, address}
       _ -> :error
     end
   end
 
   defp do_import_daily_balances(%FetchedBalances{} = fetched_balances) do
-    case CoinBalanceFetcher.import_fetched_daily_balances(fetched_balances, :on_demand) do
+    case CoinBalanceHelper.import_fetched_daily_balances(fetched_balances, :on_demand) do
       {:ok, %{addresses: [address]}} -> {:ok, address}
       _ -> :error
     end

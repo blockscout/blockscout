@@ -16,49 +16,63 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   alias BlockScoutWeb.API.V2.{TransactionView, WithdrawalView}
   alias Explorer.Chain
 
+  case Application.compile_env(:explorer, :chain_type) do
+    "ethereum" ->
+      @chain_type_transaction_necessity_by_association %{
+        :beacon_blob_transaction => :optional
+      }
+      @chain_type_block_necessity_by_association %{
+        [transactions: :beacon_blob_transaction] => :optional
+      }
+
+    "zksync" ->
+      @chain_type_block_necessity_by_association %{
+        :zksync_batch => :optional,
+        :zksync_commit_transaction => :optional,
+        :zksync_prove_transaction => :optional,
+        :zksync_execute_transaction => :optional
+      }
+
+    _ ->
+      @chain_type_transaction_necessity_by_association %{}
+      @chain_type_block_necessity_by_association %{}
+  end
+
   @transaction_necessity_by_association [
-    necessity_by_association: %{
-      [created_contract_address: :names] => :optional,
-      [from_address: :names] => :optional,
-      [to_address: :names] => :optional,
-      :block => :optional,
-      [created_contract_address: :smart_contract] => :optional,
-      [from_address: :smart_contract] => :optional,
-      [to_address: :smart_contract] => :optional
-    }
+    necessity_by_association:
+      %{
+        [created_contract_address: :names] => :optional,
+        [from_address: :names] => :optional,
+        [to_address: :names] => :optional,
+        :block => :optional,
+        [created_contract_address: :smart_contract] => :optional,
+        [from_address: :smart_contract] => :optional,
+        [to_address: :smart_contract] => :optional
+      }
+      |> Map.merge(@chain_type_transaction_necessity_by_association)
   ]
 
   @api_true [api?: true]
 
-  @block_necessity_by_association %{
-    [miner: :names] => :optional,
-    :uncles => :optional,
-    :nephews => :optional,
-    :rewards => :optional,
-    :transactions => :optional,
-    :withdrawals => :optional
-  }
+  @block_params [
+    necessity_by_association:
+      %{
+        [miner: :names] => :optional,
+        :uncles => :optional,
+        :nephews => :optional,
+        :rewards => :optional,
+        :transactions => :optional,
+        :withdrawals => :optional
+      }
+      |> Map.merge(@chain_type_block_necessity_by_association),
+    api?: true
+  ]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   def block(conn, %{"block_hash_or_number" => block_hash_or_number}) do
-    extended_necessity_by_association =
-      case Application.get_env(:explorer, :chain_type) do
-        "zksync" ->
-          @block_necessity_by_association
-          |> Map.put(:zksync_batch, :optional)
-          |> Map.put(:zksync_commit_transaction, :optional)
-          |> Map.put(:zksync_prove_transaction, :optional)
-          |> Map.put(:zksync_execute_transaction, :optional)
-
-        _ ->
-          @block_necessity_by_association
-      end
-
-    block_params = Keyword.merge(@api_true, necessity_by_association: extended_necessity_by_association)
-
     with {:ok, type, value} <- parse_block_hash_or_number_param(block_hash_or_number),
-         {:ok, block} <- fetch_block(type, value, block_params) do
+         {:ok, block} <- fetch_block(type, value, @block_params) do
       conn
       |> put_status(200)
       |> render(:block, %{block: block})

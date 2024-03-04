@@ -12,12 +12,12 @@ defmodule Explorer.Account.TagTransaction do
   alias Explorer.{Chain, PagingOptions, Repo}
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
-  schema "account_tag_transactions" do
-    field(:tx_hash_hash, Cloak.Ecto.SHA256)
-    field(:name, Explorer.Encrypted.Binary)
-    field(:tx_hash, Explorer.Encrypted.TransactionHash)
+  typed_schema "account_tag_transactions" do
+    field(:tx_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
+    field(:name, Explorer.Encrypted.Binary, null: false)
+    field(:tx_hash, Explorer.Encrypted.TransactionHash, null: false)
 
-    belongs_to(:identity, Identity)
+    belongs_to(:identity, Identity, null: false)
 
     timestamps()
   end

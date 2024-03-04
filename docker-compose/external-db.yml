@@ -1,14 +1,14 @@
 version: '3.9'
 
 services:
-  redis_db:
+  redis-db:
     extends:
       file: ./services/redis.yml
-      service: redis_db
+      service: redis-db
 
   backend:
     depends_on:
-      - redis_db
+      - redis-db
     extends:
       file: ./services/backend.yml
       service: backend
@@ -39,7 +39,8 @@ services:
 
   stats-db:
     depends_on:
-      - backend
+      stats-db-init:
+        condition: service_completed_successfully
     extends:
       file: ./services/stats.yml
       service: stats-db
@@ -47,6 +48,7 @@ services:
   stats:
     depends_on:
       - stats-db
+      - backend
     extends:
       file: ./services/stats.yml
       service: stats

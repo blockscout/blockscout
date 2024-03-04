@@ -15,18 +15,18 @@ defmodule BlockScoutWeb.Chain do
       token_contract_address_from_token_name: 1
     ]
 
-  alias Explorer.Chain.UserOperation
-
   import Explorer.Helper, only: [parse_integer: 1]
 
   alias Ecto.Association.NotLoaded
   alias Explorer.Account.{TagAddress, TagTransaction, WatchlistAddress}
+  alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.Block.Reward
 
   alias Explorer.Chain.{
     Address,
     Address.CoinBalance,
     Address.CurrentTokenBalance,
+    Beacon.Blob,
     Block,
     Hash,
     InternalTransaction,
@@ -37,11 +37,14 @@ defmodule BlockScoutWeb.Chain do
     TokenTransfer,
     Transaction,
     Transaction.StateChange,
-    Wei,
-    Withdrawal
+    UserOperation,
+    Wei
   }
 
-  alias Explorer.Chain.Zkevm.TransactionBatch
+  alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
+  alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
+
+  alias Explorer.Chain.PolygonZkevm.TransactionBatch
   alias Explorer.PagingOptions
 
   defimpl Poison.Encoder, for: Decimal do
@@ -56,7 +59,7 @@ defmodule BlockScoutWeb.Chain do
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @address_hash_len 40
-  @tx_block_op_hash_len 64
+  @full_hash_len 64
 
   def default_paging_options do
     @default_paging_options
@@ -83,20 +86,20 @@ defmodule BlockScoutWeb.Chain do
   end
 
   @spec from_param(String.t()) ::
-          {:ok, Address.t() | Block.t() | Transaction.t() | UserOperation.t()} | {:error, :not_found}
+          {:ok, Address.t() | Block.t() | Transaction.t() | UserOperation.t() | Blob.t()} | {:error, :not_found}
   def from_param(param)
 
   def from_param("0x" <> number_string = param) when byte_size(number_string) == @address_hash_len,
     do: address_from_param(param)
 
-  def from_param("0x" <> number_string = param) when byte_size(number_string) == @tx_block_op_hash_len,
-    do: block_or_transaction_or_operation_from_param(param)
+  def from_param("0x" <> number_string = param) when byte_size(number_string) == @full_hash_len,
+    do: block_or_transaction_or_operation_or_blob_from_param(param)
 
   def from_param(param) when byte_size(param) == @address_hash_len,
     do: address_from_param("0x" <> param)
 
-  def from_param(param) when byte_size(param) == @tx_block_op_hash_len,
-    do: block_or_transaction_or_operation_from_param("0x" <> param)
+  def from_param(param) when byte_size(param) == @full_hash_len,
+    do: block_or_transaction_or_operation_or_blob_from_param("0x" <> param)
 
   def from_param(string) when is_binary(string) do
     case param_to_block_number(string) do
@@ -337,6 +340,16 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {index}}]
   end
 
+  def paging_options(%{"nonce" => nonce_string}) when is_binary(nonce_string) do
+    case Integer.parse(nonce_string) do
+      {nonce, ""} ->
+        [paging_options: %{@default_paging_options | key: {nonce}}]
+
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
   def paging_options(%{"number" => number_string}) when is_binary(number_string) do
     case Integer.parse(number_string) do
       {number, ""} ->
@@ -345,6 +358,10 @@ defmodule BlockScoutWeb.Chain do
       _ ->
         [paging_options: @default_paging_options]
     end
+  end
+
+  def paging_options(%{"nonce" => nonce}) when is_integer(nonce) do
+    [paging_options: %{@default_paging_options | key: {nonce}}]
   end
 
   def paging_options(%{"number" => number}) when is_integer(number) do
@@ -401,6 +418,16 @@ defmodule BlockScoutWeb.Chain do
     case Integer.parse(items_count_string) do
       {count, ""} -> [paging_options: %{@default_paging_options | key: {count}}]
       _ -> @default_paging_options
+    end
+  end
+
+  def paging_options(%{"l1_block_number" => block_number, "tx_hash" => tx_hash}) do
+    with {block_number, ""} <- Integer.parse(block_number),
+         {:ok, tx_hash} <- string_to_transaction_hash(tx_hash) do
+      [paging_options: %{@default_paging_options | key: {block_number, tx_hash}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
     end
   end
 
@@ -602,6 +629,14 @@ defmodule BlockScoutWeb.Chain do
     %{"smart_contract_id" => smart_contract.id}
   end
 
+  defp paging_params(%OptimismDeposit{l1_block_number: l1_block_number, l2_transaction_hash: l2_tx_hash}) do
+    %{"l1_block_number" => l1_block_number, "tx_hash" => l2_tx_hash}
+  end
+
+  defp paging_params(%OptimismOutputRoot{l2_output_index: index}) do
+    %{"index" => index}
+  end
+
   defp paging_params(%SmartContract{} = smart_contract) do
     %{
       "smart_contract_id" => smart_contract.id,
@@ -611,8 +646,16 @@ defmodule BlockScoutWeb.Chain do
     }
   end
 
-  defp paging_params(%Withdrawal{index: index}) do
+  defp paging_params(%{index: index}) do
     %{"index" => index}
+  end
+
+  defp paging_params(%{msg_nonce: nonce}) do
+    %{"nonce" => nonce}
+  end
+
+  defp paging_params(%{l2_block_number: block_number}) do
+    %{"block_number" => block_number}
   end
 
   # clause for zkEVM batches pagination
@@ -673,31 +716,32 @@ defmodule BlockScoutWeb.Chain do
     %{"fiat_value" => ctb.fiat_value, "value" => value, "id" => id}
   end
 
-  defp block_or_transaction_or_operation_from_param(param) do
-    with {:error, :not_found} <- transaction_from_param(param) do
-      hash_string_to_block_or_operation(param)
-    end
-  end
-
-  defp transaction_from_param(param) do
-    case string_to_transaction_hash(param) do
-      {:ok, hash} ->
-        hash_to_transaction(hash)
-
-      :error ->
-        {:error, :not_found}
-    end
-  end
-
-  defp hash_string_to_block_or_operation(hash_string) do
-    with {:ok, hash} <- string_to_block_hash(hash_string),
+  defp block_or_transaction_or_operation_or_blob_from_param(param) do
+    with {:ok, hash} <- string_to_transaction_hash(param),
+         {:error, :not_found} <- hash_to_transaction(hash),
          {:error, :not_found} <- hash_to_block(hash),
-         {:user_operations_enabled, true} <- {:user_operations_enabled, UserOperation.user_operations_enabled?()} do
-      UserOperation.hash_to_user_operation(hash)
+         {:error, :not_found} <- hash_to_user_operation(hash),
+         {:error, :not_found} <- hash_to_blob(hash) do
+      {:error, :not_found}
     else
-      {:user_operations_enabled, false} -> {:error, :not_found}
       :error -> {:error, :not_found}
       res -> res
+    end
+  end
+
+  defp hash_to_user_operation(hash) do
+    if UserOperation.enabled?() do
+      UserOperation.hash_to_user_operation(hash)
+    else
+      {:error, :not_found}
+    end
+  end
+
+  defp hash_to_blob(hash) do
+    if Application.get_env(:explorer, :chain_type) == "ethereum" do
+      BeaconReader.blob(hash, false)
+    else
+      {:error, :not_found}
     end
   end
 

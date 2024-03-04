@@ -1,8 +1,6 @@
 defmodule BlockScoutWeb.API.RPC.StatsController do
   use BlockScoutWeb, :controller
 
-  use Explorer.Schema
-
   alias Explorer.{Chain, Etherscan, Market}
   alias Explorer.Chain.Cache.{AddressSum, AddressSumMinusBurnt}
   alias Explorer.Chain.Wei

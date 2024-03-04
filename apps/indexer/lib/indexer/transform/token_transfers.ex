@@ -6,9 +6,8 @@ defmodule Indexer.Transform.TokenTransfers do
   require Logger
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
-  import Explorer.Helper, only: [decode_data: 2]
 
-  alias Explorer.Repo
+  alias Explorer.{Helper, Repo}
   alias Explorer.Chain.{Token, TokenTransfer}
   alias Indexer.Fetcher.TokenTotalSupplyUpdater
 
@@ -47,7 +46,8 @@ defmodule Indexer.Transform.TokenTransfers do
       erc1155_token_transfers.token_transfers ++
         erc20_and_erc721_token_transfers.token_transfers ++ weth_transfers.token_transfers
 
-    {tokens, token_transfers} = sanitize_token_types(rough_tokens, rough_token_transfers)
+    tokens = sanitize_token_types(rough_tokens, rough_token_transfers)
+    token_transfers = sanitize_weth_transfers(tokens, rough_token_transfers, weth_transfers.token_transfers)
 
     token_transfers
     |> Enum.filter(fn token_transfer ->
@@ -70,9 +70,43 @@ defmodule Indexer.Transform.TokenTransfers do
     token_transfers_from_logs_uniq
   end
 
+  defp sanitize_weth_transfers(total_tokens, total_transfers, weth_transfers) do
+    existing_token_types_map =
+      total_tokens
+      |> Enum.map(&{&1.contract_address_hash, &1.type})
+      |> Map.new()
+
+    invalid_weth_transfers =
+      Enum.reduce(weth_transfers, %{}, fn token_transfer, acc ->
+        if existing_token_types_map[token_transfer.token_contract_address_hash] == "ERC-721" do
+          Map.put(acc, token_transfer_to_key(token_transfer), true)
+        else
+          acc
+        end
+      end)
+
+    total_transfers
+    |> subtract_token_transfers(invalid_weth_transfers)
+    |> Enum.reverse()
+  end
+
+  defp token_transfer_to_key(token_transfer) do
+    {token_transfer.block_hash, token_transfer.transaction_hash, token_transfer.log_index}
+  end
+
+  defp subtract_token_transfers(tt_from, tt_to_subtract) do
+    Enum.reduce(tt_from, [], fn tt, acc ->
+      case tt_to_subtract[token_transfer_to_key(tt)] do
+        nil -> [tt | acc]
+        _ -> acc
+      end
+    end)
+  end
+
   defp sanitize_token_types(tokens, token_transfers) do
     existing_token_types_map =
       tokens
+      |> Enum.uniq()
       |> Enum.reduce([], fn %{contract_address_hash: address_hash}, acc ->
         case Repo.get_by(Token, contract_address_hash: address_hash) do
           %{type: type} -> [{address_hash, type} | acc]
@@ -94,17 +128,9 @@ defmodule Indexer.Transform.TokenTransfers do
         if token_type_priority(old_type) > token_type_priority(new_type), do: old_type, else: new_type
       end)
 
-    actual_tokens =
-      Enum.map(tokens, fn %{contract_address_hash: hash} = token ->
-        Map.put(token, :type, actual_token_types_map[hash])
-      end)
-
-    actual_token_transfers =
-      Enum.map(token_transfers, fn %{token_contract_address_hash: hash} = tt ->
-        Map.put(tt, :token_type, actual_token_types_map[hash])
-      end)
-
-    {actual_tokens, actual_token_transfers}
+    Enum.map(tokens, fn %{contract_address_hash: hash} = token ->
+      Map.put(token, :type, actual_token_types_map[hash])
+    end)
   end
 
   defp define_token_type(token_transfers) do
@@ -150,7 +176,7 @@ defmodule Indexer.Transform.TokenTransfers do
   # ERC-20 token transfer
   defp parse_params(%{second_topic: second_topic, third_topic: third_topic, fourth_topic: nil} = log)
        when not is_nil(second_topic) and not is_nil(third_topic) do
-    [amount] = decode_data(log.data, [{:uint, 256}])
+    [amount] = Helper.decode_data(log.data, [{:uint, 256}])
 
     token_transfer = %{
       amount: Decimal.new(amount || 0),
@@ -176,7 +202,7 @@ defmodule Indexer.Transform.TokenTransfers do
   # ERC-20 token transfer for WETH
   defp parse_params(%{second_topic: second_topic, third_topic: nil, fourth_topic: nil} = log)
        when not is_nil(second_topic) do
-    [amount] = decode_data(log.data, [{:uint, 256}])
+    [amount] = Helper.decode_data(log.data, [{:uint, 256}])
 
     {from_address_hash, to_address_hash} =
       if log.first_topic == TokenTransfer.weth_deposit_signature() do
@@ -209,7 +235,7 @@ defmodule Indexer.Transform.TokenTransfers do
   # ERC-721 token transfer with topics as addresses
   defp parse_params(%{second_topic: second_topic, third_topic: third_topic, fourth_topic: fourth_topic} = log)
        when not is_nil(second_topic) and not is_nil(third_topic) and not is_nil(fourth_topic) do
-    [token_id] = decode_data(fourth_topic, [{:uint, 256}])
+    [token_id] = Helper.decode_data(fourth_topic, [{:uint, 256}])
 
     token_transfer = %{
       block_number: log.block_number,
@@ -241,7 +267,7 @@ defmodule Indexer.Transform.TokenTransfers do
          } = log
        )
        when not is_nil(data) do
-    [from_address_hash, to_address_hash, token_id] = decode_data(data, [:address, :address, {:uint, 256}])
+    [from_address_hash, to_address_hash, token_id] = Helper.decode_data(data, [:address, :address, {:uint, 256}])
 
     token_transfer = %{
       block_number: log.block_number,
@@ -271,9 +297,9 @@ defmodule Indexer.Transform.TokenTransfers do
           data: data
         } = log
       ) do
-    [token_ids, values] = decode_data(data, [{:array, {:uint, 256}}, {:array, {:uint, 256}}])
+    [token_ids, values] = Helper.decode_data(data, [{:array, {:uint, 256}}, {:array, {:uint, 256}}])
 
-    if token_ids == [] || values == [] do
+    if is_nil(token_ids) or token_ids == [] or is_nil(values) or values == [] do
       nil
     else
       token_transfer = %{
@@ -299,7 +325,7 @@ defmodule Indexer.Transform.TokenTransfers do
   end
 
   def parse_erc1155_params(%{third_topic: third_topic, fourth_topic: fourth_topic, data: data} = log) do
-    [token_id, value] = decode_data(data, [{:uint, 256}, {:uint, 256}])
+    [token_id, value] = Helper.decode_data(data, [{:uint, 256}, {:uint, 256}])
 
     token_transfer = %{
       amount: value,

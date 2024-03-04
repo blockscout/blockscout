@@ -96,7 +96,9 @@ defmodule EthereumJSONRPC.Variant do
             ) :: {:ok, [raw_trace_params]} | {:error, reason :: term} | :ignore
 
   def get do
-    variant = System.get_env("ETHEREUM_JSONRPC_VARIANT", "nethermind")
+    default_variant = get_default_variant()
+
+    variant = System.get_env("ETHEREUM_JSONRPC_VARIANT", default_variant)
 
     cond do
       is_nil(variant) ->
@@ -110,6 +112,21 @@ defmodule EthereumJSONRPC.Variant do
         |> String.split(".")
         |> List.last()
         |> String.downcase()
+    end
+  end
+
+  # credo:disable-for-next-line
+  defp get_default_variant do
+    case Application.get_env(:explorer, :chain_type) do
+      "optimism" -> "geth"
+      "polygon_zkevm" -> "geth"
+      "zetachain" -> "geth"
+      "shibarium" -> "geth"
+      "stability" -> "geth"
+      "zksync" -> "geth"
+      "rsk" -> "rsk"
+      "filecoin" -> "filecoin"
+      _ -> "nethermind"
     end
   end
 end
