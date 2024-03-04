@@ -369,6 +369,15 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/:blob_hash_param", V2.BlobController, :blob)
       end
     end
+
+    scope "/validators" do
+      if Application.compile_env(:explorer, :chain_type) == "stability" do
+        scope "/stability" do
+          get("/", V2.ValidatorController, :stability_validators_list)
+          get("/counters", V2.ValidatorController, :stability_validators_counters)
+        end
+      end
+    end
   end
 
   scope "/v1", as: :api_v1 do

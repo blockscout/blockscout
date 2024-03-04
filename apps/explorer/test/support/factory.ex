@@ -23,6 +23,7 @@ defmodule Explorer.Factory do
   alias Explorer.Admin.Administrator
   alias Explorer.Chain.Beacon.{Blob, BlobTransaction}
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
+  alias Explorer.Chain.Stability.Validator, as: ValidatorStability
 
   alias Explorer.Chain.{
     Address,
@@ -1116,4 +1117,13 @@ defmodule Explorer.Factory do
   end
 
   def random_bool, do: Enum.random([true, false])
+
+  def validator_stability_factory do
+    address = insert(:address)
+
+    %ValidatorStability{
+      address_hash: address.hash,
+      state: Enum.random(0..2)
+    }
+  end
 end

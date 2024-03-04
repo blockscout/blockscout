@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.PagingHelper do
     Helper for fetching filters and other url query parameters
   """
   import Explorer.Chain, only: [string_to_transaction_hash: 1]
+  alias Explorer.Chain.Stability.Validator, as: ValidatorStability
   alias Explorer.Chain.Transaction
   alias Explorer.{Helper, PagingOptions, SortingHelper}
 
@@ -34,6 +35,9 @@ defmodule BlockScoutWeb.PagingHelper do
   @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155"]
   @allowed_nft_token_type_labels ["ERC-721", "ERC-1155"]
   @allowed_chain_id [1, 56, 99]
+  @allowed_stability_validators_states ["active", "probation", "inactive"]
+
+  def allowed_stability_validators_states, do: @allowed_stability_validators_states
 
   def paging_options(%{"block_number" => block_number_string, "index" => index_string}, [:validated | _]) do
     with {block_number, ""} <- Integer.parse(block_number_string),
@@ -57,6 +61,13 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def paging_options(_params, _filter), do: [paging_options: @default_paging_options]
 
+  @spec stability_validators_state_options(map()) :: [{:state, list()}, ...]
+  def stability_validators_state_options(%{"state_filter" => state}) do
+    [state: filters_to_list(state, @allowed_stability_validators_states, :downcase)]
+  end
+
+  def stability_validators_state_options(_), do: [state: []]
+
   @spec token_transfers_types_options(map()) :: [{:token_type, list}]
   def token_transfers_types_options(%{"type" => filters}) do
     [
@@ -78,7 +89,9 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def nft_token_types_options(_), do: [token_type: []]
 
-  defp filters_to_list(filters, allowed), do: filters |> String.upcase() |> parse_filter(allowed)
+  defp filters_to_list(filters, allowed, variant \\ :upcase)
+  defp filters_to_list(filters, allowed, :downcase), do: filters |> String.downcase() |> parse_filter(allowed)
+  defp filters_to_list(filters, allowed, :upcase), do: filters |> String.upcase() |> parse_filter(allowed)
 
   # sobelow_skip ["DOS.StringToAtom"]
   def filter_options(%{"filter" => filter}, fallback) do
@@ -188,7 +201,8 @@ defmodule BlockScoutWeb.PagingHelper do
       "filter",
       "q",
       "sort",
-      "order"
+      "order",
+      "state_filter"
     ])
   end
 
@@ -267,4 +281,26 @@ defmodule BlockScoutWeb.PagingHelper do
     do: [{:dynamic, :fee, :desc_nulls_last, Transaction.dynamic_fee()}]
 
   defp do_address_transaction_sorting(_, _), do: []
+
+  @spec validators_stability_sorting(%{required(String.t()) => String.t()}) :: [
+          {:sorting, SortingHelper.sorting_params()}
+        ]
+  def validators_stability_sorting(%{"sort" => sort_field, "order" => order}) do
+    [sorting: do_validators_stability_sorting(sort_field, order)]
+  end
+
+  def validators_stability_sorting(_), do: []
+
+  defp do_validators_stability_sorting("state", "asc"), do: [asc_nulls_first: :state]
+  defp do_validators_stability_sorting("state", "desc"), do: [desc_nulls_last: :state]
+  defp do_validators_stability_sorting("address_hash", "asc"), do: [asc_nulls_first: :address_hash]
+  defp do_validators_stability_sorting("address_hash", "desc"), do: [desc_nulls_last: :address_hash]
+
+  defp do_validators_stability_sorting("blocks_validated", "asc"),
+    do: [{:dynamic, :blocks_validated, :asc_nulls_first, ValidatorStability.dynamic_validated_blocks()}]
+
+  defp do_validators_stability_sorting("blocks_validated", "desc"),
+    do: [{:dynamic, :blocks_validated, :desc_nulls_last, ValidatorStability.dynamic_validated_blocks()}]
+
+  defp do_validators_stability_sorting(_, _), do: []
 end
