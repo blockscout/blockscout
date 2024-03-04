@@ -207,7 +207,7 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/zkevm-batch/:batch_number", V2.TransactionController, :polygon_zkevm_batch)
       end
 
-      if System.get_env("CHAIN_TYPE") == "zksync" do
+      if Application.compile_env(:explorer, :chain_type) == "zksync" do
         get("/zksync-batch/:batch_number", V2.TransactionController, :zksync_batch)
       end
 
@@ -389,10 +389,16 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/zksync" do
-      if System.get_env("CHAIN_TYPE") == "zksync" do
+      if Application.compile_env(:explorer, :chain_type) == "zksync" do
         get("/batches", V2.ZkSyncController, :batches)
         get("/batches/count", V2.ZkSyncController, :batches_count)
         get("/batches/:batch_number", V2.ZkSyncController, :batch)
+      end
+    end
+
+    scope "/blobs" do
+      if Application.compile_env(:explorer, :chain_type) == "ethereum" do
+        get("/:blob_hash_param", V2.BlobController, :blob)
       end
     end
   end
