@@ -21,6 +21,8 @@ defmodule Explorer.EthRPC do
   alias Explorer.Chain.Cache.{BlockNumber, GasPriceOracle}
   alias Explorer.Etherscan.{Blocks, Logs, RPC}
 
+  @nil_gas_price_message "Gas price is not estimated yet"
+
   @methods %{
     "eth_blockNumber" => %{
       action: :eth_block_number,
@@ -813,7 +815,7 @@ defmodule Explorer.EthRPC do
         {:ok, Wei.hex_format(gas_prices[:average][:wei])}
 
       _ ->
-        {:error, "Gas price is not estimated yet"}
+        {:error, @nil_gas_price_message}
     end
   end
 
@@ -827,7 +829,7 @@ defmodule Explorer.EthRPC do
         {:ok, Wei.hex_format(gas_prices[:average][:priority_fee_wei])}
 
       _ ->
-        {:error, "Gas price is not estimated yet"}
+        {:error, @nil_gas_price_message}
     end
   end
 
@@ -900,7 +902,7 @@ defmodule Explorer.EthRPC do
        "from" => transaction.from_address_hash,
        "gasUsed" => encode_quantity(transaction.gas_used),
        "logs" => Enum.map(transaction.logs, &render_log(&1, transaction)),
-       'logsBloom' => "0x" <> (transaction.logs |> BloomFilter.logs_bloom() |> Base.encode16()),
+       'logsBloom' => "0x" <> (transaction.logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
        "status" => encode_quantity(status),
        "to" => transaction.to_address_hash,
        "transactionHash" => transaction.hash,
