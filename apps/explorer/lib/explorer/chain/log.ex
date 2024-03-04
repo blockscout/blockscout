@@ -26,7 +26,7 @@ defmodule Explorer.Chain.Log do
    * `fourth_topic` - `topics[3]`
    * `transaction` - transaction for which `log` is
    * `transaction_hash` - foreign key for `transaction`.
-   * `index` - index of the log entry in all logs for the `transaction`
+   * `index` - index of the log entry within the block
   """
   @primary_key false
   typed_schema "logs" do

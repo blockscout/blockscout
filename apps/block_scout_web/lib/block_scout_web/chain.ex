@@ -17,7 +17,9 @@ defmodule BlockScoutWeb.Chain do
 
   import Explorer.Helper, only: [parse_integer: 1]
 
+  alias BlockScoutWeb.PagingHelper
   alias Ecto.Association.NotLoaded
+  alias Explorer.Chain.UserOperation
   alias Explorer.Account.{TagAddress, TagTransaction, WatchlistAddress}
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.Block.Reward
@@ -40,6 +42,9 @@ defmodule BlockScoutWeb.Chain do
     UserOperation,
     Wei
   }
+
+  alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
+  alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
 
   alias Explorer.Chain.PolygonZkevm.TransactionBatch
   alias Explorer.PagingOptions
@@ -337,6 +342,16 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {index}}]
   end
 
+  def paging_options(%{"nonce" => nonce_string}) when is_binary(nonce_string) do
+    case Integer.parse(nonce_string) do
+      {nonce, ""} ->
+        [paging_options: %{@default_paging_options | key: {nonce}}]
+
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
   def paging_options(%{"number" => number_string}) when is_binary(number_string) do
     case Integer.parse(number_string) do
       {number, ""} ->
@@ -345,6 +360,10 @@ defmodule BlockScoutWeb.Chain do
       _ ->
         [paging_options: @default_paging_options]
     end
+  end
+
+  def paging_options(%{"nonce" => nonce}) when is_integer(nonce) do
+    [paging_options: %{@default_paging_options | key: {nonce}}]
   end
 
   def paging_options(%{"number" => number}) when is_integer(number) do
@@ -404,6 +423,16 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  def paging_options(%{"l1_block_number" => block_number, "tx_hash" => tx_hash}) do
+    with {block_number, ""} <- Integer.parse(block_number),
+         {:ok, tx_hash} <- string_to_transaction_hash(tx_hash) do
+      [paging_options: %{@default_paging_options | key: {block_number, tx_hash}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
   # clause for Polygon Edge Deposits and Withdrawals and for account's entities pagination
   def paging_options(%{"id" => id_string}) when is_binary(id_string) do
     case Integer.parse(id_string) do
@@ -430,6 +459,25 @@ defmodule BlockScoutWeb.Chain do
 
   def paging_options(%{"token_contract_address_hash" => token_contract_address_hash, "token_type" => token_type}) do
     [paging_options: %{@default_paging_options | key: {token_contract_address_hash, token_type}}]
+  end
+
+  # Clause for `Explorer.Chain.Stability.Validator`,
+  #  returned by `BlockScoutWeb.API.V2.ValidatorController.stability_validators_list/2` (`/api/v2/validators/stability`)
+  def paging_options(%{
+        "state" => state,
+        "address_hash" => address_hash_string,
+        "blocks_validated" => blocks_validated_string
+      }) do
+    [
+      paging_options: %{
+        @default_paging_options
+        | key: %{
+            address_hash: parse_address_hash(address_hash_string),
+            blocks_validated: parse_integer(blocks_validated_string),
+            state: if(state in PagingHelper.allowed_stability_validators_states(), do: state)
+          }
+      }
+    ]
   end
 
   def paging_options(_params), do: [paging_options: @default_paging_options]
@@ -511,6 +559,13 @@ defmodule BlockScoutWeb.Chain do
     case token_contract_address_from_token_name(name) do
       {:ok, hash} -> find_or_insert_address_from_hash(hash)
       _ -> {:error, :not_found}
+    end
+  end
+
+  defp parse_address_hash(address_hash_string) do
+    case Hash.Address.cast(address_hash_string) do
+      {:ok, address_hash} -> address_hash
+      _ -> nil
     end
   end
 
@@ -602,6 +657,14 @@ defmodule BlockScoutWeb.Chain do
     %{"smart_contract_id" => smart_contract.id}
   end
 
+  defp paging_params(%OptimismDeposit{l1_block_number: l1_block_number, l2_transaction_hash: l2_tx_hash}) do
+    %{"l1_block_number" => l1_block_number, "tx_hash" => l2_tx_hash}
+  end
+
+  defp paging_params(%OptimismOutputRoot{l2_output_index: index}) do
+    %{"index" => index}
+  end
+
   defp paging_params(%SmartContract{} = smart_contract) do
     %{
       "smart_contract_id" => smart_contract.id,
@@ -613,6 +676,14 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%{index: index}) do
     %{"index" => index}
+  end
+
+  defp paging_params(%{msg_nonce: nonce}) do
+    %{"nonce" => nonce}
+  end
+
+  defp paging_params(%{l2_block_number: block_number}) do
+    %{"block_number" => block_number}
   end
 
   # clause for zkEVM batches pagination

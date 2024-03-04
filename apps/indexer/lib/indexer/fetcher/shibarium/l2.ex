@@ -174,7 +174,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
       chunk_start = List.first(current_chunk)
       chunk_end = List.last(current_chunk)
 
-      Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L2")
+      Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L2)
 
       operations =
         chunk_start..chunk_end
@@ -201,7 +201,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
         start_block,
         end_block,
         "#{Enum.count(operations)} L2 operation(s)",
-        "L2"
+        :L2
       )
     end)
 
@@ -316,7 +316,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   end
 
   defp get_logs_all(block_range, child_chain, bone_withdraw, json_rpc_named_arguments) do
-    blocks = get_blocks_by_range(block_range, json_rpc_named_arguments, 100_000_000)
+    blocks = get_blocks_by_range(block_range, json_rpc_named_arguments, Helper.infinite_retries_number())
 
     deposit_logs = get_deposit_logs_from_receipts(blocks, child_chain, json_rpc_named_arguments)
 
@@ -355,7 +355,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     end)
     |> Enum.chunk_every(@eth_get_logs_range_size)
     |> Enum.reduce([], fn hashes, acc ->
-      acc ++ get_receipt_logs(hashes, json_rpc_named_arguments, 100_000_000)
+      acc ++ get_receipt_logs(hashes, json_rpc_named_arguments, Helper.infinite_retries_number())
     end)
     |> filter_deposit_events(child_chain)
   end
@@ -376,7 +376,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     end)
     |> Enum.chunk_every(@eth_get_logs_range_size)
     |> Enum.reduce([], fn hashes, acc ->
-      acc ++ get_receipt_logs(hashes, json_rpc_named_arguments, 100_000_000)
+      acc ++ get_receipt_logs(hashes, json_rpc_named_arguments, Helper.infinite_retries_number())
     end)
     |> filter_withdrawal_events(bone_withdraw)
   end

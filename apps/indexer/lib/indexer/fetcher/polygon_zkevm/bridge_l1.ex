@@ -146,7 +146,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
         chunk_end = List.last(current_chunk)
 
         if chunk_start <= chunk_end do
-          Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+          Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L1)
 
           operations =
             {chunk_start, chunk_end}
@@ -161,7 +161,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
             start_block,
             end_block,
             "#{Enum.count(operations)} L1 operation(s)",
-            "L1"
+            :L1
           )
         end
 
