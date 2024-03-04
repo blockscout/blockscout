@@ -173,14 +173,19 @@ defmodule Explorer.EthRPC do
     %{
       "address" => to_string(log.address_hash),
       "blockHash" => to_string(log.block_hash),
-      "blockNumber" => Integer.to_string(log.block_number, 16),
+      "blockNumber" =>
+        log.block_number
+        |> encode_quantity(),
       "data" => to_string(log.data),
-      "logIndex" => Integer.to_string(log.index, 16),
+      "logIndex" =>
+        log.index
+        |> encode_quantity(),
       "removed" => log.block_consensus == false,
       "topics" => topics,
       "transactionHash" => to_string(log.transaction_hash),
-      "transactionIndex" => log.transaction_index,
-      "transactionLogIndex" => log.index
+      "transactionIndex" =>
+        log.transaction_index
+        |> encode_quantity()
     }
   end
 

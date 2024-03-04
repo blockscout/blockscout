@@ -10,6 +10,7 @@ defmodule ConfigHelper do
     repos =
       case System.get_env("CHAIN_TYPE") do
         "ethereum" -> base_repos ++ [Explorer.Repo.Beacon]
+        "optimism" -> base_repos ++ [Explorer.Repo.Optimism]
         "polygon_edge" -> base_repos ++ [Explorer.Repo.PolygonEdge]
         "polygon_zkevm" -> base_repos ++ [Explorer.Repo.PolygonZkevm]
         "rsk" -> base_repos ++ [Explorer.Repo.RSK]

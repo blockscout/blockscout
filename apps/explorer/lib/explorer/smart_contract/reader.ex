@@ -3,7 +3,7 @@ defmodule Explorer.SmartContract.Reader do
   Reads Smart Contract functions from the blockchain.
 
   For information on smart contract's Application Binary Interface (ABI), visit the
-  [wiki](https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI).
+  [wiki](https://docs.soliditylang.org/en/develop/abi-spec.html).
   """
 
   alias EthereumJSONRPC.{Contract, Encoder}

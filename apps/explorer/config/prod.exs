@@ -22,6 +22,10 @@ config :explorer, Explorer.Repo.Account,
   queue_target: :timer.seconds(5),
   queue_interval: :timer.seconds(20)
 
+config :explorer, Explorer.Repo.Optimism,
+  prepare: :unnamed,
+  timeout: :timer.seconds(60)
+
 config :explorer, Explorer.Repo.PolygonEdge,
   prepare: :unnamed,
   timeout: :timer.seconds(60)

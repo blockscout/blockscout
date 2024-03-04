@@ -126,6 +126,7 @@ defmodule Explorer.Application do
         configure(Explorer.TokenInstanceOwnerAddressMigration.Supervisor),
         sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand),
         configure(Explorer.Chain.Cache.RootstockLockedBTC),
+        configure(Explorer.Chain.Cache.OptimismFinalizationPeriod),
         configure(Explorer.Migrator.TransactionsDenormalization),
         configure(Explorer.Migrator.AddressCurrentTokenBalanceTokenType),
         configure(Explorer.Migrator.AddressTokenBalanceTokenType),
@@ -142,6 +143,7 @@ defmodule Explorer.Application do
     if Mix.env() == :test do
       [
         Explorer.Repo.Beacon,
+        Explorer.Repo.Optimism,
         Explorer.Repo.PolygonEdge,
         Explorer.Repo.PolygonZkevm,
         Explorer.Repo.RSK,

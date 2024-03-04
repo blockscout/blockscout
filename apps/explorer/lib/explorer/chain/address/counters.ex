@@ -92,7 +92,7 @@ defmodule Explorer.Chain.Address.Counters do
     if is_nil(cached_value) || cached_value == 0 do
       count = CacheHelper.estimated_count_from("addresses", options)
 
-      max(count, 0)
+      if is_nil(count), do: 0, else: max(count, 0)
     else
       cached_value
     end

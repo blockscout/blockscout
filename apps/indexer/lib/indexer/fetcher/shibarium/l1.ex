@@ -243,7 +243,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
         chunk_end = List.last(current_chunk)
 
         if chunk_start <= chunk_end do
-          Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+          Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L1)
 
           operations =
             {chunk_start, chunk_end}
@@ -278,7 +278,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
             start_block,
             end_block,
             "#{Enum.count(operations)} L1 operation(s)",
-            "L1"
+            :L1
           )
         end
 
@@ -293,7 +293,9 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
       end)
 
     new_start_block = last_written_block + 1
-    {:ok, new_end_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+
+    {:ok, new_end_block} =
+      Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
 
     delay =
       if new_end_block == last_written_block do
@@ -352,7 +354,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     |> Kernel.||({0, nil})
   end
 
-  defp get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, retries \\ 100_000_000) do
+  defp get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, retries) do
     processed_from_block = integer_to_quantity(from_block)
     processed_to_block = integer_to_quantity(to_block)
 
@@ -402,7 +404,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
             @exited_ether_event
           ]
         ],
-        json_rpc_named_arguments
+        json_rpc_named_arguments,
+        Helper.infinite_retries_number()
       )
 
     contract_addresses =
@@ -421,7 +424,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
           @transfer_event,
           contract_addresses
         ],
-        json_rpc_named_arguments
+        json_rpc_named_arguments,
+        Helper.infinite_retries_number()
       )
 
     {:ok, unknown_erc1155_tokens_result} =
@@ -437,7 +441,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
             nil,
             pad_address_hash(erc1155_predicate_proxy)
           ],
-          json_rpc_named_arguments
+          json_rpc_named_arguments,
+          Helper.infinite_retries_number()
         )
       end
 
@@ -552,7 +557,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     timestamps =
       events
       |> filter_deposit_events()
-      |> Helper.get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+      |> Helper.get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number())
       |> Enum.reduce(%{}, fn block, acc ->
         block_number = quantity_to_integer(Map.get(block, "number"))
         {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))

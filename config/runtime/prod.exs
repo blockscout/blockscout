@@ -67,6 +67,12 @@ config :explorer, Explorer.Repo.BridgedTokens,
   pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
+# Configures Optimism database
+config :explorer, Explorer.Repo.Optimism,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: 1,
+  ssl: ExplorerConfigHelper.ssl_enabled?()
+
 # Configures PolygonEdge database
 config :explorer, Explorer.Repo.PolygonEdge,
   url: System.get_env("DATABASE_URL"),
