@@ -203,7 +203,13 @@ defmodule EthereumJSONRPC.HTTP do
     with {:ok, method_to_url} <- Keyword.fetch(options, :method_to_url),
          {:ok, method_atom} <- to_existing_atom(method),
          {:ok, url} <- Keyword.fetch(method_to_url, method_atom) do
-      {:trace, EndpointAvailabilityObserver.maybe_replace_url(url, options[:fallback_trace_url], :trace)}
+      {url_type, fallback_url} =
+        case method_atom do
+          :eth_call -> {:eth_call, options[:fallback_eth_call_url]}
+          _ -> {:trace, options[:fallback_trace_url]}
+        end
+
+      {url_type, EndpointAvailabilityObserver.maybe_replace_url(url, fallback_url, url_type)}
     else
       _ ->
         url =

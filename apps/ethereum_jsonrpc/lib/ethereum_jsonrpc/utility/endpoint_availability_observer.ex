@@ -20,7 +20,7 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
   def init(_) do
     schedule_next_cleaning()
 
-    {:ok, %{error_counts: %{}, unavailable_endpoints: %{ws: [], trace: [], http: []}}}
+    {:ok, %{error_counts: %{}, unavailable_endpoints: %{ws: [], trace: [], http: [], eth_call: []}}}
   end
 
   def inc_error_count(url, json_rpc_named_arguments, url_type) do
