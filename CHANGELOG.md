@@ -12,6 +12,7 @@
 
 ### Fixes
 
+- [#9514](https://github.com/blockscout/blockscout/pull/9514) - Fix missing `0x` prefix for `blockNumber`, `logIndex`, `transactionIndex` and remove `transactionLogIndex` in `eth_getLogs` response.
 - [#9512](https://github.com/blockscout/blockscout/pull/9512) - Docker-compose 2.24.6 compatibility
 - [#9262](https://github.com/blockscout/blockscout/pull/9262) - Fix withdrawal status
 - [#9123](https://github.com/blockscout/blockscout/pull/9123) - Fixes in Optimism due to changed log topics type
