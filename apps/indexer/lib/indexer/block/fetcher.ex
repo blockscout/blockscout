@@ -44,6 +44,8 @@ defmodule Indexer.Block.Fetcher do
     TransactionActions
   }
 
+  alias Indexer.Transform.Optimism.Withdrawals, as: OptimismWithdrawals
+
   alias Indexer.Transform.PolygonEdge.{DepositExecutes, Withdrawals}
 
   alias Indexer.Transform.Shibarium.Bridge, as: ShibariumBridge
@@ -149,6 +151,8 @@ defmodule Indexer.Block.Fetcher do
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
+         optimism_withdrawals =
+           if(callback_module == Indexer.Block.Realtime.Fetcher, do: OptimismWithdrawals.parse(logs), else: []),
          polygon_edge_withdrawals =
            if(callback_module == Indexer.Block.Realtime.Fetcher, do: Withdrawals.parse(logs), else: []),
          polygon_edge_deposit_executes =
@@ -215,6 +219,7 @@ defmodule Indexer.Block.Fetcher do
          },
          chain_type_import_options = %{
            transactions_with_receipts: transactions_with_receipts,
+           optimism_withdrawals: optimism_withdrawals,
            polygon_edge_withdrawals: polygon_edge_withdrawals,
            polygon_edge_deposit_executes: polygon_edge_deposit_executes,
            polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
@@ -248,6 +253,7 @@ defmodule Indexer.Block.Fetcher do
 
   defp import_options(basic_import_options, %{
          transactions_with_receipts: transactions_with_receipts,
+         optimism_withdrawals: optimism_withdrawals,
          polygon_edge_withdrawals: polygon_edge_withdrawals,
          polygon_edge_deposit_executes: polygon_edge_deposit_executes,
          polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
@@ -259,6 +265,10 @@ defmodule Indexer.Block.Fetcher do
         |> Map.put_new(:beacon_blob_transactions, %{
           params: transactions_with_receipts |> Enum.filter(&Map.has_key?(&1, :max_fee_per_blob_gas))
         })
+
+      "optimism" ->
+        basic_import_options
+        |> Map.put_new(:optimism_withdrawals, %{params: optimism_withdrawals})
 
       "polygon_edge" ->
         basic_import_options

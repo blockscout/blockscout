@@ -21,7 +21,7 @@ defmodule Indexer.Transform.PolygonZkevm.Bridge do
 
     items =
       with false <- is_nil(Application.get_env(:indexer, BridgeL2)[:start_block]),
-           false <- System.get_env("CHAIN_TYPE") != "polygon_zkevm",
+           false <- Application.get_env(:explorer, :chain_type) != "polygon_zkevm",
            rpc_l1 = Application.get_all_env(:indexer)[BridgeL1][:rpc],
            {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(rpc_l1)},
            bridge_contract = Application.get_env(:indexer, BridgeL2)[:bridge_contract],
@@ -33,7 +33,7 @@ defmodule Indexer.Transform.PolygonZkevm.Bridge do
         start_block = Enum.min(block_numbers)
         end_block = Enum.max(block_numbers)
 
-        Helper.log_blocks_chunk_handling(start_block, end_block, start_block, end_block, nil, "L2")
+        Helper.log_blocks_chunk_handling(start_block, end_block, start_block, end_block, nil, :L2)
 
         json_rpc_named_arguments_l1 = Helper.json_rpc_named_arguments(rpc_l1)
 
@@ -50,7 +50,7 @@ defmodule Indexer.Transform.PolygonZkevm.Bridge do
           start_block,
           end_block,
           "#{Enum.count(items)} L2 operation(s)",
-          "L2"
+          :L2
         )
 
         items

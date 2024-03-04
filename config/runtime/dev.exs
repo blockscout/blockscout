@@ -92,6 +92,13 @@ config :explorer, Explorer.Repo.BridgedTokens,
   # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
   pool_size: 1
 
+# Configure Optimism database
+config :explorer, Explorer.Repo.Optimism,
+  database: database,
+  hostname: hostname,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: 1
+
 # Configure PolygonEdge database
 config :explorer, Explorer.Repo.PolygonEdge,
   database: database,

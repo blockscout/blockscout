@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Optimism.Withdrawal, as: OptimismWithdrawal
   alias Explorer.Chain.PolygonEdge.Reader
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.Counters.AverageBlockTime
@@ -440,6 +441,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> maybe_put_stability_fee(transaction)
   end
 
+  defp add_optional_transaction_field(result, transaction, field) do
+    case Map.get(transaction, field) do
+      nil -> result
+      value -> Map.put(result, Atom.to_string(field), value)
+    end
+  end
+
+  # credo:disable-for-next-line
   defp chain_type_fields(result, transaction, single_tx?, conn, watchlist_names) do
     case {single_tx?, Application.get_env(:explorer, :chain_type)} do
       {true, "polygon_edge"} ->
@@ -455,6 +464,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           |> add_optional_transaction_field(transaction, "zkevm_verify_hash", :zkevm_verify_transaction, :hash)
 
         Map.put(extended_result, "zkevm_status", zkevm_status(extended_result))
+
+      {true, "optimism"} ->
+        result
+        |> add_optional_transaction_field(transaction, :l1_fee)
+        |> add_optional_transaction_field(transaction, :l1_fee_scalar)
+        |> add_optional_transaction_field(transaction, :l1_gas_price)
+        |> add_optional_transaction_field(transaction, :l1_gas_used)
+        |> add_optimism_fields(transaction.hash, single_tx?)
 
       {true, "suave"} ->
         suave_fields(transaction, result, single_tx?, conn, watchlist_names)
@@ -561,6 +578,25 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           "raw_input" => transaction.wrapped_input
         })
       end
+    end
+  end
+
+  defp add_optimism_fields(result, transaction_hash, single_tx?) do
+    if Application.get_env(:explorer, :chain_type) == "optimism" && single_tx? do
+      withdrawals =
+        transaction_hash
+        |> OptimismWithdrawal.transaction_statuses()
+        |> Enum.map(fn {nonce, status, l1_transaction_hash} ->
+          %{
+            "nonce" => nonce,
+            "status" => status,
+            "l1_transaction_hash" => l1_transaction_hash
+          }
+        end)
+
+      Map.put(result, "op_withdrawals", withdrawals)
+    else
+      result
     end
   end
 
