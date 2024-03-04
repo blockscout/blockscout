@@ -20,13 +20,13 @@ defmodule Indexer.Supervisor do
   alias Indexer.Block.Realtime, as: BlockRealtime
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
+  alias Indexer.Fetcher.Stability.Validator, as: ValidatorStability
   alias Indexer.Fetcher.TokenInstance.LegacySanitize, as: TokenInstanceLegacySanitize
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Indexer.Fetcher.TokenInstance.Retry, as: TokenInstanceRetry
   alias Indexer.Fetcher.TokenInstance.Sanitize, as: TokenInstanceSanitize
   alias Indexer.Fetcher.TokenInstance.SanitizeERC1155, as: TokenInstanceSanitizeERC1155
   alias Indexer.Fetcher.TokenInstance.SanitizeERC721, as: TokenInstanceSanitizeERC721
-  alias Indexer.Fetcher.Stability.Validator, as: ValidatorStability
 
   alias Indexer.Fetcher.{
     BlockReward,

@@ -164,7 +164,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   if Application.compile_env(:explorer, :chain_type) == "stability" do
     defp fetch_validators_async do
-      GenServer.cast(Indexer.Fetcher.Validator.Stability, :update_validators_list)
+      GenServer.cast(Indexer.Fetcher.Stability.Validator, :update_validators_list)
     end
   else
     defp fetch_validators_async do

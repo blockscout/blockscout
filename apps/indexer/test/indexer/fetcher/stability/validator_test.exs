@@ -48,7 +48,7 @@ defmodule Indexer.Fetcher.Stability.ValidatorTest do
         _validator_inactive = insert(:validator_stability, state: :inactive)
         _validator_probation = insert(:validator_stability, state: :probation)
 
-        start_supervised!({Indexer.Fetcher.Validator.Stability, name: Indexer.Fetcher.Validator.Stability})
+        start_supervised!({Indexer.Fetcher.Stability.Validator, name: Indexer.Fetcher.Stability.Validator})
 
         EthereumJSONRPC.Mox
         |> expect(:json_rpc, 1, fn
@@ -105,7 +105,7 @@ defmodule Indexer.Fetcher.Stability.ValidatorTest do
         validator_probation2 = insert(:validator_stability, state: :probation)
         _validator_probation3 = insert(:validator_stability, state: :probation)
 
-        start_supervised!({Indexer.Fetcher.Validator.Stability, name: Indexer.Fetcher.Validator.Stability})
+        start_supervised!({Indexer.Fetcher.Stability.Validator, name: Indexer.Fetcher.Stability.Validator})
 
         EthereumJSONRPC.Mox
         |> expect(:json_rpc, fn
