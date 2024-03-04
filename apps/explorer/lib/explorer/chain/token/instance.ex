@@ -124,6 +124,9 @@ defmodule Explorer.Chain.Token.Instance do
       %PagingOptions{key: {_contract_address_hash, _token_id, "ERC-1155"}} ->
         erc_1155_token_instances_by_address_hash(address_hash, options)
 
+      %PagingOptions{key: {_contract_address_hash, _token_id, "ERC-404"}} ->
+        erc_404_token_instances_by_address_hash(address_hash, options)
+
       _ ->
         erc_721 = erc_721_token_instances_by_owner_address_hash(address_hash, options)
 
