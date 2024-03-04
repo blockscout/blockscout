@@ -18,9 +18,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Setup repo
         uses: ./.github/actions/setup-repo
+        id: setup
         with:
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          docker-remote-multi-platform: true
+          docker-arm-host: 3.145.97.144
+          docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
       - name: Build & Push Core Docker image
         uses: docker/build-push-action@v5
@@ -31,6 +35,7 @@ jobs:
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
           cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
           tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}
+          labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -57,6 +62,7 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: blockscout/blockscout-zkevm:latest, blockscout/blockscout-zkevm:${{ env.RELEASE_VERSION }}
+          labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -79,6 +85,7 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: blockscout/blockscout-suave:latest, blockscout/blockscout-suave:${{ env.RELEASE_VERSION }}
+          labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8

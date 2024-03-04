@@ -66,6 +66,8 @@
 
 ### Chore
 
+- [#9468](https://github.com/blockscout/blockscout/pull/9468) - Use remote arm64 builder in CI
+
 <details>
   <summary>Dependencies version bumps</summary>
 
