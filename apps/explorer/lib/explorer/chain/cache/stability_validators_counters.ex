@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Cache.ValidatorStabilityCounter do
+defmodule Explorer.Chain.Cache.StabilityValidatorsCounters do
   @moduledoc """
   Counts and store counters of validators stability.
 
@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Cache.ValidatorStabilityCounter do
   use GenServer
 
   alias Explorer.Chain
-  alias Explorer.Chain.ValidatorStability
+  alias Explorer.Chain.Stability.Validator, as: ValidatorStability
 
   @validators_counter_key "stability_validators_counter"
   @new_validators_counter_key "new_stability_validators_counter"

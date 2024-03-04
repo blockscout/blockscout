@@ -1,11 +1,11 @@
-defmodule Indexer.Fetcher.ValidatorStability do
+defmodule Indexer.Fetcher.Stability.Validator do
   @moduledoc """
   GenServer responsible for updating the list of stability validators in the database.
   """
   use GenServer
 
   alias Explorer.Chain.Hash.Address, as: AddressHash
-  alias Explorer.Chain.ValidatorStability
+  alias Explorer.Chain.Stability.Validator, as: ValidatorStability
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)

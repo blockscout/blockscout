@@ -1,10 +1,10 @@
-defmodule Indexer.Fetcher.ValidatorStabilityTest do
+defmodule Indexer.Fetcher.Stability.ValidatorTest do
   use EthereumJSONRPC.Case
   use Explorer.DataCase
 
   import Mox
 
-  alias Explorer.Chain.ValidatorStability
+  alias Explorer.Chain.Stability.Validator, as: ValidatorStability
   alias EthereumJSONRPC.Encoder
 
   setup :verify_on_exit!
@@ -48,7 +48,7 @@ defmodule Indexer.Fetcher.ValidatorStabilityTest do
         _validator_inactive = insert(:validator_stability, state: :inactive)
         _validator_probation = insert(:validator_stability, state: :probation)
 
-        start_supervised!({Indexer.Fetcher.ValidatorStability, name: Indexer.Fetcher.ValidatorStability})
+        start_supervised!({Indexer.Fetcher.Validator.Stability, name: Indexer.Fetcher.Validator.Stability})
 
         EthereumJSONRPC.Mox
         |> expect(:json_rpc, 1, fn
@@ -105,7 +105,7 @@ defmodule Indexer.Fetcher.ValidatorStabilityTest do
         validator_probation2 = insert(:validator_stability, state: :probation)
         _validator_probation3 = insert(:validator_stability, state: :probation)
 
-        start_supervised!({Indexer.Fetcher.ValidatorStability, name: Indexer.Fetcher.ValidatorStability})
+        start_supervised!({Indexer.Fetcher.Validator.Stability, name: Indexer.Fetcher.Validator.Stability})
 
         EthereumJSONRPC.Mox
         |> expect(:json_rpc, fn

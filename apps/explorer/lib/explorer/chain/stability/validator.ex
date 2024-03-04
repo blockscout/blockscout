@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.ValidatorStability do
+defmodule Explorer.Chain.Stability.Validator do
   @moduledoc """
     Stability validators
   """
@@ -231,7 +231,7 @@ defmodule Explorer.Chain.ValidatorStability do
   end
 
   @doc """
-    Derive next page params from %ValidatorStability{}
+    Derive next page params from %Explorer.Chain.Stability.Validator{}
   """
   @spec next_page_params(t()) :: map()
   def next_page_params(%__MODULE__{state: state, address_hash: address_hash, blocks_validated: blocks_validated}) do

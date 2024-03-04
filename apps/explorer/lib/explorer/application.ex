@@ -133,7 +133,7 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.SanitizeMissingBlockRanges),
         configure(Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers),
         configure(Explorer.Migrator.TokenTransferTokenType),
-        configure_chain_type_dependent_process(Explorer.Chain.Cache.ValidatorStabilityCounter, "stability")
+        configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, "stability")
       ]
       |> List.flatten()
 

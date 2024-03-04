@@ -26,6 +26,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.TokenInstance.Sanitize, as: TokenInstanceSanitize
   alias Indexer.Fetcher.TokenInstance.SanitizeERC1155, as: TokenInstanceSanitizeERC1155
   alias Indexer.Fetcher.TokenInstance.SanitizeERC721, as: TokenInstanceSanitizeERC721
+  alias Indexer.Fetcher.Stability.Validator, as: ValidatorStability
 
   alias Indexer.Fetcher.{
     BlockReward,
@@ -42,7 +43,6 @@ defmodule Indexer.Supervisor do
     TokenUpdater,
     TransactionAction,
     UncleBlock,
-    ValidatorStability,
     Withdrawal
   }
 

@@ -461,6 +461,8 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {token_contract_address_hash, token_type}}]
   end
 
+  # Clause for `Explorer.Chain.Stability.Validator`,
+  #  returned by `BlockScoutWeb.API.V2.ValidatorController.stability_validators_list/2` (`/api/v2/validators/stability`)
   def paging_options(%{
         "state" => state,
         "address_hash" => address_hash_string,

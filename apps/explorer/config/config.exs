@@ -76,7 +76,7 @@ config :explorer, Explorer.Chain.Cache.WithdrawalsSum,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
 
-config :explorer, Explorer.Chain.Cache.ValidatorStabilityCounter,
+config :explorer, Explorer.Chain.Cache.StabilityValidatorsCounters,
   enabled: true,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default

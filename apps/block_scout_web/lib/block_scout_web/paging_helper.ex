@@ -3,7 +3,8 @@ defmodule BlockScoutWeb.PagingHelper do
     Helper for fetching filters and other url query parameters
   """
   import Explorer.Chain, only: [string_to_transaction_hash: 1]
-  alias Explorer.Chain.{Transaction, ValidatorStability}
+  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.Stability.Validator, as: ValidatorStability
   alias Explorer.{Helper, PagingOptions, SortingHelper}
 
   @page_size 50
