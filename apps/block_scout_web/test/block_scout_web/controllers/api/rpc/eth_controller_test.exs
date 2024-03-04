@@ -458,6 +458,49 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert [%{"data" => "0x030303"}] = response["result"]
     end
+
+    test "numerical fields are hexadecimals with 0x prefix",
+         %{conn: conn, api_params: api_params} do
+      address = insert(:address)
+      block = insert(:block, number: 0)
+      transaction = insert(:transaction, from_address: address) |> with_block(block)
+
+      insert(:log,
+        block: block,
+        block_number: block.number,
+        address: address,
+        transaction: transaction,
+        data: "0x010101",
+        first_topic: topic(@first_topic_hex_string_1)
+      )
+
+      params =
+        params(api_params, [
+          %{
+            "address" => to_string(address.hash),
+            "topics" => [@first_topic_hex_string_1]
+          }
+        ])
+
+      response =
+        conn
+        |> post("/api/eth-rpc", params)
+        |> json_response(200)
+
+      [result] = response["result"]
+
+      assert result
+             |> Map.take([
+               "address",
+               "blockHash",
+               "blockNumber",
+               "data",
+               "transactionIndex",
+               "logIndex",
+               "transactionHash"
+             ])
+             |> Enum.all?(fn {_, v} -> String.starts_with?(v, "0x") end)
+    end
   end
 
   describe "eth_get_balance" do
