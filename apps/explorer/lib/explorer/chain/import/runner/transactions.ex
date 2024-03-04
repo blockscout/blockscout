@@ -108,7 +108,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   end
 
   defp default_on_conflict do
-    case System.get_env("CHAIN_TYPE") do
+    case Application.get_env(:explorer, :chain_type) do
       "suave" ->
         from(
           transaction in Transaction,

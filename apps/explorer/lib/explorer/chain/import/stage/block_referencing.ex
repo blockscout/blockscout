@@ -53,7 +53,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
   @impl Stage
   def runners do
-    case System.get_env("CHAIN_TYPE") do
+    case Application.get_env(:explorer, :chain_type) do
       "optimism" ->
         @default_runners ++ @optimism_runners
 

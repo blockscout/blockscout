@@ -21,7 +21,7 @@ defmodule Indexer.Transform.PolygonZkevm.Bridge do
 
     items =
       with false <- is_nil(Application.get_env(:indexer, BridgeL2)[:start_block]),
-           false <- System.get_env("CHAIN_TYPE") != "polygon_zkevm",
+           false <- Application.get_env(:explorer, :chain_type) != "polygon_zkevm",
            rpc_l1 = Application.get_all_env(:indexer)[BridgeL1][:rpc],
            {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(rpc_l1)},
            bridge_contract = Application.get_env(:indexer, BridgeL2)[:bridge_contract],
