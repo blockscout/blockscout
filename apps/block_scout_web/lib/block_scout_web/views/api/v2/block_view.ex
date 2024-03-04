@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.BlockView
-  alias BlockScoutWeb.API.V2.{ApiView, Helper, ZkSyncView}
+  alias BlockScoutWeb.API.V2.{ApiView, Helper}
   alias Explorer.Chain.Block
   alias Explorer.Counters.BlockPriorityFeeCounter
 
@@ -144,7 +144,9 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       defp chain_type_fields(result, block, single_block?) do
         if single_block? do
           result
-          |> ZkSyncView.add_zksync_info(block)
+          |> BlockScoutWeb.API.V2.ZkSyncView.add_zksync_info(block)
+        else
+          result
         end
       end
 
