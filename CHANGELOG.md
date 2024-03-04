@@ -7,6 +7,7 @@
 - [#9490](https://github.com/blockscout/blockscout/pull/9490) - Add blob transaction counter and filter in block view
 - [#9461](https://github.com/blockscout/blockscout/pull/9461) - Fetch blocks without internal transactions backwards
 - [#9460](https://github.com/blockscout/blockscout/pull/9460) - Optimism chain type
+- [#9409](https://github.com/blockscout/blockscout/pull/9409) - ETH JSON RPC extension
 - [#9390](https://github.com/blockscout/blockscout/pull/9390) - Add stability validators
 - [#8702](https://github.com/blockscout/blockscout/pull/8702) - Add OP withdrawal status to transaction page in API
 - [#7200](https://github.com/blockscout/blockscout/pull/7200) - Add Optimism BedRock Deposits to the main page in API
