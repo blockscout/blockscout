@@ -105,7 +105,7 @@ defmodule Indexer.Fetcher.Beacon.Blob do
     DateTime.to_unix(block_timestamp)
   end
 
-  defp timestamp_to_slot(block_timestamp, %{
+  def timestamp_to_slot(block_timestamp, %{
          reference_timestamp: reference_timestamp,
          reference_slot: reference_slot,
          slot_duration: slot_duration
