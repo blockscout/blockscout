@@ -318,7 +318,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
         "0x" <> hex
 
       hex_bytes_count < 20 ->
-        "0x" <> String.pad_leading(storage_value, 40)
+        "0x" <> String.pad_leading(storage_value, 40, "0")
     end
   end
 end
