@@ -561,8 +561,7 @@ config :indexer, Indexer.Fetcher.TransactionAction,
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?:
-    System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu" ||
-      ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER")
+    ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER")
 
 config :indexer, Indexer.Fetcher.Token, concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_CONCURRENCY", 10)
 
