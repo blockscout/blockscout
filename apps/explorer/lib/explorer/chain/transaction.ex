@@ -97,7 +97,11 @@ defmodule Explorer.Chain.Transaction.Schema do
                         "zksync" ->
                           elem(
                             quote do
-                              has_one(:zksync_batch_transaction, ZkSyncBatchTransaction, foreign_key: :hash, references: :hash)
+                              has_one(:zksync_batch_transaction, ZkSyncBatchTransaction,
+                                foreign_key: :hash,
+                                references: :hash
+                              )
+
                               has_one(:zksync_batch, through: [:zksync_batch_transaction, :batch])
                               has_one(:zksync_commit_transaction, through: [:zksync_batch, :commit_transaction])
                               has_one(:zksync_prove_transaction, through: [:zksync_batch, :prove_transaction])
@@ -208,7 +212,7 @@ defmodule Explorer.Chain.Transaction do
   alias ABI.FunctionSelector
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
-  alias Explorer.{Chain, Helper, PagingOptions, Repo, SortingHelper}
+  alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
     Block.Reward,
@@ -216,10 +220,8 @@ defmodule Explorer.Chain.Transaction do
     Data,
     DenormalizationHelper,
     Hash,
-    Log,
     SmartContract,
     SmartContract.Proxy,
-    Token,
     TokenTransfer,
     Transaction,
     Wei
@@ -1168,100 +1170,6 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  @api_true [api?: true]
-  @transaction_fee_event_signature "0x99e7b0ba56da2819c37c047f0511fd2bf6c9b4e27b4a979a19d6da0f74be8155"
-  @transaction_fee_event_abi [
-    %{
-      "anonymous" => false,
-      "inputs" => [
-        %{
-          "indexed" => false,
-          "internalType" => "address",
-          "name" => "token",
-          "type" => "address"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "uint256",
-          "name" => "totalFee",
-          "type" => "uint256"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "address",
-          "name" => "validator",
-          "type" => "address"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "uint256",
-          "name" => "validatorFee",
-          "type" => "uint256"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "address",
-          "name" => "dapp",
-          "type" => "address"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "uint256",
-          "name" => "dappFee",
-          "type" => "uint256"
-        }
-      ],
-      "name" => "TransactionFee",
-      "type" => "event"
-    }
-  ]
-
-  def maybe_prepare_stability_fees(transactions) do
-    if Application.get_env(:explorer, :chain_type) == "stability" do
-      maybe_prepare_stability_fees_inner(transactions)
-    else
-      transactions
-    end
-  end
-
-  defp maybe_prepare_stability_fees_inner(transactions) when is_list(transactions) do
-    {transactions, _tokens_acc} =
-      Enum.map_reduce(transactions, %{}, fn transaction, tokens_acc ->
-        case Log.fetch_log_by_tx_hash_and_first_topic(transaction.hash, @transaction_fee_event_signature, @api_true) do
-          fee_log when not is_nil(fee_log) ->
-            {:ok, _selector, mapping} = Log.find_and_decode(@transaction_fee_event_abi, fee_log, transaction.hash)
-
-            [{"token", "address", false, token_address_hash}, _, _, _, _, _] = mapping
-
-            {token, new_tokens_acc} = check_tokens_acc(bytes_to_address_hash(token_address_hash), tokens_acc)
-
-            {%Transaction{transaction | transaction_fee_log: mapping, transaction_fee_token: token}, new_tokens_acc}
-
-          _ ->
-            {transaction, tokens_acc}
-        end
-      end)
-
-    transactions
-  end
-
-  defp maybe_prepare_stability_fees_inner(transaction) do
-    [transaction] = maybe_prepare_stability_fees_inner([transaction])
-    transaction
-  end
-
-  defp check_tokens_acc(token_address_hash, tokens_acc) do
-    if Map.has_key?(tokens_acc, token_address_hash) do
-      {tokens_acc[token_address_hash], tokens_acc}
-    else
-      token = Token.get_by_contract_address_hash(token_address_hash, @api_true)
-
-      {token, Map.put(tokens_acc, token_address_hash, token)}
-    end
-  end
-
-  def bytes_to_address_hash(bytes), do: %Hash{byte_count: 20, bytes: bytes}
-
   @doc """
   Fetches the transactions related to the address with the given hash, including
   transactions that only have the address in the `token_transfers` related table
@@ -1700,50 +1608,6 @@ defmodule Explorer.Chain.Transaction do
       "inserted_at" => inserted_at,
       "hash" => hash
     }
-  end
-
-  @suave_bid_event "0x83481d5b04dea534715acad673a8177a46fc93882760f36bdc16ccac439d504e"
-
-  @spec suave_parse_allowed_peekers(Ecto.Schema.has_many(Log.t())) :: [String.t()]
-  def suave_parse_allowed_peekers(%NotLoaded{}), do: []
-
-  def suave_parse_allowed_peekers(logs) do
-    suave_bid_contracts =
-      Application.get_all_env(:explorer)[Transaction][:suave_bid_contracts]
-      |> String.split(",")
-      |> Enum.map(fn sbc -> String.downcase(String.trim(sbc)) end)
-
-    bid_event =
-      Enum.find(logs, fn log ->
-        sanitize_log_first_topic(log.first_topic) == @suave_bid_event &&
-          Enum.member?(suave_bid_contracts, String.downcase(Hash.to_string(log.address_hash)))
-      end)
-
-    if is_nil(bid_event) do
-      []
-    else
-      [_bid_id, _decryption_condition, allowed_peekers] =
-        Helper.decode_data(bid_event.data, [{:bytes, 16}, {:uint, 64}, {:array, :address}])
-
-      Enum.map(allowed_peekers, fn peeker ->
-        "0x" <> Base.encode16(peeker, case: :lower)
-      end)
-    end
-  end
-
-  defp sanitize_log_first_topic(first_topic) do
-    if is_nil(first_topic) do
-      ""
-    else
-      sanitized =
-        if is_binary(first_topic) do
-          first_topic
-        else
-          Hash.to_string(first_topic)
-        end
-
-      String.downcase(sanitized)
-    end
   end
 
   @doc """

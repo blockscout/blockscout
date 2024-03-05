@@ -103,12 +103,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     "rsk" ->
       defp chain_type_fields(result, block, single_block?) do
         if single_block? do
-          result
-          |> Map.put("minimum_gas_price", block.minimum_gas_price)
-          |> Map.put("bitcoin_merged_mining_header", block.bitcoin_merged_mining_header)
-          |> Map.put("bitcoin_merged_mining_coinbase_transaction", block.bitcoin_merged_mining_coinbase_transaction)
-          |> Map.put("bitcoin_merged_mining_merkle_proof", block.bitcoin_merged_mining_merkle_proof)
-          |> Map.put("hash_for_merged_mining", block.hash_for_merged_mining)
+          BlockScoutWeb.API.V2.RootstockView.add_rsk_info(result, block)
         else
           result
         end
@@ -117,8 +112,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     "zksync" ->
       defp chain_type_fields(result, block, single_block?) do
         if single_block? do
-          result
-          |> BlockScoutWeb.API.V2.ZkSyncView.add_zksync_info(block)
+          BlockScoutWeb.API.V2.ZkSyncView.add_zksync_info(result, block)
         else
           result
         end
@@ -126,20 +120,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
 
     "ethereum" ->
       defp chain_type_fields(result, block, single_block?) do
-        if single_block? do
-          blob_gas_price = Block.transaction_blob_gas_price(block.transactions)
-          burnt_blob_transaction_fees = Decimal.mult(block.blob_gas_used || 0, blob_gas_price || 0)
-
-          result
-          |> Map.put("blob_gas_used", block.blob_gas_used)
-          |> Map.put("excess_blob_gas", block.excess_blob_gas)
-          |> Map.put("blob_gas_price", blob_gas_price)
-          |> Map.put("burnt_blob_fees", burnt_blob_transaction_fees)
-        else
-          result
-          |> Map.put("blob_gas_used", block.blob_gas_used)
-          |> Map.put("excess_blob_gas", block.excess_blob_gas)
-        end
+        BlockScoutWeb.API.V2.EthereumView.add_ethereum_info(result, block, single_block?)
       end
 
     _ ->
