@@ -149,8 +149,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       when is_burn_signature_or_nil(empty_address_hash_string) ->
         nil
 
-      {:ok, implementation_logic_address_hash_string} ->
-        implementation_logic_address_hash_string
+      {:ok, "0x000000000000000000000000" <> implementation_logic_address_hash_string} ->
+        "0x" <> implementation_logic_address_hash_string
 
       _ ->
         nil

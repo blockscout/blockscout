@@ -442,7 +442,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
              id: _id,
              method: "eth_call",
              params: [
-               %{data: "0x5c60da1b", to: "0x000000000000000000000000" <> ^beacon_contract_address_hash_string},
+               %{data: "0x5c60da1b", to: "0x" <> ^beacon_contract_address_hash_string},
                "latest"
              ]
            }

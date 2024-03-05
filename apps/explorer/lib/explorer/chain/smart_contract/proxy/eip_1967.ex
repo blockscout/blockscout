@@ -75,10 +75,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
       when is_burn_signature_or_nil(empty_address) ->
         nil
 
-      {:ok, beacon_contract_address} ->
+      {:ok, "0x000000000000000000000000" <> beacon_contract_address} ->
         case @implementation_signature
              |> Basic.get_implementation_address_hash_string(
-               beacon_contract_address,
+               "0x" <> beacon_contract_address,
                implementation_method_abi
              ) do
           <<implementation_address::binary-size(42)>> ->

@@ -119,7 +119,7 @@ defmodule Explorer.Chain.SmartContractTest do
                                 ]
                               },
                               _options ->
-        {:ok, string_implementation_address_hash}
+        {:ok, "0x000000000000000000000000" <> string_implementation_address_hash}
       end)
 
       assert {^string_implementation_address_hash, "proxy"} =
@@ -834,7 +834,7 @@ defmodule Explorer.Chain.SmartContractTest do
                               ]
                             },
                             _options ->
-      {:ok, string_implementation_address_hash}
+      {:ok, "0x000000000000000000000000" <> string_implementation_address_hash}
     end)
   end
 

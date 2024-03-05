@@ -288,7 +288,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
                                                 ]
                                               },
                                               _options ->
-      {:ok, "0xcebb2CCCFe291F0c442841cBE9C1D06EED61Ca02"}
+      {:ok, "0x000000000000000000000000" <> "cebb2CCCFe291F0c442841cBE9C1D06EED61Ca02"}
     end)
   end
 
