@@ -466,4 +466,94 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
 
     assert implementation_abi == @implementation_abi
   end
+
+  test "get_implementation_abi_from_proxy/2 returns implementation abi in case of EIP-1967 proxy pattern (beacon contract) when eth_getStorageAt returns less 32 bytes" do
+    proxy_contract_address = insert(:contract_address)
+
+    smart_contract =
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: [], contract_code_md5: "123")
+
+    beacon_contract_address = insert(:contract_address)
+
+    insert(:smart_contract,
+      address_hash: beacon_contract_address.hash,
+      abi: @beacon_abi,
+      contract_code_md5: "123"
+    )
+
+    beacon_contract_address_hash_string = Base.encode16(beacon_contract_address.hash.bytes, case: :lower)
+
+    implementation_contract_address = insert(:contract_address)
+
+    insert(:smart_contract,
+      address_hash: implementation_contract_address.hash,
+      abi: @implementation_abi,
+      contract_code_md5: "123"
+    )
+
+    implementation_contract_address_hash_string =
+      Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
+
+    EthereumJSONRPC.Mox
+    |> expect(
+      :json_rpc,
+      fn %{
+           id: _id,
+           method: "eth_getStorageAt",
+           params: [
+             _,
+             "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+             "latest"
+           ]
+         },
+         _options ->
+        {:ok, "0x0000000000000000000000000000000000000000"}
+      end
+    )
+    |> expect(
+      :json_rpc,
+      fn %{
+           id: _id,
+           method: "eth_getStorageAt",
+           params: [
+             _,
+             "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
+             "latest"
+           ]
+         },
+         _options ->
+        {:ok, "0x" <> beacon_contract_address_hash_string}
+      end
+    )
+    |> expect(
+      :json_rpc,
+      fn [
+           %{
+             id: _id,
+             method: "eth_call",
+             params: [
+               %{data: "0x5c60da1b", to: "0x" <> ^beacon_contract_address_hash_string},
+               "latest"
+             ]
+           }
+         ],
+         _options ->
+        {
+          :ok,
+          [
+            %{
+              id: _id,
+              jsonrpc: "2.0",
+              result: "0x000000000000000000000000" <> implementation_contract_address_hash_string
+            }
+          ]
+        }
+      end
+    )
+
+    implementation_abi = Proxy.get_implementation_abi_from_proxy(smart_contract, [])
+    verify!(EthereumJSONRPC.Mox)
+
+    assert implementation_abi == @implementation_abi
+  end
 end

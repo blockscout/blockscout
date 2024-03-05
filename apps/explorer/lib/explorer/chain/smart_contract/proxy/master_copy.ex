@@ -29,8 +29,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.MasterCopy do
         when is_burn_signature(empty_address) ->
           {:ok, "0x"}
 
-        {:ok, "0x000000000000000000000000" <> logic_contract_address} ->
-          {:ok, "0x" <> logic_contract_address}
+        {:ok, "0x" <> storage_value} ->
+          logic_contract_address = Proxy.extract_address_hex_from_storage_pointer(storage_value)
+          {:ok, logic_contract_address}
 
         _ ->
           {:ok, nil}

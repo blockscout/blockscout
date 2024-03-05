@@ -41,9 +41,7 @@ defmodule Explorer.Chain.SmartContract do
   @burn_address_hash_string "0x0000000000000000000000000000000000000000"
   @burn_address_hash_string_32 "0x0000000000000000000000000000000000000000000000000000000000000000"
 
-  defguard is_burn_signature(term) when term in ["0x", "0x0", @burn_address_hash_string_32]
-  defguard is_burn_signature_or_nil(term) when is_burn_signature(term) or term == nil
-  defguard is_burn_signature_extended(term) when is_burn_signature(term) or term == @burn_address_hash_string
+  defguard is_burn_signature(term) when term in ["0x", "0x0", @burn_address_hash_string, @burn_address_hash_string_32]
 
   @doc """
     Returns burn address hash
@@ -594,7 +592,7 @@ defmodule Explorer.Chain.SmartContract do
   def save_implementation_data(nil, _, _, _), do: {nil, nil}
 
   def save_implementation_data(empty_address_hash_string, proxy_address_hash, metadata_from_verified_twin, options)
-      when is_burn_signature_extended(empty_address_hash_string) do
+      when is_burn_signature(empty_address_hash_string) do
     if is_nil(metadata_from_verified_twin) or !metadata_from_verified_twin do
       proxy_address_hash
       |> address_hash_to_smart_contract_without_twin(options)
