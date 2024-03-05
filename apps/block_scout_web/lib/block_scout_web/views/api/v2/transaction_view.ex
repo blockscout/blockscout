@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.V2.TransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView, ZkSyncView}
+  alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
+
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
   alias BlockScoutWeb.Tokens.Helper, as: TokensHelper
@@ -11,13 +12,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Optimism.Withdrawal, as: OptimismWithdrawal
-  alias Explorer.Chain.PolygonEdge.Reader
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.Counters.AverageBlockTime
   alias Timex.Duration
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
-  import Explorer.Chain.Transaction, only: [maybe_prepare_stability_fees: 1, bytes_to_address_hash: 1]
+  import Explorer.Chain.Transaction, only: [bytes_to_address_hash: 1]
 
   @api_true [api?: true]
 
@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{
       "items" =>
         transactions
-        |> maybe_prepare_stability_fees()
+        |> chain_type_transformations()
         |> Enum.zip(decoded_transactions)
         |> Enum.map(fn {tx, decoded_input} ->
           prepare_transaction(tx, conn, false, block_height, watchlist_names, decoded_input)
@@ -55,7 +55,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     {decoded_transactions, _, _} = decode_transactions(transactions, true)
 
     transactions
-    |> maybe_prepare_stability_fees()
+    |> chain_type_transformations()
     |> Enum.zip(decoded_transactions)
     |> Enum.map(fn {tx, decoded_input} ->
       prepare_transaction(tx, conn, false, block_height, watchlist_names, decoded_input)
@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{
       "items" =>
         transactions
-        |> maybe_prepare_stability_fees()
+        |> chain_type_transformations()
         |> Enum.zip(decoded_transactions)
         |> Enum.map(fn {tx, decoded_input} -> prepare_transaction(tx, conn, false, block_height, decoded_input) end),
       "next_page_params" => next_page_params
@@ -87,7 +87,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     {decoded_transactions, _, _} = decode_transactions(transactions, true)
 
     transactions
-    |> maybe_prepare_stability_fees()
+    |> chain_type_transformations()
     |> Enum.zip(decoded_transactions)
     |> Enum.map(fn {tx, decoded_input} -> prepare_transaction(tx, conn, false, block_height, decoded_input) end)
   end
@@ -95,7 +95,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def render("transaction.json", %{transaction: transaction, conn: conn}) do
     block_height = Chain.block_height(@api_true)
     {[decoded_input], _, _} = decode_transactions([transaction], false)
-    prepare_transaction(transaction |> maybe_prepare_stability_fees(), conn, true, block_height, decoded_input)
+
+    transaction
+    |> chain_type_transformations()
+    |> prepare_transaction(conn, true, block_height, decoded_input)
   end
 
   def render("raw_trace.json", %{internal_transactions: internal_transactions}) do
@@ -448,73 +451,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  # credo:disable-for-next-line
-  defp chain_type_fields(result, transaction, single_tx?, conn, watchlist_names) do
-    case {single_tx?, Application.get_env(:explorer, :chain_type)} do
-      {true, "polygon_edge"} ->
-        result
-        |> Map.put("polygon_edge_deposit", polygon_edge_deposit(transaction.hash, conn))
-        |> Map.put("polygon_edge_withdrawal", polygon_edge_withdrawal(transaction.hash, conn))
-
-      {true, "polygon_zkevm"} ->
-        extended_result =
-          result
-          |> add_optional_transaction_field(transaction, "zkevm_batch_number", :zkevm_batch, :number)
-          |> add_optional_transaction_field(transaction, "zkevm_sequence_hash", :zkevm_sequence_transaction, :hash)
-          |> add_optional_transaction_field(transaction, "zkevm_verify_hash", :zkevm_verify_transaction, :hash)
-
-        Map.put(extended_result, "zkevm_status", zkevm_status(extended_result))
-
-      {true, "optimism"} ->
-        result
-        |> add_optional_transaction_field(transaction, :l1_fee)
-        |> add_optional_transaction_field(transaction, :l1_fee_scalar)
-        |> add_optional_transaction_field(transaction, :l1_gas_price)
-        |> add_optional_transaction_field(transaction, :l1_gas_used)
-        |> add_optimism_fields(transaction.hash, single_tx?)
-
-      {true, "suave"} ->
-        suave_fields(transaction, result, single_tx?, conn, watchlist_names)
-
-      {_, "ethereum"} ->
-        case Map.get(transaction, :beacon_blob_transaction) do
-          nil ->
-            result
-
-          %Ecto.Association.NotLoaded{} ->
-            result
-
-          item ->
-            result
-            |> Map.put("max_fee_per_blob_gas", item.max_fee_per_blob_gas)
-            |> Map.put("blob_versioned_hashes", item.blob_versioned_hashes)
-            |> Map.put("blob_gas_used", item.blob_gas_used)
-            |> Map.put("blob_gas_price", item.blob_gas_price)
-            |> Map.put("burnt_blob_fee", Decimal.mult(item.blob_gas_used, item.blob_gas_price))
-        end
-
-      {true, "zksync"} ->
-        result
-        |> ZkSyncView.add_zksync_info(transaction)
-
-      _ ->
-        result
-    end
-  end
-
   defp add_optional_transaction_field(result, transaction, field_name, assoc_name, assoc_field) do
     case Map.get(transaction, assoc_name) do
       nil -> result
       %Ecto.Association.NotLoaded{} -> result
       item -> Map.put(result, field_name, Map.get(item, assoc_field))
-    end
-  end
-
-  defp zkevm_status(result_map) do
-    if is_nil(Map.get(result_map, "zkevm_sequence_hash")) do
-      "Confirmed by Sequencer"
-    else
-      "L1 Confirmed"
     end
   end
 
@@ -932,27 +873,98 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     Map.merge(map, %{"change" => change})
   end
 
-  defp polygon_edge_deposit(transaction_hash, conn) do
-    transaction_hash
-    |> Reader.deposit_by_transaction_hash()
-    |> polygon_edge_deposit_or_withdrawal(conn)
-  end
+  case Application.compile_env(:explorer, :chain_type) do
+    "polygon_edge" ->
+      defp chain_type_transformations(transactions) do
+        transactions
+      end
 
-  defp polygon_edge_withdrawal(transaction_hash, conn) do
-    transaction_hash
-    |> Reader.withdrawal_by_transaction_hash()
-    |> polygon_edge_deposit_or_withdrawal(conn)
-  end
+      defp chain_type_fields(result, transaction, single_tx?, conn, _watchlist_names) do
+        if single_tx? do
+          BlockScoutWeb.API.V2.PolygonEdgeView.add_polygon_edge_info(result, transaction.hash, conn)
+        else
+          result
+        end
+      end
 
-  defp polygon_edge_deposit_or_withdrawal(item, conn) do
-    if not is_nil(item) do
-      {from_address, from_address_hash} = hash_to_address_and_hash(item.from)
-      {to_address, to_address_hash} = hash_to_address_and_hash(item.to)
+    "polygon_zkevm" ->
+      defp chain_type_transformations(transactions) do
+        transactions
+      end
 
-      item
-      |> Map.put(:from, Helper.address_with_info(conn, from_address, from_address_hash, item.from))
-      |> Map.put(:to, Helper.address_with_info(conn, to_address, to_address_hash, item.to))
-    end
+      defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
+        if single_tx? do
+          BlockScoutWeb.API.V2.PolygonZkevmView.add_zkevm_info(result, transaction)
+        else
+          result
+        end
+      end
+
+    "zksync" ->
+      defp chain_type_transformations(transactions) do
+        transactions
+      end
+
+      defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
+        if single_tx? do
+          BlockScoutWeb.API.V2.ZkSyncView.add_zksync_info(result, transaction)
+        else
+          result
+        end
+      end
+
+    "optimism" ->
+      defp chain_type_transformations(transactions) do
+        transactions
+      end
+
+      defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
+        if single_tx? do
+          BlockScoutWeb.API.V2.OptimismView.add_optimism_info(result, transaction)
+        else
+          result
+        end
+      end
+
+    "suave" ->
+      defp chain_type_transformations(transactions) do
+        transactions
+      end
+
+      defp chain_type_fields(result, transaction, single_tx?, conn, watchlist_names) do
+        if single_tx? do
+          BlockScoutWeb.API.V2.SuaveView.add_suave_info(transaction, result, single_tx?, conn, watchlist_names)
+        else
+          result
+        end
+      end
+
+    "stability" ->
+      defp chain_type_transformations(transactions) do
+        BlockScoutWeb.API.V2.StabilityView.extend_with_stability_fees_info(transactions)
+      end
+
+      defp chain_type_fields(result, transaction, _single_tx?, _conn, _watchlist_names) do
+        BlockScoutWeb.API.V2.StabilityView.add_stability_info(result, transaction)
+      end
+
+    "ethereum" ->
+      defp chain_type_transformations(transactions) do
+        transactions
+      end
+
+      defp chain_type_fields(result, transaction, _single_tx?, _conn, _watchlist_names) do
+        BlockScoutWeb.API.V2.EthereumView.add_ethereum_info(result, transaction)
+      end
+
+    _ ->
+      defp chain_type_transformations(transactions) do
+        transactions
+      end
+
+      defp chain_type_fields(result, _transaction, _single_tx?, _conn, _watchlist_names) do
+        result
+      end
   end
 
   defp hash_to_address_and_hash(hash) do
