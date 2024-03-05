@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       }
 
     "zksync" ->
+      @chain_type_transaction_necessity_by_association %{}
       @chain_type_block_necessity_by_association %{
         :zksync_batch => :optional,
         :zksync_commit_transaction => :optional,

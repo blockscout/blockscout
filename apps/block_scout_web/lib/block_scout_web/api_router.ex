@@ -286,7 +286,7 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/zkevm/batches/latest-number", V2.PolygonZkevmController, :batch_latest_number)
       end
 
-      if System.get_env("CHAIN_TYPE") == "zksync" do
+      if Application.compile_env(:explorer, :chain_type) == "zksync" do
         get("/zksync/batches/confirmed", V2.ZkSyncController, :batches_confirmed)
         get("/zksync/batches/latest-number", V2.ZkSyncController, :batch_latest_number)
       end

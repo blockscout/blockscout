@@ -30,7 +30,7 @@ defmodule Explorer.Chain.Block.Schema do
                         "zksync" ->
                           elem(
                             quote do
-                              has_one(:zksync_batch_block, ZkSyncBatchBlock, foreign_key: :hash)
+                              has_one(:zksync_batch_block, ZkSyncBatchBlock, foreign_key: :hash, references: :hash)
                               has_one(:zksync_batch, through: [:zksync_batch_block, :batch])
                               has_one(:zksync_commit_transaction, through: [:zksync_batch, :commit_transaction])
                               has_one(:zksync_prove_transaction, through: [:zksync_batch, :prove_transaction])
