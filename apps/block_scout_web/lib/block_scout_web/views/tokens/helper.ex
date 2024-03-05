@@ -45,7 +45,8 @@ defmodule BlockScoutWeb.Tokens.Helper do
     {:ok, CurrencyHelper.format_according_to_decimals(amount, Decimal.new(0))}
   end
 
-  defp do_token_transfer_amount(%Token{decimals: nil}, type, amount, _amounts, _token_ids)  when type in ["ERC-20", "ERC-404"] do
+  defp do_token_transfer_amount(%Token{decimals: nil}, type, amount, _amounts, _token_ids)
+       when type in ["ERC-20", "ERC-404"] do
     {:ok, CurrencyHelper.format_according_to_decimals(amount, Decimal.new(0))}
   end
 
