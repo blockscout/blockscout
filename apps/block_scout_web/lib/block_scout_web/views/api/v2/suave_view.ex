@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
 
   @suave_bid_event "0x83481d5b04dea534715acad673a8177a46fc93882760f36bdc16ccac439d504e"
 
-  def add_suave_info(%Transaction{} = transaction, out_json, single_tx?, conn, watchlist_names) do
+  def extend_transaction_json_response(%Transaction{} = transaction, out_json, single_tx?, conn, watchlist_names) do
     if is_nil(Map.get(transaction, :execution_node_hash)) do
       out_json
     else

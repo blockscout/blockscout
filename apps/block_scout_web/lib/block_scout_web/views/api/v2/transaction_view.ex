@@ -881,7 +881,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
       defp chain_type_fields(result, transaction, single_tx?, conn, _watchlist_names) do
         if single_tx? do
-          BlockScoutWeb.API.V2.PolygonEdgeView.add_polygon_edge_info(result, transaction.hash, conn)
+          BlockScoutWeb.API.V2.PolygonEdgeView.extend_transaction_json_response(result, transaction.hash, conn)
         else
           result
         end
@@ -894,7 +894,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
       defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
         if single_tx? do
-          BlockScoutWeb.API.V2.PolygonZkevmView.add_zkevm_info(result, transaction)
+          BlockScoutWeb.API.V2.PolygonZkevmView.extend_transaction_json_response(result, transaction)
         else
           result
         end
@@ -907,7 +907,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
       defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
         if single_tx? do
-          BlockScoutWeb.API.V2.ZkSyncView.add_zksync_info(result, transaction)
+          BlockScoutWeb.API.V2.ZkSyncView.extend_transaction_json_response(result, transaction)
         else
           result
         end
@@ -920,7 +920,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
       defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
         if single_tx? do
-          BlockScoutWeb.API.V2.OptimismView.add_optimism_info(result, transaction)
+          BlockScoutWeb.API.V2.OptimismView.extend_transaction_json_response(result, transaction)
         else
           result
         end
@@ -933,7 +933,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
       defp chain_type_fields(result, transaction, single_tx?, conn, watchlist_names) do
         if single_tx? do
-          BlockScoutWeb.API.V2.SuaveView.add_suave_info(transaction, result, single_tx?, conn, watchlist_names)
+          BlockScoutWeb.API.V2.SuaveView.extend_transaction_json_response(
+            transaction,
+            result,
+            single_tx?,
+            conn,
+            watchlist_names
+          )
         else
           result
         end
@@ -941,11 +947,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     "stability" ->
       defp chain_type_transformations(transactions) do
-        BlockScoutWeb.API.V2.StabilityView.extend_with_stability_fees_info(transactions)
+        BlockScoutWeb.API.V2.StabilityView.transform_transactions(transactions)
       end
 
       defp chain_type_fields(result, transaction, _single_tx?, _conn, _watchlist_names) do
-        BlockScoutWeb.API.V2.StabilityView.add_stability_info(result, transaction)
+        BlockScoutWeb.API.V2.StabilityView.extend_transaction_json_response(result, transaction)
       end
 
     "ethereum" ->
@@ -954,7 +960,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       end
 
       defp chain_type_fields(result, transaction, _single_tx?, _conn, _watchlist_names) do
-        BlockScoutWeb.API.V2.EthereumView.add_ethereum_info(result, transaction)
+        BlockScoutWeb.API.V2.EthereumView.extend_transaction_json_response(result, transaction)
       end
 
     _ ->
