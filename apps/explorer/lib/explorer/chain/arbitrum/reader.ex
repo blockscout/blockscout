@@ -30,6 +30,22 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   @doc """
   TBD
   """
+  def l1_block_of_earliest_discovered_message_to_l2 do
+    query =
+      from(msg in Message,
+        select: msg.originating_tx_blocknum,
+        where: msg.direction == :to_l2 and not is_nil(msg.originating_tx_blocknum),
+        order_by: [asc: msg.message_id],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+  end
+
+  @doc """
+  TBD
+  """
   def l1_block_of_latest_committed_batch do
     query =
       from(batch in L1Batch,
