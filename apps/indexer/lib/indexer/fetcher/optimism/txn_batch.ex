@@ -19,13 +19,12 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Beacon.Blob, as: BeaconBlob
   alias Explorer.Chain.{Block, Hash}
-  alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Optimism.FrameSequence
   alias Explorer.Chain.Optimism.TxnBatch, as: OptimismTxnBatch
   alias HTTPoison.Response
   alias Indexer.Fetcher.Beacon.Blob
   alias Indexer.Fetcher.Beacon.Client, as: BeaconClient
-  alias Indexer.Fetcher.Optimism
+  alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
   alias Indexer.Helper
   alias Varint.LEB128
 
@@ -69,7 +68,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
          {:genesis_block_l2_invalid, false} <-
            {:genesis_block_l2_invalid, is_nil(env[:genesis_block_l2]) or env[:genesis_block_l2] < 0},
-         {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.Optimism))},
+         {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(RollupL1ReorgMonitor))},
          optimism_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          {:blobs_api_url_undefined, false} <- {:blobs_api_url_undefined, is_nil(env[:blobs_api_url])},
@@ -87,8 +86,6 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
          {:ok, block_check_interval, last_safe_block} <- Optimism.get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
-
-      Subscriber.to(:optimism_reorg_block, :realtime)
 
       Process.send(self(), :continue, [])
 
@@ -116,7 +113,10 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
         {:stop, :normal, state}
 
       {:reorg_monitor_started, false} ->
-        Logger.error("Cannot start this process as reorg monitor in Indexer.Fetcher.Optimism is not started.")
+        Logger.error(
+          "Cannot start this process as reorg monitor in Indexer.Fetcher.RollupL1ReorgMonitor is not started."
+        )
+
         {:stop, :normal, state}
 
       {:rpc_l1_undefined, true} ->
@@ -228,7 +228,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
             incomplete_channels_acc
           end
 
-        reorg_block = Optimism.reorg_block_pop(@fetcher_name)
+        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           new_incomplete_channels = handle_l1_reorg(reorg_block, new_incomplete_channels)
@@ -260,12 +260,6 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
          end_block: new_end_block,
          incomplete_channels: new_incomplete_channels
      }}
-  end
-
-  @impl GenServer
-  def handle_info({:chain_event, :optimism_reorg_block, :realtime, block_number}, state) do
-    Optimism.reorg_block_push(@fetcher_name, block_number)
-    {:noreply, state}
   end
 
   @impl GenServer
@@ -491,7 +485,8 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
          blobs_api_url
        ) do
     transactions_filtered
-    |> Enum.reduce({:ok, incomplete_channels, [], []}, fn tx, {_, incomplete_channels_acc, batches_acc, sequences_acc} ->
+    |> Enum.reduce({:ok, incomplete_channels, [], []}, fn tx,
+                                                          {_, incomplete_channels_acc, batches_acc, sequences_acc} ->
       input =
         if tx.type == 3 do
           # this is EIP-4844 transaction, so we get the input from the blobs
@@ -505,12 +500,30 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
         # skip this transaction as we cannot find or read its blobs
         {:ok, incomplete_channels_acc, batches_acc, sequences_acc}
       else
-        handle_input(input, tx, blocks_params, incomplete_channels_acc, batches_acc, sequences_acc, genesis_block_l2, json_rpc_named_arguments_l2)
+        handle_input(
+          input,
+          tx,
+          blocks_params,
+          incomplete_channels_acc,
+          batches_acc,
+          sequences_acc,
+          genesis_block_l2,
+          json_rpc_named_arguments_l2
+        )
       end
     end)
   end
 
-  defp handle_input(input, tx, blocks_params, incomplete_channels_acc, batches_acc, sequences_acc, genesis_block_l2, json_rpc_named_arguments_l2) do
+  defp handle_input(
+         input,
+         tx,
+         blocks_params,
+         incomplete_channels_acc,
+         batches_acc,
+         sequences_acc,
+         genesis_block_l2,
+         json_rpc_named_arguments_l2
+       ) do
     frame = input_to_frame(input)
 
     channel = Map.get(incomplete_channels_acc, frame.channel_id, %{frames: %{}})

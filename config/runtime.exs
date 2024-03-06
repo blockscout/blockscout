@@ -684,7 +684,6 @@ config :indexer, Indexer.Fetcher.CoinBalance.Realtime,
   batch_size: coin_balances_batch_size,
   concurrency: coin_balances_concurrency
 
-config :indexer, Indexer.Fetcher.Optimism.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
 config :indexer, Indexer.Fetcher.Optimism.TxnBatch.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
 config :indexer, Indexer.Fetcher.Optimism.OutputRoot.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
 config :indexer, Indexer.Fetcher.Optimism.Deposit.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
