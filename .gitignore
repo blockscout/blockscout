@@ -53,6 +53,7 @@ dump.rdb
 /docker-compose/services/redis-data
 /docker-compose/services/logs
 /docker-compose/tmp
+/docker-compose/services/blockscout-data
 
 .idea/
 *.iml

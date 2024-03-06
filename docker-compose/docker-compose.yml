@@ -35,7 +35,7 @@ services:
         ETHEREUM_JSONRPC_HTTP_URL: ${ENDPOINT}
         # ETHEREUM_JSONRPC_TRACE_URL: ${ENDPOINT}
         ETHEREUM_JSONRPC_WS_URL: ${WS_ENDPOINT}
-        CHAIN_ID: '${CHAIN_ID}'
+        CHAIN_ID: ${CHAIN_ID}
         LOGO: "/images/skale_logo.png"
         SUBNETWORK: ${SCHAIN_NAME}
         ETHEREUM_JSONRPC_VARIANT: "geth"
@@ -44,7 +44,7 @@ services:
         NETWORK: "SKALE"
         INDEXER_RECEIPTS_BATCH_SIZE: 128
         INDEXER_COIN_BALANCES_BATCH_SIZE: 128
-        # POOL_SIZE: 130
+        POOL_SIZE: 130
         INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: "true"
         INDEXER_DISABLE_BLOCK_REWARD_FETCHER: "true"
         INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: "true"
@@ -93,3 +93,8 @@ services:
     extends:
       file: ./services/nginx.yml
       service: proxy
+
+  smart-contract-verifier:
+    extends:
+      file: ./services/smart-contract-verifier.yml
+      service: smart-contract-verifier
