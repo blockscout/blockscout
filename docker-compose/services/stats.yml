@@ -4,7 +4,7 @@ services:
   stats-db-init:
     image: postgres:15
     volumes:
-      - ./stats-db-data/${SCHAIN_NAME}:/var/lib/postgresql/data
+      - ./blockscout-data/${SCHAIN_NAME}/stats-db-data:/var/lib/postgresql/data
 
     entrypoint:
       - sh
@@ -30,7 +30,7 @@ services:
       - target: 5432
         published: ${STATS_DB_PORT:-7433}
     volumes:
-      - ./stats-db-data/${SCHAIN_NAME}:/var/lib/postgresql/data
+      - ./blockscout-data/${SCHAIN_NAME}/stats-db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U stats -d stats"]
       interval: 10s
