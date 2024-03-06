@@ -12,6 +12,10 @@ services:
       - 'host.docker.internal:host-gateway'
     env_file:
       -  ../envs/common-blockscout.env
+    environment:
+      - MICROSERVICE_SC_VERIFIER_ENABLED=true
+      - MICROSERVICE_SC_VERIFIER_URL=http://smart-contract-verifier:8050/
+      - MICROSERVICE_SC_VERIFIER_TYPE=sc_verifier
     volumes:
-      - ./logs/${SCHAIN_NAME}:/app/logs/
+      - ./blockscout-data/${SCHAIN_NAME}/logs/:/app/logs/
       - ${CONFIG_PATH:-./}:/opt/app/config.json
