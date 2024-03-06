@@ -96,6 +96,12 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   def count_transactions(%Block{transactions: txs}) when is_list(txs), do: Enum.count(txs)
   def count_transactions(_), do: nil
 
+  def count_blob_transactions(%Block{transactions: txs}) when is_list(txs),
+    # EIP-2718 blob transaction type
+    do: Enum.count(txs, &(&1.type == 3))
+
+  def count_blob_transactions(_), do: nil
+
   def count_withdrawals(%Block{withdrawals: withdrawals}) when is_list(withdrawals), do: Enum.count(withdrawals)
   def count_withdrawals(_), do: nil
 
@@ -121,12 +127,14 @@ defmodule BlockScoutWeb.API.V2.BlockView do
           burnt_blob_transaction_fees = Decimal.mult(block.blob_gas_used || 0, blob_gas_price || 0)
 
           result
+          |> Map.put("blob_tx_count", count_blob_transactions(block))
           |> Map.put("blob_gas_used", block.blob_gas_used)
           |> Map.put("excess_blob_gas", block.excess_blob_gas)
           |> Map.put("blob_gas_price", blob_gas_price)
           |> Map.put("burnt_blob_fees", burnt_blob_transaction_fees)
         else
           result
+          |> Map.put("blob_tx_count", count_blob_transactions(block))
           |> Map.put("blob_gas_used", block.blob_gas_used)
           |> Map.put("excess_blob_gas", block.excess_blob_gas)
         end

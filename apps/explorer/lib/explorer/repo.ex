@@ -151,6 +151,16 @@ defmodule Explorer.Repo do
     end
   end
 
+  defmodule Optimism do
+    use Ecto.Repo,
+      otp_app: :explorer,
+      adapter: Ecto.Adapters.Postgres
+
+    def init(_, opts) do
+      ConfigHelper.init_repo_module(__MODULE__, opts)
+    end
+  end
+
   defmodule PolygonEdge do
     use Ecto.Repo,
       otp_app: :explorer,
@@ -222,6 +232,16 @@ defmodule Explorer.Repo do
   end
 
   defmodule Filecoin do
+    use Ecto.Repo,
+      otp_app: :explorer,
+      adapter: Ecto.Adapters.Postgres
+
+    def init(_, opts) do
+      ConfigHelper.init_repo_module(__MODULE__, opts)
+    end
+  end
+
+  defmodule Stability do
     use Ecto.Repo,
       otp_app: :explorer,
       adapter: Ecto.Adapters.Postgres

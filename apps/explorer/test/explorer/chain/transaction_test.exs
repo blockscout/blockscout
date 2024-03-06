@@ -840,4 +840,50 @@ defmodule Explorer.Chain.TransactionTest do
       {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
     end)
   end
+
+  describe "fee/2" do
+    test "is_nil(gas_price), is_nil(gas_used)" do
+      assert {:maximum, nil} == Transaction.fee(%Transaction{gas: 100_500, gas_price: nil, gas_used: nil}, :wei)
+    end
+
+    test "not is_nil(gas_price), is_nil(gas_used)" do
+      assert {:maximum, Decimal.new("20100000")} ==
+               Transaction.fee(
+                 %Transaction{gas: 100_500, gas_price: %Explorer.Chain.Wei{value: 200}, gas_used: nil},
+                 :wei
+               )
+    end
+
+    test "is_nil(gas_price), not is_nil(gas_used)" do
+      transaction = %Transaction{
+        gas_price: nil,
+        max_priority_fee_per_gas: %Explorer.Chain.Wei{value: 10_000_000_000},
+        max_fee_per_gas: %Explorer.Chain.Wei{value: 63_000_000_000},
+        gas_used: Decimal.new(100),
+        block: %{base_fee_per_gas: %Explorer.Chain.Wei{value: 42_000_000_000}}
+      }
+
+      if Application.get_env(:explorer, :chain_type) == "optimism" do
+        {:actual, nil} ==
+          Transaction.fee(
+            transaction,
+            :wei
+          )
+      else
+        assert {:actual, Decimal.new("5200000000000")} ==
+                 Transaction.fee(
+                   transaction,
+                   :wei
+                 )
+      end
+    end
+
+    test "not is_nil(gas_price), not is_nil(gas_used)" do
+      assert {:actual, Decimal.new("6")} ==
+               Transaction.fee(
+                 %Transaction{gas_price: %Explorer.Chain.Wei{value: 2}, gas_used: Decimal.new(3)},
+                 :wei
+               )
+    end
+  end
 end

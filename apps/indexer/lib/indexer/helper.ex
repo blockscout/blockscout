@@ -17,6 +17,8 @@ defmodule Indexer.Helper do
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain.Hash
 
+  @finite_retries_number 3
+  @infinite_retries_number 100_000_000
   @block_check_interval_range_size 100
   @block_by_number_chunk_size 50
 
@@ -102,7 +104,7 @@ defmodule Indexer.Helper do
   Performs a specified number of retries (up to) if the first attempt returns error.
   """
   @spec get_block_number_by_tag(binary(), list(), non_neg_integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
-  def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ 3) do
+  def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ @finite_retries_number) do
     error_message = &"Cannot fetch #{tag} block number. Error: #{inspect(&1)}"
     repeated_call(&fetch_block_number_by_tag/2, [tag, json_rpc_named_arguments], error_message, retries)
   end
@@ -112,7 +114,7 @@ defmodule Indexer.Helper do
   Performs a specified number of retries (up to) if the first attempt returns error.
   """
   @spec get_transaction_by_hash(binary() | nil, list(), non_neg_integer()) :: {:ok, any()} | {:error, any()}
-  def get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ 3)
+  def get_transaction_by_hash(hash, json_rpc_named_arguments, retries_left \\ @finite_retries_number)
 
   def get_transaction_by_hash(hash, _json_rpc_named_arguments, _retries_left) when is_nil(hash), do: {:ok, nil}
 
@@ -127,6 +129,10 @@ defmodule Indexer.Helper do
     error_message = &"eth_getTransactionByHash failed. Error: #{inspect(&1)}"
 
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
+  end
+
+  def infinite_retries_number do
+    @infinite_retries_number
   end
 
   @doc """
@@ -157,7 +163,7 @@ defmodule Indexer.Helper do
           non_neg_integer(),
           non_neg_integer(),
           binary() | nil,
-          binary()
+          :L1 | :L2
         ) :: :ok
   def log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, items_count, layer) do
     is_start = is_nil(items_count)
@@ -200,11 +206,11 @@ defmodule Indexer.Helper do
   @doc """
   Calls the given function with the given arguments
   until it returns {:ok, any()} or the given attempts number is reached.
-  Pauses execution between invokes for 3 seconds.
+  Pauses execution between invokes for 3..1200 seconds (depending on the number of retries).
   """
   @spec repeated_call((... -> any()), list(), (... -> any()), non_neg_integer()) ::
-          {:ok, any()} | {:error, binary() | atom()}
-  def repeated_call(func, args, error_message, retries_left) do
+          {:ok, any()} | {:error, binary() | atom() | map()}
+  def repeated_call(func, args, error_message, retries_left, retries_done \\ 0) do
     case apply(func, args) do
       {:ok, _} = res ->
         res
@@ -217,8 +223,11 @@ defmodule Indexer.Helper do
           err
         else
           Logger.error("#{error_message.(message)} Retrying...")
-          :timer.sleep(3000)
-          repeated_call(func, args, error_message, retries_left)
+
+          # wait up to 20 minutes
+          :timer.sleep(min(3000 * Integer.pow(2, retries_done), 1_200_000))
+
+          repeated_call(func, args, error_message, retries_left, retries_done + 1)
         end
     end
   end
@@ -266,7 +275,7 @@ defmodule Indexer.Helper do
   """
   @spec get_block_timestamp_by_number(non_neg_integer(), list(), non_neg_integer()) ::
           {:ok, non_neg_integer()} | {:error, any()}
-  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ 3) do
+  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ @finite_retries_number) do
     func = &get_block_timestamp_by_number_inner/2
     args = [number, json_rpc_named_arguments]
     error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"
