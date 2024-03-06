@@ -106,10 +106,10 @@ defmodule Indexer.Fetcher.Beacon.Blob do
   end
 
   def timestamp_to_slot(block_timestamp, %{
-         reference_timestamp: reference_timestamp,
-         reference_slot: reference_slot,
-         slot_duration: slot_duration
-       }) do
+        reference_timestamp: reference_timestamp,
+        reference_slot: reference_slot,
+        slot_duration: slot_duration
+      }) do
     ((block_timestamp - reference_timestamp) |> div(slot_duration)) + reference_slot
   end
 

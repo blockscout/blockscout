@@ -200,8 +200,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
                 batch_submitter,
                 genesis_block_l2,
                 incomplete_channels_acc,
-                json_rpc_named_arguments,
-                json_rpc_named_arguments_l2,
+                {json_rpc_named_arguments, json_rpc_named_arguments_l2},
                 blobs_api_url,
                 Helper.infinite_retries_number()
               )
@@ -368,8 +367,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
          batch_submitter,
          genesis_block_l2,
          incomplete_channels,
-         json_rpc_named_arguments,
-         json_rpc_named_arguments_l2,
+         {json_rpc_named_arguments, json_rpc_named_arguments_l2},
          blobs_api_url,
          retries_left
        ) do
@@ -409,8 +407,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
             batch_submitter,
             genesis_block_l2,
             incomplete_channels,
-            json_rpc_named_arguments,
-            json_rpc_named_arguments_l2,
+            {json_rpc_named_arguments, json_rpc_named_arguments_l2},
             blobs_api_url,
             retries_left
           )
@@ -494,60 +491,64 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
          blobs_api_url
        ) do
     transactions_filtered
-    |> Enum.reduce({:ok, incomplete_channels, [], []}, fn t, {_, incomplete_channels_acc, batches_acc, sequences_acc} ->
+    |> Enum.reduce({:ok, incomplete_channels, [], []}, fn tx, {_, incomplete_channels_acc, batches_acc, sequences_acc} ->
       input =
-        if t.type == 3 do
+        if tx.type == 3 do
           # this is EIP-4844 transaction, so we get the input from the blobs
-          block_timestamp = get_block_timestamp_by_number(t.block_number, blocks_params)
-          blobs_to_input(t.hash, t.blob_versioned_hashes, block_timestamp, blobs_api_url)
+          block_timestamp = get_block_timestamp_by_number(tx.block_number, blocks_params)
+          blobs_to_input(tx.hash, tx.blob_versioned_hashes, block_timestamp, blobs_api_url)
         else
-          t.input
+          tx.input
         end
 
-      if t.type == 3 and input == <<>> do
+      if tx.type == 3 and input == <<>> do
         # skip this transaction as we cannot find or read its blobs
         {:ok, incomplete_channels_acc, batches_acc, sequences_acc}
       else
-        frame = input_to_frame(input)
-
-        channel = Map.get(incomplete_channels_acc, frame.channel_id, %{frames: %{}})
-
-        channel_frames =
-          Map.put(channel.frames, frame.number, %{
-            data: frame.data,
-            is_last: frame.is_last,
-            block_number: t.block_number,
-            tx_hash: t.hash
-          })
-
-        l1_timestamp =
-          if frame.is_last do
-            get_block_timestamp_by_number(t.block_number, blocks_params)
-          else
-            Map.get(channel, :l1_timestamp)
-          end
-
-        channel =
-          channel
-          |> Map.put_new(:id, frame.channel_id)
-          |> Map.put(:frames, channel_frames)
-          |> Map.put(:timestamp, DateTime.utc_now())
-          |> Map.put(:l1_timestamp, l1_timestamp)
-
-        if channel_complete?(channel) do
-          handle_channel(
-            channel,
-            incomplete_channels_acc,
-            batches_acc,
-            sequences_acc,
-            genesis_block_l2,
-            json_rpc_named_arguments_l2
-          )
-        else
-          {:ok, Map.put(incomplete_channels_acc, frame.channel_id, channel), batches_acc, sequences_acc}
-        end
+        handle_input(input, tx, blocks_params, incomplete_channels_acc, batches_acc, sequences_acc, genesis_block_l2, json_rpc_named_arguments_l2)
       end
     end)
+  end
+
+  defp handle_input(input, tx, blocks_params, incomplete_channels_acc, batches_acc, sequences_acc, genesis_block_l2, json_rpc_named_arguments_l2) do
+    frame = input_to_frame(input)
+
+    channel = Map.get(incomplete_channels_acc, frame.channel_id, %{frames: %{}})
+
+    channel_frames =
+      Map.put(channel.frames, frame.number, %{
+        data: frame.data,
+        is_last: frame.is_last,
+        block_number: tx.block_number,
+        tx_hash: tx.hash
+      })
+
+    l1_timestamp =
+      if frame.is_last do
+        get_block_timestamp_by_number(tx.block_number, blocks_params)
+      else
+        Map.get(channel, :l1_timestamp)
+      end
+
+    channel_updated =
+      channel
+      |> Map.put_new(:id, frame.channel_id)
+      |> Map.put(:frames, channel_frames)
+      |> Map.put(:timestamp, DateTime.utc_now())
+      |> Map.put(:l1_timestamp, l1_timestamp)
+
+    if channel_complete?(channel_updated) do
+      handle_channel(
+        channel_updated,
+        incomplete_channels_acc,
+        batches_acc,
+        sequences_acc,
+        genesis_block_l2,
+        json_rpc_named_arguments_l2
+      )
+    else
+      {:ok, Map.put(incomplete_channels_acc, frame.channel_id, channel_updated), batches_acc, sequences_acc}
+    end
   end
 
   defp handle_channel(

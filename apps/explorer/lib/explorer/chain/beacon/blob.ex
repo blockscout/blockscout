@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Beacon.Blob do
 
   @blob_size 4096 * 32
   @encoding_version 0
-  @max_blob_data_size (4*31+3)*1024 - 4
+  @max_blob_data_size (4 * 31 + 3) * 1024 - 4
   @rounds 1024
   @required_attrs ~w(hash blob_data kzg_commitment kzg_proof)a
 
@@ -51,51 +51,51 @@ defmodule Explorer.Chain.Beacon.Blob do
 
   @spec decode(binary()) :: binary() | nil
   def decode(b) do
-    try do
-      <<encoded_byte0::size(8), version::size(8), output_len::size(24), first_output::binary-size(27), _::binary>> = b
+    <<encoded_byte0::size(8), version::size(8), output_len::size(24), first_output::binary-size(27), _::binary>> = b
 
-      if version != @encoding_version or output_len > @max_blob_data_size do
-        raise "Blob version or data size is incorrect"
-      end
-
-      output = first_output <> :binary.copy(<<0>>, @max_blob_data_size - 27)
-
-      opos = 28
-      ipos = 32
-      {encoded_byte1, opos, ipos, output} = decode_field_element(b, opos, ipos, output)
-      {encoded_byte2, opos, ipos, output} = decode_field_element(b, opos, ipos, output)
-      {encoded_byte3, opos, ipos, output} = decode_field_element(b, opos, ipos, output)
-      {opos, output} = reassemble_bytes(opos, encoded_byte0, encoded_byte1, encoded_byte2, encoded_byte3, output)
-
-      {_opos, ipos, output} =
-        Enum.reduce_while(Range.new(1, @rounds - 1), {opos, ipos, output}, fn _i, {opos_acc, ipos_acc, output_acc} ->
-          if opos_acc >= output_len do
-            {:halt, {opos_acc, ipos_acc, output_acc}}
-          else
-            {encoded_byte0, opos_acc, ipos_acc, output_acc} = decode_field_element(b, opos_acc, ipos_acc, output_acc)
-            {encoded_byte1, opos_acc, ipos_acc, output_acc} = decode_field_element(b, opos_acc, ipos_acc, output_acc)
-            {encoded_byte2, opos_acc, ipos_acc, output_acc} = decode_field_element(b, opos_acc, ipos_acc, output_acc)
-            {encoded_byte3, opos_acc, ipos_acc, output_acc} = decode_field_element(b, opos_acc, ipos_acc, output_acc)
-            {opos_acc, output_acc} = reassemble_bytes(opos_acc, encoded_byte0, encoded_byte1, encoded_byte2, encoded_byte3, output_acc)
-
-            {:cont, {opos_acc, ipos_acc, output_acc}}
-          end
-        end)
-
-      Enum.each(Range.new(output_len, byte_size(output) - 1), fn i ->
-        <<0>> = binary_part(output, i, 1)
-      end)
-
-      output = binary_part(output, 0, output_len)
-
-      Enum.each(Range.new(ipos, @blob_size - 1), fn i ->
-        <<0>> = binary_part(b, i, 1)
-      end)
-
-      output
-    rescue
-      _ -> nil
+    if version != @encoding_version or output_len > @max_blob_data_size do
+      raise "Blob version or data size is incorrect"
     end
+
+    output = first_output <> :binary.copy(<<0>>, @max_blob_data_size - 27)
+
+    opos = 28
+    ipos = 32
+    {encoded_byte1, opos, ipos, output} = decode_field_element(b, opos, ipos, output)
+    {encoded_byte2, opos, ipos, output} = decode_field_element(b, opos, ipos, output)
+    {encoded_byte3, opos, ipos, output} = decode_field_element(b, opos, ipos, output)
+    {opos, output} = reassemble_bytes(opos, encoded_byte0, encoded_byte1, encoded_byte2, encoded_byte3, output)
+
+    {_opos, ipos, output} =
+      Enum.reduce_while(Range.new(1, @rounds - 1), {opos, ipos, output}, fn _i, {opos_acc, ipos_acc, output_acc} ->
+        if opos_acc >= output_len do
+          {:halt, {opos_acc, ipos_acc, output_acc}}
+        else
+          {encoded_byte0, opos_acc, ipos_acc, output_acc} = decode_field_element(b, opos_acc, ipos_acc, output_acc)
+          {encoded_byte1, opos_acc, ipos_acc, output_acc} = decode_field_element(b, opos_acc, ipos_acc, output_acc)
+          {encoded_byte2, opos_acc, ipos_acc, output_acc} = decode_field_element(b, opos_acc, ipos_acc, output_acc)
+          {encoded_byte3, opos_acc, ipos_acc, output_acc} = decode_field_element(b, opos_acc, ipos_acc, output_acc)
+
+          {opos_acc, output_acc} =
+            reassemble_bytes(opos_acc, encoded_byte0, encoded_byte1, encoded_byte2, encoded_byte3, output_acc)
+
+          {:cont, {opos_acc, ipos_acc, output_acc}}
+        end
+      end)
+
+    Enum.each(Range.new(output_len, byte_size(output) - 1), fn i ->
+      <<0>> = binary_part(output, i, 1)
+    end)
+
+    output = binary_part(output, 0, output_len)
+
+    Enum.each(Range.new(ipos, @blob_size - 1), fn i ->
+      <<0>> = binary_part(b, i, 1)
+    end)
+
+    output
+  rescue
+    _ -> nil
   end
 
   defp decode_field_element(b, opos, ipos, output) do
@@ -117,9 +117,9 @@ defmodule Explorer.Chain.Beacon.Blob do
 
     new_output =
       output
-      |> replace_byte(z, opos-32)
-      |> replace_byte(y, opos-(32*2))
-      |> replace_byte(x, opos-(32*3))
+      |> replace_byte(z, opos - 32)
+      |> replace_byte(y, opos - 32 * 2)
+      |> replace_byte(x, opos - 32 * 3)
 
     {opos, new_output}
   end
