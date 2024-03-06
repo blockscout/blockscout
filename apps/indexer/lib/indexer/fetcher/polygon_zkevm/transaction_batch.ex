@@ -212,7 +212,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
 
         # the timestamp is undefined for unfinalized batches
         timestamp =
-          case DateTime.from_unix(quantity_to_integer(Map.get(res.result, "timestamp"))) do
+          case DateTime.from_unix(quantity_to_integer(Map.get(res.result, "timestamp", 0xFFFFFFFFFFFFFFFF))) do
             {:ok, ts} -> ts
             _ -> nil
           end
