@@ -102,6 +102,20 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @doc """
   TBD
   """
+  def l1_block_of_earliest_discovered_message_to_l2(value_if_nil) do
+    case Reader.l1_block_of_earliest_discovered_message_to_l2() do
+      nil ->
+        Logger.warning("No messages to L2 found in DB")
+        value_if_nil
+
+      value ->
+        value + 1
+    end
+  end
+
+  @doc """
+  TBD
+  """
   def l1_block_of_latest_confirmed_block(value_if_nil) do
     case Reader.l1_block_of_latest_confirmed_block() do
       nil ->

@@ -38,7 +38,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     l1_rpc = config_common[:l1_rpc]
     l1_rpc_block_range = config_common[:l1_rpc_block_range]
     l1_rollup_address = config_common[:l1_rollup_address]
-    l1_start_block = config_common[:l1_start_block]
+    l1_rollup_init_block = config_common[:l1_rollup_init_block]
+    l1_start_block = max(config_common[:l1_start_block], l1_rollup_init_block)
     l1_rpc_chunk_size = config_common[:l1_rpc_chunk_size]
 
     config_tracker = Application.get_all_env(:indexer)[__MODULE__]
@@ -55,7 +56,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
          l1_rpc_chunk_size: l1_rpc_chunk_size,
          l1_rpc_block_range: l1_rpc_block_range,
          l1_rollup_address: l1_rollup_address,
-         l1_start_block: l1_start_block
+         l1_start_block: l1_start_block,
+         l1_rollup_init_block: l1_rollup_init_block
        },
        data: %{}
      }}
@@ -74,13 +76,20 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
       Rpc.get_contracts_for_rollup(state.config.l1_rollup_address, :bridge, state.config.json_l1_rpc_named_arguments)
 
     new_msg_to_l2_start_block = Db.l1_block_of_latest_discovered_message_to_l2(state.config.l1_start_block)
+    historical_msg_to_l2_end_block = Db.l1_block_of_earliest_discovered_message_to_l2(state.config.l1_start_block)
 
     Process.send(self(), :check_new_msgs_to_rollup, [])
 
     new_state =
       state
       |> Map.put(:config, Map.put(state.config, :l1_bridge_address, bridge_address))
-      |> Map.put(:data, Map.put(state.data, :new_msg_to_l2_start_block, new_msg_to_l2_start_block))
+      |> Map.put(
+        :data,
+        Map.merge(state.data, %{
+          new_msg_to_l2_start_block: new_msg_to_l2_start_block,
+          historical_msg_to_l2_end_block: historical_msg_to_l2_end_block
+        })
+      )
 
     {:noreply, new_state}
   end
@@ -93,6 +102,25 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
         state
       ])
 
+    Process.send(self(), :check_historical_msgs_to_rollup, [])
+
+    new_data =
+      Map.merge(state.data, %{
+        duration: increase_duration(state.data, handle_duration),
+        new_msg_to_l2_start_block: end_block + 1
+      })
+
+    {:noreply, %{state | data: new_data}}
+  end
+
+  # TBD
+  @impl GenServer
+  def handle_info(:check_historical_msgs_to_rollup, state) do
+    {handle_duration, {:ok, start_block}} =
+      :timer.tc(&discover_historical_messages_to_l2/1, [
+        state
+      ])
+
     Process.send_after(
       self(),
       :check_new_msgs_to_rollup,
@@ -102,7 +130,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     new_data =
       Map.merge(state.data, %{
         duration: 0,
-        new_msg_to_l2_start_block: end_block + 1
+        historical_msg_to_l2_end_block: start_block - 1
       })
 
     {:noreply, %{state | data: new_data}}
@@ -131,7 +159,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     end_block = min(start_block + rpc_block_range - 1, latest_block)
 
     if start_block <= end_block do
-      Logger.info("Block range: #{start_block}..#{end_block}")
+      Logger.info("Block range for discovery new messages from L1: #{start_block}..#{end_block}")
 
       NewMessagesToL2.discover(
         bridge_address,
@@ -144,6 +172,37 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
       {:ok, end_block}
     else
       {:ok, start_block - 1}
+    end
+  end
+
+  defp discover_historical_messages_to_l2(
+         %{
+           config: %{
+             json_l1_rpc_named_arguments: json_rpc_named_arguments,
+             l1_rpc_chunk_size: chunk_size,
+             l1_rpc_block_range: rpc_block_range,
+             l1_bridge_address: bridge_address,
+             l1_rollup_init_block: l1_rollup_init_block
+           },
+           data: %{historical_msg_to_l2_end_block: end_block}
+         } = _state
+       ) do
+    if end_block >= l1_rollup_init_block do
+      start_block = max(l1_rollup_init_block, end_block - rpc_block_range + 1)
+
+      Logger.info("Block range for discovery historical messages from L1: #{start_block}..#{end_block}")
+
+      NewMessagesToL2.discover(
+        bridge_address,
+        start_block,
+        end_block,
+        json_rpc_named_arguments,
+        chunk_size
+      )
+
+      {:ok, start_block}
+    else
+      {:ok, l1_rollup_init_block}
     end
   end
 end
