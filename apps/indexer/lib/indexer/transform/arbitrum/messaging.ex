@@ -13,7 +13,7 @@ defmodule Indexer.Transform.Arbitrum.Messaging do
   @spec parse(list(), list()) :: list()
   def parse(transactions, logs) do
     prev_metadata = Logger.metadata()
-    Logger.metadata(fetcher: :arbitrum_bridge_l2_realtime)
+    Logger.metadata(fetcher: :arbitrum_bridge_l2)
 
     l1_to_l2_completion_ops =
       transactions

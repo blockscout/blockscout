@@ -158,11 +158,7 @@ defmodule Indexer.Block.Fetcher do
              do: ShibariumBridge.parse(blocks, transactions_with_receipts, logs),
              else: []
            ),
-         arbitrum_xlevel_messages =
-           if(callback_module == Indexer.Block.Realtime.Fetcher,
-             do: ArbitrumMessaging.parse(transactions_with_receipts, logs),
-             else: []
-           ),
+         arbitrum_xlevel_messages = ArbitrumMessaging.parse(transactions_with_receipts, logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
          addresses =
