@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.RootstockView do
   alias Explorer.Chain.Block
 
-  def add_rsk_info(out_json, %Block{} = block) do
+  def extend_block_json_response(out_json, %Block{} = block) do
     out_json
     |> add_optional_transaction_field(block, :minimum_gas_price)
     |> add_optional_transaction_field(block, :bitcoin_merged_mining_header)

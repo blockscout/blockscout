@@ -103,7 +103,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     "rsk" ->
       defp chain_type_fields(result, block, single_block?) do
         if single_block? do
-          BlockScoutWeb.API.V2.RootstockView.add_rsk_info(result, block)
+          BlockScoutWeb.API.V2.RootstockView.extend_block_json_response(result, block)
         else
           result
         end
@@ -112,7 +112,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     "zksync" ->
       defp chain_type_fields(result, block, single_block?) do
         if single_block? do
-          BlockScoutWeb.API.V2.ZkSyncView.add_zksync_info(result, block)
+          BlockScoutWeb.API.V2.ZkSyncView.extend_block_json_response(result, block)
         else
           result
         end
@@ -120,7 +120,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
 
     "ethereum" ->
       defp chain_type_fields(result, block, single_block?) do
-        BlockScoutWeb.API.V2.EthereumView.add_ethereum_info(result, block, single_block?)
+        BlockScoutWeb.API.V2.EthereumView.extend_block_json_response(result, block, single_block?)
       end
 
     _ ->

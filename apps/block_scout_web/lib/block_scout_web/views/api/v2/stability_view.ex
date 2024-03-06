@@ -50,7 +50,7 @@ defmodule BlockScoutWeb.API.V2.StabilityView do
     }
   ]
 
-  def add_stability_info(out_json, %Transaction{} = transaction) do
+  def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     [
       {"token", "address", false, token_address_hash},
       {"totalFee", "uint256", false, total_fee},
@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.StabilityView do
     |> Map.put("stability_fee", stability_fee)
   end
 
-  def extend_with_stability_fees_info(transactions) do
+  def transform_transactions(transactions) do
     do_extend_with_stability_fees_info(transactions)
   end
 

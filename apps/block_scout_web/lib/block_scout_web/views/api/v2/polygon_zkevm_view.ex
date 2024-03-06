@@ -161,7 +161,7 @@ defmodule BlockScoutWeb.API.V2.PolygonZkevmView do
     end)
   end
 
-  def add_zkevm_info(out_json, %Transaction{} = transaction) do
+  def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     extended_result =
       out_json
       |> add_optional_transaction_field(transaction, "zkevm_batch_number", :zkevm_batch, :number)
