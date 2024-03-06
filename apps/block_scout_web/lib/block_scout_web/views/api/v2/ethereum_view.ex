@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.EthereumView do
   alias Explorer.Chain.{Block, Transaction}
 
-  def add_ethereum_info(out_json, %Transaction{} = transaction) do
+  def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     case Map.get(transaction, :beacon_blob_transaction) do
       nil ->
         out_json
@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.API.V2.EthereumView do
     end
   end
 
-  def add_ethereum_info(out_json, %Block{} = block, single_block?) do
+  def extend_block_json_response(out_json, %Block{} = block, single_block?) do
     blob_gas_used = Map.get(block, :blob_gas_used)
     excess_blob_gas = Map.get(block, :excess_blob_gas)
 

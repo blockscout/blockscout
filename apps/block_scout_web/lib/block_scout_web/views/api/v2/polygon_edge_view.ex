@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.API.V2.PolygonEdgeView do
     count
   end
 
-  def add_polygon_edge_info(out_json, tx_hash, connection) do
+  def extend_transaction_json_response(out_json, tx_hash, connection) do
     out_json
     |> Map.put("polygon_edge_deposit", polygon_edge_deposit(tx_hash, connection))
     |> Map.put("polygon_edge_withdrawal", polygon_edge_withdrawal(tx_hash, connection))

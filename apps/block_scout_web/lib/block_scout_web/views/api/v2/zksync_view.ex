@@ -80,26 +80,43 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
 
     ## Parameters
     - `out_json`: a map defining output json which will be extended
-    - `entity`: transaction or block structure containing zksync related data
+    - `transaction`: transaction structure containing zksync related data
 
     ## Returns
     A map extended with data related zksync rollup
   """
-  @spec add_zksync_info(map(), %{
-          :__struct__ => Explorer.Chain.Block | Explorer.Chain.Transaction,
+  @spec extend_transaction_json_response(map(), %{
+          :__struct__ => Explorer.Chain.Transaction,
           :zksync_batch => any(),
           :zksync_commit_transaction => any(),
           :zksync_execute_transaction => any(),
           :zksync_prove_transaction => any(),
           optional(any()) => any()
         }) :: map()
-  def add_zksync_info(out_json, entity)
-
-  def add_zksync_info(out_json, %Transaction{} = transaction) do
+  def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     do_add_zksync_info(out_json, transaction)
   end
 
-  def add_zksync_info(out_json, %Block{} = block) do
+  @doc """
+    Extends the json output with a sub-map containing information related
+    zksync: batch number and associated L1 transactions and their timestmaps.
+
+    ## Parameters
+    - `out_json`: a map defining output json which will be extended
+    - `block`: block structure containing zksync related data
+
+    ## Returns
+    A map extended with data related zksync rollup
+  """
+  @spec extend_block_json_response(map(), %{
+          :__struct__ => Explorer.Chain.Block,
+          :zksync_batch => any(),
+          :zksync_commit_transaction => any(),
+          :zksync_execute_transaction => any(),
+          :zksync_prove_transaction => any(),
+          optional(any()) => any()
+        }) :: map()
+  def extend_block_json_response(out_json, %Block{} = block) do
     do_add_zksync_info(out_json, block)
   end
 

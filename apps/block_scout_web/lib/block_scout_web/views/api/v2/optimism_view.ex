@@ -147,7 +147,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     count
   end
 
-  def add_optimism_info(out_json, %Transaction{} = transaction) do
+  def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     out_json
     |> add_optional_transaction_field(transaction, :l1_fee)
     |> add_optional_transaction_field(transaction, :l1_fee_scalar)
