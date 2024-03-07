@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL2 do
   import Explorer.Helper, only: [parse_integer: 1]
 
   import Indexer.Fetcher.PolygonZkevm.Bridge,
-    only: [get_logs_all: 3, import_operations: 1, prepare_operations: 3]
+    only: [get_logs_all: 3, import_operations: 1, prepare_operations: 5]
 
   alias Explorer.Chain.PolygonZkevm.{Bridge, Reader}
   alias Explorer.Repo
@@ -139,7 +139,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL2 do
         operations =
           {chunk_start, chunk_end}
           |> get_logs_all(bridge_contract, json_rpc_named_arguments)
-          |> prepare_operations(json_rpc_named_arguments, json_rpc_named_arguments_l1)
+          |> prepare_operations(nil, nil, json_rpc_named_arguments, json_rpc_named_arguments_l1)
 
         import_operations(operations)
 

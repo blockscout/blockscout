@@ -30,8 +30,14 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   @bridge_event_params [{:uint, 8}, {:uint, 32}, :address, {:uint, 32}, :address, {:uint, 256}, :bytes, {:uint, 32}]
 
   # 32-byte signature of the event ClaimEvent(uint32 index, uint32 originNetwork, address originAddress, address destinationAddress, uint256 amount)
-  @claim_event "0x25308c93ceeed162da955b3f7ce3e3f93606579e40fb92029faa9efe27545983"
-  @claim_event_params [{:uint, 32}, {:uint, 32}, :address, :address, {:uint, 256}]
+  @claim_event_v1 "0x25308c93ceeed162da955b3f7ce3e3f93606579e40fb92029faa9efe27545983"
+  @claim_event_v1_params [{:uint, 32}, {:uint, 32}, :address, :address, {:uint, 256}]
+
+  # 32-byte signature of the event ClaimEvent(uint256 globalIndex, uint32 originNetwork, address originAddress, address destinationAddress, uint256 amount)
+  @claim_event_v2 "0x1df3f2a973a00d6635911755c260704e95e8a5876997546798770f76396fda4d"
+  @claim_event_v2_params [{:uint, 256}, {:uint, 32}, :address, :address, {:uint, 256}]
+
+  @ethereum_mainnet_network_id 0
 
   @symbol_method_selector "95d89b41"
   @decimals_method_selector "313ce567"
@@ -65,7 +71,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   def filter_bridge_events(events, bridge_contract) do
     Enum.filter(events, fn event ->
       Helper.address_hash_to_string(event.address_hash, true) == bridge_contract and
-        Enum.member?([@bridge_event, @claim_event], Helper.log_topic_to_string(event.first_topic))
+        Enum.member?([@bridge_event, @claim_event_v1, @claim_event_v2], Helper.log_topic_to_string(event.first_topic))
     end)
   end
 
@@ -80,7 +86,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
         chunk_start,
         chunk_end,
         bridge_contract,
-        [[@bridge_event, @claim_event]],
+        [[@bridge_event, @claim_event_v1, @claim_event_v2]],
         json_rpc_named_arguments
       )
 
@@ -134,8 +140,76 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   Converts the list of zkEVM bridge events to the list of operations
   preparing them for importing to the database.
   """
-  @spec prepare_operations(list(), list() | nil, list(), map() | nil) :: list()
-  def prepare_operations(events, json_rpc_named_arguments, json_rpc_named_arguments_l1, block_to_timestamp \\ nil) do
+  @spec prepare_operations(list(), non_neg_integer() | nil, non_neg_integer() | nil, list() | nil, list(), map() | nil) ::
+          list()
+  def prepare_operations(
+        events,
+        rollup_network_id,
+        rollup_index,
+        json_rpc_named_arguments,
+        json_rpc_named_arguments_l1,
+        block_to_timestamp \\ nil
+      )
+      when (not is_nil(rollup_network_id) and not is_nil(rollup_index)) or
+             json_rpc_named_arguments != json_rpc_named_arguments_l1 do
+    is_l1 = json_rpc_named_arguments == json_rpc_named_arguments_l1
+
+    events =
+      Enum.filter(events, fn event ->
+        if is_l1 do
+          case event.first_topic do
+            @bridge_event ->
+              {_, _, _, destination_network} = bridge_event_parse(event)
+              # skip the Deposit event if it's for another rollup
+              destination_network == rollup_network_id
+
+            @claim_event_v2 ->
+              {mainnet_bit, rollup_idx, _index, _amount} = claim_event_v2_parse(event)
+
+              if mainnet_bit != 0 do
+                Logger.error(
+                  "L1 ClaimEvent has non-zero mainnet bit in the transaction #{event.transaction_hash}. This event will be ignored as withdrawals are only supported to Ethereum Mainnet."
+                )
+              end
+
+              # skip the Withdrawal event if it's for another rollup or the source network is Ethereum Mainnet
+              rollup_idx == rollup_index and mainnet_bit == 0
+
+            _ ->
+              true
+          end
+        else
+          case event.first_topic do
+            @bridge_event ->
+              {_, _, _, destination_network} = bridge_event_parse(event)
+
+              if destination_network != @ethereum_mainnet_network_id do
+                Logger.error(
+                  "L2 BridgeEvent has non-Mainnet destinationNetwork in the transaction #{event.transaction_hash}. This event will be ignored as withdrawals are only supported to Ethereum Mainnet."
+                )
+              end
+
+              # skip the Withdrawal event if the destination network is not Ethereum Mainnet
+              destination_network == @ethereum_mainnet_network_id
+
+            @claim_event_v2 ->
+              {mainnet_bit, _rollup_index, _index, _amount} = claim_event_v2_parse(event)
+
+              if mainnet_bit == 0 do
+                Logger.error(
+                  "L2 ClaimEvent has zero mainnet bit in the transaction #{event.transaction_hash}. This event will be ignored as deposits are only supported from Ethereum Mainnet."
+                )
+              end
+
+              # skip the Deposit event if the source network is not Ethereum Mainnet
+              mainnet_bit == 1
+
+            _ ->
+              true
+          end
+        end
+      end)
+
     {block_to_timestamp, token_address_to_id} =
       if is_nil(block_to_timestamp) do
         bridge_events = Enum.filter(events, fn event -> event.first_topic == @bridge_event end)
@@ -144,8 +218,8 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
           bridge_events
           |> Enum.reduce(%MapSet{}, fn event, acc ->
             case bridge_event_parse(event) do
-              {{nil, _}, _, _} -> acc
-              {{token_address, nil}, _, _} -> MapSet.put(acc, token_address)
+              {{nil, _}, _, _, _} -> acc
+              {{token_address, nil}, _, _, _} -> MapSet.put(acc, token_address)
             end
           end)
           |> MapSet.to_list()
@@ -159,34 +233,38 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
         {block_to_timestamp, %{}}
       end
 
-    Enum.map(events, fn event ->
+    events
+    |> Enum.map(fn event ->
       {index, l1_token_id, l1_token_address, l2_token_address, amount, block_number, block_timestamp} =
-        if event.first_topic == @bridge_event do
-          {
-            {l1_token_address, l2_token_address},
-            amount,
-            deposit_count
-          } = bridge_event_parse(event)
+        case event.first_topic do
+          @bridge_event ->
+            {
+              {l1_token_address, l2_token_address},
+              amount,
+              deposit_count,
+              _destination_network
+            } = bridge_event_parse(event)
 
-          l1_token_id = Map.get(token_address_to_id, l1_token_address)
-          block_number = quantity_to_integer(event.block_number)
-          block_timestamp = Map.get(block_to_timestamp, block_number)
+            l1_token_id = Map.get(token_address_to_id, l1_token_address)
+            block_number = quantity_to_integer(event.block_number)
+            block_timestamp = Map.get(block_to_timestamp, block_number)
 
-          # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
-          l1_token_address =
-            if is_nil(l1_token_id) do
-              l1_token_address
-            end
+            # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+            l1_token_address =
+              if is_nil(l1_token_id) do
+                l1_token_address
+              end
 
-          {deposit_count, l1_token_id, l1_token_address, l2_token_address, amount, block_number, block_timestamp}
-        else
-          [index, _origin_network, _origin_address, _destination_address, amount] =
-            decode_data(event.data, @claim_event_params)
+            {deposit_count, l1_token_id, l1_token_address, l2_token_address, amount, block_number, block_timestamp}
 
-          {index, nil, nil, nil, amount, nil, nil}
+          @claim_event_v1 ->
+            {index, amount} = claim_event_v1_parse(event)
+            {index, nil, nil, nil, amount, nil, nil}
+
+          @claim_event_v2 ->
+            {_mainnet_bit, _rollup_index, index, amount} = claim_event_v2_parse(event)
+            {index, nil, nil, nil, amount, nil, nil}
         end
-
-      is_l1 = json_rpc_named_arguments == json_rpc_named_arguments_l1
 
       result = %{
         type: operation_type(event.first_topic, is_l1),
@@ -226,14 +304,35 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
       leaf_type,
       origin_network,
       origin_address,
-      _destination_network,
+      destination_network,
       _destination_address,
       amount,
       _metadata,
       deposit_count
     ] = decode_data(event.data, @bridge_event_params)
 
-    {token_address_by_origin_address(origin_address, origin_network, leaf_type), amount, deposit_count}
+    {token_address_by_origin_address(origin_address, origin_network, leaf_type), amount, deposit_count,
+     destination_network}
+  end
+
+  defp claim_event_v1_parse(event) do
+    [index, _origin_network, _origin_address, _destination_address, amount] =
+      decode_data(event.data, @claim_event_v1_params)
+
+    {index, amount}
+  end
+
+  defp claim_event_v2_parse(event) do
+    [global_index, _origin_network, _origin_address, _destination_address, amount] =
+      decode_data(event.data, @claim_event_v2_params)
+
+    mainnet_bit = Bitwise.band(Bitwise.bsr(global_index, 64), 1)
+
+    rollup_index = Bitwise.band(Bitwise.bsr(global_index, 32), 0xFFFFFFFF)
+
+    index = Bitwise.band(global_index, 0xFFFFFFFF)
+
+    {mainnet_bit, rollup_index, index, amount}
   end
 
   defp operation_type(first_topic, is_l1) do

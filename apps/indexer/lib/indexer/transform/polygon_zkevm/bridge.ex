@@ -6,7 +6,7 @@ defmodule Indexer.Transform.PolygonZkevm.Bridge do
   require Logger
 
   import Indexer.Fetcher.PolygonZkevm.Bridge,
-    only: [filter_bridge_events: 2, prepare_operations: 4]
+    only: [filter_bridge_events: 2, prepare_operations: 6]
 
   alias Indexer.Fetcher.PolygonZkevm.{BridgeL1, BridgeL2}
   alias Indexer.Helper
@@ -42,7 +42,7 @@ defmodule Indexer.Transform.PolygonZkevm.Bridge do
         items =
           logs
           |> filter_bridge_events(bridge_contract)
-          |> prepare_operations(nil, json_rpc_named_arguments_l1, block_to_timestamp)
+          |> prepare_operations(nil, nil, nil, json_rpc_named_arguments_l1, block_to_timestamp)
 
         Helper.log_blocks_chunk_handling(
           start_block,
