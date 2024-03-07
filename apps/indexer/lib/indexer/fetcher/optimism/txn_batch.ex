@@ -463,14 +463,15 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
               |> OptimismTxnBatch.decode_eip4844_blob()
 
             if is_nil(decoded_blob_data) do
-              Logger.warning("Cannot decode the blob #{blob_hash} taken from the Beacon Node.")
-              acc
+              raise "Invalid blob"
             else
               Logger.info("The input for transaction #{transaction_hash} is taken from the Beacon Node.")
               acc <> decoded_blob_data
             end
           rescue
-            _ -> acc
+            _ ->
+              Logger.warning("Cannot decode the blob #{blob_hash} taken from the Beacon Node.")
+              acc
           end
       end
     end)
