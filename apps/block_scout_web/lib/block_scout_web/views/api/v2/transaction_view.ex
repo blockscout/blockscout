@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Optimism.Withdrawal, as: OptimismWithdrawal
   alias Explorer.Chain.PolygonEdge.Reader
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.Counters.AverageBlockTime
@@ -367,7 +368,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
 
-    priority_fee_per_gas = priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas)
+    priority_fee_per_gas = Transaction.priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas)
 
     burnt_fees = burnt_fees(transaction, max_fee_per_gas, base_fee_per_gas)
 
@@ -410,8 +411,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "confirmations" => transaction.block |> Chain.confirmations(block_height: block_height) |> format_confirmations(),
       "confirmation_duration" => processing_time_duration(transaction),
       "value" => transaction.value,
-      "fee" => transaction |> Chain.fee(:wei) |> format_fee(),
-      "gas_price" => transaction.gas_price,
+      "fee" => transaction |> Transaction.fee(:wei) |> format_fee(),
+      "gas_price" => transaction.gas_price || Transaction.effective_gas_price(transaction),
       "type" => transaction.type,
       "gas_used" => transaction.gas_used,
       "gas_limit" => transaction.gas,
@@ -440,14 +441,22 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> maybe_put_stability_fee(transaction)
   end
 
+  defp add_optional_transaction_field(result, transaction, field) do
+    case Map.get(transaction, field) do
+      nil -> result
+      value -> Map.put(result, Atom.to_string(field), value)
+    end
+  end
+
+  # credo:disable-for-next-line
   defp chain_type_fields(result, transaction, single_tx?, conn, watchlist_names) do
-    case single_tx? && Application.get_env(:explorer, :chain_type) do
-      "polygon_edge" ->
+    case {single_tx?, Application.get_env(:explorer, :chain_type)} do
+      {true, "polygon_edge"} ->
         result
         |> Map.put("polygon_edge_deposit", polygon_edge_deposit(transaction.hash, conn))
         |> Map.put("polygon_edge_withdrawal", polygon_edge_withdrawal(transaction.hash, conn))
 
-      "polygon_zkevm" ->
+      {true, "polygon_zkevm"} ->
         extended_result =
           result
           |> add_optional_transaction_field(transaction, "zkevm_batch_number", :zkevm_batch, :number)
@@ -456,8 +465,33 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
         Map.put(extended_result, "zkevm_status", zkevm_status(extended_result))
 
-      "suave" ->
+      {true, "optimism"} ->
+        result
+        |> add_optional_transaction_field(transaction, :l1_fee)
+        |> add_optional_transaction_field(transaction, :l1_fee_scalar)
+        |> add_optional_transaction_field(transaction, :l1_gas_price)
+        |> add_optional_transaction_field(transaction, :l1_gas_used)
+        |> add_optimism_fields(transaction.hash, single_tx?)
+
+      {true, "suave"} ->
         suave_fields(transaction, result, single_tx?, conn, watchlist_names)
+
+      {_, "ethereum"} ->
+        case Map.get(transaction, :beacon_blob_transaction) do
+          nil ->
+            result
+
+          %Ecto.Association.NotLoaded{} ->
+            result
+
+          item ->
+            result
+            |> Map.put("max_fee_per_blob_gas", item.max_fee_per_blob_gas)
+            |> Map.put("blob_versioned_hashes", item.blob_versioned_hashes)
+            |> Map.put("blob_gas_used", item.blob_gas_used)
+            |> Map.put("blob_gas_price", item.blob_gas_price)
+            |> Map.put("burnt_blob_fee", Decimal.mult(item.blob_gas_used, item.blob_gas_price))
+        end
 
       _ ->
         result
@@ -504,7 +538,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         |> Map.put(
           "execution_node",
           Helper.address_with_info(
-            single_tx? && conn,
+            conn,
             transaction.execution_node,
             transaction.execution_node_hash,
             single_tx?,
@@ -516,7 +550,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           "nonce" => transaction.wrapped_nonce,
           "to" =>
             Helper.address_with_info(
-              single_tx? && conn,
+              conn,
               transaction.wrapped_to_address,
               transaction.wrapped_to_address_hash,
               single_tx?,
@@ -526,7 +560,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           "gas_price" => transaction.wrapped_gas_price,
           "fee" =>
             format_fee(
-              Chain.fee(
+              Transaction.fee(
                 %Transaction{gas: transaction.wrapped_gas, gas_price: transaction.wrapped_gas_price, gas_used: nil},
                 :wei
               )
@@ -544,6 +578,25 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           "raw_input" => transaction.wrapped_input
         })
       end
+    end
+  end
+
+  defp add_optimism_fields(result, transaction_hash, single_tx?) do
+    if Application.get_env(:explorer, :chain_type) == "optimism" && single_tx? do
+      withdrawals =
+        transaction_hash
+        |> OptimismWithdrawal.transaction_statuses()
+        |> Enum.map(fn {nonce, status, l1_transaction_hash} ->
+          %{
+            "nonce" => nonce,
+            "status" => status,
+            "l1_transaction_hash" => l1_transaction_hash
+          }
+        end)
+
+      Map.put(result, "op_withdrawals", withdrawals)
+    else
+      result
     end
   end
 
@@ -570,15 +623,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   """
   def transaction_actions(actions) do
     render("transaction_actions.json", %{actions: actions})
-  end
-
-  defp priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas) do
-    if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas),
-      do: nil,
-      else:
-        Enum.min_by([max_priority_fee_per_gas, Wei.sub(max_fee_per_gas, base_fee_per_gas)], fn x ->
-          Wei.to(x, :wei)
-        end)
   end
 
   defp burnt_fees(transaction, max_fee_per_gas, base_fee_per_gas) do
@@ -735,7 +779,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
                | :rootstock_remasc
                | :token_creation
                | :token_transfer
-  def tx_types(tx, types \\ [], stage \\ :token_transfer)
+               | :blob_transaction
+  def tx_types(tx, types \\ [], stage \\ :blob_transaction)
+
+  def tx_types(%Transaction{type: type} = tx, types, :blob_transaction) do
+    # EIP-2718 blob transaction type
+    types =
+      if type == 3 do
+        [:blob_transaction | types]
+      else
+        types
+      end
+
+    tx_types(tx, types, :token_transfer)
+  end
 
   def tx_types(%Transaction{token_transfers: token_transfers} = tx, types, :token_transfer) do
     types =

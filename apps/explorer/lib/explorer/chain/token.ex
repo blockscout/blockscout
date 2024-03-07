@@ -77,7 +77,7 @@ defmodule Explorer.Chain.Token do
 
   alias Ecto.Changeset
   alias Explorer.{Chain, SortingHelper}
-  alias Explorer.Chain.{BridgedToken, Search, Token}
+  alias Explorer.Chain.{BridgedToken, Hash, Search, Token}
   alias Explorer.SmartContract.Helper
 
   @default_sorting [
@@ -230,5 +230,20 @@ defmodule Explorer.Chain.Token do
 
   def get_by_contract_address_hash(hash, options) do
     Chain.select_repo(options).get_by(__MODULE__, contract_address_hash: hash)
+  end
+
+  @doc """
+    For usage in Indexer.Fetcher.TokenInstance.LegacySanitizeERC721
+  """
+  @spec ordered_erc_721_token_address_hashes_list_query(integer(), Hash.Address.t() | nil) :: Ecto.Query.t()
+  def ordered_erc_721_token_address_hashes_list_query(limit, last_address_hash \\ nil) do
+    query =
+      __MODULE__
+      |> order_by([token], asc: token.contract_address_hash)
+      |> where([token], token.type == "ERC-721")
+      |> limit(^limit)
+      |> select([token], token.contract_address_hash)
+
+    (last_address_hash && where(query, [token], token.contract_address_hash > ^last_address_hash)) || query
   end
 end

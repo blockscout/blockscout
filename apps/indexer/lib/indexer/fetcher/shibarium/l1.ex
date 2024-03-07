@@ -23,11 +23,11 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
   import Indexer.Fetcher.Shibarium.Helper,
     only: [calc_operation_hash: 5, prepare_insert_items: 2, recalculate_cached_count: 0]
 
-  alias EthereumJSONRPC.Block.ByNumber
-  alias EthereumJSONRPC.Blocks
   alias Explorer.Chain.Shibarium.Bridge
   alias Explorer.{Chain, Repo}
-  alias Indexer.{BoundQueue, Helper}
+  alias Indexer.Fetcher.RollupL1ReorgMonitor
+  alias Indexer.Helper
+  alias Indexer.Transform.Addresses
 
   @block_check_interval_range_size 100
   @eth_get_logs_range_size 1000
@@ -111,6 +111,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
+         {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(RollupL1ReorgMonitor))},
          rpc = env[:rpc],
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
          {:deposit_manager_address_is_valid, true} <-
@@ -140,7 +141,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
          {:start_block_valid, true} <- {:start_block_valid, start_block <= latest_block} do
       recalculate_cached_count()
 
-      Process.send(self(), :reorg_monitor, [])
       Process.send(self(), :continue, [])
 
       {:noreply,
@@ -154,12 +154,15 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
          block_check_interval: block_check_interval,
          start_block: max(start_block, last_l1_block_number),
          end_block: latest_block,
-         json_rpc_named_arguments: json_rpc_named_arguments,
-         reorg_monitor_prev_latest: 0
+         json_rpc_named_arguments: json_rpc_named_arguments
        }}
     else
       {:start_block_undefined, true} ->
         # the process shouldn't start if the start block is not defined
+        {:stop, :normal, %{}}
+
+      {:reorg_monitor_started, false} ->
+        Logger.error("Cannot start this process as Indexer.Fetcher.RollupL1ReorgMonitor is not started.")
         {:stop, :normal, %{}}
 
       {:rpc_undefined, true} ->
@@ -216,27 +219,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
   @impl GenServer
   def handle_info(
-        :reorg_monitor,
-        %{
-          block_check_interval: block_check_interval,
-          json_rpc_named_arguments: json_rpc_named_arguments,
-          reorg_monitor_prev_latest: prev_latest
-        } = state
-      ) do
-    {:ok, latest} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-
-    if latest < prev_latest do
-      Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
-      reorg_block_push(latest)
-    end
-
-    Process.send_after(self(), :reorg_monitor, block_check_interval)
-
-    {:noreply, %{state | reorg_monitor_prev_latest: latest}}
-  end
-
-  @impl GenServer
-  def handle_info(
         :continue,
         %{
           deposit_manager_proxy: deposit_manager_proxy,
@@ -261,7 +243,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
         chunk_end = List.last(current_chunk)
 
         if chunk_start <= chunk_end do
-          Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, "L1")
+          Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L1)
 
           operations =
             {chunk_start, chunk_end}
@@ -276,9 +258,17 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
             )
             |> prepare_operations(json_rpc_named_arguments)
 
+          insert_items = prepare_insert_items(operations, __MODULE__)
+
+          addresses =
+            Addresses.extract_addresses(%{
+              shibarium_bridge_operations: insert_items
+            })
+
           {:ok, _} =
             Chain.import(%{
-              shibarium_bridge_operations: %{params: prepare_insert_items(operations, __MODULE__)},
+              addresses: %{params: addresses, on_conflict: :nothing},
+              shibarium_bridge_operations: %{params: insert_items},
               timeout: :infinity
             })
 
@@ -288,11 +278,11 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
             start_block,
             end_block,
             "#{Enum.count(operations)} L1 operation(s)",
-            "L1"
+            :L1
           )
         end
 
-        reorg_block = reorg_block_pop()
+        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           reorg_handle(reorg_block)
@@ -303,7 +293,9 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
       end)
 
     new_start_block = last_written_block + 1
-    {:ok, new_end_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+
+    {:ok, new_end_block} =
+      Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
 
     delay =
       if new_end_block == last_written_block do
@@ -348,25 +340,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     end
   end
 
-  defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
-    request =
-      events
-      |> Enum.reduce(%{}, fn event, acc ->
-        Map.put(acc, event["blockNumber"], 0)
-      end)
-      |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
-      |> Stream.with_index()
-      |> Enum.into(%{}, fn {params, id} -> {id, params} end)
-      |> Blocks.requests(&ByNumber.request(&1, false, false))
-
-    error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
-
-    case Helper.repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
-      {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
-      {:error, _} -> []
-    end
-  end
-
   defp get_last_l1_item do
     query =
       from(sb in Bridge,
@@ -381,7 +354,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     |> Kernel.||({0, nil})
   end
 
-  defp get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, retries \\ 100_000_000) do
+  defp get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, retries) do
     processed_from_block = integer_to_quantity(from_block)
     processed_to_block = integer_to_quantity(to_block)
 
@@ -431,7 +404,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
             @exited_ether_event
           ]
         ],
-        json_rpc_named_arguments
+        json_rpc_named_arguments,
+        Helper.infinite_retries_number()
       )
 
     contract_addresses =
@@ -450,7 +424,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
           @transfer_event,
           contract_addresses
         ],
-        json_rpc_named_arguments
+        json_rpc_named_arguments,
+        Helper.infinite_retries_number()
       )
 
     {:ok, unknown_erc1155_tokens_result} =
@@ -466,7 +441,8 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
             nil,
             pad_address_hash(erc1155_predicate_proxy)
           ],
-          json_rpc_named_arguments
+          json_rpc_named_arguments,
+          Helper.infinite_retries_number()
         )
       end
 
@@ -581,7 +557,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     timestamps =
       events
       |> filter_deposit_events()
-      |> get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+      |> Helper.get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number())
       |> Enum.reduce(%{}, fn block, acc ->
         block_number = quantity_to_integer(Map.get(block, "number"))
         {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
@@ -647,25 +623,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     "0x#{truncated_hash}"
   end
 
-  defp reorg_block_pop do
-    table_name = reorg_table_name(@fetcher_name)
-
-    case BoundQueue.pop_front(reorg_queue_get(table_name)) do
-      {:ok, {block_number, updated_queue}} ->
-        :ets.insert(table_name, {:queue, updated_queue})
-        block_number
-
-      {:error, :empty} ->
-        nil
-    end
-  end
-
-  defp reorg_block_push(block_number) do
-    table_name = reorg_table_name(@fetcher_name)
-    {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(table_name), block_number)
-    :ets.insert(table_name, {:queue, updated_queue})
-  end
-
   defp reorg_handle(reorg_block) do
     {deleted_count, _} =
       Repo.delete_all(from(sb in Bridge, where: sb.l1_block_number >= ^reorg_block and is_nil(sb.l2_transaction_hash)))
@@ -695,28 +652,5 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
         "As L1 reorg was detected, some rows with l1_block_number >= #{reorg_block} were affected (removed or updated) in the shibarium_bridge table. Number of removed rows: #{deleted_count}. Number of updated rows: >= #{updated_count}."
       )
     end
-  end
-
-  defp reorg_queue_get(table_name) do
-    if :ets.whereis(table_name) == :undefined do
-      :ets.new(table_name, [
-        :set,
-        :named_table,
-        :public,
-        read_concurrency: true,
-        write_concurrency: true
-      ])
-    end
-
-    with info when info != :undefined <- :ets.info(table_name),
-         [{_, value}] <- :ets.lookup(table_name, :queue) do
-      value
-    else
-      _ -> %BoundQueue{}
-    end
-  end
-
-  defp reorg_table_name(fetcher_name) do
-    :"#{fetcher_name}#{:_reorgs}"
   end
 end

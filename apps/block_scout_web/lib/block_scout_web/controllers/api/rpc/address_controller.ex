@@ -281,8 +281,8 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     %{}
     |> put_order_by_direction(params)
     |> Helper.put_pagination_options(params)
-    |> put_block(params, "start_block")
-    |> put_block(params, "end_block")
+    |> put_block(params, "startblock")
+    |> put_block(params, "endblock")
     |> put_filter_by(params)
     |> put_timestamp(params, "start_timestamp")
     |> put_timestamp(params, "end_timestamp")

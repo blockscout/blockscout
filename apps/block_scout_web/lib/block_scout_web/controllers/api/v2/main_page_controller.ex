@@ -2,8 +2,9 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   use Phoenix.Controller
 
   alias Explorer.{Chain, PagingOptions}
-  alias BlockScoutWeb.API.V2.{BlockView, TransactionView}
+  alias BlockScoutWeb.API.V2.{BlockView, OptimismView, TransactionView}
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Optimism.Deposit
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
@@ -34,6 +35,19 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     |> put_status(200)
     |> put_view(BlockView)
     |> render(:blocks, %{blocks: blocks |> maybe_preload_ens()})
+  end
+
+  def optimism_deposits(conn, _params) do
+    recent_deposits =
+      Deposit.list(
+        paging_options: %PagingOptions{page_size: 6},
+        api?: true
+      )
+
+    conn
+    |> put_status(200)
+    |> put_view(OptimismView)
+    |> render(:optimism_deposits, %{deposits: recent_deposits})
   end
 
   def transactions(conn, _params) do

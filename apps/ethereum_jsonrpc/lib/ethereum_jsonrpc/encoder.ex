@@ -25,6 +25,10 @@ defmodule EthereumJSONRPC.Encoder do
 
   def encode_function_call(function_selector, args), do: encode_function_call(function_selector, [args])
 
+  defp parse_args(args, {:array, type}) when is_list(args) do
+    Enum.map(args, fn arg -> parse_args(arg, type) end)
+  end
+
   defp parse_args(args, types) when is_list(args) do
     args
     |> Enum.zip(types)

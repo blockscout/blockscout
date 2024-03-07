@@ -99,7 +99,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       end
 
     fee_query =
-      if DenormalizationHelper.denormalization_finished?() do
+      if DenormalizationHelper.transactions_denormalization_finished?() do
         from(
           transaction in Transaction,
           where: transaction.block_consensus == true,
@@ -333,7 +333,9 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       time: time && time |> Decimal.to_float(),
       fiat_price: fiat_fee(fee, exchange_rate_from_db),
       base_fee: base_fee |> format_wei(),
-      priority_fee: base_fee && priority_fee && priority_fee |> Decimal.new() |> Wei.from(:wei) |> format_wei()
+      priority_fee: base_fee && priority_fee && priority_fee |> Decimal.new() |> Wei.from(:wei) |> format_wei(),
+      priority_fee_wei: base_fee && priority_fee && priority_fee |> Decimal.new() |> Decimal.round(),
+      wei: fee |> Wei.to(:wei) |> Decimal.round()
     }
   end
 

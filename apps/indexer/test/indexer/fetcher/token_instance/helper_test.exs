@@ -50,26 +50,15 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       }
       """
 
-      abi =
-        [
-          %{
-            "type" => "function",
-            "stateMutability" => "nonpayable",
-            "payable" => false,
-            "outputs" => [],
-            "name" => "tokenURI",
-            "inputs" => [
-              %{"type" => "string", "name" => "name", "internalType" => "string"}
-            ]
-          }
-        ]
-        |> ABI.parse_specification()
-        |> Enum.at(0)
-
       encoded_url =
-        abi
-        |> Encoder.encode_function_call(["http://localhost:#{bypass.port}/api/card/{id}"])
-        |> String.replace("4cf12d26", "")
+        "0x" <>
+          (ABI.TypeEncoder.encode(["http://localhost:#{bypass.port}/api/card/{id}"], %ABI.FunctionSelector{
+             function: nil,
+             types: [
+               :string
+             ]
+           })
+           |> Base.encode16(case: :lower))
 
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn [
@@ -173,6 +162,105 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
              ] = Helper.batch_fetch_instances([{"0x7e01CC81fCfdf6a71323900288A69e234C464f63", 0}])
 
       Application.put_env(:explorer, :http_adapter, HTTPoison)
+    end
+
+    test "re-fetch metadata from baseURI", %{bypass: bypass} do
+      json = """
+      {
+        "name": "123"
+      }
+      """
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data:
+                                        "0xc87b56dd0000000000000000000000000000000000000000000000004f3f5ce294ff3d36",
+                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             error: %{code: -32015, data: "Reverted 0x", message: "execution reverted"},
+             id: id,
+             jsonrpc: "2.0"
+           }
+         ]}
+      end)
+
+      encoded_url =
+        "0x" <>
+          (ABI.TypeEncoder.encode(["http://localhost:#{bypass.port}/api/card/"], %ABI.FunctionSelector{
+             function: nil,
+             types: [
+               :string
+             ]
+           })
+           |> Base.encode16(case: :lower))
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data: "0x6c0360eb",
+                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             id: id,
+             jsonrpc: "2.0",
+             result: encoded_url
+           }
+         ]}
+      end)
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/card/5710384980761197878",
+        fn conn ->
+          Conn.resp(conn, 200, json)
+        end
+      )
+
+      insert(:token,
+        contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
+        type: "ERC-721"
+      )
+
+      Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, base_uri_retry?: true)
+
+      assert [
+               {:ok,
+                %Instance{
+                  metadata: %{
+                    "name" => "123"
+                  }
+                }}
+             ] =
+               Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 5_710_384_980_761_197_878}])
+
+      Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, base_uri_retry?: false)
     end
   end
 end

@@ -3,6 +3,7 @@ defmodule Explorer.Chain.Transaction.Schema do
 
   alias Explorer.Chain.{
     Address,
+    Beacon.BlobTransaction,
     Block,
     Data,
     Hash,
@@ -13,10 +14,31 @@ defmodule Explorer.Chain.Transaction.Schema do
     Wei
   }
 
+  alias Explorer.Chain.PolygonZkevm.BatchTransaction
   alias Explorer.Chain.Transaction.{Fork, Status}
-  alias Explorer.Chain.Zkevm.BatchTransaction
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
+                        "ethereum" ->
+                          # elem(quote do ... end, 2) doesn't work with a single has_one instruction
+                          quote do
+                            [
+                              has_one(:beacon_blob_transaction, BlobTransaction, foreign_key: :hash, references: :hash)
+                            ]
+                          end
+
+                        "optimism" ->
+                          elem(
+                            quote do
+                              field(:l1_fee, Wei)
+                              field(:l1_fee_scalar, :decimal)
+                              field(:l1_gas_price, Wei)
+                              field(:l1_gas_used, :decimal)
+                              field(:l1_tx_origin, Hash.Full)
+                              field(:l1_block_number, :integer)
+                            end,
+                            2
+                          )
+
                         "suave" ->
                           elem(
                             quote do
@@ -193,8 +215,10 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.SmartContract.SigProviderInterface
 
   @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number block_consensus block_timestamp created_contract_address_hash cumulative_gas_used earliest_processing_start
-                     error gas_price gas_used index created_contract_code_indexed_at status to_address_hash revert_reason type has_error_in_internal_txs)a
+                     error gas_price gas_used index created_contract_code_indexed_at status
+                     to_address_hash revert_reason type has_error_in_internal_txs)a
 
+  @optimism_optional_attrs ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
   @suave_optional_attrs ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
 
   @required_attrs ~w(from_address_hash gas hash input nonce r s v value)a
@@ -518,7 +542,7 @@ defmodule Explorer.Chain.Transaction do
     attrs_to_cast =
       @required_attrs ++
         @optional_attrs ++
-        if Application.get_env(:explorer, :chain_type) == "suave", do: @suave_optional_attrs, else: @empty_attrs
+        custom_optional_attrs()
 
     transaction
     |> cast(attrs, attrs_to_cast)
@@ -531,6 +555,14 @@ defmodule Explorer.Chain.Transaction do
     |> check_status()
     |> foreign_key_constraint(:block_hash)
     |> unique_constraint(:hash)
+  end
+
+  defp custom_optional_attrs do
+    case Application.get_env(:explorer, :chain_type) do
+      "suave" -> @suave_optional_attrs
+      "optimism" -> @optimism_optional_attrs
+      _ -> @empty_attrs
+    end
   end
 
   @spec block_timestamp(t()) :: DateTime.t()
@@ -1458,8 +1490,8 @@ defmodule Explorer.Chain.Transaction do
           :asc_nulls_first -> Decimal.new("inf")
         end
 
-      a_fee = a |> Chain.fee(:wei) |> elem(1) || nil_case
-      b_fee = b |> Chain.fee(:wei) |> elem(1) || nil_case
+      a_fee = a |> fee(:wei) |> elem(1) || nil_case
+      b_fee = b |> fee(:wei) |> elem(1) || nil_case
 
       case Decimal.compare(a_fee, b_fee) do
         :eq -> compare_default_sorting(a, b)
@@ -1648,7 +1680,7 @@ defmodule Explorer.Chain.Transaction do
         %__MODULE__{block_number: block_number, index: index, inserted_at: inserted_at, hash: hash, value: value} = tx
       ) do
     %{
-      "fee" => tx |> Chain.fee(:wei) |> elem(1),
+      "fee" => tx |> fee(:wei) |> elem(1),
       "value" => value,
       "block_number" => block_number,
       "index" => index,
@@ -1699,5 +1731,110 @@ defmodule Explorer.Chain.Transaction do
 
       String.downcase(sanitized)
     end
+  end
+
+  @doc """
+  The fee a `transaction` paid for the `t:Explorer.Transaction.t/0` `gas`
+
+  If the transaction is pending, then the fee will be a range of `unit`
+
+      iex> Explorer.Chain.Transaction.fee(
+      ...>   %Explorer.Chain.Transaction{
+      ...>     gas: Decimal.new(3),
+      ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
+      ...>     gas_used: nil
+      ...>   },
+      ...>   :wei
+      ...> )
+      {:maximum, Decimal.new(6)}
+
+  If the transaction has been confirmed in block, then the fee will be the actual fee paid in `unit` for the `gas_used`
+  in the `transaction`.
+
+      iex> Explorer.Chain.Transaction.fee(
+      ...>   %Explorer.Chain.Transaction{
+      ...>     gas: Decimal.new(3),
+      ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
+      ...>     gas_used: Decimal.new(2)
+      ...>   },
+      ...>   :wei
+      ...> )
+      {:actual, Decimal.new(4)}
+
+  """
+  @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t() | nil}
+  def fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
+
+  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil} = tx, unit) do
+    {:maximum, fee(tx, gas_price, gas, unit)}
+  end
+
+  def fee(%Transaction{gas_price: nil, gas_used: gas_used} = transaction, unit) do
+    if Application.get_env(:explorer, :chain_type) == "optimism" do
+      {:actual, nil}
+    else
+      gas_price = effective_gas_price(transaction)
+
+      {:actual,
+       gas_price &&
+         gas_price
+         |> Wei.to(unit)
+         |> Decimal.mult(gas_used)}
+    end
+  end
+
+  def fee(%Transaction{gas_price: gas_price, gas_used: gas_used} = tx, unit) do
+    {:actual, fee(tx, gas_price, gas_used, unit)}
+  end
+
+  defp fee(tx, gas_price, gas, unit) do
+    l1_fee =
+      case Map.get(tx, :l1_fee) do
+        nil -> Wei.from(Decimal.new(0), :wei)
+        value -> value
+      end
+
+    gas_price
+    |> Wei.to(unit)
+    |> Decimal.mult(gas)
+    |> Wei.from(unit)
+    |> Wei.sum(l1_fee)
+    |> Wei.to(unit)
+  end
+
+  @doc """
+    Calculates effective gas price for transaction with type 2 (EIP-1559)
+
+    `effective_gas_price = priority_fee_per_gas + block.base_fee_per_gas`
+  """
+  @spec effective_gas_price(Transaction.t()) :: Wei.t() | nil
+
+  def effective_gas_price(%Transaction{block: nil}), do: nil
+  def effective_gas_price(%Transaction{block: %NotLoaded{}}), do: nil
+
+  def effective_gas_price(%Transaction{} = transaction) do
+    base_fee_per_gas = transaction.block.base_fee_per_gas
+    max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
+    max_fee_per_gas = transaction.max_fee_per_gas
+
+    priority_fee_per_gas = priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas)
+
+    priority_fee_per_gas && Wei.sum(priority_fee_per_gas, base_fee_per_gas)
+  end
+
+  @doc """
+    Calculates priority fee per gas for transaction with type 2 (EIP-1559)
+
+    `priority_fee_per_gas = min(transaction.max_priority_fee_per_gas, transaction.max_fee_per_gas - block.base_fee_per_gas)`
+  """
+  @spec priority_fee_per_gas(Wei.t() | nil, Wei.t() | nil, Wei.t() | nil) :: Wei.t() | nil
+  def priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas) do
+    if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas),
+      do: nil,
+      else:
+        max_priority_fee_per_gas
+        |> Wei.to(:wei)
+        |> Decimal.min(max_fee_per_gas |> Wei.sub(base_fee_per_gas) |> Wei.to(:wei))
+        |> Wei.from(:wei)
   end
 end

@@ -13,9 +13,19 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.Logs,
     Runner.Tokens,
     Runner.TokenTransfers,
+    Runner.TokenInstances,
     Runner.Address.TokenBalances,
     Runner.TransactionActions,
     Runner.Withdrawals
+  ]
+
+  @optimism_runners [
+    Runner.Optimism.FrameSequences,
+    Runner.Optimism.TxnBatches,
+    Runner.Optimism.OutputRoots,
+    Runner.Optimism.Deposits,
+    Runner.Optimism.Withdrawals,
+    Runner.Optimism.WithdrawalEvents
   ]
 
   @polygon_edge_runners [
@@ -26,18 +36,27 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   ]
 
   @polygon_zkevm_runners [
-    Runner.Zkevm.LifecycleTransactions,
-    Runner.Zkevm.TransactionBatches,
-    Runner.Zkevm.BatchTransactions
+    Runner.PolygonZkevm.LifecycleTransactions,
+    Runner.PolygonZkevm.TransactionBatches,
+    Runner.PolygonZkevm.BatchTransactions,
+    Runner.PolygonZkevm.BridgeL1Tokens,
+    Runner.PolygonZkevm.BridgeOperations
   ]
 
   @shibarium_runners [
     Runner.Shibarium.BridgeOperations
   ]
 
+  @ethereum_runners [
+    Runner.Beacon.BlobTransactions
+  ]
+
   @impl Stage
   def runners do
-    case System.get_env("CHAIN_TYPE") do
+    case Application.get_env(:explorer, :chain_type) do
+      "optimism" ->
+        @default_runners ++ @optimism_runners
+
       "polygon_edge" ->
         @default_runners ++ @polygon_edge_runners
 
@@ -47,6 +66,9 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       "shibarium" ->
         @default_runners ++ @shibarium_runners
 
+      "ethereum" ->
+        @default_runners ++ @ethereum_runners
+
       _ ->
         @default_runners
     end
@@ -54,7 +76,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
   @impl Stage
   def all_runners do
-    @default_runners ++ @polygon_edge_runners ++ @polygon_zkevm_runners ++ @shibarium_runners
+    @default_runners ++ @optimism_runners ++ @polygon_edge_runners ++ @polygon_zkevm_runners ++ @shibarium_runners
   end
 
   @impl Stage

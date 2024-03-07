@@ -48,6 +48,6 @@ defmodule Explorer.Migrator.TransactionsDenormalization do
 
   @impl FillingMigration
   def update_cache do
-    BackgroundMigrations.set_denormalization_finished(true)
+    BackgroundMigrations.set_transactions_denormalization_finished(true)
   end
 end

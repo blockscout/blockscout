@@ -89,7 +89,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
     Logger.info("tx/per day chart: min/max block numbers [#{min_block}, #{max_block}]")
 
     all_transactions_query =
-      if DenormalizationHelper.denormalization_finished?() do
+      if DenormalizationHelper.transactions_denormalization_finished?() do
         from(
           transaction in Transaction,
           where: transaction.block_number >= ^min_block and transaction.block_number <= ^max_block,
@@ -112,7 +112,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
       )
 
     query =
-      if DenormalizationHelper.denormalization_finished?() do
+      if DenormalizationHelper.transactions_denormalization_finished?() do
         all_transactions_query
       else
         from(transaction in subquery(all_transactions_query),
@@ -128,7 +128,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
     Logger.info("tx/per day chart: total gas used #{gas_used}")
 
     total_fee_query =
-      if DenormalizationHelper.denormalization_finished?() do
+      if DenormalizationHelper.transactions_denormalization_finished?() do
         from(transaction in subquery(all_transactions_query),
           select: fragment("SUM(? * ?)", transaction.gas_price, transaction.gas_used)
         )
