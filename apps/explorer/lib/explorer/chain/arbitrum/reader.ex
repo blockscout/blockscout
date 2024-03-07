@@ -64,6 +64,41 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
+  TBD
+  """
+  def l1_block_of_earliest_committed_batch do
+    query =
+      from(batch in L1Batch,
+        order_by: [asc: batch.number],
+        limit: 1
+      )
+
+    case query
+         |> Chain.join_associations(%{
+           :commit_transaction => :optional
+         })
+         |> Repo.one() do
+      nil -> nil
+      batch -> batch.commit_transaction.block
+    end
+  end
+
+  @doc """
+  TBD
+  """
+  def highest_committed_block do
+    query =
+      from(batch in L1Batch,
+        select: batch.end_block,
+        order_by: [desc: batch.number],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+  end
+
+  @doc """
     Reads a list of L1 transactions by their hashes from the `arbitrum_lifecycle_l1_transactions` table.
 
     ## Parameters
@@ -191,6 +226,22 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       nil -> nil
       block -> block.confirm_transaction.block
     end
+  end
+
+  def highest_confirmed_block do
+    query =
+      from(
+        rb in BatchBlock,
+        left_join: fb in FullBlock,
+        on: rb.hash == fb.hash,
+        select: fb.number,
+        where: not is_nil(rb.confirm_id),
+        order_by: [desc: fb.number],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
   end
 
   def l1_block_of_latest_execution do

@@ -38,7 +38,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     l1_rpc = config_common[:l1_rpc]
     l1_rpc_block_range = config_common[:l1_rpc_block_range]
     l1_rollup_address = config_common[:l1_rollup_address]
-    l1_start_block = config_common[:l1_start_block]
+    l1_rollup_init_block = config_common[:l1_rollup_init_block]
+    l1_start_block = max(config_common[:l1_start_block], l1_rollup_init_block)
     l1_rpc_chunk_size = config_common[:l1_rpc_chunk_size]
     rollup_chunk_size = config_common[:rollup_chunk_size]
 
@@ -68,6 +69,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
          recheck_interval: recheck_interval,
          l1_rollup_address: l1_rollup_address,
          l1_start_block: l1_start_block,
+         l1_rollup_init_block: l1_rollup_init_block,
          messages_to_blocks_shift: messages_to_blocks_shift,
          confirmation_batches_depth: confirmation_batches_depth
        },
@@ -105,6 +107,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     #       One of the approaches is to look deeper than the latest committed batch and
     #       check whether batches were already handled or not.
     new_batches_start_block = Db.l1_block_of_latest_committed_batch(l1_start_block)
+    historical_batches_end_block = Db.l1_block_of_earliest_committed_batch(l1_start_block)
 
     # TODO: it is necessary to develop a way to discover missed L1 confirmation txs.
     #       One of the approaches is
@@ -135,6 +138,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         :data,
         Map.merge(state.data, %{
           new_batches_start_block: new_batches_start_block,
+          historical_batches_end_block: historical_batches_end_block,
           new_confirmations_start_block: new_confirmations_start_block,
           new_executions_start_block: new_executions_start_block
         })
@@ -150,13 +154,6 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       :timer.tc(&discover_new_batches/1, [
         state
       ])
-
-    # {handle_duration, _} =
-    #   :timer.tc(&nothing_to_do/1, [
-    #     state
-    #   ])
-
-    # end_block = 0
 
     Process.send(self(), :check_new_confirmations, [])
 
@@ -196,12 +193,31 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         state
       ])
 
-    Process.send(self(), :check_lifecycle_txs_finalization, [])
+    Process.send(self(), :check_historical_batches, [])
 
     new_data =
       Map.merge(state.data, %{
         duration: increase_duration(state.data, handle_duration),
         new_executions_start_block: end_block + 1
+      })
+
+    {:noreply, %{state | data: new_data}}
+  end
+
+  # TBD
+  @impl GenServer
+  def handle_info(:check_historical_batches, state) do
+    {handle_duration, {:ok, start_block}} =
+      :timer.tc(&discover_historical_batches/1, [
+        state
+      ])
+
+    Process.send(self(), :check_lifecycle_txs_finalization, [])
+
+    new_data =
+      Map.merge(state.data, %{
+        duration: increase_duration(state.data, handle_duration),
+        historical_batches_end_block: start_block - 1
       })
 
     {:noreply, %{state | data: new_data}}
@@ -270,6 +286,38 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       {:ok, end_block}
     else
       {:ok, start_block - 1}
+    end
+  end
+
+  def discover_historical_batches(
+        %{
+          config: %{
+            l1_rpc: l1_rpc_config,
+            rollup_rpc: rollup_rpc_config,
+            l1_sequencer_inbox_address: sequencer_inbox_address,
+            messages_to_blocks_shift: messages_to_blocks_shift,
+            l1_rollup_init_block: l1_rollup_init_block
+          },
+          data: %{historical_batches_end_block: end_block}
+        } = _state
+      ) do
+    if end_block >= l1_rollup_init_block do
+      start_block = max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
+
+      Logger.info("Block range for historical batches discovery: #{start_block}..#{end_block}")
+
+      NewBatches.discover(
+        sequencer_inbox_address,
+        start_block,
+        end_block,
+        messages_to_blocks_shift,
+        l1_rpc_config,
+        rollup_rpc_config
+      )
+
+      {:ok, start_block}
+    else
+      {:ok, l1_rollup_init_block}
     end
   end
 
@@ -350,8 +398,4 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   defp monitor_lifecycle_txs_finalization(state) do
     L1Finalization.monitor_lifecycle_txs(state.config.l1_rpc.json_rpc_named_arguments)
   end
-
-  # defp nothing_to_do(_) do
-  #   :timer.sleep(500)
-  # end
 end

@@ -88,6 +88,24 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @doc """
   TBD
   """
+  def l1_block_of_earliest_committed_batch(value_if_nil) do
+    case Reader.l1_block_of_earliest_committed_batch() do
+      nil ->
+        Logger.warning("No committed batches found in DB")
+        value_if_nil
+
+      value ->
+        value + 1
+    end
+  end
+
+  def highest_committed_block do
+    Reader.highest_committed_block()
+  end
+
+  @doc """
+  TBD
+  """
   def l1_block_of_latest_discovered_message_to_l2(value_if_nil) do
     case Reader.l1_block_of_latest_discovered_message_to_l2() do
       nil ->
@@ -125,6 +143,10 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       value ->
         value + 1
     end
+  end
+
+  def highest_confirmed_block do
+    Reader.highest_confirmed_block()
   end
 
   def l1_block_of_latest_execution(value_if_nil) do
