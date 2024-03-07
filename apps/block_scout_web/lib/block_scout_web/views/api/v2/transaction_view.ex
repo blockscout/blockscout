@@ -777,6 +777,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
       defp chain_type_fields(result, transaction, single_tx?, conn, _watchlist_names) do
         if single_tx? do
+          # credo:disable-for-next-line Credo.Check.Design.AliasUsage
           BlockScoutWeb.API.V2.PolygonEdgeView.extend_transaction_json_response(result, transaction.hash, conn)
         else
           result
@@ -790,6 +791,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
       defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
         if single_tx? do
+          # credo:disable-for-next-line Credo.Check.Design.AliasUsage
           BlockScoutWeb.API.V2.PolygonZkevmView.extend_transaction_json_response(result, transaction)
         else
           result
@@ -803,6 +805,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
       defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
         if single_tx? do
+          # credo:disable-for-next-line Credo.Check.Design.AliasUsage
           BlockScoutWeb.API.V2.ZkSyncView.extend_transaction_json_response(result, transaction)
         else
           result
@@ -816,6 +819,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
       defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
         if single_tx? do
+          # credo:disable-for-next-line Credo.Check.Design.AliasUsage
           BlockScoutWeb.API.V2.OptimismView.extend_transaction_json_response(result, transaction)
         else
           result
@@ -829,6 +833,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
       defp chain_type_fields(result, transaction, single_tx?, conn, watchlist_names) do
         if single_tx? do
+          # credo:disable-for-next-line Credo.Check.Design.AliasUsage
           BlockScoutWeb.API.V2.SuaveView.extend_transaction_json_response(
             transaction,
             result,
@@ -843,10 +848,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     "stability" ->
       defp chain_type_transformations(transactions) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.StabilityView.transform_transactions(transactions)
       end
 
       defp chain_type_fields(result, transaction, _single_tx?, _conn, _watchlist_names) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.StabilityView.extend_transaction_json_response(result, transaction)
       end
 
@@ -856,6 +863,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       end
 
       defp chain_type_fields(result, transaction, _single_tx?, _conn, _watchlist_names) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.EthereumView.extend_transaction_json_response(result, transaction)
       end
 
