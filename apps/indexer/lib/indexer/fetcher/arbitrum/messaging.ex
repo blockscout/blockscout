@@ -120,7 +120,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     cond do
       highest_confirmed_block >= msg_block -> :confirmed
       highest_committed_block >= msg_block -> :sent
-      false -> :initiated
+      true -> :initiated
     end
   end
 end
