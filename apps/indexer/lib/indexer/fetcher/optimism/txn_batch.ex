@@ -419,7 +419,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
           blob_data
           |> String.trim_leading("0x")
           |> Base.decode16!(case: :lower)
-          |> BeaconBlob.decode()
+          |> OptimismTxnBatch.decode_eip4844_blob()
 
         if is_nil(decoded) do
           Logger.warning("Cannot decode the blob #{blob_hash} taken from the Blockscout Blobs API.")
@@ -460,7 +460,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
               |> Map.get("blob")
               |> String.trim_leading("0x")
               |> Base.decode16!(case: :lower)
-              |> BeaconBlob.decode()
+              |> OptimismTxnBatch.decode_eip4844_blob()
 
             if is_nil(decoded_blob_data) do
               Logger.warning("Cannot decode the blob #{blob_hash} taken from the Beacon Node.")
