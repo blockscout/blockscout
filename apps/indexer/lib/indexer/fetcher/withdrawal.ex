@@ -67,7 +67,7 @@ defmodule Indexer.Fetcher.Withdrawal do
 
       {:ok, state}
     else
-      Logger.warn("Please, specify the first block of the block range for #{__MODULE__}.")
+      Logger.warning("Please, specify the first block of the block range for #{__MODULE__}.")
       :ignore
     end
   end

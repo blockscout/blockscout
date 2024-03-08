@@ -166,7 +166,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
   end
 
   defp prepare_updated_balance({{:error, error}, _ctb}, _block_number) do
-    Logger.warn(fn -> ["Error on updating current token balance: ", inspect(error)] end)
+    Logger.warning(fn -> ["Error on updating current token balance: ", inspect(error)] end)
     nil
   end
 

@@ -60,7 +60,7 @@ defmodule Explorer.History.Process do
 
   @spec failed_compilation(non_neg_integer(), module(), non_neg_integer()) :: any()
   defp failed_compilation(day_count, historian, failed_attempts) do
-    Logger.warn(fn -> "Failed to fetch market history. Trying again." end)
+    Logger.warning(fn -> "Failed to fetch market history. Trying again." end)
     compile_historical_records(day_count, historian, failed_attempts + 1)
   end
 

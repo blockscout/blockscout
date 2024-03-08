@@ -132,7 +132,7 @@ defmodule BlockScoutWeb.SmartContractView do
         to_string(address)
 
       _ ->
-        Logger.warn(fn -> ["Error decoding address value: #{inspect(value)}"] end)
+        Logger.warning(fn -> ["Error decoding address value: #{inspect(value)}"] end)
         "(decoding error)"
     end
   end

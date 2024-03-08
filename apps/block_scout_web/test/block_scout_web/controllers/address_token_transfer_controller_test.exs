@@ -207,11 +207,9 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
           :index,
           Address.checksum(address.hash),
           Address.checksum(token.contract_address_hash),
-          %{
-            block_number: page_last_transfer.block_number,
-            index: page_last_transfer.index,
-            items_count: "50"
-          }
+          block_number: page_last_transfer.block_number,
+          index: page_last_transfer.index,
+          items_count: "50"
         )
 
       assert Map.get(json_response(conn, 200), "next_page_path") == expected_path

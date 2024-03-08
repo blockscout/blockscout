@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
           |> render(:message, %{message: "Success"})
 
         error ->
-          Logger.warn(fn -> ["Error on importing token info: ", inspect(error)] end)
+          Logger.warning(fn -> ["Error on importing token info: ", inspect(error)] end)
 
           conn
           |> put_view(ApiView)

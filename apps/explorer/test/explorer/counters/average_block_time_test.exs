@@ -36,7 +36,11 @@ defmodule Explorer.Counters.AverageBlockTimeTest do
 
       insert(:block, number: block_number, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: -100 - 6))
 
-      insert(:block, number: block_number, consensus: false, timestamp: Timex.shift(first_timestamp, seconds: -100 - 12))
+      insert(:block,
+        number: block_number,
+        consensus: false,
+        timestamp: Timex.shift(first_timestamp, seconds: -100 - 12)
+      )
 
       insert(:block, number: block_number, consensus: false, timestamp: Timex.shift(first_timestamp, seconds: -100 - 9))
 

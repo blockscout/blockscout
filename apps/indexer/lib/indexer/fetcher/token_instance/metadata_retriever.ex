@@ -54,7 +54,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     if error =~ "execution reverted" or error =~ @vm_execution_error do
       {:error, @vm_execution_error}
     else
-      Logger.warn(["Unknown metadata format error #{inspect(error)}."], fetcher: :token_instances)
+      Logger.warning(["Unknown metadata format error #{inspect(error)}."], fetcher: :token_instances)
 
       # truncate error since it will be stored in DB
       {:error, truncate_error(error)}
@@ -66,7 +66,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     if String.length(result) == 46 do
       fetch_json_from_uri({:ok, [ipfs_link() <> result]}, token_id, hex_token_id, from_base_uri?)
     else
-      Logger.warn(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
+      Logger.warning(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
 
       {:error, truncate_error(result)}
     end
@@ -91,7 +91,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     fetch_json_from_uri({:ok, [decoded_json]}, token_id, hex_token_id, from_base_uri?)
   rescue
     e ->
-      Logger.warn(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
+      Logger.warning(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
         fetcher: :token_instances
       )
 
@@ -113,7 +113,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     end
   rescue
     e ->
-      Logger.warn(
+      Logger.warning(
         [
           "Unknown metadata format base64 #{inspect(base64_encoded_json)}.",
           Exception.format(:error, e, __STACKTRACE__)
@@ -142,7 +142,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     check_type(json, hex_token_id)
   rescue
     e ->
-      Logger.warn(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
+      Logger.warning(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
         fetcher: :token_instances
       )
 
@@ -150,7 +150,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   end
 
   defp fetch_json_from_uri(uri, _token_id, _hex_token_id, _from_base_uri?) do
-    Logger.warn(["Unknown metadata uri format #{inspect(uri)}."], fetcher: :token_instances)
+    Logger.warning(["Unknown metadata uri format #{inspect(uri)}."], fetcher: :token_instances)
 
     {:error, "unknown metadata uri format"}
   end
@@ -167,7 +167,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     fetch_metadata_from_uri(prepared_uri, hex_token_id)
   rescue
     e ->
-      Logger.warn(
+      Logger.warning(
         ["Could not prepare token uri #{inspect(uri)}.", Exception.format(:error, e, __STACKTRACE__)],
         fetcher: :token_instances
       )
@@ -197,7 +197,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
         check_content_type(content_type, uri, hex_token_id, body)
 
       {:ok, %Response{body: body, status_code: code}} ->
-        Logger.warn(
+        Logger.warning(
           ["Request to token uri: #{inspect(uri)} failed with code #{code}. Body:", inspect(body)],
           fetcher: :token_instances
         )
@@ -205,7 +205,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
         {:error_code, code}
 
       {:error, %Error{reason: reason}} ->
-        Logger.warn(
+        Logger.warning(
           ["Request to token uri failed: #{inspect(uri)}.", inspect(reason)],
           fetcher: :token_instances
         )
@@ -214,7 +214,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     end
   rescue
     e ->
-      Logger.warn(
+      Logger.warning(
         ["Could not send request to token uri #{inspect(uri)}.", Exception.format(:error, e, __STACKTRACE__)],
         fetcher: :token_instances
       )

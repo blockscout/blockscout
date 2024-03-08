@@ -98,7 +98,7 @@ defmodule Explorer.ChainSpec.Parity.Importer do
     if accounts do
       parse_accounts(accounts)
     else
-      Logger.warn(fn -> "No accounts are defined in chain spec" end)
+      Logger.warning(fn -> "No accounts are defined in chain spec" end)
 
       []
     end
@@ -112,7 +112,7 @@ defmodule Explorer.ChainSpec.Parity.Importer do
       |> parse_hex_numbers()
       |> format_ranges()
     else
-      Logger.warn(fn -> "No rewards are defined in chain spec" end)
+      Logger.warning(fn -> "No rewards are defined in chain spec" end)
 
       []
     end

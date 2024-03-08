@@ -263,7 +263,7 @@ defmodule Indexer.Fetcher.TransactionAction do
       end
 
     if next_block < first_block do
-      Logger.warn(
+      Logger.warning(
         "It seems #{__MODULE__} already finished work for the block range #{first_block}..#{last_block} and " <>
           if(Enum.empty?(protocols),
             do: "all supported protocols.",

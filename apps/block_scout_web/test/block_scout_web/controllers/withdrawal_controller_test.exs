@@ -41,10 +41,7 @@ defmodule BlockScoutWeb.WithdrawalControllerTest do
       conn = get(conn, withdrawal_path(conn, :index), %{"type" => "JSON"})
 
       expected_path =
-        withdrawal_path(conn, :index, %{
-          index: index,
-          items_count: "50"
-        })
+        withdrawal_path(conn, :index, index: index, items_count: "50")
 
       assert Map.get(json_response(conn, 200), "next_page_path") == expected_path
     end

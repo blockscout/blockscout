@@ -93,7 +93,7 @@ defmodule Indexer.Memory.Monitor do
   end
 
   defp log_memory(%{total: total, limit: limit}) do
-    Logger.warn(fn ->
+    Logger.warning(fn ->
       [
         to_string(total),
         " / ",
@@ -126,7 +126,7 @@ defmodule Indexer.Memory.Monitor do
   end
 
   defp shrink([{pid, memory} | tail]) do
-    Logger.warn(fn ->
+    Logger.warning(fn ->
       [
         "Worst memory usage (",
         to_string(memory),

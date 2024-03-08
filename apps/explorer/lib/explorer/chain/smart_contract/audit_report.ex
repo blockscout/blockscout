@@ -58,7 +58,9 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
     |> cast(attrs, @optional_fields ++ @required_fields)
     |> validate_required(@required_fields, message: "Required")
     |> validate_length(:submitter_email, max: @max_string_length)
-    |> validate_format(:submitter_email, ~r/^[A-Z0-9._%+-]+@[A-Z0-9-]+.+.[A-Z]{2,4}$/i, message: "invalid email address")
+    |> validate_format(:submitter_email, ~r/^[A-Z0-9._%+-]+@[A-Z0-9-]+.+.[A-Z]{2,4}$/i,
+      message: "invalid email address"
+    )
     |> validate_format(:submitter_name, ~r/[a-zA-Z ]+/i, message: "only letters are allowed")
     |> validate_length(:submitter_name, max: @max_string_length)
     |> validate_length(:project_name, max: @max_string_length)

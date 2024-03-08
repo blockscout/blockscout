@@ -143,7 +143,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
       Application.put_env(:explorer, CoinGecko, base_url: "http://localhost:#{bypass.port}")
 
       on_exit(fn ->
-        Application.put_env(:explorer, :coin, "POA")
+        Application.put_env(:explorer, :coin, "ETH")
       end)
 
       {:ok, bypass: bypass}

@@ -373,7 +373,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
         {:error, _} = error -> {:halt, error}
       end
     else
-      Logger.warn(fn -> ["Received a non-integer block number: ", inspect(block_number)] end)
+      Logger.warning(fn -> ["Received a non-integer block number: ", inspect(block_number)] end)
     end
   end
 end

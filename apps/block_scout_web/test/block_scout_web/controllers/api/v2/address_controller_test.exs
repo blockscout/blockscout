@@ -778,7 +778,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         for _ <- 0..50 do
           tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
-          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            from_address: address
+          )
 
           insert(:token_transfer,
             transaction: tx,
@@ -843,7 +848,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         for _ <- 0..50 do
           tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
-          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            from_address: address
+          )
         end
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
@@ -888,7 +898,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         for _ <- 0..50 do
           tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
-          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            from_address: address
+          )
         end
 
       for _ <- 0..50 do
@@ -915,7 +930,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         for _ <- 0..49 do
           tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
-          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            from_address: address
+          )
         end
 
       tt_to =

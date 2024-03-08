@@ -18,6 +18,8 @@ defmodule Explorer.MarketTest do
   end
 
   test "fetch_recent_history/1" do
+    ConCache.delete(:market_history, :last_update)
+
     today = Date.utc_today()
 
     records =

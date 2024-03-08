@@ -117,7 +117,7 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
 
   # default case if nothing matches
   defp avatar_from_auth(auth) do
-    Logger.warn(auth.provider <> " needs to find an avatar URL!")
+    Logger.warning(auth.provider <> " needs to find an avatar URL!")
     Logger.debug(Poison.encode!(auth))
     nil
   end

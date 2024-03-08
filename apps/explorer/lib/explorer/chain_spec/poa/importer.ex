@@ -39,7 +39,7 @@ defmodule Explorer.ChainSpec.POA.Importer do
 
   def import_emission_rewards do
     if is_nil(rewards_contract_address()) do
-      Logger.warn(fn -> "No rewards contract address is defined" end)
+      Logger.warning(fn -> "No rewards contract address is defined" end)
     else
       block_reward = block_reward_amount()
       emission_funds = emission_funds_amount()
