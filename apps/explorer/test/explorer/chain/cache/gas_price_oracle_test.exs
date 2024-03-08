@@ -276,8 +276,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
       assert {{:ok,
                %{
                  # including base fee
-                 slow: %{price: 1.5},
-                 average: %{price: 2.5}
+                 slow: %{price: 1.25},
+                 average: %{price: 2.25}
                }}, _} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
     end
 
@@ -350,15 +350,23 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
       assert {{
                 :ok,
                 %{
-                  average: %{price: 2.5, time: 15000.0},
-                  fast: %{price: 2.5, time: 15000.0},
-                  slow: %{price: 1.5, time: 17500.0}
+                  average: %{price: 2.25, time: 15000.0},
+                  fast: %{price: 2.25, time: 15000.0},
+                  slow: %{price: 1.25, time: 17500.0}
                 }
               }, _} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
     end
 
     test "return gas prices with average block time if earliest_processing_start is not available" do
-      old_env = Application.get_env(:explorer, AverageBlockTime)
+      average_block_time_old_env = Application.get_env(:explorer, AverageBlockTime)
+      gas_price_oracle_old_env = Application.get_env(:explorer, GasPriceOracle)
+
+      Application.put_env(:explorer, GasPriceOracle,
+        safelow_time_coefficient: 3,
+        average_time_coefficient: 2,
+        fast_time_coefficient: 1
+      )
+
       Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
       start_supervised!(AverageBlockTime)
 
@@ -439,13 +447,14 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
       assert {{
                 :ok,
                 %{
-                  average: %{price: 2.5, time: 1000.0},
-                  fast: %{price: 2.5, time: 1000.0},
-                  slow: %{price: 1.5, time: 1000.0}
+                  average: %{price: 2.25, time: 2000.0},
+                  fast: %{price: 2.25, time: 1000.0},
+                  slow: %{price: 1.25, time: 3000.0}
                 }
               }, _} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
 
-      Application.put_env(:explorer, AverageBlockTime, old_env)
+      Application.put_env(:explorer, AverageBlockTime, average_block_time_old_env)
+      Application.put_env(:explorer, GasPriceOracle, gas_price_oracle_old_env)
     end
   end
 end
