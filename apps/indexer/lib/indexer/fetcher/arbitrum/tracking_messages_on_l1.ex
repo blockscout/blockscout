@@ -75,8 +75,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     %{bridge: bridge_address} =
       Rpc.get_contracts_for_rollup(state.config.l1_rollup_address, :bridge, state.config.json_l1_rpc_named_arguments)
 
-    new_msg_to_l2_start_block = Db.l1_block_of_latest_discovered_message_to_l2(state.config.l1_start_block)
-    historical_msg_to_l2_end_block = Db.l1_block_of_earliest_discovered_message_to_l2(state.config.l1_start_block)
+    new_msg_to_l2_start_block = Db.l1_block_to_discover_latest_message_to_l2(state.config.l1_start_block)
+    historical_msg_to_l2_end_block = Db.l1_block_to_discover_earliest_message_to_l2(state.config.l1_start_block - 1)
 
     Process.send(self(), :check_new_msgs_to_rollup, [])
 

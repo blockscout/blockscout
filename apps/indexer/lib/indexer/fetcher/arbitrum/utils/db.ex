@@ -74,7 +74,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @doc """
   TBD
   """
-  def l1_block_of_latest_committed_batch(value_if_nil) do
+  def l1_block_to_discover_latest_committed_batch(value_if_nil) do
     case Reader.l1_block_of_latest_committed_batch() do
       nil ->
         Logger.warning("No committed batches found in DB")
@@ -88,25 +88,28 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @doc """
   TBD
   """
-  def l1_block_of_earliest_committed_batch(value_if_nil) do
+  def l1_block_to_discover_earliest_committed_batch(value_if_nil) do
     case Reader.l1_block_of_earliest_committed_batch() do
       nil ->
         Logger.warning("No committed batches found in DB")
         value_if_nil
 
       value ->
-        value + 1
+        value - 1
     end
   end
 
-  def highest_committed_block do
-    Reader.highest_committed_block()
+  def highest_committed_block(value_if_nil) do
+    case Reader.highest_committed_block() do
+      nil -> value_if_nil
+      value -> value
+    end
   end
 
   @doc """
   TBD
   """
-  def l1_block_of_latest_discovered_message_to_l2(value_if_nil) do
+  def l1_block_to_discover_latest_message_to_l2(value_if_nil) do
     case Reader.l1_block_of_latest_discovered_message_to_l2() do
       nil ->
         Logger.warning("No messages to L2 found in DB")
@@ -120,14 +123,14 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @doc """
   TBD
   """
-  def l1_block_of_earliest_discovered_message_to_l2(value_if_nil) do
+  def l1_block_to_discover_earliest_message_to_l2(value_if_nil) do
     case Reader.l1_block_of_earliest_discovered_message_to_l2() do
       nil ->
         Logger.warning("No messages to L2 found in DB")
         value_if_nil
 
       value ->
-        value + 1
+        value - 1
     end
   end
 
@@ -145,11 +148,14 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     end
   end
 
-  def highest_confirmed_block do
-    Reader.highest_confirmed_block()
+  def highest_confirmed_block(value_if_nil) do
+    case Reader.highest_confirmed_block() do
+      nil -> value_if_nil
+      value -> value
+    end
   end
 
-  def l1_block_of_latest_execution(value_if_nil) do
+  def l1_block_to_discover_latest_execution(value_if_nil) do
     case Reader.l1_block_of_latest_execution() do
       nil ->
         Logger.warning("No L1 executions found in DB")
@@ -157,6 +163,17 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
 
       value ->
         value + 1
+    end
+  end
+
+  def l1_block_to_discover_earliest_execution(value_if_nil) do
+    case Reader.l1_block_of_earliest_execution() do
+      nil ->
+        Logger.warning("No L1 executions found in DB")
+        value_if_nil
+
+      value ->
+        value - 1
     end
   end
 

@@ -259,6 +259,21 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     |> Repo.one()
   end
 
+  def l1_block_of_earliest_execution do
+    query =
+      from(
+        tx in LifecycleTransaction,
+        left_join: ex in L1Execution,
+        on: tx.id == ex.execution_id,
+        select: tx.block,
+        order_by: [asc: tx.block],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+  end
+
   def unconfirmed_rollup_blocks(first_block, last_block) do
     query =
       from(

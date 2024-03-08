@@ -53,35 +53,41 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     if Enum.empty?(filtered_logs) do
       []
     else
-      highest_committed_block =
-        case Db.highest_committed_block() do
-          nil -> -1
-          value -> value
-        end
+      # Get values before the loop parsing the events to reduce number of DB requests
+      highest_committed_block = Db.highest_committed_block(-1)
+      highest_confirmed_block = Db.highest_confirmed_block(-1)
 
-      highest_confirmed_block =
-        case Db.highest_confirmed_block() do
-          nil -> -1
-          value -> value
-        end
+      messages_map =
+        filtered_logs
+        |> Enum.reduce(%{}, fn event, messages_acc ->
+          Logger.info("L2 to L1 message #{event.transaction_hash} found")
 
-      filtered_logs
-      |> Enum.map(fn event ->
-        Logger.info("L2 to L1 message #{event.transaction_hash} found")
+          {message_id, caller, blocknum, timestamp} = l2_to_l1_event_parse(event)
 
-        {message_id, caller, blocknum, timestamp} = l2_to_l1_event_parse(event)
+          message =
+            %{
+              direction: :from_l2,
+              message_id: message_id,
+              originator_address: caller,
+              originating_tx_hash: event.transaction_hash,
+              origination_timestamp: timestamp,
+              originating_tx_blocknum: blocknum,
+              status: status_l2_to_l1_message(blocknum, highest_committed_block, highest_confirmed_block)
+            }
+            |> complete_to_params()
 
-        %{
-          direction: :from_l2,
-          message_id: message_id,
-          originator_address: caller,
-          originating_tx_hash: event.transaction_hash,
-          origination_timestamp: timestamp,
-          originating_tx_blocknum: blocknum,
-          status: status_l2_to_l1_message(blocknum, highest_committed_block, highest_confirmed_block)
-        }
-        |> complete_to_params()
-      end)
+          Map.put(
+            messages_acc,
+            message_id,
+            message
+          )
+        end)
+
+      # This is required only for the case when l2-to-l1 messages
+      # are found by block catchup fetcher
+      messages_map
+      |> find_and_update_executed_messages()
+      |> Map.values()
     end
   end
 
@@ -122,5 +128,20 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       highest_committed_block >= msg_block -> :sent
       true -> :initiated
     end
+  end
+
+  defp find_and_update_executed_messages(messages) do
+    messages
+    |> Map.keys()
+    |> Db.l1_executions()
+    |> Enum.reduce(messages, fn execution, messages_acc ->
+      message =
+        messages_acc
+        |> Map.get(execution.message_id)
+        |> Map.put(:completion_tx_hash, execution.execution_transaction.hash.bytes)
+        |> Map.put(:status, :relayed)
+
+      Map.put(messages_acc, execution.message_id, message)
+    end)
   end
 end

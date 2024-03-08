@@ -106,8 +106,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     #       when the batch #1, #2 and #4 are in DB, but #3 is not
     #       One of the approaches is to look deeper than the latest committed batch and
     #       check whether batches were already handled or not.
-    new_batches_start_block = Db.l1_block_of_latest_committed_batch(l1_start_block)
-    historical_batches_end_block = Db.l1_block_of_earliest_committed_batch(l1_start_block)
+    new_batches_start_block = Db.l1_block_to_discover_latest_committed_batch(l1_start_block)
+    historical_batches_end_block = Db.l1_block_to_discover_earliest_committed_batch(l1_start_block - 1)
 
     # TODO: it is necessary to develop a way to discover missed L1 confirmation txs.
     #       One of the approaches is
@@ -121,7 +121,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     # TODO: it is necessary to develop a way to discover missed executions.
     #       One of the approaches is to look deeper than the latest execution and
     #       check whether executions were already handled or not.
-    new_executions_start_block = Db.l1_block_of_latest_execution(l1_start_block)
+    new_executions_start_block = Db.l1_block_to_discover_latest_execution(l1_start_block)
+    historical_executions_end_block = Db.l1_block_to_discover_earliest_execution(l1_start_block - 1)
 
     Process.send(self(), :check_new_batches, [])
 
@@ -140,7 +141,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
           new_batches_start_block: new_batches_start_block,
           historical_batches_end_block: historical_batches_end_block,
           new_confirmations_start_block: new_confirmations_start_block,
-          new_executions_start_block: new_executions_start_block
+          new_executions_start_block: new_executions_start_block,
+          historical_executions_end_block: historical_executions_end_block
         })
       )
 
@@ -189,7 +191,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   @impl GenServer
   def handle_info(:check_new_executions, state) do
     {handle_duration, {:ok, end_block}} =
-      :timer.tc(&discover_l1_messages_executions/1, [
+      :timer.tc(&discover_new_l1_messages_executions/1, [
         state
       ])
 
@@ -212,12 +214,31 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         state
       ])
 
-    Process.send(self(), :check_lifecycle_txs_finalization, [])
+    Process.send(self(), :check_historical_executions, [])
 
     new_data =
       Map.merge(state.data, %{
         duration: increase_duration(state.data, handle_duration),
         historical_batches_end_block: start_block - 1
+      })
+
+    {:noreply, %{state | data: new_data}}
+  end
+
+  # TBD
+  @impl GenServer
+  def handle_info(:check_historical_executions, state) do
+    {handle_duration, {:ok, end_block}} =
+      :timer.tc(&discover_historical_l1_messages_executions/1, [
+        state
+      ])
+
+    Process.send(self(), :check_lifecycle_txs_finalization, [])
+
+    new_data =
+      Map.merge(state.data, %{
+        duration: increase_duration(state.data, handle_duration),
+        historical_executions_end_block: end_block - 1
       })
 
     {:noreply, %{state | data: new_data}}
@@ -359,7 +380,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     end
   end
 
-  defp discover_l1_messages_executions(
+  defp discover_new_l1_messages_executions(
          %{
            config: %{
              l1_rpc: l1_rpc_config,
@@ -392,6 +413,34 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       {:ok, end_block}
     else
       {:ok, start_block - 1}
+    end
+  end
+
+  defp discover_historical_l1_messages_executions(
+         %{
+           config: %{
+             l1_rpc: l1_rpc_config,
+             l1_outbox_address: outbox_address,
+             l1_rollup_init_block: l1_rollup_init_block
+           },
+           data: %{historical_executions_end_block: end_block}
+         } = _state
+       ) do
+    if end_block >= l1_rollup_init_block do
+      start_block = max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
+
+      Logger.info("Block range for historical l2-to-l1 messages executions discovery: #{start_block}..#{end_block}")
+
+      NewL1Executions.discover(
+        outbox_address,
+        start_block,
+        end_block,
+        l1_rpc_config
+      )
+
+      {:ok, start_block}
+    else
+      {:ok, l1_rollup_init_block}
     end
   end
 

@@ -118,6 +118,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   end
 
   defp get_relayed_messages(block_number) do
+    # Assuming that catchup block fetcher will mark historical messages
+    # as executed it is not needed to handle :initiated and :sent
+    # messages here
     confirmed_messages = Db.confirmed_l2_to_l1_messages(block_number)
 
     if Enum.empty?(confirmed_messages) do
