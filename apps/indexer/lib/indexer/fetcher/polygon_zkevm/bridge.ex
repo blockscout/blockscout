@@ -154,82 +154,23 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
              json_rpc_named_arguments != json_rpc_named_arguments_l1 do
     is_l1 = json_rpc_named_arguments == json_rpc_named_arguments_l1
 
-    events =
-      Enum.filter(events, fn event ->
-        if is_l1 do
-          case event.first_topic do
-            @bridge_event ->
-              {_, _, _, destination_network} = bridge_event_parse(event)
-              # skip the Deposit event if it's for another rollup
-              destination_network == rollup_network_id
-
-            @claim_event_v2 ->
-              {mainnet_bit, rollup_idx, _index, _amount} = claim_event_v2_parse(event)
-
-              if mainnet_bit != 0 do
-                Logger.error(
-                  "L1 ClaimEvent has non-zero mainnet bit in the transaction #{event.transaction_hash}. This event will be ignored as withdrawals are only supported to Ethereum Mainnet."
-                )
-              end
-
-              # skip the Withdrawal event if it's for another rollup or the source network is Ethereum Mainnet
-              rollup_idx == rollup_index and mainnet_bit == 0
-
-            _ ->
-              true
-          end
-        else
-          case event.first_topic do
-            @bridge_event ->
-              {_, _, _, destination_network} = bridge_event_parse(event)
-
-              if destination_network != @ethereum_mainnet_network_id do
-                Logger.error(
-                  "L2 BridgeEvent has non-Mainnet destinationNetwork in the transaction #{event.transaction_hash}. This event will be ignored as withdrawals are only supported to Ethereum Mainnet."
-                )
-              end
-
-              # skip the Withdrawal event if the destination network is not Ethereum Mainnet
-              destination_network == @ethereum_mainnet_network_id
-
-            @claim_event_v2 ->
-              {mainnet_bit, _rollup_index, _index, _amount} = claim_event_v2_parse(event)
-
-              if mainnet_bit == 0 do
-                Logger.error(
-                  "L2 ClaimEvent has zero mainnet bit in the transaction #{event.transaction_hash}. This event will be ignored as deposits are only supported from Ethereum Mainnet."
-                )
-              end
-
-              # skip the Deposit event if the source network is not Ethereum Mainnet
-              mainnet_bit == 1
-
-            _ ->
-              true
-          end
-        end
-      end)
+    events = filter_events(events, is_l1, rollup_network_id, rollup_index)
 
     {block_to_timestamp, token_address_to_id} =
       if is_nil(block_to_timestamp) do
+        # this function is called by the catchup indexer,
+        # so here we can use RPC calls as it's not so critical for delays as in realtime
         bridge_events = Enum.filter(events, fn event -> event.first_topic == @bridge_event end)
-
-        l1_token_addresses =
-          bridge_events
-          |> Enum.reduce(%MapSet{}, fn event, acc ->
-            case bridge_event_parse(event) do
-              {{nil, _}, _, _, _} -> acc
-              {{token_address, nil}, _, _, _} -> MapSet.put(acc, token_address)
-            end
-          end)
-          |> MapSet.to_list()
+        l1_token_addresses = l1_token_addresses_from_bridge_events(bridge_events)
 
         {
           blocks_to_timestamps(bridge_events, json_rpc_named_arguments),
           token_addresses_to_ids(l1_token_addresses, json_rpc_named_arguments_l1)
         }
       else
-        # this is called in realtime
+        # this function is called in realtime by the transformer,
+        # so we don't use RPC calls to avoid delays and fetch token data
+        # in a separate fetcher
         {block_to_timestamp, %{}}
       end
 
@@ -335,6 +276,74 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     {mainnet_bit, rollup_index, index, amount}
   end
 
+  defp filter_events(events, is_l1, rollup_network_id, rollup_index) do
+    Enum.filter(events, fn event ->
+      case {event.first_topic, is_l1} do
+        {@bridge_event, true} -> filter_bridge_event_l1(event, rollup_network_id)
+        {@bridge_event, false} -> filter_bridge_event_l2(event)
+        {@claim_event_v2, true} -> filter_claim_event_l1(event, rollup_index)
+        {@claim_event_v2, false} -> filter_claim_event_l2(event)
+        _ -> true
+      end
+    end)
+  end
+
+  defp filter_bridge_event_l1(event, rollup_network_id) do
+    {_, _, _, destination_network} = bridge_event_parse(event)
+    # skip the Deposit event if it's for another rollup
+    destination_network == rollup_network_id
+  end
+
+  defp filter_bridge_event_l2(event) do
+    {_, _, _, destination_network} = bridge_event_parse(event)
+
+    if destination_network != @ethereum_mainnet_network_id do
+      Logger.error(
+        "L2 BridgeEvent has non-Mainnet destinationNetwork in the transaction #{event.transaction_hash}. This event will be ignored as withdrawals are only supported to Ethereum Mainnet."
+      )
+    end
+
+    # skip the Withdrawal event if the destination network is not Ethereum Mainnet
+    destination_network == @ethereum_mainnet_network_id
+  end
+
+  defp filter_claim_event_l1(event, rollup_index) do
+    {mainnet_bit, rollup_idx, _index, _amount} = claim_event_v2_parse(event)
+
+    if mainnet_bit != 0 do
+      Logger.error(
+        "L1 ClaimEvent has non-zero mainnet bit in the transaction #{event.transaction_hash}. This event will be ignored as withdrawals are only supported to Ethereum Mainnet."
+      )
+    end
+
+    # skip the Withdrawal event if it's for another rollup or the source network is Ethereum Mainnet
+    rollup_idx == rollup_index and mainnet_bit == 0
+  end
+
+  defp filter_claim_event_l2(event) do
+    {mainnet_bit, _rollup_index, _index, _amount} = claim_event_v2_parse(event)
+
+    if mainnet_bit == 0 do
+      Logger.error(
+        "L2 ClaimEvent has zero mainnet bit in the transaction #{event.transaction_hash}. This event will be ignored as deposits are only supported from Ethereum Mainnet."
+      )
+    end
+
+    # skip the Deposit event if the source network is not Ethereum Mainnet
+    mainnet_bit == 1
+  end
+
+  defp l1_token_addresses_from_bridge_events(events) do
+    events
+    |> Enum.reduce(%MapSet{}, fn event, acc ->
+      case bridge_event_parse(event) do
+        {{nil, _}, _, _, _} -> acc
+        {{token_address, nil}, _, _, _} -> MapSet.put(acc, token_address)
+      end
+    end)
+    |> MapSet.to_list()
+  end
+
   defp operation_type(first_topic, is_l1) do
     if first_topic == @bridge_event do
       if is_l1, do: :deposit, else: :withdrawal
@@ -391,10 +400,10 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   end
 
   defp token_address_by_origin_address(origin_address, origin_network, leaf_type) do
-    with true <- leaf_type != 1 and origin_network <= 1,
+    with true <- leaf_type != 1,
          token_address = "0x" <> Base.encode16(origin_address, case: :lower),
          true <- token_address != burn_address_hash_string() do
-      if origin_network == 0 do
+      if origin_network == @ethereum_mainnet_network_id do
         # this is L1 address
         {token_address, nil}
       else
