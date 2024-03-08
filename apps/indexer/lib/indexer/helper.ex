@@ -240,13 +240,7 @@ defmodule Indexer.Helper do
   def get_blocks_by_events(events, json_rpc_named_arguments, retries) do
     events
     |> Enum.reduce(%{}, fn event, acc ->
-      block_number =
-        if is_map(event) do
-          event.block_number
-        else
-          event["blockNumber"]
-        end
-
+      block_number = Map.get(event, :block_number, event["blockNumber"])
       Map.put(acc, block_number, 0)
     end)
     |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
