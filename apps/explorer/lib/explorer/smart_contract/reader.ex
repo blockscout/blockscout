@@ -775,6 +775,14 @@ defmodule Explorer.SmartContract.Reader do
     Map.put_new(output, "value", result)
   end
 
+  defp new_value(%{"type" => "int" <> _size} = output, [value], _index) do
+    Map.put_new(output, "value", Integer.to_string(value))
+  end
+
+  defp new_value(%{"type" => "uint" <> _size} = output, [value], _index) do
+    Map.put_new(output, "value", Integer.to_string(value))
+  end
+
   defp new_value(output, [value], _index) do
     Map.put_new(output, "value", value)
   end
