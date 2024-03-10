@@ -35,6 +35,9 @@ jobs:
         with:
           images: blockscout/blockscout
 
+      - name: Add SHORT_SHA env property with commit short sha
+        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+
       - name: Build & Push Docker image
         uses: docker/build-push-action@v5
         with:
