@@ -17,6 +17,7 @@
 
 - [#9572](https://github.com/blockscout/blockscout/pull/9572) - Fix Shibarium L1 fetcher
 - [#9563](https://github.com/blockscout/blockscout/pull/9563) - Fix timestamp handler for unfinalized zkEVM batches
+- [#9560](https://github.com/blockscout/blockscout/pull/9560) - Fix fetch pending transaction for hyperledger besu client
 - [#9514](https://github.com/blockscout/blockscout/pull/9514) - Fix missing `0x` prefix for `blockNumber`, `logIndex`, `transactionIndex` and remove `transactionLogIndex` in `eth_getLogs` response.
 - [#9512](https://github.com/blockscout/blockscout/pull/9512) - Docker-compose 2.24.6 compatibility
 - [#9262](https://github.com/blockscout/blockscout/pull/9262) - Fix withdrawal status
