@@ -8,6 +8,8 @@
 
 ### Chore
 
+- [#9197](https://github.com/blockscout/blockscout/pull/9197) - Add `MARKET_HISTORY_FETCH_INTERVAL` env
+
 <details>
   <summary>Dependencies version bumps</summary>
 
