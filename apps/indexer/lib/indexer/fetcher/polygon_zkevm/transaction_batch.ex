@@ -209,7 +209,14 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
                                                                     {batches, l2_txs, l1_txs, next_id, hash_to_id} =
                                                                       _acc ->
         number = quantity_to_integer(Map.get(res.result, "number"))
-        {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(res.result, "timestamp")))
+
+        # the timestamp is undefined for unfinalized batches
+        timestamp =
+          case DateTime.from_unix(quantity_to_integer(Map.get(res.result, "timestamp", 0xFFFFFFFFFFFFFFFF))) do
+            {:ok, ts} -> ts
+            _ -> nil
+          end
+
         l2_transaction_hashes = Map.get(res.result, "transactions")
         global_exit_root = Map.get(res.result, "globalExitRoot")
         acc_input_hash = Map.get(res.result, "accInputHash")
