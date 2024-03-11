@@ -555,50 +555,6 @@ defmodule EthereumJSONRPC.Transaction do
     ])
   end
 
-  defp chain_type_fields(params, elixir) do
-    case Application.get_env(:explorer, :chain_type) do
-      "ethereum" ->
-        put_if_present(elixir, params, [
-          {"blobVersionedHashes", :blob_versioned_hashes},
-          {"maxFeePerBlobGas", :max_fee_per_blob_gas}
-        ])
-
-      "optimism" ->
-        put_if_present(elixir, params, [
-          {"l1TxOrigin", :l1_tx_origin},
-          {"l1BlockNumber", :l1_block_number}
-        ])
-
-      "suave" ->
-        wrapped = Map.get(elixir, "requestRecord")
-
-        if is_nil(wrapped) do
-          params
-        else
-          params
-          |> Map.merge(%{
-            execution_node_hash: Map.get(elixir, "executionNode"),
-            wrapped_type: quantity_to_integer(Map.get(wrapped, "type")),
-            wrapped_nonce: quantity_to_integer(Map.get(wrapped, "nonce")),
-            wrapped_to_address_hash: Map.get(wrapped, "to"),
-            wrapped_gas: quantity_to_integer(Map.get(wrapped, "gas")),
-            wrapped_gas_price: quantity_to_integer(Map.get(wrapped, "gasPrice")),
-            wrapped_max_priority_fee_per_gas: quantity_to_integer(Map.get(wrapped, "maxPriorityFeePerGas")),
-            wrapped_max_fee_per_gas: quantity_to_integer(Map.get(wrapped, "maxFeePerGas")),
-            wrapped_value: quantity_to_integer(Map.get(wrapped, "value")),
-            wrapped_input: Map.get(wrapped, "input"),
-            wrapped_v: quantity_to_integer(Map.get(wrapped, "v")),
-            wrapped_r: quantity_to_integer(Map.get(wrapped, "r")),
-            wrapped_s: quantity_to_integer(Map.get(wrapped, "s")),
-            wrapped_hash: Map.get(wrapped, "hash")
-          })
-        end
-
-      _ ->
-        params
-    end
-  end
-
   @doc """
   Extracts `t:EthereumJSONRPC.hash/0` from transaction `params`
 

@@ -11,7 +11,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.Optimism.Withdrawal, as: OptimismWithdrawal
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.Counters.AverageBlockTime
   alias Timex.Duration
@@ -442,107 +441,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     result
     |> chain_type_fields(transaction, single_tx?, conn, watchlist_names)
     |> maybe_put_stability_fee(transaction)
-  end
-
-  defp add_optional_transaction_field(result, transaction, field) do
-    case Map.get(transaction, field) do
-      nil -> result
-      value -> Map.put(result, Atom.to_string(field), value)
-    end
-  end
-
-  defp add_optional_transaction_field(result, transaction, field_name, assoc_name, assoc_field) do
-    case Map.get(transaction, assoc_name) do
-      nil -> result
-      %Ecto.Association.NotLoaded{} -> result
-      item -> Map.put(result, field_name, Map.get(item, assoc_field))
-    end
-  end
-
-  if Application.compile_env(:explorer, :chain_type) != "suave" do
-    defp suave_fields(_transaction, result, _single_tx?, _conn, _watchlist_names), do: result
-  else
-    defp suave_fields(transaction, result, single_tx?, conn, watchlist_names) do
-      if is_nil(transaction.execution_node_hash) do
-        result
-      else
-        {[wrapped_decoded_input], _, _} =
-          decode_transactions(
-            [
-              %Transaction{
-                to_address: transaction.wrapped_to_address,
-                input: transaction.wrapped_input,
-                hash: transaction.wrapped_hash
-              }
-            ],
-            false
-          )
-
-        result
-        |> Map.put("allowed_peekers", Transaction.suave_parse_allowed_peekers(transaction.logs))
-        |> Map.put(
-          "execution_node",
-          Helper.address_with_info(
-            conn,
-            transaction.execution_node,
-            transaction.execution_node_hash,
-            single_tx?,
-            watchlist_names
-          )
-        )
-        |> Map.put("wrapped", %{
-          "type" => transaction.wrapped_type,
-          "nonce" => transaction.wrapped_nonce,
-          "to" =>
-            Helper.address_with_info(
-              conn,
-              transaction.wrapped_to_address,
-              transaction.wrapped_to_address_hash,
-              single_tx?,
-              watchlist_names
-            ),
-          "gas_limit" => transaction.wrapped_gas,
-          "gas_price" => transaction.wrapped_gas_price,
-          "fee" =>
-            format_fee(
-              Transaction.fee(
-                %Transaction{gas: transaction.wrapped_gas, gas_price: transaction.wrapped_gas_price, gas_used: nil},
-                :wei
-              )
-            ),
-          "max_priority_fee_per_gas" => transaction.wrapped_max_priority_fee_per_gas,
-          "max_fee_per_gas" => transaction.wrapped_max_fee_per_gas,
-          "value" => transaction.wrapped_value,
-          "hash" => transaction.wrapped_hash,
-          "method" =>
-            method_name(
-              %Transaction{to_address: transaction.wrapped_to_address, input: transaction.wrapped_input},
-              wrapped_decoded_input
-            ),
-          "decoded_input" => decoded_input(wrapped_decoded_input),
-          "raw_input" => transaction.wrapped_input
-        })
-      end
-    end
-  end
-
-  defp add_optimism_fields(result, transaction_hash, single_tx?) do
-    if Application.get_env(:explorer, :chain_type) == "optimism" && single_tx? do
-      withdrawals =
-        transaction_hash
-        |> OptimismWithdrawal.transaction_statuses()
-        |> Enum.map(fn {nonce, status, l1_transaction_hash} ->
-          %{
-            "nonce" => nonce,
-            "status" => status,
-            "l1_transaction_hash" => l1_transaction_hash
-          }
-        end)
-
-      Map.put(result, "op_withdrawals", withdrawals)
-    else
-      result
-    end
   end
 
   def token_transfers(_, _conn, false), do: nil
@@ -979,20 +877,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       defp chain_type_fields(result, _transaction, _single_tx?, _conn, _watchlist_names) do
         result
       end
-  end
-
-  defp hash_to_address_and_hash(hash) do
-    with false <- is_nil(hash),
-         {:ok, address} <-
-           Chain.hash_to_address(
-             hash,
-             [necessity_by_association: %{:names => :optional, :smart_contract => :optional}, api?: true],
-             false
-           ) do
-      {address, address.hash}
-    else
-      _ -> {nil, nil}
-    end
   end
 
   defp maybe_put_stability_fee(body, transaction) do
