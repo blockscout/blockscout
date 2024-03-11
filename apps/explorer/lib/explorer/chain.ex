@@ -3048,7 +3048,9 @@ defmodule Explorer.Chain do
           join: t in assoc(itx, :transaction),
           where: itx.created_contract_address_hash == ^address_hash,
           where: t.status == ^1,
-          select: %{init: itx.init, created_contract_code: itx.created_contract_code}
+          select: %{init: itx.init, created_contract_code: itx.created_contract_code},
+          order_by: [desc: itx.block_number],
+          limit: ^1
         )
 
       res = creation_int_tx_query |> Repo.one()

@@ -7,7 +7,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Basic
 
-  import Explorer.Chain.SmartContract, only: [is_burn_signature_or_nil: 1]
+  import Explorer.Chain.SmartContract, only: [is_burn_signature: 1]
 
   # supported signatures:
   # 5c60da1b = keccak256(implementation())
@@ -65,31 +65,38 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
       }
     ]
 
-    case Contract.eth_get_storage_at_request(
-           proxy_address_hash,
-           storage_slot_beacon_contract_address,
-           nil,
-           json_rpc_named_arguments
-         ) do
-      {:ok, empty_address}
-      when is_burn_signature_or_nil(empty_address) ->
-        nil
+    beacon_contract_address =
+      case Contract.eth_get_storage_at_request(
+             proxy_address_hash,
+             storage_slot_beacon_contract_address,
+             nil,
+             json_rpc_named_arguments
+           ) do
+        {:ok, empty_address}
+        when is_burn_signature(empty_address) ->
+          nil
 
-      {:ok, beacon_contract_address} ->
-        case @implementation_signature
-             |> Basic.get_implementation_address_hash_string(
-               beacon_contract_address,
-               implementation_method_abi
-             ) do
-          <<implementation_address::binary-size(42)>> ->
-            implementation_address
+        {:ok, "0x" <> storage_value} ->
+          Proxy.extract_address_hex_from_storage_pointer(storage_value)
 
-          _ ->
-            nil
-        end
+        _ ->
+          nil
+      end
 
-      _ ->
-        nil
+    if beacon_contract_address do
+      case @implementation_signature
+           |> Basic.get_implementation_address_hash_string(
+             beacon_contract_address,
+             implementation_method_abi
+           ) do
+        <<implementation_address::binary-size(42)>> ->
+          implementation_address
+
+        _ ->
+          nil
+      end
+    else
+      nil
     end
   end
 end

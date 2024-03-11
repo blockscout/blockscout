@@ -20,8 +20,7 @@ defmodule Indexer.Fetcher.Optimism do
   import Explorer.Helper, only: [parse_integer: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
-  alias Explorer.Chain.Events.{Publisher, Subscriber}
-  alias Indexer.{BoundQueue, Helper}
+  alias Indexer.Helper
 
   @fetcher_name :optimism
   @block_check_interval_range_size 100
@@ -46,59 +45,7 @@ defmodule Indexer.Fetcher.Optimism do
   @impl GenServer
   def init(_args) do
     Logger.metadata(fetcher: @fetcher_name)
-
-    modules_using_reorg_monitor = [
-      Indexer.Fetcher.Optimism.TxnBatch,
-      Indexer.Fetcher.Optimism.OutputRoot,
-      Indexer.Fetcher.Optimism.WithdrawalEvent
-    ]
-
-    reorg_monitor_not_needed =
-      modules_using_reorg_monitor
-      |> Enum.all?(fn module ->
-        is_nil(Application.get_all_env(:indexer)[module][:start_block_l1])
-      end)
-
-    if reorg_monitor_not_needed do
-      :ignore
-    else
-      optimism_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc]
-
-      json_rpc_named_arguments = json_rpc_named_arguments(optimism_l1_rpc)
-
-      {:ok, %{}, {:continue, json_rpc_named_arguments}}
-    end
-  end
-
-  @impl GenServer
-  def handle_continue(json_rpc_named_arguments, _state) do
-    {:ok, block_check_interval, _} = get_block_check_interval(json_rpc_named_arguments)
-    Process.send(self(), :reorg_monitor, [])
-
-    {:noreply,
-     %{block_check_interval: block_check_interval, json_rpc_named_arguments: json_rpc_named_arguments, prev_latest: 0}}
-  end
-
-  @impl GenServer
-  def handle_info(
-        :reorg_monitor,
-        %{
-          block_check_interval: block_check_interval,
-          json_rpc_named_arguments: json_rpc_named_arguments,
-          prev_latest: prev_latest
-        } = state
-      ) do
-    {:ok, latest} = get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
-
-    if latest < prev_latest do
-      Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")
-
-      Publisher.broadcast([{:optimism_reorg_block, latest}], :realtime)
-    end
-
-    Process.send_after(self(), :reorg_monitor, block_check_interval)
-
-    {:noreply, %{state | prev_latest: latest}}
+    :ignore
   end
 
   @doc """
@@ -289,7 +236,8 @@ defmodule Indexer.Fetcher.Optimism do
       end
 
     with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
-         {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.Optimism))},
+         {:reorg_monitor_started, true} <-
+           {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.RollupL1ReorgMonitor))},
          optimism_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          {:contract_is_valid, true} <- {:contract_is_valid, Helper.address_correct?(contract_address)},
@@ -304,8 +252,6 @@ defmodule Indexer.Fetcher.Optimism do
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
          {:ok, block_check_interval, last_safe_block} <- get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
-
-      Subscriber.to(:optimism_reorg_block, :realtime)
 
       Process.send(self(), :continue, [])
 
@@ -360,47 +306,5 @@ defmodule Indexer.Fetcher.Optimism do
 
   def repeated_request(req, error_message, json_rpc_named_arguments, retries) do
     Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
-  end
-
-  def reorg_block_pop(fetcher_name) do
-    table_name = reorg_table_name(fetcher_name)
-
-    case BoundQueue.pop_front(reorg_queue_get(table_name)) do
-      {:ok, {block_number, updated_queue}} ->
-        :ets.insert(table_name, {:queue, updated_queue})
-        block_number
-
-      {:error, :empty} ->
-        nil
-    end
-  end
-
-  def reorg_block_push(fetcher_name, block_number) do
-    table_name = reorg_table_name(fetcher_name)
-    {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(table_name), block_number)
-    :ets.insert(table_name, {:queue, updated_queue})
-  end
-
-  defp reorg_queue_get(table_name) do
-    if :ets.whereis(table_name) == :undefined do
-      :ets.new(table_name, [
-        :set,
-        :named_table,
-        :public,
-        read_concurrency: true,
-        write_concurrency: true
-      ])
-    end
-
-    with info when info != :undefined <- :ets.info(table_name),
-         [{_, value}] <- :ets.lookup(table_name, :queue) do
-      value
-    else
-      _ -> %BoundQueue{}
-    end
-  end
-
-  defp reorg_table_name(fetcher_name) do
-    :"#{fetcher_name}#{:_reorgs}"
   end
 end

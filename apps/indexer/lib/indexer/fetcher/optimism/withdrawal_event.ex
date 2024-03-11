@@ -16,7 +16,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Optimism.WithdrawalEvent
-  alias Indexer.Fetcher.Optimism
+  alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
   alias Indexer.Helper
 
   @fetcher_name :optimism_withdrawal_events
@@ -111,7 +111,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
           )
         end
 
-        reorg_block = Optimism.reorg_block_pop(@fetcher_name)
+        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           {deleted_count, _} = Repo.delete_all(from(we in WithdrawalEvent, where: we.l1_block_number >= ^reorg_block))
@@ -140,12 +140,6 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     Process.send_after(self(), :continue, delay)
 
     {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
-  end
-
-  @impl GenServer
-  def handle_info({:chain_event, :optimism_reorg_block, :realtime, block_number}, state) do
-    Optimism.reorg_block_push(@fetcher_name, block_number)
-    {:noreply, state}
   end
 
   @impl GenServer

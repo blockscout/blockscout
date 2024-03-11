@@ -65,11 +65,11 @@ defmodule Explorer.Repo.ConfigHelperTest do
     end
 
     test "parse params from database url with encoded special characters in username" do
-      database_url = "postgresql://user%23:test_password@hostname.test.com:7777/test_database"
+      database_url = "postgresql://user%40:test_password@hostname.test.com:7777/test_database"
 
       result = ConfigHelper.get_db_config(%{url: database_url, env_func: fn _ -> nil end})
 
-      assert result[:username] == "user%23"
+      assert result[:username] == "user@"
       assert result[:password] == "test_password"
       assert result[:hostname] == "hostname.test.com"
       assert result[:port] == "7777"
