@@ -395,12 +395,6 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/batches/:batch_number", V2.ZkSyncController, :batch)
       end
     end
-
-    scope "/blobs" do
-      if Application.compile_env(:explorer, :chain_type) == "ethereum" do
-        get("/:blob_hash_param", V2.BlobController, :blob)
-      end
-    end
   end
 
   scope "/v1", as: :api_v1 do
