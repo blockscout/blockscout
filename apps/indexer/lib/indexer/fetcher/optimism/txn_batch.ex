@@ -445,9 +445,14 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
               |> Blob.timestamp_to_slot(beacon_config)
               |> BeaconClient.get_blob_sidecars()
 
+            blobs = Map.get(fetched_blobs, "data", [])
+
+            if Enum.empty?(blobs) do
+              raise "Empty data"
+            end
+
             decoded_blob_data =
-              fetched_blobs
-              |> Map.get("data", [])
+              blobs
               |> Enum.find(fn b ->
                 b
                 |> Map.get("kzg_commitment", "0x")
@@ -469,8 +474,11 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
               acc <> decoded_blob_data
             end
           rescue
-            _ ->
-              Logger.warning("Cannot decode the blob #{blob_hash} taken from the Beacon Node.")
+            reason ->
+              Logger.warning(
+                "Cannot decode the blob #{blob_hash} taken from the Beacon Node. Reason: #{inspect(reason)}"
+              )
+
               acc
           end
       end
