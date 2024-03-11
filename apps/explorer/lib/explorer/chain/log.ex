@@ -232,10 +232,10 @@ defmodule Explorer.Chain.Log do
   @spec find_and_decode([map()], __MODULE__.t(), Hash.t()) ::
           {:error, any} | {:ok, ABI.FunctionSelector.t(), any}
   def find_and_decode(abi, log, transaction_hash) do
-    # For events, the method_id (signature) is 32 bytes, whereas for
-    # functions it is 4 bytes. To avoid complications with different sizes,
-    # we always take only the first 4 bytes of the hash.
-    with {%FunctionSelector{method_id: <<first_four::binary-size(4), _::binary>>} = selector, mapping} <-
+    # For events, the method_id (signature) is 32 bytes, whereas for methods and
+    # errors it is 4 bytes. To avoid complications with different sizes, we
+    # always take only the first 4 bytes of the hash.
+    with {%FunctionSelector{method_id: <<first_four_bytes::binary-size(4), _::binary>>} = selector, mapping} <-
            abi
            |> ABI.parse_specification(include_events?: true)
            |> Event.find_and_decode(
@@ -245,7 +245,7 @@ defmodule Explorer.Chain.Log do
              log.fourth_topic && log.fourth_topic.bytes,
              log.data.bytes
            ),
-         selector <- %{selector | method_id: first_four} do
+         selector <- %{selector | method_id: first_four_bytes} do
       {:ok, selector, mapping}
     end
   rescue

@@ -87,13 +87,13 @@ defmodule Explorer.Chain.ContractMethod do
       [selector] ->
         now = DateTime.utc_now()
 
-        # For events, the method_id (signature) is 32 bytes, whereas for
-        # functions it is 4 bytes. To avoid complications with different sizes,
+        # For events, the method_id (signature) is 32 bytes, whereas for methods
+        # and errors it is 4 bytes. To avoid complications with different sizes,
         # we always take only the first 4 bytes of the hash.
-        <<identifier::binary-size(4), _::binary>> = selector.method_id
+        <<first_four_bytes::binary-size(4), _::binary>> = selector.method_id
 
         %{
-          identifier: identifier,
+          identifier: first_four_bytes,
           abi: element,
           type: Atom.to_string(selector.type),
           inserted_at: now,
