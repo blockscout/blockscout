@@ -16,6 +16,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL2 do
 
   alias Explorer.Chain.PolygonZkevm.{Bridge, Reader}
   alias Explorer.Repo
+  alias Indexer.Fetcher.PolygonZkevm.BridgeL1
   alias Indexer.Helper
 
   @eth_get_logs_range_size 1000
@@ -54,9 +55,13 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL2 do
   def handle_info(:init_with_delay, %{json_rpc_named_arguments: json_rpc_named_arguments} = state) do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
+    rollup_network_id = Application.get_all_env(:indexer)[BridgeL1][:rollup_network_id]
+
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
-         rpc_l1 = Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonZkevm.BridgeL1][:rpc],
+         rpc_l1 = Application.get_all_env(:indexer)[BridgeL1][:rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(rpc_l1)},
+         {:rollup_network_id_is_valid, true} <-
+           {:rollup_network_id_is_valid, !is_nil(rollup_network_id) and rollup_network_id > 0},
          {:bridge_contract_address_is_valid, true} <-
            {:bridge_contract_address_is_valid, Helper.address_correct?(env[:bridge_contract])},
          start_block = parse_integer(env[:start_block]),
@@ -77,7 +82,8 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL2 do
          json_rpc_named_arguments: json_rpc_named_arguments,
          json_rpc_named_arguments_l1: Helper.json_rpc_named_arguments(rpc_l1),
          end_block: latest_block,
-         start_block: max(start_block, last_l2_block_number)
+         start_block: max(start_block, last_l2_block_number),
+         rollup_network_id: rollup_network_id
        }}
     else
       {:start_block_undefined, true} ->
@@ -87,6 +93,10 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL2 do
       {:rpc_l1_undefined, true} ->
         Logger.error("L1 RPC URL is not defined.")
         {:stop, :normal, state}
+
+      {:rollup_network_id_is_valid, false} ->
+        Logger.error("Invaild network ID. Please, check INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NETWORK_ID env variable.")
+        {:stop, :normal, %{}}
 
       {:bridge_contract_address_is_valid, false} ->
         Logger.error("PolygonZkEVMBridge contract address is invalid or not defined.")
@@ -124,7 +134,8 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL2 do
           start_block: start_block,
           end_block: end_block,
           json_rpc_named_arguments: json_rpc_named_arguments,
-          json_rpc_named_arguments_l1: json_rpc_named_arguments_l1
+          json_rpc_named_arguments_l1: json_rpc_named_arguments_l1,
+          rollup_network_id: rollup_network_id
         } = state
       ) do
     start_block..end_block
@@ -139,7 +150,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL2 do
         operations =
           {chunk_start, chunk_end}
           |> get_logs_all(bridge_contract, json_rpc_named_arguments)
-          |> prepare_operations(nil, nil, json_rpc_named_arguments, json_rpc_named_arguments_l1)
+          |> prepare_operations(rollup_network_id, nil, json_rpc_named_arguments, json_rpc_named_arguments_l1)
 
         import_operations(operations)
 

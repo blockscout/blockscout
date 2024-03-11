@@ -24,6 +24,9 @@ defmodule Indexer.Transform.PolygonZkevm.Bridge do
            false <- Application.get_env(:explorer, :chain_type) != "polygon_zkevm",
            rpc_l1 = Application.get_all_env(:indexer)[BridgeL1][:rpc],
            {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(rpc_l1)},
+           rollup_network_id = Application.get_all_env(:indexer)[BridgeL1][:rollup_network_id],
+           {:rollup_network_id_is_valid, true} <-
+             {:rollup_network_id_is_valid, !is_nil(rollup_network_id) and rollup_network_id > 0},
            bridge_contract = Application.get_env(:indexer, BridgeL2)[:bridge_contract],
            {:bridge_contract_address_is_valid, true} <-
              {:bridge_contract_address_is_valid, Helper.address_correct?(bridge_contract)} do
@@ -42,7 +45,7 @@ defmodule Indexer.Transform.PolygonZkevm.Bridge do
         items =
           logs
           |> filter_bridge_events(bridge_contract)
-          |> prepare_operations(nil, nil, nil, json_rpc_named_arguments_l1, block_to_timestamp)
+          |> prepare_operations(rollup_network_id, nil, nil, json_rpc_named_arguments_l1, block_to_timestamp)
 
         Helper.log_blocks_chunk_handling(
           start_block,
@@ -60,6 +63,10 @@ defmodule Indexer.Transform.PolygonZkevm.Bridge do
 
         {:rpc_l1_undefined, true} ->
           Logger.error("L1 RPC URL is not defined. Cannot use #{__MODULE__} for parsing logs.")
+          []
+
+        {:rollup_network_id_is_valid, false} ->
+          Logger.error("Invaild network ID. Please, check INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NETWORK_ID env variable.")
           []
 
         {:bridge_contract_address_is_valid, false} ->

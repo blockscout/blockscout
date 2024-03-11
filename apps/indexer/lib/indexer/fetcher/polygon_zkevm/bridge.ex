@@ -37,8 +37,6 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   @claim_event_v2 "0x1df3f2a973a00d6635911755c260704e95e8a5876997546798770f76396fda4d"
   @claim_event_v2_params [{:uint, 256}, {:uint, 32}, :address, :address, {:uint, 256}]
 
-  @ethereum_mainnet_network_id 0
-
   @symbol_method_selector "95d89b41"
   @decimals_method_selector "313ce567"
 
@@ -150,8 +148,8 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
         json_rpc_named_arguments_l1,
         block_to_timestamp \\ nil
       )
-      when (not is_nil(rollup_network_id) and not is_nil(rollup_index)) or
-             json_rpc_named_arguments != json_rpc_named_arguments_l1 do
+      when not is_nil(rollup_network_id) and
+             (not is_nil(rollup_index) or json_rpc_named_arguments != json_rpc_named_arguments_l1) do
     is_l1 = json_rpc_named_arguments == json_rpc_named_arguments_l1
 
     events = filter_events(events, is_l1, rollup_network_id, rollup_index)
@@ -161,7 +159,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
         # this function is called by the catchup indexer,
         # so here we can use RPC calls as it's not so critical for delays as in realtime
         bridge_events = Enum.filter(events, fn event -> event.first_topic == @bridge_event end)
-        l1_token_addresses = l1_token_addresses_from_bridge_events(bridge_events)
+        l1_token_addresses = l1_token_addresses_from_bridge_events(bridge_events, rollup_network_id)
 
         {
           blocks_to_timestamps(bridge_events, json_rpc_named_arguments),
@@ -184,7 +182,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
               amount,
               deposit_count,
               _destination_network
-            } = bridge_event_parse(event)
+            } = bridge_event_parse(event, rollup_network_id)
 
             l1_token_id = Map.get(token_address_to_id, l1_token_address)
             block_number = quantity_to_integer(event.block_number)
@@ -240,7 +238,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     end)
   end
 
-  defp bridge_event_parse(event) do
+  defp bridge_event_parse(event, rollup_network_id) do
     [
       leaf_type,
       origin_network,
@@ -252,8 +250,8 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
       deposit_count
     ] = decode_data(event.data, @bridge_event_params)
 
-    {token_address_by_origin_address(origin_address, origin_network, leaf_type), amount, deposit_count,
-     destination_network}
+    {token_address_by_origin_address(origin_address, origin_network, leaf_type, rollup_network_id), amount,
+     deposit_count, destination_network}
   end
 
   defp claim_event_v1_parse(event) do
@@ -280,31 +278,16 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     Enum.filter(events, fn event ->
       case {event.first_topic, is_l1} do
         {@bridge_event, true} -> filter_bridge_event_l1(event, rollup_network_id)
-        {@bridge_event, false} -> filter_bridge_event_l2(event)
         {@claim_event_v2, true} -> filter_claim_event_l1(event, rollup_index)
-        {@claim_event_v2, false} -> filter_claim_event_l2(event)
         _ -> true
       end
     end)
   end
 
   defp filter_bridge_event_l1(event, rollup_network_id) do
-    {_, _, _, destination_network} = bridge_event_parse(event)
+    {_, _, _, destination_network} = bridge_event_parse(event, rollup_network_id)
     # skip the Deposit event if it's for another rollup
     destination_network == rollup_network_id
-  end
-
-  defp filter_bridge_event_l2(event) do
-    {_, _, _, destination_network} = bridge_event_parse(event)
-
-    if destination_network != @ethereum_mainnet_network_id do
-      Logger.error(
-        "L2 BridgeEvent has non-Mainnet destinationNetwork in the transaction #{event.transaction_hash}. This event will be ignored as withdrawals are only supported to Ethereum Mainnet."
-      )
-    end
-
-    # skip the Withdrawal event if the destination network is not Ethereum Mainnet
-    destination_network == @ethereum_mainnet_network_id
   end
 
   defp filter_claim_event_l1(event, rollup_index) do
@@ -312,7 +295,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
     if mainnet_bit != 0 do
       Logger.error(
-        "L1 ClaimEvent has non-zero mainnet bit in the transaction #{event.transaction_hash}. This event will be ignored as withdrawals are only supported to Ethereum Mainnet."
+        "L1 ClaimEvent has non-zero mainnet bit in the transaction #{event.transaction_hash}. This event will be ignored."
       )
     end
 
@@ -320,23 +303,10 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     rollup_idx == rollup_index and mainnet_bit == 0
   end
 
-  defp filter_claim_event_l2(event) do
-    {mainnet_bit, _rollup_index, _index, _amount} = claim_event_v2_parse(event)
-
-    if mainnet_bit == 0 do
-      Logger.error(
-        "L2 ClaimEvent has zero mainnet bit in the transaction #{event.transaction_hash}. This event will be ignored as deposits are only supported from Ethereum Mainnet."
-      )
-    end
-
-    # skip the Deposit event if the source network is not Ethereum Mainnet
-    mainnet_bit == 1
-  end
-
-  defp l1_token_addresses_from_bridge_events(events) do
+  defp l1_token_addresses_from_bridge_events(events, rollup_network_id) do
     events
     |> Enum.reduce(%MapSet{}, fn event, acc ->
-      case bridge_event_parse(event) do
+      case bridge_event_parse(event, rollup_network_id) do
         {{nil, _}, _, _, _} -> acc
         {{token_address, nil}, _, _, _} -> MapSet.put(acc, token_address)
       end
@@ -399,11 +369,11 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     |> Map.merge(tokens_inserted_outside)
   end
 
-  defp token_address_by_origin_address(origin_address, origin_network, leaf_type) do
+  defp token_address_by_origin_address(origin_address, origin_network, leaf_type, rollup_network_id) do
     with true <- leaf_type != 1,
          token_address = "0x" <> Base.encode16(origin_address, case: :lower),
          true <- token_address != burn_address_hash_string() do
-      if origin_network == @ethereum_mainnet_network_id do
+      if origin_network != rollup_network_id do
         # this is L1 address
         {token_address, nil}
       else
