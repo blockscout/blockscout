@@ -377,7 +377,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         or_where: block.number in ^consensus_block_numbers,
         # we also need to acquire blocks that will be upserted here, for ordering
         or_where: block.hash in ^hashes,
-        select: block.hash,
+        select: %{hash: block.hash, number: block.number},
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: block.hash],
         lock: "FOR NO KEY UPDATE"
@@ -413,7 +413,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       from(
         token_transfer in TokenTransfer,
         join: s in subquery(acquire_query),
-        on: token_transfer.block_hash == s.hash,
+        on: token_transfer.block_number == s.number,
         # we don't want to remove consensus from blocks that will be upserted
         where: token_transfer.block_hash not in ^hashes
       ),
