@@ -40,6 +40,8 @@ services:
     platform: linux/amd64
     restart: always
     container_name: 'stats'
+    ports:
+      - 8050:8050
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     env_file:

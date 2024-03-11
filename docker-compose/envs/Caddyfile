@@ -1,0 +1,55 @@
+(common) {
+    header /* {
+        -Server
+        -X-Powered-By
+		-Server-timing
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    }
+}
+
+explorer.onino.io {
+    import common
+    encode zstd gzip
+    tls info@onino.io
+    @api {
+        path_regexp ^/(api|socket|sitemap\.xml|auth/auth0|auth/auth0/callback|auth/logout)
+    }
+    reverse_proxy @api http://backend:4000 {
+        header_up Host {upstream_hostport}
+    }
+    reverse_proxy http://frontend:3000 {
+        header_up Host {upstream_hostport}
+    }
+
+    handle /links.json {
+        root * /var/www/html
+        file_server {
+            index links.json
+        }
+    }
+}
+
+stats.explorer.onino.io {
+    import common
+    encode zstd gzip
+    header Access-Control-Allow-Credentials "true"
+    header Access-Control-Allow-Methods "PUT, GET, POST, OPTIONS, DELETE, PATCH"
+    header Access-Control-Allow-Origin "https://explorer.onino.io"
+    tls info@onino.io
+    reverse_proxy http://stats:8050 {
+        header_up Host {upstream_hostport}
+    }
+}
+
+visualizer.explorer.onino.io {
+    import common
+    encode zstd gzip
+    header Access-Control-Allow-Methods "PUT, GET, POST, OPTIONS, DELETE, PATCH"
+    header Access-Control-Allow-Headers "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,x-csrf-token"
+    tls info@onino.io
+    reverse_proxy http://visualizer:8050 {
+        header_up Host {upstream_hostport}
+    }
+}

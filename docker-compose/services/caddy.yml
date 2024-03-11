@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  caddy:
+    image: caddy:latest
+    pull_policy: always
+    restart: always
+    container_name: 'caddy'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    ports:
+      - 80:80/tcp
+      - 443:443/tcp
+      - 443:443/udp
+    volumes:
+    - ../envs/Caddyfile:/etc/caddy/Caddyfile
+    - ../envs/links.json:/var/www/html/links.json
+    - ./caddy-data/:/data
+    - ./caddy-config:/config

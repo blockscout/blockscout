@@ -6,6 +6,8 @@ services:
     pull_policy: always
     platform: linux/amd64
     restart: always
+    ports:
+      - 8060:8050
     container_name: 'visualizer'
     env_file:
       -  ../envs/common-visualizer.env

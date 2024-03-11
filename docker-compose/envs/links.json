@@ -1,0 +1,12 @@
+[
+    {
+        "title": "About Us",
+        "links": [
+            {"text":"Telegram","url":"https://t.me/oninoofficial"},
+            {"text":"YouTube","url":"https://www.youtube.com/@onino_io"},
+            {"text":"Linkedin","url":"https://www.linkedin.com/company/onino-io"},
+            {"text":"Discord","url":"https://discord.gg/MupjfTRqty"},
+            {"text":"Instagram","url":"https://www.instagram.com/onino.io/"}
+        ]
+    }
+]

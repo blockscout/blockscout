@@ -52,6 +52,8 @@ dump.rdb
 /docker-compose/services/stats-db-data
 /docker-compose/services/redis-data
 /docker-compose/services/logs
+/docker-compose/services/caddy-data
+/docker-compose/services/caddy-config
 /docker-compose/tmp
 
 .idea/
@@ -65,3 +67,5 @@ dump.rdb
 *.env.example
 *.env.local
 *.env.staging
+.env_frontend
+.env_blockscout

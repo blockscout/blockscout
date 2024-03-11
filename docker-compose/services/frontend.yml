@@ -7,5 +7,7 @@ services:
     platform: linux/amd64
     restart: always
     container_name: 'frontend'
+    ports:
+      - 3000:3000
     env_file:
-      -  ../envs/common-frontend.env
+      -  ../envs/.env_frontend

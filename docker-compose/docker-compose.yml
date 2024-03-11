@@ -40,11 +40,6 @@ services:
         RELEASE_VERSION: 6.2.2
     links:
       - db:database
-    environment:
-        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
-        CHAIN_ID: '1337'
 
   visualizer:
     extends:
@@ -59,6 +54,7 @@ services:
   frontend:
     depends_on:
       - backend
+      - caddy
     extends:
       file: ./services/frontend.yml
       service: frontend
@@ -84,11 +80,9 @@ services:
       file: ./services/stats.yml
       service: stats
 
-  proxy:
+  caddy:
     depends_on:
       - backend
-      - frontend
-      - stats
     extends:
-      file: ./services/nginx.yml
-      service: proxy
+      file: ./services/caddy.yml
+      service: caddy

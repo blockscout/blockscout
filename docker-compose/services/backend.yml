@@ -10,7 +10,9 @@ services:
     command: sh -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
     extra_hosts:
       - 'host.docker.internal:host-gateway'
+    ports:
+      - 4000:4000
     env_file:
-      -  ../envs/common-blockscout.env
+      -  ../envs/.env_blockscout
     volumes:
       - ./logs/:/app/logs/
