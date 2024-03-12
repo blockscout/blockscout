@@ -105,7 +105,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :blocks, :realtime, blocks}) do
-    last_broadcasted_block_number = Helper.fetch_from_cache(:number, :last_broadcasted_block)
+    last_broadcasted_block_number = Helper.fetch_from_ets_cache(:number, :last_broadcasted_block)
 
     blocks
     |> Enum.sort_by(& &1.number, :asc)
@@ -327,7 +327,7 @@ defmodule BlockScoutWeb.Notifier do
 
   defp schedule_broadcasting(block) do
     :timer.sleep(@check_broadcast_sequence_period)
-    last_broadcasted_block_number = Helper.fetch_from_cache(:number, :last_broadcasted_block)
+    last_broadcasted_block_number = Helper.fetch_from_ets_cache(:number, :last_broadcasted_block)
 
     if last_broadcasted_block_number == BlockNumberHelper.previous_block_number(block.number) do
       broadcast_block(block)

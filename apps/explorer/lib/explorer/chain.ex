@@ -4107,16 +4107,6 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-  @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
-  def count_token_holders_from_token_hash(contract_address_hash) do
-    query =
-      from(ctb in CurrentTokenBalance.token_holders_query_for_count(contract_address_hash),
-        select: fragment("COUNT(DISTINCT(?))", ctb.address_hash)
-      )
-
-    Repo.one!(query, timeout: :infinity)
-  end
-
   @spec address_to_unique_tokens(Hash.Address.t(), Token.t(), [paging_options | api?]) :: [Instance.t()]
   def address_to_unique_tokens(contract_address_hash, token, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
