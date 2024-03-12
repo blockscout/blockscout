@@ -279,6 +279,7 @@ defmodule Explorer.SmartContract.Reader do
     abi_with_method_id = get_abi_with_method_id(abi)
 
     abi_with_method_id
+    |> Enum.reject(&Helper.queriable_method?(&1))
     |> Enum.filter(&Helper.read_with_wallet_method?(&1))
   end
 

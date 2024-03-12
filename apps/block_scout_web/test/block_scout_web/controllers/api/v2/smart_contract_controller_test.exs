@@ -1173,6 +1173,64 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       refute %{"type" => "receive"} in response
     end
 
+    test "ensure read-methods are not duplicated", %{conn: conn} do
+      abi = [
+        %{
+          "inputs" => [],
+          "name" => "test",
+          "outputs" => [
+            %{"internalType" => "uint256", "name" => "", "type" => "uint256"}
+          ],
+          "stateMutability" => "pure",
+          "type" => "function"
+        }
+      ]
+
+      id =
+        abi
+        |> ABI.parse_specification()
+        |> Enum.at(0)
+        |> Map.fetch!(:method_id)
+
+      target_contract = insert(:smart_contract, abi: abi)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: "eth_call", params: _params}], _opts ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x00000000000000000000000000000000000000000000009d37020ac9049a8040"
+             }
+           ]}
+        end
+      )
+
+      request = get(conn, "/api/v2/smart-contracts/#{target_contract.address_hash}/methods-read")
+
+      assert response = json_response(request, 200)
+
+      assert response == [
+               %{
+                 "type" => "function",
+                 "stateMutability" => "pure",
+                 "outputs" => [
+                   %{
+                     "type" => "uint256",
+                     "value" => 2_900_102_562_052_921_000_000
+                   }
+                 ],
+                 "name" => "test",
+                 "names" => ["uint256"],
+                 "inputs" => [],
+                 "method_id" => Base.encode16(id, case: :lower)
+               }
+             ]
+    end
+
     test "get array of addresses within read-methods", %{conn: conn} do
       abi = [
         %{

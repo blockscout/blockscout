@@ -18,7 +18,8 @@ defmodule Explorer.SmartContract.Helper do
   def error?(function), do: function["type"] == "error"
 
   @doc """
-    Checks whether the function which is not queriable can be consider as read function or not.
+    Checks whether the function which is not queriable can be considered as read
+    function or not.
   """
   @spec read_with_wallet_method?(%{}) :: true | false
   def read_with_wallet_method?(function),
