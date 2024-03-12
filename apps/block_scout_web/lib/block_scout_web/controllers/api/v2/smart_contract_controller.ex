@@ -39,7 +39,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
            {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options, false)} do
       conn
       |> put_status(200)
-      |> render(:smart_contract, %{address: address})
+      |> render(:smart_contract, %{address: address, conn: conn})
     end
   end
 

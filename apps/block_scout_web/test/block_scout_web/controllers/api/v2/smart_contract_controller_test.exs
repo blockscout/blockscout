@@ -86,6 +86,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_fully_verified" => true,
         "is_verified_via_sourcify" => target_contract.verified_via_sourcify,
         "is_vyper_contract" => target_contract.is_vyper_contract,
+        "has_methods_read" => true,
+        "has_methods_write" => true,
+        "has_methods_read_proxy" => true,
+        "has_methods_write_proxy" => true,
+        "has_custom_methods_read" => false,
+        "has_custom_methods_write" => false,
         "minimal_proxy_address_hash" => nil,
         "sourcify_repo_url" =>
           if(target_contract.verified_via_sourcify,
@@ -116,6 +122,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "language" => smart_contract_language(target_contract),
         "license_type" => "none"
       }
+
+      get_eip1967_implementation_non_zero_address()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
@@ -177,6 +185,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_fully_verified" => true,
         "is_verified_via_sourcify" => target_contract.verified_via_sourcify,
         "is_vyper_contract" => target_contract.is_vyper_contract,
+        "has_methods_read" => true,
+        "has_methods_read_proxy" => false,
+        "has_methods_write" => true,
+        "has_methods_write_proxy" => false,
+        "has_custom_methods_read" => false,
+        "has_custom_methods_write" => false,
         "minimal_proxy_address_hash" => nil,
         "sourcify_repo_url" =>
           if(target_contract.verified_via_sourcify,
@@ -210,6 +224,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "language" => smart_contract_language(target_contract),
         "license_type" => "gnu_agpl_v3"
       }
+
+      get_eip1967_implementation_error_response()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
@@ -279,6 +295,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_fully_verified" => false,
         "is_verified_via_sourcify" => false,
         "is_vyper_contract" => target_contract.is_vyper_contract,
+        "has_methods_read" => true,
+        "has_methods_write" => true,
+        "has_methods_read_proxy" => false,
+        "has_methods_write_proxy" => false,
+        "has_custom_methods_read" => false,
+        "has_custom_methods_write" => false,
         "minimal_proxy_address_hash" => nil,
         "sourcify_repo_url" => nil,
         "can_be_visualized_via_sol2uml" => false,
@@ -306,6 +328,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "language" => smart_contract_language(target_contract),
         "license_type" => "none"
       }
+
+      get_eip1967_implementation_error_response()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       response = json_response(request, 200)
@@ -390,6 +414,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_fully_verified" => false,
         "is_verified_via_sourcify" => false,
         "is_vyper_contract" => implementation_contract.is_vyper_contract,
+        "has_methods_read" => true,
+        "has_methods_write" => true,
+        "has_methods_read_proxy" => true,
+        "has_methods_write_proxy" => true,
+        "has_custom_methods_read" => false,
+        "has_custom_methods_write" => false,
         "minimal_proxy_address_hash" => Address.checksum("0x" <> implementation_contract_address_hash_string),
         "sourcify_repo_url" => nil,
         "can_be_visualized_via_sol2uml" => false,
@@ -475,6 +505,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         Conn.resp(conn, 200, eth_bytecode_response)
       end)
 
+      get_eip1967_implementation_error_response()
+
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
       assert_receive %Phoenix.Socket.Message{
@@ -553,6 +585,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
         Conn.resp(conn, 200, eth_bytecode_response)
       end)
+
+      get_eip1967_implementation_error_response()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -706,6 +740,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                }
 
+      get_eip1967_implementation_error_response()
+
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)
       assert %{"is_verified" => true} = response
@@ -762,6 +798,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
         Conn.resp(conn, 200, eth_bytecode_response)
       end)
+
+      get_eip1967_implementation_error_response()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -3217,6 +3255,109 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                                               },
                                               _options ->
       {:ok, "0x000000000000000000000000#{address_hash |> to_string() |> String.replace("0x", "")}"}
+    end)
+  end
+
+  def get_eip1967_implementation_non_zero_address do
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                id: 0,
+                                                method: "eth_getStorageAt",
+                                                params: [
+                                                  _,
+                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                  "latest"
+                                                ]
+                                              },
+                                              _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000001"}
+    end)
+  end
+
+  def get_eip1967_implementation_error_response do
+    EthereumJSONRPC.Mox
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:error, "error"}
+    end)
+    |> mock_empty_beacon_storage_pointer_request()
+    |> mock_empty_oz_storage_pointer_request()
+    |> mock_empty_eip_1822_storage_pointer_request()
+  end
+
+  defp mock_empty_beacon_storage_pointer_request(mox) do
+    expect(mox, :json_rpc, fn %{
+                                id: 0,
+                                method: "eth_getStorageAt",
+                                params: [
+                                  _,
+                                  "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
+                                  "latest"
+                                ]
+                              },
+                              _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+  end
+
+  defp mock_empty_eip_1822_storage_pointer_request(mox) do
+    expect(mox, :json_rpc, fn %{
+                                id: 0,
+                                method: "eth_getStorageAt",
+                                params: [
+                                  _,
+                                  "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
+                                  "latest"
+                                ]
+                              },
+                              _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+  end
+
+  defp mock_empty_oz_storage_pointer_request(mox) do
+    expect(mox, :json_rpc, fn %{
+                                id: 0,
+                                method: "eth_getStorageAt",
+                                params: [
+                                  _,
+                                  "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                  "latest"
+                                ]
+                              },
+                              _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
     end)
   end
 end
