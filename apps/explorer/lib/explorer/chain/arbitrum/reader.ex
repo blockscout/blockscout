@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   TBD
   """
 
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query, only: [from: 2, subquery: 1]
 
   alias Explorer.Chain.Arbitrum.{BatchBlock, L1Batch, L1Execution, LifecycleTransaction, Message}
 
@@ -210,7 +210,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     query =
       from(
         rb in BatchBlock,
-        left_join: fb in FullBlock,
+        inner_join: fb in FullBlock,
         on: rb.hash == fb.hash,
         select: rb,
         where: not is_nil(rb.confirm_id),
@@ -232,7 +232,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     query =
       from(
         rb in BatchBlock,
-        left_join: fb in FullBlock,
+        inner_join: fb in FullBlock,
         on: rb.hash == fb.hash,
         select: fb.number,
         where: not is_nil(rb.confirm_id),
@@ -248,7 +248,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     query =
       from(
         tx in LifecycleTransaction,
-        left_join: ex in L1Execution,
+        inner_join: ex in L1Execution,
         on: tx.id == ex.execution_id,
         select: tx.block,
         order_by: [desc: tx.block],
@@ -263,7 +263,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     query =
       from(
         tx in LifecycleTransaction,
-        left_join: ex in L1Execution,
+        inner_join: ex in L1Execution,
         on: tx.id == ex.execution_id,
         select: tx.block,
         order_by: [asc: tx.block],
@@ -278,7 +278,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     query =
       from(
         rb in BatchBlock,
-        left_join: fb in FullBlock,
+        inner_join: fb in FullBlock,
         on: rb.hash == fb.hash,
         select: %{
           batch_number: rb.batch_number,
@@ -311,5 +311,58 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     Repo.all(query, timeout: :infinity)
+  end
+
+  def l1_blocks_of_confirmations_bounding_first_unconfirmed_rollup_blocks_gap do
+    rollup_blocks_query =
+      from(
+        rb in BatchBlock,
+        inner_join: fb in FullBlock,
+        on: rb.hash == fb.hash,
+        select: %{
+          block_num: fb.number,
+          confirm_id: rb.confirm_id
+        },
+        where: not is_nil(rb.confirm_id)
+      )
+
+    confirmed_ranges_query =
+      from(
+        rbq in subquery(rollup_blocks_query),
+        select: %{
+          confirm_id: rbq.confirm_id,
+          min_block_num: min(rbq.block_num),
+          max_block_num: max(rbq.block_num)
+        },
+        group_by: rbq.confirm_id
+      )
+
+    confirmed_combined_ranges_query =
+      from(
+        crq in subquery(confirmed_ranges_query),
+        select: %{
+          confirm_id: crq.confirm_id,
+          min_block_num: crq.min_block_num,
+          max_block_num: crq.max_block_num,
+          prev_max_number: fragment("LAG(?, 1) OVER (ORDER BY ?)", crq.max_block_num, crq.min_block_num),
+          prev_confirm_id: fragment("LAG(?, 1) OVER (ORDER BY ?)", crq.confirm_id, crq.min_block_num)
+        }
+      )
+
+    main_query =
+      from(
+        ccrq in subquery(confirmed_combined_ranges_query),
+        inner_join: lctx_cur in LifecycleTransaction,
+        on: ccrq.confirm_id == lctx_cur.id,
+        left_join: lctx_prev in LifecycleTransaction,
+        on: ccrq.prev_confirm_id == lctx_prev.id,
+        select: {lctx_prev.block, lctx_cur.block},
+        where: ccrq.min_block_num - 1 != ccrq.prev_max_number or is_nil(ccrq.prev_max_number),
+        order_by: [desc: ccrq.min_block_num],
+        limit: 1
+      )
+
+    main_query
+    |> Repo.one()
   end
 end

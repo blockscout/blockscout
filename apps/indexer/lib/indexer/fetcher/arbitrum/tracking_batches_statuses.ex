@@ -374,6 +374,13 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         rollup_rpc_config
       )
 
+      {expected_confirmation_start_block, expected_confirmation_end_block} =
+        Db.l1_blocks_to_expect_rollup_blocks_confirmation()
+
+      Logger.notice(
+        "Expected confirmation within ##{expected_confirmation_start_block}..##{expected_confirmation_end_block} l1 blocks"
+      )
+
       {:ok, end_block}
     else
       {:ok, start_block - 1}

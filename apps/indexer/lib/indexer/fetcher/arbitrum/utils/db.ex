@@ -288,4 +288,17 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   def l1_executions(message_ids) do
     Reader.l1_executions(message_ids)
   end
+
+  def l1_blocks_to_expect_rollup_blocks_confirmation do
+    case Reader.l1_blocks_of_confirmations_bounding_first_unconfirmed_rollup_blocks_gap() do
+      nil ->
+        {nil, nil}
+
+      {nil, newer_confirmation_l1_block} ->
+        {nil, newer_confirmation_l1_block - 1}
+
+      {older_confirmation_l1_block, newer_confirmation_l1_block} ->
+        {older_confirmation_l1_block + 1, newer_confirmation_l1_block - 1}
+    end
+  end
 end
