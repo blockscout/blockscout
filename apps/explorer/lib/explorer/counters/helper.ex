@@ -3,6 +3,8 @@ defmodule Explorer.Counters.Helper do
     A helper for caching modules
   """
 
+  alias Explorer.Chain.AddressCounter
+
   @ets_opts [
     :set,
     :named_table,
@@ -16,7 +18,7 @@ defmodule Explorer.Counters.Helper do
     DateTime.to_unix(utc_now, :millisecond)
   end
 
-  def fetch_from_cache(key, cache_name, default \\ 0) do
+  def fetch_from_ets_cache(key, cache_name, default \\ nil) do
     case :ets.lookup(cache_name, key) do
       [{_, value}] ->
         value
@@ -24,6 +26,10 @@ defmodule Explorer.Counters.Helper do
       [] ->
         default
     end
+  end
+
+  def fetch_from_db_cache(address_hash_string, key) do
+    AddressCounter.get_value(address_hash_string, key)
   end
 
   def create_cache_table(cache_name) do

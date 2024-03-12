@@ -5,10 +5,12 @@ defmodule Explorer.Counters.TokenHoldersCounter do
   use GenServer
 
   alias Explorer.Chain
+  alias Explorer.Chain.AddressCounter
   alias Explorer.Counters.Helper
 
-  @cache_name :token_holders_counter
+  @cache_name :token_holders_count
   @last_update_key "last_update"
+  @updated_at :updated_at
 
   config = Application.compile_env(:explorer, Explorer.Counters.TokenHoldersCounter)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
@@ -45,16 +47,14 @@ defmodule Explorer.Counters.TokenHoldersCounter do
       update_cache(address_hash)
     end
 
-    address_hash_string = to_string(address_hash)
-    fetch_from_cache("hash_#{address_hash_string}")
+    fetch_count_from_cache(address_hash)
   end
 
   def cache_name, do: @cache_name
 
   defp cache_expired?(address_hash) do
     cache_period = Application.get_env(:explorer, __MODULE__)[:cache_period]
-    address_hash_string = to_string(address_hash)
-    updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
+    updated_at = fetch_updated_at_from_cache(address_hash)
 
     cond do
       is_nil(updated_at) -> true
@@ -65,17 +65,32 @@ defmodule Explorer.Counters.TokenHoldersCounter do
 
   defp update_cache(address_hash) do
     address_hash_string = to_string(address_hash)
-    put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
+    put_into_ets_cache("hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
     new_data = Chain.count_token_holders_from_token_hash(address_hash)
-    put_into_cache("hash_#{address_hash_string}", new_data)
+    put_into_ets_cache("hash_#{address_hash_string}", new_data)
+    put_into_db_cache(address_hash_string, new_data)
   end
 
-  defp fetch_from_cache(key) do
-    Helper.fetch_from_cache(key, @cache_name)
+  defp fetch_count_from_cache(address_hash) do
+    address_hash_string = to_string(address_hash)
+    key = "hash_#{address_hash_string}"
+
+    Helper.fetch_from_ets_cache(key, @cache_name) || Helper.fetch_from_db_cache(address_hash, @cache_name)
   end
 
-  defp put_into_cache(key, value) do
+  defp fetch_updated_at_from_cache(address_hash) do
+    address_hash_string = to_string(address_hash)
+    key = "hash_#{address_hash_string}_#{@last_update_key}"
+
+    Helper.fetch_from_ets_cache(key, @cache_name) || Helper.fetch_from_db_cache(address_hash, @updated_at)
+  end
+
+  defp put_into_ets_cache(key, value) do
     :ets.insert(@cache_name, {key, value})
+  end
+
+  defp put_into_db_cache(address_hash_string, counter) do
+    AddressCounter.create(%{hash: address_hash_string, token_holders_count: counter})
   end
 
   defp create_cache_table do

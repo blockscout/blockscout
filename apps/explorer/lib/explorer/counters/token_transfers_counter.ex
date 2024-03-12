@@ -71,7 +71,7 @@ defmodule Explorer.Counters.TokenTransfersCounter do
   end
 
   defp fetch_from_cache(key) do
-    Helper.fetch_from_cache(key, @cache_name)
+    Helper.fetch_from_ets_cache(key, @cache_name)
   end
 
   defp put_into_cache(key, value) do
