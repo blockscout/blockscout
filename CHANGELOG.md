@@ -17,6 +17,7 @@
 
 - [#9601](https://github.com/blockscout/blockscout/pull/9601) - Fix token instance transform for some unconventional tokens
 - [#9597](https://github.com/blockscout/blockscout/pull/9597) - Update token transfers block_consensus by block_number
+- [#9596](https://github.com/blockscout/blockscout/pull/9596) - Fix logging
 - [#9572](https://github.com/blockscout/blockscout/pull/9572) - Fix Shibarium L1 fetcher
 - [#9563](https://github.com/blockscout/blockscout/pull/9563) - Fix timestamp handler for unfinalized zkEVM batches
 - [#9560](https://github.com/blockscout/blockscout/pull/9560) - Fix fetch pending transaction for hyperledger besu client
