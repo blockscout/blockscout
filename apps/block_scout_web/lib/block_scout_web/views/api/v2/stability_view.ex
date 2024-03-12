@@ -51,30 +51,35 @@ defmodule BlockScoutWeb.API.V2.StabilityView do
   ]
 
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
-    [
-      {"token", "address", false, token_address_hash},
-      {"totalFee", "uint256", false, total_fee},
-      {"validator", "address", false, validator_address_hash},
-      {"validatorFee", "uint256", false, validator_fee},
-      {"dapp", "address", false, dapp_address_hash},
-      {"dappFee", "uint256", false, dapp_fee}
-    ] = transaction.transaction_fee_log
+    case transaction.transaction_fee_log do
+      [
+        {"token", "address", false, token_address_hash},
+        {"totalFee", "uint256", false, total_fee},
+        {"validator", "address", false, validator_address_hash},
+        {"validatorFee", "uint256", false, validator_fee},
+        {"dapp", "address", false, dapp_address_hash},
+        {"dappFee", "uint256", false, dapp_fee}
+      ] ->
+        stability_fee = %{
+          "token" =>
+            TokenView.render("token.json", %{
+              token: transaction.transaction_fee_token,
+              contract_address_hash: bytes_to_address_hash(token_address_hash)
+            }),
+          "validator_address" =>
+            Helper.address_with_info(nil, nil, bytes_to_address_hash(validator_address_hash), false),
+          "dapp_address" => Helper.address_with_info(nil, nil, bytes_to_address_hash(dapp_address_hash), false),
+          "total_fee" => to_string(total_fee),
+          "dapp_fee" => to_string(dapp_fee),
+          "validator_fee" => to_string(validator_fee)
+        }
 
-    stability_fee = %{
-      "token" =>
-        TokenView.render("token.json", %{
-          token: transaction.transaction_fee_token,
-          contract_address_hash: bytes_to_address_hash(token_address_hash)
-        }),
-      "validator_address" => Helper.address_with_info(nil, nil, bytes_to_address_hash(validator_address_hash), false),
-      "dapp_address" => Helper.address_with_info(nil, nil, bytes_to_address_hash(dapp_address_hash), false),
-      "total_fee" => to_string(total_fee),
-      "dapp_fee" => to_string(dapp_fee),
-      "validator_fee" => to_string(validator_fee)
-    }
+        out_json
+        |> Map.put("stability_fee", stability_fee)
 
-    out_json
-    |> Map.put("stability_fee", stability_fee)
+      _ ->
+        out_json
+    end
   end
 
   def transform_transactions(transactions) do
