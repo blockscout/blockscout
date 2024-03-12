@@ -16,7 +16,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Timex.Duration
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
-  import Explorer.Chain.Transaction, only: [bytes_to_address_hash: 1]
 
   @api_true [api?: true]
 
@@ -440,7 +439,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     result
     |> chain_type_fields(transaction, single_tx?, conn, watchlist_names)
-    |> maybe_put_stability_fee(transaction)
   end
 
   def token_transfers(_, _conn, false), do: nil
@@ -877,36 +875,5 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       defp chain_type_fields(result, _transaction, _single_tx?, _conn, _watchlist_names) do
         result
       end
-  end
-
-  defp maybe_put_stability_fee(body, transaction) do
-    with "stability" <- Application.get_env(:explorer, :chain_type),
-         [
-           {"token", "address", false, token_address_hash},
-           {"totalFee", "uint256", false, total_fee},
-           {"validator", "address", false, validator_address_hash},
-           {"validatorFee", "uint256", false, validator_fee},
-           {"dapp", "address", false, dapp_address_hash},
-           {"dappFee", "uint256", false, dapp_fee}
-         ] <- transaction.transaction_fee_log do
-      stability_fee = %{
-        "token" =>
-          TokenView.render("token.json", %{
-            token: transaction.transaction_fee_token,
-            contract_address_hash: bytes_to_address_hash(token_address_hash)
-          }),
-        "validator_address" => Helper.address_with_info(nil, nil, bytes_to_address_hash(validator_address_hash), false),
-        "dapp_address" => Helper.address_with_info(nil, nil, bytes_to_address_hash(dapp_address_hash), false),
-        "total_fee" => to_string(total_fee),
-        "dapp_fee" => to_string(dapp_fee),
-        "validator_fee" => to_string(validator_fee)
-      }
-
-      body
-      |> Map.put("stability_fee", stability_fee)
-    else
-      _ ->
-        body
-    end
   end
 end
