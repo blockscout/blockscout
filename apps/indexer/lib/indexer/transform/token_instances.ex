@@ -51,21 +51,18 @@ defmodule Indexer.Transform.TokenInstances do
 
     current_key = {token_contract_address_hash, token_id}
 
-    Map.put(
+    Map.update(
       acc,
       current_key,
-      Enum.max_by(
-        [
-          params,
-          acc[current_key] || params
-        ],
-        fn %{
-             owner_updated_at_block: owner_updated_at_block,
-             owner_updated_at_log_index: owner_updated_at_log_index
-           } ->
-          {owner_updated_at_block, owner_updated_at_log_index}
-        end
-      )
+      params,
+      fn current ->
+        Enum.max_by([params, current], fn ti ->
+          {
+            Map.get(ti, :owner_updated_at_block, 0),
+            Map.get(ti, :owner_updated_at_log_index, 0)
+          }
+        end)
+      end
     )
   end
 
@@ -78,7 +75,7 @@ defmodule Indexer.Transform.TokenInstances do
          acc
        ) do
     Enum.reduce(token_ids, acc, fn id, sub_acc ->
-      Map.put(sub_acc, {token_contract_address_hash, id}, %{
+      Map.put_new(sub_acc, {token_contract_address_hash, id}, %{
         token_contract_address_hash: token_contract_address_hash,
         token_id: id,
         token_type: "ERC-1155"
