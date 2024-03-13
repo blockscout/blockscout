@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.BridgedTokensView do
   @doc """
   Calculates capitalization of the bridged token in USD.
   """
-  @spec bridged_token_usd_cap(BridgedToken.t(), Token.t()) :: Decimal.t() | nil
+  @spec bridged_token_usd_cap(BridgedToken.t(), Token.t()) :: Decimal.t()
   def bridged_token_usd_cap(bridged_token, token) do
     if bridged_token.custom_cap do
       bridged_token.custom_cap

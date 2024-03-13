@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.Etherscan do
   @moduledoc """
   Documentation data for Etherscan-compatible API.
   """
-
   alias Explorer.Chain.BridgedToken
 
   @account_balance_example_value %{
@@ -2011,7 +2010,7 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
-  if BridgedToken.enabled?() do
+  if Application.compile_env(:explorer, BridgedToken)[:enabled] do
     @success_status_type %{
       type: "status",
       enum: ~s(["1"]),
@@ -3065,7 +3064,7 @@ defmodule BlockScoutWeb.Etherscan do
     @token_gettokenholders_action
   ]
 
-  @token_actions if BridgedToken.enabled?(),
+  @token_actions if Application.compile_env(:explorer, BridgedToken)[:enabled],
                    do: [@token_bridgedtokenlist_action, @base_token_actions],
                    else: @base_token_actions
 

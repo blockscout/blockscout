@@ -5,19 +5,6 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.BridgedToken
 
-  import BlockScoutWeb.PagingHelper,
-    only: [
-      chain_ids_filter_options: 1,
-      tokens_sorting: 1
-    ]
-
-  import BlockScoutWeb.Chain,
-    only: [
-      paging_options: 1
-    ]
-
-  @api_true [api?: true]
-
   def gettoken(conn, params) do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
          {:format, {:ok, address_hash}} <- to_address_hash(contractaddress_param),
@@ -64,22 +51,36 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
     end
   end
 
-  def bridgedtokenlist(conn, params) do
-    bridged_tokens =
-      if BridgedToken.enabled?() do
-        options =
-          params
-          |> paging_options()
-          |> Keyword.merge(chain_ids_filter_options(params))
-          |> Keyword.merge(tokens_sorting(params))
-          |> Keyword.merge(@api_true)
+  if Application.compile_env(:explorer, BridgedToken)[:enabled] do
+    @api_true [api?: true]
+    def bridgedtokenlist(conn, params) do
+      import BlockScoutWeb.PagingHelper,
+        only: [
+          chain_ids_filter_options: 1,
+          tokens_sorting: 1
+        ]
 
-        "" |> BridgedToken.list_top_bridged_tokens(options)
-      else
-        []
-      end
+      import BlockScoutWeb.Chain,
+        only: [
+          paging_options: 1
+        ]
 
-    render(conn, "bridgedtokenlist.json", %{bridged_tokens: bridged_tokens})
+      bridged_tokens =
+        if BridgedToken.enabled?() do
+          options =
+            params
+            |> paging_options()
+            |> Keyword.merge(chain_ids_filter_options(params))
+            |> Keyword.merge(tokens_sorting(params))
+            |> Keyword.merge(@api_true)
+
+          "" |> BridgedToken.list_top_bridged_tokens(options)
+        else
+          []
+        end
+
+      render(conn, "bridgedtokenlist.json", %{bridged_tokens: bridged_tokens})
+    end
   end
 
   defp fetch_contractaddress(params) do
