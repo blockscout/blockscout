@@ -197,7 +197,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
         check_content_type(content_type, uri, hex_token_id, body)
 
       {:ok, %Response{body: body, status_code: code}} ->
-        Logger.warn(
+        Logger.debug(
           ["Request to token uri: #{inspect(uri)} failed with code #{code}. Body:", inspect(body)],
           fetcher: :token_instances
         )
