@@ -3030,7 +3030,9 @@ defmodule Explorer.Chain do
         on: tx.created_contract_address_hash == a.hash,
         where: tx.created_contract_address_hash == ^address_hash,
         where: tx.status == ^1,
-        select: %{init: tx.input, created_contract_code: a.contract_code}
+        select: %{init: tx.input, created_contract_code: a.contract_code},
+        order_by: [desc: tx.block_number],
+        limit: ^1
       )
 
     tx_input =
