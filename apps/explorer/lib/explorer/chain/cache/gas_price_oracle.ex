@@ -98,7 +98,6 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
         block in Block,
         left_join: transaction in assoc(block, :transactions),
         where: block.consensus == true,
-        where: transaction.status == ^1,
         where: is_nil(transaction.gas_price) or transaction.gas_price > ^0,
         where: transaction.block_number > ^from_block,
         group_by: transaction.block_number,

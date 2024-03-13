@@ -254,9 +254,9 @@ config :explorer, Explorer.Chain.Cache.GasPriceOracle,
   safelow_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_SAFELOW_PERCENTILE", 35),
   average_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_AVERAGE_PERCENTILE", 60),
   fast_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_FAST_PERCENTILE", 90),
-  safelow_time_coefficient: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_SAFELOW_TIME_COEFFICIENT", 5),
-  average_time_coefficient: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_AVERAGE_TIME_COEFFICIENT", 3),
-  fast_time_coefficient: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_FAST_TIME_COEFFICIENT", 1)
+  safelow_time_coefficient: ConfigHelper.parse_float_env_var("GAS_PRICE_ORACLE_SAFELOW_TIME_COEFFICIENT", 5),
+  average_time_coefficient: ConfigHelper.parse_float_env_var("GAS_PRICE_ORACLE_AVERAGE_TIME_COEFFICIENT", 3),
+  fast_time_coefficient: ConfigHelper.parse_float_env_var("GAS_PRICE_ORACLE_FAST_TIME_COEFFICIENT", 1)
 
 config :explorer, Explorer.Chain.Cache.RootstockLockedBTC,
   enabled: System.get_env("ETHEREUM_JSONRPC_VARIANT") == "rsk",
