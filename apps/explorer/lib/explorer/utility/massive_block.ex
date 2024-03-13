@@ -8,7 +8,7 @@ defmodule Explorer.Utility.MassiveBlock do
 
   alias Explorer.Repo
 
-  schema "massive_blocks" do
+  typed_schema "massive_blocks" do
     field(:number, :integer)
 
     timestamps()
