@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.ChainController do
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.Chain.Cache.Block, as: BlockCache
-  # alias Explorer.Chain.Cache.GasUsage
+  alias Explorer.Chain.Cache.GasUsage
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
   alias Explorer.Chain.Search
   alias Explorer.Chain.Supply.RSK
@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.ChainController do
 
   def show(conn, _params) do
     transaction_estimated_count = TransactionCache.estimated_count()
-    # total_gas_usage = GasUsage.total()
+    total_gas_usage = GasUsage.total()
     block_count = BlockCache.estimated_count()
     address_count = Counters.address_estimated_count()
 
@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.ChainController do
       chart_data_paths: chart_data_paths,
       market_cap_calculation: market_cap_calculation,
       transaction_estimated_count: transaction_estimated_count,
-      # total_gas_usage: total_gas_usage,
+      total_gas_usage: total_gas_usage,
       transactions_path: recent_transactions_path(conn, :index),
       transaction_stats: transaction_stats,
       block_count: block_count,
