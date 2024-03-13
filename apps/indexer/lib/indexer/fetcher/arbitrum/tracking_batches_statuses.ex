@@ -118,6 +118,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     #          from previous SendRootUpdated
     new_confirmations_start_block = Db.l1_block_of_latest_confirmed_block(l1_start_block)
 
+    {expected_confirmation_start_block, expected_confirmation_end_block} =
+      Db.l1_blocks_to_expect_rollup_blocks_confirmation(l1_start_block - 1)
+
     # TODO: it is necessary to develop a way to discover missed executions.
     #       One of the approaches is to look deeper than the latest execution and
     #       check whether executions were already handled or not.
@@ -141,6 +144,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
           new_batches_start_block: new_batches_start_block,
           historical_batches_end_block: historical_batches_end_block,
           new_confirmations_start_block: new_confirmations_start_block,
+          historical_confirmations_end_block: expected_confirmation_end_block,
+          historical_confirmations_start_block: expected_confirmation_start_block,
           new_executions_start_block: new_executions_start_block,
           historical_executions_end_block: historical_executions_end_block
         })
@@ -172,7 +177,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   @impl GenServer
   def handle_info(:check_new_confirmations, state) do
     {handle_duration, {:ok, end_block}} =
-      :timer.tc(&discover_rollup_confirmation/1, [
+      :timer.tc(&discover_new_rollup_confirmation/1, [
         state
       ])
 
@@ -342,7 +347,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     end
   end
 
-  def discover_rollup_confirmation(
+  def discover_new_rollup_confirmation(
         %{
           config: %{
             l1_rpc: l1_rpc_config,
@@ -374,16 +379,62 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         rollup_rpc_config
       )
 
-      {expected_confirmation_start_block, expected_confirmation_end_block} =
-        Db.l1_blocks_to_expect_rollup_blocks_confirmation()
-
-      Logger.notice(
-        "Expected confirmation within ##{expected_confirmation_start_block}..##{expected_confirmation_end_block} l1 blocks"
-      )
-
       {:ok, end_block}
     else
       {:ok, start_block - 1}
+    end
+  end
+
+  def discover_historical_rollup_confirmation(
+        %{
+          config: %{
+            l1_rpc: l1_rpc_config,
+            l1_outbox_address: outbox_address,
+            rollup_rpc: rollup_rpc_config,
+            l1_rollup_init_block: l1_rollup_init_block
+          },
+          data: %{
+            historical_confirmations_end_block: expected_confirmation_end_block,
+            historical_confirmations_start_block: expected_confirmation_start_block
+          }
+        } = _state
+      ) do
+    {interim_start_block, end_block} =
+      case expected_confirmation_end_block do
+        nil ->
+          Db.l1_blocks_to_expect_rollup_blocks_confirmation(nil)
+
+        value ->
+          {expected_confirmation_start_block, expected_confirmation_end_block}
+      end
+
+    if is_nil(end_block) do
+      {:ok, {nil, nil}}
+    else
+      if end_block >= l1_rollup_init_block do
+        start_block =
+          case interim_start_block do
+            nil ->
+              max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
+
+            value ->
+              Enum.max([l1_rollup_init_block, value, end_block - l1_rpc_config.logs_block_range + 1])
+          end
+
+        Logger.info("Block range for historical rollup confirmations discovery: #{start_block}..#{end_block}")
+
+        NewConfirmations.discover(
+          outbox_address,
+          start_block,
+          end_block,
+          l1_rpc_config,
+          rollup_rpc_config
+        )
+
+        {:ok, {start_block, interim_start_block}}
+      else
+        {:ok, {l1_rollup_init_block, nil}}
+      end
     end
   end
 
