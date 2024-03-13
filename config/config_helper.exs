@@ -61,6 +61,17 @@ defmodule ConfigHelper do
     end
   end
 
+  @spec parse_float_env_var(String.t(), float()) :: float()
+  def parse_float_env_var(env_var, default_value) do
+    env_var
+    |> safe_get_env(to_string(default_value))
+    |> Float.parse()
+    |> case do
+      {float, _} -> float
+      _ -> 0
+    end
+  end
+
   @spec parse_integer_or_nil_env_var(String.t()) :: non_neg_integer() | nil
   def parse_integer_or_nil_env_var(env_var) do
     env_var
