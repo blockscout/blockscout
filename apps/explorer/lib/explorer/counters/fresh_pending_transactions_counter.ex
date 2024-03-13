@@ -1,6 +1,6 @@
 defmodule Explorer.Counters.FreshPendingTransactionsCounter do
   @moduledoc """
-  Caches number of pending transactions for last 24 hours.
+  Caches number of pending transactions for last 30 minutes.
 
   It loads the sum asynchronously and in a time interval of :cache_period (default to 5 minutes).
   """
@@ -12,7 +12,7 @@ defmodule Explorer.Counters.FreshPendingTransactionsCounter do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Transaction
 
-  @counter_type "pending_transaction_count_24h"
+  @counter_type "pending_transaction_count_30min"
 
   @doc """
   Starts a process to periodically update the counter.
@@ -65,9 +65,7 @@ defmodule Explorer.Counters.FreshPendingTransactionsCounter do
   def consolidate do
     query =
       from(transaction in Transaction,
-        where:
-          is_nil(transaction.block_hash) and
-            fragment("NOW() - ? at time zone 'UTC' <= interval '30 minutes'", transaction.inserted_at),
+        where: is_nil(transaction.block_hash) and transaction.inserted_at >= ago(30, "minute"),
         select: count(transaction.hash)
       )
 

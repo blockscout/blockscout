@@ -97,7 +97,7 @@ defmodule Explorer.Counters.Transactions24hStats do
     query =
       from(transaction in Transaction,
         join: block in assoc(transaction, :block),
-        where: fragment("NOW() - ? at time zone 'UTC' <= interval '24 hours'", block.timestamp),
+        where: block.timestamp >= ago(24, "hour"),
         select: %{count: count(transaction.hash)},
         select_merge: ^%{fee_sum: sum_query},
         select_merge: ^%{fee_average: avg_query}
