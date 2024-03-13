@@ -118,7 +118,7 @@ defmodule Indexer.Block.Fetcher do
   end
 
   @decorate span(tracer: Tracer)
-  @spec fetch_and_import_range(t, Range.t()) ::
+  @spec fetch_and_import_range(t, Range.t(), map) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
           | {:error,
              {step :: atom(), reason :: [Ecto.Changeset.t()] | term()}
@@ -129,7 +129,8 @@ defmodule Indexer.Block.Fetcher do
           callback_module: callback_module,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state,
-        _.._ = range
+        _.._ = range,
+        additional_options \\ %{}
       )
       when callback_module != nil do
     {fetch_time, fetched_blocks} =
@@ -228,7 +229,7 @@ defmodule Indexer.Block.Fetcher do
          {:ok, inserted} <-
            __MODULE__.import(
              state,
-             import_options(basic_import_options, chain_type_import_options)
+             basic_import_options |> Map.merge(additional_options) |> import_options(chain_type_import_options)
            ),
          {:tx_actions, {:ok, inserted_tx_actions}} <-
            {:tx_actions,
