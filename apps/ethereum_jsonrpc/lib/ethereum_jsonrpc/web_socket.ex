@@ -53,7 +53,7 @@ defmodule EthereumJSONRPC.WebSocket do
 
    * `{:ok, result}` - `result` is the `/result` from JSONRPC response object of format
      `%{"id" => ..., "result" => result}`.
-   * `{:error, reason}` - `reason` is the the `/error` from JSONRPC response object of format
+   * `{:error, reason}` - `reason` is the `/error` from JSONRPC response object of format
      `%{"id" => ..., "error" => reason}`.  The transport can also give any `term()` for `reason` if a more specific
      reason is possible.
 

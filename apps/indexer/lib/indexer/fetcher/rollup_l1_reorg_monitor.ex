@@ -32,6 +32,9 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
     Logger.metadata(fetcher: @fetcher_name)
 
     modules_can_use_reorg_monitor = [
+      Indexer.Fetcher.Optimism.OutputRoot,
+      Indexer.Fetcher.Optimism.TxnBatch,
+      Indexer.Fetcher.Optimism.WithdrawalEvent,
       Indexer.Fetcher.PolygonEdge.Deposit,
       Indexer.Fetcher.PolygonEdge.WithdrawalExit,
       Indexer.Fetcher.PolygonZkevm.BridgeL1,
@@ -56,14 +59,27 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
       module_using_reorg_monitor = Enum.at(modules_using_reorg_monitor, 0)
 
       l1_rpc =
-        if Enum.member?(
-             [Indexer.Fetcher.PolygonEdge.Deposit, Indexer.Fetcher.PolygonEdge.WithdrawalExit],
-             module_using_reorg_monitor
-           ) do
-          # there can be more than one PolygonEdge.* modules, so we get the common L1 RPC URL for them from Indexer.Fetcher.PolygonEdge
-          Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonEdge][:polygon_edge_l1_rpc]
-        else
-          Application.get_all_env(:indexer)[module_using_reorg_monitor][:rpc]
+        cond do
+          Enum.member?(
+            [Indexer.Fetcher.PolygonEdge.Deposit, Indexer.Fetcher.PolygonEdge.WithdrawalExit],
+            module_using_reorg_monitor
+          ) ->
+            # there can be more than one PolygonEdge.* modules, so we get the common L1 RPC URL for them from Indexer.Fetcher.PolygonEdge
+            Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonEdge][:polygon_edge_l1_rpc]
+
+          Enum.member?(
+            [
+              Indexer.Fetcher.Optimism.OutputRoot,
+              Indexer.Fetcher.Optimism.TxnBatch,
+              Indexer.Fetcher.Optimism.WithdrawalEvent
+            ],
+            module_using_reorg_monitor
+          ) ->
+            # there can be more than one Optimism.* modules, so we get the common L1 RPC URL for them from Indexer.Fetcher.Optimism
+            Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc]
+
+          true ->
+            Application.get_all_env(:indexer)[module_using_reorg_monitor][:rpc]
         end
 
       json_rpc_named_arguments = Helper.json_rpc_named_arguments(l1_rpc)

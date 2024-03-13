@@ -355,6 +355,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   end
 
   def render_json(value, _type) do
-    value
+    to_string(value)
   end
 end
