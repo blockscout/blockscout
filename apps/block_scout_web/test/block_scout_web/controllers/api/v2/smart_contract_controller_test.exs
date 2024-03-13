@@ -1126,13 +1126,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                      "tuple[bytes32,uint256,bytes32,uint256,address,address,uint256,bool,tuple[address,bytes32[],bytes][]]",
                    "value" => [
                      "0xfe6a43fa23a0269092cbf97cb908e1d5a49a18fd6942baf2467fb5b221e39ab2",
-                     1000,
+                     "1000",
                      "0xfe6a43fa23a0269092cbf97cb908e1d5a49a18fd6942baf2467fb5b221e39ab2",
-                     10,
+                     "10",
                      "0xbb36c792b9b45aaf8b848a1392b0d6559202729e",
                      "0xbb36c792b9b45aaf8b848a1392b0d6559202729e",
-                     123_123,
-                     true,
+                     "123123",
+                     "true",
                      [
                        [
                          "0xbb36c792b9b45aaf8b848a1392b0d6559202729e",
@@ -1220,7 +1220,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "outputs" => [
                    %{
                      "type" => "uint256",
-                     "value" => 2_900_102_562_052_921_000_000
+                     "value" => "2900102562052921000000"
                    }
                  ],
                  "name" => "test",
@@ -1535,7 +1535,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert %{
                "is_error" => false,
-               "result" => %{"names" => ["bool"], "output" => [%{"type" => "bool", "value" => true}]}
+               "result" => %{"names" => ["bool"], "output" => [%{"type" => "bool", "value" => "true"}]}
              } == response
     end
 
@@ -1636,13 +1636,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                        "tuple[bytes32,uint256,bytes32,uint256,address,address,uint256,bool,tuple[address,bytes32[],bytes][]]",
                      "value" => [
                        "0xfe6a43fa23a0269092cbf97cb908e1d5a49a18fd6942baf2467fb5b221e39ab2",
-                       1000,
+                       "1000",
                        "0xfe6a43fa23a0269092cbf97cb908e1d5a49a18fd6942baf2467fb5b221e39ab2",
-                       10,
+                       "10",
                        "0xbb36c792b9b45aaf8b848a1392b0d6559202729e",
                        "0xbb36c792b9b45aaf8b848a1392b0d6559202729e",
-                       123_123,
-                       true,
+                       "123123",
+                       "true",
                        [
                          [
                            "0xbb36c792b9b45aaf8b848a1392b0d6559202729e",
@@ -2145,7 +2145,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert %{
                "is_error" => false,
-               "result" => %{"names" => ["bool"], "output" => [%{"type" => "bool", "value" => true}]}
+               "result" => %{"names" => ["bool"], "output" => [%{"type" => "bool", "value" => "true"}]}
              } == response
     end
 
@@ -2225,7 +2225,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                "result" => %{
                  "names" => ["amounts"],
                  "output" => [
-                   %{"type" => "uint256[]", "value" => [1_000_000_000_000_000_000_000, 15_520_773_838_563_941]}
+                   %{"type" => "uint256[]", "value" => ["1000000000000000000000", "15520773838563941"]}
                  ]
                }
              } == response
@@ -2423,7 +2423,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert %{
                "is_error" => false,
-               "result" => %{"names" => ["bool"], "output" => [%{"type" => "bool", "value" => true}]}
+               "result" => %{"names" => ["bool"], "output" => [%{"type" => "bool", "value" => "true"}]}
              } == response
     end
 
