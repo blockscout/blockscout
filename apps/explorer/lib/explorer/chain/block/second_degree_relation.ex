@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Block.SecondDegreeRelation do
   Uncles occur when a Proof-of-Work proof is completed slightly late, but before the next block is completes, so the
   network knows about the late proof and can credit as an uncle in the next block.
 
-  This schema is the join schema between the `nephew` and the `uncle` it is is including the `uncle`.  The actual
+  This schema is the join schema between the `nephew` and the `uncle` it is including the `uncle`.  The actual
   `uncle` block is still a normal `t:Explorer.Chain.Block.t/0`.
   """
 

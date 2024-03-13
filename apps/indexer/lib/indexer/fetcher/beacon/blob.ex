@@ -105,11 +105,15 @@ defmodule Indexer.Fetcher.Beacon.Blob do
     DateTime.to_unix(block_timestamp)
   end
 
-  defp timestamp_to_slot(block_timestamp, %{
-         reference_timestamp: reference_timestamp,
-         reference_slot: reference_slot,
-         slot_duration: slot_duration
-       }) do
+  @doc """
+  Converts block timestamp to the slot number.
+  """
+  @spec timestamp_to_slot(non_neg_integer(), map()) :: non_neg_integer()
+  def timestamp_to_slot(block_timestamp, %{
+        reference_timestamp: reference_timestamp,
+        reference_slot: reference_slot,
+        slot_duration: slot_duration
+      }) do
     ((block_timestamp - reference_timestamp) |> div(slot_duration)) + reference_slot
   end
 

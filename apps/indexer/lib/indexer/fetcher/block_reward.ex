@@ -325,7 +325,7 @@ defmodule Indexer.Fetcher.BlockReward do
 
   defp fetched_beneficiary_error_to_iodata(%{code: code, message: message, data: %{block_quantity: block_quantity}})
        when is_integer(code) and is_binary(message) and is_binary(block_quantity) do
-    ["@", quantity_to_integer(block_quantity), ": (", to_string(code), ") ", message, ?\n]
+    ["@", block_quantity |> quantity_to_integer() |> to_string(), ": (", to_string(code), ") ", message, ?\n]
   end
 
   defp defaults do
