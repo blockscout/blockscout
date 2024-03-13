@@ -1220,7 +1220,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "outputs" => [
                    %{
                      "type" => "uint256",
-                     "value" => 2_900_102_562_052_921_000_000
+                     "value" => "2900102562052921000000"
                    }
                  ],
                  "name" => "test",
