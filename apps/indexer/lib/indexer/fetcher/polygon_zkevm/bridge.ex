@@ -138,28 +138,37 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   Converts the list of zkEVM bridge events to the list of operations
   preparing them for importing to the database.
   """
-  @spec prepare_operations(list(), non_neg_integer() | nil, non_neg_integer() | nil, list() | nil, list(), map() | nil) ::
+  @spec prepare_operations(
+          list(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer() | nil,
+          non_neg_integer(),
+          list() | nil,
+          list(),
+          map() | nil
+        ) ::
           list()
   def prepare_operations(
         events,
-        rollup_network_id,
-        rollup_index,
+        rollup_network_id_l1,
+        rollup_network_id_l2,
+        rollup_index_l1,
+        rollup_index_l2,
         json_rpc_named_arguments,
         json_rpc_named_arguments_l1,
         block_to_timestamp \\ nil
-      )
-      when not is_nil(rollup_network_id) and
-             (not is_nil(rollup_index) or json_rpc_named_arguments != json_rpc_named_arguments_l1) do
+      ) do
     is_l1 = json_rpc_named_arguments == json_rpc_named_arguments_l1
 
-    events = filter_events(events, is_l1, rollup_network_id, rollup_index)
+    events = filter_events(events, is_l1, rollup_network_id_l1, rollup_network_id_l2, rollup_index_l1, rollup_index_l2)
 
     {block_to_timestamp, token_address_to_id} =
       if is_nil(block_to_timestamp) do
         # this function is called by the catchup indexer,
         # so here we can use RPC calls as it's not so critical for delays as in realtime
         bridge_events = Enum.filter(events, fn event -> event.first_topic == @bridge_event end)
-        l1_token_addresses = l1_token_addresses_from_bridge_events(bridge_events, rollup_network_id)
+        l1_token_addresses = l1_token_addresses_from_bridge_events(bridge_events, rollup_network_id_l2)
 
         {
           blocks_to_timestamps(bridge_events, json_rpc_named_arguments),
@@ -182,7 +191,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
               amount,
               deposit_count,
               _destination_network
-            } = bridge_event_parse(event, rollup_network_id)
+            } = bridge_event_parse(event, rollup_network_id_l2)
 
             l1_token_id = Map.get(token_address_to_id, l1_token_address)
             block_number = quantity_to_integer(event.block_number)
@@ -201,7 +210,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
             {index, nil, nil, nil, amount, nil, nil}
 
           @claim_event_v2 ->
-            {_mainnet_bit, _rollup_index, index, amount} = claim_event_v2_parse(event)
+            {_mainnet_bit, _rollup_idx, index, _origin_network, amount} = claim_event_v2_parse(event)
             {index, nil, nil, nil, amount, nil, nil}
         end
 
@@ -238,7 +247,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     end)
   end
 
-  defp bridge_event_parse(event, rollup_network_id) do
+  defp bridge_event_parse(event, rollup_network_id_l2) do
     [
       leaf_type,
       origin_network,
@@ -250,7 +259,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
       deposit_count
     ] = decode_data(event.data, @bridge_event_params)
 
-    {token_address_by_origin_address(origin_address, origin_network, leaf_type, rollup_network_id), amount,
+    {token_address_by_origin_address(origin_address, origin_network, leaf_type, rollup_network_id_l2), amount,
      deposit_count, destination_network}
   end
 
@@ -262,7 +271,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   end
 
   defp claim_event_v2_parse(event) do
-    [global_index, _origin_network, _origin_address, _destination_address, amount] =
+    [global_index, origin_network, _origin_address, _destination_address, amount] =
       decode_data(event.data, @claim_event_v2_params)
 
     mainnet_bit = Bitwise.band(Bitwise.bsr(global_index, 64), 1)
@@ -271,27 +280,35 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
     index = Bitwise.band(global_index, 0xFFFFFFFF)
 
-    {mainnet_bit, rollup_index, index, amount}
+    {mainnet_bit, rollup_index, index, origin_network, amount}
   end
 
-  defp filter_events(events, is_l1, rollup_network_id, rollup_index) do
+  defp filter_events(events, is_l1, rollup_network_id_l1, rollup_network_id_l2, rollup_index_l1, rollup_index_l2) do
     Enum.filter(events, fn event ->
       case {event.first_topic, is_l1} do
-        {@bridge_event, true} -> filter_bridge_event_l1(event, rollup_network_id)
-        {@claim_event_v2, true} -> filter_claim_event_l1(event, rollup_index)
+        {@bridge_event, true} -> filter_bridge_event_l1(event, rollup_network_id_l2)
+        {@bridge_event, false} -> filter_bridge_event_l2(event, rollup_network_id_l1, rollup_network_id_l2)
+        {@claim_event_v2, true} -> filter_claim_event_l1(event, rollup_index_l2)
+        {@claim_event_v2, false} -> filter_claim_event_l2(event, rollup_network_id_l1, rollup_index_l1)
         _ -> true
       end
     end)
   end
 
-  defp filter_bridge_event_l1(event, rollup_network_id) do
-    {_, _, _, destination_network} = bridge_event_parse(event, rollup_network_id)
+  defp filter_bridge_event_l1(event, rollup_network_id_l2) do
+    {_, _, _, destination_network} = bridge_event_parse(event, rollup_network_id_l2)
     # skip the Deposit event if it's for another rollup
-    destination_network == rollup_network_id
+    destination_network == rollup_network_id_l2
   end
 
-  defp filter_claim_event_l1(event, rollup_index) do
-    {mainnet_bit, rollup_idx, _index, _amount} = claim_event_v2_parse(event)
+  defp filter_bridge_event_l2(event, rollup_network_id_l1, rollup_network_id_l2) do
+    {_, _, _, destination_network} = bridge_event_parse(event, rollup_network_id_l2)
+    # skip the Withdrawal event if it's for another L1 chain
+    destination_network == rollup_network_id_l1
+  end
+
+  defp filter_claim_event_l1(event, rollup_index_l2) do
+    {mainnet_bit, rollup_idx, _index, _origin_network, _amount} = claim_event_v2_parse(event)
 
     if mainnet_bit != 0 do
       Logger.error(
@@ -300,13 +317,21 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     end
 
     # skip the Withdrawal event if it's for another rollup or the source network is Ethereum Mainnet
-    rollup_idx == rollup_index and mainnet_bit == 0
+    rollup_idx == rollup_index_l2 and mainnet_bit == 0
   end
 
-  defp l1_token_addresses_from_bridge_events(events, rollup_network_id) do
+  defp filter_claim_event_l2(event, rollup_network_id_l1, rollup_index_l1) do
+    {mainnet_bit, rollup_idx, _index, origin_network, _amount} = claim_event_v2_parse(event)
+
+    # skip the Deposit event if it's from another L1 chain
+    (mainnet_bit == 1 and rollup_network_id_l1 == 0) or
+      (mainnet_bit == 0 and (rollup_idx == rollup_index_l1 or origin_network == rollup_network_id_l1))
+  end
+
+  defp l1_token_addresses_from_bridge_events(events, rollup_network_id_l2) do
     events
     |> Enum.reduce(%MapSet{}, fn event, acc ->
-      case bridge_event_parse(event, rollup_network_id) do
+      case bridge_event_parse(event, rollup_network_id_l2) do
         {{nil, _}, _, _, _} -> acc
         {{token_address, nil}, _, _, _} -> MapSet.put(acc, token_address)
       end
@@ -369,11 +394,11 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     |> Map.merge(tokens_inserted_outside)
   end
 
-  defp token_address_by_origin_address(origin_address, origin_network, leaf_type, rollup_network_id) do
+  defp token_address_by_origin_address(origin_address, origin_network, leaf_type, rollup_network_id_l2) do
     with true <- leaf_type != 1,
          token_address = "0x" <> Base.encode16(origin_address, case: :lower),
          true <- token_address != burn_address_hash_string() do
-      if origin_network != rollup_network_id do
+      if origin_network != rollup_network_id_l2 do
         # this is L1 address
         {token_address, nil}
       else
