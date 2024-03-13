@@ -960,7 +960,7 @@ defmodule Explorer.Chain do
             :contracts_creation_transaction => :optional
           }
         ],
-        query_decompiled_code_flag \\ true
+        query_decompiled_code_flag \\ false
       ) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 

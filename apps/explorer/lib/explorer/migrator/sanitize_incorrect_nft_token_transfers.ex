@@ -130,27 +130,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
     """
     DELETE
     FROM token_transfers tt
-    WHERE (tt.transaction_hash, tt.block_hash, tt.log_index) IN #{encode_token_transfer_ids(token_transfer_ids)}
+    WHERE (tt.transaction_hash, tt.block_hash, tt.log_index) IN #{TokenTransfer.encode_token_transfer_ids(token_transfer_ids)}
     """
-  end
-
-  defp encode_token_transfer_ids(ids) do
-    encoded_values =
-      ids
-      |> Enum.reduce("", fn {t_hash, b_hash, log_index}, acc ->
-        acc <> "('#{hash_to_query_string(t_hash)}', '#{hash_to_query_string(b_hash)}', #{log_index}),"
-      end)
-      |> String.trim_trailing(",")
-
-    "(#{encoded_values})"
-  end
-
-  defp hash_to_query_string(hash) do
-    s_hash =
-      hash
-      |> to_string()
-      |> String.trim_leading("0")
-
-    "\\#{s_hash}"
   end
 end

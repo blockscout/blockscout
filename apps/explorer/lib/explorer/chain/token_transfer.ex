@@ -400,4 +400,57 @@ defmodule Explorer.Chain.TokenTransfer do
     |> where([tt, token: token], token.type == "ERC-721")
     |> preload([tt, token: token], [{:token, token}])
   end
+
+  @doc """
+  To be used in migrators
+  """
+  @spec encode_token_transfer_ids([{Hash.t(), Hash.t(), non_neg_integer()}]) :: binary()
+  def encode_token_transfer_ids(ids) do
+    encoded_values =
+      ids
+      |> Enum.reduce("", fn {t_hash, b_hash, log_index}, acc ->
+        acc <> "('#{hash_to_query_string(t_hash)}', '#{hash_to_query_string(b_hash)}', #{log_index}),"
+      end)
+      |> String.trim_trailing(",")
+
+    "(#{encoded_values})"
+  end
+
+  defp hash_to_query_string(hash) do
+    s_hash =
+      hash
+      |> to_string()
+      |> String.trim_leading("0")
+
+    "\\#{s_hash}"
+  end
+
+  @doc """
+  Fetches token transfers from logs.
+  """
+  @spec logs_to_token_transfers([Log.t()], Keyword.t()) :: [TokenTransfer.t()]
+  def logs_to_token_transfers(logs, options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    logs
+    |> logs_to_token_transfers_query()
+    |> limit(^Enum.count(logs))
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).all()
+  end
+
+  defp logs_to_token_transfers_query(query \\ __MODULE__, logs)
+
+  defp logs_to_token_transfers_query(query, [log | tail]) do
+    query
+    |> or_where(
+      [tt],
+      tt.transaction_hash == ^log.transaction_hash and tt.block_hash == ^log.block_hash and tt.log_index == ^log.index
+    )
+    |> logs_to_token_transfers_query(tail)
+  end
+
+  defp logs_to_token_transfers_query(query, []) do
+    query
+  end
 end
