@@ -29,7 +29,7 @@ defmodule Indexer.Transform.PolygonZkevm.Bridge do
            rollup_index_l1 = Application.get_all_env(:indexer)[BridgeL1][:rollup_index_l1],
            rollup_index_l2 = Application.get_all_env(:indexer)[BridgeL2][:rollup_index_l2],
            {:rollup_network_id_l1_is_valid, true} <-
-             {:rollup_network_id_l1_is_valid, !is_nil(rollup_network_id_l1) and rollup_network_id_l1 > 0},
+             {:rollup_network_id_l1_is_valid, !is_nil(rollup_network_id_l1) and rollup_network_id_l1 >= 0},
            {:rollup_network_id_l2_is_valid, true} <-
              {:rollup_network_id_l2_is_valid, !is_nil(rollup_network_id_l2) and rollup_network_id_l2 > 0},
            {:rollup_index_l2_is_valid, true} <- {:rollup_index_l2_is_valid, !is_nil(rollup_index_l2)},

@@ -60,7 +60,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
          rpc = env[:rpc],
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
          {:rollup_network_id_l1_is_valid, true} <-
-           {:rollup_network_id_l1_is_valid, !is_nil(env[:rollup_network_id_l1]) and env[:rollup_network_id_l1] > 0},
+           {:rollup_network_id_l1_is_valid, !is_nil(env[:rollup_network_id_l1]) and env[:rollup_network_id_l1] >= 0},
          {:rollup_network_id_l2_is_valid, true} <-
            {:rollup_network_id_l2_is_valid,
             !is_nil(env_l2[:rollup_network_id_l2]) and env_l2[:rollup_network_id_l2] > 0},
