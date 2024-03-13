@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   alias Explorer.Chain.{Data, Log, TokenTransfer, Transaction}
   alias HTTPoison.Response
 
-  import Explorer.Utility.Microservice, only: [base_url: 2]
+  import Explorer.Utility.Microservice, only: [base_url: 2, check_enabled: 2]
 
   require Logger
 
@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   @doc """
   Interpret transaction or user operation
   """
-  @spec interpret(Transaction.t() | map()) ::
+  @spec interpret(Transaction.t() | map(), (Transaction.t() -> any()) | (map() -> any())) ::
           {{:error, :disabled | binary()}, integer()}
           | {:error, Jason.DecodeError.t()}
           | {:ok, any()}
@@ -90,11 +90,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   defp http_response_code({:ok, %Response{status_code: status_code}}), do: status_code
   defp http_response_code(_), do: 500
 
-  defp config do
-    Application.get_env(:block_scout_web, __MODULE__)
-  end
-
-  def enabled?, do: config()[:enabled]
+  def enabled?, do: check_enabled(:block_scout_web, __MODULE__) == :ok
 
   defp interpret_url do
     base_url(:block_scout_web, __MODULE__) <> "/transactions/summary"
