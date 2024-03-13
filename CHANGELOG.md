@@ -44,6 +44,7 @@
 
 - [#9571](https://github.com/blockscout/blockscout/pull/9571) - Support Optimism Ecotone upgrade by Indexer.Fetcher.Optimism.TxnBatch module
 - [#9562](https://github.com/blockscout/blockscout/pull/9562) - Add cancun evm version
+- [#9506](https://github.com/blockscout/blockscout/pull/9506) - API v1 bridgedtokenlist endpoint
 - [#9260](https://github.com/blockscout/blockscout/pull/9260) - Optimism Delta upgrade support by Indexer.Fetcher.OptimismTxnBatch module
 - [#8740](https://github.com/blockscout/blockscout/pull/8740) - Add delay to Indexer.Fetcher.OptimismTxnBatch module initialization
 
