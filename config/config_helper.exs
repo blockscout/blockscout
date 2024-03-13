@@ -17,6 +17,7 @@ defmodule ConfigHelper do
         "shibarium" -> base_repos ++ [Explorer.Repo.Shibarium]
         "suave" -> base_repos ++ [Explorer.Repo.Suave]
         "filecoin" -> base_repos ++ [Explorer.Repo.Filecoin]
+        "stability" -> base_repos ++ [Explorer.Repo.Stability]
         _ -> base_repos
       end
 
@@ -56,6 +57,17 @@ defmodule ConfigHelper do
     |> Integer.parse()
     |> case do
       {integer, _} -> integer
+      _ -> 0
+    end
+  end
+
+  @spec parse_float_env_var(String.t(), float()) :: float()
+  def parse_float_env_var(env_var, default_value) do
+    env_var
+    |> safe_get_env(to_string(default_value))
+    |> Float.parse()
+    |> case do
+      {float, _} -> float
       _ -> 0
     end
   end

@@ -17,7 +17,9 @@ defmodule BlockScoutWeb.Chain do
 
   import Explorer.Helper, only: [parse_integer: 1]
 
+  alias BlockScoutWeb.PagingHelper
   alias Ecto.Association.NotLoaded
+  alias Explorer.Chain.UserOperation
   alias Explorer.Account.{TagAddress, TagTransaction, WatchlistAddress}
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.Block.Reward
@@ -459,6 +461,25 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {token_contract_address_hash, token_type}}]
   end
 
+  # Clause for `Explorer.Chain.Stability.Validator`,
+  #  returned by `BlockScoutWeb.API.V2.ValidatorController.stability_validators_list/2` (`/api/v2/validators/stability`)
+  def paging_options(%{
+        "state" => state,
+        "address_hash" => address_hash_string,
+        "blocks_validated" => blocks_validated_string
+      }) do
+    [
+      paging_options: %{
+        @default_paging_options
+        | key: %{
+            address_hash: parse_address_hash(address_hash_string),
+            blocks_validated: parse_integer(blocks_validated_string),
+            state: if(state in PagingHelper.allowed_stability_validators_states(), do: state)
+          }
+      }
+    ]
+  end
+
   def paging_options(_params), do: [paging_options: @default_paging_options]
 
   def put_key_value_to_paging_options([paging_options: paging_options], key, value) do
@@ -538,6 +559,13 @@ defmodule BlockScoutWeb.Chain do
     case token_contract_address_from_token_name(name) do
       {:ok, hash} -> find_or_insert_address_from_hash(hash)
       _ -> {:error, :not_found}
+    end
+  end
+
+  defp parse_address_hash(address_hash_string) do
+    case Hash.Address.cast(address_hash_string) do
+      {:ok, address_hash} -> address_hash
+      _ -> nil
     end
   end
 

@@ -130,14 +130,18 @@ defmodule Indexer.Block.Realtime.Fetcher do
     new_previous_number =
       case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
         {:ok, number} when is_nil(previous_number) or number != previous_number ->
-          if abnormal_gap?(number, previous_number) do
-            new_number = max(number, previous_number)
-            start_fetch_and_import(new_number, block_fetcher, previous_number)
-            new_number
-          else
-            start_fetch_and_import(number, block_fetcher, previous_number)
-            number
-          end
+          number =
+            if abnormal_gap?(number, previous_number) do
+              new_number = max(number, previous_number)
+              start_fetch_and_import(new_number, block_fetcher, previous_number)
+              new_number
+            else
+              start_fetch_and_import(number, block_fetcher, previous_number)
+              number
+            end
+
+          fetch_validators_async()
+          number
 
         _ ->
           previous_number
@@ -156,6 +160,16 @@ defmodule Indexer.Block.Realtime.Fetcher do
   # don't handle other messages (e.g. :ssl_closed)
   def handle_info(_, state) do
     {:noreply, state}
+  end
+
+  if Application.compile_env(:explorer, :chain_type) == "stability" do
+    defp fetch_validators_async do
+      GenServer.cast(Indexer.Fetcher.Stability.Validator, :update_validators_list)
+    end
+  else
+    defp fetch_validators_async do
+      :ignore
+    end
   end
 
   defp subscribe_to_new_heads(%__MODULE__{subscription: nil} = state, subscribe_named_arguments)

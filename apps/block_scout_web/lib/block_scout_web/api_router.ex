@@ -351,6 +351,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
       scope "/account-abstraction" do
         get("/operations/:operation_hash_param", V2.Proxy.AccountAbstractionController, :operation)
+        get("/operations/:operation_hash_param/summary", V2.Proxy.AccountAbstractionController, :summary)
         get("/bundlers/:address_hash_param", V2.Proxy.AccountAbstractionController, :bundler)
         get("/bundlers", V2.Proxy.AccountAbstractionController, :bundlers)
         get("/factories/:address_hash_param", V2.Proxy.AccountAbstractionController, :factory)
@@ -367,6 +368,15 @@ defmodule BlockScoutWeb.ApiRouter do
     scope "/blobs" do
       if Application.compile_env(:explorer, :chain_type) == "ethereum" do
         get("/:blob_hash_param", V2.BlobController, :blob)
+      end
+    end
+
+    scope "/validators" do
+      if Application.compile_env(:explorer, :chain_type) == "stability" do
+        scope "/stability" do
+          get("/", V2.ValidatorController, :stability_validators_list)
+          get("/counters", V2.ValidatorController, :stability_validators_counters)
+        end
       end
     end
   end
