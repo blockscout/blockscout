@@ -369,6 +369,25 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       assert %{block_number: ^number, block_hash: ^hash} = Repo.one(PendingBlockOperation)
     end
 
+    test "inserts pending_block_operations only for actually inserted blocks",
+         %{consensus_block: %{miner_hash: miner_hash}, options: options} do
+      %{number: number, hash: hash} = new_block = params_for(:block, miner_hash: miner_hash, consensus: true)
+      new_block1 = params_for(:block, miner_hash: miner_hash, consensus: true)
+
+      miner = Repo.get_by(Address, hash: miner_hash)
+
+      insert(:block, Map.put(new_block1, :miner, miner))
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, new_block)
+      %Ecto.Changeset{valid?: true, changes: block_changes1} = Block.changeset(%Block{}, new_block1)
+
+      Multi.new()
+      |> Blocks.run([block_changes, block_changes1], options)
+      |> Repo.transaction()
+
+      assert %{block_number: ^number, block_hash: ^hash} = Repo.one(PendingBlockOperation)
+    end
+
     test "change instance owner if was token transfer in older blocks",
          %{consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number}, options: options} do
       block_number = block_number + 2
