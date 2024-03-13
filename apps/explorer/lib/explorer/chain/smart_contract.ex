@@ -674,7 +674,9 @@ defmodule Explorer.Chain.SmartContract do
       from(
         tx in Transaction,
         where: tx.created_contract_address_hash == ^address_hash,
-        where: tx.status == ^1
+        where: tx.status == ^1,
+        order_by: [desc: tx.block_number],
+        limit: ^1
       )
 
     tx =
