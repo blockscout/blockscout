@@ -164,6 +164,7 @@
 - [#9424](https://github.com/blockscout/blockscout/pull/9424) - Bump webpack from 5.90.1 to 5.90.3 in /apps/block_scout_web/assets
 - [#9425](https://github.com/blockscout/blockscout/pull/9425) - Bump sass-loader from 14.1.0 to 14.1.1 in /apps/block_scout_web/assets
 - [#9421](https://github.com/blockscout/blockscout/pull/9421) - Bump sass from 1.70.0 to 1.71.0 in /apps/block_scout_web/assets
+
 </details>
 
 ## 6.1.0
@@ -857,6 +858,7 @@
 - [#7958](https://github.com/blockscout/blockscout/pull/7958) - Bump ex_doc from 0.30.2 to 0.30.3
 - [#7965](https://github.com/blockscout/blockscout/pull/7965) - Bump webpack from 5.88.1 to 5.88.2 in /apps/block_scout_web/assets
 - [#7972](https://github.com/blockscout/blockscout/pull/7972) - Bump word-wrap from 1.2.3 to 1.2.4 in /apps/block_scout_web/assets
+
 </details>
 
 ## 5.2.0-beta
@@ -2624,8 +2626,8 @@
 
 - [#3249](https://github.com/blockscout/blockscout/pull/3249) - Fix incorrect ABI decoding of address in tuple output
 - [#3237](https://github.com/blockscout/blockscout/pull/3237) - Refine contract method signature detection for read/write feature
-- [#3235](https://github.com/blockscout/blockscout/pull/3235) - Fix coin supply api edpoint
-- [#3233](https://github.com/blockscout/blockscout/pull/3233) - Fix for the contract verifiaction for solc 0.5 family with experimental features enabled
+- [#3235](https://github.com/blockscout/blockscout/pull/3235) - Fix coin supply api endpoint
+- [#3233](https://github.com/blockscout/blockscout/pull/3233) - Fix for the contract verification for solc 0.5 family with experimental features enabled
 - [#3231](https://github.com/blockscout/blockscout/pull/3231) - Improve search: unlimited number of searching results
 - [#3231](https://github.com/blockscout/blockscout/pull/3231) - Improve search: allow search with space
 - [#3231](https://github.com/blockscout/blockscout/pull/3231) - Improve search: order by token holders in descending order and token/contract name is ascending order
@@ -2636,7 +2638,7 @@
 
 - [#3326](https://github.com/blockscout/blockscout/pull/3326) - Chart smooth lines
 - [#3250](https://github.com/blockscout/blockscout/pull/3250) - Eliminate occurrences of obsolete env variable ETHEREUM_JSONRPC_JSON_RPC_TRANSPORT
-- [#3240](https://github.com/blockscout/blockscout/pull/3240), [#3251](https://github.com/blockscout/blockscout/pull/3251) - various CSS imroving
+- [#3240](https://github.com/blockscout/blockscout/pull/3240), [#3251](https://github.com/blockscout/blockscout/pull/3251) - various CSS improving
 - [f3a720](https://github.com/blockscout/blockscout/commit/2dd909c10a79b0bf4b7541a486be114152f3a720) - Make wobserver optional
 
 ## 3.3.1-beta
@@ -3001,11 +3003,11 @@ fixed menu hovers in dark mode desktop view
 - [#2596](https://github.com/blockscout/blockscout/pull/2596) - support AuRa's empty step reward type
 - [#2588](https://github.com/blockscout/blockscout/pull/2588) - add verification submission comment
 - [#2505](https://github.com/blockscout/blockscout/pull/2505) - support POA Network emission rewards
-- [#2581](https://github.com/blockscout/blockscout/pull/2581) - Add generic Map-like Cache behaviour and implementation
+- [#2581](https://github.com/blockscout/blockscout/pull/2581) - Add generic Map-like Cache behavior and implementation
 - [#2561](https://github.com/blockscout/blockscout/pull/2561) - Add token's type to the response of tokenlist method
 - [#2555](https://github.com/blockscout/blockscout/pull/2555) - find and show decoding candidates for logs
 - [#2499](https://github.com/blockscout/blockscout/pull/2499) - import emission reward ranges
-- [#2497](https://github.com/blockscout/blockscout/pull/2497) - Add generic Ordered Cache behaviour and implementation
+- [#2497](https://github.com/blockscout/blockscout/pull/2497) - Add generic Ordered Cache behavior and implementation
 
 ### Fixes
 
@@ -3061,7 +3063,7 @@ fixed menu hovers in dark mode desktop view
 - [#2559](https://github.com/blockscout/blockscout/pull/2559) - fix rsk total supply for empty exchange rate
 - [#2553](https://github.com/blockscout/blockscout/pull/2553) - Dark theme import to the end of sass
 - [#2550](https://github.com/blockscout/blockscout/pull/2550) - correctly encode decimal values for frontend
-- [#2549](https://github.com/blockscout/blockscout/pull/2549) - Fix wrong colour of tooltip
+- [#2549](https://github.com/blockscout/blockscout/pull/2549) - Fix wrong color of tooltip
 - [#2548](https://github.com/blockscout/blockscout/pull/2548) - CSS preload support in Firefox
 - [#2547](https://github.com/blockscout/blockscout/pull/2547) - do not show eth value if it's zero on the transaction overview page
 - [#2543](https://github.com/blockscout/blockscout/pull/2543) - do not hide search input during logs search
@@ -3250,7 +3252,7 @@ fixed menu hovers in dark mode desktop view
 
 ### Chore
 
-- [#2127](https://github.com/blockscout/blockscout/pull/2127) - use previouse chromedriver version
+- [#2127](https://github.com/blockscout/blockscout/pull/2127) - use previous chromedriver version
 - [#2118](https://github.com/blockscout/blockscout/pull/2118) - show only the last decompiled contract
 - [#2255](https://github.com/blockscout/blockscout/pull/2255) - upgrade elixir version to 1.9.0
 - [#2256](https://github.com/blockscout/blockscout/pull/2256) - use the latest version of chromedriver
@@ -3485,7 +3487,7 @@ Reverting of synchronous block counter, implemented in #1848
 
 ### Fixes
 
-- [#1630](https://github.com/blockscout/blockscout/pull/1630) - (Fix) colour for release link in the footer
+- [#1630](https://github.com/blockscout/blockscout/pull/1630) - (Fix) color for release link in the footer
 - [#1621](https://github.com/blockscout/blockscout/pull/1621) - Modify query to fetch failed contract creations
 - [#1614](https://github.com/blockscout/blockscout/pull/1614) - Do not fetch burn address token balance
 - [#1639](https://github.com/blockscout/blockscout/pull/1614) - Optimize token holder count updates when importing address current balances
