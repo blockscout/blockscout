@@ -896,7 +896,7 @@ defmodule Explorer.ChainTest do
       address = insert(:address)
       insert(:decompiled_smart_contract, address_hash: address.hash)
 
-      {:ok, found_address} = Chain.hash_to_address(address.hash)
+      {:ok, found_address} = Chain.hash_to_address(address.hash, [], true)
 
       assert found_address.has_decompiled_code?
     end
@@ -1384,7 +1384,7 @@ defmodule Explorer.ChainTest do
       }
     }
 
-    test "with valid data", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+    test "with valid data", %{json_rpc_named_arguments: _json_rpc_named_arguments} do
       {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
       {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
       {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
