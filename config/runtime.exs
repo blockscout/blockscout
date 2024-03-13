@@ -114,8 +114,8 @@ config :block_scout_web, Api.GraphQL,
     ),
   enabled: ConfigHelper.parse_bool_env_var("API_GRAPHQL_ENABLED", "true"),
   token_limit: ConfigHelper.parse_integer_env_var("API_GRAPHQL_TOKEN_LIMIT", 1000),
-  # Needs to be 200 to support the schema introspection for graphiql
-  max_complexity: ConfigHelper.parse_integer_env_var("API_GRAPHQL_MAX_COMPLEXITY", 200)
+  # Needs to be 215 to support the schema introspection for graphiql
+  max_complexity: ConfigHelper.parse_integer_env_var("API_GRAPHQL_MAX_COMPLEXITY", 215)
 
 # Configures History
 price_chart_config =
