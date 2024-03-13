@@ -21,21 +21,34 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcher do
   def init(_) do
     send_new_task()
 
-    {:ok, %{block_fetcher: generate_block_fetcher()}}
+    {:ok, %{block_fetcher: generate_block_fetcher(), low_priority_blocks: []}}
   end
 
   @impl true
-  def handle_info(:task, state) do
-    case MassiveBlock.get_last_block_number() do
-      nil ->
-        send_new_task(@increased_interval)
+  def handle_info(:task, %{low_priority_blocks: low_priority_blocks} = state) do
+    {result, new_low_priority_blocks} =
+      case MassiveBlock.get_last_block_number(low_priority_blocks) do
+        nil ->
+          case low_priority_blocks do
+            [number | rest] ->
+              failed_blocks = process_block(state.block_fetcher, number)
+              {:processed, rest ++ failed_blocks}
 
-      number ->
-        process_block(state.block_fetcher, number)
-        send_new_task()
+            [] ->
+              {:empty, []}
+          end
+
+        number ->
+          failed_blocks = process_block(state.block_fetcher, number)
+          {:processed, low_priority_blocks ++ failed_blocks}
+      end
+
+    case result do
+      :processed -> send_new_task()
+      :empty -> send_new_task(@increased_interval)
     end
 
-    {:noreply, state}
+    {:noreply, %{state | low_priority_blocks: new_low_priority_blocks}}
   end
 
   def handle_info(_, state) do
@@ -47,9 +60,11 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcher do
       {:ok, _result} ->
         Logger.info("MassiveBlockFetcher successfully proceed block #{inspect(number)}")
         MassiveBlock.delete_block_number(number)
+        []
 
       {:error, error} ->
         Logger.error("MassiveBlockFetcher failed: #{inspect(error)}")
+        [number]
     end
   end
 

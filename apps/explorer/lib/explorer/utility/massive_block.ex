@@ -8,8 +8,9 @@ defmodule Explorer.Utility.MassiveBlock do
 
   alias Explorer.Repo
 
+  @primary_key false
   typed_schema "massive_blocks" do
-    field(:number, :integer)
+    field(:number, :integer, primary_key: true)
 
     timestamps()
   end
@@ -19,8 +20,11 @@ defmodule Explorer.Utility.MassiveBlock do
     cast(massive_block, params, [:number])
   end
 
-  def get_last_block_number do
-    Repo.aggregate(__MODULE__, :max, :number)
+  def get_last_block_number(except_numbers) do
+    __MODULE__
+    |> where([mb], mb.number not in ^except_numbers)
+    |> select([mb], max(mb.number))
+    |> Repo.one()
   end
 
   def insert_block_numbers(numbers) do
