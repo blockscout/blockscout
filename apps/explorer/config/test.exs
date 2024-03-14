@@ -49,6 +49,7 @@ for repo <- [
       Explorer.Repo.Optimism,
       Explorer.Repo.PolygonEdge,
       Explorer.Repo.PolygonZkevm,
+      Explorer.Repo.ZkSync,
       Explorer.Repo.RSK,
       Explorer.Repo.Shibarium,
       Explorer.Repo.Suave,

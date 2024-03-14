@@ -4,7 +4,9 @@
 
 ### Features
 
+- [#9631](https://github.com/blockscout/blockscout/pull/9631) - Initial support of zksync chain type
 - [#9490](https://github.com/blockscout/blockscout/pull/9490) - Add blob transaction counter and filter in block view
+- [#9486](https://github.com/blockscout/blockscout/pull/9486) - Massive blocks fetcher
 - [#9473](https://github.com/blockscout/blockscout/pull/9473) - Add user_op interpretation
 - [#9461](https://github.com/blockscout/blockscout/pull/9461) - Fetch blocks without internal transactions backwards
 - [#9460](https://github.com/blockscout/blockscout/pull/9460) - Optimism chain type
@@ -44,6 +46,7 @@
 
 ### Chore
 
+- [#9622](https://github.com/blockscout/blockscout/pull/9622) - Add alternative `hex.pm` mirrors
 - [#9571](https://github.com/blockscout/blockscout/pull/9571) - Support Optimism Ecotone upgrade by Indexer.Fetcher.Optimism.TxnBatch module
 - [#9562](https://github.com/blockscout/blockscout/pull/9562) - Add cancun evm version
 - [#9506](https://github.com/blockscout/blockscout/pull/9506) - API v1 bridgedtokenlist endpoint

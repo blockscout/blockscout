@@ -43,6 +43,13 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.PolygonZkevm.BridgeOperations
   ]
 
+  @zksync_runners [
+    Runner.ZkSync.LifecycleTransactions,
+    Runner.ZkSync.TransactionBatches,
+    Runner.ZkSync.BatchTransactions,
+    Runner.ZkSync.BatchBlocks
+  ]
+
   @shibarium_runners [
     Runner.Shibarium.BridgeOperations
   ]
@@ -69,6 +76,9 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       "ethereum" ->
         @default_runners ++ @ethereum_runners
 
+      "zksync" ->
+        @default_runners ++ @zksync_runners
+
       _ ->
         @default_runners
     end
@@ -76,7 +86,8 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
   @impl Stage
   def all_runners do
-    @default_runners ++ @optimism_runners ++ @polygon_edge_runners ++ @polygon_zkevm_runners ++ @shibarium_runners
+    @default_runners ++
+      @optimism_runners ++ @polygon_edge_runners ++ @polygon_zkevm_runners ++ @shibarium_runners ++ @zksync_runners
   end
 
   @impl Stage

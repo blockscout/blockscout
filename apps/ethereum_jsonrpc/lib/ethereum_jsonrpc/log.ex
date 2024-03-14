@@ -174,6 +174,11 @@ defmodule EthereumJSONRPC.Log do
     end
   end
 
+  # zkSync specific log fields
+  defp entry_to_elixir({key, _}) when key in ~w(l1BatchNumber logType) do
+    {nil, nil}
+  end
+
   defp put_topics(params, topics) when is_map(params) and is_list(topics) do
     params
     |> Map.put(:first_topic, Enum.at(topics, 0))
