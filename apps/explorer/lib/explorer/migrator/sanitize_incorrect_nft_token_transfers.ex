@@ -13,7 +13,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
 
   alias Explorer.Chain.Import.Runner.Blocks
   alias Explorer.Chain.{Log, TokenTransfer}
-  alias Explorer.Migrator.{MigrationStatus, TokenTransferTokenType}
+  alias Explorer.Migrator.MigrationStatus
   alias Explorer.Repo
 
   @migration_name "sanitize_incorrect_nft"
@@ -130,7 +130,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
     """
     DELETE
     FROM token_transfers tt
-    WHERE (tt.transaction_hash, tt.block_hash, tt.log_index) IN #{TokenTransferTokenType.encode_token_transfer_ids(token_transfer_ids)}
+    WHERE (tt.transaction_hash, tt.block_hash, tt.log_index) IN #{TokenTransfer.encode_token_transfer_ids(token_transfer_ids)}
     """
   end
 end

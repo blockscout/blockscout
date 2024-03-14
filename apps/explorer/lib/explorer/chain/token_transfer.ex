@@ -326,7 +326,7 @@ defmodule Explorer.Chain.TokenTransfer do
         |> filter_by_direction(:to, address_hash)
         |> filter_by_type(token_types)
         |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
-        |> TokenTransfer.handle_paging_options(paging_options)
+        |> handle_paging_options(paging_options)
         |> Chain.wrapped_union_subquery()
 
       from_address_hash_query =
@@ -335,7 +335,7 @@ defmodule Explorer.Chain.TokenTransfer do
         |> filter_by_direction(:from, address_hash)
         |> filter_by_type(token_types)
         |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
-        |> TokenTransfer.handle_paging_options(paging_options)
+        |> handle_paging_options(paging_options)
         |> Chain.wrapped_union_subquery()
 
       to_address_hash_query
