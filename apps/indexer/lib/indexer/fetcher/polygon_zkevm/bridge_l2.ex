@@ -101,14 +101,14 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL2 do
 
       {:rollup_network_id_l1_is_valid, false} ->
         Logger.error(
-          "Invaild network ID for L1. Please, check INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NETWORK_ID env variable."
+          "Invalid network ID for L1. Please, check INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NETWORK_ID env variable."
         )
 
         {:stop, :normal, %{}}
 
       {:rollup_network_id_l2_is_valid, false} ->
         Logger.error(
-          "Invaild network ID for L2. Please, check INDEXER_POLYGON_ZKEVM_L2_BRIDGE_NETWORK_ID env variable."
+          "Invalid network ID for L2. Please, check INDEXER_POLYGON_ZKEVM_L2_BRIDGE_NETWORK_ID env variable."
         )
 
         {:stop, :normal, %{}}
