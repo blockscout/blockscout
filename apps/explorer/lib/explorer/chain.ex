@@ -307,9 +307,8 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association)
 
     direction
-    |> TokenTransfer.token_transfers_by_address_hash(address_hash, filters)
+    |> TokenTransfer.token_transfers_by_address_hash(address_hash, filters, paging_options)
     |> join_associations(necessity_by_association)
-    |> TokenTransfer.handle_paging_options(paging_options)
     |> select_repo(options).all()
   end
 

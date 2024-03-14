@@ -311,13 +311,40 @@ defmodule Explorer.Chain.TokenTransfer do
     |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
   end
 
-  def token_transfers_by_address_hash(direction, address_hash, token_types) do
-    only_consensus_transfers_query()
-    |> filter_by_direction(direction, address_hash)
-    |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
-    |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
-    |> preload([token: token], [{:token, token}])
-    |> filter_by_type(token_types)
+  def token_transfers_by_address_hash(direction, address_hash, token_types, paging_options) do
+    if direction == :to || direction == :from do
+      only_consensus_transfers_query()
+      |> filter_by_direction(direction, address_hash)
+      |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+      |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+      |> preload([token: token], [{:token, token}])
+      |> filter_by_type(token_types)
+      |> handle_paging_options(paging_options)
+    else
+      to_address_hash_query =
+        only_consensus_transfers_query()
+        |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+        |> filter_by_direction(:to, address_hash)
+        |> filter_by_type(token_types)
+        |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+        |> handle_paging_options(paging_options)
+        |> Chain.wrapped_union_subquery()
+
+      from_address_hash_query =
+        only_consensus_transfers_query()
+        |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+        |> filter_by_direction(:from, address_hash)
+        |> filter_by_type(token_types)
+        |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+        |> handle_paging_options(paging_options)
+        |> Chain.wrapped_union_subquery()
+
+      to_address_hash_query
+      |> union(^from_address_hash_query)
+      |> Chain.wrapped_union_subquery()
+      |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+      |> limit(^paging_options.page_size)
+    end
   end
 
   def filter_by_direction(query, :to, address_hash) do
@@ -328,11 +355,6 @@ defmodule Explorer.Chain.TokenTransfer do
   def filter_by_direction(query, :from, address_hash) do
     query
     |> where([tt], tt.from_address_hash == ^address_hash)
-  end
-
-  def filter_by_direction(query, _, address_hash) do
-    query
-    |> where([tt], tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
   end
 
   def filter_by_type(query, []), do: query

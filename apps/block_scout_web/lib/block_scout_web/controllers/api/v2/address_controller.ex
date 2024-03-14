@@ -48,7 +48,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       :to_address => :optional,
       :from_address => :optional,
       :block => :optional,
-      :transaction => :optional
+      :transaction => :optional,
+      :token => :optional
     },
     api?: true
   ]
