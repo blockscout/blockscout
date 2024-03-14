@@ -308,6 +308,8 @@ config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
 
 config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
   platform: System.get_env("EXCHANGE_RATES_COINGECKO_PLATFORM_ID"),
+  base_url: System.get_env("EXCHANGE_RATES_COINGECKO_BASE_URL"),
+  base_pro_url: System.get_env("EXCHANGE_RATES_COINGECKO_BASE_PRO_URL"),
   api_key: System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),
   coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID")
 
