@@ -319,6 +319,7 @@ defmodule Explorer.Chain.TokenTransfer do
       |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
       |> preload([token: token], [{:token, token}])
       |> filter_by_type(token_types)
+      |> TokenTransfer.handle_paging_options(paging_options)
     else
       to_address_hash_query =
         only_consensus_transfers_query()
@@ -342,6 +343,7 @@ defmodule Explorer.Chain.TokenTransfer do
       |> union(^from_address_hash_query)
       |> Chain.wrapped_union_subquery()
       |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+      |> limit(^paging_options.page_size)
     end
   end
 
