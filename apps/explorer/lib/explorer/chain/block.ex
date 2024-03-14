@@ -3,6 +3,7 @@ defmodule Explorer.Chain.Block.Schema do
 
   alias Explorer.Chain.{Address, Block, Hash, PendingBlockOperation, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
+  alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
                         "ethereum" ->
@@ -22,6 +23,18 @@ defmodule Explorer.Chain.Block.Schema do
                               field(:bitcoin_merged_mining_merkle_proof, :binary)
                               field(:hash_for_merged_mining, :binary)
                               field(:minimum_gas_price, :decimal)
+                            end,
+                            2
+                          )
+
+                        "zksync" ->
+                          elem(
+                            quote do
+                              has_one(:zksync_batch_block, ZkSyncBatchBlock, foreign_key: :hash, references: :hash)
+                              has_one(:zksync_batch, through: [:zksync_batch_block, :batch])
+                              has_one(:zksync_commit_transaction, through: [:zksync_batch, :commit_transaction])
+                              has_one(:zksync_prove_transaction, through: [:zksync_batch, :prove_transaction])
+                              has_one(:zksync_execute_transaction, through: [:zksync_batch, :execute_transaction])
                             end,
                             2
                           )

@@ -207,6 +207,10 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/zkevm-batch/:batch_number", V2.TransactionController, :polygon_zkevm_batch)
       end
 
+      if Application.compile_env(:explorer, :chain_type) == "zksync" do
+        get("/zksync-batch/:batch_number", V2.TransactionController, :zksync_batch)
+      end
+
       if Application.compile_env(:explorer, :chain_type) == "suave" do
         get("/execution-node/:execution_node_hash_param", V2.TransactionController, :execution_node)
       end
@@ -280,6 +284,11 @@ defmodule BlockScoutWeb.ApiRouter do
       if Application.compile_env(:explorer, :chain_type) == "polygon_zkevm" do
         get("/zkevm/batches/confirmed", V2.PolygonZkevmController, :batches_confirmed)
         get("/zkevm/batches/latest-number", V2.PolygonZkevmController, :batch_latest_number)
+      end
+
+      if Application.compile_env(:explorer, :chain_type) == "zksync" do
+        get("/zksync/batches/confirmed", V2.ZkSyncController, :batches_confirmed)
+        get("/zksync/batches/latest-number", V2.ZkSyncController, :batch_latest_number)
       end
     end
 
@@ -377,6 +386,14 @@ defmodule BlockScoutWeb.ApiRouter do
           get("/", V2.ValidatorController, :stability_validators_list)
           get("/counters", V2.ValidatorController, :stability_validators_counters)
         end
+      end
+    end
+
+    scope "/zksync" do
+      if Application.compile_env(:explorer, :chain_type) == "zksync" do
+        get("/batches", V2.ZkSyncController, :batches)
+        get("/batches/count", V2.ZkSyncController, :batches_count)
+        get("/batches/:batch_number", V2.ZkSyncController, :batch)
       end
     end
   end

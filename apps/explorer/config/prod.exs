@@ -28,6 +28,10 @@ config :explorer, Explorer.Repo.PolygonZkevm,
   prepare: :unnamed,
   timeout: :timer.seconds(60)
 
+config :explorer, Explorer.Repo.ZkSync,
+  prepare: :unnamed,
+  timeout: :timer.seconds(60)
+
 config :explorer, Explorer.Repo.RSK,
   prepare: :unnamed,
   timeout: :timer.seconds(60)

@@ -264,11 +264,8 @@ defmodule EthereumJSONRPC.Transaction do
           "hash" => hash,
           "input" => input,
           "nonce" => nonce,
-          "r" => r,
-          "s" => s,
           "to" => to_address_hash,
           "transactionIndex" => index,
-          "v" => v,
           "value" => value,
           "type" => type,
           "maxPriorityFeePerGas" => max_priority_fee_per_gas,
@@ -285,10 +282,7 @@ defmodule EthereumJSONRPC.Transaction do
       index: index,
       input: input,
       nonce: nonce,
-      r: r,
-      s: s,
       to_address_hash: to_address_hash,
-      v: v,
       value: value,
       transaction_index: index,
       type: type,
@@ -298,7 +292,10 @@ defmodule EthereumJSONRPC.Transaction do
 
     put_if_present(transaction, result, [
       {"creates", :created_contract_address_hash},
-      {"block_timestamp", :block_timestamp}
+      {"block_timestamp", :block_timestamp},
+      {"r", :r},
+      {"s", :s},
+      {"v", :v}
     ])
   end
 
@@ -313,11 +310,8 @@ defmodule EthereumJSONRPC.Transaction do
           "hash" => hash,
           "input" => input,
           "nonce" => nonce,
-          "r" => r,
-          "s" => s,
           "to" => to_address_hash,
           "transactionIndex" => index,
-          "v" => v,
           "value" => value,
           "type" => type,
           "maxPriorityFeePerGas" => max_priority_fee_per_gas,
@@ -334,10 +328,7 @@ defmodule EthereumJSONRPC.Transaction do
       index: index,
       input: input,
       nonce: nonce,
-      r: r,
-      s: s,
       to_address_hash: to_address_hash,
-      v: v,
       value: value,
       transaction_index: index,
       type: type,
@@ -347,10 +338,14 @@ defmodule EthereumJSONRPC.Transaction do
 
     put_if_present(transaction, result, [
       {"creates", :created_contract_address_hash},
-      {"block_timestamp", :block_timestamp}
+      {"block_timestamp", :block_timestamp},
+      {"r", :r},
+      {"s", :s},
+      {"v", :v}
     ])
   end
 
+  # for legacy txs without maxPriorityFeePerGas and maxFeePerGas
   def do_elixir_to_params(
         %{
           "blockHash" => block_hash,
@@ -361,11 +356,8 @@ defmodule EthereumJSONRPC.Transaction do
           "hash" => hash,
           "input" => input,
           "nonce" => nonce,
-          "r" => r,
-          "s" => s,
           "to" => to_address_hash,
           "transactionIndex" => index,
-          "v" => v,
           "value" => value,
           "type" => type
         } = transaction
@@ -380,10 +372,7 @@ defmodule EthereumJSONRPC.Transaction do
       index: index,
       input: input,
       nonce: nonce,
-      r: r,
-      s: s,
       to_address_hash: to_address_hash,
-      v: v,
       value: value,
       transaction_index: index,
       type: type
@@ -391,10 +380,14 @@ defmodule EthereumJSONRPC.Transaction do
 
     put_if_present(transaction, result, [
       {"creates", :created_contract_address_hash},
-      {"block_timestamp", :block_timestamp}
+      {"block_timestamp", :block_timestamp},
+      {"r", :r},
+      {"s", :s},
+      {"v", :v}
     ])
   end
 
+  # for legacy txs without type, maxPriorityFeePerGas and maxFeePerGas
   def do_elixir_to_params(
         %{
           "blockHash" => block_hash,
@@ -405,11 +398,8 @@ defmodule EthereumJSONRPC.Transaction do
           "hash" => hash,
           "input" => input,
           "nonce" => nonce,
-          "r" => r,
-          "s" => s,
           "to" => to_address_hash,
           "transactionIndex" => index,
-          "v" => v,
           "value" => value
         } = transaction
       ) do
@@ -423,20 +413,21 @@ defmodule EthereumJSONRPC.Transaction do
       index: index,
       input: input,
       nonce: nonce,
-      r: r,
-      s: s,
       to_address_hash: to_address_hash,
-      v: v,
       value: value,
       transaction_index: index
     }
 
     put_if_present(transaction, result, [
       {"creates", :created_contract_address_hash},
-      {"block_timestamp", :block_timestamp}
+      {"block_timestamp", :block_timestamp},
+      {"r", :r},
+      {"s", :s},
+      {"v", :v}
     ])
   end
 
+  # for txs without gasPrice, maxPriorityFeePerGas and maxFeePerGas
   def do_elixir_to_params(
         %{
           "blockHash" => block_hash,
@@ -446,12 +437,9 @@ defmodule EthereumJSONRPC.Transaction do
           "hash" => hash,
           "input" => input,
           "nonce" => nonce,
-          "r" => r,
-          "s" => s,
           "to" => to_address_hash,
           "transactionIndex" => index,
           "type" => type,
-          "v" => v,
           "value" => value
         } = transaction
       ) do
@@ -465,10 +453,7 @@ defmodule EthereumJSONRPC.Transaction do
       index: index,
       input: input,
       nonce: nonce,
-      r: r,
-      s: s,
       to_address_hash: to_address_hash,
-      v: v,
       value: value,
       transaction_index: index,
       type: type
@@ -476,7 +461,10 @@ defmodule EthereumJSONRPC.Transaction do
 
     put_if_present(transaction, result, [
       {"creates", :created_contract_address_hash},
-      {"block_timestamp", :block_timestamp}
+      {"block_timestamp", :block_timestamp},
+      {"r", :r},
+      {"s", :s},
+      {"v", :v}
     ])
   end
 
@@ -671,6 +659,11 @@ defmodule EthereumJSONRPC.Transaction do
       nil -> {key, chain_id}
       _ -> {key, quantity_to_integer(chain_id)}
     end
+  end
+
+  # ZkSync fields
+  defp entry_to_elixir({key, _}) when key in ~w(l1BatchNumber l1BatchTxIndex) do
+    {:ignore, :ignore}
   end
 
   defp entry_to_elixir(_) do
