@@ -50,7 +50,6 @@ defmodule Explorer.Chain.Address.CoinBalance do
         cb in CoinBalance,
         where: cb.address_hash == ^address_hash,
         where: cb.block_number <= ^block_number,
-        where: not is_nil(cb.value),
         inner_join: b in Block,
         on: cb.block_number == b.number,
         limit: ^2,
