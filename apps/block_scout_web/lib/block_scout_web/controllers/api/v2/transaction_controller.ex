@@ -33,6 +33,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.Chain.PolygonZkevm.Reader
   alias Explorer.Chain.ZkSync.Reader
+  alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
   alias Indexer.Fetcher.FirstTraceOnDemand
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -444,6 +445,25 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       |> put_view(BlobView)
       |> render(:blobs, %{blobs: blobs})
     end
+  end
+
+  def stats(conn, _params) do
+    transactions_count = Transactions24hStats.fetch_count(@api_true)
+    pending_transactions_count = FreshPendingTransactionsCounter.fetch(@api_true)
+    transaction_fees_sum = Transactions24hStats.fetch_fee_sum(@api_true)
+    transaction_fees_avg = Transactions24hStats.fetch_fee_average(@api_true)
+
+    conn
+    |> put_status(200)
+    |> render(
+      :stats,
+      %{
+        transactions_count_24h: transactions_count,
+        pending_transactions_count: pending_transactions_count,
+        transaction_fees_sum_24h: transaction_fees_sum,
+        transaction_fees_avg_24h: transaction_fees_avg
+      }
+    )
   end
 
   @doc """

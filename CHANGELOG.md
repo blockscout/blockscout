@@ -9,6 +9,7 @@
 - [#9511](https://github.com/blockscout/blockscout/pull/9511) - Separate errors by type in EndpointAvailabilityObserver
 - [#9490](https://github.com/blockscout/blockscout/pull/9490), [#9644](https://github.com/blockscout/blockscout/pull/9644) - Add blob transaction counter and filter in block view
 - [#9486](https://github.com/blockscout/blockscout/pull/9486) - Massive blocks fetcher
+- [#9483](https://github.com/blockscout/blockscout/pull/9483) - Add secondary coin and transaction stats
 - [#9473](https://github.com/blockscout/blockscout/pull/9473) - Add user_op interpretation
 - [#9461](https://github.com/blockscout/blockscout/pull/9461) - Fetch blocks without internal transactions backwards
 - [#9460](https://github.com/blockscout/blockscout/pull/9460) - Optimism chain type

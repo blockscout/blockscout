@@ -184,6 +184,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
+  def render("stats.json", %{
+        transactions_count_24h: transactions_count,
+        pending_transactions_count: pending_transactions_count,
+        transaction_fees_sum_24h: transaction_fees_sum,
+        transaction_fees_avg_24h: transaction_fees_avg
+      }) do
+    %{
+      "transactions_count_24h" => transactions_count,
+      "pending_transactions_count" => pending_transactions_count,
+      "transaction_fees_sum_24h" => transaction_fees_sum,
+      "transaction_fees_avg_24h" => transaction_fees_avg
+    }
+  end
+
   @doc """
     Decodes list of logs
   """

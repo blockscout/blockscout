@@ -147,6 +147,18 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     })
   end
 
+  def secondary_coin_market_chart(conn, _params) do
+    recent_market_history = Market.fetch_recent_history(true)
+
+    chart_data =
+      recent_market_history
+      |> Enum.map(fn day -> Map.take(day, [:closing_price, :date]) end)
+
+    json(conn, %{
+      chart_data: chart_data
+    })
+  end
+
   defp backward_compatibility(response, conn) do
     case Conn.get_req_header(conn, "updated-gas-oracle") do
       ["true"] ->

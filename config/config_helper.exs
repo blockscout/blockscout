@@ -170,6 +170,20 @@ defmodule ConfigHelper do
     end
   end
 
+  @spec exchange_rates_secondary_coin_price_source() :: Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare
+  def exchange_rates_secondary_coin_price_source do
+    cmc_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINMARKETCAP_SECONDARY_COIN_ID")
+    cg_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINGECKO_SECONDARY_COIN_ID")
+    cc_secondary_coin_symbol = System.get_env("EXCHANGE_RATES_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL")
+
+    cond do
+      cg_secondary_coin_id && cg_secondary_coin_id !== "" -> Price.CoinGecko
+      cmc_secondary_coin_id && cmc_secondary_coin_id !== "" -> Price.CoinMarketCap
+      cc_secondary_coin_symbol && cc_secondary_coin_symbol !== "" -> Price.CryptoCompare
+      true -> Price.CryptoCompare
+    end
+  end
+
   def block_transformer do
     block_transformers = %{
       "clique" => Blocks.Clique,

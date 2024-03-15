@@ -14,9 +14,9 @@ defmodule Explorer.Market do
 
   Today's date is include as part of the day count
   """
-  @spec fetch_recent_history() :: [MarketHistory.t()]
-  def fetch_recent_history do
-    MarketHistoryCache.fetch()
+  @spec fetch_recent_history(boolean()) :: [MarketHistory.t()]
+  def fetch_recent_history(secondary_coin? \\ false) do
+    MarketHistoryCache.fetch(secondary_coin?)
   end
 
   @doc """
@@ -72,7 +72,7 @@ defmodule Explorer.Market do
 
     Repo.insert_all(MarketHistory, records_without_zeroes,
       on_conflict: market_history_on_conflict(),
-      conflict_target: [:date]
+      conflict_target: [:date, :secondary_coin]
     )
   end
 

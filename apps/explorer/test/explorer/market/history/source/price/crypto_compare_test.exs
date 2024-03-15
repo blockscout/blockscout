@@ -63,28 +63,31 @@ defmodule Explorer.Market.History.Source.Price.CryptoCompareTest do
         %{
           closing_price: Decimal.from_float(9655.77),
           date: ~D[2018-04-24],
-          opening_price: Decimal.from_float(8967.86)
+          opening_price: Decimal.from_float(8967.86),
+          secondary_coin: false
         },
         %{
           closing_price: Decimal.from_float(8873.62),
           date: ~D[2018-04-25],
-          opening_price: Decimal.from_float(9657.69)
+          opening_price: Decimal.from_float(9657.69),
+          secondary_coin: false
         },
         %{
           closing_price: Decimal.from_float(8804.32),
           date: ~D[2018-04-26],
-          opening_price: Decimal.from_float(8873.57)
+          opening_price: Decimal.from_float(8873.57),
+          secondary_coin: false
         }
       ]
 
-      assert {:ok, expected} == CryptoCompare.fetch_price_history(3)
+      assert {:ok, expected} == CryptoCompare.fetch_price_history(3, false)
     end
 
     test "with errored request", %{bypass: bypass} do
       error_text = ~S({"error": "server error"})
       Bypass.expect(bypass, fn conn -> Conn.resp(conn, 500, error_text) end)
 
-      assert :error == CryptoCompare.fetch_price_history(3)
+      assert :error == CryptoCompare.fetch_price_history(3, false)
     end
 
     test "rejects empty prices", %{bypass: bypass} do
@@ -135,10 +138,15 @@ defmodule Explorer.Market.History.Source.Price.CryptoCompareTest do
       Bypass.expect(bypass, fn conn -> Conn.resp(conn, 200, json) end)
 
       expected = [
-        %{closing_price: Decimal.from_float(8804.32), date: ~D[2018-04-26], opening_price: Decimal.from_float(8873.57)}
+        %{
+          closing_price: Decimal.from_float(8804.32),
+          date: ~D[2018-04-26],
+          opening_price: Decimal.from_float(8873.57),
+          secondary_coin: false
+        }
       ]
 
-      assert {:ok, expected} == CryptoCompare.fetch_price_history(3)
+      assert {:ok, expected} == CryptoCompare.fetch_price_history(3, false)
     end
   end
 end
