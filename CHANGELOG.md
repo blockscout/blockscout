@@ -21,6 +21,7 @@
 
 ### Fixes
 
+- [#9646](https://github.com/blockscout/blockscout/pull/9646) - Hotfix for Optimism Ecotone batch blobs indexing
 - [#9640](https://github.com/blockscout/blockscout/pull/9640) - Fix no function clause matching in `BENS.item_to_address_hash_strings/1`
 - [#9638](https://github.com/blockscout/blockscout/pull/9638) - Do not broadcast coin balance changes with empty value/delta
 - [#9635](https://github.com/blockscout/blockscout/pull/9635) - Reset missing ranges collector to max number after the cycle is done
