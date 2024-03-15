@@ -37,6 +37,7 @@
 - [#9529](https://github.com/blockscout/blockscout/pull/9529) - Fix `MAX_SAFE_INTEGER` frontend bug
 - [#9518](https://github.com/blockscout/blockscout/pull/9518), [#9628](https://github.com/blockscout/blockscout/pull/9628) - Fix MultipleResultsError in `smart_contract_creation_tx_bytecode/1`
 - [#9514](https://github.com/blockscout/blockscout/pull/9514) - Fix missing `0x` prefix for `blockNumber`, `logIndex`, `transactionIndex` and remove `transactionLogIndex` in `eth_getLogs` response.
+- [#9510](https://github.com/blockscout/blockscout/pull/9510) - Fix WS false 0 token balances
 - [#9512](https://github.com/blockscout/blockscout/pull/9512) - Docker-compose 2.24.6 compatibility
 - [#9262](https://github.com/blockscout/blockscout/pull/9262) - Fix withdrawal status
 - [#9123](https://github.com/blockscout/blockscout/pull/9123) - Fixes in Optimism due to changed log topics type
