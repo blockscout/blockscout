@@ -112,6 +112,7 @@
 
 - [#9441](https://github.com/blockscout/blockscout/pull/9441) - Update BENS integration: change endpoint for resolving address in search
 - [#9437](https://github.com/blockscout/blockscout/pull/9437) - Add Enum.uniq before sanitizing token transfers
+- [#9407](https://github.com/blockscout/blockscout/pull/9407) - ERC-404 basic support
 - [#9403](https://github.com/blockscout/blockscout/pull/9403) - Null round handling
 - [#9401](https://github.com/blockscout/blockscout/pull/9401) - Eliminate incorrect token transfers with empty token_ids
 - [#9396](https://github.com/blockscout/blockscout/pull/9396) - More-Minimal Proxy support

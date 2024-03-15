@@ -1,6 +1,6 @@
 defmodule Indexer.Transform.TokenTransfers do
   @moduledoc """
-  Helper functions for transforming data for ERC-20 and ERC-721 token transfers.
+  Helper functions for transforming data for known token standards (ERC-20, ERC-721, ERC-1155, ERC-404) transfers.
   """
 
   require Logger
@@ -8,7 +8,7 @@ defmodule Indexer.Transform.TokenTransfers do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias Explorer.{Helper, Repo}
-  alias Explorer.Chain.{Token, TokenTransfer}
+  alias Explorer.Chain.{Hash, Token, TokenTransfer}
   alias Indexer.Fetcher.TokenTotalSupplyUpdater
 
   @doc """
@@ -38,12 +38,22 @@ defmodule Indexer.Transform.TokenTransfers do
       end)
       |> Enum.reduce(initial_acc, &do_parse(&1, &2, :erc1155))
 
+    erc404_token_transfers =
+      logs
+      |> Enum.filter(fn log ->
+        log.first_topic == TokenTransfer.erc404_erc20_transfer_event() ||
+          log.first_topic == TokenTransfer.erc404_erc721_transfer_event()
+      end)
+      |> Enum.reduce(initial_acc, &do_parse(&1, &2, :erc404))
+
     rough_tokens =
-      erc1155_token_transfers.tokens ++
+      erc404_token_transfers.tokens ++
+        erc1155_token_transfers.tokens ++
         erc20_and_erc721_token_transfers.tokens ++ weth_transfers.tokens
 
     rough_token_transfers =
-      erc1155_token_transfers.token_transfers ++
+      erc404_token_transfers.token_transfers ++
+        erc1155_token_transfers.token_transfers ++
         erc20_and_erc721_token_transfers.token_transfers ++ weth_transfers.token_transfers
 
     tokens = sanitize_token_types(rough_tokens, rough_token_transfers)
@@ -141,17 +151,17 @@ defmodule Indexer.Transform.TokenTransfers do
 
   defp token_type_priority(nil), do: -1
 
-  @token_types_priority_order ["ERC-20", "ERC-721", "ERC-1155"]
+  @token_types_priority_order ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
   defp token_type_priority(token_type) do
     Enum.find_index(@token_types_priority_order, &(&1 == token_type))
   end
 
   defp do_parse(log, %{tokens: tokens, token_transfers: token_transfers} = acc, type \\ :erc20_erc721) do
     parse_result =
-      if type != :erc1155 do
-        parse_params(log)
-      else
-        parse_erc1155_params(log)
+      case type do
+        :erc1155 -> parse_erc1155_params(log)
+        :erc404 -> parse_erc404_params(log)
+        _ -> parse_params(log)
       end
 
     case parse_result do
@@ -295,14 +305,20 @@ defmodule Indexer.Transform.TokenTransfers do
     {token, token_transfer}
   end
 
-  def parse_erc1155_params(
-        %{
-          first_topic: unquote(TokenTransfer.erc1155_batch_transfer_signature()),
-          third_topic: third_topic,
-          fourth_topic: fourth_topic,
-          data: data
-        } = log
-      ) do
+  @spec parse_erc1155_params(map()) ::
+          nil
+          | {%{
+               contract_address_hash: Hash.Address.t(),
+               type: String.t()
+             }, map()}
+  defp parse_erc1155_params(
+         %{
+           first_topic: unquote(TokenTransfer.erc1155_batch_transfer_signature()),
+           third_topic: third_topic,
+           fourth_topic: fourth_topic,
+           data: data
+         } = log
+       ) do
     [token_ids, values] = Helper.decode_data(data, [{:array, {:uint, 256}}, {:array, {:uint, 256}}])
 
     if is_nil(token_ids) or token_ids == [] or is_nil(values) or values == [] do
@@ -333,7 +349,7 @@ defmodule Indexer.Transform.TokenTransfers do
     end
   end
 
-  def parse_erc1155_params(%{third_topic: third_topic, fourth_topic: fourth_topic, data: data} = log) do
+  defp parse_erc1155_params(%{third_topic: third_topic, fourth_topic: fourth_topic, data: data} = log) do
     [token_id, value] = Helper.decode_data(data, [{:uint, 256}, {:uint, 256}])
 
     from_address_hash = truncate_address_hash(third_topic)
@@ -358,6 +374,84 @@ defmodule Indexer.Transform.TokenTransfers do
     }
 
     {token, token_transfer}
+  end
+
+  @spec parse_erc404_params(map()) ::
+          nil
+          | {%{
+               contract_address_hash: Hash.Address.t(),
+               type: String.t()
+             }, map()}
+  defp parse_erc404_params(
+         %{
+           first_topic: unquote(TokenTransfer.erc404_erc20_transfer_event()),
+           second_topic: second_topic,
+           third_topic: third_topic,
+           fourth_topic: nil,
+           data: data
+         } = log
+       ) do
+    [value] = Helper.decode_data(data, [{:uint, 256}])
+
+    if is_nil(value) or value == [] do
+      nil
+    else
+      token_transfer = %{
+        block_number: log.block_number,
+        block_hash: log.block_hash,
+        log_index: log.index,
+        from_address_hash: truncate_address_hash(second_topic),
+        to_address_hash: truncate_address_hash(third_topic),
+        token_contract_address_hash: log.address_hash,
+        transaction_hash: log.transaction_hash,
+        token_type: "ERC-404",
+        token_ids: [],
+        amounts: [value]
+      }
+
+      token = %{
+        contract_address_hash: log.address_hash,
+        type: "ERC-404"
+      }
+
+      {token, token_transfer}
+    end
+  end
+
+  defp parse_erc404_params(
+         %{
+           first_topic: unquote(TokenTransfer.erc404_erc721_transfer_event()),
+           second_topic: second_topic,
+           third_topic: third_topic,
+           fourth_topic: fourth_topic,
+           data: _data
+         } = log
+       ) do
+    [token_id] = Helper.decode_data(fourth_topic, [{:uint, 256}])
+
+    if is_nil(token_id) or token_id == [] do
+      nil
+    else
+      token_transfer = %{
+        block_number: log.block_number,
+        block_hash: log.block_hash,
+        log_index: log.index,
+        from_address_hash: truncate_address_hash(second_topic),
+        to_address_hash: truncate_address_hash(third_topic),
+        token_contract_address_hash: log.address_hash,
+        transaction_hash: log.transaction_hash,
+        token_type: "ERC-404",
+        token_ids: [token_id],
+        amounts: []
+      }
+
+      token = %{
+        contract_address_hash: log.address_hash,
+        type: "ERC-404"
+      }
+
+      {token, token_transfer}
+    end
   end
 
   defp truncate_address_hash(nil), do: burn_address_hash_string()

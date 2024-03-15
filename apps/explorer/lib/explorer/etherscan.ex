@@ -293,14 +293,14 @@ defmodule Explorer.Etherscan do
   @doc """
     Gets a list of ERC-721 token transfers for a given address_hash. If contract_address_hash is not nil, transfers will be filtered by contract.
   """
-  @spec list_nft_token_transfers(Hash.Address.t(), Hash.Address.t() | nil, map()) :: [TokenTransfer.t()]
-  def list_nft_token_transfers(
+  @spec list_nft_transfers(Hash.Address.t(), Hash.Address.t() | nil, map()) :: [TokenTransfer.t()]
+  def list_nft_transfers(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash,
         contract_address_hash,
         options \\ @default_options
       ) do
     options
-    |> base_nft_token_transfers_query(contract_address_hash)
+    |> base_nft_transfers_query(contract_address_hash)
     |> where([tt], tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
     |> Repo.replica().all()
   end
@@ -308,17 +308,17 @@ defmodule Explorer.Etherscan do
   @doc """
     Gets a list of ERC-721 token transfers for a given token contract_address_hash.
   """
-  @spec list_nft_token_transfers_by_token(Hash.Address.t(), map()) :: [TokenTransfer.t()]
-  def list_nft_token_transfers_by_token(
+  @spec list_nft_transfers_by_token(Hash.Address.t(), map()) :: [TokenTransfer.t()]
+  def list_nft_transfers_by_token(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = contract_address_hash,
         options \\ @default_options
       ) do
     options
-    |> base_nft_token_transfers_query(contract_address_hash)
+    |> base_nft_transfers_query(contract_address_hash)
     |> Repo.replica().all()
   end
 
-  defp base_nft_token_transfers_query(options, contract_address_hash) do
+  defp base_nft_transfers_query(options, contract_address_hash) do
     options = Map.merge(@default_options, options)
 
     TokenTransfer.erc_721_token_transfers_query()

@@ -3818,13 +3818,13 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
-  @spec erc721_or_erc1155_token_instance_from_token_id_and_token_address(
+  @spec nft_instance_from_token_id_and_token_address(
           Decimal.t() | non_neg_integer(),
           Hash.Address.t(),
           [api?]
         ) ::
           {:ok, Instance.t()} | {:error, :not_found}
-  def erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, token_contract_address, options \\ []) do
+  def nft_instance_from_token_id_and_token_address(token_id, token_contract_address, options \\ []) do
     query = Instance.token_instance_query(token_id, token_contract_address)
 
     case select_repo(options).one(query) do
@@ -4129,9 +4129,10 @@ defmodule Explorer.Chain do
 
   def put_owner_to_token_instance(
         %Instance{owner: nil, is_unique: true} = token_instance,
-        %Token{type: "ERC-1155"},
+        %Token{type: type},
         options
-      ) do
+      )
+      when type in ["ERC-1155", "ERC-404"] do
     owner_address_hash =
       token_instance
       |> Instance.owner_query()
@@ -4146,7 +4147,7 @@ defmodule Explorer.Chain do
   def data, do: DataloaderEcto.new(Repo)
 
   @spec transaction_token_transfer_type(Transaction.t()) ::
-          :erc20 | :erc721 | :erc1155 | :token_transfer | nil
+          :erc20 | :erc721 | :erc1155 | :erc404 | :token_transfer | nil
   def transaction_token_transfer_type(
         %Transaction{
           status: :ok,
@@ -4207,10 +4208,7 @@ defmodule Explorer.Chain do
 
         find_erc1155_token_transfer(transaction.token_transfers, {from_address, to_address})
 
-      {"0xf907fc5b" <> _params, ^zero_wei} ->
-        :erc20
-
-      # check for ERC-20 or for old ERC-721, ERC-1155 token versions
+      # check for ERC-20 or for old ERC-721, ERC-1155, ERC-404 token versions
       {unquote(TokenTransfer.transfer_function_signature()) <> params, ^zero_wei} ->
         types = [:address, {:uint, 256}]
 
@@ -4218,7 +4216,7 @@ defmodule Explorer.Chain do
 
         decimal_value = Decimal.new(value)
 
-        find_erc721_or_erc20_or_erc1155_token_transfer(transaction.token_transfers, {address, decimal_value})
+        find_known_token_transfer(transaction.token_transfers, {address, decimal_value})
 
       _ ->
         nil
@@ -4243,7 +4241,7 @@ defmodule Explorer.Chain do
     if token_transfer, do: :erc1155
   end
 
-  defp find_erc721_or_erc20_or_erc1155_token_transfer(token_transfers, {address, decimal_value}) do
+  defp find_known_token_transfer(token_transfers, {address, decimal_value}) do
     token_transfer =
       Enum.find(token_transfers, fn token_transfer ->
         token_transfer.to_address_hash.bytes == address && token_transfer.amount == decimal_value
@@ -4254,6 +4252,7 @@ defmodule Explorer.Chain do
         %Token{type: "ERC-20"} -> :erc20
         %Token{type: "ERC-721"} -> :erc721
         %Token{type: "ERC-1155"} -> :erc1155
+        %Token{type: "ERC-404"} -> :erc404
         _ -> nil
       end
     else
@@ -4504,20 +4503,20 @@ defmodule Explorer.Chain do
       ...>  token_contract_address_hash: token.contract_address_hash,
       ...>  token_id: token_id
       ...> )
-      iex> Explorer.Chain.check_erc721_or_erc1155_token_instance_exists(token_id, token.contract_address_hash)
+      iex> Explorer.Chain.check_nft_instance_exists(token_id, token.contract_address_hash)
       :ok
 
   Returns `:not_found` if not found
 
       iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      iex> Explorer.Chain.check_erc721_or_erc1155_token_instance_exists(10, hash)
+      iex> Explorer.Chain.check_nft_instance_exists(10, hash)
       :not_found
   """
-  @spec check_erc721_or_erc1155_token_instance_exists(binary() | non_neg_integer(), Hash.Address.t()) ::
+  @spec check_nft_instance_exists(binary() | non_neg_integer(), Hash.Address.t()) ::
           :ok | :not_found
-  def check_erc721_or_erc1155_token_instance_exists(token_id, hash) do
+  def check_nft_instance_exists(token_id, hash) do
     token_id
-    |> erc721_or_erc1155_token_instance_exist?(hash)
+    |> nft_instance_exist?(hash)
     |> boolean_to_check_result()
   end
 
@@ -4532,17 +4531,17 @@ defmodule Explorer.Chain do
       ...>  token_contract_address_hash: token.contract_address_hash,
       ...>  token_id: token_id
       ...> )
-      iex> Explorer.Chain.erc721_or_erc1155_token_instance_exist?(token_id, token.contract_address_hash)
+      iex> Explorer.Chain.nft_instance_exist?(token_id, token.contract_address_hash)
       true
 
   Returns `false` if not found
 
       iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      iex> Explorer.Chain.erc721_or_erc1155_token_instance_exist?(10, hash)
+      iex> Explorer.Chain.nft_instance_exist?(10, hash)
       false
   """
-  @spec erc721_or_erc1155_token_instance_exist?(binary() | non_neg_integer(), Hash.Address.t()) :: boolean()
-  def erc721_or_erc1155_token_instance_exist?(token_id, hash) do
+  @spec nft_instance_exist?(binary() | non_neg_integer(), Hash.Address.t()) :: boolean()
+  def nft_instance_exist?(token_id, hash) do
     query =
       from(i in Instance,
         where: i.token_contract_address_hash == ^hash and i.token_id == ^Decimal.new(token_id)

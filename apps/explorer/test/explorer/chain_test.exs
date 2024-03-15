@@ -148,8 +148,8 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "ERC721_or_ERC1155_token_instance_from_token_id_and_token_address/2" do
-    test "return ERC721 token instance" do
+  describe "nft_instance_from_token_id_and_token_address/2" do
+    test "return NFT instance" do
       token = insert(:token)
 
       token_id = 10
@@ -160,7 +160,7 @@ defmodule Explorer.ChainTest do
       )
 
       assert {:ok, result} =
-               Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(
+               Chain.nft_instance_from_token_id_and_token_address(
                  token_id,
                  token.contract_address_hash
                )

@@ -151,6 +151,22 @@ defmodule Explorer.Account.Notifier.Summary do
           name: transfer.token.name,
           type: transfer.token.type
         }
+
+      "ERC-404" ->
+        token_ids_string = token_ids(transfer)
+
+        %Summary{
+          amount: amount(transfer),
+          transaction_hash: transaction.hash,
+          method: method(transfer),
+          from_address_hash: transfer.from_address_hash,
+          to_address_hash: transfer.to_address_hash,
+          block_number: transfer.block_number,
+          subject: if(token_ids_string == "", do: transfer.token.type, else: token_ids_string),
+          tx_fee: fee(transaction),
+          name: transfer.token.name,
+          type: transfer.token.type
+        }
     end
   end
 

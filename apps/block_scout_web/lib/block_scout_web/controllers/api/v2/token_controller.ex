@@ -189,7 +189,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_str)} do
       token_instance =
-        case Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, address_hash, @api_true) do
+        case Chain.nft_instance_from_token_id_and_token_address(token_id, address_hash, @api_true) do
           {:ok, token_instance} ->
             token_instance
             |> Chain.select_repo(@api_true).preload(:owner)

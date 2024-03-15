@@ -106,6 +106,10 @@ defmodule Explorer.Factory do
         "ERC-721" => %{
           "incoming" => random_bool(),
           "outcoming" => random_bool()
+        },
+        "ERC-404" => %{
+          "incoming" => random_bool(),
+          "outcoming" => random_bool()
         }
       },
       "notification_methods" => %{
@@ -130,6 +134,8 @@ defmodule Explorer.Factory do
       watch_erc_721_output: random_bool(),
       watch_erc_1155_input: random_bool(),
       watch_erc_1155_output: random_bool(),
+      watch_erc_404_input: random_bool(),
+      watch_erc_404_output: random_bool(),
       notify_email: random_bool()
     }
   end
@@ -205,6 +211,8 @@ defmodule Explorer.Factory do
       watch_erc_721_output: random_bool(),
       watch_erc_1155_input: random_bool(),
       watch_erc_1155_output: random_bool(),
+      watch_erc_404_input: random_bool(),
+      watch_erc_404_output: random_bool(),
       notify_email: random_bool()
     }
   end
@@ -951,7 +959,14 @@ defmodule Explorer.Factory do
   end
 
   def address_current_token_balance_with_token_id_factory do
-    {token_type, token_id} = Enum.random([{"ERC-20", nil}, {"ERC-721", nil}, {"ERC-1155", Enum.random(1..100_000)}])
+    {token_type, token_id} =
+      Enum.random([
+        {"ERC-20", nil},
+        {"ERC-721", nil},
+        {"ERC-1155", Enum.random(1..100_000)},
+        {"ERC-404", nil},
+        {"ERC-404", Enum.random(1..100_000)}
+      ])
 
     %CurrentTokenBalance{
       address: build(:address),
