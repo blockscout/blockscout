@@ -177,9 +177,9 @@ defmodule ConfigHelper do
     cc_secondary_coin_symbol = System.get_env("EXCHANGE_RATES_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL")
 
     cond do
-      cc_secondary_coin_symbol && cc_secondary_coin_symbol !== "" -> Price.CoinGecko
+      cg_secondary_coin_id && cg_secondary_coin_id !== "" -> Price.CoinGecko
       cmc_secondary_coin_id && cmc_secondary_coin_id !== "" -> Price.CoinMarketCap
-      cg_secondary_coin_id && cg_secondary_coin_id !== "" -> Price.CryptoCompare
+      cc_secondary_coin_symbol && cc_secondary_coin_symbol !== "" -> Price.CryptoCompare
       true -> Price.CryptoCompare
     end
   end
