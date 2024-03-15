@@ -19,6 +19,7 @@
 
 ### Fixes
 
+- [#9646](https://github.com/blockscout/blockscout/pull/9646) - Hotfix for Optimism Ecotone batch blobs indexing
 - [#9640](https://github.com/blockscout/blockscout/pull/9640) - Fix no function clause matching in `BENS.item_to_address_hash_strings/1`
 - [#9629](https://github.com/blockscout/blockscout/pull/9629) - Don't insert pbo for not inserted blocks
 - [#9601](https://github.com/blockscout/blockscout/pull/9601) - Fix token instance transform for some unconventional tokens
