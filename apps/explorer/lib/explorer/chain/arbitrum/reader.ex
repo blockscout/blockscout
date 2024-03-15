@@ -328,37 +328,37 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
     confirmed_ranges_query =
       from(
-        rbq in subquery(rollup_blocks_query),
+        subquery in subquery(rollup_blocks_query),
         select: %{
-          confirm_id: rbq.confirm_id,
-          min_block_num: min(rbq.block_num),
-          max_block_num: max(rbq.block_num)
+          confirm_id: subquery.confirm_id,
+          min_block_num: min(subquery.block_num),
+          max_block_num: max(subquery.block_num)
         },
-        group_by: rbq.confirm_id
+        group_by: subquery.confirm_id
       )
 
     confirmed_combined_ranges_query =
       from(
-        crq in subquery(confirmed_ranges_query),
+        subquery in subquery(confirmed_ranges_query),
         select: %{
-          confirm_id: crq.confirm_id,
-          min_block_num: crq.min_block_num,
-          max_block_num: crq.max_block_num,
-          prev_max_number: fragment("LAG(?, 1) OVER (ORDER BY ?)", crq.max_block_num, crq.min_block_num),
-          prev_confirm_id: fragment("LAG(?, 1) OVER (ORDER BY ?)", crq.confirm_id, crq.min_block_num)
+          confirm_id: subquery.confirm_id,
+          min_block_num: subquery.min_block_num,
+          max_block_num: subquery.max_block_num,
+          prev_max_number: fragment("LAG(?, 1) OVER (ORDER BY ?)", subquery.max_block_num, subquery.min_block_num),
+          prev_confirm_id: fragment("LAG(?, 1) OVER (ORDER BY ?)", subquery.confirm_id, subquery.min_block_num)
         }
       )
 
     main_query =
       from(
-        ccrq in subquery(confirmed_combined_ranges_query),
-        inner_join: lctx_cur in LifecycleTransaction,
-        on: ccrq.confirm_id == lctx_cur.id,
-        left_join: lctx_prev in LifecycleTransaction,
-        on: ccrq.prev_confirm_id == lctx_prev.id,
-        select: {lctx_prev.block, lctx_cur.block},
-        where: ccrq.min_block_num - 1 != ccrq.prev_max_number or is_nil(ccrq.prev_max_number),
-        order_by: [desc: ccrq.min_block_num],
+        subquery in subquery(confirmed_combined_ranges_query),
+        inner_join: tx_cur in LifecycleTransaction,
+        on: subquery.confirm_id == tx_cur.id,
+        left_join: tx_prev in LifecycleTransaction,
+        on: subquery.prev_confirm_id == tx_prev.id,
+        select: {tx_prev.block, tx_cur.block},
+        where: subquery.min_block_num - 1 != subquery.prev_max_number or is_nil(subquery.prev_max_number),
+        order_by: [desc: subquery.min_block_num],
         limit: 1
       )
 

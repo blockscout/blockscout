@@ -20,6 +20,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
   defp get_logs_new_confirmations(start_block, end_block, outbox_address, json_rpc_named_arguments, cache \\ %{})
        when start_block <= end_block do
+    # TODO: consider to have a persistent cache in DB to reduce the number of getLogs requests
     {logs, new_cache} =
       case cache[{start_block, end_block}] do
         nil ->
@@ -478,7 +479,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   end
 
   defp handle_confirmations_from_logs([], _, _, _) do
-    {[], [], []}
+    {:ok, {[], [], []}}
   end
 
   defp handle_confirmations_from_logs(
@@ -502,8 +503,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
     applicable_lifecycle_txs = take_lifecycle_txs_for_confirmed_blocks(rollup_blocks, lifecycle_txs_basic)
 
+    retcode =
+      if Enum.count(lifecycle_txs_basic) != Enum.count(applicable_lifecycle_txs) do
+        :confirmation_missed
+      else
+        :ok
+      end
+
     if Enum.empty?(applicable_lifecycle_txs) do
-      {[], [], []}
+      {retcode, {[], [], []}}
     else
       {lifecycle_txs, rollup_blocks, highest_confirmed_block_number} =
         finalize_lifecycle_txs_and_confirmed_blocks(
@@ -518,7 +526,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       # For example, due to DB inconsistency: some blocks/batches are missed.
       confirmed_txs = get_confirmed_l2_to_l1_messages(highest_confirmed_block_number)
 
-      {lifecycle_txs, rollup_blocks, confirmed_txs}
+      {retcode, {lifecycle_txs, rollup_blocks, confirmed_txs}}
     end
   end
 
@@ -540,7 +548,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         l1_rpc_config.json_rpc_named_arguments
       )
 
-    {lifecycle_txs, rollup_blocks, confirmed_txs} =
+    {retcode, {lifecycle_txs, rollup_blocks, confirmed_txs}} =
       handle_confirmations_from_logs(
         logs,
         l1_rpc_config,
@@ -555,5 +563,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         arbitrum_messages: %{params: confirmed_txs},
         timeout: :infinity
       })
+
+    retcode
   end
 end

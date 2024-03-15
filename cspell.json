@@ -399,6 +399,7 @@
         "reqs",
         "rerequest",
         "reshows",
+        "retcode",
         "retryable",
         "returnaddress",
         "retval",

@@ -109,17 +109,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     new_batches_start_block = Db.l1_block_to_discover_latest_committed_batch(l1_start_block)
     historical_batches_end_block = Db.l1_block_to_discover_earliest_committed_batch(l1_start_block - 1)
 
-    # TODO: it is necessary to develop a way to discover missed L1 confirmation txs.
-    #       One of the approaches is
-    #       1. Find the latest unconfirmed block before which there is a confirmed block
-    #       2. Get its hash
-    #       3. Find SendRootUpdated with the given hash
-    #       4. Confirm all the blocks between the block with given hash (inclusively) and the block
-    #          from previous SendRootUpdated
     new_confirmations_start_block = Db.l1_block_of_latest_confirmed_block(l1_start_block)
-
-    {expected_confirmation_start_block, expected_confirmation_end_block} =
-      Db.l1_blocks_to_expect_rollup_blocks_confirmation(l1_start_block - 1)
 
     # TODO: it is necessary to develop a way to discover missed executions.
     #       One of the approaches is to look deeper than the latest execution and
@@ -144,8 +134,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
           new_batches_start_block: new_batches_start_block,
           historical_batches_end_block: historical_batches_end_block,
           new_confirmations_start_block: new_confirmations_start_block,
-          historical_confirmations_end_block: expected_confirmation_end_block,
-          historical_confirmations_start_block: expected_confirmation_start_block,
+          historical_confirmations_end_block: nil,
+          historical_confirmations_start_block: nil,
           new_executions_start_block: new_executions_start_block,
           historical_executions_end_block: historical_executions_end_block
         })
@@ -176,18 +166,25 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   # TBD
   @impl GenServer
   def handle_info(:check_new_confirmations, state) do
-    {handle_duration, {:ok, end_block}} =
+    {handle_duration, {retcode, end_block}} =
       :timer.tc(&discover_new_rollup_confirmation/1, [
         state
       ])
 
     Process.send(self(), :check_new_executions, [])
 
-    new_data =
-      Map.merge(state.data, %{
+    updated_fields =
+      case retcode do
+        :ok -> %{}
+        _ -> %{historical_confirmations_end_block: nil, historical_confirmations_start_block: nil}
+      end
+      |> Map.merge(%{
+        # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
         duration: increase_duration(state.data, handle_duration),
         new_confirmations_start_block: end_block + 1
       })
+
+    new_data = Map.merge(state.data, updated_fields)
 
     {:noreply, %{state | data: new_data}}
   end
@@ -219,7 +216,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         state
       ])
 
-    Process.send(self(), :check_historical_executions, [])
+    Process.send(self(), :check_historical_confirmations, [])
 
     new_data =
       Map.merge(state.data, %{
@@ -232,8 +229,33 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
   # TBD
   @impl GenServer
+  def handle_info(:check_historical_confirmations, state) do
+    {handle_duration, {retcode, {start_block, end_block}}} =
+      :timer.tc(&discover_historical_rollup_confirmation/1, [
+        state
+      ])
+
+    Process.send(self(), :check_historical_executions, [])
+
+    updated_fields =
+      case retcode do
+        :ok -> %{historical_confirmations_end_block: start_block - 1, historical_confirmations_start_block: end_block}
+        _ -> %{historical_confirmations_end_block: nil, historical_confirmations_start_block: nil}
+      end
+      |> Map.merge(%{
+        # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
+        duration: increase_duration(state.data, handle_duration)
+      })
+
+    new_data = Map.merge(state.data, updated_fields)
+
+    {:noreply, %{state | data: new_data}}
+  end
+
+  # TBD
+  @impl GenServer
   def handle_info(:check_historical_executions, state) do
-    {handle_duration, {:ok, end_block}} =
+    {handle_duration, {:ok, start_block}} =
       :timer.tc(&discover_historical_l1_messages_executions/1, [
         state
       ])
@@ -243,7 +265,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     new_data =
       Map.merge(state.data, %{
         duration: increase_duration(state.data, handle_duration),
-        historical_executions_end_block: end_block - 1
+        historical_executions_end_block: start_block - 1
       })
 
     {:noreply, %{state | data: new_data}}
@@ -371,15 +393,16 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     if start_block <= end_block do
       Logger.info("Block range for new rollup confirmations discovery: #{start_block}..#{end_block}")
 
-      NewConfirmations.discover(
-        outbox_address,
-        start_block,
-        end_block,
-        l1_rpc_config,
-        rollup_rpc_config
-      )
+      retcode =
+        NewConfirmations.discover(
+          outbox_address,
+          start_block,
+          end_block,
+          l1_rpc_config,
+          rollup_rpc_config
+        )
 
-      {:ok, end_block}
+      {retcode, end_block}
     else
       {:ok, start_block - 1}
     end
@@ -391,6 +414,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
             l1_rpc: l1_rpc_config,
             l1_outbox_address: outbox_address,
             rollup_rpc: rollup_rpc_config,
+            l1_start_block: l1_start_block,
             l1_rollup_init_block: l1_rollup_init_block
           },
           data: %{
@@ -404,25 +428,24 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         nil ->
           Db.l1_blocks_to_expect_rollup_blocks_confirmation(nil)
 
-        value ->
+        _ ->
           {expected_confirmation_start_block, expected_confirmation_end_block}
       end
 
-    if is_nil(end_block) do
-      {:ok, {nil, nil}}
-    else
-      if end_block >= l1_rollup_init_block do
-        start_block =
-          case interim_start_block do
-            nil ->
-              max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
+    with {:end_block_defined, false} <- {:end_block_defined, is_nil(end_block)},
+         {:genesis_not_reached, true} <- {:genesis_not_reached, end_block >= l1_rollup_init_block} do
+      start_block =
+        case interim_start_block do
+          nil ->
+            max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
 
-            value ->
-              Enum.max([l1_rollup_init_block, value, end_block - l1_rpc_config.logs_block_range + 1])
-          end
+          value ->
+            Enum.max([l1_rollup_init_block, value, end_block - l1_rpc_config.logs_block_range + 1])
+        end
 
-        Logger.info("Block range for historical rollup confirmations discovery: #{start_block}..#{end_block}")
+      Logger.info("Block range for historical rollup confirmations discovery: #{start_block}..#{end_block}")
 
+      retcode =
         NewConfirmations.discover(
           outbox_address,
           start_block,
@@ -431,10 +454,10 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
           rollup_rpc_config
         )
 
-        {:ok, {start_block, interim_start_block}}
-      else
-        {:ok, {l1_rollup_init_block, nil}}
-      end
+      {retcode, {start_block, interim_start_block}}
+    else
+      {:end_block_defined, true} -> {:ok, {l1_start_block, nil}}
+      {:genesis_not_reached, false} -> {:ok, {l1_rollup_init_block, nil}}
     end
   end
 

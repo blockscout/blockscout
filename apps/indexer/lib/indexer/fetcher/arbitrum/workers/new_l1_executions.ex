@@ -126,6 +126,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     if Enum.empty?(confirmed_messages) do
       []
     else
+      # TODO: discover way to reduce appearance of such message
       Logger.info("Identified #{length(confirmed_messages)} l2-to-l1 messages already confirmed but not completed")
 
       messages_map =
