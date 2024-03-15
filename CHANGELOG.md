@@ -4,6 +4,19 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+</details>
+
+## 6.3.0
+
+### Features
+
 - [#9631](https://github.com/blockscout/blockscout/pull/9631) - Initial support of zksync chain type
 - [#9532](https://github.com/blockscout/blockscout/pull/9532) - Add last output root size counter
 - [#9511](https://github.com/blockscout/blockscout/pull/9511) - Separate errors by type in EndpointAvailabilityObserver
@@ -63,6 +76,29 @@
 - [#9506](https://github.com/blockscout/blockscout/pull/9506) - API v1 bridgedtokenlist endpoint
 - [#9260](https://github.com/blockscout/blockscout/pull/9260) - Optimism Delta upgrade support by Indexer.Fetcher.OptimismTxnBatch module
 - [#8740](https://github.com/blockscout/blockscout/pull/8740) - Add delay to Indexer.Fetcher.OptimismTxnBatch module initialization
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+- [#9544](https://github.com/blockscout/blockscout/pull/9544) - Bump @babel/core from 7.23.9 to 7.24.0 in /apps/block_scout_web/assets
+- [#9537](https://github.com/blockscout/blockscout/pull/9537) - Bump logger_json from 5.1.3 to 5.1.4
+- [#9550](https://github.com/blockscout/blockscout/pull/9550) - Bump xss from 1.0.14 to 1.0.15 in /apps/block_scout_web/assets
+- [#9539](https://github.com/blockscout/blockscout/pull/9539) - Bump floki from 0.35.4 to 0.36.0
+- [#9551](https://github.com/blockscout/blockscout/pull/9551) - Bump @amplitude/analytics-browser from 2.5.1 to 2.5.2 in /apps/block_scout_web/assets
+- [#9547](https://github.com/blockscout/blockscout/pull/9547) - Bump @babel/preset-env from 7.23.9 to 7.24.0 in /apps/block_scout_web/assets
+- [#9549](https://github.com/blockscout/blockscout/pull/9549) - Bump postcss-loader from 8.1.0 to 8.1.1 in /apps/block_scout_web/assets
+- [#9542](https://github.com/blockscout/blockscout/pull/9542) - Bump phoenix_ecto from 4.4.3 to 4.5.0
+- [#9546](https://github.com/blockscout/blockscout/pull/9546) - https://github.com/blockscout/blockscout/pull/9546
+- [#9545](https://github.com/blockscout/blockscout/pull/9545) - Bump chart.js from 4.4.1 to 4.4.2 in /apps/block_scout_web/assets
+- [#9540](https://github.com/blockscout/blockscout/pull/9540) - Bump postgrex from 0.17.4 to 0.17.5
+- [#9543](https://github.com/blockscout/blockscout/pull/9543) - Bump ueberauth from 0.10.7 to 0.10.8
+- [#9538](https://github.com/blockscout/blockscout/pull/9538) - Bump credo from 1.7.4 to 1.7.5
+- [#9607](https://github.com/blockscout/blockscout/pull/9607) - Bump redix from 1.3.0 to 1.4.1
+- [#9606](https://github.com/blockscout/blockscout/pull/9606) - Bump ecto from 3.11.1 to 3.11.2
+- [#9605](https://github.com/blockscout/blockscout/pull/9605) - Bump ex_doc from 0.31.1 to 0.31.2
+- [#9604](https://github.com/blockscout/blockscout/pull/9604) - Bump phoenix_ecto from 4.5.0 to 4.5.1
+
+</details>
 
 ## 6.2.2
 
