@@ -96,12 +96,6 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   def count_transactions(%Block{transactions: txs}) when is_list(txs), do: Enum.count(txs)
   def count_transactions(_), do: nil
 
-  def count_blob_transactions(%Block{transactions: txs}) when is_list(txs),
-    # EIP-2718 blob transaction type
-    do: Enum.count(txs, &(&1.type == 3))
-
-  def count_blob_transactions(_), do: nil
-
   def count_withdrawals(%Block{withdrawals: withdrawals}) when is_list(withdrawals), do: Enum.count(withdrawals)
   def count_withdrawals(_), do: nil
 
