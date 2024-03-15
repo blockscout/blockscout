@@ -180,9 +180,21 @@ defmodule Explorer.Market.History.Cataloger do
     {:noreply, %{}}
   end
 
-  @spec source_price() :: module()
-  defp source_price do
-    config_or_default(:price_source, Explorer.ExchangeRates.Source, Explorer.Market.History.Source.Price.CryptoCompare)
+  @spec source_price(boolean()) :: module()
+  defp source_price(secondary_coin?) do
+    if secondary_coin? do
+      config_or_default(
+        :secondary_coin_price_source,
+        Explorer.ExchangeRates.Source,
+        Explorer.Market.History.Source.Price.CryptoCompare
+      )
+    else
+      config_or_default(
+        :price_source,
+        Explorer.ExchangeRates.Source,
+        Explorer.Market.History.Source.Price.CryptoCompare
+      )
+    end
   end
 
   @spec source_market_cap() :: module()
@@ -210,7 +222,8 @@ defmodule Explorer.Market.History.Cataloger do
 
       if failed_attempts < @price_failed_attempts do
         {:price_history,
-         {day_count, failed_attempts, secondary_coin?, source_price().fetch_price_history(day_count, secondary_coin?)}}
+         {day_count, failed_attempts, secondary_coin?,
+          source_price(secondary_coin?).fetch_price_history(day_count, secondary_coin?)}}
       else
         {:price_history, {day_count, failed_attempts, secondary_coin?, {:ok, []}}}
       end

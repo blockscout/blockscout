@@ -292,11 +292,11 @@ config :explorer, Explorer.Counters.AddressTokenTransfersCounter,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TOKEN_TRANSFERS_COUNTER_PERIOD", "1h")
 
 config :explorer, Explorer.Counters.LastOutputRootSizeCounter,
-  enabled: true,
-  enable_consolidation: true,
+  enabled: ConfigHelper.chain_type() == "optimism",
+  enable_consolidation: ConfigHelper.chain_type() == "optimism",
   cache_period: ConfigHelper.parse_time_env_var("CACHE_OPTIMISM_LAST_OUTPUT_ROOT_SIZE_COUNTER_PERIOD", "5m")
 
-  config :explorer, Explorer.Counters.Transactions24hStats,
+config :explorer, Explorer.Counters.Transactions24hStats,
   enabled: true,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_TRANSACTIONS_24H_STATS_PERIOD", "1h"),
   enable_consolidation: true
@@ -314,6 +314,7 @@ config :explorer, Explorer.ExchangeRates,
 config :explorer, Explorer.ExchangeRates.Source,
   source: ConfigHelper.exchange_rates_source(),
   price_source: ConfigHelper.exchange_rates_price_source(),
+  secondary_coin_price_source: ConfigHelper.exchange_rates_secondary_coin_price_source(),
   market_cap_source: ConfigHelper.exchange_rates_market_cap_source(),
   tvl_source: ConfigHelper.exchange_rates_tvl_source()
 
